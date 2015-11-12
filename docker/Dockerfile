@@ -52,7 +52,7 @@ RUN apt-get update && apt-get install -qy \
     && rm -rf /var/lib/apt/lists/*
 
 # Set up root password
-RUN echo "root:codesprint" | chpasswd
+RUN echo "root:root" | chpasswd
 
 # MySQL
 VOLUME /var/lib/mysql
@@ -69,9 +69,12 @@ RUN wget -q -P /usr/local/bin/ https://tools.ietf.org/tools/idnits/idnits && chm
 ENV DDIR="/usr/local/share/datatracker"
 RUN mkdir -p $DDIR
 WORKDIR $DDIR
+
 COPY requirements.txt ./
-COPY settings_local.py ./
 RUN pip install -r requirements.txt
+
+COPY settings_local.py ./
+COPY setprompt ./
 
 COPY docker-init.sh /docker-init.sh
 ENTRYPOINT ["/docker-init.sh"]

@@ -74,12 +74,13 @@ trap 'echo "$program($LINENO): Command failed with error code $? ([$$] $0 $*)"; 
 # Option parsing
 
 # Options
-shortopts=dhi:m:r:t:vVu:
-longopts=download-data,help,ietfdb-url=,mysqldata=,docker-repo=,tag=,verbose,version,user=,
+shortopts=dhi:m:Mr:t:vVu:
+longopts=download-data,help,ietfdb-url=,mysqldata=,no-mysqldir,docker-repo=,tag=,verbose,version,user=,
 
 # Default values
-TAG=$(basename $(svn info --show-item url $parent))
+TAG=$(basename $(svn info $parent | grep ^URL | awk '{print $2}'))
 REPO="levkowetz/datatracker"
+NOMYMAP=""
 
 if   [ "$(uname)" = "Linux" ]; then
     args=$(getopt -o "$shortopts" --long "$longopts" -n '$program' -- $SV "$@")
@@ -100,6 +101,7 @@ while true ; do
 	-h| --help)	usage; exit;;		# Show this help, then exit
 	-i| --ietfdb-url)	URL=$2; shift;;	# Use an alternative database tarball URL
 	-m| --mysqldir)	MYSQLDIR=$2; shift;;	# Set the desired location for MySQL's database files
+	-M| --no-mysqldir) NOMYMAP=1;;	# Don't map the mysql dir to an external dir
 	-r| --docker-repo)	REPO=$2; shift;;	# Use the given docker repository, instead of the default
 	-t| --tag)	TAG=$2; shift;;		# Use this docker image tag, instead of the svn branch name
 	-u| --user)	WHO=$2; shift;;		# Run the container as the specified user
@@ -142,7 +144,7 @@ fi
 
 
 echo ""
-echo "Starting a docker container for '$TAG' ..."
+echo "Starting a docker container for '$TAG'."
 
 docker ps | grep -q $REPO:$TAG && die \
 "It seems that another docker container is already running the
@@ -173,7 +175,11 @@ if ! docker images $REPO | grep -q $TAG; then
     fi
 fi
 
-docker run -ti -p 8000:8000 -v $HOME:/home/$WHO -v $MYSQLDIR:/var/lib/mysql -e USER=$WHO -e DATADIR=${parent#$HOME/}/data -e CWD=${PWD#$HOME/} $REPO:$TAG
+if [ -n "$NOMYMAP" ]; then
+    docker run -ti -p 8000:8000 -v $HOME:/home/$WHO                             -e USER=$WHO -e DATADIR=${parent#$HOME/}/data -e CWD=${PWD#$HOME/} -e TAG=$TAG $REPO:$TAG
+else
+    docker run -ti -p 8000:8000 -v $HOME:/home/$WHO -v $MYSQLDIR:/var/lib/mysql -e USER=$WHO -e DATADIR=${parent#$HOME/}/data -e CWD=${PWD#$HOME/} -e TAG=$TAG $REPO:$TAG
+fi
 
 echo ""
 echo "Committing changes in the container to an image:"

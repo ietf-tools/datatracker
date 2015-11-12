@@ -6,6 +6,10 @@ if [ ! "$USER" ]; then
     echo "Environment variable USER is not set -- will set USER='django'."
     USER="django"
 fi
+if [ ! "$TAG" ]; then
+    echo "Environment variable TAG is not set -- will set TAG='datatracker'."
+    TAG="datatracker"
+fi
 
 echo "Checking if MySQL base data exists ..."
 if [ ! -d $MYSQLDIR/mysql ]; then
@@ -53,27 +57,30 @@ if ! id -u "$USER" &> /dev/null; then
     useradd -s /bin/bash -G staff $USER
 fi
 
+VIRTDIR="/opt/home/$USER/$TAG"
 if [ ! -d /opt/home/$USER ]; then
     echo "Setting up python virtualenv at /opt/home/$USER ..."
     mkdir -p /opt/home/$USER
     chown $USER /opt/home/$USER
-    mkdir /opt/home/$USER/datatracker
-    virtualenv --system-site-packages /opt/home/$USER/datatracker
+    mkdir $VIRTDIR
+    virtualenv --system-site-packages $VIRTDIR
 fi
 
 echo "Activating a virtual python environment ..."
-cat /opt/home/$USER/datatracker/bin/activate >> /etc/bash.bashrc
-. /opt/home/$USER/datatracker/bin/activate
+cat $VIRTDIR/bin/activate >> /etc/bash.bashrc
+cat /usr/local/share/datatracker/setprompt >> /etc/bash.bashrc 
+. $VIRTDIR/bin/activate
+
 
 if ! python -c "import django"; then
     echo "Installing requirements ..."
     pip install -r /usr/local/share/datatracker/requirements.txt
 fi
 
-if [ ! -f /opt/home/$USER/datatracker/lib/site-python/settings_local.py ]; then
+if [ ! -f $VIRTDIR/lib/site-python/settings_local.py ]; then
     echo "Setting up a default settings_local.py ..."
-    mkdir -p /opt/home/$USER/datatracker/lib/site-python/
-    cp /usr/local/share/datatracker/settings_local.py /opt/home/$USER/datatracker/lib/site-python/
+    mkdir -p $VIRTDIR/lib/site-python/
+    cp /usr/local/share/datatracker/settings_local.py $VIRTDIR/lib/site-python/
 fi
 
 chown -R $USER /opt/home/$USER
