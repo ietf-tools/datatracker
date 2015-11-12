@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from django.db import models, migrations
+from django.db import migrations
 
 def create_required_tags(apps, schema_editor):
     LiaisonStatement = apps.get_model("liaisons", "LiaisonStatement")
