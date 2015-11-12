@@ -18,7 +18,7 @@ from ietf.liaisons.models import (LiaisonStatement,LiaisonStatementEvent,
 from ietf.liaisons.utils import (get_person_for_user, can_add_outgoing_liaison,
     can_add_incoming_liaison, can_edit_liaison,can_submit_liaison_required,
     can_add_liaison)
-from ietf.liaisons.forms import liaison_form_factory, SearchLiaisonForm, EditAttachmentForm
+from ietf.liaisons.forms import liaison_form_factory, SearchLiaisonForm, EditAttachmentForm, AddCommentForm
 from ietf.liaisons.mails import notify_pending_by_email, send_liaison_by_email
 from ietf.liaisons.fields import select2_id_liaison_json
 from ietf.name.models import LiaisonStatementTagName
@@ -288,6 +288,32 @@ def redirect_for_approval(request, object_id=None):
 # -------------------------------------------------
 # View Functions
 # -------------------------------------------------
+@role_required('Secretariat',)
+def add_comment(request, object_id):
+    """Add comment to history"""
+    statement = get_object_or_404(LiaisonStatement, id=object_id)
+    login = request.user.person
+
+    if request.method == 'POST':
+        form = AddCommentForm(request.POST)
+        if form.is_valid():
+            if form.cleaned_data.get('private'):
+                type_id = 'private_comment'
+            else:
+                type_id = 'comment'
+                
+            LiaisonStatementEvent.objects.create(
+                by=login,
+                type_id=type_id,
+                statement=statement,
+                desc=form.cleaned_data['comment']
+            )
+            messages.success(request, 'Comment added.')
+            return redirect("ietf.liaisons.views.liaison_history", object_id=statement.id)
+    else:
+        form = AddCommentForm()
+  
+    return render(request, 'liaisons/add_comment.html',dict(liaison=statement,form=form))
 
 @can_submit_liaison_required
 def liaison_add(request, type=None, **kwargs):
@@ -330,6 +356,8 @@ def liaison_history(request, object_id):
     """Show the history for a specific liaison statement"""
     liaison = get_object_or_404(LiaisonStatement, id=object_id)
     events = liaison.liaisonstatementevent_set.all().order_by("-time", "-id").select_related("by")
+    if not has_role(request.user, "Secretariat"):
+        events = events.exclude(type='private_comment')
 
     return render(request, "liaisons/detail_history.html",  {
         'events':events,
@@ -439,6 +467,7 @@ def liaison_edit_attachment(request, object_id, doc_id):
 def liaison_list(request, state='posted'):
     """A generic list view with tabs for different states: posted, pending, dead"""
     # use prefetch to speed up main liaison page load
+    selected_menu_entry = state
     liaisons = LiaisonStatement.objects.filter(state=state).prefetch_related(
         Prefetch('from_groups',queryset=Group.objects.order_by('acronym').select_related('type'),to_attr='prefetched_from_groups'),
         Prefetch('to_groups',queryset=Group.objects.order_by('acronym').select_related('type'),to_attr='prefetched_to_groups'),
@@ -451,15 +480,20 @@ def liaison_list(request, state='posted'):
         msg = "Restricted to participants who are authorized to submit liaison statements on behalf of the various IETF entities"
         return HttpResponseForbidden(msg)
 
+    if 'tags' in request.GET:
+        value = request.GET.get('tags')
+        liaisons = liaisons.filter(tags__slug=value)
+        selected_menu_entry = 'action needed'
+
     # perform search / filter
     if 'text' in request.GET:
-        form = SearchLiaisonForm(data=request.GET,state=state)
+        form = SearchLiaisonForm(data=request.GET,queryset=liaisons)
         search_conducted = True
         if form.is_valid():
             results = form.get_results()
             liaisons = results
     else:
-        form = SearchLiaisonForm(state=state)
+        form = SearchLiaisonForm(queryset=liaisons)
         search_conducted = False
 
     # perform sort
@@ -482,6 +516,7 @@ def liaison_list(request, state='posted'):
     entries = []
     entries.append(("Posted", urlreverse("ietf.liaisons.views.liaison_list", kwargs={'state':'posted'})))
     if can_add_liaison(request.user):
+        entries.append(("Action Needed", urlreverse("ietf.liaisons.views.liaison_list", kwargs={'state':'posted'}) + '?tags=required'))
         entries.append(("Pending", urlreverse("ietf.liaisons.views.liaison_list", kwargs={'state':'pending'})))
         entries.append(("Dead", urlreverse("ietf.liaisons.views.liaison_list", kwargs={'state':'dead'})))
 
@@ -494,7 +529,7 @@ def liaison_list(request, state='posted'):
 
     return render(request, 'liaisons/liaison_base.html',  {
         'liaisons':liaisons,
-        'selected_menu_entry':state,
+        'selected_menu_entry':selected_menu_entry,
         'menu_entries':entries,
         'menu_actions':actions,
         'sort':sort,
