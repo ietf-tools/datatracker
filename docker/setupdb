@@ -1,0 +1,108 @@
+#!/bin/bash
+
+version=0.10
+program=${0##*/}
+progdir=${0%/*}
+if [ "$progdir" = "$program" ]; then progdir="."; fi
+if [ "$progdir" = "." ]; then progdir="$PWD"; fi
+parent=$(dirname $progdir)
+if [ "$parent" = "." ]; then parent="$PWD"; fi
+
+# ----------------------------------------------------------------------
+function usage() {
+    cat <<EOF
+NAME
+	$program - Set up a local copy of the IETF database MySQL files
+
+SYNOPSIS
+	$program [OPTIONS] ARGS
+
+DESCRIPTION
+
+	This script downloads a prebuilt copy of the IETF database MySQL
+	files, ready for mapping into the /var/lib/mysql/ directory of the
+	ietf/database-environment Docker image.
+
+EOF
+    echo -e "OPTIONS"
+    if   [ "$(uname)" = "Linux" ]; then
+        egrep "^[	]+[-][A-Za-z| -]+\*?\)[	]+[A-Za-z].+#" $0 | tr -s "\t|" "\t," | sed -r -e 's/\)[ \t]+([A-Z]+)=\$2[^#]*#/=\1\t/' -e 's/\)[^#]*#/\t/'
+    else
+        egrep "^[	]+[-][A-Za-z| -]+\*?\)[	]+[A-Za-z].+#" $0 | sed 's/\|.*\$2[^#]*#/	/'| sed -E 's/\|.*\)[^#]*#/	/'
+    fi
+    cat <<EOF
+
+FILES
+
+AUTHOR
+	Written by Henrik Levkowetz, <henrik@levkowetz.com>
+
+COPYRIGHT
+
+	Copyright (c) 2015 IETF Trust and the persons identified as authors of
+	the code. All rights reserved.  License 'Simplified BSD', as specified
+	in http://opensource.org/licenses/BSD-3-Clause.
+	
+EOF
+
+}
+
+# ----------------------------------------------------------------------
+function die() {
+    echo -e "\n$program: error: $*" >&2 
+    exit 1
+}
+
+function note() { 
+	if [ -n "$VERBOSE" ]; then echo -e "$*"; fi
+}
+
+# ----------------------------------------------------------------------
+function version() {
+	echo -e "$program $version"
+}
+
+# ----------------------------------------------------------------------
+trap 'echo "$program($LINENO): Command failed with error code $? ([$$] $0 $*)"; exit 1' ERR
+
+
+# ----------------------------------------------------------------------
+# Option parsing
+
+# Options
+shortopts=hvV
+longopts=help,verbose,version
+
+if   [ "$(uname)" = "Linux" ]; then
+    args=$(getopt -o "$shortopts" --long "$longopts" -n '$program' -- $SV "$@")
+    if [ $? != 0 ] ; then die "Terminating..." >&2 ; exit 1 ; fi
+    eval set -- "$args"
+    sed="sed -r"
+else
+    # Darwin, BSDs
+    args=$(getopt -o$shortopts $SV $*)
+    if [ $? != 0 ] ; then die "Terminating..." >&2 ; exit 1 ; fi
+    set -- $args
+    sed="sed -E"
+fi
+
+while true ; do
+    case "$1" in
+	-h| --help)	usage; exit;;		# Show this help, then exit
+	-v| --verbose)	VERBOSE=1;;		# Be more talkative
+	-V| --version)	version; exit;;		# Show program version, then exit
+	--)		shift; break;;
+	*) die "Internal error, inconsistent option specification: '$1'";;
+    esac
+    shift
+done
+
+# ----------------------------------------------------------------------
+# The program itself
+
+[ -n "$MYSQLDIR" ]	|| MYSQLDIR=$parent/data/mysql
+[ -n "$URL"]		|| URL=https://www.ietf.org/lib/dt/sprint/ietf_utf8.bin.tar.bz2
+
+cd $(dirname $MYSQLDIR)
+wget -N $URL && tar xjf ietf_utf8.bin.tar.bz2 && chmod -R go+rwX mysql
+
