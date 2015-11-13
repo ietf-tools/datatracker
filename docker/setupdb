@@ -104,5 +104,5 @@ done
 [ -n "$URL" ]		|| URL=https://www.ietf.org/lib/dt/sprint/ietf_utf8.bin.tar.bz2
 
 cd $(dirname $MYSQLDIR)
-wget -N $URL && tar xjf ietf_utf8.bin.tar.bz2 && chmod -R go+rwX mysql
+wget -N $URL && echo "Unpacking database ..." && tar xjf ietf_utf8.bin.tar.bz2 && echo "Fixing permissions ..." && chmod -R go+rwX mysql
 
