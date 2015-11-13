@@ -74,13 +74,17 @@ trap 'echo "$program($LINENO): Command failed with error code $? ([$$] $0 $*)"; 
 # Option parsing
 
 # Options
-shortopts=dhi:m:Mr:t:vVu:
-longopts=download-data,help,ietfdb-url=,mysqldata=,no-mysqldir,docker-repo=,tag=,verbose,version,user=,
+shortopts=dhi:m:Mp:r:t:vVu:
+longopts=download-data,help,ietfdb-url=,mysqldata=,no-mysqldir,port=,docker-repo=,tag=,verbose,version,user=,
 
 # Default values
-TAG=$(basename $(svn info $parent | grep ^URL | awk '{print $2}'))
-REPO="levkowetz/datatracker"
+MYSQLDIR=$parent/data/mysql
 NOMYMAP=""
+PORT=8000
+REPO="levkowetz/datatracker"
+TAG=$(basename $(svn info $parent | grep ^URL | awk '{print $2}'))
+URL=https://www.ietf.org/lib/dt/sprint/ietf_utf8.bin.tar.bz2
+WHO=$(whoami)
 
 if   [ "$(uname)" = "Linux" ]; then
     args=$(getopt -o "$shortopts" --long "$longopts" -n '$program' -- $SV "$@")
@@ -101,7 +105,8 @@ while true ; do
 	-h| --help)	usage; exit;;		# Show this help, then exit
 	-i| --ietfdb-url)	URL=$2; shift;;	# Use an alternative database tarball URL
 	-m| --mysqldir)	MYSQLDIR=$2; shift;;	# Set the desired location for MySQL's database files
-	-M| --no-mysqldir) NOMYMAP=1;;	# Don't map the mysql dir to an external dir
+	-M| --no-mysqldir) NOMYMAP=1;;		# Don't map the mysql dir to an external dir
+	-p| --port)	PORT=$2; shift;;	# Bind the container's port 8000 to external port PORT
 	-r| --docker-repo)	REPO=$2; shift;;	# Use the given docker repository, instead of the default
 	-t| --tag)	TAG=$2; shift;;		# Use this docker image tag, instead of the svn branch name
 	-u| --user)	WHO=$2; shift;;		# Run the container as the specified user
@@ -148,12 +153,11 @@ echo "Starting a docker container for '$TAG'."
 
 docker ps | grep -q $REPO:$TAG && die \
 "It seems that another docker container is already running the
-image '$REPO:$TAG' -- but only one MySQL instance can bind
-to the database files at a time.  Quitting."
-
-[ -n "$WHO" ]		|| WHO=$(whoami)
-[ -n "$MYSQLDIR" ]	|| MYSQLDIR=$parent/data/mysql
-[ -n "$URL"]		|| URL=https://www.ietf.org/lib/dt/sprint/ietf_utf8.bin.tar.bz2
+image '$REPO:$TAG'.  Continuing here can cause various problems,
+such as changes from within the container being saved from different
+containers to the same image, overwriting earlier changes, and
+multiple containers trying to use the same database files.  Better
+to bail out here.  Quitting."
 
 if [ -n "$DOWNLOAD" ]; then
     (
@@ -176,9 +180,9 @@ if ! docker images $REPO | grep -q $TAG; then
 fi
 
 if [ -n "$NOMYMAP" ]; then
-    docker run -ti -p 8000:8000 -v $HOME:/home/$WHO                             -e USER=$WHO -e DATADIR=${parent#$HOME/}/data -e CWD=${PWD#$HOME/} -e TAG=$TAG $REPO:$TAG
+    docker run -ti -p 8000:$PORT -v $HOME:/home/$WHO                             -e USER=$WHO -e DATADIR=${parent#$HOME/}/data -e CWD=${PWD#$HOME/} -e TAG=$TAG $REPO:$TAG
 else
-    docker run -ti -p 8000:8000 -v $HOME:/home/$WHO -v $MYSQLDIR:/var/lib/mysql -e USER=$WHO -e DATADIR=${parent#$HOME/}/data -e CWD=${PWD#$HOME/} -e TAG=$TAG $REPO:$TAG
+    docker run -ti -p 8000:$PORT -v $HOME:/home/$WHO -v $MYSQLDIR:/var/lib/mysql -e USER=$WHO -e DATADIR=${parent#$HOME/}/data -e CWD=${PWD#$HOME/} -e TAG=$TAG $REPO:$TAG
 fi
 
 echo ""
