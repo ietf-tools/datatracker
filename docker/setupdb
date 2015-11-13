@@ -101,7 +101,7 @@ done
 # The program itself
 
 [ -n "$MYSQLDIR" ]	|| MYSQLDIR=$parent/data/mysql
-[ -n "$URL"]		|| URL=https://www.ietf.org/lib/dt/sprint/ietf_utf8.bin.tar.bz2
+[ -n "$URL" ]		|| URL=https://www.ietf.org/lib/dt/sprint/ietf_utf8.bin.tar.bz2
 
 cd $(dirname $MYSQLDIR)
 wget -N $URL && tar xjf ietf_utf8.bin.tar.bz2 && chmod -R go+rwX mysql
