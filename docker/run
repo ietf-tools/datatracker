@@ -180,9 +180,9 @@ if ! docker images $REPO | grep -q $TAG; then
 fi
 
 if [ -n "$NOMYMAP" ]; then
-    docker run -ti -p 8000:$PORT -v $HOME:/home/$WHO                             -e USER=$WHO -e DATADIR=${parent#$HOME/}/data -e CWD=${PWD#$HOME/} -e TAG=$TAG $REPO:$TAG
+    docker run -ti -p $PORT:8000 -v $HOME:/home/$WHO                             -e USER=$WHO -e DATADIR=${parent#$HOME/}/data -e CWD=${PWD#$HOME/} -e TAG=$TAG $REPO:$TAG
 else
-    docker run -ti -p 8000:$PORT -v $HOME:/home/$WHO -v $MYSQLDIR:/var/lib/mysql -e USER=$WHO -e DATADIR=${parent#$HOME/}/data -e CWD=${PWD#$HOME/} -e TAG=$TAG $REPO:$TAG
+    docker run -ti -p $PORT:8000 -v $HOME:/home/$WHO -v $MYSQLDIR:/var/lib/mysql -e USER=$WHO -e DATADIR=${parent#$HOME/}/data -e CWD=${PWD#$HOME/} -e TAG=$TAG $REPO:$TAG
 fi
 
 echo ""
