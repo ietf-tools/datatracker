@@ -77,6 +77,7 @@ COPY settings_local.py ./
 COPY setprompt ./
 
 COPY docker-init.sh /docker-init.sh
+RUN chmod +x /docker-init.sh
 ENTRYPOINT ["/docker-init.sh"]
 
 CMD	/bin/bash
