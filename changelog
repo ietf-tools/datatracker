@@ -17,6 +17,9 @@ ietfdb (6.10.0) ietf; urgency=medium
 
   Commit log details:
 
+  * Applied test speedup fixes to the testcrawler config, too.  Looks like
+    ~15% speed-up of the test-crawler.
+
   * Added handling for an exception which can occur in bin/mergeready if a 
     branch with merge flags is moved, for example moving it to an attic after 
     merge.
