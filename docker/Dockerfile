@@ -41,12 +41,14 @@ RUN apt-get update && apt-get install -qy \
 	libxml2-dev \
 	libxslt-dev \
 	mysql-server \
+	openssh-client \
 	procps \
 	pv \
 	python \
 	python-dev \
 	python-m2crypto \
 	subversion/wheezy-backports \
+	sudo \
 	wget \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
