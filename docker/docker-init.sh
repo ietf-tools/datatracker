@@ -16,6 +16,13 @@ if [ ! -d $MYSQLDIR/mysql ]; then
     echo "WARNING: Expected the directory $MYSQLDIR/mysql/ to exist -- have you downloaded and unpacked the IETF binary database tarball?"
 fi
 
+echo "Setting up the 'mysql' user for database file access ..."
+MYSQL_TARGET_GID=$(stat -c "%g" $MYSQLDIR/mysql)
+if ! grep -q ":$MYSQL_TARGET_GID:$" /etc/group; then
+    groupadd -g $MYSQL_TARGET_GID mysqldata
+fi
+usermod -a -G $MYSQL_TARGET_GID mysql
+
 echo "Checking if MySQL is running ..."
 if ! /etc/init.d/mysql status; then
     echo "Starting mysql ..."
@@ -54,7 +61,8 @@ fi
 
 if ! id -u "$USER" &> /dev/null; then
     echo "Creating user '$USER' ..."
-    useradd -s /bin/bash -G staff $USER
+    useradd -s /bin/bash -G staff,sudo $USER
+    echo "$USER:$USER" | chpasswd
 fi
 
 VIRTDIR="/opt/home/$USER/$TAG"
