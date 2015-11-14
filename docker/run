@@ -79,9 +79,9 @@ longopts=download-data,help,ietfdb-url=,mysqldata=,no-mysqldir,port=,docker-repo
 
 # Default values
 MYSQLDIR=$parent/data/mysql
-NOMYMAP=""
+FILEDIR=$parent/../data/
 PORT=8000
-REPO="levkowetz/datatracker"
+REPO="ietf/datatracker-environment"
 TAG=$(basename $(svn info $parent | grep ^URL | awk '{print $2}'))
 URL=https://www.ietf.org/lib/dt/sprint/ietf_utf8.bin.tar.bz2
 WHO=$(whoami)
@@ -103,9 +103,9 @@ while true ; do
     case "$1" in
 	-d| --download-data) DOWNLOAD=1;;	# Download and set up the database files
 	-h| --help)	usage; exit;;		# Show this help, then exit
+	-f| --filedir)	FILEDIR=$2; shift;;	# Set the desired location of drafts, charters etc.
 	-i| --ietfdb-url)	URL=$2; shift;;	# Use an alternative database tarball URL
-	-m| --mysqldir)	MYSQLDIR=$2; shift;;	# Set the desired location for MySQL's database files
-	-M| --no-mysqldir) NOMYMAP=1;;		# Don't map the mysql dir to an external dir
+	-m| --mysqldir)	MYSQLDIR=$2; shift;;	# Set the desired location of MySQL's database files
 	-p| --port)	PORT=$2; shift;;	# Bind the container's port 8000 to external port PORT
 	-r| --docker-repo)	REPO=$2; shift;;	# Use the given docker repository, instead of the default
 	-t| --tag)	TAG=$2; shift;;		# Use this docker image tag, instead of the svn branch name
@@ -179,10 +179,16 @@ if ! docker images $REPO | grep -q $TAG; then
     fi
 fi
 
-if [ -n "$NOMYMAP" ]; then
-    docker run -ti -p $PORT:8000 -v $HOME:/home/$WHO                             -e USER=$WHO -e DATADIR=${parent#$HOME/}/data -e CWD=${PWD#$HOME/} -e TAG=$TAG $REPO:$TAG
+if [ -z "$MYSQLDIR" ]; then
+    docker run -ti -p $PORT:8000 -v $HOME:/home/$WHO                            \
+	-e USER=$WHO -e DATADIR=${parent#$HOME/}/data -e CWD=${PWD#$HOME/}	\
+	-e TAG=$TAG -e FILEDIR=${FILEDIR#$HOME}	\
+	$REPO:$TAG
 else
-    docker run -ti -p $PORT:8000 -v $HOME:/home/$WHO -v $MYSQLDIR:/var/lib/mysql -e USER=$WHO -e DATADIR=${parent#$HOME/}/data -e CWD=${PWD#$HOME/} -e TAG=$TAG $REPO:$TAG
+    docker run -ti -p $PORT:8000 -v $HOME:/home/$WHO -v $MYSQLDIR:/var/lib/mysql\
+	-e USER=$WHO -e DATADIR=${parent#$HOME/}/data -e CWD=${PWD#$HOME/}	\
+	-e TAG=$TAG -e FILEDIR=${FILEDIR#$HOME}	\
+	$REPO:$TAG
 fi
 
 echo ""

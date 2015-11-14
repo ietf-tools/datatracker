@@ -58,19 +58,19 @@ if ! id -u "$USER" &> /dev/null; then
 fi
 
 VIRTDIR="/opt/home/$USER/$TAG"
-if [ ! -d /opt/home/$USER ]; then
+echo "Checking that there's a virtual environment for $TAG ..."
+if [ ! -f $VIRTDIR/bin/activate ]; then
     echo "Setting up python virtualenv at /opt/home/$USER ..."
     mkdir -p /opt/home/$USER
     chown $USER /opt/home/$USER
     mkdir $VIRTDIR
     virtualenv --system-site-packages $VIRTDIR
+    cat $VIRTDIR/bin/activate >> /etc/bash.bashrc
+    cat /usr/local/share/datatracker/setprompt >> /etc/bash.bashrc 
 fi
 
-echo "Activating a virtual python environment ..."
-cat $VIRTDIR/bin/activate >> /etc/bash.bashrc
-cat /usr/local/share/datatracker/setprompt >> /etc/bash.bashrc 
+echo "Activating the virtual python environment ..."
 . $VIRTDIR/bin/activate
-
 
 if ! python -c "import django"; then
     echo "Installing requirements ..."
