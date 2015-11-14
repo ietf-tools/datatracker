@@ -170,7 +170,7 @@ else
 fi
 
 if ! docker images $REPO | grep -q $TAG; then
-    echo "Fetching a docker image for your docker container ..."
+    echo "Fetching docker image '$REPO:$TAG'"
     if ! docker pull $REPO:$TAG; then
 	docker pull $REPO:latest || die "Failed to pull down the '$REPO:latest' docker image"
 	id=$(docker images $REPO | grep latest  | awk '{print $3}')
