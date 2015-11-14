@@ -53,7 +53,7 @@ EOF
 
 # ----------------------------------------------------------------------
 function die() {
-    echo -e "\n$program: error: $*" > /dev/stderr
+    echo -e "\n$program: error: $*" >&2
     exit 1
 }
 
@@ -134,18 +134,32 @@ if [ "$(uname)" != "Linux" ]; then
     else
 	die "Could not find boot2docker or docker-machine -- you need to set one of those before running this script."
     fi
+else
+    die "Didn't expect to run this script on Linux -- are you inside docker?"
 fi
 
+
 if [ $($machine status) != "running" ]; then
-    echo "The docker VM doesn't seem to be running; will attempt to start it by doing '$$ $machine $up':"
+    echo "The docker VM doesn't seem to be running; will attempt to start it by doing '\$ $machine $up':"
     $machine $up || die "Failed taking up the Docker VM"
 fi
 
-
-if [ ! -f ~/.docker-info ]; then
-    $machine $env 2>/dev/null | grep DOCKER_ > ~/.docker-info
+if [ -f "$machine" ]; then
+    if [ $($machine status | tr "A-Z" "a-z") = "running" ]; then
+	tmpfile=$(mktemp docker.run.XXXXXXXX)
+	if $machine $env 2>/dev/null | grep  DOCKER_ > $tmpfile; then
+	    mv $tmpfile ~/.docker-info
+	elif printenv | grep  DOCKER_ > $tmpfile; then
+	    mv $tmpfile ~/.docker-info
+	else
+	    rm $tmpfile
+	    die "Failed setting the appropriate DOCKER_* environment variables."
+	fi
+	. ~/.docker-info
+    else
+	rm -f ~/.docker-info
+    fi
 fi
-. ~/.docker-info
 
 
 echo ""
@@ -162,7 +176,7 @@ to bail out here.  Quitting."
 if [ -n "$DOWNLOAD" ]; then
     (
 	cd $(dirname $MYSQLDIR)
-	wget -N $URL && tar xjf ietf_utf8.bin.tar.bz2 && chmod -R go+rwX mysql
+	wget -N $URL && tar xjf ietf_utf8.bin.tar.bz2 && chmod -R g+rX mysql
     )
     [ -d "$MYSQLDIR" ] || die "The download seems to have failed; still no $MYSQLDIR.  Giving up."
 else
