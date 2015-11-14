@@ -1,6 +1,6 @@
 ietfdb (6.10.0) ietf; urgency=medium
 
-  **Prepackaged Development Environment with Docker; Test Speedups**
+  **Prepackaged Development Environment with Docker; Test Speed-Ups**
 
   This release provides what is hoped to be a dramatic improvement in the time
   needed to set up an environment for datatracker development, by providing
@@ -16,6 +16,12 @@ ietfdb (6.10.0) ietf; urgency=medium
   development wiki:  https://wiki.tools.ietf.org/tools/ietfdb/wiki/Docker
 
   Commit log details:
+
+  * Added a utility script docker/updatedb to download and load a new dump
+    into the local database, using 'manage.py dbshell'.
+
+  * Added a utility model to hold information on when a given database dump 
+    has been done.
 
   * Applied test speedup fixes to the testcrawler config, too.  Looks like
     ~15% speed-up of the test-crawler.
