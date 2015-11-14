@@ -1,3 +1,60 @@
+ietfdb (6.10.0) ietf; urgency=medium
+
+  **Prepackaged Development Environment with Docker; Test Speedups**
+
+  This release provides what is hoped to be a dramatic improvement in the time
+  needed to set up an environment for datatracker development, by providing
+  scripts to use prebuilt docker images and mysql database tarballs.
+  The setup process should now be as easy as:
+
+  1. Install Docker: https://docs.docker.com/engine/installation/
+  2. Check out datatracker code: svn co https://svn.tools.ietf.org/svn/ietfdb/...
+  3. In your working copy, pull down the database image: docker/setupdb
+  4. In your working copy, start the docker container: docker/run
+
+  A more comprehensive setup description is available on the datatracker
+  development wiki:  https://wiki.tools.ietf.org/tools/ietfdb/wiki/Docker
+
+  Commit log details:
+
+  * Added handling for an exception which can occur in bin/mergeready if a 
+    branch with merge flags is moved, for example moving it to an attic after 
+    merge.
+
+  * Added support for running different containers mapping internal port 
+    8000 to different external ports.  Added additional text explaining why we 
+    won't run multiple containers from the same svn branch.  Did som default 
+    value code refactoring.
+
+  * Added little script to pull down and unpack a copy of the datatracker's 
+    mysql database files.
+
+  * Added tweaks to the docker setup to make it work nicely to run different 
+    docker containers for different SVN branches.
+
+  * Updated the docker init-script to not re-install MySQL; it can cause 
+    more trouble than it might save; added a guard against trying to set up the 
+    ietf database if MySQL isn't running; and changed the final working 
+    directory to be the same as where the user invoked the 'docker/run' 
+    command.  If not started via docker/run, drop into the home directory.
+
+  * Updated docker/run with options to select a non-default 
+    docker-repository and docker image tag (which now defaults to the svn 
+    branch basename); added handling for missing docker environment variables, 
+    and for the docker virtual machine not running.
+
+  * Disallowed Coverage 4.0.2 in requirements.txt, as it is buggy.
+
+  * Removed logging through ietf.utils.log.log when running tests -- should 
+    shave another 15% off the test suite run time, cutting the testsuite
+    running time in about half compared to earlier.
+
+  * Merged in [10097] from olau@iola.dk, in order to speed up the test 
+    suite.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  14 Nov 2015 00:11:45 -0800
+
+
 ietfdb (6.9.0) ietf; urgency=medium
 
   **More IETF-94 Code**
