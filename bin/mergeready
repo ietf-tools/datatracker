@@ -262,7 +262,10 @@ for entry in ready:
     cmd = 'svn log -v -r %s %s/%s/' % (rev, repo, branch)
     if opt_verbose > 1:
         note("Running '%s' ..." % cmd)
-    loginfo = pipe(cmd).splitlines()
+    try:
+        loginfo = pipe(cmd).splitlines()
+    except OSError:
+        continue
     try:
         rev, who, when = split_loginfo(loginfo[1])
     except IndexError:
