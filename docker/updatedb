@@ -126,6 +126,7 @@ echo "Loading database ..."
 gunzip < $DATADIR/ietf_utf8.sql.gz \
     | pv --progress --bytes --rate --eta --size $(gzip --list --quiet $DATADIR/ietf_utf8.sql.gz | awk '{ print $2 }') \
     | sed -e 's/ENGINE=MyISAM/ENGINE=InnoDB/' \
-    | mysql --host=localhost --user=django --password=RkTkDPFnKpko -s -f ietf_utf8 
+    | $parent/ietf/manage.py dbshell
+    
 
 
