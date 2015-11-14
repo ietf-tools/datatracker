@@ -20,3 +20,17 @@ class ContentTypeResource(ModelResource):
         serializer = api.Serializer()
 
         
+
+
+class DumpInfoResource(ModelResource):
+    class Meta:
+        queryset = DumpInfo.objects.all()
+        serializer = api.Serializer()
+        #resource_name = 'dumpinfo'
+        filtering = { 
+            "id": ALL,
+            "date": ALL,
+            "host": ALL,
+        }
+api.utils.register(DumpInfoResource())
+
