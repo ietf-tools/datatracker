@@ -22,3 +22,6 @@
 /ipengine*
 /iptest*
 /xml2rfc
+/django-admin
+/django-admin.py
+/wheel
