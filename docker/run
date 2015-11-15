@@ -121,7 +121,6 @@ done
 # ----------------------------------------------------------------------
 # The program itself
 
-
 if [ "$(uname)" != "Linux" ]; then
     if   [ -n "$(type -p boot2docker)" ]; then
 	machine=$(type -p boot2docker)
@@ -197,12 +196,12 @@ if [ -z "$MYSQLDIR" ]; then
     docker run -ti -p $PORT:8000 -v $HOME:/home/$WHO                            \
 	-e USER=$WHO -e DATADIR=${parent#$HOME/}/data -e CWD=${PWD#$HOME/}	\
 	-e TAG=$TAG -e FILEDIR=${FILEDIR#$HOME}	\
-	$REPO:$TAG
+	$REPO:$TAG "$@"
 else
     docker run -ti -p $PORT:8000 -v $HOME:/home/$WHO -v $MYSQLDIR:/var/lib/mysql\
 	-e USER=$WHO -e DATADIR=${parent#$HOME/}/data -e CWD=${PWD#$HOME/}	\
 	-e TAG=$TAG -e FILEDIR=${FILEDIR#$HOME}	\
-	$REPO:$TAG
+	$REPO:$TAG "$@"
 fi
 
 echo ""

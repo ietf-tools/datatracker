@@ -29,6 +29,9 @@ if ! /etc/init.d/mysql status; then
     /etc/init.d/mysql start
 fi
 
+# Give debian-sys-maint access, to avoid complaints later
+mysql mysql <<< "GRANT ALL PRIVILEGES on *.* TO 'debian-sys-maint'@'localhost' IDENTIFIED BY '$(awk '/^password/ {print $3; exit}' /etc/mysql/debian.cnf )' WITH GRANT OPTION; FLUSH PRIVILEGES;"
+
 echo "Checking if the IETF database exists at $MYSQLDIR ..."
 if [ ! -d $MYSQLDIR/ietf_utf8 ]; then
     if [ -z "$DATADIR" ]; then
@@ -97,4 +100,4 @@ cd /home/$USER/$CWD || cd /home/$USER/
 
 echo "Done!"
 
-su $USER
+su $USER "$@"
