@@ -100,4 +100,4 @@ cd /home/$USER/$CWD || cd /home/$USER/
 
 echo "Done!"
 
-su $USER "$@"
+su $USER
