@@ -257,10 +257,10 @@ Release notes:
 $changes
 
 The new version is available for installation through SVN checkout, with
-  'svn checkout http://svn.tools.ietf.org/svn/tools/$PROJ/tags/$VER'
+  'svn checkout https://svn.tools.ietf.org/svn/tools/$PROJ/tags/$VER'
 
 For development, check out the new development version instead:
-  'svn checkout http://svn.tools.ietf.org/svn/tools/$PROJ/tags/dev/$DEV'
+  'svn checkout https://svn.tools.ietf.org/svn/tools/$PROJ/tags/dev/$DEV'
 
 Regards,
 
