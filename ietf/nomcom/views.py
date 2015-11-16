@@ -349,7 +349,6 @@ def private_feedback(request, year):
 def feedback(request, year, public):
     nomcom = get_nomcom_by_year(year)
     has_publickey = nomcom.public_key and True or False
-    submit_disabled = True
     nominee = None
     position = None
     selected_nominee = request.GET.get('nominee')
@@ -357,7 +356,6 @@ def feedback(request, year, public):
     if selected_nominee and selected_position:
         nominee = get_object_or_404(Nominee, id=selected_nominee)
         position = get_object_or_404(Position, id=selected_position)
-        submit_disabled = False
 
     positions = Position.objects.get_by_nomcom(nomcom=nomcom).opened()
 
@@ -384,11 +382,13 @@ def feedback(request, year, public):
         if form.is_valid():
             form.save()
             message = ('success', 'Your feedback has been registered.')
+            form = None
+    else:
+        if nominee and position:
             form = FeedbackForm(nomcom=nomcom, user=request.user, public=public,
                                 position=position, nominee=nominee)
-    else:
-        form = FeedbackForm(nomcom=nomcom, user=request.user, public=public,
-                            position=position, nominee=nominee)
+        else:
+            form = None
 
     return render(request, 'nomcom/feedback.html', {
         'form': form,
@@ -396,7 +396,6 @@ def feedback(request, year, public):
         'nomcom': nomcom,
         'year': year,
         'positions': positions,
-        'submit_disabled': submit_disabled,
         'selected': 'feedback',
         'base_template': base_template
     })

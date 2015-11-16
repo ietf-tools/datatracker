@@ -657,7 +657,6 @@ class NomcomViewsTest(TestCase):
     def test_private_feedback(self):
         self.access_member_url(self.private_feedback_url)
         return self.feedback_view(public=False)
-        self.client.logout()
 
     def feedback_view(self, *args, **kwargs):
         public = kwargs.pop('public', True)
@@ -688,10 +687,15 @@ class NomcomViewsTest(TestCase):
 
         response = self.client.get(feedback_url)
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "feedbackform")
+        self.assertNotContains(response, "feedbackform")
 
         position = Position.objects.get(name=position_name)
         nominee = Nominee.objects.get(email__address=nominee_email)
+
+        feedback_url += "?nominee=%d&position=%d" % (nominee.id, position.id)
+        response = self.client.get(feedback_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "feedbackform")
 
         comments = u'Test feedback view. Comments with accents äöåÄÖÅ éáíóú âêîôû ü àèìòù.'
 
@@ -704,8 +708,6 @@ class NomcomViewsTest(TestCase):
         if public:
             test_data['nominator_email'] = nominator_email
             test_data['nominator_name'] = nominator_email
-
-        feedback_url += "?nominee=%d&position=%d" % (nominee.id, position.id)
 
         nominee_position = NomineePosition.objects.get(nominee=nominee,
                                                        position=position)
@@ -722,6 +724,7 @@ class NomcomViewsTest(TestCase):
         response = self.client.post(feedback_url, test_data)
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "alert-success")
+        self.assertNotContains(response, "feedbackform")
 
         ## check objects
         feedback = Feedback.objects.filter(positions__in=[position],
