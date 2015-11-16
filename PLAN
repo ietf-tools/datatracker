@@ -2,23 +2,28 @@
 Datatracker PLAN
 ================
 
-Updated: 01 Nov 2015 18:33:44
+Updated: 16 Nov 2015 20:37:18
 
 Planned work in rough order
 ===========================
 
-* Merge in the refactoring of saving document state
+* Nomcom improvements
+
+* Integrating YANG testing into the submission tool
 
 * Glue code for WG issue trackers and wiki:
   - create new trackers on group creation
   - update access lists on group chair/secretary changes
   - update components on new group documents
 
+* Refactored Community app
+
+* Schema Changes: floorplan, document tags, external links for groups
+
 * Transition to PostgreSQL
 
 * Performance analysis of database table and index setup
 
-* Add mysql lookup for draft aliases
 
-* Schema Changes: floorplan, and document tags
+
 
