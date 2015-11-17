@@ -1189,6 +1189,40 @@ class ChangeStreamStateTests(TestCase):
         self.assertTrue("marsdelegate@ietf.org" in unicode(outbox[-1]))
         self.assertTrue("plain@example.com" in unicode(outbox[-1]))
 
+    def test_set_initial_state(self):
+        draft = make_test_data()
+        draft.unset_state("draft-stream-%s"%draft.stream_id)
+
+        url = urlreverse('doc_change_stream_state', kwargs=dict(name=draft.name, state_type="draft-stream-ietf"))
+        login_testing_unauthorized(self, "marschairman", url)
+        
+        # set a state when no state exists
+        old_state = draft.get_state("draft-stream-%s" % draft.stream_id )
+        self.assertEqual(old_state,None)
+        new_state = State.objects.get(used=True, type="draft-stream-%s" % draft.stream_id, slug="parked")
+        empty_outbox()
+        events_before = draft.docevent_set.count()
+
+        r = self.client.post(url,
+                             dict(new_state=new_state.pk,
+                                  comment="some comment",
+                                  weeks="10",
+                                  tags=[t.pk for t in draft.tags.filter(slug__in=get_tags_for_stream_id(draft.stream_id))],
+                                  ))
+        self.assertEqual(r.status_code, 302)
+
+        draft = Document.objects.get(pk=draft.pk)
+        self.assertEqual(draft.get_state("draft-stream-%s" % draft.stream_id), new_state)
+        self.assertEqual(draft.docevent_set.count() - events_before, 2)
+        reminder = DocReminder.objects.filter(event__doc=draft, type="stream-s")
+        self.assertEqual(len(reminder), 1)
+        due = datetime.datetime.now() + datetime.timedelta(weeks=10)
+        self.assertTrue(due - datetime.timedelta(days=1) <= reminder[0].due <= due + datetime.timedelta(days=1))
+        self.assertEqual(len(outbox), 1)
+        self.assertTrue("state changed" in outbox[0]["Subject"].lower())
+        self.assertTrue("mars-chairs@ietf.org" in unicode(outbox[0]))
+        self.assertTrue("marsdelegate@ietf.org" in unicode(outbox[0]))
+
     def test_set_state(self):
         draft = make_test_data()
 

@@ -1393,7 +1393,7 @@ def change_stream_state(request, name, state_type):
     prev_state = doc.get_state(state_type.slug)
     next_states = next_states_for_stream_state(doc, state_type, prev_state)
 
-    can_set_sub_pub = has_role(request.user,('Secretariat','Area Director')) or prev_state.slug=='sub-pub'
+    can_set_sub_pub = has_role(request.user,('Secretariat','Area Director')) or (prev_state and prev_state.slug=='sub-pub')
 
     if request.method == 'POST':
         form = ChangeStreamStateForm(request.POST, doc=doc, state_type=state_type,can_set_sub_pub=can_set_sub_pub,stream=doc.stream)
