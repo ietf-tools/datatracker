@@ -249,7 +249,9 @@ def send_reminder_mail(request, year, type):
                                'selected': selected_tab,
                                'reminder_description': reminder_description,
                                'state_description': state_description,
-                               'message': message}, RequestContext(request))
+                               'message': message,
+                               'is_chair_task' : True,
+                              }, RequestContext(request))
 
 
 @role_required("Nomcom Chair", "Nomcom Advisor")
@@ -269,7 +271,9 @@ def private_merge(request, year):
                                'year': year,
                                'form': form,
                                'message': message,
-                               'selected': 'merge'}, RequestContext(request))
+                               'selected': 'merge',
+                               'is_chair_task' : True,
+                              }, RequestContext(request))
 
 
 def requirements(request, year):
@@ -414,7 +418,9 @@ def private_feedback_email(request, year):
                               {'message': message,
                                'nomcom': nomcom,
                                'year': year,
-                               'selected': 'feedback_email'}, RequestContext(request))
+                               'selected': 'feedback_email',
+                               'is_chair_task' : True,
+                              }, RequestContext(request))
 
     form = FeedbackEmailForm(nomcom=nomcom)
 
@@ -448,7 +454,9 @@ def private_questionnaire(request, year):
                               {'message': message,
                                'nomcom': nomcom,
                                'year': year,
-                               'selected': 'questionnaire'}, RequestContext(request))
+                               'selected': 'questionnaire',
+                               'is_chair_task' : True,
+                              }, RequestContext(request))
 
     if request.method == 'POST':
         form = QuestionnaireForm(data=request.POST,
@@ -649,7 +657,9 @@ def view_feedback_pending(request, year):
                                'type_dict': type_dict,
                                'extra_ids': extra_ids,
                                'types': FeedbackTypeName.objects.all().order_by('pk'),
-                               'nomcom': nomcom}, RequestContext(request))
+                               'nomcom': nomcom,
+                               'is_chair_task' : True,
+                              }, RequestContext(request))
 
 
 @role_required("Nomcom")
@@ -704,7 +714,9 @@ def edit_nominee(request, year, nominee_id):
                                'nominee': nominee,
                                'form': form,
                                'message': message,
-                               'nomcom': nomcom}, RequestContext(request))
+                               'nomcom': nomcom,
+                               'is_chair_task' : True,
+                              }, RequestContext(request))
 
 
 @role_required("Nomcom Chair", "Nomcom Advisor")
@@ -739,7 +751,9 @@ def edit_nomcom(request, year):
                                'nomcom': nomcom,
                                'message': message,
                                'year': year,
-                               'selected': 'edit_nomcom'}, RequestContext(request))
+                               'selected': 'edit_nomcom',
+                               'is_chair_task' : True,
+                              }, RequestContext(request))
 
 
 @role_required("Nomcom Chair", "Nomcom Advisor")
@@ -755,6 +769,7 @@ def delete_nomcom(request, year):
         'year': year,
         'selected': 'edit_nomcom',
         'nomcom': nomcom,
+        'is_chair_task' : True,
     })
 
 
@@ -769,7 +784,9 @@ def list_templates(request, year):
                                'positions': positions,
                                'year': year,
                                'selected': 'edit_templates',
-                               'nomcom': nomcom}, RequestContext(request))
+                               'nomcom': nomcom,
+                               'is_chair_task' : True,
+                              }, RequestContext(request))
 
 
 @role_required("Nomcom Chair", "Nomcom Advisor")
@@ -782,7 +799,9 @@ def edit_template(request, year, template_id):
                          formclass=NomComTemplateForm,
                          extra_context={'year': year,
                                         'return_url': return_url,
-                                        'nomcom': nomcom})
+                                        'nomcom': nomcom,
+                                        'is_chair_task' : True,
+                                       })
 
 
 @role_required("Nomcom Chair", "Nomcom Advisor")
@@ -794,7 +813,9 @@ def list_positions(request, year):
                               {'positions': positions,
                                'year': year,
                                'selected': 'edit_positions',
-                               'nomcom': nomcom}, RequestContext(request))
+                               'nomcom': nomcom,
+                               'is_chair_task' : True,
+                              }, RequestContext(request))
 
 
 @role_required("Nomcom Chair", "Nomcom Advisor")
@@ -811,7 +832,9 @@ def remove_position(request, year, position_id):
     return render_to_response('nomcom/remove_position.html',
                               {'year': year,
                                'position': position,
-                               'nomcom': nomcom}, RequestContext(request))
+                               'nomcom': nomcom,
+                               'is_chair_task' : True,
+                              }, RequestContext(request))
 
 
 @role_required("Nomcom Chair", "Nomcom Advisor")
@@ -837,4 +860,6 @@ def edit_position(request, year, position_id=None):
                               {'form': form,
                                'position': position,
                                'year': year,
-                               'nomcom': nomcom}, RequestContext(request))
+                               'nomcom': nomcom,
+                               'is_chair_task' : True,
+                              }, RequestContext(request))
