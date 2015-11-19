@@ -1,3 +1,24 @@
+ietfdb (6.11.0) ietf; urgency=medium
+
+  **Liaison Tool Enhancement**
+
+  This release introduces a number of requested changes and enhancements
+  to the liaison tool, and a few other fixed:
+
+  * Merged in^/personal/rcross/v6.7.3.dev0@10465, which included 
+    [10382],[10464],[10465], introducing a number of usability fixes to the 
+    liaison tool, including a new tab for action needed statements and the 
+    ability to add comments to liaison statements' history.
+
+  * Merged in [10503] from rjsparks@nostrum.com:
+    Allow setting the stream state of a document that has not yet had any 
+    stream state set. Fixes #1859.  Candidate for patch. 
+
+  * Updated the docker README.
+
+  * Updated the mkrelease script to send svn checkout links which specify 
+    https://, not http.
+
 ietfdb (6.10.0) ietf; urgency=medium
 
   **Prepackaged Development Environment with Docker; Test Speed-Ups**
