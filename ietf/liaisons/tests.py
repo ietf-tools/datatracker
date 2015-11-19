@@ -338,6 +338,35 @@ class LiaisonManagementTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 
+    def test_add_comment(self):
+        make_test_data()
+        liaison = make_liaison_models()
+        
+        # test unauthorized
+        url = urlreverse('ietf.liaisons.views.liaison_history',kwargs=dict(object_id=liaison.pk))
+        addurl = urlreverse('ietf.liaisons.views.add_comment',kwargs=dict(object_id=liaison.pk))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q("a.btn:contains('Add Comment')")), 0)
+        login_testing_unauthorized(self, "secretary", addurl)
+
+        # public comment
+        self.client.login(username="secretary", password="secretary+password")
+        comment = 'Test comment'
+        r = self.client.post(addurl, dict(comment=comment))
+        self.assertEqual(r.status_code,302)
+        qs = liaison.liaisonstatementevent_set.filter(type='comment',desc=comment)
+        self.assertTrue(qs.count(),1)
+        
+        # private comment
+        r = self.client.post(addurl, dict(comment='Private comment',private=True),follow=True)
+        self.assertEqual(r.status_code,200)
+        self.assertTrue('Private comment' in r.content)
+        self.client.logout()
+        r = self.client.get(url)
+        self.assertFalse('Private comment' in r.content)
+
     def test_taken_care_of(self):
         make_test_data()
         liaison = make_liaison_models()
@@ -721,7 +750,7 @@ class LiaisonManagementTests(TestCase):
         r = self.client.post(url,
                              dict(from_groups=from_groups,
                                   from_contact=submitter.email_address(),
-                                  to_groups=str(to_group.pk),
+                                  to_groups=[str(to_group.pk)],
                                   to_contacts='to_contacts@example.com',
                                   technical_contacts="technical_contact@example.com",
                                   action_holder_contacts="action_holder_contacts@example.com",
@@ -889,6 +918,7 @@ class LiaisonManagementTests(TestCase):
             from_groups = ','.join([ str(x.pk) for x in liaison.from_groups.all() ]),
             from_contact = liaison.from_contact.address,
             to_groups = ','.join([ str(x.pk) for x in liaison.to_groups.all() ]),
+            to_contacts = 'to_contacts@example.com',
             purpose = liaison.purpose.slug,
             deadline = liaison.deadline,
             title = liaison.title,

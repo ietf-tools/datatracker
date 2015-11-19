@@ -41,11 +41,11 @@ class LiaisonStatementsFeed(Feed):
                 # wildcards to make it easier to construct a URL that
                 # matches
                 search_string = re.sub(r"[^a-zA-Z1-9]", ".", search)
-                statement = LiaisonStatement.objects.filter(from_name__iregex=search_string).first()
+                statement = LiaisonStatement.objects.filter(from_groups__name__iregex=search_string).first()
                 if not statement:
                     raise FeedDoesNotExist
 
-                name = statement.from_name
+                name = statement.from_groups.first().name
                 obj['filter'] = { 'from_name': name }
                 obj['title'] = u'Liaison Statements from %s' % name
                 return obj
@@ -97,4 +97,4 @@ class LiaisonStatementsFeed(Feed):
         return item.submitted
 
     def item_author_name(self, item):
-        return item.from_name
+        return item.from_groups.first().name

@@ -124,6 +124,7 @@ var attachmentWidget = {
 
 var liaisonForm = {
     initVariables : function() {
+        liaisonForm.is_edit_form = liaisonForm.form.attr("data-edit-form") == "True"
         liaisonForm.from_groups = liaisonForm.form.find('#id_from_groups');
         liaisonForm.from_contact = liaisonForm.form.find('#id_from_contact');
         liaisonForm.response_contacts = liaisonForm.form.find('#id_response_contacts');
@@ -189,6 +190,11 @@ var liaisonForm = {
     },
 
     updateInfo : function(first_time, sender) {
+        // don't overwrite fields when editing existing liaison
+        if(liaisonForm.is_edit_form){
+            return false;
+        }
+        
         var from_ids = liaisonForm.from_groups.val();
         var to_ids = liaisonForm.to_groups.val();
         var url = liaisonForm.form.data("ajaxInfoUrl");
@@ -278,26 +284,12 @@ var searchForm = {
     // search form, based on doc search feature
     init : function() {
         searchForm.form = $(this);
-        searchForm.form.find(".search_field input,select").change(searchForm.toggleSubmit).click(searchForm.toggleSubmit).keyup(searchForm.toggleSubmit);
-    },
-
-    anyAdvancedActive : function() {
-        var advanced = false;
-        var by = searchForm.form.find("input[name=by]:checked");
-
-        if (by.length > 0) {
-            by.closest(".search_field").find("input,select").not("input[name=by]").each(function () {
-                if ($.trim(this.value)) {
-                    advanced = true;
-                }
-            });
-        }
-        return advanced;
+        $("#search-clear-btn").bind("click", searchForm.clearForm);
     },
     
-    toggleSubmit : function() {
-        var textSearch = $.trim($("#id_text").val());
-        searchForm.form.find("button[type=submit]").get(0).disabled = !textSearch && !searchForm.anyAdvancedActive();
+    clearForm : function() {
+        var form = $(this).parents("form");
+        form.find("input").val("");
     }
 }
 
@@ -307,5 +299,5 @@ $(document).ready(function () {
     $.ajaxSetup({ traditional: true });
     
     $('form.liaisons-form').each(liaisonForm.init);
-    $('#search_form').each(searchForm.init);
+    $('#liaison_search_form').each(searchForm.init);
 });

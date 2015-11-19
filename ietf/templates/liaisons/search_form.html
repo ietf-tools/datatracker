@@ -3,7 +3,7 @@
 {% load ietf_filters %}
 {% load bootstrap3 %}
 
-<form id="search_form" class="form-horizontal" action="{% url "ietf.liaisons.views.liaison_list" state=state %}" method="get">
+<form id="liaison_search_form" class="form-horizontal" action="{% url "ietf.liaisons.views.liaison_list" state=state %}" method="get">
 
   <div class="input-group search_field">
     {{ form.text|add_class:"form-control"|attr:"placeholder:Title, body, identifiers, etc." }}
@@ -32,7 +32,7 @@
 
           <div class="form-group search_field">
             <div class="col-sm-4">
-              <label for="id_source" class="control-label">Source</label>
+              <label for="id_source" class="control-label">From Group(s)</label>
             </div>
             <div class="col-sm-8">
               {{ form.source|add_class:"form-control" }}
@@ -41,7 +41,7 @@
 
           <div class="form-group search_field">
             <div class="col-sm-4">
-              <label for="id_destination" class="control-label">Destination</label>
+              <label for="id_destination" class="control-label">To Group(s)</label>
             </div>
             <div class="col-sm-8">
               {{ form.destination|add_class:"form-control" }}
@@ -70,7 +70,7 @@
 
       <div class="form-group search_field">
         <div class="col-md-offset-4 col-sm-4">
-          <button class="btn btn-default btn-block" type="reset">Clear</button>
+          <button id="search-clear-btn" class="btn btn-default btn-block" type="button">Clear</button>
         </div>
         <div class="col-sm-4">
           <button class="btn btn-primary btn-block" type="submit">

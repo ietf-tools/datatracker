@@ -1582,6 +1582,16 @@
 },
 {
  "fields": {
+  "order": 10,
+  "used": true,
+  "name": "Private Comment",
+  "desc": ""
+ },
+ "model": "name.liaisonstatementeventtypename",
+ "pk": "private_comment"
+},
+{
+ "fields": {
   "order": 1,
   "used": true,
   "name": "For action",

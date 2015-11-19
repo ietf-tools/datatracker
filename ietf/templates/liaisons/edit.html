@@ -43,7 +43,7 @@
     <p class="help-block">Fields marked with <label class="required"></label> are required. For detailed descriptions of the fields see the <a href="{% url "liaisons_field_help" %}">field help</a>.</p>
   {% endif %}
 
-  <form role="form" class="liaisons-form form-horizontal show-required" method="post" enctype="multipart/form-data" data-ajax-info-url="{% url "ietf.liaisons.views.ajax_get_liaison_info" %}">{% csrf_token %}
+  <form role="form" class="liaisons-form form-horizontal show-required" method="post" enctype="multipart/form-data" data-edit-form="{{ form.edit }}" data-ajax-info-url="{% url "ietf.liaisons.views.ajax_get_liaison_info" %}">{% csrf_token %}
 
     {% for fieldset in form.fieldsets %}
       {% if forloop.first and user|has_role:"Secretariat" %}

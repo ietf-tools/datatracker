@@ -27,19 +27,13 @@
       {% for liaison in liaisons %}
         <tr>
           <td class="text-nowrap">{{ liaison.sort_date|date:"Y-m-d" }}</td>
-          <td>{{ liaison.from_groups_display }}</td>
-          <td>{{ liaison.to_groups_display }}</td>
-          <td class="text-nowrap">{{ liaison.deadline|default:"-"|date:"Y-m-d" }}{% if liaison.deadline and not liaison.action_taken %}<br><span class="label label-warning">Action Needed</span>{% endif %}</td>
-          <td>
-            {% if not liaison.from_contact_id %}
-                {% for doc in liaison.attachments.all %}
-                    <a href="{{ doc.href }}">{{ doc.title }}</a>
-                    <br>
-                {% endfor %}
-            {% else %}
-                <a href="{% url "ietf.liaisons.views.liaison_detail" object_id=liaison.pk %}">{{ liaison.title }}</a>
-            {% endif %}
-          </td>
+          <td class="liaison-group-col">{{ liaison.from_groups_display }}</td>
+          <td class="liaison-group-col">{{ liaison.to_groups_display }}</td>
+          <td class="text-nowrap">{{ liaison.deadline|default:"-"|date:"Y-m-d" }}
+            {% if liaison.deadline and not liaison.action_taken %}
+              <br><span class="label {% if liaison.is_outgoing %}label-warning{% else %}label-info{% endif %}">Action Needed</span>
+            {% endif %}</td>
+          <td><a href="{% url "ietf.liaisons.views.liaison_detail" object_id=liaison.pk %}">{{ liaison.title }}</a></td>
         </tr>
       {% endfor %}
     </tbody>

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+
+{% load bootstrap3 %}
+
+{% block title %}Add comment on {{ liaison.title }}{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <h1>Add comment<br><small>{{ liaison.title }}</small></h1>
+
+  <p>The comment will be added to the history trail of the statement.</p>
+
+  {% bootstrap_messages %}
+
+  <form class="add-comment" method="post">
+    {% csrf_token %}
+
+    {% bootstrap_form form %}
+    
+    {% buttons %}
+      <button type="submit" class="btn btn-primary">Add Comment</button>
+      <a class="btn btn-default pull-right" href="{% url "ietf.liaisons.views.liaison_history" object_id=liaison.id %}">Back</a>
+    {% endbuttons %}
+  </form>
+{% endblock %}
