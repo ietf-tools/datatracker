@@ -287,7 +287,7 @@ for entry in ready:
     # 
     merge_path = os.path.join(*path.split(os.path.sep)[:4])
     if not (rev, repo, merge_path) in hold:
-        output_line = "%s  %-24s %s@%s" % (when.strftime("%Y-%m-%d_%H:%MZ"), who+":", merge_path, rev)
+        output_line = "%s  %-24s ^/%s@%s" % (when.strftime("%Y-%m-%d_%H:%MZ"), who+":", merge_path, rev)
         if unittest == 'passed':
             ready_commits[when] = output_line
         else:
