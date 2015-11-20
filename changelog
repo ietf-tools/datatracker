@@ -19,6 +19,8 @@ ietfdb (6.11.0) ietf; urgency=medium
   * Updated the mkrelease script to send svn checkout links which specify 
     https://, not http.
 
+ -- Henrik Levkowetz <henrik@levkowetz.com>  20 Nov 2015 20:25:07 +0000
+
 ietfdb (6.10.0) ietf; urgency=medium
 
   **Prepackaged Development Environment with Docker; Test Speed-Ups**
@@ -85,8 +87,7 @@ ietfdb (6.10.0) ietf; urgency=medium
   * Merged in [10097] from olau@iola.dk, in order to speed up the test 
     suite.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  20 Nov 2015 20:25:07 +0000
-
+ -- Henrik Levkowetz <henrik@levkowetz.com>  14 Nov 2015 00:11:45 -0800
 
 ietfdb (6.9.0) ietf; urgency=medium
 
