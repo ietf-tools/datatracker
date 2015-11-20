@@ -343,16 +343,27 @@ class LiaisonManagementTests(TestCase):
         liaison = make_liaison_models()
         
         # test unauthorized
-        url = urlreverse('ietf.liaisons.views.liaison_history',kwargs=dict(object_id=liaison.pk))
         addurl = urlreverse('ietf.liaisons.views.add_comment',kwargs=dict(object_id=liaison.pk))
+        url = urlreverse('ietf.liaisons.views.liaison_history',kwargs=dict(object_id=liaison.pk))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q("a.btn:contains('Add Comment')")), 0)
         login_testing_unauthorized(self, "secretary", addurl)
 
-        # public comment
+        # login in as secretariat staff
         self.client.login(username="secretary", password="secretary+password")
+
+        # Check add_comment page
+        r = self.client.get(addurl)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q("h1:contains('Add comment')")), 1)
+        self.assertEqual(len(q("form div label:contains('Comment')")), 1)
+        self.assertEqual(len(q("form textarea")), 1)
+        self.assertEqual(len(q("form button.btn:contains('Add Comment')")), 1)
+
+        # public comment
         comment = 'Test comment'
         r = self.client.post(addurl, dict(comment=comment))
         self.assertEqual(r.status_code,302)
