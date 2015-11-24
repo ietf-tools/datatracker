@@ -237,7 +237,7 @@ class Draft():
             if re.search("\f", line, re.I):
                 pages, page, newpage = begpage(pages, page, newpage)
                 continue
-            if re.search("^ *Internet.Draft.+[12][0-9][0-9][0-9] *$", line, re.I):
+            if re.search("^ *Internet.Draft.+   .+[12][0-9][0-9][0-9] *$", line, re.I):
                 pages, page, newpage = begpage(pages, page, newpage, line)
                 continue
     #        if re.search("^ *Internet.Draft  +", line, re.I):
@@ -376,9 +376,10 @@ class Draft():
         abstract_indent = 0
         look_for_header = False
         for line in self.lines:
-            if not begin and abstract_re.match(line):
-                begin=True
-                abstract_indent = len(abstract_re.match(line).group(0))
+            if not begin:
+                if abstract_re.match(line):
+                    begin=True
+                    abstract_indent = len(abstract_re.match(line).group(0))
                 continue
             if begin:
                 if not line and not abstract:
