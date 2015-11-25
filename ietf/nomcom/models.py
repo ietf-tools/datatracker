@@ -66,6 +66,14 @@ class NomCom(models.Model):
         if created:
             initialize_templates_for_group(self)
 
+    def year(self):
+        year = getattr(self,'_cached_year',None)
+        if year is None:
+            if self.group and self.group.acronym.startswith('nomcom'):
+                year = int(self.group.acronym[6:])
+                self._cached_year = year
+        return year
+
 
 def delete_nomcom(sender, **kwargs):
     nomcom = kwargs.get('instance', None)

@@ -9,8 +9,12 @@
 
 {% block nomcom_content %}
   {% origin %}
-  <p class="alert alert-info">
-    Select a nominee from the list of nominees to the right to obtain a new feedback form.
+  <p id="instructions" class="alert alert-info">
+   {% if nomcom.group.state_id == 'conclude' %}
+     Feedback to this nomcom is closed.
+   {% else %} 
+     Select a nominee from the list of nominees to the right to obtain a new feedback form.
+   {% endif %}
   </p>
 
   {% if message %}
@@ -21,7 +25,7 @@
 
   {% if nomcom|has_publickey %}
     <div class="row">
-      <div class="col-sm-4 col-sm-push-8">
+      <div id="nominees" class="col-sm-4 col-sm-push-8">
         <h3>Nominees</h3>
 
         {% for p in positions %}
@@ -29,7 +33,7 @@
             <h4>{{ p.name }}</h4>
             <div class="btn-group-vertical form-group">
               {% for np in p.nomineeposition_set.accepted.not_duplicated %}
-                <a class="btn btn-default btn-xs" href="?nominee={{np.nominee.id}}&position={{ np.position.id}}">
+                <a class="btn btn-default btn-xs" {% if nomcom.group.state_id != 'conclude' %}href="?nominee={{np.nominee.id}}&position={{ np.position.id}}"{% endif %}>
 	          {{ np.nominee }}
 	          {% add_num_nominations user np.position np.nominee %}
                 </a>

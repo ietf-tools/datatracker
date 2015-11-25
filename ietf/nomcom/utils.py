@@ -53,7 +53,7 @@ def get_nomcom_by_year(year):
     from ietf.nomcom.models import NomCom
     return get_object_or_404(NomCom,
                              group__acronym__icontains=year,
-                             group__state__slug='active')
+                             )
 
 
 def get_year_by_nomcom(nomcom):

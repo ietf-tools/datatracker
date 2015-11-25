@@ -322,6 +322,14 @@ def nominate(request, year, public):
                                'year': year,
                                'selected': 'nominate'}, RequestContext(request))
 
+    if nomcom.group.state_id == 'conclude':
+        message = ('warning', "Nominations to this Nomcom are closed.")
+        return render_to_response(template,
+                              {'message': message,
+                               'nomcom': nomcom,
+                               'year': year,
+                               'selected': 'nominate'}, RequestContext(request))
+
     message = None
     if request.method == 'POST':
         form = NominateForm(data=request.POST, nomcom=nomcom, user=request.user, public=public)
@@ -355,11 +363,12 @@ def feedback(request, year, public):
     has_publickey = nomcom.public_key and True or False
     nominee = None
     position = None
-    selected_nominee = request.GET.get('nominee')
-    selected_position = request.GET.get('position')
-    if selected_nominee and selected_position:
-        nominee = get_object_or_404(Nominee, id=selected_nominee)
-        position = get_object_or_404(Position, id=selected_position)
+    if nomcom.group.state_id != 'conclude':
+        selected_nominee = request.GET.get('nominee')
+        selected_position = request.GET.get('position')
+        if selected_nominee and selected_position:
+            nominee = get_object_or_404(Nominee, id=selected_nominee)
+            position = get_object_or_404(Position, id=selected_position)
 
     positions = Position.objects.get_by_nomcom(nomcom=nomcom).opened()
 
@@ -379,7 +388,7 @@ def feedback(request, year, public):
             })
 
     message = None
-    if request.method == 'POST':
+    if nominee and position and request.method == 'POST':
         form = FeedbackForm(data=request.POST,
                             nomcom=nomcom, user=request.user,
                             public=public, position=position, nominee=nominee)

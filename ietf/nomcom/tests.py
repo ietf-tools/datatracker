@@ -30,6 +30,9 @@ from ietf.nomcom.forms import EditMembersForm, EditMembersFormPreview
 from ietf.nomcom.utils import get_nomcom_by_year, get_or_create_nominee
 from ietf.nomcom.management.commands.send_reminders import Command, is_time_to_send
 
+from ietf.nomcom.factories import NomComFactory, nomcom_kwargs_for_year
+from ietf.person.factories import PersonFactory
+
 client_test_cert_files = None
 
 def get_cert_files():
@@ -920,3 +923,51 @@ class ReminderTest(TestCase):
         self.assertEqual(len(outbox), messages_before + 1)
         self.assertTrue('nominee1@' in outbox[-1]['To'])
 
+class InactiveNomcomTests(TestCase):
+
+    def setUp(self):
+        self.nc = NomComFactory.create(**nomcom_kwargs_for_year(group__state_id='conclude'))
+        self.plain_person = PersonFactory.create()
+
+    def test_feedback_closed(self):
+        for view in ['nomcom_public_feedback', 'nomcom_private_feedback']:
+            url = reverse(view, kwargs={'year': self.nc.year()})
+            who = self.plain_person if 'public' in view else self.nc.group.role_set.filter(name='member').first().person
+            login_testing_unauthorized(self, who.user.username, url)
+            response = self.client.get(url)
+            self.assertEqual(response.status_code, 200)
+            q = PyQuery(response.content)
+            self.assertTrue( '(Concluded)' in q('h1').text())
+            self.assertTrue( 'closed' in q('#instructions').text())
+            self.assertTrue( q('#nominees a') )
+            self.assertFalse( q('#nominees a[href]') )
+    
+            url += "?nominee=%d&position=%d" % (self.nc.nominee_set.first().id, self.nc.nominee_set.first().nomineeposition_set.first().position.id)
+            response = self.client.get(url)
+            self.assertEqual(response.status_code, 200)
+            q = PyQuery(response.content)
+            self.assertFalse( q('#feedbackform'))        
+            
+            empty_outbox()
+            fb_before = self.nc.feedback_set.count()
+            test_data = {'comments': u'Test feedback view. Comments with accents äöåÄÖÅ éáíóú âêîôû ü àèìòù.',
+                         'nominator_email': self.plain_person.email_set.first().address,
+                         'confirmation': True}
+            response = self.client.post(url, test_data)
+            self.assertEqual(response.status_code, 200)
+            q = PyQuery(response.content)
+            self.assertTrue( 'closed' in q('#instructions').text())
+            self.assertEqual( len(outbox), 0 )
+            self.assertEqual( fb_before, self.nc.feedback_set.count() )
+
+    def test_nominations_closed(self):
+        for view in ['nomcom_public_nominate', 'nomcom_private_nominate']:
+            url = reverse(view, kwargs={'year': self.nc.year() })
+            who = self.plain_person if 'public' in view else self.nc.group.role_set.filter(name='member').first().person
+            login_testing_unauthorized(self, who.user.username, url)
+            response = self.client.get(url)
+            self.assertEqual(response.status_code, 200)
+            q = PyQuery(response.content)
+            self.assertTrue( '(Concluded)' in q('h1').text())
+            self.assertTrue( 'closed' in q('.alert-warning').text())
+            
