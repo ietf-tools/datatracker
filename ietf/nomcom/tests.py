@@ -27,11 +27,12 @@ from ietf.nomcom.models import NomineePosition, Position, Nominee, \
                                NomineePositionStateName, Feedback, FeedbackTypeName, \
                                Nomination
 from ietf.nomcom.forms import EditMembersForm, EditMembersFormPreview
-from ietf.nomcom.utils import get_nomcom_by_year, get_or_create_nominee
+from ietf.nomcom.utils import get_nomcom_by_year, get_or_create_nominee, get_hash_nominee_position
 from ietf.nomcom.management.commands.send_reminders import Command, is_time_to_send
 
-from ietf.nomcom.factories import NomComFactory, nomcom_kwargs_for_year
+from ietf.nomcom.factories import NomComFactory, nomcom_kwargs_for_year, provide_private_key_to_test_client
 from ietf.person.factories import PersonFactory
+from ietf.dbtemplate.factories import DBTemplateFactory
 
 client_test_cert_files = None
 
@@ -928,11 +929,13 @@ class InactiveNomcomTests(TestCase):
     def setUp(self):
         self.nc = NomComFactory.create(**nomcom_kwargs_for_year(group__state_id='conclude'))
         self.plain_person = PersonFactory.create()
+        self.chair = self.nc.group.role_set.filter(name='chair').first().person
+        self.member = self.nc.group.role_set.filter(name='member').first().person
 
     def test_feedback_closed(self):
         for view in ['nomcom_public_feedback', 'nomcom_private_feedback']:
             url = reverse(view, kwargs={'year': self.nc.year()})
-            who = self.plain_person if 'public' in view else self.nc.group.role_set.filter(name='member').first().person
+            who = self.plain_person if 'public' in view else self.member
             login_testing_unauthorized(self, who.user.username, url)
             response = self.client.get(url)
             self.assertEqual(response.status_code, 200)
@@ -963,11 +966,151 @@ class InactiveNomcomTests(TestCase):
     def test_nominations_closed(self):
         for view in ['nomcom_public_nominate', 'nomcom_private_nominate']:
             url = reverse(view, kwargs={'year': self.nc.year() })
-            who = self.plain_person if 'public' in view else self.nc.group.role_set.filter(name='member').first().person
+            who = self.plain_person if 'public' in view else self.member
             login_testing_unauthorized(self, who.user.username, url)
             response = self.client.get(url)
             self.assertEqual(response.status_code, 200)
             q = PyQuery(response.content)
             self.assertTrue( '(Concluded)' in q('h1').text())
             self.assertTrue( 'closed' in q('.alert-warning').text())
-            
+
+    def test_acceptance_closed(self):
+        today = datetime.date.today().strftime('%Y%m%d')
+	pid = self.nc.position_set.first().nomineeposition_set.first().id 
+        url = reverse('nomcom_process_nomination_status', kwargs = {
+                      'year' : self.nc.year(),
+                      'nominee_position_id' : pid,
+                      'state' : 'accepted',
+                      'date' : today,
+                      'hash' : get_hash_nominee_position(today,pid),
+                     })
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 403)
+
+    def test_can_view_but_cannot_edit_nomcom_settings(self):
+        url = reverse('nomcom_edit_nomcom',kwargs={'year':self.nc.year() })
+        login_testing_unauthorized(self, self.chair.user.username, url)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        response = self.client.post(url,{})
+        self.assertEqual(response.status_code, 403)
+
+    def test_cannot_classify_feedback(self):
+        url = reverse('nomcom_view_feedback_pending',kwargs={'year':self.nc.year() })
+        login_testing_unauthorized(self, self.chair.user.username, url)
+        provide_private_key_to_test_client(self)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 403)
+        response = self.client.post(url,{})
+        self.assertEqual(response.status_code, 403)
+
+    def test_cannot_modify_nominees(self):
+        url = reverse('nomcom_private_index', kwargs={'year':self.nc.year()})
+        login_testing_unauthorized(self, self.chair.user.username, url)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        q = PyQuery(response.content)
+        self.assertFalse( q('#batch-action-form'))
+        test_data = {"action": "set_as_pending",
+                     "selected": [1]}
+        response = self.client.post(url, test_data)
+        self.assertEqual(response.status_code, 200)
+        q = PyQuery(response.content)
+        self.assertTrue('not active' in q('.alert-warning').text() )
+
+    def test_email_pasting_closed(self):
+        url = reverse('nomcom_private_feedback_email', kwargs={'year':self.nc.year()})
+        login_testing_unauthorized(self, self.chair.user.username, url)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        q = PyQuery(response.content)
+        self.assertFalse( q('#paste-email-feedback-form'))
+        test_data = {"email_text": "some garbage text",
+                    }
+        response = self.client.post(url, test_data)
+        self.assertEqual(response.status_code, 200)
+        q = PyQuery(response.content)
+        self.assertTrue('not active' in q('.alert-warning').text() )
+
+    def test_questionnaire_entry_closed(self):
+        url = reverse('nomcom_private_questionnaire', kwargs={'year':self.nc.year()})
+        login_testing_unauthorized(self, self.chair.user.username, url)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        q = PyQuery(response.content)
+        self.assertFalse( q('#questionnaireform'))
+        response = self.client.post(url, {})
+        self.assertEqual(response.status_code, 200)
+        q = PyQuery(response.content)
+        self.assertTrue('not active' in q('.alert-warning').text() )
+        
+    def _test_send_reminders_closed(self,rtype):
+        url = reverse('nomcom_send_reminder_mail', kwargs={'year':self.nc.year(),'type':rtype })
+        login_testing_unauthorized(self, self.chair.user.username, url)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        q = PyQuery(response.content)
+        self.assertFalse( q('#reminderform'))
+        response = self.client.post(url, {})
+        self.assertEqual(response.status_code, 200)
+        q = PyQuery(response.content)
+        self.assertTrue('not active' in q('.alert-warning').text() )
+
+    def test_send_accept_reminders_closed(self):
+        self._test_send_reminders_closed('accept')
+
+    def test_send_questionnaire_reminders_closed(self):
+        self._test_send_reminders_closed('questionnaire')
+
+    def test_merge_closed(self):
+        url = reverse('nomcom_private_merge', kwargs={'year':self.nc.year()})
+        login_testing_unauthorized(self, self.chair.user.username, url)
+        response = self.client.get(url)
+        q = PyQuery(response.content)
+        self.assertFalse( q('#mergeform'))
+        response = self.client.post(url, {})
+        self.assertEqual(response.status_code, 200)
+        q = PyQuery(response.content)
+        self.assertTrue('not active' in q('.alert-warning').text() )
+
+    def test_cannot_edit_position(self):
+        url = reverse('nomcom_edit_position',kwargs={'year':self.nc.year(),'position_id':self.nc.position_set.first().id})
+        login_testing_unauthorized(self, self.chair.user.username, url)
+        provide_private_key_to_test_client(self)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 403)
+        response = self.client.post(url,{})
+        self.assertEqual(response.status_code, 403)
+
+    def test_cannot_add_position(self):
+        url = reverse('nomcom_add_position',kwargs={'year':self.nc.year()})
+        login_testing_unauthorized(self, self.chair.user.username, url)
+        provide_private_key_to_test_client(self)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 403)
+        response = self.client.post(url,{})
+        self.assertEqual(response.status_code, 403)
+
+    def test_cannot_delete_position(self):
+        url = reverse('nomcom_remove_position',kwargs={'year':self.nc.year(),'position_id':self.nc.position_set.first().id})
+        login_testing_unauthorized(self, self.chair.user.username, url)
+        provide_private_key_to_test_client(self)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 403)
+        response = self.client.post(url,{})
+        self.assertEqual(response.status_code, 403)
+
+    def test_can_view_but_not_edit_templates(self):
+        template = DBTemplateFactory.create(group=self.nc.group,
+                                            title='Test template',
+                                            path='/nomcom/'+self.nc.group.acronym+'/test',
+                                            variables='',
+                                            type_id='text',
+                                            content='test content')
+        url = reverse('nomcom_edit_template',kwargs={'year':self.nc.year(), 'template_id':template.id})
+        login_testing_unauthorized(self, self.chair.user.username, url)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        q = PyQuery(response.content)
+        self.assertFalse( q('#templateform') )
+

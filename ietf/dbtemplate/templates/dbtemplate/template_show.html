@@ -1,0 +1,40 @@
+{% extends "ietf.html" %}
+
+{% load bootstrap3 %}
+
+{% block content %}
+<h1>Template: {{ template }}</h1>
+
+<h2>Meta information</h2>
+<dl>
+  <dt>Title</dt>
+  <dd>{{ template.title }}</dt>
+  <dt>Group</dt>
+  <dd>{{ template.group }}</dd>
+  <dt>Template type</dt>
+  <dd>{{ template.type.name }}
+  {% if template.type.slug == "rst" %}
+  <p class="help-block">This template uses the syntax of reStructuredText. Get a quick reference at <a href="http://docutils.sourceforge.net/docs/user/rst/quickref.html">http://docutils.sourceforge.net/docs/user/rst/quickref.html</a>.</p>
+  <p class="help-block">You can do variable interpolation with $varialbe if the template allows any variable.</p>
+  {% endif %}
+  {% if template.type.slug == "django" %}
+  <p class="help-block">This template uses the syntax of the default django template framework. Get more info at <a href="https://docs.djangoproject.com/en/dev/topics/templates/">https://docs.djangoproject.com/en/dev/topics/templates/</a>.</p>
+  <p class="help-block">You can do variable interpolation with the current django markup &#123;&#123;variable&#125;&#125; if the template allows any variable.</p>
+  {% endif %}
+  {% if template.type.slug == "plain" %}
+  <p class="help-block">This template uses plain text, so no markup is used. You can do variable interpolation with $variable if the template allows any variable.</p>
+  {% endif %}
+  </dd>
+  {% if template.variables %}
+  <dt>Variables allowed in this template</dt>
+  <dd>{{ template.variables|linebreaks }}</dd>
+  {% endif %}
+</dl>
+
+<h2>Template content</h2>
+
+  <div class = "panel panel-default">
+    <p class='pasted'>{{ template.content }}</p>
+  </div>
+
+{% endblock content %}

@@ -8,7 +8,9 @@
   {% origin %}
   <h2>Positions in {{ nomcom.group }}</h2>
 
-  <a class="btn btn-default" href="{% url "nomcom_add_position" year %}">Add new position</a>
+  {% if nomcom.group.state_id == 'active' %}
+    <a class="btn btn-default" href="{% url "nomcom_add_position" year %}">Add new position</a>
+  {% endif %}
 
   {% if positions %}
     {% for position in positions %}
@@ -26,11 +28,13 @@
             <a href="{% url "nomcom_edit_template" year template.id %}">{{ template }}</a><br>
           {% endfor %}
         </dd>
+        {% if nomcom.group.state_id == 'active' %}
         <dt>Actions</dt>
         <dd>
           <a class="btn btn-default" href="{% url "nomcom_edit_position" year position.id %}">Edit</a>
           <a class="btn btn-default" href="{% url "nomcom_remove_position" year position.id %}">Remove</a>
         </dd>
+        {% endif %}
       </dl>
     {% endfor %}
   {% else %}

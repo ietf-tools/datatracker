@@ -13,7 +13,7 @@
     <p class="alert alert-{{ message.0 }}">{{ message.1 }}</p>
   {% endif %}
 
-  {% if nomcom|has_publickey %}
+  {% if form %}
     {% if questionnaire_response %}
       <h2>Questionnaire response</h2>
       {{ questionnaire_response }}

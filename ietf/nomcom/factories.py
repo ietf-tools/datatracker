@@ -58,6 +58,11 @@ Tdb0MiLc+r/zvx8oXtgDjDUa
 -----END PRIVATE KEY-----
 '''
 
+def provide_private_key_to_test_client(testcase):
+    session = testcase.client.session
+    session['NOMCOM_PRIVATE_KEY_%s'%testcase.nc.year()] = key
+    session.save()
+
 def nomcom_kwargs_for_year(year=None, *args, **kwargs):
     if not year:
         year = random.randint(1980,2100)

@@ -1,5 +1,4 @@
 from django.conf.urls import patterns, url
-from django.views.generic import TemplateView
 
 from ietf.nomcom.forms import EditMembersForm, EditMembersFormPreview
 
@@ -22,8 +21,6 @@ urlpatterns = patterns('ietf.nomcom.views',
     url(r'^(?P<year>\d{4})/private/send-reminder-mail/(?P<type>\w+)/$', 'send_reminder_mail', name='nomcom_send_reminder_mail'),
     url(r'^(?P<year>\d{4})/private/edit-members/$', EditMembersFormPreview(EditMembersForm), name='nomcom_edit_members'),
     url(r'^(?P<year>\d{4})/private/edit-nomcom/$', 'edit_nomcom', name='nomcom_edit_nomcom'),
-    url(r'^(?P<year>\d{4})/private/delete-nomcom/$', 'delete_nomcom', name='nomcom_delete_nomcom'),
-    url(r'^deleted/$', TemplateView.as_view(template_name='nomcom/deleted.html'), name='nomcom_deleted'),
     url(r'^(?P<year>\d{4})/private/chair/templates/$', 'list_templates', name='nomcom_list_templates'),
     url(r'^(?P<year>\d{4})/private/chair/templates/(?P<template_id>\d+)/$', 'edit_template', name='nomcom_edit_template'),
     url(r'^(?P<year>\d{4})/private/chair/position/$', 'list_positions', name='nomcom_list_positions'),

@@ -31,13 +31,11 @@
       {% endif %}
   </dl>
 
-  <form id="templateform" method="post">
-    {% csrf_token %}
-    {% bootstrap_form form %}
+  <div class = "panel panel-default">
+    <p class='pasted'>{{ template.content }}</p>
+  </div>
 
     {% buttons %}
-      <input class="btn btn-primary" type="submit" value="Save template">
       <a class="btn btn-default pull-right" href="{% if return_url %}{{ return_url }}{% else %}../{% endif %}">Back</a>
     {% endbuttons %}
-  </form>
 {% endblock nomcom_content %}

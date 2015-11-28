@@ -12,10 +12,10 @@
     <div class="alert alert-{{ message.0 }}">{{ message.1 }}</div>
   {% endif %}
 
-  {% if nomcom|has_publickey %}
+  {% if form %}
     {% bootstrap_messages %}
 
-    <form id="questionnnaireform" method="post">
+    <form id="paste-email-feedback-form" method="post">
       {% csrf_token %}
       {% bootstrap_form form %}
       {% buttons %}
