@@ -25,13 +25,11 @@ class NomComResource(ModelResource):
         }
 api.nomcom.register(NomComResource())
 
-from ietf.person.resources import EmailResource
 from ietf.dbtemplate.resources import DBTemplateResource
 class PositionResource(ModelResource):
     nomcom           = ToOneField(NomComResource, 'nomcom')
     requirement      = ToOneField(DBTemplateResource, 'requirement', null=True)
     questionnaire    = ToOneField(DBTemplateResource, 'questionnaire', null=True)
-    incumbent        = ToOneField(EmailResource, 'incumbent', null=True)
     class Meta:
         queryset = Position.objects.all()
         serializer = api.Serializer()
@@ -44,7 +42,6 @@ class PositionResource(ModelResource):
             "nomcom": ALL_WITH_RELATIONS,
             "requirement": ALL_WITH_RELATIONS,
             "questionnaire": ALL_WITH_RELATIONS,
-            "incumbent": ALL_WITH_RELATIONS,
         }
 api.nomcom.register(PositionResource())
 

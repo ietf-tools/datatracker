@@ -566,14 +566,13 @@ class NomComTemplateForm(BaseNomcomForm, DBTemplateForm):
 
 class PositionForm(BaseNomcomForm, forms.ModelForm):
 
-    fieldsets = [('Position', ('name', 'description',
-                               'is_open', 'incumbent'))]
+    fieldsets = [('Position', ('name', 'description', 'is_open' ))]
 
     incumbent = SearchableEmailField(required=False)
 
     class Meta:
         model = Position
-        fields = ('name', 'description', 'is_open', 'incumbent')
+        fields = ('name', 'description', 'is_open')
 
     def __init__(self, *args, **kwargs):
         self.nomcom = kwargs.pop('nomcom', None)

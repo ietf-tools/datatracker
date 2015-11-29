@@ -131,8 +131,7 @@ def nomcom_test_data():
         position, created = Position.objects.get_or_create(nomcom=nomcom,
                                                            name=name,
                                                            description=description,
-                                                           is_open=True,
-                                                           incumbent=email)
+                                                           is_open=True)
 
     ChangeStateGroupEvent.objects.get_or_create(group=group,
                                                 type="changed_state",
