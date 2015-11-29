@@ -126,6 +126,12 @@ class Nominee(models.Model):
         else:
             return self.email.address
 
+    def name(self):
+        if self.email.person and self.email.person.name:
+            return u'%s' % (self.email.person.plain_name(),)
+        else:
+            return self.email.address
+
 
 class NomineePosition(models.Model):
 

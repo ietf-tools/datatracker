@@ -38,8 +38,10 @@ def add_num_nominations(user, position, nominee):
                                     nominees__in=[nominee],
                                     author=author,
                                     type='comment').count()
-
-    return '<span class="badge" title="%d earlier comments from you on %s as %s">%s</span>&nbsp;' % (count, nominee.email.address, position, count)
+    if count:
+        return '<span class="badge" title="%s earlier comments from you on %s as %s">%s</span>&nbsp;' % (count , nominee.email.address, position, count)
+    else:
+        return '<span class="badge" title="You have not yet provided feedback on %s as %s">no feedback</span>&nbsp;' % (nominee.email.address, position)
 
 
 @register.filter
