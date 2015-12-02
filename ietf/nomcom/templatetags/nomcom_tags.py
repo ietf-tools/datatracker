@@ -30,14 +30,9 @@ def is_chair_or_advisor(user, year):
 def has_publickey(nomcom):
     return nomcom and nomcom.public_key and True or False
 
-
-@register.simple_tag
-def add_num_nominations(counts, position, nominee):
-    count = counts.get((position.id,nominee.id),0)
-    if count:
-        return '<span class="badge" title="%s earlier comments from you on %s as %s">%s</span>&nbsp;' % (count , nominee.email.address, position, count)
-    else:
-        return '<span class="badge" title="You have not yet provided feedback on %s as %s">no feedback</span>&nbsp;' % (nominee.email.address, position)
+@register.filter
+def lookup(container,key):
+    return container and container.get(key,None)
 
 @register.filter
 def formatted_email(address):

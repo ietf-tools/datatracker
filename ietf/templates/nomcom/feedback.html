@@ -44,7 +44,12 @@
               {% for np in p.nomineeposition_set.accepted.not_duplicated %}
                 <a class="btn btn-default btn-xs" {% if nomcom.group.state_id != 'conclude' %}href="?nominee={{np.nominee.id}}&position={{ np.position.id}}"{% endif %}>
 	          {{ np.nominee.name }}
-	          {% add_num_nominations counts np.position np.nominee %}
+                  {% with count=counts|lookup:np.position.id|lookup:np.nominee.id %}
+                    <span class="badge" 
+                          title="{% if count %}{{count}} earlier comment{{count|pluralize}} from you {% else %}You have not yet provided feedback {% endif %} on {{np.nominee.email.address}} as {{np.position}}">
+                      {{ count | default:"no feedback" }}
+                    </span>&nbsp;
+                  {% endwith %}
                 </a>
               {% endfor %}
             </div>
@@ -54,9 +59,9 @@
         <p>
           An number after a name indicates
           that you have given comments on this nominee
-          earlier. If you position the mouse pointer over
-          it, you should see how many comments
-          exist from you for this nominee.
+          earlier. Position the mouse pointer over
+          the badge, for more information about this
+          nominee.
         </p>
       </div>
 
