@@ -1,6 +1,6 @@
 import datetime
 import re
-from collections import OrderedDict
+from collections import OrderedDict, Counter
 
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
@@ -392,8 +392,10 @@ def feedback(request, year, public):
     user_comments = Feedback.objects.filter(nomcom=nomcom,
                                             type='comment',
                                             author__in=request.user.person.email_set.filter(active='True')) 
-
-    
+    counter = Counter(user_comments.values_list('positions','nominees'))
+    counts = dict()
+    for pos,nom in counter:
+        counts.setdefault(pos,dict())[nom] = counter[(pos,nom)]
 
     if public:
         base_template = "nomcom/nomcom_public_base.html"
@@ -407,7 +409,7 @@ def feedback(request, year, public):
                 'nomcom': nomcom,
                 'year': year,
                 'selected': 'feedback',
-                'user_comments' : user_comments,
+                'counts' : counts,
                 'base_template': base_template
             })
 
@@ -434,7 +436,7 @@ def feedback(request, year, public):
         'year': year,
         'positions': positions,
         'selected': 'feedback',
-        'user_comments' : user_comments,
+        'counts': counts,
         'base_template': base_template
     })
 

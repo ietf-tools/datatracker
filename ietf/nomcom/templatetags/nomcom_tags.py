@@ -13,6 +13,8 @@ from ietf.person.models import Person
 from ietf.nomcom.models import Feedback
 from ietf.nomcom.utils import get_nomcom_by_year, get_user_email, retrieve_nomcom_private_key
 
+import debug           # pyflakes:ignore
+
 
 register = template.Library()
 
@@ -31,8 +33,10 @@ def has_publickey(nomcom):
 
 
 @register.simple_tag
-def add_num_nominations(user_comments, position, nominee):
-    count = user_comments.filter(positions=position, nominees=nominee).count()
+def add_num_nominations(counts, position, nominee):
+    count = 0
+    if position.id in counts and nominee.id in counts[position.id]:
+        count = counts[position.id][nominee.id]
     if count:
         return '<span class="badge" title="%s earlier comments from you on %s as %s">%s</span>&nbsp;' % (count , nominee.email.address, position, count)
     else:
