@@ -389,6 +389,12 @@ def feedback(request, year, public):
 
     positions = Position.objects.get_by_nomcom(nomcom=nomcom).opened()
 
+    user_comments = Feedback.objects.filter(nomcom=nomcom,
+                                            type='comment',
+                                            author__in=request.user.person.email_set.filter(active='True')) 
+
+    
+
     if public:
         base_template = "nomcom/nomcom_public_base.html"
     else:
@@ -401,6 +407,7 @@ def feedback(request, year, public):
                 'nomcom': nomcom,
                 'year': year,
                 'selected': 'feedback',
+                'user_comments' : user_comments,
                 'base_template': base_template
             })
 
@@ -427,6 +434,7 @@ def feedback(request, year, public):
         'year': year,
         'positions': positions,
         'selected': 'feedback',
+        'user_comments' : user_comments,
         'base_template': base_template
     })
 

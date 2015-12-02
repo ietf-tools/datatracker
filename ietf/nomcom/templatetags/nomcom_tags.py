@@ -31,18 +31,12 @@ def has_publickey(nomcom):
 
 
 @register.simple_tag
-def add_num_nominations(user, position, nominee):
-    author = get_user_email(user)
-
-    count = Feedback.objects.filter(positions__in=[position],
-                                    nominees__in=[nominee],
-                                    author=author,
-                                    type='comment').count()
+def add_num_nominations(user_comments, position, nominee):
+    count = user_comments.filter(positions=position, nominees=nominee).count()
     if count:
         return '<span class="badge" title="%s earlier comments from you on %s as %s">%s</span>&nbsp;' % (count , nominee.email.address, position, count)
     else:
         return '<span class="badge" title="You have not yet provided feedback on %s as %s">no feedback</span>&nbsp;' % (nominee.email.address, position)
-
 
 @register.filter
 def formatted_email(address):

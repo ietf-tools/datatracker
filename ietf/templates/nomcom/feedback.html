@@ -44,7 +44,7 @@
               {% for np in p.nomineeposition_set.accepted.not_duplicated %}
                 <a class="btn btn-default btn-xs" {% if nomcom.group.state_id != 'conclude' %}href="?nominee={{np.nominee.id}}&position={{ np.position.id}}"{% endif %}>
 	          {{ np.nominee.name }}
-	          {% add_num_nominations user np.position np.nominee %}
+	          {% add_num_nominations user_comments np.position np.nominee %}
                 </a>
               {% endfor %}
             </div>

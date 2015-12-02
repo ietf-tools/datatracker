@@ -483,7 +483,7 @@ class FeedbackForm(BaseNomcomForm, forms.ModelForm):
                 author = emails and emails[0] or None
 
         if author:
-            feedback.author = author
+            feedback.author = author.address
 
         feedback.nomcom = self.nomcom
         feedback.user = self.user
