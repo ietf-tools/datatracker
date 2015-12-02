@@ -392,10 +392,7 @@ def feedback(request, year, public):
     user_comments = Feedback.objects.filter(nomcom=nomcom,
                                             type='comment',
                                             author__in=request.user.person.email_set.filter(active='True')) 
-    counter = Counter(user_comments.values_list('positions','nominees'))
-    counts = dict()
-    for pos,nom in counter:
-        counts.setdefault(pos,dict())[nom] = counter[(pos,nom)]
+    counts = Counter(user_comments.values_list('positions','nominees'))
 
     if public:
         base_template = "nomcom/nomcom_public_base.html"
