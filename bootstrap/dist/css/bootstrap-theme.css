@@ -1,8 +1,97 @@
 /*!
- * Bootstrap v3.3.5 (http://getbootstrap.com)
+ * Bootstrap v3.3.6 (http://getbootstrap.com)
  * Copyright 2011-2015 Twitter, Inc.
  * Licensed under MIT (https://github.com/twbs/bootstrap/blob/master/LICENSE)
  */
+.btn-pass {
+  color: #fff;
+  background-color: #76dc4c;
+  border-color: #66d837;
+}
+.btn-pass:focus,
+.btn-pass.focus {
+  color: #fff;
+  background-color: #58cd28;
+  border-color: #347817;
+}
+.btn-pass:hover {
+  color: #fff;
+  background-color: #58cd28;
+  border-color: #4caf22;
+}
+.btn-pass:active,
+.btn-pass.active,
+.open > .dropdown-toggle.btn-pass {
+  color: #fff;
+  background-color: #58cd28;
+  border-color: #4caf22;
+}
+.btn-pass:active:hover,
+.btn-pass.active:hover,
+.open > .dropdown-toggle.btn-pass:hover,
+.btn-pass:active:focus,
+.btn-pass.active:focus,
+.open > .dropdown-toggle.btn-pass:focus,
+.btn-pass:active.focus,
+.btn-pass.active.focus,
+.open > .dropdown-toggle.btn-pass.focus {
+  color: #fff;
+  background-color: #4caf22;
+  border-color: #347817;
+}
+.btn-pass:active,
+.btn-pass.active,
+.open > .dropdown-toggle.btn-pass {
+  background-image: none;
+}
+.btn-pass.disabled:hover,
+.btn-pass[disabled]:hover,
+fieldset[disabled] .btn-pass:hover,
+.btn-pass.disabled:focus,
+.btn-pass[disabled]:focus,
+fieldset[disabled] .btn-pass:focus,
+.btn-pass.disabled.focus,
+.btn-pass[disabled].focus,
+fieldset[disabled] .btn-pass.focus {
+  background-color: #76dc4c;
+  border-color: #66d837;
+}
+.btn-pass .badge {
+  color: #76dc4c;
+  background-color: #fff;
+}
+.label-pass {
+  background-color: #76dc4c;
+}
+.label-pass[href]:hover,
+.label-pass[href]:focus {
+  background-color: #58cd28;
+}
+.label-info {
+  background-color: #f0c905;
+}
+.label-info[href]:hover,
+.label-info[href]:focus {
+  background-color: #be9f04;
+}
+.panel-pass {
+  border-color: #76dc4c;
+}
+.panel-pass > .panel-heading {
+  color: #000;
+  background-color: #b5f29c;
+  border-color: #76dc4c;
+}
+.panel-pass > .panel-heading + .panel-collapse > .panel-body {
+  border-top-color: #76dc4c;
+}
+.panel-pass > .panel-heading .badge {
+  color: #b5f29c;
+  background-color: #000;
+}
+.panel-pass > .panel-footer + .panel-collapse > .panel-body {
+  border-bottom-color: #76dc4c;
+}
 .btn-default,
 .btn-primary,
 .btn-success,
