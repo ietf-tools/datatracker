@@ -8,7 +8,7 @@
 {% block title %}{% if liaison %}Edit liaison: {{ liaison }}{% else %}Send Liaison Statement{% endif %}{% endblock %}
 
 {% block pagehead %}
-  <link rel="stylesheet" href="{% static 'bootstrap-datepicker/css/datepicker3.css' %}">
+  <link rel="stylesheet" href="{% static 'bootstrap-datepicker/css/bootstrap-datepicker3.min.css' %}">
   <link rel="stylesheet" href="{% static 'select2/select2.css' %}">
   <link rel="stylesheet" href="{% static 'select2-bootstrap-css/select2-bootstrap.min.css' %}">
   <link rel="stylesheet" href="{% static 'ietf/css/liaisons.css' %}">
@@ -72,7 +72,7 @@
 {% endblock %}
 
 {% block js %}
-  <script src="{% static 'bootstrap-datepicker/js/bootstrap-datepicker.js' %}"></script>
+  <script src="{% static 'bootstrap-datepicker/js/bootstrap-datepicker.min.js' %}"></script>
   <script src="{% static 'select2/select2.min.js' %}"></script>
   <script src="{% static 'ietf/js/select2-field.js' %}"></script>
   <script src="{% static 'ietf/js/liaisons.js' %}"></script>
