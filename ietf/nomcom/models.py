@@ -9,7 +9,7 @@ from django.contrib.auth.models import User
 from django.template.loader import render_to_string
 
 from ietf.nomcom.fields import EncryptedTextField
-from ietf.person.models import Email
+from ietf.person.models import Person,Email
 from ietf.group.models import Group
 from ietf.name.models import NomineePositionStateName, FeedbackTypeName
 from ietf.dbtemplate.models import DBTemplate
@@ -224,4 +224,7 @@ class Feedback(models.Model):
     class Meta:
         ordering = ['time']
 
-
+class FeedbackLastSeen(models.Model):
+    reviewer = models.ForeignKey(Person)
+    nominee = models.ForeignKey(Nominee)
+    time = models.DateTimeField(auto_now=True)

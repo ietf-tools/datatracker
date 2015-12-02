@@ -145,3 +145,17 @@ class NominationResource(ModelResource):
         }
 api.nomcom.register(NominationResource())
 
+from ietf.person.resources import PersonResource
+class FeedbackLastSeenResource(ModelResource):
+    reviewer         = ToOneField(PersonResource, 'reviewer')
+    nominee          = ToOneField(NomineeResource, 'nominee')
+    class Meta:
+        queryset = FeedbackLastSeen.objects.all()
+        serializer = api.Serializer()
+        filtering = {
+            "id": ALL,
+            "time": ALL,
+            "reviewer": ALL_WITH_RELATIONS,
+            "nominee": ALL_WITH_RELATIONS,
+        }
+api.nomcom.register(FeedbackLastSeenResource())

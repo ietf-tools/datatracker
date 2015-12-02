@@ -26,7 +26,7 @@ from ietf.nomcom.forms import (NominateForm, FeedbackForm, QuestionnaireForm,
                                PrivateKeyForm, EditNomcomForm, EditNomineeForm,
                                PendingFeedbackForm, ReminderDatesForm, FullFeedbackFormSet,
                                FeedbackEmailForm)
-from ietf.nomcom.models import Position, NomineePosition, Nominee, Feedback, NomCom, ReminderDates
+from ietf.nomcom.models import Position, NomineePosition, Nominee, Feedback, NomCom, ReminderDates, FeedbackLastSeen
 from ietf.nomcom.utils import (get_nomcom_by_year, store_nomcom_private_key,
                                get_hash_nominee_position, send_reminder_to_nominees,
                                HOME_TEMPLATE, NOMINEE_ACCEPT_REMINDER_TEMPLATE,NOMINEE_QUESTIONNAIRE_REMINDER_TEMPLATE)
@@ -579,7 +579,18 @@ def view_feedback(request, year):
             independent_feedback_types.append(ft)
     nominees_feedback = {}
     for nominee in nominees:
-        nominee_feedback = [(ft.name, nominee.feedback_set.by_type(ft.slug).count()) for ft in feedback_types]
+        last_seen = FeedbackLastSeen.objects.filter(reviewer=request.user.person,nominee=nominee).first()
+        nominee_feedback = []
+        for ft in feedback_types:
+            qs = nominee.feedback_set.by_type(ft.slug)
+            count = qs.count()
+            if not count:
+                newflag = False
+            elif not last_seen:
+                newflag = True
+            else:
+                newflag = qs.filter(time__gt=last_seen.time).exists()
+            nominee_feedback.append( (ft.name,count,newflag) )
         nominees_feedback.update({nominee: nominee_feedback})
     independent_feedback = [ft.feedback_set.get_by_nomcom(nomcom).count() for ft in independent_feedback_types]
 
@@ -736,11 +747,19 @@ def view_feedback_nominee(request, year, nominee_id):
     nominee = get_object_or_404(Nominee, id=nominee_id)
     feedback_types = FeedbackTypeName.objects.filter(slug__in=settings.NOMINEE_FEEDBACK_TYPES)
 
+    last_seen = FeedbackLastSeen.objects.filter(reviewer=request.user.person,nominee=nominee).first()
+    last_seen_time = (last_seen and last_seen.time) or datetime.datetime(year=1,month=1,day=1)
+    if last_seen:
+        last_seen.save()
+    else:
+        FeedbackLastSeen.objects.create(reviewer=request.user.person,nominee=nominee)
+
     return render_to_response('nomcom/view_feedback_nominee.html',
                               {'year': year,
                                'selected': 'view_feedback',
                                'nominee': nominee,
                                'feedback_types': feedback_types,
+                               'last_seen_time' : last_seen_time,
                                'nomcom': nomcom}, RequestContext(request))
 
 

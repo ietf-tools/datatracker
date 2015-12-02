@@ -25,12 +25,13 @@ from ietf.nomcom.test_data import nomcom_test_data, generate_cert, check_comment
                                   MEMBER_USER, SECRETARIAT_USER, EMAIL_DOMAIN, NOMCOM_YEAR
 from ietf.nomcom.models import NomineePosition, Position, Nominee, \
                                NomineePositionStateName, Feedback, FeedbackTypeName, \
-                               Nomination
+                               Nomination, FeedbackLastSeen
 from ietf.nomcom.forms import EditMembersForm, EditMembersFormPreview
 from ietf.nomcom.utils import get_nomcom_by_year, get_or_create_nominee, get_hash_nominee_position
 from ietf.nomcom.management.commands.send_reminders import Command, is_time_to_send
 
-from ietf.nomcom.factories import NomComFactory, nomcom_kwargs_for_year, provide_private_key_to_test_client
+from ietf.nomcom.factories import NomComFactory, FeedbackFactory, \
+                                  nomcom_kwargs_for_year, provide_private_key_to_test_client
 from ietf.person.factories import PersonFactory
 from ietf.dbtemplate.factories import DBTemplateFactory
 
@@ -1114,3 +1115,69 @@ class InactiveNomcomTests(TestCase):
         q = PyQuery(response.content)
         self.assertFalse( q('#templateform') )
 
+class FeedbackLastSeenTests(TestCase):
+
+    def setUp(self):
+        self.nc = NomComFactory.create(**nomcom_kwargs_for_year(group__state_id='conclude'))
+        self.author = PersonFactory.create().email_set.first().address
+        self.member = self.nc.group.role_set.filter(name='member').first().person
+        self.nominee = self.nc.nominee_set.first()
+        self.position = self.nc.position_set.first()
+        for type_id in ['comment','nomina','questio']:
+            f = FeedbackFactory.create(author=self.author,nomcom=self.nc,type_id=type_id)
+            f.positions.add(self.position)
+            f.nominees.add(self.nominee)
+        now = datetime.datetime.now() 
+        self.hour_ago = now - datetime.timedelta(hours=1)
+        self.half_hour_ago = now - datetime.timedelta(minutes=30)
+        self.second_from_now = now + datetime.timedelta(seconds=1)
+
+    def test_feedback_index_badges(self):
+        url = reverse('nomcom_view_feedback',kwargs={'year':self.nc.year()})
+        login_testing_unauthorized(self, self.member.user.username, url)
+        provide_private_key_to_test_client(self)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code,200)
+        q = PyQuery(response.content)
+        self.assertEqual( len(q('.label-success')), 3 )
+
+        f = self.nc.feedback_set.first()
+        f.time = self.hour_ago
+        f.save()
+        FeedbackLastSeen.objects.create(reviewer=self.member,nominee=self.nominee)
+        FeedbackLastSeen.objects.update(time=self.half_hour_ago)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code,200)
+        q = PyQuery(response.content)
+        self.assertEqual( len(q('.label-success')), 2 )
+
+        FeedbackLastSeen.objects.update(time=self.second_from_now)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code,200)
+        q = PyQuery(response.content)
+        self.assertEqual( len(q('.label-success')), 0 )
+
+    def test_feedback_nominee_badges(self):
+        url = reverse('nomcom_view_feedback_nominee',kwargs={'year':self.nc.year(),'nominee_id':self.nominee.id})
+        login_testing_unauthorized(self, self.member.user.username, url)
+        provide_private_key_to_test_client(self)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code,200)
+        q = PyQuery(response.content)
+        self.assertEqual( len(q('.label-success')), 3 )
+
+        f = self.nc.feedback_set.first()
+        f.time = self.hour_ago
+        f.save()
+        FeedbackLastSeen.objects.create(reviewer=self.member,nominee=self.nominee)
+        FeedbackLastSeen.objects.update(time=self.half_hour_ago)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code,200)
+        q = PyQuery(response.content)
+        self.assertEqual( len(q('.label-success')), 2 )
+
+        FeedbackLastSeen.objects.update(time=self.second_from_now)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code,200)
+        q = PyQuery(response.content)
+        self.assertEqual( len(q('.label-success')), 0 )

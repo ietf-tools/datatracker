@@ -1,7 +1,7 @@
 import factory
 import random
 
-from ietf.nomcom.models import NomCom, Position, Nominee, NomineePosition
+from ietf.nomcom.models import NomCom, Position, Feedback, Nominee, NomineePosition
 from ietf.group.factories import GroupFactory
 from ietf.person.factories import PersonFactory
 
@@ -128,3 +128,17 @@ class PositionFactory(factory.DjangoModelFactory):
     description = factory.Faker('paragraph',nb_sentences=4)
     is_open = True
 
+class NomineeFactory(factory.DjangoModelFactory):
+    class Meta:
+        model = Nominee
+
+    nomcom = factory.SubFactory(NomComFactory)
+
+class FeedbackFactory(factory.DjangoModelFactory):
+    class Meta:
+        model = Feedback
+
+    nomcom = factory.SubFactory(NomComFactory)
+    subject = factory.Faker('sentence')
+    comments = factory.Faker('paragraph')
+    type_id = 'comment'
