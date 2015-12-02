@@ -1,0 +1,31 @@
+{% spaceless %}
+
+{% load ietf_filters %}
+
+{% if doc.get_state_slug == "rfc" %}
+@misc{% templatetag openbrace %}rfc{{ doc.rfc_number }},
+	series =	{Request for Comments},
+	number=		{{ doc.rfc_number }},
+	howpublished=	{% templatetag openbrace %}{{ doc.stream }} RFC {{ doc.rfc_number }} ({{ doc.intended_std_level }}){% templatetag closebrace %},
+	publisher =	{RFC Editor},
+	doi =		{% templatetag openbrace %}10.17487/rfc{{ doc.rfc_number }}{% templatetag closebrace %},
+	url =		{https://rfc-editor.org/rfc/rfc{{ doc.rfc_number }}.txt},{% else %}
+{% if published %}%% You should probably cite rfc{{ latest_revision.doc.rfc_number }} instead of this I-D.{% else %}{% if replaced_by %}%% You should probably cite {{replaced_by|join:" or "}} instead of this I-D.{% else %}
+{% if doc.rev != latest_revision.rev %}%% You should probably cite {{latest_revision.doc.name}}-{{latest_revision.rev}} instead of this revision.{%endif%}{% endif %}{% endif %}
+@techreport{% templatetag openbrace %}{{doc.name|slice:"6:"}}-{{doc.rev}},
+	number=		{% templatetag openbrace %}{{doc.name}}-{{doc.rev}}{% templatetag closebrace %},
+	type =		{% templatetag openbrace %}Internet-Draft{% templatetag closebrace %},
+	institution =	{% templatetag openbrace %}Internet Engineering Task Force{% templatetag closebrace %},
+	publisher =	{% templatetag openbrace %}Internet Engineering Task Force{% templatetag closebrace %},
+	note =		{% templatetag openbrace %}Work in Progress{% templatetag closebrace %},
+	url =		{% templatetag openbrace %}https://tools.ietf.org/html/{{doc.name}}-{{doc.rev}}{% templatetag closebrace %},{% endif %}
+	author=		{% templatetag openbrace %}{% for entry in doc.authors.all %}{% with entry.person as author %}{{author.name}}{% endwith %}{% if not forloop.last %} and {% endif %}{% endfor %}{% templatetag closebrace %},
+	title=		{% templatetag openbrace %}{% templatetag openbrace %}{{doc.title}}{% templatetag closebrace %}{% templatetag closebrace %},
+	pagetotal =	{{ doc.pages }},
+	year =		{{ doc.time.year }},
+	month =		{{ doc.time|date:"b" }},
+	day =		{{ doc.time.day }},
+	abstract =	{% templatetag openbrace %}{{ doc.abstract|clean_whitespace }}{% templatetag closebrace %},
+{% templatetag closebrace %}
+
+{% endspaceless %}

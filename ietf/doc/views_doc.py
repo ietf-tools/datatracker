@@ -58,7 +58,7 @@ from ietf.name.models import StreamName, BallotPositionName
 from ietf.person.models import Email
 from ietf.utils.history import find_history_active_at
 from ietf.doc.forms import TelechatForm, NotifyForm
-from ietf.doc.mails import email_comment 
+from ietf.doc.mails import email_comment
 from ietf.mailtrigger.utils import gather_relevant_expansions
 
 def render_document_top(request, doc, tab, name):
@@ -101,7 +101,7 @@ def document_main(request, name, rev=None):
 
     if doc.type_id == 'conflrev':
         conflictdoc = doc.related_that_doc('conflrev')[0].document
-    
+
     revisions = []
     for h in doc.history_set.order_by("time", "id"):
         if h.rev and not h.rev in revisions:
@@ -233,6 +233,9 @@ def document_main(request, name, rev=None):
             # latest revision
             latest_revision = doc.latest_event(NewRevisionDocEvent, type="new_revision")
 
+        # bibtex
+        file_urls.append(("bibtex", "bibtex"))
+
         # ballot
         ballot_summary = None
         if iesg_state and iesg_state.slug in IESG_BALLOT_ACTIVE_STATES:
@@ -281,7 +284,7 @@ def document_main(request, name, rev=None):
         if doc.stream_id == "ietf" and iesg_state:
             show_in_states = set(IESG_BALLOT_ACTIVE_STATES)
             show_in_states.update(('approved','ann','rfcqueue','pub'))
-            if iesg_state.slug in show_in_states: 
+            if iesg_state.slug in show_in_states:
                 can_edit_consensus = can_edit
                 e = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
                 consensus = nice_consensus(e and e.consensus)
@@ -463,7 +466,7 @@ def document_main(request, name, rev=None):
         if doc.rev == "00" and not os.path.isfile(pathname):
             # This could move to a template
             content = "A conflict review response has not yet been proposed."
-        else:     
+        else:
             content = get_document_content(filename, pathname, split=False, markup=True)
 
         ballot_summary = None
@@ -491,13 +494,13 @@ def document_main(request, name, rev=None):
         if doc.rev == "00" and not os.path.isfile(pathname):
             # This could move to a template
             content = "Status change text has not yet been proposed."
-        else:     
+        else:
             content = get_document_content(filename, pathname, split=False)
 
         ballot_summary = None
         if doc.get_state_slug() in ("iesgeval"):
             ballot_summary = needed_ballot_positions(doc, doc.active_ballot().active_ad_positions().values())
-     
+
         if isinstance(doc,Document):
             sorted_relations=doc.relateddocument_set.all().order_by('relationship__name')
         elif isinstance(doc,DocHistory):
@@ -590,7 +593,7 @@ def document_email(request,name):
     aliases = get_doc_email_aliases(name) if doc.type_id=='draft' else None
 
     expansions = gather_relevant_expansions(doc=doc)
-    
+
     return render(request, "doc/document_email.html",
                             dict(doc=doc,
                                  top=top,
@@ -664,6 +667,32 @@ def document_history(request, name):
                                    can_add_comment=can_add_comment,
                                    ),
                               context_instance=RequestContext(request))
+
+
+def document_bibtex(request, name, rev=None):
+    doc = get_object_or_404(Document, docalias__name=name)
+
+    latest_revision = doc.latest_event(NewRevisionDocEvent, type="new_revision")
+    replaced_by = [d.name for d in doc.related_that("replaces")]
+    published = doc.latest_event(type="published_rfc")
+    rfc = latest_revision.doc if latest_revision.doc.get_state_slug() == "rfc" else None
+
+    if rev != None and rev != doc.rev:
+        # find the entry in the history
+        for h in doc.history_set.order_by("-time"):
+            if rev == h.rev:
+                doc = h
+                break
+
+    return render_to_response("doc/document_bibtex.bib",
+                              dict(doc=doc,
+                                   replaced_by=replaced_by,
+                                   published=published,
+                                   rfc=rfc,
+                                   latest_revision=latest_revision),
+                              content_type="text/plain; charset=utf-8",
+                              context_instance=RequestContext(request))
+
 
 def document_writeup(request, name):
     doc = get_object_or_404(Document, docalias__name=name)
@@ -921,7 +950,7 @@ def add_comment(request, name):
         form = AddCommentForm(request.POST)
         if form.is_valid():
             c = form.cleaned_data['comment']
-            
+
             e = DocEvent(doc=doc, by=login)
             e.type = "added_comment"
             e.desc = c
@@ -932,7 +961,7 @@ def add_comment(request, name):
             return redirect("doc_history", name=doc.name)
     else:
         form = AddCommentForm()
-  
+
     return render_to_response('doc/add_comment.html',
                               dict(doc=doc,
                                    form=form),
@@ -1035,7 +1064,7 @@ def email_aliases(request,name=''):
     doc = get_object_or_404(Document, name=name) if name else None
     if not name:
         # require login for the overview page, but not for the
-        # document-specific pages 
+        # document-specific pages
         if not request.user.is_authenticated():
                 return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
     aliases = get_doc_email_aliases(name)
