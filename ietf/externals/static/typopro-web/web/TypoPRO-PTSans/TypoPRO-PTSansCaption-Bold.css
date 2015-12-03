@@ -1,0 +1,15 @@
+
+/* TypoPRO PT Sans Caption Bold */
+@font-face {
+    font-family:  'TypoPRO PT Sans Caption';
+    src:          url('TypoPRO-PTSansCaption-Bold.eot');
+    src:          local('*'),
+                  url('TypoPRO-PTSansCaption-Bold.eot?#iefix') format('embedded-opentype'),
+                  url('TypoPRO-PTSansCaption-Bold.woff') format('woff'),
+                  url('TypoPRO-PTSansCaption-Bold.ttf') format('truetype');
+    font-style:   normal;
+    font-weight:  bold;
+    font-stretch: normal;
+    font-variant: small-caps;
+}
+

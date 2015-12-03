@@ -1,0 +1,15 @@
+
+/* TypoPRO PT Serif Bold Italic */
+@font-face {
+    font-family:  'TypoPRO PT Serif';
+    src:          url('TypoPRO-PTSerif-BoldItalic.eot');
+    src:          local('*'),
+                  url('TypoPRO-PTSerif-BoldItalic.eot?#iefix') format('embedded-opentype'),
+                  url('TypoPRO-PTSerif-BoldItalic.woff') format('woff'),
+                  url('TypoPRO-PTSerif-BoldItalic.ttf') format('truetype');
+    font-style:   italic;
+    font-weight:  bold;
+    font-stretch: normal;
+    font-variant: normal;
+}
+

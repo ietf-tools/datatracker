@@ -1,0 +1,15 @@
+
+/* TypoPRO PT Serif Bold */
+@font-face {
+    font-family:  'TypoPRO PT Serif';
+    src:          url('TypoPRO-PTSerif-Bold.eot');
+    src:          local('*'),
+                  url('TypoPRO-PTSerif-Bold.eot?#iefix') format('embedded-opentype'),
+                  url('TypoPRO-PTSerif-Bold.woff') format('woff'),
+                  url('TypoPRO-PTSerif-Bold.ttf') format('truetype');
+    font-style:   normal;
+    font-weight:  bold;
+    font-stretch: normal;
+    font-variant: normal;
+}
+

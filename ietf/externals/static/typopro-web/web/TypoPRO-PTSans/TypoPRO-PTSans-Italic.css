@@ -1,0 +1,15 @@
+
+/* TypoPRO PT Sans Italic */
+@font-face {
+    font-family:  'TypoPRO PT Sans';
+    src:          url('TypoPRO-PTSans-Italic.eot');
+    src:          local('*'),
+                  url('TypoPRO-PTSans-Italic.eot?#iefix') format('embedded-opentype'),
+                  url('TypoPRO-PTSans-Italic.woff') format('woff'),
+                  url('TypoPRO-PTSans-Italic.ttf') format('truetype');
+    font-style:   italic;
+    font-weight:  normal;
+    font-stretch: normal;
+    font-variant: normal;
+}
+

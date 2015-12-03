@@ -1,0 +1,30 @@
+
+/* TypoPRO PT Mono Bold */
+@font-face {
+    font-family:  'TypoPRO PT Mono';
+    src:          url('TypoPRO-PTMono-Bold.eot');
+    src:          local('*'),
+                  url('TypoPRO-PTMono-Bold.eot?#iefix') format('embedded-opentype'),
+                  url('TypoPRO-PTMono-Bold.woff') format('woff'),
+                  url('TypoPRO-PTMono-Bold.ttf') format('truetype');
+    font-style:   normal;
+    font-weight:  bold;
+    font-stretch: normal;
+    font-variant: normal;
+}
+
+
+/* TypoPRO PT Mono */
+@font-face {
+    font-family:  'TypoPRO PT Mono';
+    src:          url('TypoPRO-PTMono-Regular.eot');
+    src:          local('*'),
+                  url('TypoPRO-PTMono-Regular.eot?#iefix') format('embedded-opentype'),
+                  url('TypoPRO-PTMono-Regular.woff') format('woff'),
+                  url('TypoPRO-PTMono-Regular.ttf') format('truetype');
+    font-style:   normal;
+    font-weight:  normal;
+    font-stretch: normal;
+    font-variant: normal;
+}
+

@@ -1,0 +1,15 @@
+
+/* TypoPRO PT Sans Narrow */
+@font-face {
+    font-family:  'TypoPRO PT Sans Narrow';
+    src:          url('TypoPRO-PTSansNarrow-Regular.eot');
+    src:          local('*'),
+                  url('TypoPRO-PTSansNarrow-Regular.eot?#iefix') format('embedded-opentype'),
+                  url('TypoPRO-PTSansNarrow-Regular.woff') format('woff'),
+                  url('TypoPRO-PTSansNarrow-Regular.ttf') format('truetype');
+    font-style:   normal;
+    font-weight:  normal;
+    font-stretch: condensed;
+    font-variant: normal;
+}
+

@@ -1,0 +1,120 @@
+
+/* TypoPRO PT Sans Bold */
+@font-face {
+    font-family:  'TypoPRO PT Sans';
+    src:          url('TypoPRO-PTSans-Bold.eot');
+    src:          local('*'),
+                  url('TypoPRO-PTSans-Bold.eot?#iefix') format('embedded-opentype'),
+                  url('TypoPRO-PTSans-Bold.woff') format('woff'),
+                  url('TypoPRO-PTSans-Bold.ttf') format('truetype');
+    font-style:   normal;
+    font-weight:  bold;
+    font-stretch: normal;
+    font-variant: normal;
+}
+
+
+/* TypoPRO PT Sans Bold Italic */
+@font-face {
+    font-family:  'TypoPRO PT Sans';
+    src:          url('TypoPRO-PTSans-BoldItalic.eot');
+    src:          local('*'),
+                  url('TypoPRO-PTSans-BoldItalic.eot?#iefix') format('embedded-opentype'),
+                  url('TypoPRO-PTSans-BoldItalic.woff') format('woff'),
+                  url('TypoPRO-PTSans-BoldItalic.ttf') format('truetype');
+    font-style:   italic;
+    font-weight:  bold;
+    font-stretch: normal;
+    font-variant: normal;
+}
+
+
+/* TypoPRO PT Sans Italic */
+@font-face {
+    font-family:  'TypoPRO PT Sans';
+    src:          url('TypoPRO-PTSans-Italic.eot');
+    src:          local('*'),
+                  url('TypoPRO-PTSans-Italic.eot?#iefix') format('embedded-opentype'),
+                  url('TypoPRO-PTSans-Italic.woff') format('woff'),
+                  url('TypoPRO-PTSans-Italic.ttf') format('truetype');
+    font-style:   italic;
+    font-weight:  normal;
+    font-stretch: normal;
+    font-variant: normal;
+}
+
+
+/* TypoPRO PT Sans */
+@font-face {
+    font-family:  'TypoPRO PT Sans';
+    src:          url('TypoPRO-PTSans-Regular.eot');
+    src:          local('*'),
+                  url('TypoPRO-PTSans-Regular.eot?#iefix') format('embedded-opentype'),
+                  url('TypoPRO-PTSans-Regular.woff') format('woff'),
+                  url('TypoPRO-PTSans-Regular.ttf') format('truetype');
+    font-style:   normal;
+    font-weight:  normal;
+    font-stretch: normal;
+    font-variant: normal;
+}
+
+
+/* TypoPRO PT Sans Caption Bold */
+@font-face {
+    font-family:  'TypoPRO PT Sans Caption';
+    src:          url('TypoPRO-PTSansCaption-Bold.eot');
+    src:          local('*'),
+                  url('TypoPRO-PTSansCaption-Bold.eot?#iefix') format('embedded-opentype'),
+                  url('TypoPRO-PTSansCaption-Bold.woff') format('woff'),
+                  url('TypoPRO-PTSansCaption-Bold.ttf') format('truetype');
+    font-style:   normal;
+    font-weight:  bold;
+    font-stretch: normal;
+    font-variant: small-caps;
+}
+
+
+/* TypoPRO PT Sans Caption */
+@font-face {
+    font-family:  'TypoPRO PT Sans Caption';
+    src:          url('TypoPRO-PTSansCaption-Regular.eot');
+    src:          local('*'),
+                  url('TypoPRO-PTSansCaption-Regular.eot?#iefix') format('embedded-opentype'),
+                  url('TypoPRO-PTSansCaption-Regular.woff') format('woff'),
+                  url('TypoPRO-PTSansCaption-Regular.ttf') format('truetype');
+    font-style:   normal;
+    font-weight:  normal;
+    font-stretch: normal;
+    font-variant: small-caps;
+}
+
+
+/* TypoPRO PT Sans Narrow Bold */
+@font-face {
+    font-family:  'TypoPRO PT Sans Narrow';
+    src:          url('TypoPRO-PTSansNarrow-Bold.eot');
+    src:          local('*'),
+                  url('TypoPRO-PTSansNarrow-Bold.eot?#iefix') format('embedded-opentype'),
+                  url('TypoPRO-PTSansNarrow-Bold.woff') format('woff'),
+                  url('TypoPRO-PTSansNarrow-Bold.ttf') format('truetype');
+    font-style:   normal;
+    font-weight:  bold;
+    font-stretch: condensed;
+    font-variant: normal;
+}
+
+
+/* TypoPRO PT Sans Narrow */
+@font-face {
+    font-family:  'TypoPRO PT Sans Narrow';
+    src:          url('TypoPRO-PTSansNarrow-Regular.eot');
+    src:          local('*'),
+                  url('TypoPRO-PTSansNarrow-Regular.eot?#iefix') format('embedded-opentype'),
+                  url('TypoPRO-PTSansNarrow-Regular.woff') format('woff'),
+                  url('TypoPRO-PTSansNarrow-Regular.ttf') format('truetype');
+    font-style:   normal;
+    font-weight:  normal;
+    font-stretch: condensed;
+    font-variant: normal;
+}
+

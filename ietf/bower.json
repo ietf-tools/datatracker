@@ -11,7 +11,8 @@
     "jquery.cookie": "1.4.1",
     "respond": "1.4.2",
     "select2": "3.5.4",
-    "select2-bootstrap-css": "1.4.6"
+    "select2-bootstrap-css": "1.4.6",
+    "typopro-web": "3.4.1"
   },
   "devDependencies": {},
   "overrides": {
@@ -23,6 +24,13 @@
     },
     "respond": {
       "main": "dest/respond.min.js"
+    },
+    "typopro-web": {
+      "main": [
+        "web/TypoPRO-PTMono/*",
+        "web/TypoPRO-PTSans/*",
+        "web/TypoPRO-PTSerif/*"
+      ]
     }
   }
 }

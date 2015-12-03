@@ -1,0 +1,15 @@
+
+/* TypoPRO PT Serif Caption */
+@font-face {
+    font-family:  'TypoPRO PT Serif Caption';
+    src:          url('TypoPRO-PTSerifCaption-Regular.eot');
+    src:          local('*'),
+                  url('TypoPRO-PTSerifCaption-Regular.eot?#iefix') format('embedded-opentype'),
+                  url('TypoPRO-PTSerifCaption-Regular.woff') format('woff'),
+                  url('TypoPRO-PTSerifCaption-Regular.ttf') format('truetype');
+    font-style:   normal;
+    font-weight:  normal;
+    font-stretch: normal;
+    font-variant: small-caps;
+}
+

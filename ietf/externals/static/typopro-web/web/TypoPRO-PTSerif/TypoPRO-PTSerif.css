@@ -1,0 +1,90 @@
+
+/* TypoPRO PT Serif Bold */
+@font-face {
+    font-family:  'TypoPRO PT Serif';
+    src:          url('TypoPRO-PTSerif-Bold.eot');
+    src:          local('*'),
+                  url('TypoPRO-PTSerif-Bold.eot?#iefix') format('embedded-opentype'),
+                  url('TypoPRO-PTSerif-Bold.woff') format('woff'),
+                  url('TypoPRO-PTSerif-Bold.ttf') format('truetype');
+    font-style:   normal;
+    font-weight:  bold;
+    font-stretch: normal;
+    font-variant: normal;
+}
+
+
+/* TypoPRO PT Serif Bold Italic */
+@font-face {
+    font-family:  'TypoPRO PT Serif';
+    src:          url('TypoPRO-PTSerif-BoldItalic.eot');
+    src:          local('*'),
+                  url('TypoPRO-PTSerif-BoldItalic.eot?#iefix') format('embedded-opentype'),
+                  url('TypoPRO-PTSerif-BoldItalic.woff') format('woff'),
+                  url('TypoPRO-PTSerif-BoldItalic.ttf') format('truetype');
+    font-style:   italic;
+    font-weight:  bold;
+    font-stretch: normal;
+    font-variant: normal;
+}
+
+
+/* TypoPRO PT Serif Italic */
+@font-face {
+    font-family:  'TypoPRO PT Serif';
+    src:          url('TypoPRO-PTSerif-Italic.eot');
+    src:          local('*'),
+                  url('TypoPRO-PTSerif-Italic.eot?#iefix') format('embedded-opentype'),
+                  url('TypoPRO-PTSerif-Italic.woff') format('woff'),
+                  url('TypoPRO-PTSerif-Italic.ttf') format('truetype');
+    font-style:   italic;
+    font-weight:  normal;
+    font-stretch: normal;
+    font-variant: normal;
+}
+
+
+/* TypoPRO PT Serif */
+@font-face {
+    font-family:  'TypoPRO PT Serif';
+    src:          url('TypoPRO-PTSerif-Regular.eot');
+    src:          local('*'),
+                  url('TypoPRO-PTSerif-Regular.eot?#iefix') format('embedded-opentype'),
+                  url('TypoPRO-PTSerif-Regular.woff') format('woff'),
+                  url('TypoPRO-PTSerif-Regular.ttf') format('truetype');
+    font-style:   normal;
+    font-weight:  normal;
+    font-stretch: normal;
+    font-variant: normal;
+}
+
+
+/* TypoPRO PT Serif Caption Italic */
+@font-face {
+    font-family:  'TypoPRO PT Serif Caption';
+    src:          url('TypoPRO-PTSerifCaption-Italic.eot');
+    src:          local('*'),
+                  url('TypoPRO-PTSerifCaption-Italic.eot?#iefix') format('embedded-opentype'),
+                  url('TypoPRO-PTSerifCaption-Italic.woff') format('woff'),
+                  url('TypoPRO-PTSerifCaption-Italic.ttf') format('truetype');
+    font-style:   italic;
+    font-weight:  normal;
+    font-stretch: normal;
+    font-variant: small-caps;
+}
+
+
+/* TypoPRO PT Serif Caption */
+@font-face {
+    font-family:  'TypoPRO PT Serif Caption';
+    src:          url('TypoPRO-PTSerifCaption-Regular.eot');
+    src:          local('*'),
+                  url('TypoPRO-PTSerifCaption-Regular.eot?#iefix') format('embedded-opentype'),
+                  url('TypoPRO-PTSerifCaption-Regular.woff') format('woff'),
+                  url('TypoPRO-PTSerifCaption-Regular.ttf') format('truetype');
+    font-style:   normal;
+    font-weight:  normal;
+    font-stretch: normal;
+    font-variant: small-caps;
+}
+
