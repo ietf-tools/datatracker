@@ -49,7 +49,7 @@ from ietf.doc.models import ( Document, DocAlias, DocHistory, DocEvent, BallotDo
 from ietf.doc.utils import ( add_links_in_new_revision_events, augment_events_with_revision,
     can_adopt_draft, get_chartering_type, get_document_content, get_tags_for_stream_id,
     needed_ballot_positions, nice_consensus, prettify_std_name, update_telechat, has_same_ballot,
-    get_initial_notify, make_notify_changed_event )
+    get_initial_notify, make_notify_changed_event, crawl_history)
 from ietf.community.models import CommunityList
 from ietf.group.models import Role
 from ietf.group.utils import can_manage_group_type, can_manage_materials
@@ -417,6 +417,7 @@ def document_main(request, name, rev=None):
                                        search_archive=search_archive,
                                        actions=actions,
                                        tracking_document=tracking_document,
+                                       rev_history=crawl_history(latest_revision.doc if latest_revision else doc),
                                        ),
                                   context_instance=RequestContext(request))
 
@@ -442,6 +443,8 @@ def document_main(request, name, rev=None):
 
         can_manage = can_manage_group_type(request.user, doc.group.type_id)
 
+        latest_revision = doc.latest_event(NewRevisionDocEvent, type="new_revision")
+
         return render_to_response("doc/document_charter.html",
                                   dict(doc=doc,
                                        top=top,
@@ -456,6 +459,7 @@ def document_main(request, name, rev=None):
                                        group=group,
                                        milestones=milestones,
                                        can_manage=can_manage,
+                                       rev_history=crawl_history(latest_revision.doc if latest_revision else doc),
                                        ),
                                   context_instance=RequestContext(request))
 
@@ -473,6 +477,8 @@ def document_main(request, name, rev=None):
         if doc.get_state_slug() in ("iesgeval") and doc.active_ballot():
             ballot_summary = needed_ballot_positions(doc, doc.active_ballot().active_ad_positions().values())
 
+        latest_revision = doc.latest_event(NewRevisionDocEvent, type="new_revision")
+
         return render_to_response("doc/document_conflict_review.html",
                                   dict(doc=doc,
                                        top=top,
@@ -484,6 +490,7 @@ def document_main(request, name, rev=None):
                                        conflictdoc=conflictdoc,
                                        ballot_summary=ballot_summary,
                                        approved_states=('appr-reqnopub-pend','appr-reqnopub-sent','appr-noprob-pend','appr-noprob-sent'),
+                                       rev_history=crawl_history(latest_revision.doc if latest_revision else doc),
                                        ),
                                   context_instance=RequestContext(request))
 
@@ -508,6 +515,8 @@ def document_main(request, name, rev=None):
         else:
             sorted_relations=None
 
+        latest_revision = doc.latest_event(NewRevisionDocEvent, type="new_revision")
+
         return render_to_response("doc/document_status_change.html",
                                   dict(doc=doc,
                                        top=top,
@@ -519,6 +528,7 @@ def document_main(request, name, rev=None):
                                        ballot_summary=ballot_summary,
                                        approved_states=('appr-pend','appr-sent'),
                                        sorted_relations=sorted_relations,
+                                       rev_history=crawl_history(latest_revision.doc if latest_revision else doc),
                                        ),
                                   context_instance=RequestContext(request))
 
