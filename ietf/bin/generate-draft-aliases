@@ -38,7 +38,7 @@ django.setup()
 from django.conf import settings
 
 from ietf.doc.models import Document
-from ietf.group.utils import get_group_chairs_emails, get_group_ads_emails
+from ietf.group.utils import get_group_role_emails, get_group_ad_emails
 from ietf.utils.aliases import *
 import time
 
@@ -47,7 +47,7 @@ def get_draft_ad_emails(draft):
     # If working group document, return current WG ADs
     wg = draft.group
     if wg and wg.acronym != 'none' and wg.parent and wg.parent.acronym != 'none':
-        return get_group_ads_emails(wg)
+        return get_group_ad_emails(wg)
     # If not, return explicit AD set (whether up to date or not)
     ad = draft.ad
     #return [ad and ad.user and ad.user.email]
@@ -147,7 +147,7 @@ if __name__ == '__main__':
 
         # .chairs = group chairs
         if draft.group:
-            handle_sublist(afile, vfile, alias+'.chairs', get_group_chairs_emails(draft.group))
+            handle_sublist(afile, vfile, alias+'.chairs', get_group_role_emails(draft.group, ['chair', 'secr']))
 
         # .ad = sponsoring AD / WG AD (WG document)
         handle_sublist(afile, vfile, alias+'.ad',       get_draft_ad_emails(draft))

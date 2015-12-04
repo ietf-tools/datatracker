@@ -2,6 +2,8 @@ import os
 
 from django.shortcuts import get_object_or_404
 
+import debug                            # pyflakes:ignore
+
 from ietf.group.models import Group, RoleHistory
 from ietf.person.models import Email
 from ietf.utils.history import get_history_object_for, copy_many_to_many_for_history
@@ -44,52 +46,33 @@ def get_charter_text(group):
     except IOError:
         return 'Error Loading Group Charter'
 
-def get_area_ads_emails(area):
-    if area.acronym == 'none':
-        return []
-    emails = [r.email.email_address()
-              for r in area.role_set.filter(name__in=('pre-ad', 'ad', 'chair'))]
-    return filter(None, emails)
+def get_group_role_emails(group, roles):
+    "Get a list of email addresses for a given WG and Role"
+    if not group or not group.acronym or group.acronym == 'none':
+        return set()
+    emails = Email.objects.filter(role__group=group, role__name__in=roles)
+    return set(filter(None, [e.email_address() for e in emails]))
 
-def get_group_ads_emails(wg):
-    " Get list of area directors' emails for a given WG "
-    if wg.acronym == 'none':
-        return []
+def get_child_group_role_emails(parent, roles, group_type='wg'):
+    """Get a list of email addresses for a given set of
+    roles for all child groups of a given type"""
+    emails = set()
+    groups = Group.objects.filter(parent=parent, type=group_type, state="active")
+    for group in groups:
+        emails |= get_group_role_emails(group, roles)
+    return emails
 
-    ad_emails = set()
-
-    if wg.parent and wg.parent.acronym != 'none':
-        # Include the  _current_ list of ads for the area!
-        ad_emails.update(get_area_ads_emails(wg.parent))
-
+def get_group_ad_emails(wg):
+    " Get list of area directors' email addresses for a given WG "
+    if not wg.acronym or wg.acronym == 'none':
+        return set()
+    emails = get_group_role_emails(wg.parent, roles=('pre-ad', 'ad', 'chair'))
     # Make sure the assigned AD is included (in case that is not one of the area ADs)
     if wg.state.slug=='active':
         wg_ad_email = wg.ad_role() and wg.ad_role().email.address
         if wg_ad_email:
-            ad_emails.add(wg_ad_email)
-
-    return list(ad_emails)
-
-def get_group_chairs_emails(wg):
-    " Get list of area chairs' emails for a given WG "
-    if wg.acronym == 'none':
-        return []
-    emails = Email.objects.filter(role__group=wg,
-                                  role__name='chair')
-    if not emails:
-        return []
-    emails = [e.email_address() for e in emails]
-    emails = filter(None, emails)
+            emails.add(wg_ad_email)
     return emails
-
-def get_area_chairs_emails(area):
-    emails = {}
-    # XXX - should we filter these by validity? Or not?
-    wgs = Group.objects.filter(parent=area, type="wg", state="active")
-    for wg in wgs:
-        for e in get_group_chairs_emails(wg):
-            emails[e] = True
-    return emails.keys()
 
 def save_milestone_in_history(milestone):
     h = get_history_object_for(milestone)

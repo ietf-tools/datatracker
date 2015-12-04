@@ -26,7 +26,7 @@ django.setup()
 from django.conf import settings
 
 from ietf.group.models import Group
-from ietf.group.utils import get_group_ads_emails, get_group_chairs_emails, get_area_ads_emails, get_area_chairs_emails
+from ietf.group.utils import get_group_ad_emails, get_group_role_emails, get_child_group_role_emails
 from ietf.utils.aliases import dump_sublist
 
 # from secr/utils/group.py..
@@ -69,8 +69,8 @@ if __name__ == '__main__':
 
     for wg in interesting_wgs.distinct().iterator():
         name = wg.acronym
-        dump_sublist(afile, vfile, name+'-ads',    settings.GROUP_VIRTUAL_DOMAIN, get_group_ads_emails(wg))
-        dump_sublist(afile, vfile, name+'-chairs', settings.GROUP_VIRTUAL_DOMAIN, get_group_chairs_emails(wg))
+        dump_sublist(afile, vfile, name+'-ads',    settings.GROUP_VIRTUAL_DOMAIN, get_group_ad_emails(wg))
+        dump_sublist(afile, vfile, name+'-chairs', settings.GROUP_VIRTUAL_DOMAIN, get_group_role_emails(wg, ['chair', 'secr']))
 
     # - status = Active
     rgs = Group.objects.filter(type='rg').all()
@@ -82,8 +82,8 @@ if __name__ == '__main__':
 
     for rg in interesting_rgs.distinct().iterator():
         name = rg.acronym
-        #dump_sublist('%s%s' % (name, '-ads'), get_group_ads_emails, rg, True)
-        dump_sublist(afile, vfile, name+'-chairs', settings.GROUP_VIRTUAL_DOMAIN, get_group_chairs_emails(rg))
+        #dump_sublist('%s%s' % (name, '-ads'), get_group_ad_emails, rg, True)
+        dump_sublist(afile, vfile, name+'-chairs', settings.GROUP_VIRTUAL_DOMAIN, get_group_role_emails(rg, ['chair', 'secr']))
 
     # Additionally, for areaz, we should list -ads and -chairs
     # (for every chair in active groups within the area).
@@ -91,6 +91,7 @@ if __name__ == '__main__':
     active_areas = areas.filter(state__in=ACTIVE_STATES)
     for area in active_areas:
         name = area.acronym
-        dump_sublist(afile, vfile, name+'-ads'   , settings.GROUP_VIRTUAL_DOMAIN, get_area_ads_emails(area))
-        dump_sublist(afile, vfile, name+'-chairs', settings.GROUP_VIRTUAL_DOMAIN, get_area_chairs_emails(area)+get_area_ads_emails(area))
+        area_ad_emails = get_group_role_emails(area, ['pre-ad', 'ad', 'chair'])
+        dump_sublist(afile, vfile, name+'-ads'   , settings.GROUP_VIRTUAL_DOMAIN, area_ad_emails)
+        dump_sublist(afile, vfile, name+'-chairs', settings.GROUP_VIRTUAL_DOMAIN, (get_child_group_role_emails(area, ['chair', 'secr']) | area_ad_emails))
 
