@@ -6,7 +6,10 @@ from django.core.urlresolvers import reverse as urlreverse
 from django.db.models import Q
 from django.test import Client
 
+import debug                             # pyflakes:ignore
+
 from ietf.group.models import Role, Group
+from ietf.group.utils import get_group_role_emails, get_child_group_role_emails, get_group_ad_emails
 from ietf.utils.test_data import make_test_data
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase, unicontent
 
@@ -57,7 +60,7 @@ class StreamTests(TestCase):
 
 
 @skipIf(skip_dot_to_pdf, skip_message)
-class GroupTests(TestCase):
+class GroupDocDependencyGraphTests(TestCase):
 
     def test_group_document_dependency_dotfile(self):
         make_test_data()
@@ -85,3 +88,34 @@ class GroupTests(TestCase):
                 self.assertGreater(len(r.content), 0, "Pdf dependency graph for group "
                     "%s has no content"%group.acronym)
             
+
+class GroupRoleEmailTests(TestCase):
+
+    def test_group_role_emails(self):
+        make_test_data()
+        wgs = Group.objects.filter(type='wg')
+        for wg in wgs:
+            chair_emails = get_group_role_emails(wg, ['chair'])
+            secr_emails  = get_group_role_emails(wg, ['secr'])
+            self.assertIn("chairman", list(chair_emails)[0])
+            self.assertIn("secretary", list(secr_emails)[0])
+            both_emails  = get_group_role_emails(wg, ['chair', 'secr'])
+            self.assertEqual(secr_emails | chair_emails, both_emails)
+
+    def test_child_group_role_emails(self):
+        make_test_data()
+        areas = Group.objects.filter(type='area')
+        for area in areas:
+            emails = get_child_group_role_emails(area, ['chair', 'secr'])
+            self.assertGreater(len(emails), 0)
+            for item in emails:
+                self.assertIn('@', item)
+
+    def test_group_ad_emails(self):
+        make_test_data()
+        wgs = Group.objects.filter(type='wg')
+        for wg in wgs:
+            emails = get_group_ad_emails(wg)
+            self.assertGreater(len(emails), 0)
+            for item in emails:
+                self.assertIn('@', item)

@@ -176,11 +176,14 @@ def make_test_data():
     # group personnel
     create_person(mars_wg, "chair", name="WG Cháir Man", username="marschairman")
     create_person(mars_wg, "delegate", name="WG Dèlegate", username="marsdelegate")
+    create_person(mars_wg, "secr", name="Miss Secretary", username="marssecretary")
+
     mars_wg.role_set.get_or_create(name_id='ad',person=ad,email=ad.role_email('ad'))
     mars_wg.save()
 
-    create_person(ames_wg, "chair", name="WG Cháir Man", username="ameschairman")
+    create_person(ames_wg, "chair", name="Ames Chair Man", username="ameschairman")
     create_person(ames_wg, "delegate", name="WG Dèlegate", username="amesdelegate")
+    create_person(ames_wg, "secr", name="Mr Secretary", username="amessecretary")
     ames_wg.role_set.get_or_create(name_id='ad',person=ad,email=ad.role_email('ad'))
     ames_wg.save()
 
