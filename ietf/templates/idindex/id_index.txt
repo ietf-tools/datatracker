@@ -11,7 +11,7 @@ post date.{% endif %} Generated {{ time }}.
 {% for group in groups %}
 {% filter underline %}{{ group.name }} ({{ group.acronym }}){% endfilter %}
 {% for d in group.active_drafts %}
-  {% filter wordwrap:72|indent:2 %}"{{ d.title|clean_whitespace }}", {% for a in d.authors %}{{ a }}, {% endfor %}{{ d.rev_time|date:"Y-m-d"}}, <{{ d.name }}-{{ d.rev }}{{ d.exts }}>
+  {% filter wordwrap:72|indent:2 %}"{{ d.title|clean_whitespace }}", {% for a in d.authors %}{{ a.strip }}, {% endfor %}{{ d.rev_time|date:"Y-m-d"}}, <{{ d.name }}-{{ d.rev }}{{ d.exts }}>
 {% endfilter %}{% if with_abstracts %}
       {{ d.abstract.strip|unindent|fill:72|indent:6 }}
 {% endif %}{% endfor %}{% endfor %}{% endautoescape %}
