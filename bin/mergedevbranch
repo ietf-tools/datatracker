@@ -116,7 +116,9 @@ fix=$3
 repo=$(echo -n "$(svn info | grep "^Repository Root: " | sed 's/Repository Root: //')")
 
 note "Identify the branch:"
-if   svn info ${repo}/personal/$branch > /dev/null 2>&1; then
+if   svn info $branch > /dev/null 2>&1; then
+    branch="${branch#^/}"
+elif svn info ${repo}/personal/$branch > /dev/null 2>&1; then
     branch="personal/$branch"
 elif svn info ${repo}/branch/$branch > /dev/null 2>&1; then
     branch="branch/$branch"
@@ -147,7 +149,7 @@ read -p "Continue with diff? [Y/n] "
 [ "$REPLY" = "Y" -o  "$REPLY" = "y" -o  "$REPLY" = "" ] || exit
 
 note "Diff:"
-svn diff -c $rev $repo/$branch | less
+svn diff -c $rev -x"-u -b" $repo/$branch | less
 
 echo ""
 read -p "Additional descriptive text (hit return for none): "
@@ -163,10 +165,10 @@ read -p "Continue with the merge? [Y/n] "
 
 note "Do the merge:"
 if [[ $rev =~ : ]]; then
-    svn merge -r $rev ${repo}/$branch . || die "Merge of $branch @$rev failed.  The merge command was:
+    svn merge -r $rev -x"-u -b" ${repo}/$branch . || die "Merge of $branch @$rev failed.  The merge command was:
   svn merge -r $rev ${repo}/$branch ."
 else
-    svn merge -c $rev ${repo}/$branch . || die "Merge of $branch @$rev failed.  The merge command was:
+    svn merge -c $rev -x"-u -b" ${repo}/$branch . || die "Merge of $branch @$rev failed.  The merge command was:
   svn merge -c $rev ${repo}/$branch ."
 fi
 
