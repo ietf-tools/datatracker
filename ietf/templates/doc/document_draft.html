@@ -13,6 +13,20 @@
   .inline	{ display: inline; }
 {% endblock %}
 
+{% block js %}
+<script>
+$(window).on({
+    resize: function (event) {
+    	draw_timeline();
+    },
+    load: function (event) {
+        draw_timeline();
+    }
+});
+</script>
+{% endblock %}
+
+
 {% block title %}
   {% if doc.get_state_slug == "rfc" %}
     RFC {{ rfc_number }}
@@ -26,6 +40,7 @@
   {{ top|safe }}
 
   {% include "doc/revisions_list.html" %}
+  {% include "doc/timeline.html" %}
 
   <table class="table table-condensed">
     <thead id="message-row">
@@ -34,7 +49,7 @@
 	  <th colspan="4" class="alert-warning">The information below is for an old version of the document</th>
 	  {% else %}
 	  <th colspan="4"></th>
-	  {% endif %}  
+	  {% endif %}
        </tr>
     </thead>
 
