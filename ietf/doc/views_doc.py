@@ -417,7 +417,6 @@ def document_main(request, name, rev=None):
                                        search_archive=search_archive,
                                        actions=actions,
                                        tracking_document=tracking_document,
-                                       rev_history=crawl_history(latest_revision.doc if latest_revision else doc),
                                        ),
                                   context_instance=RequestContext(request))
 
@@ -443,8 +442,6 @@ def document_main(request, name, rev=None):
 
         can_manage = can_manage_group_type(request.user, doc.group.type_id)
 
-        latest_revision = doc.latest_event(NewRevisionDocEvent, type="new_revision")
-
         return render_to_response("doc/document_charter.html",
                                   dict(doc=doc,
                                        top=top,
@@ -459,7 +456,6 @@ def document_main(request, name, rev=None):
                                        group=group,
                                        milestones=milestones,
                                        can_manage=can_manage,
-                                       rev_history=crawl_history(latest_revision.doc if latest_revision else doc),
                                        ),
                                   context_instance=RequestContext(request))
 
@@ -477,8 +473,6 @@ def document_main(request, name, rev=None):
         if doc.get_state_slug() in ("iesgeval") and doc.active_ballot():
             ballot_summary = needed_ballot_positions(doc, doc.active_ballot().active_ad_positions().values())
 
-        latest_revision = doc.latest_event(NewRevisionDocEvent, type="new_revision")
-
         return render_to_response("doc/document_conflict_review.html",
                                   dict(doc=doc,
                                        top=top,
@@ -490,7 +484,6 @@ def document_main(request, name, rev=None):
                                        conflictdoc=conflictdoc,
                                        ballot_summary=ballot_summary,
                                        approved_states=('appr-reqnopub-pend','appr-reqnopub-sent','appr-noprob-pend','appr-noprob-sent'),
-                                       rev_history=crawl_history(latest_revision.doc if latest_revision else doc),
                                        ),
                                   context_instance=RequestContext(request))
 
@@ -515,8 +508,6 @@ def document_main(request, name, rev=None):
         else:
             sorted_relations=None
 
-        latest_revision = doc.latest_event(NewRevisionDocEvent, type="new_revision")
-
         return render_to_response("doc/document_status_change.html",
                                   dict(doc=doc,
                                        top=top,
@@ -528,7 +519,6 @@ def document_main(request, name, rev=None):
                                        ballot_summary=ballot_summary,
                                        approved_states=('appr-pend','appr-sent'),
                                        sorted_relations=sorted_relations,
-                                       rev_history=crawl_history(latest_revision.doc if latest_revision else doc),
                                        ),
                                   context_instance=RequestContext(request))
 
@@ -921,6 +911,9 @@ def document_json(request, name):
     data["shepherd"] = doc.shepherd.formatted_email() if doc.shepherd else None
     data["ad"] = doc.ad.role_email("ad").formatted_email() if doc.ad else None
 
+    latest_revision = doc.latest_event(NewRevisionDocEvent, type="new_revision")
+    data["rev_history"] = crawl_history(latest_revision.doc if latest_revision else doc)
+
     if doc.type_id == "draft":
         data["iesg_state"] = extract_name(doc.get_state("draft-iesg"))
         data["rfceditor_state"] = extract_name(doc.get_state("draft-rfceditor"))
@@ -932,7 +925,7 @@ def document_json(request, name):
             data["consensus"] = e.consensus if e else None
         data["stream"] = extract_name(doc.stream)
 
-    return HttpResponse(json.dumps(data, indent=2), content_type='text/plain')
+    return HttpResponse(json.dumps(data, indent=2), content_type='application/json')
 
 class AddCommentForm(forms.Form):
     comment = forms.CharField(required=True, widget=forms.Textarea)

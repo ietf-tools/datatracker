@@ -3,7 +3,6 @@ import re
 import urllib
 import math
 import datetime
-import operator
 
 from django.conf import settings
 from django.db.models.query import EmptyQuerySet
@@ -542,7 +541,7 @@ def uppercase_std_abbreviated_name(name):
         return name
 
 def crawl_history(doc):
-    # return document history data for use in ietf/templates/doc/timeline.html
+    # return document history data for inclusion in doc.json (used by timeline)
     def ancestors(doc):
         retval = []
         if hasattr(doc, 'relateddocument_set'):
@@ -559,12 +558,20 @@ def crawl_history(doc):
         for d in history:
             for e in d.docevent_set.filter(type='new_revision'):
                 if hasattr(e, 'newrevisiondocevent'):
-                    retval.append((d.name, e.newrevisiondocevent.rev, e.time.isoformat()))
+                    retval.append({
+                        'name': d.name,
+                        'rev': e.newrevisiondocevent.rev,
+                        'published': e.time.isoformat()
+                    })
 
     if doc.type_id == "draft":
         e = doc.latest_event(type='published_rfc')
     else:
         e = doc.latest_event(type='iesg_approved')
     if e:
-        retval.append((doc.name, e.doc.canonical_name, e.time.isoformat()))
-    return sorted(retval, key=operator.itemgetter(2))
+        retval.append({
+            'name': e.doc.canonical_name(),
+            'rev': e.doc.canonical_name(),
+            'published': e.time.isoformat()
+        })
+    return sorted(retval, key=lambda x: x['published'])
