@@ -5,7 +5,7 @@
 {% load staticfiles %}
 
 {% block pagehead %}
-  <link rel="stylesheet" href="{% static 'bootstrap-datepicker/css/datepicker3.css' %}">
+  <link rel="stylesheet" href="{% static 'bootstrap-datepicker/css/bootstrap-datepicker3.min.css' %}">
 {% endblock %}
 
 {% block title %}Liaison Statements - {{ selected_menu_entry|capfirst }}{% endblock %}
@@ -52,6 +52,6 @@
 {% endblock content %}
 
 {% block js %}
-  <script src="{% static 'bootstrap-datepicker/js/bootstrap-datepicker.js' %}"></script>
+  <script src="{% static 'bootstrap-datepicker/js/bootstrap-datepicker.min.js' %}"></script>
   <script src="{% static 'ietf/js/liaisons.js' %}"></script>
 {% endblock %}

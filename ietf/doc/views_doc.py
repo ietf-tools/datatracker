@@ -233,6 +233,9 @@ def document_main(request, name, rev=None):
             # latest revision
             latest_revision = doc.latest_event(NewRevisionDocEvent, type="new_revision")
 
+        # bibtex
+        file_urls.append(("bibtex", "bibtex"))
+
         # ballot
         ballot_summary = None
         if iesg_state and iesg_state.slug in IESG_BALLOT_ACTIVE_STATES:
@@ -664,6 +667,32 @@ def document_history(request, name):
                                    can_add_comment=can_add_comment,
                                    ),
                               context_instance=RequestContext(request))
+
+
+def document_bibtex(request, name, rev=None):
+    doc = get_object_or_404(Document, docalias__name=name)
+
+    latest_revision = doc.latest_event(NewRevisionDocEvent, type="new_revision")
+    replaced_by = [d.name for d in doc.related_that("replaces")]
+    published = doc.latest_event(type="published_rfc")
+    rfc = latest_revision.doc if latest_revision.doc.get_state_slug() == "rfc" else None
+
+    if rev != None and rev != doc.rev:
+        # find the entry in the history
+        for h in doc.history_set.order_by("-time"):
+            if rev == h.rev:
+                doc = h
+                break
+
+    return render_to_response("doc/document_bibtex.bib",
+                              dict(doc=doc,
+                                   replaced_by=replaced_by,
+                                   published=published,
+                                   rfc=rfc,
+                                   latest_revision=latest_revision),
+                              content_type="text/plain; charset=utf-8",
+                              context_instance=RequestContext(request))
+
 
 def document_writeup(request, name):
     doc = get_object_or_404(Document, docalias__name=name)
