@@ -12,7 +12,7 @@
 {% block morecss %}
 .inline	{ display: inline; }
 
-#timeline .axis text { font-size: small; }
+#timeline { font-size: small; }
 
 #timeline .axis path, #timeline .axis line {
 	fill: none;
@@ -21,28 +21,23 @@
 
 #timeline .axis.y path, #timeline .axis.y line { stroke: none; }
 
-#timeline .axis.x text {
-	dominant-baseline: central;
-	fill: darkgrey;
-}
+#timeline .axis.x text { dominant-baseline: central; }
 
 #timeline .bar text {
 	fill: white;
 	dominant-baseline: central;
 }
 
-#timeline .bar:nth-child(odd) rect {
-  fill: #3abf03;
-  stroke: #32a602;
-  stroke-width: 1;
-}
+{% comment %} like label-success {% endcomment %}
+#timeline .bar:nth-child(odd) rect { fill: #5CB85C; }
 
-#timeline .bar:nth-child(even) rect {
-  fill: #6b5bad;
-  stroke: #5f4f9f;
-  stroke-width: 1;
-}
+{% comment %} like label-primary {% endcomment %}
+#timeline .bar:nth-child(even) rect { fill: #337AB7; }
 
+{% comment %} like label-warning {% endcomment %}
+.stop-left { stop-color: #F0AD4E; }
+.stop-right { stop-color: white; }
+#timeline .bar:nth-last-child(4) rect { fill: url(#gradient); }
 {% endblock %}
 
 {% block title %}
@@ -58,7 +53,7 @@
   {{ top|safe }}
 
   {% include "doc/revisions_list.html" %}
-  <div id="timeline"><svg></svg></div>
+  <div id="timeline"></div>
 
   <table class="table table-condensed">
     <thead id="message-row">
