@@ -8,7 +8,7 @@
     "font-awesome": "4.5.0",
     "jquery": "1.11.3",
     "jquery.cookie": "1.4.1",
-    "select2": "3.5.2",
+    "select2": "3.5.4",
     "select2-bootstrap-css": "1.4.6"
   },
   "devDependencies": {},
