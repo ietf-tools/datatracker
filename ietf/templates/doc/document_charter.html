@@ -91,7 +91,7 @@
 
     <tbody class="meta">
       <tr>
-	<th>WG</th>
+	<th>{{ group.type.name }}</th>
 	<th>State</th>
 	<td class="edit"></td>
 	<td>{{ group.state.name }}</td>
@@ -99,6 +99,7 @@
     </tbody>
 
     <tbody class="meta">
+      {% if group.type_id != "rg" %}
       <tr>
 	<th>IESG</th>
 	<th>Responsible AD</th>
@@ -111,6 +112,7 @@
 	  {{ doc.ad|default:"(None)" }}
 	</td>
       </tr>
+      {% endif %}
 
       {% if not snapshot and chartering %}
 	<tr>
