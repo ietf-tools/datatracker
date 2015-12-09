@@ -1,0 +1,146 @@
+#!/usr/bin/env python
+
+"""
+An SVN pre-commit hook which requires that commits either are marked as
+whitespace cleanup commits, and contain no non-whitespace changes, or
+leave whitespace alone on lines without code changes.
+"""
+
+import os
+import sys
+import difflib
+import debug
+from pysvn import Client, Transaction
+
+prog = os.path.basename(sys.argv[0])
+
+def die(msg):
+    sys.stderr.write("\n%s: Error: %s\n" % (prog, msg))
+    sys.exit(1)
+
+if len(sys.argv) <= 1:
+    die("Expected arguments: REPOSITORY TRANSACTION, found none")
+    
+if len(sys.argv) <= 2:
+    die( "Expected arguments: REPOSITORY TRANSACTION, found only '%s'" % sys.argv[1])
+
+repo = sys.argv[1]
+txname = sys.argv[2]
+tx = Transaction(repo, txname)
+client = Client()
+
+is_whitespace_cleanup = "whitespace cleanup" in tx.revpropget("svn:log").lower()
+
+def normalize(s):
+    return s.rstrip().expandtabs()    
+
+def normalize_sequence(seq):
+    o = []
+    for l in seq:
+        o.append(normalize(l))
+    return o
+
+def count(gen):
+    return sum(1 for _ in gen)
+
+# Function with side effects.  Acts on global varaibles
+def inc_ab(flag):
+    global a, b
+    if   flag == ' ':
+        a += 1; b += 1
+    elif flag == '-':
+        a += 1
+    elif flag == '+':
+        b += 1
+    elif flag == '?':
+        pass
+    else:
+        raise ValueError("Unexpected ndiff mark: '%s' in: %s" % (flag, plain_diff[i]))
+
+def get_chunks(unidiff):
+    if not unidiff:
+        return []
+    chunks = []
+    chunk = []
+    intro = unidiff[0:2]
+    for line in unidiff[2:]:
+        if line.startswith("@@"):
+            if chunk:
+                chunks.append(chunk)
+            chunk = [line]
+        else:
+            chunk.append(line)
+    chunks.append(chunk)
+    return intro, chunks
+        
+changes = tx.changed()
+issues = {}
+context = 3
+for path in changes:
+    action, kind, mod, propmod = changes[path]
+
+    # Don't try to diff added or deleted files, on ly changed text files
+    if not (mod and action == "R"):
+        continue
+
+    # Don't try do diff binary files
+    mimetype = tx.propget("svn:mime-type", path)
+    if mimetype and not mimetype.startswith("text/"):
+        continue
+
+    new = tx.cat(path).splitlines()
+    old = client.cat("file://"+os.path.join(repo,path)).splitlines()
+
+    plain_diff = list(difflib.unified_diff(old, new, "%s (repository)"%path, "%s (commit)"%path, lineterm="" ))
+    old = normalize_sequence(old)
+    new = normalize_sequence(new)
+    white_diff = list(difflib.unified_diff(old, new, "%s (repository)"%path, "%s (commit)"%path, lineterm=""))
+
+    plain_count = len(plain_diff)
+    white_count = len(white_diff)
+
+#    for i in range(len(white_diff)):
+#        sys.stderr.write("%-80s |  %-80s\n" % (normalize(plain_diff[i][:80]), normalize(white_diff[i][:80])))
+    if white_count != plain_count and not is_whitespace_cleanup:
+        intro, plain_chunks = get_chunks(plain_diff)
+        intro, white_chunks = get_chunks(white_diff)
+        for chunk in white_chunks:
+            for i in range(len(plain_chunks)):
+                if chunk == plain_chunks[i]:
+                    del plain_chunks[i]
+        issue = intro
+        for chunk in plain_chunks:
+            issue += chunk
+        if  len(plain_chunks) > 1:
+            are = "are"; s = "s"; an = ""
+        else:
+            are = "is"; s = ""; an = "an "
+        issues[path] = issue
+    if white_count != 0 and is_whitespace_cleanup:
+        intro, white_chunks = get_chunks(white_diff)
+        if  len(white_chunks) > 1:
+            are = "are"; s = "s"; an = ""
+        else:
+            are = "is"; s = ""; an = "an "
+        issues[path] = white_diff
+
+if issues:
+    if is_whitespace_cleanup:
+        die("It looks as if there are non-whitespace changes in\n"
+            "this commit, but it was marked as a whitespace cleanup commit.\n\n"
+            "Here %s the diff chunk%s with unexpected change%s:\n\n%s\n\n"
+            "Declining the commit due to a mix of code and spaces-only changes.  Please\n"
+            "avoid mixing whitespace-only changes with code changes. See details above." % 
+            (are, s, s, '\n\n'.join([ '\n'.join(issues[path]) for path in issues ]))
+        )
+
+    else:
+        die("It looks as if there are spaces-only changes in this\n"
+            "commit, but it was not marked as a whitespace cleanup commit.\n\n"
+            "Here %s the diff chunk%s with unexpected change%s:\n\n%s\n\n"
+            "Declining the commit due to a mix of code and spaces-only changes.  Please\n"
+            "avoid mixing whitespace-only changes with code changes. See details above." % 
+            (are, s, s, '\n\n'.join([ '\n'.join(issues[path]) for path in issues ]))
+        )
+
+sys.exit(0)
