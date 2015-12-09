@@ -1,0 +1,137 @@
+// -*- mode: c -*-
+@gray-doc-background:   #fafafa;        // was #f5f5f5
+
+// Brand palette
+// http://www.colourlovers.com/palette/3702908/Key_West_Sunset_2
+//
+@brand-blue:            #2c254a;        // space blue
+@brand-purple:          #59356b;        // time purple
+@brand-red:             #d4584d;  // tweaked from sunset 2
+@brand-orange:          #f69f74;
+@brand-yellow:          #f8e16d;
+//
+// Secondary colours, not part of the primary palette
+@brand-green:           #69fc2c;
+
+
+@brand-primary:         @brand-blue;      // space blue
+@brand-success:         darken(@brand-green, 20%);  // green // #3abf03
+@brand-info:            darken(@brand-yellow, 10%); // yellow
+@brand-warning:         @brand-orange;      // orange
+//@brand-danger:          darken(saturate(@brand-orange, 60%), 10%);
+@brand-danger:    darken(saturate(@brand-red, 20%), 8%); // red
+@text-color:            @gray-darker;
+@link-color:            lighten(saturate(@brand-primary, 35%), 20%);
+@font-family-sans-serif:  "PT Sans", "Trebuchet", "Seravek", sans-serif;
+@font-family-serif:       "PT Serif", "Palatino", "Neue Swift", serif;
+@font-family-monospace:   "PT Mono", Monaco, monospace;
+@font-family-base:        @font-family-serif;
+// Halloween
+//@font-family-sans-serif:  "IM Fell English SC", Helvetica, Arial, sans-serif;
+//@font-family-serif:       "IM Fell English", serif;
+////** Default monospace fonts for `<code>`, `<kbd>`, and `<pre>`.
+//@font-family-monospace:   "Nova Mono", Menlo, Monaco, Consolas, monospace;
+//@font-family-base:        @font-family-serif;
+
+@mag1:        sqrt(sqrt(2));
+@mag2:        @mag1 * @mag1;
+@mag3:        @mag2 * @mag1;
+@mag4:        @mag3 * @mag1;
+
+@maghalf:     sqrt(@mag1);
+
+@font-size-base:          15px;
+@font-size-large:         ((@font-size-base * @mag1)); // 18px
+@font-size-small:         ((@font-size-base / @mag1)); // 13px
+
+@font-size-h1:            ceil((@font-size-base * @mag4)); // 31px
+@font-size-h2:            ceil((@font-size-base * @mag3)); // 26px
+@font-size-h3:            ceil((@font-size-base * @mag2)); // 22px
+@font-size-h4:            ceil((@font-size-base * @mag1)); // 18px
+@font-size-h5:            ceil((@font-size-base * @maghalf));// 16px
+@font-size-h6:            @font-size-base;
+// 'Caption' faces are actually created for small point sizes, 6-8 pt, but this works well:
+@headings-font-family:    "PT Sans Caption", sans-serif;
+
+//@headings-font-family:    "IM Fell DW Pica", serif; // Halloween
+
+@headings-font-weight:    400;
+@component-active-bg:       lighten(@brand-primary, 20%);
+@table-condensed-cell-padding:  3px;
+@btn-primary-bg:                 lighten(@brand-primary, 30%);
+@btn-pass-color:                 #fff;
+@btn-pass-bg:                    lighten(desaturate(@brand-success, 30%), 20%);
+@btn-pass-border:                darken(@btn-pass-bg, 5%);
+
+@zindex-tooltip:           1035; //1070;
+@navbar-default-bg:                lighten(saturate(@brand-red, 25%), 10%);
+@navbar-default-link-color:                #222;
+@navbar-default-link-hover-color:          #111;
+@navbar-default-link-active-color:         #111;
+@navbar-default-link-disabled-color:       #777;
+@navbar-default-toggle-icon-bar-bg:        #000;
+@navbar-inverse-color:                      lighten(@gray-light, 5%);
+@navbar-inverse-bg:                         @brand-primary;
+@navbar-inverse-link-color:                 #eee; // lighten(@gray-light, 15%);
+@navbar-inverse-link-hover-bg:              darken(@navbar-inverse-bg, 4%); // transparent;
+@navbar-inverse-link-active-bg:             darken(@navbar-inverse-bg, 8%); // darken(@navbar-inverse-bg, 10%);
+@nav-link-padding:                          10px 11px;
+@pagination-active-bg:                 lighten(@brand-primary, 20%);
+@state-success-text:             darken(@brand-success, 70%);
+@state-success-bg:               lighten(desaturate(@brand-success, 20%), 40%);
+@state-info-text:                darken(@brand-info, 70%);
+@state-info-bg:                  lighten(@brand-info, 32%);
+@state-warning-text:             darken(@brand-warning, 70%);
+@state-warning-bg:               lighten(@brand-warning, 10%);
+@state-danger-text:              darken(@brand-danger, 70%);
+@state-danger-bg:                lighten(saturate(@brand-danger, 50%), 20%);
+@tooltip-max-width:           250px;
+@tooltip-color:               @state-info-text;
+@tooltip-bg:                  darken(saturate(@state-info-bg, 15%), 25%);
+@tooltip-arrow-width:         8px;
+@label-primary-bg:            lighten(@brand-primary, 20%);
+@label-pass-bg:         lighten(desaturate(@brand-success, 30%), 20%);
+
+@label-info-bg:               darken(saturate(@brand-info, 5%), 12%);
+@alert-padding:               8px;
+@panel-pass-text:             @state-success-text;
+@panel-pass-border:           lighten(desaturate(@brand-success, 30%), 20%);
+@panel-pass-heading-bg:       @state-success-bg;
+
+@pre-bg:                      lighten(@brand-yellow, 28%);
+@pre-color:                   @gray-base;
+@blockquote-font-size:        (@font-size-base * @mag1);
+
+
+
+// New definitions used in the datatracker:
+
+.btn-pass {
+  .button-variant(@btn-pass-color; @btn-pass-bg; @btn-pass-border);
+}
+
+.label-pass {
+  .label-variant(@label-pass-bg);
+}
+
+ .label-info {
+   .label-variant(@label-info-bg);
+ }
+
+.panel-pass {
+  .panel-variant(@panel-pass-border; @panel-pass-text; @panel-pass-heading-bg; @panel-pass-border);
+}
+
+
+// XXX This change from before is not currently being applied, not sure how
+// critical this is:
+//--- /Users/lars/Downloads/bootstrap-3.3.5/less/mixins/forms.less        2015-06-16 10:13:22.000000000 +0200
+//+++ less/mixins/forms.less      2015-12-02 14:38:25.000000000 +0100
+//@@ -16,6 +16,7 @@
+//   &.radio-inline label,
+//   &.checkbox-inline label  {
+//     color: @text-color;
+//+    background-color: @background-color;
+//   }
+//   // Set the border and box shadow on specific inputs to match
+//   .form-control {

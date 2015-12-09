@@ -4,27 +4,20 @@ _______________________
 Content
 =======
 
-The files in this directory are modified versions of bootstrap_.  This is
-a cumbersome way to customize bootsrap, but as of the time of writing this
-(03 Apr 2015), there seems to be no provision for including modifications
-within the distributed build environment without either editing files in
-place, or copying and modifying parts of the build environment.
+The files in this directory are standard drop of the bootstrap sources (at
+the moment 3.3.6). All modifications are contained in less/ietf.less, which
+is included in modified less/theme.less and less/bootstrap.less.  This lets
+ietf.less override variables defined in variables.less.  ietf.less also adds
+a few additional styles that complement those defined in other less files
+(mostly, the various *-pass styles.)
 
-Bootstrap 3.3.4 was added in [9374], see the changes with::
+When upgrading to a new version of bootstrap, make sure to add
 
-   $ svn diff -r 9374:9894 bootstrap/less/
+  @import "ietf.less"
 
-Bootstrap 3.3.5 was added in [9894] and [9895], see the changes since then with::
+after each import of less/variables.less. At the moment, the only two locations
+where this occurs are in less/theme.less and less/bootstrap.less.
 
-   $ svn diff -r 9895 bootstrap/less/
-
-Modifications done::
-
-	less/variables.less	# modified with our datatracker-specific changes
-	less/buttons.less	# added .btn-pass
-	less/labels.less	# added .label-pass
-	less/panels.less	# added .panel-pass
-	less/mixins/forms.less	# modified inline label background-color
 
 Setup
 =====
