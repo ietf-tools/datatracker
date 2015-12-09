@@ -16,13 +16,14 @@
     <thead id="message-row">
        <tr>
 	  {% if doc.rev != latest_rev %}
-	  <th colspan="4" class="alert-warning">&nbsp;The information below is for an old version of the document</th>
+	  <th colspan="3" class="alert-warning">The information below is for an old version of the document</th>
 	  {% else %}
-	  <th colspan="4">&nbsp;</th>
+	  <th colspan="3"></th>
 	  {% endif %}  
        </tr>
     </thead>
 
+    <tbody class="meta">
     <tr>
       <th>{% if doc.meeting_related %}Meeting{% endif %} {{ doc.type.name }}</th>
       <td class="edit"></td>
@@ -82,7 +83,7 @@
 
     {% if presentations or can_manage_material %}
       <tr>
-        <th>On Agenda</th>
+        <th>On agenda</th>
         <td class="edit">
           {% if not snapshot and can_manage_material %}
             {% doc_edit_button "material_presentations" name=doc.name %}
@@ -104,6 +105,7 @@
       <td class="edit"></td>
       <td>{{ doc.time|date:"Y-m-d" }}</td>
     </tr>
+  </tbody>
   </table>
 
   <p class="buttonlist">
