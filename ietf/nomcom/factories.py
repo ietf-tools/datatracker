@@ -125,7 +125,6 @@ class PositionFactory(factory.DjangoModelFactory):
         model = Position
 
     name = factory.Faker('sentence',nb_words=10)
-    description = factory.Faker('paragraph',nb_sentences=4)
     is_open = True
 
 class NomineeFactory(factory.DjangoModelFactory):

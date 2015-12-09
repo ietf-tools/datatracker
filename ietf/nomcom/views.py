@@ -874,7 +874,7 @@ def edit_template(request, year, template_id):
 @role_required("Nomcom Chair", "Nomcom Advisor")
 def list_positions(request, year):
     nomcom = get_nomcom_by_year(year)
-    positions = nomcom.position_set.all()
+    positions = nomcom.position_set.order_by('-is_open')
 
     return render_to_response('nomcom/list_positions.html',
                               {'positions': positions,
@@ -936,3 +936,7 @@ def edit_position(request, year, position_id=None):
                                'nomcom': nomcom,
                                'is_chair_task' : True,
                               }, RequestContext(request))
+
+@role_required("Nomcom Chair", "Nomcom Advisor")
+def configuration_help(request, year):
+    return render(request,'nomcom/chair_help.html',{'year':year})

@@ -17,7 +17,6 @@ from ietf.nomcom.utils import (NOMINATION_RECEIPT_TEMPLATE, FEEDBACK_RECEIPT_TEM
                                get_user_email, validate_private_key, validate_public_key,
                                get_or_create_nominee, create_feedback_email)
 from ietf.person.models import Email
-from ietf.person.fields import SearchableEmailField
 from ietf.utils.fields import MultiEmailField
 from ietf.utils.mail import send_mail
 from ietf.mailtrigger.utils import gather_address_lists
@@ -566,13 +565,11 @@ class NomComTemplateForm(BaseNomcomForm, DBTemplateForm):
 
 class PositionForm(BaseNomcomForm, forms.ModelForm):
 
-    fieldsets = [('Position', ('name', 'description', 'is_open' ))]
-
-    incumbent = SearchableEmailField(required=False)
+    fieldsets = [('Position', ('name', 'is_open' ))]
 
     class Meta:
         model = Position
-        fields = ('name', 'description', 'is_open')
+        fields = ('name', 'is_open')
 
     def __init__(self, *args, **kwargs):
         self.nomcom = kwargs.pop('nomcom', None)

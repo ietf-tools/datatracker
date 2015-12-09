@@ -37,7 +37,6 @@ class PositionResource(ModelResource):
         filtering = { 
             "id": ALL,
             "name": ALL,
-            "description": ALL,
             "is_open": ALL,
             "nomcom": ALL_WITH_RELATIONS,
             "requirement": ALL_WITH_RELATIONS,

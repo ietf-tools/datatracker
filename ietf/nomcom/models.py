@@ -164,8 +164,7 @@ class NomineePosition(models.Model):
 
 class Position(models.Model):
     nomcom = models.ForeignKey('NomCom')
-    name = models.CharField(verbose_name='Name', max_length=255)
-    description = models.TextField(verbose_name='Description')
+    name = models.CharField(verbose_name='Name', max_length=255, help_text='This short description will appear on the Nomination and Feedback pages. Be as descriptive as necessary. Past examples: "Transport AD", "IAB Member"')
     requirement = models.ForeignKey(DBTemplate, related_name='requirement', null=True, editable=False)
     questionnaire = models.ForeignKey(DBTemplate, related_name='questionnaire', null=True, editable=False)
     is_open = models.BooleanField(verbose_name='Is open', default=False)

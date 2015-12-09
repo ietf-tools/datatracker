@@ -430,7 +430,7 @@ class NomcomViewsTest(TestCase):
         nomcom = get_nomcom_by_year(self.year)
         count = nomcom.position_set.all().count()
         login_testing_unauthorized(self, CHAIR_USER, self.edit_position_url)
-        test_data = {"action" : "add", "name": "testpos", "description": "test description"}
+        test_data = {"action" : "add", "name": "testpos" }
         r = self.client.post(self.edit_position_url, test_data)
         self.assertEqual(r.status_code, 302)
         self.assertEqual(nomcom.position_set.all().count(), count+1)
@@ -1181,3 +1181,15 @@ class FeedbackLastSeenTests(TestCase):
         self.assertEqual(response.status_code,200)
         q = PyQuery(response.content)
         self.assertEqual( len(q('.label-success')), 0 )
+
+class NewActiveNomComTests(TestCase):
+
+    def setUp(self):
+        self.nc = NomComFactory.create(**nomcom_kwargs_for_year(group__state_id='conclude'))
+        self.chair = self.nc.group.role_set.filter(name='chair').first().person
+
+    def test_help(self):
+        url = reverse('nomcom_chair_help',kwargs={'year':self.nc.year()})
+        login_testing_unauthorized(self, self.chair.user.username, url)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code,200)

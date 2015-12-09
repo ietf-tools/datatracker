@@ -42,6 +42,7 @@
             {% if nomcom.group.state_id == 'active' %}
             <li {% if selected == "edit_members" %}class="active"{% endif %}><a href="{% url "nomcom_edit_members" year %}">Edit Members</a></li>
             {% endif %}
+            <li {% if selected == "help" %}class="active"{% endif %}><a href="{% url "nomcom_chair_help" year %}">Configuration Help</a></li>
         </ul>
       </li>
 
