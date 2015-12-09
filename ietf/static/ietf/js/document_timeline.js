@@ -10,7 +10,7 @@ var width;
 
 function offset(d, i) {
     // increase the y offset if the document name changed in this revision
-    if (i > 0 && data[i - 1].name !== d.name || d.rev.match("rfc"))
+    if (i > 0 && data[i - 1].name !== d.name || d.rev.match("^rfc\d+$"))
         bar_y += bar_height;
     return "translate(" + x_scale(d.published) + ", " + bar_y + ")";
 }
@@ -59,8 +59,7 @@ function update_timeline() {
 
 
 function draw_timeline() {
-    bar_height = parseFloat($("body").css('line-height'));
-    // bar_height = 20;
+    bar_height = parseFloat($("body").css("line-height"));
 
     var div = $("#timeline");
     if (div.is(":empty"))
@@ -70,12 +69,16 @@ function draw_timeline() {
     var gradient = chart.append("defs")
         .append("linearGradient")
             .attr("id", "gradient");
-    gradient.append('stop')
-        .attr('class', 'stop-left')
-        .attr('offset', '0');
-    gradient.append('stop')
-        .attr('class', 'stop-right')
-        .attr('offset', '1');
+    gradient.append("stop")
+        .attr({
+            class: "gradient left",
+            offset: 0
+        });
+    gradient.append("stop")
+        .attr({
+            class: "gradient right",
+            offset: 1
+        });
 
     var y_labels = data
         .map(function(elem) { return elem.name; })
@@ -121,6 +124,10 @@ function draw_timeline() {
         })
         .text(function(d) { return d.rev; });
 
+    // since the gradient is defined inside the SVG, we need to set the CSS
+    // style here, so the relative URL works
+    $("#timeline .bar:nth-last-child(2) rect").css("fill", "url(#gradient)");
+
     var y_scale = d3.scale.ordinal()
         .domain(y_labels)
         .rangePoints([0, bar_y]);
@@ -150,22 +157,24 @@ function draw_timeline() {
     d3.select(".x.axis").each(function() {
         x_label_height = this.getBBox().height;
     });
-    chart.attr('height', bar_y + x_label_height);
+    chart.attr("height", bar_y + x_label_height);
 }
 
 
 d3.json("doc.json", function(error, json) {
-    if (error) return; // console.warn(error);
+    if (error) return;
     data = json["rev_history"];
 
-    // make js dates out of publication dates
-    data.forEach(function(d) { d.published = new Date(d.published); });
+    if (data.length) {
+        // make js dates out of publication dates
+        data.forEach(function(d) { d.published = new Date(d.published); });
 
-    // add pseudo entry 185 days after last revision (when the ID will expire)
-    var pseudo = new Date(data[data.length - 1].published.getTime() +
-                          1000*60*60*24*185);
-    data.push({ name: "", rev: "", published: pseudo});
-    draw_timeline();
+        // add pseudo entry 185 days after last rev (when the ID will expire)
+        var pseudo = new Date(data[data.length - 1].published.getTime() +
+                              1000*60*60*24*185);
+        data.push({ name: "", rev: "", published: pseudo});
+        draw_timeline();
+    }
 });
 
 

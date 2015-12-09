@@ -878,7 +878,7 @@ def ballot_popup(request, name, ballot_id):
                               context_instance=RequestContext(request))
 
 
-def document_json(request, name):
+def document_json(request, name, rev=None):
     doc = get_object_or_404(Document, docalias__name=name)
 
     def extract_name(s):

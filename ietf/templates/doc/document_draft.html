@@ -11,33 +11,6 @@
 
 {% block morecss %}
 .inline	{ display: inline; }
-
-#timeline { font-size: small; }
-
-#timeline .axis path, #timeline .axis line {
-	fill: none;
-	stroke: black;
-}
-
-#timeline .axis.y path, #timeline .axis.y line { stroke: none; }
-
-#timeline .axis.x text { dominant-baseline: central; }
-
-#timeline .bar text {
-	fill: white;
-	dominant-baseline: central;
-}
-
-{% comment %} like label-success {% endcomment %}
-#timeline .bar:nth-child(odd) rect { fill: #5CB85C; }
-
-{% comment %} like label-primary {% endcomment %}
-#timeline .bar:nth-child(even) rect { fill: #337AB7; }
-
-{% comment %} like label-warning {% endcomment %}
-.stop-left { stop-color: #F0AD4E; }
-.stop-right { stop-color: white; }
-#timeline .bar:nth-last-child(4) rect { fill: url(#gradient); }
 {% endblock %}
 
 {% block title %}
@@ -520,9 +493,7 @@
       </div>
     </div>
   {% endif %}
-
 {% endblock %}
-
 
 {% block js %}
 <script src="{% static 'd3/d3.min.js' %}"></script>

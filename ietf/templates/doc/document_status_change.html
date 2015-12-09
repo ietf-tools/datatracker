@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
-
+{% load staticfiles %}
 {% load ietf_filters %}
 
 {% block title %}{{ doc.title }}{% endblock %}
@@ -11,6 +11,7 @@
   {{ top|safe }}
 
   {% include "doc/revisions_list.html" %}
+  <div id="timeline"></div>
 
   <table class="table table-condensed">
     <thead id="message-row">
@@ -153,3 +154,8 @@
 
 {% endblock %}
 
+
+{% block js %}
+<script src="{% static 'd3/d3.min.js' %}"></script>
+<script src="{% static 'ietf/js/document_timeline.js' %}"></script>
+{% endblock %}

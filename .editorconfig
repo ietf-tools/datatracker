@@ -11,5 +11,6 @@ indent_style = space
 indent_size = 4
 end_of_line = lf
 charset = utf-8
-trim_trailing_whitespace = true
-insert_final_newline = true
+# to avoid tripping Henrik's commit hook:
+trim_trailing_whitespace = false
+insert_final_newline = false
