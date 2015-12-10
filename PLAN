@@ -24,6 +24,5 @@ Planned work in rough order
 
 * Performance analysis of database table and index setup
 
-
-
+* Code refactoring to avoid code changes for new WG document tags
 
