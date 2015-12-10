@@ -10,15 +10,17 @@ var width;
 
 function offset(d, i) {
     // increase the y offset if the document name changed in this revision
-    if (i > 0 && data[i - 1].name !== d.name || d.rev.match("^rfc\d+$"))
+    if (i > 0 && data[i - 1].name !== d.name || d.rev.match("^rfc\d+$")) {
         bar_y += bar_height;
+    }
     return "translate(" + x_scale(d.published) + ", " + bar_y + ")";
 }
 
 
 function bar_width(d, i) {
-    if (i < data.length - 1)
+    if (i < data.length - 1) {
         return x_scale(data[i + 1].published) - x_scale(d.published);
+    }
 }
 
 
@@ -62,8 +64,9 @@ function draw_timeline() {
     bar_height = parseFloat($("body").css("line-height"));
 
     var div = $("#timeline");
-    if (div.is(":empty"))
+    if (div.is(":empty")) {
         div.append("<svg></svg>");
+    }
     var chart = d3.select("#timeline svg").attr("width", width);
 
     var gradient = chart.append("defs")
@@ -120,7 +123,7 @@ function draw_timeline() {
     g.append("text")
         .attr({
             x: 3,
-            y: bar_height/2
+            y: bar_height / 2
         })
         .text(function(d) { return d.rev; });
 
@@ -146,7 +149,7 @@ function draw_timeline() {
     chart.append("g")
         .attr({
             class: "y axis",
-            transform: "translate(10, " + bar_height/2 + ")"
+            transform: "translate(10, " + bar_height / 2 + ")"
         })
         .call(y_axis)
         .selectAll("text")
@@ -162,8 +165,8 @@ function draw_timeline() {
 
 
 d3.json("doc.json", function(error, json) {
-    if (error) return;
-    data = json["rev_history"];
+    if (error) { return; }
+    data = json.rev_history;
 
     if (data.length) {
         // make js dates out of publication dates
@@ -171,8 +174,8 @@ d3.json("doc.json", function(error, json) {
 
         // add pseudo entry 185 days after last rev (when the ID will expire)
         var pseudo = new Date(data[data.length - 1].published.getTime() +
-                              1000*60*60*24*185);
-        data.push({ name: "", rev: "", published: pseudo});
+                              1000 * 60 * 60 * 24 * 185);
+        data.push({name: "", rev: "", published: pseudo});
         draw_timeline();
     }
 });
