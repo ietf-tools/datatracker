@@ -95,4 +95,12 @@
      <td></td>
   {% endif %}
 
+  {% if color_row_positions %}
+    {% with doc|ballotposition:user as pos %}
+    <td {% if pos %}class="changebar position-{{pos.slug}}"{% endif %}></td>
+    {% endwith %}
+  {% else %}
+     <td></td>
+  {% endif %}
+  
 </tr>
