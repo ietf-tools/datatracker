@@ -61,9 +61,15 @@ Available Grunt commands
    grunt dist			# (Just compile CSS and JavaScript)
 
 Regenerates the ``dist/`` directory with compiled and minified CSS and JavaScript
-files. As a Bootstrap user, this is normally the command you want.  Changes to
-the ``dist/`` directory will be picked up by ``manage.py collectstatic`` as part
-of ``bin/mkrelease``.
+files. As a Bootstrap user, this is normally the command you want.  Changes in the
+``dist/`` directory which are committed to the svn repository will be replicated in
+the ``ietf/static/ietf/bootstrap`` directory through and svn:externals declaration.
+
+During development, you'll need to manually rsync newly generated files in place
+after doing ``grunt dist``:  ``rsync -a dist/ ../ietf/static/ietf/bootstrap/``)
+
+During deployment, they will be picked up by ``manage.py collectstatic`` and placed
+in the production environment's static directory.
 
 ::
 
