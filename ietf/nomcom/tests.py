@@ -43,6 +43,14 @@ def get_cert_files():
         client_test_cert_files = generate_cert()
     return client_test_cert_files
 
+def build_test_public_keys_dir(obj):
+    obj.nomcom_public_keys_dir = os.path.abspath("tmp-nomcom-public-keys-dir")
+    if not os.path.exists(obj.nomcom_public_keys_dir):
+        os.mkdir(obj.nomcom_public_keys_dir)
+    settings.NOMCOM_PUBLIC_KEYS_DIR = obj.nomcom_public_keys_dir
+
+def clean_test_public_keys_dir(obj):
+        shutil.rmtree(obj.nomcom_public_keys_dir)
 
 class NomcomViewsTest(TestCase):
     """Tests to create a new nomcom"""
@@ -53,11 +61,7 @@ class NomcomViewsTest(TestCase):
         return response
 
     def setUp(self):
-        self.nomcom_public_keys_dir = os.path.abspath("tmp-nomcom-public-keys-dir")
-        if not os.path.exists(self.nomcom_public_keys_dir):
-            os.mkdir(self.nomcom_public_keys_dir)
-        settings.NOMCOM_PUBLIC_KEYS_DIR = self.nomcom_public_keys_dir
-
+        build_test_public_keys_dir(self)
         nomcom_test_data()
         self.cert_file, self.privatekey_file = get_cert_files()
         self.year = NOMCOM_YEAR
@@ -81,7 +85,7 @@ class NomcomViewsTest(TestCase):
         self.public_nominate_url = reverse('nomcom_public_nominate', kwargs={'year': self.year})
 
     def tearDown(self):
-        shutil.rmtree(self.nomcom_public_keys_dir)
+        clean_test_public_keys_dir(self)
 
     def access_member_url(self, url):
         login_testing_unauthorized(self, COMMUNITY_USER, url)
@@ -753,16 +757,12 @@ class NomineePositionStateSaveTest(TestCase):
     """Tests for the NomineePosition save override method"""
 
     def setUp(self):
-        self.nomcom_public_keys_dir = os.path.abspath("tmp-nomcom-public-keys-dir")
-        if not os.path.exists(self.nomcom_public_keys_dir):
-            os.mkdir(self.nomcom_public_keys_dir)
-        settings.NOMCOM_PUBLIC_KEYS_DIR = self.nomcom_public_keys_dir
-
+        build_test_public_keys_dir(self)
         nomcom_test_data()
         self.nominee = Nominee.objects.get(email__person__user__username=COMMUNITY_USER)
 
     def tearDown(self):
-        shutil.rmtree(self.nomcom_public_keys_dir)
+        clean_test_public_keys_dir(self)
 
     def test_state_autoset(self):
         """Verify state is autoset correctly"""
@@ -792,16 +792,13 @@ class NomineePositionStateSaveTest(TestCase):
 class FeedbackTest(TestCase):
 
     def setUp(self):
-        self.nomcom_public_keys_dir = os.path.abspath("tmp-nomcom-public-keys-dir")
-        if not os.path.exists(self.nomcom_public_keys_dir):
-            os.mkdir(self.nomcom_public_keys_dir)
-        settings.NOMCOM_PUBLIC_KEYS_DIR = self.nomcom_public_keys_dir
+        build_test_public_keys_dir(self)
 
         nomcom_test_data()
         self.cert_file, self.privatekey_file = get_cert_files()
 
     def tearDown(self):
-        shutil.rmtree(self.nomcom_public_keys_dir)
+        clean_test_public_keys_dir(self)
 
     def test_encrypted_comments(self):
 
@@ -828,11 +825,7 @@ class FeedbackTest(TestCase):
 class ReminderTest(TestCase):
 
     def setUp(self):
-        self.nomcom_public_keys_dir = os.path.abspath("tmp-nomcom-public-keys-dir")
-        if not os.path.exists(self.nomcom_public_keys_dir):
-            os.mkdir(self.nomcom_public_keys_dir)
-        settings.NOMCOM_PUBLIC_KEYS_DIR = self.nomcom_public_keys_dir
-
+        build_test_public_keys_dir(self)
         nomcom_test_data()
         self.nomcom = get_nomcom_by_year(NOMCOM_YEAR)
         self.cert_file, self.privatekey_file = get_cert_files()
@@ -872,7 +865,7 @@ class ReminderTest(TestCase):
         feedback.nominees.add(n)
 
     def tearDown(self):
-        shutil.rmtree(self.nomcom_public_keys_dir)
+        clean_test_public_keys_dir(self)
 
     def test_is_time_to_send(self):
         self.nomcom.reminder_interval = 4
@@ -928,10 +921,14 @@ class ReminderTest(TestCase):
 class InactiveNomcomTests(TestCase):
 
     def setUp(self):
+        build_test_public_keys_dir(self)
         self.nc = NomComFactory.create(**nomcom_kwargs_for_year(group__state_id='conclude'))
         self.plain_person = PersonFactory.create()
         self.chair = self.nc.group.role_set.filter(name='chair').first().person
         self.member = self.nc.group.role_set.filter(name='member').first().person
+
+    def tearDown(self):
+        clean_test_public_keys_dir(self)
 
     def test_feedback_closed(self):
         for view in ['nomcom_public_feedback', 'nomcom_private_feedback']:
@@ -1118,6 +1115,7 @@ class InactiveNomcomTests(TestCase):
 class FeedbackLastSeenTests(TestCase):
 
     def setUp(self):
+        build_test_public_keys_dir(self)
         self.nc = NomComFactory.create(**nomcom_kwargs_for_year(group__state_id='conclude'))
         self.author = PersonFactory.create().email_set.first().address
         self.member = self.nc.group.role_set.filter(name='member').first().person
@@ -1131,6 +1129,9 @@ class FeedbackLastSeenTests(TestCase):
         self.hour_ago = now - datetime.timedelta(hours=1)
         self.half_hour_ago = now - datetime.timedelta(minutes=30)
         self.second_from_now = now + datetime.timedelta(seconds=1)
+
+    def tearDown(self):
+        clean_test_public_keys_dir(self)
 
     def test_feedback_index_badges(self):
         url = reverse('nomcom_view_feedback',kwargs={'year':self.nc.year()})
@@ -1185,8 +1186,12 @@ class FeedbackLastSeenTests(TestCase):
 class NewActiveNomComTests(TestCase):
 
     def setUp(self):
+        build_test_public_keys_dir(self)
         self.nc = NomComFactory.create(**nomcom_kwargs_for_year(group__state_id='conclude'))
         self.chair = self.nc.group.role_set.filter(name='chair').first().person
+
+    def tearDown(self):
+        clean_test_public_keys_dir(self)
 
     def test_help(self):
         url = reverse('nomcom_chair_help',kwargs={'year':self.nc.year()})
