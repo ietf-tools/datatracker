@@ -1116,7 +1116,7 @@ class FeedbackLastSeenTests(TestCase):
 
     def setUp(self):
         build_test_public_keys_dir(self)
-        self.nc = NomComFactory.create(**nomcom_kwargs_for_year(group__state_id='conclude'))
+        self.nc = NomComFactory.create(**nomcom_kwargs_for_year())
         self.author = PersonFactory.create().email_set.first().address
         self.member = self.nc.group.role_set.filter(name='member').first().person
         self.nominee = self.nc.nominee_set.first()
@@ -1187,7 +1187,7 @@ class NewActiveNomComTests(TestCase):
 
     def setUp(self):
         build_test_public_keys_dir(self)
-        self.nc = NomComFactory.create(**nomcom_kwargs_for_year(group__state_id='conclude'))
+        self.nc = NomComFactory.create(**nomcom_kwargs_for_year())
         self.chair = self.nc.group.role_set.filter(name='chair').first().person
 
     def tearDown(self):

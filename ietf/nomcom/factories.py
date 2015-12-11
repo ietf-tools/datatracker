@@ -84,7 +84,7 @@ class NomComFactory(factory.DjangoModelFactory):
 
     group = factory.SubFactory(GroupFactory,type_id='nomcom')
 
-    public_key = factory.django.FileField(data=cert,storage=FileSystemStorage(location=settings.NOMCOM_PUBLIC_KEYS_DIR))    
+    public_key = factory.django.FileField(data=cert)    
 
     @factory.post_generation
     def populate_positions(self, create, extracted, **kwargs):
