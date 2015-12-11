@@ -1,6 +1,9 @@
 import factory
 import random
 
+from django.core.files.storage import FileSystemStorage
+from django.conf import settings
+
 from ietf.nomcom.models import NomCom, Position, Feedback, Nominee, NomineePosition
 from ietf.group.factories import GroupFactory
 from ietf.person.factories import PersonFactory
@@ -81,7 +84,7 @@ class NomComFactory(factory.DjangoModelFactory):
 
     group = factory.SubFactory(GroupFactory,type_id='nomcom')
 
-    public_key = factory.django.FileField(data=cert)    
+    public_key = factory.django.FileField(data=cert,storage=FileSystemStorage(location=settings.NOMCOM_PUBLIC_KEYS_DIR))    
 
     @factory.post_generation
     def populate_positions(self, create, extracted, **kwargs):
