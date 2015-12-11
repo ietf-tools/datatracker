@@ -5,12 +5,14 @@ from StringIO import StringIO
 from django.conf import settings
 from django.core.urlresolvers import reverse as urlreverse
 
-from ietf.utils.test_utils import TestCase
+from ietf.doc.models import State
 from ietf.person.models import Person
 from ietf.submit.models import Preapproval
+from ietf.utils.test_utils import TestCase
 from ietf.utils.test_data import make_test_data
+from ietf.secr.drafts.email import get_email_initial
 
-#from pyquery import PyQuery
+from pyquery import PyQuery
 
 SECR_USER='secretary'
 
@@ -83,6 +85,32 @@ class MainTestCase(TestCase):
         # can't test this directly, test via drafts actions
         pass
     
+    def test_get_email_initial(self):
+        # Makes sure that a manual posting by the Secretariat of an I-D that is
+        # in the RFC Editor Queue will result in notification of the RFC Editor
+        draft = make_test_data()
+        state = State.objects.get(type='draft-iesg',slug='rfcqueue')
+        draft.set_state(state)
+        data = get_email_initial(draft,type='revision')
+        self.assertTrue('rfc-editor@rfc-editor.org' in data['to'])
+
+    def test_revision_rfcqueue(self):
+        # Makes sure that a manual posting by the Secretariat of an I-D that is
+        # in the RFC Editor Queue will result in notification of the RFC Editor
+        draft = make_test_data()
+        state = State.objects.get(type='draft-iesg',slug='rfcqueue')
+        draft.set_state(state)
+        url = urlreverse('drafts_revision', kwargs={'id':draft.name})
+        self.client.login(username="secretary", password="secretary+password")
+        rev = str(int(draft.rev) + 1).zfill(2)
+        file = StringIO("This is a test.")
+        file.name = "%s-%s.txt" % (draft.name, rev)
+        post = {'title':'The Title','pages':'10','txt':file}
+        response = self.client.post(url,post,follow=True)
+        self.assertEqual(response.status_code, 200)
+        q = PyQuery(response.content)
+        self.assertTrue('rfc-editor@rfc-editor.org' in q("#draft-confirm-email tr:first-child td").html())
+
     def test_makerfc(self):
         draft = make_test_data()
         url = urlreverse('drafts_edit', kwargs={'id':draft.name})
