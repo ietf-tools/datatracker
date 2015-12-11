@@ -1,9 +1,6 @@
 import factory
 import random
 
-from django.core.files.storage import FileSystemStorage
-from django.conf import settings
-
 from ietf.nomcom.models import NomCom, Position, Feedback, Nominee, NomineePosition
 from ietf.group.factories import GroupFactory
 from ietf.person.factories import PersonFactory

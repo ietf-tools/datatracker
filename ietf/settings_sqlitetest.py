@@ -5,7 +5,7 @@
 #   ./manage.py test --settings=settings_sqlitetest doc.ChangeStateTestCase
 #
 
-import io
+import os 
 from settings import *                  # pyflakes:ignore
 
 # Workaround to avoid spending minutes stepping through the migrations in
