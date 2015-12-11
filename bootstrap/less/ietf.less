@@ -11,11 +11,11 @@
 @brand-yellow:          #f8e16d;
 //
 // Secondary colours, not part of the primary palette
-@brand-green:           #69fc2c;
+@brand-green:           #78D916;
 
 
 @brand-primary:         @brand-blue;      // space blue
-@brand-success:         darken(@brand-green, 20%);  // green // #3abf03
+@brand-success:         @brand-green;  // green // #3abf03
 @brand-info:            darken(@brand-yellow, 10%); // yellow
 @brand-warning:         @brand-orange;      // orange
 //@brand-danger:          darken(saturate(@brand-orange, 60%), 10%);
@@ -121,6 +121,23 @@
 .panel-pass {
   .panel-variant(@panel-pass-border; @panel-pass-text; @panel-pass-heading-bg; @panel-pass-border);
 }
+
+
+.position-discuss,
+.position-block		{ background-color: @brand-warning; }
+.position-yes		{ background-color: @brand-success; }
+.position-noobj		{ background-color: hsl(hue(@brand-success),  80%, 85%); }
+.position-abstain	{ background-color: hsl(hue(@brand-primary),  80%, 70%); }
+.position-recuse	{ background-color: lighten(@gray-base, 50%); }
+.position-norecord	{ background-color: @body-bg; }
+
+.position-discuss-row,
+.position-block-row    { background-color: hsl(hue(@brand-warning), 90%, 92%) !important ; }
+.position-yes-row      { background-color: hsl(hue(@brand-success),100%, 88%) !important ; }
+.position-noobj-row    { background-color: hsl(hue(@brand-success), 80%, 97%) !important ; }
+.position-abstain-row  { background-color: hsl(hue(@brand-primary), 90%, 95%) !important ; }
+.position-recuse-row   { background-color: lighten(@gray-base, 85%)	      !important ; }
+.position-norecord-row { background-color: inherit; }
 
 
 // XXX This change from before is not currently being applied, not sure how

@@ -126,20 +126,23 @@ label.required:after { content: "\2217"; color: #a94442; font-weight: bold; }
 .nav-tabs[role=tablist] { margin-bottom: 0.7em; }
 
 /* Styles needed for the ballot table */
+/*
 .position-discuss,
-.position-block    { background-color: #d4584d; } /* @alert-danger-bg */
-.position-yes      { background-color: #67F72B; } /* @brand-success */
-.position-noobj    { background-color: #D1F7C1; } /* lighten(@brand-success) */
-.position-abstain  { background-color: #f69f74; } /* @brand-warning */
+.position-block    { background-color: #f0ad4e; }
+.position-yes      { background-color: #67F72B; }
+.position-noobj    { background-color: #D1F7C1; }
+.position-abstain  { background-color: #8C73F5; }
 .position-recuse   { background-color: #808080; }
-.position-norecord { background-color: inherit; }
+.position-norecord { background-color: #FFFFFF; }
 .position-discuss-row,
-.position-block-row    { background-color: #F1CBC8 !important ; } /* lighter variants of above */
-.position-yes-row      { background-color: #E1FDD6 !important ; }
-.position-noobj-row    { background-color: #F2FCEE !important ; }
-.position-abstain-row  { background-color: #FAD0BB !important ; }
+.position-block-row    { background-color: #FFE5d9 !important ; }
+.position-yes-row      { background-color: #DBFFCC !important ; }
+.position-noobj-row    { background-color: #F4FFF0 !important ; }
+.position-abstain-row  { background-color: #eae5ff !important ; }
 .position-recuse-row   { background-color: #D9D9D9 !important ; }
-.position-norecord-row { background-color: inherit; }
+.position-norecord-row { background-color: #ffffff; }
+*/
+
 .ballot-icon table td { border: 1px solid #ddd; height: 10px; width: 8px; }
 .ballot-icon table .my { border: 2px solid #000;}
 .ballot-icon table { margin: 0 0 10px 10px; }
@@ -413,6 +416,8 @@ td.ad div { border-bottom: solid #ccc 1px; }
 .milestone { font-style: italic; }
 
 .adname { padding-bottom: .5em; line-height: 1em;}
+
+.changebar { width: 0.3em; }
 
 h1 small .pull-right { margin-top: 10.5px; }
 
