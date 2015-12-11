@@ -94,7 +94,7 @@ fieldset[disabled] .btn-pass.focus {
 }
 .position-discuss,
 .position-block {
-  background-color: #f69f74;
+  background-color: #e12817;
 }
 .position-yes {
   background-color: #78d916;
@@ -113,7 +113,7 @@ fieldset[disabled] .btn-pass.focus {
 }
 .position-discuss-row,
 .position-block-row {
-  background-color: #fde4d8 !important;
+  background-color: #fddbd8 !important;
 }
 .position-yes-row {
   background-color: #e1ffc2 !important;
