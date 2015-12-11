@@ -103,10 +103,10 @@ fieldset[disabled] .btn-pass.focus {
   background-color: #d9f7ba;
 }
 .position-abstain {
-  background-color: #8c75f0;
+  background-color: #f09e75;
 }
 .position-recuse {
-  background-color: #808080;
+  background-color: #8c75f0;
 }
 .position-norecord {
   background-color: #fff;
@@ -122,10 +122,10 @@ fieldset[disabled] .btn-pass.focus {
   background-color: #f7fdf1 !important;
 }
 .position-abstain-row {
-  background-color: #ebe7fe !important;
+  background-color: #fde4d8 !important;
 }
 .position-recuse-row {
-  background-color: #d9d9d9 !important;
+  background-color: #ebe7fe !important;
 }
 .position-norecord-row {
   background-color: inherit;
