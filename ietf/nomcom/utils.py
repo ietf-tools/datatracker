@@ -29,7 +29,7 @@ import debug                            # pyflakes:ignore
 MAIN_NOMCOM_TEMPLATE_PATH = '/nomcom/defaults/'
 QUESTIONNAIRE_TEMPLATE = 'position/questionnaire.txt'
 HEADER_QUESTIONNAIRE_TEMPLATE = 'position/header_questionnaire.txt'
-REQUIREMENTS_TEMPLATE = 'position/requirements.txt'
+REQUIREMENTS_TEMPLATE = 'position/requirements'
 HOME_TEMPLATE = 'home.rst'
 INEXISTENT_PERSON_TEMPLATE = 'email/inexistent_person.txt'
 NOMINEE_EMAIL_TEMPLATE = 'email/new_nominee.txt'

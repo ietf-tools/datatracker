@@ -7,6 +7,7 @@ from django.conf import settings
 from django.core.files.storage import FileSystemStorage
 from django.contrib.auth.models import User
 from django.template.loader import render_to_string
+from django.template.defaultfilters import linebreaks
 
 from ietf.nomcom.fields import EncryptedTextField
 from ietf.person.models import Person,Email
@@ -201,7 +202,10 @@ class Position(models.Model):
         return render_to_string(self.questionnaire.path, {'position': self})
 
     def get_requirement(self):
-        return render_to_string(self.requirement.path, {'position': self})
+        rendered = render_to_string(self.requirement.path, {'position': self})
+        if self.requirement.type_id=='plain':
+            rendered = linebreaks(rendered)
+        return rendered
 
 
 class Feedback(models.Model):
