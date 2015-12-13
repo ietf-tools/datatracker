@@ -9,7 +9,7 @@ leave whitespace alone on lines without code changes.
 import os
 import sys
 import difflib
-import debug
+#import debug
 from pysvn import Client, Transaction
 
 prog = os.path.basename(sys.argv[0])
@@ -40,6 +40,14 @@ def normalize_sequence(seq):
         o.append(normalize(l))
     return o
 
+def normalize_file_end(seq):
+    while True and seq:
+        if seq[-1].strip() == "":
+            del seq[-1]
+        else:
+            break
+    return seq
+
 def count(gen):
     return sum(1 for _ in gen)
 
@@ -59,7 +67,7 @@ def inc_ab(flag):
 
 def get_chunks(unidiff):
     if not unidiff:
-        return []
+        return [], []
     chunks = []
     chunk = []
     intro = unidiff[0:2]
@@ -91,6 +99,10 @@ for path in changes:
     new = tx.cat(path).splitlines()
     old = client.cat("file://"+os.path.join(repo,path)).splitlines()
 
+    # Added trailing space can mess up the comparison -- eliminate it
+    new = normalize_file_end(new)
+    old = normalize_file_end(old)
+
     plain_diff = list(difflib.unified_diff(old, new, "%s (repository)"%path, "%s (commit)"%path, lineterm="" ))
     old = normalize_sequence(old)
     new = normalize_sequence(new)
@@ -104,10 +116,14 @@ for path in changes:
     if white_count != plain_count and not is_whitespace_cleanup:
         intro, plain_chunks = get_chunks(plain_diff)
         intro, white_chunks = get_chunks(white_diff)
+        deletes = []
         for chunk in white_chunks:
             for i in range(len(plain_chunks)):
                 if chunk == plain_chunks[i]:
-                    del plain_chunks[i]
+                    deletes += [i]
+        deletes.reverse()
+        for i in deletes:
+            del plain_chunks[i]            
         issue = intro
         for chunk in plain_chunks:
             issue += chunk
