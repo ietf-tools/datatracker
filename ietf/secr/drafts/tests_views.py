@@ -87,8 +87,13 @@ class MainTestCase(TestCase):
     
     def test_get_email_initial(self):
         # Makes sure that a manual posting by the Secretariat of an I-D that is
-        # in the RFC Editor Queue will result in notification of the RFC Editor
+        # in the RFC Editor Queue will result in notification of the RFC Editor,
+        # but earlier in the approval process does not
         draft = make_test_data()
+        state = State.objects.get(type='draft-iesg',slug='ad-eval')
+        draft.set_state(state)
+        data = get_email_initial(draft,type='revision')
+        self.assertFalse('rfc-editor@rfc-editor.org' in data['to'])
         state = State.objects.get(type='draft-iesg',slug='rfcqueue')
         draft.set_state(state)
         data = get_email_initial(draft,type='revision')
