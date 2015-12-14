@@ -39,9 +39,15 @@ class PositionNomineeField(forms.ChoiceField):
         positions = Position.objects.get_by_nomcom(self.nomcom).opened().order_by('name')
         results = []
         for position in positions:
-            nominees = [('%s_%s' % (position.id, i.id), unicode(i)) for i in Nominee.objects.get_by_nomcom(self.nomcom).not_duplicated().filter(nominee_position=position).select_related("email", "email__person")]
+            accepted_nominees = [np.nominee for np in NomineePosition.objects.filter(position=position,state='accepted').exclude(nominee__duplicated__isnull=False)]
+            nominees = [('%s_%s' % (position.id, i.id), unicode(i)) for i in accepted_nominees]
             if nominees:
-                results.append((position.name, nominees))
+                results.append((position.name+" (Accepted)", nominees))
+        for position in positions:
+            other_nominees = [np.nominee for np in NomineePosition.objects.filter(position=position).exclude(state='accepted').exclude(nominee__duplicated__isnull=False)]
+            nominees = [('%s_%s' % (position.id, i.id), unicode(i)) for i in other_nominees]
+            if nominees:
+                results.append((position.name+" (Declined or Pending)", nominees))
         kwargs['choices'] = results
         super(PositionNomineeField, self).__init__(*args, **kwargs)
 
@@ -671,7 +677,7 @@ class MutableFeedbackForm(forms.ModelForm):
         if self.feedback_type.slug != 'nomina':
             self.fields['nominee'] = MultiplePositionNomineeField(nomcom=self.nomcom,
                                                                   required=True,
-                                                                  widget=forms.SelectMultiple,
+                                                                  widget=forms.SelectMultiple(attrs={'class':'nominee_multi_select','size':'12'}),
                                                                   help_text='Hold down "Control", or "Command" on a Mac, to select more than one.')
         else:
             self.fields['position'] = forms.ModelChoiceField(queryset=Position.objects.get_by_nomcom(self.nomcom).opened(), label="Position")
