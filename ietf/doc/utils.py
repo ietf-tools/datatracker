@@ -8,6 +8,7 @@ from django.conf import settings
 from django.db.models.query import EmptyQuerySet
 from django.forms import ValidationError
 from django.utils.html import strip_tags, escape
+from django.core.urlresolvers import reverse as urlreverse
 
 from ietf.doc.models import Document, DocHistory, State
 from ietf.doc.models import DocAlias, RelatedDocument, BallotType, DocReminder
@@ -561,7 +562,8 @@ def crawl_history(doc):
                     retval.append({
                         'name': d.name,
                         'rev': e.newrevisiondocevent.rev,
-                        'published': e.time.isoformat()
+                        'published': e.time.isoformat(),
+                        'url': urlreverse("doc_view", kwargs=dict(name=d)) + e.newrevisiondocevent.rev + "/"
                     })
 
     if doc.type_id == "draft":
@@ -572,6 +574,7 @@ def crawl_history(doc):
         retval.append({
             'name': e.doc.canonical_name(),
             'rev': e.doc.canonical_name(),
-            'published': e.time.isoformat()
+            'published': e.time.isoformat(),
+            'url': urlreverse("doc_view", kwargs=dict(name=e.doc))
         })
     return sorted(retval, key=lambda x: x['published'])
