@@ -103,7 +103,6 @@ class BaseNomcomForm(object):
                         continue
                 yield fieldset_dict
 
-
 class EditMembersForm(BaseNomcomForm, forms.Form):
 
     members = MultiEmailField(label="Members email", required=False, widget=forms.Textarea)
@@ -767,3 +766,7 @@ class EditNomineeForm(forms.ModelForm):
         if nominees:
             raise forms.ValidationError('This emails already does exists in another nominee, please go to merge form')
         return nominee_email
+
+class NominationResponseCommentForm(forms.Form):
+    comments = forms.CharField(widget=forms.Textarea,required=False,help_text="Any comments provided will be encrytped and will only be visible to the NomCom.")
+

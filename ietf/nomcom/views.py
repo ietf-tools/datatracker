@@ -4,6 +4,7 @@ from collections import OrderedDict, Counter
 
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import AnonymousUser
 from django.contrib import messages
 from django.core.urlresolvers import reverse
 from django.http import Http404, HttpResponseRedirect, HttpResponseForbidden
@@ -25,7 +26,7 @@ from ietf.nomcom.forms import (NominateForm, FeedbackForm, QuestionnaireForm,
                                MergeForm, NomComTemplateForm, PositionForm,
                                PrivateKeyForm, EditNomcomForm, EditNomineeForm,
                                PendingFeedbackForm, ReminderDatesForm, FullFeedbackFormSet,
-                               FeedbackEmailForm)
+                               FeedbackEmailForm, NominationResponseCommentForm)
 from ietf.nomcom.models import Position, NomineePosition, Nominee, Feedback, NomCom, ReminderDates, FeedbackLastSeen
 from ietf.nomcom.utils import (get_nomcom_by_year, store_nomcom_private_key,
                                get_hash_nominee_position, send_reminder_to_nominees,
@@ -546,15 +547,34 @@ def process_nomination_status(request, year, nominee_position_id, state, date, h
     state = get_object_or_404(NomineePositionStateName, slug=state)
     message = ('warning',
         ("Click on 'Save' to set the state of your nomination to %s to %s (this"+
-        "is not a final commitment - you can notify us later if you need to change this)") %
+        " is not a final commitment - you can notify us later if you need to change this).") %
         (nominee_position.position.name, state.name))
     if request.method == 'POST':
-        nominee_position.state = state
-        nominee_position.save()
-        need_confirmation = False
-        message = message = ('success', 'Your nomination on %s has been set as %s' % (nominee_position.position.name,
-                                                                                      state.name))
-
+        form = NominationResponseCommentForm(request.POST)
+        if form.is_valid():
+            nominee_position.state = state
+            nominee_position.save()
+            need_confirmation = False
+            if form.cleaned_data['comments']:
+                # This Feedback object is of type comment instead of nomina in order to not
+                # make answering "who nominated themselves" harder.
+                who = request.user
+                if isinstance(who,AnonymousUser):
+                    who = None
+                f = Feedback.objects.create(nomcom = nomcom,
+                                            author = nominee_position.nominee.email,
+                                            subject = '%s nomination %s'%(nominee_position.nominee.name(),state),
+                                            comments = form.cleaned_data['comments'],
+                                            type_id = 'comment', 
+                                            user = who,
+                                           )
+                f.positions.add(nominee_position.position)
+                f.nominees.add(nominee_position.nominee)
+        
+            message = ('success', 'Your nomination on %s has been set as %s' % (nominee_position.position.name,
+                                                                                state.name))
+    else:
+        form = NominationResponseCommentForm()
     return render_to_response('nomcom/process_nomination_status.html',
                               {'message': message,
                                'nomcom': nomcom,
@@ -562,7 +582,8 @@ def process_nomination_status(request, year, nominee_position_id, state, date, h
                                'nominee_position': nominee_position,
                                'state': state,
                                'need_confirmation': need_confirmation,
-                               'selected': 'feedback'}, RequestContext(request))
+                               'selected': 'feedback',
+                               'form': form }, RequestContext(request))
 
 
 @role_required("Nomcom")

@@ -16,6 +16,8 @@
     <form method="post">
       {% csrf_token %}
 
+      {% bootstrap_form form %}
+
       {% buttons %}
         <button class="btn btn-primary" type="submit">Save</button>
       {% endbuttons %}

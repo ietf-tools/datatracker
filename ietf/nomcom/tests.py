@@ -1198,3 +1198,30 @@ class NewActiveNomComTests(TestCase):
         login_testing_unauthorized(self, self.chair.user.username, url)
         response = self.client.get(url)
         self.assertEqual(response.status_code,200)
+
+    def test_accept_reject_nomination_comment(self):
+        np = self.nc.nominee_set.first().nomineeposition_set.first()
+        hash = get_hash_nominee_position(np.time.strftime("%Y%m%d"),np.id)
+        url = reverse('nomcom_process_nomination_status',
+                      kwargs={'year':self.nc.year(),
+                              'nominee_position_id':np.id,
+                              'state':'accepted',
+                              'date':np.time.strftime("%Y%m%d"),
+                              'hash':hash,
+                             }
+                     )
+        np.state_id='pending'
+        np.save()
+        response = self.client.get(url)
+        self.assertEqual(response.status_code,200)
+        feedback_count_before = Feedback.objects.count()
+        response = self.client.post(url,{})
+        # This view uses Yaco-style POST handling
+        self.assertEqual(response.status_code,200)
+        self.assertEqual(Feedback.objects.count(),feedback_count_before)
+        np.state_id='pending'
+        np.save()
+        response = self.client.post(url,{'comments':'A nonempty comment'})
+        self.assertEqual(response.status_code,200)
+        self.assertEqual(Feedback.objects.count(),feedback_count_before+1)
+      
