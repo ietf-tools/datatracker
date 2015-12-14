@@ -598,8 +598,23 @@ def view_feedback(request, year):
             feedback_types.append(ft)
         else:
             independent_feedback_types.append(ft)
-    nominees_feedback = {}
+    nominees_feedback = []
+
+    def nominee_staterank(nominee):
+        states=nominee.nomineeposition_set.values_list('state_id',flat=True)
+        if 'accepted' in states:
+            return 0
+        elif 'pending' in states:
+            return 1
+        else:
+            return 2
+
     for nominee in nominees:
+        nominee.staterank = nominee_staterank(nominee)
+
+    sorted_nominees = sorted(nominees,key=lambda x:x.staterank)
+
+    for nominee in sorted_nominees:
         last_seen = FeedbackLastSeen.objects.filter(reviewer=request.user.person,nominee=nominee).first()
         nominee_feedback = []
         for ft in feedback_types:
@@ -612,7 +627,7 @@ def view_feedback(request, year):
             else:
                 newflag = qs.filter(time__gt=last_seen.time).exists()
             nominee_feedback.append( (ft.name,count,newflag) )
-        nominees_feedback.update({nominee: nominee_feedback})
+        nominees_feedback.append( {'nominee':nominee, 'feedback':nominee_feedback} )
     independent_feedback = [ft.feedback_set.get_by_nomcom(nomcom).count() for ft in independent_feedback_types]
 
     return render_to_response('nomcom/view_feedback.html',
