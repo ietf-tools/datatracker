@@ -104,6 +104,14 @@
       <tr>
 	<th>IESG</th>
 	<th>Responsible AD</th>
+	<td></td>
+	<td>
+	  {{ group.ad_role.person.plain_name|default:"(None)" }}
+	</td>
+	  </tr>
+	  <tr>
+	<th></th>
+	<th>Charter Edit AD</th>
 	<td class="edit">
 	  {% if can_manage %}
 	    {% doc_edit_button "charter_edit_ad" name=doc.name %}
