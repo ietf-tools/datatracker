@@ -139,11 +139,13 @@
 .position-recuse-row   { background-color: hsl(hue(@brand-primary), 90%, 95%) !important ; }
 .position-norecord-row { background-color: inherit; }
 
+
+
 /* like label-success */
 #timeline .bar:nth-child(odd) rect  { fill: desaturate(@label-success-bg, 30%); }
 
 /* like label-primary */
-#timeline .bar:nth-child(even) rect { fill: @label-primary-bg; }
+#timeline .bar:nth-child(even) rect { fill: lighten(@label-primary-bg, 10%); }
 
 /* like label-warning */
 #timeline .gradient.left  { stop-color: @label-warning-bg; }

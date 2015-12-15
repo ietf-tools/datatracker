@@ -136,7 +136,7 @@ fieldset[disabled] .btn-pass.focus {
 }
 /* like label-primary */
 #timeline .bar:nth-child(even) rect {
-  fill: #54478e;
+  fill: #6b5bad;
 }
 /* like label-warning */
 #timeline .gradient.left {
