@@ -130,6 +130,21 @@ fieldset[disabled] .btn-pass.focus {
 .position-norecord-row {
   background-color: inherit;
 }
+/* like label-success */
+#timeline .bar:nth-child(odd) rect {
+  fill: #78b53a;
+}
+/* like label-primary */
+#timeline .bar:nth-child(even) rect {
+  fill: #54478e;
+}
+/* like label-warning */
+#timeline .gradient.left {
+  stop-color: #f69f74;
+}
+#timeline .gradient.right {
+  stop-color: white;
+}
 /*! normalize.css v3.0.3 | MIT License | github.com/necolas/normalize.css */
 html {
   font-family: sans-serif;
