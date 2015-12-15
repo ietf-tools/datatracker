@@ -20,6 +20,8 @@ Planned work in rough order
 
 * Schema Changes: floorplan, document tags, external links for groups
 
+* Glue code to trigger generation of htmlized documents on www.ietf.org
+
 * Transition to PostgreSQL
 
 * Performance analysis of database table and index setup
