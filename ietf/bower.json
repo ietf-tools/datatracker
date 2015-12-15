@@ -5,6 +5,7 @@
   "main": [],
   "dependencies": {
     "bootstrap-datepicker": "1.5.0",
+    "d3": "3.5.10",
     "font-awesome": "4.5.0",
     "html5shiv": "3.7.3",
     "jquery": "1.11.3",

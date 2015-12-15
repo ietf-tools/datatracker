@@ -431,3 +431,32 @@ h1 small .pull-right { margin-top: 10.5px; }
 */
 form.navbar-form input.form-control.input-sm { width: 141px; }
 	
+
+
+/* Styles for d3.js graphical SVG timelines */
+#timeline { font-size: small; }
+
+#timeline .axis path, #timeline .axis line {
+    fill: none;
+    stroke: black;
+}
+
+#timeline .axis.y path, #timeline .axis.y line { stroke: none; }
+
+#timeline .axis.x text { dominant-baseline: central; }
+
+#timeline .bar text {
+    fill: white;
+    dominant-baseline: central;
+    pointer-events: none;
+}
+
+/* like label-success */
+#timeline .bar:nth-child(odd) rect { fill: #5CB85C; }
+
+/* like label-primary */
+#timeline .bar:nth-child(even) rect { fill: #337AB7; }
+
+/* like label-warning */
+#timeline .gradient.left { stop-color: #F0AD4E; }
+#timeline .gradient.right { stop-color: white; }

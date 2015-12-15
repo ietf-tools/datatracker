@@ -10,7 +10,7 @@
 {% endblock %}
 
 {% block morecss %}
-  .inline	{ display: inline; }
+.inline	{ display: inline; }
 {% endblock %}
 
 {% block title %}
@@ -26,6 +26,7 @@
   {{ top|safe }}
 
   {% include "doc/revisions_list.html" %}
+  <div id="timeline"></div>
 
   <table class="table table-condensed">
     <thead id="message-row">
@@ -34,7 +35,7 @@
 	  <th colspan="4" class="alert-warning">The information below is for an old version of the document</th>
 	  {% else %}
 	  <th colspan="4"></th>
-	  {% endif %}  
+	  {% endif %}
        </tr>
     </thead>
 
@@ -492,5 +493,9 @@
       </div>
     </div>
   {% endif %}
+{% endblock %}
 
+{% block js %}
+<script src="{% static 'd3/d3.min.js' %}"></script>
+<script src="{% static 'ietf/js/document_timeline.js' %}"></script>
 {% endblock %}

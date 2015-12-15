@@ -49,7 +49,7 @@ from ietf.doc.models import ( Document, DocAlias, DocHistory, DocEvent, BallotDo
 from ietf.doc.utils import ( add_links_in_new_revision_events, augment_events_with_revision,
     can_adopt_draft, get_chartering_type, get_document_content, get_tags_for_stream_id,
     needed_ballot_positions, nice_consensus, prettify_std_name, update_telechat, has_same_ballot,
-    get_initial_notify, make_notify_changed_event )
+    get_initial_notify, make_notify_changed_event, crawl_history)
 from ietf.community.models import CommunityList
 from ietf.group.models import Role
 from ietf.group.utils import can_manage_group_type, can_manage_materials
@@ -878,7 +878,7 @@ def ballot_popup(request, name, ballot_id):
                               context_instance=RequestContext(request))
 
 
-def document_json(request, name):
+def document_json(request, name, rev=None):
     doc = get_object_or_404(Document, docalias__name=name)
 
     def extract_name(s):
@@ -911,6 +911,9 @@ def document_json(request, name):
     data["shepherd"] = doc.shepherd.formatted_email() if doc.shepherd else None
     data["ad"] = doc.ad.role_email("ad").formatted_email() if doc.ad else None
 
+    latest_revision = doc.latest_event(NewRevisionDocEvent, type="new_revision")
+    data["rev_history"] = crawl_history(latest_revision.doc if latest_revision else doc)
+
     if doc.type_id == "draft":
         data["iesg_state"] = extract_name(doc.get_state("draft-iesg"))
         data["rfceditor_state"] = extract_name(doc.get_state("draft-rfceditor"))
@@ -922,7 +925,7 @@ def document_json(request, name):
             data["consensus"] = e.consensus if e else None
         data["stream"] = extract_name(doc.stream)
 
-    return HttpResponse(json.dumps(data, indent=2), content_type='text/plain')
+    return HttpResponse(json.dumps(data, indent=2), content_type='application/json')
 
 class AddCommentForm(forms.Form):
     comment = forms.CharField(required=True, widget=forms.Textarea)
