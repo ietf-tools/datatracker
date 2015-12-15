@@ -451,12 +451,3 @@ form.navbar-form input.form-control.input-sm { width: 141px; }
     pointer-events: none;
 }
 
-/* like label-success */
-#timeline .bar:nth-child(odd) rect { fill: #5CB85C; }
-
-/* like label-primary */
-#timeline .bar:nth-child(even) rect { fill: #337AB7; }
-
-/* like label-warning */
-#timeline .gradient.left { stop-color: #F0AD4E; }
-#timeline .gradient.right { stop-color: white; }
