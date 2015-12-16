@@ -533,7 +533,7 @@ def process_nomination_status(request, year, nominee_position_id, state, date, h
     expiration_days = getattr(settings, 'DAYS_TO_EXPIRE_NOMINATION_LINK', None)
     if expiration_days:
         request_date = datetime.date(int(date[:4]), int(date[4:6]), int(date[6:]))
-        if datetime.date.today() > (request_date + datetime.timedelta(days=settings.DAYS_TO_EXPIRE_REGISTRATION_LINK)):
+        if datetime.date.today() > (request_date + datetime.timedelta(days=settings.DAYS_TO_EXPIRE_NOMINATION_LINK)):
             return HttpResponseForbidden("Link expired")
 
     need_confirmation = True

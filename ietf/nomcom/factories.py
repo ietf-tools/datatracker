@@ -92,18 +92,20 @@ class NomComFactory(factory.DjangoModelFactory):
         if extracted is None:
             extracted = True
         if create and extracted:
-            nominees = [Nominee.objects.create(nomcom=self, email=PersonFactory().email_set.first()) for i in range(2)]
+            nominees = [Nominee.objects.create(nomcom=self, email=PersonFactory().email_set.first()) for i in range(4)]
             positions = [PositionFactory(nomcom=self) for i in range(3)]
 
-            def npc(x,y):
-                return NomineePosition.objects.create(position=x,
-                                                      nominee=y,
-                                                      state_id='accepted') 
+            def npc(position,nominee,state_id):
+                return NomineePosition.objects.create(position=position,
+                                                      nominee=nominee,
+                                                      state_id=state_id) 
             # This gives us positions with 0, 1 and 2 nominees, and
-            # one person who's been nomminated for more than one position
-            npc(positions[0],nominees[0])
-            npc(positions[1],nominees[0])
-            npc(positions[1],nominees[1])
+            # one person who's been nominated for more than one position
+            npc(positions[0],nominees[0],'accepted')
+            npc(positions[1],nominees[0],'accepted')
+            npc(positions[1],nominees[1],'accepted')
+            npc(positions[0],nominees[2],'pending')
+            npc(positions[0],nominees[3],'declined')
 
     @factory.post_generation
     def populate_personnel(self, create, extracted, **kwargs):

@@ -31,7 +31,8 @@ from ietf.nomcom.utils import get_nomcom_by_year, get_or_create_nominee, get_has
 from ietf.nomcom.management.commands.send_reminders import Command, is_time_to_send
 
 from ietf.nomcom.factories import NomComFactory, FeedbackFactory, \
-                                  nomcom_kwargs_for_year, provide_private_key_to_test_client
+                                  nomcom_kwargs_for_year, provide_private_key_to_test_client, \
+                                  key
 from ietf.person.factories import PersonFactory
 from ietf.dbtemplate.factories import DBTemplateFactory
 
@@ -1199,6 +1200,37 @@ class NewActiveNomComTests(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code,200)
 
+    def test_accept_reject_nomination_edges(self):
+
+        np = self.nc.nominee_set.first().nomineeposition_set.first()
+
+        kwargs={'year':self.nc.year(),
+                'nominee_position_id':np.id,
+                'state':'accepted',
+                'date':np.time.strftime("%Y%m%d"),
+                'hash':get_hash_nominee_position(np.time.strftime("%Y%m%d"),np.id),
+               }
+        url = reverse('nomcom_process_nomination_status', kwargs=kwargs)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code,403)
+        self.assertTrue('already was' in unicontent(response))
+
+        settings.DAYS_TO_EXPIRE_NOMINATION_LINK = 2
+        np.time = np.time - datetime.timedelta(days=3)
+        np.save()
+        kwargs['date'] = np.time.strftime("%Y%m%d")
+        kwargs['hash'] = get_hash_nominee_position(np.time.strftime("%Y%m%d"),np.id)
+        url = reverse('nomcom_process_nomination_status', kwargs=kwargs)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code,403)
+        self.assertTrue('Link expired' in unicontent(response))
+
+        kwargs['hash'] = 'bad'
+        url = reverse('nomcom_process_nomination_status', kwargs=kwargs)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code,403)
+        self.assertTrue('Bad hash!' in unicontent(response))
+
     def test_accept_reject_nomination_comment(self):
         np = self.nc.nominee_set.first().nomineeposition_set.first()
         hash = get_hash_nominee_position(np.time.strftime("%Y%m%d"),np.id)
@@ -1224,4 +1256,188 @@ class NewActiveNomComTests(TestCase):
         response = self.client.post(url,{'comments':'A nonempty comment'})
         self.assertEqual(response.status_code,200)
         self.assertEqual(Feedback.objects.count(),feedback_count_before+1)
+
+    def test_provide_private_key(self):
+        url = reverse('nomcom_private_key',kwargs={'year':self.nc.year()})
+        login_testing_unauthorized(self,self.chair.user.username,url)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code,200)
+        response = self.client.post(url,{'key':key})
+        self.assertEqual(response.status_code,302)
+
+    def test_email_pasting(self):
+        url = reverse('nomcom_private_feedback_email',kwargs={'year':self.nc.year()})
+        login_testing_unauthorized(self,self.chair.user.username,url)
+        response = self.client.get(url)
+        self.assertTrue(response.status_code,200)
+        fb_count_before = Feedback.objects.count()
+        response = self.client.post(url,{'email_text':"""To: rjsparks@nostrum.com
+From: Robert Sparks <rjsparks@nostrum.com>
+Subject: Junk message for feedback testing
+Message-ID: <566F2FE5.1050401@nostrum.com>
+Date: Mon, 14 Dec 2015 15:08:53 -0600
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Transfer-Encoding: 7bit
+
+Junk body for testing
+
+"""})
+        self.assertEqual(response.status_code,200)
+        self.assertEqual(Feedback.objects.count(),fb_count_before+1)
+
+    def test_simple_feedback_pending(self):
+        url = reverse('nomcom_view_feedback_pending',kwargs={'year':self.nc.year() })
+        login_testing_unauthorized(self, self.chair.user.username, url)
+        provide_private_key_to_test_client(self)
+
+        # test simple classification when there's only one thing to classify
+
+        # junk is the only category you can set directly from the first form the view presents
+        fb = FeedbackFactory(nomcom=self.nc,type_id=None)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code,200)
+
+        response = self.client.post(url, {'form-TOTAL_FORMS': 1,
+                                          'form-INITIAL_FORMS': 1,
+                                          'form-0-id': fb.id,
+                                          'form-0-type': 'junk',
+                                        })
+        self.assertEqual(response.status_code,302)
+        fb = Feedback.objects.get(id=fb.id)
+        self.assertEqual(fb.type_id,'junk')
+
+        # comments, nominations, and questionnare responses are catagorized via a second 
+        # formset presented by the view (signaled by having 'end' appear in the POST)
+        fb = FeedbackFactory(nomcom=self.nc,type_id=None)
+        np = NomineePosition.objects.filter(position__nomcom = self.nc,state='accepted').first()
+        fb_count_before = np.nominee.feedback_set.count()
+        response = self.client.post(url, {'form-TOTAL_FORMS':1,
+                                          'form-INITIAL_FORMS':1,
+                                          'end':'Save feedback',
+                                          'form-0-id': fb.id,
+                                          'form-0-type': 'comment',
+                                          'form-0-nominee': '%s_%s'%(np.position.id,np.nominee.id),
+                                        })
+        self.assertEqual(response.status_code,302)
+        fb = Feedback.objects.get(id=fb.id)
+        self.assertEqual(fb.type_id,'comment')
+        self.assertEqual(np.nominee.feedback_set.count(),fb_count_before+1)
+
+        fb = FeedbackFactory(nomcom=self.nc,type_id=None)
+        nominee = self.nc.nominee_set.first()
+        position = self.nc.position_set.exclude(nomineeposition__nominee=nominee).first()
+        self.assertIsNotNone(position)
+        fb_count_before = nominee.feedback_set.count()
+        response = self.client.post(url, {'form-TOTAL_FORMS':1,
+                                          'form-INITIAL_FORMS':1,
+                                          'end':'Save feedback',
+                                          'form-0-id': fb.id,
+                                          'form-0-type': 'nomina',
+                                          'form-0-position': position.id,
+                                          'form-0-candidate_name' : nominee.name(),
+                                          'form-0-candidate_email' : nominee.email.address,
+                                        })
+        self.assertEqual(response.status_code,302)
+        fb = Feedback.objects.get(id=fb.id)
+        self.assertEqual(fb.type_id,'nomina')
+        self.assertEqual(nominee.feedback_set.count(),fb_count_before+1)
+
+        fb = FeedbackFactory(nomcom=self.nc,type_id=None)
+        np = NomineePosition.objects.filter(position__nomcom = self.nc,state='accepted').first()
+        fb_count_before = np.nominee.feedback_set.count()
+        response = self.client.post(url, {'form-TOTAL_FORMS':1,
+                                          'form-INITIAL_FORMS':1,
+                                          'end':'Save feedback',
+                                          'form-0-id': fb.id,
+                                          'form-0-type': 'questio',
+                                          'form-0-nominee': '%s_%s'%(np.position.id,np.nominee.id),
+                                        })
+        self.assertEqual(response.status_code,302)
+        fb = Feedback.objects.get(id=fb.id)
+        self.assertEqual(fb.type_id,'questio')
+        self.assertEqual(np.nominee.feedback_set.count(),fb_count_before+1)
+
+    def test_complicated_feedback_pending(self):
+        url = reverse('nomcom_view_feedback_pending',kwargs={'year':self.nc.year() })
+        login_testing_unauthorized(self, self.chair.user.username, url)
+        provide_private_key_to_test_client(self)
+
+        # Test having multiple things to classify
+        # The view has some complicated to handle having some forms in the initial form formset
+        # being categorized as 'junk' and others being categorized as something that requires
+        # more information. The second formset presented will have forms for any others initially 
+        # categorized as nominations, then a third formset will be presented with any that were 
+        # initially categorized as comments or questionnaire responses. The following exercises
+        # all the gears that glue these three formset presentations together.
       
+        fb0 = FeedbackFactory(nomcom=self.nc,type_id=None)
+        fb1 = FeedbackFactory(nomcom=self.nc,type_id=None)
+        fb2 = FeedbackFactory(nomcom=self.nc,type_id=None)
+        nominee = self.nc.nominee_set.first()
+        new_position_for_nominee = self.nc.position_set.exclude(nomineeposition__nominee=nominee).first()
+
+        # Initial formset
+        response = self.client.post(url, {'form-TOTAL_FORMS': 3,
+                                          'form-INITIAL_FORMS': 3,
+                                          'form-0-id': fb0.id,
+                                          'form-0-type': 'junk',
+                                          'form-1-id': fb1.id,
+                                          'form-1-type': 'nomina',
+                                          'form-2-id': fb2.id,
+                                          'form-2-type': 'comment',
+                                        })
+        self.assertEqual(response.status_code,200) # Notice that this is not a 302
+        fb0 = Feedback.objects.get(id=fb0.id)
+        self.assertEqual(fb0.type_id,'junk')
+        q = PyQuery(response.content)
+        self.assertEqual(q('input[name=\"form-0-type\"]').attr['value'],'nomina')
+        self.assertEqual(q('input[name=\"extra_ids\"]').attr['value'],'%s:comment' % fb2.id)
+
+        # Second formset
+        response = self.client.post(url, {'form-TOTAL_FORMS':1,
+                                          'form-INITIAL_FORMS':1,
+                                          'end':'Save feedback',
+                                          'form-0-id': fb1.id,
+                                          'form-0-type': 'nomina',
+                                          'form-0-position': new_position_for_nominee.id,
+                                          'form-0-candidate_name' : nominee.name(),
+                                          'form-0-candidate_email' : nominee.email.address,
+                                          'extra_ids': '%s:comment' % fb2.id,
+                                        })
+        self.assertEqual(response.status_code,200) # Notice that this is also is not a 302
+        fb1 = Feedback.objects.get(id=fb1.id)
+        self.assertEqual(fb1.type_id,'nomina')
+        q = PyQuery(response.content)
+        self.assertEqual(q('input[name=\"form-0-type\"]').attr['value'],'comment')
+        self.assertFalse(q('input[name=\"extra_ids\"]'))
+
+        # Exercising the resulting third formset is identical to the simple test above
+        # that categorizes a single thing as a comment. Note that it returns a 302.
+
+        # There is yet another code-path for transitioning to the second form when
+        # nothing was classified as a nomination. 
+        fb0 = FeedbackFactory(nomcom=self.nc,type_id=None)
+        fb1 = FeedbackFactory(nomcom=self.nc,type_id=None)
+        np = NomineePosition.objects.filter(position__nomcom = self.nc,state='accepted').first()
+        response = self.client.post(url, {'form-TOTAL_FORMS': 2,
+                                          'form-INITIAL_FORMS': 2,
+                                          'form-0-id': fb0.id,
+                                          'form-0-type': 'junk',
+                                          'form-1-id': fb1.id,
+                                          'form-1-type': 'comment',
+                                        })
+        self.assertEqual(response.status_code,200) 
+        q = PyQuery(response.content)
+        self.assertEqual(q('input[name=\"form-0-type\"]').attr['value'],'comment')
+        self.assertFalse(q('input[name=\"extra_ids\"]'))
+
+
+class NomComIndexTests(TestCase):
+    def setUp(self):
+        for year in range(2000,2014):
+            NomComFactory.create(**nomcom_kwargs_for_year(year=year,populate_positions=False,populate_personnel=False))
+
+    def testIndex(self):
+        url = reverse('ietf.nomcom.views.index')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code,200)
