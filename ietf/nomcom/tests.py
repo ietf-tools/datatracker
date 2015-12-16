@@ -6,6 +6,7 @@ import shutil
 from pyquery import PyQuery
 
 from django.db import IntegrityError
+from django.db.models import Max
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.core.files import File
@@ -35,6 +36,7 @@ from ietf.nomcom.factories import NomComFactory, FeedbackFactory, \
                                   key
 from ietf.person.factories import PersonFactory
 from ietf.dbtemplate.factories import DBTemplateFactory
+from ietf.dbtemplate.models import DBTemplate
 
 client_test_cert_files = None
 
@@ -1104,7 +1106,7 @@ class InactiveNomcomTests(TestCase):
                                             title='Test template',
                                             path='/nomcom/'+self.nc.group.acronym+'/test',
                                             variables='',
-                                            type_id='text',
+                                            type_id='plain',
                                             content='test content')
         url = reverse('nomcom_edit_template',kwargs={'year':self.nc.year(), 'template_id':template.id})
         login_testing_unauthorized(self, self.chair.user.username, url)
@@ -1269,7 +1271,7 @@ class NewActiveNomComTests(TestCase):
         url = reverse('nomcom_private_feedback_email',kwargs={'year':self.nc.year()})
         login_testing_unauthorized(self,self.chair.user.username,url)
         response = self.client.get(url)
-        self.assertTrue(response.status_code,200)
+        self.assertEqual(response.status_code,200)
         fb_count_before = Feedback.objects.count()
         response = self.client.post(url,{'email_text':"""To: rjsparks@nostrum.com
 From: Robert Sparks <rjsparks@nostrum.com>
@@ -1418,7 +1420,6 @@ Junk body for testing
         # nothing was classified as a nomination. 
         fb0 = FeedbackFactory(nomcom=self.nc,type_id=None)
         fb1 = FeedbackFactory(nomcom=self.nc,type_id=None)
-        np = NomineePosition.objects.filter(position__nomcom = self.nc,state='accepted').first()
         response = self.client.post(url, {'form-TOTAL_FORMS': 2,
                                           'form-INITIAL_FORMS': 2,
                                           'form-0-id': fb0.id,
@@ -1431,6 +1432,90 @@ Junk body for testing
         self.assertEqual(q('input[name=\"form-0-type\"]').attr['value'],'comment')
         self.assertFalse(q('input[name=\"extra_ids\"]'))
 
+    def test_feedback_unrelated(self):
+        FeedbackFactory(nomcom=self.nc,type_id='junk')
+        url=reverse('nomcom_view_feedback_unrelated',kwargs={'year':self.nc.year()})
+        login_testing_unauthorized(self,self.chair.user.username,url)
+        provide_private_key_to_test_client(self)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code,200)
+
+    def test_list_templates(self):
+        DBTemplateFactory.create(group=self.nc.group,
+                                 title='Test template',
+                                 path='/nomcom/'+self.nc.group.acronym+'/test',
+                                 variables='',
+                                 type_id='plain',
+                                 content='test content')
+        url=reverse('nomcom_list_templates',kwargs={'year':self.nc.year()})
+        login_testing_unauthorized(self,self.chair.user.username,url)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code,200)
+
+    def test_edit_templates(self):
+        template = DBTemplateFactory.create(group=self.nc.group,
+                                            title='Test template',
+                                            path='/nomcom/'+self.nc.group.acronym+'/test',
+                                            variables='',
+                                            type_id='plain',
+                                            content='test content')
+        url=reverse('nomcom_edit_template',kwargs={'year':self.nc.year(),'template_id':template.id})
+        login_testing_unauthorized(self,self.chair.user.username,url)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code,200)
+        response = self.client.post(url,{'content': 'more interesting test content'})
+        self.assertEqual(response.status_code,302)
+        template = DBTemplate.objects.get(id=template.id)
+        self.assertEqual('more interesting test content',template.content)
+        
+    def test_list_positions(self):
+        url = reverse('nomcom_list_positions',kwargs={'year':self.nc.year()})
+        login_testing_unauthorized(self,self.chair.user.username,url)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code,200)
+
+    def test_remove_position(self):
+        position = self.nc.position_set.filter(nomineeposition__isnull=False).first()
+        f = FeedbackFactory(nomcom=self.nc)
+        f.positions.add(position)
+        url = reverse('nomcom_remove_position',kwargs={'year':self.nc.year(),'position_id':position.id})
+        login_testing_unauthorized(self,self.chair.user.username,url)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code,200)
+        q = PyQuery(response.content)
+        self.assertTrue(any(['likely to be harmful' in x.text for x in q('.alert-warning')]))
+        response = self.client.post(url,{'remove':position.id})
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(self.nc.position_set.filter(id=position.id))
+
+    def test_remove_invalid_position(self):
+        no_such_position_id = self.nc.position_set.aggregate(Max('id'))['id__max']+1
+        url = reverse('nomcom_remove_position',kwargs={'year':self.nc.year(),'position_id':no_such_position_id})
+        login_testing_unauthorized(self,self.chair.user.username,url)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_edit_position(self):
+        position = self.nc.position_set.filter(is_open=True).first()
+        url = reverse('nomcom_edit_position',kwargs={'year':self.nc.year(),'position_id':position.id})
+        login_testing_unauthorized(self,self.chair.user.username,url)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        response = self.client.post(url,{'name':'more interesting test name'})
+        self.assertEqual(response.status_code, 302)
+        position = Position.objects.get(id=position.id)
+        self.assertEqual('more interesting test name',position.name)
+        self.assertFalse(position.is_open)
+
+    def test_edit_invalid_position(self):
+        no_such_position_id = self.nc.position_set.aggregate(Max('id'))['id__max']+1
+        url = reverse('nomcom_edit_position',kwargs={'year':self.nc.year(),'position_id':no_such_position_id})
+        login_testing_unauthorized(self,self.chair.user.username,url)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
+    # Note that the old tests currently test the edit_position view through its nomcom_add_position name
+        
 
 class NomComIndexTests(TestCase):
     def setUp(self):
@@ -1441,3 +1526,32 @@ class NomComIndexTests(TestCase):
         url = reverse('ietf.nomcom.views.index')
         response = self.client.get(url)
         self.assertEqual(response.status_code,200)
+
+class NoPublicKeyTests(TestCase):
+    def setUp(self):
+        self.nc = NomComFactory.create(**nomcom_kwargs_for_year(public_key=None))
+        self.chair = self.nc.group.role_set.filter(name='chair').first().person
+
+    def do_common_work(self,url,expected_form):
+        login_testing_unauthorized(self,self.chair.user.username,url)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code,200)
+        q=PyQuery(response.content)
+        self.assertTrue(any(['not yet' in x.text for x in q('.alert-warning')]))
+        self.assertEqual(bool(q('form:not(.navbar-form)')),expected_form)
+        self.client.logout()
+
+    def test_not_yet(self):
+        # Warn reminder mail
+        self.do_common_work(reverse('nomcom_send_reminder_mail',kwargs={'year':self.nc.year(),'type':'accept'}),True)
+        # No nominations
+        self.do_common_work(reverse('nomcom_private_nominate',kwargs={'year':self.nc.year()}),False)
+        # No feedback
+        self.do_common_work(reverse('nomcom_private_feedback',kwargs={'year':self.nc.year()}),False)
+        # No feedback email
+        self.do_common_work(reverse('nomcom_private_feedback_email',kwargs={'year':self.nc.year()}),False)
+        # No questionnaire responses
+        self.do_common_work(reverse('nomcom_private_questionnaire',kwargs={'year':self.nc.year()}),False)
+        # Warn on edit nomcom
+        self.do_common_work(reverse('nomcom_edit_nomcom',kwargs={'year':self.nc.year()}),True)
+

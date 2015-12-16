@@ -38,11 +38,7 @@ import debug                  # pyflakes:ignore
 def index(request):
     nomcom_list = Group.objects.filter(type__slug='nomcom').order_by('acronym')
     for nomcom in nomcom_list:
-        year = nomcom.acronym[6:]
-        try:
-            year = int(year)
-        except ValueError:
-            year = None
+        year = int(nomcom.acronym[6:])
         nomcom.year = year
         nomcom.label = "%s/%s" % (year, year+1)
         if   year in [ 2005, 2006, 2007, 2008, 2009, 2010 ]:
@@ -816,7 +812,7 @@ def edit_nomcom(request, year):
     if nomcom.public_key:
         message = ('warning', 'Previous data will remain encrypted with the old key')
     else:
-        message = ('warning', 'The nomcom has not a public key yet')
+        message = ('warning', 'This Nomcom does not yet have a public key')
 
     ReminderDateInlineFormSet = inlineformset_factory(parent_model=NomCom,
                                                       model=ReminderDates,
