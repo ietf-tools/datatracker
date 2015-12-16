@@ -577,4 +577,11 @@ def crawl_history(doc):
             'published': e.time.isoformat(),
             'url': urlreverse("doc_view", kwargs=dict(name=e.doc))
         })
-    return sorted(retval, key=lambda x: x['published'])
+    # for some reason, some draft revisions can exist multiple times?
+    seen = set()
+    unique = []
+    for r in retval:
+        if r["url"] not in seen:
+            unique.append(r)
+            seen.add(r["url"])
+    return sorted(unique, key=lambda x: x['published'])
