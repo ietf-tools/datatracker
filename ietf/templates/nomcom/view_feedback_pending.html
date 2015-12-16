@@ -149,9 +149,6 @@
 
         {% buttons %}
           <input class="btn btn-primary" type="submit" value="Classify">
-          {% if default_type %}
-            <input class="btn btn-default" type="submit" name="move_to_default" value="Move all unclassified feedback to {{ default_type }}">
-          {% endif %}
         {% endbuttons %}
       {% endif %}
     </form>

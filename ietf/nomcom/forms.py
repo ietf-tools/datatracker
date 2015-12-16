@@ -609,13 +609,6 @@ class PendingFeedbackForm(BaseNomcomForm, forms.ModelForm):
         model = Feedback
         fields = ('type', )
 
-    def __init__(self, *args, **kwargs):
-        super(PendingFeedbackForm, self).__init__(*args, **kwargs)
-        try:
-            self.default_type = FeedbackTypeName.objects.get(slug=settings.DEFAULT_FEEDBACK_TYPE)
-        except FeedbackTypeName.DoesNotExist:
-            self.default_type = None
-
     def set_nomcom(self, nomcom, user):
         self.nomcom = nomcom
         self.user = user
@@ -630,17 +623,6 @@ class PendingFeedbackForm(BaseNomcomForm, forms.ModelForm):
         feedback.user = self.user
         feedback.save()
         return feedback
-
-    def move_to_default(self):
-        if not self.default_type or self.cleaned_data.get('type', None):
-            return None
-        feedback = super(PendingFeedbackForm, self).save(commit=False)
-        feedback.nomcom = self.nomcom
-        feedback.user = self.user
-        feedback.type = self.default_type
-        feedback.save()
-        return feedback
-
 
 class ReminderDatesForm(forms.ModelForm):
 

@@ -656,24 +656,9 @@ def view_feedback_pending(request, year):
                                            extra=0)
     feedbacks = Feedback.objects.filter(type__isnull=True, nomcom=nomcom)
 
-    try:
-        default_type = FeedbackTypeName.objects.get(slug=settings.DEFAULT_FEEDBACK_TYPE)
-    except FeedbackTypeName.DoesNotExist:
-        default_type = None
 
     extra_step = False
-    if request.method == 'POST' and request.POST.get('move_to_default'):
-        formset = FeedbackFormSet(request.POST)
-        if formset.is_valid():
-            for form in formset.forms:
-                form.set_nomcom(nomcom, request.user)
-                form.move_to_default()
-            formset = FeedbackFormSet(queryset=feedbacks)
-            for form in formset.forms:
-                form.set_nomcom(nomcom, request.user)
-            messages.success(request, 'Feedback saved')
-            return redirect('nomcom_view_feedback_pending', year=year)
-    elif request.method == 'POST' and request.POST.get('end'):
+    if request.method == 'POST' and request.POST.get('end'):
         extra_ids = request.POST.get('extra_ids', None)
         extra_step = True
         formset = FullFeedbackFormSet(request.POST)
@@ -751,7 +736,6 @@ def view_feedback_pending(request, year):
                                'formset': formset,
                                'message': message,
                                'extra_step': extra_step,
-                               'default_type': default_type,
                                'type_dict': type_dict,
                                'extra_ids': extra_ids,
                                'types': FeedbackTypeName.objects.all().order_by('pk'),
