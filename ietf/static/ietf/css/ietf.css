@@ -204,18 +204,6 @@ pre {
     word-break: keep-all;
 }
 
-/* Make ampersands pretty */
-/* This sets ampersand in a different font than the rest of the text. Fancy, but it's
-really better to select a pretty font in the first place.  Additionally, _which_ 'pretty'
-ampersand you get is dependent on which fonts are available in the browser.  Hacky. */
-/*
-.amp {
-	 font-family:Baskerville,"Goudy Old Style","Palatino","Book Antiqua",serif;
-	 font-size:110%;
-	 font-style:italic;
-}
- */
-
 /* Turn off link underlining for panels in the search results */
 .ipr a:hover { text-decoration: none }
 
@@ -447,11 +435,11 @@ form.navbar-form input.form-control.input-sm { width: 141px; }
 }
 
 /* like label-success */
-#timeline .bar:nth-child(odd) rect { fill: #5CB85C; }
+#timeline .bar:nth-child(odd) rect { fill: #3abf03; }
+#timeline .bar:nth-child(odd) rect:hover,
+#timeline .bar:nth-child(odd) rect:focus { fill: #2b8d02; }
 
 /* like label-primary */
-#timeline .bar:nth-child(even) rect { fill: #337AB7; }
-
-/* like label-warning */
-#timeline .gradient.left { stop-color: #F0AD4E; }
-#timeline .gradient.right { stop-color: white; }
+#timeline .bar:nth-child(even) rect { fill: #54478e; }
+#timeline .bar:nth-child(even) rect:hover,
+#timeline .bar:nth-child(even) rect:focus { fill: #40366c; }
