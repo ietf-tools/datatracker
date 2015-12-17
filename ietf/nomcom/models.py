@@ -111,6 +111,7 @@ class Nomination(models.Model):
 class Nominee(models.Model):
 
     email = models.ForeignKey(Email)
+    person = models.ForeignKey(Person, blank=True, null=True)
     nominee_position = models.ManyToManyField('Position', through='NomineePosition')
     duplicated = models.ForeignKey('Nominee', blank=True, null=True)
     nomcom = models.ForeignKey('NomCom')
