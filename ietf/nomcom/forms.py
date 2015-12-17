@@ -88,33 +88,9 @@ class MultiplePositionNomineeField(forms.MultipleChoiceField, PositionNomineeFie
         return result
 
 
-class BaseNomcomForm(object):
-    def __unicode__(self):
-        return self.as_div()
-
-    def as_div(self):
-        return render_to_string('nomcom/nomcomform.html', {'form': self})
-
-    def get_fieldsets(self):
-        if not self.fieldsets:
-            yield dict(name=None, fields=self)
-        else:
-            for fieldset, fields in self.fieldsets:
-                fieldset_dict = dict(name=fieldset, fields=[])
-                for field_name in fields:
-                    if field_name in self.fields:
-                        fieldset_dict['fields'].append(self[field_name])
-                    if not fieldset_dict['fields']:
-                        # if there is no fields in this fieldset, we continue to next fieldset
-                        continue
-                yield fieldset_dict
-
-class EditMembersForm(BaseNomcomForm, forms.Form):
+class EditMembersForm(forms.Form):
 
     members = MultiEmailField(label="Members email", required=False, widget=forms.Textarea)
-
-    fieldsets = [('Members', ('members',))]
-
 
 class EditMembersFormPreview(FormPreview):
     form_template = 'nomcom/edit_members.html'
@@ -212,10 +188,8 @@ class EditMembersFormPreview(FormPreview):
         return redirect('nomcom_edit_members', year=self.year)
 
 
-class EditNomcomForm(BaseNomcomForm, forms.ModelForm):
+class EditNomcomForm(forms.ModelForm):
 
-    fieldsets = [('Edit nomcom settings', ('public_key', 'initial_text',
-                                           'send_questionnaire', 'reminder_interval'))]
 
     def __init__(self, *args, **kwargs):
         super(EditNomcomForm, self).__init__(*args, **kwargs)
@@ -242,14 +216,12 @@ class EditNomcomForm(BaseNomcomForm, forms.ModelForm):
         raise forms.ValidationError('Invalid public key. Error was: %s' % error)
 
 
-class MergeForm(BaseNomcomForm, forms.Form):
+class MergeForm(forms.Form):
 
     secondary_emails = MultiEmailField(label="Secondary email addresses",
         help_text="Provide a comma separated list of email addresses. Nominations already received with any of these email address will be moved to show under the primary address.", widget=forms.Textarea)
     primary_email = forms.EmailField(label="Primary email address",
                                      widget=forms.TextInput(attrs={'size': '40'}))
-
-    fieldsets = [('Emails', ('primary_email', 'secondary_emails'))]
 
     def __init__(self, *args, **kwargs):
         self.nomcom = kwargs.pop('nomcom', None)
@@ -326,15 +298,12 @@ class MergeForm(BaseNomcomForm, forms.Form):
         secondary_nominees.update(duplicated=primary_nominee)
 
 
-class NominateForm(BaseNomcomForm, forms.ModelForm):
+class NominateForm(forms.ModelForm):
     comments = forms.CharField(label="Candidate's qualifications for the position",
                                widget=forms.Textarea())
     confirmation = forms.BooleanField(label='Email comments back to me as confirmation.',
                                       help_text="If you want to get a confirmation mail containing your feedback in cleartext, please check the 'email comments back to me as confirmation'.",
                                       required=False)
-
-    fieldsets = [('Candidate Nomination', ('share_nominator','position', 'candidate_name',
-                  'candidate_email', 'candidate_phone', 'comments', 'confirmation'))]
 
     def __init__(self, *args, **kwargs):
         self.nomcom = kwargs.pop('nomcom', None)
@@ -343,19 +312,12 @@ class NominateForm(BaseNomcomForm, forms.ModelForm):
 
         super(NominateForm, self).__init__(*args, **kwargs)
 
-        fieldset = ['share_nominator',
-                    'position',
-                    'candidate_name',
-                    'candidate_email', 'candidate_phone',
-                    'comments']
-
         self.fields['nominator_email'].label = 'Nominator email'
         if self.nomcom:
             self.fields['position'].queryset = Position.objects.get_by_nomcom(self.nomcom).opened()
             self.fields['comments'].help_text = self.nomcom.initial_text
 
         if not self.public:
-            fieldset = ['nominator_email'] + fieldset
             author = get_user_email(self.user)
             if author:
                 self.fields['nominator_email'].initial = author.address
@@ -367,9 +329,8 @@ class NominateForm(BaseNomcomForm, forms.ModelForm):
                                                               has indicated they will allow NomCom to share their name as one of the people
                                                               nominating this candidate."""
         else:
-            fieldset.append('confirmation')
+            pass
 
-        self.fieldsets = [('Candidate Nomination', fieldset)]
 
     def save(self, commit=True):
         # Create nomination
@@ -433,7 +394,7 @@ class NominateForm(BaseNomcomForm, forms.ModelForm):
                   'candidate_email', 'candidate_phone')
 
 
-class FeedbackForm(BaseNomcomForm, forms.ModelForm):
+class FeedbackForm(forms.ModelForm):
     nominator_email = forms.CharField(label='Commenter email',required=False)
 
     comments = forms.CharField(label='Comments',
@@ -516,11 +477,9 @@ class FeedbackForm(BaseNomcomForm, forms.ModelForm):
                   'confirmation',
                  )
 
-class FeedbackEmailForm(BaseNomcomForm, forms.Form):
+class FeedbackEmailForm(forms.Form):
 
     email_text = forms.CharField(label='Email text', widget=forms.Textarea())
-
-    fieldsets = [('Feedback email', ('email_text',))]
 
     def __init__(self, *args, **kwargs):
         self.nomcom = kwargs.pop('nomcom', None)
@@ -529,12 +488,10 @@ class FeedbackEmailForm(BaseNomcomForm, forms.Form):
     def save(self, commit=True):
         create_feedback_email(self.nomcom, self.cleaned_data['email_text'])
 
-class QuestionnaireForm(BaseNomcomForm, forms.ModelForm):
+class QuestionnaireForm(forms.ModelForm):
 
     comments = forms.CharField(label='Questionnaire response from this candidate',
                                widget=forms.Textarea())
-    fieldsets = [('New questionnaire response', ('nominee', 'comments'))]
-
     def __init__(self, *args, **kwargs):
         self.nomcom = kwargs.pop('nomcom', None)
         self.user = kwargs.pop('user', None)
@@ -563,14 +520,10 @@ class QuestionnaireForm(BaseNomcomForm, forms.ModelForm):
         model = Feedback
         fields = ( 'comments', )
 
-class NomComTemplateForm(BaseNomcomForm, DBTemplateForm):
+class NomComTemplateForm(DBTemplateForm):
     content = forms.CharField(label="Text", widget=forms.Textarea(attrs={'cols': '120', 'rows':'40', }))
-    fieldsets = [('Template content', ('content', )), ]
 
-
-class PositionForm(BaseNomcomForm, forms.ModelForm):
-
-    fieldsets = [('Position', ('name', 'is_open' ))]
+class PositionForm(forms.ModelForm):
 
     class Meta:
         model = Position
@@ -585,11 +538,9 @@ class PositionForm(BaseNomcomForm, forms.ModelForm):
         super(PositionForm, self).save(*args, **kwargs)
 
 
-class PrivateKeyForm(BaseNomcomForm, forms.Form):
+class PrivateKeyForm(forms.Form):
 
     key = forms.CharField(label='Private key', widget=forms.Textarea(), required=False)
-
-    fieldsets = [('Private key', ('key',))]
 
     def clean_key(self):
         key = self.cleaned_data.get('key', None)
@@ -601,7 +552,7 @@ class PrivateKeyForm(BaseNomcomForm, forms.Form):
         raise forms.ValidationError('Invalid private key. Error was: %s' % error)
 
 
-class PendingFeedbackForm(BaseNomcomForm, forms.ModelForm):
+class PendingFeedbackForm(forms.ModelForm):
 
     type = forms.ModelChoiceField(queryset=FeedbackTypeName.objects.all().order_by('pk'), widget=forms.RadioSelect, empty_label='Unclassified', required=False)
 
