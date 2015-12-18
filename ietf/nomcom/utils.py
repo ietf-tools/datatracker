@@ -271,42 +271,22 @@ def send_reminder_to_nominees(nominees,type):
     return addrs
 
 
-def get_or_create_nominee(nomcom, candidate_name, candidate_email, position, author):
+def get_or_create_nominee_by_person(nomcom, candidate, position, author):
     from ietf.nomcom.models import Nominee, NomineePosition
 
     nomcom_template_path = '/nomcom/%s/' % nomcom.group.acronym
 
-    # Create person and email if candidate email does't exist and send email
-    email, created_email = Email.objects.get_or_create(address=candidate_email)
-    if created_email:
-        person = Person.objects.create(name=candidate_name,
-                                       ascii=unaccent.asciify(candidate_name),
-                                       address=candidate_email)
-        email.person = person
-        email.save()
-
     # Add the nomination for a particular position
-    nominee, created = Nominee.objects.get_or_create(email=email, nomcom=nomcom)
+    nominee, created = Nominee.objects.get_or_create(person=candidate,email=candidate.email(), nomcom=nomcom)
     while nominee.duplicated:
         nominee = nominee.duplicated
     nominee_position, nominee_position_created = NomineePosition.objects.get_or_create(position=position, nominee=nominee)
-
-    if created_email:
-        # send email to secretariat and nomcomchair to warn about the new person
-        subject = 'New person is created'
-        from_email = settings.NOMCOM_FROM_EMAIL
-        (to_email, cc) = gather_address_lists('nomination_created_person',nomcom=nomcom)
-        context = {'email': email.address,
-                   'fullname': email.person.name,
-                   'person_id': email.person.id}
-        path = nomcom_template_path + INEXISTENT_PERSON_TEMPLATE
-        send_mail(None, to_email, from_email, subject, path, context, cc=cc)
 
     if nominee_position_created:
         # send email to nominee
         subject = 'IETF Nomination Information'
         from_email = settings.NOMCOM_FROM_EMAIL
-        (to_email, cc) = gather_address_lists('nomination_new_nominee',nominee=email.address)
+        (to_email, cc) = gather_address_lists('nomination_new_nominee',nominee=nominee.email.address)
         domain = Site.objects.get_current().domain
         today = datetime.date.today().strftime('%Y%m%d')
         hash = get_hash_nominee_position(today, nominee_position.id)
@@ -325,7 +305,7 @@ def get_or_create_nominee(nomcom, candidate_name, candidate_email, position, aut
                               today,
                               hash))
 
-        context = {'nominee': email.person.name,
+        context = {'nominee': nominee.person.name,
                    'position': position.name,
                    'domain': domain,
                    'accept_url': accept_url,
@@ -338,8 +318,8 @@ def get_or_create_nominee(nomcom, candidate_name, candidate_email, position, aut
         if nomcom.send_questionnaire:
             subject = '%s Questionnaire' % position
             from_email = settings.NOMCOM_FROM_EMAIL
-            (to_email, cc) = gather_address_lists('nomcom_questionnaire',nominee=email.address)
-            context = {'nominee': email.person.name,
+            (to_email, cc) = gather_address_lists('nomcom_questionnaire',nominee=nominee.email.address)
+            context = {'nominee': nominee.person.name,
                       'position': position.name}
             path = '%s%d/%s' % (nomcom_template_path,
                                 position.id, HEADER_QUESTIONNAIRE_TEMPLATE)
@@ -353,8 +333,8 @@ def get_or_create_nominee(nomcom, candidate_name, candidate_email, position, aut
     subject = 'Nomination Information'
     from_email = settings.NOMCOM_FROM_EMAIL
     (to_email, cc) = gather_address_lists('nomination_received',nomcom=nomcom)
-    context = {'nominee': email.person.name,
-               'nominee_email': email.address,
+    context = {'nominee': nominee.person.name,
+               'nominee_email': nominee.email.address,
                'position': position.name}
 
     if author:
@@ -368,6 +348,34 @@ def get_or_create_nominee(nomcom, candidate_name, candidate_email, position, aut
     send_mail(None, to_email, from_email, subject, path, context, cc=cc)
 
     return nominee
+
+def get_or_create_nominee(nomcom, candidate_name, candidate_email, position, author):
+
+    ## TODO: Assert here that there is no matching email or person, and change the code
+    ## to not possibly stomp on existing things
+
+    # Create person and email if candidate email does't exist and send email
+    email, created_email = Email.objects.get_or_create(address=candidate_email)
+    if created_email:
+        person = Person.objects.create(name=candidate_name,
+                                       ascii=unaccent.asciify(candidate_name),
+                                       address=candidate_email)
+        email.person = person
+        email.save()
+
+    if created_email:
+        # send email to secretariat and nomcomchair to warn about the new person
+        subject = 'New person is created'
+        from_email = settings.NOMCOM_FROM_EMAIL
+        (to_email, cc) = gather_address_lists('nomination_created_person',nomcom=nomcom)
+        context = {'email': email.address,
+                   'fullname': email.person.name,
+                   'person_id': email.person.id}
+        nomcom_template_path = '/nomcom/%s/' % nomcom.group.acronym
+        path = nomcom_template_path + INEXISTENT_PERSON_TEMPLATE
+        send_mail(None, to_email, from_email, subject, path, context, cc=cc)
+
+    return get_or_create_nominee_by_person(nomcom, email.person, position, author)
 
 
 def getheader(header_text, default="ascii"):

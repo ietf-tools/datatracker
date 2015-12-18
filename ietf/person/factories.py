@@ -54,3 +54,5 @@ class EmailFactory(factory.DjangoModelFactory):
         django_get_or_create = ('address',)
 
     address = '%s.%s@%s' % (factory.Faker('first_name'),factory.Faker('last_name'),factory.Faker('domain_name'))
+    active = True
+    primary = False

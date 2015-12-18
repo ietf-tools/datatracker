@@ -92,7 +92,7 @@ class NomComFactory(factory.DjangoModelFactory):
         if extracted is None:
             extracted = True
         if create and extracted:
-            nominees = [Nominee.objects.create(nomcom=self, email=PersonFactory().email_set.first()) for i in range(4)]
+            nominees = [NomineeFactory(nomcom=self) for i in range(4)]
             positions = [PositionFactory(nomcom=self) for i in range(3)]
 
             def npc(position,nominee,state_id):
@@ -134,6 +134,8 @@ class NomineeFactory(factory.DjangoModelFactory):
         model = Nominee
 
     nomcom = factory.SubFactory(NomComFactory)
+    person = factory.SubFactory(PersonFactory)   
+    email = factory.LazyAttribute(lambda n: n.person.email())
 
 class FeedbackFactory(factory.DjangoModelFactory):
     class Meta:
