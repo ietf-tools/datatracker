@@ -75,6 +75,7 @@ class NomcomViewsTest(TestCase):
         self.edit_members_url = reverse('nomcom_edit_members', kwargs={'year': self.year})
         self.edit_nomcom_url = reverse('nomcom_edit_nomcom', kwargs={'year': self.year})
         self.private_nominate_url = reverse('nomcom_private_nominate', kwargs={'year': self.year})
+        self.private_nominate_newperson_url = reverse('nomcom_private_nominate_newperson', kwargs={'year': self.year})
         self.add_questionnaire_url = reverse('nomcom_private_questionnaire', kwargs={'year': self.year})
         self.private_feedback_url = reverse('nomcom_private_feedback', kwargs={'year': self.year})
         self.positions_url = reverse("nomcom_list_positions", kwargs={'year': self.year})        
@@ -86,6 +87,7 @@ class NomcomViewsTest(TestCase):
         self.questionnaires_url = reverse('nomcom_questionnaires', kwargs={'year': self.year})
         self.public_feedback_url = reverse('nomcom_public_feedback', kwargs={'year': self.year})
         self.public_nominate_url = reverse('nomcom_public_nominate', kwargs={'year': self.year})
+        self.public_nominate_newperson_url = reverse('nomcom_public_nominate_newperson', kwargs={'year': self.year})
 
     def tearDown(self):
         clean_test_public_keys_dir(self)
@@ -507,6 +509,42 @@ class NomcomViewsTest(TestCase):
         return self.nominate_view(public=False)
         self.client.logout()
 
+    def test_public_nominate_newperson(self):
+        login_testing_unauthorized(self, COMMUNITY_USER, self.public_nominate_url)
+
+        messages_before = len(outbox)
+
+        self.nominate_newperson_view(public=True,confirmation=True)
+
+        self.assertEqual(len(outbox), messages_before + 4)
+
+        self.assertEqual('New person is created', outbox[-4]['Subject'])
+        self.assertTrue('secretariat' in outbox[-4]['To'])
+
+        self.assertEqual('IETF Nomination Information', outbox[-3]['Subject'])
+        self.assertTrue('nominee' in outbox[-3]['To'])
+
+        self.assertEqual('Nomination Information', outbox[-2]['Subject'])
+        self.assertTrue('nomcomchair' in outbox[-2]['To'])
+
+        self.assertEqual('Nomination receipt', outbox[-1]['Subject'])
+        self.assertTrue('plain' in outbox[-1]['To'])
+        self.assertTrue(u'Comments with accents äöå' in unicode(outbox[-1].get_payload(decode=True),"utf-8","replace"))
+
+        # Nominate the same person for the same position again without asking for confirmation 
+
+        messages_before = len(outbox)
+
+        self.nominate_view(public=True)
+        self.assertEqual(len(outbox), messages_before + 1)
+        self.assertEqual('Nomination Information', outbox[-1]['Subject'])
+        self.assertTrue('nomcomchair' in outbox[-1]['To'])
+
+    def test_private_nominate_newperson(self):
+        self.access_member_url(self.private_nominate_url)
+        return self.nominate_newperson_view(public=False)
+        self.client.logout()
+
     def test_public_nominate_with_automatic_questionnaire(self):
         nomcom = get_nomcom_by_year(self.year)
         nomcom.send_questionnaire = True
@@ -522,15 +560,15 @@ class NomcomViewsTest(TestCase):
 
     def nominate_view(self, *args, **kwargs):
         public = kwargs.pop('public', True)
-        nominee = kwargs.pop('nominee', None)
+        searched_email = kwargs.pop('searched_email', None)
         nominee_email = kwargs.pop('nominee_email', u'nominee@example.com')
-        if not nominee:
-            nominee = Email.objects.filter(address=nominee_email).first() 
-            if not nominee:
-                nominee = EmailFactory(address=nominee_email,primary=True)
-        if not nominee.person:
-            nominee.person = PersonFactory()
-            nominee.save()
+        if not searched_email:
+            searched_email = Email.objects.filter(address=nominee_email).first() 
+            if not searched_email:
+                searched_email = EmailFactory(address=nominee_email,primary=True)
+        if not searched_email.person:
+            searched_email.person = PersonFactory()
+            searched_email.save()
         nominator_email = kwargs.pop('nominator_email', "%s%s" % (COMMUNITY_USER, EMAIL_DOMAIN))
         position_name = kwargs.pop('position', 'IAOC')
         confirmation = kwargs.pop('confirmation', False)
@@ -560,7 +598,7 @@ class NomcomViewsTest(TestCase):
         comments = u'Test nominate view. Comments with accents äöåÄÖÅ éáíóú âêîôû ü àèìòù.'
         candidate_phone = u'123456'
 
-        test_data = {'candidate': nominee.pk,
+        test_data = {'searched_email': searched_email.pk,
                      'candidate_phone': candidate_phone,
                      'position': position.id,
                      'qualifications': comments,
@@ -574,11 +612,10 @@ class NomcomViewsTest(TestCase):
         self.assertContains(response, "alert-success")
 
         # check objects
-        ## TODO - straighten this _obj vs _email naming mess out
-        nominee_obj = Nominee.objects.get(email=nominee)
-        NomineePosition.objects.get(position=position, nominee=nominee_obj)
+        nominee = Nominee.objects.get(email=searched_email)
+        NomineePosition.objects.get(position=position, nominee=nominee)
         feedback = Feedback.objects.filter(positions__in=[position],
-                                           nominees__in=[nominee_obj],
+                                           nominees__in=[nominee],
                                            type=FeedbackTypeName.objects.get(slug='nomina')).latest('id')
         if public:
             self.assertEqual(feedback.author, nominator_email)
@@ -589,84 +626,83 @@ class NomcomViewsTest(TestCase):
         self.assertEqual(check_comments(feedback.comments, comments, self.privatekey_file), True)
         Nomination.objects.get(position=position,
                                candidate_name=nominee.person.plain_name(),
-                               candidate_email=nominee.address,
+                               candidate_email=searched_email.address,
                                candidate_phone=candidate_phone,
-                               nominee=nominee_obj,
+                               nominee=nominee,
                                comments=feedback,
                                nominator_email="%s%s" % (COMMUNITY_USER, EMAIL_DOMAIN))
 
-## Save this for repurposing to test the to-be-created 'by name and address' form
-##    def nominate_view(self, *args, **kwargs):
-##        public = kwargs.pop('public', True)
-##        nominee_email = kwargs.pop('nominee_email', u'nominee@example.com')
-##        nominator_email = kwargs.pop('nominator_email', "%s%s" % (COMMUNITY_USER, EMAIL_DOMAIN))
-##        position_name = kwargs.pop('position', 'IAOC')
-##        confirmation = kwargs.pop('confirmation', False)
-##
-##        if public:
-##            nominate_url = self.public_nominate_url
-##        else:
-##            nominate_url = self.private_nominate_url
-##        response = self.client.get(nominate_url)
-##        self.assertEqual(response.status_code, 200)
-##
-##        nomcom = get_nomcom_by_year(self.year)
-##        if not nomcom.public_key:
-##            q = PyQuery(response.content)
-##            self.assertEqual(len(q("#nominate-form")), 0)
-##
-##        # save the cert file in tmp
-##        nomcom.public_key.storage.location = tempfile.gettempdir()
-##        nomcom.public_key.save('cert', File(open(self.cert_file.name, 'r')))
-##
-##        response = self.client.get(nominate_url)
-##        self.assertEqual(response.status_code, 200)
-##        q = PyQuery(response.content)
-##        self.assertEqual(len(q("#nominate-form")), 1)
-##
-##        position = Position.objects.get(name=position_name)
-##        candidate_email = nominee_email
-##        candidate_name = u'nominee'
-##        comments = u'Test nominate view. Comments with accents äöåÄÖÅ éáíóú âêîôû ü àèìòù.'
-##        candidate_phone = u'123456'
-##
-##        test_data = {'candidate_name': candidate_name,
-##                     'candidate_email': candidate_email,
-##                     'candidate_phone': candidate_phone,
-##                     'position': position.id,
-##                     'qualifications': comments,
-##                     'confirmation': confirmation}
-##        if not public:
-##            test_data['nominator_email'] = nominator_email
-##
-##        response = self.client.post(nominate_url, test_data)
-##        self.assertEqual(response.status_code, 200)
-##        q = PyQuery(response.content)
-##        self.assertContains(response, "alert-success")
-##
-##        # check objects
-##        email = Email.objects.get(address=candidate_email)
-##        Person.objects.get(name=candidate_name, address=candidate_email)
-##        nominee = Nominee.objects.get(email=email)
-##        NomineePosition.objects.get(position=position, nominee=nominee)
-##        feedback = Feedback.objects.filter(positions__in=[position],
-##                                           nominees__in=[nominee],
-##                                           type=FeedbackTypeName.objects.get(slug='nomina')).latest('id')
-##        if public:
-##            self.assertEqual(feedback.author, nominator_email)
-##
-##        # to check feedback comments are saved like enrypted data
-##        self.assertNotEqual(feedback.comments, comments)
-##
-##        self.assertEqual(check_comments(feedback.comments, comments, self.privatekey_file), True)
-##        Nomination.objects.get(position=position,
-##                               candidate_name=candidate_name,
-##                               candidate_email=candidate_email,
-##                               candidate_phone=candidate_phone,
-##                               nominee=nominee,
-##                               comments=feedback,
-##                               nominator_email="%s%s" % (COMMUNITY_USER, EMAIL_DOMAIN))
-##
+    def nominate_newperson_view(self, *args, **kwargs):
+        public = kwargs.pop('public', True)
+        nominee_email = kwargs.pop('nominee_email', u'nominee@example.com')
+        nominator_email = kwargs.pop('nominator_email', "%s%s" % (COMMUNITY_USER, EMAIL_DOMAIN))
+        position_name = kwargs.pop('position', 'IAOC')
+        confirmation = kwargs.pop('confirmation', False)
+
+        if public:
+            nominate_url = self.public_nominate_newperson_url
+        else:
+            nominate_url = self.private_nominate_newperson_url
+        response = self.client.get(nominate_url)
+        self.assertEqual(response.status_code, 200)
+
+        nomcom = get_nomcom_by_year(self.year)
+        if not nomcom.public_key:
+            q = PyQuery(response.content)
+            self.assertEqual(len(q("#nominate-form")), 0)
+
+        # save the cert file in tmp
+        nomcom.public_key.storage.location = tempfile.gettempdir()
+        nomcom.public_key.save('cert', File(open(self.cert_file.name, 'r')))
+
+        response = self.client.get(nominate_url)
+        self.assertEqual(response.status_code, 200)
+        q = PyQuery(response.content)
+        self.assertEqual(len(q("#nominate-form")), 1)
+
+        position = Position.objects.get(name=position_name)
+        candidate_email = nominee_email
+        candidate_name = u'nominee'
+        comments = u'Test nominate view. Comments with accents äöåÄÖÅ éáíóú âêîôû ü àèìòù.'
+        candidate_phone = u'123456'
+
+        test_data = {'candidate_name': candidate_name,
+                     'candidate_email': candidate_email,
+                     'candidate_phone': candidate_phone,
+                     'position': position.id,
+                     'qualifications': comments,
+                     'confirmation': confirmation}
+        if not public:
+            test_data['nominator_email'] = nominator_email
+
+        response = self.client.post(nominate_url, test_data)
+        self.assertEqual(response.status_code, 200)
+        q = PyQuery(response.content)
+        self.assertContains(response, "alert-success")
+
+        # check objects
+        email = Email.objects.get(address=candidate_email)
+        Person.objects.get(name=candidate_name, address=candidate_email)
+        nominee = Nominee.objects.get(email=email)
+        NomineePosition.objects.get(position=position, nominee=nominee)
+        feedback = Feedback.objects.filter(positions__in=[position],
+                                           nominees__in=[nominee],
+                                           type=FeedbackTypeName.objects.get(slug='nomina')).latest('id')
+        if public:
+            self.assertEqual(feedback.author, nominator_email)
+
+        # to check feedback comments are saved like enrypted data
+        self.assertNotEqual(feedback.comments, comments)
+
+        self.assertEqual(check_comments(feedback.comments, comments, self.privatekey_file), True)
+        Nomination.objects.get(position=position,
+                               candidate_name=candidate_name,
+                               candidate_email=candidate_email,
+                               candidate_phone=candidate_phone,
+                               nominee=nominee,
+                               comments=feedback,
+                               nominator_email="%s%s" % (COMMUNITY_USER, EMAIL_DOMAIN))
+
     def test_add_questionnaire(self):
         self.access_chair_url(self.add_questionnaire_url)
         return self.add_questionnaire()

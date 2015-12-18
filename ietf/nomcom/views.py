@@ -22,7 +22,7 @@ from ietf.group.models import Group, GroupEvent
 from ietf.message.models import Message
 
 from ietf.nomcom.decorators import nomcom_private_key_required
-from ietf.nomcom.forms import (NominateForm, FeedbackForm, QuestionnaireForm,
+from ietf.nomcom.forms import (NominateForm, NominateNewPersonForm, FeedbackForm, QuestionnaireForm,
                                MergeForm, NomComTemplateForm, PositionForm,
                                PrivateKeyForm, EditNomcomForm, EditNomineeForm,
                                PendingFeedbackForm, ReminderDatesForm, FullFeedbackFormSet,
@@ -361,6 +361,58 @@ def nominate(request, year, public):
                                'year': year,
                                'selected': 'nominate'}, RequestContext(request))
 
+@login_required
+def public_nominate_newperson(request, year):
+    return nominate_newperson(request, year, True)
+
+
+@role_required("Nomcom")
+def private_nominate_newperson(request, year):
+    return nominate_newperson(request, year, False)
+
+
+def nominate_newperson(request, year, public):
+    nomcom = get_nomcom_by_year(year)
+    has_publickey = nomcom.public_key and True or False
+    if public:
+        template = 'nomcom/public_nominate.html'
+    else:
+        template = 'nomcom/private_nominate.html'
+
+    if not has_publickey:
+        message = ('warning', "This Nomcom is not yet accepting nominations")
+        return render_to_response(template,
+                              {'message': message,
+                               'nomcom': nomcom,
+                               'year': year,
+                               'selected': 'nominate'}, RequestContext(request))
+
+    if nomcom.group.state_id == 'conclude':
+        message = ('warning', "Nominations to this Nomcom are closed.")
+        return render_to_response(template,
+                              {'message': message,
+                               'nomcom': nomcom,
+                               'year': year,
+                               'selected': 'nominate'}, RequestContext(request))
+
+    message = None
+    if request.method == 'POST':
+        form = NominateNewPersonForm(data=request.POST, nomcom=nomcom, user=request.user, public=public)
+        if form.is_valid():
+            form.save()
+            message = ('success', 'Your nomination has been registered. Thank you for the nomination.')
+            ## This needs to redirect to the normal nominate url instead.
+            ## Need to weed out the custom message stuff
+            form = NominateNewPersonForm(nomcom=nomcom, user=request.user, public=public)
+    else:
+        form = NominateNewPersonForm(nomcom=nomcom, user=request.user, public=public)
+
+    return render_to_response(template,
+                              {'form': form,
+                               'message': message,
+                               'nomcom': nomcom,
+                               'year': year,
+                               'selected': 'nominate'}, RequestContext(request))
 
 @login_required
 def public_feedback(request, year):

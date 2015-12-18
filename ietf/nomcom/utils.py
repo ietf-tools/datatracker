@@ -363,7 +363,6 @@ def get_or_create_nominee(nomcom, candidate_name, candidate_email, position, aut
         email.person = person
         email.save()
 
-    if created_email:
         # send email to secretariat and nomcomchair to warn about the new person
         subject = 'New person is created'
         from_email = settings.NOMCOM_FROM_EMAIL

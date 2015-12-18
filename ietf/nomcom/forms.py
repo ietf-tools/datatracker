@@ -5,6 +5,8 @@ from django.shortcuts import get_object_or_404, redirect
 from django.utils.decorators import method_decorator
 from django.shortcuts import render_to_response
 from django.template.context import RequestContext
+from django.core.urlresolvers import reverse
+from django.utils.html import mark_safe
 
 from ietf.dbtemplate.forms import DBTemplateForm
 from ietf.group.models import Group, Role
@@ -300,7 +302,7 @@ class MergeForm(forms.Form):
 
 
 class NominateForm(forms.ModelForm):
-    candidate = SearchableEmailField(only_users=False)
+    searched_email = SearchableEmailField(only_users=False)
     qualifications = forms.CharField(label="Candidate's qualifications for the position",
                                widget=forms.Textarea())
     confirmation = forms.BooleanField(label='Email comments back to me as confirmation.',
@@ -314,6 +316,9 @@ class NominateForm(forms.ModelForm):
 
         super(NominateForm, self).__init__(*args, **kwargs)
 
+        new_person_url_name = 'nomcom_%s_nominate_newperson' % ('public' if self.public else 'private' )
+        self.fields['searched_email'].label = 'Candidate email'
+        self.fields['searched_email'].help_text = 'Search by name or email address. Click <a href="%s">here</a> if the search does not find the candidate you want to nominate.' % reverse(new_person_url_name,kwargs={'year':self.nomcom.year()})
         self.fields['nominator_email'].label = 'Nominator email'
         if self.nomcom:
             self.fields['position'].queryset = Position.objects.get_by_nomcom(self.nomcom).opened()
@@ -339,18 +344,15 @@ class NominateForm(forms.ModelForm):
         # Create nomination
         nomination = super(NominateForm, self).save(commit=False)
         nominator_email = self.cleaned_data.get('nominator_email', None)
-        ## TODO - rename this candidate_email after purging the old candidate_email
-        candidate = self.cleaned_data['candidate']
-        ##candidate_email = self.cleaned_data['candidate_email']
-        ##candidate_name = self.cleaned_data['candidate_name']
+        searched_email = self.cleaned_data['searched_email']
         position = self.cleaned_data['position']
         qualifications = self.cleaned_data['qualifications']
         confirmation = self.cleaned_data.get('confirmation', False)
         share_nominator = self.cleaned_data['share_nominator']
         nomcom_template_path = '/nomcom/%s/' % self.nomcom.group.acronym
 
-        nomination.candidate_name = candidate.person.plain_name()
-        nomination.candidate_email = candidate.address
+        nomination.candidate_name = searched_email.person.plain_name()
+        nomination.candidate_email = searched_email.address
 
         author = None
         if self.public:
@@ -359,8 +361,7 @@ class NominateForm(forms.ModelForm):
             if nominator_email:
                 emails = Email.objects.filter(address=nominator_email)
                 author = emails and emails[0] or None
-        ##nominee = get_or_create_nominee(self.nomcom, candidate_name, candidate_email, position, author)
-        nominee = get_or_create_nominee_by_person (self.nomcom, candidate.person, position, author)
+        nominee = get_or_create_nominee_by_person (self.nomcom, searched_email.person, position, author)
 
         # Complete nomination data
         feedback = Feedback.objects.create(nomcom=self.nomcom,
@@ -399,10 +400,118 @@ class NominateForm(forms.ModelForm):
 
     class Meta:
         model = Nomination
-        fields = ('share_nominator', 'position', 'nominator_email', 'candidate', 
+        fields = ('share_nominator', 'position', 'nominator_email', 'searched_email', 
                   'candidate_phone', 'qualifications', 'confirmation')
-        ##fields = ('share_nominator', 'position', 'nominator_email', 'candidate', 'candidate_name',
-        ##          'candidate_email', 'candidate_phone', 'qualifications', 'confirmation')
+
+class NominateNewPersonForm(forms.ModelForm):
+    qualifications = forms.CharField(label="Candidate's qualifications for the position",
+                               widget=forms.Textarea())
+    confirmation = forms.BooleanField(label='Email comments back to me as confirmation.',
+                                      help_text="If you want to get a confirmation mail containing your feedback in cleartext, please check the 'email comments back to me as confirmation'.",
+                                      required=False)
+
+    def __init__(self, *args, **kwargs):
+        self.nomcom = kwargs.pop('nomcom', None)
+        self.user = kwargs.pop('user', None)
+        self.public = kwargs.pop('public', None)
+
+        super(NominateNewPersonForm, self).__init__(*args, **kwargs)
+
+        self.fields['nominator_email'].label = 'Nominator email'
+        if self.nomcom:
+            self.fields['position'].queryset = Position.objects.get_by_nomcom(self.nomcom).opened()
+            self.fields['qualifications'].help_text = self.nomcom.initial_text
+
+        if not self.public:
+            self.fields.pop('confirmation')
+            author = get_user_email(self.user)
+            if author:
+                self.fields['nominator_email'].initial = author.address
+                help_text = """(Nomcom Chair/Member: please fill this in. Use your own email address if the person making the
+                               nomination wishes to be anonymous. The confirmation email will be sent to the address given here,
+                               and the address will also be captured as part of the registered nomination.)"""
+                self.fields['nominator_email'].help_text = help_text
+                self.fields['share_nominator'].help_text = """(Nomcom Chair/Member: Check this box if the person providing this nomination
+                                                              has indicated they will allow NomCom to share their name as one of the people
+                                                              nominating this candidate."""
+        else:
+            self.fields.pop('nominator_email')
+
+
+    def clean_candidate_email(self):
+        candidate_email = self.cleaned_data['candidate_email']
+        if Email.objects.filter(address=candidate_email).exists():
+            normal_url_name = 'nomcom_%s_nominate' % 'public' if self.public else 'private'
+            msg = '%s is already in the datatracker. \
+                   Use the <a href="%s">normal nomination form</a> to nominate the person \
+                   with this address.\
+                  ' % (candidate_email,reverse(normal_url_name,kwargs={'year':self.nomcom.year()}))
+            raise forms.ValidationError(mark_safe(msg))
+        return candidate_email
+
+    def save(self, commit=True):
+        # Create nomination
+        nomination = super(NominateNewPersonForm, self).save(commit=False)
+        nominator_email = self.cleaned_data.get('nominator_email', None)
+        candidate_email = self.cleaned_data['candidate_email']
+        candidate_name = self.cleaned_data['candidate_name']
+        position = self.cleaned_data['position']
+        qualifications = self.cleaned_data['qualifications']
+        confirmation = self.cleaned_data.get('confirmation', False)
+        share_nominator = self.cleaned_data['share_nominator']
+        nomcom_template_path = '/nomcom/%s/' % self.nomcom.group.acronym
+
+
+        author = None
+        if self.public:
+            author = get_user_email(self.user)
+        else:
+            if nominator_email:
+                emails = Email.objects.filter(address=nominator_email)
+                author = emails and emails[0] or None
+        ## This is where it should change - validation of the email field should fail if the email exists
+        ## The function should become make_nominee_from_newperson)
+        nominee = get_or_create_nominee(self.nomcom, candidate_name, candidate_email, position, author)
+
+        # Complete nomination data
+        feedback = Feedback.objects.create(nomcom=self.nomcom,
+                                           comments=qualifications,
+                                           type=FeedbackTypeName.objects.get(slug='nomina'),
+                                           user=self.user)
+        feedback.positions.add(position)
+        feedback.nominees.add(nominee)
+
+        if author:
+            nomination.nominator_email = author.address
+            feedback.author = author.address
+            feedback.save()
+
+        nomination.nominee = nominee
+        nomination.comments = feedback
+        nomination.share_nominator = share_nominator
+        nomination.user = self.user
+
+        if commit:
+            nomination.save()
+
+        # send receipt email to nominator
+        if confirmation:
+            if author:
+                subject = 'Nomination receipt'
+                from_email = settings.NOMCOM_FROM_EMAIL
+                (to_email, cc) = gather_address_lists('nomination_receipt_requested',nominator=author.address)
+                context = {'nominee': nominee.email.person.name,
+                          'comments': qualifications,
+                          'position': position.name}
+                path = nomcom_template_path + NOMINATION_RECEIPT_TEMPLATE
+                send_mail(None, to_email, from_email, subject, path, context, cc=cc)
+
+        return nomination
+
+    class Meta:
+        model = Nomination
+        fields = ('share_nominator', 'position', 'nominator_email', 'candidate_name',
+                  'candidate_email', 'candidate_phone', 'qualifications', 'confirmation')
 
 
 class FeedbackForm(forms.ModelForm):
