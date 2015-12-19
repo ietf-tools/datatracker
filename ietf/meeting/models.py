@@ -13,6 +13,7 @@ from timedeltafield import TimedeltaField
 import debug                            # pyflakes:ignore
 
 from django.db import models
+from django.db.models import Max
 from django.conf import settings
 # mostly used by json_dict()
 #from django.template.defaultfilters import slugify, date as date_format, time as time_format
@@ -263,6 +264,14 @@ class Meeting(models.Model):
         if self.agenda != agenda:
             self.agenda = agenda
             self.save()
+
+    def updated(self):
+        meeting_time = datetime.datetime(*(self.date.timetuple()[:7]))
+        ts = max(self.timeslot_set.aggregate(Max('modified'))["modified__max"] or meeting_time,
+                 self.session_set.aggregate(Max('modified'))["modified__max"] or meeting_time)
+        tz = pytz.timezone(settings.PRODUCTION_TIMEZONE)
+        ts = tz.localize(ts)
+        return ts
 
     class Meta:
         ordering = ["-date", ]

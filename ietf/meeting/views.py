@@ -32,7 +32,7 @@ from ietf.meeting.helpers import build_all_agenda_slices, get_wg_name_list
 from ietf.meeting.helpers import get_all_assignments_from_schedule
 from ietf.meeting.helpers import get_modified_from_assignments
 from ietf.meeting.helpers import get_wg_list, find_ads_for_meeting
-from ietf.meeting.helpers import get_meeting, get_schedule, agenda_permissions, meeting_updated, get_meetings
+from ietf.meeting.helpers import get_meeting, get_schedule, agenda_permissions, get_meetings
 from ietf.meeting.helpers import preprocess_assignments_for_agenda, read_agenda_file
 from ietf.meeting.helpers import convert_draft_to_pdf
 from ietf.utils.pipe import pipe
@@ -380,7 +380,7 @@ def agenda(request, num=None, name=None, base=None, ext=None):
         base = base.replace("-utc", "")
         return render(request, "meeting/no-"+base+ext, {'meeting':meeting }, content_type=mimetype[ext])
 
-    updated = meeting_updated(meeting)
+    updated = meeting.updated()
     filtered_assignments = schedule.assignments.exclude(timeslot__type__in=['lead','offagenda'])
     filtered_assignments = preprocess_assignments_for_agenda(filtered_assignments, meeting)
 
@@ -528,7 +528,7 @@ def agenda_by_type_ics(request,num=None,type=None):
     assignments = schedule.assignments.order_by('session__type__slug','timeslot__time')
     if type:
         assignments = assignments.filter(session__type__slug=type)
-    updated = meeting_updated(meeting)
+    updated = meeting.updated()
     return render(request,"meeting/agenda.ics",{"schedule":schedule,"updated":updated,"assignments":assignments},content_type="text/calendar")
 
 def session_agenda(request, num, session):
@@ -771,7 +771,7 @@ def room_view(request, num=None):
 def ical_agenda(request, num=None, name=None, ext=None):
     meeting = get_meeting(num)
     schedule = get_schedule(meeting, name)
-    updated = meeting_updated(meeting)
+    updated = meeting.updated()
 
     if schedule is None:
         raise Http404
