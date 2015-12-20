@@ -106,6 +106,7 @@ def get_revision_emails(draft):
     custom mail lists for the document or group
     2) the main AD, via id_internal.job_owner
     3) any ad who has marked "discuss" in the ballot associated with this id_internal
+    4) And now, also, the RFC Editor if the draft is in the RFC Editor Queue
     """
     # from legacy
     if not draft.get_state('draft-iesg'):
@@ -121,6 +122,9 @@ def get_revision_emails(draft):
         for ad, pos in draft.active_ballot().active_ad_positions().iteritems():
             if pos and pos.pos_id == "discuss":
                 emails.append(ad.role_email("ad").address)
+
+    if draft.get_state('draft-iesg').slug == "rfcqueue":
+        emails.append('rfc-editor@rfc-editor.org')
 
     return ', '.join(emails)
 
