@@ -312,66 +312,24 @@ def questionnaires(request, year):
 
 @login_required
 def public_nominate(request, year):
-    return nominate(request, year, True)
+    return nominate(request=request, year=year, public=True, newperson=False)
 
 
 @role_required("Nomcom")
 def private_nominate(request, year):
-    return nominate(request, year, False)
-
-
-def nominate(request, year, public):
-    nomcom = get_nomcom_by_year(year)
-    has_publickey = nomcom.public_key and True or False
-    if public:
-        template = 'nomcom/public_nominate.html'
-    else:
-        template = 'nomcom/private_nominate.html'
-
-    if not has_publickey:
-        message = ('warning', "This Nomcom is not yet accepting nominations")
-        return render_to_response(template,
-                              {'message': message,
-                               'nomcom': nomcom,
-                               'year': year,
-                               'selected': 'nominate'}, RequestContext(request))
-
-    if nomcom.group.state_id == 'conclude':
-        message = ('warning', "Nominations to this Nomcom are closed.")
-        return render_to_response(template,
-                              {'message': message,
-                               'nomcom': nomcom,
-                               'year': year,
-                               'selected': 'nominate'}, RequestContext(request))
-
-    message = None
-    if request.method == 'POST':
-        form = NominateForm(data=request.POST, nomcom=nomcom, user=request.user, public=public)
-        if form.is_valid():
-            form.save()
-            message = ('success', 'Your nomination has been registered. Thank you for the nomination.')
-            form = NominateForm(nomcom=nomcom, user=request.user, public=public)
-    else:
-        form = NominateForm(nomcom=nomcom, user=request.user, public=public)
-
-    return render_to_response(template,
-                              {'form': form,
-                               'message': message,
-                               'nomcom': nomcom,
-                               'year': year,
-                               'selected': 'nominate'}, RequestContext(request))
+    return nominate(request=request, year=year, public=False, newperson=False)
 
 @login_required
 def public_nominate_newperson(request, year):
-    return nominate_newperson(request, year, True)
+    return nominate(request=request, year=year, public=True, newperson=True)
 
 
 @role_required("Nomcom")
 def private_nominate_newperson(request, year):
-    return nominate_newperson(request, year, False)
+    return nominate(request=request, year=year, public=False, newperson=True)
 
 
-def nominate_newperson(request, year, public):
+def nominate(request, year, public, newperson):
     nomcom = get_nomcom_by_year(year)
     has_publickey = nomcom.public_key and True or False
     if public:
@@ -397,15 +355,24 @@ def nominate_newperson(request, year, public):
 
     message = None
     if request.method == 'POST':
-        form = NominateNewPersonForm(data=request.POST, nomcom=nomcom, user=request.user, public=public)
+        if newperson:
+            form = NominateNewPersonForm(data=request.POST, nomcom=nomcom, user=request.user, public=public)
+        else:
+            form = NominateForm(data=request.POST, nomcom=nomcom, user=request.user, public=public)
         if form.is_valid():
             form.save()
             message = ('success', 'Your nomination has been registered. Thank you for the nomination.')
-            ## This needs to redirect to the normal nominate url instead.
-            ## Need to weed out the custom message stuff
-            form = NominateNewPersonForm(nomcom=nomcom, user=request.user, public=public)
+            if newperson:
+                ## This needs to redirect to the normal nominate URL instead.
+                ## Need to weed out the custom message stuff.
+                form = NominateNewPersonForm(nomcom=nomcom, user=request.user, public=public)
+            else:
+                form = NominateForm(nomcom=nomcom, user=request.user, public=public)
     else:
-        form = NominateNewPersonForm(nomcom=nomcom, user=request.user, public=public)
+        if newperson:
+            form = NominateNewPersonForm(nomcom=nomcom, user=request.user, public=public)
+        else:
+            form = NominateForm(nomcom=nomcom, user=request.user, public=public)
 
     return render_to_response(template,
                               {'form': form,
