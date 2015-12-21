@@ -243,9 +243,10 @@ $(document).ready(function () {
     });
 });
 
-$(function() {
-    // customize the styling a bit; more is done in ietf.css
+$(document).ready(function () {
+    // if there is a sortable table on the page
     if ($(".tablesorter").length) {
+        // customize the styling a bit; more is done in ietf.css
         $.tablesorter.themes.bootstrap = {
             table: "",
             iconSortNone: "bootstrap-icon-unsorted",
@@ -253,12 +254,15 @@ $(function() {
             iconSortDesc: "glyphicon glyphicon-chevron-down",
             hover: "active"
         };
+        // disable the URL-based sorting stuff that uses the django backend
+        $(".tablesorter thead a").contents().unwrap();
+        // make the table sortable
         $(".tablesorter").tablesorter({
             emptyTo: "zero",
             theme: "bootstrap",
             table: "",
             headerTemplate: "{content} {icon}",
-            widgets: ["uitheme", "sort2Hash"]
+            widgets: ["uitheme"]
         });
     }
 });
