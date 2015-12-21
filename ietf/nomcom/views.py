@@ -357,9 +357,7 @@ def nominate(request, year, public, newperson):
             form.save()
             messages.success(request, 'Your nomination has been registered. Thank you for the nomination.')
             if newperson:
-                ## This needs to redirect to the normal nominate URL instead.
-                ## Need to weed out the custom message stuff.
-                form = NominateNewPersonForm(nomcom=nomcom, user=request.user, public=public)
+                return redirect('nomcom_%s_nominate' % ('public' if public else 'private'), year=year)
             else:
                 form = NominateForm(nomcom=nomcom, user=request.user, public=public)
     else:

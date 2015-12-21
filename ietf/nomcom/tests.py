@@ -675,7 +675,8 @@ class NomcomViewsTest(TestCase):
         if not public:
             test_data['nominator_email'] = nominator_email
 
-        response = self.client.post(nominate_url, test_data)
+        response = self.client.post(nominate_url, test_data,follow=True)
+        self.assertTrue(response.redirect_chain)
         self.assertEqual(response.status_code, 200)
         q = PyQuery(response.content)
         self.assertContains(response, "alert-success")
