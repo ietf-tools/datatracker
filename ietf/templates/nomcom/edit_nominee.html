@@ -8,13 +8,8 @@
 
 {% block nomcom_content %}
   {% origin %}
-  {% bootstrap_messages %}
 
   <h2>Edit email<br><small>{{ nominee }}</small></h2>
-
-  {% if message %}
-    <p class="alert alert-{{ message.0 }}">{{ message.1 }}</p>
-  {% endif %}
 
   <form method="post">
     {% csrf_token %}

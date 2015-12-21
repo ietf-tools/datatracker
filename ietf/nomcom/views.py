@@ -106,11 +106,11 @@ def announcements(request):
 @role_required("Nomcom")
 def private_key(request, year):
     nomcom = get_nomcom_by_year(year)
-    message = None
+    
     if request.session.get('NOMCOM_PRIVATE_KEY_%s' % year, None):
-        message = ('warning', 'You already have a private decryption key set for this session.')
+        messages.warning(request, 'You already have a private decryption key set for this session.')
     else:
-        message = ('warning', "You don't have a private decryption key set for this session yet")
+        messages.warning(request, "You don't have a private decryption key set for this session yet")
 
     back_url = request.GET.get('back_to', reverse('nomcom_private_index', None, args=(year, )))
     if request.method == 'POST':
@@ -125,7 +125,6 @@ def private_key(request, year):
                                'year': year,
                                'back_url': back_url,
                                'form': form,
-                               'message': message,
                                'selected': 'private_key'}, RequestContext(request))
 
 
@@ -134,10 +133,9 @@ def private_index(request, year):
     nomcom = get_nomcom_by_year(year)
     all_nominee_positions = NomineePosition.objects.get_by_nomcom(nomcom).not_duplicated()
     is_chair = nomcom.group.has_role(request.user, "chair")
-    message = None
     if is_chair and request.method == 'POST':
         if nomcom.group.state_id != 'active':
-            message = ('warning', "This nomcom is not active. Request administrative assistance if Nominee state needs to change.")
+            messages.warning(request, "This nomcom is not active. Request administrative assistance if Nominee state needs to change.")
         else:
             action = request.POST.get('action')
             nominations_to_modify = request.POST.getlist('selected')
@@ -145,15 +143,15 @@ def private_index(request, year):
                 nominations = all_nominee_positions.filter(id__in=nominations_to_modify)
                 if action == "set_as_accepted":
                     nominations.update(state='accepted')
-                    message = ('success', 'The selected nominations have been set as accepted')
+                    messages.success(request,'The selected nominations have been set as accepted')
                 elif action == "set_as_declined":
                     nominations.update(state='declined')
-                    message = ('success', 'The selected nominations have been set as declined')
+                    messages.success(request,'The selected nominations have been set as declined')
                 elif action == "set_as_pending":
                     nominations.update(state='pending')
-                    message = ('success', 'The selected nominations have been set as pending')
+                    messages.success(request,'The selected nominations have been set as pending')
             else:
-                message = ('warning', "Please, select some nominations to work with")
+                messages.warning(request, "Please, select some nominations to work with")
 
     filters = {}
     questionnaire_state = "questionnaire"
@@ -195,7 +193,7 @@ def private_index(request, year):
                                'selected_position': selected_position and int(selected_position) or None,
                                'selected': 'index',
                                'is_chair': is_chair,
-                               'message': message}, RequestContext(request))
+                              }, RequestContext(request))
 
 
 @role_required("Nomcom Chair", "Nomcom Advisor")
@@ -205,11 +203,13 @@ def send_reminder_mail(request, year, type):
 
     has_publickey = nomcom.public_key and True or False
     if not has_publickey:
-        message = ('warning', "This Nomcom does not yet have a public key.")
+        messages.warning(request, "This Nomcom does not yet have a public key.")
+        nomcom_ready = False
     elif nomcom.group.state_id != 'active':
-        message = ('warning', "This Nomcom is not active.")
+        messages.warning(request, "This Nomcom is not active.")
+        nomcom_ready = False
     else:
-        message = None
+        nomcom_ready = True
 
     if type=='accept':
         interesting_state = 'pending'
@@ -239,17 +239,17 @@ def send_reminder_mail(request, year, type):
     mail_template = DBTemplate.objects.filter(group=nomcom.group, path=mail_path)
     mail_template = mail_template and mail_template[0] or None
 
-    if request.method == 'POST' and not message:
+    if request.method == 'POST' and nomcom_ready:
         selected_nominees = request.POST.getlist('selected')
         selected_nominees = nominees.filter(id__in=selected_nominees)
         if selected_nominees:
             addrs = send_reminder_to_nominees(selected_nominees,type)
             if addrs:
-                message = ('success', 'A copy of "%s" has been sent to %s'%(mail_template.title,", ".join(addrs)))
+                messages.success(request, 'A copy of "%s" has been sent to %s'%(mail_template.title,", ".join(addrs)))
             else:
-                message = ('warning', 'No messages were sent.')
+                messages.warning(request, 'No messages were sent.')
         else:
-            message = ('warning', "Please, select at least one nominee")
+            messages.warning(request, "Please, select at least one nominee")
 
     return render_to_response('nomcom/send_reminder_mail.html',
                               {'nomcom': nomcom,
@@ -259,7 +259,6 @@ def send_reminder_mail(request, year, type):
                                'selected': selected_tab,
                                'reminder_description': reminder_description,
                                'state_description': state_description,
-                               'message': message,
                                'is_chair_task' : True,
                               }, RequestContext(request))
 
@@ -268,15 +267,14 @@ def send_reminder_mail(request, year, type):
 def private_merge(request, year):
     nomcom = get_nomcom_by_year(year)
     if nomcom.group.state_id != 'active':
-        message = ('warning', "This Nomcom is not active.")
+        messages.warning(request, "This Nomcom is not active.")
         form = None
     else:
-        message = None
         if request.method == 'POST':
             form = MergeForm(request.POST, nomcom=nomcom)
             if form.is_valid():
                 form.save()
-                message = ('success', 'The emails have been unified')
+                messages.success(request, 'The emails have been unified')
         else:
             form = MergeForm(nomcom=nomcom)
 
@@ -284,7 +282,6 @@ def private_merge(request, year):
                               {'nomcom': nomcom,
                                'year': year,
                                'form': form,
-                               'message': message,
                                'selected': 'merge',
                                'is_chair_task' : True,
                               }, RequestContext(request))
@@ -338,22 +335,19 @@ def nominate(request, year, public, newperson):
         template = 'nomcom/private_nominate.html'
 
     if not has_publickey:
-        message = ('warning', "This Nomcom is not yet accepting nominations")
+        messages.warning(request, "This Nomcom is not yet accepting nominations")
         return render_to_response(template,
-                              {'message': message,
-                               'nomcom': nomcom,
+                              {'nomcom': nomcom,
                                'year': year,
                                'selected': 'nominate'}, RequestContext(request))
 
     if nomcom.group.state_id == 'conclude':
-        message = ('warning', "Nominations to this Nomcom are closed.")
+        messages.warning(request, "Nominations to this Nomcom are closed.")
         return render_to_response(template,
-                              {'message': message,
-                               'nomcom': nomcom,
+                              {'nomcom': nomcom,
                                'year': year,
                                'selected': 'nominate'}, RequestContext(request))
 
-    message = None
     if request.method == 'POST':
         if newperson:
             form = NominateNewPersonForm(data=request.POST, nomcom=nomcom, user=request.user, public=public)
@@ -361,7 +355,7 @@ def nominate(request, year, public, newperson):
             form = NominateForm(data=request.POST, nomcom=nomcom, user=request.user, public=public)
         if form.is_valid():
             form.save()
-            message = ('success', 'Your nomination has been registered. Thank you for the nomination.')
+            messages.success(request, 'Your nomination has been registered. Thank you for the nomination.')
             if newperson:
                 ## This needs to redirect to the normal nominate URL instead.
                 ## Need to weed out the custom message stuff.
@@ -376,7 +370,6 @@ def nominate(request, year, public, newperson):
 
     return render_to_response(template,
                               {'form': form,
-                               'message': message,
                                'nomcom': nomcom,
                                'year': year,
                                'selected': 'nominate'}, RequestContext(request))
@@ -418,9 +411,8 @@ def feedback(request, year, public):
         base_template = "nomcom/nomcom_private_base.html"
 
     if not has_publickey:
-            message = ('warning', "This Nomcom is not yet accepting comments")
+            messages.warning(request, "This Nomcom is not yet accepting comments")
             return render(request, 'nomcom/feedback.html', {
-                'message': message,
                 'nomcom': nomcom,
                 'year': year,
                 'selected': 'feedback',
@@ -428,14 +420,13 @@ def feedback(request, year, public):
                 'base_template': base_template
             })
 
-    message = None
     if nominee and position and request.method == 'POST':
         form = FeedbackForm(data=request.POST,
                             nomcom=nomcom, user=request.user,
                             public=public, position=position, nominee=nominee)
         if form.is_valid():
             form.save()
-            message = ('success', 'Your feedback has been registered.')
+            messages.success(request, 'Your feedback has been registered.')
             form = None
     else:
         if nominee and position:
@@ -446,7 +437,6 @@ def feedback(request, year, public):
 
     return render(request, 'nomcom/feedback.html', {
         'form': form,
-        'message': message,
         'nomcom': nomcom,
         'year': year,
         'positions': positions,
@@ -460,20 +450,20 @@ def feedback(request, year, public):
 def private_feedback_email(request, year):
     nomcom = get_nomcom_by_year(year)
     has_publickey = nomcom.public_key and True or False
-    message = None
     template = 'nomcom/private_feedback_email.html'
 
     if not has_publickey:
-        message = ('warning', "This Nomcom is not yet accepting feedback email.")
+        messages.warning(request, "This Nomcom is not yet accepting feedback email.")
+        nomcom_ready = False
     elif nomcom.group.state_id != 'active':
-        message = ('warning', "This Nomcom is not active, and is not accepting feedback email.")
+        messages.warning(request, "This Nomcom is not active, and is not accepting feedback email.")
+        nomcom_ready = False
     else:
-        pass
+        nomcom_ready = True
         
-    if message:
+    if not nomcom_ready:
         return render_to_response(template,
-                          {'message': message,
-                           'nomcom': nomcom,
+                          {'nomcom': nomcom,
                            'year': year,
                            'selected': 'feedback_email',
                            'is_chair_task' : True,
@@ -487,35 +477,33 @@ def private_feedback_email(request, year):
         if form.is_valid():
             form.save()
             form = FeedbackEmailForm(nomcom=nomcom)
-            message = ('success', 'The feedback email has been registered.')
+            messages.success(request, 'The feedback email has been registered.')
 
     return render_to_response(template,
                               {'form': form,
-                               'message': message,
                                'nomcom': nomcom,
                                'year': year,
                                'selected': 'feedback_email'}, RequestContext(request))
-
 
 @role_required("Nomcom Chair", "Nomcom Advisor")
 def private_questionnaire(request, year):
     nomcom = get_nomcom_by_year(year)
     has_publickey = nomcom.public_key and True or False
-    message = None
     questionnaire_response = None
     template = 'nomcom/private_questionnaire.html'
 
     if not has_publickey:
-        message = ('warning', "This Nomcom is not yet accepting questionnaires.")
+        messages.warning(request, "This Nomcom is not yet accepting questionnaires.")
+        nomcom_ready = False
     elif nomcom.group.state_id != 'active':
-        message = ('warning', "This Nomcom is not active, and is not accepting questionnaires.")
+        messages.warning(request, "This Nomcom is not active, and is not accepting questionnaires.")
+        nomcom_ready = False
     else:
-        pass
+        nomcom_ready = True
         
-    if message:
+    if not nomcom_ready:
         return render_to_response(template,
-                          {'message': message,
-                           'nomcom': nomcom,
+                          {'nomcom': nomcom,
                            'year': year,
                            'selected': 'questionnaire',
                            'is_chair_task' : True,
@@ -526,7 +514,7 @@ def private_questionnaire(request, year):
                                  nomcom=nomcom, user=request.user)
         if form.is_valid():
             form.save()
-            message = ('success', 'The questionnaire response has been registered.')
+            messages.success(request, 'The questionnaire response has been registered.')
             questionnaire_response = form.cleaned_data['comments']
             form = QuestionnaireForm(nomcom=nomcom, user=request.user)
     else:
@@ -535,7 +523,6 @@ def private_questionnaire(request, year):
     return render_to_response(template,
                               {'form': form,
                                'questionnaire_response': questionnaire_response,
-                               'message': message,
                                'nomcom': nomcom,
                                'year': year,
                                'selected': 'questionnaire'}, RequestContext(request))
@@ -560,10 +547,7 @@ def process_nomination_status(request, year, nominee_position_id, state, date, h
         return HttpResponseForbidden("The nomination already was %s" % nominee_position.state)
 
     state = get_object_or_404(NomineePositionStateName, slug=state)
-    message = ('warning',
-        ("Click on 'Save' to set the state of your nomination to %s to %s (this"+
-        " is not a final commitment - you can notify us later if you need to change this).") %
-        (nominee_position.position.name, state.name))
+    messages.info(request, "Click on 'Save' to set the state of your nomination to %s to %s (this is not a final commitment - you can notify us later if you need to change this)." % (nominee_position.position.name, state.name))
     if request.method == 'POST':
         form = NominationResponseCommentForm(request.POST)
         if form.is_valid():
@@ -586,13 +570,11 @@ def process_nomination_status(request, year, nominee_position_id, state, date, h
                 f.positions.add(nominee_position.position)
                 f.nominees.add(nominee_position.nominee)
         
-            message = ('success', 'Your nomination on %s has been set as %s' % (nominee_position.position.name,
-                                                                                state.name))
+            messages.success(request,  'Your nomination on %s has been set as %s' % (nominee_position.position.name, state.name))
     else:
         form = NominationResponseCommentForm()
     return render_to_response('nomcom/process_nomination_status.html',
-                              {'message': message,
-                               'nomcom': nomcom,
+                              {'nomcom': nomcom,
                                'year': year,
                                'nominee_position': nominee_position,
                                'state': state,
@@ -663,9 +645,6 @@ def view_feedback_pending(request, year):
     if nomcom.group.state_id == 'conclude':
         return HttpResponseForbidden("This nomcom is concluded.")
     extra_ids = None
-    message = None
-    for message in messages.get_messages(request):
-        message = ('success', message.message)
     FeedbackFormSet = modelformset_factory(Feedback,
                                            form=PendingFeedbackForm,
                                            extra=0)
@@ -728,7 +707,7 @@ def view_feedback_pending(request, year):
                     for form in formset.forms:
                         form.set_nomcom(nomcom, request.user, extra)
                 if moved:
-                    message = ('success', '%s messages classified. You must enter more information for the following feedback.' % moved)
+                    messages.success(request, '%s messages classified. You must enter more information for the following feedback.' % moved)
             else:
                 messages.success(request, 'Feedback saved')
                 return redirect('nomcom_view_feedback_pending', year=year)
@@ -749,7 +728,6 @@ def view_feedback_pending(request, year):
                               {'year': year,
                                'selected': 'feedback_pending',
                                'formset': formset,
-                               'message': message,
                                'extra_step': extra_step,
                                'type_dict': type_dict,
                                'extra_ids': extra_ids,
@@ -802,14 +780,13 @@ def view_feedback_nominee(request, year, nominee_id):
 def edit_nominee(request, year, nominee_id):
     nomcom = get_nomcom_by_year(year)
     nominee = get_object_or_404(Nominee, id=nominee_id)
-    message = None
 
     if request.method == 'POST':
         form = EditNomineeForm(request.POST,
                                instance=nominee)
         if form.is_valid():
             form.save()
-            message = ('success', 'The nominee has been changed')
+            messages.success(request, 'The nominee has been changed')
     else:
         form = EditNomineeForm(instance=nominee)
 
@@ -818,7 +795,6 @@ def edit_nominee(request, year, nominee_id):
                                'selected': 'index',
                                'nominee': nominee,
                                'form': form,
-                               'message': message,
                                'nomcom': nomcom,
                                'is_chair_task' : True,
                               }, RequestContext(request))
@@ -829,9 +805,9 @@ def edit_nomcom(request, year):
     nomcom = get_nomcom_by_year(year)
 
     if nomcom.public_key:
-        message = ('warning', 'Previous data will remain encrypted with the old key')
+        messages.warning(request,  'Previous data will remain encrypted with the old key')
     else:
-        message = ('warning', 'This Nomcom does not yet have a public key')
+        messages.warning(request, 'This Nomcom does not yet have a public key')
 
     ReminderDateInlineFormSet = inlineformset_factory(parent_model=NomCom,
                                                       model=ReminderDates,
@@ -849,7 +825,7 @@ def edit_nomcom(request, year):
             form.save()
             formset.save()
             formset = ReminderDateInlineFormSet(instance=nomcom)
-            message = ('success', 'The nomcom has been changed')
+            messages.success(request, 'The nomcom has been changed')
     else:
         formset = ReminderDateInlineFormSet(instance=nomcom)
         form = EditNomcomForm(instance=nomcom)
@@ -858,7 +834,6 @@ def edit_nomcom(request, year):
                               {'form': form,
                                'formset': formset,
                                'nomcom': nomcom,
-                               'message': message,
                                'year': year,
                                'selected': 'edit_nomcom',
                                'is_chair_task' : True,

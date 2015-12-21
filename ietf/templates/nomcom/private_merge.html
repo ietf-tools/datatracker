@@ -26,12 +26,6 @@
     primary address is the one which the nominee prefers at the time.
   </p>
 
-  {% if message %}
-    <div class="alert alert-{{ message.0 }}">{{ message.1 }}</div>
-  {% endif %}
-
-  {% bootstrap_messages %}
-
   {% if form %}
     <form id="mergeform" method="post">
       {% csrf_token %}

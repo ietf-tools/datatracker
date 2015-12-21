@@ -26,12 +26,6 @@
     <p>The message that will be sent is shown below the list of nominees. </p>
   {% endif %}
 
-  {% bootstrap_messages %}
-
-  {% if message %}
-    <div class="alert alert-{{ message.0 }}">{{ message.1 }}</div>
-  {% endif %}
-
   {% if nomcom.group.state_id == 'active' %} 
     <form id="reminderform " method="post">
       {% csrf_token %}

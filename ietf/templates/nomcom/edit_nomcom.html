@@ -14,12 +14,6 @@
   {% origin %}
   <h2>Settings</h2>
 
-  {% if message %}
-    <div class="alert alert-{{ message.0 }}">{{ message.1 }}</div>
-  {% endif %}
-
-  {% bootstrap_messages %}
-
   <form enctype="multipart/form-data" method="post">
     {% csrf_token %}
     {% bootstrap_form form %}

@@ -140,7 +140,7 @@ class NomcomViewsTest(TestCase):
         r = self.client.post(self.private_index_url, test_data)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertNotEqual(q('p.alert.alert-success'), [])
+        self.assertTrue(q('.alert-success'))
         self.assertEqual(NomineePosition.objects.filter(state='accepted').count (), 1)
         self.client.logout()
 
@@ -152,7 +152,7 @@ class NomcomViewsTest(TestCase):
         r = self.client.post(self.private_index_url, test_data)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertNotEqual(q('p.alert.alert-success'), [])
+        self.assertTrue(q('.alert-success'))
         self.assertEqual(NomineePosition.objects.filter(state='declined').count (), 1)
         self.client.logout()
 
@@ -164,7 +164,7 @@ class NomcomViewsTest(TestCase):
         r = self.client.post(self.private_index_url, test_data)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertNotEqual(q('p.alert.alert-success'), [])
+        self.assertTrue(q('.alert-success'))
         self.assertEqual(NomineePosition.objects.filter(state='pending').count (), 1)
         self.client.logout()
 
@@ -1645,7 +1645,9 @@ class NoPublicKeyTests(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code,200)
         q=PyQuery(response.content)
-        self.assertTrue(any(['not yet' in x.text for x in q('.alert-warning')]))
+        text_bits = [x.xpath('./text()') for x in q('.alert-warning')]
+        flat_text_bits = [item for sublist in text_bits for item in sublist]
+        self.assertTrue(any(['not yet' in y for y in flat_text_bits]))
         self.assertEqual(bool(q('form:not(.navbar-form)')),expected_form)
         self.client.logout()
 
