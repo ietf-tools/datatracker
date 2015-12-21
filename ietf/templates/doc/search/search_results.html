@@ -13,7 +13,10 @@
     </div>
   {% endif %}
 
-  <table class="table table-condensed table-striped tablesorter">
+  {% comment %}
+  Disable the js tablesort stuff for a truncate result, per Henrik.
+  {% endcomment %}
+  <table class="table table-condensed table-striped {% if not meta.max %}tablesorter{% endif %}">
     <thead>
       <tr>
         <th class="sorter-false"></th>
