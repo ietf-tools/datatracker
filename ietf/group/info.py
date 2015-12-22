@@ -336,7 +336,9 @@ def construct_group_menu_context(request, group, selected, group_type, others):
     entries.append(("Email expansions", urlreverse("ietf.group.info.email", kwargs=kwargs)))
     entries.append(("History", urlreverse("ietf.group.info.history", kwargs=kwargs)))
     if group.features.has_documents:
-        entries.append((mark_safe("Dependency graph &raquo;"), urlreverse("ietf.group.info.dependencies_pdf", kwargs=kwargs)))
+        kwargs["output_type"] = "svg"
+        entries.append((mark_safe("Dependency graph &raquo;"), urlreverse("ietf.group.info.dependencies", kwargs=kwargs)))
+        del kwargs["output_type"]
 
     if group.list_archive.startswith("http:") or group.list_archive.startswith("https:") or group.list_archive.startswith("ftp:"):
         entries.append((mark_safe("List archive &raquo;"), group.list_archive))
@@ -656,50 +658,44 @@ def make_dot(group):
                              dict( nodes=nodes, edges=edges )
                             )
 
-def dependencies_dot(request, acronym, group_type=None):
+@cache_page(60 * 60)
+def dependencies(request, acronym, group_type=None, output_type="pdf"):
     group = get_group_or_404(acronym, group_type)
     if not group.features.has_documents:
         raise Http404
 
-    return HttpResponse(make_dot(group),
-                        content_type='text/plain; charset=UTF-8'
-                        )
-
-@cache_page ( 60 * 60 )
-def dependencies_pdf(request, acronym, group_type=None):
-    group = get_group_or_404(acronym, group_type)
-    if not group.features.has_documents:
-        raise Http404
-
-    dothandle,dotname = mkstemp()  
+    dothandle, dotname = mkstemp()
     os.close(dothandle)
-    dotfile = open(dotname,"w")
+    dotfile = open(dotname, "w")
     dotfile.write(make_dot(group))
     dotfile.close()
 
-    unflathandle,unflatname = mkstemp()
+    if (output_type == "dot"):
+        return HttpResponse(make_dot(group),
+                            content_type='text/plain; charset=UTF-8'
+                            )
+
+    unflathandle, unflatname = mkstemp()
     os.close(unflathandle)
+    outhandle, outname = mkstemp()
+    os.close(outhandle)
 
-    pshandle,psname = mkstemp()
-    os.close(pshandle)
+    pipe("%s -f -l 10 -o %s %s" % (settings.UNFLATTEN_BINARY, unflatname, dotname))
+    pipe("%s -T%s -o %s %s" % (settings.DOT_BINARY, output_type, outname, unflatname))
 
-    pdfhandle,pdfname = mkstemp()
-    os.close(pdfhandle)
+    outhandle = open(outname, "r")
+    out = outhandle.read()
+    outhandle.close()
 
-    pipe("%s -f -l 10 -o %s %s" % (settings.UNFLATTEN_BINARY,unflatname,dotname))
-    pipe("%s -Tps -Gsize=10.5,8.0 -Gmargin=0.25 -Gratio=auto -Grotate=90 -o %s %s" % (settings.DOT_BINARY,psname,unflatname))
-    pipe("%s %s %s" % (settings.PS2PDF_BINARY,psname,pdfname))
-    
-    pdfhandle = open(pdfname,"r")
-    pdf = pdfhandle.read()
-    pdfhandle.close()
-
-    os.unlink(pdfname)
-    os.unlink(psname)
+    os.unlink(outname)
     os.unlink(unflatname)
     os.unlink(dotname)
 
-    return HttpResponse(pdf, content_type='application/pdf')
+    if (output_type == "pdf"):
+        output_type = "application/pdf"
+    elif (output_type == "svg"):
+        output_type = "image/svg+xml"
+    return HttpResponse(out, content_type=output_type)
 
 def email_aliases(request, acronym=None, group_type=None):
     group = get_group_or_404(acronym,group_type) if acronym else None
