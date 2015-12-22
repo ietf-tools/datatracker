@@ -16,13 +16,15 @@ from ietf.nomcom.models import ( NomCom, Nomination, Nominee, NomineePosition,
                                  Position, Feedback, ReminderDates )
 from ietf.nomcom.utils import (NOMINATION_RECEIPT_TEMPLATE, FEEDBACK_RECEIPT_TEMPLATE,
                                get_user_email, validate_private_key, validate_public_key,
-                               get_or_create_nominee, get_or_create_nominee_by_person,
+                               make_nomineeposition, make_nomineeposition_for_newperson,
                                create_feedback_email)
 from ietf.person.models import Email
 from ietf.person.fields import SearchableEmailField
 from ietf.utils.fields import MultiEmailField
 from ietf.utils.mail import send_mail
 from ietf.mailtrigger.utils import gather_address_lists
+
+import debug                   # pyflakes:ignore
 
 
 ROLODEX_URL = getattr(settings, 'ROLODEX_URL', None)
@@ -361,7 +363,7 @@ class NominateForm(forms.ModelForm):
             if nominator_email:
                 emails = Email.objects.filter(address=nominator_email)
                 author = emails and emails[0] or None
-        nominee = get_or_create_nominee_by_person (self.nomcom, searched_email.person, position, author)
+        nominee = make_nomineeposition(self.nomcom, searched_email.person, position, author)
 
         # Complete nomination data
         feedback = Feedback.objects.create(nomcom=self.nomcom,
@@ -471,7 +473,7 @@ class NominateNewPersonForm(forms.ModelForm):
                 author = emails and emails[0] or None
         ## This is where it should change - validation of the email field should fail if the email exists
         ## The function should become make_nominee_from_newperson)
-        nominee = get_or_create_nominee(self.nomcom, candidate_name, candidate_email, position, author)
+        nominee = make_nomineeposition_for_newperson(self.nomcom, candidate_name, candidate_email, position, author)
 
         # Complete nomination data
         feedback = Feedback.objects.create(nomcom=self.nomcom,
@@ -734,13 +736,34 @@ class MutableFeedbackForm(forms.ModelForm):
                                                                   help_text='Hold down "Control", or "Command" on a Mac, to select more than one.')
         else:
             self.fields['position'] = forms.ModelChoiceField(queryset=Position.objects.get_by_nomcom(self.nomcom).opened(), label="Position")
-            self.fields['candidate_name'] = forms.CharField(label="Candidate name")
-            self.fields['candidate_email'] = forms.EmailField(label="Candidate email")
+            self.fields['searched_email'] = SearchableEmailField(only_users=False,help_text="Try to find the candidate you are classifying with this field first. Only use the name and email fields below if this search does not find the candidate.",label="Candidate",required=False)
+            self.fields['candidate_name'] = forms.CharField(label="Candidate name",help_text="Only fill in this name field if the search doesn't find the person you are classifying",required=False)
+            self.fields['candidate_email'] = forms.EmailField(label="Candidate email",help_text="Only fill in this email field if the search doesn't find the person you are classifying",required=False)
             self.fields['candidate_phone'] = forms.CharField(label="Candidate phone", required=False)
+
+    def clean(self):
+        cleaned_data = super(MutableFeedbackForm,self).clean()
+        if self.feedback_type.slug == 'nomina':
+            searched_email = self.cleaned_data.get('searched_email')
+            candidate_name = self.cleaned_data.get('candidate_name')
+            if candidate_name:
+                candidate_name = candidate_name.strip()
+            candidate_email = self.cleaned_data.get('candidate_email') 
+            if candidate_email:
+                candidate_email = candidate_email.strip()
+            
+            if not any([ searched_email and not candidate_name and not candidate_email,
+                         not searched_email and candidate_name and candidate_email,
+                      ]):
+                raise forms.ValidationError("You must identify either an existing person (by searching with the candidate field) and leave the name and email fields blank, or leave the search field blank and provide both a name and email address.")
+            if candidate_email and Email.objects.filter(address=candidate_email).exists():
+                raise forms.ValidationError("%s already exists in the datatracker. Please search within the candidate field to find it and leave both the name and email fields blank." % candidate_email)
+        return cleaned_data
 
     def save(self, commit=True):
         feedback = super(MutableFeedbackForm, self).save(commit=False)
         if self.instance.type.slug == 'nomina':
+            searched_email = self.cleaned_data['searched_email']
             candidate_email = self.cleaned_data['candidate_email']
             candidate_name = self.cleaned_data['candidate_name']
             candidate_phone = self.cleaned_data['candidate_phone']
@@ -752,7 +775,10 @@ class MutableFeedbackForm(forms.ModelForm):
             emails = Email.objects.filter(address=nominator_email)
             author = emails and emails[0] or None
 
-            nominee = get_or_create_nominee(self.nomcom, candidate_name, candidate_email, position, author)
+            if searched_email:
+                nominee = make_nomineeposition(self.nomcom, searched_email.person, position, author)
+            else:
+                nominee = make_nomineeposition_for_newperson(self.nomcom, candidate_name, candidate_email, position, author)
             feedback.nominees.add(nominee)
             feedback.positions.add(position)
             Nomination.objects.create(

@@ -28,7 +28,7 @@ from ietf.nomcom.models import NomineePosition, Position, Nominee, \
                                NomineePositionStateName, Feedback, FeedbackTypeName, \
                                Nomination, FeedbackLastSeen
 from ietf.nomcom.forms import EditMembersForm, EditMembersFormPreview
-from ietf.nomcom.utils import get_nomcom_by_year, get_or_create_nominee, get_hash_nominee_position
+from ietf.nomcom.utils import get_nomcom_by_year, make_nomineeposition, get_hash_nominee_position
 from ietf.nomcom.management.commands.send_reminders import Command, is_time_to_send
 
 from ietf.nomcom.factories import NomComFactory, FeedbackFactory, \
@@ -951,20 +951,22 @@ class ReminderTest(TestCase):
         today = datetime.date.today()
         t_minus_3 = today - datetime.timedelta(days=3)
         t_minus_4 = today - datetime.timedelta(days=4)
-        n = get_or_create_nominee(self.nomcom,"Nominee 1","nominee1@example.org",gen,None)
+        e1 = EmailFactory(address="nominee1@example.org",person=PersonFactory(name=u"Nominee 1"))
+        e2 = EmailFactory(address="nominee2@example.org",person=PersonFactory(name=u"Nominee 2"))
+        n = make_nomineeposition(self.nomcom,e1.person,gen,None)
         np = n.nomineeposition_set.get(position=gen)
         np.time = t_minus_3
         np.save()
-        n = get_or_create_nominee(self.nomcom,"Nominee 1","nominee1@example.org",iab,None)
+        n = make_nomineeposition(self.nomcom,e1.person,iab,None)
         np = n.nomineeposition_set.get(position=iab)
         np.state = NomineePositionStateName.objects.get(slug='accepted')
         np.time = t_minus_3
         np.save()
-        n = get_or_create_nominee(self.nomcom,"Nominee 2","nominee2@example.org",rai,None)
+        n = make_nomineeposition(self.nomcom,e2.person,rai,None)
         np = n.nomineeposition_set.get(position=rai)
         np.time = t_minus_4
         np.save()
-        n = get_or_create_nominee(self.nomcom,"Nominee 2","nominee2@example.org",gen,None)
+        n = make_nomineeposition(self.nomcom,e2.person,gen,None)
         np = n.nomineeposition_set.get(position=gen)
         np.state = NomineePositionStateName.objects.get(slug='accepted')
         np.time = t_minus_4
@@ -1445,13 +1447,50 @@ Junk body for testing
                                           'form-0-id': fb.id,
                                           'form-0-type': 'nomina',
                                           'form-0-position': position.id,
-                                          'form-0-candidate_name' : nominee.name(),
-                                          'form-0-candidate_email' : nominee.email.address,
+                                          'form-0-searched_email' : nominee.email.address,
                                         })
         self.assertEqual(response.status_code,302)
         fb = Feedback.objects.get(id=fb.id)
         self.assertEqual(fb.type_id,'nomina')
         self.assertEqual(nominee.feedback_set.count(),fb_count_before+1)
+
+        # Classify a newperson
+        fb = FeedbackFactory(nomcom=self.nc,type_id=None)
+        position = self.nc.position_set.first()
+        response = self.client.post(url, {'form-TOTAL_FORMS':1,
+                                          'form-INITIAL_FORMS':1,
+                                          'end':'Save feedback',
+                                          'form-0-id': fb.id,
+                                          'form-0-type': 'nomina',
+                                          'form-0-position': position.id,
+                                          'form-0-candidate_email' : 'newperson@example.com',
+                                          'form-0-candidate_name'  : 'New Person',
+                                        })
+        self.assertEqual(response.status_code,302)
+        fb = Feedback.objects.get(id=fb.id)
+        self.assertEqual(fb.type_id,'nomina')
+        self.assertTrue(fb.nominees.filter(person__name='New Person').exists())
+
+        # check for failure when trying to add a newperson that already exists
+
+        fb = FeedbackFactory(nomcom=self.nc,type_id=None)
+        position = self.nc.position_set.all()[1]
+        nominee = self.nc.nominee_set.get(person__email__address='newperson@example.com')
+        fb_count_before = nominee.feedback_set.count()
+        response = self.client.post(url, {'form-TOTAL_FORMS':1,
+                                          'form-INITIAL_FORMS':1,
+                                          'end':'Save feedback',
+                                          'form-0-id': fb.id,
+                                          'form-0-type': 'nomina',
+                                          'form-0-position': position.id,
+                                          'form-0-candidate_email' : 'newperson@example.com',
+                                          'form-0-candidate_name'  : 'New Person',
+                                        })
+        self.assertEqual(response.status_code,200)
+        self.assertTrue('already exists' in unicontent(response))
+        fb = Feedback.objects.get(id=fb.id)
+        self.assertEqual(fb.type_id,None)
+        self.assertEqual(nominee.feedback_set.count(),fb_count_before)
 
         fb = FeedbackFactory(nomcom=self.nc,type_id=None)
         np = NomineePosition.objects.filter(position__nomcom = self.nc,state='accepted').first()
@@ -1461,7 +1500,7 @@ Junk body for testing
                                           'end':'Save feedback',
                                           'form-0-id': fb.id,
                                           'form-0-type': 'questio',
-                                          'form-0-nominee': '%s_%s'%(np.position.id,np.nominee.id),
+                                          'form-0-nominee' : '%s_%s'%(np.position.id,np.nominee.id),
                                         })
         self.assertEqual(response.status_code,302)
         fb = Feedback.objects.get(id=fb.id)
@@ -1504,23 +1543,23 @@ Junk body for testing
         self.assertEqual(q('input[name=\"form-0-type\"]').attr['value'],'nomina')
         self.assertEqual(q('input[name=\"extra_ids\"]').attr['value'],'%s:comment' % fb2.id)
 
-        # Second formset
+        # Second formset 
         response = self.client.post(url, {'form-TOTAL_FORMS':1,
                                           'form-INITIAL_FORMS':1,
                                           'end':'Save feedback',
                                           'form-0-id': fb1.id,
                                           'form-0-type': 'nomina',
                                           'form-0-position': new_position_for_nominee.id,
-                                          'form-0-candidate_name' : nominee.name(),
-                                          'form-0-candidate_email' : nominee.email.address,
+                                          'form-0-candidate_name' : 'Totally New Person',
+                                          'form-0-candidate_email': 'totallynew@example.org',
                                           'extra_ids': '%s:comment' % fb2.id,
                                         })
         self.assertEqual(response.status_code,200) # Notice that this is also is not a 302
-        fb1 = Feedback.objects.get(id=fb1.id)
-        self.assertEqual(fb1.type_id,'nomina')
         q = PyQuery(response.content)
         self.assertEqual(q('input[name=\"form-0-type\"]').attr['value'],'comment')
         self.assertFalse(q('input[name=\"extra_ids\"]'))
+        fb1 = Feedback.objects.get(id=fb1.id)
+        self.assertEqual(fb1.type_id,'nomina')
 
         # Exercising the resulting third formset is identical to the simple test above
         # that categorizes a single thing as a comment. Note that it returns a 302.
