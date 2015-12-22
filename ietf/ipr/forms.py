@@ -134,7 +134,7 @@ class GenericDisclosureForm(forms.Form):
                 raise forms.ValidationError('Submitter information must be provided in section VII')
         
         return cleaned_data
-        
+
     def save(self, *args, **kwargs):
         nargs = self.cleaned_data.copy()
         same_as_ii_above = nargs.get('same_as_ii_above')
