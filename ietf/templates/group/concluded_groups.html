@@ -1,6 +1,10 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
-{% load origin %}
+{% load origin staticfiles %}
+
+{% block pagehead %}
+<link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
+{% endblock %}
 
 {% block title %}Concluded groups{% endblock %}
 
@@ -29,7 +33,7 @@
     {% if not t.concluded_groups %}
       <p><b>No groups found.</b></p>
     {% else %}
-      <table class="table table-condensed table-striped">
+      <table class="table table-condensed table-striped tablesorter">
         <thead>
           <tr>
             <th>Group</th>
@@ -45,20 +49,8 @@
 	        <a href="{{ g.about_url }}">{{ g.acronym }}</a>
               </td>
               <td>{{ g.name }}</td>
-              <td>
-	        {% if g.start_date %}
-	          {{ g.start_date|date:"M. Y" }}
-	        {% else %}
-	          <span class="text-muted">?</span>
-	        {% endif %}
-              </td>
-              <td>
-	        {% if g.conclude_date %}
-	          {{ g.conclude_date|date:"M. Y" }}
-	        {% else %}
-	          <span class="text-muted">?</span>
-	        {% endif %}
-              </td>
+              <td>{{ g.start_date|date:"Y-m" }}</td>
+              <td>{{ g.conclude_date|date:"Y-m" }}</td>
             </tr>
           {% endfor %}
         </tbody>
@@ -66,4 +58,8 @@
     {% endif %}
   {% endfor %}
 
+{% endblock %}
+
+{% block js %}
+<script src="{% static "jquery.tablesorter/js/jquery.tablesorter.combined.min.js" %}"></script>
 {% endblock %}

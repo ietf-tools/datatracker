@@ -2,19 +2,31 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
 {% load ietf_filters %}
-{% load future %}
+{% load future staticfiles %}
+
+{% block pagehead %}
+<link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
+{% endblock %}
 
 {% block group_content %}
   {% origin %}
 
   {% if aliases %}
-  <h2>Email Aliases</h2>
+  <h2>Email aliases</h2>
 
-  <table class="table table-condensed table-striped ietf">
+  <table class="table table-condensed table-striped tablesorter">
+    <thead>
+      <tr>
+        <th>Alias</th>
+        <th>Expansion</th>
+      </tr>
+    </thead>
     <tbody>
       {% for alias in aliases %}
         <tr>
-          <td>{{ group.acronym }}{{ alias.alias_type|default:''}}@{{ietf_domain}}</td>
+          <td>
+            <a href="mailto:{{ group.acronym }}{{ alias.alias_type|default:''}}@{{ietf_domain}}">
+            {{ group.acronym }}{{ alias.alias_type|default:''}}@{{ietf_domain}}</a></td>
           <td>{{ alias.expansion }}</td>
         </tr>
       {% endfor %}
@@ -22,12 +34,12 @@
   </table>
   {% endif %}
 
-  <h2>Recipient Expansions</h2>
+  <h2>Recipient expansions</h2>
 
-  <table class="table table-condensed table-striped ietf">
+  <table class="table table-condensed table-striped tablesorter">
     <thead>
       <tr>
-        <th>Mail Trigger</th>
+        <th>Mail trigger</th>
         <th>To</th>
         <th>Cc</th>
       </tr>
@@ -44,4 +56,8 @@
     </tbody>
   </table>
 
+{% endblock %}
+
+{% block js %}
+<script src="{% static "jquery.tablesorter/js/jquery.tablesorter.combined.min.js" %}"></script>
 {% endblock %}

@@ -1,6 +1,10 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
-{% load origin %}
+{% load origin staticfiles %}
+
+{% block pagehead %}
+<link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
+{% endblock %}
 
 {% block title %}BOFs{% endblock %}
 
@@ -19,7 +23,7 @@
   {% if not groups %}
     <p>No BOFs found.</p>
   {% else %}
-    <table class="table table-condensed table-striped ietf">
+    <table class="table table-condensed table-striped tablesorter">
       <thead>
         <tr>
           <th>BOF</th>
@@ -39,4 +43,8 @@
     </table>
   {% endif %}
 
+{% endblock %}
+
+{% block js %}
+<script src="{% static "jquery.tablesorter/js/jquery.tablesorter.combined.min.js" %}"></script>
 {% endblock %}

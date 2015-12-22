@@ -1,6 +1,10 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
-{% load origin %}
+{% load origin staticfiles %}
+
+{% block pagehead %}
+<link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
+{% endblock %}
 
 {% block title %}Chartering or re-chartering groups{% endblock %}
 
@@ -30,10 +34,10 @@
     {% if not t.chartering_groups %}
       <p>No groups found.</p>
     {% else %}
-      <table class="table table-condensed table-striped">
+      <table class="table table-condensed table-striped tablesorter">
         <thead>
           <tr>
-            <th>Group</th>
+            <th>{{ t.name }}</th>
             <th>Name</th>
             <th>Date</th>
             <th>Status</th>
@@ -68,4 +72,8 @@
       </table>
     {% endif %}
   {% endfor %}
+{% endblock %}
+
+{% block js %}
+<script src="{% static "jquery.tablesorter/js/jquery.tablesorter.combined.min.js" %}"></script>
 {% endblock %}

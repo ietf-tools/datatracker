@@ -1,6 +1,10 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
-{% load origin %}
+{% load origin staticfiles %}
+
+{% block pagehead %}
+<link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
+{% endblock %}
 
 {% block title %}Active IRTF research groups{% endblock %}
 
@@ -11,9 +15,9 @@
   <h2>IRTF chair</h2>
   <p><a href="mailto:irtf-chair@irtf.org">{{ irtf.chair.person.plain_name }}</a></p>
 
-  <h2>Active Research Groups</h2>
+  <h2>Active research groups</h2>
 
-  <table class="table table-striped table-condensed">
+  <table class="table table-striped table-condensed tablesorter">
     <thead>
       <tr>
         <th>Group</th>
@@ -32,4 +36,8 @@
     </tbody>
   </table>
 
+{% endblock %}
+
+{% block js %}
+<script src="{% static "jquery.tablesorter/js/jquery.tablesorter.combined.min.js" %}"></script>
 {% endblock %}

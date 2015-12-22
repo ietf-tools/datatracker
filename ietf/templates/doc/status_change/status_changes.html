@@ -1,7 +1,11 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
-{% load ietf_filters %}
+{% load ietf_filters staticfiles %}
+
+{% block pagehead %}
+<link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
+{% endblock %}
 
 {% block title %}RFC status changes{% endblock %}
 
@@ -14,7 +18,7 @@
   {% endif %}
 
   {% regroup docs by get_state as state_groups %}
-  <table class="table table-striped table-condensed">
+  <table class="table table-striped table-condensed tablesorter">
     <thead>
       <tr>
         <th>Document</th>
@@ -22,18 +26,23 @@
       </tr>
     </thead>
 
-    <tbody>
       {% for state in state_groups %}
+    <tbody>
         <tr class="info"><th colspan="2">{{state.grouper}}</th></tr>
+    </tbody>
 
+    <tbody>
         {% for doc in state.list %}
           <tr>
 	    <td>{{ doc.displayname_with_link|safe }}</td>
             <td><b>{{ doc.title }}</b></td>
           </tr>
         {% endfor %}
-      {% endfor %}
     </tbody>
+      {% endfor %}
   </table>
 {% endblock content %}
 
+{% block js %}
+<script src="{% static "jquery.tablesorter/js/jquery.tablesorter.combined.min.js" %}"></script>
+{% endblock %}

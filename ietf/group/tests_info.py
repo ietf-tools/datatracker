@@ -47,7 +47,7 @@ class GroupPagesTests(TestCase):
         url = urlreverse('ietf.group.info.active_groups', kwargs=dict(group_type="rg"))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue('Active Research Groups' in unicontent(r))
+        self.assertTrue('Active research groups' in unicontent(r))
 
         url = urlreverse('ietf.group.info.active_groups', kwargs=dict(group_type="area"))
         r = self.client.get(url)
@@ -57,17 +57,17 @@ class GroupPagesTests(TestCase):
         url = urlreverse('ietf.group.info.active_groups', kwargs=dict(group_type="ag"))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("Active Area Groups" in unicontent(r))
+        self.assertTrue("Active area groups" in unicontent(r))
 
         url = urlreverse('ietf.group.info.active_groups', kwargs=dict(group_type="dir"))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("Active Directorates" in unicontent(r))
+        self.assertTrue("Active directorates" in unicontent(r))
 
         url = urlreverse('ietf.group.info.active_groups', kwargs=dict(group_type="team"))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("Active Teams" in unicontent(r))
+        self.assertTrue("Active teams" in unicontent(r))
 
         url = urlreverse('ietf.group.info.active_groups', kwargs=dict())
         r = self.client.get(url)
@@ -960,7 +960,7 @@ expand-ames-chairs@virtual.ietf.org                              mars_chair@ietf
         url = urlreverse('ietf.group.info.email', kwargs=dict(acronym="mars"))
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
-        self.assertTrue('Email Aliases' in unicontent(r))
+        self.assertTrue('Email aliases' in unicontent(r))
         self.assertTrue('mars-ads@ietf.org' in unicontent(r))
         self.assertTrue('group_personnel_change' in unicontent(r))
  

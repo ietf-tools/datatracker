@@ -30,7 +30,7 @@ class FilenameField(DisplayField):
 class TitleField(DisplayField):
     codename = 'title'
     description = 'I-D title'
-    rfcDescription = 'RFC Title'
+    rfcDescription = 'RFC title'
 
     def get_value(self, document, raw=False):
         return document.title
@@ -38,8 +38,8 @@ class TitleField(DisplayField):
 
 class DateField(DisplayField):
     codename = 'date'
-    description = 'Date of current I-D'
-    rfcDescription = 'Date of RFC'
+    description = 'Last revision'
+    rfcDescription = 'Published'
 
     def get_value(self, document, raw=False):
         date = document.latest_event(type='new_revision')

@@ -1,9 +1,13 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
-{% load origin %}
+{% load origin staticfiles %}
 {% load future %}
 {% load staticfiles %}
 {% load bootstrap3 %}
+
+{% block pagehead %}
+<link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
+{% endblock %}
 
 {% block title %}{{ cl.long_name }}{% endblock %}
 
@@ -34,12 +38,12 @@
         <li>Search for the document or documents you want to add using the datatracker search form.</li>
         <li>In the search results, you'll find a link to add individual documents to your list.</li>
       </ul>
-      <a class="btn btn-default" href="/doc/search/">Document search</a>
+      <p><a class="btn btn-default" href="/doc/search/">Document search</a></p>
 
-      <table class="table table-condensed table-striped">
+      <table class="table table-condensed table-striped tablesorter">
         <thead>
 	  <tr>
-	    <th>Name</th><th>State</th><th>Title</th><th></th>
+	    <th>Name</th><th>State</th><th>Title</th><th class="sorter-false"></th>
 	  </tr>
         </thead>
         <tbody>
@@ -56,9 +60,9 @@
     </div>
 
     <div class="tab-pane" id="rules">
-      <table class="table table-condensed table-striped">
+      <table class="table table-condensed table-striped tablesorter">
         <thead>
-	  <tr><th>Rule</th><th>Value</th><th>Documents</th><th></th></tr>
+	  <tr><th>Rule</th><th>Value</th><th>Documents</th><th class="sorter-false"></th></tr>
         </thead>
         <tbody>
 	  {% for rule in cl.rule_set.all %}
@@ -111,22 +115,26 @@
 
 {% endblock %}
 
+{% block js %}
+<script src="{% static "jquery.tablesorter/js/jquery.tablesorter.combined.min.js" %}"></script>
+
 {% comment %}
-XXX scrolling jumps around when using this, unfortunately
-<script>
-$('.nav-memory a').click(function (e) {
-e.preventDefault();
-$(this).tab('show');
-});
-
-// store the currently selected tab in the hash value
-$("ul.nav-tabs > li > a").on("shown.bs.tab", function (e) {
-var id = $(e.target).attr("href").substr(1);
-window.location.hash = id;
-});
-
-// on load of the page: switch to the currently selected tab
-var hash = window.location.hash;
-$('.nav-memory a[href="' + hash + '"]').tab('show');
-</script>
+Stay on the current tab after form submission.
+If other pages need this functionality, it should move to ietf.js.
 {% endcomment %}
+<script>
+$(function() {
+    $('a[data-toggle="tab"]').on("click", function (e) {
+        // save the current tab
+        localStorage.setItem("currentTab", $(e.target).attr("href"));
+    });
+
+    // go to "currentTab", if it exists
+    var currentTab = localStorage.getItem("currentTab");
+    if (currentTab) {
+        $('a[href="' + currentTab + '"]').click();
+    }
+});
+</script>
+
+{% endblock %}

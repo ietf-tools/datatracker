@@ -1,14 +1,18 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
-{% load origin %}
+{% load origin staticfiles %}
 
-{% block title %}Active Teams{% endblock %}
+{% block pagehead %}
+<link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
+{% endblock %}
+
+{% block title %}Active teams{% endblock %}
 
 
 {% block content %}
   {% origin %}
-  <h1>Active Teams</h1>
-  <table class="table table-condensed table-striped">
+  <h1>Active teams</h1>
+  <table class="table table-condensed table-striped tablesorter">
     <thead>
       <tr>
         <th>Team</th>
@@ -31,4 +35,8 @@
     </tbody>
   </table>
 
+{% endblock %}
+
+{% block js %}
+<script src="{% static "jquery.tablesorter/js/jquery.tablesorter.combined.min.js" %}"></script>
 {% endblock %}

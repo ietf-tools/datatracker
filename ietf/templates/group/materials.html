@@ -2,7 +2,11 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}{% origin %}
 
-{% load ietf_filters %}
+{% load ietf_filters staticfiles %}
+
+{% block pagehead %}
+<link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
+{% endblock %}
 
 {% block group_subtitle %}Materials{% endblock %}
 
@@ -14,16 +18,18 @@
     {% for doc_type, docs in doc_types %}
       <h2>{{ doc_type.name }}</h2>
 
-      <table class="table table-condensed table-striped materials">
+      <table class="table table-condensed table-striped materials tablesorter">
+      <thead>
         <tr>
           <th>Title</th>
           <th>Abstract</th>
-          <th>Curr. Rev.</th>
+          <th>Curr. rev.</th>
           <th>Date</th>
-          <th>Last Presented</th>
-          <th>On Agenda</th>
+          <th>Last presented</th>
+          <th>On agenda</th>
         </tr>
-
+      </thead>
+      <tbody>
         {% for d in docs %}
           <tr>
             <td><a class="title-link" href="{% url "doc_view" name=d.name %}">{{ d.title }}</a></td>
@@ -44,6 +50,7 @@
                 {% endif %}
                 {% if not forloop.last %}, {% endif %}
               {% endfor %}
+              </td>
               <td>{% regroup d.future_presentations by session.meeting as meeting_pres_list %} 
                 {% for p in meeting_pres_list %}
                   {{ p.grouper }}
@@ -61,6 +68,7 @@
               </td>
           </tr>
         {% endfor %}
+        </tbody>
       </table>
     {% endfor %}
   {% else %}
@@ -69,4 +77,8 @@
     <p>No materials uploaded.</p>
   {% endif %}
 
+{% endblock %}
+
+{% block js %}
+<script src="{% static "jquery.tablesorter/js/jquery.tablesorter.combined.min.js" %}"></script>
 {% endblock %}

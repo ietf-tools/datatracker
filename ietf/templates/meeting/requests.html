@@ -2,7 +2,11 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
 
-{% load ietf_filters %}
+{% load ietf_filters staticfiles %}
+
+{% block pagehead %}
+<link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
+{% endblock %}
 
 {% block bodyAttrs %}data-spy="scroll" data-target="#affix"{% endblock %}
 
@@ -31,7 +35,7 @@
           {% endfor %}
         </p>
 
-        <table class="table table-condensed table-striped">
+        <table class="table table-condensed table-striped tablesorter">
           <thead>
 	    <tr>
 	      <th>Group</th>
@@ -46,7 +50,11 @@
           <tbody>
 	    {% for session in area.list %}
 	      {% ifchanged %}
+          </tbody>
+          <tbody>
 	        <tr><th class="warning" colspan="7">{{session.status|capfirst}}</th></tr>
+          </tbody>
+          <tbody>
 	      {% endifchanged %}
 
 	      <tr>
@@ -118,4 +126,8 @@
     </div>
   </div>
 
+{% endblock %}
+
+{% block js %}
+<script src="{% static "jquery.tablesorter/js/jquery.tablesorter.combined.min.js" %}"></script>
 {% endblock %}

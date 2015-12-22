@@ -5,8 +5,8 @@
 
 {% with cl.get_rfcs_and_drafts as documents %}
   {% with dc.get_active_fields as fields %}
-    <h2>Drafts</h2>
-    <table class="table table-condensed table-striped">
+    <h2>Internet-Drafts</h2>
+    <table class="table table-condensed table-striped tablesorter">
       <thead>
         <tr>
           {% for field in fields %}
@@ -28,7 +28,7 @@
 
   {% with dc.get_active_fields as fields %}
     <h2>RFCs</h2>
-    <table class="table table-condensed table-striped">
+    <table class="table table-condensed table-striped tablesorter">
       <thead>
         <tr>
           {% for field in fields %}

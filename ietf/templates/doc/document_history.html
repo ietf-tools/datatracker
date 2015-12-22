@@ -2,7 +2,7 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
 {% load ietf_filters %}
-{% load future %}
+{% load future staticfiles %}
 
 {% block title %}History for {{ doc.name }}-{{ doc.rev }}{% endblock %}
 
@@ -12,6 +12,7 @@
 
 {% block pagehead %}
   <link rel="alternate" type="application/atom+xml" href="/feed/document-changes/{{ doc.name }}/" />
+  <link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
 {% endblock %}
 
 {% block content %}
@@ -88,7 +89,7 @@
     </div>
   {% endif %}
 
-  <table class="table table-condensed table-striped ietf">
+  <table class="table table-condensed table-striped tablesorter">
     <thead>
       <tr>
         <th>Date</th>
@@ -110,3 +111,7 @@
     </tbody>
   </table>
 {% endblock content %}
+
+{% block js %}
+<script src="{% static "jquery.tablesorter/js/jquery.tablesorter.combined.min.js" %}"></script>
+{% endblock %}

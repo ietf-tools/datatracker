@@ -1,6 +1,10 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
-{% load origin %}
+{% load origin staticfiles %}
+
+{% block pagehead %}
+<link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
+{% endblock %}
 
 {% block title %}Document relationships{% endblock %}
 
@@ -8,7 +12,7 @@
   {% origin %}
   <h1>Document relationships</h1>
 
-  <table class="table table-condensed table-striped">
+  <table class="table table-condensed table-striped tablesorter">
     <thead>
       <tr>
         <th>Relationship</th>
@@ -19,7 +23,7 @@
     <tbody>
       {% for rel in relations %}
         <tr class="anchor-target" id="{{ rel.slug }}">
-          <td class="name">{{ rel.name }}</td>
+          <th class="name">{{ rel.name }}</th>
           <td class="desc">{{ rel.desc|linebreaksbr }}</td>
           <td class="revname">{{ rel.revname }}</td>
         </tr>
@@ -27,4 +31,8 @@
     </tbody>
   </table>
 
+{% endblock %}
+
+{% block js %}
+<script src="{% static "jquery.tablesorter/js/jquery.tablesorter.combined.min.js" %}"></script>
 {% endblock %}
