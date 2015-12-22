@@ -271,10 +271,11 @@ def private_merge(request, year):
         form = None
     else:
         if request.method == 'POST':
-            form = MergeForm(request.POST, nomcom=nomcom)
+            form = MergeForm(request.POST, nomcom=nomcom )
             if form.is_valid():
                 form.save()
-                messages.success(request, 'The emails have been unified')
+                messages.success(request, 'A merge request has been sent to the secretariat.')
+                return redirect('nomcom_private_index',year=year)
         else:
             form = MergeForm(nomcom=nomcom)
 
@@ -784,7 +785,8 @@ def edit_nominee(request, year, nominee_id):
                                instance=nominee)
         if form.is_valid():
             form.save()
-            messages.success(request, 'The nominee has been changed')
+            messages.success(request, 'The nomination address for %s has been changed to %s'%(nominee.name(),nominee.email.address))
+            return redirect('nomcom_private_index', year=year)
     else:
         form = EditNomineeForm(instance=nominee)
 
