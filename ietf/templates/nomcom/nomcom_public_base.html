@@ -9,7 +9,7 @@
 {% block content %}
   {% origin %}
 
-  <h1>NomCom {{ year }}</h1>
+  <h1>NomCom {{ year }} {% if nomcom.group.state_id == 'conclude' %}(Concluded){% endif %}</h1>
 
   <ul class="nav nav-tabs" role="tablist">
     <li {% if selected == "index" %}class="active"{% endif %}><a href="{% url "nomcom_year_index" year %}">Home</a></li>

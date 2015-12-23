@@ -25,3 +25,5 @@ six>=1.8.0
 wsgiref>=0.1.2
 xml2rfc>=2.5.0
 django>=1.7.10,<1.8
+factory-boy>=2.6.0
+Unidecode>=0.4.18

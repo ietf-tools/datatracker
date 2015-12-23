@@ -1,21 +1,22 @@
 {% extends "nomcom/nomcom_public_base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
+{% load staticfiles %}
 
 {% load bootstrap3 %}
 {% load nomcom_tags %}
+
+{% block pagehead %}
+  <link rel="stylesheet" href="{% static 'select2/select2.css' %}">
+  <link rel="stylesheet" href="{% static 'select2-bootstrap-css/select2-bootstrap.min.css' %}">
+{% endblock %}
 
 {% block subtitle %} - Nominate{% endblock %}
 
 {% block nomcom_content %}
   {% origin %}
-  {% if message %}
-    <p class="alert alert-{{ message.0 }}">{{ message.1 }}</p>
-  {% endif %}
 
-  {% bootstrap_messages %}
-
-  {% if nomcom|has_publickey %}
+  {% if form %}
     <form id="nominate-form" method="post">
       {% csrf_token %}
       {% bootstrap_form form %}
@@ -25,4 +26,9 @@
     </form>
   {% endif %}
 
+{% endblock %}
+
+{% block js %}
+  <script src="{% static 'select2/select2.min.js' %}"></script>
+  <script src="{% static 'ietf/js/select2-field.js' %}"></script>
 {% endblock %}

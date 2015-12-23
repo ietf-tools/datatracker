@@ -23,7 +23,7 @@
           {% if feedback.type.slug == ft.slug %}
             {% if forloop.first %}<p></p>{% else %}<hr>{% endif %}
             <dl class="dl-horizontal">
-              <dt>From</dt>
+              <dt>{% if feedback.time > last_seen_time %}<span class="label label-success">New</span>{% endif %}From</dt>
               <dd>{{ feedback.author|formatted_email|default:"Anonymous" }}
                     {% if ft.slug == "nomina" and feedback.nomination_set.first.share_nominator %}
                         <span class="bg-info"> OK to share name with nominee</span>

@@ -19,7 +19,6 @@
   <div class="tab-content">
     {% for position in positions %}
       <div class="tab-pane {% if forloop.first %}active{% endif %}" id="{{ position.name|slugify }}">
-        <h3>{{ position.description }}</h3>
         {{ position.get_questionnaire|linebreaks}}
       </div>
     {% endfor %}

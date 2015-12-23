@@ -9,7 +9,7 @@
 {% block content %}
   {% origin %}
 
-  <h1>NomCom {{ year }} <small>Private area</small></h1>
+  <h1>NomCom {{ year }} {% if nomcom.group.state_id == 'conclude' %}(Concluded){% endif %} <small>Private area {% if is_chair_task %}- Chair/Advisors only{% endif %}</small></h1>
 
   <ul class="nav nav-tabs" role="tablist">
     <li {% if selected == "index" %}class="active"{% endif %}><a href="{% url "nomcom_private_index" year %}">Nominees</a></li>
@@ -17,31 +17,32 @@
     {% if nomcom|has_publickey %}
       <li {% if selected == "nominate" %}class="active"{% endif %}><a href="{% url "nomcom_private_nominate" year %}">Nominate</a></li>
       <li {% if selected == "feedback" %}class="active"{% endif %}><a href="{% url "nomcom_private_feedback" year %}">Enter feedback</a></li>
-      <li {% if selected == "questionnaire" %}class="active"{% endif %}><a href="{% url "nomcom_private_questionnaire" year %}">Questionnaire response</a></li>
     {% endif %}
 
     <li {% if selected == "view_feedback" %}class="active"{% endif %}><a href="{% url "nomcom_view_feedback" year %}">View feedback</a></li>
     <li {% if selected == "private_key" %}class="active"{% endif %}><a href="{% url "nomcom_private_key" year %}">Private key</a></li>
 
-    {% if user|is_chair:year %}
+    {% if user|is_chair_or_advisor:year %}
       <li class="dropdown">
-        <a class="dropdown-toggle" data-toggle="dropdown" href="#">Chair <span class="caret"></span></a>
+        <a class="dropdown-toggle" data-toggle="dropdown" href="#">Chair/Advisor Tasks <span class="caret"></span></a>
         <ul class="dropdown-menu" role="menu">
-          <li {% if selected == "feedback_pending" %}class="active"{% endif %}><a href="{% url "nomcom_view_feedback_pending" year %}">Pending feedback</a></li>
-          <li {% if selected == "feedback_email" %}class="active"{% endif %}><a href="{% url "nomcom_private_feedback_email" year %}">Enter email feedback</a></li>
-          <li {% if selected == "send_accept_reminder" %}class="active"{% endif %}><a href="{% url "nomcom_send_reminder_mail" year "accept" %}">Send accept reminder</a></li>
-          <li {% if selected == "send_questionnaire_reminder" %}class="active"{% endif %}><a href="{% url "nomcom_send_reminder_mail" year "questionnaire" %}">Send questionnaire reminder</a></li>
-        </ul>
-      </li>
-
-      <li class="dropdown">
-        <a class="dropdown-toggle" data-toggle="dropdown" href="#">Edit <span class="caret"></span></a>
-        <ul class="dropdown-menu" role="menu">
-          <li {% if selected == "edit_nomcom" %}class="active"{% endif %}><a href="{% url "nomcom_edit_nomcom" year %}">Edit Settings</a></li>
-          <li {% if selected == "edit_templates" %}class="active"{% endif %}><a href="{% url "nomcom_list_templates" year %}">Edit Pages</a></li>
-          <li {% if selected == "edit_positions" %}class="active"{% endif %}><a href="{% url "nomcom_list_positions" year %}">Edit Positions</a></li>
-          <li {% if selected == "merge" %}class="active"{% endif %}><a href="{% url "nomcom_private_merge" year %}">Merge Email Addresses</a></li>
-          <li {% if selected == "edit_members" %}class="active"{% endif %}><a href="{% url "nomcom_edit_members" year %}">Edit Nomcom Members</a></li>
+          {% if nomcom.group.state_id == 'active' %}
+          <li role = "presentation" class = "dropdown-header">Feedback Management</li>
+            <li {% if selected == "feedback_pending" %}class="active"{% endif %}><a href="{% url "nomcom_view_feedback_pending" year %}">Classify pending feedback</a></li>
+            <li {% if selected == "feedback_email" %}class="active"{% endif %}><a href="{% url "nomcom_private_feedback_email" year %}">Enter email feedback</a></li>
+            <li {% if selected == "questionnaire" %}class="active"{% endif %}><a href="{% url "nomcom_private_questionnaire" year %}">Enter questionnaire response</a></li>
+            <li {% if selected == "send_accept_reminder" %}class="active"{% endif %}><a href="{% url "nomcom_send_reminder_mail" year "accept" %}">Send accept reminder</a></li>
+            <li {% if selected == "send_questionnaire_reminder" %}class="active"{% endif %}><a href="{% url "nomcom_send_reminder_mail" year "questionnaire" %}">Send questionnaire reminder</a></li>
+            <li {% if selected == "merge" %}class="active"{% endif %}><a href="{% url "nomcom_private_merge" year %}">Request Nominee Merge</a></li>
+          {% endif %}
+          <li role = "presentation" class = "dropdown-header">Nomcom Configuration</li>
+            <li {% if selected == "edit_nomcom" %}class="active"{% endif %}><a href="{% url "nomcom_edit_nomcom" year %}">Edit Settings</a></li>
+            <li {% if selected == "edit_templates" %}class="active"{% endif %}><a href="{% url "nomcom_list_templates" year %}">Edit Pages</a></li>
+            <li {% if selected == "edit_positions" %}class="active"{% endif %}><a href="{% url "nomcom_list_positions" year %}">Edit Positions</a></li>
+            {% if nomcom.group.state_id == 'active' %}
+            <li {% if selected == "edit_members" %}class="active"{% endif %}><a href="{% url "nomcom_edit_members" year %}">Edit Members</a></li>
+            {% endif %}
+            <li {% if selected == "help" %}class="active"{% endif %}><a href="{% url "nomcom_chair_help" year %}">Configuration Help</a></li>
         </ul>
       </li>
     {% endif %}

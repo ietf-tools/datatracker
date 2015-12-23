@@ -7,9 +7,10 @@ from django.conf import settings
 from django.core.files.storage import FileSystemStorage
 from django.contrib.auth.models import User
 from django.template.loader import render_to_string
+from django.template.defaultfilters import linebreaks
 
 from ietf.nomcom.fields import EncryptedTextField
-from ietf.person.models import Email
+from ietf.person.models import Person,Email
 from ietf.group.models import Group
 from ietf.name.models import NomineePositionStateName, FeedbackTypeName
 from ietf.dbtemplate.models import DBTemplate
@@ -66,6 +67,14 @@ class NomCom(models.Model):
         if created:
             initialize_templates_for_group(self)
 
+    def year(self):
+        year = getattr(self,'_cached_year',None)
+        if year is None:
+            if self.group and self.group.acronym.startswith('nomcom'):
+                year = int(self.group.acronym[6:])
+                self._cached_year = year
+        return year
+
 
 def delete_nomcom(sender, **kwargs):
     nomcom = kwargs.get('instance', None)
@@ -102,6 +111,7 @@ class Nomination(models.Model):
 class Nominee(models.Model):
 
     email = models.ForeignKey(Email)
+    person = models.ForeignKey(Person, blank=True, null=True)
     nominee_position = models.ManyToManyField('Position', through='NomineePosition')
     duplicated = models.ForeignKey('Nominee', blank=True, null=True)
     nomcom = models.ForeignKey('NomCom')
@@ -115,6 +125,12 @@ class Nominee(models.Model):
     def __unicode__(self):
         if self.email.person and self.email.person.name:
             return u'%s <%s>' % (self.email.person.plain_name(), self.email.address)
+        else:
+            return self.email.address
+
+    def name(self):
+        if self.email.person and self.email.person.name:
+            return u'%s' % (self.email.person.plain_name(),)
         else:
             return self.email.address
 
@@ -150,12 +166,10 @@ class NomineePosition(models.Model):
 
 class Position(models.Model):
     nomcom = models.ForeignKey('NomCom')
-    name = models.CharField(verbose_name='Name', max_length=255)
-    description = models.TextField(verbose_name='Description')
+    name = models.CharField(verbose_name='Name', max_length=255, help_text='This short description will appear on the Nomination and Feedback pages. Be as descriptive as necessary. Past examples: "Transport AD", "IAB Member"')
     requirement = models.ForeignKey(DBTemplate, related_name='requirement', null=True, editable=False)
     questionnaire = models.ForeignKey(DBTemplate, related_name='questionnaire', null=True, editable=False)
     is_open = models.BooleanField(verbose_name='Is open', default=False)
-    incumbent = models.ForeignKey(Email, null=True, blank=True)
 
     objects = PositionManager()
 
@@ -189,7 +203,10 @@ class Position(models.Model):
         return render_to_string(self.questionnaire.path, {'position': self})
 
     def get_requirement(self):
-        return render_to_string(self.requirement.path, {'position': self})
+        rendered = render_to_string(self.requirement.path, {'position': self})
+        if self.requirement.type_id=='plain':
+            rendered = linebreaks(rendered)
+        return rendered
 
 
 class Feedback(models.Model):
@@ -211,4 +228,7 @@ class Feedback(models.Model):
     class Meta:
         ordering = ['time']
 
-
+class FeedbackLastSeen(models.Model):
+    reviewer = models.ForeignKey(Person)
+    nominee = models.ForeignKey(Nominee)
+    time = models.DateTimeField(auto_now=True)

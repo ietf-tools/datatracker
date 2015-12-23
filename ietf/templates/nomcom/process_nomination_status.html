@@ -8,13 +8,12 @@
 
 {% block nomcom_content %}
   {% origin %}
-  {% if message %}
-    <div class="alert alert-{{ message.0 }}">{{ message.1 }}</div>
-  {% endif %}
 
   {% if need_confirmation %}
     <form method="post">
       {% csrf_token %}
+
+      {% bootstrap_form form %}
 
       {% buttons %}
         <button class="btn btn-primary" type="submit">Save</button>

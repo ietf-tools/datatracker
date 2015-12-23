@@ -1,44 +1,53 @@
 {% extends "nomcom/nomcom_private_base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
+{% load staticfiles %}
 
 {% load bootstrap3 %}
 
-{% block subtitle %} - Merging emails {% endblock %}
+{% block pagehead %}
+  <link rel="stylesheet" href="{% static 'select2/select2.css' %}">
+  <link rel="stylesheet" href="{% static 'select2-bootstrap-css/select2-bootstrap.min.css' %}">
+{% endblock %}
+
+{% block subtitle %} - Request Nominee Merge {% endblock %}
 
 {% block nomcom_content %}
   {% origin %}
-  <h2>Merging nominee email addresses</h2>
+  <h2>Request Nominee Merge</h2>
 
   <p>
-    If a nominee has been nominated with multiple email addresses, the nominee will
-    appear multiple times in the nomination list, as the email address is used as
-    the unique identifier for each nominee.  In order to permit comments and nominations
-    to be submitted under multiple email addresses, there is a list of secondary email
-    addresses which needs to be kept up-to-date.  When nominations of one particular nominee
-    have already been made under different email addresses, the nomination comments from the
-    secondary address also needs to be merged with those under the primary address.
+    The nomination system encourages the community to nominate people by selecting
+    their email address from the set of addresses the tracker already knows. In order
+    to allow a person who does not yet have a datatracker account to be nominated, the
+    system also provides a way for the community to nominate people with a new, 
+    previously unknown email address. When this option is chosen, a new Person record
+    is created and associated with the new address.
   </p>
-
   <p>
-    It doesn't matter particularly which email address is used as primary, as far as the
-    nominee information maintenance goes, but it's probably handier for the nomcom if the
-    primary address is the one which the nominee prefers at the time.
+    Occasionally, this new address should have been associated with an existing person
+    instead. This will happen particularly if the community member uses a slightly incorrect
+    address (such as a typo), or knows the person they want to nominate by a very old or very
+    new address that is not yet in the tracker. When this happens, you can use this form to
+    ask the secretariat to merge the two Person records. The secretariat has a process
+    for verifying that the addresses both belong to the same person, and a tool that
+    can correct the relevant data.
   </p>
 
-  {% if message %}
-    <div class="alert alert-{{ message.0 }}">{{ message.1 }}</div>
+  {% if form %}
+    <form id="mergeform" method="post">
+      {% csrf_token %}
+      {% bootstrap_form form %}
+
+      {% buttons %}
+        <input class="btn btn-primary" type="submit" value="Save" name="save">
+      {% endbuttons %}
+    </form>
   {% endif %}
 
-  {% bootstrap_messages %}
+{% endblock %}
 
-  <form id="nominateform" method="post">
-    {% csrf_token %}
-    {% bootstrap_form form %}
-
-    {% buttons %}
-      <input class="btn btn-primary" type="submit" value="Save" name="save">
-    {% endbuttons %}
-  </form>
-
+{% block js %}
+  <script src="{% static 'select2/select2.min.js' %}"></script>
+  <script src="{% static 'ietf/js/select2-field.js' %}"></script>
 {% endblock %}

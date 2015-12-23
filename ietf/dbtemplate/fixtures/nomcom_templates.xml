@@ -76,10 +76,10 @@ Questionnaire</field>
         <field to="group.group" name="group" rel="ManyToOneRel"><None></None></field>
     </object>
     <object pk="6" model="dbtemplate.dbtemplate">
-        <field type="CharField" name="path">/nomcom/defaults/position/requirements.txt</field>
+        <field type="CharField" name="path">/nomcom/defaults/position/requirements</field>
         <field type="CharField" name="title">Position requirements</field>
         <field type="TextField" name="variables">$position: Position</field>
-        <field to="name.dbtemplatetypename" name="type" rel="ManyToOneRel">plain</field>
+        <field to="name.dbtemplatetypename" name="type" rel="ManyToOneRel">rst</field>
         <field type="TextField" name="content">These are the requirements for the position $position:
 
 Requirements.</field>

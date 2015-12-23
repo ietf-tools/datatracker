@@ -648,6 +648,7 @@
 {
  "fields": {
   "order": 0,
+  "prefix": "charter",
   "used": true,
   "name": "Charter",
   "desc": ""
@@ -658,6 +659,7 @@
 {
  "fields": {
   "order": 0,
+  "prefix": "agenda",
   "used": true,
   "name": "Agenda",
   "desc": ""
@@ -668,6 +670,7 @@
 {
  "fields": {
   "order": 0,
+  "prefix": "minutes",
   "used": true,
   "name": "Minutes",
   "desc": ""
@@ -678,6 +681,7 @@
 {
  "fields": {
   "order": 0,
+  "prefix": "slides",
   "used": true,
   "name": "Slides",
   "desc": ""
@@ -688,6 +692,7 @@
 {
  "fields": {
   "order": 0,
+  "prefix": "draft",
   "used": true,
   "name": "Draft",
   "desc": ""
@@ -698,6 +703,7 @@
 {
  "fields": {
   "order": 0,
+  "prefix": "liai-att",
   "used": true,
   "name": "Liaison Attachment",
   "desc": ""
@@ -708,6 +714,7 @@
 {
  "fields": {
   "order": 0,
+  "prefix": "conflict-review",
   "used": true,
   "name": "Conflict Review",
   "desc": ""
@@ -718,6 +725,7 @@
 {
  "fields": {
   "order": 0,
+  "prefix": "status-change",
   "used": true,
   "name": "Status Change",
   "desc": ""
@@ -728,6 +736,7 @@
 {
  "fields": {
   "order": 0,
+  "prefix": "",
   "used": false,
   "name": "Shepherd's writeup",
   "desc": ""
@@ -738,6 +747,7 @@
 {
  "fields": {
   "order": 0,
+  "prefix": "",
   "used": false,
   "name": "Liaison",
   "desc": ""
@@ -748,6 +758,7 @@
 {
  "fields": {
   "order": 0,
+  "prefix": "recording",
   "used": true,
   "name": "Recording",
   "desc": ""
@@ -758,6 +769,7 @@
 {
  "fields": {
   "order": 0,
+  "prefix": "bluesheets",
   "used": true,
   "name": "Bluesheets",
   "desc": ""
@@ -4553,6 +4565,14 @@
 },
 {
  "fields": {
+  "template": "{{doc.author_list}}",
+  "desc": "The authors of the document, without using the draft aliases"
+ },
+ "model": "mailtrigger.recipient",
+ "pk": "doc_authors_expanded"
+},
+{
+ "fields": {
   "template": null,
   "desc": "Any ADs holding an active DISCUSS position on a given document"
  },
@@ -4710,6 +4730,14 @@
  },
  "model": "mailtrigger.recipient",
  "pk": "iana_last_call"
+},
+{
+ "fields": {
+  "template": "<i-d-announce@ietf.org>",
+  "desc": "The I-D-Announce Email List"
+ },
+ "model": "mailtrigger.recipient",
+ "pk": "id_announce"
 },
 {
  "fields": {
@@ -5316,11 +5344,7 @@
  "fields": {
   "cc": [],
   "to": [
-   "doc_authors",
-   "doc_group_chairs",
-   "doc_group_responsible_directors",
-   "doc_notify",
-   "doc_shepherd"
+   "doc_authors_expanded"
   ],
   "desc": "Recipients when what a document replaces or is replaced by changes"
  },
@@ -5710,6 +5734,17 @@
 },
 {
  "fields": {
+  "cc": [],
+  "to": [
+   "ietf_secretariat"
+  ],
+  "desc": "Recipients for a message requesting that duplicated Person records be merged "
+ },
+ "model": "mailtrigger.mailtrigger",
+ "pk": "person_merge_requested"
+},
+{
+ "fields": {
   "cc": [
    "doc_group_chairs",
    "doc_notify",
@@ -5853,7 +5888,7 @@
    "submission_group_mail_list"
   ],
   "to": [
-   "ietf_announce"
+   "id_announce"
   ],
   "desc": "Recipients for the announcement of a successfully submitted draft"
  },

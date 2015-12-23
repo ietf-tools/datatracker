@@ -25,23 +25,7 @@
             <dt>From</dt>
             <dd>{{ feedback.author|formatted_email|default:"Anonymous" }}</dd>
             <dt>Date</dt>
-            <dd>{{ feedback.time|date:"Y-m-d" }})</dd>
-
-            {% if ft.slug == "nomina" %}
-              {% for fn in feedback.nomination_set.all %}
-                {% if fn.candidate_name %}
-                  <dt>Nominee</dt>
-                  <dd>{{ fn.candidate_name }}</dd>
-                {% endif %}
-                {% if fn.candidate_phone %}
-                  <dt>Nominee phone</dt>
-                  <dd>{{ fn.candidate_phone }}</dd>
-                {% endif %}
-              {% endfor %}
-            {% endif %}
-
-            <dt>Positions</dt>
-            <dd>{{ feedback.positions.all|join:"," }}</dd>
+            <dd>{{ feedback.time|date:"Y-m-d" }}</dd>
             <dt>Body</dt>
             <dd class="pasted">{% decrypt feedback.comments request year 1 %}</dd>
           </dl>

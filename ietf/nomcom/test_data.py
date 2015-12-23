@@ -21,19 +21,19 @@ SECRETARIAT_USER = 'secretary'
 EMAIL_DOMAIN = '@example.com'
 NOMCOM_YEAR = "2013"
 
-POSITIONS = {
-    "GEN": "IETF Chair/Gen AD",
-    "APP": "APP Area Director",
-    "INT": "INT Area Director",
-    "OAM": "OPS Area Director",
-    "OPS": "OPS Area Director",
-    "RAI": "RAI Area Director",
-    "RTG": "RTG Area Director",
-    "SEC": "SEC Area Director",
-    "TSV": "TSV Area Director",
-    "IAB": "IAB Member",
-    "IAOC": "IAOC Member",
-  }
+POSITIONS = [
+    "GEN",
+    "APP",
+    "INT",
+    "OAM",
+    "OPS",
+    "RAI",
+    "RTG",
+    "SEC",
+    "TSV",
+    "IAB",
+    "IAOC"
+  ]
 
 
 def generate_cert():
@@ -127,12 +127,10 @@ def nomcom_test_data():
     nominee, _ = Nominee.objects.get_or_create(email=email, nomcom=nomcom)
 
     # positions
-    for name, description in POSITIONS.iteritems():
+    for name in POSITIONS:
         position, created = Position.objects.get_or_create(nomcom=nomcom,
                                                            name=name,
-                                                           description=description,
-                                                           is_open=True,
-                                                           incumbent=email)
+                                                           is_open=True)
 
     ChangeStateGroupEvent.objects.get_or_create(group=group,
                                                 type="changed_state",

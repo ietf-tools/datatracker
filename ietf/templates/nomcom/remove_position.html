@@ -7,16 +7,24 @@
 {% block nomcom_content %}
   {% origin %}
   <h2>Position: {{ position }}</h2>
-  <dl>
-    <dt>Description:</dt>
-    <dd>{{ position.description }}</dd>
-    <dt>Incumbent:</dt>
-    <dd>{{ position.incumbent }}</dd>
-    <dt>Is open:</dt>
-    <dd>{{ position.is_open }}</dd>
-  </dl>
 
-  <h3>Do you want to remove it?</h3>
+  <p>This position is currently {{position.is_open|yesno:"open,closed"}}.</p>
+  <p>It has {{position.feedback_set.count|default:"no"}} feedback objects associated with it.</p>
+  {% if position.feedback_set.count %}
+    <p>
+        <span class="alert alert-warning">Unless this is a position created only for testing, deleting it is likely to be harmful. All of the feedback will also be deleted.</span>
+    </p>
+    <p>
+       {% if position.is_open %}
+           If you are just wanting the position to disappear from the lists available to the community for providing nominations and feedback, instead of deleting the position, edit the position and change is_open to False.
+       {% else %}
+           Since the position is closed, it will not appear on the lists available to the community for providing nominations and feedback.
+       {% endif %}
+    </p>
+    <p>If this is just a test position, it is ok to delete it.</p>
+  {% else %}
+    <p>This position is safe to delete.</p>
+  {% endif %}
 
   <form method="post">
     {% csrf_token %}
@@ -24,8 +32,8 @@
     <input type="hidden" name="remove" value="1">
 
     {% buttons %}
-      <a class="btn btn-default pull-right" href="../">No, get me out of here</a>
-      <button class="btn btn-primary" type="submit">Yes, remove it</button>
+      <button class="btn btn-primary btn-warning" type="submit">Delete</button>
+      <a class="btn btn-default" href="{% url 'nomcom_list_positions' year %}">Cancel</a>
     {% endbuttons %}
   </form>
 
