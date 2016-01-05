@@ -451,8 +451,6 @@ def change_intention(request, name):
                 
                 de = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
                 prev_consensus = de and de.consensus
-                print prev_consensus
-                print doc.intended_std_level_id
                 if not prev_consensus and doc.intended_std_level_id in ("std", "ds", "ps", "bcp"):
                     ce = ConsensusDocEvent(doc=doc, by=login, type="changed_consensus")
                     ce.consensus = True
