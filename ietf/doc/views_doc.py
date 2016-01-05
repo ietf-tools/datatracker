@@ -216,7 +216,7 @@ def document_main(request, name, rev=None):
             possible_types = ["pdf", "xml", "ps"]
             found_types = ["txt"] + [t for t in possible_types if os.path.exists(base_path + t)]
 
-            if doc.get_state_slug() == "active":
+            if not snapshot and doc.get_state_slug() == "active":
                 base = settings.IETF_ID_URL
             else:
                 base = settings.IETF_ID_ARCHIVE_URL
