@@ -260,7 +260,7 @@ def default_approval_text(review):
 
     conflictdoc = review.relateddocument_set.get(relationship__slug='conflrev').target.document
     if conflictdoc.stream_id=='ise':
-         receiver = 'RFC-Editor'
+         receiver = 'Independent Submissions Editor'
     elif conflictdoc.stream_id=='irtf':
          receiver = 'IRTF'
     else:
