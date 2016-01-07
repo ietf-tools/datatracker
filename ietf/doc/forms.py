@@ -3,7 +3,7 @@ import datetime
 from django import forms
 
 from ietf.iesg.models import TelechatDate
-from ietf.doc.models import Document
+from ietf.iesg.utils import telechat_page_count
 
 class TelechatForm(forms.Form):
     telechat_date = forms.TypedChoiceField(coerce=lambda x: datetime.datetime.strptime(x, '%Y-%m-%d').date(), empty_value=None, required=False, help_text="Page counts are the current page counts for the telechat, before this telechat date edit is made.")
@@ -20,7 +20,7 @@ class TelechatForm(forms.Form):
         self.page_count = {}
         choice_display = {}
         for d in dates:
-          self.page_count[d] = sum([doc.pages for doc in Document.objects.filter(docevent__telechatdocevent__telechat_date=d,type='draft').distinct() if doc.telechat_date()==d])
+          self.page_count[d] = telechat_page_count(d).for_approval
           choice_display[d] = '%s (%s pages)' % (d.strftime("%Y-%m-%d"),self.page_count[d])
         self.fields['telechat_date'].choices = [("", "(not on agenda)")] + [(d, choice_display[d]) for d in dates]
 
