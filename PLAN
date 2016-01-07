@@ -28,3 +28,7 @@ Planned work in rough order
 
 * Code refactoring to avoid code changes for new WG document tags
 
+* When draft XML source is available, take references from that instead
+  of extracting them from the text version.
+
+
