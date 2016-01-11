@@ -543,38 +543,41 @@ def uppercase_std_abbreviated_name(name):
 
 def crawl_history(doc):
     # return document history data for inclusion in doc.json (used by timeline)
-    def ancestors(doc):
-        retval = []
+    def get_ancestors(doc):
+        ancestors = []
         if hasattr(doc, 'relateddocument_set'):
             for rel in doc.relateddocument_set.filter(relationship__slug='replaces'):
-                if rel.target.document not in retval:
-                    retval.append(rel.target.document)
-                    retval.extend(ancestors(rel.target.document))
-            return retval
+                if rel.target.document not in ancestors:
+                    ancestors.append(rel.target.document)
+                    ancestors.extend(get_ancestors(rel.target.document))
+            return ancestors
 
-    retval = []
-    history = ancestors(doc)
-    if history is not None:
-        history.append(doc)
-        for d in history:
-            for e in d.docevent_set.filter(type='new_revision'):
+    history = {}
+    docs = get_ancestors(doc)
+    if docs is not None:
+        docs.append(doc)
+        for d in docs:
+            for e in d.docevent_set.filter(type='new_revision').distinct():
                 if hasattr(e, 'newrevisiondocevent'):
-                    retval.append({
+                    url = urlreverse("doc_view", kwargs=dict(name=d)) + e.newrevisiondocevent.rev + "/"
+                    history[url] = {
                         'name': d.name,
                         'rev': e.newrevisiondocevent.rev,
                         'published': e.time.isoformat(),
-                        'url': urlreverse("doc_view", kwargs=dict(name=d)) + e.newrevisiondocevent.rev + "/"
-                    })
+                        'url': url,
+                    }
 
     if doc.type_id == "draft":
         e = doc.latest_event(type='published_rfc')
     else:
         e = doc.latest_event(type='iesg_approved')
     if e:
-        retval.append({
+        url = urlreverse("doc_view", kwargs=dict(name=e.doc))
+        history[url] = {
             'name': e.doc.canonical_name(),
             'rev': e.doc.canonical_name(),
             'published': e.time.isoformat(),
-            'url': urlreverse("doc_view", kwargs=dict(name=e.doc))
-        })
-    return sorted(retval, key=lambda x: x['published'])
+            'url': url
+        }
+    history = history.values()
+    return sorted(history, key=lambda x: x['published'])
