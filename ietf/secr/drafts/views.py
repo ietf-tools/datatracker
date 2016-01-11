@@ -69,7 +69,7 @@ def handle_uploaded_file(f):
     '''
     Save uploaded draft files to temporary directory
     '''
-    destination = open(os.path.join('/tmp', f.name), 'wb+')
+    destination = open(os.path.join(settings.IDSUBMIT_MANUAL_STAGING_DIR, f.name), 'wb+')
     for chunk in f.chunks():
         destination.write(chunk)
     destination.close()
@@ -155,7 +155,7 @@ def promote_files(draft, types):
     '''
     filename = '%s-%s' % (draft.name,draft.rev)
     for ext in types:
-        path = os.path.join('/tmp', filename + ext)
+        path = os.path.join(settings.IDSUBMIT_MANUAL_STAGING_DIR, filename + ext)
         shutil.move(path,settings.INTERNET_DRAFT_PATH)
 
 # -------------------------------------------------

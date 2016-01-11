@@ -26,9 +26,14 @@ class MainTestCase(TestCase):
         os.mkdir(self.archive_dir)
         settings.INTERNET_DRAFT_ARCHIVE_DIR = self.archive_dir
 
+        self.manual_dir =  os.path.abspath("tmp-submit-manual-dir")
+        os.mkdir(self.manual_dir)
+        settings.IDSUBMIT_MANUAL_STAGING_DIR = self.manual_dir
+
     def tearDown(self):
         shutil.rmtree(self.repository_dir)
         shutil.rmtree(self.archive_dir)
+        shutil.rmtree(self.manual_dir)
         
     def test_abstract(self):
         draft = make_test_data()

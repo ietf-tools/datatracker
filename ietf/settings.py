@@ -474,6 +474,9 @@ IDSUBMIT_STAGING_PATH = '/a/www/www6s/staging/'
 IDSUBMIT_STAGING_URL = '//www.ietf.org/staging/'
 IDSUBMIT_IDNITS_BINARY = '/a/www/ietf-datatracker/scripts/idnits'
 
+IDSUBMIT_MANUAL_STAGING_DIR = '/tmp/'
+
+
 IDSUBMIT_FILE_TYPES = (
     'txt',
     'xml',
