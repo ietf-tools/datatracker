@@ -1,3 +1,146 @@
+ietfdb (6.12.0) ietf; urgency=medium
+
+  **Document timelines, table sorting, iesg agenda pace counts, AD position colours**
+
+  New features from lars@netapp.com:
+  - Graphical document timelines at the top of each draft and RFC document
+    page, giving an overall graphical view of the history timeline of the
+    document and its ancestors.
+  - Swift client-side sorting of tables, wherever it makes sense.
+  - Document dependency graphs are now provided in svg format by default.
+    The old pdf format is still available if desired.
+
+  New features from rjsparks@nostrum.com:
+  - Page counts on the IESG agenda and documents pages
+
+  New features from henrik@levkowetz.com:
+  - Substantially reworked AD position signal colours, with sidebars, on
+    the AD view of the IESG agenda and document pages.
+
+  There is also a long list of bugfixes, provided by rjsparks@nostrum.com,
+  lars@netapp.com, housley@vigilsec.com, rcross@amsl.com, and
+  henrik@levkowetz.com.  Here are details, extracted from the commit log:
+  
+  * Merged in [10636] from rjsparks@nostrum.com:
+    Refactored counting telechat pages to do it only in one place.  Count more
+    accurately and make it possible to report more granularly. Added page
+    counts to agenda.json.
+
+  * Merged in [10634] from rjsparks@nostrum.com:
+    Change the text used in conflict review approval messages. Fixes #1877.  
+
+  * Merged in [10633] from housley@vigilsec.com:
+    If the Internet-Draft is not the current revision, set the URLs to 
+    settings.IETF_ID_ARCHIVE_URL.  Fixes #1876. 
+
+  * Merged in [10632] from housley@vigilsec.com:
+    For documents in the IETF stream, display consensus in the IESG portion 
+    of the page.  For documents in other streams, disply consensis in the 
+    Stream portion of the page.  Fixes #1560. 
+
+  * Merged in [10631] from rjsparks@nostrum.com:
+    Added page counts to iesg/agenda/documents and to the edit telechat date 
+    form. Fixes #1772.  
+
+  * Merged in [10630] from housley@vigilsec.com:
+    Better handling of consensus for BCPs and  standards track documents.  
+    Partial fix for ticket 1560. 
+
+  * Merged in [10624] from rcross@amsl.com:
+    ValueError at /ipr/new-specific.  Fixes #1873.
+
+  * Merged in [10623] from lars@netapp.com:
+    Simplify the dependency graph generation, by relying on dot to generate
+    PDF (and now also SVG) directly. Default to showing SVG from the link on a
+    group's page.
+
+  * Merged in [10621] from lars@netapp.com:
+    Use js tablesort almost everywhere I thought it would make sense. While I
+    touched the pages, I also corrected a few minor HTML nits, capitalization
+    inconsistencies and some other minor things.
+
+  * Merged in [10605] from lars@netapp.com:
+    Show IDs that expired with a fading gradient and don't extend their box
+    after 185 days. Plus a bunch of cosmetic changes. 
+
+  * Rewrote crawl_history() to be easier to read (renaming multiple 
+    'retval' variables and other naming tweaks) and made it return distinct 
+    revisions without the added uniqueness filtering round from 
+    /personal/lars/6.11.1.dev0@10604.
+
+  * Merged in [10591] from housley@vigilsec.com:
+    Added a negative test to ensure the RFC Editor is not included on 
+    notifications of manual posts by the Secretariat unless the document is in 
+    the RFC Editor Queue.
+
+  * Added a directory for staging of manually submitted drafts, instead of
+    using hardcoded /tmp/, and added creation and removal of a test directory
+    for this.
+
+  * Merged in [10586] from housley@vigilsec.com:
+    Added automated tests for the fix for ticket #1751. 
+
+  * Merged in [10569] from housley@vigilsec.com:
+    For manual posting of an I-D by the Secretariat, include the RFC Editor 
+    on the email message if the I-D is in the RFC Editor Queue. Fixes #1751. 
+
+  * Changed a helper function meeting_updated() to a method on Meeting, and 
+    provided it as a synthetic attribute on the /api/v1/meeting/meeting/ 
+    endpoints of the JSON API.
+
+  * Merged in [10567] from housley@vigilsec.com:
+    For Charters, display the Responsible AD as well as the Charter Edit AD.
+    Fixes #1829. 
+
+  * Moved the timeline colouring css to ietf.less, to pick up the brand
+    colours directly.
+
+  * Merged in /personal/lars/6.11.1.dev0@10590 from lars@netapp.com,  which 
+    brings in a timeline view at the top of document pages.
+
+  * Merged in [10551] and [10553] from lars@netapp.com:
+    Added an .editorconfig file, so we can have some consistency in the project.
+    (I don't care what settings we use, as long as we all use the same.)  Use
+    four spaces as default (Python default, as suggested by Henrik).
+
+  * Tweaked the colours a bit in order to make it easier for ADs to 
+    distinguish between the position colours on their personalised versions of 
+    iesg/agenda/documents/.
+
+  * Added a coloured bar at the right-hand side of the ADs' view of 
+    iesg/agenda/documents/, in order to make it easier to distinguish between 
+    the 'yes' and 'no-objection' colour codes.
+
+  * Moved definitions for the AD ballot position's background colours 
+    (which shows each AD his own positions by colour coding) from ietf.css to 
+    ietf.less, to make it easier to adjust the colours while keeping to the 
+    hues of the colour palette.
+
+  * Updated and corrected the description in the README file of of how the 
+    contents of the bootstrap/dist/ directory end up in the right place for 
+    static serving.
+
+  * Merged in [10540] from lars@netapp.com:
+    Update vnu HTML5 validator, and fix an HTML nit it found. 
+
+  * Merged in [10539] from lars@netapp.com:
+    Fix CSS/js inclusion of select2 from new static location. (Looks like this
+    file was forgotten when we began to use bower.)  
+
+  * Merged in [10538] from lars@netapp.com:
+    Fixes for displaying IRTF RGs (call them RGs, and don't show IESG state.) 
+
+  * Merged in [10536] from lars@netapp.com:
+    Manage html5shiv and respond.js locally via bower, rather than relying on
+    the CDN.  
+
+  * Merged in [10532] from lars@netapp.com:
+    Move to bootstrap 3.3.6, with a simpler way to maintain our customized
+    version in the future (described in bootstrap/README-DATATRACKER.rst). 
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  12 Jan 2016 13:32:10 -0800
+
+
 ietfdb (6.11.0) ietf; urgency=medium
 
   **Liaison Tool Enhancement**
