@@ -43,11 +43,7 @@
     <tbody>
         <tr class="info">
           <th></th>
-          {% if "ad" in meta.headers %}
-              <th colspan="{{ meta.headers|length|add:"-1" }}">
-          {% else %}
-              <th colspan="{{ meta.headers|length }}">
-          {% endif %}
+          <th colspan="{{ meta.headers|length|add:"-1" }}">
 	    {{ doc_group.grouper|plural:doc_group.list }}
           </th>
         </tr>
