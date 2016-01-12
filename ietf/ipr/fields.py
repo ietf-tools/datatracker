@@ -41,6 +41,10 @@ class SearchableIprDisclosuresField(forms.CharField):
             value = ""
         if isinstance(value, basestring):
             pks = self.parse_select2_value(value)
+            # if the user posted a non integer value we need to remove it
+            for key in pks:
+                if not key.isdigit():
+                    pks.remove(key)
             value = self.model.objects.filter(pk__in=pks)
         if isinstance(value, self.model):
             value = [value]
@@ -56,6 +60,9 @@ class SearchableIprDisclosuresField(forms.CharField):
     def clean(self, value):
         value = super(SearchableIprDisclosuresField, self).clean(value)
         pks = self.parse_select2_value(value)
+
+        if not all([ key.isdigit() for key in pks ]):
+            raise forms.ValidationError(u'You must enter IPR ID(s) as integers')
 
         objs = self.model.objects.filter(pk__in=pks)
 

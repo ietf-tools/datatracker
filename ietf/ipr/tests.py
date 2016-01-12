@@ -404,6 +404,31 @@ class IprTests(TestCase):
         self.assertTrue('New IPR Submission' in outbox[0]['Subject'])
         self.assertTrue('ietf-ipr@' in outbox[0]['To'])
 
+    def test_update_bad_post(self):
+        draft = make_test_data()
+        url = urlreverse("ietf.ipr.views.new", kwargs={ "type": "specific" })
+
+        # successful post
+        empty_outbox()
+        r = self.client.post(url, {
+            "updates": "this is supposed to be an integer",
+            "holder_legal_name": "Test Legal",
+            "holder_contact_name": "Test Holder",
+            "holder_contact_email": "test@holder.com",
+            "iprdocrel_set-TOTAL_FORMS": 1,
+            "iprdocrel_set-INITIAL_FORMS": 0,
+            "iprdocrel_set-0-document": "%s" % draft.docalias_set.first().pk,
+            "iprdocrel_set-0-revisions": '00',
+            "patent_info": "none",
+            "has_patent_pending": False,
+            "licensing": "royalty-free",
+            "submitter_name": "Test Holder",
+            "submitter_email": "test@holder.com",
+            })
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertTrue(q("#id_updates").parents(".form-group").hasClass("has-error"))
+
     def test_addcomment(self):
         make_test_data()
         ipr = IprDisclosureBase.objects.get(title='Statement regarding rights')
