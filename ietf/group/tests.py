@@ -17,8 +17,7 @@ if   getattr(settings,'SKIP_DOT_TO_PDF', False):
     skip_dot_to_pdf = True
     skip_message = "settings.SKIP_DOT_TO_PDF = %s" % skip_dot_to_pdf
 elif (  os.path.exists(settings.DOT_BINARY) and
-        os.path.exists(settings.UNFLATTEN_BINARY) and
-        os.path.exists(settings.PS2PDF_BINARY)):
+        os.path.exists(settings.UNFLATTEN_BINARY)):
     skip_dot_to_pdf = False
     skip_message = ""
 else:
@@ -65,9 +64,9 @@ class GroupDocDependencyGraphTests(TestCase):
     def test_group_document_dependency_dotfile(self):
         make_test_data()
         for group in Group.objects.filter(Q(type="wg") | Q(type="rg")):
-            client = Client(Accept='application/pdf')
-            for url in [ urlreverse("ietf.group.info.dependencies_dot",kwargs=dict(acronym=group.acronym)),
-                         urlreverse("ietf.group.info.dependencies_dot",kwargs=dict(acronym=group.acronym,group_type=group.type_id)),
+            client = Client(Accept='text/plain')
+            for url in [ urlreverse("ietf.group.info.dependencies",kwargs=dict(acronym=group.acronym,output_type="dot")),
+                         urlreverse("ietf.group.info.dependencies",kwargs=dict(acronym=group.acronym,group_type=group.type_id,output_type="dot")),
                        ]:
                 r = client.get(url)
                 self.assertTrue(r.status_code == 200, "Failed to receive "
@@ -79,13 +78,26 @@ class GroupDocDependencyGraphTests(TestCase):
         make_test_data()
         for group in Group.objects.filter(Q(type="wg") | Q(type="rg")):
             client = Client(Accept='application/pdf')
-            for url in [ urlreverse("ietf.group.info.dependencies_pdf",kwargs=dict(acronym=group.acronym)),
-                         urlreverse("ietf.group.info.dependencies_pdf",kwargs=dict(acronym=group.acronym,group_type=group.type_id)),
+            for url in [ urlreverse("ietf.group.info.dependencies",kwargs=dict(acronym=group.acronym,output_type="pdf")),
+                         urlreverse("ietf.group.info.dependencies",kwargs=dict(acronym=group.acronym,group_type=group.type_id,output_type="pdf")),
                        ]:
                 r = client.get(url)
                 self.assertTrue(r.status_code == 200, "Failed to receive "
                     "a pdf dependency graph for group: %s"%group.acronym)
                 self.assertGreater(len(r.content), 0, "Pdf dependency graph for group "
+                    "%s has no content"%group.acronym)
+
+    def test_group_document_dependency_svgfile(self):
+        make_test_data()
+        for group in Group.objects.filter(Q(type="wg") | Q(type="rg")):
+            client = Client(Accept='image/svg+xml')
+            for url in [ urlreverse("ietf.group.info.dependencies",kwargs=dict(acronym=group.acronym,output_type="svg")),
+                         urlreverse("ietf.group.info.dependencies",kwargs=dict(acronym=group.acronym,group_type=group.type_id,output_type="svg")),
+                       ]:
+                r = client.get(url)
+                self.assertTrue(r.status_code == 200, "Failed to receive "
+                    "a svg dependency graph for group: %s"%group.acronym)
+                self.assertGreater(len(r.content), 0, "svg dependency graph for group "
                     "%s has no content"%group.acronym)
             
 

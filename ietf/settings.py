@@ -509,7 +509,6 @@ INTERNET_DRAFT_DAYS_TO_EXPIRE = 185
 
 DOT_BINARY = '/usr/bin/dot'
 UNFLATTEN_BINARY= '/usr/bin/unflatten'
-PS2PDF_BINARY = '/usr/bin/ps2pdf'
 RSYNC_BINARY = '/usr/bin/rsync'
 
 # Account settings
