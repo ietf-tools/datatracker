@@ -1,7 +1,11 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
-{% load ietf_filters %}
+{% load ietf_filters staticfiles %}
+
+{% block pagehead %}
+<link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
+{% endblock %}
 
 {% block bodyAttrs %}data-spy="scroll" data-target="#affix"{% endblock %}
 
@@ -29,7 +33,7 @@
 	  <a href="mailto:{{ regime.chair.person.email_address }}">{{ regime.chair.person.plain_name }}</a>
 	</p>
 
-	<table class="table table-condensed table-striped">
+	<table class="table table-condensed table-striped tablesorter">
 	  <thead>
 	    <tr>
 	      <th>Date</th>
@@ -53,7 +57,7 @@
       {# somebody ought to import these announcements in the DB instead of this mess #}
       <h2 class="anchor-target" id="2003">Messages from 2003/2004</h2>
       <p><b>Committee chair:</b> <a href="mailto:richdr@microsoft.com">Rich Draves</a></p>
-      <table class="table table-condensed table-striped">
+      <table class="table table-condensed table-striped tablesorter">
 	<thead>
 	  <tr>
 	    <th>Date</th>
@@ -82,7 +86,7 @@
 
       <h2 class="anchor-target" id="2002">Messages from 2002/2003</h2>
       <p><b>Committee chair:</b> <a href="mailto:PRoberts@MEGISTO.com">Phil Roberts</a></p>
-      <table class="table table-condensed table-striped">
+      <table class="table table-condensed table-striped tablesorter">
 	<thead>
 	  <tr>
 	    <th>Date</th>
@@ -130,4 +134,8 @@
       </ul>
     </div>
   </div>
+{% endblock %}
+
+{% block js %}
+<script src="{% static "jquery.tablesorter/js/jquery.tablesorter.combined.min.js" %}"></script>
 {% endblock %}

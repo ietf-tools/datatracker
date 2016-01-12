@@ -1,14 +1,19 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
-{% load ietf_filters %}
+{% load ietf_filters staticfiles %}
+
+{% block pagehead %}
+<link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
+{% endblock %}
+
 {% block title %}IAB/IESG NomComs{% endblock %}
 
 {% block content %}
   {% origin %}
   <h1>IAB/IESG NomComs</h1>
 
-  <table class="table table-condensed table-striped">
+  <table class="table table-condensed table-striped tablesorter">
     <thead>
       <tr>
         <th>Year</th>
@@ -40,4 +45,8 @@
       {% endfor %}
     </tbody>
   </table>
+{% endblock %}
+
+{% block js %}
+<script src="{% static "jquery.tablesorter/js/jquery.tablesorter.combined.min.js" %}"></script>
 {% endblock %}

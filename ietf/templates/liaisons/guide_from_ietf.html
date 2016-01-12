@@ -2,7 +2,11 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
 
-{% load ietf_filters %}
+{% load ietf_filters staticfiles %}
+
+{% block pagehead %}
+<link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
+{% endblock %}
 
 {% block title %}Liaison statements from the IETF - guidelines for completing the "Cc:" field{% endblock %}
 
@@ -22,7 +26,7 @@
     <li><a href="{{ "4053"|rfcurl }}">RFC 4053 (BCP 103), "Procedures for Handling Liaison Statements to and from the IETF"</a></li>
   </ul>
 
-  <table class="table table-condensed table-striped">
+  <table class="table table-condensed table-striped tablesorter">
     <thead>
       <tr>
         <th>Submitting entity <sup><small>(1)</small></sup></th>
@@ -76,4 +80,8 @@
     <sup><small>(5)</small></sup> A list of Area Directorate mailing lists is not currently available.
   </p>
 
+{% endblock %}
+
+{% block js %}
+<script src="{% static "jquery.tablesorter/js/jquery.tablesorter.combined.min.js" %}"></script>
 {% endblock %}

@@ -1,6 +1,10 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
-{% load origin %}
+{% load origin staticfiles %}
+
+{% block pagehead %}
+<link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
+{% endblock %}
 
 {% block title %}
   References from {{doc.canonical_name}}
@@ -17,7 +21,7 @@
     <a class="btn btn-default" href="{% url 'relationship_subset_help' subset='reference' %}">Reference type help</a>
   </p>
 
-  <table class="table table-condensed table-striped">
+  <table class="table table-condensed table-striped tablesorter">
     <thead>
       <tr>
         <th>Document</th>
@@ -51,4 +55,8 @@
       {% endfor %}
   </table>
 
+{% endblock %}
+
+{% block js %}
+<script src="{% static "jquery.tablesorter/js/jquery.tablesorter.combined.min.js" %}"></script>
 {% endblock %}

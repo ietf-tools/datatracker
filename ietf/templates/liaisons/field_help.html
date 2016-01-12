@@ -2,7 +2,11 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
 
-{% load ietf_filters %}
+{% load ietf_filters staticfiles %}
+
+{% block pagehead %}
+<link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
+{% endblock %}
 
 {% block title %}Liaison statement field help{% endblock %}
 
@@ -44,7 +48,7 @@
     </a>
   </p>
 
-  <table class="table table-condensed table-striped">
+  <table class="table table-condensed table-striped tablesorter">
     <thead>
       <tr>
     <th>Fieldset</th>
@@ -60,7 +64,7 @@
       <td>Use arrows to select or type name to search</td>
     </tr>
     <tr>
-      <td></td>
+      <th>From</th>
       <th>From Contact</th>
       <td>
     The e-mail address of the person submitting the liaison statement.
@@ -68,7 +72,7 @@
       <td>The field is filled in automatically.</td>
     </tr>
     <tr>
-      <td></td>
+      <th>From</th>
       <th>Response Contacts</th>
       <td>
     The e-mail address(es) to which any response should be sent, separated by commas.
@@ -86,7 +90,7 @@
       </td>
     </tr>
     <tr>
-      <td></td>
+      <th>To</th>
       <th>Contacts</th>
       <td>
     The e-mail address(es) of the recipient(s) of the liaison statement, separated by commas.
@@ -102,7 +106,7 @@
       <td>Optional. Suggested format: Name &lt;e-mail address&gt</td>
     </tr>
     <tr>
-      <td></td>
+      <th>Other email addresses</th>
       <th>Action Holder Contacts</th>
       <td>
     The e-mail address(es) of the persons responsible for acting on the statement.
@@ -110,7 +114,7 @@
       <td>Optional. Suggested format: Name &lt;e-mail address&gt</td>
     </tr>
     <tr>
-      <td></td>
+      <th>Other email addresses</th>
       <th>Cc</th>
       <td>
     The e-mail address(es) of the copy recipient(s) of the liaison statement, one on each line.
@@ -128,7 +132,7 @@
       </td>
     </tr>
     <tr>
-      <td></td>
+      <th>Purpose</th>
       <th>Deadline</th>
       <td>The date by which a comment or action is required.</td>
       <td>
@@ -143,13 +147,13 @@
       <td>Mandatory.</td>
     </tr>
     <tr>
-      <td></td>
+      <th>Liaison statements</th>
       <th>Submission date</th>
       <td>The date the liaison was originally submitted.</td>
       <td>Mandatory.</td>
     </tr>
     <tr>
-      <td></td>
+      <th>Liaison statements</th>
       <th>Body</th>
       <td>The text of the liaison statement.</td>
       <td>
@@ -166,7 +170,7 @@
       </td>
     </tr>
     <tr>
-      <td></td>
+      <th>Add attachment</th>
       <th>File</th>
       <td>Browse to find the attachment.</td>
       <td>
@@ -174,4 +178,8 @@
       </td>
     </tr>
   </table>
+{% endblock %}
+
+{% block js %}
+<script src="{% static "jquery.tablesorter/js/jquery.tablesorter.combined.min.js" %}"></script>
 {% endblock %}

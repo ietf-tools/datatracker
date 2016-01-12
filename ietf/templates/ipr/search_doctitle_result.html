@@ -2,7 +2,12 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}{% origin %}
 
-{% load ietf_filters %}
+{% load ietf_filters staticfiles %}
+
+{% block pagehead %}
+<link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
+{% endblock %}
+
 {% block search_header %}Search result on {{ q }}{% endblock %}
 
 {% block search_result %}
@@ -11,17 +16,19 @@
   {% else %}
     <p class="alert alert-info">Total number of IPR disclosures found: <b>{{ iprs|length }}</b>.</p>
 
-    <table class="table table-condensed table-striped">
+    <table class="table table-condensed table-striped tablesorter">
       <thead><th>Date</th><th>ID</th><th>Statement</th></thead>
-      <tbody>
         {% for alias in docs %}
+      <tbody>
           <tr>
             <th class="warning" colspan="3">
 	      IPR that is related to <i>{{ alias.name|rfcspace|lstrip:"0"|rfcnospace }} ("{{ alias.document.title }}"){% if alias.related %}</i> that was <i>{{ alias.relation|lower }} {{ alias.related.source.name|rfcspace|lstrip:"0"|rfcnospace  }} ("{{ alias.related.source.title }}"){% endif %}
 	      </i>
             </th>
           </tr>
+      </tbody>
 
+      <tbody>
           {% if alias.document.ipr %}
             {% for ipr in alias.document.ipr %}
               <tr>
@@ -46,8 +53,12 @@
               <td>No IPR disclosures related to <i>{{ alias.name|rfcspace|lstrip:"0" }}</i> have been submitted.</td>
             </tr>
           {% endif %}
-        {% endfor %}
       </tbody>
+        {% endfor %}
     </table>
   {% endif %}
+{% endblock %}
+
+{% block js %}
+<script src="{% static "jquery.tablesorter/js/jquery.tablesorter.combined.min.js" %}"></script>
 {% endblock %}

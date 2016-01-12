@@ -1,7 +1,11 @@
 {% extends "base.html" %}
 
 {% load future %}
-{% load ietf_filters %}
+{% load ietf_filters staticfiles %}
+
+{% block pagehead %}
+<link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
+{% endblock %}
 
 {% block title %}History for Liaison Statement - {{ liaison.title }}{% endblock %}
 
@@ -16,7 +20,7 @@
     </p>
   {% endif %}
 
-  <table class="table table-condensed table-striped history">
+  <table class="table table-condensed table-striped history tablesorter">
     <thead>
       <tr>
         <th>Date</th>
@@ -42,3 +46,7 @@
     </tbody>
   </table>
 {% endblock content %}
+
+{% block js %}
+<script src="{% static "jquery.tablesorter/js/jquery.tablesorter.combined.min.js" %}"></script>
+{% endblock %}

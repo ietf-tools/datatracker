@@ -188,7 +188,7 @@
   "order": 0,
   "revname": "Conflict reviewed by",
   "used": true,
-  "name": "conflict reviews",
+  "name": "Conflict reviews",
   "desc": ""
  },
  "model": "name.docrelationshipname",

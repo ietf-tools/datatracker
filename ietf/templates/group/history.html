@@ -2,11 +2,15 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
 {% load ietf_filters %}
-{% load future %}
+{% load future staticfiles %}
+
+{% block pagehead %}
+<link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
+{% endblock %}
 
 {% block group_content %}
   {% origin %}
-  <table class="table table-condensed table-striped ietf">
+  <table class="table table-condensed table-striped tablesorter">
     <thead>
       <tr>
         <th>Date</th>
@@ -27,4 +31,8 @@
     </tbody>
   </table>
 
+{% endblock %}
+
+{% block js %}
+<script src="{% static "jquery.tablesorter/js/jquery.tablesorter.combined.min.js" %}"></script>
 {% endblock %}

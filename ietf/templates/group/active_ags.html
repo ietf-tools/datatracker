@@ -1,13 +1,17 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
-{% load origin %}
+{% load origin staticfiles %}
 
-{% block title %}Active Area Groups{% endblock %}
+{% block pagehead %}
+<link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
+{% endblock %}
+
+{% block title %}Active area groups{% endblock %}
 
 {% block content %}
   {% origin %}
-  <h1>Active Area Groups</h1>
-  <table class="table table-condensed table-striped">
+  <h1>Active area groups</h1>
+  <table class="table table-condensed table-striped tablesorter">
     <thead>
       <tr>
         <th>Team</th>
@@ -43,3 +47,6 @@
   </table>
 {% endblock %}
 
+{% block js %}
+<script src="{% static "jquery.tablesorter/js/jquery.tablesorter.combined.min.js" %}"></script>
+{% endblock %}

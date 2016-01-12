@@ -4,6 +4,10 @@
 {% load staticfiles %}
 {% block title %}{{ title }}{% endblock %}
 
+{% block pagehead %}
+<link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
+{% endblock %}
+
 {% block content %}
   {% origin %}
   <h1>{{ title }}</h1>
@@ -12,7 +16,7 @@
     <p><a class="btn btn-default" href="{% static 'ietf/images/iesg-draft-state-diagram.png' %}">View diagram</a></p>
   {% endif %}
 
-  <table class="table table-condensed table-striped">
+  <table class="table table-condensed table-striped tablesorter">
     <thead>
       <tr>
         <th>State</th>
@@ -40,7 +44,7 @@
   {% if tags %}
     <h2>Tags</h2>
 
-    <table class="table table-condensed table-striped">
+    <table class="table table-condensed table-striped tablesorter">
       <thead>
         <tr>
           <th>Tag</th>
@@ -51,7 +55,7 @@
       <tbody>
         {% for tag in tags %}
           <tr class="anchor-target" id="{{ tag.slug }}">
-            <td>{{ tag.name }}</td>
+            <th>{{ tag.name }}</th>
             <td>{{ tag.desc|linebreaksbr }}</td>
           </tr>
         {% endfor %}
@@ -59,4 +63,8 @@
     </table>
   {% endif %}
 
+{% endblock %}
+
+{% block js %}
+<script src="{% static "jquery.tablesorter/js/jquery.tablesorter.combined.min.js" %}"></script>
 {% endblock %}

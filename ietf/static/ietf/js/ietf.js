@@ -256,6 +256,8 @@ $(document).ready(function () {
         };
         // disable the URL-based sorting stuff that uses the django backend
         $(".tablesorter thead a").contents().unwrap();
+        // strip the caret used by the django backend sorting
+        $(".tablesorter thead th span.fa-caret-down").remove();
         // make the table sortable
         $(".tablesorter").tablesorter({
             emptyTo: "zero",
