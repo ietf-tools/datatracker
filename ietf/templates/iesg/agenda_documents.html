@@ -4,6 +4,7 @@
 
 {% load ballot_icon %}
 {% load ietf_filters %}
+{% load iesg_filters %}
 
 {% block pagehead %}
   <link rel="alternate" type="application/atom+xml" href="/feed/iesg-agenda/">
@@ -27,7 +28,11 @@
   {% endif %}
 
   {% for t in telechats %}
-    <h2>IESG telechat {{t.date}}</h2>
+    <h2>IESG telechat {{t.date}}
+    {% with t|telechat_page_count as pages %}
+    <small class="text-muted">{{pages}} page{{pages|pluralize}}</small>
+    {% endwith %}
+</h2>
     <p>
       <a class="btn btn-default" role="button" href="/iesg/agenda/">
         <span class="fa fa-list"></span>

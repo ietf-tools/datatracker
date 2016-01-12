@@ -8,7 +8,7 @@
 
 {% block content %}
   {% origin %}
-  <h1>Set telechat date<br><small>{{ doc.name }}</small></h1>
+  <h1>Set telechat date<br><small>{{ doc.name }} ({{ doc.pages }} page{{ doc.pages|pluralize }})</small></h1>
 
   {% bootstrap_messages %}
 
@@ -20,10 +20,38 @@
     {% csrf_token %}
     {% bootstrap_form form %}
 
+    <div id="large_page_count_warning" class="hidden-nojs alert alert-warning">
+        Putting the document on this telechat gives the telechat a very large document page count. Please consider choosing another telechat date for this document.
+    </div>
+
     {% buttons %}
       <button type="submit" class="btn btn-primary">Save</button>
       <a class="btn btn-default pull-right" href="{% url "doc_view" name=doc.name %}">Back</a>
     {% endbuttons %}
   </form>
 
+
+{% endblock %}
+
+{% block js %}
+  <script>
+    var pages = {};
+    {% for date,count in form.page_count.items %}
+    pages['{{date}}'] = {{count}};
+    {% endfor %}
+
+    $("#large_page_count_warning").hide();
+
+    function toggleWarning(date) {
+      if ( date==="" | pages[date] + {{ doc.pages }} < 400 ) {
+        $("#large_page_count_warning").hide();
+      } else {
+        $("#large_page_count_warning").show();
+      }
+    }
+
+    $("select[name='telechat_date']").change(function () {
+      toggleWarning($(this).val());
+    });
+  </script>
 {% endblock %}
