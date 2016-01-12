@@ -249,9 +249,9 @@ $(document).ready(function () {
         // customize the styling a bit; more is done in ietf.css
         $.tablesorter.themes.bootstrap = {
             table: "",
-            iconSortNone: "bootstrap-icon-unsorted",
-            iconSortAsc: "glyphicon glyphicon-chevron-up",
-            iconSortDesc: "glyphicon glyphicon-chevron-down",
+            iconSortNone: "fa fa-sort",
+            iconSortAsc: "fa fa-sort-asc",
+            iconSortDesc: "fa fa-sort-desc",
             hover: "active"
         };
         // disable the URL-based sorting stuff that uses the django backend
