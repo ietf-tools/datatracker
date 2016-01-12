@@ -10,6 +10,7 @@
     "html5shiv": "3.7.3",
     "jquery": "1.11.3",
     "jquery.cookie": "1.4.1",
+    "jquery.tablesorter": "2.25.0",
     "respond": "1.4.2",
     "select2": "3.5.4",
     "select2-bootstrap-css": "1.4.6"
@@ -21,6 +22,12 @@
         "./css/font-awesome.min.css",
         "./fonts/*"
       ]
+    },
+    "tablesorter": {
+        "main": [
+            "dist/js/jquery.tablesorter.combined.js",
+            "dist/css/theme.bootstrap.min.css"
+        ]
     },
     "respond": {
       "main": "dest/respond.min.js"

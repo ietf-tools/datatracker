@@ -13,14 +13,14 @@
     </div>
   {% endif %}
 
-  <table class="table table-condensed table-striped">
+  <table class="table table-condensed table-striped tablesorter">
     <thead>
       <tr>
-        <th></th>
+        <th class="sorter-false"></th>
 
         {% for h in meta.headers %}
           {% if h.title != "Title" %}
-            <th class="{{ h.key }}">
+            <th data-header="{{ h.key }}">
 	      {% if "sort_url" in h %}
 	        <a href="{{ h.sort_url }}">{{ h.title }}
 	          {% if h.sorted %}<span class="fa fa-caret-down"></span>{% endif %}
@@ -36,15 +36,21 @@
 
     {% regroup docs by search_heading as grouped_docs %}
 
-    <tbody>
       {% for doc_group in grouped_docs %}
+    <tbody>
         <tr class="info">
           <th></th>
-          <th colspan="{{ meta.headers|length|add:"-1" }}">
+          {% if "ad" in meta.headers %}
+              <th colspan="{{ meta.headers|length|add:"-1" }}">
+          {% else %}
+              <th colspan="{{ meta.headers|length }}">
+          {% endif %}
 	    {{ doc_group.grouper|plural:doc_group.list }}
           </th>
         </tr>
+    </tbody>
 
+    <tbody>
         {% for doc in doc_group.list %}
           {% include "doc/search/search_result_row.html" %}
         {% endfor %}

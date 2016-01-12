@@ -242,3 +242,23 @@ $(document).ready(function () {
         }
     });
 });
+
+$(function() {
+    // customize the styling a bit; more is done in ietf.css
+    if ($(".tablesorter").length) {
+        $.tablesorter.themes.bootstrap = {
+            table: "",
+            iconSortNone: "bootstrap-icon-unsorted",
+            iconSortAsc: "glyphicon glyphicon-chevron-up",
+            iconSortDesc: "glyphicon glyphicon-chevron-down",
+            hover: "active"
+        };
+        $(".tablesorter").tablesorter({
+            emptyTo: "zero",
+            theme: "bootstrap",
+            table: "",
+            headerTemplate: "{content} {icon}",
+            widgets: ["uitheme", "sort2Hash"]
+        });
+    }
+});

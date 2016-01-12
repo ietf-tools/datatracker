@@ -2,12 +2,13 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
 
-{% load ietf_filters %}
+{% load ietf_filters staticfiles %}
 
 {% block pagehead %}
   {% if last_call_only %}
     <link rel="alternate" type="application/atom+xml" href="/feed/last-call/">
   {% endif %}
+  <link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
 {% endblock %}
 
 {% block title %}{{ title }}{% endblock %}
@@ -16,18 +17,21 @@
   {% origin %}
   <h1>{{ title }}</h1>
 
-  <table class="table table-condensed table-striped">
+  <table class="table table-condensed table-striped tablesorter">
     <thead>
       <tr>
         <th class="text-nowrap">Area</th>
         <th class="text-nowrap">{% if state.slug == "lc" %}Expires at{% else %}Date{% endif %}</th>
         <th>Document</th>
+        <th>Intended level</th>
+        <th>AD</th>
       </tr>
     </thead>
-    <tbody>
       {% for state, docs in grouped_docs %}
-        <tr class="info"><th colspan="3">{{ state.name }}</th></tr>
-
+    <tbody>
+        <tr class="info"><th colspan="5">{{ state.name }}</th></tr>
+    </tbody>
+    <tbody>
         {% for doc in docs %}
           <tr>
             <td class="text-nowrap">{% if doc.area_acronym %}{{ doc.area_acronym }}{% endif %}</td>
@@ -40,17 +44,22 @@
             </td>
 
             <td>
-	      <b>{{ doc.title }}</b> ({{ doc.intended_std_level.name }})
-	      <br><a href="{% url "doc_view" doc.name %}">{{ doc.name }}</a>
-	      <br>AD: <a href="mailto:{{ doc.ad.email_address|urlencode }}">{{ doc.ad.plain_name }}</a>
+	      <a href="{% url "doc_view" doc.name %}">{{ doc.name }}</a>
+          <br><b>{{ doc.title }}</b>
 	      {% if doc.note %}
 	        <br><i>Note: {{ doc.note|linebreaksbr|urlize }}</i>
 	      {% endif %}
             </td>
+          <td>{{ doc.intended_std_level.name }}</td>
+          <td><a href="mailto:{{ doc.ad.email_address|urlencode }}">{{ doc.ad.plain_name }}</a></td>
           </tr>
         {% endfor %}
-      {% endfor %}
     </tbody>
+      {% endfor %}
   </table>
 
+{% endblock %}
+
+{% block js %}
+<script src="{% static "jquery.tablesorter/js/jquery.tablesorter.combined.min.js" %}"></script>
 {% endblock %}
