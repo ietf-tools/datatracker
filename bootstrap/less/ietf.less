@@ -142,10 +142,15 @@
 
 
 /* like label-success */
-#timeline .bar:nth-child(odd) rect  { fill: desaturate(@label-success-bg, 30%); }
+#timeline .bar:nth-child(odd) rect  { fill: desaturate(@label-success-bg, 10%); }
+#timeline .bar:nth-child(odd) rect:hover,
+#timeline .bar:nth-child(odd) rect:focus { fill: darken(saturate(@label-success-bg, 20%), 15%); }
+
 
 /* like label-primary */
-#timeline .bar:nth-child(even) rect { fill: lighten(@label-primary-bg, 10%); }
+#timeline .bar:nth-child(even) rect { fill: lighten(@label-primary-bg, 15%); }
+#timeline .bar:nth-child(even) rect:hover,
+#timeline .bar:nth-child(even) rect:focus { fill: @label-primary-bg; }
 
 /* like label-warning */
 #timeline .gradient.left  { stop-color: @label-warning-bg; }

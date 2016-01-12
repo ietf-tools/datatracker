@@ -132,11 +132,19 @@ fieldset[disabled] .btn-pass.focus {
 }
 /* like label-success */
 #timeline .bar:nth-child(odd) rect {
-  fill: #78b53a;
+  fill: #78cd22;
+}
+#timeline .bar:nth-child(odd) rect:hover,
+#timeline .bar:nth-child(odd) rect:focus {
+  fill: #52a300;
 }
 /* like label-primary */
 #timeline .bar:nth-child(even) rect {
-  fill: #6b5bad;
+  fill: #7a6cb6;
+}
+#timeline .bar:nth-child(even) rect:hover,
+#timeline .bar:nth-child(even) rect:focus {
+  fill: #54478e;
 }
 /* like label-warning */
 #timeline .gradient.left {
