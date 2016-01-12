@@ -414,6 +414,13 @@ class EditInfoTests(TestCase):
         self.assertEqual(draft.latest_event(ConsensusDocEvent, type="changed_consensus").consensus, True)
 
         # reset
+        draft.intended_std_level_id = 'bcp'
+        draft.save()
+        r = self.client.post(url, dict(consensus="Unknown"))
+        self.assertEqual(r.status_code, 403) # BCPs must have a consensus
+
+        draft.intended_std_level_id = 'inf'
+        draft.save()
         r = self.client.post(url, dict(consensus="Unknown"))
         self.assertEqual(r.status_code, 302)
 

@@ -449,6 +449,16 @@ def change_intention(request, name):
                     c.save()
                     email_desc += "\n"+c.desc
                 
+                de = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
+                prev_consensus = de and de.consensus
+                if not prev_consensus and doc.intended_std_level_id in ("std", "ds", "ps", "bcp"):
+                    ce = ConsensusDocEvent(doc=doc, by=login, type="changed_consensus")
+                    ce.consensus = True
+                    ce.desc = "Changed consensus to <b>%s</b> from %s" % (nice_consensus(True),
+                                                                          nice_consensus(prev_consensus))
+                    ce.save()
+                    email_desc += "\n"+ce.desc
+
                 doc.time = e.time
                 doc.save()
 
@@ -1101,6 +1111,8 @@ def edit_consensus(request, name):
             if form.cleaned_data["consensus"] != prev_consensus:
                 e = ConsensusDocEvent(doc=doc, type="changed_consensus", by=request.user.person)
                 e.consensus = {"Unknown":None,"Yes":True,"No":False}[form.cleaned_data["consensus"]]
+                if not e.consensus and doc.intended_std_level_id in ("std", "ds", "ps", "bcp"):
+                    return HttpResponseForbidden("BCPs and Standards Track documents must have consensus")
 
                 e.desc = "Changed consensus to <b>%s</b> from %s" % (nice_consensus(e.consensus),
                                                                      nice_consensus(prev_consensus))
