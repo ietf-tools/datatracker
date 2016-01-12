@@ -226,7 +226,7 @@
 	{% endif %}
       </tr>
 
-      {% if consensus %}
+      {% if consensus and not stream_state_type_slug == "draft-stream-ietf" %}
 	<tr>
 	  <th></th>
 	  <th>Consensus</th>
@@ -300,6 +300,21 @@
 	  {{ iesg_state_summary|default:"I-D Exists" }}
 	</td>
       </tr>
+
+      {% if consensus and stream_state_type_slug == "draft-stream-ietf" %}
+	<tr>
+	  <th></th>
+	  <th>Consensus</th>
+	  <td class="edit">
+	    {% if can_edit or can_edit_stream_info %}
+	      <a class="btn btn-default btn-xs" href="{% url "doc_edit_consensus" name=doc.name %}">Edit</a>
+	    {% endif %}
+	  </td>
+	  <td>
+	    <span title="Whether the document is the result of a community consensus process as defined in RFC 5741">{{ consensus }}</span>
+	  </td>
+	</tr>
+      {% endif %}
 
       <tr>
         <th></th>
