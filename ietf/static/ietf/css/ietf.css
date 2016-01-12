@@ -207,18 +207,6 @@ pre {
     word-break: keep-all;
 }
 
-/* Make ampersands pretty */
-/* This sets ampersand in a different font than the rest of the text. Fancy, but it's
-really better to select a pretty font in the first place.  Additionally, _which_ 'pretty'
-ampersand you get is dependent on which fonts are available in the browser.  Hacky. */
-/*
-.amp {
-	 font-family:Baskerville,"Goudy Old Style","Palatino","Book Antiqua",serif;
-	 font-size:110%;
-	 font-style:italic;
-}
- */
-
 /* Turn off link underlining for panels in the search results */
 .ipr a:hover { text-decoration: none }
 

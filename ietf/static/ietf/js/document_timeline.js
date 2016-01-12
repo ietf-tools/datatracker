@@ -7,7 +7,7 @@ var bar_height;
 var y_label_width;
 var x_axis;
 var width;
-
+var now;
 
 function expiration_date(d) {
     return new Date(d.published.getTime() + 1000 * 60 * 60 * 24 * 185);
@@ -31,12 +31,14 @@ function offset(d) {
 
 
 function bar_width(d, i) {
-    // check for next rev of this name
+    // check for next rev of this name, or published RFC
     for (i++; i < data.length; i++) {
-        if (data[i].name === d.name) { break; }
+        if (data[i].name === d.name || data[i].name.match(/^rfc/)) { break; }
     }
 
     var w = i === data.length ? expiration_date(d) : data[i].published;
+    // don't extend the bar past the expiration date of the document
+    w = w > expiration_date(d) ? expiration_date(d) : w;
     return x_scale(w) - x_scale(d.published);
 }
 
@@ -50,11 +52,15 @@ function scale_x() {
         d3.max(data, function(d) { return d.published; })
     ]).range([y_label_width, width]);
 
+
+    // if the end of the timeline is past the current date, show it
+    var tv = data.slice(0, -1);
+    now = Date.now();
+    if (tv[tv.length - 1].published > now) { tv.push(new Date(now)); }
+
     // resort data by publication time to suppress some ticks if they are closer
     // than 12px, and don't add a tick for the final pseudo entry
-    var tv = data
-        .slice(0, -1)
-        .sort(function(a, b) { return a.published - b.published; })
+    tv = tv.sort(function(a, b) { return a.published - b.published; })
         .map(function(d, i, arr) {
             if (i === 0 ||
                 x_scale(d.published) > x_scale(arr[i - 1].published) + 12) {
@@ -65,7 +71,10 @@ function scale_x() {
     x_axis = d3.svg.axis()
         .scale(x_scale)
         .tickValues(tv)
-        .tickFormat(d3.time.format("%b %Y"))
+        .tickFormat(function(d) {
+            if (d.getTime() < now) { return d3.time.format("%b %Y")(d); }
+            return "Now";
+        })
         .orient("bottom");
 }
 
@@ -94,23 +103,37 @@ function draw_timeline() {
 
     var div = $("#timeline");
     if (div.is(":empty")) {
-        div.append("<svg></svg>");
+        div.append("<svg xmlns:xlink='http://www.w3.org/1999/xlink'></svg>");
     }
     var chart = d3.select("#timeline svg").attr("width", width);
 
-    var gradient = chart.append("defs")
-        .append("linearGradient")
-            .attr("id", "gradient");
-    gradient.append("stop")
+    var defs = chart.append("defs");
+    var fade = defs.append("linearGradient")
+        .attr("id", "maskGradient");
+    fade.append("stop")
         .attr({
-            class: "gradient left",
-            offset: 0
+            offset: 0.9,
+            "stop-color": "white",
+            "stop-opacity": 1
         });
-    gradient.append("stop")
+    fade.append("stop")
         .attr({
-            class: "gradient right",
-            offset: 1
+            offset: 1,
+            "stop-color": "white",
+            "stop-opacity": 0
         });
+
+    defs.append("mask")
+        .attr({
+            id: "fade",
+            maskContentUnits: "objectBoundingBox"
+        })
+        .append("rect")
+            .attr({
+                height: 1,
+                width: 1,
+                fill: "url(#maskGradient)"
+            });
 
     var y_labels = data
         .map(function(d) { return d.name; })
@@ -156,18 +179,22 @@ function draw_timeline() {
         .append("rect")
             .attr({
                 height: bar_height,
-                width: bar_width
+                width: bar_width,
+                mask: function(d, i) {
+                    // apply gradient it the document expired
+                    if (bar_width(d, i) >= x_scale(expiration_date(d)) -
+                                           x_scale(d.published)) {
+                        return "url(#fade)";
+                    }
+                }
             });
+
     g.append("text")
         .attr({
             x: 3,
             y: bar_height / 2
         })
         .text(function(d) { return d.rev; });
-
-    // since the gradient is defined inside the SVG, we need to set the CSS
-    // style here, so the relative URL works
-    $("#timeline .bar:last-child rect").css("fill", "url(#gradient)");
 
     var y_scale = d3.scale.ordinal()
         .domain(y_labels)
