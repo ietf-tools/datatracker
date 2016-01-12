@@ -38,7 +38,7 @@ def get_doc_section(doc):
             s += ".3"
         else:
             s += ".2"
-        if doc.get_state_slug() != "rfc" and doc.get_state_slug('draft-iesg') not in ("lc", "writeupw", "goaheadw", "iesg-eva", "defer"):
+        if doc.get_state_slug() != "rfc" and doc.get_state_slug('draft-iesg') not in ("lc", "writeupw", "goaheadw", "iesg-eva", "defer", "approved", "ann", "rfcqueue", "pub"):
             s += ".3"
         elif doc.returning_item():
             s += ".2"
