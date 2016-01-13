@@ -1,19 +1,19 @@
 {% autoescape off %}{% filter wordwrap:73 %}
 
-{% if review_type == "new" %}A new IETF working group is being considered in the {{ charter.group.parent.name }}.{% endif %}{% if review_type == "recharter" %}A new charter for the {{ charter.group.name }} ({{charter.group.acronym}}) working group in the {{ charter.group.parent.name }} of the IETF is being considered. {% endif %} The draft charter for this working group is provided below for your review and comment.                
+{% if review_type == "new" %}A new {% if charter.group.type_id == "rg" %}IRTF{% else %}IETF{% endif %} {{ charter.group.type.name }} is being considered in the {% if charter.group.type_id == "rg" %}IRTF{% else %}IETF{% endif %}.{% elif review_type == "recharter" %}A new charter for the {{ charter.group.name }} ({{charter.group.acronym}}) {{ charter.group.type.name }} {% if charter.group.type_id == "rg" %}IRTF{% else %}in the {{ charter.group.parent }} of the IETF{% endif %} is being considered. {% endif %} The draft charter for this {{ charter.group.type.name }} is provided below for your review and comment.
 
-Review time is one week.               
+Review time is one week.
 
-The IETF Secretariat                
+The IETF Secretariat
 
-{{charter.group.name}} ({{ charter.group.acronym }})               
---------------------------------------------------                   
-Current Status: {{ charter.group.state.name }} {% if charter.group.state_id != 'bof' %}Working Group{% endif %}
+{{charter.group.name}} ({{ charter.group.acronym }})
+--------------------------------------------------
+Current Status: {{ charter.group.state.name }} {{ charter.group.type.name }}
 
-Chairs :        {{ chairs|join:', '|default:'TBD' }}
-
+Chairs:         {{ chairs|join:', '|default:'TBD' }}
+{% if charter.group.type_id != "rg" %}
 Area Director: 	{{ ads|join:', '|default:'TBD' }}
-
+{% endif %}
 Mailing List: 	{{ charter.group.list_email|default:'TBD' }}
 
 {{ charter.name }}-{{ charter.rev }}

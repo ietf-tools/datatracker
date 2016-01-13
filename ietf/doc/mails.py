@@ -98,7 +98,7 @@ def generate_last_call_announcement(request, doc):
         group = "an individual submitter"
         expiration_date += datetime.timedelta(days=14)
     else:
-        group = "the %s WG (%s)" % (doc.group.name, doc.group.acronym)
+        group = "the %s %s (%s)" % (doc.group.name, doc.group.type.name, doc.group.acronym)
 
     doc.filled_title = textwrap.fill(doc.title, width=70, subsequent_indent=" " * 3)
     
@@ -162,7 +162,7 @@ def generate_approval_mail_approved(request, doc):
 
     # the second check catches some area working groups (like
     # Transport Area Working Group)
-    if doc.group.type_id not in ("area", "individ", "ag") and not doc.group.name.endswith("Working Group"):
+    if doc.group.type_id not in ("area", "individ", "ag", "rg") and not doc.group.name.endswith("Working Group"):
         doc.group.name_with_wg = doc.group.name + " Working Group"
     else:
         doc.group.name_with_wg = doc.group.name
@@ -467,7 +467,7 @@ def email_charter_internal_review(request, charter):
                         markup=False,
                    )
     send_mail(request, addrs.to, settings.DEFAULT_FROM_EMAIL,
-              'Internal WG Review: %s (%s)'%(charter.group.name,charter.group.acronym),
+              'Internal %s Review: %s (%s)'%(charter.group.type.name,charter.group.name,charter.group.acronym),
               'doc/mail/charter_internal_review.txt',
               dict(charter=charter,
                    chairs=charter.group.role_set.filter(name='chair').values_list('person__name',flat=True),
