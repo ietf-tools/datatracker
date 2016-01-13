@@ -5,11 +5,11 @@
 {% load bootstrap3 %}
 {% load ietf_filters %}
 
-{% block title %}WG Action announcement }} announcement writeup for {{ charter.chartered_group.acronym }}{% endblock %}
+{% block title %}{{ charter.chartered_group.type.name }} action announcement writeup for {{ charter.chartered_group.acronym }}{% endblock %}
 
 {% block content %}
   {% origin %}
-  <h1>WG Action announcement writeup<br><small>{{ charter.chartered_group.acronym }}</small></h1>
+  <h1>{{ charter.chartered_group.type.name }} action announcement writeup<br><small>{{ charter.chartered_group.acronym }}</small></h1>
 
   {% bootstrap_messages %}
 

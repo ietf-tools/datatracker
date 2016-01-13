@@ -6,23 +6,4 @@ Review time is one week.
 
 The IETF Secretariat
 
-{{charter.group.name}} ({{ charter.group.acronym }})
---------------------------------------------------
-Current Status: {{ charter.group.state.name }} {{ charter.group.type.name }}
-
-Chairs:         {{ chairs|join:', '|default:'TBD' }}
-{% if charter.group.type_id != "rg" %}
-Area Director: 	{{ ads|join:', '|default:'TBD' }}
-{% endif %}
-Mailing List: 	{{ charter.group.list_email|default:'TBD' }}
-
-{{ charter.name }}-{{ charter.rev }}
-
-{{ charter_text }}
-
-Proposed milestones
-
-{%if milestones %}{% for milestone in milestones reversed %}{{ milestone.due|date:"M Y" }} {{ milestone.desc }}
-{% endfor %}{% else %}TBD{% endif %}
-
-{% endfilter %}{% endautoescape%}
+{% include "doc/charter/group_info.txt" with group=charter.group%}{% endfilter %}{% endautoescape %}

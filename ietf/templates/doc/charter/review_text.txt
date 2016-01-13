@@ -1,8 +1,8 @@
 {% load ietf_filters %}{% autoescape off %}From: The IESG <iesg-secretary@ietf.org>
 To: {{ to }}{% if cc %}
 Cc: {{ cc }} {% endif %}
-Subject: WG Review: {{ group.name }} ({{ group.acronym }})
+Subject: {{ group.type.name }} Review: {{ group.name }} ({{ group.acronym }})
 
-{% filter wordwrap:73 %}{% if review_type == "new" %}A new IETF working group has been proposed in the {{ group.parent.name }}.{% endif %}{% if review_type == "recharter" %}The {{ group.name }} ({{group.acronym}}) working group in the {{ group.parent.name }} of the IETF is undergoing rechartering.{% endif %} The IESG has not made any determination yet. The following draft charter was submitted, and is provided for informational purposes only. Please send your comments to the IESG mailing list (iesg at ietf.org) by {{ review_date }}.
+{% filter wordwrap:73 %}{% if review_type == "new" %}A new {% if group.type_id == "rg" %}IRTF{% else %}IETF{% endif %} {{ group.type.name }} has been proposed in the {{ group.parent.name }}.{% elif review_type == "recharter" %}The {{ group.name }} ({{group.acronym}}) {{ group.type.name }} in the {{ group.parent.name }} of the {% if group.type_id == "rg" %}IRTF{% else %}IETF{% endif %} is undergoing rechartering.{% endif %} The {% if group.type_id == "rg" %}IRSG{% else %}IESG{% endif %} has not made any determination yet. The following draft charter was submitted, and is provided for informational purposes only. Please send your comments to the {% if group.type_id == "rg" %}IRSG{% else %}IESG{% endif %} mailing list ({% if group.type_id == "rg" %}irsg@irtf.org{% else %}iesg@ietf.org{% endif %} by {{ review_date }}.
 
 {% include "doc/charter/group_info.txt" %}{% endfilter %}{% endautoescape %}

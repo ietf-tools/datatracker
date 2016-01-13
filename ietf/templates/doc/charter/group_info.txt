@@ -1,6 +1,6 @@
 {{ group.name }} ({{ group.acronym }})
-------------------------------------------------
-Current Status: {{ group.state.name }} {{ group.type.name }}
+-----------------------------------------------------------------------
+Current status: {{ group.state.name }} {{ group.type.name }}
 
 {% if chairs %}Chairs:
 {% for r in chairs %}  {{ r.person.plain_name }} <{{r.email.address}}>
@@ -16,10 +16,10 @@ Current Status: {{ group.state.name }} {{ group.type.name }}
 
 {% endif %}{% if group.list_email %}Mailing list
   Address: {{ group.list_email }}
-  To Subscribe: {{ group.list_subscribe }}
+  To subscribe: {{ group.list_subscribe }}
   Archive: {{ group.list_archive }}
 {% endif %}
-Charter:
+Charter: {{ charter_url }}
 
 {{ charter_text }}
 
