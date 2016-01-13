@@ -1,23 +1,35 @@
 {{ group.name }} ({{ group.acronym }})
 -----------------------------------------------------------------------
 Current status: {{ group.state.name }} {{ group.type.name }}
-
-{% if chairs %}Chairs:
+{% if chairs %}
+Chairs:
 {% for r in chairs %}  {{ r.person.plain_name }} <{{r.email.address}}>
-{% endfor %}
-{% endif %}{% if secr %}Secretaries:
+{% endfor %}{% else %}
+Chairs:
+  TBD
+{% endif %}{% if secr %}
+Secretaries:
 {% for r in secr %}  {{ r.person.plain_name }} <{{r.email.address}}>
-{% endfor %}
-{% endif %}{% if techadv %}Technical advisors:
+{% endfor %}{% endif %}{% if charter.group.type_id != "rg" %}{% if ads %}
+Area Directors:
+{% for r in ads %}  {{ r.person.plain_name }} <{{r.email.address}}>
+{% endfor %}{% else %}
+Area Directors:
+  TBD
+{% endif %}{% endif %}{% if techadv %}
+Technical advisors:
 {% for r in techadv %}  {{ r.person.plain_name }} <{{r.email.address}}>
-{% endfor %}
-{% endif %}{% if group.ad_role %}Assigned Area Director:
+{% endfor %}{% endif %}{% if group.ad_role %}
+Assigned Area Director:
   {{ group.ad_role.person.plain_name }} <{{ group.ad_role.email.address }}>
-
-{% endif %}{% if group.list_email %}Mailing list
+{% endif %}{% if group.list_email %}
+Mailing list:
   Address: {{ group.list_email }}
   To subscribe: {{ group.list_subscribe }}
   Archive: {{ group.list_archive }}
+{% else %}
+Mailing list:
+  TBD
 {% endif %}
 Charter: {{ charter_url }}
 

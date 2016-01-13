@@ -475,6 +475,7 @@ def email_charter_internal_review(request, charter):
                    charter_url=settings.IDTRACKER_BASE_URL + charter.get_absolute_url(),
                    chairs=charter.group.role_set.filter(name="chair"),
                    secr=charter.group.role_set.filter(name="secr"),
+                   ads=charter.group.role_set.filter(name='ad').values_list('person__name',flat=True),
                    techadv=charter.group.role_set.filter(name="techadv"),
                    milestones=charter.group.groupmilestone_set.filter(state="charter"),
               ),

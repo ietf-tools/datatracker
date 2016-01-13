@@ -8,6 +8,8 @@ from pyquery import PyQuery
 from django.conf import settings
 from django.core.urlresolvers import reverse as urlreverse
 
+import debug                            # pyflakes:ignore
+
 from ietf.doc.models import ( Document, State, BallotDocEvent, BallotType, NewRevisionDocEvent,
     TelechatDocEvent, WriteupDocEvent )
 from ietf.doc.utils_charter import next_revision, default_review_text, default_action_text 
@@ -101,15 +103,30 @@ class EditCharterTests(TestCase):
             self.assertEqual(len(outbox), 3 if slug=="intrev" else 2 )
 
             if slug=="intrev":
-                self.assertTrue("Internal WG Review" in outbox[-3]['Subject'])
-                self.assertTrue(all([x in outbox[-3]['To'] for x in ['iab@','iesg@']]))
-                self.assertTrue("A new IETF WG" in outbox[-3].get_payload())
+                self.assertIn("Internal WG Review", outbox[-3]['Subject'])
+                self.assertIn("iab@", outbox[-3]['To'])
+                self.assertIn("iesg@", outbox[-3]['To'])
+                self.assertIn("A new IETF WG", outbox[-3].get_payload())
+                body = outbox[-3].get_payload()
+                for word in ["Chairs", "Ames Man <ameschairman@ietf.org>",
+                    "Secretaries", "Secretary <amessecretary@ietf.org>",
+                    "Assigned Area Director", "Areað Irector <aread@ietf.org>",
+                    "Area Directors", "Mailing list", "ames-wg@ietf.org",
+                    "Charter", "Milestones"]:
+                    self.assertIn(word, body)
 
-            self.assertTrue("state changed" in outbox[-2]['Subject'].lower())
-            self.assertTrue("iesg-secretary@" in outbox[-2]['To'])
+            self.assertIn("state changed", outbox[-2]['Subject'].lower())
+            self.assertIn("iesg-secretary@", outbox[-2]['To'])
+            body = outbox[-2].get_payload()
+            for word in ["WG", "Charter", ]:
+                self.assertIn(word, body)
 
-            self.assertTrue("State Update Notice" in outbox[-1]['Subject'])
-            self.assertTrue("ames-chairs@" in outbox[-1]['To'])
+            self.assertIn("State Update Notice", outbox[-1]['Subject'])
+            self.assertIn("ames-chairs@", outbox[-1]['To'])
+            body = outbox[-1].get_payload()
+            for word in ["State changed", "ID Tracker URL", ]:
+                self.assertIn(word, body)
+
 
         # Exercise internal review of a recharter
         group = Group.objects.get(acronym="mars")
@@ -486,11 +503,24 @@ class EditCharterTests(TestCase):
         self.assertTrue(os.path.exists(os.path.join(self.charter_dir, "charter-ietf-%s-%s.txt" % (group.acronym, charter.rev))))
 
         self.assertEqual(len(outbox), 2)
+        #
         self.assertTrue("approved" in outbox[0]['Subject'].lower())
         self.assertTrue("iesg-secretary" in outbox[0]['To'])
+        body = outbox[0].get_payload()
+        for word in ["WG",   "/wg/ames/charter/",
+            "Charter", "/doc/charter-ietf-ames/", ]:
+            self.assertIn(word, body)
+        #
         self.assertTrue("WG Action" in outbox[1]['Subject'])
         self.assertTrue("ietf-announce" in outbox[1]['To'])
         self.assertTrue("ames-wg@ietf.org" in outbox[1]['Cc'])
+        body = outbox[1].get_payload()
+        for word in ["Chairs", "Ames Man <ameschairman@ietf.org>",
+            "Secretaries", "Secretary <amessecretary@ietf.org>",
+            "Assigned Area Director", "Areað Irector <aread@ietf.org>",
+            "Area Directors", "Mailing list", "ames-wg@ietf.org",
+            "Charter", "/doc/charter-ietf-ames/", "Milestones"]:
+            self.assertIn(word, body)
 
         self.assertEqual(group.groupmilestone_set.filter(state="charter").count(), 0)
         self.assertEqual(group.groupmilestone_set.filter(state="active").count(), 2)
