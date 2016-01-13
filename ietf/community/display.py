@@ -182,14 +182,14 @@ class PublicationSort(SortMethod):
     description = 'Date of publication of current version of the document'
 
     def get_sort_field(self):
-        return '-documentchangedates__new_version_date'
+        return '-time' # FIXME: latest revision date
 
 class ChangeSort(SortMethod):
     codename = 'recent_change'
     description = 'Date of most recent change of status of any type'
 
     def get_sort_field(self):
-        return '-documentchangedates__normal_change_date'
+        return '-time' # FIXME: latest doc event
 
 
 class SignificantSort(SortMethod):
@@ -197,7 +197,7 @@ class SignificantSort(SortMethod):
     description = 'Date of most recent significant change of status'
 
     def get_sort_field(self):
-        return '-documentchangedates__significant_change_date'
+        return '-time' # FIXME: latest significant state change
 
 
 TYPES_OF_SORT = [(i.codename, i.description) for i in SortMethod.__subclasses__()]

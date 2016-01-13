@@ -88,20 +88,3 @@ class EmailSubscriptionResource(ModelResource):
             "community_list": ALL_WITH_RELATIONS,
         }
 api.community.register(EmailSubscriptionResource())
-
-from ietf.doc.resources import DocumentResource
-class DocumentChangeDatesResource(ModelResource):
-    document         = ToOneField(DocumentResource, 'document')
-    class Meta:
-        queryset = DocumentChangeDates.objects.all()
-        serializer = api.Serializer()
-        #resource_name = 'documentchangedates'
-        filtering = { 
-            "id": ALL,
-            "new_version_date": ALL,
-            "normal_change_date": ALL,
-            "significant_change_date": ALL,
-            "document": ALL_WITH_RELATIONS,
-        }
-api.community.register(DocumentChangeDatesResource())
-

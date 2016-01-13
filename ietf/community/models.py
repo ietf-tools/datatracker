@@ -203,29 +203,15 @@ def notify_events(sender, instance, **kwargs):
         return
     if instance.doc.type.slug != 'draft' or instance.type == 'added_comment':
         return
-    (changes, created) = DocumentChangeDates.objects.get_or_create(document=instance.doc)
-    changes.normal_change_date = instance.time
     significant = False
     if instance.type == 'changed_document' and 'tate changed' in instance.desc:
         for i in SIGNIFICANT_STATES:
             if ('<b>%s</b>' % i) in instance.desc:
                 significant = True
-                changes.significant_change_date = instance.time
                 break
-    elif instance.type == 'new_revision':
-        changes.new_version_date = instance.time
-    changes.save()
     notification = ListNotification.objects.create(
         event=instance,
         significant=significant,
     )
     notification.notify_by_email()
 signals.post_save.connect(notify_events)
-
-
-class DocumentChangeDates(models.Model):
-
-    document = models.ForeignKey(Document)
-    new_version_date = models.DateTimeField(blank=True, null=True)
-    normal_change_date = models.DateTimeField(blank=True, null=True)
-    significant_change_date = models.DateTimeField(blank=True, null=True)
