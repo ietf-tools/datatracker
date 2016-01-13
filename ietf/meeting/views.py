@@ -368,13 +368,14 @@ def agenda(request, num=None, name=None, base=None, ext=None):
 
     # We do not have the appropriate data in the datatracker for IETF 64 and earlier.
     # So that we're not producing misleading pages...
-    if not meetings.exists() or not meetings.first().agenda.assignments.exists():
+    
+    meeting = meetings.first()
+    if not meetings.exists() or (meeting.number.isdigit() and meeting.number <= 64 and not meeting.agenda.assignments.exists()):
         if ext == '.html':
             return HttpResponseRedirect( 'https://www.ietf.org/proceedings/%s' % num )
         else:
             raise Http404
 
-    meeting = meetings.first()
     schedule = get_schedule(meeting, name)
     if schedule == None:
         base = base.replace("-utc", "")
