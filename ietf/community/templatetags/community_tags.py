@@ -2,30 +2,7 @@ from django import template
 from django.template.loader import render_to_string
 from django.conf import settings
 
-from ietf.community.models import CommunityList
-from ietf.group.models import Role
-
-
 register = template.Library()
-
-@register.assignment_tag
-def community_lists_for_user(user):
-    if not (user and hasattr(user, "is_authenticated") and user.is_authenticated()):
-        return {}
-
-    try:
-        person = user.person
-        groups = []
-        managed_areas = [i.group for i in Role.objects.filter(name__slug='ad', group__type__slug='area', group__state__slug='active', email__in=person.email_set.all())]
-        for area in managed_areas:
-            groups.append(CommunityList.objects.get_or_create(group=area)[0])
-        managed_wg = [i.group for i in Role.objects.filter(name__slug='chair', group__type__slug='wg', group__state__slug__in=('active','bof'), email__in=person.email_set.all())]
-        for wg in managed_wg:
-            groups.append(CommunityList.objects.get_or_create(group=wg)[0])
-        lists['group'] = groups
-    except:
-        pass
-    return lists
 
 @register.inclusion_tag('community/display_field.html', takes_context=False)
 def show_field(field, doc):

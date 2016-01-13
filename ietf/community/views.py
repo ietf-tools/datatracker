@@ -95,7 +95,6 @@ def untrack_document(request, name):
     clist = get_object_or_404(CommunityList, user=request.user)
 
     if request.method == "POST":
-        clist = CommunityList.objects.get_or_create(user=request.user)[0]
         clist.added_ids.remove(doc)
         if request.is_ajax():
             return HttpResponse(json.dumps({ 'success': True }), content_type='text/plain')
