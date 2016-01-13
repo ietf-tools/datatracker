@@ -110,13 +110,13 @@ class Recipient(models.Model):
         addrs = []
         if 'doc' in kwargs:
             for reldoc in kwargs['doc'].related_that_doc(['conflrev']):
-                if reldoc.document.stream_id=='irsg':
-                    addrs.append('"Internet Research Steering Group" <irsg@ietf.org>')
+                if reldoc.document.stream_id=='irtf':
+                    addrs.append('"Internet Research Steering Group" <irsg@irtf.org>')
         return addrs
 
     def gather_group_steering_group(self,**kwargs):
         addrs = []
-        sg_map = dict( wg='"The IESG" <iesg@ietf.org>', rg='"Internet Research Steering Group" <irsg@ietf.org>' )
+        sg_map = dict( wg='"The IESG" <iesg@ietf.org>', rg='"Internet Research Steering Group" <irsg@irtf.org>' )
         if 'group' in kwargs and kwargs['group'].type_id in sg_map:
             addrs.append(sg_map[kwargs['group'].type_id])
         return addrs 
