@@ -103,7 +103,7 @@ class EditCharterTests(TestCase):
             if slug=="intrev":
                 self.assertTrue("Internal WG Review" in outbox[-3]['Subject'])
                 self.assertTrue(all([x in outbox[-3]['To'] for x in ['iab@','iesg@']]))
-                self.assertTrue("A new IETF working" in outbox[-3].get_payload())
+                self.assertTrue("A new IETF WG" in outbox[-3].get_payload())
 
             self.assertTrue("state changed" in outbox[-2]['Subject'].lower())
             self.assertTrue("iesg-secretary@" in outbox[-2]['To'])
