@@ -435,9 +435,9 @@
     </div>
     {% if user.is_authenticated %}
       {% if tracking_document %}
-        <a class="btn btn-default btn-xs community-list-add-remove-doc" href="{% url "community_untrack_document" doc.name %}" title="Remove from your personal ID list"><span class="fa fa-bookmark-o"></span> Untrack</a>
+        <a class="btn btn-default btn-xs community-list-add-remove-doc" href="{% url "community_personal_untrack_document" doc.name %}" title="Remove from your personal ID list"><span class="fa fa-bookmark-o"></span> Untrack</a>
       {% else %}
-        <a class="btn btn-default btn-xs community-list-add-remove-doc" href="{% url "community_track_document" doc.name %}" title="Add to your personal ID list"><span class="fa fa-bookmark"></span> Track</a>
+        <a class="btn btn-default btn-xs community-list-add-remove-doc" href="{% url "community_personal_track_document" doc.name %}" title="Add to your personal ID list"><span class="fa fa-bookmark"></span> Track</a>
       {% endif %}
     {% endif %}
 

@@ -14,11 +14,11 @@
   <td>
     {% if user.is_authenticated %}
       {% if doc.name in doc_is_tracked %}
-        <a href="{% url "community_untrack_document" doc.name %}" class="community-list-add-remove-doc" title="Remove from your personal ID list">
+        <a href="{% url "community_personal_untrack_document" doc.name %}" class="community-list-add-remove-doc" title="Remove from your personal ID list">
           <span class="fa fa-bookmark"></span>
         </a>
       {% else %}
-        <a href="{% url "community_track_document" doc.name %}" class="community-list-add-remove-doc" title="Add to your personal ID list">
+        <a href="{% url "community_personal_track_document" doc.name %}" class="community-list-add-remove-doc" title="Add to your personal ID list">
           <span class="fa fa-bookmark-o"></span>
         </a>
       {% endif %}

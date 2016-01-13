@@ -8,7 +8,7 @@ from django.db.models import signals, Q
 
 from ietf.utils.mail import send_mail
 from ietf.doc.models import Document, DocEvent
-from ietf.group.models import Group, Role
+from ietf.group.models import Group
 
 from ietf.community.rules import TYPES_OF_RULES, RuleManager
 from ietf.community.display import (TYPES_OF_SORT, DisplayField,
@@ -23,21 +23,6 @@ class CommunityList(models.Model):
     added_ids = models.ManyToManyField(Document)
     secret = models.CharField(max_length=255, null=True, blank=True)
     cached = models.TextField(null=True, blank=True)
-
-    def check_manager(self, user):
-        if user == self.user:
-            return True
-        if not self.group or self.group.type.slug not in ('area', 'wg'):
-            return False
-        try:
-            person = user.person
-        except:
-            return False
-        if self.group.type.slug == 'area':
-            return bool(Role.objects.filter(name__slug='ad', email__in=person.email_set.all(), group=self.group).count())
-        elif self.group.type.slug == 'wg':
-            return bool(Role.objects.filter(name__slug='chair', email__in=person.email_set.all(), group=self.group).count())
-        return False
 
     def long_name(self):
         if self.user:

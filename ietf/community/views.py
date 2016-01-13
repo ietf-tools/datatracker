@@ -6,14 +6,13 @@ import json
 
 from django.db import IntegrityError
 from django.conf import settings
-from django.contrib.auth import REDIRECT_FIELD_NAME
 from django.http import HttpResponse, HttpResponseForbidden, Http404, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render, redirect
-from django.utils.http import urlquote
 from django.contrib.auth.decorators import login_required
 
 from ietf.community.models import CommunityList, Rule, EmailSubscription
 from ietf.community.forms import RuleForm, DisplayForm, SubscribeForm, UnSubscribeForm
+from ietf.community.utils import can_manage_community_list_for_group
 from ietf.group.models import Group
 from ietf.doc.models import DocEvent, Document
 
@@ -48,38 +47,37 @@ def _manage_list(request, clist):
                                'rule_form': rule_form})
 
 
+@login_required
 def manage_personal_list(request):
-    user = request.user
-    if not user.is_authenticated():
-        path = urlquote(request.get_full_path())
-        tup = settings.LOGIN_URL, REDIRECT_FIELD_NAME, path
-        return HttpResponseRedirect('%s?%s=%s' % tup)
     clist = CommunityList.objects.get_or_create(user=request.user)[0]
-    if not clist.check_manager(request.user):
-        path = urlquote(request.get_full_path())
-        tup = settings.LOGIN_URL, REDIRECT_FIELD_NAME, path
-        return HttpResponseRedirect('%s?%s=%s' % tup)
     return _manage_list(request, clist)
 
 
+@login_required
 def manage_group_list(request, acronym):
     group = get_object_or_404(Group, acronym=acronym)
-    if group.type.slug not in ('area', 'wg'):
-        raise Http404
+    if not can_manage_community_list_for_group(request.user, group):
+        return HttpResponseForbidden("You do not have permission to access this view")
+
     clist = CommunityList.objects.get_or_create(group=group)[0]
-    if not clist.check_manager(request.user):
-        path = urlquote(request.get_full_path())
-        tup = settings.LOGIN_URL, REDIRECT_FIELD_NAME, path
-        return HttpResponseRedirect('%s?%s=%s' % tup)
     return _manage_list(request, clist)
 
 @login_required
-def track_document(request, name):
+def track_document(request, name, acronym=None):
     doc = get_object_or_404(Document, docalias__name=name)
 
     if request.method == "POST":
-        clist = CommunityList.objects.get_or_create(user=request.user)[0]
+        if acronym:
+            group = get_object_or_404(Group, acronym=acronym)
+            if not can_manage_community_list_for_group(request.user, group):
+                return HttpResponseForbidden("You do not have permission to access this view")
+
+            clist = CommunityList.objects.get_or_create(group=group)[0]
+        else:
+            clist = CommunityList.objects.get_or_create(user=request.user)[0]
+
         clist.added_ids.add(doc)
+
         if request.is_ajax():
             return HttpResponse(json.dumps({ 'success': True }), content_type='text/plain')
         else:
@@ -90,9 +88,15 @@ def track_document(request, name):
     })
 
 @login_required
-def untrack_document(request, name):
+def untrack_document(request, name, acronym=None):
     doc = get_object_or_404(Document, docalias__name=name)
-    clist = get_object_or_404(CommunityList, user=request.user)
+    if acronym:
+        group = get_object_or_404(Group, acronym=acronym)
+        if not can_manage_community_list_for_group(request.user, group):
+            return HttpResponseForbidden("You do not have permission to access this view")
+        clist = get_object_or_404(CommunityList, group=group)
+    else:
+        clist = get_object_or_404(CommunityList, user=request.user)
 
     if request.method == "POST":
         clist.added_ids.remove(doc)
@@ -106,23 +110,13 @@ def untrack_document(request, name):
     })
 
 @login_required
-def remove_document(request, list_id, name):
-    clist = get_object_or_404(CommunityList, pk=list_id)
-    if not clist.check_manager(request.user):
-        return HttpResponseForbidden("You do not have permission to access this view")
-
-    doc = get_object_or_404(Document, docalias__name=name)
-    clist.added_ids.remove(doc)
-
-    return HttpResponseRedirect(clist.get_manage_url())
-
-
 def remove_rule(request, list_id, rule_id):
     clist = get_object_or_404(CommunityList, pk=list_id)
-    if not clist.check_manager(request.user):
-        path = urlquote(request.get_full_path())
-        tup = settings.LOGIN_URL, REDIRECT_FIELD_NAME, path
-        return HttpResponseRedirect('%s?%s=%s' % tup)
+
+    if ((clist.user and clist.user != request.user)
+        or (clist.group and not can_manage_community_list_for_group(request.user, clist.group))):
+        return HttpResponseForbidden("You do not have permission to access this view")
+
     rule = get_object_or_404(Rule, pk=rule_id)
     rule.delete()
     return HttpResponseRedirect(clist.get_manage_url())
@@ -218,30 +212,19 @@ def _csv_list(request, clist):
         writer.writerow(row)
     return response
 
-
+@login_required
 def csv_personal_list(request):
-    user = request.user
-    if not user.is_authenticated():
-        path = urlquote(request.get_full_path())
-        tup = settings.LOGIN_URL, REDIRECT_FIELD_NAME, path
-        return HttpResponseRedirect('%s?%s=%s' % tup)
-    clist = CommunityList.objects.get_or_create(user=user)[0]
-    if not clist.check_manager(user):
-        path = urlquote(request.get_full_path())
-        tup = settings.LOGIN_URL, REDIRECT_FIELD_NAME, path
-        return HttpResponseRedirect('%s?%s=%s' % tup)
+    clist = CommunityList.objects.get_or_create(user=request.user)[0]
     return _csv_list(request, clist)
 
 
+@login_required
 def csv_group_list(request, acronym):
     group = get_object_or_404(Group, acronym=acronym)
-    if group.type.slug not in ('area', 'wg'):
-        raise Http404
+    if not can_manage_community_list_for_group(request.user, group):
+        return HttpResponseForbidden("You do not have permission to access this view")
+
     clist = CommunityList.objects.get_or_create(group=group)[0]
-    if not clist.check_manager(request.user):
-        path = urlquote(request.get_full_path())
-        tup = settings.LOGIN_URL, REDIRECT_FIELD_NAME, path
-        return HttpResponseRedirect('%s?%s=%s' % tup)
     return _csv_list(request, clist)
 
 def view_csv_personal_list(request, secret):
