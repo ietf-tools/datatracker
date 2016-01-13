@@ -2,7 +2,7 @@ from functools import update_wrapper
 
 from django import template
 from django.contrib import admin
-from django.contrib.admin.util import unquote
+from django.contrib.admin.utils import unquote
 from django.core.exceptions import PermissionDenied
 from django.core.management import load_command_class
 from django.http import Http404
