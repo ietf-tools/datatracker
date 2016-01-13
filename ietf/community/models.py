@@ -39,12 +39,6 @@ class CommunityList(models.Model):
             return bool(Role.objects.filter(name__slug='chair', email__in=person.email_set.all(), group=self.group).count())
         return False
 
-    def short_name(self):
-        if self.user:
-            return 'mine'
-        else:
-            return '%s' % self.group.acronym
-
     def long_name(self):
         if self.user:
             return 'Personal ID list of %s' % self.user.username
@@ -124,12 +118,10 @@ class Rule(models.Model):
     cached_ids = models.ManyToManyField(Document)
     rule_type = models.CharField(max_length=30, choices=TYPES_OF_RULES)
     value = models.CharField(max_length=255)
+    last_updated = models.DateTimeField(auto_now=True)
 
     class Meta:
         unique_together= ("community_list", "rule_type", "value")
-
-    last_updated = models.DateTimeField(
-        auto_now=True)
 
     def get_callable_rule(self):
         for i in RuleManager.__subclasses__():

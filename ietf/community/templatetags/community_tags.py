@@ -9,10 +9,10 @@ from ietf.group.models import Role
 register = template.Library()
 
 @register.assignment_tag
-def get_user_managed_lists(user):
+def community_lists_for_user(user):
     if not (user and hasattr(user, "is_authenticated") and user.is_authenticated()):
-        return ''
-    lists = {'personal': CommunityList.objects.get_or_create(user=user)[0]}
+        return {}
+
     try:
         person = user.person
         groups = []
