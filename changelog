@@ -1,6 +1,8 @@
 ietfdb (6.12.0) ietf; urgency=medium
 
-  **Document timelines, table sorting, iesg agenda pace counts, AD position colours**
+  **Document timelines, table sorting, iesg agenda page counts, AD position colours**
+
+  This is a combined feature and bugfix release.
 
   New features from lars@netapp.com:
   - Graphical document timelines at the top of each draft and RFC document
@@ -21,6 +23,10 @@ ietfdb (6.12.0) ietf; urgency=medium
   lars@netapp.com, housley@vigilsec.com, rcross@amsl.com, and
   henrik@levkowetz.com.  Here are details, extracted from the commit log:
   
+  * Don't redirect to proceedings for future meetings which exist in the
+    database but don't have a schedule yet.  We want to show tne agenda (even
+    if empty) for those.
+
   * Merged in [10636] from rjsparks@nostrum.com:
     Refactored counting telechat pages to do it only in one place.  Count more
     accurately and make it possible to report more granularly. Added page
@@ -138,7 +144,7 @@ ietfdb (6.12.0) ietf; urgency=medium
     Move to bootstrap 3.3.6, with a simpler way to maintain our customized
     version in the future (described in bootstrap/README-DATATRACKER.rst). 
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  12 Jan 2016 13:32:10 -0800
+ -- Henrik Levkowetz <henrik@levkowetz.com>  13 Jan 2016 10:28:56 +0000
 
 
 ietfdb (6.11.0) ietf; urgency=medium
