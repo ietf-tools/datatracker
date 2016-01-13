@@ -1,8 +1,8 @@
 {% load ietf_filters %}{% autoescape off %}From: The IESG <iesg-secretary@ietf.org>
 To: {{ to }}{% if cc %}
 Cc: {{ cc }} {% endif %}
-Subject: WG Action: {{ action_type }} {{ group.name }} ({{ group.acronym }})
+Subject: {{ group.type.name }} Action: {{ action_type }} {{ group.name }} ({{ group.acronym }})
 
-{% filter wordwrap:73 %}{% if action_type == "Formed" %}A new IETF working group has been formed in the {{ group.parent.name }}.{% endif %}{% if action_type == "Rechartered" %}The {{ group.name }} ({{ group.acronym }}) working group in the {{ group.parent.name }} of the IETF has been rechartered.{% endif %} For additional information please contact the Area Directors or the {{ group.type.name }} Chair{{ chairs|pluralize}}.
+{% filter wordwrap:73 %}{% if action_type == "Formed" %}A new {% if group.type_id == "rg" %}IRTF{% else %}IETF{% endif %} {{ group.type.name }} has been formed in the {{ group.parent.name }}.{% endif %}{% if action_type == "Rechartered" %}The {{ group.name }} ({{ group.acronym }}) {{ group.type.name }} in the {{ group.parent.name }} of the {% if group.type_id == "rg" %}IRTF{% else %}IETF{% endif %} has been rechartered.{% endif %} For additional information, please contact the {% if group.type_id == "rg" %}IRTF Chair, the Internet Research Steering Group{% else %}Area Directors{% endif %} or the {{ group.type.name }} Chair{{ chairs|pluralize}}.
 
 {% include "doc/charter/group_info.txt" %}{% endfilter %}{% endautoescape %}
