@@ -7,15 +7,15 @@ import json
 from django.db import IntegrityError
 from django.conf import settings
 from django.contrib.auth import REDIRECT_FIELD_NAME
-from django.http import HttpResponse, Http404, HttpResponseRedirect
-from django.shortcuts import get_object_or_404, render_to_response
-from django.template import RequestContext
+from django.http import HttpResponse, HttpResponseForbidden, Http404, HttpResponseRedirect
+from django.shortcuts import get_object_or_404, render, redirect
 from django.utils.http import urlquote
+from django.contrib.auth.decorators import login_required
 
 from ietf.community.models import CommunityList, Rule, EmailSubscription
 from ietf.community.forms import RuleForm, DisplayForm, SubscribeForm, UnSubscribeForm
 from ietf.group.models import Group
-from ietf.doc.models import DocEvent, DocAlias
+from ietf.doc.models import DocEvent, Document
 
 
 def _manage_list(request, clist):
@@ -41,12 +41,11 @@ def _manage_list(request, clist):
         rule_form = RuleForm(clist=clist)
         display_form = DisplayForm(instance=display_config)
     clist = CommunityList.objects.get(id=clist.id)
-    return render_to_response('community/manage_clist.html',
+    return render(request, 'community/manage_clist.html',
                               {'cl': clist,
                                'dc': display_config,
                                'display_form': display_form,
-                               'rule_form': rule_form},
-                              context_instance=RequestContext(request))
+                               'rule_form': rule_form})
 
 
 def manage_personal_list(request):
@@ -74,52 +73,49 @@ def manage_group_list(request, acronym):
         return HttpResponseRedirect('%s?%s=%s' % tup)
     return _manage_list(request, clist)
 
+@login_required
+def track_document(request, name):
+    doc = get_object_or_404(Document, docalias__name=name)
 
-def add_track_document(request, document_name):
-    """supports the "Track this document" functionality
-    
-    This is exposed in the document view and in document search results."""
-    if not request.user.is_authenticated():
-        path = urlquote(request.get_full_path())
-        tup = settings.LOGIN_URL, REDIRECT_FIELD_NAME, path
-        return HttpResponseRedirect('%s?%s=%s' % tup)
-    doc = get_object_or_404(DocAlias, name=document_name).document
-    clist = CommunityList.objects.get_or_create(user=request.user)[0]
-    clist.update()
-    return add_document_to_list(request, clist, doc)
+    if request.method == "POST":
+        clist = CommunityList.objects.get_or_create(user=request.user)[0]
+        clist.added_ids.add(doc)
+        if request.is_ajax():
+            return HttpResponse(json.dumps({ 'success': True }), content_type='text/plain')
+        else:
+            return redirect("manage_personal_list")
 
-def remove_track_document(request, document_name):
-    """supports the "Untrack this document" functionality
-    
-    This is exposed in the document view and in document search results."""
-    clist = CommunityList.objects.get_or_create(user=request.user)[0]
-    if not clist.check_manager(request.user):
-        path = urlquote(request.get_full_path())
-        tup = settings.LOGIN_URL, REDIRECT_FIELD_NAME, path
-        return HttpResponseRedirect('%s?%s=%s' % tup)
-    doc = get_object_or_404(DocAlias, name=document_name).document
-    clist.added_ids.remove(doc)
-    clist.update()
-    return HttpResponse(json.dumps({'success': True}), content_type='text/plain')
+    return render(request, "community/track_document.html", {
+        "name": doc.name,
+    })
 
-def remove_document(request, list_id, document_name):
+@login_required
+def untrack_document(request, name):
+    doc = get_object_or_404(Document, docalias__name=name)
+    clist = get_object_or_404(CommunityList, user=request.user)
+
+    if request.method == "POST":
+        clist = CommunityList.objects.get_or_create(user=request.user)[0]
+        clist.added_ids.remove(doc)
+        if request.is_ajax():
+            return HttpResponse(json.dumps({ 'success': True }), content_type='text/plain')
+        else:
+            return redirect("manage_personal_list")
+
+    return render(request, "community/untrack_document.html", {
+        "name": doc.name,
+    })
+
+@login_required
+def remove_document(request, list_id, name):
     clist = get_object_or_404(CommunityList, pk=list_id)
     if not clist.check_manager(request.user):
-        path = urlquote(request.get_full_path())
-        tup = settings.LOGIN_URL, REDIRECT_FIELD_NAME, path
-        return HttpResponseRedirect('%s?%s=%s' % tup)
-    doc = get_object_or_404(DocAlias, name=document_name).document
-    clist.added_ids.remove(doc)
-    clist.update()
-    return HttpResponseRedirect(clist.get_manage_url())
+        return HttpResponseForbidden("You do not have permission to access this view")
 
-def add_document_to_list(request, clist, doc):
-    if not clist.check_manager(request.user):
-        path = urlquote(request.get_full_path())
-        tup = settings.LOGIN_URL, REDIRECT_FIELD_NAME, path
-        return HttpResponseRedirect('%s?%s=%s' % tup)
-    clist.added_ids.add(doc)
-    return HttpResponse(json.dumps({'success': True}), content_type='text/plain')
+    doc = get_object_or_404(Document, docalias__name=name)
+    clist.added_ids.remove(doc)
+
+    return HttpResponseRedirect(clist.get_manage_url())
 
 
 def remove_rule(request, list_id, rule_id):
@@ -135,11 +131,10 @@ def remove_rule(request, list_id, rule_id):
 
 def _view_list(request, clist):
     display_config = clist.get_display_config()
-    return render_to_response('community/public/view_list.html',
+    return render(request, 'community/public/view_list.html',
                               {'cl': clist,
                                'dc': display_config,
-                              },
-                              context_instance=RequestContext(request))
+                              })
 
 
 def view_personal_list(request, secret):
@@ -172,7 +167,7 @@ def _atom_view(request, clist, significant=False):
     else:
         subtitle = 'Document changes'
 
-    return render_to_response('community/public/atom.xml',
+    return render(request, 'community/public/atom.xml',
                               {'cl': clist,
                                'entries': notifications,
                                'title': title,
@@ -180,8 +175,7 @@ def _atom_view(request, clist, significant=False):
                                'id': feed_id.get_urn(),
                                'updated': datetime.datetime.today(),
                               },
-                              content_type='text/xml',
-                              context_instance=RequestContext(request))
+                              content_type='text/xml')
 
 
 def changes_personal_list(request, secret):
@@ -264,12 +258,11 @@ def _subscribe_list(request, clist, significant):
             success = True
     else:
         form = SubscribeForm(clist=clist, significant=significant)
-    return render_to_response('community/public/subscribe.html',
+    return render(request, 'community/public/subscribe.html',
                               {'cl': clist,
                                'form': form,
                                'success': success,
-                              },
-                              context_instance=RequestContext(request))
+                              })
 
 
 def _unsubscribe_list(request, clist, significant):
@@ -281,13 +274,12 @@ def _unsubscribe_list(request, clist, significant):
             success = True
     else:
         form = UnSubscribeForm(clist=clist, significant=significant)
-    return render_to_response('community/public/unsubscribe.html',
+    return render(request, 'community/public/unsubscribe.html',
                               {'cl': clist,
                                'form': form,
                                'success': success,
                                'significant': significant,
-                              },
-                              context_instance=RequestContext(request))
+                              })
 
 
 def subscribe_personal_list(request, secret, significant=False):
@@ -321,11 +313,10 @@ def confirm_subscription(request, list_id, email, date, confirm_hash, significan
         community_list=clist,
         email=email,
         significant=significant)
-    return render_to_response('community/public/subscription_confirm.html',
+    return render(request, 'community/public/subscription_confirm.html',
                               {'cl': clist,
                                'significant': significant,
-                              },
-                              context_instance=RequestContext(request))
+                              })
 
 
 def confirm_significant_subscription(request, list_id, email, date, confirm_hash):
@@ -341,11 +332,10 @@ def confirm_unsubscription(request, list_id, email, date, confirm_hash, signific
         community_list=clist,
         email=email,
         significant=significant).delete()
-    return render_to_response('community/public/unsubscription_confirm.html',
+    return render(request, 'community/public/unsubscription_confirm.html',
                               {'cl': clist,
                                'significant': significant,
-                              },
-                              context_instance=RequestContext(request))
+                              })
 
 
 def confirm_significant_unsubscription(request, list_id, email, date, confirm_hash):

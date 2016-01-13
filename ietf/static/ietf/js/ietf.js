@@ -105,19 +105,19 @@ $(document).ready(function () {
 	var trigger = $(this);
 	$.ajax({
 	    url: trigger.attr('href'),
-	    type: 'GET',
+            type: 'POST',
 	    cache: false,
 	    dataType: 'json',
 	    success: function(response){
 		if (response.success) {
-                trigger.parent().find(".tooltip").remove();
-                trigger.find("span.fa").toggleClass("fa-bookmark fa-bookmark-o");
-                if (trigger.hasClass('btn')) {
-                    trigger.attr('disabled', true).blur();
-                } else {
-                    trigger.contents().unwrap().blur();
+                    trigger.parent().find(".tooltip").remove();
+                    trigger.find("span.fa").toggleClass("fa-bookmark fa-bookmark-o");
+                    if (trigger.hasClass('btn')) {
+                        trigger.attr('disabled', true).blur();
+                    } else {
+                        trigger.contents().unwrap().blur();
+                    }
                 }
-            }
 	    }
 	});
     });

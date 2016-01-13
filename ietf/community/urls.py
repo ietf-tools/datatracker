@@ -23,9 +23,10 @@ urlpatterns = patterns('ietf.community.views',
     url(r'^group/(?P<acronym>[\w.@+-]+)/unsubscribe/$', 'unsubscribe_group_list', {'significant': False}, name='unsubscribe_group_list'),
     url(r'^group/(?P<acronym>[\w.@+-]+)/unsubscribe/significant/$', 'unsubscribe_group_list', {'significant': True}, name='unsubscribe_significant_group_list'),
 
-    url(r'^add_track_document/(?P<document_name>[^/]+)/$', 'add_track_document', name='community_add_track_document'),
-    url(r'^remove_track_document/(?P<document_name>[^/]+)/$', 'remove_track_document', name='community_remove_track_document'),
-    url(r'^(?P<list_id>[\d]+)/remove_document/(?P<document_name>[^/]+)/$', 'remove_document', name='community_remove_document'),
+    url(r'^trackdocument/(?P<name>[^/]+)/$', 'track_document', name='community_track_document'),
+    url(r'^untrackdocument/(?P<name>[^/]+)/$', 'untrack_document', name='community_untrack_document'),
+
+    url(r'^(?P<list_id>[\d]+)/remove_document/(?P<name>[^/]+)/$', 'remove_document', name='community_remove_document'),
     url(r'^(?P<list_id>[\d]+)/remove_rule/(?P<rule_id>[^/]+)/$', 'remove_rule', name='community_remove_rule'),
     url(r'^(?P<list_id>[\d]+)/subscribe/confirm/(?P<email>[\w.@+-]+)/(?P<date>[\d]+)/(?P<confirm_hash>[a-f0-9]+)/$', 'confirm_subscription', name='confirm_subscription'),
     url(r'^(?P<list_id>[\d]+)/subscribe/significant/confirm/(?P<email>[\w.@+-]+)/(?P<date>[\d]+)/(?P<confirm_hash>[a-f0-9]+)/$', 'confirm_significant_subscription', name='confirm_significant_subscription'),
