@@ -172,15 +172,6 @@ class DisplayConfiguration(models.Model):
         super(DisplayConfiguration, self).delete()
 
 
-class ExpectedChange(models.Model):
-
-    community_list = models.ForeignKey(CommunityList)
-    document = models.ForeignKey(Document)
-    expected_date = models.DateField(
-        verbose_name='Expected date'
-        )
-
-
 class EmailSubscription(models.Model):
     community_list = models.ForeignKey(CommunityList)
     email = models.CharField(max_length=200)

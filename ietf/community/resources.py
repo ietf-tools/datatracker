@@ -29,22 +29,6 @@ class CommunityListResource(ModelResource):
         }
 api.community.register(CommunityListResource())
 
-from ietf.doc.resources import DocumentResource
-class ExpectedChangeResource(ModelResource):
-    community_list   = ToOneField(CommunityListResource, 'community_list')
-    document         = ToOneField(DocumentResource, 'document')
-    class Meta:
-        queryset = ExpectedChange.objects.all()
-        serializer = api.Serializer()
-        #resource_name = 'expectedchange'
-        filtering = { 
-            "id": ALL,
-            "expected_date": ALL,
-            "community_list": ALL_WITH_RELATIONS,
-            "document": ALL_WITH_RELATIONS,
-        }
-api.community.register(ExpectedChangeResource())
-
 class DisplayConfigurationResource(ModelResource):
     community_list   = ToOneField(CommunityListResource, 'community_list')
     class Meta:
