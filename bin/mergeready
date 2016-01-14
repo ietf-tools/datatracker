@@ -125,14 +125,18 @@ def pipe(cmd, inp=None):
     return out
 
 def split_loginfo(line):
-    parts = line.split()
-    rev = parts[0][1:]
-    who = parts[2]
-    date = parts[4]
-    time = parts[5]
-    tz   = parts[6]
-    when = tzparse.tzparse(" ".join(parts[4:7]), "%Y-%m-%d %H:%M:%S %Z")
-    when = when.astimezone(pytz.utc)
+    try:
+        parts = line.split()
+        rev = parts[0][1:]
+        who = parts[2]
+        date = parts[4]
+        time = parts[5]
+        tz   = parts[6]
+        when = tzparse.tzparse(" ".join(parts[4:7]), "%Y-%m-%d %H:%M:%S %Z")
+        when = when.astimezone(pytz.utc)
+    except ValueError as e:
+        sys.stderr.write("Bad log line format: %s\n  %s\n" % (line, e))
+
     return rev, who, when
 
 # ----------------------------------------------------------------------
