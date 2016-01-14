@@ -6,6 +6,9 @@
 
 {% block pagehead %}
   <link rel="alternate" type="application/atom+xml" href="/feed/group-changes/{{ group.acronym }}/">
+  <script src="{% static 'd3/d3.min.js' %}"></script>
+  <script src="{% static 'jquery/jquery.min.js' %}"></script>
+  <script src="{% static 'ietf/js/document_timeline.js' %}"></script>
 {% endblock %}
 
 {% block title %}{{ doc.title }}{% endblock %}
@@ -217,9 +220,4 @@
     {% endif %}
   {% endif %}
 
-{% endblock %}
-
-{% block js %}
-<script src="{% static 'd3/d3.min.js' %}"></script>
-<script src="{% static 'ietf/js/document_timeline.js' %}"></script>
 {% endblock %}

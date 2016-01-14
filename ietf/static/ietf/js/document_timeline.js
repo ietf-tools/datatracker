@@ -36,9 +36,15 @@ function bar_width(d, i) {
         if (data[i].name === d.name || data[i].name.match(/^rfc/)) { break; }
     }
 
-    var w = i === data.length ? expiration_date(d) : data[i].published;
-    // don't extend the bar past the expiration date of the document
-    w = w > expiration_date(d) ? expiration_date(d) : w;
+    var w;
+    if (d.name.match(/^draft-/)) {
+        // don't extend the bar past the expiration date of the document
+        w = i === data.length ? expiration_date(d) : data[i].published;
+        w = w > expiration_date(d) ? expiration_date(d) : w;
+    } else {
+        // documents other than drafts don't expire after 185 days
+        w = i === data.length ? new Date() : data[i].published;
+    }
     return x_scale(w) - x_scale(d.published);
 }
 
@@ -58,12 +64,17 @@ function scale_x() {
     now = Date.now();
     if (tv[tv.length - 1].published > now) { tv.push(new Date(now)); }
 
+    // x label format
+    var format = d3.time.format("%b %Y");
+
     // resort data by publication time to suppress some ticks if they are closer
-    // than 12px, and don't add a tick for the final pseudo entry
+    // than 12px and have a different label from the one before; and don't add a
+    // tick for the final pseudo entry
     tv = tv.sort(function(a, b) { return a.published - b.published; })
         .map(function(d, i, arr) {
             if (i === 0 ||
-                x_scale(d.published) > x_scale(arr[i - 1].published) + 12) {
+                x_scale(d.published) > x_scale(arr[i - 1].published) + 12 &&
+                format(d.published) !== format(arr[i - 1].published)) {
                 return d.published;
             }
         }).filter(function(d) { return d !== undefined; });
@@ -72,7 +83,7 @@ function scale_x() {
         .scale(x_scale)
         .tickValues(tv)
         .tickFormat(function(d) {
-            if (d.getTime() < now) { return d3.time.format("%b %Y")(d); }
+            if (d.getTime() < now) { return format(d); }
             return "Now";
         })
         .orient("bottom");
@@ -181,8 +192,9 @@ function draw_timeline() {
                 height: bar_height,
                 width: bar_width,
                 mask: function(d, i) {
-                    // apply gradient it the document expired
-                    if (bar_width(d, i) >= x_scale(expiration_date(d)) -
+                    // apply gradient if the document is a draft and expired
+                    if (d.name.match(/^draft-/) &&
+                        bar_width(d, i) >= x_scale(expiration_date(d)) -
                                            x_scale(d.published)) {
                         return "url(#fade)";
                     }

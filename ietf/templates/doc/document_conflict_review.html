@@ -4,6 +4,12 @@
 {% load staticfiles %}
 {% load ietf_filters %}
 
+{% block pagehead %}
+  <script src="{% static 'd3/d3.min.js' %}"></script>
+  <script src="{% static 'jquery/jquery.min.js' %}"></script>
+  <script src="{% static 'ietf/js/document_timeline.js' %}"></script>
+{% endblock %}
+
 {% block title %}{{ doc.title }}{% endblock %}
 
 {% block content %}
@@ -138,10 +144,4 @@
     <p></p>
     {{ content|fill:"80"|safe|linebreaksbr|keep_spacing|sanitize_html|safe }}
   {% endif %}
-{% endblock %}
-
-
-{% block js %}
-<script src="{% static 'd3/d3.min.js' %}"></script>
-<script src="{% static 'ietf/js/document_timeline.js' %}"></script>
 {% endblock %}
