@@ -34,6 +34,10 @@
             </th>
           {% endif %}
         {% endfor %}
+
+        {% if color_row_positions %}
+            <th class="sorter-false"></th>
+        {% endif %}
       </tr>
     </thead>
 
@@ -43,7 +47,11 @@
     <tbody>
         <tr class="info">
           <th></th>
-          <th colspan="{{ meta.headers|length|add:"-1" }}">
+          {% if color_row_positions %}
+              <th colspan="{{ meta.headers|length }}">
+          {% else %}
+              <th colspan="{{ meta.headers|length|add:"-1" }}">
+          {% endif %}
 	    {{ doc_group.grouper|plural:doc_group.list }}
           </th>
         </tr>
