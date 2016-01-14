@@ -4,6 +4,12 @@
 {% load staticfiles %}
 {% load ietf_filters %}
 
+{% block pagehead %}
+  <script src="{% static 'd3/d3.min.js' %}"></script>
+  <script src="{% static 'jquery/jquery.min.js' %}"></script>
+  <script src="{% static 'ietf/js/document_timeline.js' %}"></script>
+{% endblock %}
+
 {% block title %}{{ doc.title }}{% endblock %}
 
 {% block content %}
@@ -126,10 +132,4 @@
       <p class="download-instead"><a href="{{ other_types.0.1 }}">Download as {{ other_types.0.0.upper }}</a></p>
     {% endif %}
   {% endif %}
-{% endblock %}
-
-
-{% block js %}
-<script src="{% static 'd3/d3.min.js' %}"></script>
-<script src="{% static 'ietf/js/document_timeline.js' %}"></script>
 {% endblock %}
