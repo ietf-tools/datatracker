@@ -1,3 +1,4 @@
+from ietf.community.models import CommunityList
 from ietf.group.models import Role
 
 def can_manage_community_list_for_group(user, group):
@@ -11,3 +12,16 @@ def can_manage_community_list_for_group(user, group):
     else:
         return False
 
+def augment_docs_with_tracking_info(docs, user):
+    """Add attribute to each document with whether the document is tracked
+    by the user or not."""
+
+    tracked = set()
+
+    if user and user.is_authenticated():
+        clist = CommunityList.objects.filter(user=user).first()
+        if clist:
+            tracked.update(clist.get_documents().filter(pk__in=docs).values_list("pk", flat=True))
+
+    for d in docs:
+        d.tracked_in_personal_community_list = d.pk in tracked

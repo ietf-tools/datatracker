@@ -33,7 +33,6 @@
 import datetime, re
 
 from django import forms
-from django.core.exceptions import ObjectDoesNotExist
 from django.core.urlresolvers import reverse as urlreverse
 from django.shortcuts import render
 from django.db.models import Q
@@ -41,7 +40,6 @@ from django.http import Http404, HttpResponseBadRequest, HttpResponse, HttpRespo
 
 import debug                            # pyflakes:ignore
 
-from ietf.community.models import CommunityList
 from ietf.doc.models import ( Document, DocHistory, DocAlias, State, RelatedDocument,
     DocEvent, LastCallDocEvent, TelechatDocEvent, IESG_SUBSTATE_TAGS )
 from ietf.doc.expire import expirable_draft
@@ -51,6 +49,7 @@ from ietf.idindex.index import active_drafts_index_by_group
 from ietf.name.models import DocTagName, DocTypeName, StreamName
 from ietf.person.models import Person
 from ietf.utils.draft_search import normalize_draftname
+from ietf.community.utils import augment_docs_with_tracking_info
 
 
 class SearchForm(forms.Form):
@@ -201,9 +200,9 @@ def fill_in_search_attributes(docs):
         l.sort()
 
 
-def retrieve_search_results(form, all_types=False):
-
+def retrieve_search_results(form, request, all_types=False):
     """Takes a validated SearchForm and return the results."""
+
     if not form.is_valid():
         raise ValueError("SearchForm doesn't validate: %s" % form.errors)
 
@@ -322,6 +321,8 @@ def retrieve_search_results(form, all_types=False):
 
     results.sort(key=sort_key)
 
+    augment_docs_with_tracking_info(results, request.user)
+
     # fill in a meta dict with some information for rendering the result table
     if len(results) == MAX:
         meta['max'] = MAX
@@ -345,21 +346,6 @@ def retrieve_search_results(form, all_types=False):
     return (results, meta)
 
 
-def get_doc_is_tracked(request, results):
-    # Determine whether each document is being tracked or not, and remember
-    # that so we can display the proper track/untrack option.
-    doc_is_tracked = { }
-    if request.user.is_authenticated():
-        try:
-            clist = CommunityList.objects.get(user=request.user)
-            clist.update()
-        except ObjectDoesNotExist:
-            return doc_is_tracked
-        for doc in results:
-            if clist.get_documents().filter(name=doc.name).count() > 0:
-                doc_is_tracked[doc.name] = True
-    return doc_is_tracked
-
 def search(request):
     if request.GET:
         # backwards compatibility
@@ -375,17 +361,15 @@ def search(request):
         if not form.is_valid():
             return HttpResponseBadRequest("form not valid: %s" % form.errors)
 
-        results, meta = retrieve_search_results(form)
+        results, meta = retrieve_search_results(form, request)
         meta['searching'] = True
     else:
         form = SearchForm()
         results = []
         meta = { 'by': None, 'advanced': False, 'searching': False }
 
-    doc_is_tracked = get_doc_is_tracked(request, results)
-
     return render(request, 'doc/search/search.html', {
-        'form':form, 'docs':results, 'doc_is_tracked':doc_is_tracked, 'meta':meta, },
+        'form':form, 'docs':results, 'meta':meta, },
     )
 
 def frontpage(request):
@@ -550,7 +534,7 @@ def docs_for_ad(request, name):
     form = SearchForm({'by':'ad','ad': ad.id,
                        'rfcs':'on', 'activedrafts':'on', 'olddrafts':'on',
                        'sort': 'status'})
-    results, meta = retrieve_search_results(form, all_types=True)
+    results, meta = retrieve_search_results(form, request, all_types=True)
     results.sort(key=ad_dashboard_sort_key)
     del meta["headers"][-1]
     #
@@ -564,7 +548,7 @@ def docs_for_ad(request, name):
 def drafts_in_last_call(request):
     lc_state = State.objects.get(type="draft-iesg", slug="lc").pk
     form = SearchForm({'by':'state','state': lc_state, 'rfcs':'on', 'activedrafts':'on'})
-    results, meta = retrieve_search_results(form)
+    results, meta = retrieve_search_results(form, request)
 
     return render(request, 'doc/drafts_in_last_call.html', {
         'form':form, 'docs':results, 'meta':meta

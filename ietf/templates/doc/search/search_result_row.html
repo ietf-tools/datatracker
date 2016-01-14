@@ -13,7 +13,7 @@
 
   <td>
     {% if user.is_authenticated %}
-      {% if doc.name in doc_is_tracked %}
+      {% if doc.tracked_in_personal_community_list %}
         <a href="{% url "community_personal_untrack_document" doc.name %}" class="community-list-add-remove-doc" title="Remove from your personal ID list">
           <span class="fa fa-bookmark"></span>
         </a>

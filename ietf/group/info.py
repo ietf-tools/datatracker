@@ -47,7 +47,7 @@ from django.views.decorators.cache import cache_page
 from django.db.models import Q
 from django.utils.safestring import mark_safe
 
-from ietf.doc.views_search import SearchForm, retrieve_search_results, get_doc_is_tracked
+from ietf.doc.views_search import SearchForm, retrieve_search_results
 from ietf.doc.models import Document, State, DocAlias, RelatedDocument
 from ietf.doc.utils import get_chartering_type
 from ietf.doc.templatetags.ietf_filters import clean_whitespace
@@ -378,13 +378,13 @@ def construct_group_menu_context(request, group, selected, group_type, others):
 
     return d
 
-def search_for_group_documents(group):
+def search_for_group_documents(group, request):
     form = SearchForm({ 'by':'group', 'group': group.acronym or "", 'rfcs':'on', 'activedrafts': 'on' })
-    docs, meta = retrieve_search_results(form)
+    docs, meta = retrieve_search_results(form, request)
 
     # get the related docs
     form_related = SearchForm({ 'by':'group', 'name': u'-%s-' % group.acronym, 'activedrafts': 'on' })
-    raw_docs_related, meta_related = retrieve_search_results(form_related)
+    raw_docs_related, meta_related = retrieve_search_results(form_related, request)
 
     docs_related = []
     for d in raw_docs_related:
@@ -423,17 +423,13 @@ def group_documents(request, acronym, group_type=None):
     if not group.features.has_documents:
         raise Http404
 
-    docs, meta, docs_related, meta_related = search_for_group_documents(group)
-
-    doc_is_tracked = get_doc_is_tracked(request, docs)
-    doc_is_tracked.update(get_doc_is_tracked(request, docs_related))
+    docs, meta, docs_related, meta_related = search_for_group_documents(group, request)
 
     context = construct_group_menu_context(request, group, "documents", group_type, {
                 'docs': docs,
                 'meta': meta,
                 'docs_related': docs_related,
                 'meta_related': meta_related,
-                'doc_is_tracked': doc_is_tracked,
                 })
 
     return render(request, 'group/group_documents.html', context)
@@ -444,7 +440,7 @@ def group_documents_txt(request, acronym, group_type=None):
     if not group.features.has_documents:
         raise Http404
 
-    docs, meta, docs_related, meta_related = search_for_group_documents(group)
+    docs, meta, docs_related, meta_related = search_for_group_documents(group, request)
 
     for d in docs:
         d.prefix = d.get_state().name
