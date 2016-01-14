@@ -2,6 +2,21 @@ ietfdb (6.12.1) ietf; urgency=medium
 
   This is a bugfix release, in preparation for the next feature release.
 
+  * Merged in [10686] from lars@netapp.com:
+    Load the js for the timeline as part of the page header, in order to
+    (hopefully) avoid page re-render after the json loads. Only apply the
+    gradient that signifies document expiration to I-Ds. Suppress duplicate
+    x-axis labels (same month).  
+
+  * Merged in [10685] from lars@netapp.com:
+    Commit r10578 broke search result table display due to the added column.
+    Fixed this.  (Also updated vnu.jar. Unrelated, but wasn't careful when
+    committing.) 
+
+  * Merged in [10684] from lars@netapp.com:
+    Added a warning about the accuracy of bibliographic information for Legacy
+    RFCs. 
+
   * Added listing of Area Directors and TBD indications which was
     inadvertently dropped from some chartering related emails during
     refactoring.  Also added testing code to verify the email body content of
