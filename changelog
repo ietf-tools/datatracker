@@ -1,3 +1,32 @@
+ietfdb (6.12.1) ietf; urgency=medium
+
+  This is a bugfix release, in preparation for the next feature release.
+
+  * Added listing of Area Directors and TBD indications which was
+    inadvertently dropped from some chartering related emails during
+    refactoring.  Also added testing code to verify the email body content of
+    some chartering emails a bit more thoroughly.
+
+  * Merged in [10674] from lars@netapp.com:
+    More fixes to charter-related emails and some related web templates.
+    Mostly focused on supporting the IRTF better, but also removing some
+    redundancies (i.e., including group_info.txt instead of duplicating
+    something similar.) 
+
+  * Merged in [10673] from lars@netapp.com:
+    Fixed the internal review email template and related code to handle IRTF
+    RGs better.  
+
+  * Merged in [10672] from lars@netapp.com:
+    Fixed a bug that prevented the IRSG from being CC'ed, and correct its
+    email address.  
+
+  * Merged in [10671] from lars@netapp.com:
+    Fixed a 'RemovedInDjango19Warning' warning.  
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  13 Jan 2016 10:32:29 -0800
+
+
 ietfdb (6.12.0) ietf; urgency=medium
 
   **Document timelines, table sorting, iesg agenda page counts, AD position colours**
@@ -5,17 +34,22 @@ ietfdb (6.12.0) ietf; urgency=medium
   This is a combined feature and bugfix release.
 
   New features from lars@netapp.com:
+
   - Graphical document timelines at the top of each draft and RFC document
     page, giving an overall graphical view of the history timeline of the
     document and its ancestors.
+
   - Swift client-side sorting of tables, wherever it makes sense.
+
   - Document dependency graphs are now provided in svg format by default.
     The old pdf format is still available if desired.
 
   New features from rjsparks@nostrum.com:
+
   - Page counts on the IESG agenda and documents pages
 
   New features from henrik@levkowetz.com:
+
   - Substantially reworked AD position signal colours, with sidebars, on
     the AD view of the IESG agenda and document pages.
 
