@@ -3,6 +3,11 @@
 {% load ietf_filters %}
 
 {% if doc.get_state_slug == "rfc" %}
+{% if doc.stream|slugify == "legacy" %}
+% Datatracker information for RFCs on the Legacy Stream is unfortunately often
+% incorrect. Please correct the bibtex below based on the information in the
+% actual RFC at https://rfc-editor.org/rfc/rfc{{ doc.rfc_number }}.txt
+{% endif %}
 @misc{% templatetag openbrace %}rfc{{ doc.rfc_number }},
 	series =	{Request for Comments},
 	number=		{{ doc.rfc_number }},
