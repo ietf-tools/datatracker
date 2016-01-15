@@ -39,7 +39,7 @@ ietfdb (6.12.1) ietf; urgency=medium
   * Merged in [10671] from lars@netapp.com:
     Fixed a 'RemovedInDjango19Warning' warning.  
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  13 Jan 2016 10:32:29 -0800
+ -- Henrik Levkowetz <henrik@levkowetz.com>  15 Jan 2016 08:46:18 +0000
 
 
 ietfdb (6.12.0) ietf; urgency=medium
