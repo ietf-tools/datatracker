@@ -7,43 +7,32 @@ from django.template.defaultfilters import linebreaksbr, force_escape
 
 from ietf.utils.pipe import pipe
 from ietf.utils.log import log
-from ietf.ietfauth.utils import has_role
 from ietf.doc.templatetags.ietf_filters import wrap_text
 
 from ietf.person.models import Person
-from ietf.nomcom.models import Feedback
-from ietf.nomcom.utils import get_nomcom_by_year, get_user_email, retrieve_nomcom_private_key
+from ietf.nomcom.utils import get_nomcom_by_year, retrieve_nomcom_private_key
+
+import debug           # pyflakes:ignore
 
 
 register = template.Library()
 
 
 @register.filter
-def is_chair(user, year):
+def is_chair_or_advisor(user, year):
     if not user or not year:
         return False
     nomcom = get_nomcom_by_year(year=year)
-    if has_role(user, "Secretariat"):
-        return True
-    return nomcom.group.has_role(user, "chair")
+    return nomcom.group.has_role(user, ["chair","advisor"])
 
 
 @register.filter
 def has_publickey(nomcom):
     return nomcom and nomcom.public_key and True or False
 
-
-@register.simple_tag
-def add_num_nominations(user, position, nominee):
-    author = get_user_email(user)
-
-    count = Feedback.objects.filter(positions__in=[position],
-                                    nominees__in=[nominee],
-                                    author=author,
-                                    type='comment').count()
-
-    return '<span class="badge" title="%d earlier comments from you on %s as %s">%s</span>&nbsp;' % (count, nominee.email.address, position, count)
-
+@register.filter
+def lookup(container,key):
+    return container and container.get(key,None)
 
 @register.filter
 def formatted_email(address):

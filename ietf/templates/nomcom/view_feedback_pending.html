@@ -3,17 +3,24 @@
 {% load origin %}
 
 {% load bootstrap3 %}
+{% load staticfiles %}
 {% load nomcom_tags %}
 
+{% block pagehead %}
+  <link rel="stylesheet" href="{% static 'select2/select2.css' %}">
+  <link rel="stylesheet" href="{% static 'select2-bootstrap-css/select2-bootstrap.min.css' %}">
+{% endblock %}
+
 {% block subtitle %} - Feeback pending{% endblock %}
+
+{% block morecss %}
+.nominee_multi_select { resize: vertical; }
+{% endblock %}
 
 {% block nomcom_content %}
   {% origin %}
   <h2>Feedback pending from email list</h2>
 
-  {% if message %}
-    <p class="alert alert-{{ message.0 }}">{{ message.1 }}</p>
-  {% endif %}
 
   {% if formset.forms %}
     <form method="post">
@@ -145,9 +152,6 @@
 
         {% buttons %}
           <input class="btn btn-primary" type="submit" value="Classify">
-          {% if default_type %}
-            <input class="btn btn-default" type="submit" name="move_to_default" value="Move all unclassified feedback to {{ default_type }}">
-          {% endif %}
         {% endbuttons %}
       {% endif %}
     </form>
@@ -156,4 +160,9 @@
       <p>There is no pending feedback.</p>
   {% endif %}
 
+{% endblock %}
+
+{% block js %}
+  <script src="{% static 'select2/select2.min.js' %}"></script>
+  <script src="{% static 'ietf/js/select2-field.js' %}"></script>
 {% endblock %}

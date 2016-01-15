@@ -11,51 +11,48 @@
   {% origin %}
   <h2>Send remider to {{reminder_description}}</h2>
 
-  <p>The message that will be sent is as follows:</p>
-  <pre>{{ mail_template.content|wrap_text:80 }}</pre>
+  {% if nomcom.group.state_id == 'active' %}
+    <p>The message that will be sent is as follows:</p>
+    <pre>{{ mail_template.content|wrap_text:80 }}</pre>
 
-  {% if mail_template %}
-    <p>
-      <a class="btn btn-default" href="{% url "nomcom_edit_template" year mail_template.id %}">Edit the message</a>
-    </p>
+    {% if mail_template %}
+      <p>
+        <a class="btn btn-default" href="{% url "nomcom_edit_template" year mail_template.id %}">Edit the message</a>
+      </p>
+    {% endif %}
+
+    <p>These are the nominees that are in the '{{state_description}}' state for the listed positions. </p>
+
+    <p>The message that will be sent is shown below the list of nominees. </p>
   {% endif %}
 
-  <p>These are the nominees that are in the '{{state_description}}' state for the listed positions. </p>
-
-  <p>The message that will be sent is shown below the list of nominees. </p>
-
-  {% bootstrap_messages %}
-
-  {% if message %}
-    <div class="alert alert-{{ message.0 }}">{{ message.1 }}</div>
-  {% endif %}
-
-  <form method="post">
-    {% csrf_token %}
-    <table class="table table-condensed table-striped">
-      <thead>
-        <tr>
-	  <th><span class="fa fa-check"></span></th>
-	  <th>Nominee</th>
-	  <th>Positions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for nominee in nominees %}
+  {% if nomcom.group.state_id == 'active' %} 
+    <form id="reminderform " method="post">
+      {% csrf_token %}
+      <table class="table table-condensed table-striped">
+        <thead>
           <tr>
-	    <td>
-	      <input class="batch-select" type="checkbox" value="{{ nominee.id }}" name="selected" checked="checked">
-	    </td>
-	    <td>{{ nominee }}</td>
-	    <td>{{nominee.interesting_positions|join:", "}}</td>
+            <th><span class="fa fa-check"></span></th>
+            <th>Nominee</th>
+            <th>Positions</th>
           </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {% for nominee in nominees %}
+            <tr>
+              <td>
+                <input class="batch-select" type="checkbox" value="{{ nominee.id }}" name="selected" checked="checked">
+              </td>
+              <td>{{ nominee }}</td>
+              <td>{{nominee.interesting_positions|join:", "}}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
 
-    {% buttons %}
-      <input class="btn btn-primary" type="submit" name="submit" value="Submit request">
-    {% endbuttons %}
-  </form>
-
+      {% buttons %}
+        <input class="btn btn-primary" type="submit" name="submit" value="Submit request">
+      {% endbuttons %}
+    </form>
+  {% endif %} 
 {% endblock %}

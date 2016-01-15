@@ -1309,6 +1309,7 @@ class ChangeReplacesTests(TestCase):
             expires=datetime.datetime.now() + datetime.timedelta(days=settings.INTERNET_DRAFT_DAYS_TO_EXPIRE),
             group=mars_wg,
         )
+        self.basea.documentauthor_set.create(author=Email.objects.create(address="basea_author@example.com"),order=1)
 
         self.baseb = Document.objects.create(
             name="draft-test-base-b",
@@ -1319,6 +1320,7 @@ class ChangeReplacesTests(TestCase):
             expires=datetime.datetime.now() - datetime.timedelta(days = 365 - settings.INTERNET_DRAFT_DAYS_TO_EXPIRE),
             group=mars_wg,
         )
+        self.baseb.documentauthor_set.create(author=Email.objects.create(address="baseb_author@example.com"),order=1)
 
         self.replacea = Document.objects.create(
             name="draft-test-replace-a",
@@ -1329,6 +1331,7 @@ class ChangeReplacesTests(TestCase):
             expires=datetime.datetime.now() + datetime.timedelta(days = settings.INTERNET_DRAFT_DAYS_TO_EXPIRE),
             group=mars_wg,
         )
+        self.replacea.documentauthor_set.create(author=Email.objects.create(address="replacea_author@example.com"),order=1)
  
         self.replaceboth = Document.objects.create(
             name="draft-test-replace-both",
@@ -1339,6 +1342,7 @@ class ChangeReplacesTests(TestCase):
             expires=datetime.datetime.now() + datetime.timedelta(days = settings.INTERNET_DRAFT_DAYS_TO_EXPIRE),
             group=mars_wg,
         )
+        self.replaceboth.documentauthor_set.create(author=Email.objects.create(address="replaceboth_author@example.com"),order=1)
  
         self.basea.set_state(State.objects.get(used=True, type="draft", slug="active"))
         self.baseb.set_state(State.objects.get(used=True, type="draft", slug="expired"))
@@ -1373,8 +1377,8 @@ class ChangeReplacesTests(TestCase):
         self.assertTrue(not RelatedDocument.objects.filter(relationship='possibly-replaces', source=self.replacea))
         self.assertEqual(len(outbox), 1)
         self.assertTrue('replacement status updated' in outbox[-1]['Subject'])
-        self.assertTrue('base-a@' in outbox[-1]['To'])
-        self.assertTrue('replace-a@' in outbox[-1]['To'])
+        self.assertTrue('replacea_author@' in outbox[-1]['To'])
+        self.assertTrue('basea_author@' in outbox[-1]['To'])
 
         empty_outbox()
         # Post that says replaceboth replaces both base a and base b
@@ -1385,9 +1389,9 @@ class ChangeReplacesTests(TestCase):
         self.assertEqual(Document.objects.get(name='draft-test-base-a').get_state().slug,'repl')
         self.assertEqual(Document.objects.get(name='draft-test-base-b').get_state().slug,'repl')
         self.assertEqual(len(outbox), 1)
-        self.assertTrue('base-a@' in outbox[-1]['To'])
-        self.assertTrue('base-b@' in outbox[-1]['To'])
-        self.assertTrue('replace-both@' in outbox[-1]['To'])
+        self.assertTrue('basea_author@' in outbox[-1]['To'])
+        self.assertTrue('baseb_author@' in outbox[-1]['To'])
+        self.assertTrue('replaceboth_author@' in outbox[-1]['To'])
 
         # Post that undoes replaceboth
         empty_outbox()
@@ -1396,9 +1400,9 @@ class ChangeReplacesTests(TestCase):
         self.assertEqual(Document.objects.get(name='draft-test-base-a').get_state().slug,'repl') # Because A is still also replaced by replacea
         self.assertEqual(Document.objects.get(name='draft-test-base-b').get_state().slug,'expired')
         self.assertEqual(len(outbox), 1)
-        self.assertTrue('base-a@' in outbox[-1]['To'])
-        self.assertTrue('base-b@' in outbox[-1]['To'])
-        self.assertTrue('replace-both@' in outbox[-1]['To'])
+        self.assertTrue('basea_author@' in outbox[-1]['To'])
+        self.assertTrue('baseb_author@' in outbox[-1]['To'])
+        self.assertTrue('replaceboth_author@' in outbox[-1]['To'])
 
         # Post that undoes replacea
         empty_outbox()
@@ -1406,8 +1410,8 @@ class ChangeReplacesTests(TestCase):
         r = self.client.post(url, dict(replaces=""))
         self.assertEqual(r.status_code, 302)
         self.assertEqual(Document.objects.get(name='draft-test-base-a').get_state().slug,'active')
-        self.assertTrue('base-a@' in outbox[-1]['To'])
-        self.assertTrue('replace-a@' in outbox[-1]['To'])
+        self.assertTrue('basea_author@' in outbox[-1]['To'])
+        self.assertTrue('replacea_author@' in outbox[-1]['To'])
 
 
     def test_review_possibly_replaces(self):

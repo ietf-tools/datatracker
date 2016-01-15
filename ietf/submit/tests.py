@@ -324,7 +324,7 @@ class SubmitTests(TestCase):
         self.assertTrue((u"I-D Action: %s" % name) in outbox[-3]["Subject"])
         self.assertTrue((u"I-D Action: %s" % name) in draft.message_set.order_by("-time")[0].subject)
         self.assertTrue("Author Name" in unicode(outbox[-3]))
-        self.assertTrue("ietf-announce@" in outbox[-3]['To'])
+        self.assertTrue("i-d-announce@" in outbox[-3]['To'])
         self.assertTrue("New Version Notification" in outbox[-2]["Subject"])
         self.assertTrue(name in unicode(outbox[-2]))
         self.assertTrue("mars" in unicode(outbox[-2]))

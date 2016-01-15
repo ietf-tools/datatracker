@@ -8,31 +8,38 @@
   {% origin %}
   <h2>Positions in {{ nomcom.group }}</h2>
 
-  <a class="btn btn-default" href="{% url "nomcom_add_position" year %}">Add new position</a>
+  {% if nomcom.group.state_id == 'active' %}
+    <a class="btn btn-default" href="{% url "nomcom_add_position" year %}">Add new position</a>
+    <p></p>
+  {% endif %}
 
   {% if positions %}
-    {% for position in positions %}
-      <h3>{{ position.name }}</h3>
+   {% regroup positions by is_open as posgroups %}
+    {% for group in posgroups %}
+      <div class="panel panel-default">
+      <div class="panel-heading"><h3>{{ group.grouper| yesno:"Open Positions,Closed Positions"}}</h3></div>
+      <div class="panel-body">
+      {% for position in group.list %}
+      <h4>{{ position.name }}</h4>
       <dl class="dl-horizontal">
-        <dt>Description</dt>
-        <dd>{{ position.description }}</dd>
-        <dt>Incumbent</dt>
-        <dd>{% if position.incumbent %}{{ position.incumbent.person }} &lt;{{ position.incumbent.address }}&gt;{% else %}None{% endif %}</dd>
-        <dt>Is open</dt>
-        <dd>{{ position.is_open }}</dd>
         <dt>Templates</dt>
         <dd>
           {% for template in position.get_templates %}
             <a href="{% url "nomcom_edit_template" year template.id %}">{{ template }}</a><br>
           {% endfor %}
         </dd>
+        {% if nomcom.group.state_id == 'active' %}
         <dt>Actions</dt>
         <dd>
           <a class="btn btn-default" href="{% url "nomcom_edit_position" year position.id %}">Edit</a>
           <a class="btn btn-default" href="{% url "nomcom_remove_position" year position.id %}">Remove</a>
         </dd>
+        {% endif %}
       </dl>
     {% endfor %}
+    </div>
+    </div>
+   {% endfor %}
   {% else %}
     <p>There are no positions defined.</p>
   {% endif %}

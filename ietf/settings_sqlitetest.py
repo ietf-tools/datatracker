@@ -5,6 +5,7 @@
 #   ./manage.py test --settings=settings_sqlitetest doc.ChangeStateTestCase
 #
 
+import os 
 from settings import *                  # pyflakes:ignore
 
 # Workaround to avoid spending minutes stepping through the migrations in
@@ -38,4 +39,5 @@ DATABASES = {
 
 if TEST_CODE_COVERAGE_CHECKER and not TEST_CODE_COVERAGE_CHECKER._started:
     TEST_CODE_COVERAGE_CHECKER.start()
-    
+
+NOMCOM_PUBLIC_KEYS_DIR=os.path.abspath("tmp-nomcom-public-keys-dir")

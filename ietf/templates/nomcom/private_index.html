@@ -66,14 +66,14 @@
   </form>
 
 
-  {% if is_chair %}
+  {% if is_chair and nomcom.group.state_id == 'active' %}
     <form class="form-inline" id="batch-action-form" method="post">{% csrf_token %}
   {% endif %}
 
   <table class="table table-condensed table-striped">
     <thead>
       <tr>
-	{% if is_chair %}<th colspan="2"><span class="fa fa-check"></span></th>{% endif %}
+	{% if is_chair and nomcom.group.state_id == 'active' %}<th colspan="2"><span class="fa fa-check"></span></th>{% endif %}
 	<th>Nominee</th>
 	<th>Position</th>
 	<th>State</th>
@@ -83,7 +83,7 @@
     <tbody>
       {% for np in nominee_positions %}
         <tr>
-	  {% if is_chair %}
+	  {% if is_chair and nomcom.group.state_id == 'active' %}
 	    <td><input class="batch-select" type="checkbox" value="{{ np.id }}" name="selected"></td>
 	    <td class="edit"><a class="btn btn-default btn-xs" href="{% url "nomcom_edit_nominee" year np.nominee.id %}">Edit</a></td>
 	  {% endif %}
@@ -101,23 +101,21 @@
 
   {% if is_chair %}
 
-    {% if message %}
-      <p class="alert alert-{{ message.0 }}">{{ message.1 }}</p>
+    {% if nomcom.group.state_id == 'active' %}
+      <div class="form-group">
+        <label>Action:</label>
+        <select class="form-control" name="action">
+          <option value="" selected="selected">---------</option>
+          <option value="set_as_accepted">Set as accepted</option>
+          <option value="set_as_pending">Set as pending</option>
+          <option value="set_as_declined">Set as declined</option>
+        </select>
+      </div>
+
+      <button class="btn btn-warning"  type="submit" title="Run action">Apply</button>
+
+      </form>
     {% endif %}
-
-    <div class="form-group">
-      <label>Action:</label>
-      <select class="form-control" name="action">
-        <option value="" selected="selected">---------</option>
-        <option value="set_as_accepted">Set as accepted</option>
-        <option value="set_as_pending">Set as pending</option>
-        <option value="set_as_declined">Set as declined</option>
-      </select>
-    </div>
-
-    <button class="btn btn-warning"  type="submit" title="Run action">Apply</button>
-
-    </form>
   {% endif %}
 
 {% endblock %}

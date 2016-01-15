@@ -10,28 +10,48 @@
   {% origin %}
   <h2>Feedback related to nominees</h2>
 
-  <table class="table table-condensed table-striped">
-    <thead>
-      <tr>
-        <th>Nominee</th>
-        {% for ft in feedback_types %}
-          <th>{{ ft.name }}</th>
-        {% endfor %}
-      </tr>
-    </thead>
-    <tbody>
-      {% for nominee, feedback in nominees_feedback.items %}
-        <tr>
-          <td>
-	    <a href="{% url "nomcom_view_feedback_nominee" year nominee.id %}#comment">{{ nominee }}
-          </td>
-          {% for f in feedback %}
-            <td>{{ f.1 }}</td>
+  {% regroup nominees_feedback by nominee.staterank as stateranked_nominees %}
+  {% for staterank in stateranked_nominees %}
+    <div class="panel panel-default">
+     <div class="panel-heading">
+         {% if staterank.grouper == 0 %}
+            Accepted nomination for at least one position
+         {% elif staterank.grouper == 1 %}
+            Pending for at least one position and has not accepted any nomination
+         {% else %}
+            Declined each nominated position
+         {% endif %}
+     </div>
+     <div class="panel-body">
+      <table class="table table-condensed table-striped">
+        <thead>
+          <tr>
+            <th class="col-sm-9">Nominee</th>
+            {% for ft in feedback_types %}
+              <th class="col-sm-1 text-center">{{ ft.name }}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for fb_dict in staterank.list %}
+            <tr>
+              <td>
+    	        <a href="{% url "nomcom_view_feedback_nominee" year fb_dict.nominee.id %}">{{ fb_dict.nominee.name }}</a>
+                <span class="hidden-xs">&lt;{{fb_dict.nominee.email.address}}&gt;</span>
+              </td>
+              {% for fbtype_name, fbtype_count, fbtype_newflag in fb_dict.feedback %}
+                <td class="text-right">
+                   {% if fbtype_newflag %}<span class="label label-success">New</span>{% endif %}
+                   {{ fbtype_count }}
+                </td>
+              {% endfor %}
+            </tr>
           {% endfor %}
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+        </tbody>
+      </table>
+     </div>
+    </div>
+  {% endfor %}
 
   {% if independent_feedback_types %}
     <h2>Feedback not related to Nominees</h2>

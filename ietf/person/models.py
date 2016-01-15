@@ -59,10 +59,13 @@ class PersonInfo(models.Model):
         if e:
             return e[0]
         return None
-    def email_address(self):
+    def email(self):
         e = self.email_set.filter(primary=True).first()
         if not e:
             e = self.email_set.filter(active=True).order_by("-time").first()
+        return e
+    def email_address(self):
+        e = self.email()
         if e:
             return e.address
         else:

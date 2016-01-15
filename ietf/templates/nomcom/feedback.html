@@ -5,24 +5,30 @@
 {% load bootstrap3 %}
 {% load nomcom_tags %}
 
+{% block morecss %}
+.btn-group-vertical .btn {
+    text-align: left;
+}
+.btn-group-vertical .btn .badge {
+        float:right;  margin-top: -1.3em;  
+}
+{% endblock %}
+
 {% block subtitle %} - Feedback{% endblock %}
 
 {% block nomcom_content %}
   {% origin %}
-  <p class="alert alert-info">
-    First select a nominee from the list of nominees to provide input about that nominee.
-    This will fill in the non-editable fields in the form.
+  <p id="instructions" class="alert alert-info">
+   {% if nomcom.group.state_id == 'conclude' %}
+     Feedback to this nomcom is closed.
+   {% else %} 
+     Select a nominee from the list of nominees to the right to obtain a new feedback form.
+   {% endif %}
   </p>
-
-  {% if message %}
-    <p class="alert alert-{{ message.0 }}">{{ message.1 }}</p>
-  {% endif %}
-
-  {% bootstrap_messages %}
 
   {% if nomcom|has_publickey %}
     <div class="row">
-      <div class="col-sm-4 col-sm-push-8">
+      <div id="nominees" class="col-sm-4 col-sm-push-8">
         <h3>Nominees</h3>
 
         {% for p in positions %}
@@ -30,9 +36,14 @@
             <h4>{{ p.name }}</h4>
             <div class="btn-group-vertical form-group">
               {% for np in p.nomineeposition_set.accepted.not_duplicated %}
-                <a class="btn btn-default btn-xs" href="?nominee={{np.nominee.id}}&position={{ np.position.id}}">
-	          {{ np.nominee }}
-	          {% add_num_nominations user np.position np.nominee %}
+                <a class="btn btn-default btn-xs" {% if nomcom.group.state_id != 'conclude' %}href="?nominee={{np.nominee.id}}&position={{ np.position.id}}"{% endif %}>
+	          {{ np.nominee.name }}
+                  {% with count=counts|lookup:np.position.id|lookup:np.nominee.id %}
+                    <span class="badge" 
+                          title="{% if count %}{{count}} earlier comment{{count|pluralize}} from you {% else %}You have not yet provided feedback {% endif %} on {{np.nominee.email.address}} as {{np.position}}">
+                      {{ count | default:"no feedback" }}
+                    </span>&nbsp;
+                  {% endwith %}
                 </a>
               {% endfor %}
             </div>
@@ -42,22 +53,30 @@
         <p>
           An number after a name indicates
           that you have given comments on this nominee
-          earlier. If you position the mouse pointer over
-          it, you should see how many comments
-          exist from you for this nominee.
+          earlier. Position the mouse pointer over
+          the badge, for more information about this
+          nominee.
         </p>
       </div>
 
       <div class="col-sm-8 col-sm-pull-4">
-        <h3>Provide feedback</h3>
+        {% if form %}
+          <h3>Provide feedback
+              {% if form.position %}
+                  about {{form.nominee.email.person.name}} ({{form.nominee.email.address}}) for the {{form.position.name}} position.</p>
+              {% endif %}
+          </h3>
+          <p>This feedback will only be available to <a href="{% url 'nomcom_year_index' year=year %}">NomCom {{year}}</a>.
+             You may have the feedback mailed back to you by selecting the option below.</p>
 
-        <form id="feedbackform" method="post">
-          {% csrf_token %}
-          {% bootstrap_form form %}
-          {% buttons %}
-            <input class="btn btn-primary" type="submit" value="Save" name="save" {% if submit_disabled %}disabled="disabled"{% endif %}>
-          {% endbuttons %}
+          <form id="feedbackform" method="post">
+            {% csrf_token %}
+            {% bootstrap_form form %}
+            {% buttons %}
+              <input class="btn btn-primary" type="submit" value="Save" name="save">
+            {% endbuttons %}
         </form>
+        {% endif %}
       </div>
     </div>
   {% endif %}

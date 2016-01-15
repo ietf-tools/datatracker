@@ -1,0 +1,98 @@
+{% extends "nomcom/nomcom_private_base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+
+{% load bootstrap3 %}
+{% load ietf_filters %}
+
+{% block bodyAttrs %}data-spy="scroll" data-target="#nav-instructions"{% endblock %}
+
+{% block subtitle %} - Configuration Help {% endblock %}
+
+{% block nomcom_content %}
+  {% origin %}
+
+  <div class="col-sm-2 col-sm-offset-10 hidden-xs hidden-print bs-docs-sidebar" id="nav-instructions">
+    <ul class="nav nav-pills nav-stacked small" data-spy="affix">
+      <li><a href="#keys">Keypair</a></li>
+      <li><a href="#configure">Configuration</a></li>
+      <li><a href="#positions">Positions</a></li>
+      <li><a href="#templates">Templates</a></li>
+    </ul>
+  </div>
+
+  <div id="instructions" class="col-sm-10">
+    <h2>Help for Configuring a New NomCom</h2>
+
+
+
+
+<h3 class="anchor-target" id="keys">Generate a keypair for the nomcom</h3>
+
+<p> The Datatracker uses a public/private keypair to encrypt any feedback entered by the community
+before storing it in the database. Only persons with the private key can view this feedback. 
+The private key is provided by using a datatracker page to store a blowfish-encrypted cookie in a browser session.
+The blowfish-encrypted private key is sent to the server and used to decrypt feedback.  The private key is never
+stored on the server, but if the server is compromised, it would be possible for an attacker to grab the private key 
+by modifying the datatracker code. The NomCom chair generates the keypair for each NomCom and manages its secure
+distribution.
+</p>
+
+<p>To generate the keypair:
+<ol>
+<li>
+Create a config file for openssl, named nomcom-config.cnf, with the following contents: 
+<pre>[ req ]
+distinguished_name = req_distinguished_name
+string_mask        = utf8only
+x509_extensions    = ss_v3_ca
+
+[ req_distinguished_name ]
+commonName           = Common Name (e.g. NomComYY)
+commonName_default   = NomCom{{year|slice:"2:"}}
+
+[ ss_v3_ca ]
+
+subjectKeyIdentifier = hash
+keyUsage = critical, digitalSignature, keyEncipherment, dataEncipherment
+basicConstraints = critical, CA:true
+subjectAltName = email:nomcom{{year|slice:"2:"}}@ietf.org
+extendedKeyUsage= emailProtection
+</pre></li>
+<li>Generate a private key and corresponding certificate:
+<pre>openssl req -config nomcom-config.cnf -x509 -new -newkey rsa:2048 -sha256 -days 730 -nodes -keyout privateKey-nomcom{{year|slice:"2:"}}.pem -out nomcom{{year|slice:"2:"}}.cert</pre>
+(Just press Enter when presented with "Common Name (e.g. NomComYY) [NomCom15]:")
+</li>
+</ol>
+<p>
+You will upload the certificate to the datatracker (and make it available to people wishing to send mail) in the steps below.
+</p>
+<p>Securely distribute privateKey-nomcom{{year|slice:"2:"}} to your NomCom advisor(s), liaisons, and members, as they become known.</p>
+
+
+<h3 class="anchor-target" id="configure">Configure the Datatracker NomCom</h3>
+
+<p>Sign into the datatracker and go to the <a href="{% url 'nomcom_edit_nomcom' year %}">NomCom Configuration Page</a>.</p>
+<p>Use the Browse button to select the public nomcom{{year|slice:"2:"}}.cert file created above.</p>
+<p>Enter any special instructions you want to appear on the nomination entry form in the "Help text for nomination form" box. These will appear on the form immediately below the field labeled "Candidate's qualifications for the position".</p>
+<p>Choose whether to have the datatracker send questionnares, and whether to automatically remind people to accept nominations and return questionnaires, according to the instructions on the form.</p>
+<p>Press the save button.</p>
+<p>You can return to this page and change your mind on any of the settings, even towards the end of your nomcom cycle. However, be wary of uploading a new public key once one feedback has been received. That step should only be taken in the case of a compromised keypair. Old feedback will remain encrypted with the old key, and will not be accessible through the datatracker.</p>
+
+<h3 class="anchor-target" id="positions">Configure the Positions to be filled</h3>
+<p>Add the positions this nomcom needs to fill.</p>
+<p>Only create one Position for those roles having multiple seats to fill, 
+such as the IAB, or the IESG areas where multiple ADs in that area are at the end of their term. </p>
+
+<p>Note the "Is open" checkbox. When this is set to True, the Position will appear on the Nomination and Feedback pages. You will set this to False when you do not want any more feedback (that is, the position is filled, or otherwise closed for some reason). It is a good idea to start with the "Is open" value set to False. After you edit the templates for the position and are ready for the community to provide nominations and feedback, set the "Is open" value to True.</p>
+<p>You might need to close some positions and open others as your nomcom progresses. For example, the 2014 Nomcom was called back after it had finished work on its usual selections to fill a IAOC position that had been vacated mid-term. Before making the call for nominations and feedback for this additional IAOC position, the chair would mark the already filled positions as not open, leaving only the new IAOC position open for consideration. At that point, only that IAOC position would be available on the Nomination and Feedback pages. </p>
+
+<h3 class="anchor-target" id="templates">Customize the web-form and email templates</h3>
+
+<p>Edit each of the templates at {% url 'nomcom_list_templates' year %}. The "Home page of group" template is where to put information about the current nomcom members and policies. It is also a good place to list incumbents in positions, and information about whether the incumbents will stand again. See the home page of past nomcoms for examples.</p>
+
+<h3 class="anchor-target" id="test">Test the results</h3>
+<p> Before advertising that your nomcom pages are ready for the community to use, test your configuration. Create a dummy nominee for at least one position, and give it some feedback. You will be able to move this out of the way later. Once you've marked positions as open, ask your nomcom members to look over the expertise and questionnaires tab (which show rendered view of each of the templates for each position) to ensure they contain what you want the community to see. Please don't assume that everything is all right without looking. It's a good idea to give the secretariat and the tools team a heads up a few (preferably 3 to 5) days notice before announcing that your pages are ready for community use.
+  </div>
+{% endblock %}
+

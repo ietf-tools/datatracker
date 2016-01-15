@@ -1,6 +1,7 @@
 <!DOCTYPE html> {% load ietf_filters staticfiles %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}{% origin %}
+{% load bootstrap3 %}
 <html lang="en">
   <head>
     <meta charset="utf-8">
@@ -83,15 +84,7 @@
       </nav>
     {% endwith %}
       <div class="container-fluid">
-        {% if messages %}
-          <div class="row">
-	    <div class="col-lg-12">
-	      {% for message in messages %}
-	        <p class="alert alert-info {% if message.tags %}{{ message.tags }}{% endif %}">{{ message }}</p>
-	      {% endfor %}
-	    </div>
-          </div>
-        {% endif %}
+        {% bootstrap_messages %}
         {% if request.COOKIES.left_menu != "off" and not hide_menu %} {# ugly hack for the more or less unported meeting agenda edit pages #}
           <div class="row">
 	    <div class="col-md-2 visible-md visible-lg leftmenu">

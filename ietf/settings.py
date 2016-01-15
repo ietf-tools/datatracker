@@ -455,7 +455,6 @@ NOMCOM_PUBLIC_KEYS_DIR = '/a/www/nomcom/public_keys/'
 NOMCOM_FROM_EMAIL = 'nomcom-chair@ietf.org'
 OPENSSL_COMMAND = '/usr/bin/openssl'
 DAYS_TO_EXPIRE_NOMINATION_LINK = ''
-DEFAULT_FEEDBACK_TYPE = 'offtopic'
 NOMINEE_FEEDBACK_TYPES = ['comment', 'questio', 'nomina']
 
 # ID Submission Tool settings

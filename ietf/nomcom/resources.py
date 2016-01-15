@@ -25,13 +25,11 @@ class NomComResource(ModelResource):
         }
 api.nomcom.register(NomComResource())
 
-from ietf.person.resources import EmailResource
 from ietf.dbtemplate.resources import DBTemplateResource
 class PositionResource(ModelResource):
     nomcom           = ToOneField(NomComResource, 'nomcom')
     requirement      = ToOneField(DBTemplateResource, 'requirement', null=True)
     questionnaire    = ToOneField(DBTemplateResource, 'questionnaire', null=True)
-    incumbent        = ToOneField(EmailResource, 'incumbent', null=True)
     class Meta:
         queryset = Position.objects.all()
         serializer = api.Serializer()
@@ -39,12 +37,10 @@ class PositionResource(ModelResource):
         filtering = { 
             "id": ALL,
             "name": ALL,
-            "description": ALL,
             "is_open": ALL,
             "nomcom": ALL_WITH_RELATIONS,
             "requirement": ALL_WITH_RELATIONS,
             "questionnaire": ALL_WITH_RELATIONS,
-            "incumbent": ALL_WITH_RELATIONS,
         }
 api.nomcom.register(PositionResource())
 
@@ -148,3 +144,17 @@ class NominationResource(ModelResource):
         }
 api.nomcom.register(NominationResource())
 
+from ietf.person.resources import PersonResource
+class FeedbackLastSeenResource(ModelResource):
+    reviewer         = ToOneField(PersonResource, 'reviewer')
+    nominee          = ToOneField(NomineeResource, 'nominee')
+    class Meta:
+        queryset = FeedbackLastSeen.objects.all()
+        serializer = api.Serializer()
+        filtering = {
+            "id": ALL,
+            "time": ALL,
+            "reviewer": ALL_WITH_RELATIONS,
+            "nominee": ALL_WITH_RELATIONS,
+        }
+api.nomcom.register(FeedbackLastSeenResource())

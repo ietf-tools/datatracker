@@ -21,6 +21,8 @@ from ietf.utils import draft, markup_txt
 from ietf.utils.mail import send_mail
 from ietf.mailtrigger.utils import gather_address_lists
 
+import debug              # pyflakes:ignore
+
 #TODO FIXME - it would be better if this lived in ietf/doc/mails.py, but there's
 #        an import order issue to work out.
 def email_update_telechat(request, doc, text):
