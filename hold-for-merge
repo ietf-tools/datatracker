@@ -1,8 +1,5 @@
 # -*- conf-mode -*-
 
-
-personal/rjs/v6.11.1.dev0-nomcom@10629
-
 /personal/lars/6.11.1.dev0@10537	# Downgrades the PT fonts to a limited unicode range, renames them, and removes copyright from css file.
 branch/iola/event-saving-refactor-r10076 @ 10190
 branch/amsl/liaisons@10160		# Merged as branch/amsl/liaisons/6.4.1 @ 10160
