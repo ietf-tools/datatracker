@@ -572,6 +572,20 @@ def document_main(request, name, rev=None):
     raise Http404
 
 
+def check_doc_email_aliases():
+    pattern = re.compile('^expand-(.*?)(\..*?)?@.*? +(.*)$')
+    good_count = 0
+    tot_count = 0
+    with open(settings.DRAFT_VIRTUAL_PATH,"r") as virtual_file:
+        for line in virtual_file.readlines():
+            m = pattern.match(line)
+            tot_count += 1
+            if m:
+                good_count += 1
+            if good_count > 50 and tot_count < 3*good_count:
+                return True
+    return False
+
 def get_doc_email_aliases(name):
     if name:
         pattern = re.compile('^expand-(%s)(\..*?)?@.*? +(.*)$'%name)
@@ -584,7 +598,6 @@ def get_doc_email_aliases(name):
             if m:
                 aliases.append({'doc_name':m.group(1),'alias_type':m.group(2),'expansion':m.group(3)})
     return aliases
-
 
 def document_email(request,name):
     doc = get_object_or_404(Document, docalias__name=name)

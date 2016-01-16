@@ -484,6 +484,20 @@ def group_about(request, acronym, group_type=None):
                       "can_manage": can_manage,
                   }))
 
+def check_group_email_aliases():
+    pattern = re.compile('expand-(.*?)(-\w+)@.*? +(.*)$')
+    tot_count = 0
+    good_count = 0
+    with open(settings.GROUP_VIRTUAL_PATH,"r") as virtual_file:
+        for line in virtual_file.readlines():
+            m = pattern.match(line)
+            tot_count += 1
+            if m:
+                good_count += 1
+            if good_count > 50 and tot_count < 3*good_count:
+                return True
+    return False
+
 def get_group_email_aliases(acronym, group_type):
     if acronym:
         pattern = re.compile('expand-(%s)(-\w+)@.*? +(.*)$'%acronym)

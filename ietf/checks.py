@@ -23,11 +23,11 @@ def check_cdn_directory_exists(app_configs, **kwargs):
 
 @checks.register('files')
 def check_group_email_aliases_exists(app_configs, **kwargs):
-    from ietf.group.info import get_group_email_aliases
+    from ietf.group.info import check_group_email_aliases
     errors = []
     try:
-        aliases = get_group_email_aliases(None, None)
-        if not aliases:
+        ok = check_group_email_aliases()
+        if not ok:
             errors.append(checks.Error(
                 "Found no aliases in the group email aliases file",
                 hint="Please run ietf/bin/generate-wg-aliases to generate them.",
@@ -46,11 +46,11 @@ def check_group_email_aliases_exists(app_configs, **kwargs):
 
 @checks.register('files')
 def check_doc_email_aliases_exists(app_configs, **kwargs):
-    from ietf.doc.views_doc import get_doc_email_aliases
+    from ietf.doc.views_doc import check_doc_email_aliases
     errors = []
     try:
-        aliases = get_doc_email_aliases(None)
-        if not aliases:
+        ok = check_doc_email_aliases()
+        if not ok:
             errors.append(checks.Critical(
                 "Found no aliases in the document email aliases file.",
                 hint="Please run ietf/bin/generate-draft-aliases to generate them.",
