@@ -1,3 +1,89 @@
+ietfdb (6.13.0) ietf; urgency=medium
+
+  **Improved NomCom Support**
+
+  This release provides a massive refactoring of the NomCom app, fixing
+  a large number of known issues, and adding a long list of refinements,
+  improvements and new features.  This whole release is the work of
+  rjsparks@nostrum.com.  From the commit log:
+
+  * Merged in [10629] from rjsparks@nostrum.com:
+    This set of changes focuses on improvements to the nomcom portion of
+    the datatracker. 
+
+    These changes:
+
+    - Simplify the nomcom form for comments. Make it more obvious who
+      receives mail when a comment is supplied. Fixes #1849.
+
+    - Simplify the nomcom form for nominations. Provide a primary workflow
+      where nominations choose an existing Person, and a secondary
+      workflow for nominating new people. 
+
+    - Allow nominees to add a comment when accepting or declining a
+      nomination. Fixes #1845.
+
+    - Organize the list of nominees on the feedback page. Fixes #1786 and
+      #1809.
+
+    - Simplify the mechanisms used to display feedback message counts.
+
+    - Regroup the feedback view to make it easier to see where to spend
+      review effort. Fixes #1866.
+
+    - Capture when nomcom members last reviewed feedback for a given
+      nominee. Add badges when new feedback is avaliable. Improve the
+      layout of the feedback index page. Fixes #1850.
+
+    - Reorganize the tab navigation on the nomcom private pages. Made it
+      more obvious when the chair is doing something that only the chair
+      gets to see. Fixes #1788 and #1795.
+
+    - Regroup multiselect options to make classifying pending feedback
+      simpler. Make the control larger and resizable. Fixes #1495.
+
+    - Simplify the chair's views for editing nominee records. Replace the
+      merge nominee form with a request to the secretariat to merge Person
+      records. Fixes #1847. 
+
+    - Added merging nominees to the secretariat's persson merging script. 
+
+    - Show information for concluded nomcoms. Close feedback and
+      nomination for concluded nomcoms. Fixes #1856.
+
+    - Improve the questionnaire templates, reminding the nominee that
+      receiving the questionnaire does not imply they have accepted a
+      nomination. Fixes #1807.
+
+    - Remove the description field from Postion. Simplify the Position
+      list and the Position edit form. Make the nomcom pages more self
+      documenting. Add a page to help nomcom chiars through setting up a
+      new nomcom. Fixes #1867 and #1768.
+
+    - Remove the type from the template pathname for the requirements
+      templates. Make the requirements views work for both types plain and
+      rst. Changed the default type for new nomcom requirement templates
+      to rst.
+
+    - Remove 'incumbent' from the models. Fixes #1771.
+
+    - Adjust the models for Nominee and Nomination to better associate
+      Nominee objects with Person objects.
+
+    - Remove BaseNomcomForm and the implementation of custom fieldsets.
+
+    - Replace the custom message framework with the django provided
+      messages framework.
+
+    - Improve SearchablePersonField to show the primary email address for
+      any search result where a name appears more than once.
+
+    - Add the use of factory-boy for generating test data. Normalize
+      management of a test directory for test nomcom public keys.
+      Significantly improve test coverage of the nomcom related code.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  15 Jan 2016 14:00:16 -0800
+
 ietfdb (6.12.1) ietf; urgency=medium
 
   This is a bugfix release, in preparation for the next feature release.
