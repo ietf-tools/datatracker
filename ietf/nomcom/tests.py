@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import tempfile
+#import tempfile
 import datetime
 import os
 import shutil
@@ -390,7 +390,7 @@ class NomcomViewsTest(TestCase):
             self.assertEqual(len(q("#nominate-form")), 0)
 
         # save the cert file in tmp
-        nomcom.public_key.storage.location = tempfile.gettempdir()
+        #nomcom.public_key.storage.location = tempfile.gettempdir()
         nomcom.public_key.save('cert', File(open(self.cert_file.name, 'r')))
 
         response = self.client.get(nominate_url)
@@ -456,7 +456,7 @@ class NomcomViewsTest(TestCase):
             self.assertEqual(len(q("#nominate-form")), 0)
 
         # save the cert file in tmp
-        nomcom.public_key.storage.location = tempfile.gettempdir()
+        #nomcom.public_key.storage.location = tempfile.gettempdir()
         nomcom.public_key.save('cert', File(open(self.cert_file.name, 'r')))
 
         response = self.client.get(nominate_url)
@@ -532,7 +532,7 @@ class NomcomViewsTest(TestCase):
             self.assertNotContains(response, "questionnnaireform")
 
         # save the cert file in tmp
-        nomcom.public_key.storage.location = tempfile.gettempdir()
+        #nomcom.public_key.storage.location = tempfile.gettempdir()
         nomcom.public_key.save('cert', File(open(self.cert_file.name, 'r')))
 
         response = self.client.get(self.add_questionnaire_url)
@@ -607,7 +607,7 @@ class NomcomViewsTest(TestCase):
             self.assertNotContains(response, "feedbackform")
 
         # save the cert file in tmp
-        nomcom.public_key.storage.location = tempfile.gettempdir()
+        #nomcom.public_key.storage.location = tempfile.gettempdir()
         nomcom.public_key.save('cert', File(open(self.cert_file.name, 'r')))
 
         response = self.client.get(feedback_url)
@@ -723,7 +723,7 @@ class FeedbackTest(TestCase):
         nomcom = position.nomcom
 
         # save the cert file in tmp
-        nomcom.public_key.storage.location = tempfile.gettempdir()
+        #nomcom.public_key.storage.location = tempfile.gettempdir()
         nomcom.public_key.save('cert', File(open(self.cert_file.name, 'r')))
 
         comments = u'Plain text. Comments with accents äöåÄÖÅ éáíóú âêîôû ü àèìòù.'
@@ -745,7 +745,7 @@ class ReminderTest(TestCase):
         nomcom_test_data()
         self.nomcom = get_nomcom_by_year(NOMCOM_YEAR)
         self.cert_file, self.privatekey_file = get_cert_files()
-        self.nomcom.public_key.storage.location = tempfile.gettempdir()
+        #self.nomcom.public_key.storage.location = tempfile.gettempdir()
         self.nomcom.public_key.save('cert', File(open(self.cert_file.name, 'r')))
 
         gen = Position.objects.get(nomcom=self.nomcom,name='GEN')
