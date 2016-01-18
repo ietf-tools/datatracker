@@ -82,7 +82,7 @@ ietfdb (6.13.0) ietf; urgency=medium
       management of a test directory for test nomcom public keys.
       Significantly improve test coverage of the nomcom related code.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  15 Jan 2016 14:00:16 -0800
+ -- Henrik Levkowetz <henrik@levkowetz.com>  18 Jan 2016 09:05:42 +0000
 
 ietfdb (6.12.1) ietf; urgency=medium
 
