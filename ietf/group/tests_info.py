@@ -197,7 +197,7 @@ class GroupPagesTests(TestCase):
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(url)
         q = PyQuery(r.content)
-        self.assertTrue(any([draft2.name in x.attrib['href'] for x in q('table td a.community-list-add-remove-doc')]))
+        self.assertTrue(any([draft2.name in x.attrib['href'] for x in q('table td a.track-untrack-doc')]))
 
         # test the txt version too while we're at it
         url = urlreverse('ietf.group.info.group_documents_txt', kwargs=dict(group_type=group.type_id, acronym=group.acronym))

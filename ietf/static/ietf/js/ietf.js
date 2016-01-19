@@ -100,10 +100,10 @@ $(document).ready(function () {
     }
 
     // search results
-    $('.community-list-add-remove-doc').click(function(e) {
+    $('.track-untrack-doc').click(function(e) {
 	e.preventDefault();
-	var trigger = $(this);
-	$.ajax({
+        var trigger = $(this);
+        $.ajax({
 	    url: trigger.attr('href'),
             type: 'POST',
 	    cache: false,
@@ -111,12 +111,8 @@ $(document).ready(function () {
 	    success: function(response){
 		if (response.success) {
                     trigger.parent().find(".tooltip").remove();
-                    trigger.find("span.fa").toggleClass("fa-bookmark fa-bookmark-o");
-                    if (trigger.hasClass('btn')) {
-                        trigger.attr('disabled', true).blur();
-                    } else {
-                        trigger.contents().unwrap().blur();
-                    }
+                    trigger.addClass("hide");
+                    trigger.parent().find(".track-untrack-doc").not(trigger).removeClass("hide");
                 }
 	    }
 	});
