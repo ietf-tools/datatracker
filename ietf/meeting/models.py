@@ -96,7 +96,12 @@ class Meeting(models.Model):
         return self.date + datetime.timedelta(days=offset)
 
     def end_date(self):
-        return self.get_meeting_date(5)
+        if self.type.slug == 'ietf':
+            return self.get_meeting_date(5)
+        else:
+            # TODO: Once interims have timeslots assigned, 
+            #       look for the last ending timeslot instead
+            return self.date
 
     def get_00_cutoff(self):
         start_date = datetime.datetime(year=self.date.year, month=self.date.month, day=self.date.day, tzinfo=pytz.utc)

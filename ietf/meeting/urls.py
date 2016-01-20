@@ -61,10 +61,6 @@ urlpatterns = patterns('',
     (r'^(?P<num>\d+)/session/(?P<sessionid>\d+)/constraints.json', ajax.session_constraints),
 
     (r'^(?P<num>\d+)/session/(?P<acronym>[A-Za-z0-9_\-\+]+)/$',  views.session_details),
-    (r'^(?P<num>\d+)/session/(?P<acronym>[A-Za-z0-9_\-\+]+)/(?P<seq>\d+)/$',  views.session_details),
-    (r'^(?P<num>\d+)/session/(?P<acronym>[A-Za-z0-9_\-\+]+)/(?P<week_day>[a-zA-Z]+)/$',  views.session_details),
-    (r'^(?P<num>\d+)/session/(?P<acronym>[A-Za-z0-9_\-\+]+)/(?P<date>\d{4}-\d{2}-\d{2}(-\d{4})?)/$',  views.session_details),
-    (r'^(?P<num>\d+)/session/(?P<acronym>[A-Za-z0-9_\-\+]+)/(?P<date>\d{4}-\d{2}-\d{2}(-\d{4})?)/(?P<seq>\d+)/$',  views.session_details),
 
     (r'^(?P<num>\d+)/constraint/(?P<constraintid>\d+).json',       ajax.constraint_json),
     (r'^(?P<num>\d+).json$',                               ajax.meeting_json),
