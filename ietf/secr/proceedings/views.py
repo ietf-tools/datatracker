@@ -35,7 +35,7 @@ from ietf.secr.proceedings.proc_utils import ( gen_acknowledgement, gen_agenda, 
 from ietf.utils.log import log
 
 # -------------------------------------------------
-# Globals 
+# Globals
 # -------------------------------------------------
 AUTHORIZED_ROLES=('WG Chair','WG Secretary','RG Chair','AG Secretary','IRTF Chair','IAB Group Chair','Area Director','Secretariat','Team Chair')
 # -------------------------------------------------
@@ -228,7 +228,7 @@ def post_process(doc):
         base,ext = os.path.splitext(doc.external_url)
         doc.external_url = base + '.pdf'
         doc.save()
-        
+
 # -------------------------------------------------
 # AJAX Functions
 # -------------------------------------------------
@@ -290,12 +290,12 @@ def ajax_get_sessions(request, meeting_num, acronym):
         group = Group.objects.get(acronym=acronym)
     except ObjectDoesNotExist:
         return results
-        
+
     sessions = Session.objects.filter(meeting=meeting,group=group,status='sched')
-    
+
     # order by time scheduled
     sessions = sorted(sessions,key = lambda x: x.official_timeslotassignment().timeslot.time)
-    
+
     for n,session in enumerate(sessions,start=1):
         timeslot = session.official_timeslotassignment().timeslot
         val = '{}: {} {}'.format(n,timeslot.time.strftime('%m-%d %H:%M'),timeslot.location.name)
@@ -303,7 +303,7 @@ def ajax_get_sessions(request, meeting_num, acronym):
         results.append(d)
 
     return results
-    
+
 @jsonapi
 def ajax_order_slide(request):
     '''
@@ -485,7 +485,7 @@ def interim(request, acronym):
                                    type_id='session',
                                   )
 
-            create_interim_directory(request)
+            create_interim_directory()
             make_directories(meeting)
 
             messages.success(request, 'Meeting created')
@@ -630,29 +630,29 @@ def recording(request, meeting_num):
     '''
     meeting = get_object_or_404(Meeting, number=meeting_num)
     sessions = meeting.session_set.filter(type='session',status='sched').order_by('group__acronym')
-    
+
     if request.method == 'POST':
         form = RecordingForm(request.POST)
         if form.is_valid():
             group = form.cleaned_data['group']
             external_url =  form.cleaned_data['external_url']
             session = form.cleaned_data['session']
-            
+
             if Document.objects.filter(type='recording',external_url=external_url):
                 messages.error(request, "Recording already exists")
                 return redirect('proceedings_recording', meeting_num=meeting_num)
             else:
                 create_recording(session,meeting,group,external_url)
-            
+
             # rebuild proceedings
             create_proceedings(meeting,group)
-            
+
             messages.success(request,'Recording added')
             return redirect('proceedings_recording', meeting_num=meeting_num)
-    
+
     else:
         form = RecordingForm()
-    
+
     return render_to_response('proceedings/recording.html',{
         'meeting':meeting,
         'form':form,
@@ -668,12 +668,12 @@ def recording_edit(request, meeting_num, name):
     '''
     recording = get_object_or_404(Document, name=name)
     meeting = get_object_or_404(Meeting, number=meeting_num)
-    
+
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
             return redirect("proceedings_recording", meeting_num=meeting_num)
-            
+
         form = RecordingEditForm(request.POST, instance=recording)
         if form.is_valid():
             # save record and rebuild proceedings
@@ -683,14 +683,14 @@ def recording_edit(request, meeting_num, name):
             return redirect('proceedings_recording', meeting_num=meeting_num)
     else:
         form = RecordingEditForm(instance=recording)
-    
+
     return render_to_response('proceedings/recording_edit.html',{
         'meeting':meeting,
         'form':form,
         'recording':recording},
         RequestContext(request, {}),
     )
-    
+
 @check_permissions
 def replace_slide(request, slide_id):
     '''
@@ -725,7 +725,7 @@ def replace_slide(request, slide_id):
             new_slide.external_url = disk_filename
             new_slide.save()
             post_process(new_slide)
-            
+
             # create DocEvent uploaded
             DocEvent.objects.create(doc=slide,
                                     by=request.user.person,
@@ -848,7 +848,7 @@ def select_interim(request):
         redirect_url = reverse('proceedings_interim', kwargs={'acronym':request.POST['group']})
         return HttpResponseRedirect(redirect_url)
 
-    if has_role(request.user, "Secretariat"): 
+    if has_role(request.user, "Secretariat"):
         # initialize working groups form
         choices = build_choices(Group.objects.active_wgs())
         group_form = GroupSelectForm(choices=choices)
@@ -886,7 +886,7 @@ def upload_unified(request, meeting_num, acronym=None, session_id=None):
         else:
             url = reverse('proceedings_select', kwargs={'meeting_num':meeting.number})
         return HttpResponseRedirect(url)
-        
+
     meeting = get_object_or_404(Meeting, number=meeting_num)
     now = datetime.datetime.now()
     if acronym:
@@ -960,14 +960,14 @@ def upload_unified(request, meeting_num, acronym=None, session_id=None):
             DocAlias.objects.get_or_create(name=doc.name, document=doc)
 
             handle_upload_file(file,disk_filename,meeting,material_type.slug)
-            
+
             # set Doc state
             if doc.type.slug=='slides':
                 doc.set_state(State.objects.get(type=doc.type,slug='archived'))
                 doc.set_state(State.objects.get(type='reuse_policy',slug='single'))
             else:
                 doc.set_state(State.objects.get(type=doc.type,slug='active'))
-                
+
             # create session relationship, per Henrik we should associate documents to all sessions
             # for the current meeting (until tools support different materials for diff sessions)
             for s in sessions:
@@ -985,7 +985,7 @@ def upload_unified(request, meeting_num, acronym=None, session_id=None):
                                        rev=doc.rev,
                                        desc='New revision available',
                                        time=now)
-            
+
             post_process(doc)
             create_proceedings(meeting,group)
             messages.success(request,'File uploaded sucessfully')

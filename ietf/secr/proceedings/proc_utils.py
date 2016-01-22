@@ -10,6 +10,7 @@ import os
 import shutil
 
 from django.conf import settings
+from django.http import HttpRequest
 from django.shortcuts import render_to_response, render
 
 from ietf.doc.models import Document, RelatedDocument, DocEvent, NewRevisionDocEvent, State
@@ -32,9 +33,9 @@ def check_audio_files(group,meeting):
     '''
     Checks for audio files and creates corresponding materials (docs) for the Session
     Expects audio files in the format ietf[meeting num]-[room]-YYYMMDD-HHMM-*,
-    
+
     Example: ietf90-salonb-20140721-1710-pm3.mp3
-    
+
     '''
     for session in Session.objects.filter(group=group,meeting=meeting,status__in=('sched','schedw')):
         try:
@@ -68,7 +69,7 @@ def create_recording(session,meeting,group,url):
         title = 'Audio recording for {}'.format(time)
     else:
         title = 'Video recording for {}'.format(time)
-        
+
     doc = Document.objects.create(name=name,
                                   title=title,
                                   external_url=url,
@@ -76,7 +77,7 @@ def create_recording(session,meeting,group,url):
                                   rev='00',
                                   type_id='recording')
     doc.set_state(State.objects.get(type='recording', slug='active'))
-    
+
     # create DocEvent
     NewRevisionDocEvent.objects.create(type='new_revision',
                                        by=Person.objects.get(name='(System)'),
@@ -213,7 +214,7 @@ def write_html(path,content):
 # End Helper Functions
 # -------------------------------------------------
 
-def create_interim_directory(request):
+def create_interim_directory():
     '''
     Create static Interim Meeting directory pages that will live in a different URL space than
     the secretariat Django project
@@ -222,7 +223,7 @@ def create_interim_directory(request):
     # produce date sorted output
     page = 'proceedings.html'
     meetings = InterimMeeting.objects.order_by('-date')
-    response = render(request, 'proceedings/interim_directory.html',{'meetings': meetings})
+    response = render(HttpRequest(), 'proceedings/interim_directory.html',{'meetings': meetings})
     path = os.path.join(settings.SECR_INTERIM_LISTING_DIR, page)
     f = open(path,'w')
     f.write(response.content)
@@ -232,7 +233,7 @@ def create_interim_directory(request):
     page = 'proceedings-bygroup.html'
     qs = InterimMeeting.objects.all()
     meetings = sorted(qs, key=lambda a: a.group().acronym)
-    response = render(request, 'proceedings/interim_directory.html',{'meetings': meetings})
+    response = render(HttpRequest(), 'proceedings/interim_directory.html',{'meetings': meetings})
     path = os.path.join(settings.SECR_INTERIM_LISTING_DIR, page)
     f = open(path,'w')
     f.write(response.content)
@@ -269,7 +270,7 @@ def create_proceedings(meeting, group, is_final=False):
             settings.MEDIA_URL,
             meeting.date.strftime('%Y/%m/%d'),
             group.acronym)
-    
+
     # Only do these tasks if we are running official proceedings generation,
     # otherwise skip them for expediency.  This procedure is called any time meeting
     # materials are uploaded/deleted, and we don't want to do all this work each time.
