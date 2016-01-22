@@ -476,6 +476,7 @@ def email_charter_internal_review(request, charter):
                    chairs=charter.group.role_set.filter(name="chair"),
                    secr=charter.group.role_set.filter(name="secr"),
                    ads=charter.group.role_set.filter(name='ad'),
+                   parent_ads=charter.group.parent.role_set.filter(name='ad'),
                    techadv=charter.group.role_set.filter(name="techadv"),
                    milestones=charter.group.groupmilestone_set.filter(state="charter"),
               ),

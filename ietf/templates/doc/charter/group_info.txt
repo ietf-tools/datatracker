@@ -15,7 +15,10 @@ Assigned Area Director{{ads|length|pluralize}}:{% if ads %}
 {% for r in ads %}  {{ r.person.plain_name }} <{{r.email.address}}>
 {% endfor %}{% else %}
   TBD
-{% endif %}{% endif %}{% if techadv %}
+{% endif %}{% if parent_ads %}
+{{group.parent.name}} Directors:
+{% for r in parent_ads %}  {{ r.person.plain_name }} <{{r.email.address }}>
+{% endfor %}{% endif %}{% endif %}{% if techadv %}
 Technical advisors:
 {% for r in techadv %}  {{ r.person.plain_name }} <{{r.email.address}}>
 {% endfor %}{% endif %} {% if group.list_email %}
