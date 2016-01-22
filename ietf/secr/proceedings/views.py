@@ -485,7 +485,7 @@ def interim(request, acronym):
                                    type_id='session',
                                   )
 
-            create_interim_directory()
+            create_interim_directory(request)
             make_directories(meeting)
 
             messages.success(request, 'Meeting created')

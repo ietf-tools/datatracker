@@ -10,7 +10,7 @@ import os
 import shutil
 
 from django.conf import settings
-from django.shortcuts import render_to_response
+from django.shortcuts import render_to_response, render
 
 from ietf.doc.models import Document, RelatedDocument, DocEvent, NewRevisionDocEvent, State
 from ietf.group.models import Group, Role
@@ -213,7 +213,7 @@ def write_html(path,content):
 # End Helper Functions
 # -------------------------------------------------
 
-def create_interim_directory():
+def create_interim_directory(request):
     '''
     Create static Interim Meeting directory pages that will live in a different URL space than
     the secretariat Django project
@@ -222,7 +222,7 @@ def create_interim_directory():
     # produce date sorted output
     page = 'proceedings.html'
     meetings = InterimMeeting.objects.order_by('-date')
-    response = render_to_response('proceedings/interim_directory.html',{'meetings': meetings})
+    response = render(request, 'proceedings/interim_directory.html',{'meetings': meetings})
     path = os.path.join(settings.SECR_INTERIM_LISTING_DIR, page)
     f = open(path,'w')
     f.write(response.content)
@@ -232,7 +232,7 @@ def create_interim_directory():
     page = 'proceedings-bygroup.html'
     qs = InterimMeeting.objects.all()
     meetings = sorted(qs, key=lambda a: a.group().acronym)
-    response = render_to_response('proceedings/interim_directory.html',{'meetings': meetings})
+    response = render(request, 'proceedings/interim_directory.html',{'meetings': meetings})
     path = os.path.join(settings.SECR_INTERIM_LISTING_DIR, page)
     f = open(path,'w')
     f.write(response.content)
