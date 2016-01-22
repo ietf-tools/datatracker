@@ -20,6 +20,8 @@ Emails:
 
 You can make changes to your profile here: https://datatracker.ietf.org/accounts/profile/
 
+Reply to this message if this merge should not have happened, or if it produced an incorrect result that you cannot correct by editing your profile.
+
 Thank You,
 The IETF Secretariat
 {% endfilter %}
