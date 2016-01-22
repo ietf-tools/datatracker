@@ -129,12 +129,13 @@ class SessionResource(ModelResource):
     status           = ToOneField(SessionStatusNameResource, 'status')
     materials        = ToManyField(DocumentResource, 'materials', null=True)
     resources        = ToManyField(ResourceAssociationResource, 'resources', null=True)
-    requested_duration = api.TimedeltaField()
+    requested_duration = api.TimedeltaField('requested_duration')
     class Meta:
         queryset = Session.objects.all()
         serializer = api.Serializer()
         #resource_name = 'session'
-        filtering = { 
+        ordering = ['modified', 'scheduled','meeting',]
+        filtering = {
             "id": ALL,
             "name": ALL,
             "short": ALL,
@@ -161,11 +162,12 @@ class TimeSlotResource(ModelResource):
     type = ToOneField(TimeSlotTypeNameResource, 'type')
     location = ToOneField(RoomResource, 'location', null=True)
     sessions = ToManyField(SessionResource, 'sessions', null=True)
-    duration = api.TimedeltaField()
+    duration = api.TimedeltaField('duration')
     class Meta:
         queryset = TimeSlot.objects.all()
         serializer = api.Serializer()
         #resource_name = 'timeslot'
+        ordering = ['time', 'modified', 'meeting',]
         filtering = { 
             "id": ALL,
             "name": ALL,
@@ -189,6 +191,7 @@ class SchedTimeSessAssignmentResource(ModelResource):
         queryset = SchedTimeSessAssignment.objects.all()
         serializer = api.Serializer()
         #resource_name = 'schedtimesessassignment'
+        ordering = ['modified', ]
         filtering = { 
             "id": ALL,
             "modified": ALL,
