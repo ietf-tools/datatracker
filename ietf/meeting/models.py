@@ -266,9 +266,11 @@ class Meeting(models.Model):
             self.save()
 
     def updated(self):
-        meeting_time = datetime.datetime(*(self.date.timetuple()[:7]))
-        ts = max(self.timeslot_set.aggregate(Max('modified'))["modified__max"] or meeting_time,
-                 self.session_set.aggregate(Max('modified'))["modified__max"] or meeting_time)
+        min_time = datetime.datetime(1970, 1, 1, 0, 0, 0) # should be Meeting.modified, but we don't have that
+        timeslots_updated = self.timeslot_set.aggregate(Max('modified'))["modified__max"] or min_time
+        sessions_updated = self.session_set.aggregate(Max('modified'))["modified__max"] or min_time
+        assignments_updated = (self.agenda.assignments.aggregate(Max('modified'))["modified__max"] or min_time) if self.agenda else min_time
+        ts = max(timeslots_updated, sessions_updated, assignments_updated)
         tz = pytz.timezone(settings.PRODUCTION_TIMEZONE)
         ts = tz.localize(ts)
         return ts
@@ -349,7 +351,7 @@ class TimeSlot(models.Model):
     location = models.ForeignKey(Room, blank=True, null=True)
     show_location = models.BooleanField(default=True, help_text="Show location in agenda.")
     sessions = models.ManyToManyField('Session', related_name='slots', through='SchedTimeSessAssignment', null=True, blank=True, help_text=u"Scheduled session, if any.")
-    modified = models.DateTimeField(default=datetime.datetime.now)
+    modified = models.DateTimeField(auto_now=True)
     #
 
     @property
@@ -509,6 +511,10 @@ class TimeSlot(models.Model):
             type     = self.type,           # must be same type (usually session)
             time__gt = self.time + self.duration,  # must be after this session
             time__lt = self.time + self.duration + datetime.timedelta(seconds=11*60)).first()
+
+    class Meta:
+        ordering = ["-time", ]
+
 
 # end of TimeSlot
 
@@ -676,7 +682,7 @@ class SchedTimeSessAssignment(models.Model):
     session  = models.ForeignKey('Session', null=True, default=None, related_name='timeslotassignments', help_text=u"Scheduled session.")
     schedule = models.ForeignKey('Schedule', null=False, blank=False, related_name='assignments')
     extendedfrom = models.ForeignKey('self', null=True, default=None, help_text=u"Timeslot this session is an extension of.")
-    modified = models.DateTimeField(default=datetime.datetime.now)
+    modified = models.DateTimeField(auto_now=True)
     notes    = models.TextField(blank=True)
     badness  = models.IntegerField(default=0, blank=True, null=True)
     pinned   = models.BooleanField(default=False, help_text="Do not move session during automatic placement.")
@@ -906,7 +912,7 @@ class Session(models.Model):
     comments = models.TextField(blank=True)
     status = models.ForeignKey(SessionStatusName)
     scheduled = models.DateTimeField(null=True, blank=True)
-    modified = models.DateTimeField(default=datetime.datetime.now)
+    modified = models.DateTimeField(auto_now=True)
 
     materials = models.ManyToManyField(Document, through=SessionPresentation, blank=True)
     resources = models.ManyToManyField(ResourceAssociation)
