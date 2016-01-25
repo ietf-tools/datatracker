@@ -7,6 +7,7 @@ from ietf.meeting import views
 from ietf.meeting import ajax
 
 safe_for_all_meeting_types = [
+    url(r'^session/(?P<acronym>[A-Za-z0-9_\-\+]+)/$',  views.session_details),
 ]
 
 type_ietf_only_patterns = [
@@ -37,7 +38,6 @@ type_ietf_only_patterns = [
     url(r'^sessions.json',                               ajax.sessions_json),
     url(r'^session/(?P<sessionid>\d+).json',             ajax.session_json),
     url(r'^session/(?P<sessionid>\d+)/constraints.json', ajax.session_constraints),
-    url(r'^session/(?P<acronym>[A-Za-z0-9_\-\+]+)/$',  views.session_details),
     url(r'^constraint/(?P<constraintid>\d+).json',       ajax.constraint_json),
     url(r'^json$',                               ajax.meeting_json),
 ]
@@ -61,6 +61,7 @@ urlpatterns = [
     url(r'^(?P<meeting_num>\d+)/materials.html$', views.materials),
     url(r'^requests.html$', RedirectView.as_view(url='/meeting/requests', permanent=True)),
     url(r'^(?P<num>\d+)/requests.html$', RedirectView.as_view(url='/meeting/%(num)s/requests', permanent=True)),
+    url(r'^(?P<num>[A-Za-z0-9._+-]+)/', include(safe_for_all_meeting_types)),
     # The optionals have to go first, otherwise the agenda/(owner)/(name)/ patterns match things they shouldn't
     url(r'^(?:(?P<num>\d+)/)?', include(type_ietf_only_patterns_id_optional)),
     url(r'^(?P<num>\d+)/', include(type_ietf_only_patterns)),
