@@ -47,10 +47,10 @@ from django.views.decorators.cache import cache_page
 from django.db.models import Q
 from django.utils.safestring import mark_safe
 
-from ietf.doc.views_search import SearchForm, retrieve_search_results
 from ietf.doc.models import Document, State, DocAlias, RelatedDocument
 from ietf.doc.utils import get_chartering_type
 from ietf.doc.templatetags.ietf_filters import clean_whitespace
+from ietf.doc.utils_search import prepare_document_table
 from ietf.group.models import Group, Role, ChangeStateGroupEvent
 from ietf.name.models import GroupTypeName
 from ietf.group.utils import get_charter_text, can_manage_group_type, milestone_reviewer_for_group_type
@@ -379,12 +379,12 @@ def construct_group_menu_context(request, group, selected, group_type, others):
     return d
 
 def search_for_group_documents(group, request):
-    form = SearchForm({ 'by':'group', 'group': group.acronym or "", 'rfcs':'on', 'activedrafts': 'on' })
-    docs, meta = retrieve_search_results(form, request)
+    qs = Document.objects.filter(states__type="draft", states__slug__in=["active", "rfc"], group=group)
+    docs, meta = prepare_document_table(request, qs)
 
     # get the related docs
-    form_related = SearchForm({ 'by':'group', 'name': u'-%s-' % group.acronym, 'activedrafts': 'on' })
-    raw_docs_related, meta_related = retrieve_search_results(form_related, request)
+    qs_related = Document.objects.filter(states__type="draft", states__slug="active", name__contains="-%s-" % group.acronym)
+    raw_docs_related, meta_related = prepare_document_table(request, qs_related)
 
     docs_related = []
     for d in raw_docs_related:
