@@ -144,7 +144,7 @@ def post_submission(request, submission):
     if not (group.type_id == "individ" and draft.group and draft.group.type_id == "area"):
         # don't overwrite an assigned area if it's still an individual
         # submission
-        draft.group_id = group.pk
+        draft.group = group
     draft.rev = submission.rev
     draft.pages = submission.pages
     draft.abstract = submission.abstract
