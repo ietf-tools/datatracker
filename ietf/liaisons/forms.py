@@ -346,7 +346,7 @@ class LiaisonModelForm(BetterModelForm):
                 extension = ''
             written += 1
             name = self.instance.name() + ("-attachment-%s" % written)
-            attach, _ = Document.objects.get_or_create(
+            attach, created = Document.objects.get_or_create(
                 name = name,
                 defaults=dict(
                     title = attachment_title,
@@ -354,6 +354,8 @@ class LiaisonModelForm(BetterModelForm):
                     external_url = name + extension, # strictly speaking not necessary, but just for the time being ...
                     )
                 )
+            if created:
+                attach.docalias_set.create(name=attach.name)
             LiaisonStatementAttachment.objects.create(statement=self.instance,document=attach)
             attach_file = open(os.path.join(settings.LIAISON_ATTACH_PATH, attach.name + extension), 'w')
             attach_file.write(attached_file.read())

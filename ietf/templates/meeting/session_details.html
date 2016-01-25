@@ -16,12 +16,14 @@
 
       <table class="table table-condensed table-striped">
         {% for pres in session.filtered_sessionpresentation_set %}
-          <tr>
-              <td>
-                  <a href="{% url 'doc_view' name=pres.document.name rev=pres.rev%}">{{pres.document.title}} ({{ pres.document.name }}-{{ pres.rev }})
-                  </a>
-              </td>
-          </tr>
+          {% if pres.document.type_id != 'bluesheets' and pres.document.type_id != 'recording' %}
+            <tr>
+                <td>
+                    <a href="{% url 'doc_view' name=pres.document.name rev=pres.rev%}">{{pres.document.title}} ({{ pres.document.name }}-{{ pres.rev }})
+                    </a>
+                </td>
+            </tr>
+          {% endif %}
         {% endfor %}
       </table>
     {% endif %}

@@ -522,6 +522,8 @@ def document_main(request, name, rev=None):
                                        ),
                                   context_instance=RequestContext(request))
 
+    # TODO : Add "recording", and "bluesheets" here when those documents are appropriately
+    #        created and content is made available on disk
     if doc.type_id in ("slides", "agenda", "minutes"):
         can_manage_material = can_manage_materials(request.user, doc.group)
         presentations = None
