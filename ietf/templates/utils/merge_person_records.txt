@@ -1,0 +1,27 @@
+{% filter wordwrap:73 %}
+Dear {{ person.plain_name }},
+
+We have noticed that there are two records in the IETF Datatracker for a person named "{{ person.plain_name }}".  These records have been merged.
+
+The merged record is:
+
+Name: {{ person.plain_name }}
+Aliases: {{ person.alias_set.all|join:", " }}
+Address: {{ person.address }}
+Affiliation: {{ person.affiliation }}
+User (login): {{ person.user.username }}
+
+Emails:
+{% for email in person.email_set.all %}{% if email.active %}{{ email.address }}{% if email.primary %} (primary){% endif %}
+{% endif %}{% endfor %}
+
+{% if changes %}Changes of special note:
+{{ changes }}{% endif %}
+
+You can make changes to your profile here: https://datatracker.ietf.org/accounts/profile/
+
+Reply to this message if this merge should not have happened, or if it produced an incorrect result that you cannot correct by editing your profile.
+
+Thank You,
+The IETF Secretariat
+{% endfilter %}
