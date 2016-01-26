@@ -6,20 +6,20 @@
 
 {% block content %}
   {% origin %}
-  <h1>{{ meeting }} : {{ acronym }} : {{ time }} </h1>
+  <h1>{{ meeting }} : {{ acronym }}</h1>
 
-  {% if session.name %}
-    <h2>{{ session.name }}</h2>
-  {% endif %}
+  {% for session in sessions %}
+    <h2>{{ session.time }}{% if session.name %} : {{ session.name }}{% endif %}</h2>
 
-  {% if filtered_sessionpresentation_set %}
-    <p>Materials:</p>
+    {% if session.filtered_sessionpresentation_set %}
+      <p>Materials:</p>
 
-    <ul>
-      {% for pres in filtered_sessionpresentation_set %}
-        <li><a href="{% url 'doc_view' name=pres.document.name rev=pres.rev%}">{{ pres.document.name }}-{{ pres.rev }}</a></li>
-      {% endfor %}
-    </ul>
-  {% endif %}
+      <ul>
+        {% for pres in session.filtered_sessionpresentation_set %}
+          <li><a href="{% url 'doc_view' name=pres.document.name rev=pres.rev%}">{{ pres.document.name }}-{{ pres.rev }}</a></li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  {% endfor %}
 
 {% endblock %}

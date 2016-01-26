@@ -825,29 +825,12 @@ def meeting_requests(request, num=None):
         {"meeting": meeting, "sessions":sessions,
          "groups_not_meeting": groups_not_meeting})
 
-def session_details(request, num, acronym, date=None, week_day=None, seq=None):
+def session_details(request, num, acronym ):
     meeting = get_meeting(num)
     sessions = Session.objects.filter(meeting=meeting,group__acronym=acronym,type__in=['session','plenary','other'])
 
     if not sessions:
         sessions = Session.objects.filter(meeting=meeting,short=acronym) 
-
-    if date:
-        if len(date)==15:
-            start = datetime.datetime.strptime(date,"%Y-%m-%d-%H%M")
-            sessions = sessions.filter(timeslotassignments__schedule=meeting.agenda,timeslotassignments__timeslot__time=start)
-        else:
-            start = datetime.datetime.strptime(date,"%Y-%m-%d").date()
-            end = start+datetime.timedelta(days=1)
-            sessions = sessions.filter(timeslotassignments__schedule=meeting.agenda,timeslotassignments__timeslot__time__range=(start,end))
-
-    if week_day:
-        try:
-            dow = ['sun','mon','tue','wed','thu','fri','sat'].index(week_day.lower()[:3]) + 1
-        except ValueError:
-            raise Http404
-        sessions = sessions.filter(timeslotassignments__schedule=meeting.agenda,timeslotassignments__timeslot__time__week_day=dow)
-        
 
     def sort_key(session):
         official_sessions = session.timeslotassignments.filter(schedule=session.meeting.agenda)
@@ -858,34 +841,19 @@ def session_details(request, num, acronym, date=None, week_day=None, seq=None):
 
     sessions = sorted(sessions,key=sort_key)
 
-    if seq:
-        iseq = int(seq) - 1
-        if not iseq in range(0,len(sessions)):
-            raise Http404
-        else:
-            sessions= [sessions[iseq]]
-
     if not sessions:
         raise Http404
 
-    if len(sessions)==1:
-        session = sessions[0]
-        scheduled_time = "Not yet scheduled"
+    for session in sessions:
+
         ss = session.timeslotassignments.filter(schedule=meeting.agenda).order_by('timeslot__time')
-        if ss:
-            scheduled_time = ','.join(x.timeslot.time.strftime("%A %b-%d %H%M") for x in ss)
+        session.time = ', '.join(x.timeslot.time.strftime("%A %b-%d %H%M") for x in ss) if ss else 'Not yet scheduled'
+
         # TODO FIXME Deleted materials shouldn't be in the sessionpresentation_set
-        filtered_sessionpresentation_set = [p for p in session.sessionpresentation_set.all() if p.document.get_state_slug(p.document.type_id)!='deleted']
-        return render(request, "meeting/session_details.html",
-                      { 'session':sessions[0] ,
-                        'meeting' :meeting ,
-                        'acronym' :acronym,
-                        'time': scheduled_time,
-                        'filtered_sessionpresentation_set': filtered_sessionpresentation_set
-                      })
-    else:
-        return render(request, "meeting/session_list.html",
-                      { 'sessions':sessions ,
-                        'meeting' :meeting ,
-                        'acronym' :acronym,
-                      })
+        session.filtered_sessionpresentation_set = [p for p in session.sessionpresentation_set.all() if p.document.get_state_slug(p.document.type_id)!='deleted']
+
+    return render(request, "meeting/session_details.html",
+                  { 'sessions':sessions ,
+                    'meeting' :meeting ,
+                    'acronym' :acronym,
+                  })
