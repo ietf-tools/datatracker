@@ -77,6 +77,8 @@ def create_recording(session,meeting,group,url):
                                   rev='00',
                                   type_id='recording')
     doc.set_state(State.objects.get(type='recording', slug='active'))
+
+    doc.docalias_set.create(name=name)
     
     # create DocEvent
     NewRevisionDocEvent.objects.create(type='new_revision',

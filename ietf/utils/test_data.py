@@ -351,5 +351,8 @@ def make_test_data():
     other_doc_factory('agenda','agenda-42-mars')
     other_doc_factory('minutes','minutes-42-mars')
     other_doc_factory('slides','slides-42-mars-1')
+    # TODO: add
+    #other_doc_factory('bluesheets','bluesheets-42-mars-1')
+    #other_doc_factory('recording','recording-42-mars-1-00')
 
     return draft
