@@ -826,7 +826,7 @@ def meeting_requests(request, num=None):
          "groups_not_meeting": groups_not_meeting})
 
 def session_details(request, num, acronym ):
-    meeting = get_meeting(num)
+    meeting = get_meeting(num=num,type_in=None)
     sessions = Session.objects.filter(meeting=meeting,group__acronym=acronym,type__in=['session','plenary','other'])
 
     if not sessions:
@@ -847,7 +847,12 @@ def session_details(request, num, acronym ):
     for session in sessions:
 
         ss = session.timeslotassignments.filter(schedule=meeting.agenda).order_by('timeslot__time')
-        session.time = ', '.join(x.timeslot.time.strftime("%A %b-%d %H%M") for x in ss) if ss else 'Not yet scheduled'
+        if ss:
+            session.time = ', '.join(x.timeslot.time.strftime("%A %b-%d-%Y %H%M") for x in ss) 
+        elif session.meeting.type_id=='interim':
+            session.time = session.meeting.date.strftime("%A %b-%d-%Y")
+        else:
+            session.time = 'Not yet scheduled' 
 
         # TODO FIXME Deleted materials shouldn't be in the sessionpresentation_set
         session.filtered_sessionpresentation_set = [p for p in session.sessionpresentation_set.all() if p.document.get_state_slug(p.document.type_id)!='deleted']
