@@ -10,19 +10,15 @@ Chairs:
 {% endif %}{% if secr %}
 Secretaries:
 {% for r in secr %}  {{ r.person.plain_name }} <{{r.email.address}}>
-{% endfor %}{% endif %}{% if charter.group.type_id != "rg" %}{% if ads %}
-Area Directors:
+{% endfor %}{% endif %}{% if charter.group.type_id != "rg" %}
+Assigned Area Director{{ads|length|pluralize}}:{% if ads %}
 {% for r in ads %}  {{ r.person.plain_name }} <{{r.email.address}}>
 {% endfor %}{% else %}
-Area Directors:
   TBD
 {% endif %}{% endif %}{% if techadv %}
 Technical advisors:
 {% for r in techadv %}  {{ r.person.plain_name }} <{{r.email.address}}>
-{% endfor %}{% endif %}{% if group.ad_role %}
-Assigned Area Director:
-  {{ group.ad_role.person.plain_name }} <{{ group.ad_role.email.address }}>
-{% endif %}{% if group.list_email %}
+{% endfor %}{% endif %} {% if group.list_email %}
 Mailing list:
   Address: {{ group.list_email }}
   To subscribe: {{ group.list_subscribe }}
