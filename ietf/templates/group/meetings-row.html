@@ -1,0 +1,27 @@
+      <table class="table table-condensed table-striped">
+      <thead>
+        <tr>
+          <th class="col-md-2"></th>
+          <th class="col-md-2"></th>
+          <th class="col-md-1"></th>
+          <th class="col-md-1"></th>
+          <th class="col-md-6"></th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for s in sessions %}
+        <tr>
+         <td>{% ifchanged s.meeting %}{% if s.meeting.type.slug == 'ietf' %}IETF{% endif %}{{s.meeting.number}}{% endifchanged %}</td>
+         <td>
+           {% if s.status.slug == "sched" %}
+            {% if s.meeting.type.slug == 'ietf' %}{{s.time|date:"D M d, Y Hi"}}{% else %}{{s.time|date:"D M d, Y"}}{% endif %}
+          {% else %}
+            {{s.status}}
+          {% endif %}
+         </td>
+         <td>{% if s.minutes %}<a href="{{ s.minutes.get_absolute_url }}">Minutes</a>{% endif %}</td>
+         <td>{% if s.agenda %}<a href="{{ s.agenda.get_absolute_url }}">Agenda</a>{% endif %}</td>
+         <td>{% if s.meeting.type.slug == 'ietf' %}<a href="{% url 'ietf.meeting.views.session_details' num=s.meeting.number acronym=s.group.acronym %}">Materials</a>{% endif %}</td>
+      {% endfor %}
+      </tbody>
+      </table>

@@ -14,11 +14,16 @@
     {% if session.filtered_sessionpresentation_set %}
       <p>Materials:</p>
 
-      <ul>
+      <table class="table table-condensed table-striped">
         {% for pres in session.filtered_sessionpresentation_set %}
-          <li><a href="{% url 'doc_view' name=pres.document.name rev=pres.rev%}">{{ pres.document.name }}-{{ pres.rev }}</a></li>
+          <tr>
+              <td>
+                  <a href="{% url 'doc_view' name=pres.document.name rev=pres.rev%}">{{pres.document.title}} ({{ pres.document.name }}-{{ pres.rev }})
+                  </a>
+              </td>
+          </tr>
         {% endfor %}
-      </ul>
+      </table>
     {% endif %}
   {% endfor %}
 

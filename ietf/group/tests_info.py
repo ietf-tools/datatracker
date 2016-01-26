@@ -22,6 +22,8 @@ from ietf.utils.test_utils import TestCase, unicontent
 from ietf.utils.mail import outbox, empty_outbox
 from ietf.utils.test_data import make_test_data
 from ietf.utils.test_utils import login_testing_unauthorized
+from ietf.group.factories import GroupFactory
+from ietf.meeting.factories import SessionFactory
 
 class GroupPagesTests(TestCase):
     def setUp(self):
@@ -988,3 +990,29 @@ class AjaxTests(TestCase):
         mars_wg = Group.objects.get(acronym="mars")
         self.assertEqual(mars_wg_data["name"], mars_wg.name)
 
+class MeetingInfoTests(TestCase):
+
+    def setUp(self):
+        self.group = GroupFactory.create(type_id='wg')
+        today = datetime.date.today()
+        SessionFactory.create(meeting__type_id='ietf',group=self.group,meeting__date=today-datetime.timedelta(days=90))
+        self.inprog = SessionFactory.create(meeting__type_id='ietf',group=self.group,meeting__date=today-datetime.timedelta(days=1))
+        SessionFactory.create(meeting__type_id='ietf',group=self.group,meeting__date=today+datetime.timedelta(days=90))
+        SessionFactory.create(meeting__type_id='interim',group=self.group,meeting__date=today+datetime.timedelta(days=45))
+
+
+    def test_meeting_info(self):
+        url = urlreverse('ietf.group.info.meetings',kwargs={'acronym':self.group.acronym})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200) 
+        q = PyQuery(response.content)
+        self.assertTrue(q('#inprogressmeets'))
+        self.assertTrue(q('#futuremeets'))
+        self.assertTrue(q('#pastmeets'))
+
+        self.group.session_set.filter(id=self.inprog.id).delete()
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200) 
+        q = PyQuery(response.content)
+        self.assertFalse(q('#inprogressmeets'))
+        
