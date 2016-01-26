@@ -445,9 +445,9 @@ def approvals(request):
                                'days': days })
 
 
-@role_required("Secretariat", "WG Chair", "RG Chair")
+@role_required("Secretariat", "Area Director", "WG Chair", "RG Chair")
 def add_preapproval(request):
-    groups = Group.objects.filter(type__in=("wg", "rg")).exclude(state="conclude").order_by("acronym").distinct()
+    groups = Group.objects.filter(type__in=("wg", "rg")).exclude(state__in=["conclude","bof-conc"]).order_by("acronym").distinct()
 
     if not has_role(request.user, "Secretariat"):
         groups = groups.filter(role__person__user=request.user,role__name__in=['ad','chair','delegate','secr'])

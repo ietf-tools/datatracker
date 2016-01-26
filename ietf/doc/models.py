@@ -234,7 +234,7 @@ class DocumentInfo(models.Model):
 
     def meeting_related(self):
         answer = False
-        if self.type_id in ("agenda","minutes","bluesheets","slides"):
+        if self.type_id in ("agenda","minutes","bluesheets","slides","recording"):
             answer =  (self.name.split("-")[1] == "interim"
                        or (self if isinstance(self, Document) else self.doc).session_set.exists())
             if self.type_id in ("slides",):

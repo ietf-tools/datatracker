@@ -70,7 +70,7 @@ class SearchForm(forms.Form):
 
     sort = forms.ChoiceField(choices=(("document", "Document"), ("title", "Title"), ("date", "Date"), ("status", "Status"), ("ipr", "Ipr"), ("ad", "AD")), required=False, widget=forms.HiddenInput)
 
-    doctypes = DocTypeName.objects.exclude(slug='draft').order_by('name');
+    doctypes = DocTypeName.objects.filter(used=True).exclude(slug='draft').order_by('name');
 
     def __init__(self, *args, **kwargs):
         super(SearchForm, self).__init__(*args, **kwargs)

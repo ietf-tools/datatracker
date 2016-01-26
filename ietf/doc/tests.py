@@ -558,6 +558,9 @@ Man                    Expires September 22, 2015               [Page 3]
                         "agenda-42-mars",
                         "minutes-42-mars",
                         "slides-42-mars-1",
+                        # TODO: add
+                        #"bluesheets-42-mars-1",
+                        #"recording-42-mars-1-00",
                        ]:
             doc = Document.objects.get(name=docname)
             # give it some history

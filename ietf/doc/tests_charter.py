@@ -111,7 +111,7 @@ class EditCharterTests(TestCase):
                 for word in ["Chairs", "Ames Man <ameschairman@ietf.org>",
                     "Secretaries", "Secretary <amessecretary@ietf.org>",
                     "Assigned Area Director", "Areað Irector <aread@ietf.org>",
-                    "Area Directors", "Mailing list", "ames-wg@ietf.org",
+                    "Mailing list", "ames-wg@ietf.org",
                     "Charter", "Milestones"]:
                     self.assertIn(word, body)
 

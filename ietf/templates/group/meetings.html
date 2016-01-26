@@ -1,0 +1,50 @@
+{% extends "group/group_base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+
+{% block title %}Meetings{% if group %} for {{group.acronym}}{% endif %}{% endblock %}
+
+{% block group_content %}
+{% origin %}
+{% if in_progress %}
+  <div class="panel panel-default" id="inprogressmeets">
+    <div class="panel-heading">
+        Meetings in progress
+    </div>
+    <div class="panel-body">
+      {% with in_progress as sessions %}
+         {% include "group/meetings-row.html" %}
+      {% endwith %}
+    </div>
+  </div>
+{% endif %}
+
+{% if future %}
+  <div class="panel panel-default" id="futuremeets">
+    <div class="panel-heading">
+        Future Meetings 
+    </div>
+    <div class="panel-body">
+      {% with future as sessions %}
+         {% include "group/meetings-row.html" %}
+      {% endwith %}
+    </div>
+  </div>
+{% endif %}
+
+{% if past %}
+  <div class="panel panel-default" id="pastmeets">
+    <div class="panel-heading">
+        Past Meetings
+    </div>
+    <div class="panel-body">
+      {% with past as sessions %}
+         {% include "group/meetings-row.html" %}
+      {% endwith %}
+    </div>
+  </div>
+{% endif %}
+
+<div>This page shows meetings within the last four years. For earlier meetings, please see the proceedings.</div>
+
+{% endblock %}

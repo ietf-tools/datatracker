@@ -36,6 +36,7 @@ import os
 import itertools
 import re
 from tempfile import mkstemp
+import datetime
 from collections import OrderedDict
 
 from django.shortcuts import render, redirect
@@ -333,6 +334,8 @@ def construct_group_menu_context(request, group, selected, group_type, others):
         entries.append(("About", urlreverse("group_about", kwargs=kwargs)))
     if group.features.has_materials and get_group_materials(group).exists():
         entries.append(("Materials", urlreverse("ietf.group.info.materials", kwargs=kwargs)))
+    if group.type_id in ('rg','wg'):
+        entries.append(("Meetings", urlreverse("ietf.group.info.meetings", kwargs=kwargs)))
     entries.append(("Email expansions", urlreverse("ietf.group.info.email", kwargs=kwargs)))
     entries.append(("History", urlreverse("ietf.group.info.history", kwargs=kwargs)))
     if group.features.has_documents:
@@ -724,3 +727,47 @@ def email_aliases(request, acronym=None, group_type=None):
 
     return render(request,'group/email_aliases.html',{'aliases':aliases,'ietf_domain':settings.IETF_DOMAIN,'group':group})
 
+def meetings(request, acronym=None, group_type=None):
+    group = get_group_or_404(acronym,group_type) if acronym else None
+
+    four_years_ago = datetime.datetime.now()-datetime.timedelta(days=4*365)
+
+    sessions = group.session_set.filter(status__in=['sched','schedw','appr','canceled'],meeting__date__gt=four_years_ago)
+
+    def sort_key(session):
+        if session.meeting.type.slug=='ietf':
+            official_sessions = session.timeslotassignments.filter(schedule=session.meeting.agenda)
+            if official_sessions:
+                return official_sessions.first().timeslot.time
+            elif session.meeting.date:
+                return datetime.datetime.combine(session.meeting.date,datetime.datetime.min.time())
+            else:
+                return session.requested
+        else: 
+            # TODO: use timeslots for interims once they have them
+            return datetime.datetime.combine(session.meeting.date,datetime.datetime.min.time())
+
+    for s in sessions:
+        s.time=sort_key(s)
+
+    sessions = sorted(sessions,key=lambda s:s.time,reverse=True)
+
+    today = datetime.date.today()
+    future = []
+    in_progress = []
+    past = []
+    for s in sessions:
+        if s.meeting.date > today:
+            future.append(s)
+        elif s.meeting.end_date() >= today:
+            in_progress.append(s)
+        else:
+            past.append(s)
+
+    return render(request,'group/meetings.html',
+                  construct_group_menu_context(request, group, "meetings", group_type, {
+                     'group':group,
+                     'future':future,
+                     'in_progress':in_progress,
+                     'past':past,
+                  }))
