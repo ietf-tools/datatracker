@@ -2,7 +2,17 @@
 # -*- coding: utf-8 -*-
 # -*- Python -*-
 #
+'''
+This script merges two Person records into one.  It determines which record is the target
+based on most current User record (last_login) unless -f (force) option is used to
+force SOURCE TARGET as specified on the command line.  The order of operations is
+important.  We must complete all source.save() operations before moving the aliases to
+the target, this is to avoid extra "Possible duplicate Person" emails going out, if the
+Person is saved without an alias the Person.save() creates another one, which then
+conflicts with the moved one.
+'''
 
+# Set PYTHONPATH and load environment variables for standalone script -----------------
 import os, sys
 basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 sys.path = [ basedir ] + sys.path
@@ -10,23 +20,162 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ietf.settings")
 
 import django
 django.setup()
+# -------------------------------------------------------------------------------------
 
 import argparse
+import pprint
+import syslog
+from django.contrib import admin
+from django.contrib.auth.models import User
 from ietf.person.models import Person
+from ietf.utils.log import log
+from ietf.utils.mail import send_mail
 
-from ietf.person.utils import merge_persons
+def dedupe_aliaises(person):
+    '''
+    Check person for duplicate aliases and purge
+    '''
+    seen = []
+    for alias in person.alias_set.all():
+        if alias.name in seen:
+            alias.delete()
+        else:
+            seen.append(alias.name)
 
-parser = argparse.ArgumentParser()
-parser.add_argument("source_id",type=int)
-parser.add_argument("target_id",type=int)
-args = parser.parse_args()
+def determine_merge_order(source,target):
+    '''
+    Determine merge order.  Select Person that has related User.  If both have Users
+    select one with most recent login
+    '''
+    if source.user and not target.user:
+        source,target = target,source   # swap merge order
+    if source.user and target.user:
+        source,target = sorted([source,target],key=lambda a: a.user.last_login)
+    return source,target
 
-source = Person.objects.get(pk=args.source_id)
-target = Person.objects.get(pk=args.target_id)
+def get_extra_primary(source,target):
+    '''
+    Inspect email addresses and return list of those that should no longer be primary
+    '''
+    if source.email_set.filter(primary=True) and target.email_set.filter(primary=True):
+        return source.email_set.filter(primary=True)
+    else:
+        return []
 
-print "Merging person {}({}) to {}({})".format(source.ascii,source.pk,target.ascii,target.pk)
-response = raw_input('Ok to continue y/n? ')
-if response.lower() != 'y':
-    sys.exit()
+def handle_users(source,target,check_only=False):
+    '''
+    Deletes extra Users.  Retains target user.  If check_only == True, just return a string
+    describing action, otherwise perform user changes and return string.
+    '''
+    if not (source.user or target.user):
+        return "DATATRACKER LOGIN ACTION: none (no login defined)"
+    if not source.user and target.user:
+        return "DATATRACKER LOGIN ACTION: retaining login {}".format(target.user)
+    if source.user and not target.user:
+        message = "DATATRACKER LOGIN ACTION: retaining login {}".format(source.user)
+        if not check_only:
+            target.user = source.user
+            target.save()
+        return message
+    if source.user and target.user:
+        message = "DATATRACKER LOGIN ACTION: retaining login: {}, removing login: {}".format(target.user,source.user)
+        if not check_only:
+            syslog.syslog('merge-person-records: deleting user {}'.format(source.user.username))
+            user = source.user
+            source.user = None
+            source.save()
+            user.delete()
+        return message
 
-merge_persons(source,target,sys.stdout)
+def send_notification(person,changes):
+    '''
+    Send an email to the merge target (Person) notifying them of the changes
+    '''
+    send_mail(request = None,
+              to       = person.email_address(),
+              frm      = "IETF Secretariat <ietf-secretariat@ietf.org>",
+              subject  = "IETF Datatracker records merged",
+              template = "utils/merge_person_records.txt",
+              context  = dict(person=person,changes='\n'.join(changes)),
+              extra    = {}
+             )
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("source_id",type=int)
+    parser.add_argument("target_id",type=int)
+    parser.add_argument('-f','--force', help='force merge order',action='store_true')
+    parser.add_argument('-v','--verbose', help='verbose output',action='store_true')
+    args = parser.parse_args()
+    changes = []
+    syslog.openlog(os.path.basename(__file__), syslog.LOG_PID, syslog.LOG_USER)
+
+    source = Person.objects.get(pk=args.source_id)
+    target = Person.objects.get(pk=args.target_id)
+
+    # set merge order
+    if not args.force:
+        source,target = determine_merge_order(source,target)
+
+    # confirm
+    print "Merging person {}({}) to {}({})".format(source.ascii,source.pk,target.ascii,target.pk)
+    print handle_users(source,target,check_only=True)
+    response = raw_input('Ok to continue y/n? ')
+    if response.lower() != 'y':
+        sys.exit()
+
+    # write log
+    syslog.syslog("Merging person records {} => {}".format(source.pk,target.pk))
+
+    # handle primary emails
+    for email in get_extra_primary(source,target):
+        email.primary = False
+        email.save()
+        changes.append('EMAIL ACTION: {} no longer marked as primary'.format(email.address))
+
+    # handle users
+    changes.append(handle_users(source,target))
+
+    # find all related objects and migrate
+    for related_object in source._meta.get_all_related_objects():
+        accessor = related_object.get_accessor_name()
+        field_name = related_object.field.name
+        queryset = getattr(source, accessor).all()
+        if args.verbose:
+            print "Merging {}:{}".format(accessor,queryset.count())
+        kwargs = { field_name:target }
+        queryset.update(**kwargs)
+
+    # check aliases
+    dedupe_aliaises(target)
+
+    # copy other attributes
+    for field in ('ascii','ascii_short','address','affiliation'):
+        if getattr(source,field) and not getattr(target,field):
+            setattr(target,field,getattr(source,field))
+            target.save()
+
+    # check for any remaining relationships and exit if more found
+    objs = [source]
+    opts = Person._meta
+    user = User.objects.filter(is_superuser=True).first()
+    admin_site = admin.site
+    using = 'default'
+    deletable_objects, perms_needed, protected = admin.utils.get_deleted_objects(
+        objs, opts, user, admin_site, using)
+
+    if len(deletable_objects) > 1:
+        print "Not Deleting Person: {}({})".format(source.ascii,source.pk)
+        print "Related objects remain:"
+        pprint.pprint(deletable_objects[1])
+        sys.exit(1)
+
+    if args.verbose:
+        print "Deleting Person: {}({})".format(source.ascii,source.pk)
+    source.delete()
+
+    # send email notification
+    send_notification(target,changes)
+
+if __name__ == "__main__":
+    main()

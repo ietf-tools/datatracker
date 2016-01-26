@@ -848,7 +848,7 @@ def select_interim(request):
         redirect_url = reverse('proceedings_interim', kwargs={'acronym':request.POST['group']})
         return HttpResponseRedirect(redirect_url)
 
-    if has_role(request.user, "Secretariat"): 
+    if has_role(request.user, "Secretariat"):
         # initialize working groups form
         choices = build_choices(Group.objects.active_wgs())
         group_form = GroupSelectForm(choices=choices)
