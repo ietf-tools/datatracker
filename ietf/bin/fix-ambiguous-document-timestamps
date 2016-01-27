@@ -1,0 +1,36 @@
+#!/usr/bin/env python
+# -*- Python -*-
+
+"""
+This script looks at document timestamps going back one year, and if it finds
+ambiguous timestamps, shifts them backwards one hour in order to disambiguate
+them.
+"""
+
+import os, sys
+import datetime
+import pytz
+
+filename = os.path.abspath(__file__)
+basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+sys.path = [ basedir ] + sys.path
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ietf.settings")
+
+import django
+django.setup()
+
+from django.conf import settings
+from ietf.doc.models import Document
+
+now = datetime.datetime.now()
+then = now - datetime.timedelta(days=365)
+
+for d in Document.objects.filter(time__gt=then).order_by('-time'):
+    tz = pytz.timezone(settings.TIME_ZONE)
+    try:
+        t = tz.localize(d.time, is_dst=None)
+    except pytz.AmbiguousTimeError as e:
+        orig = d.time
+        d.time = d.time - datetime.timedelta(minutes=60)
+        print "%s: changed %s --> %s" % (d.name, orig, d.time)
+        d.save()
