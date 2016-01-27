@@ -267,7 +267,11 @@ def update_replaces_from_submission(request, submission, draft):
             if r not in existing_suggested:
                 suggested.append(r)
 
-    by = request.user.person if request.user.is_authenticated() else Person.objects.get(name="(System)")
+
+    try:
+        by = request.user.person if request.user.is_authenticated() else Person.objects.get(name="(System)")
+    except Person.DoesNotExist:
+        by = Person.objects.get(name="(System)")
     set_replaces_for_document(request, draft, existing_replaces + approved, by,
                               email_subject="%s replacement status set during submit by %s" % (draft.name, submission.submitter_parsed()["name"]))
 
