@@ -81,6 +81,7 @@ def check_id_submission_directories(app_configs, **kwargs):
                     "or if the setting is correct, create the directory."),
                 id = "datatracker.E0006",
             ))
+    return errors
 
 @checks.register('files')
 def check_id_submission_directories(app_configs, **kwargs):
@@ -96,3 +97,4 @@ def check_id_submission_directories(app_configs, **kwargs):
                     "or if the setting is correct, make sure the file is in place and has the right permissions."),
                 id = "datatracker.E0007",
             ))
+    return errors
