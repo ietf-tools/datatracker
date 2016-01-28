@@ -7,4 +7,4 @@ class GroupFactory(factory.DjangoModelFactory):
         model = Group
 
     name = factory.Faker('sentence',nb_words=6)
-    acronym = factory.Faker('word')
+    acronym = factory.Sequence(lambda n: 'acronym_%d' %n)

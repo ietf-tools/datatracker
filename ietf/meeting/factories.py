@@ -78,7 +78,7 @@ class ScheduleFactory(factory.DjangoModelFactory):
         model = Schedule
 
     meeting = factory.SubFactory(MeetingFactory)
-    name = factory.Faker('text',max_nb_chars=16)
+    name = factory.Sequence(lambda n: 'schedule_%d'%n)
     owner = factory.SubFactory(PersonFactory)
 
 class TimeSlotFactory(factory.DjangoModelFactory):
