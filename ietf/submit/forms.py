@@ -118,12 +118,6 @@ class SubmissionUploadForm(forms.Form):
         if self.shutdown and not has_role(self.request.user, "Secretariat"):
             raise forms.ValidationError('The submission tool is currently shut down')
 
-        # sanity check that paths exist (for development servers)
-        for s in ("IDSUBMIT_STAGING_PATH", "IDSUBMIT_IDNITS_BINARY",
-                  "IDSUBMIT_REPOSITORY_PATH", "INTERNET_DRAFT_ARCHIVE_DIR"):
-            if not os.path.exists(getattr(settings, s)):
-                raise forms.ValidationError('%s defined in settings.py does not exist' % s)
-
         for ext in ['txt', 'pdf', 'xml', 'ps']:
             f = self.cleaned_data.get(ext, None)
             if not f:
