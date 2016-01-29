@@ -1,6 +1,6 @@
 $(function () {
-    var form = $(".content-wrapper form");
-    var newRowHtml = form.find(".new-row").get(0).outerHTML;
+    var form = $(".new-relation-row").closest("form");
+    var newRowHtml = form.find(".new-relation-row").get(0).outerHTML;
     var counter = 1;
 
     form.on("click", ".delete", function (e) {
@@ -8,9 +8,9 @@ $(function () {
         $(this).closest(".row").remove();
     });
 
-    form.on("keydown", ".new-row input[type=text]", function () {
-        var top = $(this).closest(".new-row");
-        top.removeClass("new-row");
+    form.on("keydown", ".new-relation-row input[type=text]", function () {
+        var top = $(this).closest(".new-relation-row");
+        top.removeClass("new-relation-row");
         top.find(".help-block").remove();
         top.find(".delete").show();
         top.find("input,select").each(function () {
