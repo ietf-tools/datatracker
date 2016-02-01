@@ -6,13 +6,21 @@
 
 {% block group_content %}
 {% origin %}
+
+<div class="buttonlist">
+<a class="btn btn-default" href="{% url 'ietf.meeting.views.meeting_requests' %}">Session requests</a>
+{% if can_edit %}
+<a class="btn btn-default" href="{% url 'ietf.secr.sreq.views.main' %}">Request a session</a>
+{% endif %}
+</div>
+
 {% if in_progress %}
   <div class="panel panel-default" id="inprogressmeets">
     <div class="panel-heading">
         Meetings in progress
     </div>
     <div class="panel-body">
-      {% with in_progress as sessions %}
+      {% with sessions=in_progress show_request=True %}
          {% include "group/meetings-row.html" %}
       {% endwith %}
     </div>
@@ -25,7 +33,7 @@
         Future Meetings 
     </div>
     <div class="panel-body">
-      {% with future as sessions %}
+      {% with sessions=future show_request=True %}
          {% include "group/meetings-row.html" %}
       {% endwith %}
     </div>
