@@ -9,23 +9,39 @@
   <h1>{{ meeting }} : {{ acronym }}</h1>
 
   {% for session in sessions %}
-    <h2>{{ session.time }}{% if session.name %} : {{ session.name }}{% endif %}</h2>
+    <h2>{% if sessions|length > 1 %}Session {{ forloop.counter }} : {% endif %}{{ session.time }}{% if session.name %} : {{ session.name }}{% endif %}</h2>
+
+   {% if can_manage_materials %}
+   {% if session.status.slug == 'sched' or session.status.slug == 'schedw' %}
+   <div class="buttonlist">
+     <a class="btn btn-default" href="{% url 'ietf.secr.proceedings.views.upload_unified' meeting_num=session.meeting.number acronym=session.group.acronym %}">
+        Upload/Edit Materials 
+     </a>
+     {% if not type_counter.agenda %}
+       <span class="label label-warning">This session does not yet have an agenda</span>
+     {% endif %}
+   </div>
+   {% endif %}
+   {% endif %}
 
     {% if session.filtered_sessionpresentation_set %}
-      <p>Materials:</p>
-
-      <table class="table table-condensed table-striped">
-        {% for pres in session.filtered_sessionpresentation_set %}
-          {% if pres.document.type_id != 'bluesheets' and pres.document.type_id != 'recording' %}
-            <tr>
-                <td>
-                    <a href="{% url 'doc_view' name=pres.document.name rev=pres.rev%}">{{pres.document.title}} ({{ pres.document.name }}-{{ pres.rev }})
-                    </a>
-                </td>
-            </tr>
-          {% endif %}
-        {% endfor %}
-      </table>
+      <div class="panel panel-default">
+        <div class="panel-heading">Materials:</div>
+        <div class="panel-body">
+          <table class="table table-condensed table-striped">
+            {% for pres in session.filtered_sessionpresentation_set %}
+              {% if pres.document.type_id != 'bluesheets' and pres.document.type_id != 'recording' %}
+                <tr>
+                    <td>
+                        <a href="{% url 'doc_view' name=pres.document.name rev=pres.rev%}">{{pres.document.title}} ({{ pres.document.name }}-{{ pres.rev }})
+                        </a>
+                    </td>
+                </tr>
+              {% endif %}
+            {% endfor %}
+          </table>
+        </div>
+      </div>
     {% endif %}
   {% endfor %}
 
