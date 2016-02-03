@@ -84,7 +84,7 @@ def handle_users(source,target,check_only=False):
             user = source.user
             source.user = None
             source.save()
-            user.delete()
+            #user.delete()
         return message
 
 def send_notification(person,changes):
