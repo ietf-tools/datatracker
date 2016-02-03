@@ -15,7 +15,7 @@ class UserFactory(factory.DjangoModelFactory):
 
     first_name = factory.Faker('first_name')
     last_name = factory.Faker('last_name')
-    email = factory.LazyAttribute(lambda u: '%s.%s@%s'%(u.first_name,u.last_name,fake.domain_name()))
+    email = factory.LazyAttributeSequence(lambda u, n: '%s.%s_%d@%s'%(u.first_name,u.last_name,n,fake.domain_name()))
     username = factory.LazyAttribute(lambda u: u.email)
 
     @factory.post_generation
@@ -53,6 +53,6 @@ class EmailFactory(factory.DjangoModelFactory):
         model = Email
         django_get_or_create = ('address',)
 
-    address = '%s.%s@%s' % (fake.first_name(),fake.last_name(),fake.domain_name())
+    address = factory.Sequence(lambda n:'%s.%s_%d@%s' % (fake.first_name(),fake.last_name(),n,fake.domain_name()))
     active = True
     primary = False

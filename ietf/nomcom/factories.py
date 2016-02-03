@@ -135,7 +135,7 @@ class NomineeFactory(factory.DjangoModelFactory):
 
     nomcom = factory.SubFactory(NomComFactory)
     person = factory.SubFactory(PersonFactory)   
-    email = factory.LazyAttribute(lambda n: n.person.email())
+    email = factory.LazyAttribute(lambda obj: obj.person.email())
 
 class FeedbackFactory(factory.DjangoModelFactory):
     class Meta:
