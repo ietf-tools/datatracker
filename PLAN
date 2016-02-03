@@ -31,4 +31,5 @@ Planned work in rough order
 * When draft XML source is available, take references from that instead
   of extracting them from the text version.
 
-
+* Small nomcom refactoring: associate Feedback records with Person
+  instead of User.
