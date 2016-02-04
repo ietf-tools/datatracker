@@ -19,7 +19,8 @@ from ietf.doc.utils import ( add_state_change_event, close_ballot, close_open_ba
     create_ballot_if_not_open, update_telechat )
 from ietf.doc.mails import ( email_ballot_deferred, email_ballot_undeferred, 
     extra_automation_headers, generate_last_call_announcement, 
-    generate_issue_ballot_mail, generate_ballot_writeup, generate_approval_mail )
+    generate_issue_ballot_mail, generate_ballot_writeup, generate_ballot_rfceditornote,
+    generate_approval_mail )
 from ietf.doc.lastcall import request_last_call
 from ietf.iesg.models import TelechatDate
 from ietf.ietfauth.utils import has_role, role_required
@@ -585,6 +586,57 @@ def ballot_writeupnotes(request, name):
                                    ),
                               context_instance=RequestContext(request))
 
+class BallotRfcEditorNoteForm(forms.Form):
+    rfc_editor_note = forms.CharField(widget=forms.Textarea, label="RFC Editor Note", required=True)
+
+    def clean_rfc_editor_note(self):
+        return self.cleaned_data["rfc_editor_note"].replace("\r", "")
+        
+@role_required('Area Director','Secretariat')
+def ballot_rfceditornote(request, name):
+    """Editing of RFC Editor Note in the ballot"""
+    doc = get_object_or_404(Document, docalias__name=name)
+
+    login = request.user.person
+
+
+        
+    existing = doc.latest_event(WriteupDocEvent, type="changed_rfc_editor_note_text")
+    if not existing or (existing.text == ""):
+        existing = generate_ballot_rfceditornote(request, doc)
+
+    form = BallotRfcEditorNoteForm(auto_id=False, initial=dict(rfc_editor_note=existing.text))
+
+    if request.method == 'POST' and "save_ballot_rfceditornote" in request.POST:
+        form = BallotRfcEditorNoteForm(request.POST)
+        if form.is_valid():
+            t = form.cleaned_data["rfc_editor_note"]
+            if t != existing.text:
+                e = WriteupDocEvent(doc=doc, by=login)
+                e.by = login
+                e.type = "changed_rfc_editor_note_text"
+                e.desc = "RFC Editor Note was changed"
+                e.text = t.rstrip()
+                e.save()
+
+    if request.method == 'POST' and "clear_ballot_rfceditornote" in request.POST:
+        e = WriteupDocEvent(doc=doc, by=login)
+        e.by = login
+        e.type = "changed_rfc_editor_note_text"
+        e.desc = "RFC Editor Note was cleared"
+        e.text = ""
+        e.save()
+
+        # make sure form shows a blank RFC Editor Note
+        form = BallotRfcEditorNoteForm(initial=dict(rfc_editor_note=" "))
+
+    return render_to_response('doc/ballot/rfceditornote.html',
+                              dict(doc=doc,
+                                   back_url=doc.get_absolute_url(),
+                                   ballot_rfceditornote_form=form,
+                                   ),
+                              context_instance=RequestContext(request))
+
 class ApprovalTextForm(forms.Form):
     approval_text = forms.CharField(widget=forms.Textarea, required=True)
 
@@ -657,7 +709,19 @@ def approve_ballot(request, name):
     if not e:
         e = generate_ballot_writeup(request, doc)
     ballot_writeup = e.text
-    
+
+    error_duplicate_rfc_editor_note = False
+    e = doc.latest_event(WriteupDocEvent, type="changed_rfc_editor_note_text")
+    if e and (e.text != ""):
+        if "RFC Editor Note" in ballot_writeup:
+            error_duplicate_rfc_editor_note = True
+        ballot_writeup += "\n\n" + e.text
+
+    if error_duplicate_rfc_editor_note:
+        return render_to_response('doc/draft/rfceditor_note_duplicate_error.html',
+                                  dict(doc=doc),
+                                  context_instance=RequestContext(request))
+
     if "NOT be published" in approval_text:
         action = "do_not_publish"
     elif "To: RFC Editor" in approval_text:

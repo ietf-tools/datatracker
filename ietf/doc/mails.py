@@ -92,6 +92,17 @@ def generate_ballot_writeup(request, doc):
     
     return e
     
+def generate_ballot_rfceditornote(request, doc):
+    e = WriteupDocEvent()
+    e.type = "changed_ballot_rfceditornote_text"
+    e.by = request.user.person
+    e.doc = doc
+    e.desc = u"RFC Editor Note for ballot was generated"
+    e.text = unicode(render_to_string("doc/mail/ballot_rfceditornote.txt"))
+    e.save()
+    
+    return e
+
 def generate_last_call_announcement(request, doc):
     expiration_date = datetime.date.today() + datetime.timedelta(days=14)
     if doc.group.type_id in ("individ", "area"):
