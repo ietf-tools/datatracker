@@ -6,7 +6,7 @@ import re
 import tarfile
 import urllib
 from tempfile import mkstemp
-from collections import OrderedDict
+from collections import OrderedDict, Counter
 import csv
 import json
 
@@ -25,6 +25,7 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 
 from ietf.doc.models import Document, State
 from ietf.group.models import Group
+from ietf.group.utils import can_manage_materials
 from ietf.ietfauth.utils import role_required, has_role
 from ietf.meeting.models import Meeting, Session, Schedule, Room
 from ietf.meeting.helpers import get_areas, get_person_by_email, get_schedule_by_name
@@ -830,7 +831,7 @@ def session_details(request, num, acronym ):
     sessions = Session.objects.filter(meeting=meeting,group__acronym=acronym,type__in=['session','plenary','other'])
 
     if not sessions:
-        sessions = Session.objects.filter(meeting=meeting,short=acronym) 
+        sessions = Session.objects.filter(meeting=meeting,short=acronym,type__in=['session','plenary','other']) 
 
     def sort_key(session):
         official_sessions = session.timeslotassignments.filter(schedule=session.meeting.agenda)
@@ -844,21 +845,32 @@ def session_details(request, num, acronym ):
     if not sessions:
         raise Http404
 
+    type_counter = Counter()
+
     for session in sessions:
 
         ss = session.timeslotassignments.filter(schedule=meeting.agenda).order_by('timeslot__time')
         if ss:
             session.time = ', '.join(x.timeslot.time.strftime("%A %b-%d-%Y %H%M") for x in ss) 
+            if session.status.slug == 'canceled':
+                session.time += " CANCELLED"
         elif session.meeting.type_id=='interim':
             session.time = session.meeting.date.strftime("%A %b-%d-%Y")
+            if session.status.slug == 'canceled':
+                session.time += " CANCELLED"
         else:
-            session.time = 'Not yet scheduled' 
+            session.time = session.status.name
 
         # TODO FIXME Deleted materials shouldn't be in the sessionpresentation_set
         session.filtered_sessionpresentation_set = [p for p in session.sessionpresentation_set.all() if p.document.get_state_slug(p.document.type_id)!='deleted']
+        type_counter.update([p.document.type.slug for p in session.filtered_sessionpresentation_set])
+
+    can_manage = can_manage_materials(request.user, Group.objects.get(acronym=acronym))
 
     return render(request, "meeting/session_details.html",
                   { 'sessions':sessions ,
                     'meeting' :meeting ,
                     'acronym' :acronym,
+                    'can_manage_materials' : can_manage,
+                    'type_counter': type_counter,
                   })

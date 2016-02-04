@@ -32,9 +32,9 @@
 
     <tbody class="meta">
     <tr>
-      <th>{% if doc.meeting_related %}Meeting{% endif %} {{ doc.type.name }}</th>
-      <td class="edit"></td>
-      <td>
+      <th class="col-md-1">{% if doc.meeting_related %}Meeting{% endif %} {{ doc.type.name }}</th>
+      <td class="edit col-md-1"></td>
+      <td class="col-md-10">
         {{ doc.group.name }}
         <a href="{{ doc.group.about_url }}">({{ doc.group.acronym }})</a> {{ doc.group.type.name }}
 
