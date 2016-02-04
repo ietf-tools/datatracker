@@ -7,7 +7,7 @@ Time-stamp: <2010-04-28 02:57:16 carljm forms.py>
 from copy import deepcopy
 
 from django import forms
-from django.forms.util import flatatt, ErrorDict
+from django.forms.utils import flatatt, ErrorDict
 from django.utils.safestring import mark_safe
 
 class Fieldset(object):
