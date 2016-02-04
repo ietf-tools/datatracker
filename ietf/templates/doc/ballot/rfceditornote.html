@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2016, All Rights Reserved #}
+{% load origin %}
+
+{% load bootstrap3 %}
+
+{% block title %}RFC Editor Note for ballot for {{ doc }}{% endblock %}
+
+{% block content %}
+  {% origin %}
+
+  <h1>RFC Editor Note for ballot<br><small><a href="{% url "doc_view" name=doc.canonical_name %}">{{ doc }}</a></small></h1>
+
+  {% bootstrap_messages %}
+
+  <form method="post">
+    {% csrf_token %}
+    {% bootstrap_form ballot_rfceditornote_form %}
+
+    <div class="help-block">
+      RFC Editor Note. This text will be appended to all announcements and messages to the RFC Editor.
+    </div>
+
+    {% buttons %}
+      <button type="submit" class="btn btn-primary" name="save_ballot_rfceditornote" value="Save Ballot RFC Editor Note">Save</button>
+      <button type="submit" class="btn btn-warning" name="clear_ballot_rfceditornote" value="Clear Ballot RFC Editor Note">Clear</button>
+    {% endbuttons %}
+  </form>
+
+{% endblock%}
