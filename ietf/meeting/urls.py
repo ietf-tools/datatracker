@@ -26,7 +26,7 @@ type_ietf_only_patterns = [
     url(r'^timeslots/edit$',                     views.edit_timeslots),
     url(r'^rooms$',                              ajax.timeslot_roomsurl),
     url(r'^room/(?P<roomid>\d+).json$',          ajax.timeslot_roomurl),
-    url(r'^room/(?P<roomid>\d+).html$',          views.edit_roomurl),
+    url(r'^room/(?P<roomid>\d+)(.html)?/?$',          views.edit_roomurl),
     url(r'^timeslots$',                          ajax.timeslot_slotsurl),
     url(r'^timeslots.json$',                     ajax.timeslot_slotsurl),
     url(r'^timeslot/(?P<slotid>\d+).json$',      ajax.timeslot_sloturl),
@@ -50,15 +50,15 @@ type_ietf_only_patterns_id_optional = [
     url(r'^requests$', views.meeting_requests),
     url(r'^agenda/agenda.ics$', views.ical_agenda),
     url(r'^agenda.ics$', views.ical_agenda),
-    url(r'^agenda/week-view.html$', views.week_view),
-    url(r'^agenda/room-view.html$', views.room_view),
-    url(r'^week-view.html$', views.week_view),
-    url(r'^room-view.html$', views.room_view),
+    url(r'^agenda/week-view(.html)?/?$', views.week_view),
+    url(r'^agenda/room-view(.html)?/?$', views.room_view),
+    url(r'^week-view(.html)?/?$', views.week_view),
+    url(r'^room-view(.html)?/$', views.room_view),
 ]
 
 urlpatterns = [
     # TODO - views.material should take num instead of meeting_num so it can move into one of the above lists
-    url(r'^(?P<meeting_num>\d+)/materials.html$', views.materials),
+    url(r'^(?P<meeting_num>\d+)/materials(.html)?/?$', views.materials),
     url(r'^requests.html$', RedirectView.as_view(url='/meeting/requests', permanent=True)),
     url(r'^(?P<num>\d+)/requests.html$', RedirectView.as_view(url='/meeting/%(num)s/requests', permanent=True)),
     url(r'^(?P<num>[A-Za-z0-9._+-]+)/', include(safe_for_all_meeting_types)),
