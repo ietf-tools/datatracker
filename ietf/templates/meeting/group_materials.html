@@ -48,6 +48,15 @@
         {% endfor %}
       {% endwith %}
     </td>
+    <td>
+     {% with session.drafts as drafts %}
+       {% for draft in drafts %}
+         <a href="{% url "doc_view" name=draft.canonical_name %}">{{ draft.canonical_name }}</a><br>
+       {% empty %} 
+         <span class="label label-warning">No drafts</span>
+       {% endfor %}
+     {% endwith %}
+    </td>
   {% endif %}
 </tr>
 

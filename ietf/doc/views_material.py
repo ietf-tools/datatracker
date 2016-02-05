@@ -250,11 +250,10 @@ def get_upcoming_manageable_sessions(user, doc, acronym=None, date=None, seq=Non
 def edit_material_presentations(request, name, acronym=None, date=None, seq=None, week_day=None):
 
     doc = get_object_or_404(Document, name=name)
-    if not (doc.type_id=='slides' and doc.get_state('slides').slug=='active'):
-        raise Http404
 
     group = doc.group
-    if not (group.features.has_materials and can_manage_materials(request.user,group)):
+
+    if not can_manage_materials(request.user,group):
         raise Http404
 
     sorted_sessions = get_upcoming_manageable_sessions(request.user, doc, acronym, date, seq, week_day)
@@ -301,11 +300,11 @@ def edit_material_presentations(request, name, acronym=None, date=None, seq=None
 def material_presentations(request, name, acronym=None, date=None, seq=None, week_day=None):
 
     doc = get_object_or_404(Document, name=name)
-    if not (doc.type_id=='slides' and doc.get_state('slides').slug=='active'):
-        raise Http404
+
 
     group = doc.group
-    if not (group.features.has_materials and can_manage_materials(request.user,group)):
+
+    if not can_manage_materials(request.user,group):
         raise Http404
 
     sorted_sessions = get_upcoming_manageable_sessions(request.user, doc, acronym, date, seq, week_day)

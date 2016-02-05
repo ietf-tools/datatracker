@@ -244,6 +244,26 @@
 	</tr>
       {% endif %}
 
+      {% if presentations or can_edit_stream_info %}
+        <tr>
+          <th></th>
+          <th>On Agenda</th>
+          <td class="edit">
+            {% if not snapshot and can_edit_stream_info %}
+              {% doc_edit_button "material_presentations" name=doc.name %}
+            {% endif %}
+          </td>
+  
+          <td>
+            {% if presentations %}
+              {% for pres in presentations %}{{ pres.session.short_name }} at {{ pres.session.meeting }} {% if pres.rev != doc.rev %}(version -{{ pres.rev }}){% endif %}{% if not forloop.last %}, {% endif %}{% endfor %}
+            {% else %}
+              None
+            {% endif %}
+          </td>
+        </tr>
+      {% endif %}
+
       <tr>
         <th></th>
 	<th>Document shepherd</th>

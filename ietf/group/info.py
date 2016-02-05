@@ -59,6 +59,7 @@ from ietf.group.utils import can_manage_materials, get_group_or_404
 from ietf.utils.pipe import pipe
 from ietf.settings import MAILING_LIST_INFO_URL
 from ietf.mailtrigger.utils import gather_relevant_expansions
+from ietf.ietfauth.utils import has_role
 
 def roles(group, role_name):
     return Role.objects.filter(group=group, name=role_name).select_related("email", "person")
@@ -732,7 +733,9 @@ def meetings(request, acronym=None, group_type=None):
 
     four_years_ago = datetime.datetime.now()-datetime.timedelta(days=4*365)
 
-    sessions = group.session_set.filter(status__in=['sched','schedw','appr','canceled'],meeting__date__gt=four_years_ago)
+    sessions = group.session_set.filter(status__in=['sched','schedw','appr','canceled'],
+                                        meeting__date__gt=four_years_ago,
+                                        type__in=['session','plenary','other'])
 
     def sort_key(session):
         if session.meeting.type.slug=='ietf':
@@ -764,10 +767,13 @@ def meetings(request, acronym=None, group_type=None):
         else:
             past.append(s)
 
+    can_edit = has_role(request.user,["Secretariat","Area Director"]) or group.has_role(request.user,["Chair","Secretary"])
+
     return render(request,'group/meetings.html',
                   construct_group_menu_context(request, group, "meetings", group_type, {
                      'group':group,
                      'future':future,
                      'in_progress':in_progress,
                      'past':past,
+                     'can_edit':can_edit,
                   }))

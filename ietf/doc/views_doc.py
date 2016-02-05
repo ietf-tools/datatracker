@@ -307,6 +307,8 @@ def document_main(request, name, rev=None):
         status_changes = [ rel.document for rel in status_change_docs  if rel.document.get_state_slug() in ('appr-sent','appr-pend')]
         proposed_status_changes = [ rel.document for rel in status_change_docs  if rel.document.get_state_slug() in ('needshep','adrev','iesgeval','defer','appr-pr')]
 
+        presentations = doc.future_presentations()
+
         # remaining actions
         actions = []
 
@@ -417,6 +419,7 @@ def document_main(request, name, rev=None):
                                        search_archive=search_archive,
                                        actions=actions,
                                        tracking_document=tracking_document,
+                                       presentations=presentations,
                                        ),
                                   context_instance=RequestContext(request))
 
@@ -526,13 +529,8 @@ def document_main(request, name, rev=None):
     #        created and content is made available on disk
     if doc.type_id in ("slides", "agenda", "minutes"):
         can_manage_material = can_manage_materials(request.user, doc.group)
-        presentations = None
-        if doc.type_id=='slides' and doc.get_state_slug('slides')=='active' :
-            presentations = doc.future_presentations()
+        presentations = doc.future_presentations()
         if doc.meeting_related():
-            # disallow editing meeting-related stuff through this
-            # interface for the time being
-            can_manage_material = False
             basename = doc.canonical_name() # meeting materials are unversioned at the moment
             if doc.external_url:
                 # we need to remove the extension for the globbing below to work
