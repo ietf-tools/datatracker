@@ -2,12 +2,10 @@
 Datatracker PLAN
 ================
 
-Updated: 16 Nov 2015 20:37:18
+Updated: 05 Feb 2016 7:34:53
 
 Planned work in rough order
 ===========================
-
-* Nomcom improvements
 
 * Integrating YANG testing into the submission tool
 
@@ -15,6 +13,8 @@ Planned work in rough order
   - create new trackers on group creation
   - update access lists on group chair/secretary changes
   - update components on new group documents
+
+* Add "Waiting for implementation" and "Held by WG" states, with comment field
 
 * Refactored Community app
 
