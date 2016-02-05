@@ -160,6 +160,9 @@ def agenda_json(request, date=None):
                     e = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
                     if e:
                         docinfo['consensus'] = e.consensus
+
+                    docinfo['rfc-ed-note'] = doc.has_rfc_editor_note()
+
                 elif doc.type_id == 'conflrev':
                     docinfo['rev'] = doc.rev
                     td = doc.relateddocument_set.get(relationship__slug='conflrev').target.document

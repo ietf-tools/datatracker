@@ -1,4 +1,4 @@
-{# Copyright The IETF Trust 2015, All Rights Reserved #}{% load origin %}{% origin %}
+{# Copyright The IETF Trust 2016, All Rights Reserved #}{% load origin %}{% origin %}
 {% load ietf_filters ballot_icon %}
 
 <div class="pull-right">{% ballot_icon doc %}</div>
@@ -20,6 +20,9 @@
       <span class="fa fa-file"></span></a>
     {% endwith %}
     <a href="{% url "doc_view" name=doc.canonical_name %}">{{ doc.canonical_name }}</a>
+    {% if doc.has_rfc_editor_note %}
+      <a href="{% url "doc_view" name=doc.canonical_name %}writeup/">  <em>(Has RFC Editor Note)</em></a>
+    {% endif %}
   </dd>
 
   <dt>{{ doc.intended_std_level }}</dt><dd><b>{{ doc.title }}</b></dd>

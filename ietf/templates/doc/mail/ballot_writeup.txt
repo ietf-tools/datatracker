@@ -32,10 +32,6 @@ Personnel
    experts(s), insert 'The IANA Expert(s) for the registries
    in this document are <TO BE ADDED BY THE AD>.'
 
-RFC Editor Note
-
-  (Insert RFC Editor Note here or remove section)
-
 IRTF Note
 
   (Insert IRTF Note here or remove section)

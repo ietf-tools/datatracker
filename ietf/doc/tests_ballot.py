@@ -274,6 +274,45 @@ class BallotWriteupsTests(TestCase):
         draft = Document.objects.get(name=draft.name)
         self.assertTrue("This is a simple test" in draft.latest_event(WriteupDocEvent, type="changed_ballot_writeup_text").text)
 
+    def test_edit_ballot_rfceditornote(self):
+        draft = make_test_data()
+        url = urlreverse('doc_ballot_rfceditornote', kwargs=dict(name=draft.name))
+        login_testing_unauthorized(self, "secretary", url)
+
+        # add a note to the RFC Editor
+        WriteupDocEvent.objects.create(
+            doc=draft,
+            desc="Changed text",
+            type="changed_rfc_editor_note_text",
+            text="This is a note for the RFC Editor.",
+            by=Person.objects.get(name="(System)"))
+
+        # normal get
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('textarea[name=rfc_editor_note]')), 1)
+        self.assertTrue(q('[type=submit]:contains("Save")'))
+        self.assertTrue("<label class=\"control-label\">RFC Editor Note</label>" in r.content)
+        self.assertTrue("This is a note for the RFC Editor" in r.content)
+
+        # save with a note
+        r = self.client.post(url, dict(
+                rfc_editor_note="This is a simple test.",
+                save_ballot_rfceditornote="1"))
+        self.assertEqual(r.status_code, 200)
+        draft = Document.objects.get(name=draft.name)
+        self.assertTrue(draft.has_rfc_editor_note())
+        self.assertTrue("This is a simple test" in draft.latest_event(WriteupDocEvent, type="changed_rfc_editor_note_text").text)
+
+        # clear the existing note
+        r = self.client.post(url, dict(
+                rfc_editor_note=" ",
+                clear_ballot_rfceditornote="1"))
+        self.assertEqual(r.status_code, 200)
+        draft = Document.objects.get(name=draft.name)
+        self.assertFalse(draft.has_rfc_editor_note())
+
     def test_issue_ballot(self):
         draft = make_test_data()
         url = urlreverse('doc_ballot_writeupnotes', kwargs=dict(name=draft.name))
@@ -341,6 +380,55 @@ class BallotWriteupsTests(TestCase):
         draft = Document.objects.get(name=draft.name)
         self.assertTrue("Subject: Results of IETF-conflict review" in draft.latest_event(WriteupDocEvent, type="changed_ballot_approval_text").text)
         
+    def test_edit_verify_permissions(self):
+
+        def verify_fail(username, url):
+            if username:
+                self.client.login(username=username, password=username+"+password")
+            r = self.client.get(url)
+            self.assertEqual(r.status_code,403)
+
+        def verify_can_see(username, url):
+            self.client.login(username=username, password=username+"+password")
+            r = self.client.get(url)
+            self.assertEqual(r.status_code,200)
+            q = PyQuery(r.content)
+            self.assertEqual(len(q("<textarea class=\"form-control\"")),1) 
+
+        draft = make_test_data()
+
+        e = WriteupDocEvent()
+        e.type = "changed_ballot_approval_text"
+        e.by = Person.objects.get(name="(System)")
+        e.doc = draft
+        e.desc = u"Ballot approval text was generated"
+        e.text = u"Test approval text."
+        e.save()
+
+        e = WriteupDocEvent()
+        e.type = "changed_ballot_writeup_text"
+        e.by = Person.objects.get(name="(System)")
+        e.doc = draft
+        e.desc = u"Ballot writeup was generated"
+        e.text = u"Test ballot writeup text."
+        e.save()
+
+        e = WriteupDocEvent()
+        e.type = "changed_ballot_rfceditornote_text"
+        e.by = Person.objects.get(name="(System)")
+        e.doc = draft
+        e.desc = u"RFC Editor Note for ballot was generated"
+        e.text = u"Test note to the RFC Editor text."
+        e.save()
+
+        for p in ['doc_ballot_approvaltext','doc_ballot_writeupnotes','doc_ballot_rfceditornote']:
+            url = urlreverse(p, kwargs=dict(name=draft.name))
+
+            for username in ['plain','marschairman','iana','iab chair']:
+                verify_fail(username, url)
+
+            for username in ['secretary','ad']:
+                verify_can_see(username, url)
 
 class ApproveBallotTests(TestCase):
     def test_approve_ballot(self):

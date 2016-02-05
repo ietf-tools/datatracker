@@ -735,6 +735,10 @@ def document_writeup(request, name):
                          text_from_writeup("changed_ballot_writeup_text"),
                          urlreverse("doc_ballot_writeupnotes", kwargs=dict(name=doc.name))))
 
+        writeups.append(("RFC Editor Note",
+                         text_from_writeup("changed_rfc_editor_note_text"),
+                         urlreverse("doc_ballot_rfceditornote", kwargs=dict(name=doc.name))))
+
     elif doc.type_id == "charter":
         sections.append(("WG Review Announcement",
                          "",

@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2016, All Rights Reserved #}
+{% load origin %}
+
+{% block title %}Duplicate RFC Editor Note Error{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <h1>There appear to be two RFC Editor Notes for this approved I-D</h1>
+
+  <p>Sorry, there appears to be an RFC Editor Note in the ballot writeup and
+    another one in the RFC Editor Note.  Please put all of the information for
+    the RFC Editor in the RFC Editor Note.</p>
+
+  <p>The document writeup can be edited
+  <a href="{% url "doc_view" name=doc.canonical_name %}writeup/"> <em>Here</em></a>.</p>
+
+{% endblock %}

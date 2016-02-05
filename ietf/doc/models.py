@@ -232,6 +232,10 @@ class DocumentInfo(models.Model):
         else:
             return None
 
+    def has_rfc_editor_note(self):
+        e = self.latest_event(WriteupDocEvent, type="changed_rfc_editor_note_text")
+        return bool(e and (e.text != ""))
+
     def meeting_related(self):
         answer = False
         if self.type_id in ("agenda","minutes","bluesheets","slides","recording"):
@@ -675,6 +679,7 @@ EVENT_TYPES = [
     
     ("changed_ballot_approval_text", "Changed ballot approval text"),
     ("changed_ballot_writeup_text", "Changed ballot writeup text"),
+    ("changed_rfc_editor_note_text", "Changed RFC Editor Note text"),
 
     ("changed_last_call_text", "Changed last call text"),
     ("requested_last_call", "Requested last call"),

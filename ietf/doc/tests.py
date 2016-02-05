@@ -710,11 +710,19 @@ class DocTestCase(TestCase):
             text="This is ballot writeup notes.",
             by=Person.objects.get(name="(System)"))
 
+        rfced_note = WriteupDocEvent.objects.create(
+            doc=doc,
+            desc="Changed text",
+            type="changed_rfc_editor_note_text",
+            text="This is a note for the RFC Editor.",
+            by=Person.objects.get(name="(System)"))
+
         url = urlreverse('doc_writeup', kwargs=dict(name=doc.name))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertTrue(appr.text in unicontent(r))
         self.assertTrue(notes.text in unicontent(r))
+        self.assertTrue(rfced_note.text in r.content)
 
     def test_history(self):
         doc = make_test_data()
