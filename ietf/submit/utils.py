@@ -317,21 +317,26 @@ def ensure_person_email_info_exists(name, email):
 
     # make sure we have an email address
     if email:
+        active = True
         addr = email.lower()
     else:
         # we're in trouble, use a fake one
+        active = False
         addr = u"unknown-email-%s" % person.name.replace(" ", "-")
 
     try:
         email = person.email_set.get(address=addr)
     except Email.DoesNotExist:
         try:
-            # maybe it's pointing to someone else
-            email = Email.objects.get(address=addr)
+            # An Email object pointing to some other person will not exist
+            # at this point, because get_person_from_name_email would have
+            # returned that person, but it's possible that an Email record
+            # not associated with any Person exists
+            email = Email.objects.get(address=addr,person__isnull=True)
         except Email.DoesNotExist:
             # most likely we just need to create it
             email = Email(address=addr)
-            email.active = True
+            email.active = active
 
         email.person = person
         email.save()
