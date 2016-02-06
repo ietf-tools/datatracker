@@ -26,9 +26,9 @@
             {% endif %}
           {% endif %}
          </td>
-         <td>{% if s.agenda %}<a class="btn btn-default btn-xs" href="{{ s.agenda.get_absolute_url }}">Agenda</a>{% endif %}</td>
-         <td>{% if s.minutes %}<a class="btn btn-default btn-xs" href="{{ s.minutes.get_absolute_url }}">Minutes</a>{% endif %}</td>
-         <td><a class="btn btn-default btn-xs" href="{% url 'ietf.meeting.views.session_details' num=s.meeting.number acronym=s.group.acronym %}">Materials</a></td>
+         <td>{% if s.agenda %}<a href="{{ s.agenda.get_absolute_url }}">Agenda</a>{% endif %}</td>
+         <td>{% if s.minutes %}<a href="{{ s.minutes.get_absolute_url }}">Minutes</a>{% endif %}</td>
+         <td><a href="{% url 'ietf.meeting.views.session_details' num=s.meeting.number acronym=s.group.acronym %}">Materials</a></td>
       {% endfor %}
       </tbody>
       </table>

@@ -4,15 +4,16 @@
 
 {% block title %}Meetings{% if group %} for {{group.acronym}}{% endif %}{% endblock %}
 
+{% block buttonlist %}
+  {{ block.super }}
+  <a class="btn btn-default" href="{% url 'ietf.meeting.views.meeting_requests' %}">Session requests</a>
+  {% if can_edit %}
+  <a class="btn btn-default" href="{% url 'ietf.secr.sreq.views.main' %}">Request a session</a>
+  {% endif %}
+{% endblock buttonlist %}
+
 {% block group_content %}
 {% origin %}
-
-<div class="buttonlist">
-<a class="btn btn-default" href="{% url 'ietf.meeting.views.meeting_requests' %}">Session requests</a>
-{% if can_edit %}
-<a class="btn btn-default" href="{% url 'ietf.secr.sreq.views.main' %}">Request a session</a>
-{% endif %}
-</div>
 
 {% if in_progress %}
   <div class="panel panel-default" id="inprogressmeets">
