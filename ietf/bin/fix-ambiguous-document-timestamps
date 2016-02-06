@@ -20,7 +20,7 @@ import django
 django.setup()
 
 from django.conf import settings
-from ietf.doc.models import Document
+from ietf.doc.models import Document, DocEvent
 
 now = datetime.datetime.now()
 then = now - datetime.timedelta(days=365)
@@ -32,5 +32,16 @@ for d in Document.objects.filter(time__gt=then).order_by('-time'):
     except pytz.AmbiguousTimeError as e:
         orig = d.time
         d.time = d.time - datetime.timedelta(minutes=60)
-        print "%s: changed %s --> %s" % (d.name, orig, d.time)
+        print "%s:\n  changed %s --> %s" % (d, orig, d.time)
         d.save()
+
+for d in DocEvent.objects.filter(time__gt=then).order_by('-time'):
+    tz = pytz.timezone(settings.TIME_ZONE)
+    try:
+        t = tz.localize(d.time, is_dst=None)
+    except pytz.AmbiguousTimeError as e:
+        orig = d.time
+        d.time = d.time - datetime.timedelta(minutes=60)
+        print "%s:\n  changed %s --> %s" % (d, orig, d.time)
+        d.save()
+        
