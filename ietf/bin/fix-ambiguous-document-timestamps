@@ -2,7 +2,7 @@
 # -*- Python -*-
 
 """
-This script looks at document timestamps going back one year, and if it finds
+This script looks at document timestamps going back three years, and if it finds
 ambiguous timestamps, shifts them backwards one hour in order to disambiguate
 them.
 """
@@ -23,7 +23,7 @@ from django.conf import settings
 from ietf.doc.models import Document, DocEvent
 
 now = datetime.datetime.now()
-then = now - datetime.timedelta(days=365)
+then = now - datetime.timedelta(days=365*3)
 
 for d in Document.objects.filter(time__gt=then).order_by('-time'):
     tz = pytz.timezone(settings.TIME_ZONE)
