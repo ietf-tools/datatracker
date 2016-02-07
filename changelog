@@ -146,7 +146,7 @@ ietfdb (6.14.0) ietf; urgency=medium
     Assignments.  Fixed a bug which left Timeslot.duration null in the
     resources.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  07 Feb 2016 14:39:46 +0000
+ -- Henrik Levkowetz <henrik@levkowetz.com>  07 Feb 2016 15:42:41 +0000
 
 
 ietfdb (6.13.0) ietf; urgency=medium
