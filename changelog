@@ -1,3 +1,154 @@
+ietfdb (6.14.0) ietf; urgency=medium
+
+  **Meetings Tabs on Group Pages**
+
+  This is a mixed bugfix and feature release.  The most notable new features
+  are: 
+
+  - The WG and RG pages now have 'Meetings' tabs, which lists regular and
+    interim meetings with links to agenda, minutes, and materials.
+
+  - The IESG Telechat Agenda now shows "(Has RFC Editor Note)" after the I-D
+    filename if there is an RFC Editor Note associated with the document.
+
+  - Improved calculation of 'modified' timestamps for meetings, to make it
+    possible for meeting apps like 'IETFers' to know when to fetch updated
+    meeting data without having to poll all sessions and timeslots regularly
+    in order to catch changes.
+
+  Here's the full list of fixes and features:
+
+  * Merged in [10780] from rjsparks@nostrum.com:
+    Stop making active unknown-email- objects. Mark existing such objects 
+    as inactive. Tweak exception handling in submit/utils to make it obvious 
+    that the utilities will not change the person an existing Email record is 
+    pointing to.  
+
+  * Removed previously mandatory but unwanted '.html' suffixes on meeting views.
+
+  * Merged in [10779] from rjsparks@nostrum.com:
+    Added the ability to associate documents with sessions from the document
+    main page.  Integrated the group meetings tab with the secretariat meeting
+    request and meeting materials pages.  Made better use of bootstrap styling
+    for the meetings tab and session details view. 
+
+  * Consolidated multiple group contextmenu buttonlist elements into one.  
+    Changed button links into plain links for agenda/minutes/materials -- makes 
+    the bage less busy, takes up less room, and lessens the conflation between 
+    action buttons and links.
+
+  * Merged in [10770], [10771], [10772], and [10773] from housley@vigilsec.com:
+
+    The IESG Telechat Agenda now shows "(Has RFC Editor Note)" after the I-D
+    filename if there is an RFC Editor Note associated with the document.
+    This was added to the html and txt versions of the agenda.  It was not
+    added to the Secretariat view or the Scribe view of the agenda.
+
+    For transition, when an AD edits the RFC Editor Note, they need to move
+    the text from the current writeup into the new field.  Returning documents
+    on the telechat agenda seems to be the biggest opportunity for something
+    to fall between the cracks.  If an event of type "changed_rfc_editor_note'
+    exists, and the string "RFC Editor Note" appears in the text of the most
+    recent 'changed_ballot_writeup_text' event, then a message is shown that
+    tells the AD to remove the RFC Editor Note from the writeup.
+
+  * Merged in [10765] from lars@netapp.com:
+    Correctly identify group work items in announce_to_lists.txt. Fixes #1901.
+
+  * Merged in [10764] from lars@netapp.com:
+    Fixed a RemovedInDjango19Warning: The django.forms.util module has been
+    renamed.  Use django.forms.utils instead.
+
+  * Merged in [10763] from lars@netapp.com:
+    Updated some web assets. Also change bower.json so bower can automatically
+    fetch newer minor or patch releases for the assets.  
+
+  * Merged in [10758] from rjsparks@nostrum.com:
+    Provide help-text for the new-status field when editing status change
+    document relations. Fixes #1898.  
+
+  * Merged in [10757] from rjsparks@nostrum.com:
+    Fix from Ole Laursen for the javascript managing status-change document
+    relationships. Fixes #1899. 
+
+  * Merged in [10756] from rjsparks@nostrum.com:
+    Tweak factories to not randomly create keys that violate constraints.  
+
+  * Merged in [10755] from rcross@amsl.com:
+    Change merge-person-records, don't delete User until we handle related 
+    objects.   
+
+  * Added a script to disambiguate document timestamps for the last 3 years,
+    in order to avoid AmbiguousTimestamp exceptions and HTTP 500 errors for
+    certain documents and document envents which fell in the autumn PDT-PST
+    duplicate hour.
+
+  * Changed draft submission confirmation to not fail if the login used is
+    missing an associated person record.
+
+  * Merged in [10734] from rjsparks@nostrum.com:
+    Excluded concluded bofs from the set of groups for which a person can
+    pre-approve drafts. Restore AD access to preapproval. (Need to consider
+    adding delegate and group secretary access). Fixes #1896.  
+
+  * Merged in [10733] from rjsparks@nostrum.com:
+    Show session details for interims as well as ietf meetings.  
+
+  * Merged in [10732] from rjsparks@nostrum.com:
+    Filter unused document types from the search form. Fixes #1890.  
+
+  * Merged in [10731] from rjsparks@nostrum.com:
+    Addresses issues uncovered by the test-crawler. Adds missing DocAlias
+    records for several document types. Creates DocAlias objects when
+    createing Document objects for those document types. Identifies places in
+    code to touch when we are ready to expose the bluesheets and recording
+    document types at /doc/. (The data rows and the content store need work
+    before doing so). 
+
+  * Merged in [10728] from rjsparks@nostrum.com:
+    Refactored meeting urls file without changing functionality in prepation
+    for extending some views to handle interims. Reduced the level of
+    redundancy in the way the urls lists were constructed.  
+
+  * Merged in [10726] from rjsparks@nostrum.com:
+    Added listing all the area directors back. Related to #1889.  
+
+  * Merged in [10725] from rcross@amsl.com:
+    Modified notification text for merges of multiple Person records for the
+    same person.
+
+  * Merged in [10723] from rjsparks@nostrum.com:
+    Tweaked the rendering of Area Directors in the charter text used in
+    new-work, internal review, external review, and group action messages to
+    display. Fixes #1889.  
+
+  * Merged [10721] and [10724] from rcross@amsl.com:
+    Removed Test watermark from interim meeting index background.  Rewrote
+    merge-person-records utility script to handle all related objects in a
+    generic manner, remove old User records and handle email primary
+    attribute.  Fixes #1627.
+
+  * Merged in [10719] from rjsparks@nostrum.com:
+    Added a meetings tab to the group information page. Links to minutes,
+    agendas, and materials for each session at each meeting. Improves the UI
+    for the session materials page.  
+
+  * Merged in [10701] from rjsparks@nostrum.com:
+    Simplified meeting.session_details. Shows all sessions for a meeting on 
+    one page instead of having a page per session. Removes the by-date, 
+    by-weekday, by-sequence mechanic. 
+
+  * Changed the calculation of 'modified' time for a meeting, and also changed
+    the 'updated' field for Session, TimeSlot, and SchedTimeSessAssignments to
+    auto-update on any changes to the objects.
+
+  * Enabled resource sorting by modification time for Sessions, Timeslots, and
+    Assignments.  Fixed a bug which left Timeslot.duration null in the
+    resources.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  07 Feb 2016 05:06:49 -0800
+
+
 ietfdb (6.13.0) ietf; urgency=medium
 
   **Improved NomCom Support**
