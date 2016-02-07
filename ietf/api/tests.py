@@ -2,13 +2,13 @@ import os
 import sys
 import json
 
-from django.test import Client
+from django.test import Client, TestCase
 from django.conf import settings
 from django.utils.importlib import import_module
 from django.db import models
 
 from tastypie.exceptions import BadRequest
-from tastypie.test import ResourceTestCase
+from tastypie.test import ResourceTestCaseMixin
 
 import debug                            # pyflakes:ignore
 
@@ -18,7 +18,7 @@ OMITTED_APPS = (
     'ietf.ipr',
 )
 
-class TastypieApiTestCase(ResourceTestCase):
+class TastypieApiTestCase(ResourceTestCaseMixin, TestCase):
     def __init__(self, *args, **kwargs):
         self.apps = {}
         for app_name in settings.INSTALLED_APPS:
@@ -28,7 +28,7 @@ class TastypieApiTestCase(ResourceTestCase):
                 models_path = os.path.join(os.path.dirname(app.__file__), "models.py")
                 if os.path.exists(models_path):
                     self.apps[name] = app
-        super(ResourceTestCase, self).__init__(*args, **kwargs)
+        super(TastypieApiTestCase, self).__init__(*args, **kwargs)
 
     def test_api_top_level(self):
         client = Client(Accept='application/json')
