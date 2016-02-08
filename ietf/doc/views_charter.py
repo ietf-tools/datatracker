@@ -157,7 +157,7 @@ def change_state(request, name, option=None):
                         create_ballot_if_not_open(charter, login, "r-extrev")
                     default_review_text(group, charter, login)
                     default_action_text(group, charter, login)
-                elif charter_state.slug == "iesgrev":
+                elif charter_state.slug in ["extrev","iesgrev"]:
                     create_ballot_if_not_open(charter, login, "approve")
                 elif charter_state.slug == "approved":
                     change_group_state_after_charter_approval(group, login)
