@@ -10,8 +10,6 @@
   {% origin %}
   <h1>Add comment<br><small>{{ doc }}</small></h1>
 
-  {% bootstrap_messages %}
-
   <form method="post">
     {% csrf_token %}
     {% bootstrap_form form %}

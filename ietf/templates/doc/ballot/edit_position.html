@@ -9,8 +9,6 @@
   {% origin %}
   <h1>Change position for {{ ad.plain_name }} regarding <br><small><a href="{% url "doc_view" name=doc.canonical_name %}">{{ doc }}</a></small></h1>
 
-  {% bootstrap_messages %}
-
   <div class="question">{{ ballot.ballot_type.question }}</div>
 
   {% if ballot_deferred %}

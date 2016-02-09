@@ -10,8 +10,6 @@
   {% origin %}
   <h1>Approve<br><small>{{ doc.canonical_name }}</small></h1>
 
-  {% bootstrap_messages %}
-
   <form method="post">
     {% csrf_token %}
     {% bootstrap_formset formset %}

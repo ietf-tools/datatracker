@@ -10,8 +10,6 @@
   {% origin %}
   <h1>Send Notification{{ formset|pluralize }}<br><small>{{ ipr }}</small></h1>
 
-  {% bootstrap_messages %}
-
   <form class="send-notification" method="post">
     {% csrf_token %}
 

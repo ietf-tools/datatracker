@@ -11,8 +11,6 @@
 
   <h1>Ballot writeup and notes<br><small>{{ charter.chartered_group }}</small></h1>
 
-  {% bootstrap_messages %}
-
   <form method="post">
     {% csrf_token %}
     {% bootstrap_form ballot_writeup_form %}

@@ -12,8 +12,6 @@
   {% origin %}
   <h1>Begin IETF conflict review<br><small>{{doc_to_review.canonical_name}}-{{doc_to_review.rev}}</small></h1>
 
-  {% bootstrap_messages %}
-
   {% if user|has_role:"Secretariat" %}
     <p><a class="btn btn-info" href="{% url "state_help" type="conflict-review" %}">Help on states</a></p>
   {% endif %}

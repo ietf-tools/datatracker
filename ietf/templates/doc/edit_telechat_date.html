@@ -10,8 +10,6 @@
   {% origin %}
   <h1>Set telechat date<br><small>{{ doc.name }} ({{ doc.pages }} page{{ doc.pages|pluralize }})</small></h1>
 
-  {% bootstrap_messages %}
-
   {% for warning in warnings %}
     <div class="alert alert-warning">{{ warning }}</div>
   {% endfor %}

@@ -11,8 +11,6 @@
 
   <h1>Ballot writeup and notes<br><small><a href="{% url "doc_view" name=doc.canonical_name %}">{{ doc }}</a></small></h1>
 
-  {% bootstrap_messages %}
-
   <form method="post">
     {% csrf_token %}
     {% bootstrap_form ballot_writeup_form %}

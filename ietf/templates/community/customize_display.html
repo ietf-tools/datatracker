@@ -2,8 +2,6 @@
 {% load origin %}{% origin %}
 {% load bootstrap3 %}
 
-{% bootstrap_messages %}
-
 <form method="post" action="#custom">
   {% csrf_token %}
   {% bootstrap_form display_form %}
