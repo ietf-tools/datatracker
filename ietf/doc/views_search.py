@@ -33,11 +33,14 @@
 import datetime, re
 
 from django import forms
+from django.conf import settings
+from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.urlresolvers import reverse as urlreverse
-from django.shortcuts import render
 from django.db.models import Q
 from django.http import Http404, HttpResponseBadRequest, HttpResponse, HttpResponseRedirect
+from django.shortcuts import render
+from django.utils.cache import _generate_cache_key
 
 import debug                            # pyflakes:ignore
 
@@ -408,7 +411,17 @@ def search_for_name(request, name):
 
         return None
 
+    def cached_redirect(key, url):
+        cache.set(key, url, settings.CACHE_MIDDLEWARE_SECONDS)
+        return HttpResponseRedirect(url)
+
     n = name
+
+    cache_key = _generate_cache_key(request, 'GET', [], settings.CACHE_MIDDLEWARE_KEY_PREFIX)
+    if cache_key:
+        url = cache.get(cache_key, None)
+        if url:
+            return HttpResponseRedirect(url)
 
     # chop away extension
     extension_split = re.search("^(.+)\.(txt|ps|pdf)$", n)
@@ -417,7 +430,7 @@ def search_for_name(request, name):
 
     redirect_to = find_unique(name)
     if redirect_to:
-        return HttpResponseRedirect(urlreverse("doc_view", kwargs={ "name": redirect_to }))
+        return cached_redirect(cache_key, urlreverse("doc_view", kwargs={ "name": redirect_to }))
     else:
         # check for embedded rev - this may be ambigious, so don't
         # chop it off if we don't find a match
@@ -428,9 +441,9 @@ def search_for_name(request, name):
                 rev = rev_split.group(2)
                 # check if we can redirect directly to the rev
                 if DocHistory.objects.filter(doc__docalias__name=redirect_to, rev=rev).exists():
-                    return HttpResponseRedirect(urlreverse("doc_view", kwargs={ "name": redirect_to, "rev": rev }))
+                    return cached_redirect(cache_key, urlreverse("doc_view", kwargs={ "name": redirect_to, "rev": rev }))
                 else:
-                    return HttpResponseRedirect(urlreverse("doc_view", kwargs={ "name": redirect_to }))
+                    return cached_redirect(cache_key, urlreverse("doc_view", kwargs={ "name": redirect_to }))
 
     # build appropriate flags based on string prefix
     doctypenames = DocTypeName.objects.filter(used=True)
@@ -447,7 +460,7 @@ def search_for_name(request, name):
         else:
             search_args += "&rfcs=on&activedrafts=on&olddrafts=on"
 
-    return HttpResponseRedirect(urlreverse("doc_search") + search_args)
+    return cached_redirect(cache_key, urlreverse("doc_search") + search_args)
 
 def ad_dashboard_group(doc):
 
