@@ -67,3 +67,34 @@ def check_doc_email_aliases_exists(app_configs, **kwargs):
 
     return errors
     
+@checks.register('directories')
+def check_id_submission_directories(app_configs, **kwargs):
+    errors = []
+    for s in ("IDSUBMIT_STAGING_PATH", "IDSUBMIT_REPOSITORY_PATH", "INTERNET_DRAFT_ARCHIVE_DIR"):
+        p = getattr(settings, s)
+        if not os.path.exists(p):
+            errors.append(checks.Critical(
+                "A directory used by the ID submission tool does not exist at the path given\n"
+                "in the settings file.  The setting is:\n"
+                "    %s = %s" % (s, p),
+                hint = ("Please either update the local settings to point at the correct directory,"
+                    "or if the setting is correct, create the directory."),
+                id = "datatracker.E0006",
+            ))
+    return errors
+
+@checks.register('files')
+def check_id_submission_files(app_configs, **kwargs):
+    errors = []
+    for s in ("IDSUBMIT_IDNITS_BINARY", ):
+        p = getattr(settings, s)
+        if not os.path.exists(p):
+            errors.append(checks.Critical(
+                "A file used by the ID submission tool does not exist at the path given\n"
+                "in the settings file.  The setting is:\n"
+                "    %s = %s" % (s, p),
+                hint = ("Please either update the local settings to point at the correct file,"
+                    "or if the setting is correct, make sure the file is in place and has the right permissions."),
+                id = "datatracker.E0007",
+            ))
+    return errors

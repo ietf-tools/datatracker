@@ -24,14 +24,18 @@ from ietf.submit.models import Submission, Preapproval
 
 class SubmitTests(TestCase):
     def setUp(self):
+        self.saved_idsubmit_staging_path = settings.IDSUBMIT_STAGING_PATH
         self.staging_dir = os.path.abspath("tmp-submit-staging-dir")
         os.mkdir(self.staging_dir)
         settings.IDSUBMIT_STAGING_PATH = self.staging_dir
 
+        self.saved_internet_draft_path = settings.INTERNET_DRAFT_PATH
+        self.saved_idsubmit_repository_path = settings.IDSUBMIT_REPOSITORY_PATH
         self.repository_dir = os.path.abspath("tmp-submit-repository-dir")
         os.mkdir(self.repository_dir)
         settings.INTERNET_DRAFT_PATH = settings.IDSUBMIT_REPOSITORY_PATH = self.repository_dir
 
+        self.saved_archive_dir = settings.INTERNET_DRAFT_ARCHIVE_DIR
         self.archive_dir = os.path.abspath("tmp-submit-archive-dir")
         os.mkdir(self.archive_dir)
         settings.INTERNET_DRAFT_ARCHIVE_DIR = self.archive_dir
@@ -40,6 +44,11 @@ class SubmitTests(TestCase):
         shutil.rmtree(self.staging_dir)
         shutil.rmtree(self.repository_dir)
         shutil.rmtree(self.archive_dir)
+        settings.IDSUBMIT_STAGING_PATH = self.saved_idsubmit_staging_path
+        settings.INTERNET_DRAFT_PATH = self.saved_internet_draft_path
+        settings.IDSUBMIT_REPOSITORY_PATH = self.saved_idsubmit_repository_path
+        settings.INTERNET_DRAFT_ARCHIVE_DIR = self.saved_archive_dir
+
 
     def submission_file(self, name, rev, group, format, templatename):
         # construct appropriate text draft

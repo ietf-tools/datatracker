@@ -41,8 +41,6 @@ def archive_draft_files(filename):
     Takes a string representing the old draft filename, without extensions.
     Moves any matching files to archive directory.
     '''
-    if not os.path.isdir(settings.INTERNET_DRAFT_ARCHIVE_DIR):
-        raise IOError('Internet-Draft archive directory does not exist (%s)' % settings.INTERNET_DRAFT_ARCHIVE_DIR)
     files = glob.glob(os.path.join(settings.INTERNET_DRAFT_PATH,filename) + '.*')
     for file in files:
         shutil.move(file,settings.INTERNET_DRAFT_ARCHIVE_DIR)

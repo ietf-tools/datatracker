@@ -18,10 +18,12 @@ SECR_USER='secretary'
 
 class MainTestCase(TestCase):
     def setUp(self):
+        self.saved_internet_draft_path = settings.INTERNET_DRAFT_PATH
         self.repository_dir = os.path.abspath("tmp-submit-repository-dir")
         os.mkdir(self.repository_dir)
         settings.INTERNET_DRAFT_PATH = self.repository_dir
 
+        self.saved_internet_draft_archive_dir = settings.INTERNET_DRAFT_ARCHIVE_DIR
         self.archive_dir = os.path.abspath("tmp-submit-archive-dir")
         os.mkdir(self.archive_dir)
         settings.INTERNET_DRAFT_ARCHIVE_DIR = self.archive_dir
@@ -34,6 +36,8 @@ class MainTestCase(TestCase):
         shutil.rmtree(self.repository_dir)
         shutil.rmtree(self.archive_dir)
         shutil.rmtree(self.manual_dir)
+        settings.INTERNET_DRAFT_PATH = self.saved_internet_draft_path
+        settings.INTERNET_DRAFT_ARCHIVE_DIR = self.saved_internet_draft_archive_dir
         
     def test_abstract(self):
         draft = make_test_data()

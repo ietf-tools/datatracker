@@ -209,6 +209,8 @@ ICANN
 
 class RFCSyncTests(TestCase):
     def setUp(self):
+        self.save_id_dir = settings.INTERNET_DRAFT_PATH
+        self.save_archive_dir = settings.INTERNET_DRAFT_ARCHIVE_DIR
         self.id_dir = os.path.abspath("tmp-id-dir")
         self.archive_dir = os.path.abspath("tmp-id-archive")
         if not os.path.exists(self.id_dir):
@@ -221,6 +223,8 @@ class RFCSyncTests(TestCase):
     def tearDown(self):
         shutil.rmtree(self.id_dir)
         shutil.rmtree(self.archive_dir)
+        settings.INTERNET_DRAFT_PATH = self.save_id_dir
+        settings.INTERNET_DRAFT_ARCHIVE_DIR = self.save_archive_dir
 
     def write_draft_file(self, name, size):
         with open(os.path.join(self.id_dir, name), 'w') as f:

@@ -498,6 +498,8 @@ class ResurrectTests(TestCase):
 
 class ExpireIDsTests(TestCase):
     def setUp(self):
+        self.saved_id_dir = settings.INTERNET_DRAFT_PATH
+        self.saved_archive_dir = settings.INTERNET_DRAFT_ARCHIVE_DIR
         self.id_dir = os.path.abspath("tmp-id-dir")
         self.archive_dir = os.path.abspath("tmp-id-archive")
         if not os.path.exists(self.id_dir):
@@ -514,6 +516,8 @@ class ExpireIDsTests(TestCase):
     def tearDown(self):
         shutil.rmtree(self.id_dir)
         shutil.rmtree(self.archive_dir)
+        settings.INTERNET_DRAFT_PATH = self.saved_id_dir
+        settings.INTERNET_DRAFT_ARCHIVE_DIR = self.saved_archive_dir
 
     def write_draft_file(self, name, size):
         f = open(os.path.join(self.id_dir, name), 'w')
