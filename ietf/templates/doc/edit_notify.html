@@ -12,8 +12,6 @@
   {% origin %}
   <h1>Edit notification addresses<br><small>{{titletext}}</small></h1>
 
-  {% bootstrap_messages %}
-
   <form enctype="multipart/form-data" method="post">
     {% csrf_token %}
     {% bootstrap_form form %}

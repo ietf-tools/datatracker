@@ -18,8 +18,6 @@
   <p>The shepherd needs to have a Datatracker account. A new account can be
     <a href="{% url "create_account" %}">created here</a>.</p>
 
-  {% bootstrap_messages %}
-
     <form enctype="multipart/form-data" method="post">
       {% csrf_token %}
       {% bootstrap_form form %}

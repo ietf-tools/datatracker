@@ -10,8 +10,6 @@
   {% origin %}
   <h1>{{ title }}</h1>
 
-  {% bootstrap_messages %}
-
   {% if not option %}
     <p><a class="btn btn-info" href="{% url "state_help" type="charter" %}">Help on states</a></p>
   {% endif %}

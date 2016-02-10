@@ -8,8 +8,6 @@
 
 {% block submit_content %}
   {% origin %}
-  {% bootstrap_messages %}
-
   {% if form.shutdown and user|has_role:"Secretariat" %}
   <p class="bg-warning">WARNING: currently in draft submission blackout period</p>
   {% endif %}

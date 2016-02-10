@@ -12,8 +12,6 @@
   {% origin %}
   <h1>Edit shepherd writeup<br><small>{{ doc.canonical_name }}-{{ doc.rev }}</small></h1>
 
-  {% bootstrap_messages %}
-
   <form enctype="multipart/form-data" method="post">
     {% csrf_token %}
     {% bootstrap_form form %}

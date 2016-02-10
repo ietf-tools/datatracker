@@ -11,8 +11,6 @@
   {% origin %}
   <h1>Last call text<br><small><a href="{% url "doc_view" name=doc.canonical_name %}">{{ doc }}</a></small></h1>
 
-  {% bootstrap_messages %}
-
   <form method="post">
     {% csrf_token %}
     {% bootstrap_form last_call_form %}

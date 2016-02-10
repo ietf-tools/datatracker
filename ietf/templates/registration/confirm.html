@@ -18,8 +18,6 @@
   {% else %}
     <h1>Complete account creation</h1>
 
-    {% bootstrap_messages %}
-
     <p>In order to complete the setup of your account with login name {{ email }}, please choose a password:</p>
     <form method="post">
       {% csrf_token %}

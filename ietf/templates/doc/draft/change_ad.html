@@ -10,8 +10,6 @@
   {% origin %}
   <h1>Change shepherding AD<br><small>{{ doc.name }}-{{ doc.rev }}</small></h1>
 
-  {% bootstrap_messages %}
-
   <form enctype="multipart/form-data" method="post">
     {% csrf_token %}
     {% bootstrap_form form %}

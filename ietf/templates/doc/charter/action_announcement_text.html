@@ -11,8 +11,6 @@
   {% origin %}
   <h1>{{ charter.chartered_group.type.name }} action announcement writeup<br><small>{{ charter.chartered_group.acronym }}</small></h1>
 
-  {% bootstrap_messages %}
-
   <form method="post">
     {% csrf_token %}
     {% bootstrap_form announcement_text_form %}
