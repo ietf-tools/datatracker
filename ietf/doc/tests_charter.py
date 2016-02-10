@@ -13,6 +13,7 @@ import debug                            # pyflakes:ignore
 from ietf.doc.models import ( Document, State, BallotDocEvent, BallotType, NewRevisionDocEvent,
     TelechatDocEvent, WriteupDocEvent )
 from ietf.doc.utils_charter import next_revision, default_review_text, default_action_text 
+from ietf.doc.utils import close_open_ballots
 from ietf.group.models import Group, GroupMilestone
 from ietf.iesg.models import TelechatDate
 from ietf.person.models import Person
@@ -97,7 +98,7 @@ class EditCharterTests(TestCase):
 
             self.assertTrue("state changed" in find_event("changed_state")[0].desc.lower())
 
-            if slug in ("intrev", "iesgrev"):
+            if slug in ("intrev", "extrev"):
                 self.assertTrue(find_event("created_ballot"))
 
             self.assertEqual(len(outbox), 3 if slug=="intrev" else 2 )
@@ -126,6 +127,14 @@ class EditCharterTests(TestCase):
             body = outbox[-1].get_payload()
             for word in ["State changed", "ID Tracker URL", ]:
                 self.assertIn(word, body)
+
+        by = Person.objects.get(user__username="secretary")
+        for slug in ('extrev','iesgrev'):
+            close_open_ballots(charter,by)
+            r = self.client.post(url, dict(charter_state=str(State.objects.get(used=True,type='charter',slug=slug).pk) ))
+            self.assertTrue(r.status_code,302)
+            charter = Document.objects.get(name="charter-ietf-%s" % group.acronym)
+            self.assertTrue(charter.ballot_open('approve'))
 
 
         # Exercise internal review of a recharter
