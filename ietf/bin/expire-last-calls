@@ -14,5 +14,8 @@ from ietf.doc.lastcall import *
 
 drafts = get_expired_last_calls()
 for doc in drafts:
-    expire_last_call(doc)
-    syslog.syslog("Expired last call for %s (id=%s)" % (doc.file_tag(), doc.pk))
+    try:
+        expire_last_call(doc)
+        syslog.syslog("Expired last call for %s (id=%s)" % (doc.file_tag(), doc.pk))
+    except Exception as e:
+        syslog.syslog(syslog.LOG_ERR, "ERROR: Failed to expire last call for %s (id=%s)" % (doc.file_tag(), doc.pk))
