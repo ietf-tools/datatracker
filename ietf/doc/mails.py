@@ -357,7 +357,9 @@ def extra_automation_headers(doc):
     return extra
 
 def email_last_call_expired(doc):
-    text = "IETF Last Call has ended, and the state has been changed to\n%s." % doc.get_state("draft-iesg").name
+    if not doc.type_id in ['draft','statchg']:
+        return
+    text = "IETF Last Call has ended, and the state has been changed to\n%s." % doc.get_state("draft-iesg" if doc.type_id == 'draft' else "statchg").name
     addrs = gather_address_lists('last_call_expired',doc=doc)
     
     send_mail(None,
