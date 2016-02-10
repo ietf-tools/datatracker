@@ -14,6 +14,7 @@ from django.contrib import messages
 from django.core.exceptions import ImproperlyConfigured
 from django.template.loader import render_to_string
 from django.template import Context,RequestContext
+from django.template.defaultfilters import escape as html_escape
 import ietf
 from ietf.utils.log import log
 import sys
@@ -240,7 +241,7 @@ def show_that_mail_was_sent(request,leadline,msg,bcc):
                     info += "Cc: %s\n" % msg.get('Cc')
                 if bcc:
                     info += "Bcc: %s\n" % bcc
-                messages.info(request,info,extra_tags='preformatted',fail_silently=True)
+                messages.info(request,html_escape(info),extra_tags='preformatted',fail_silently=True)
 
 def send_mail_mime(request, to, frm, subject, msg, cc=None, extra=None, toUser=False, bcc=None):
     """Send MIME message with content already filled in."""
