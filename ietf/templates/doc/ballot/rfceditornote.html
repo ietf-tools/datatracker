@@ -4,12 +4,12 @@
 
 {% load bootstrap3 %}
 
-{% block title %}RFC Editor Note for ballot for {{ doc }}{% endblock %}
+{% block title %}RFC Editor Note for {{ doc }}{% endblock %}
 
 {% block content %}
   {% origin %}
 
-  <h1>RFC Editor Note for ballot<br><small><a href="{% url "doc_view" name=doc.canonical_name %}">{{ doc }}</a></small></h1>
+  <h1>RFC Editor Note for<br><small><a href="{% url "doc_view" name=doc.canonical_name %}">{{ doc }}</a></small></h1>
 
   {% bootstrap_messages %}
 

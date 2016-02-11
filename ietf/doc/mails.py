@@ -243,6 +243,9 @@ def generate_publication_request(request, doc):
         approving_body = str(doc.stream)
         consensus_body = approving_body
 
+    e = doc.latest_event(WriteupDocEvent, type="changed_rfc_editor_note_text")
+    rfcednote = e.text if e else ""
+
     return render_to_string("doc/mail/publication_request.txt",
                             dict(doc=doc,
                                  doc_url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url(),
@@ -250,6 +253,7 @@ def generate_publication_request(request, doc):
                                  approving_body=approving_body,
                                  consensus_body=consensus_body,
                                  consensus=consensus,
+                                 rfc_editor_note=rfcednote,
                                  )
                             )
 
