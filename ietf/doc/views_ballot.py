@@ -23,7 +23,7 @@ from ietf.doc.mails import ( email_ballot_deferred, email_ballot_undeferred,
     generate_approval_mail )
 from ietf.doc.lastcall import request_last_call
 from ietf.iesg.models import TelechatDate
-from ietf.ietfauth.utils import has_role, role_required
+from ietf.ietfauth.utils import has_role, role_required, is_authorized_in_doc_stream
 from ietf.message.utils import infer_message
 from ietf.name.models import BallotPositionName
 from ietf.person.models import Person
@@ -592,15 +592,16 @@ class BallotRfcEditorNoteForm(forms.Form):
     def clean_rfc_editor_note(self):
         return self.cleaned_data["rfc_editor_note"].replace("\r", "")
         
-@role_required('Area Director','Secretariat')
+@role_required('Area Director','Secretariat','IAB Chair','IRTF Chair','ISE')
 def ballot_rfceditornote(request, name):
-    """Editing of RFC Editor Note in the ballot"""
+    """Editing of RFC Editor Note"""
     doc = get_object_or_404(Document, docalias__name=name)
+
+    if not is_authorized_in_doc_stream(request.user, doc):
+        return HttpResponseForbidden("You do not have the necessary permissions to change the RFC Editor Note for this document")
 
     login = request.user.person
 
-
-        
     existing = doc.latest_event(WriteupDocEvent, type="changed_rfc_editor_note_text")
     if not existing or (existing.text == ""):
         existing = generate_ballot_rfceditornote(request, doc)

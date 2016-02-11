@@ -421,14 +421,48 @@ class BallotWriteupsTests(TestCase):
         e.text = u"Test note to the RFC Editor text."
         e.save()
 
+        # IETF Stream Documents
         for p in ['doc_ballot_approvaltext','doc_ballot_writeupnotes','doc_ballot_rfceditornote']:
             url = urlreverse(p, kwargs=dict(name=draft.name))
 
-            for username in ['plain','marschairman','iana','iab chair']:
+            for username in ['plain','marschairman','iab chair','irtf chair','ise','iana']:
                 verify_fail(username, url)
 
             for username in ['secretary','ad']:
                 verify_can_see(username, url)
+
+        # RFC Editor Notes for documents in the IAB Stream
+        draft.stream_id = 'iab'
+        draft.save()
+        url = urlreverse('doc_ballot_rfceditornote', kwargs=dict(name=draft.name))
+
+        for username in ['plain','marschairman','ad','irtf chair','ise','iana']:
+            verify_fail(username, url)
+
+        for username in ['secretary','iab chair']:
+            verify_can_see(username, url)
+
+        # RFC Editor Notes for documents in the IRTF Stream
+        draft.stream_id = 'irtf'
+        draft.save()
+        url = urlreverse('doc_ballot_rfceditornote', kwargs=dict(name=draft.name))
+
+        for username in ['plain','marschairman','ad','iab chair','ise','iana']:
+            verify_fail(username, url)
+
+        for username in ['secretary','irtf chair']:
+            verify_can_see(username, url)
+
+        # RFC Editor Notes for documents in the IAB Stream
+        draft.stream_id = 'ise'
+        draft.save()
+        url = urlreverse('doc_ballot_rfceditornote', kwargs=dict(name=draft.name))
+
+        for username in ['plain','marschairman','ad','iab chair','irtf chair','iana']:
+            verify_fail(username, url)
+
+        for username in ['secretary','ise']:
+            verify_can_see(username, url)
 
 class ApproveBallotTests(TestCase):
     def test_approve_ballot(self):

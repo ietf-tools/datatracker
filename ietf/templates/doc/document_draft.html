@@ -264,40 +264,55 @@
         </tr>
       {% endif %}
 
-      <tr>
-        <th></th>
-	<th>Document shepherd</th>
-	<td class="edit">
-	  {% if can_edit_stream_info %}
-	    <a class="btn btn-default btn-xs" href="{% url "doc_edit_shepherd" name=doc.name %}">Edit</a>
-	  {% elif is_shepherd %}
-	    <a class="btn btn-default btn-xs" href="{% url "doc_change_shepherd_email" name=doc.name %}">Change Email</a>
-	  {% endif %}
-	</td>
-	<td>
-	  {% if doc.shepherd %}{{ doc.shepherd.person }}{% else %}No shepherd assigned{% endif %}
-	</td>
-      </tr>
-
-      {% if shepherd_writeup or can_edit_shepherd_writeup %}
+      {% if stream_state_type_slug == "draft-stream-ietf" %}
 	<tr>
 	  <th></th>
-	  <th>Shepherd write-up</th>
+	  <th>Document shepherd</th>
 	  <td class="edit">
-	    {% if can_edit_shepherd_writeup %}
-	      {% url "doc_edit_shepherd_writeup" name=doc.name as doc_edit_url %}
-	      {% if doc_edit_url %}
-		<a class="btn btn-default btn-xs" href="{{doc_edit_url}}">Edit</a>
-	      {% endif %}
+	    {% if can_edit_stream_info %}
+	      <a class="btn btn-default btn-xs" href="{% url "doc_edit_shepherd" name=doc.name %}">Edit</a>
+	    {% elif is_shepherd %}
+	      <a class="btn btn-default btn-xs" href="{% url "doc_change_shepherd_email" name=doc.name %}">Change Email</a>
 	    {% endif %}
 	  </td>
 	  <td>
-	    {% if shepherd_writeup %}
-	      <a class="btn btn-default btn-xs" href="{% url "doc_shepherd_writeup" name=doc.name %}">Show</a>
-	      (last changed {{ shepherd_writeup.time|date:"Y-m-d"}})
-	    {% else %}
-	      (None)
+	    {% if doc.shepherd %}{{ doc.shepherd.person }}{% else %}No shepherd assigned{% endif %}
+	  </td>
+	</tr>
+
+        {% if shepherd_writeup or can_edit_shepherd_writeup %}
+	  <tr>
+	    <th></th>
+	    <th>Shepherd write-up</th>
+	    <td class="edit">
+	      {% if can_edit_shepherd_writeup %}
+	        {% url "doc_edit_shepherd_writeup" name=doc.name as doc_edit_url %}
+	        {% if doc_edit_url %}
+		  <a class="btn btn-default btn-xs" href="{{doc_edit_url}}">Edit</a>
+	        {% endif %}
+	      {% endif %}
+	    </td>
+	    <td>
+	      {% if shepherd_writeup %}
+	        <a class="btn btn-default btn-xs" href="{% url "doc_shepherd_writeup" name=doc.name %}">Show</a>
+		(last changed {{ shepherd_writeup.time|date:"Y-m-d"}})
+	      {% else %}
+	        (None)
+	      {% endif %}
+	    </td>
+	  </tr>
+        {% endif %}
+      {% else %}
+	<tr>
+	  <th></th>
+	  <th>RFC Editor Note</th>
+	  <td class="edit">
+	    {% if can_edit_stream_info %}
+	    <a class="btn btn-default btn-xs" href="{% url "doc_ballot_rfceditornote" name=doc.name %}">Edit</a>
 	    {% endif %}
+	  </td>
+	  <td>
+	    {% if doc.has_rfc_editor_note %}(last changed {{ doc.has_rfc_editor_note|date:"Y-m-d"}}){% else %}(None){% endif %}
 	  </td>
 	</tr>
       {% endif %}
@@ -310,105 +325,108 @@
       {% endif %}
 
     </tbody>
-    <tbody class="meta">
-      <tr>
-	<th>IESG</th>
-	<th><a href="{% url "ietf.help.views.state" doc=doc.type.slug type="iesg" %}">IESG state</a></th>
-	<td class="edit">
-	  {% if iesg_state and can_edit %}
-	    <a class="btn btn-default btn-xs" href="{% url "doc_change_state" name=doc.name %}">Edit</a>
-	  {% endif %}
-	</td>
-	<td>
-	  {{ iesg_state_summary|default:"I-D Exists" }}
-	</td>
-      </tr>
 
-      {% if consensus and stream_state_type_slug == "draft-stream-ietf" %}
+    {% if not stream_state_type_slug == "draft-stream-iab" %}
+      <tbody class="meta">
 	<tr>
-	  <th></th>
-	  <th>Consensus</th>
+	  <th>IESG</th>
+	  <th><a href="{% url "ietf.help.views.state" doc=doc.type.slug type="iesg" %}">IESG state</a></th>
 	  <td class="edit">
-	    {% if can_edit or can_edit_stream_info %}
-	      <a class="btn btn-default btn-xs" href="{% url "doc_edit_consensus" name=doc.name %}">Edit</a>
+	    {% if iesg_state and can_edit %}
+	    <a class="btn btn-default btn-xs" href="{% url "doc_change_state" name=doc.name %}">Edit</a>
 	    {% endif %}
 	  </td>
 	  <td>
-	    <span title="Whether the document is the result of a community consensus process as defined in RFC 5741">{{ consensus }}</span>
+	    {{ iesg_state_summary|default:"I-D Exists" }}
 	  </td>
 	</tr>
-      {% endif %}
 
-      <tr>
-        <th></th>
-	<th>Telechat date</th>
-	<td class="edit">
-	  {% if can_edit %}
-	    <a class="btn btn-default btn-xs" href="{% url "doc_change_telechat_date" name=doc.name %}">Edit</a>
-	  {% endif %}
-	</td>
-	<td>
-	  {% if telechat %}
-	    On agenda of {{ telechat.telechat_date }} IESG telechat
-	    {% if telechat.returning_item %}
-	      (returning item)
-	    {% endif %}
-	  {% else %}
-	    {% if can_edit %}
-	      (None)
-	    {% endif %}
-	  {% endif %}
-
-	  {% if ballot_summary %}
-	    <br><i>{{ ballot_summary }}</i>
-	  {% endif %}
-	</td>
-      </tr>
-
-      <tr>
-        <th></th>
-	<th>Responsible AD</th>
-	<td class="edit">
-	  {% if can_edit %}
-	    <a class="btn btn-default btn-xs" href="{% url "doc_change_ad" name=doc.name %}">Edit</a>
-	  {% endif %}
-	</td>
-	<td>
-	  {{ doc.ad|default:"(None)" }}
-	</td>
-      </tr>
-
-      {% if iesg_state %}
-	{% if doc.note or can_edit %}
+        {% if consensus and stream_state_type_slug == "draft-stream-ietf" %}
 	  <tr>
 	    <th></th>
-	    <th>IESG note</th>
+	    <th>Consensus</th>
 	    <td class="edit">
-	      {% if can_edit %}
-		<a class="btn btn-default btn-xs" href="{% url "doc_change_iesg_note" name=doc.name %}">Edit</a>
+	      {% if can_edit or can_edit_stream_info %}
+	      <a class="btn btn-default btn-xs" href="{% url "doc_edit_consensus" name=doc.name %}">Edit</a>
 	      {% endif %}
 	    </td>
 	    <td>
-	      {{ doc.note|default:"(None)"|linebreaksbr }}
+	      <span title="Whether the document is the result of a community consensus process as defined in RFC 5741">{{ consensus }}</span>
 	    </td>
 	  </tr>
-	{% endif %}
-      {% endif %}
+        {% endif %}
 
-      <tr>
-        <th></th>
-	<th>Send notices to</th>
-	<td class="edit">
-	  {% if can_edit_notify %}
-	    <a class="btn btn-default btn-xs" href="{% url "doc_change_notify" name=doc.name %}">Edit</a>
+	<tr>
+	  <th></th>
+	  <th>Telechat date</th>
+	  <td class="edit">
+	    {% if can_edit %}
+	    <a class="btn btn-default btn-xs" href="{% url "doc_change_telechat_date" name=doc.name %}">Edit</a>
+	    {% endif %}
+	  </td>
+	  <td>
+	    {% if telechat %}
+	    On agenda of {{ telechat.telechat_date }} IESG telechat
+	      {% if telechat.returning_item %}
+	        (returning item)
+	      {% endif %}
+	    {% else %}
+	      {% if can_edit %}
+	        (None)
+	      {% endif %}
+	    {% endif %}
+
+	    {% if ballot_summary %}
+	      <br><i>{{ ballot_summary }}</i>
+	    {% endif %}
+	  </td>
+	</tr>
+
+	<tr>
+	  <th></th>
+	  <th>Responsible AD</th>
+	  <td class="edit">
+	    {% if can_edit %}
+	      <a class="btn btn-default btn-xs" href="{% url "doc_change_ad" name=doc.name %}">Edit</a>
+	    {% endif %}
+	  </td>
+	  <td>
+	    {{ doc.ad|default:"(None)" }}
+	  </td>
+	</tr>
+
+        {% if iesg_state %}
+	  {% if doc.note or can_edit %}
+	    <tr>
+	      <th></th>
+	      <th>IESG note</th>
+	      <td class="edit">
+	        {% if can_edit %}
+		  <a class="btn btn-default btn-xs" href="{% url "doc_change_iesg_note" name=doc.name %}">Edit</a>
+	        {% endif %}
+	    </td>
+	    <td>
+	        {{ doc.note|default:"(None)"|linebreaksbr }}
+	    </td>
+	  </tr>
 	  {% endif %}
-	</td>
-	<td>
-	  {{ doc.notify|default:"(None)"}}
-	</td>
-      </tr>
+	{% endif %}
 
-    </tbody>
+	<tr>
+	  <th></th>
+	  <th>Send notices to</th>
+	  <td class="edit">
+	    {% if can_edit_notify %}
+	      <a class="btn btn-default btn-xs" href="{% url "doc_change_notify" name=doc.name %}">Edit</a>
+	    {% endif %}
+	  </td>
+	  <td>
+	    {{ doc.notify|default:"(None)"}}
+	  </td>
+	</tr>
+
+      </tbody>
+    {% endif %}
 
     {% if iana_review_state %}
     <tbody class="meta">

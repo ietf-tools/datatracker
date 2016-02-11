@@ -7,7 +7,7 @@ This document is the product of the {{ group_description }}.{% endif %}{% endfil
 
 URL: {{ doc_url }}
 
-{% filter wordwrap:73 %}{% if consensus != None %}The document {% if consensus %}represents{% else %}does not necessarily represent{% endif%} the consensus of the {{ consensus_body }}.
+{% filter wordwrap:73 %}{% if consensus != None %}The document {% if consensus %}represents{% else %}does not necessarily represent{% endif %} the consensus of the {{ consensus_body }}.
 
 {% endif %}No IANA allocation in the document requires IETF Consensus or Standards Action.{% endfilter %}
 
@@ -17,4 +17,6 @@ URL: {{ doc_url }}
 [OPTIONAL: Include statement of the purpose of publishing this document, its intended audience, its merits and significance.]
 
 [OPTIONAL: Include suggested names and contact information for one or more competent and independent potential reviewers for the document (this can speed the review and approval process).]
+
+{% if doc.has_rfc_editor_note %}{% filter wordwrap:73 %}{{ rfc_editor_note }}{% endfilter %}{% endif %}
 {% endautoescape %}
