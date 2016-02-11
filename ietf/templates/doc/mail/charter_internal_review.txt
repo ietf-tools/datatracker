@@ -1,9 +1,9 @@
 {% autoescape off %}{% filter wordwrap:73 %}
 
 {% if review_type == "new" %}A new {% if charter.group.type_id == "rg" %}IRTF{% else %}IETF{% endif %} {{ charter.group.type.name }} is being considered in the {% if charter.group.type_id == "rg" %}IRTF{% else %}IETF{% endif %}.{% elif review_type == "recharter" %}A new charter for the {{ charter.group.name }} ({{charter.group.acronym}}) {{ charter.group.type.name }} {% if charter.group.type_id == "rg" %}IRTF{% else %}in the {{ charter.group.parent }} of the IETF{% endif %} is being considered. {% endif %} The draft charter for this {{ charter.group.type.name }} is provided below for your review and comment.
-
+{% if charter.group.type_id != "rg" %}
 Review time is one week.
-
+{% endif %}
 The IETF Secretariat
 
 {% include "doc/charter/group_info.txt" with group=charter.group%}{% endfilter %}{% endautoescape %}
