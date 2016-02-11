@@ -1,3 +1,37 @@
+ietfdb (6.14.1) ietf; urgency=medium
+
+  This is a small bugfix release.
+
+  * Merged in [10811] from rjsparks@nostrum.com:
+    Handle expiring the last call of status change documents. Be more robust
+    about errors when expiring last calls. Fixes #1911.  
+
+  * Merged in [10810] from rjsparks@nostrum.com:
+    Removed a bunch of redundant displays of the django messages framework
+    messages from forms.  
+
+  * Merged in [10809] from rjsparks@nostrum.com:
+    Further tweaks to rendering messages from the messaging framework.  
+
+  * Merged in [10806] from rjsparks@nostrum.com:
+    Fix a minor typo in the new rfc_editor_note code.
+
+  * Merged in [10804] from rjsparks@nostrum.com:
+    Some tweaks to handle rendering django messaging framework messages a
+    little better.  
+
+  * Merged in [10803] from rjsparks@nostrum.com:
+    Create the approval ballot for charters when the charter enters external
+    review (or iesg review if external review is skipped). Fixes #1792.  
+
+  * Moved some production-path checks to the checks module, and fixed up 
+    tests which changed some settings without restoring them.
+
+  * Added caching to the smart document lookup view.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  11 Feb 2016 01:11:57 -0800
+
+
 ietfdb (6.14.0) ietf; urgency=medium
 
   **Meetings Tabs on Group Pages**
