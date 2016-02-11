@@ -6,7 +6,7 @@ coverage>=4.0.1,!=4.0.2
 decorator>=3.4.0
 defusedxml>=0.4.1		# for TastyPie when ussing xml; not a declared dependency
 django-bootstrap3>=5.1.1
-django-tastypie>=0.12.1
+django-tastypie>=0.13.1
 django-widget-tweaks>=1.3
 docutils>=0.12                  
 html5lib>=0.90
