@@ -478,6 +478,21 @@ class ApproveBallotTests(TestCase):
         q = PyQuery(r.content)
         self.assertTrue(q('[type=submit]:contains("send announcement")'))
         self.assertEqual(len(q('form pre:contains("Subject: Protocol Action")')), 1)
+        self.assertEqual(len(q('form pre:contains("This is a note for the RFC Editor")')), 0)
+
+        # add a note to the RFC Editor
+        WriteupDocEvent.objects.create(
+            doc=draft,
+            desc="Changed text",
+            type="changed_rfc_editor_note_text",
+            text="This is a note for the RFC Editor.",
+            by=Person.objects.get(name="(System)"))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertTrue(q('[type=submit]:contains("send announcement")'))
+        self.assertEqual(len(q('form pre:contains("Subject: Protocol Action")')), 1)
+        self.assertEqual(len(q('form pre:contains("This is a note for the RFC Editor")')), 1)
 
         # approve
         mailbox_before = len(outbox)
