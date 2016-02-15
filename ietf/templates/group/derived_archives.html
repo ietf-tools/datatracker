@@ -1,0 +1,26 @@
+{% extends "group/group_base.html" %}
+{# Copyright The IETF Trust 2016, All Rights Reserved #}
+{% load origin %}
+
+{% block title %}Archives{% if group %} for {{group.acronym}}{% endif %}{% endblock %}
+
+{% block group_content %}
+{% origin %}
+
+{% if list_acronym %}
+
+<div class="row">
+<span class="col-xs-2 col-md-1"><strong>Mailarchive</strong></span><span class="col-xs-8 col-md-8"><a href="{{group.list_archive}}">{{group.list_archive}}</a></span>
+</div>
+
+<div class="row">
+<span class="col-xs-2 col-md-1"><strong>Mhonarc</strong></span><span class="col-xs-8 col-md-8"><a href="https://www.ietf.org/mail-archive/web/{{list_acronym}}/current/maillist.html">https://www.ietf.org/mail-archive/web/{{list_acronym}}/current/maillist.html</a></span>
+</div>
+
+{% else %}
+<div class="row">
+<strong class="col-xs-2 col-md-1">Archive</strong><span class="col-xs-8 col-md-8"><a href="{{group.list_archive}}">{{group.list_archive}}</a></span>
+</div>
+{% endif %}
+
+{% endblock %}
