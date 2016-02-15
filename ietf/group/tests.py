@@ -1,6 +1,8 @@
 import os
 from unittest import skipIf
 
+from pyquery import PyQuery
+
 from django.conf import settings
 from django.core.urlresolvers import reverse as urlreverse
 from django.db.models import Q
@@ -10,6 +12,7 @@ import debug                             # pyflakes:ignore
 
 from ietf.group.models import Role, Group
 from ietf.group.utils import get_group_role_emails, get_child_group_role_emails, get_group_ad_emails
+from ietf.group.factories import GroupFactory
 from ietf.utils.test_data import make_test_data
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase, unicontent
 
@@ -131,3 +134,28 @@ class GroupRoleEmailTests(TestCase):
             self.assertGreater(len(emails), 0)
             for item in emails:
                 self.assertIn('@', item)
+
+class GroupDerivedArchiveTests(TestCase):
+
+    def test_group_with_mailarch(self):
+        group = GroupFactory()
+        group.list_archive = 'https://mailarchive.ietf.org/arch/browse/%s/'%group.acronym
+        group.save()
+        url = urlreverse("ietf.group.info.derived_archives",kwargs=dict(acronym=group.acronym))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(url, q('.nav-tabs .active a')[0].attrib['href'])
+        self.assertTrue(group.list_archive in unicontent(r))
+        self.assertTrue('web/%s/current'%group.acronym in unicontent(r))
+
+    def test_group_without_mailarch(self):
+        group = GroupFactory()
+        group.list_archive = 'https://alienarchive.example.com'
+        group.save()
+        url = urlreverse("ietf.group.info.derived_archives",kwargs=dict(acronym=group.acronym))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertFalse(q('.nav-tabs .active'))
+        self.assertTrue(group.list_archive in unicontent(r))
