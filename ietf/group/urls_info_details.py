@@ -21,5 +21,6 @@ urlpatterns = patterns('',
     (r'^materials/$', 'ietf.group.info.materials', None, "group_materials"),
     (r'^materials/new/$', 'ietf.doc.views_material.choose_material_type'),
     (r'^materials/new/(?P<doc_type>[\w-]+)/$', 'ietf.doc.views_material.edit_material', { 'action': "new" }, "group_new_material"),
+    (r'^archives/$', 'ietf.group.info.derived_archives'),
     url(r'^email-aliases/$', RedirectView.as_view(pattern_name='ietf.group.info.email',permanent=False),name='old_group_email_aliases'),
 )

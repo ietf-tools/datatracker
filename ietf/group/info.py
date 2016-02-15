@@ -345,7 +345,10 @@ def construct_group_menu_context(request, group, selected, group_type, others):
         del kwargs["output_type"]
 
     if group.list_archive.startswith("http:") or group.list_archive.startswith("https:") or group.list_archive.startswith("ftp:"):
-        entries.append((mark_safe("List archive &raquo;"), group.list_archive))
+        if 'mailarchive.ietf.org' in group.list_archive:
+            entries.append(("List archive", urlreverse("ietf.group.info.derived_archives", kwargs=kwargs)))
+        else:
+            entries.append((mark_safe("List archive &raquo;"), group.list_archive))
     if group.has_tools_page():
         entries.append((mark_safe("Tools page &raquo;"), "https://tools.ietf.org/%s/%s/" % (group.type_id, group.acronym)))
 
@@ -776,4 +779,24 @@ def meetings(request, acronym=None, group_type=None):
                      'in_progress':in_progress,
                      'past':past,
                      'can_edit':can_edit,
+                  }))
+
+def derived_archives(request, acronym=None, group_type=None):
+    group = get_group_or_404(acronym,group_type) if acronym else None
+
+    list_acronym = None
+
+    m = re.search('mailarchive.ietf.org/arch/search/?\?email_list=([-\w]+)\Z',group.list_archive)
+    if m:
+        list_acronym=m.group(1)
+
+    if not list_acronym:
+        m = re.search('mailarchive.ietf.org/arch/browse/([-\w]+)/?\Z',group.list_archive)
+        if m:
+            list_acronym=m.group(1)
+
+    return render(request, 'group/derived_archives.html',
+                  construct_group_menu_context(request, group, "list archive", group_type, {
+                     'group':group,
+                     'list_acronym':list_acronym,
                   }))
