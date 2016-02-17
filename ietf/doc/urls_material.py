@@ -2,6 +2,7 @@ from django.conf.urls import patterns, url
 
 urlpatterns = patterns('ietf.doc.views_material',
     url(r'^(?P<action>state|title|abstract|revise)/$', "edit_material", name="material_edit"),
+    url(r'^meetings/$', "all_presentations", name="all_presentations"),
     url(r'^sessions/$', "material_presentations", name="material_presentations"),
     (r'^sessions/(?P<seq>\d+)/edit/$',  "edit_material_presentations"),
     (r'^sessions/(?P<acronym>[A-Za-z0-9_\-\+]+)/edit/$',  "edit_material_presentations"),

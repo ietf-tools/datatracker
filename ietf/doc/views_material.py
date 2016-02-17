@@ -18,6 +18,7 @@ from ietf.doc.utils import add_state_change_event, check_common_doc_name_rules
 from ietf.group.models import Group
 from ietf.group.utils import can_manage_materials
 from ietf.meeting.models import Session
+from ietf.meeting.utils import group_sessions
 
 @login_required
 def choose_material_type(request, acronym):
@@ -317,4 +318,20 @@ def material_presentations(request, name, acronym=None, date=None, seq=None, wee
         'doc': doc,
         'date': date,
         'week_day': week_day,
+        })
+
+def all_presentations(request, name):
+    doc = get_object_or_404(Document, name=name)
+
+
+    sessions = doc.session_set.filter(status__in=['sched','schedw','appr','canceled'],
+                                      type__in=['session','plenary','other'])
+
+    future, in_progress, past = group_sessions(sessions)
+    
+    return render(request, 'doc/material/all_presentations.html', {
+        'doc': doc,
+        'future': future,
+        'in_progress': in_progress,
+        'past' : past,
         })
