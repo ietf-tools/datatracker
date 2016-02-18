@@ -10,3 +10,8 @@ def presented_versions(session,doc):
    else:
       rev = sp.first().rev
       return rev if rev else "(current)"
+
+@register.filter
+def can_manage_materials(session,user):
+    return session.can_manage_materials(user)
+

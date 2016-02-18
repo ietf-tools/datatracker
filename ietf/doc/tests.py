@@ -20,10 +20,14 @@ import debug                            # pyflakes:ignore
 from ietf.doc.models import ( Document, DocAlias, DocRelationshipName, RelatedDocument, State,
     DocEvent, BallotPositionDocEvent, LastCallDocEvent, WriteupDocEvent, NewRevisionDocEvent,
     save_document_in_history )
+from ietf.doc.factories import DocumentFactory
 from ietf.group.models import Group
+from ietf.group.factories import GroupFactory
 from ietf.meeting.models import Meeting, Session, SessionPresentation
+from ietf.meeting.factories import SessionFactory
 from ietf.name.models import SessionStatusName
 from ietf.person.models import Person
+from ietf.person.factories import PersonFactory
 from ietf.utils.mail import outbox
 from ietf.utils.test_data import make_test_data
 from ietf.utils.test_utils import login_testing_unauthorized, unicontent
@@ -904,3 +908,65 @@ expand-draft-ietf-ames-test.all@virtual.ietf.org  ames-author@example.ames, ames
         self.assertEqual(r.status_code, 200)
         self.assertTrue('draft-ietf-mars-test.all@ietf.org' in unicontent(r))
         self.assertTrue('ballot_saved' in unicontent(r))
+
+class DocumentMeetingTests(TestCase):
+
+    def setUp(self):
+        self.group = GroupFactory(type_id='wg',state_id='active')
+
+        today = datetime.date.today()
+        cut_days = settings.MEETING_MATERIALS_SUBMISSION_CORRECTION_DAYS
+        self.past_cutoff = SessionFactory.create(meeting__type_id='ietf',group=self.group,meeting__date=today-datetime.timedelta(days=1+cut_days))
+        self.past = SessionFactory.create(meeting__type_id='ietf',group=self.group,meeting__date=today-datetime.timedelta(days=cut_days/2))
+        self.inprog = SessionFactory.create(meeting__type_id='ietf',group=self.group,meeting__date=today-datetime.timedelta(days=1))
+        SessionFactory.create(meeting__type_id='ietf',group=self.group,meeting__date=today+datetime.timedelta(days=90))
+        SessionFactory.create(meeting__type_id='interim',group=self.group,meeting__date=today+datetime.timedelta(days=45))
+
+    def test_view_document_meetings(self):
+        doc = DocumentFactory.create()
+        doc.sessionpresentation_set.create(session=self.inprog,rev=None)
+
+        url = urlreverse('ietf.doc.views_material.all_presentations', kwargs=dict(name=doc.name))
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        q = PyQuery(response.content)
+        self.assertTrue(q('#inprogressmeets'))
+        self.assertFalse(any([q(id) for id in ['#pastmeets','#futuremeets']]))
+        self.assertFalse(q('#addsessionsbutton'))
+        self.assertFalse(q("a.btn:contains('Remove document')"))
+
+        doc.sessionpresentation_set.create(session=self.past_cutoff,rev=None)
+        doc.sessionpresentation_set.create(session=self.past,rev=None)
+
+        self.client.login(username="secretary", password="secretary+password")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        q = PyQuery(response.content)
+        self.assertTrue(q('#addsessionsbutton'))
+        self.assertEqual(1,len(q("#inprogressmeets a.btn-default:contains('Remove document')")))
+        self.assertEqual(1,len(q("#pastmeets a.btn-default:contains('Remove document')")))
+        self.assertEqual(1,len(q("#pastmeets a.btn-warning:contains('Remove document')")))
+
+        group_chair = PersonFactory()
+        self.group.role_set.create(name_id='chair',person=group_chair,email=group_chair.email())
+        self.client.login(username=group_chair.user.username,password='%s+password'%group_chair.user.username)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        q = PyQuery(response.content)
+        self.assertTrue(q('#addsessionsbutton'))
+        self.assertEqual(1,len(q("#inprogressmeets a.btn-default:contains('Remove document')")))
+        self.assertEqual(1,len(q("#pastmeets a.btn-default:contains('Remove document')")))
+        self.assertTrue(q('#pastmeets'))
+        self.assertFalse(q("#pastmeets a.btn-warning:contains('Remove document')"))
+
+        other_group = GroupFactory(type_id='wg',state_id='active')
+        other_chair = PersonFactory()
+        other_group.role_set.create(name_id='chair',person=other_chair,email=group_chair.email())
+        self.client.login(username=other_chair.user.username,password='%s+password'%other_chair.user.username)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        q = PyQuery(response.content)
+        self.assertTrue(q('#addsessionsbutton'))
+        self.assertTrue(all([q(id) for id in ['#pastmeets','#inprogressmeets']]))
+        self.assertFalse(q("#inprogressmeets a.btn:contains('Remove document')"))
+        self.assertFalse(q("#pastmeets a.btn:contains('Remove document')"))

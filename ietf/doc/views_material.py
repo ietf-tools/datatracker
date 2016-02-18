@@ -330,6 +330,7 @@ def all_presentations(request, name):
     future, in_progress, past = group_sessions(sessions)
     
     return render(request, 'doc/material/all_presentations.html', {
+        'user': request.user,
         'doc': doc,
         'future': future,
         'in_progress': in_progress,
