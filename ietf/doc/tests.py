@@ -1002,14 +1002,8 @@ class DocumentMeetingTests(TestCase):
         q = PyQuery(response.content)
         self.assertEqual(2,len(q('select#id_version option')))
 
-        # Simulate the cancel button
-        response = self.client.post(url,{})
-        self.assertEqual(response.status_code, 302)
-        self.assertEqual(doc.sessionpresentation_set.get(pk=sp.pk).rev,None)
-        
         self.assertEqual(1,doc.docevent_set.count())
         response = self.client.post(url,{'version':'00','save':''})
-        response = self.client.post(url,{})
         self.assertEqual(response.status_code, 302)
         self.assertEqual(doc.sessionpresentation_set.get(pk=sp.pk).rev,'00')
         self.assertEqual(2,doc.docevent_set.count())
@@ -1029,7 +1023,7 @@ class DocumentMeetingTests(TestCase):
         q=PyQuery(response.content)
         self.assertEqual(1,len(q(".alert-warning:contains('may affect published proceedings')")))
 
-    def test_remove_document_self(self):
+    def test_remove_document_session(self):
         doc = DocumentFactory.create()
         sp = doc.sessionpresentation_set.create(session=self.future,rev=None)
 
@@ -1053,11 +1047,6 @@ class DocumentMeetingTests(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
 
-        # Simulate the cancel button
-        response = self.client.post(url,{})
-        self.assertEqual(response.status_code, 302)
-        self.assertTrue(doc.sessionpresentation_set.filter(pk=sp.pk).exists())
-        
         self.assertEqual(1,doc.docevent_set.count())
         response = self.client.post(url,{'remove_session':''})
         self.assertEqual(response.status_code, 302)
@@ -1078,3 +1067,26 @@ class DocumentMeetingTests(TestCase):
         self.assertEqual(response.status_code, 200)
         q=PyQuery(response.content)
         self.assertEqual(1,len(q(".alert-warning:contains('may affect published proceedings')")))
+
+    def test_add_document_session(self):
+        doc = DocumentFactory.create()
+
+        url = urlreverse('ietf.doc.views_doc.add_sessionpresentation',kwargs=dict(name=doc.name))
+        login_testing_unauthorized(self,self.group_chair.user.username,url)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code,200)
+    
+        response = self.client.post(url,{'session':0,'version':'current'})
+        self.assertEqual(response.status_code,200)
+        q=PyQuery(response.content)
+        self.assertTrue(q('.form-group.has-error'))
+     
+        response = self.client.post(url,{'session':self.future.pk,'version':'bogus version'})
+        self.assertEqual(response.status_code,200)
+        q=PyQuery(response.content)
+        self.assertTrue(q('.form-group.has-error'))
+
+        self.assertEqual(1,doc.docevent_set.count())
+        response = self.client.post(url,{'session':self.future.pk,'version':'current'})
+        self.assertEqual(response.status_code,302)
+        self.assertEqual(2,doc.docevent_set.count())

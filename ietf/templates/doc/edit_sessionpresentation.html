@@ -21,7 +21,7 @@
 
     {% buttons %}
       <button class="btn btn-primary" type="submit" name="save">Save</button>
-      <button class="btn btn-default">Cancel</button>
+      <a class="btn btn-default" href="{% url 'ietf.doc.views_material.all_presentations' name=sp.document.name %}">Cancel</a>
     {% endbuttons %}
 
   </form>

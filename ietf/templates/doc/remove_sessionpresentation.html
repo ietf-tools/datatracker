@@ -24,7 +24,7 @@
     {% csrf_token %}
     {% buttons %}
       <button type="submit" class="btn btn-{% if sp.session.is_material_submission_cutoff %}warning{% else %}primary{% endif %}" name="remove_session">Remove document from session</button>
-      <button type="submit" class="btn btn-default">Cancel</button>
+      <a class="btn btn-default href="{% url 'ietf.doc.views_material.all_presentations' name=sp.document.name %}">Cancel</a>
     {% endbuttons %}
   </form>
 

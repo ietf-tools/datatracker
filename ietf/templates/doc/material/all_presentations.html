@@ -9,11 +9,8 @@
   <h1>Sessions linked to {{doc.name}}{% if doc.title %}<br><small>{{doc.title}}</small>{% endif %}</h1>
 
 <div class="buttonlist" >
-  {% comment TODO %}
-    <a class="btn btn-default">Add doc to next session for this group</a>
-  {% endcomment %}
   {% if user|has_role:"Secretariat,Area Director,WG Chair,WG Secretary,RG Chair,RG Secretary,IRTF Chair,Team Chair" %} 
-    <a class="btn btn-default" id="addsessionsbutton">Link to more sessions</a>
+    <a class="btn btn-default" id="addsessionsbutton" href="{% url 'ietf.doc.views_doc.add_sessionpresentation' name=doc.name %}">Link to more sessions</a>
   {% else %}
     {{user}} failed the has_role check
   {% endif %}

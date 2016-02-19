@@ -38,6 +38,7 @@ from ietf.doc import views_status_change
 from ietf.doc import views_doc
 
 session_patterns = [
+    url(r'^add$', views_doc.add_sessionpresentation),
     url(r'^(?P<session_id>\d+)/edit$',  views_doc.edit_sessionpresentation),
     url(r'^(?P<session_id>\d+)/remove$', views_doc.remove_sessionpresentation),
 ]
