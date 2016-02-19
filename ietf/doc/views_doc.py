@@ -1091,3 +1091,65 @@ def email_aliases(request,name=''):
 
     return render(request,'doc/email_aliases.html',{'aliases':aliases,'ietf_domain':settings.IETF_DOMAIN,'doc':doc})
 
+class SessionPresentationForm(forms.Form):
+
+    version = forms.ChoiceField(required=False,
+                                label='Which version of this document will be discussed at this session?')
+
+    def __init__(self, *args, **kwargs):
+        choices = kwargs.pop('choices')
+        super(SessionPresentationForm,self).__init__(*args,**kwargs)
+        self.fields['version'].choices = choices
+
+def edit_sessionpresentation(request,name,session_id):
+    doc = get_object_or_404(Document, name=name)
+    sp = get_object_or_404(doc.sessionpresentation_set, session_id=session_id)
+
+    if not sp.session.can_manage_materials(request.user):
+        raise Http404
+
+    if sp.session.is_material_submission_cutoff() and not has_role(request.user, "Secretariat"):
+        raise Http404
+
+    choices = [(x,x) for x in doc.docevent_set.filter(type='new_revision').values_list('newrevisiondocevent__rev',flat=True)]
+    choices.insert(0,('current','Current at the time of the session'))
+    initial = {'version' : sp.rev if sp.rev else 'current'}
+
+    if request.method == 'POST':
+        if 'save' in request.POST:
+            form = SessionPresentationForm(request.POST,choices=choices)
+            if form.is_valid():
+                new_selection = form.cleaned_data['version']
+                if initial['version'] != new_selection:
+                    doc.sessionpresentation_set.filter(pk=sp.pk).update(rev=None if new_selection=='current' else new_selection)
+                    c = DocEvent(type="added_comment", doc=doc, by=request.user.person)
+                    c.desc = "Revision for session %s changed to  %s" % (sp.session,new_selection)
+                    c.save()
+                return redirect('ietf.doc.views_material.all_presentations', name=name)
+        else:
+            return redirect('ietf.doc.views_material.all_presentations', name=name)
+    else:
+        form = SessionPresentationForm(choices=choices,initial=initial)
+
+    return render(request,'doc/edit_sessionpresentation.html', {'sp': sp, 'form': form })
+
+def remove_sessionpresentation(request,name,session_id):
+    doc = get_object_or_404(Document, name=name)
+    sp = get_object_or_404(doc.sessionpresentation_set, session_id=session_id)
+
+    if not sp.session.can_manage_materials(request.user):
+        raise Http404
+
+    if sp.session.is_material_submission_cutoff() and not has_role(request.user, "Secretariat"):
+        raise Http404
+
+    if request.method == 'POST':
+        if 'remove_session' in request.POST:
+            doc.sessionpresentation_set.filter(pk=sp.pk).delete()
+            c = DocEvent(type="added_comment", doc=doc, by=request.user.person)
+            c.desc = "Removed from session: %s" % (sp.session)
+            c.save()
+
+        return redirect('ietf.doc.views_material.all_presentations', name=name)
+
+    return render(request,'doc/remove_sessionpresentation.html', {'sp': sp })

@@ -32,7 +32,8 @@
          <td><a href="{% url 'ietf.meeting.views.session_details' num=s.meeting.number acronym=s.group.acronym %}">Materials</a></td>
          <td>
              {% if user|has_role:"Secretariat" or s|can_manage_materials:user and not s.is_material_submission_cutoff %}
-               <a class="btn btn-{% if s.is_material_submission_cutoff %}warning{% else %}default{% endif %} btn-xs" href="">Remove document from session</a>
+               <a class="btn btn-{% if s.is_material_submission_cutoff %}warning{% else %}default{% endif %} btn-xs" href="{% url 'ietf.doc.views_doc.remove_sessionpresentation' name=doc.name session_id=s.pk %}">Remove document from session</a>
+               <a class="btn btn-{% if s.is_material_submission_cutoff %}warning{% else %}default{% endif %} btn-xs" href="{% url 'ietf.doc.views_doc.edit_sessionpresentation' name=doc.name session_id=s.pk %}">Change revision</a>
              {% endif %}
          </td>
       {% endfor %}
