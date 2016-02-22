@@ -6,6 +6,8 @@ import datetime
 from StringIO import StringIO
 from pyquery import PyQuery
 
+import debug              # pyflakes:ignore
+
 from django.conf import settings
 from django.core.urlresolvers import reverse as urlreverse
 
@@ -17,6 +19,7 @@ from ietf.name.models import SessionStatusName
 from ietf.person.models import Person
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized, unicontent
 from ietf.utils.test_data import make_test_data
+
 
 class GroupMaterialTests(TestCase):
     def setUp(self):

@@ -933,7 +933,7 @@ class DocumentMeetingTests(TestCase):
         doc.sessionpresentation_set.create(session=self.inprog,rev=None)
         doc.sessionpresentation_set.create(session=self.interim,rev=None)
 
-        url = urlreverse('ietf.doc.views_material.all_presentations', kwargs=dict(name=doc.name))
+        url = urlreverse('ietf.doc.views_doc.all_presentations', kwargs=dict(name=doc.name))
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         q = PyQuery(response.content)

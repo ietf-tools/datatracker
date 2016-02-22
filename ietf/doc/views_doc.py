@@ -61,6 +61,7 @@ from ietf.doc.forms import TelechatForm, NotifyForm
 from ietf.doc.mails import email_comment 
 from ietf.mailtrigger.utils import gather_relevant_expansions
 from ietf.meeting.models import Session
+from ietf.meeting.utils import group_sessions, get_upcoming_manageable_sessions, sort_sessions
 
 def render_document_top(request, doc, tab, name):
     tabs = []
@@ -1094,7 +1095,6 @@ def email_aliases(request,name=''):
 
 class VersionForm(forms.Form):
 
-    # TODO is required=False correct here?
     version = forms.ChoiceField(required=True,
                                 label='Which version of this document will be discussed at this session?')
 
@@ -1126,7 +1126,7 @@ def edit_sessionpresentation(request,name,session_id):
                 c = DocEvent(type="added_comment", doc=doc, by=request.user.person)
                 c.desc = "Revision for session %s changed to  %s" % (sp.session,new_selection)
                 c.save()
-            return redirect('ietf.doc.views_material.all_presentations', name=name)
+            return redirect('ietf.doc.views_doc.all_presentations', name=name)
     else:
         form = VersionForm(choices=choices,initial=initial)
 
@@ -1147,46 +1147,9 @@ def remove_sessionpresentation(request,name,session_id):
         c = DocEvent(type="added_comment", doc=doc, by=request.user.person)
         c.desc = "Removed from session: %s" % (sp.session)
         c.save()
-        return redirect('ietf.doc.views_material.all_presentations', name=name)
+        return redirect('ietf.doc.views_doc.all_presentations', name=name)
 
     return render(request,'doc/remove_sessionpresentation.html', {'sp': sp })
-
-
-def get_upcoming_manageable_sessions(user):
-
-    # TODO: Move this into meeting.models or utils, or maybe person.models or utils - it doesn't depend on doc
-    # Find all the sessions for meetings that haven't ended that the user could affect
-    # This motif is also in Document.future_presentations - it would be nice to consolodate it somehow
-    
-    # Consider adding an argument that has some Qs to append to the queryset
-
-    candidate_sessions = Session.objects.exclude(status__in=['canceled','disappr','notmeet','deleted']).filter(meeting__date__gte=datetime.date.today()-datetime.timedelta(days=15))
-    refined_candidates = [ sess for sess in candidate_sessions if sess.meeting.end_date()>=datetime.date.today()]
-
-    # Consider keeping this (put acronym=None back in argument list
-    #if acronym:
-    #    refined_candidates = [ sess for sess in refined_candidates if sess.group.acronym==acronym]
-
-    return [ sess for sess in refined_candidates if can_manage_materials(user, sess.group) ]
-
-def sort_sessions(sessions):
-
-    # Python sorts are stable since version 2,2, so this series results in a list sorted first 
-    # by the meeting 'number', then by session's group acronym, then by scheduled time 
-    # (or the time of the session request if the session isn't scheduled).
-    
-    def time_sort_key(session):
-        official_sessions = session.timeslotassignments.filter(schedule=session.meeting.agenda)
-        if official_sessions:
-            return official_sessions.first().timeslot.time
-        else:
-            return session.requested
-
-    time_sorted = sorted(sessions,key=time_sort_key)
-    acronym_sorted = sorted(time_sorted,key=lambda x: x.group.acronym)
-    meeting_sorted = sorted(acronym_sorted,key=lambda x: x.meeting.number)
-
-    return meeting_sorted
 
 class SessionChooserForm(forms.Form):
     session = forms.ChoiceField(label="Which session should this document be added to?",required=True)
@@ -1221,10 +1184,27 @@ def add_sessionpresentation(request,name):
             c = DocEvent(type="added_comment", doc=doc, by=request.user.person)
             c.desc = "%s to session: %s" % ('Added -%s'%rev if rev else 'Added', Session.objects.get(pk=session_id))
             c.save()
-            return redirect('ietf.doc.views_material.all_presentations', name=name)
+            return redirect('ietf.doc.views_doc.all_presentations', name=name)
 
     else: 
         version_form = VersionForm(choices=version_choices,initial={'version':'current'})
         session_form = SessionChooserForm(choices=session_choices)
 
     return render(request,'doc/add_sessionpresentation.html',{'doc':doc,'version_form':version_form,'session_form':session_form})
+
+def all_presentations(request, name):
+    doc = get_object_or_404(Document, name=name)
+
+
+    sessions = doc.session_set.filter(status__in=['sched','schedw','appr','canceled'],
+                                      type__in=['session','plenary','other'])
+
+    future, in_progress, past = group_sessions(sessions)
+
+    return render(request, 'doc/material/all_presentations.html', {
+        'user': request.user,
+        'doc': doc,
+        'future': future,
+        'in_progress': in_progress,
+        'past' : past,
+        })

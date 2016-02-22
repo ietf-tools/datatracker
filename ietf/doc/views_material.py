@@ -17,7 +17,6 @@ from ietf.doc.models import NewRevisionDocEvent, save_document_in_history
 from ietf.doc.utils import add_state_change_event, check_common_doc_name_rules
 from ietf.group.models import Group
 from ietf.group.utils import can_manage_materials
-from ietf.meeting.utils import group_sessions
 
 @login_required
 def choose_material_type(request, acronym):
@@ -92,10 +91,15 @@ def edit_material(request, name=None, acronym=None, action=None, doc_type=None):
 
         doc = None
         document_type = get_object_or_404(DocTypeName, slug=doc_type)
+        if document_type not in DocTypeName.objects.filter(slug__in=group.features.material_types):
+            raise Http404
     else:
         doc = get_object_or_404(Document, name=name)
         group = doc.group
         document_type = doc.type
+        if document_type not in DocTypeName.objects.filter(slug__in=group.features.material_types):
+            raise Http404
+       
 
     if not can_manage_materials(request.user, group):
         return HttpResponseForbidden("You don't have permission to access this view")
@@ -172,20 +176,3 @@ def edit_material(request, name=None, acronym=None, action=None, doc_type=None):
         'document_type': document_type,
         'doc_name': doc.name if doc else "",
     })
-
-def all_presentations(request, name):
-    doc = get_object_or_404(Document, name=name)
-
-
-    sessions = doc.session_set.filter(status__in=['sched','schedw','appr','canceled'],
-                                      type__in=['session','plenary','other'])
-
-    future, in_progress, past = group_sessions(sessions)
-    
-    return render(request, 'doc/material/all_presentations.html', {
-        'user': request.user,
-        'doc': doc,
-        'future': future,
-        'in_progress': in_progress,
-        'past' : past,
-        })

@@ -118,6 +118,7 @@ urlpatterns = patterns('',
     (r'^(?P<name>charter-[A-Za-z0-9._+-]+)/', include('ietf.doc.urls_charter')),
     (r'^(?P<name>[A-Za-z0-9._+-]+)/conflict-review/', include('ietf.doc.urls_conflict_review')),
     (r'^(?P<name>[A-Za-z0-9._+-]+)/status-change/', include('ietf.doc.urls_status_change')),
+    url(r'^(?P<name>[A-Za-z0-9._+-]+)/meetings$', 'ietf.doc.views_doc.all_presentations', name="all_presentations"),
     (r'^(?P<name>[A-Za-z0-9._+-]+)/material/', include('ietf.doc.urls_material')),
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/session/', include(session_patterns)),
 )
