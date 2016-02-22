@@ -13,6 +13,9 @@ from ietf.meeting.models import Session, TimeSlot
 from ietf.meeting.test_data import make_meeting_test_data
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized, unicontent
 
+from ietf.group.factories import GroupFactory
+from ietf.meeting.factories import SessionFactory, SessionPresentationFactory
+
 class MeetingTests(TestCase):
     def setUp(self):
         self.materials_dir = os.path.abspath(settings.TEST_MATERIALS_DIR)
@@ -155,13 +158,6 @@ class MeetingTests(TestCase):
         login_testing_unauthorized(self,"secretary",url)
         r = self.client.get(url)
         self.assertTrue(all([x in unicontent(r) for x in ['mars','IESG Breakfast','Test Room','Breakfast Room']]))
-
-    def test_session_details(self):
-        meeting = make_meeting_test_data()
-        url = urlreverse("ietf.meeting.views.session_details", kwargs=dict(num=meeting.number, acronym="mars"))
-        r = self.client.get(url)
-        self.assertTrue(all([x in unicontent(r) for x in ('slides','agenda','minutes')]))
-        self.assertFalse('deleted' in unicontent(r))
 
     def test_materials(self):
         meeting = make_meeting_test_data()
@@ -330,3 +326,20 @@ class EditTests(TestCase):
         ames_slot_qs.update(time=mars_ends + datetime.timedelta(seconds=10 * 60))
         self.assertTrue(mars_slot.slot_to_the_right)
         self.assertTrue(mars_scheduled.slot_to_the_right)
+
+class SessionDetailsTests(TestCase):
+
+    def test_session_details(self):
+
+        group = GroupFactory.create(type_id='wg',state_id='active')
+        session = SessionFactory.create(meeting__type_id='ietf',group=group, meeting__date=datetime.date.today()+datetime.timedelta(days=90))
+        SessionPresentationFactory.create(session=session,document__type_id='draft',rev=None)
+        SessionPresentationFactory.create(session=session,document__type_id='minutes')
+        SessionPresentationFactory.create(session=session,document__type_id='slides')
+        SessionPresentationFactory.create(session=session,document__type_id='agenda')
+
+        url = urlreverse("ietf.meeting.views.session_details", kwargs=dict(num=session.meeting.number, acronym=group.acronym))
+        r = self.client.get(url)
+        self.assertTrue(all([x in unicontent(r) for x in ('slides','agenda','minutes','draft')]))
+        self.assertFalse('deleted' in unicontent(r))
+        

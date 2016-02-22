@@ -33,7 +33,12 @@
               {% if pres.document.type_id != 'bluesheets' and pres.document.type_id != 'recording' %}
                 <tr>
                     <td>
-                        <a href="{% url 'doc_view' name=pres.document.name rev=pres.rev%}">{{pres.document.title}} ({{ pres.document.name }}-{{ pres.rev }})
+                        {% if pres.rev %}
+                           {% url 'doc_view' name=pres.document.name rev=pres.rev as url %}
+                        {% else %}
+                           {% url 'doc_view' name=pres.document.name as url %}
+                        {% endif %}
+                        <a href="{{url}}">{{pres.document.title}} ({{ pres.document.name }}-{{ pres.rev }})
                         </a>
                     </td>
                 </tr>
