@@ -828,7 +828,7 @@ def meeting_requests(request, num=None):
         {"meeting": meeting, "sessions":sessions,
          "groups_not_meeting": groups_not_meeting})
 
-def session_details(request, num, acronym ):
+def get_sessions(num, acronym):
     meeting = get_meeting(num=num,type_in=None)
     sessions = Session.objects.filter(meeting=meeting,group__acronym=acronym,type__in=['session','plenary','other'])
 
@@ -842,7 +842,11 @@ def session_details(request, num, acronym ):
         else:
             return session.requested
 
-    sessions = sorted(sessions,key=sort_key)
+    return sorted(sessions,key=sort_key)
+
+def session_details(request, num, acronym ):
+    meeting = get_meeting(num=num,type_in=None)
+    sessions = get_sessions(num, acronym)
 
     if not sessions:
         raise Http404
@@ -901,6 +905,11 @@ def add_session_drafts(request, session_id, num):
 
     already_linked = [sp.document for sp in session.sessionpresentation_set.filter(document__type_id='draft')]
 
+    session_number = None
+    sessions = get_sessions(session.meeting.number,session.group.acronym)
+    if len(sessions) > 1:
+       session_number = 1 + sessions.index(session)
+
     if request.method == 'POST':
         form = SessionDraftsForm(request.POST,already_linked=already_linked)
         if form.is_valid():
@@ -915,6 +924,7 @@ def add_session_drafts(request, session_id, num):
 
     return render(request, "meeting/add_session_drafts.html",
                   { 'session': session,
+                    'session_number': session_number,
                     'already_linked': session.sessionpresentation_set.filter(document__type_id='draft'),
                     'form': form,
                   })

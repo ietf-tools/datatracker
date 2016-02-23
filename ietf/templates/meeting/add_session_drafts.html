@@ -12,7 +12,7 @@
 {% block content %}
   {% origin %}
 
-  <h1>Add drafts to  {{ session.meeting }} : {{ session.group.acronym }}</h1>
+  <h1>Add drafts to  {{ session.meeting }} {% if session_number %}: Session {{session_number}}{% endif %} : {{ session.group.acronym }}{% if session.name %} : {{session.name}}{% endif %}</h1>
   {% comment %} TODO: put the session name here or calculate the number at the meeting {% endcomment %}
 
   {% if session.is_material_submission_cutoff %}

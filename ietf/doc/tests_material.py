@@ -12,7 +12,6 @@ from django.conf import settings
 from django.core.urlresolvers import reverse as urlreverse
 
 from ietf.doc.models import Document, State, DocAlias, NewRevisionDocEvent
-#from ietf.doc.views_material import material_presentations, edit_material_presentations
 from ietf.group.models import Group
 from ietf.meeting.models import Meeting, Session, SessionPresentation
 from ietf.name.models import SessionStatusName
