@@ -336,7 +336,7 @@ def construct_group_menu_context(request, group, selected, group_type, others):
         entries.append(("About", urlreverse("group_about", kwargs=kwargs)))
     if group.features.has_materials and get_group_materials(group).exists():
         entries.append(("Materials", urlreverse("ietf.group.info.materials", kwargs=kwargs)))
-    if group.type_id in ('rg','wg'):
+    if group.type_id in ('rg','wg','team'):
         entries.append(("Meetings", urlreverse("ietf.group.info.meetings", kwargs=kwargs)))
     entries.append(("Email expansions", urlreverse("ietf.group.info.email", kwargs=kwargs)))
     entries.append(("History", urlreverse("ietf.group.info.history", kwargs=kwargs)))
