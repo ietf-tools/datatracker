@@ -15,7 +15,10 @@
    {% if session.status.slug == 'sched' or session.status.slug == 'schedw' %}
    <div class="buttonlist">
      <a class="btn btn-default" href="{% url 'ietf.secr.proceedings.views.upload_unified' meeting_num=session.meeting.number acronym=session.group.acronym %}">
-        Upload/Edit Materials 
+        Upload/Edit materials 
+     </a>
+     <a class="btn btn-default" href="{% url 'ietf.meeting.views.add_session_drafts' session_id=session.pk num=session.meeting.number %}">
+        Link additional drafts to session
      </a>
      {% if not type_counter.agenda %}
        <span class="label label-warning">This session does not yet have an agenda</span>
@@ -33,7 +36,12 @@
               {% if pres.document.type_id != 'bluesheets' and pres.document.type_id != 'recording' %}
                 <tr>
                     <td>
-                        <a href="{% url 'doc_view' name=pres.document.name rev=pres.rev%}">{{pres.document.title}} ({{ pres.document.name }}-{{ pres.rev }})
+                        {% if pres.rev %}
+                           {% url 'doc_view' name=pres.document.name rev=pres.rev as url %}
+                        {% else %}
+                           {% url 'doc_view' name=pres.document.name as url %}
+                        {% endif %}
+                        <a href="{{url}}">{{pres.document.title}} ({{ pres.document.name }}{% if pres.rev %}-{{ pres.rev }}{% endif %})
                         </a>
                     </td>
                 </tr>

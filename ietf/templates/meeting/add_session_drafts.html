@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin staticfiles bootstrap3 %}
+
+{% block title %}Add drafts to {{ session.meeting }} : {{ session.group.acronym }}{% endblock %}
+
+{% block pagehead %}
+  <link rel="stylesheet" href="{% static 'select2/select2.css' %}">
+  <link rel="stylesheet" href="{% static 'select2-bootstrap-css/select2-bootstrap.min.css' %}">
+{% endblock %}
+
+{% block content %}
+  {% origin %}
+
+  <h1>Add drafts to  {{ session.meeting }} {% if session_number %}: Session {{session_number}}{% endif %} : {{ session.group.acronym }}{% if session.name %} : {{session.name}}{% endif %}</h1>
+  {% comment %} TODO: put the session name here or calculate the number at the meeting {% endcomment %}
+
+  {% if session.is_material_submission_cutoff %}
+    <div class="alert alert-warning">The deadline for submission corrections has passed. This may affect published proceedings.</div>
+  {% endif %}
+
+  <div class="alert alert-info">This form will link additional drafts to this session with a revision of "Current at time of presentation". For more fine grained control of versions, or to remove a draft from a session, adjust the sessions associated with a draft from the draft's main page.</div>
+  <div class="panel panel-default">
+    <div class="panel-heading">Drafts already linked to this sesssion</div>
+    <div class="panel-body">
+      <table class="table table-contensed table-striped">
+        <tr>
+           <th class="col-md-1">Revision</th>
+           <th>Document</th>
+        </tr>
+        {% for sp in already_linked %}
+          <tr>
+              <td>{% if sp.rev %}-{{sp.rev}}{% else %}(current){% endif %}</td>
+              <td>{{sp.document.title}} ({{sp.document.name}})</td>
+          </tr>
+        {% endfor %}
+      </table>
+    </div>
+  </div>
+
+  <div class="panel panel-default">
+     <div class="panel-heading">Additional drafts to link to this session</div>
+     <div class="panel-body">
+        <form method="post">
+          {% csrf_token %}
+          {% bootstrap_form form %}
+          {% buttons %}
+            <button class="btn btn-{% if session.is_material_submission_cutoff %}warning{% else %}primary{% endif %}" type="submit">Save</button>
+            <a class="btn btn-default" href="{% url 'ietf.meeting.views.session_details' num=session.meeting.number acronym=session.group.acronym %}">Cancel</a>
+          {% endbuttons %}
+        </form>
+     </div>
+   </div>
+
+{% endblock %}
+
+{% block js %}
+  <script src="{% static 'select2/select2.min.js' %}"></script>
+  <script src="{% static 'ietf/js/select2-field.js' %}"></script>
+{% endblock %}

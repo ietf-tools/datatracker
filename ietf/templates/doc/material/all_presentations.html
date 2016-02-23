@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin ietf_filters %}
+
+{% block title %}Sessions linked to {{doc.name}}{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <h1>Sessions linked to <a href="{% url 'doc_view' name=doc.name %}">{{doc.name}}</a>{% if doc.title %}<br><small>{{doc.title}}</small>{% endif %}</h1>
+
+<div class="buttonlist" >
+  {% if user|has_role:"Secretariat,Area Director,WG Chair,WG Secretary,RG Chair,RG Secretary,IRTF Chair,Team Chair" %} 
+    <a class="btn btn-default" id="addsessionsbutton" href="{% url 'ietf.doc.views_doc.add_sessionpresentation' name=doc.name %}">Link to more sessions</a>
+  {% else %}
+    {{user}} failed the has_role check
+  {% endif %}
+</div>
+
+{% if in_progress %}
+  <div class="panel panel-default" id="inprogressmeets">
+    <div class="panel-heading">Meetings in progress</div>
+    <div class="panel-body">
+      {% with sessions=in_progress %}
+        {% include "doc/material/presentations-row.html" %}
+      {% endwith %}
+    </div>
+  </div>
+{% endif %}
+
+{% if future %}
+  <div class="panel panel-default" id="futuremeets">
+    <div class="panel-heading">Future meetings</div>
+    <div class="panel-body">
+      {% with sessions=future %}
+        {% include "doc/material/presentations-row.html" %}
+      {% endwith %}
+    </div>
+  </div>
+{% endif %}
+
+{% if past %}
+  <div class="panel panel-default" id="pastmeets">
+    <div class="panel-heading">Past meetings</div>
+    <div class="panel-body">
+      {% with sessions=past %}
+        {% include "doc/material/presentations-row.html" %}
+      {% endwith %}
+    </div>
+  </div>
+{% endif %}
+
+{% endblock content %}

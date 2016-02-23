@@ -60,6 +60,8 @@ from ietf.utils.history import find_history_active_at
 from ietf.doc.forms import TelechatForm, NotifyForm
 from ietf.doc.mails import email_comment 
 from ietf.mailtrigger.utils import gather_relevant_expansions
+from ietf.meeting.models import Session
+from ietf.meeting.utils import group_sessions, get_upcoming_manageable_sessions, sort_sessions
 
 def render_document_top(request, doc, tab, name):
     tabs = []
@@ -1091,3 +1093,118 @@ def email_aliases(request,name=''):
 
     return render(request,'doc/email_aliases.html',{'aliases':aliases,'ietf_domain':settings.IETF_DOMAIN,'doc':doc})
 
+class VersionForm(forms.Form):
+
+    version = forms.ChoiceField(required=True,
+                                label='Which version of this document will be discussed at this session?')
+
+    def __init__(self, *args, **kwargs):
+        choices = kwargs.pop('choices')
+        super(VersionForm,self).__init__(*args,**kwargs)
+        self.fields['version'].choices = choices
+
+def edit_sessionpresentation(request,name,session_id):
+    doc = get_object_or_404(Document, name=name)
+    sp = get_object_or_404(doc.sessionpresentation_set, session_id=session_id)
+
+    if not sp.session.can_manage_materials(request.user):
+        raise Http404
+
+    if sp.session.is_material_submission_cutoff() and not has_role(request.user, "Secretariat"):
+        raise Http404
+
+    choices = [(x,x) for x in doc.docevent_set.filter(type='new_revision').values_list('newrevisiondocevent__rev',flat=True)]
+    choices.insert(0,('current','Current at the time of the session'))
+    initial = {'version' : sp.rev if sp.rev else 'current'}
+
+    if request.method == 'POST':
+        form = VersionForm(request.POST,choices=choices)
+        if form.is_valid():
+            new_selection = form.cleaned_data['version']
+            if initial['version'] != new_selection:
+                doc.sessionpresentation_set.filter(pk=sp.pk).update(rev=None if new_selection=='current' else new_selection)
+                c = DocEvent(type="added_comment", doc=doc, by=request.user.person)
+                c.desc = "Revision for session %s changed to  %s" % (sp.session,new_selection)
+                c.save()
+            return redirect('ietf.doc.views_doc.all_presentations', name=name)
+    else:
+        form = VersionForm(choices=choices,initial=initial)
+
+    return render(request,'doc/edit_sessionpresentation.html', {'sp': sp, 'form': form })
+
+def remove_sessionpresentation(request,name,session_id):
+    doc = get_object_or_404(Document, name=name)
+    sp = get_object_or_404(doc.sessionpresentation_set, session_id=session_id)
+
+    if not sp.session.can_manage_materials(request.user):
+        raise Http404
+
+    if sp.session.is_material_submission_cutoff() and not has_role(request.user, "Secretariat"):
+        raise Http404
+
+    if request.method == 'POST':
+        doc.sessionpresentation_set.filter(pk=sp.pk).delete()
+        c = DocEvent(type="added_comment", doc=doc, by=request.user.person)
+        c.desc = "Removed from session: %s" % (sp.session)
+        c.save()
+        return redirect('ietf.doc.views_doc.all_presentations', name=name)
+
+    return render(request,'doc/remove_sessionpresentation.html', {'sp': sp })
+
+class SessionChooserForm(forms.Form):
+    session = forms.ChoiceField(label="Which session should this document be added to?",required=True)
+
+    def __init__(self, *args, **kwargs):
+        choices = kwargs.pop('choices')
+        super(SessionChooserForm,self).__init__(*args,**kwargs)
+        self.fields['session'].choices = choices
+
+@role_required("Secretariat","Area Director","WG Chair","WG Secretary","RG Chair","RG Secretary","IRTF Chair","Team Chair")
+def add_sessionpresentation(request,name):
+    doc = get_object_or_404(Document, name=name)
+    
+    version_choices = [(x,x) for x in doc.docevent_set.filter(type='new_revision').values_list('newrevisiondocevent__rev',flat=True)]
+    version_choices.insert(0,('current','Current at the time of the session'))
+
+    sessions = get_upcoming_manageable_sessions(request.user)
+    sessions = sort_sessions([s for s in sessions if not s.sessionpresentation_set.filter(document=doc).exists()])
+    if doc.group:
+        sessions = sorted(sessions,key=lambda x:0 if x.group==doc.group else 1)
+
+    session_choices = [(s.pk,unicode(s)) for s in sessions]
+
+    if request.method == 'POST':
+        version_form = VersionForm(request.POST,choices=version_choices)
+        session_form = SessionChooserForm(request.POST,choices=session_choices)
+        if version_form.is_valid() and session_form.is_valid():
+            session_id = session_form.cleaned_data['session']
+            version = version_form.cleaned_data['version']
+            rev = None if version=='current' else version
+            doc.sessionpresentation_set.create(session_id=session_id,rev=rev)
+            c = DocEvent(type="added_comment", doc=doc, by=request.user.person)
+            c.desc = "%s to session: %s" % ('Added -%s'%rev if rev else 'Added', Session.objects.get(pk=session_id))
+            c.save()
+            return redirect('ietf.doc.views_doc.all_presentations', name=name)
+
+    else: 
+        version_form = VersionForm(choices=version_choices,initial={'version':'current'})
+        session_form = SessionChooserForm(choices=session_choices)
+
+    return render(request,'doc/add_sessionpresentation.html',{'doc':doc,'version_form':version_form,'session_form':session_form})
+
+def all_presentations(request, name):
+    doc = get_object_or_404(Document, name=name)
+
+
+    sessions = doc.session_set.filter(status__in=['sched','schedw','appr','canceled'],
+                                      type__in=['session','plenary','other'])
+
+    future, in_progress, past = group_sessions(sessions)
+
+    return render(request, 'doc/material/all_presentations.html', {
+        'user': request.user,
+        'doc': doc,
+        'future': future,
+        'in_progress': in_progress,
+        'past' : past,
+        })

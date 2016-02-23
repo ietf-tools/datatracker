@@ -17,7 +17,6 @@ from ietf.doc.models import NewRevisionDocEvent, save_document_in_history
 from ietf.doc.utils import add_state_change_event, check_common_doc_name_rules
 from ietf.group.models import Group
 from ietf.group.utils import can_manage_materials
-from ietf.meeting.models import Session
 
 @login_required
 def choose_material_type(request, acronym):
@@ -92,10 +91,15 @@ def edit_material(request, name=None, acronym=None, action=None, doc_type=None):
 
         doc = None
         document_type = get_object_or_404(DocTypeName, slug=doc_type)
+        if document_type not in DocTypeName.objects.filter(slug__in=group.features.material_types):
+            raise Http404
     else:
         doc = get_object_or_404(Document, name=name)
         group = doc.group
         document_type = doc.type
+        if document_type not in DocTypeName.objects.filter(slug__in=group.features.material_types):
+            raise Http404
+       
 
     if not can_manage_materials(request.user, group):
         return HttpResponseForbidden("You don't have permission to access this view")
@@ -172,149 +176,3 @@ def edit_material(request, name=None, acronym=None, action=None, doc_type=None):
         'document_type': document_type,
         'doc_name': doc.name if doc else "",
     })
-
-class MaterialVersionForm(forms.Form):
-
-    version = forms.ChoiceField(required=False,
-                                label='Which version of this document will be presented at this session')
-
-    def __init__(self, *args, **kwargs):
-        choices = kwargs.pop('choices')
-        super(MaterialVersionForm,self).__init__(*args,**kwargs)
-        self.fields['version'].choices = choices
-
-def get_upcoming_manageable_sessions(user, doc, acronym=None, date=None, seq=None, week_day = None):
-
-    # Find all the sessions for meetings that haven't ended that the user could affect
-    # This motif is also in Document.future_presentations - it would be nice to consolodate it somehow
-
-    candidate_sessions = Session.objects.exclude(status__in=['canceled','disappr','notmeet','deleted']).filter(meeting__date__gte=datetime.date.today()-datetime.timedelta(days=15))
-    refined_candidates = [ sess for sess in candidate_sessions if sess.meeting.end_date()>=datetime.date.today()]
-
-    if acronym:
-        refined_candidates = [ sess for sess in refined_candidates if sess.group.acronym==acronym]
-
-    if date:
-        if len(date)==15:
-            start = datetime.datetime.strptime(date,"%Y-%m-%d-%H%M")
-            refined_candidates = [ sess for sess in refined_candidates if sess.timeslotassignments.filter(schedule=sess.meeting.agenda,timeslot__time=start) ]
-        else:
-            start = datetime.datetime.strptime(date,"%Y-%m-%d").date()
-            end = start+datetime.timedelta(days=1)
-            refined_candidates = [ sess for sess in refined_candidates if sess.timeslotassignments.filter(schedule=sess.meeting.agenda,timeslot__time__range=(start,end)) ]
-
-    if week_day:
-        try:
-            dow = ['sun','mon','tue','wed','thu','fri','sat'].index(week_day.lower()[:3]) + 1
-        except ValueError:
-            raise Http404
-        refined_candidates = [ sess for sess in refined_candidates if sess.timeslotassignments.filter(schedule=sess.meeting.agenda,timeslot__time__week_day=dow) ]
-
-    changeable_sessions = [ sess for sess in refined_candidates if can_manage_materials(user, sess.group) ]
-
-    if not changeable_sessions:
-        raise Http404
-
-    for sess in changeable_sessions:
-        sess.has_presentation = bool(sess.sessionpresentation_set.filter(document=doc))
-        if sess.has_presentation:
-            sess.version = sess.sessionpresentation_set.get(document=doc).rev
-
-    # Since Python 2.2 sorts are stable, so this series results in a list sorted first by whether
-    # the session has any presentations, then by the meeting 'number', then by session's group 
-    # acronym, then by scheduled time (or the time of the session request if the session isn't 
-    # scheduled).
-    
-    def time_sort_key(session):
-        official_sessions = session.timeslotassignments.filter(schedule=session.meeting.agenda)
-        if official_sessions:
-            return official_sessions.first().timeslot.time
-        else:
-            return session.requested
-
-    time_sorted = sorted(changeable_sessions,key=time_sort_key)
-    acronym_sorted = sorted(time_sorted,key=lambda x: x.group.acronym)
-    meeting_sorted = sorted(acronym_sorted,key=lambda x: x.meeting.number)
-    sorted_sessions = sorted(meeting_sorted,key=lambda x: '0' if x.has_presentation else '1')
-    
-    if seq:
-        iseq = int(seq) - 1
-        if not iseq in range(0,len(sorted_sessions)):
-            raise Http404
-        else:
-            sorted_sessions = [sorted_sessions[iseq]]
-
-    return sorted_sessions
-
-@login_required
-def edit_material_presentations(request, name, acronym=None, date=None, seq=None, week_day=None):
-
-    doc = get_object_or_404(Document, name=name)
-
-    group = doc.group
-
-    if not can_manage_materials(request.user,group):
-        raise Http404
-
-    sorted_sessions = get_upcoming_manageable_sessions(request.user, doc, acronym, date, seq, week_day)
-
-    if len(sorted_sessions)!=1:
-        raise Http404
-
-    session = sorted_sessions[0]
-    choices = [('notpresented','Not Presented')]
-    choices.extend([(x,x) for x in doc.docevent_set.filter(type='new_revision').values_list('newrevisiondocevent__rev',flat=True)])
-    initial = {'version' : session.version if hasattr(session,'version') else 'notpresented'}
-
-    if request.method == 'POST':
-        form = MaterialVersionForm(request.POST,choices=choices)
-        if form.is_valid():
-            new_selection = form.cleaned_data['version']
-            if initial['version'] != new_selection:
-                if initial['version'] == 'notpresented':
-                    doc.sessionpresentation_set.create(session=session,rev=new_selection)
-                    c = DocEvent(type="added_comment", doc=doc, by=request.user.person)
-                    c.desc = "Added version %s to session: %s" % (new_selection,session)
-                    c.save()
-                elif new_selection == 'notpresented':
-                    doc.sessionpresentation_set.filter(session=session).delete()
-                    c = DocEvent(type="added_comment", doc=doc, by=request.user.person)
-                    c.desc = "Removed from session: %s" % (session)
-                    c.save()
-                else:
-                    doc.sessionpresentation_set.filter(session=session).update(rev=new_selection)
-                    c = DocEvent(type="added_comment", doc=doc, by=request.user.person)
-                    c.desc = "Revision for session %s changed to  %s" % (session,new_selection)
-                    c.save()
-            return redirect('doc_view',name=doc.name)
-    else:
-        form = MaterialVersionForm(choices=choices,initial=initial)
-
-    return render(request, 'doc/material/edit_material_presentations.html', {
-        'session': session,
-        'doc': doc,
-        'form': form,
-        })
-
-@login_required
-def material_presentations(request, name, acronym=None, date=None, seq=None, week_day=None):
-
-    doc = get_object_or_404(Document, name=name)
-
-
-    group = doc.group
-
-    if not can_manage_materials(request.user,group):
-        raise Http404
-
-    sorted_sessions = get_upcoming_manageable_sessions(request.user, doc, acronym, date, seq, week_day)
-
-    #for index,session in enumerate(sorted_sessions):
-    #    session.sequence = index+1
-
-    return render(request, 'doc/material/material_presentations.html', {
-        'sessions' : sorted_sessions,
-        'doc': doc,
-        'date': date,
-        'week_day': week_day,
-        })

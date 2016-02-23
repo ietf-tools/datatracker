@@ -13,7 +13,7 @@ import json
 import debug                            # pyflakes:ignore
 
 from django import forms
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden, Http404
 from django.contrib import messages
 from django.core.urlresolvers import reverse
@@ -23,7 +23,7 @@ from django.forms.models import modelform_factory
 from django.forms import ModelForm
 from django.views.decorators.csrf import ensure_csrf_cookie
 
-from ietf.doc.models import Document, State
+from ietf.doc.models import Document, State, DocEvent
 from ietf.group.models import Group
 from ietf.group.utils import can_manage_materials
 from ietf.ietfauth.utils import role_required, has_role
@@ -38,6 +38,8 @@ from ietf.meeting.helpers import preprocess_assignments_for_agenda, read_agenda_
 from ietf.meeting.helpers import convert_draft_to_pdf
 from ietf.utils.pipe import pipe
 from ietf.utils.pdf import pdf_pages
+
+from ietf.doc.fields import SearchableDocumentsField
 
 def materials(request, meeting_num=None):
     meeting = get_meeting(meeting_num)
@@ -826,7 +828,7 @@ def meeting_requests(request, num=None):
         {"meeting": meeting, "sessions":sessions,
          "groups_not_meeting": groups_not_meeting})
 
-def session_details(request, num, acronym ):
+def get_sessions(num, acronym):
     meeting = get_meeting(num=num,type_in=None)
     sessions = Session.objects.filter(meeting=meeting,group__acronym=acronym,type__in=['session','plenary','other'])
 
@@ -840,7 +842,11 @@ def session_details(request, num, acronym ):
         else:
             return session.requested
 
-    sessions = sorted(sessions,key=sort_key)
+    return sorted(sessions,key=sort_key)
+
+def session_details(request, num, acronym ):
+    meeting = get_meeting(num=num,type_in=None)
+    sessions = get_sessions(num, acronym)
 
     if not sessions:
         raise Http404
@@ -873,4 +879,52 @@ def session_details(request, num, acronym ):
                     'acronym' :acronym,
                     'can_manage_materials' : can_manage,
                     'type_counter': type_counter,
+                  })
+
+class SessionDraftsForm(forms.Form):
+    drafts = SearchableDocumentsField(required=False)
+
+    def __init__(self, *args, **kwargs):
+        self.already_linked = kwargs.pop('already_linked')
+        super(self.__class__, self).__init__(*args, **kwargs)
+
+    def clean(self):
+        selected = self.cleaned_data['drafts']
+        problems = set(selected).intersection(set(self.already_linked)) 
+        if problems:
+           raise forms.ValidationError("Already linked: %s" % ', '.join([d.name for d in problems]))
+        return self.cleaned_data
+
+def add_session_drafts(request, session_id, num):
+    # num is redundant, but we're dragging it along an artifact of where we are in the current URL structure
+    session = get_object_or_404(Session,pk=session_id)
+    if not session.can_manage_materials(request.user):
+        raise Http404
+    if session.is_material_submission_cutoff() and not has_role(request.user, "Secretariat"):
+        raise Http404
+
+    already_linked = [sp.document for sp in session.sessionpresentation_set.filter(document__type_id='draft')]
+
+    session_number = None
+    sessions = get_sessions(session.meeting.number,session.group.acronym)
+    if len(sessions) > 1:
+       session_number = 1 + sessions.index(session)
+
+    if request.method == 'POST':
+        form = SessionDraftsForm(request.POST,already_linked=already_linked)
+        if form.is_valid():
+            for draft in form.cleaned_data['drafts']:
+                session.sessionpresentation_set.create(document=draft,rev=None)
+                c = DocEvent(type="added_comment", doc=draft, by=request.user.person)
+                c.desc = "Added to session: %s" % session
+                c.save()
+            return redirect('ietf.meeting.views.session_details', num=session.meeting.number, acronym=session.group.acronym)
+    else:
+        form = SessionDraftsForm(already_linked=already_linked)
+
+    return render(request, "meeting/add_session_drafts.html",
+                  { 'session': session,
+                    'session_number': session_number,
+                    'already_linked': session.sessionpresentation_set.filter(document__type_id='draft'),
+                    'form': form,
                   })

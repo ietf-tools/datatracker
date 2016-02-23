@@ -6,11 +6,12 @@ import datetime
 from StringIO import StringIO
 from pyquery import PyQuery
 
+import debug              # pyflakes:ignore
+
 from django.conf import settings
 from django.core.urlresolvers import reverse as urlreverse
 
 from ietf.doc.models import Document, State, DocAlias, NewRevisionDocEvent
-from ietf.doc.views_material import material_presentations, edit_material_presentations
 from ietf.group.models import Group
 from ietf.meeting.models import Meeting, Session, SessionPresentation
 from ietf.name.models import SessionStatusName
@@ -18,7 +19,6 @@ from ietf.person.models import Person
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized, unicontent
 from ietf.utils.test_data import make_test_data
 
-from ietf.meeting.test_data import make_meeting_test_data
 
 class GroupMaterialTests(TestCase):
     def setUp(self):
@@ -172,68 +172,4 @@ class GroupMaterialTests(TestCase):
 
         with open(os.path.join(doc.get_file_path(), doc.name + "-" + doc.rev + ".txt")) as f:
             self.assertEqual(f.read(), content)
-
-    def test_material_presentations(self):
-        doc = self.create_slides()
-        meeting = make_meeting_test_data()
-        meeting.session_set.filter(group__acronym='mars').update(group=doc.group)
-
-        url = urlreverse(material_presentations,kwargs=dict(name=doc.name))
-        login_testing_unauthorized(self, "secretary", url)
-
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-
-        url = urlreverse(material_presentations,kwargs=dict(name=doc.name,seq=1))
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-
-        when = meeting.agenda.assignments.filter(session__group__acronym='testteam').first().timeslot.time
-        mdw = when.date().isoformat()
-        dow = ['mon','tue','wed','thu','fri','sat','sun'][when.weekday()]
-
-        for kw in [ dict(),
-                    dict(seq=1),
-                    dict(week_day=dow),
-                    dict(week_day=dow,seq=1),
-                    dict(date=mdw),
-                    dict(date=mdw,seq=1),
-                    dict(date=mdw+'-0930'),
-                    dict(date=mdw+'-0930',seq=1),
-                   ]:
-            kw['name'] = doc.name
-            kw['acronym'] = 'testteam'
-            url = urlreverse(material_presentations,kwargs=kw)
-            r = self.client.get(url)
-            self.assertEqual(r.status_code, 200)
-
-    def test_edit_material_presentations(self):
-        doc = self.create_slides()
-        meeting = make_meeting_test_data()
-        meeting.session_set.filter(group__acronym='mars').update(group=doc.group)
-
-        session = meeting.agenda.assignments.filter(session__group__acronym='testteam').first().session
-
-        url = urlreverse(edit_material_presentations,kwargs=dict(name=doc.name,acronym='testteam',seq=1))
-        login_testing_unauthorized(self, "secretary", url)
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        
-        self.assertEqual(doc.sessionpresentation_set.count(),0)
-
-        # add the materials to a session
-        r = self.client.post(url, dict(action="Save",version="00"))
-        self.assertEqual(r.status_code, 302)
-        self.assertEqual(doc.sessionpresentation_set.first().session , session) 
-
-        # change the version
-        r = self.client.post(url, dict(action="Save",version="01"))
-        self.assertEqual(r.status_code, 302)
-        self.assertEqual(doc.sessionpresentation_set.first().session , session) 
-
-        # take the slides back off that meeting
-        r = self.client.post(url, dict(action="Save",version="notpresented"))
-        self.assertEqual(r.status_code, 302)
-        self.assertEqual(doc.sessionpresentation_set.count(),0)
-        
 

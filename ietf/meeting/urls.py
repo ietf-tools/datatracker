@@ -8,6 +8,7 @@ from ietf.meeting import ajax
 
 safe_for_all_meeting_types = [
     url(r'^session/(?P<acronym>[A-Za-z0-9_\-\+]+)/$',  views.session_details),
+    url(r'^session/(?P<session_id>\d+)/drafts$',  views.add_session_drafts),
 ]
 
 type_ietf_only_patterns = [

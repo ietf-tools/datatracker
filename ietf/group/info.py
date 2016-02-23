@@ -60,6 +60,7 @@ from ietf.utils.pipe import pipe
 from ietf.settings import MAILING_LIST_INFO_URL
 from ietf.mailtrigger.utils import gather_relevant_expansions
 from ietf.ietfauth.utils import has_role
+from ietf.meeting.utils import group_sessions
 
 def roles(group, role_name):
     return Role.objects.filter(group=group, name=role_name).select_related("email", "person")
@@ -335,7 +336,7 @@ def construct_group_menu_context(request, group, selected, group_type, others):
         entries.append(("About", urlreverse("group_about", kwargs=kwargs)))
     if group.features.has_materials and get_group_materials(group).exists():
         entries.append(("Materials", urlreverse("ietf.group.info.materials", kwargs=kwargs)))
-    if group.type_id in ('rg','wg'):
+    if group.type_id in ('rg','wg','team'):
         entries.append(("Meetings", urlreverse("ietf.group.info.meetings", kwargs=kwargs)))
     entries.append(("Email expansions", urlreverse("ietf.group.info.email", kwargs=kwargs)))
     entries.append(("History", urlreverse("ietf.group.info.history", kwargs=kwargs)))
@@ -740,35 +741,7 @@ def meetings(request, acronym=None, group_type=None):
                                         meeting__date__gt=four_years_ago,
                                         type__in=['session','plenary','other'])
 
-    def sort_key(session):
-        if session.meeting.type.slug=='ietf':
-            official_sessions = session.timeslotassignments.filter(schedule=session.meeting.agenda)
-            if official_sessions:
-                return official_sessions.first().timeslot.time
-            elif session.meeting.date:
-                return datetime.datetime.combine(session.meeting.date,datetime.datetime.min.time())
-            else:
-                return session.requested
-        else: 
-            # TODO: use timeslots for interims once they have them
-            return datetime.datetime.combine(session.meeting.date,datetime.datetime.min.time())
-
-    for s in sessions:
-        s.time=sort_key(s)
-
-    sessions = sorted(sessions,key=lambda s:s.time,reverse=True)
-
-    today = datetime.date.today()
-    future = []
-    in_progress = []
-    past = []
-    for s in sessions:
-        if s.meeting.date > today:
-            future.append(s)
-        elif s.meeting.end_date() >= today:
-            in_progress.append(s)
-        else:
-            past.append(s)
+    future, in_progress, past = group_sessions(sessions)
 
     can_edit = has_role(request.user,["Secretariat","Area Director"]) or group.has_role(request.user,["Chair","Secretary"])
 
