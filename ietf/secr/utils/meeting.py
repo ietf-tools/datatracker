@@ -20,6 +20,9 @@ def get_materials(group,meeting):
         for doc in session.materials.exclude(states__slug='deleted').order_by('order'):
             if doc.type.slug in ('minutes','agenda'):
                 materials[doc.type.slug] = doc
+            elif doc.type.slug == 'draft':
+                continue
+                # drafts are currently managed directly by the session and document views
             elif doc not in materials[doc.type.slug]:
                 materials[doc.type.slug].append(doc)
     return materials
