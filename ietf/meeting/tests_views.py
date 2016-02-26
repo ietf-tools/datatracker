@@ -9,7 +9,7 @@ from django.conf import settings
 from pyquery import PyQuery
 
 from ietf.doc.models import Document
-from ietf.meeting.models import Session, TimeSlot
+from ietf.meeting.models import Session, TimeSlot, Meeting
 from ietf.meeting.test_data import make_meeting_test_data
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized, unicontent
 
@@ -330,3 +330,24 @@ class EditTests(TestCase):
         ames_slot_qs.update(time=mars_ends + datetime.timedelta(seconds=10 * 60))
         self.assertTrue(mars_slot.slot_to_the_right)
         self.assertTrue(mars_scheduled.slot_to_the_right)
+
+class InterimTests(TestCase):
+    def test_upcoming(self):
+        make_meeting_test_data()
+        r = self.client.get("/meeting/upcoming/")
+        self.assertEqual(r.status_code, 200)
+        today = datetime.date.today()
+        mars_interim = Meeting.objects.filter(date__gt=today,type='interim',number__contains='mars').first()
+        ames_interim = Meeting.objects.filter(date__gt=today,type='interim',number__contains='ames').first()
+        self.assertTrue(mars_interim.number in r.content)
+        self.assertTrue(ames_interim.number in r.content)
+        # cancelled session
+        q = PyQuery(r.content)
+        self.assertTrue('CANCELLED' in q('[id*="-ames"]').text())
+
+    def test_upcoming_ics(self):
+        make_meeting_test_data()
+        r = self.client.get("/meeting/upcoming.ics/")
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.get('Content-Type'),"text/calendar")
+

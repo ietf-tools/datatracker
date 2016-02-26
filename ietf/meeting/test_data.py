@@ -77,6 +77,32 @@ def make_meeting_test_data():
     doc.set_state(State.objects.get(type='reuse_policy',slug='single'))
     mars_session.sessionpresentation_set.add(SessionPresentation(session=mars_session,document=doc,rev=doc.rev))
     
+    # Future Interim Meetings
+    date = datetime.date.today() + datetime.timedelta(days=365)
+    mars_meeting = Meeting.objects.create(
+        number="interim-%s-mars-1" % date.year,
+        type_id='interim',
+        date=date,
+        city="New York",
+        country="US",
+        )
+    mars_session = Session.objects.create(meeting=mars_meeting, group=mars,
+                                          attendees=10, requested_by=system_person,
+                                          requested_duration=20, status_id="sched",
+                                          scheduled=datetime.datetime.now(),type_id="session")
+    ames = Group.objects.get(acronym="ames")
+    ames_meeting = Meeting.objects.create(
+        number="interim-%s-ames-1" % date.year,
+        type_id='interim',
+        date=date,
+        city="New York",
+        country="US",
+        )
+    ames_session = Session.objects.create(meeting=ames_meeting, group=ames,
+                                          attendees=10, requested_by=system_person,
+                                          requested_duration=20, status_id="canceled",
+                                          scheduled=datetime.datetime.now(),type_id="session")
+
     return meeting
 
 

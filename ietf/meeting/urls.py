@@ -65,6 +65,8 @@ urlpatterns = [
     # The optionals have to go first, otherwise the agenda/(owner)/(name)/ patterns match things they shouldn't
     url(r'^(?:(?P<num>\d+)/)?', include(type_ietf_only_patterns_id_optional)),
     url(r'^(?P<num>\d+)/', include(type_ietf_only_patterns)),
+    url(r'^upcoming/$', views.upcoming),
+    url(r'^upcoming.ics/$', views.ical_upcoming),
     url(r'^$', views.current_materials),
 ]
 

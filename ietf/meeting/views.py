@@ -874,3 +874,36 @@ def session_details(request, num, acronym ):
                     'can_manage_materials' : can_manage,
                     'type_counter': type_counter,
                   })
+
+def ical_upcoming(request):
+    '''ICAL upcoming meetings'''
+    return HttpResponse()
+
+def upcoming(request):
+    '''List of upcoming meetings'''
+    today = datetime.datetime.today()
+    meetings = Meeting.objects.filter(date__gt=today)
+
+    # extract groups hierarchy
+    seen = set()
+    groups = [ m.session_set.first().group for m in meetings.filter(type='interim') ]
+    group_parents = []
+    for g in groups:
+        if g.parent.acronym not in seen:
+            group_parents.append(g.parent)
+            seen.add(g.parent.acronym)
+
+    seen = set()
+    for p in group_parents:
+        p.group_list = []
+        for g in groups:
+            if g.acronym not in seen and g.parent == p:
+                p.group_list.append(g)
+                seen.add(g.acronym)
+
+        p.group_list.sort(key=lambda g: g.acronym)
+
+    return render(request, "meeting/upcoming.html",
+                  { 'meetings':meetings,
+                    'group_parents':group_parents,
+                  })
