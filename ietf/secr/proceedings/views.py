@@ -997,7 +997,9 @@ def upload_unified(request, meeting_num, acronym=None, session_id=None):
 
     # gather DocEvents
     # include deleted material to catch deleted doc events
-    docs = session.materials.all()
+    #docs = session.materials.all()
+    # Don't report on draft DocEvents since the secr/materials app isn't managing them
+    docs = session.materials.exclude(type='draft')
     docevents = DocEvent.objects.filter(doc__in=docs)
 
     path = get_proceedings_path(meeting,group)
