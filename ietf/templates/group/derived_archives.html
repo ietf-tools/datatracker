@@ -10,16 +10,16 @@
 {% if list_acronym %}
 
 <div class="row">
-<span class="col-xs-2 col-md-1"><strong>Mailarchive</strong></span><span class="col-xs-8 col-md-8"><a href="{{group.list_archive}}">{{group.list_archive}}</a></span>
+<span class="col-xs-4 col-sm-3 col-md-2"><strong>Mailarchive</strong></span><span class="col-xs-8 col-sm-9 col-md-10"><a href="{{group.list_archive}}">{{group.list_archive}}</a></span>
 </div>
 
 <div class="row">
-<span class="col-xs-2 col-md-1"><strong>Mhonarc</strong></span><span class="col-xs-8 col-md-8"><a href="https://www.ietf.org/mail-archive/web/{{list_acronym}}/current/maillist.html">https://www.ietf.org/mail-archive/web/{{list_acronym}}/current/maillist.html</a></span>
+<span class="col-xs-4 col-sm-3 col-md-2"><strong>Mhonarc</strong></span><span class="col-xs-8 col-sm-9 col-md-10"><a href="https://www.ietf.org/mail-archive/web/{{list_acronym}}/current/maillist.html">https://www.ietf.org/mail-archive/web/{{list_acronym}}/current/maillist.html</a></span>
 </div>
 
 {% else %}
 <div class="row">
-<strong class="col-xs-2 col-md-1">Archive</strong><span class="col-xs-8 col-md-8"><a href="{{group.list_archive}}">{{group.list_archive}}</a></span>
+<strong class="col-xs-4 col-sm-3 col-md-2">Archive</strong><span class="col-xs-8 col-sm-9 col-md-10"><a href="{{group.list_archive}}">{{group.list_archive}}</a></span>
 </div>
 {% endif %}
 
