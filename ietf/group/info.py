@@ -340,16 +340,18 @@ def construct_group_menu_context(request, group, selected, group_type, others):
         entries.append(("Meetings", urlreverse("ietf.group.info.meetings", kwargs=kwargs)))
     entries.append(("Email expansions", urlreverse("ietf.group.info.email", kwargs=kwargs)))
     entries.append(("History", urlreverse("ietf.group.info.history", kwargs=kwargs)))
-    if group.features.has_documents:
-        kwargs["output_type"] = "svg"
-        entries.append((mark_safe("Dependency graph &raquo;"), urlreverse("ietf.group.info.dependencies", kwargs=kwargs)))
-        del kwargs["output_type"]
 
     if group.list_archive.startswith("http:") or group.list_archive.startswith("https:") or group.list_archive.startswith("ftp:"):
         if 'mailarchive.ietf.org' in group.list_archive:
             entries.append(("List archive", urlreverse("ietf.group.info.derived_archives", kwargs=kwargs)))
         else:
             entries.append((mark_safe("List archive &raquo;"), group.list_archive))
+
+    if group.features.has_documents:
+        kwargs["output_type"] = "svg"
+        entries.append((mark_safe("Dependency graph &raquo;"), urlreverse("ietf.group.info.dependencies", kwargs=kwargs)))
+        del kwargs["output_type"]
+
     if group.has_tools_page():
         entries.append((mark_safe("Tools page &raquo;"), "https://tools.ietf.org/%s/%s/" % (group.type_id, group.acronym)))
 
