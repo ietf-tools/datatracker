@@ -250,13 +250,13 @@
           <th>On Agenda</th>
           <td class="edit">
             {% if not snapshot and can_edit_stream_info %}
-              {% doc_edit_button "material_presentations" name=doc.name %}
+              {% doc_edit_button "ietf.doc.views_doc.all_presentations" name=doc.name %}
             {% endif %}
           </td>
   
           <td>
             {% if presentations %}
-              {% for pres in presentations %}{{ pres.session.short_name }} at {{ pres.session.meeting }} {% if pres.rev != doc.rev %}(version -{{ pres.rev }}){% endif %}{% if not forloop.last %}, {% endif %}{% endfor %}
+              {% for pres in presentations %}{{ pres.session.short_name }} at {{ pres.session.meeting }} {% if pres.rev and pres.rev != doc.rev %}(version -{{ pres.rev }}){% endif %}{% if not forloop.last %}, {% endif %}{% endfor %}
             {% else %}
               None
             {% endif %}

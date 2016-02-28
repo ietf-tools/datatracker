@@ -37,6 +37,12 @@ from ietf.doc import views_search, views_draft, views_ballot
 from ietf.doc import views_status_change
 from ietf.doc import views_doc
 
+session_patterns = [
+    url(r'^add$', views_doc.add_sessionpresentation),
+    url(r'^(?P<session_id>\d+)/edit$',  views_doc.edit_sessionpresentation),
+    url(r'^(?P<session_id>\d+)/remove$', views_doc.remove_sessionpresentation),
+]
+
 urlpatterns = patterns('',
     (r'^/?$', views_search.search),
     url(r'^(?P<name>[A-Za-z0-9\._\+\-]+)$', views_search.search_for_name, name="doc_search_for_name"),
@@ -112,5 +118,7 @@ urlpatterns = patterns('',
     (r'^(?P<name>charter-[A-Za-z0-9._+-]+)/', include('ietf.doc.urls_charter')),
     (r'^(?P<name>[A-Za-z0-9._+-]+)/conflict-review/', include('ietf.doc.urls_conflict_review')),
     (r'^(?P<name>[A-Za-z0-9._+-]+)/status-change/', include('ietf.doc.urls_status_change')),
+    url(r'^(?P<name>[A-Za-z0-9._+-]+)/meetings$', 'ietf.doc.views_doc.all_presentations', name="all_presentations"),
     (r'^(?P<name>[A-Za-z0-9._+-]+)/material/', include('ietf.doc.urls_material')),
+    url(r'^(?P<name>[A-Za-z0-9._+-]+)/session/', include(session_patterns)),
 )

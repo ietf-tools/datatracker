@@ -20,10 +20,14 @@ import debug                            # pyflakes:ignore
 from ietf.doc.models import ( Document, DocAlias, DocRelationshipName, RelatedDocument, State,
     DocEvent, BallotPositionDocEvent, LastCallDocEvent, WriteupDocEvent, NewRevisionDocEvent,
     save_document_in_history )
+from ietf.doc.factories import DocumentFactory
 from ietf.group.models import Group
+from ietf.group.factories import GroupFactory
 from ietf.meeting.models import Meeting, Session, SessionPresentation
+from ietf.meeting.factories import SessionFactory
 from ietf.name.models import SessionStatusName
 from ietf.person.models import Person
+from ietf.person.factories import PersonFactory
 from ietf.utils.mail import outbox
 from ietf.utils.test_data import make_test_data
 from ietf.utils.test_utils import login_testing_unauthorized, unicontent
@@ -904,3 +908,185 @@ expand-draft-ietf-ames-test.all@virtual.ietf.org  ames-author@example.ames, ames
         self.assertEqual(r.status_code, 200)
         self.assertTrue('draft-ietf-mars-test.all@ietf.org' in unicontent(r))
         self.assertTrue('ballot_saved' in unicontent(r))
+
+class DocumentMeetingTests(TestCase):
+
+    def setUp(self):
+        self.group = GroupFactory(type_id='wg',state_id='active')
+        self.group_chair = PersonFactory()
+        self.group.role_set.create(name_id='chair',person=self.group_chair,email=self.group_chair.email())
+
+        self.other_group = GroupFactory(type_id='wg',state_id='active')
+        self.other_chair = PersonFactory()
+        self.other_group.role_set.create(name_id='chair',person=self.other_chair,email=self.other_chair.email())
+
+        today = datetime.date.today()
+        cut_days = settings.MEETING_MATERIALS_SUBMISSION_CORRECTION_DAYS
+        self.past_cutoff = SessionFactory.create(meeting__type_id='ietf',group=self.group,meeting__date=today-datetime.timedelta(days=1+cut_days))
+        self.past = SessionFactory.create(meeting__type_id='ietf',group=self.group,meeting__date=today-datetime.timedelta(days=cut_days/2))
+        self.inprog = SessionFactory.create(meeting__type_id='ietf',group=self.group,meeting__date=today-datetime.timedelta(days=1))
+        self.future = SessionFactory.create(meeting__type_id='ietf',group=self.group,meeting__date=today+datetime.timedelta(days=90))
+        self.interim = SessionFactory.create(meeting__type_id='interim',group=self.group,meeting__date=today+datetime.timedelta(days=45))
+
+    def test_view_document_meetings(self):
+        doc = DocumentFactory.create()
+        doc.sessionpresentation_set.create(session=self.inprog,rev=None)
+        doc.sessionpresentation_set.create(session=self.interim,rev=None)
+
+        url = urlreverse('ietf.doc.views_doc.all_presentations', kwargs=dict(name=doc.name))
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        q = PyQuery(response.content)
+        self.assertTrue(all([q(id) for id in ['#inprogressmeets','#futuremeets']]))
+        self.assertFalse(any([q(id) for id in ['#pastmeets',]]))
+        self.assertFalse(q('#addsessionsbutton'))
+        self.assertFalse(q("a.btn:contains('Remove document')"))
+
+        doc.sessionpresentation_set.create(session=self.past_cutoff,rev=None)
+        doc.sessionpresentation_set.create(session=self.past,rev=None)
+
+        self.client.login(username="secretary", password="secretary+password")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        q = PyQuery(response.content)
+        self.assertTrue(q('#addsessionsbutton'))
+        self.assertEqual(1,len(q("#inprogressmeets a.btn-default:contains('Remove document')")))
+        self.assertEqual(1,len(q("#futuremeets a.btn-default:contains('Remove document')")))
+        self.assertEqual(1,len(q("#pastmeets a.btn-default:contains('Remove document')")))
+        self.assertEqual(1,len(q("#pastmeets a.btn-warning:contains('Remove document')")))
+
+        self.client.login(username=self.group_chair.user.username,password='%s+password'%self.group_chair.user.username)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        q = PyQuery(response.content)
+        self.assertTrue(q('#addsessionsbutton'))
+        self.assertEqual(1,len(q("#inprogressmeets a.btn-default:contains('Remove document')")))
+        self.assertEqual(1,len(q("#futuremeets a.btn-default:contains('Remove document')")))
+        self.assertEqual(1,len(q("#pastmeets a.btn-default:contains('Remove document')")))
+        self.assertTrue(q('#pastmeets'))
+        self.assertFalse(q("#pastmeets a.btn-warning:contains('Remove document')"))
+
+        self.client.login(username=self.other_chair.user.username,password='%s+password'%self.other_chair.user.username)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        q = PyQuery(response.content)
+        self.assertTrue(q('#addsessionsbutton'))
+        self.assertTrue(all([q(id) for id in ['#futuremeets','#pastmeets','#inprogressmeets']]))
+        self.assertFalse(q("#inprogressmeets a.btn:contains('Remove document')"))
+        self.assertFalse(q("#futuremeets a.btn:contains('Remove document')"))
+        self.assertFalse(q("#pastmeets a.btn:contains('Remove document')"))
+
+    def test_edit_document_session(self):
+        doc = DocumentFactory.create()
+        sp = doc.sessionpresentation_set.create(session=self.future,rev=None)
+
+        url = urlreverse('ietf.doc.views_doc.edit_sessionpresentation',kwargs=dict(name='no-such-doc',session_id=sp.session_id))
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
+        url = urlreverse('ietf.doc.views_doc.edit_sessionpresentation',kwargs=dict(name=doc.name,session_id=0))
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
+        url = urlreverse('ietf.doc.views_doc.edit_sessionpresentation',kwargs=dict(name=doc.name,session_id=sp.session_id))
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
+        self.client.login(username=self.other_chair.user.username,password='%s+password'%self.other_chair.user.username)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+        
+        self.client.login(username=self.group_chair.user.username,password='%s+password'%self.group_chair.user.username)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        q = PyQuery(response.content)
+        self.assertEqual(2,len(q('select#id_version option')))
+
+        self.assertEqual(1,doc.docevent_set.count())
+        response = self.client.post(url,{'version':'00','save':''})
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(doc.sessionpresentation_set.get(pk=sp.pk).rev,'00')
+        self.assertEqual(2,doc.docevent_set.count())
+
+    def test_edit_document_session_after_proceedings_closed(self):
+        doc = DocumentFactory.create()
+        sp = doc.sessionpresentation_set.create(session=self.past_cutoff,rev=None)
+
+        url = urlreverse('ietf.doc.views_doc.edit_sessionpresentation',kwargs=dict(name=doc.name,session_id=sp.session_id))
+        self.client.login(username=self.group_chair.user.username,password='%s+password'%self.group_chair.user.username)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+        
+        self.client.login(username='secretary',password='secretary+password')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        q=PyQuery(response.content)
+        self.assertEqual(1,len(q(".alert-warning:contains('may affect published proceedings')")))
+
+    def test_remove_document_session(self):
+        doc = DocumentFactory.create()
+        sp = doc.sessionpresentation_set.create(session=self.future,rev=None)
+
+        url = urlreverse('ietf.doc.views_doc.remove_sessionpresentation',kwargs=dict(name='no-such-doc',session_id=sp.session_id))
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
+        url = urlreverse('ietf.doc.views_doc.remove_sessionpresentation',kwargs=dict(name=doc.name,session_id=0))
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
+        url = urlreverse('ietf.doc.views_doc.remove_sessionpresentation',kwargs=dict(name=doc.name,session_id=sp.session_id))
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
+        self.client.login(username=self.other_chair.user.username,password='%s+password'%self.other_chair.user.username)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+        
+        self.client.login(username=self.group_chair.user.username,password='%s+password'%self.group_chair.user.username)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+        self.assertEqual(1,doc.docevent_set.count())
+        response = self.client.post(url,{'remove_session':''})
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(doc.sessionpresentation_set.filter(pk=sp.pk).exists())
+        self.assertEqual(2,doc.docevent_set.count())
+
+    def test_remove_document_session_after_proceedings_closed(self):
+        doc = DocumentFactory.create()
+        sp = doc.sessionpresentation_set.create(session=self.past_cutoff,rev=None)
+
+        url = urlreverse('ietf.doc.views_doc.remove_sessionpresentation',kwargs=dict(name=doc.name,session_id=sp.session_id))
+        self.client.login(username=self.group_chair.user.username,password='%s+password'%self.group_chair.user.username)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+        
+        self.client.login(username='secretary',password='secretary+password')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        q=PyQuery(response.content)
+        self.assertEqual(1,len(q(".alert-warning:contains('may affect published proceedings')")))
+
+    def test_add_document_session(self):
+        doc = DocumentFactory.create()
+
+        url = urlreverse('ietf.doc.views_doc.add_sessionpresentation',kwargs=dict(name=doc.name))
+        login_testing_unauthorized(self,self.group_chair.user.username,url)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code,200)
+    
+        response = self.client.post(url,{'session':0,'version':'current'})
+        self.assertEqual(response.status_code,200)
+        q=PyQuery(response.content)
+        self.assertTrue(q('.form-group.has-error'))
+     
+        response = self.client.post(url,{'session':self.future.pk,'version':'bogus version'})
+        self.assertEqual(response.status_code,200)
+        q=PyQuery(response.content)
+        self.assertTrue(q('.form-group.has-error'))
+
+        self.assertEqual(1,doc.docevent_set.count())
+        response = self.client.post(url,{'session':self.future.pk,'version':'current'})
+        self.assertEqual(response.status_code,302)
+        self.assertEqual(2,doc.docevent_set.count())

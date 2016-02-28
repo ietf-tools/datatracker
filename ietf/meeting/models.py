@@ -22,6 +22,7 @@ from django.utils.text import slugify
 
 from ietf.doc.models import Document
 from ietf.group.models import Group
+from ietf.group.utils import can_manage_materials
 from ietf.name.models import MeetingTypeName, TimeSlotTypeName, SessionStatusName, ConstraintName, RoomResourceName
 from ietf.person.models import Person
 
@@ -887,7 +888,7 @@ class Constraint(models.Model):
 class SessionPresentation(models.Model):
     session = models.ForeignKey('Session')
     document = models.ForeignKey(Document)
-    rev = models.CharField(verbose_name="revision", max_length=16, blank=True)
+    rev = models.CharField(verbose_name="revision", max_length=16, null=True, blank=True)
 
     class Meta:
         db_table = 'meeting_session_materials'
@@ -956,6 +957,12 @@ class Session(models.Model):
 
     def drafts(self):
         return list(self.materials.filter(type='draft'))
+
+    def can_manage_materials(self, user):
+        return can_manage_materials(user,self.group)
+
+    def is_material_submission_cutoff(self):
+        return datetime.date.today() > self.meeting.get_submission_correction_date()
 
     def __unicode__(self):
         if self.meeting.type_id == "interim":

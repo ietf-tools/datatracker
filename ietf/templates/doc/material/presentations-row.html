@@ -1,0 +1,41 @@
+{% load origin %}
+{% load ietf_filters session_filters %}
+
+      {% origin %}
+      <table class="table table-condensed table-striped">
+      <thead>
+        <tr>
+          <th class="col-md-1">Revision</th>
+          <th class="col-md-2">Meeting</th>
+          <th class="col-md-2">Session</th>
+          <th class="col-md-1">{% comment %}Agenda{% endcomment %}</th>
+          <th class="col-md-1">{% comment %}Minutes{% endcomment %}</th>
+          <th class="col-md-1">{% comment %}Materials{% endcomment %}</th>
+          <th class="col-md-4">{% comment %}Buttons{% endcomment %}</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for s in sessions %}
+        <tr>
+         <td>{{s|presented_versions:doc}}</td>
+         <td>{% ifchanged s.meeting %}{% if s.meeting.type.slug == 'ietf' %}IETF{% endif %}{{s.meeting.number}}{% endifchanged %}</td>
+         <td>
+           {% if s.name %}{{ s.name }}<br>{% endif %}
+           {% if s.status.slug == "sched" %}
+            {% if s.meeting.type.slug == 'ietf' %}{{s.time|date:"D M d, Y Hi"}}{% else %}{{s.time|date:"D M d, Y"}}{% endif %}
+          {% else %}
+            {{s.status}}
+          {% endif %}
+         </td>
+         <td>{% if s.agenda %}<a href="{{ s.agenda.get_absolute_url }}">Agenda</a>{% endif %}</td>
+         <td>{% if s.minutes %}<a href="{{ s.minutes.get_absolute_url }}">Minutes</a>{% endif %}</td>
+         <td><a href="{% url 'ietf.meeting.views.session_details' num=s.meeting.number acronym=s.group.acronym %}">Materials</a></td>
+         <td>
+             {% if user|has_role:"Secretariat" or s|can_manage_materials:user and not s.is_material_submission_cutoff %}
+               <a class="btn btn-{% if s.is_material_submission_cutoff %}warning{% else %}default{% endif %} btn-xs" href="{% url 'ietf.doc.views_doc.remove_sessionpresentation' name=doc.name session_id=s.pk %}">Remove document from session</a>
+               <a class="btn btn-{% if s.is_material_submission_cutoff %}warning{% else %}default{% endif %} btn-xs" href="{% url 'ietf.doc.views_doc.edit_sessionpresentation' name=doc.name session_id=s.pk %}">Change revision</a>
+             {% endif %}
+         </td>
+      {% endfor %}
+      </tbody>
+      </table>

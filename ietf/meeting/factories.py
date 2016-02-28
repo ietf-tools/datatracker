@@ -4,7 +4,7 @@ import datetime
 
 from django.db.models import Max
 
-from ietf.meeting.models import Meeting, Session, Schedule, TimeSlot
+from ietf.meeting.models import Meeting, Session, Schedule, TimeSlot, SessionPresentation
 from ietf.group.factories import GroupFactory
 from ietf.person.factories import PersonFactory
 
@@ -96,4 +96,13 @@ class TimeSlotFactory(factory.DjangoModelFactory):
     def duration(self):
         return datetime.timedelta(minutes=30+random.randrange(9)*15)
 
+class SessionPresentationFactory(factory.DjangoModelFactory):
+    class Meta:
+        model = SessionPresentation
+
+    session = factory.SubFactory(SessionFactory)
+    document = factory.SubFactory('ietf.doc.factories.DocumentFactory')
+    @factory.lazy_attribute
+    def rev(self):
+        return self.document.rev
 

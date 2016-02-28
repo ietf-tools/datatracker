@@ -3,6 +3,8 @@ import shutil
 import datetime
 import urlparse
 
+import debug           # pyflakes:ignore
+
 from django.core.urlresolvers import reverse as urlreverse
 from django.conf import settings
 
@@ -12,6 +14,11 @@ from ietf.doc.models import Document
 from ietf.meeting.models import Session, TimeSlot
 from ietf.meeting.test_data import make_meeting_test_data
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized, unicontent
+
+from ietf.person.factories import PersonFactory
+from ietf.group.factories import GroupFactory
+from ietf.meeting.factories import SessionFactory, SessionPresentationFactory
+from ietf.doc.factories import DocumentFactory
 
 class MeetingTests(TestCase):
     def setUp(self):
@@ -155,13 +162,6 @@ class MeetingTests(TestCase):
         login_testing_unauthorized(self,"secretary",url)
         r = self.client.get(url)
         self.assertTrue(all([x in unicontent(r) for x in ['mars','IESG Breakfast','Test Room','Breakfast Room']]))
-
-    def test_session_details(self):
-        meeting = make_meeting_test_data()
-        url = urlreverse("ietf.meeting.views.session_details", kwargs=dict(num=meeting.number, acronym="mars"))
-        r = self.client.get(url)
-        self.assertTrue(all([x in unicontent(r) for x in ('slides','agenda','minutes')]))
-        self.assertFalse('deleted' in unicontent(r))
 
     def test_materials(self):
         meeting = make_meeting_test_data()
@@ -330,3 +330,63 @@ class EditTests(TestCase):
         ames_slot_qs.update(time=mars_ends + datetime.timedelta(seconds=10 * 60))
         self.assertTrue(mars_slot.slot_to_the_right)
         self.assertTrue(mars_scheduled.slot_to_the_right)
+
+class SessionDetailsTests(TestCase):
+
+    def test_session_details(self):
+
+        group = GroupFactory.create(type_id='wg',state_id='active')
+        session = SessionFactory.create(meeting__type_id='ietf',group=group, meeting__date=datetime.date.today()+datetime.timedelta(days=90))
+        SessionPresentationFactory.create(session=session,document__type_id='draft',rev=None)
+        SessionPresentationFactory.create(session=session,document__type_id='minutes')
+        SessionPresentationFactory.create(session=session,document__type_id='slides')
+        SessionPresentationFactory.create(session=session,document__type_id='agenda')
+
+        url = urlreverse('ietf.meeting.views.session_details', kwargs=dict(num=session.meeting.number, acronym=group.acronym))
+        r = self.client.get(url)
+        self.assertTrue(all([x in unicontent(r) for x in ('slides','agenda','minutes','draft')]))
+        self.assertFalse('deleted' in unicontent(r))
+        
+    def test_add_session_drafts(self):
+        group = GroupFactory.create(type_id='wg',state_id='active')
+        group_chair = PersonFactory.create()
+        group.role_set.create(name_id='chair',person = group_chair, email = group_chair.email())
+        session = SessionFactory.create(meeting__type_id='ietf',group=group, meeting__date=datetime.date.today()+datetime.timedelta(days=90))
+        SessionPresentationFactory.create(session=session,document__type_id='draft',rev=None)
+        old_draft = session.sessionpresentation_set.filter(document__type='draft').first().document
+        new_draft = DocumentFactory(type_id='draft')
+
+        url = urlreverse('ietf.meeting.views.add_session_drafts', kwargs=dict(num=session.meeting.number, session_id=session.pk))
+
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 404)
+
+        self.client.login(username="plain",password="plain+password")
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 404)
+
+        self.client.login(username=group_chair.user.username, password='%s+password'%group_chair.user.username)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(old_draft.name in unicontent(r))
+
+        r = self.client.post(url,dict(drafts=[new_draft.name,old_draft.name]))
+        self.assertTrue(r.status_code, 200)
+        q=PyQuery(r.content)
+        self.assertTrue(q('form .alert-danger:contains("Already linked:")'))
+
+        self.assertEqual(1,session.sessionpresentation_set.count())
+        r = self.client.post(url,dict(drafts=[new_draft.name,]))
+        self.assertTrue(r.status_code, 302)
+        self.assertEqual(2,session.sessionpresentation_set.count())
+
+        session.meeting.date -= datetime.timedelta(days=180)
+        session.meeting.save()
+        r = self.client.get(url)
+        self.assertEqual(r.status_code,404)
+        self.client.login(username='secretary',password='secretary+password')
+        r = self.client.get(url)
+        self.assertEqual(r.status_code,200)
+        q = PyQuery(r.content)
+        self.assertEqual(1,len(q(".alert-warning:contains('may affect published proceedings')")))
+
