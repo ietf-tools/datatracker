@@ -1,3 +1,84 @@
+ietfdb (6.15.0) ietf; urgency=medium
+
+  **Session docs, WG List Archive Tab, RFC Note enhancements**
+
+  This release provides a number of nice enhancements:
+
+  - Documents can now be associated with meeting sessions from the document
+    information page by group chairs, secretariat, etc., through an edit button
+    by the 'On Agenda' entry in the Stream info section.
+
+  - The group pages now provide links to both the new Mailarchive and the old
+    MHonArc list archives (if both exist).
+
+  - The ability to add RFC Editor notes which will be called out on the IESG
+    agenda which was introduced in release 6.14.0 has now been made available
+    to the IAB, IRTF and Independent streams.
+
+  Detailed changelog information:
+
+  * Merged in [10861] from rjsparks@nostrum.com:
+    Data cleanup: place old groups in better states and better areas.  Remove
+    a few groups that appear to have never existed (as groups).  
+
+  * Merged in [10857] from rjsparks@nostrum.com:
+    Preserve the assumptions in the secr/proceedings code by isolating it from
+    drafts now appearing in sessionpresentations.  
+
+  * Merged in [10856] from rjsparks@nostrum.com:
+    - Show all sessions associated with a document.
+    - Remove the day/seq urls from the materials tree.
+    - Allow sessionpresentation.rev to be None, meaning 'current version'.
+    - Streamlined workflows to focus on current versions of a draft as a default.
+    - Allow adding and editing sessionpresentations when looking at a specific 
+      document.
+    - Allow adding drafts when looking at a specific session.
+    - Add the meeting tab to 'team' groups.
+    - Refactored several utility classes and expanded on factories.
+
+    Fixes #1908 and #1910. 
+
+  * Since the list-archive tab on group pages can sometimes be a tab and 
+    sometimes a link out, positioning it between the always-tab and always 
+    link-out entries seems reasonable.
+
+  * Column text on the archives tab could overlap for some screen sizes.  
+    Tweaked the use of bootstrap cell width styles.
+
+  * Merged in [10848] from rjsparks@nostrum.com:
+    Correct typo in template. Fixes #1914.  
+
+  * Restricted django-bootstrap3 to versions which work with django 1.7.
+
+  * Merged in [10718] from olau@iola.dk:
+    Set daemon = True on the thread in the SMTP test server running while
+    running tests. This fixes the annoying problem of the python process
+    staying alive after certain bugs in the test invocation or after a
+    plain Ctrl + c. 
+
+  * Merged in [10840] from rjsparks@nostrum.com:
+    Fill in the list archive tab, showing both mailarchive and mhonarc links
+    when they exists. Preserve the immediate link-to-archive behavior for the
+    group pages for lists that are not in mailarchive/mhonarc. Provides a url
+    at the datatracker for the mailman listinfo pages to use that will show
+    both types of archive.  
+
+  * Tweaked the output of the check_referential_integrity script to specify 
+    the through table name for m2m relationships.
+
+  * Merged in [10834] from housley@vigilsec.com:
+    Allow IAB, IRTF, and Independent streams to use new capability for RFC
+    Editor Notes.  Do not display of document shepherd and shepherd writeup
+    for non-IETF stream documents.  Do not display IESG information for IAB
+    stream documents. 
+
+  * Merged in [10828] from lars@netapp.com:
+    IRTF RGs do not have a review period, the email is generated as a courtesy
+    to the IAB and IESG.  
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  28 Feb 2016 12:05:39 -0800
+
+
 ietfdb (6.14.1) ietf; urgency=medium
 
   This is a small bugfix release.
