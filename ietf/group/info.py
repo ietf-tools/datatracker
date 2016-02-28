@@ -296,25 +296,28 @@ def chartering_groups(request):
                        group_types=group_types))
 
 def concluded_groups(request):
-    group_types = GroupTypeName.objects.filter(slug__in=("wg", "rg"))
+    sections = OrderedDict()
 
-    for t in group_types:
-        t.concluded_groups = Group.objects.filter(type=t, state__in=("conclude", "bof-conc")).select_related("state", "charter").order_by("acronym")
+    sections['WGs'] = Group.objects.filter(type='wg', state="conclude").select_related("state", "charter").order_by("parent__name","acronym")
+    sections['RGs'] = Group.objects.filter(type='rg', state="conclude").select_related("state", "charter").order_by("parent__name","acronym")
+    sections['BOFs'] = Group.objects.filter(type='wg', state="bof-conc").select_related("state", "charter").order_by("parent__name","acronym")
 
+    for name, groups in sections.items():
+        
         # add start/conclusion date
-        d = dict((g.pk, g) for g in t.concluded_groups)
+        d = dict((g.pk, g) for g in groups)
 
-        for g in t.concluded_groups:
+        for g in groups:
             g.start_date = g.conclude_date = None
 
-        for e in ChangeStateGroupEvent.objects.filter(group__in=t.concluded_groups, state="active").order_by("-time"):
+        for e in ChangeStateGroupEvent.objects.filter(group__in=groups, state="active").order_by("-time"):
             d[e.group_id].start_date = e.time
 
-        for e in ChangeStateGroupEvent.objects.filter(group__in=t.concluded_groups, state="conclude").order_by("time"):
+        for e in ChangeStateGroupEvent.objects.filter(group__in=groups, state="conclude").order_by("time"):
             d[e.group_id].conclude_date = e.time
 
     return render(request, 'group/concluded_groups.html',
-                  dict(group_types=group_types))
+                  dict(sections=sections))
 
 def get_group_materials(group):
 #   return Document.objects.filter(group=group, type__in=group.features.material_types, session=None).exclude(states__slug="deleted")
