@@ -20,7 +20,7 @@
          <td>{{s|presented_versions:doc}}</td>
          <td>{% ifchanged s.meeting %}{% if s.meeting.type.slug == 'ietf' %}IETF{% endif %}{{s.meeting.number}}{% endifchanged %}</td>
          <td>
-           {% if s.name %}{{ s.name }}<br>{% endif %}
+           {% if s.name %}{{ s.name }}<br>{% else %}{{ s.group.acronym }} - {% endif %}
            {% if s.status.slug == "sched" %}
             {% if s.meeting.type.slug == 'ietf' %}{{s.time|date:"D M d, Y Hi"}}{% else %}{{s.time|date:"D M d, Y"}}{% endif %}
           {% else %}
