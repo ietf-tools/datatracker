@@ -76,7 +76,7 @@ ietfdb (6.15.0) ietf; urgency=medium
     IRTF RGs do not have a review period, the email is generated as a courtesy
     to the IAB and IESG.  
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  28 Feb 2016 12:05:39 -0800
+ -- Henrik Levkowetz <henrik@levkowetz.com>  29 Feb 2016 17:00:45 +0000
 
 
 ietfdb (6.14.1) ietf; urgency=medium
