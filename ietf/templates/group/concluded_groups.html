@@ -6,23 +6,41 @@
 <link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
 {% endblock %}
 
+{% block morecss %}
+
+.fixed { position: fixed; }
+
+.bs-docs-sidebar .nav .nav>li>a { padding-left: 20px; }
+
+.bs-docs-sidebar .nav ul.nav { display: none; }
+
+.bs-docs-sidebar .nav>.active>ul.nav { display: block; }
+
+{% endblock %}
+
+{% block bodyAttrs %}data-spy="scroll" data-target="#navscroller"{% endblock %}
+
 {% block title %}Concluded groups{% endblock %}
 
 {% block content %}
   {% origin %}
+  <div class="col-md-10">
   <h1>Concluded groups</h1>
 
   <p class="alert alert-info">Note that the information on historical groups may be inaccurate.</p>
 
-  {% for t in group_types %}
-    <h2>{{ t.name }}s</h2>
+  {% for label, groups in sections.items %}
+   <div class="anchor-target" id="{{label}}">
+    <div class="panel panel-default">
+      <div class="panel-heading">{{label}}</div>
+      <div class="panel-body">
 
-    {% if t.slug == "wg" %}
+    {% if label == "WGs" %}
       <p>
         Some additional concluded WGs may
         be present <a href="https://tools.ietf.org/wg/concluded">here</a>.
       </p>
-    {% elif t.slug == "rg" %}
+    {% elif label == "RGs" %}
       <p>
         The information below is incomplete and misses a few older RGs.
         Please check the <a href="https://irtf.org/groups">IRTF site</a>
@@ -30,34 +48,67 @@
       </p>
     {% endif %}
 
-    {% if not t.concluded_groups %}
+    {% if not groups %}
       <p><b>No groups found.</b></p>
     {% else %}
-      <table class="table table-condensed table-striped tablesorter">
-        <thead>
-          <tr>
-            <th>Group</th>
-            <th>Name</th>
-            <th>Start</th>
-            <th>Concluded</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for g in t.concluded_groups %}
-            <tr>
-              <td>
-	        <a href="{{ g.about_url }}">{{ g.acronym }}</a>
-              </td>
-              <td>{{ g.name }}</td>
-              <td>{{ g.start_date|date:"Y-m" }}</td>
-              <td>{{ g.conclude_date|date:"Y-m" }}</td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+      {% regroup groups by parent as grouped_by_areas %}
+      {% for area_grouping in grouped_by_areas %}
+       <div class="anchor-target" id="{{label}}-{{area_grouping.grouper.name|default:'unknown'|slugify}}">
+        <div class="panel panel-default">
+          <div class="panel-heading">{{area_grouping.grouper.name|default:'Unknown area'}}</div>
+          <div class="panel-body">
+            <table class="table table-condensed table-striped tablesorter">
+              <thead>
+                <tr>
+                  <th class="col-md-1">Group</th>
+                  <th class="col-md-7">Name</th>
+                  <th class="col-md-1">Start</th>
+                  <th class="col-md-1">Concluded</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for g in area_grouping.list %}
+                  <tr>
+                    <td>
+  	            <a href="{{ g.about_url }}">{{ g.acronym }}</a>
+                    </td>
+                    <td>{{ g.name }}</td>
+                    <td>{{ g.start_date|date:"Y-m" }}</td>
+                    <td>{{ g.conclude_date|date:"Y-m" }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+       </div>
+      {% endfor %}
     {% endif %}
+     </div>
+   </div>
+  </div>
   {% endfor %}
+ </div>
 
+  <div class="col-md-2 hidden-print bs-docs-sidebar" id="navscroller">
+    <ul class="nav nav-pills nav-stacked small fixed" >
+      {% for label, groups in sections.items %}
+        <li>
+          <a href="#{{label}}">{{label}}</a>
+          {% regroup groups by parent as grouped_by_areas %}
+          <ul class="nav nav-pills nav-stacked">
+          {% for area_grouping in grouped_by_areas %}
+            <li>
+               <a href="#{{label}}-{{area_grouping.grouper.name|default:'unknown'|slugify}}">
+                 {{area_grouping.grouper.name|default:'Unknown area'}}
+               </a>
+            </li>
+          {% endfor %}
+          </ul>
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
 {% endblock %}
 
 {% block js %}
