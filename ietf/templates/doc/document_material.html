@@ -116,7 +116,7 @@
   </table>
 
   <p class="buttonlist">
-    {% if not snapshot and can_manage_material %}
+    {% if not snapshot and can_manage_material and in_group_materials_types %}
       <a class="btn btn-default" href="{% url "material_edit" name=doc.name action="revise" %}">Upload New Revision</a>
     {% endif %}
   </p>
