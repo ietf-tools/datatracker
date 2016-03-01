@@ -81,6 +81,14 @@
         </div> <!-- panel -->
       </div> <!-- panel-group -->
 
+      {% if menu_actions %}
+        <div class="buttonlist">
+          {% for name, url in menu_actions %}
+            <a class="btn btn-default" href="{{ url }}">{{ name }}</a>
+          {% endfor %}
+        </div>
+      {% endif %}
+  
         {% if meetings %}
           <h3></h3>
           <table class="table table-condensed table-striped tablesorter">

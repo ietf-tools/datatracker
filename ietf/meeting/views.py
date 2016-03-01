@@ -39,6 +39,20 @@ from ietf.meeting.helpers import convert_draft_to_pdf
 from ietf.utils.pipe import pipe
 from ietf.utils.pdf import pdf_pages
 
+from .forms import InterimRequestForm
+
+# -------------------------------------------------
+# Helper Functions
+# -------------------------------------------------
+def can_request_interim_meeting(user):
+    if has_role(user, ('Secretariat','Area Director','WG Chair','IRTF Chair')):
+        return True
+    return False
+
+# -------------------------------------------------
+# View Functions
+# -------------------------------------------------
+
 def materials(request, meeting_num=None):
     meeting = get_meeting(meeting_num)
 
@@ -875,9 +889,29 @@ def session_details(request, num, acronym ):
                     'type_counter': type_counter,
                   })
 
+@role_required('Area Director','Secretariat','IRTF Chair','WG Chair')
+def interim_request(request):
+    '''View for requesting an interim meeting'''
+    form = InterimRequestForm(request=request)
+
+    if request.method == 'POST':
+        form = InterimRequestForm(request, data=request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect(upcoming)
+    else:
+        form = InterimRequestForm(request=request)
+
+    return render(request, "meeting/interim_request.html", {"form":form})
+
 def ical_upcoming(request):
     '''ICAL upcoming meetings'''
-    return HttpResponse()
+    today = datetime.datetime.today()
+    meetings = Meeting.objects.filter(date__gt=today)    
+
+    return render(request, "meeting/upcoming.ics", {
+        "meetings": meetings,
+    }, content_type="text/calendar")
 
 def upcoming(request):
     '''List of upcoming meetings'''
@@ -903,7 +937,13 @@ def upcoming(request):
 
         p.group_list.sort(key=lambda g: g.acronym)
 
+    # add menu actions
+    actions = []
+    if can_request_interim_meeting(request.user):
+        actions.append(("Request new interim meeting", reverse("ietf.meeting.views.interim_request")))
+   
     return render(request, "meeting/upcoming.html",
                   { 'meetings':meetings,
+                    'menu_actions': actions,
                     'group_parents':group_parents,
                   })

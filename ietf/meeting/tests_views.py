@@ -9,6 +9,7 @@ from django.conf import settings
 from pyquery import PyQuery
 
 from ietf.doc.models import Document
+from ietf.group.models import Group
 from ietf.meeting.models import Session, TimeSlot, Meeting
 from ietf.meeting.test_data import make_meeting_test_data
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized, unicontent
@@ -350,4 +351,76 @@ class InterimTests(TestCase):
         r = self.client.get("/meeting/upcoming.ics/")
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.get('Content-Type'),"text/calendar")
+
+    def test_interim_request_permissions(self):
+        '''Ensure only authorized users see link to request interim meeting'''
+        # test unauthorized
+        upcoming_url = urlreverse("ietf.meeting.views.upcoming")
+        request_url = urlreverse("ietf.meeting.views.interim_request")
+        r = self.client.get(upcoming_url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q("a.btn:contains('Request new interim meeting')")), 0)
+        r = self.client.get(request_url)
+        self.assertEqual(r.status_code, 302)
+        redirect_url = 'http://testserver' + "/accounts/login/?next=/meeting/interim/request/"
+        self.assertEqual(r['location'],redirect_url)
+
+        # test authorized
+        self.client.login(username="secretary", password="secretary+password")
+        r = self.client.get(upcoming_url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q("a.btn:contains('Request new interim meeting')")), 1)
+        r = self.client.get(request_url)
+        self.assertEqual(r.status_code, 200)
+
+    def test_interim_request_options(self):
+        make_meeting_test_data()
+
+        # secretariat can request for any group
+        self.client.login(username="secretary", password="secretary+password")
+        r = self.client.get("/meeting/interim/request/")
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(Group.objects.filter(type__in=('wg','rg'),state='active').count(),
+            len(q("#id_group option")) -1 )  # -1 for options placeholder
+
+    def test_interim_request_submit(self):
+        make_meeting_test_data()
+        date = datetime.date.today() + datetime.timedelta(days=30)
+        group = Group.objects.get(acronym='mars')
+        city = 'San Francisco'
+        country = 'US'
+        timezone = 'US/Pacific'
+        remote_instructions = 'Use webex'
+        agenda = 'Intro. Slides. Discuss.'
+        agenda_note = 'On second level'
+        self.client.login(username="secretary", password="secretary+password")
+        data = {'group':group.pk,
+                'date':date.strftime("%Y-%m-%d"),
+                'city':city,
+                'country':country,
+                'timezone':timezone,
+                'remote_instructions':remote_instructions,
+                'agenda':agenda,
+                'agenda_note':agenda_note}
+
+        r = self.client.post(urlreverse("ietf.meeting.views.interim_request"),data)
+        
+        self.assertEqual(r.status_code,302)
+        redirect_url = 'http://testserver' + urlreverse("ietf.meeting.views.upcoming")
+        self.assertEqual(r['location'],redirect_url)
+        meeting = Meeting.objects.order_by('id').last()
+        self.assertEqual(meeting.type_id,'interim')
+        self.assertEqual(meeting.date,date)
+        self.assertEqual(meeting.number,'interim-%s-%s-%s' % (date.year,group.acronym,1))
+        self.assertEqual(meeting.city,city)
+        self.assertEqual(meeting.country,country)
+        self.assertEqual(meeting.time_zone,timezone)
+        self.assertEqual(meeting.agenda_note,agenda_note)
+        session = meeting.session_set.first()
+        self.assertEqual(session.remote_instructions,remote_instructions)
+
+
 

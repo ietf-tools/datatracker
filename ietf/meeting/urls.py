@@ -67,6 +67,7 @@ urlpatterns = [
     url(r'^(?P<num>\d+)/', include(type_ietf_only_patterns)),
     url(r'^upcoming/$', views.upcoming),
     url(r'^upcoming.ics/$', views.ical_upcoming),
+    url(r'^interim/request/$', views.interim_request),
     url(r'^$', views.current_materials),
 ]
 

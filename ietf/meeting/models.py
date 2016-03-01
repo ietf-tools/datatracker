@@ -918,6 +918,7 @@ class Session(models.Model):
     status = models.ForeignKey(SessionStatusName)
     scheduled = models.DateTimeField(null=True, blank=True)
     modified = models.DateTimeField(auto_now=True)
+    remote_instructions = models.CharField(blank=True,max_length=1024)
 
     materials = models.ManyToManyField(Document, through=SessionPresentation, blank=True)
     resources = models.ManyToManyField(ResourceAssociation)
