@@ -389,6 +389,9 @@ class InterimTests(TestCase):
     def test_interim_request_submit(self):
         make_meeting_test_data()
         date = datetime.date.today() + datetime.timedelta(days=30)
+        time = datetime.datetime.now().time().replace(microsecond=0,second=0)
+        dt = datetime.datetime.combine(date, time)
+        duration = datetime.timedelta(hours=3)
         group = Group.objects.get(acronym='mars')
         city = 'San Francisco'
         country = 'US'
@@ -399,6 +402,8 @@ class InterimTests(TestCase):
         self.client.login(username="secretary", password="secretary+password")
         data = {'group':group.pk,
                 'date':date.strftime("%Y-%m-%d"),
+                'time':time.strftime('%H:%M'),
+                'duration':'03:00:00',
                 'city':city,
                 'country':country,
                 'timezone':timezone,
@@ -421,6 +426,9 @@ class InterimTests(TestCase):
         self.assertEqual(meeting.agenda_note,agenda_note)
         session = meeting.session_set.first()
         self.assertEqual(session.remote_instructions,remote_instructions)
+        timeslot = session.official_timeslotassignment().timeslot
+        self.assertEqual(timeslot.time,dt)
+        self.assertEqual(timeslot.duration,duration)
 
 
 
