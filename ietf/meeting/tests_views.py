@@ -358,20 +358,14 @@ class InterimTests(TestCase):
         upcoming_url = urlreverse("ietf.meeting.views.upcoming")
         request_url = urlreverse("ietf.meeting.views.interim_request")
         r = self.client.get(upcoming_url)
-        self.assertEqual(r.status_code, 200)
-        q = PyQuery(r.content)
-        self.assertEqual(len(q("a.btn:contains('Request new interim meeting')")), 0)
+        self.assertNotContains(r,'Request new interim meeting')
         r = self.client.get(request_url)
-        self.assertEqual(r.status_code, 302)
-        redirect_url = 'http://testserver' + "/accounts/login/?next=/meeting/interim/request/"
-        self.assertEqual(r['location'],redirect_url)
+        self.assertRedirects(r, '/accounts/login/?next=/meeting/interim/request/')
 
         # test authorized
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(upcoming_url)
-        self.assertEqual(r.status_code, 200)
-        q = PyQuery(r.content)
-        self.assertEqual(len(q("a.btn:contains('Request new interim meeting')")), 1)
+        self.assertContains(r,'Request new interim meeting')
         r = self.client.get(request_url)
         self.assertEqual(r.status_code, 200)
 
@@ -413,9 +407,7 @@ class InterimTests(TestCase):
 
         r = self.client.post(urlreverse("ietf.meeting.views.interim_request"),data)
         
-        self.assertEqual(r.status_code,302)
-        redirect_url = 'http://testserver' + urlreverse("ietf.meeting.views.upcoming")
-        self.assertEqual(r['location'],redirect_url)
+        self.assertRedirects(r,urlreverse('ietf.meeting.views.upcoming'))
         meeting = Meeting.objects.order_by('id').last()
         self.assertEqual(meeting.type_id,'interim')
         self.assertEqual(meeting.date,date)

@@ -9,10 +9,21 @@
   {% origin %}
   <h1>Interim Meeting Request</h1>
 
-  <form method="post">
+  <form method="post" class="form-horizontal">
     {% csrf_token %}
 
-    {% bootstrap_form form %}
+    {% bootstrap_field form.group layout='horizontal' %}
+
+    <div class="form-group">
+        <label for="session" class="col-md-2 control-label">Session</label>
+        <div class="col-md-10">
+            <div class="form-inline">
+                {% bootstrap_field form.date show_label=False %}
+                {% bootstrap_field form.time show_label=False %}
+                {% bootstrap_field form.duration show_label=False %}
+            </div>
+        </div>
+    </div>
     
     {% buttons %}
       <button type="submit" class="btn btn-primary">Submit</button>
