@@ -237,7 +237,7 @@ class DocumentInfo(models.Model):
         if e and (e.text != ""):
             return e.time
         else:
-        	return False
+            return None
 
     def meeting_related(self):
         answer = False
