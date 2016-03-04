@@ -892,7 +892,7 @@ def session_details(request, num, acronym ):
 @role_required('Area Director','Secretariat','IRTF Chair','WG Chair')
 def interim_request(request):
     '''View for requesting an interim meeting'''
-    form = InterimRequestForm(request=request)
+    #form = InterimRequestForm(request=request)
 
     if request.method == 'POST':
         form = InterimRequestForm(request, data=request.POST)
@@ -900,7 +900,7 @@ def interim_request(request):
             form.save()
             return redirect(upcoming)
     else:
-        form = InterimRequestForm(request=request)
+        form = InterimRequestForm(request=request,initial={'meeting_type':'single'})
 
     return render(request, "meeting/interim_request.html", {"form":form})
 

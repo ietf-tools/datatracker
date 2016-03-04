@@ -448,3 +448,17 @@ form.navbar-form input.form-control.input-sm { width: 141px; }
     padding: inherit;
     outline: inherit;
 }
+
+/* Interim Meetings
+   ========================================================================== */
+#meeting-type-options {
+    display: inline-block;
+    margin-left: 4em;
+}
+
+.fieldset {
+    box-shadow: 0 2px 4px 0 rgba(0,0,0,0.16),0 2px 10px 0 rgba(0,0,0,0.12) !important;
+    background-color: #f1f1f1;
+    padding: 16px 16px;
+    margin-bottom: 20px;
+}

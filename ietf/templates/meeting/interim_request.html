@@ -15,35 +15,42 @@
   {% origin %}
   <h1>Interim Meeting Request</h1>
 
-  <form method="post" class="form-horizontal">
+  <form id="interim-request-form" role="form" method="post" class="form-horizontal">
     {% csrf_token %}
 
     {% bootstrap_field form.group layout='horizontal' %}
 
-    <div class="form-group">
-        <div class="checkbox">
-            <label class="checkbox-inline">{% render_field form.face_to_face class="form-control" %}Face to Face</label>
+    <div class="form-group form-inline">
+        <div class="col-md-offset-2">
+        
+        <div class="col-md-3">
+        <!-- <div class="checkbox"> -->
+            <label class="checkbox-inline">{% render_field form.face_to_face %}<strong>Face to Face</strong></label>
+        <!-- </div> -->
         </div>
-        
+
+
+        <!-- <div id="meeting-type-options"> -->
+        <div class="col-md-2 radio-inline"><strong>Meeting Type:</strong></div>
         <label class="radio-inline">
-            <input type="radio" name="optradio">Option 1
+            <input type="radio" value="single" name="meeting_type">Single
         </label>
         <label class="radio-inline">
-            <input type="radio" name="optradio">Option 2
+            <input type="radio" value="multi-day" name="meeting_type">Multi-Day
         </label>
         <label class="radio-inline">
-            <input type="radio" name="optradio">Option 3
+            <input type="radio" value="series" name="meeting_type">Series
         </label>
+        <!-- </div> -->
         
-            {% render_field form.multi_day class="form-control" %}
-            {% render_field form.series class="form-control" %}
-        
+        </div>
+
     </div>
 
-    
+    <div class="fieldset">    
     <div class="form-group">
         <label for="face-to_face" class="col-md-2 control-label">Location</label>
-        <div class="form-inline">
+        <div class="col-md-10 form-inline">
             {% render_field form.city class="form-control" placeholder="City" %}
             {% render_field form.country class="form-control" %}
             {% render_field form.timezone class="form-control" %}
@@ -68,13 +75,14 @@
 
     <div class="form-group">
         <label for="agenda" class="col-md-2 control-label">Agenda</label>
-        <div class="col-md-10">{% render_field form.agenda class="form-control" placeholder="Meeting agenda" %}</div>
+        <div class="col-md-10">{% render_field form.agenda class="form-control" rows="6" placeholder="paste agenda here" %}</div>
     </div>
         
     <div class="form-group">
         <label for="agenda_note" class="col-md-2 control-label">Agenda Note</label>
         <div class="col-md-10">{% render_field form.agenda_note class="form-control" placeholder="Note" %}</div>
     </div>
+    </div>  <!-- fieldset -->
 
     {% buttons %}
       <button type="submit" class="btn btn-primary">Submit</button>
