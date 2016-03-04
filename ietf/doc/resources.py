@@ -5,7 +5,11 @@ from tastypie.constants import ALL, ALL_WITH_RELATIONS # pyflakes:ignore
 
 from ietf import api
 
-from ietf.doc.models import *                            # pyflakes:ignore
+from ietf.doc.models import (BallotType, DeletedEvent, StateType, State, Document,
+    DocumentAuthor, DocEvent, StateDocEvent, DocHistory, ConsensusDocEvent, DocAlias,
+    TelechatDocEvent, DocReminder, LastCallDocEvent, NewRevisionDocEvent, WriteupDocEvent,
+    InitialReviewDocEvent, DocHistoryAuthor, BallotDocEvent, RelatedDocument,
+    RelatedDocHistory, BallotPositionDocEvent)
 
 
 from ietf.name.resources import BallotPositionNameResource, DocTypeNameResource

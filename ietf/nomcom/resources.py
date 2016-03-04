@@ -5,8 +5,8 @@ from tastypie.constants import ALL, ALL_WITH_RELATIONS
 
 from ietf import api
 
-from ietf.nomcom.models import *        # pyflakes:ignore
-
+from ietf.nomcom.models import (NomCom, Position, Nominee, ReminderDates, NomineePosition,
+    Feedback, Nomination, FeedbackLastSeen )
 
 from ietf.group.resources import GroupResource
 class NomComResource(ModelResource):

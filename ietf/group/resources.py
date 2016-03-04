@@ -5,7 +5,9 @@ from tastypie.constants import ALL, ALL_WITH_RELATIONS
 
 from ietf import api
 
-from ietf.group.models import *         # pyflakes:ignore
+from ietf.group.models import (Group, GroupStateTransitions, GroupMilestone, GroupHistory,
+    GroupURL, Role, GroupEvent, RoleHistory, GroupMilestoneHistory, MilestoneGroupEvent,
+    ChangeStateGroupEvent)
 
 
 from ietf.person.resources import PersonResource

@@ -5,7 +5,7 @@ from tastypie.constants import ALL, ALL_WITH_RELATIONS  # pyflakes:ignore
 
 from ietf import api
 
-from ietf.mailtrigger.models import *                            # pyflakes:ignore
+from ietf.mailtrigger.models import Recipient, MailTrigger
 
 
 class RecipientResource(ModelResource):

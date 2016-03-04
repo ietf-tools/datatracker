@@ -4,7 +4,7 @@ from tastypie.constants import ALL
 
 from ietf import api
 
-from ietf.iesg.models import *          # pyflakes:ignore
+from ietf.iesg.models import TelechatDate, Telechat, TelechatAgendaItem
 
 
 class TelechatDateResource(ModelResource):

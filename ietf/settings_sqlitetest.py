@@ -6,7 +6,7 @@
 #
 
 import os 
-from settings import *                  # pyflakes:ignore
+from settings import *                                          # pyflakes:ignore
 
 # Workaround to avoid spending minutes stepping through the migrations in
 # every test run.  The result of this is to use the 'syncdb' way of creating
@@ -37,7 +37,7 @@ DATABASES = {
         },
     }
 
-if TEST_CODE_COVERAGE_CHECKER and not TEST_CODE_COVERAGE_CHECKER._started:
-    TEST_CODE_COVERAGE_CHECKER.start()
+if TEST_CODE_COVERAGE_CHECKER and not TEST_CODE_COVERAGE_CHECKER._started: # pyflakes:ignore
+    TEST_CODE_COVERAGE_CHECKER.start()                          # pyflakes:ignore
 
 NOMCOM_PUBLIC_KEYS_DIR=os.path.abspath("tmp-nomcom-public-keys-dir")

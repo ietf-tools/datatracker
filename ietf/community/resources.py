@@ -5,8 +5,8 @@ from tastypie.constants import ALL, ALL_WITH_RELATIONS
 
 from ietf import api
 
-from ietf.community.models import *     # pyflakes:ignore
-
+from ietf.community.models import ( CommunityList, ExpectedChange, DisplayConfiguration,
+    ListNotification, Rule, EmailSubscription, DocumentChangeDates ) 
 
 from ietf.doc.resources import DocumentResource
 from ietf.group.resources import GroupResource

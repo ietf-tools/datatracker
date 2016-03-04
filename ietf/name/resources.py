@@ -5,7 +5,13 @@ from tastypie.constants import ALL, ALL_WITH_RELATIONS  # pyflakes:ignore
 
 from ietf import api
 
-from ietf.name.models import *                            # pyflakes:ignore
+from ietf.name.models import (TimeSlotTypeName, GroupStateName, DocTagName, IntendedStdLevelName,
+    LiaisonStatementPurposeName, DraftSubmissionStateName, DocTypeName, RoleName,
+    IprDisclosureStateName, StdLevelName, LiaisonStatementEventTypeName, GroupTypeName,
+    IprEventTypeName, GroupMilestoneStateName, SessionStatusName, DocReminderTypeName,
+    ConstraintName, MeetingTypeName, DocRelationshipName, RoomResourceName, IprLicenseTypeName,
+    LiaisonStatementTagName, FeedbackTypeName, LiaisonStatementState, StreamName,
+    BallotPositionName, DBTemplateTypeName, NomineePositionStateName)
 
 
 class TimeSlotTypeNameResource(ModelResource):

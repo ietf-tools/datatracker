@@ -5,7 +5,7 @@ from tastypie.constants import ALL, ALL_WITH_RELATIONS
 
 from ietf import api
 
-from ietf.message.models import *       # pyflakes:ignore
+from ietf.message.models import Message, SendQueue
 
 
 from ietf.person.resources import PersonResource

@@ -5,7 +5,7 @@ from tastypie.constants import ALL, ALL_WITH_RELATIONS
 
 from ietf import api
 
-from ietf.person.models import *        # pyflakes:ignore
+from ietf.person.models import Person, Email, Alias, PersonHistory
 
 
 from ietf.utils.resources import UserResource

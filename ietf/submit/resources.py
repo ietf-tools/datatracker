@@ -5,7 +5,7 @@ from tastypie.constants import ALL, ALL_WITH_RELATIONS
 
 from ietf import api
 
-from ietf.submit.models import *        # pyflakes:ignore
+from ietf.submit.models import Preapproval, SubmissionCheck, Submission, SubmissionEvent
 
 
 from ietf.person.resources import PersonResource

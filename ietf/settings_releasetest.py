@@ -43,5 +43,5 @@ DATABASES = {
         },
     }
 
-if TEST_CODE_COVERAGE_CHECKER and not TEST_CODE_COVERAGE_CHECKER._started:
-    TEST_CODE_COVERAGE_CHECKER.start()
+if TEST_CODE_COVERAGE_CHECKER and not TEST_CODE_COVERAGE_CHECKER._started: # pyflakes:ignore
+    TEST_CODE_COVERAGE_CHECKER.start()                          # pyflakes:ignore

@@ -3,7 +3,11 @@ from django.utils.safestring import mark_safe
 from django.contrib import admin
 from django import forms
 
-from models import *                    # pyflakes:ignore
+from models import (StateType, State, DocAlias, DocumentAuthor, RelatedDocument,
+    Document, DocHistory, BallotType, DocEvent,  NewRevisionDocEvent, StateDocEvent,
+    ConsensusDocEvent, BallotDocEvent, WriteupDocEvent, LastCallDocEvent,
+    TelechatDocEvent, BallotPositionDocEvent)
+
 from ietf.doc.utils import get_state_types
 
 class StateTypeAdmin(admin.ModelAdmin):

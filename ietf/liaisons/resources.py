@@ -5,7 +5,8 @@ from tastypie.constants import ALL, ALL_WITH_RELATIONS  # pyflakes:ignore
 
 from ietf import api
 
-from ietf.liaisons.models import *                            # pyflakes:ignore
+from ietf.liaisons.models import (LiaisonStatement, LiaisonStatementGroupContacts,
+    LiaisonStatementEvent, LiaisonStatementAttachment, RelatedLiaisonStatement)
 
 
 from ietf.person.resources import EmailResource

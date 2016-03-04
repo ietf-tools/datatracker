@@ -5,8 +5,8 @@ from tastypie.constants import ALL, ALL_WITH_RELATIONS  # pyflakes:ignore
 
 from ietf import api
 
-from ietf.ipr.models import *                            # pyflakes:ignore
-
+from ietf.ipr.models import ( IprDisclosureBase, IprDocRel, HolderIprDisclosure, ThirdPartyIprDisclosure,
+    RelatedIpr, NonDocSpecificIprDisclosure, GenericIprDisclosure, IprEvent, LegacyMigrationIprEvent )
 
 from ietf.person.resources import PersonResource
 from ietf.name.resources import IprDisclosureStateNameResource

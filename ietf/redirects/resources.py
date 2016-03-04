@@ -5,7 +5,7 @@ from tastypie.constants import ALL, ALL_WITH_RELATIONS
 
 from ietf import api
 
-from ietf.redirects.models import *     # pyflakes:ignore
+from ietf.redirects.models import Redirect, Suffix, Command
 
 
 class RedirectResource(ModelResource):

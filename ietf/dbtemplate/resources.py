@@ -5,7 +5,7 @@ from tastypie.constants import ALL, ALL_WITH_RELATIONS
 
 from ietf import api
 
-from ietf.dbtemplate.models import *    # pyflakes:ignore
+from ietf.dbtemplate.models import DBTemplate
 
 
 from ietf.group.resources import GroupResource

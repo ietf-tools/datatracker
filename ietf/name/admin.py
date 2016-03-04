@@ -1,5 +1,9 @@
 from django.contrib import admin
-from models import *                    # pyflakes:ignore
+from ietf.name.models import (GroupTypeName, GroupStateName, RoleName, StreamName,
+    DocRelationshipName, DocTypeName, DocTagName, StdLevelName, IntendedStdLevelName,
+    DocReminderTypeName, BallotPositionName, SessionStatusName, TimeSlotTypeName,
+    ConstraintName, NomineePositionStateName, FeedbackTypeName, DBTemplateTypeName,
+    DraftSubmissionStateName, RoomResourceName)
 
 
 class NameAdmin(admin.ModelAdmin):

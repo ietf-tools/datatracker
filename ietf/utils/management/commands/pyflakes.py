@@ -61,6 +61,8 @@ def check(codeString, filename, verbosity=1):
         # honour pyflakes:ignore comments
         messages = [message for message in w.messages
                     if lines[message.lineno-1].find('pyflakes:ignore') < 0]
+        # honour pyflakes:
+
         messages.sort(lambda a, b: cmp(a.lineno, b.lineno))
         if verbosity > 0:
             if len(messages):
