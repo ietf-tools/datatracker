@@ -2,7 +2,7 @@
 Datatracker PLAN
 ================
 
-Updated: 05 Feb 2016 7:34:53
+Updated: 04 Mar 2016 12:00:58 PST
 
 Planned work in rough order
 ===========================
@@ -16,11 +16,11 @@ Planned work in rough order
 
 * Add "Waiting for implementation" and "Held by WG" states, with comment field
 
+* Glue code to trigger generation of htmlized documents on www.ietf.org
+
 * Refactored Community app
 
 * Schema Changes: floorplan, document tags, external links for groups
-
-* Glue code to trigger generation of htmlized documents on www.ietf.org
 
 * Transition to PostgreSQL
 
