@@ -185,6 +185,7 @@ changes=$( sed -n "/^$PROJ ($VER.*)/,/^ -- /p" changelog )
 #note "$changes"
 
 note "Upgrading the python library modules before checking migrations and running tests ..."
+pip freeze > minimum-requirements.txt
 pip install --upgrade -r requirements.txt
 
 note "Checking that we don't have any model changes that haven't been captured in migrations ..."
@@ -275,3 +276,4 @@ cat ~/src/db/release-mail-v$VER.txt | $do mail -s "New datatracker release: v$VE
 
 $do toolsfeed control changelog /www/tools.ietf.org/tools/atomfeed.xml
 $do toolpush /www/tools.ietf.org/tools/atomfeed.xml
+pip install -r minimum-requirements.txt
