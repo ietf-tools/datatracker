@@ -9,14 +9,16 @@ Planned work in rough order
 
 * Integrating YANG testing into the submission tool
 
+* Add "Waiting for implementation" and "Held by WG" states, with comment field
+
 * Glue code for WG issue trackers and wiki:
   - create new trackers on group creation
   - update access lists on group chair/secretary changes
   - update components on new group documents
 
-* Add "Waiting for implementation" and "Held by WG" states, with comment field
-
 * Glue code to trigger generation of htmlized documents on www.ietf.org
+
+* Upgrade to Django 1.8 / 1.9
 
 * Refactored Community app
 
