@@ -20,7 +20,7 @@
     <workgroup>%(group)s</workgroup>
     <abstract>
       <t>
-	 This document describes how to test tests.
+         This document describes how to test tests.
       </t>
     </abstract>
   </front>
@@ -28,17 +28,123 @@
   <middle>
     <section title="Introduction">
       <t>
-	 This document describes a protocol for testing tests.
+         This document describes a protocol for testing tests.
       </t>
     </section>
+    <section title="Yang">
+       <figure>
+          <artwork>
+             <![CDATA[
+<CODE BEGINS> file "ietf-mpls@2015-10-16.yang"
+
+module ietf-mpls {
+
+  namespace "urn:ietf:params:xml:ns:yang:ietf-mpls";
+
+  prefix "mpls";
+
+  import ietf-routing {
+    prefix "rt";
+  }
+
+  import ietf-interfaces {
+    prefix "if";
+  }
+
+  organization "TBD";
+
+  contact "TBD";
+
+  description
+    "This YANG module defines the essential components for the
+     management of the MPLS subsystem.";
+
+  revision "2015-10-16" {
+    description
+      "Initial revision";
+    reference "RFC 3031: A YANG Data Model for base MPLS";
+  }
+
+  typedef mpls-label {
+    type uint32 {
+      range "0..1048575";
+    }
+    description
+      "The MPLS label range";
+  }
+
+  typedef percent {
+    type uint16 {
+      range "0 .. 100";
+    }
+    description "Percentage";
+  }
+
+  grouping interface-mpls {
+    description "MPLS interface properties grouping";
+    leaf enabled {
+      type boolean;
+      description
+        "'true' if mpls encapsulation is enabled on the
+         interface. 'false' if mpls encapsulation is enabled
+         on the interface.";
+    }
+  }
+
+  augment "/rt:routing/rt:routing-instance" {
+    description "MPLS augmentation.";
+    container mpls {
+      description
+        "MPLS container, to be used as an augmentation target node
+         other MPLS sub-features config, e.g. MPLS static LSP, MPLS
+         LDP LSPs, and Trafic Engineering MPLS LSP Tunnels, etc.";
+
+      list interface {
+        key "name";
+        description "List of MPLS interfaces";
+        leaf name {
+          type if:interface-ref;
+          description
+            "The name of a configured MPLS interface";
+        }
+        container config {
+          description "Holds intended configuration";
+          uses interface-mpls;
+        }
+        container state {
+          config false;
+          description "Holds inuse configuration";
+          uses interface-mpls;
+        }
+      }
+    }
+  }
+
+  augment "/rt:routing-state/rt:routing-instance" {
+    description "MPLS augmentation.";
+    container mpls {
+      config false;
+      description
+        "MPLS container, to be used as an augmentation target node
+         other MPLS sub-features state";
+    }
+  }
+}
+
+<CODE ENDS>
+             ]]>
+          </artwork>
+       </figure>
+    </section>
+
     <section anchor="Security" title="Security Considerations">
       <t>
-	 There are none.
+         There are none.
       </t>
     </section>
     <section anchor="IANA" title="IANA Considerations">
       <t>
-	 No new registrations for IANA.
+         No new registrations for IANA.
       </t>
     </section>
   </middle>

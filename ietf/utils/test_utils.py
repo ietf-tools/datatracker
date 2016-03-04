@@ -295,4 +295,3 @@ class TestCase(django.test.TestCase):
         self.assertTrue(resp['Content-Type'].startswith('text/html'))
         self.assertValidHTML(resp.content)
 
-        

@@ -2,6 +2,7 @@ import re
 import datetime
 
 from django.db import models
+import jsonfield
 
 from ietf.doc.models import Document
 from ietf.person.models import Person
@@ -65,6 +66,23 @@ class Submission(models.Model):
 
     def existing_document(self):
         return Document.objects.filter(name=self.name).first()
+
+class SubmissionCheck(models.Model):
+    time = models.DateTimeField(auto_now=True, default=None) # The default is to make makemigrations happy
+    submission = models.ForeignKey(Submission, related_name='checks')
+    checker = models.CharField(max_length=256, blank=True)
+    passed = models.NullBooleanField(default=False)
+    message = models.TextField(null=True, blank=True)
+    errors = models.IntegerField(null=True, blank=True, default=None)
+    warnings = models.IntegerField(null=True, blank=True, default=None)
+    items = jsonfield.JSONField(null=True, blank=True, default='{}')
+    #
+    def __unicode__(self):
+        return "%s submission check: %s: %s" % (self.checker, 'Passed' if self.passed else 'Failed', self.message[:48]+'...')
+    def has_warnings(self):
+        return self.warnings != '[]'
+    def has_errors(self):
+        return self.errors != '[]'
 
 class SubmissionEvent(models.Model):
     submission = models.ForeignKey(Submission)

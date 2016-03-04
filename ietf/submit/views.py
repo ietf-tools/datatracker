@@ -8,6 +8,7 @@ from django.core.urlresolvers import reverse as urlreverse
 from django.core.validators import validate_email, ValidationError
 from django.http import HttpResponseRedirect, Http404, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils.module_loading import import_string
 
 import debug                            # pyflakes:ignore
 
@@ -17,9 +18,9 @@ from ietf.group.models import Group
 from ietf.ietfauth.utils import has_role, role_required
 from ietf.submit.forms import SubmissionUploadForm, NameEmailForm, EditSubmissionForm, PreapprovalForm, ReplacesForm
 from ietf.submit.mail import send_full_url, send_approval_request_to_group, send_submission_confirmation, send_manual_post_request
-from ietf.submit.models import Submission, Preapproval, DraftSubmissionStateName
+from ietf.submit.models import Submission, SubmissionCheck, Preapproval, DraftSubmissionStateName
 from ietf.submit.utils import approvable_submissions_for_user, preapprovals_for_user, recently_approved_by_user
-from ietf.submit.utils import check_idnits, found_idnits, validate_submission, create_submission_event
+from ietf.submit.utils import validate_submission, create_submission_event
 from ietf.submit.utils import post_submission, cancel_submission, rename_submission_files
 from ietf.utils.accesstoken import generate_random_key, generate_access_token
 from ietf.utils.draft import Draft
@@ -92,9 +93,6 @@ def upload_submission(request):
                 else:
                     abstract = form.parsed_draft.get_abstract()
 
-                # check idnits
-                idnits_message = check_idnits(file_name['txt'])
-
                 # save submission
                 try:
                     submission = Submission.objects.create(
@@ -114,11 +112,27 @@ def upload_submission(request):
                         submission_date=datetime.date.today(),
                         document_date=form.parsed_draft.get_creation_date(),
                         replaces="",
-                        idnits_message=idnits_message,
                         )
                 except Exception as e:
                     log("Exception: %s\n" % e)
                     raise
+
+                # run submission checkers
+                def apply_check(submission, checker, method, fn):
+                    func = getattr(checker, method)
+                    passed, message, errors, warnings, items = func(fn)
+                    check = SubmissionCheck(submission=submission, checker=checker.name, passed=passed, message=message, errors=errors, warnings=warnings, items=items)
+                    check.save()
+
+                for checker_path in settings.IDSUBMIT_CHECKER_CLASSES:
+                    checker_class = import_string(checker_path)
+                    checker = checker_class()
+                    # ordered list of methods to try
+                    for method in ("check_fragment_xml", "check_file_xml", "check_fragment_txt", "check_file_txt", ):
+                        ext = method[-3:]
+                        if hasattr(checker, method) and ext in file_name:
+                            apply_check(submission, checker, method, file_name[ext])
+                            break
 
                 create_submission_event(request, submission, desc="Uploaded submission")
 
@@ -175,7 +189,7 @@ def submission_status(request, submission_id, access_token=None):
         raise Http404
 
     errors = validate_submission(submission)
-    passes_idnits = found_idnits(submission.idnits_message)
+    passes_checks = all([ c.passed!=False for c in submission.checks.all() ])
 
     is_secretariat = has_role(request.user, "Secretariat")
     is_chair = submission.group and submission.group.has_role(request.user, "chair")
@@ -316,7 +330,7 @@ def submission_status(request, submission_id, access_token=None):
         'selected': 'status',
         'submission': submission,
         'errors': errors,
-        'passes_idnits': passes_idnits,
+        'passes_checks': passes_checks,
         'submitter_form': submitter_form,
         'replaces_form': replaces_form,
         'message': message,

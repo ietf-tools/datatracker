@@ -472,9 +472,15 @@ IDSUBMIT_REPOSITORY_PATH = INTERNET_DRAFT_PATH
 IDSUBMIT_STAGING_PATH = '/a/www/www6s/staging/'
 IDSUBMIT_STAGING_URL = '//www.ietf.org/staging/'
 IDSUBMIT_IDNITS_BINARY = '/a/www/ietf-datatracker/scripts/idnits'
+IDSUBMIT_PYANG_COMMAND = 'pyang -p %(workdir)s --verbose --ietf  %(model)s'
+
+IDSUBMIT_CHECKER_CLASSES = (
+    "ietf.submit.checkers.DraftIdnitsChecker",
+    "ietf.submit.checkers.DraftYangChecker",
+)
+
 
 IDSUBMIT_MANUAL_STAGING_DIR = '/tmp/'
-
 
 IDSUBMIT_FILE_TYPES = (
     'txt',

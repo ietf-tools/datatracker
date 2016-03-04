@@ -1,5 +1,4 @@
 import os
-import re
 import datetime
 
 from django.conf import settings
@@ -18,23 +17,6 @@ from ietf.submit.mail import announce_to_lists, announce_new_version, announce_t
 from ietf.submit.models import Submission, SubmissionEvent, Preapproval, DraftSubmissionStateName
 from ietf.utils import unaccent
 from ietf.utils.log import log
-from ietf.utils.pipe import pipe
-
-def check_idnits(path):
-    #p = subprocess.Popen([self.idnits, '--submitcheck', '--nitcount', path], stdout=subprocess.PIPE)
-    cmd = "%s --submitcheck --nitcount %s" % (settings.IDSUBMIT_IDNITS_BINARY, path)
-    code, out, err = pipe(cmd)
-    if code != 0:
-        log("idnits error: %s:\n  Error %s: %s" %( cmd, code, err))
-    return out
-
-def found_idnits(idnits_message):
-    if not idnits_message:
-        return False
-    success_re = re.compile('\s+Summary:\s+0\s+|No nits found')
-    if success_re.search(idnits_message):
-        return True
-    return False
 
 def validate_submission(submission):
     errors = {}

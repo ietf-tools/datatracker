@@ -1,7 +1,6 @@
 import datetime
 import os
 import shutil
-import re
 
 from django.conf import settings
 
@@ -98,7 +97,7 @@ class SubmitTests(TestCase):
             self.assertTrue(os.path.exists(os.path.join(self.staging_dir, u"%s-%s.%s" % (name, rev, format))))
         self.assertEqual(Submission.objects.filter(name=name).count(), 1)
         submission = Submission.objects.get(name=name)
-        self.assertTrue(re.search('\s+Summary:\s+0\s+errors|No nits found', submission.idnits_message))
+        self.assertTrue(all([ c.passed!=False for c in submission.checks.all() ]))
         self.assertEqual(len(submission.authors_parsed()), 1)
         author = submission.authors_parsed()[0]
         self.assertEqual(author["name"], "Author Name")

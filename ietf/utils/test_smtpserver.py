@@ -16,6 +16,7 @@ class AsyncCoreLoopThread(object):
         kwargs={'exit_condition':self.exit_condition,'timeout':1.0} 
         self.thread = threading.Thread(target=self.wrap_loop, kwargs=kwargs)
         self.thread.daemon = True
+        self.thread.daemon = True
         self.thread.start()     
 
     def stop(self):

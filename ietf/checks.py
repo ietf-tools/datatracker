@@ -2,6 +2,7 @@ import os
 
 from django.conf import settings
 from django.core import checks
+from django.utils.module_loading import import_string
 
 @checks.register('directories')
 def check_cdn_directory_exists(app_configs, **kwargs):
@@ -96,5 +97,48 @@ def check_id_submission_files(app_configs, **kwargs):
                 hint = ("Please either update the local settings to point at the correct file,"
                     "or if the setting is correct, make sure the file is in place and has the right permissions."),
                 id = "datatracker.E0007",
+            ))
+    return errors
+
+@checks.register('submission-checkers')
+def check_id_submission_checkers(app_configs, **kwargs):
+    errors = []
+    for checker_path in settings.IDSUBMIT_CHECKER_CLASSES:
+        try:
+            checker_class = import_string(checker_path)
+        except Exception as e:
+            errors.append(checks.Critical(
+                "An exception was raised when trying to import the draft submission"
+                "checker class '%s':\n %s" % (checker_path, e),
+                hint = "Please check that the class exists and can be imported.",
+                id = "datatracker.E0008",
+            ))
+        try:
+            checker = checker_class()
+        except Exception as e:
+            errors.append(checks.Critical(
+                "An exception was raised when trying to instantiate the draft submission"
+                "checker class '%s': %s" % (checker_path, e),
+                hint = "Please check that the class can be instantiated.",
+                id = "datatracker.E0009",
+            ))
+            continue
+        for attr in ('name',):
+            if not hasattr(checker, attr):
+                errors.append(checks.Critical(
+                    "The draft submission checker '%s' has no attribute '%s', which is required" % (checker_path, attr),
+                    hint = "Please update the class.",
+                    id = "datatracker.E0010",
+                ))
+        checker_methods = ("check_file_txt", "check_file_xml", "check_fragment_txt", "check_fragment_xml", )
+        for method in checker_methods:
+            if hasattr(checker, method):
+                break
+        else:
+            errors.append(checks.Critical(
+                "The draft submission checker '%s' has no recognised checker method;  "
+                "should be one or more of %s." % (checker_path, checker_methods),
+                hint = "Please update the class.",
+                id = "datatracker.E0011",
             ))
     return errors

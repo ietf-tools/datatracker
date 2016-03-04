@@ -37,32 +37,52 @@
     <p class="alert alert-danger">Please fix errors in the form below.</p>
   {% endif %}
 
-  <h2>I-D nits</h2>
+  <h2>Submission checks</h2>
   <p>
-    {% if passes_idnits %}
-      Your draft has been verified to meet I-D nits requirements.
+    {% if passes_checks %}
+      Your draft has been verified to pass the submission checks.
     {% else %}
-      Your draft has <b>NOT</b> been verified to meet I-D nits requirements.
+      Your draft has <b>NOT</b> been verified to pass the submission checks.
     {% endif %}
   </p>
-  <button class="btn btn-default" data-toggle="modal" data-target="#nits">View I-D nits</button>
+  {% for check in submission.checks.all %}
+    {% if check.errors %}
+       <p class="alert alert-warning">
+	  The {{check.checker}} returned {{ check.errors }} error{{ check.errors|pluralize }}
+	  and {{ check.warnings }} warning
 
-  <div class="modal fade" id="nits" tabindex="-1" role="dialog" aria-labelledby="nits" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-      <div class="modal-content">
-        <div class="modal-header">
-	  <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-	  <h4 class="modal-title" id="nitslabel">I-D nits for {{ submission.name }}-{{ submission.rev }}</h4>
-        </div>
-        <div class="modal-body">
-	  <pre>{{ submission.idnits_message }}</pre>
-        </div>
-        <div class="modal-footer">
-	  <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-        </div>
+	  {{ check.warnings|pluralize }} ; click the button
+	  below to see details.  Please fix those, and resubmit.
+       </p>
+    {% elif check.warnings %}
+       <p class="alert alert-warning">
+	  The {{check.checker}} returned {{ check.warnings }} warning{{ check.warnings|pluralize }}.
+       </p>
+    {% endif %}
+  {% endfor %}
+
+  {% for check in submission.checks.all %}
+    {% if check.passed != None %}
+      <button class="btn btn-{% if check.passed %}{% if check.warnings %}warning{% elif check.errors %}warning{% else %}success{% endif %}{% else %}danger{% endif %}" data-toggle="modal" data-target="#check-{{check.pk}}">View {{ check.checker }}</button>
+
+      <div class="modal fade" id="check-{{check.pk}}" tabindex="-1" role="dialog" aria-labelledby="check-{{check.pk}}" aria-hidden="true">
+	<div class="modal-dialog modal-lg">
+	  <div class="modal-content">
+	    <div class="modal-header">
+	      <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+	      <h4 class="modal-title" id="nitslabel">{{ check.checker|title }} for {{ submission.name }}-{{ submission.rev }}</h4>
+	    </div>
+	    <div class="modal-body">
+	      <pre>{{ check.message }}</pre>
+	    </div>
+	    <div class="modal-footer">
+	      <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+	    </div>
+	  </div>
+	</div>
       </div>
-    </div>
-  </div>
+    {% endif %}
+  {% endfor %}
 
   <div class="modal fade" id="twopages" tabindex="-1" role="dialog" aria-labelledby="twopageslabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
@@ -218,7 +238,7 @@
     </form>
     <p>Leads to manual post by the secretariat.</p>
 
-    {% if passes_idnits and not errors %}
+    {% if passes_checks and not errors %}
       <h2>Please edit the following meta-data before posting:</h2>
 
       <form class="idsubmit" method="post">
