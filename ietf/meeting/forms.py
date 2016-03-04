@@ -10,6 +10,7 @@ from django.utils import six
 from ietf.group.models import Group
 from ietf.ietfauth.utils import has_role
 from ietf.meeting.models import Meeting, Schedule, TimeSlot, Session, SchedTimeSessAssignment, countries, timezones
+from ietf.utils.fields import DatepickerDateField
 
 # need to insert empty option for use in ChoiceField
 countries.insert(0, ('', '-'*9 ))
@@ -115,21 +116,24 @@ class GroupModelChoiceField(forms.ModelChoiceField):
 
 class InterimRequestForm(forms.Form):
     group = GroupModelChoiceField(queryset = Group.objects.filter(type__in=('wg','rg'),state='active').order_by('acronym'))
-    date = forms.DateField()
+    face_to_face = forms.BooleanField(required=False)
+    multi_day = forms.BooleanField(required=False)
+    series = forms.BooleanField(required=False)
+    date = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1" }, label='Date', required=True)
     time = forms.TimeField()
     duration = DurationField()
-    face_to_face = forms.BooleanField(required=False)
     city = forms.CharField(max_length=255,required=False)
     country = forms.ChoiceField(choices=countries,required=False)
     timezone = forms.ChoiceField(choices=timezones)
-    remote_instructions = forms.CharField(max_length=1024)
-    agenda = forms.CharField(widget=forms.Textarea)
-    agenda_note = forms.CharField(widget=forms.Textarea)
+    remote_instructions = forms.CharField(max_length=1024,required=False)
+    agenda = forms.CharField(required=False,widget=forms.Textarea)
+    agenda_note = forms.CharField(max_length=255,required=False)
 
     def __init__(self, request, *args, **kwargs):
         super(InterimRequestForm, self).__init__(*args, **kwargs)
         self.user = request.user
         self.person = self.user.person
+        self.fields["group"].widget.attrs["class"] = "select2-field"
 
         self.set_group_options()
 

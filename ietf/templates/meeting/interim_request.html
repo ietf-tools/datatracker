@@ -1,9 +1,15 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
-{% load bootstrap3 %}
+{% load staticfiles bootstrap3 widget_tweaks %}
 
 {% block title %}Interim Request{% endblock %}
+
+{% block pagehead %}
+  <link rel="stylesheet" href="{% static 'select2/select2.css' %}">
+  <link rel="stylesheet" href="{% static 'select2-bootstrap-css/select2-bootstrap.min.css' %}">
+  <link rel="stylesheet" href="{% static 'bootstrap-datepicker/css/bootstrap-datepicker3.min.css' %}">
+{% endblock %}
 
 {% block content %}
   {% origin %}
@@ -15,20 +21,71 @@
     {% bootstrap_field form.group layout='horizontal' %}
 
     <div class="form-group">
-        <label for="session" class="col-md-2 control-label">Session</label>
-        <div class="col-md-10">
-            <div class="form-inline">
-                {% bootstrap_field form.date show_label=False %}
-                {% bootstrap_field form.time show_label=False %}
-                {% bootstrap_field form.duration show_label=False %}
-            </div>
+        <div class="checkbox">
+            <label class="checkbox-inline">{% render_field form.face_to_face class="form-control" %}Face to Face</label>
+        </div>
+        
+        <label class="radio-inline">
+            <input type="radio" name="optradio">Option 1
+        </label>
+        <label class="radio-inline">
+            <input type="radio" name="optradio">Option 2
+        </label>
+        <label class="radio-inline">
+            <input type="radio" name="optradio">Option 3
+        </label>
+        
+            {% render_field form.multi_day class="form-control" %}
+            {% render_field form.series class="form-control" %}
+        
+    </div>
+
+    
+    <div class="form-group">
+        <label for="face-to_face" class="col-md-2 control-label">Location</label>
+        <div class="form-inline">
+            {% render_field form.city class="form-control" placeholder="City" %}
+            {% render_field form.country class="form-control" %}
+            {% render_field form.timezone class="form-control" %}
         </div>
     </div>
     
+    <div class="form-group">
+        <label for="session" class="col-md-2 control-label">Session</label>
+        <div class="">
+            <div class="form-inline">
+                <div class="col-md-3">{% render_field form.date class="form-control" %}</div>
+                <div class="col-md-3">{% render_field form.time class="form-control" placeholder="time" %}</div>
+                <div class="col-md-3">{% render_field form.duration class="form-control" placeholder="duration" %}</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label for="id_remote_instructions" class="col-md-2 control-label">Remote Instructions</label>
+        <div class="col-md-10">{% render_field form.remote_instructions class="form-control" placeholder="ie. Webex address" %}</div>
+    </div>
+
+    <div class="form-group">
+        <label for="agenda" class="col-md-2 control-label">Agenda</label>
+        <div class="col-md-10">{% render_field form.agenda class="form-control" placeholder="Meeting agenda" %}</div>
+    </div>
+        
+    <div class="form-group">
+        <label for="agenda_note" class="col-md-2 control-label">Agenda Note</label>
+        <div class="col-md-10">{% render_field form.agenda_note class="form-control" placeholder="Note" %}</div>
+    </div>
+
     {% buttons %}
       <button type="submit" class="btn btn-primary">Submit</button>
       <a class="btn btn-default pull-right" href="{% url "ietf.meeting.views.upcoming" %}">Back</a>
     {% endbuttons %}
   </form>
 
+{% endblock %}
+
+{% block js %}
+  <script src="{% static 'bootstrap-datepicker/js/bootstrap-datepicker.min.js' %}"></script>
+  <script src="{% static 'select2/select2.min.js' %}"></script>
+  <script src="{% static 'ietf/js/meeting-interim-request.js' %}"></script>
 {% endblock %}
