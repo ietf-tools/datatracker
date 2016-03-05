@@ -200,7 +200,7 @@
 	  <th>
 	     {% if doc.stream.slug != "legacy" %}
 	     <a href="{% url "ietf.help.views.state" doc=doc.type.slug type=doc.stream.slug %}">
-		{% if doc.stream.slug == "ietf" %} WG {% else %} {{ doc.stream }} {% endif %} state
+		{% if doc.stream_id == 'ietf' %} WG {% else %} {{ doc.stream }} {% endif %} state
 	     </a>
 	     {% else %}
 		Legacy state
@@ -229,7 +229,7 @@
 	{% endif %}
       </tr>
 
-      {% if consensus and not stream_state_type_slug == "draft-stream-ietf" %}
+      {% if consensus and not doc.stream_id == 'ietf' %}
 	<tr>
 	  <th></th>
 	  <th>Consensus</th>
@@ -264,7 +264,7 @@
         </tr>
       {% endif %}
 
-      {% if stream_state_type_slug == "draft-stream-ietf" %}
+      {% if doc.stream_id == 'ietf' %}
 	<tr>
 	  <th></th>
 	  <th>Document shepherd</th>
@@ -326,7 +326,7 @@
 
     </tbody>
 
-    {% if not stream_state_type_slug == "draft-stream-iab" %}
+    {% if not doc.stream_id == 'iab' %}
       <tbody class="meta">
 	<tr>
 	  <th>IESG</th>
@@ -341,7 +341,7 @@
 	  </td>
 	</tr>
 
-        {% if consensus and stream_state_type_slug == "draft-stream-ietf" %}
+        {% if consensus and doc.stream_id == 'ietf' %}
 	  <tr>
 	    <th></th>
 	    <th>Consensus</th>

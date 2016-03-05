@@ -1,3 +1,36 @@
+ietfdb (6.16.0) ietf; urgency=medium
+
+  **Yang validation of draft submissions**
+
+  This release adds Yang validation of submitted drafts which contain
+  Yang code, through a new plug-in architecture which makes it easy to 
+  addo other submission-time checkers and validators in the future.
+
+  It also contains a few unrelated fixes and tweaks, as follows:
+
+  * Fixed pyflakes complaints introduced with pyflakes 1.1.0
+
+  * Refactored draft submission checks so that new checkers can be slotted 
+    in through a configuration in settings.py.  Refactored the calling of 
+    idnits to use the new API, and added a pyang validation check.
+
+  * Added new entries to requirements.txt: pyang, xym, and jsonfield.  Sorted
+    the list.
+
+  * Merged in [10880] from rjsparks@nostrum.com:
+    Only show the 'Upload new revision' button when the view will actually
+    let you upload a new revision.  
+
+  * Merged in [10862] from rjsparks@nostrum.com:
+    Group concluded working groups by area. Fixes #1670.  
+
+  * Merged in [10839] from housley@vigilsec.com:
+    Added test for proper eneration of the approval message with and without
+    an RFC Editor Note.  Tweaked RFC Editor note display template.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  05 Mar 2016 06:27:10 -0800
+
+
 ietfdb (6.15.0) ietf; urgency=medium
 
   **Session docs, WG List Archive Tab, RFC Note enhancements**
