@@ -28,7 +28,6 @@ from ietf.name.resources import DraftSubmissionStateNameResource
 class SubmissionResource(ModelResource):
     state            = ToOneField(DraftSubmissionStateNameResource, 'state')
     group            = ToOneField(GroupResource, 'group', null=True)
-    checks           = ToManyField(SubmissionCheck, 'checks', null=True)
     class Meta:
         queryset = Submission.objects.all()
         serializer = api.Serializer()
@@ -82,11 +81,14 @@ class SubmissionCheckResource(ModelResource):
         #resource_name = 'submissioncheck'
         filtering = { 
             "id": ALL,
+            "time": ALL,
             "checker": ALL,
             "passed": ALL,
-            "warning": ALL,
             "message": ALL,
             "errors": ALL,
+            "warnings": ALL,
+            "items": ALL,
             "submission": ALL_WITH_RELATIONS,
         }
 api.submit.register(SubmissionCheckResource())
+
