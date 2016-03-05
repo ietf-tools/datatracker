@@ -15,9 +15,11 @@
 /ipengine*
 /iptest*
 /ipy*
+/json2xml
 /pip
 /pip2
 /pip2.7
+/pyang
 /pyflakes
 /python
 /python2
@@ -27,3 +29,5 @@
 /unidecode
 /wheel
 /xml2rfc
+/yang2html
+/yangdsdl
