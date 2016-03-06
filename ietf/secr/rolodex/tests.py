@@ -7,7 +7,7 @@ from ietf.utils.test_data import make_test_data
 
 SECR_USER='secretary'
 
-class MainTestCase(TestCase):
+class RolodexTestCase(TestCase):
     def test_main(self):
         "Main Test"
         url = reverse('rolodex')

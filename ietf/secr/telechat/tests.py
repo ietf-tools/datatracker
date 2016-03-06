@@ -11,7 +11,7 @@ SECR_USER='secretary'
 def augment_data():
     TelechatDate.objects.create(date=datetime.datetime.today())
     
-class MainTestCase(TestCase):
+class SecrTelechatTestCase(TestCase):
     def test_main(self):
         "Main Test"
         augment_data()

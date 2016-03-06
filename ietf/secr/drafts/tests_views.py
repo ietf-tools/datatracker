@@ -16,7 +16,7 @@ from pyquery import PyQuery
 
 SECR_USER='secretary'
 
-class MainTestCase(TestCase):
+class SecrDraftsTestCase(TestCase):
     def setUp(self):
         self.saved_internet_draft_path = settings.INTERNET_DRAFT_PATH
         self.repository_dir = os.path.abspath("tmp-submit-repository-dir")

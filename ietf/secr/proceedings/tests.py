@@ -19,7 +19,7 @@ from ietf.secr.utils.meeting import get_proceedings_path
 
 SECR_USER='secretary'
 
-class MainTestCase(TestCase):
+class ProceedingsTestCase(TestCase):
     def test_main(self):
         "Main Test"
         make_test_data()

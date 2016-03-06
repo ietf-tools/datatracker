@@ -12,7 +12,7 @@ SECR_USER='secretary'
 WG_USER=''
 AD_USER=''
 
-class MainTestCase(TestCase):
+class SecrAnnouncementTestCase(TestCase):
     # ------- Test View -------- #
     def test_main(self):
         "Main Test"
@@ -25,7 +25,7 @@ class MainTestCase(TestCase):
 class DummyCase(TestCase):
     name = connection.settings_dict['NAME']
 
-class UnauthorizedCase(TestCase):
+class UnauthorizedAnnouncementCase(TestCase):
     def test_unauthorized(self):
         "Unauthorized Test"
         make_test_data()
@@ -35,7 +35,7 @@ class UnauthorizedCase(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 403)
     
-class SubmitCase(TestCase):
+class SubmitAnnouncementCase(TestCase):
     def test_invalid_submit(self):
         "Invalid Submit"
         make_test_data()

@@ -14,7 +14,7 @@ def augment_data():
     # need this for the RoleForm intialization
     Group.objects.create(acronym='dummy',name='Dummy Group',type_id='sdo')
 
-class MainTestCase(TestCase):
+class SecrRolesMainTestCase(TestCase):
     def test_main(self):
         "Main Test"
         augment_data()

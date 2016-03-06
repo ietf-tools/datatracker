@@ -16,7 +16,7 @@ from ietf.utils.mail import outbox
 from ietf.utils.test_utils import TestCase
 
 
-class MainTestCase(TestCase):
+class SecrMeetingTestCase(TestCase):
     def setUp(self):
         self.proceedings_dir = os.path.abspath("tmp-proceedings-dir")
         if not os.path.exists(self.proceedings_dir):

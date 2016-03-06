@@ -27,7 +27,7 @@ class SreqUrlTests(TestCase):
         r = self.client.get("/secr/sreq/%s/new/" % testgroup.acronym)
         self.assertEqual(r.status_code, 200)
 
-class MainTestCase(TestCase):
+class SessionRequestTestCase(TestCase):
     def test_main(self):
         make_test_data()
         url = reverse('sessions')

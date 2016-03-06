@@ -15,7 +15,7 @@ def augment_data():
                               type='started',
                               by=system)
                               
-class MainTestCase(TestCase):
+class SecrAreasTestCase(TestCase):
     def test_main(self):
         "Main Test"
         make_test_data()

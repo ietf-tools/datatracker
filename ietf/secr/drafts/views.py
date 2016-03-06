@@ -124,7 +124,6 @@ def process_files(request,draft):
         file_size=txt_size,
         document_date=wrapper.get_creation_date(),
         submission_date=datetime.date.today(),
-        idnits_message='idnits bypassed by manual posting',
         group_id=draft.group.id,
         remote_ip=request.META['REMOTE_ADDR'],
         first_two_pages=''.join(wrapper.pages[:2]),
