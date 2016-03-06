@@ -349,10 +349,19 @@ def retrieve_search_results(form, all_types=False):
     if hasattr(form.data, "urlencode"): # form was fed a Django QueryDict, not local plain dict
         d = form.data.copy()
         for h in meta['headers']:
-            d["sort"] = h["key"]
-            h["sort_url"] = "?" + d.urlencode()
-            if h['key'] == query.get('sort'):
+            sort = query.get('sort')
+            if sort.endswith(h['key']):
                 h['sorted'] = True
+                if sort.startswith('-'):
+                    h['direction'] = 'desc'
+                    d["sort"] = h["key"]                    
+                else:
+                    h['direction'] = 'asc'
+                    d["sort"] = "-" + h["key"]
+            else:
+                d["sort"] = h["key"]
+            h["sort_url"] = "?" + d.urlencode()
+                
     return (results, meta)
 
 

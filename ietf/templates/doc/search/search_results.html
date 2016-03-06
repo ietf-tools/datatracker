@@ -26,7 +26,13 @@
             <th data-header="{{ h.key }}">
 	      {% if "sort_url" in h %}
 	        <a href="{{ h.sort_url }}">{{ h.title }}
-	          {% if h.sorted %}<span class="fa fa-caret-down"></span>{% endif %}
+	          {% if h.sorted and meta.max %}
+		     {% if h.direction == "asc" %}
+		        <span class="fa fa-caret-up"></span>
+		     {% else %}
+		        <span class="fa fa-caret-down"></span>
+		     {% endif %}
+		  {% endif %}
 	        </a>
 	      {% else %}
 	        {{ h.title }}
