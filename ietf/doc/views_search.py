@@ -35,7 +35,7 @@ import datetime, re
 from django import forms
 from django.conf import settings
 from django.core.cache import cache
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, SuspiciousOperation
 from django.core.urlresolvers import reverse as urlreverse
 from django.db.models import Q
 from django.http import Http404, HttpResponseBadRequest, HttpResponse, HttpResponseRedirect
@@ -71,7 +71,15 @@ class SearchForm(forms.Form):
     state = forms.ModelChoiceField(State.objects.filter(type="draft-iesg"), empty_label="any state", required=False)
     substate = forms.ChoiceField(choices=(), required=False)
 
-    sort = forms.ChoiceField(choices=(("document", "Document"), ("title", "Title"), ("date", "Date"), ("status", "Status"), ("ipr", "Ipr"), ("ad", "AD")), required=False, widget=forms.HiddenInput)
+    sort = forms.ChoiceField(
+        choices= (
+            ("document", "Document"), ("-document", "Document (desc.)"),
+            ("title", "Title"), ("-title", "Title (desc.)"),
+            ("date", "Date"), ("-date", "Date (desc.)"),
+            ("status", "Status"), ("-status", "Status (desc.)"),
+            ("ipr", "Ipr"), ("ipr", "Ipr (desc.)"),
+            ("ad", "AD"), ("-ad", "AD (desc)"), ),
+        required=False, widget=forms.HiddenInput)
 
     doctypes = DocTypeName.objects.filter(used=True).exclude(slug='draft').order_by('name');
 
@@ -296,18 +304,18 @@ def retrieve_search_results(form, all_types=False):
             res.append(d.get_state_slug());
             res.append("-");
 
-        if query["sort"] == "title":
+        if query["sort"] in ["title", "-title"]:
             res.append(d.title)
-        elif query["sort"] == "date":
+        elif query["sort"]  in ["date", "-date" ]:
             res.append(str(d.latest_revision_date))
-        elif query["sort"] == "status":
+        elif query["sort"]  in ["status", "-status"]:
             if rfc_num != None:
                 res.append(int(rfc_num))
             else:
                 res.append(d.get_state().order if d.get_state() else None)
-        elif query["sort"] == "ipr":
+        elif query["sort"]  in ["ipr", "-ipr"]:
             res.append(len(d.ipr()))
-        elif query["sort"] == "ad":
+        elif query["sort"]  in ["ad", "-ad"]:
             if rfc_num != None:
                 res.append(int(rfc_num))
             elif d.get_state_slug() == "active":
@@ -323,7 +331,7 @@ def retrieve_search_results(form, all_types=False):
 
         return res
 
-    results.sort(key=sort_key)
+    results.sort(key=sort_key, reverse=query["sort"].startswith("-"))
 
     # fill in a meta dict with some information for rendering the result table
     if len(results) == MAX:
