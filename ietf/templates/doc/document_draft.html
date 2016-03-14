@@ -434,8 +434,8 @@
       </ul>
     </div>
     {% if user.is_authenticated %}
-      <a class="btn btn-default btn-xs track-untrack-doc {% if not doc.tracked_in_personal_community_list %}hide{% endif %}" href="{% url "community_personal_untrack_document" doc.name %}" title="Remove from your personal ID list"><span class="fa fa-bookmark"></span> Untrack</a>
-      <a class="btn btn-default btn-xs track-untrack-doc {% if doc.tracked_in_personal_community_list %}hide{% endif %}" href="{% url "community_personal_track_document" doc.name %}" title="Add to your personal ID list"><span class="fa fa-bookmark-o"></span> Track</a>
+      <a class="btn btn-default btn-xs track-untrack-doc {% if not doc.tracked_in_personal_community_list %}hide{% endif %}" href="{% url "community_personal_untrack_document" user.username doc.name %}" title="Remove from your personal ID list"><span class="fa fa-bookmark"></span> Untrack</a>
+      <a class="btn btn-default btn-xs track-untrack-doc {% if doc.tracked_in_personal_community_list %}hide{% endif %}" href="{% url "community_personal_track_document" user.username doc.name %}" title="Add to your personal ID list"><span class="fa fa-bookmark-o"></span> Track</a>
     {% endif %}
 
     {% if can_edit and iesg_state %}

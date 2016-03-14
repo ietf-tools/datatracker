@@ -451,3 +451,10 @@ form.navbar-form input.form-control.input-sm { width: 141px; }
     pointer-events: none;
 }
 
+
+/* Community lists */
+
+label#list-feeds {
+  display: inline-block;
+  font-weight: normal;
+}

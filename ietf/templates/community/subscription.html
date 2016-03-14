@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+
+{% load bootstrap3 %}
+
+{% block title %}Subscription to {{ clist.long_name }}{% endblock %}
+
+{% block content %}
+  {% origin %}
+
+  {% if not to_email %}
+    <h1>Subscription to {{ clist.long_name }}</h1>
+
+    {% bootstrap_messages %}
+
+    {% if operation == "subscribe" %}
+      <p>Get notified when changes happen to any of the tracked documents.</p>
+    {% else %}
+      <p>Unsubscribe from getting notified when changes happen to any of the tracked documents.</p>
+    {% endif %}
+
+    <form method="post">
+      {% csrf_token %}
+      {% bootstrap_form form %}
+
+      {% buttons %}
+      <a class="btn btn-default" href="{% if clist.group %}{% url "community_group_view_list" clist.group.acronym %}{% else %}{% url "community_personal_view_list" clist.user.username %}{% endif%}">Back to list</a>
+
+      <button type="submit" class="btn btn-primary">{% if operation == "subscribe" %}Subscribe{% else %}Unsubscribe{% endif %}</button>
+      {% endbuttons %}
+    </form>
+  {% else %}
+    <h1>Sent confirmation email</h1>
+
+    <p>A message has been sent to <code>{{ to_email }}</code> with
+      a link for confirming {% if operation == subscribe %}the subscription{% else %}cancelling the subscription{% endif %}.</p>
+
+    <p>
+      <a class="btn btn-default" href="{% if clist.group %}{% url "community_group_view_list" clist.group.acronym %}{% else %}{% url "community_personal_view_list" clist.user.username %}{% endif%}">Back to list</a>
+    </p>
+  {% endif %}
+{% endblock %}

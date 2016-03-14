@@ -1,4 +1,38 @@
+{% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
-{% load origin %}{% origin %}
-{% load community_tags %}
-{% get_clist_view cl %}
+{% load origin %}
+{% load bootstrap3 %}
+
+{% block title %}{{ clist.long_name }}{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <h1>{{ clist.long_name }}</h1>
+
+  {% bootstrap_messages %}
+
+  <ul class="list-inline">
+    {% if can_manage_list %}
+      <li><a class="btn btn-default" href="{% if clist.group %}{% url "community_group_manage_list" clist.group.acronym %}{% else %}{% url "community_personal_manage_list" clist.user.username %}{% endif%}">Manage list</a></li>
+    {% endif %}
+
+    {% if clist.pk != None %}
+      <li><a class="btn btn-default" href="{% if clist.group %}{% url "community_group_subscribe" clist.group.acronym %}{% else %}{% url "community_personal_subscription" clist.user.username "subscribe" %}{% endif%}">Subscribe to changes</a></li>
+
+      <li><a class="btn btn-default" href="{% if clist.group %}{% url "community_group_subscribe" clist.group.acronym %}{% else %}{% url "community_personal_subscription" clist.user.username "unsubscribe" %}{% endif%}">Unsubscribe</a></li>
+    {% endif %}
+
+    <li><a class="btn btn-default" href="{% if clist.group %}{% url "community_group_csv" clist.group.acronym %}{% else %}{% url "community_personal_csv" clist.user.username %}{% endif%}">Export as CSV</a></li>
+
+    <li>
+      <label id="list-feeds">Atom feed of document changes:</label>
+      <div class="btn-group" role="group" aria-labelledby="list-feeds">
+        <a class="btn btn-default" title="Feed of all changes" href="{% if clist.group %}{% url "community_group_feed" clist.group.acronym %}{% else %}{% url "community_personal_feed" clist.user.username %}{% endif%}">All</a>
+        <a class="btn btn-default" title="Feed of only significant state changes" href="{% if clist.group %}{% url "community_group_feed" clist.group.acronym %}{% else %}{% url "community_personal_feed" clist.user.username %}{% endif%}?significant=1">Significant</a>
+      </div>
+    </li>
+
+  </ul>
+
+  {% include "doc/search/search_results.html" with skip_no_matches_warning=True %}
+{% endblock %}
