@@ -11,6 +11,11 @@ from django.http import HttpResponse
 
 import changelog
 
+# workaround for thread import lock problem, http://bugs.python.org/issue7980
+import time                             
+time.strptime('1984', '%Y')             # this will happen lazily when changelog calls tzparse later, otherwise
+
+
 def trac_links(text):
     # changeset links
     text = re.sub(r'\[(\d+)\]', r'<a href="https://wiki.tools.ietf.org/tools/ietfdb/changeset/\1">[\1]</a>', text)
