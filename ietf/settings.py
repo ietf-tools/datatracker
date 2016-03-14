@@ -582,7 +582,7 @@ GROUP_ALIASES_PATH = os.path.abspath(BASE_DIR + "/../test/data/group-aliases")
 GROUP_VIRTUAL_PATH = os.path.abspath(BASE_DIR + "/../test/data/group-virtual")
 GROUP_VIRTUAL_DOMAIN = "virtual.ietf.org"
 
-POSTCONFIRM_PATH   = "/a/postconfirm/test-wrapper"
+POSTCONFIRM_PATH   = "/a/postconfirm/wrapper"
 
 USER_PREFERENCE_DEFAULTS = {
     "expires_soon"  : "14",
