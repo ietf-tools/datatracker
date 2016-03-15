@@ -1,4 +1,4 @@
-import re
+idniimport re
 import datetime
 
 from django.db import models
@@ -44,8 +44,6 @@ class Submission(models.Model):
     submission_date = models.DateField(default=datetime.date.today)
 
     submitter = models.CharField(max_length=255, blank=True, help_text="Name and email of submitter, e.g. \"John Doe &lt;john@example.org&gt;\".")
-
-    idnits_message = models.TextField(blank=True)
 
     def __unicode__(self):
         return u"%s-%s" % (self.name, self.rev)
