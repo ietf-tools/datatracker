@@ -4,9 +4,11 @@ import datetime
 
 from django.conf import settings
 from django.http import HttpResponse
+from django.core.exceptions import ObjectDoesNotExist
 from django.core.urlresolvers import reverse
 from django.utils.encoding import force_text
 
+import tastypie
 from tastypie.api import Api
 from tastypie.bundle import Bundle
 from tastypie.serializers import Serializer as BaseSerializer
@@ -172,5 +174,42 @@ class TimedeltaField(ApiField):
                 raise ApiFieldError("Datetime provided to '%s' field must be a string: %s" % (self.instance_name, value))
 
         return value
-    
-    
+
+class ToOneField(tastypie.fields.ToOneField):
+    "Subclass of tastypie.fields.ToOneField which adds caching in the dehydrate method."
+
+    def dehydrate(self, bundle, for_list=True):
+        foreign_obj = None
+        
+        if callable(self.attribute):
+            previous_obj = bundle.obj
+            foreign_obj = self.attribute(bundle)
+        elif isinstance(self.attribute, six.string_types):
+            foreign_obj = bundle.obj
+
+            for attr in self._attrs:
+                previous_obj = foreign_obj
+                try:
+                    foreign_obj = getattr(foreign_obj, attr, None)
+                except ObjectDoesNotExist:
+                    foreign_obj = None
+
+        if not foreign_obj:
+            if not self.null:
+                if callable(self.attribute):
+                    raise ApiFieldError("The related resource for resource %s could not be found." % (previous_obj))
+                else:
+                    raise ApiFieldError("The model '%r' has an empty attribute '%s' and doesn't allow a null value." % (previous_obj, attr))
+            return None
+
+        fk_resource = self.get_related_resource(foreign_obj)
+
+        # Up to this point we've copied the code from tastypie 0.13.1.  Now
+        # we add caching.
+        cache_key = fk_resource.generate_cache_key('related', for_list=for_list)
+        dehydrated = fk_resource._meta.cache.get(cache_key)
+        if dehydrated is None:
+            fk_bundle = Bundle(obj=foreign_obj, request=bundle.request)
+            dehydrated = self.dehydrate_related(fk_bundle, fk_resource, for_list=for_list)
+            fk_resource._meta.cache.set(cache_key, dehydrated)
+        return dehydrated
