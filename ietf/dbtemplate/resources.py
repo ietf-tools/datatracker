@@ -2,6 +2,7 @@
 from tastypie.resources import ModelResource
 from tastypie.fields import ToOneField
 from tastypie.constants import ALL, ALL_WITH_RELATIONS
+from tastypie.cache import SimpleCache
 
 from ietf import api
 
@@ -14,6 +15,7 @@ class DBTemplateResource(ModelResource):
     type             = ToOneField(DBTemplateTypeNameResource, 'type')
     group            = ToOneField(GroupResource, 'group', null=True)
     class Meta:
+        cache = SimpleCache()
         queryset = DBTemplate.objects.all()
         serializer = api.Serializer()
         #resource_name = 'dbtemplate'

@@ -2,6 +2,7 @@
 from tastypie.resources import ModelResource
 from tastypie.fields import ToOneField
 from tastypie.constants import ALL, ALL_WITH_RELATIONS
+from tastypie.cache import SimpleCache
 
 from ietf import api
 
@@ -12,6 +13,7 @@ from ietf.person.resources import PersonResource
 class PreapprovalResource(ModelResource):
     by               = ToOneField(PersonResource, 'by')
     class Meta:
+        cache = SimpleCache()
         queryset = Preapproval.objects.all()
         serializer = api.Serializer()
         #resource_name = 'preapproval'
@@ -29,6 +31,7 @@ class SubmissionResource(ModelResource):
     state            = ToOneField(DraftSubmissionStateNameResource, 'state')
     group            = ToOneField(GroupResource, 'group', null=True)
     class Meta:
+        cache = SimpleCache()
         queryset = Submission.objects.all()
         serializer = api.Serializer()
         #resource_name = 'submission'
@@ -61,6 +64,7 @@ class SubmissionEventResource(ModelResource):
     submission       = ToOneField(SubmissionResource, 'submission')
     by               = ToOneField(PersonResource, 'by', null=True)
     class Meta:
+        cache = SimpleCache()
         queryset = SubmissionEvent.objects.all()
         serializer = api.Serializer()
         #resource_name = 'submissionevent'
@@ -76,6 +80,7 @@ api.submit.register(SubmissionEventResource())
 class SubmissionCheckResource(ModelResource):
     submission       = ToOneField(SubmissionResource, 'submission')
     class Meta:
+        cache = SimpleCache()
         queryset = SubmissionCheck.objects.all()
         serializer = api.Serializer()
         #resource_name = 'submissioncheck'

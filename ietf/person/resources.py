@@ -2,6 +2,7 @@
 from tastypie.resources import ModelResource
 from tastypie.fields import ToOneField
 from tastypie.constants import ALL, ALL_WITH_RELATIONS
+from tastypie.cache import SimpleCache
 
 from ietf import api
 
@@ -12,6 +13,7 @@ from ietf.utils.resources import UserResource
 class PersonResource(ModelResource):
     user             = ToOneField(UserResource, 'user', null=True)
     class Meta:
+        cache = SimpleCache()
         queryset = Person.objects.all()
         serializer = api.Serializer()
         #resource_name = 'person'
@@ -30,6 +32,7 @@ api.person.register(PersonResource())
 class EmailResource(ModelResource):
     person           = ToOneField(PersonResource, 'person', null=True)
     class Meta:
+        cache = SimpleCache()
         queryset = Email.objects.all()
         serializer = api.Serializer()
         #resource_name = 'email'
@@ -44,6 +47,7 @@ api.person.register(EmailResource())
 class AliasResource(ModelResource):
     person           = ToOneField(PersonResource, 'person')
     class Meta:
+        cache = SimpleCache()
         queryset = Alias.objects.all()
         serializer = api.Serializer()
         #resource_name = 'alias'
@@ -59,6 +63,7 @@ class PersonHistoryResource(ModelResource):
     person           = ToOneField(PersonResource, 'person')
     user             = ToOneField(UserResource, 'user', null=True)
     class Meta:
+        cache = SimpleCache()
         queryset = PersonHistory.objects.all()
         serializer = api.Serializer()
         #resource_name = 'personhistory'

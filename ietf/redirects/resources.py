@@ -2,6 +2,7 @@
 from tastypie.resources import ModelResource
 from tastypie.fields import ToOneField
 from tastypie.constants import ALL, ALL_WITH_RELATIONS
+from tastypie.cache import SimpleCache
 
 from ietf import api
 
@@ -10,6 +11,7 @@ from ietf.redirects.models import Redirect, Suffix, Command
 
 class RedirectResource(ModelResource):
     class Meta:
+        cache = SimpleCache()
         queryset = Redirect.objects.all()
         serializer = api.Serializer()
         #resource_name = 'redirect'
@@ -24,6 +26,7 @@ api.redirects.register(RedirectResource())
 
 class SuffixResource(ModelResource):
     class Meta:
+        cache = SimpleCache()
         queryset = Suffix.objects.all()
         serializer = api.Serializer()
         #resource_name = 'suffix'
@@ -38,6 +41,7 @@ class CommandResource(ModelResource):
     script           = ToOneField(RedirectResource, 'script')
     suffix           = ToOneField(SuffixResource, 'suffix', null=True)
     class Meta:
+        cache = SimpleCache()
         queryset = Command.objects.all()
         serializer = api.Serializer()
         #resource_name = 'command'
