@@ -1,104 +1,198 @@
 #!/bin/bash
 
-version=0.23
+version=0.24
 program=${0##*/}
 progdir=${0%/*}
 if [ "$progdir" = "$program" ]; then progdir="."; fi
 
-function die() { 
-    echo -e "\n$program: Error: ${1:0:160} ..."  >&2
+# ----------------------------------------------------------------------
+function usage() {
+    cat <<EOF
+NAME
+	$program - make new dev branches for the IETF sprint
+
+SYNOPSIS
+	$program [OPTIONS] [DEVELOPER [BRANCHNAME]]
+
+DESCRIPTION
+	Make new dev branches for sprint participants based on the
+	content of the sprint registration page.  If given a specific
+	developer name and optionally a branch name as arguments, make a
+	new branch for the specified developer instead.  If run without
+	arguments, the script assumes that it's being run on the host that
+	holds the Trac wiki with the sprint signup pages.
+
+EOF
+    echo -e "OPTIONS"
+    if   [ "$(uname)" = "Linux" ]; then
+        egrep "^[	]+[-][A-Za-z| -]+\*?\)[	]+[A-Za-z].+#" $0 | tr -s "\t|" "\t," | sed -r -e 's/\)[ \t]+([A-Z]+)=\$2[^#]*#/=\1\t/' -e 's/\)[^#]*#/\t/'
+    else
+        egrep "^[	]+[-][A-Za-z| -]+\*?\)[	]+[A-Za-z].+#" $0 | sed 's/\|.*\$2[^#]*#/	/'| sed -E 's/\|.*\)[^#]*#/	/'
+    fi
+    cat <<EOF
+
+FILES
+
+AUTHOR
+	Written by Henrik Levkowetz, <henrik@zinfandel.tools.ietf.org>
+
+COPYRIGHT
+	Copyright 2016 Henrik Levkowetz.
+
+	This program is free software; you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation; either version 2 of the License, or (at
+	your option) any later version. There is NO WARRANTY; not even the
+	implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+	PURPOSE. See the GNU General Public License for more details.
+	
+EOF
+
+}
+
+# ----------------------------------------------------------------------
+function die() {
+    echo -e "\n$program: error: $*" > /dev/stderr
     exit 1
 }
 
 function warn() { 
-	logger -i -p user.warn -t $program "$*"
-	echo "$program: Warning: $*" 1>&2; 
+    echo "$program: Warning: $*" 1>&2; 
 }
+
 
 function note() { 
-	logger -i -p user.notice -t $program "$*"
-	if [ -n "$OPT_VERBOSE" ]; then echo -e "$*"; fi
+    if [ -n "$VERBOSE" ]; then echo -e "$*"; fi
 }
 
-function version() {  
-	echo -e "$program: v$version\n\nRunning as $(id -urn) on $(date +'%Y-%m-%d %H:%M')"
+# ----------------------------------------------------------------------
+function version() {
+	echo -e "$program $version"
 }
 
-#[ "$#" -gt 0 ] || die "Expected the ietf number as argument on the command line, but found nothing"
-#[ $1 -gt 70 ]  || die "Expected the ietf number as argument on the command line, but found '$1'"
+# ----------------------------------------------------------------------
+trap 'echo "$program($LINENO): Command failed with error code $? ([$$] $0 $*)"; exit 1' ERR
 
-#if [ "$1" ]; then arg=$1; else arg=$(svn info http://svn.tools.ietf.org/svn/tools/ietfdb/trunk/ | egrep "^Last Changed Rev" | awk '{print $4}'); fi
 
-if [ "$1" ]; then arg=$1; else arg=$(svn ls http://svn.tools.ietf.org/svn/tools/ietfdb/tags/ | grep '^[1-9]' | tail -n 1 | sed -r 's/^(.*)\/$/v\1/' ); fi
+# ----------------------------------------------------------------------
+# Option parsing
 
-if [ "${arg:0:1}" = "v" ]; then
-    source="tags/${arg:1}"
-    target="$arg"
-    rev="release $arg"
+# Options
+shortopts=hnvV
+longopts=help,verbose,number,version
+
+# Default values
+num=""
+
+if   [ "$(uname)" = "Linux" ]; then
+    args=$(getopt -o "$shortopts" --long "$longopts" -n '$program' -- $SV "$@")
+    if [ $? != 0 ] ; then die "Terminating..." >&2 ; exit 1 ; fi
+    eval set -- "$args"
+    sed="sed -r"
 else
-    source="trunk@$arg"
-    target="r$arg"
-    rev="repository rev r$arg"
+    # Darwin, BSDs
+    args=$(getopt -o$shortopts $SV $*)
+    if [ $? != 0 ] ; then die "Terminating..." >&2 ; exit 1 ; fi
+    set -- $args
+    sed="sed -E"
 fi
+
+while true ; do
+    case "$1" in
+	-h| --help)	usage; exit;;		# Show this help, then exit
+	-m| --meeting)	num=$2; shift;;		# Specify the IETF meeting number
+	-v| --verbose)	VERBOSE=1;;		# Be more talkative
+	-V| --version)	version; exit;;		# Show program version, then exit
+	--)		shift; break;;
+	*) die "Internal error, inconsistent option specification: '$1'";;
+    esac
+    shift
+done
+
+# ----------------------------------------------------------------------
+# The program itself
+
+who=""
+tag=$(svn log -v https://svn.tools.ietf.org/svn/tools/ietfdb/tags/dev/ --limit 1 | grep '/tags/' | awk '{print $2}')
+
+source="${tag:1}"
+target="${tag##*/}"
+rev="dev tag $target"
+
+[ "$1" ] && who="$1"
+[ "$2" ] && target="${target%.dev*}-$2"
 
 function mksvndir() {
     who=$1
     if [ "$2" ]; then dir=$2; else dir=$who; fi
-    if ! svn info http://svn.tools.ietf.org/svn/tools/ietfdb/personal/$dir >/dev/null 2>&1 ; then
+    if ! svn info https://svn.tools.ietf.org/svn/tools/ietfdb/personal/$dir >/dev/null 2>&1 ; then
 	echo "Creating personal directory area for IETF datatracker coding: /personal/$dir"
-	svn mkdir http://svn.tools.ietf.org/svn/tools/ietfdb/personal/$dir -m "Personal SVN dir for $who, for IETF datatracker code"
+	svn mkdir https://svn.tools.ietf.org/svn/tools/ietfdb/personal/$dir -m "Personal SVN dir for $who, for IETF datatracker code"
     else
 	echo "Repository area personal/$dir is already in place."
     fi
 }
 
+# dump="ietf_utf8.sql.gz"
+# echo "Copying a database dump to www.ietf.org/lib/dt/sprint/$dump"
+# scp /www/tools.ietf.org/tools/$dump ietfa:/a/www/www6s/lib/dt/sprint/
+
 cd $progdir
 
-num=$( < /www/tools.ietf.org/meta/current-ietf-number.txt)
-for n in $(seq $((num-3)) $num); do
-    trac-admin /www/tools.ietf.org/tools/ietfdb wiki export IETF${n}SprintSignUp	\
-	| egrep "^\|\|" | tail -n +2 | python -c '
-import sys, re
-afile = open("aliases")
-aliases = dict([ line.strip().split(None,1) for line in afile.read().splitlines() ])
-for line in sys.stdin:
-    blank, name, email, rest = line.strip().split("||", 3)
-    login, dummy  = re.split("[@.]", email, 1)
-    if login in aliases:
-        login = aliases[login]
-    print "\t".join((login.strip().lower(), email.strip().lower(), name.strip())) ' \
-	| update $progdir/sprint$n.txt
-done
+if [ "$who" ]; then
+    mksvndir $who
+    svn cp https://svn.tools.ietf.org/svn/tools/ietfdb/$source https://svn.tools.ietf.org/svn/tools/ietfdb/personal/$who/$target/ -m "New branch for $target"
+else
+    [ "$num" ] || num=$( < /www/tools.ietf.org/meta/current-ietf-number.txt)
+    for n in $(seq $((num-3)) $num); do
+	trac-admin /www/tools.ietf.org/tools/ietfdb wiki export IETF${n}SprintSignUp	\
+	    | egrep "^\|\|" | tail -n +2 | python -c '
+    import sys, re
+    afile = open("aliases")
+    aliases = dict([ line.strip().split(None,1) for line in afile.read().splitlines() ])
+    for line in sys.stdin:
+	blank, name, email, rest = line.strip().split("||", 3)
+	login, dummy  = re.split("[@.]", email, 1)
+	if login in aliases:
+	    login = aliases[login]
+	print "\t".join((login.strip().lower(), email.strip().lower(), name.strip())) ' \
+	    | update $progdir/sprint$n.txt
+    done
 
-cat $(ls $progdir/sprint*.txt | tail -n 2) $progdir/extras.txt | sed 's/[ \t]*$//' | sort | uniq | while read login email name; do 
-    echo ""
-    echo "$login ($name <$email>):"
-    mksvndir $login
-    if ! svn info http://svn.tools.ietf.org/svn/tools/ietfdb/personal/$login/$target >/dev/null 2>&1 ; then
-	echo "  creating $target branch for $login ($name)."
-	svn cp http://svn.tools.ietf.org/svn/tools/ietfdb/$source http://svn.tools.ietf.org/svn/tools/ietfdb/personal/$login/$target/ -m "New IETF datatracker coding branch for $name"	\
-	&& mail "$name <$email>" -s "A new SVN branch for you for IETF datatracker coding${rev:+, based on $rev}." -b henrik@levkowetz.com <<-EOF
-	    Hi,
+    cat $(ls $progdir/sprint*.txt | tail -n 2) $progdir/extras.txt | sed 's/[ \t]*$//' | sort | uniq | while read login email name; do 
+	echo ""
+	echo "$login ($name <$email>):"
+	mksvndir $login
+	if ! svn info https://svn.tools.ietf.org/svn/tools/ietfdb/personal/$login/$target >/dev/null 2>&1 ; then
+	    echo "  creating $target branch for $login ($name)."
+	    svn cp https://svn.tools.ietf.org/svn/tools/ietfdb/$source https://svn.tools.ietf.org/svn/tools/ietfdb/personal/$login/$target/ -m "New IETF datatracker coding branch for $name"	\
+	    && mail "$name <$email>" -s "A new SVN branch for you for IETF datatracker coding${rev:+, based on $rev}." -b henrik@levkowetz.com <<-EOF
+		Hi,
 
-	    This mail has been automatically generated by the $program script.
+		This mail has been automatically generated by the $program script.
 
-	    A new SVN branch has been set up for you for IETF datatracker coding, at
-	      http://svn.tools.ietf.org/svn/tools/ietfdb/personal/$login/$target
-	      ${rev:+This branch is based on $rev.  }You can check it out by doing
-	      svn co http://svn.tools.ietf.org/svn/tools/ietfdb/personal/$login/$target
+		A new SVN branch has been set up for you for IETF datatracker coding, at
+		https://svn.tools.ietf.org/svn/tools/ietfdb/personal/$login/$target
+		${rev:+This branch is based on $rev.  }You can check it out by doing
+		svn co https://svn.tools.ietf.org/svn/tools/ietfdb/personal/$login/$target
 
-	    Please read the instructions about sprint coder setup at
-	      http://trac.tools.ietf.org/tools/ietfdb/wiki/SprintCoderSetup
-	    -- both the workflow description and the details of setting up your
-	    environment.
+		There's also a new database dump available at
+		https://www.ietf.org/lib/dt/sprint/ietf_utf8.sql.gz -- this dump is served
+		via CDN, and should hopefully be swifter to download than the alternatives.
+
+		Please read the instructions about sprint coder setup at
+		https://trac.tools.ietf.org/tools/ietfdb/wiki/SprintCoderSetup
+		--  both the workflow description and the details of setting up your
+		environment.
 
 
-	    Best regards,
+		Best regards,
 
-	           Henrik (via the $program script)
+		       Henrik (via the $program script)
 
 	EOF
-    else
-	echo "  branch personal/$login/$target already exists."
-    fi
-done
+	else
+	    echo "  branch personal/$login/$target already exists."
+	fi
+    done
+fi
