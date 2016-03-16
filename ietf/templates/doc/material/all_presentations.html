@@ -11,8 +11,6 @@
 <div class="buttonlist" >
   {% if user|has_role:"Secretariat,Area Director,WG Chair,WG Secretary,RG Chair,RG Secretary,IRTF Chair,Team Chair" %} 
     <a class="btn btn-default" id="addsessionsbutton" href="{% url 'ietf.doc.views_doc.add_sessionpresentation' name=doc.name %}">Link to more sessions</a>
-  {% else %}
-    {{user}} failed the has_role check
   {% endif %}
 </div>
 
