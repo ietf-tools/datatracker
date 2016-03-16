@@ -23,7 +23,7 @@ def parse_date(dstr):
         try:
             t = tzparse(dstr, format)
             return t
-        except Exception:
+        except ValueError:
             pass
     raise Exception("Couldn't parse the date string '%s'" % dstr)
             
