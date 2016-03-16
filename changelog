@@ -54,7 +54,7 @@ ietfdb (6.17.0) ietf; urgency=medium
     the sort direction arrow with that used for the client-side tablesorter
     for untruncated results.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  16 Mar 2016 06:23:29 -0700
+ -- Henrik Levkowetz <henrik@levkowetz.com>  16 Mar 2016 15:11:45 +0000
 
 
 ietfdb (6.16.0) ietf; urgency=medium
