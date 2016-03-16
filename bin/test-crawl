@@ -291,15 +291,24 @@ if __name__ == "__main__":
         if skip_url(url):
             continue
 
+        timestamp = datetime.datetime.now()
+        acc_time = (timestamp - start_time).total_seconds()
+        acc_secs = (timestamp - start_time).total_seconds()
+        hrs = acc_secs // (60*60)
+        min = (acc_secs % (60*60)) // 60
+        sec = acc_secs % 60
+
         try:
-            timestamp = datetime.datetime.now()
+            request_start = datetime.datetime.now()
             r = client.get(url, secure=True, follow=True)
-            elapsed = datetime.datetime.now() - timestamp
+            elapsed = datetime.datetime.now() - request_start
         except KeyboardInterrupt:
             log(" ... was fetching %s" % url)
             sys.exit(1)
         except:
-            log("500 %.3fs %s FAIL (from: [ %s ])" % ((datetime.datetime.now() - timestamp).total_seconds(), url, (",\n\t".join(get_referrers(url)))))
+            elapsed = datetime.datetime.now() - request_start
+            tags = [ u"FAIL  (from [ %s ])" % (",\n\t".join(get_referrers(url))) ]
+            log("%2d:%02d:%02d %7d %6d  %s %6.3fs %s %s" % (hrs,min,sec, len(visited), len(urls), 500, elapsed.total_seconds(), url, " ".join(tags)))
             log("=============")
             log(traceback.format_exc())
             log("=============")
