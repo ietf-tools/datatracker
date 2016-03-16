@@ -154,8 +154,8 @@ def fill_in_wg_drafts(group):
             group.drafts.append(a)
         else:
             group.rfcs.append(a)
-            a.rel = RelatedDocument.objects.filter(source=a.document).distinct()
-            a.invrel = RelatedDocument.objects.filter(target=a).distinct()
+            a.rel = RelatedDocument.objects.filter(source=a.document,relationship_id__in=['obs','updates']).distinct()
+            a.invrel = RelatedDocument.objects.filter(target=a,relationship_id__in=['obs','updates']).distinct()
 
 @cache_page ( 60 * 60 )
 def wg_charters(request, group_type):
