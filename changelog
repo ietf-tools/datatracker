@@ -1,3 +1,62 @@
+ietfdb (6.17.0) ietf; urgency=medium
+
+  **Speedier REST API and Newest-First Search Result Ordering**
+
+  This is a small combined feature and bugfix release. 
+
+  It introduces better sort capability for document search results which are
+  too large to present all search result items on one page.  Since 6.12.0 it
+  has been possible to do both reverse and regular client-side sorts on the
+  various search result columns when all the search results did fit on one
+  page, but for truncated results only ascending sorts has been possible.  For
+  the date column in particular, this was mostly less than useful, as it would
+  present the oldest results first, rather than the most recent.  This has now
+  been remedied; sorting in both directions is available also for large
+  document search results.
+
+  This release also contains various speed-related fixes.  Of particular note
+  is speed imporvements of heavy REST API queries on the order of a factor 4,
+  by adding caching, and speed improvements of a factor 20 for some heavy
+  legacy pages, by limiting the rendered content to what is actually needed.
+
+  Details:
+
+  * Tweaked the test-crawler to give the same log line format for exception 
+    failures as for regular log lines.
+
+  * Merged in [10932] from rjsparks@nostrum.com:
+    Restrict related documents included in the 1wg-charter* views to those
+    that update or obsolete WG produced RFCs.  
+
+  * Fixed some typos.
+
+  * Introduced caching for the REST API resources by subclassed tastypie's
+    ToOneField in order to provide caching for FK entries.
+
+  * Removed obsolete Submission.idnits_message field.
+
+  * Added an admin model class for SubmissionEvent.
+
+  * Tweaked the mkdevbranch utility script to be able to make a branch for 
+    one specific developer on request.
+
+  * Corrected the path to the wrapper for postconfirm used by the draft- 
+    and wg-aliases.
+
+  * Added a workaround for thread import lock problem,
+    http://bugs.python.org/issue7980.
+
+  * Renamed a bunch of identically named MainTestCase classes.
+
+  * Removed unused idnits_message field on Submission model.
+
+  * Added reverse sort capability to truncated document search views.  Aligned
+    the sort direction arrow with that used for the client-side tablesorter
+    for untruncated results.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  16 Mar 2016 06:23:29 -0700
+
+
 ietfdb (6.16.0) ietf; urgency=medium
 
   **Yang validation of draft submissions**
