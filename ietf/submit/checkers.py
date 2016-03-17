@@ -140,7 +140,10 @@ class DraftYangChecker(object):
                 for line in error_lines:
                     fn, lnum, msg = line.split(':', 2)
                     lnum = int(lnum)
-                    line = text[lnum-1].rstrip()
+                    if fn == model and (lnum-1) in range(len(text)):
+                        line = text[lnum-1].rstrip()
+                    else:
+                        line = None
                     items.append((lnum, line, msg))
                     if 'error: ' in msg:
                         errors += 1
