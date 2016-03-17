@@ -14,8 +14,6 @@ from ietf.community.forms import SearchRuleTypeForm, SearchRuleForm, AddDocument
 from ietf.community.utils import can_manage_community_list
 from ietf.community.utils import docs_tracked_by_community_list, docs_matching_community_list_rule
 from ietf.community.utils import states_of_significant_change
-from ietf.community.utils import send_subscription_confirmation_email
-from ietf.community.utils import verify_confirmation_data
 from ietf.group.models import Group
 from ietf.doc.models import DocEvent, Document
 from ietf.doc.utils_search import prepare_document_table
@@ -39,11 +37,14 @@ def view_list(request, username=None, acronym=None):
     docs = docs_tracked_by_community_list(clist)
     docs, meta = prepare_document_table(request, docs, request.GET)
 
+    subscribed = request.user.is_authenticated() and EmailSubscription.objects.filter(community_list=clist, email__person__user=request.user)
+
     return render(request, 'community/view_list.html', {
         'clist': clist,
         'docs': docs,
         'meta': meta,
         'can_manage_list': can_manage_community_list(request.user, clist),
+        'subscribed': subscribed,
     })
 
 @login_required
@@ -245,56 +246,34 @@ def feed(request, username=None, acronym=None):
     }, content_type='text/xml')
 
 
-def subscription(request, operation, username=None, acronym=None):
+@login_required
+def subscription(request, username=None, acronym=None):
     clist = lookup_list(username, acronym)
     if clist.pk is None:
         raise Http404
 
-    to_email = None
-    if request.method == 'POST':
-        form = SubscriptionForm(operation, clist, request.POST)
-        if form.is_valid():
-            to_email = form.cleaned_data['email']
-            significant = form.cleaned_data['notify_on'] == "significant"
+    existing_subscriptions = EmailSubscription.objects.filter(community_list=clist, email__person__user=request.user)
 
-            send_subscription_confirmation_email(request, clist, operation, to_email, significant)
+    if request.method == 'POST':
+        action = request.POST.get("action")
+        if action == "subscribe":
+            form = SubscriptionForm(request.user, clist, request.POST)
+            if form.is_valid():
+                subscription = form.save(commit=False)
+                subscription.community_list = clist
+                subscription.save()
+
+                return HttpResponseRedirect("")
+
+        elif action == "unsubscribe":
+            existing_subscriptions.filter(pk=request.POST.get("subscription_id")).delete()
+
+            return HttpResponseRedirect("")
     else:
-        form = SubscriptionForm(operation, clist)
+        form = SubscriptionForm(request.user, clist)
 
     return render(request, 'community/subscription.html', {
         'clist': clist,
         'form': form,
-        'to_email': to_email,
-        'operation': operation,
+        'existing_subscriptions': existing_subscriptions,
     })
-
-
-def confirm_subscription(request, operation, auth, username=None, acronym=None):
-    clist = lookup_list(username, acronym)
-    if clist.pk is None:
-        raise Http404
-
-    to_email, significant = verify_confirmation_data(auth, clist, operation="subscribe")
-
-    if request.method == "POST" and request.POST.get("action") == "confirm":
-        if operation == "subscribe":
-            if not EmailSubscription.objects.filter(community_list=clist, email__iexact=to_email, significant=significant):
-                EmailSubscription.objects.create(community_list=clist, email=to_email, significant=significant)
-        elif operation == "unsubscribe":
-            EmailSubscription.objects.filter(
-                community_list=clist,
-                email__iexact=to_email,
-                significant=significant).delete()
-
-        if clist.group:
-            return redirect('community_group_view_list', acronym=clist.group.acronym)
-        else:
-            return redirect('community_personal_view_list', username=clist.user.username)
-
-    return render(request, 'community/confirm_subscription.html', {
-        'clist': clist,
-        'to_email': to_email,
-        'significant': significant,
-        'operation': operation,
-    })
-

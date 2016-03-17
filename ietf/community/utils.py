@@ -1,8 +1,5 @@
 from django.db.models import Q
 from django.conf import settings
-from django.contrib.sites.models import Site
-from django.http import Http404
-import django.core.signing
 
 from ietf.community.models import CommunityList, EmailSubscription, SearchRule
 from ietf.doc.models import Document, State
@@ -143,49 +140,14 @@ def notify_event_to_subscribers(event):
     subscriptions = EmailSubscription.objects.filter(community_list__in=community_lists_tracking_doc(event.doc)).distinct()
 
     if not significant:
-        subscriptions = subscriptions.filter(significant=False)
+        subscriptions = subscriptions.filter(notify_on="all")
 
-    for sub in subscriptions.select_related("community_list"):
+    for sub in subscriptions.select_related("community_list", "email"):
         clist = sub.community_list
         subject = '%s notification: Changes to %s' % (clist.long_name(), event.doc.name)
 
-        send_mail(None, sub.email, settings.DEFAULT_FROM_EMAIL, subject, 'community/notification_email.txt',
+        send_mail(None, sub.email.address, settings.DEFAULT_FROM_EMAIL, subject, 'community/notification_email.txt',
                   context = {
                       'event': event,
                       'clist': clist,
                   })
-
-def confirmation_salt(operation, clist):
-    return ":".join(["community",
-                     operation,
-                     "personal" if clist.user else "group",
-                     clist.user.username if clist.user else clist.group.acronym])
-
-def send_subscription_confirmation_email(request, clist, operation, to_email, significant):
-    domain = Site.objects.get_current().domain
-    subject = 'Confirm list subscription: %s' % clist
-    from_email = settings.DEFAULT_FROM_EMAIL
-
-    auth = django.core.signing.dumps([to_email, 1 if significant else 0], salt=confirmation_salt("subscribe", clist))
-
-    send_mail(request, to_email, from_email, subject, 'community/confirm_email.txt', {
-        'domain': domain,
-        'clist': clist,
-        'auth': auth,
-        'operation': operation,
-    })
-
-def verify_confirmation_data(auth, clist, operation):
-    try:
-        data = django.core.signing.loads(auth, salt=confirmation_salt(operation, clist), max_age=24 * 60 * 60)
-    except django.core.signing.BadSignature:
-        raise Http404("Invalid or expired auth")
-
-    try:
-        to_email, significant = data[:2]
-    except ValueError:
-        raise Http404("Invalid data")
-
-    return to_email, bool(significant)
-
-    

@@ -88,25 +88,24 @@ class SearchRuleForm(forms.ModelForm):
             f.required = True
 
 
-class SubscriptionForm(forms.Form):
-    notify_on = forms.ChoiceField(choices=[("all", "All changes"), ("significant", "Only significant state changes")], widget=forms.RadioSelect, initial="all")
-    email = forms.EmailField(label="Your email")
-
-    def __init__(self, operation, clist, *args, **kwargs):
-        self.operation = operation
+class SubscriptionForm(forms.ModelForm):
+    def __init__(self, user, clist, *args, **kwargs):
         self.clist = clist
+        self.user = user
 
         super(SubscriptionForm, self).__init__(*args, **kwargs)
 
-        if operation == "subscribe":
-            self.fields["notify_on"].label = "Get notified on"
-        else:
-            self.fields["notify_on"].label = "For notifications on"
+        self.fields["notify_on"].widget = forms.RadioSelect(choices=self.fields["notify_on"].choices)
+        self.fields["email"].queryset = self.fields["email"].queryset.filter(person__user=user, active=True).order_by("-primary")
+        self.fields["email"].widget = forms.RadioSelect(choices=[t for t in self.fields["email"].choices if t[0]])
+
+        if self.fields["email"].queryset:
+            self.fields["email"].initial = self.fields["email"].queryset[0]
 
     def clean(self):
-        if self.operation == "subscribe":
-            if EmailSubscription.objects.filter(community_list=self.clist, email=self.cleaned_data["email"], significant=self.cleaned_data["notify_on"] == "significant").exists():
-                raise forms.ValidationError("This email address is already subscribed.")
-        else:
-            if not EmailSubscription.objects.filter(community_list=self.clist, email=self.cleaned_data["email"], significant=self.cleaned_data["notify_on"] == "significant").exists():
-                raise forms.ValidationError("Couldn't find a matching subscription?")
+        if EmailSubscription.objects.filter(community_list=self.clist, email=self.cleaned_data["email"], notify_on=self.cleaned_data["notify_on"]).exists():
+            raise forms.ValidationError("You already have a subscription like this.")
+
+    class Meta:
+        model = EmailSubscription
+        fields = ("notify_on", "email")

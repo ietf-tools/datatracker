@@ -9,7 +9,7 @@ from ietf.community.models import CommunityList, SearchRule, EmailSubscription
 from ietf.community.utils import docs_matching_community_list_rule, community_list_rules_matching_doc
 from ietf.doc.models import State
 from ietf.doc.utils import add_state_change_event
-from ietf.person.models import Person
+from ietf.person.models import Person, Email
 from ietf.utils.test_data import make_test_data
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase
 from ietf.utils.mail import outbox
@@ -217,28 +217,18 @@ class CommunityListTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertTrue('<entry>' not in r.content)
 
-    def extract_confirm_url(self, confirm_email):
-        # dig out confirm_email link
-        msg = confirm_email.get_payload(decode=True)
-        line_start = "http"
-        confirm_url = None
-        for line in msg.split("\n"):
-            if line.strip().startswith(line_start):
-                confirm_url = line.strip()
-        self.assertTrue(confirm_url)
-
-        return confirm_url
-
     def test_subscription(self):
         draft = make_test_data()
 
-        url = urlreverse("community_personal_subscription", kwargs={ "operation": "subscribe", "username": "plain" })
+        url = urlreverse("community_personal_subscription", kwargs={ "username": "plain" })
 
-        # subscribe without list
+        login_testing_unauthorized(self, "plain", url)
+
+        # subscription without list
         r = self.client.get(url)
         self.assertEqual(r.status_code, 404)
 
-        # subscribe with list
+        # subscription with list
         clist = CommunityList.objects.create(user=User.objects.get(username="plain"))
         clist.added_docs.add(draft)
         SearchRule.objects.create(
@@ -250,42 +240,19 @@ class CommunityListTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 
-        # do subscribe
-        mailbox_before = len(outbox)
-        r = self.client.post(url, { "email": "subscriber@example.com", "notify_on": "significant" })
-        self.assertEqual(r.status_code, 200)
-        self.assertEqual(len(outbox), mailbox_before + 1)
-
-        # go to confirm page
-        confirm_url = self.extract_confirm_url(outbox[-1])
-        r = self.client.get(confirm_url)
-        self.assertEqual(r.status_code, 200)
-
-        # confirm subscribe
-        r = self.client.post(confirm_url, { 'action': 'confirm' })
+        # subscribe
+        email = Email.objects.filter(person__user__username="plain").first()
+        r = self.client.post(url, { "email": email.pk, "notify_on": "significant", "action": "subscribe" })
         self.assertEqual(r.status_code, 302)
-        self.assertEqual(EmailSubscription.objects.filter(community_list=clist, email="subscriber@example.com", significant=True).count(), 1)
 
-        # unsubscribe
-        url = urlreverse("community_personal_subscription", kwargs={ "operation": "unsubscribe", "username": "plain" })
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        subscription = EmailSubscription.objects.filter(community_list=clist, email=email, notify_on="significant").first()
 
-        # do unsubscribe
-        mailbox_before = len(outbox)
-        r = self.client.post(url, { "email": "subscriber@example.com", "notify_on": "significant" })
-        self.assertEqual(r.status_code, 200)
-        self.assertEqual(len(outbox), mailbox_before + 1)
+        self.assertTrue(subscription)
 
-        # go to confirm page
-        confirm_url = self.extract_confirm_url(outbox[-1])
-        r = self.client.get(confirm_url)
-        self.assertEqual(r.status_code, 200)
-
-        # confirm unsubscribe
-        r = self.client.post(confirm_url, { 'action': 'confirm' })
+        # delete subscription
+        r = self.client.post(url, { "subscription_id": subscription.pk, "action": "unsubscribe" })
         self.assertEqual(r.status_code, 302)
-        self.assertEqual(EmailSubscription.objects.filter(community_list=clist, email="subscriber@example.com", significant=True).count(), 0)
+        self.assertEqual(EmailSubscription.objects.filter(community_list=clist, email=email, notify_on="significant").count(), 0)
 
     def test_notification(self):
         draft = make_test_data()
@@ -299,7 +266,7 @@ class CommunityListTests(TestCase):
             text="test",
         )
 
-        EmailSubscription.objects.create(community_list=clist, email="subscriber@example.com", significant=True)
+        EmailSubscription.objects.create(community_list=clist, email=Email.objects.filter(person__user__username="plain").first(), notify_on="significant")
 
         mailbox_before = len(outbox)
         active_state = State.objects.get(type="draft", slug="active")

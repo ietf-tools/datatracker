@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from django.db import migrations
+from django.db import migrations, models
 
 def port_rules_to_typed_system(apps, schema_editor):
     SearchRule = apps.get_model("community", "SearchRule")
@@ -163,6 +163,37 @@ def get_rid_of_empty_lists(apps, schema_editor):
         if not cl.added_docs.exists() and not cl.searchrule_set.exists() and not cl.emailsubscription_set.exists():
             cl.delete()
 
+def move_email_subscriptions_to_preregistered_email(apps, schema_editor):
+    EmailSubscription = apps.get_model("community", "EmailSubscription")
+    Email = apps.get_model("person", "Email")
+    Person = apps.get_model("person", "Person")
+
+    for e in EmailSubscription.objects.all():
+        email_obj = None
+        try:
+            email_obj = Email.objects.get(address=e.email)
+        except Email.DoesNotExist:
+            if e.community_list.user:
+                person = Person.objects.filter(user=e.community_list.user).first()
+
+                #print "creating", e.email, person.ascii
+                # we'll register it on the user, on the assumption
+                # that the user and the subscriber is the same person
+                email_obj = Email.objects.create(
+                    address=e.email,
+                    person=person,
+                )
+
+        if not email_obj:
+            print "deleting", e.email
+            e.delete()
+
+def fill_in_notify_on(apps, schema_editor):
+    EmailSubscription = apps.get_model("community", "EmailSubscription")
+
+    EmailSubscription.objects.filter(significant=False, notify_on="all")
+    EmailSubscription.objects.filter(significant=True, notify_on="significant")
+
 def noop(apps, schema_editor):
     pass
 
@@ -175,9 +206,21 @@ class Migration(migrations.Migration):
     operations = [
         migrations.RunPython(port_rules_to_typed_system, delete_extra_person_rules),
         migrations.RunPython(rename_rule_type_forwards, rename_rule_type_backwards),
+        migrations.RunPython(move_email_subscriptions_to_preregistered_email, noop),
         migrations.RunPython(get_rid_of_empty_lists, noop),
+        migrations.RunPython(fill_in_notify_on, noop),
         migrations.RemoveField(
             model_name='searchrule',
             name='value',
+        ),
+        migrations.AlterField(
+            model_name='emailsubscription',
+            name='email',
+            field=models.ForeignKey(to='person.Email'),
+            preserve_default=True,
+        ),
+        migrations.RemoveField(
+            model_name='emailsubscription',
+            name='significant',
         ),
     ]

@@ -17,9 +17,11 @@
     {% endif %}
 
     {% if clist.pk != None %}
-      <li><a class="btn btn-default" href="{% if clist.group %}{% url "community_group_subscribe" clist.group.acronym %}{% else %}{% url "community_personal_subscription" clist.user.username "subscribe" %}{% endif%}">Subscribe to changes</a></li>
-
-      <li><a class="btn btn-default" href="{% if clist.group %}{% url "community_group_subscribe" clist.group.acronym %}{% else %}{% url "community_personal_subscription" clist.user.username "unsubscribe" %}{% endif%}">Unsubscribe</a></li>
+      {% if subscribed %}
+        <li><a class="btn btn-default" href="{% if clist.group %}{% url "community_group_subscribe" clist.group.acronym %}{% else %}{% url "community_personal_subscription" clist.user.username %}{% endif%}">Change subscription</a></li>
+      {% else %}
+        <li><a class="btn btn-default" href="{% if clist.group %}{% url "community_group_subscribe" clist.group.acronym %}{% else %}{% url "community_personal_subscription" clist.user.username %}{% endif%}">Subscribe to changes</a></li>
+      {% endif %}
     {% endif %}
 
     <li><a class="btn btn-default" href="{% if clist.group %}{% url "community_group_csv" clist.group.acronym %}{% else %}{% url "community_personal_csv" clist.user.username %}{% endif%}">Export as CSV</a></li>

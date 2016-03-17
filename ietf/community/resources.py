@@ -51,8 +51,8 @@ class EmailSubscriptionResource(ModelResource):
         #resource_name = 'emailsubscription'
         filtering = { 
             "id": ALL,
-            "email": ALL,
-            "significant": ALL,
+            "email": ALL_WITH_RELATIONS,
+            "notify_on": ALL,
             "community_list": ALL_WITH_RELATIONS,
         }
 api.community.register(EmailSubscriptionResource())

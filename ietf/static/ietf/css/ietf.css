@@ -458,3 +458,7 @@ label#list-feeds {
   display: inline-block;
   font-weight: normal;
 }
+
+.email-subscription button[type=submit] {
+  margin-left: 3em;
+}

@@ -4,7 +4,7 @@ from django.db.models import signals
 
 from ietf.doc.models import Document, DocEvent, State
 from ietf.group.models import Group
-from ietf.person.models import Person
+from ietf.person.models import Person, Email
 
 class CommunityList(models.Model):
     user = models.ForeignKey(User, blank=True, null=True)
@@ -62,11 +62,16 @@ class SearchRule(models.Model):
 
 class EmailSubscription(models.Model):
     community_list = models.ForeignKey(CommunityList)
-    email = models.CharField(max_length=200)
-    significant = models.BooleanField(default=False)
+    email = models.ForeignKey(Email)
+
+    NOTIFICATION_CHOICES = [
+        ("all", "All changes"),
+        ("significant", "Only significant state changes")
+    ]
+    notify_on = models.CharField(max_length=30, choices=NOTIFICATION_CHOICES, default="all")
 
     def __unicode__(self):
-        return u"%s to %s (%s changes)" % (self.email, self.community_list, "significant" if self.significant else "all")
+        return u"%s to %s (%s changes)" % (self.email, self.community_list, self.notify_on)
 
 
 def notify_events(sender, instance, **kwargs):

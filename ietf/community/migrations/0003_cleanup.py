@@ -105,4 +105,10 @@ class Migration(migrations.Migration):
             name='searchrule',
             unique_together=set([]),
         ),
+        migrations.AddField(
+            model_name='emailsubscription',
+            name='notify_on',
+            field=models.CharField(default=b'all', max_length=30, choices=[(b'all', b'All changes'), (b'significant', b'Only significant state changes')]),
+            preserve_default=True,
+        ),
     ]
