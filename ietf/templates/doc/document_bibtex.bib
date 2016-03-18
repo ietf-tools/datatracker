@@ -11,7 +11,7 @@
 @misc{% templatetag openbrace %}rfc{{ doc.rfc_number }},
 	series =	{Request for Comments},
 	number=		{{ doc.rfc_number }},
-	howpublished=	{% templatetag openbrace %}{{ doc.stream }} RFC {{ doc.rfc_number }}{% if doc.doc.intended_std_level %} ({{ doc.intended_std_level }}){% endif %}{% templatetag closebrace %},
+	howpublished=	{% templatetag openbrace %}RFC {{ doc.rfc_number }}{% if doc.doc.intended_std_level %} ({{ doc.intended_std_level }}){% endif %}{% templatetag closebrace %},
 	publisher =	{RFC Editor},
 	doi =		{% templatetag openbrace %}10.17487/rfc{{ doc.rfc_number }}{% templatetag closebrace %},
 	url =		{https://rfc-editor.org/rfc/rfc{{ doc.rfc_number }}.txt},{% else %}
