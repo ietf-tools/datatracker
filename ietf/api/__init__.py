@@ -206,7 +206,7 @@ class ToOneField(tastypie.fields.ToOneField):
 
         # Up to this point we've copied the code from tastypie 0.13.1.  Now
         # we add caching.
-        cache_key = fk_resource.generate_cache_key('related', for_list=for_list)
+        cache_key = fk_resource.generate_cache_key('related', pk=foreign_obj.pk, for_list=for_list, )
         dehydrated = fk_resource._meta.cache.get(cache_key)
         if dehydrated is None:
             fk_bundle = Bundle(obj=foreign_obj, request=bundle.request)
