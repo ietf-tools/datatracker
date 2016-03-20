@@ -282,7 +282,7 @@ class Meeting(models.Model):
         return ts
 
     class Meta:
-        ordering = ["-date", ]
+        ordering = ["-date", "id"]
 
 class ResourceAssociation(models.Model):
     name = models.ForeignKey(RoomResourceName)
@@ -519,7 +519,7 @@ class TimeSlot(models.Model):
             time__lt = self.time + self.duration + datetime.timedelta(seconds=11*60)).first()
 
     class Meta:
-        ordering = ["-time", ]
+        ordering = ["-time", "id"]
 
 
 # end of TimeSlot
