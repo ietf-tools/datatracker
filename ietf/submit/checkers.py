@@ -111,9 +111,13 @@ class DraftYangChecker(object):
     def check_file_txt(self, path):
         name = os.path.basename(path)
         workdir = tempfile.mkdtemp()
+        errors = []
+        warnings = []
         results = {}
 
         extractor = xym.YangModuleExtractor(path, workdir, strict=True, debug_level = 0)
+        if not os.path.exists(path):
+            return None, "%s: No such file or directory: '%s'"%(name.capitalize(), path), errors, warnings, results
         with open(path) as file:
             try:
                 # This places the yang models as files in workdir
