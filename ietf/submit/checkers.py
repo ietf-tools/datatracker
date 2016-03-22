@@ -142,17 +142,21 @@ class DraftYangChecker(object):
             if code > 0:
                 error_lines = err.splitlines()
                 for line in error_lines:
-                    fn, lnum, msg = line.split(':', 2)
-                    lnum = int(lnum)
-                    if fn == model and (lnum-1) in range(len(text)):
-                        line = text[lnum-1].rstrip()
-                    else:
-                        line = None
-                    items.append((lnum, line, msg))
-                    if 'error: ' in msg:
-                        errors += 1
-                    if 'warning: ' in msg:
-                        warnings += 1
+                    if line.strip():
+                        try:
+                            fn, lnum, msg = line.split(':', 2)
+                            lnum = int(lnum)
+                            if fn == model and (lnum-1) in range(len(text)):
+                                line = text[lnum-1].rstrip()
+                            else:
+                                line = None
+                            items.append((lnum, line, msg))
+                            if 'error: ' in msg:
+                                errors += 1
+                            if 'warning: ' in msg:
+                                warnings += 1
+                        except ValueError:
+                            pass
             results[model] = {
                 "passed":  code == 0,
                 "message": out+"No validation errors\n" if code == 0 else err,
