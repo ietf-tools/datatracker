@@ -14,3 +14,6 @@ DATABASE_TEST_OPTIONS = {
     }
 
 IDSUBMIT_IDNITS_BINARY = "/usr/local/bin/idnits"
+IDSUBMIT_REPOSITORY_PATH = "test/id/"
+IDSUBMIT_STAGING_PATH = "test/staging/"
+INTERNET_DRAFT_ARCHIVE_DIR = "test/archive/"

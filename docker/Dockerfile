@@ -40,6 +40,7 @@ RUN apt-get update && apt-get install -qy \
 	libsvn1/wheezy-backports \
 	libxml2-dev \
 	libxslt-dev \
+	locales \
 	mysql-server \
 	openssh-client \
 	procps \
@@ -47,11 +48,16 @@ RUN apt-get update && apt-get install -qy \
 	python \
 	python-dev \
 	python-m2crypto \
+	rsync \
 	subversion/wheezy-backports \
 	sudo \
 	wget \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+
+# Enable some common locales
+RUN sed -i -e 's/^. en_US/en_US/' -e 's/^. en_GB/en_GB/' -e 's/^. en_IE/en_IE/' /etc/locale.gen
+RUN locale-gen
 
 # Set up root password
 RUN echo "root:root" | chpasswd
@@ -60,9 +66,10 @@ RUN echo "root:root" | chpasswd
 VOLUME /var/lib/mysql
 
 # Pip
-ENV PYTHONWARNINGS="ignore:a true SSLContext object"
+ENV PYTHONWARNINGS="ignore:a true SSLContext object,ignore:An HTTPS request has been made"
 WORKDIR /usr/src
 RUN wget -q https://bootstrap.pypa.io/get-pip.py && python get-pip.py && rm get-pip.py
+RUN pip install certifi
 RUN pip install virtualenv
 
 # idnits and dependencies
@@ -73,7 +80,7 @@ RUN mkdir -p $DDIR
 WORKDIR $DDIR
 
 COPY requirements.txt ./
-RUN pip install -r requirements.txt
+RUN pip --no-cache-dir install -r requirements.txt
 
 COPY settings_local.py ./
 COPY setprompt ./

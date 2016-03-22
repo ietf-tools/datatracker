@@ -1,2 +1,5 @@
 /*.pyc
+/archive
+/id
+/staging
 /sql_setup.sql

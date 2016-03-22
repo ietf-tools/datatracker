@@ -17,6 +17,7 @@
 # Simulated Subversion default ignores end here
 /.project
 /.pydevproject
+/.Python
 /.settings
 /.coverage
 /unix.tag
@@ -30,6 +31,8 @@
 /lib
 /share
 /include
+/pip-selfcheck.json
+/settings_local.py
 /static
 /latest-coverage.json
 /ghostdriver.log

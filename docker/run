@@ -122,14 +122,8 @@ done
 # The program itself
 
 if [ "$(uname)" != "Linux" ]; then
-    if   [ -n "$(type -p boot2docker)" ]; then
-	machine=$(type -p boot2docker)
-	up=up
-	env=shellinit
-    elif [ -n "$(type -p docker-machine)" ]; then
+    if [ -n "$(type -p docker-machine)" ]; then
 	machine=$(type -p docker-machine)
-	up=start
-	env="env default"
     else
 	die "Could not find boot2docker or docker-machine -- you need to set one of those before running this script."
     fi
@@ -138,13 +132,13 @@ else
 fi
 
 
-if [ $($machine status) != "running" ]; then
-    echo "The docker VM doesn't seem to be running; will attempt to start it by doing '\$ $machine $up':"
-    $machine $up || die "Failed taking up the Docker VM"
+if [ $($machine status default) != "Running" ]; then
+    echo "The docker VM doesn't seem to be running; will attempt to start it by doing '\$ $machine start':"
+    $machine start || die "Failed taking up the Docker VM"
 fi
 
 if [ -f "$machine" ]; then
-    if [ $($machine status | tr "A-Z" "a-z") = "running" ]; then
+    if [ $($machine status | tr "A-Z" "a-z") = "Running" ]; then
 	tmpfile=$(mktemp docker.run.XXXXXXXX)
 	if $machine $env 2>/dev/null | grep  DOCKER_ > $tmpfile; then
 	    mv $tmpfile ~/.docker-info

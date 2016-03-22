@@ -94,9 +94,50 @@ if [ ! -f $VIRTDIR/lib/site-python/settings_local.py ]; then
     cp /usr/local/share/datatracker/settings_local.py $VIRTDIR/lib/site-python/
 fi
 
+for sub in test/id/ test/staging/ test/archive/; do
+    dir="/home/$USER/$CWD/$sub"
+    if [ ! -d "$dir"  ]; then
+	echo "Creating dir $dir"
+	mkdir -p "$dir";
+    fi
+done
+
+for sub in					\
+	nomcom_keys/public_keys			\
+	developers/ietf-ftp			\
+	developers/ietf-ftp/internet-drafts	\
+	developers/ietf-ftp/rfc			\
+	developers/ietf-ftp/charter		\
+	developers/ietf-ftp/status-changes	\
+	developers/ietf-ftp/conflict-reviews	\
+	developers/www6s			\
+	developers/www6s/staging		\
+	developers/www6s/wg-descriptions	\
+	developers/www6s/proceedings		\
+	developers/www6/			\
+	developers/www6/iesg			\
+	developers/www6/iesg/evaluation		\
+	; do
+    dir="/home/$USER/$CWD/data/$sub"
+    if [ ! -d "$dir"  ]; then
+	echo "Creating dir $dir"
+	mkdir -p "$dir";
+    fi
+done
+
+if [ ! -f "/home/$USER/$CWD/test/data/draft-aliases" ]; then
+    echo "Generating draft aliases ..."
+    ietf/bin/generate-draft-aliases }
+fi
+
+if [ ! -f "/home/$USER/$CWD/test/data/group-aliases" ]; then
+    echo "Generating group aliases ..."
+    ietf/bin/generate-wg-aliases }
+fi
+
 chown -R $USER /opt/home/$USER
 
-cd /home/$USER/$CWD || cd /home/$USER/
+cd "/home/$USER/$CWD" || cd "/home/$USER/"
 
 echo "Done!"
 

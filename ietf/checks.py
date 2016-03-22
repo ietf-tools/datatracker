@@ -30,7 +30,7 @@ def check_group_email_aliases_exists(app_configs, **kwargs):
         ok = check_group_email_aliases()
         if not ok:
             errors.append(checks.Error(
-                "Found no aliases in the group email aliases file",
+                "Found no aliases in the group email aliases file\n'%s'."%settings.GROUP_ALIASES_PATH,
                 hint="Please run ietf/bin/generate-wg-aliases to generate them.",
                 obj=None,
                 id="datatracker.E0002",
@@ -53,7 +53,7 @@ def check_doc_email_aliases_exists(app_configs, **kwargs):
         ok = check_doc_email_aliases()
         if not ok:
             errors.append(checks.Critical(
-                "Found no aliases in the document email aliases file.",
+                "Found no aliases in the document email aliases file\n'%s'."%settings.DRAFT_ALIASES_PATH,
                 hint="Please run ietf/bin/generate-draft-aliases to generate them.",
                 obj=None,
                 id="datatracker.E0004",
