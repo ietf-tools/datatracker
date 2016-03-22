@@ -1,10 +1,15 @@
+import re
+
 from django.db.models import Q
 from django.conf import settings
 
 from ietf.community.models import CommunityList, EmailSubscription, SearchRule
 from ietf.doc.models import Document, State
-from ietf.group.models import Role
+from ietf.group.models import Role, Group
 from ietf.person.models import Person
+from ietf.ietfauth.utils import has_role
+from django.contrib.auth.models import User
+from django.shortcuts import get_object_or_404
 
 from ietf.utils.mail import send_mail
 
@@ -18,6 +23,18 @@ def states_of_significant_change():
         Q(type="draft", slug__in=['rfc', 'dead'])
     )
 
+def lookup_community_list(username=None, acronym=None):
+    assert username or acronym
+
+    if acronym:
+        group = get_object_or_404(Group, acronym=acronym)
+        clist = CommunityList.objects.filter(group=group).first() or CommunityList(group=group)
+    else:
+        user = get_object_or_404(User, username=username)
+        clist = CommunityList.objects.filter(user=user).first() or CommunityList(user=user)
+
+    return clist
+
 def can_manage_community_list(user, clist):
     if not user or not user.is_authenticated():
         return False
@@ -25,6 +42,9 @@ def can_manage_community_list(user, clist):
     if clist.user:
         return user == clist.user
     elif clist.group:
+        if has_role(user, 'Secretariat'):
+            return True
+
         if clist.group.type_id == 'area':
             return Role.objects.filter(name__slug='ad', person__user=user, group=clist.group).exists()
         elif clist.group.type_id in ('wg', 'rg'):
@@ -46,6 +66,21 @@ def augment_docs_with_tracking_info(docs, user):
     for d in docs:
         d.tracked_in_personal_community_list = d.pk in tracked
 
+def reset_name_contains_index_for_rule(rule):
+    if not rule.rule_type == "name_contains":
+        return
+
+    rule.name_contains_index = Document.objects.filter(docalias__name__regex=rule.text)
+
+def update_name_contains_indexes_with_new_doc(doc):
+    for r in SearchRule.objects.filter(rule_type="name_contains"):
+        # in theory we could use the database to do this query, but
+        # Django doesn't support a reversed regex operator, and regexp
+        # support needs backend-specific code so custom SQL is a bit
+        # cumbersome too
+        if re.search(r.text, doc.name):
+            r.name_contains_index.add(doc)
+
 def docs_matching_community_list_rule(rule):
     docs = Document.objects.all()
     if rule.rule_type in ['group', 'area', 'group_rfc', 'area_rfc']:
@@ -59,13 +94,11 @@ def docs_matching_community_list_rule(rule):
     elif rule.rule_type == "shepherd":
         return docs.filter(states=rule.state, shepherd__person=rule.person)
     elif rule.rule_type == "name_contains":
-        return docs.filter(states=rule.state, name__icontains=rule.text)
+        return docs.filter(states=rule.state, searchrule=rule)
 
     raise NotImplementedError
 
 def community_list_rules_matching_doc(doc):
-    from django.db import connection
-
     states = list(doc.states.values_list("pk", flat=True))
 
     rules = SearchRule.objects.none()
@@ -108,10 +141,7 @@ def community_list_rules_matching_doc(doc):
     rules |= SearchRule.objects.filter(
         rule_type="name_contains",
         state__in=states,
-    ).extra(
-        # we need a reverse icontains here, unfortunately this means we need concatenation which isn't quite cross-platform
-        where=["%s like '%%' || text || '%%'" if connection.vendor == "sqlite" else "%s like concat('%%', text, '%%')"],
-        params=[doc.name]
+        name_contains_index=doc, # search our materialized index to avoid full scan
     )
 
     return rules

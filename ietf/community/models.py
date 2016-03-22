@@ -1,6 +1,7 @@
 from django.contrib.auth.models import User
 from django.db import models
 from django.db.models import signals
+from django.core.urlresolvers import reverse as urlreverse
 
 from ietf.doc.models import Document, DocEvent, State
 from ietf.group.models import Group
@@ -21,6 +22,13 @@ class CommunityList(models.Model):
 
     def __unicode__(self):
         return self.long_name()
+
+    def get_absolute_url(self):
+        if self.user:
+            return urlreverse("community_personal_view_list", kwargs={ 'username': self.user.username })
+        elif self.group:
+            return urlreverse("group_docs", kwargs={ 'acronym': self.group.acronym })
+        return ""
 
 
 class SearchRule(models.Model):
@@ -47,7 +55,7 @@ class SearchRule(models.Model):
 
         ('shepherd', 'All I-Ds with a particular document shepherd'),
 
-        ('name_contains', 'All I-Ds with particular text in the name'),
+        ('name_contains', 'All I-Ds with particular text/regular expression in the name'),
     ]
 
     community_list = models.ForeignKey(CommunityList)
@@ -57,7 +65,13 @@ class SearchRule(models.Model):
     state = models.ForeignKey(State, blank=True, null=True)
     group = models.ForeignKey(Group, blank=True, null=True)
     person = models.ForeignKey(Person, blank=True, null=True)
-    text = models.CharField(max_length=255, blank=True, default="")
+    text = models.CharField(verbose_name="Text/RegExp", max_length=255, blank=True, default="")
+
+    # store a materialized view/index over which documents are matched
+    # by the name_contains rule to avoid having to scan the whole
+    # database - we update this manually when the rule is changed and
+    # when new documents are submitted
+    name_contains_index = models.ManyToManyField(Document)
 
 
 class EmailSubscription(models.Model):

@@ -87,6 +87,9 @@ class SearchRuleForm(forms.ModelForm):
         for name, f in self.fields.iteritems():
             f.required = True
 
+    def clean_text(self):
+        return self.cleaned_data["text"].strip().lower() # names are always lower case
+
 
 class SubscriptionForm(forms.ModelForm):
     def __init__(self, user, clist, *args, **kwargs):

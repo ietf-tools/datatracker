@@ -194,6 +194,31 @@ def fill_in_notify_on(apps, schema_editor):
     EmailSubscription.objects.filter(significant=False, notify_on="all")
     EmailSubscription.objects.filter(significant=True, notify_on="significant")
 
+def add_group_community_lists(apps, schema_editor):
+    Group = apps.get_model("group", "Group")
+    Document = apps.get_model("doc", "Document")
+    State = apps.get_model("doc", "State")
+    CommunityList = apps.get_model("community", "CommunityList")
+    SearchRule = apps.get_model("community", "SearchRule")
+
+    active_state = State.objects.get(slug="active", type="draft")
+    rfc_state = State.objects.get(slug="rfc", type="draft")
+
+    for g in Group.objects.filter(type__in=("rg", "wg")):
+        clist = CommunityList.objects.filter(group=g).first()
+        if clist:
+            SearchRule.objects.get_or_create(community_list=clist, rule_type="group", group=g, state=active_state)
+            SearchRule.objects.get_or_create(community_list=clist, rule_type="group_rfc", group=g, state=rfc_state)
+            r, _ = SearchRule.objects.get_or_create(community_list=clist, rule_type="name_contains", text=r"^draft-[^-]+-%s-" % g.acronym, state=active_state)
+            r.name_contains_index = Document.objects.filter(docalias__name__regex=r.text)
+
+        else:
+            clist = CommunityList.objects.create(group=g)
+            SearchRule.objects.create(community_list=clist, rule_type="group", group=g, state=active_state)
+            SearchRule.objects.create(community_list=clist, rule_type="group_rfc", group=g, state=rfc_state)
+            r = SearchRule.objects.create(community_list=clist, rule_type="name_contains", text=r"^draft-[^-]+-%s-" % g.acronym, state=active_state)
+            r.name_contains_index = Document.objects.filter(docalias__name__regex=r.text)
+
 def noop(apps, schema_editor):
     pass
 
@@ -209,6 +234,7 @@ class Migration(migrations.Migration):
         migrations.RunPython(move_email_subscriptions_to_preregistered_email, noop),
         migrations.RunPython(get_rid_of_empty_lists, noop),
         migrations.RunPython(fill_in_notify_on, noop),
+        migrations.RunPython(add_group_community_lists, noop),
         migrations.RemoveField(
             model_name='searchrule',
             name='value',

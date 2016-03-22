@@ -4,35 +4,20 @@ import datetime
 import json
 
 from django.http import HttpResponse, HttpResponseForbidden, HttpResponseRedirect, Http404
-from django.shortcuts import get_object_or_404, render, redirect
+from django.shortcuts import get_object_or_404, render
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.models import User
 from django.utils.html import strip_tags
 
-from ietf.community.models import CommunityList, SearchRule, EmailSubscription
+from ietf.community.models import SearchRule, EmailSubscription
 from ietf.community.forms import SearchRuleTypeForm, SearchRuleForm, AddDocumentsForm, SubscriptionForm
-from ietf.community.utils import can_manage_community_list
+from ietf.community.utils import lookup_community_list, can_manage_community_list
 from ietf.community.utils import docs_tracked_by_community_list, docs_matching_community_list_rule
-from ietf.community.utils import states_of_significant_change
-from ietf.group.models import Group
+from ietf.community.utils import states_of_significant_change, reset_name_contains_index_for_rule
 from ietf.doc.models import DocEvent, Document
 from ietf.doc.utils_search import prepare_document_table
 
-def lookup_list(username=None, acronym=None):
-    assert username or acronym
-
-    if acronym:
-        group = get_object_or_404(Group, acronym=acronym)
-        clist = CommunityList.objects.filter(group=group).first() or CommunityList(group=group)
-    else:
-        user = get_object_or_404(User, username=username)
-        clist = CommunityList.objects.filter(user=user).first() or CommunityList(user=user)
-
-    return clist
-
-
-def view_list(request, username=None, acronym=None):
-    clist = lookup_list(username, acronym)
+def view_list(request, username=None):
+    clist = lookup_community_list(username)
 
     docs = docs_tracked_by_community_list(clist)
     docs, meta = prepare_document_table(request, docs, request.GET)
@@ -48,10 +33,10 @@ def view_list(request, username=None, acronym=None):
     })
 
 @login_required
-def manage_list(request, username=None, acronym=None):
+def manage_list(request, username=None, acronym=None, group_type=None):
     # we need to be a bit careful because clist may not exist in the
     # database so we can't call related stuff on it yet
-    clist = lookup_list(username, acronym)
+    clist = lookup_community_list(username, acronym)
 
     if not can_manage_community_list(request.user, clist):
         return HttpResponseForbidden("You do not have permission to access this view")
@@ -71,6 +56,14 @@ def manage_list(request, username=None, acronym=None):
     else:
         add_doc_form = AddDocumentsForm()
 
+    if request.method == 'POST' and action == 'remove_document':
+        document_pk = request.POST.get('document')
+        if clist.pk is not None and document_pk:
+            document = get_object_or_404(clist.added_docs, pk=document_pk)
+            clist.added_docs.remove(document)
+
+            return HttpResponseRedirect("")
+
     if request.method == 'POST' and action == 'add_rule':
         rule_type_form = SearchRuleTypeForm(request.POST)
         if rule_type_form.is_valid():
@@ -86,6 +79,8 @@ def manage_list(request, username=None, acronym=None):
                 rule.community_list = clist
                 rule.rule_type = rule_type
                 rule.save()
+                if rule.rule_type == "name_contains":
+                    reset_name_contains_index_for_rule(rule)
 
                 return HttpResponseRedirect("")
     else:
@@ -111,7 +106,7 @@ def manage_list(request, username=None, acronym=None):
     return render(request, 'community/manage_list.html', {
         'clist': clist,
         'rules': rules,
-        'individually_added': clist.added_docs.count() if clist.pk is not None else 0,
+        'individually_added': clist.added_docs.all() if clist.pk is not None else [],
         'rule_type_form': rule_type_form,
         'rule_form': rule_form,
         'empty_rule_forms': empty_rule_forms,
@@ -125,7 +120,7 @@ def track_document(request, name, username=None, acronym=None):
     doc = get_object_or_404(Document, docalias__name=name)
 
     if request.method == "POST":
-        clist = lookup_list(username, acronym)
+        clist = lookup_community_list(username, acronym)
         if not can_manage_community_list(request.user, clist):
             return HttpResponseForbidden("You do not have permission to access this view")
 
@@ -137,10 +132,7 @@ def track_document(request, name, username=None, acronym=None):
         if request.is_ajax():
             return HttpResponse(json.dumps({ 'success': True }), content_type='text/plain')
         else:
-            if clist.group:
-                return redirect('community_group_view_list', acronym=clist.group.acronym)
-            else:
-                return redirect('community_personal_view_list', username=clist.user.username)
+            return HttpResponseRedirect(clist.get_absolute_url())
 
     return render(request, "community/track_document.html", {
         "name": doc.name,
@@ -149,7 +141,7 @@ def track_document(request, name, username=None, acronym=None):
 @login_required
 def untrack_document(request, name, username=None, acronym=None):
     doc = get_object_or_404(Document, docalias__name=name)
-    clist = lookup_list(username, acronym)
+    clist = lookup_community_list(username, acronym)
     if not can_manage_community_list(request.user, clist):
         return HttpResponseForbidden("You do not have permission to access this view")
 
@@ -160,18 +152,15 @@ def untrack_document(request, name, username=None, acronym=None):
         if request.is_ajax():
             return HttpResponse(json.dumps({ 'success': True }), content_type='text/plain')
         else:
-            if clist.group:
-                return redirect('community_group_view_list', acronym=clist.group.acronym)
-            else:
-                return redirect('community_personal_view_list', username=clist.user.username)
+            return HttpResponseRedirect(clist.get_absolute_url())
 
     return render(request, "community/untrack_document.html", {
         "name": doc.name,
     })
 
 
-def export_to_csv(request, username=None, acronym=None):
-    clist = lookup_list(username, acronym)
+def export_to_csv(request, username=None, acronym=None, group_type=None):
+    clist = lookup_community_list(username, acronym)
 
     response = HttpResponse(content_type='text/csv')
 
@@ -211,8 +200,8 @@ def export_to_csv(request, username=None, acronym=None):
 
     return response
 
-def feed(request, username=None, acronym=None):
-    clist = lookup_list(username, acronym)
+def feed(request, username=None, acronym=None, group_type=None):
+    clist = lookup_community_list(username, acronym)
 
     significant = request.GET.get('significant', '') == '1'
 
@@ -247,8 +236,8 @@ def feed(request, username=None, acronym=None):
 
 
 @login_required
-def subscription(request, username=None, acronym=None):
-    clist = lookup_list(username, acronym)
+def subscription(request, username=None, acronym=None, group_type=None):
+    clist = lookup_community_list(username, acronym)
     if clist.pk is None:
         raise Http404
 

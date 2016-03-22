@@ -30,9 +30,10 @@
         </li>
       {% endfor %}
     </ul>
-  {% endif %}
 
-  <p><a class="btn btn-default" href="{% if clist.group %}{% url "community_group_view_list" clist.group.acronym %}{% else %}{% url "community_personal_view_list" clist.user.username %}{% endif%}">Back to list</a></p>
+    <p><a class="btn btn-default" href="{{ clist.get_absolute_url }}">Back to list</a></p>
+
+  {% endif %}
 
   <h2>Add new subscription</h2>
 
@@ -44,12 +45,14 @@
       {% bootstrap_form form %}
 
       {% buttons %}
-      <a class="btn btn-default" href="{% if clist.group %}{% url "community_group_view_list" clist.group.acronym %}{% else %}{% url "community_personal_view_list" clist.user.username %}{% endif%}">Back to list</a>
+      <a class="btn btn-default" href="{{ clist.get_absolute_url }}">Back to list</a>
 
       <button type="submit" name="action" value="subscribe" class="btn btn-primary">Subscribe</button>
       {% endbuttons %}
     </form>
   {% else %}
     <div class="alert alert-danger">You do not have any active email addresses registered with your account. Go to <a href="{% url "account_profile" %}">your profile and add or activate one</a>.</div>
+
+    <a class="btn btn-default" href="{{ clist.get_absolute_url }}">Back to list</a>
   {% endif %}
 {% endblock %}

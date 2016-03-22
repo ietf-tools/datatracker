@@ -55,7 +55,7 @@
     <li><a href="{% url "community_personal_view_list" user.username %}">My tracked docs</a></li>
 
     {% for g in user|managed_groups %}
-      <li><a href="{% url "community_group_view_list" g.acronym %}">{{ g.acronym }} {{ g.type.slug }} docs</a></li>
+      <li><a href="{% url "group_docs" g.acronym %}">{{ g.acronym }} {{ g.type.slug }} docs</a></li>
     {% endfor %}
   {% else %}
     <li><a rel="nofollow" href="/accounts/login/?next={{ request.get_full_path|urlencode }}">Sign in to track docs</a></li>

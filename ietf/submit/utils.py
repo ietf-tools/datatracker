@@ -14,6 +14,7 @@ from ietf.group.models import Group
 from ietf.ietfauth.utils import has_role
 from ietf.name.models import StreamName
 from ietf.person.models import Person, Email
+from ietf.community.utils import update_name_contains_indexes_with_new_doc
 from ietf.submit.mail import announce_to_lists, announce_new_version, announce_to_authors
 from ietf.submit.models import Submission, SubmissionEvent, Preapproval, DraftSubmissionStateName
 from ietf.utils import unaccent
@@ -222,6 +223,8 @@ def post_submission(request, submission):
     submission.state = DraftSubmissionStateName.objects.get(slug="posted")
 
     new_replaces, new_possibly_replaces = update_replaces_from_submission(request, submission, draft)
+
+    update_name_contains_indexes_with_new_doc(draft)
 
     announce_to_lists(request, submission)
     announce_new_version(request, submission, draft, state_change_msg)

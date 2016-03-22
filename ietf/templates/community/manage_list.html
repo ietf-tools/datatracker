@@ -19,18 +19,38 @@
 
   {% bootstrap_messages %}
 
-  <p>The list currently tracks <a href="{% if clist.group %}{% url "community_group_view_list" clist.group.acronym %}{% else %}{% url "community_personal_view_list" clist.user.username %}{% endif%}">{{ total_count }} document{{ total_count|pluralize }}</a>.</p>
+  <p>The list currently tracks <a href="{{ clist.get_absolute_url }}">{{ total_count }} document{{ total_count|pluralize }}</a>.</p>
 
-  <p><a class="btn btn-default" href="{% if clist.group %}{% url "community_group_view_list" clist.group.acronym %}{% else %}{% url "community_personal_view_list" clist.user.username %}{% endif%}">Back to list</a></p>
+  <p><a class="btn btn-default" href="{{ clist.get_absolute_url }}">Back to list</a></p>
 
   <h2>Individual documents</h2>
 
-  <p>The list tracks {{ individually_added }} individually added document{{ individually_added|pluralize }}.</p>
-
-  {% if clist.group  %}
-    <p>You can add individual documents here:</p>
+  {% if individually_added %}
+    <p>The list tracks {{ individually_added|length }} individually added document{{ individually_added|length|pluralize }}:</p>
+    <table class="table table-condensed table-striped">
+      <tbody>
+        {% for d in individually_added %}
+          <tr>
+            <td>{{ d.name }}</td>
+            <td>
+              <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="document" value="{{ d.pk }}">
+                <button class="btn btn-danger btn-xs" name="action" value="remove_document">Remove</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
   {% else %}
-    <p>You can conveniently track individual documents in your personal list with the track icon <span class="fa fa-bookmark-o"></span> in <a href="/doc/search/">search results</a>.</p>
+    <p>The list does not track any individually added documents yet.</p>
+  {% endif %}
+
+  {% if clist.group %}
+    <p>Add individual documents here:</p>
+  {% else %}
+    <p>Conveniently track individual documents in your personal list with the track icon <span class="fa fa-bookmark-o"></span> in <a href="/doc/search/">search results</a>.</p>
 
     <p>You can also add documents here:</p>
   {% endif %}

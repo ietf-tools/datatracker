@@ -10,11 +10,11 @@ def managed_groups(user):
         return []
 
     groups = []
-    groups.extend(Group.objects.filter(
-        role__name__slug='ad',
-        role__person__user=user,
-        type__slug='area',
-        state__slug='active').select_related("type"))
+    # groups.extend(Group.objects.filter(
+    #     role__name__slug='ad',
+    #     role__person__user=user,
+    #     type__slug='area',
+    #     state__slug='active').select_related("type"))
 
     groups.extend(Group.objects.filter(
         role__name__slug='chair',
