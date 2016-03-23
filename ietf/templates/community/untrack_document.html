@@ -1,0 +1,16 @@
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}{% origin %}
+{% load bootstrap3 %}
+
+{% block title %}Remove tracking of document {{ name }}{% endblock %}
+
+{% bootstrap_messages %}
+
+<form method="post">
+  {% csrf_token %}
+  <p>Remove {{ name }} from the list?</p>
+
+  {% buttons %}
+    <input type="submit" class="btn btn-primary" value="Remove tracking of document">
+  {% endbuttons %}
+</form>

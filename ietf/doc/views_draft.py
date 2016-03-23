@@ -881,6 +881,7 @@ class ShepherdWriteupUploadForm(forms.Form):
     def clean_txt(self):
         return get_cleaned_text_file_content(self.cleaned_data["txt"])
 
+@login_required
 def edit_shepherd_writeup(request, name):
     """Change this document's shepherd writeup"""
     doc = get_object_or_404(Document, type="draft", name=name)

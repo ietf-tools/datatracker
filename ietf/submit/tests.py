@@ -20,6 +20,7 @@ from ietf.person.models import Person
 from ietf.group.models import Group
 from ietf.doc.models import Document, DocAlias, DocEvent, State, BallotDocEvent, BallotPositionDocEvent, DocumentAuthor
 from ietf.submit.models import Submission, Preapproval
+from ietf.group.utils import setup_default_community_list_for_group
 
 class SubmitTests(TestCase):
     def setUp(self):
@@ -143,7 +144,8 @@ class SubmitTests(TestCase):
     def submit_new_wg(self, formats):
         # submit new -> supply submitter info -> approve
         draft = make_test_data()
-        
+        setup_default_community_list_for_group(draft.group)
+
         # prepare draft to suggest replace
         sug_replaced_draft = Document.objects.create(
             name="draft-ietf-ames-sug-replaced",

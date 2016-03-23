@@ -3,14 +3,14 @@ Hello,
 
 This is a notification from the {{ clist.long_name }}.
 
-Document: {{ notification.doc }},
-https://datatracker.ietf.org/doc/{{ notification.doc }}
+Document: {{ event.doc }},
+https://datatracker.ietf.org/doc/{{ event.doc_id }}/
 
 Change:
-{{ notification.desc|textify|striptags }}
+{{ event.desc|textify|striptags }}
 
 Best regards,
 
-        The datatracker draft tracking service
+        The Datatracker draft tracking service
         (for the IETF Secretariat)
 {% endautoescape %}
