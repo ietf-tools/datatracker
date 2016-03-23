@@ -84,6 +84,11 @@ and end with
       {% endif %}
 <br /><br /></td></tr></table>
 
+{% if status_update %}
+<h3>Status Update (provided {{status_update.time|date:"Y-m-d"}})</h3>
+<pre class="pasted">{{status_update.desc|escape|urlize}}</pre>
+{% endif %}
+
 <h3>Recordings:</h3>
 {% if materials.recording %}
 <ul>

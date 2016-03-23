@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+
+{% load bootstrap3 %}
+
+{% block title %}
+  Edit status for {{ group.type.name }} ({{group.acronym}})
+{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <h1>
+  Edit status for {{ group.type.name }} ({{group.acronym}})
+  </h1>
+
+  <form enctype="multipart/form-data" method="post">
+    {% csrf_token %}
+    {% bootstrap_form form %}
+
+    {% buttons %}
+      <button type="submit" class="btn btn-primary" name="submit_response" value="Submit">Submit</button>
+      <a class="btn btn-default pull-right" href="{% url "ietf.group.info.group_about" acronym=group.acronym %}">Back</a>
+    {% endbuttons %}
+  </form>
+
+  <h2>About Status Updates</h2>
+  <p>Capturing group status updates in the datatracker allows including them in meeting proceedings. This capability wa
+s added to address the IESG request at <a href="https://wiki.tools.ietf.org/tools/ietfdb/ticket/1773">ticket 1773</a>.
+Not all groups are expected to provide status updates. Those that do have historically sent messages by email or have placed them on a wiki. For example, see <a href="https://mailarchive.ietf.org/arch/msg/saag/fo2b3KA47SM4MuQuYj5VIh-Tjok">the Kitten report sent to SAAG for IETF94</a> or the <a href="https://trac.tools.ietf.org/area/rtg/trac/wiki/IETF94summary">Routing area high level summaries for IETF94</a>.</p>
+
+{% endblock %}

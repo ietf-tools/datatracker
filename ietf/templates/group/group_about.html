@@ -64,6 +64,24 @@
       </tr>
     {% endif %}
 
+    {% if can_provide_status_update or status_update %}
+      <tr id='status_update'>
+        <td></td>
+        <th>Status Update</th>
+        <td>
+           {% if status_update %}
+              (last changed {{status_update.time|date:"Y-m-d"}})
+           {% else %}
+              (None)
+           {% endif %}
+           <a class="btn btn-default btn-xs" href="{% url "ietf.group.info.group_about_status" acronym=group.acronym %}">Show</a>
+           {% if can_provide_status_update %}
+             <a class="btn btn-default btn-xs" href="{% url "ietf.group.info.group_about_status_edit" acronym=group.acronym %}">Edit</a>
+           {% endif %}
+        </td>
+      </tr>
+    {% endif %}
+
 
       {% with group.groupurl_set.all as urls %}
         {% if urls %}

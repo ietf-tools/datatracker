@@ -9,9 +9,12 @@ import glob
 import os
 import shutil
 
+import debug        # pyflakes:ignore
+
 from django.conf import settings
 from django.http import HttpRequest
 from django.shortcuts import render_to_response, render
+from django.db.utils import ConnectionDoesNotExist
 
 from ietf.doc.models import Document, RelatedDocument, DocEvent, NewRevisionDocEvent, State
 from ietf.group.models import Group, Role
@@ -359,6 +362,7 @@ def create_proceedings(meeting, group, is_final=False):
         charter = None
         ctime = None
 
+    status_update = group.latest_event(type='status_update',time__lte=meeting.get_submission_correction_date())
 
     # rather than return the response as in a typical view function we save it as the snapshot
     # proceedings.html
@@ -374,7 +378,8 @@ def create_proceedings(meeting, group, is_final=False):
         'tas': tas,
         'meeting': meeting,
         'rfcs': rfcs,
-        'materials': materials}
+        'materials': materials,
+        'status_update': status_update,}
     )
 
     # save proceedings
@@ -457,6 +462,12 @@ def gen_attendees(context):
     meeting = context['meeting']
 
     attendees = Registration.objects.using('ietf' + meeting.number).all().order_by('lname')
+
+    if settings.SERVER_MODE!='production':
+        try:
+            attendees.count()
+        except ConnectionDoesNotExist:
+            attendees = Registration.objects.none()
 
     html = render_to_response('proceedings/attendee.html',{
         'meeting': meeting,

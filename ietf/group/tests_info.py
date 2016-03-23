@@ -4,6 +4,7 @@ import shutil
 import calendar
 import datetime
 import json
+import StringIO
 
 from pyquery import PyQuery
 from tempfile import NamedTemporaryFile
@@ -12,6 +13,10 @@ import debug                            # pyflakes:ignore
 from django.conf import settings
 from django.core.urlresolvers import reverse as urlreverse
 from django.core.urlresolvers import NoReverseMatch
+from django.contrib.auth.models import User
+
+from django.utils.html import escape
+from django.template.defaultfilters import urlize
 
 from ietf.doc.models import Document, DocAlias, DocEvent, State
 from ietf.group.models import Group, GroupEvent, GroupMilestone, GroupStateTransitions 
@@ -22,7 +27,7 @@ from ietf.utils.test_utils import TestCase, unicontent
 from ietf.utils.mail import outbox, empty_outbox
 from ietf.utils.test_data import make_test_data
 from ietf.utils.test_utils import login_testing_unauthorized
-from ietf.group.factories import GroupFactory
+from ietf.group.factories import GroupFactory, RoleFactory, GroupEventFactory
 from ietf.meeting.factories import SessionFactory
 
 class GroupPagesTests(TestCase):
@@ -1015,4 +1020,89 @@ class MeetingInfoTests(TestCase):
         self.assertEqual(response.status_code, 200) 
         q = PyQuery(response.content)
         self.assertFalse(q('#inprogressmeets'))
+        
+
+class StatusUpdateTests(TestCase):
+
+    def test_unsupported_group_types(self):
+
+        def ensure_updates_dont_show(group,user):
+            url = urlreverse('ietf.group.info.group_about',kwargs={'acronym':group.acronym})
+            if user:
+                self.client.login(username=user.username,password='%s+password'%user.username)
+            response = self.client.get(url)
+            self.assertEqual(response.status_code, 200)
+            q = PyQuery(response.content)
+            self.assertFalse(q('tr#status_update') )
+            self.client.logout()
+
+        def ensure_cant_edit(group,user):
+            url = urlreverse('ietf.group.info.group_about_status_edit',kwargs={'acronym':group.acronym})
+            if user:
+                self.client.login(username=user.username,password='%s+password'%user.username)
+            response = self.client.get(url)
+            self.assertEqual(response.status_code, 404)
+            self.client.logout()
+
+        for type_id in GroupTypeName.objects.exclude(slug__in=('wg','rg','team')).values_list('slug',flat=True):
+            group = GroupFactory.create(type_id=type_id)
+            for user in (None,User.objects.get(username='secretary')):
+                ensure_updates_dont_show(group,user)
+                ensure_cant_edit(group,user)
+
+    def test_see_status_update(self):
+        chair = RoleFactory(name_id='chair',group__type_id='wg')
+        GroupEventFactory(type='status_update',group=chair.group)
+        url = urlreverse('ietf.group.info.group_about',kwargs={'acronym':chair.group.acronym}) 
+        response = self.client.get(url)
+        self.assertEqual(response.status_code,200)
+        q=PyQuery(response.content)
+        self.assertTrue(q('tr#status_update'))
+        self.assertTrue(q('tr#status_update td a:contains("Show")'))
+        self.assertFalse(q('tr#status_update td a:contains("Edit")'))
+        self.client.login(username=chair.person.user.username,password='%s+password'%chair.person.user.username)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code,200)
+        q=PyQuery(response.content)
+        self.assertTrue(q('tr#status_update td a:contains("Show")'))
+        self.assertTrue(q('tr#status_update td a:contains("Edit")'))
+
+    def test_view_status_update(self):
+        chair = RoleFactory(name_id='chair',group__type_id='wg')
+        event = GroupEventFactory(type='status_update',group=chair.group)
+        url = urlreverse('ietf.group.info.group_about_status',kwargs={'acronym':chair.group.acronym}) 
+        response = self.client.get(url)
+        self.assertEqual(response.status_code,200)
+        q=PyQuery(response.content)
+        self.assertTrue(urlize(escape(event.desc) in q('pre')))
+        self.assertFalse(q('a#edit_button'))
+        self.client.login(username=chair.person.user.username,password='%s+password'%chair.person.user.username)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code,200)
+        q=PyQuery(response.content)
+        self.assertTrue(q('a#edit_button'))
+
+    def test_edit_status_update(self):
+        chair = RoleFactory(name_id='chair',group__type_id='wg')
+        event = GroupEventFactory(type='status_update',group=chair.group)
+        url = urlreverse('ietf.group.info.group_about_status_edit',kwargs={'acronym':chair.group.acronym}) 
+        response = self.client.get(url)
+        self.assertEqual(response.status_code,404)
+        self.client.login(username=chair.person.user.username,password='%s+password'%chair.person.user.username)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code,200)
+        q=PyQuery(response.content)
+        self.assertTrue(event.desc in q('form textarea#id_content').text())
+
+        response = self.client.post(url,dict(content='Direct content typed into form',submit_response='1'))
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(chair.group.latest_event(type='status_update').desc,'Direct content typed into form')
+
+        test_file = StringIO.StringIO("This came from a file.")
+        test_file.name = "unnamed"
+        response = self.client.post(url,dict(txt=test_file,submit_response="1"))
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(chair.group.latest_event(type='status_update').desc,'This came from a file.')
+       
+
         
