@@ -958,6 +958,12 @@ class Session(models.Model):
     def drafts(self):
         return list(self.materials.filter(type='draft'))
 
+    def all_meeting_drafts(self):
+        drafts = []
+        for session in self.meeting.session_set.filter(group=self.group):
+            drafts.extend(session.drafts())
+        return drafts
+
     def can_manage_materials(self, user):
         return can_manage_materials(user,self.group)
 

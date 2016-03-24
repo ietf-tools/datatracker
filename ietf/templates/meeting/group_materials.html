@@ -49,7 +49,7 @@
       {% endwith %}
     </td>
     <td>
-     {% with session.drafts as drafts %}
+     {% with session.all_meeting_drafts as drafts %}
        {% for draft in drafts %}
          <a href="{% url "doc_view" name=draft.canonical_name %}">{{ draft.canonical_name }}</a><br>
        {% empty %} 
