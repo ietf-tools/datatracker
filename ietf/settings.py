@@ -576,6 +576,7 @@ DRAFT_VIRTUAL_PATH = os.path.abspath(BASE_DIR + "/../test/data/draft-virtual")
 
 # Set debug apps in DEV_APPS settings_local
 DEV_APPS = ()
+DEV_MIDDLEWARE_CLASSES = ()
 DRAFT_VIRTUAL_DOMAIN = "virtual.ietf.org"
 
 GROUP_ALIASES_PATH = os.path.abspath(BASE_DIR + "/../test/data/group-aliases")
@@ -598,6 +599,8 @@ from settings_local import *            # pyflakes:ignore
 
 # Add DEV_APPS to INSTALLED_APPS
 INSTALLED_APPS += DEV_APPS
+MIDDLEWARE_CLASSES += DEV_MIDDLEWARE_CLASSES
+
 
 # We provide a secret key only for test and development modes.  It's
 # absolutely vital that django fails to start in production mode unless a
