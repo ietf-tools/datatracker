@@ -1,3 +1,33 @@
+ietfdb (6.17.1) ietf; urgency=medium
+
+  This is a patch release, cleaning the slate before the group status update
+  feature.
+
+  * Merged in [10954] from rjsparks@nostrum.com:
+    Remove the stream from the \'howpublished\' component of the bibtex
+    reference for an rfc. Fixes #1927.  
+
+  * Merged in [10953] from rjsparks@nostrum.com:
+    Use the same pattern for extending installed apps with middleware classes.
+
+  * Updated docker-related files based on 6.17.0
+
+  * Put a guard in the yang validator against trying to read a draft which 
+    is absent from the staging area, and against unexpecte pyang output.
+
+  * Fixed a problem with paging of api lists, which requires that the 
+    ordering keys define a fully deterministic ordering (i.e., there may be no 
+    entries with the same sort position in order to make the api paging work).  
+    (The admin interface's paging does not seem to have this problem.)  Fixes 
+    issue #1930.
+
+  * Added object pk to the cache key.  Fixes issue #1929.
+
+  * Fixed a possible index error in the yang validator checker plugin.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  24 Mar 2016 09:12:40 -0700
+
+
 ietfdb (6.17.0) ietf; urgency=medium
 
   **Speedier REST API and Newest-First Search Result Ordering**
