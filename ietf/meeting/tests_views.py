@@ -380,13 +380,13 @@ class InterimTests(TestCase):
         self.assertEqual(Group.objects.filter(type__in=('wg','rg'),state='active').count(),
             len(q("#id_group option")) -1 )  # -1 for options placeholder
 
-    def test_interim_request_submit(self):
+    def test_interim_request_single(self):
         make_meeting_test_data()
+        group = Group.objects.get(acronym='mars')
         date = datetime.date.today() + datetime.timedelta(days=30)
         time = datetime.datetime.now().time().replace(microsecond=0,second=0)
         dt = datetime.datetime.combine(date, time)
         duration = datetime.timedelta(hours=3)
-        group = Group.objects.get(acronym='mars')
         city = 'San Francisco'
         country = 'US'
         timezone = 'US/Pacific'
@@ -395,15 +395,18 @@ class InterimTests(TestCase):
         agenda_note = 'On second level'
         self.client.login(username="secretary", password="secretary+password")
         data = {'group':group.pk,
-                'date':date.strftime("%Y-%m-%d"),
-                'time':time.strftime('%H:%M'),
-                'duration':'03:00:00',
-                'city':city,
-                'country':country,
-                'timezone':timezone,
-                'remote_instructions':remote_instructions,
-                'agenda':agenda,
-                'agenda_note':agenda_note}
+                'meeting_type':'single',
+                'form-0-date':date.strftime("%Y-%m-%d"),
+                'form-0-time':time.strftime('%H:%M'),
+                'form-0-duration':'03:00:00',
+                'form-0-city':city,
+                'form-0-country':country,
+                'form-0-timezone':timezone,
+                'form-0-remote_instructions':remote_instructions,
+                'form-0-agenda':agenda,
+                'form-0-agenda_note':agenda_note,
+                'form-TOTAL_FORMS':1,
+                'form-INITIAL_FORMS':0}
 
         r = self.client.post(urlreverse("ietf.meeting.views.interim_request"),data)
         
@@ -422,5 +425,60 @@ class InterimTests(TestCase):
         self.assertEqual(timeslot.time,dt)
         self.assertEqual(timeslot.duration,duration)
 
+    def test_interim_request_multi_day(self):
+        make_meeting_test_data()
+        date = datetime.date.today() + datetime.timedelta(days=30)
+        date2 = date + datetime.timedelta(days=1)
+        time = datetime.datetime.now().time().replace(microsecond=0,second=0)
+        dt = datetime.datetime.combine(date, time)
+        dt2 = datetime.datetime.combine(date2, time)
+        duration = datetime.timedelta(hours=3)
+        group = Group.objects.get(acronym='mars')
+        city = 'San Francisco'
+        country = 'US'
+        timezone = 'US/Pacific'
+        remote_instructions = 'Use webex'
+        agenda = 'Intro. Slides. Discuss.'
+        agenda_note = 'On second level'
+        self.client.login(username="secretary", password="secretary+password")
+        data = {'group':group.pk,
+                'meeting_type':'multi-day',
+                'form-0-date':date.strftime("%Y-%m-%d"),
+                'form-0-time':time.strftime('%H:%M'),
+                'form-0-duration':'03:00:00',
+                'form-0-city':city,
+                'form-0-country':country,
+                'form-0-timezone':timezone,
+                'form-0-remote_instructions':remote_instructions,
+                'form-0-agenda':agenda,
+                'form-0-agenda_note':agenda_note,
+                'form-1-date':date2.strftime("%Y-%m-%d"),
+                'form-1-time':time.strftime('%H:%M'),
+                'form-1-duration':'03:00:00',
+                'form-1-city':city,
+                'form-1-country':country,
+                'form-1-timezone':timezone,
+                'form-1-remote_instructions':remote_instructions,
+                'form-1-agenda':agenda,
+                'form-1-agenda_note':agenda_note,
+                'form-TOTAL_FORMS':2,
+                'form-INITIAL_FORMS':0}
 
+        r = self.client.post(urlreverse("ietf.meeting.views.interim_request"),data)
+        
+        self.assertRedirects(r,urlreverse('ietf.meeting.views.upcoming'))
+        meeting = Meeting.objects.order_by('id').last()
+        self.assertEqual(meeting.type_id,'interim')
+        self.assertEqual(meeting.date,date)
+        self.assertEqual(meeting.number,'interim-%s-%s-%s' % (date.year,group.acronym,1))
+        self.assertEqual(meeting.city,city)
+        self.assertEqual(meeting.country,country)
+        self.assertEqual(meeting.time_zone,timezone)
+        self.assertEqual(meeting.agenda_note,agenda_note)
+        self.assertEqual(meeting.session_set.count(),2)
+        for session in meeting.session_set.all():
+            self.assertEqual(session.remote_instructions,remote_instructions)
+            timeslot = session.official_timeslotassignment().timeslot
+            self.assertEqual(timeslot.time,dt2)
+            self.assertEqual(timeslot.duration,duration)
 

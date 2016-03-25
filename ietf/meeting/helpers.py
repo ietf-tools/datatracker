@@ -285,4 +285,6 @@ def session_constraint_expire(request,session):
     if key is not None and cache.has_key(key):
         cache.delete(key)
 
-
+def get_next_interim_number(group,date):
+    sequence = Meeting.objects.filter(number__startswith='interim-%s-%s' % (date.year,group.acronym)).count() + 1
+    return 'interim-%s-%s-%s' % (date.year,group.acronym,sequence)

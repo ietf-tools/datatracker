@@ -33,7 +33,7 @@
         <!-- <div id="meeting-type-options"> -->
         <div class="col-md-2 radio-inline"><strong>Meeting Type:</strong></div>
         <label class="radio-inline">
-            <input type="radio" value="single" name="meeting_type">Single
+            <input type="radio" value="single" checked="checked" name="meeting_type">Single
         </label>
         <label class="radio-inline">
             <input type="radio" value="multi-day" name="meeting_type">Multi-Day
@@ -47,13 +47,15 @@
 
     </div>
 
-    <div class="fieldset">    
+    {{ formset.management_form }}
+    {% for form in formset %}
+    <div class="fieldset{% if forloop.last %} template{% endif %}" >    
     <div class="form-group">
         <label for="face-to_face" class="col-md-2 control-label">Location</label>
         <div class="col-md-10 form-inline">
-            {% render_field form.city class="form-control" placeholder="City" %}
-            {% render_field form.country class="form-control" %}
-            {% render_field form.timezone class="form-control" %}
+            {% render_field form.city class="form-control location" placeholder="City" %}
+            {% render_field form.country class="form-control location" %}
+            {% render_field form.timezone class="form-control location" %}
         </div>
     </div>
     
@@ -83,6 +85,11 @@
         <div class="col-md-10">{% render_field form.agenda_note class="form-control" placeholder="Note" %}</div>
     </div>
     </div>  <!-- fieldset -->
+    {% endfor %}
+
+    <div class="row">
+    <button id="add_session" type="button" class="btn btn-default"><span class="glyphicon glyphicon-plus" aria-hidden="true">Add Session</button>
+    </div>  
 
     {% buttons %}
       <button type="submit" class="btn btn-primary">Submit</button>

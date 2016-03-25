@@ -462,3 +462,7 @@ form.navbar-form input.form-control.input-sm { width: 141px; }
     padding: 16px 16px;
     margin-bottom: 20px;
 }
+
+#interim-request-form .fieldset.template {
+    display: none;
+}

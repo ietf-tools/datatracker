@@ -117,61 +117,14 @@ class GroupModelChoiceField(forms.ModelChoiceField):
 class InterimRequestForm(forms.Form):
     group = GroupModelChoiceField(queryset = Group.objects.filter(type__in=('wg','rg'),state='active').order_by('acronym'))
     face_to_face = forms.BooleanField(required=False)
-    multi_day = forms.BooleanField(required=False)
-    series = forms.BooleanField(required=False)
-    date = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1" }, label='Date', required=True)
-    time = forms.TimeField()
-    duration = DurationField()
-    city = forms.CharField(max_length=255,required=False)
-    country = forms.ChoiceField(choices=countries,required=False)
-    timezone = forms.ChoiceField(choices=timezones)
-    remote_instructions = forms.CharField(max_length=1024,required=False)
-    agenda = forms.CharField(required=False,widget=forms.Textarea)
-    agenda_note = forms.CharField(max_length=255,required=False)
+    meeting_type = forms.ChoiceField(choices=(("single", "Single"), ("multi-day", "Multi-Day"), ('series','Series')), required=False, initial='single', widget=forms.RadioSelect)
 
     def __init__(self, request, *args, **kwargs):
         super(InterimRequestForm, self).__init__(*args, **kwargs)
         self.user = request.user
         self.person = self.user.person
         self.fields["group"].widget.attrs["class"] = "select2-field"
-
         self.set_group_options()
-
-    def _save_agenda(self, text):
-        pass
-
-    def save(self):
-        agenda = self.cleaned_data.get('agenda')
-        agenda_note = self.cleaned_data.get('agenda_note')
-        date = self.cleaned_data.get('date')
-        time = self.cleaned_data.get('time')
-        duration = self.cleaned_data.get('duration')
-        group = self.cleaned_data.get('group')
-        city = self.cleaned_data.get('city')
-        country = self.cleaned_data.get('country')
-        timezone = self.cleaned_data.get('timezone')
-        remote_instructions = self.cleaned_data.get('remote_instructions')
-        sequence = Meeting.objects.filter(number__startswith='interim-%s-%s' % (date.year,group.acronym)).count() + 1
-        number = 'interim-%s-%s-%s' % (date.year,group.acronym,sequence)
-        meeting = Meeting.objects.create(number=number,type_id='interim',date=date,city=city,
-            country=country,agenda_note=agenda_note,time_zone=timezone)
-        schedule = Schedule.objects.create(meeting=meeting, owner=self.person, visible=True, public=True)
-        meeting.agenda = schedule
-        meeting.save()
-        slot = TimeSlot.objects.create(meeting=meeting, type_id="session", duration=duration,
-            time=datetime.datetime.combine(date, time))
-        session = Session.objects.create(meeting=meeting,
-            group=group,
-            requested_by=self.person,
-            status_id='apprw',
-            type_id='session',
-            remote_instructions=remote_instructions)
-        SchedTimeSessAssignment.objects.create(timeslot=slot, session=session, schedule=schedule)
-
-        if agenda:
-            self._save_agenda(agenda)
-
-        return meeting
 
     def set_group_options(self):
         '''Set group options based on user accessing the form'''
@@ -186,3 +139,40 @@ class InterimRequestForm(forms.Form):
             queryset = Group.objects.filter(type="wg", state="active", role__person=self.person, role__name="chair").distinct().order_by('acronym')
 
         self.fields['group'].queryset = queryset
+
+class InterimSessionForm(forms.Form):
+    date = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1" }, label='Date', required=True)
+    time = forms.TimeField()
+    duration = DurationField()
+    remote_instructions = forms.CharField(max_length=1024,required=False)
+    agenda = forms.CharField(required=False,widget=forms.Textarea)
+    agenda_note = forms.CharField(max_length=255,required=False)
+    city = forms.CharField(max_length=255,required=False)
+    country = forms.ChoiceField(choices=countries,required=False)
+    timezone = forms.ChoiceField(choices=timezones)
+
+    def _save_agenda(self, text):
+        pass
+
+    def save(self, request, group, meeting):
+        person = request.user.person
+        agenda = self.cleaned_data.get('agenda')
+        agenda_note = self.cleaned_data.get('agenda_note')
+        date = self.cleaned_data.get('date')
+        time = self.cleaned_data.get('time')
+        duration = self.cleaned_data.get('duration')
+        remote_instructions = self.cleaned_data.get('remote_instructions')
+
+        slot = TimeSlot.objects.create(meeting=meeting, type_id="session", duration=duration,
+            time=datetime.datetime.combine(date, time))
+        session = Session.objects.create(meeting=meeting,
+            group=group,
+            requested_by=person,
+            status_id='apprw',
+            type_id='session',
+            remote_instructions=remote_instructions,
+            agenda_note=agenda_note,)
+        SchedTimeSessAssignment.objects.create(timeslot=slot, session=session, schedule=meeting.agenda)
+
+        if agenda:
+            self._save_agenda(agenda)

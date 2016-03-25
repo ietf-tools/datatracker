@@ -20,7 +20,7 @@ from django.core.urlresolvers import reverse
 from django.db.models import Min, Max
 from django.conf import settings
 from django.forms.models import modelform_factory
-from django.forms import ModelForm
+from django.forms import ModelForm, formset_factory
 from django.views.decorators.csrf import ensure_csrf_cookie
 
 from ietf.doc.models import Document, State
@@ -35,11 +35,11 @@ from ietf.meeting.helpers import get_modified_from_assignments
 from ietf.meeting.helpers import get_wg_list, find_ads_for_meeting
 from ietf.meeting.helpers import get_meeting, get_schedule, agenda_permissions, get_meetings
 from ietf.meeting.helpers import preprocess_assignments_for_agenda, read_agenda_file
-from ietf.meeting.helpers import convert_draft_to_pdf
+from ietf.meeting.helpers import convert_draft_to_pdf, get_next_interim_number
 from ietf.utils.pipe import pipe
 from ietf.utils.pdf import pdf_pages
 
-from .forms import InterimRequestForm
+from .forms import InterimRequestForm, InterimSessionForm
 
 # -------------------------------------------------
 # Helper Functions
@@ -892,17 +892,36 @@ def session_details(request, num, acronym ):
 @role_required('Area Director','Secretariat','IRTF Chair','WG Chair')
 def interim_request(request):
     '''View for requesting an interim meeting'''
-    #form = InterimRequestForm(request=request)
-
+    SessionFormset = formset_factory(InterimSessionForm, extra=2)
+    
     if request.method == 'POST':
         form = InterimRequestForm(request, data=request.POST)
-        if form.is_valid():
-            form.save()
+        formset = SessionFormset(data=request.POST)
+        if form.is_valid() and formset.is_valid():
+            group = form.cleaned_data.get('group')
+            meeting_type = form.cleaned_data.get('meeting_type')
+            if meeting_type in ('single','multi-day'):
+                date = sorted([ f.cleaned_data.get('date') for f in formset.forms])[0]
+                number = get_next_interim_number(group,date)
+                city = formset.forms[0].cleaned_data.get('city')
+                country = formset.forms[0].cleaned_data.get('country')
+                timezone = formset.forms[0].cleaned_data.get('timezone')
+                meeting = Meeting.objects.create(number=number,type_id='interim',date=date,city=city,
+                    country=country,time_zone=timezone)
+                schedule = Schedule.objects.create(meeting=meeting, owner=person, visible=True, public=True)
+                meeting.agenda = schedule
+                meeting.save()
+            for f in formset.forms:
+                # TODO: create meetings if type == series
+                f.save(request,group,meeting)
             return redirect(upcoming)
+        else:
+            assert False, (form.errors, formset.errors)
     else:
         form = InterimRequestForm(request=request,initial={'meeting_type':'single'})
+        formset = SessionFormset()
 
-    return render(request, "meeting/interim_request.html", {"form":form})
+    return render(request, "meeting/interim_request.html", {"form":form, "formset":formset})
 
 def ical_upcoming(request):
     '''ICAL upcoming meetings'''
