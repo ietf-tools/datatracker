@@ -1,5 +1,9 @@
 ietfdb (6.18.0) ietf; urgency=medium
 
+  **Status update summaries for groups, and yang symbols in yang draft listings**
+
+  This release brings in 2 new features, as follows:
+
   * Merged in [10969] from rjsparks@nostrum.com:
     Capture 'Status update' summaries for groups that want to provide 
     them. These updates show on the groups charter (or about) page, and in the 
@@ -8,13 +12,18 @@ ietfdb (6.18.0) ietf; urgency=medium
     proceedings. This addresses the majority of #1773 (a ticket entered on 
     behalf of the IESG).  
 
+  * Merged in henrik/6.16.1-pyang-work@10995:
+    Added in support for displaying results from selected submission checks 
+    as symbols on draft pages and in draft lists.  For now, that means that 
+    drafts with yang modules will show either a green or orange yang symbol, 
+    depending on the result of the submission yang validation check.
+
  -- Henrik Levkowetz <henrik@levkowetz.com>  28 Mar 2016 10:53:19 -0700
 
 ietfdb (6.17.1) ietf; urgency=medium
 
   This is a patch release, cleaning the slate before the group status update
   feature.
-
 
   * Merged in [10974] from rjsparks@nostrum.com:
     Turn the shepherd management buttons back on for the ISE. Fixes #1925.  
