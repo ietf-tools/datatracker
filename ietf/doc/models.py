@@ -521,6 +521,11 @@ class Document(DocumentInfo):
         else:
             return None
 
+    def submission(self):
+        s = self.submission_set.filter(rev=self.rev)
+        s = s.first()
+        return s
+
 class RelatedDocHistory(models.Model):
     source = models.ForeignKey('DocHistory')
     target = models.ForeignKey('DocAlias', related_name="reversely_related_document_history_set")

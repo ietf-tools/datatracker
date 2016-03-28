@@ -25,9 +25,11 @@ api.submit.register(PreapprovalResource())
 
 from ietf.group.resources import GroupResource
 from ietf.name.resources import DraftSubmissionStateNameResource
+from ietf.doc.resources import DocumentResource
 class SubmissionResource(ModelResource):
     state            = ToOneField(DraftSubmissionStateNameResource, 'state')
     group            = ToOneField(GroupResource, 'group', null=True)
+    draft            = ToOneField(DocumentResource, 'draft', null=True)
     class Meta:
         queryset = Submission.objects.all()
         serializer = api.Serializer()
@@ -53,6 +55,7 @@ class SubmissionResource(ModelResource):
             "submitter": ALL,
             "state": ALL_WITH_RELATIONS,
             "group": ALL_WITH_RELATIONS,
+            "draft": ALL_WITH_RELATIONS,
         }
 api.submit.register(SubmissionResource())
 

@@ -5,10 +5,10 @@ from django.contrib import admin
 from ietf.submit.models import Preapproval, Submission, SubmissionCheck
 
 class SubmissionAdmin(admin.ModelAdmin):
-    list_display = ['id', 'draft_link', 'status_link', 'submission_date',]
+    list_display = ['id', 'rev', 'draft_link', 'status_link', 'submission_date',]
     ordering = [ '-id' ]
     search_fields = ['name', ]
-    raw_id_fields = ['group']
+    raw_id_fields = ['group', 'draft']
 
     def status_link(self, instance):
         url = urlreverse('submit_submission_status_by_hash',

@@ -44,6 +44,11 @@ class DraftIdnitsChecker(object):
     """
     name = "idnits check"
 
+    # start using this when we provide more in the way of warnings during
+    # submission checking:
+    # symbol = '<span class="fa fa-check-square"></span>'
+    symbol = ""
+
     def check_file_txt(self, path):
         """
         Run an idnits check, and return a passed/failed indication, a message,
@@ -107,6 +112,7 @@ class DraftIdnitsChecker(object):
 class DraftYangChecker(object):
 
     name = "yang validation"
+    symbol = u'<span class="large">\u262f</span>'
 
     def check_file_txt(self, path):
         name = os.path.basename(path)

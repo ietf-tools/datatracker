@@ -212,6 +212,7 @@ def post_submission(request, submission):
     if new_possibly_replaces:
         send_review_possibly_replaces_request(request, draft, submitter_info)
 
+    submission.draft = draft
     submission.save()
 
 def update_replaces_from_submission(request, submission, draft):
