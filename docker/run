@@ -132,15 +132,15 @@ else
 fi
 
 
-if [ $($machine status default) != "Running" ]; then
+if [ $($machine status default | tr "A-Z" "a-z" ) != "running" ]; then
     echo "The docker VM doesn't seem to be running; will attempt to start it by doing '\$ $machine start':"
     $machine start || die "Failed taking up the Docker VM"
 fi
 
 if [ -f "$machine" ]; then
-    if [ $($machine status | tr "A-Z" "a-z") = "Running" ]; then
+    if [ $($machine status default | tr "A-Z" "a-z") = "running" ]; then
 	tmpfile=$(mktemp docker.run.XXXXXXXX)
-	if $machine $env 2>/dev/null | grep  DOCKER_ > $tmpfile; then
+	if $machine env 2>/dev/null | grep  DOCKER_ > $tmpfile; then
 	    mv $tmpfile ~/.docker-info
 	elif printenv | grep  DOCKER_ > $tmpfile; then
 	    mv $tmpfile ~/.docker-info
@@ -169,7 +169,7 @@ to bail out here.  Quitting."
 if [ -n "$DOWNLOAD" ]; then
     (
 	cd $(dirname $MYSQLDIR)
-	wget -N $URL && tar xjf ietf_utf8.bin.tar.bz2 && chmod -R g+rX mysql
+	wget -N $URL && tar xjf ietf_utf8.bin.tar.bz2 && chmod -R go+rwX mysql
     )
     [ -d "$MYSQLDIR" ] || die "The download seems to have failed; still no $MYSQLDIR.  Giving up."
 else
