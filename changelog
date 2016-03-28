@@ -33,7 +33,7 @@ ietfdb (6.17.1) ietf; urgency=medium
 
   * Fixed a possible index error in the yang validator checker plugin.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  24 Mar 2016 09:12:40 -0700
+ -- Henrik Levkowetz <henrik@levkowetz.com>  28 Mar 2016 15:00:09 +0000
 
 
 ietfdb (6.17.0) ietf; urgency=medium
