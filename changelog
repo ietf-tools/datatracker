@@ -1,3 +1,15 @@
+ietfdb (6.18.0) ietf; urgency=medium
+
+  * Merged in [10969] from rjsparks@nostrum.com:
+    Capture 'Status update' summaries for groups that want to provide 
+    them. These updates show on the groups charter (or about) page, and in the 
+    group history. The most recent update provided before proceedings 
+    corrections closing date is included in the group's page in the meeting 
+    proceedings. This addresses the majority of #1773 (a ticket entered on 
+    behalf of the IESG).  
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  28 Mar 2016 10:53:19 -0700
+
 ietfdb (6.17.1) ietf; urgency=medium
 
   This is a patch release, cleaning the slate before the group status update
@@ -12,7 +24,7 @@ ietfdb (6.17.1) ietf; urgency=medium
     Fixes #1933.  
 
   * Merged in [10954] from rjsparks@nostrum.com:
-    Remove the stream from the \'howpublished\' component of the bibtex
+    Remove the stream from the 'howpublished' component of the bibtex
     reference for an rfc. Fixes #1927.  
 
   * Merged in [10953] from rjsparks@nostrum.com:
@@ -3593,7 +3605,7 @@ ietfdb (5.0.2) ietf; urgency=medium
 
   * Merged in [7204] from rjsparks@nostrum.com:
     Adds the IAB-parented sessions to the set of things returned as 
-    \'areas\'.
+    'areas'.
     Fixes bug #1288 
 
   * Reapplied merge of [7209], which although listed in svn:mergeinfo on . 
@@ -3892,7 +3904,7 @@ ietfdb (4.83) ietf; urgency=high
 
   * Added document titles to status change request email.  Fixes issue #1069. 
 
-  * Added \'Last Call Issued:\' to front of last call atom feed entry subjects. 
+  * Added 'Last Call Issued:' to front of last call atom feed entry subjects. 
 
   * Fixed conflict review text for irtf docs to reference RFC 5743. 
 
@@ -3908,7 +3920,7 @@ ietfdb (4.83) ietf; urgency=high
   From adam@nostrum.com: 
 
   * Fixed #1153: Fixes IPR disclosures being counted multiple times and
-    counting of \'not yet approved\' IPR disclosures. 
+    counting of 'not yet approved' IPR disclosures. 
 
   From rjsparks@nostrum.com: 
 
@@ -4802,8 +4814,8 @@ ietfdb (4.44) ietf; urgency=medium
     - Added a document type for changing the publication status of other 
       documents, and the UI for manipulating them.
 
-    - Added charters, conflict reviews, and status changes to the AD's \'My 
-      Documents\' page
+    - Added charters, conflict reviews, and status changes to the AD's 'My 
+      Documents' page
 
     - Improved the presentation of all document types on the Agenda, Future 
       Telechats, Scribe and Moderator package pages
@@ -4887,7 +4899,7 @@ ietfdb (4.43) ietf; urgency=high
 
   * Repaired the ballot requirements string
 
-  * Removed the \'Set all to not on agenda\' button, as it is never used. 
+  * Removed the 'Set all to not on agenda' button, as it is never used. 
 
   From adam@nostrum.com:
 
@@ -4895,7 +4907,7 @@ ietfdb (4.43) ietf; urgency=high
 
   * Added links to the session request page
 
-  * Two changes: (1) searches by substring rather than \'begins with\' (to
+  * Two changes: (1) searches by substring rather than 'begins with' (to
     allow, e.g., searching by last name); and (2) limits results to 10 entries
     (to limit server load and limit effectiveness of email-scraping attacks) 
 
