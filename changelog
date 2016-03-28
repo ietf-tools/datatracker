@@ -18,7 +18,7 @@ ietfdb (6.18.0) ietf; urgency=medium
     drafts with yang modules will show either a green or orange yang symbol, 
     depending on the result of the submission yang validation check.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  28 Mar 2016 10:53:19 -0700
+ -- Henrik Levkowetz <henrik@levkowetz.com>  28 Mar 2016 20:10:07 +0000
 
 ietfdb (6.17.1) ietf; urgency=medium
 
