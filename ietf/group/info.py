@@ -39,6 +39,7 @@ from tempfile import mkstemp
 import datetime
 from collections import OrderedDict
 
+from django import forms
 from django.shortcuts import render, redirect
 from django.template.loader import render_to_string
 from django.http import HttpResponse, Http404, HttpResponseRedirect
@@ -54,9 +55,10 @@ from ietf.doc.utils import get_chartering_type
 from ietf.doc.templatetags.ietf_filters import clean_whitespace
 from ietf.group.models import Group, Role, ChangeStateGroupEvent
 from ietf.name.models import GroupTypeName
-from ietf.group.utils import get_charter_text, can_manage_group_type, milestone_reviewer_for_group_type
+from ietf.group.utils import get_charter_text, can_manage_group_type, milestone_reviewer_for_group_type, can_provide_status_update
 from ietf.group.utils import can_manage_materials, get_group_or_404
 from ietf.utils.pipe import pipe
+from ietf.utils.textupload import get_cleaned_text_file_content
 from ietf.settings import MAILING_LIST_INFO_URL
 from ietf.mailtrigger.utils import gather_relevant_expansions
 from ietf.ietfauth.utils import has_role
@@ -489,13 +491,78 @@ def group_about(request, acronym, group_type=None):
 
     can_manage = can_manage_group_type(request.user, group.type_id)
 
+    can_provide_update = can_provide_status_update(request.user, group)
+    status_update = group.latest_event(type="status_update")
+
+
     return render(request, 'group/group_about.html',
                   construct_group_menu_context(request, group, "charter" if group.features.has_chartering_process else "about", group_type, {
                       "milestones_in_review": group.groupmilestone_set.filter(state="review"),
                       "milestone_reviewer": milestone_reviewer_for_group_type(group_type),
                       "requested_close": requested_close,
                       "can_manage": can_manage,
+                      "can_provide_status_update": can_provide_update,
+                      "status_update": status_update,
                   }))
+
+def group_about_status(request, acronym, group_type=None):
+    group = get_group_or_404(acronym, group_type)
+    status_update = group.latest_event(type='status_update')
+    can_provide_update = can_provide_status_update(request.user, group)
+    return render(request, 'group/group_about_status.html',
+                  { 'group' : group,
+                    'status_update': status_update,
+                    'can_provide_status_update': can_provide_update,
+                  }
+                 )
+
+class StatusUpdateForm(forms.Form):
+    content = forms.CharField(widget=forms.Textarea, label='Status update', help_text = 'Edit the status update', required=False)
+    txt = forms.FileField(label='.txt format', help_text='Or upload a .txt file', required=False)
+
+    def clean_content(self):
+        return self.cleaned_data['content'].replace('\r','')
+
+    def clean_txt(self):
+        return get_cleaned_text_file_content(self.cleaned_data["txt"])
+
+def group_about_status_edit(request, acronym, group_type=None):
+    group = get_group_or_404(acronym, group_type)
+    if not can_provide_status_update(request.user, group):
+        raise Http404
+    old_update = group.latest_event(type='status_update')
+
+    login = request.user.person
+
+    if request.method == 'POST':
+        if 'submit_response' in request.POST:
+            form = StatusUpdateForm(request.POST, request.FILES)
+            if form.is_valid():
+                from_file = form.cleaned_data['txt']
+                if from_file:
+                    update_text = from_file
+                else:
+                    update_text = form.cleaned_data['content']
+                group.groupevent_set.create(
+                    by=login,
+                    type='status_update',
+                    desc=update_text,
+                ) 
+                return redirect('ietf.group.info.group_about',acronym=group.acronym)
+        else:
+            form = None
+    else:
+        form = None
+
+    if not form:
+        form = StatusUpdateForm(initial={"content": old_update.desc if old_update else ""})
+
+    return render(request, 'group/group_about_status_edit.html',
+                  { 
+                    'form': form,
+                    'group':group,
+                  }
+                 )
 
 def check_group_email_aliases():
     pattern = re.compile('expand-(.*?)(-\w+)@.*? +(.*)$')
