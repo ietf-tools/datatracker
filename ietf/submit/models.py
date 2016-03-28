@@ -45,6 +45,8 @@ class Submission(models.Model):
 
     submitter = models.CharField(max_length=255, blank=True, help_text="Name and email of submitter, e.g. \"John Doe &lt;john@example.org&gt;\".")
 
+    draft = models.ForeignKey(Document, null=True, blank=True)
+
     def __unicode__(self):
         return u"%s-%s" % (self.name, self.rev)
 
@@ -74,6 +76,7 @@ class SubmissionCheck(models.Model):
     errors = models.IntegerField(null=True, blank=True, default=None)
     warnings = models.IntegerField(null=True, blank=True, default=None)
     items = jsonfield.JSONField(null=True, blank=True, default='{}')
+    symbol = models.CharField(max_length=64, default='')
     #
     def __unicode__(self):
         return "%s submission check: %s: %s" % (self.checker, 'Passed' if self.passed else 'Failed', self.message[:48]+'...')

@@ -153,6 +153,12 @@ fieldset[disabled] .btn-pass.focus {
 #timeline .gradient.right {
   stop-color: white;
 }
+.checker-warning {
+  color: #ff5805;
+}
+.checker-success {
+  color: #5ebc00;
+}
 /*! normalize.css v3.0.3 | MIT License | github.com/necolas/normalize.css */
 html {
   font-family: sans-serif;

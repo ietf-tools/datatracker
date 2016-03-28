@@ -153,6 +153,12 @@ fieldset[disabled] .btn-pass.focus {
 #timeline .gradient.right {
   stop-color: white;
 }
+.checker-warning {
+  color: #ff5805;
+}
+.checker-success {
+  color: #5ebc00;
+}
 .btn-default,
 .btn-primary,
 .btn-success,

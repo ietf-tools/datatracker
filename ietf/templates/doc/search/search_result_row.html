@@ -59,13 +59,22 @@
     {% if doc.latest_revision_date|timesince_days|new_enough:request and doc.get_state_slug != "rfc" %}</a>{% endif %}
     </span>
 
+    {% for check in doc.submission.checks.all %}
+      {% if check.passed != None and check.symbol.strip %}
+	{% if check.errors or check.warnings %}
+	   <span class="checker-warning pull-right" title="{{check.checker|title}} returned warnings or errors.">{{ check.symbol|safe }}</span>
+	{% else %}
+	   <span class="checker-success pull-right" title="{{check.checker|title}} passed">{{ check.symbol|safe }}</span>
+	{% endif %}
+      {% endif %}
+    {% endfor %}
+
     {% if doc.pages %}
       <br><small class="text-muted">{{doc.pages}} page{{ doc.pages|pluralize }}</small>
     {% endif %}
 
-
     {% if doc.latest_revision_date|timesince_days|new_enough:request %}
-    <wbr><span class="label label-success pull-right">New</span>
+    <wbr><span class="label label-success">New</span>
     {% endif %}
 
     {% if doc.get_state_slug == "active" and doc.expirable and doc.expires|timesince_days|expires_soon:request %}

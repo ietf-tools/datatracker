@@ -76,6 +76,15 @@
 	  {% if latest_revision and latest_revision.time.date != doc.time.date %}
 	    (latest revision {{ latest_revision.time|date:"Y-m-d" }})
 	  {% endif %}
+	  {% for check in doc.submission.checks.all %}
+	     {% if check.passed != None and check.symbol.strip %}
+		 {% if check.errors or check.warnings %}
+		    <span class="checker-warning" title="Submission {{check.checker|title}} returned warnings or errors.">{{ check.symbol|safe }}</span>
+		 {% else %}
+		    <span class="checker-success" title="Submission {{check.checker|title}} passed">{{ check.symbol|safe }}</span>
+		 {% endif %}
+	      {% endif %}
+	  {% endfor %}
 	</td>
       </tr>
 

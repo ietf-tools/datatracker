@@ -121,7 +121,7 @@ def upload_submission(request):
                 def apply_check(submission, checker, method, fn):
                     func = getattr(checker, method)
                     passed, message, errors, warnings, items = func(fn)
-                    check = SubmissionCheck(submission=submission, checker=checker.name, passed=passed, message=message, errors=errors, warnings=warnings, items=items)
+                    check = SubmissionCheck(submission=submission, checker=checker.name, passed=passed, message=message, errors=errors, warnings=warnings, items=items, symbol=checker.symbol)
                     check.save()
 
                 for checker_path in settings.IDSUBMIT_CHECKER_CLASSES:
