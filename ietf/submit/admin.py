@@ -28,6 +28,7 @@ admin.site.register(Submission, SubmissionAdmin)
 class SubmissionCheckAdmin(admin.ModelAdmin):
     list_display = ['submission', 'time', 'checker', 'passed', 'errors', 'warnings', 'items']
     raw_id_fields = ['submission']
+    search_fields = ['submission__name']
 admin.site.register(SubmissionCheck, SubmissionCheckAdmin)
 
 class PreapprovalAdmin(admin.ModelAdmin):
