@@ -1,12 +1,16 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+from tqdm import tqdm
 from django.db import migrations
 from ietf.submit.checkers import DraftIdnitsChecker, DraftYangChecker
 
 def set_submission_check_symbol(apps, schema_editor):
     SubmissionCheck = apps.get_model('submit','SubmissionCheck')
-    for s in SubmissionCheck.objects.all():
+    checks = SubmissionCheck.objects.all()
+    print("")
+    print("    Adding submission check symbol info to existing checks")
+    for s in tqdm():
         if not s.symbol:
             if s.checker == "idnits check":
                 s.symbol = DraftIdnitsChecker.symbol
