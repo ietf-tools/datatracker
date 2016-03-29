@@ -10,7 +10,7 @@ def set_submission_check_symbol(apps, schema_editor):
     checks = SubmissionCheck.objects.all()
     print("")
     print("    Adding submission check symbol info to existing checks")
-    for s in tqdm():
+    for s in tqdm(checks):
         if not s.symbol:
             if s.checker == "idnits check":
                 s.symbol = DraftIdnitsChecker.symbol
