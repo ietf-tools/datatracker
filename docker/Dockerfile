@@ -34,6 +34,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 # Install needed packages
 RUN apt-get update && apt-get install -qy \
 	ca-certificates \
+	colordiff \
 	gawk \
 	less \
 	libmysqlclient-dev \
