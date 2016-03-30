@@ -19,7 +19,7 @@ def check_access(user):
     the Announcement app.
     '''
     person = user.person
-    groups_with_access = ("iab", "rsoc", "ietf", "iaoc", "rse", "mentor","ietf-trust")
+    groups_with_access = ("iab", "isoc", "isocbot", "rsoc", "ietf", "iaoc", "rse", "mentor","ietf-trust")
     if Role.objects.filter(person=person,
                            group__acronym__in=groups_with_access,
                            name="chair") or has_role(user, ["Secretariat","IAD"]):
@@ -54,7 +54,7 @@ def main(request):
     and send.
     '''
     if not check_access(request.user):
-        return HttpResponseForbidden('Restricted to: Secretariat, IAD, or chair of IETF, IAB, RSOC, RSE, IAOC, NomCom.')
+        return HttpResponseForbidden('Restricted to: Secretariat, IAD, or chair of IETF, IAB, RSOC, RSE, IAOC, ISOC, NomCom.')
 
     form = AnnounceForm(request.POST or None,user=request.user)
 

@@ -30,7 +30,7 @@ FROM_LIST = ('IETF Secretariat <ietf-secretariat@ietf.org>',
              'The IAOC <tobias.gondrom@gondrom.org>',
              'The IETF Trust <ietf-trust@ietf.org>',
              'RSOC Chair <rsoc-chair@iab.org>',
-             'ISOC Board of Trustees <eburger@standardstrack.com>',
+             'ISOC Board of Trustees <bob.hinden@gmail.com>',
              'RFC Series Editor <rse@rfc-editor.org>',
              'IAB Executive Administrative Manager <execd@iab.org>',
              'IETF Mentoring Program <mentoring@ietf.org>',
@@ -54,6 +54,7 @@ def get_from_choices(user):
     leadership chairs and other entities.
     '''
     person = user.person
+    f = []
     if has_role(user,'Secretariat'):
         f = FROM_LIST
     elif has_role(user,'IETF Chair'):
@@ -87,6 +88,10 @@ def get_from_choices(user):
                              group__acronym='isoc',
                              name="ceo"):
         f = (FROM_LIST[18],)
+    elif Role.objects.filter(person=person,
+                             group__acronym='isocbot',
+                             name="chair"):
+        f = (FROM_LIST[14],)
     elif Role.objects.filter(person=person,
                              group__acronym='ietf-trust',
                              name="chair"):
