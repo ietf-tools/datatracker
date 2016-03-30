@@ -1,3 +1,16 @@
+ietfdb (6.18.1) ietf; urgency=low
+
+  This is a small bugfix release.
+
+  * Added (belatedly) progress bars to some long-running migrations.
+
+  * Fixed a few issues with the docker/run script.
+
+  * Added some debian modules to the docker/Docker file used to generate
+    the docker image
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  30 Mar 2016 11:54:31 +0000
+
 ietfdb (6.18.0) ietf; urgency=medium
 
   **Status update summaries for groups, and yang symbols in yang draft listings**
