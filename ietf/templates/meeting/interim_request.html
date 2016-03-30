@@ -63,9 +63,16 @@
         <label for="session" class="col-md-2 control-label">Session</label>
         <div class="">
             <div class="form-inline">
-                <div class="col-md-3">{% render_field form.date class="form-control" %}</div>
-                <div class="col-md-3">{% render_field form.time class="form-control" placeholder="time" %}</div>
-                <div class="col-md-3">{% render_field form.duration class="form-control" placeholder="duration" %}</div>
+                <div class="col-md-9">
+                {% render_field form.date class="form-control" %}
+                <div>
+                {% render_field form.time class="form-control time-field" placeholder="time" %}
+                <p class="help-block">Time</p>
+                </div>
+                {% render_field form.utc_time class="form-control time-field computed" disabled="disabled" placeholder="UTC time" %}
+                {% render_field form.duration class="form-control time-field" placeholder="duration" %}
+                {% render_field form.end_time class="form-control time-field computed" placeholder="end time" disabled="disabled" %}
+                </div>
             </div>
         </div>
     </div>
@@ -87,14 +94,19 @@
     </div>  <!-- fieldset -->
     {% endfor %}
 
-    <div class="row">
-    <button id="add_session" type="button" class="btn btn-default"><span class="glyphicon glyphicon-plus" aria-hidden="true">Add Session</button>
-    </div>  
+    <div class="form-group">
+    <div class="col-md-10">
+    <button id="add_session" type="button" class="btn btn-default"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span>Add Session</button>
+    </div>
+    </div>
 
+    <div class="form-group"
     {% buttons %}
       <button type="submit" class="btn btn-primary">Submit</button>
       <a class="btn btn-default pull-right" href="{% url "ietf.meeting.views.upcoming" %}">Back</a>
     {% endbuttons %}
+    </div>
+    
   </form>
 
 {% endblock %}

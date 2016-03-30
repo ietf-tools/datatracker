@@ -18,7 +18,7 @@ from ietf.doc.models import Document
 from ietf.group.models import Group
 from ietf.ietfauth.utils import has_role, user_is_person
 from ietf.person.models  import Person
-from ietf.meeting.models import Meeting
+from ietf.meeting.models import Meeting, Schedule
 from ietf.utils.history import find_history_active_at, find_history_replacements_active_at
 from ietf.utils.pipe import pipe
 
@@ -285,6 +285,35 @@ def session_constraint_expire(request,session):
     if key is not None and cache.has_key(key):
         cache.delete(key)
 
+def get_earliest_session(session_formset):
+    '''Return earliest InterimSessionForm from formset'''
+    earliest = session_formset[0]
+    if len(session_formset) == 1:
+        return earliest
+    for form in session_formset[1:]:
+        date = form.cleaned_data.get('date')
+        if date and date < earliest.cleaned_data.get('date'):
+            earliest = form
+    return earliest
+
 def get_next_interim_number(group,date):
     sequence = Meeting.objects.filter(number__startswith='interim-%s-%s' % (date.year,group.acronym)).count() + 1
     return 'interim-%s-%s-%s' % (date.year,group.acronym,sequence)
+
+def create_interim_meeting(request_form,session_form):
+    '''Create an Interim meeting, given an InterimRequestForm and InterimSessionForm'''    
+    group = request_form.cleaned_data.get('group')
+    date = session_form.cleaned_data.get('date')
+    number = get_next_interim_number(group,date)
+    city = session_form.cleaned_data.get('city')
+    country = session_form.cleaned_data.get('country')
+    timezone = session_form.cleaned_data.get('timezone')
+    if not request_form.cleaned_data.get('face_to_face'):
+        timezone = 'UTC'
+    meeting = Meeting.objects.create(number=number,type_id='interim',date=date,city=city,
+        country=country,time_zone=timezone)
+    schedule = Schedule.objects.create(meeting=meeting, owner=request_form.person, visible=True, public=True)
+    meeting.agenda = schedule
+    meeting.save()
+    return meeting
+

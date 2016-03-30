@@ -387,6 +387,48 @@ class InterimTests(TestCase):
         time = datetime.datetime.now().time().replace(microsecond=0,second=0)
         dt = datetime.datetime.combine(date, time)
         duration = datetime.timedelta(hours=3)
+        remote_instructions = 'Use webex'
+        agenda = 'Intro. Slides. Discuss.'
+        agenda_note = 'On second level'
+        self.client.login(username="secretary", password="secretary+password")
+        data = {'group':group.pk,
+                'meeting_type':'single',
+                'form-0-date':date.strftime("%Y-%m-%d"),
+                'form-0-time':time.strftime('%H:%M'),
+                'form-0-duration':'03:00:00',
+                'form-0-city':'',
+                'form-0-country':'',
+                'form-0-timezone':'',
+                'form-0-remote_instructions':remote_instructions,
+                'form-0-agenda':agenda,
+                'form-0-agenda_note':agenda_note,
+                'form-TOTAL_FORMS':1,
+                'form-INITIAL_FORMS':0}
+
+        r = self.client.post(urlreverse("ietf.meeting.views.interim_request"),data)
+        
+        self.assertRedirects(r,urlreverse('ietf.meeting.views.upcoming'))
+        meeting = Meeting.objects.order_by('id').last()
+        self.assertEqual(meeting.type_id,'interim')
+        self.assertEqual(meeting.date,date)
+        self.assertEqual(meeting.number,'interim-%s-%s-%s' % (date.year,group.acronym,1))
+        self.assertEqual(meeting.city,'')
+        self.assertEqual(meeting.country,'')
+        self.assertEqual(meeting.time_zone,'UTC')
+        self.assertEqual(meeting.agenda_note,agenda_note)
+        session = meeting.session_set.first()
+        self.assertEqual(session.remote_instructions,remote_instructions)
+        timeslot = session.official_timeslotassignment().timeslot
+        self.assertEqual(timeslot.time,dt)
+        self.assertEqual(timeslot.duration,duration)
+
+    def test_interim_request_single_f2f(self):
+        make_meeting_test_data()
+        group = Group.objects.get(acronym='mars')
+        date = datetime.date.today() + datetime.timedelta(days=30)
+        time = datetime.datetime.now().time().replace(microsecond=0,second=0)
+        dt = datetime.datetime.combine(date, time)
+        duration = datetime.timedelta(hours=3)
         city = 'San Francisco'
         country = 'US'
         timezone = 'US/Pacific'

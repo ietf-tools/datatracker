@@ -35,7 +35,8 @@ from ietf.meeting.helpers import get_modified_from_assignments
 from ietf.meeting.helpers import get_wg_list, find_ads_for_meeting
 from ietf.meeting.helpers import get_meeting, get_schedule, agenda_permissions, get_meetings
 from ietf.meeting.helpers import preprocess_assignments_for_agenda, read_agenda_file
-from ietf.meeting.helpers import convert_draft_to_pdf, get_next_interim_number
+from ietf.meeting.helpers import convert_draft_to_pdf, get_earliest_session
+from ietf.meeting.helpers import create_interim_meeting
 from ietf.utils.pipe import pipe
 from ietf.utils.pdf import pdf_pages
 
@@ -897,22 +898,20 @@ def interim_request(request):
     if request.method == 'POST':
         form = InterimRequestForm(request, data=request.POST)
         formset = SessionFormset(data=request.POST)
+        person = request.user.person
         if form.is_valid() and formset.is_valid():
             group = form.cleaned_data.get('group')
             meeting_type = form.cleaned_data.get('meeting_type')
+            
+            # pre create meeting
             if meeting_type in ('single','multi-day'):
-                date = sorted([ f.cleaned_data.get('date') for f in formset.forms])[0]
-                number = get_next_interim_number(group,date)
-                city = formset.forms[0].cleaned_data.get('city')
-                country = formset.forms[0].cleaned_data.get('country')
-                timezone = formset.forms[0].cleaned_data.get('timezone')
-                meeting = Meeting.objects.create(number=number,type_id='interim',date=date,city=city,
-                    country=country,time_zone=timezone)
-                schedule = Schedule.objects.create(meeting=meeting, owner=person, visible=True, public=True)
-                meeting.agenda = schedule
-                meeting.save()
+                meeting = create_interim_meeting(request_form=form,session_form=get_earliest_session(formset))
+            
             for f in formset.forms:
-                # TODO: create meetings if type == series
+                if not f.has_changed():
+                    continue
+                if meeting_type == 'series':
+                    meeting = create_interim_meeting(form,f)
                 f.save(request,group,meeting)
             return redirect(upcoming)
         else:
@@ -935,7 +934,7 @@ def ical_upcoming(request):
 def upcoming(request):
     '''List of upcoming meetings'''
     today = datetime.datetime.today()
-    meetings = Meeting.objects.filter(date__gt=today)
+    meetings = Meeting.objects.filter(date__gte=today).order_by('date')
 
     # extract groups hierarchy
     seen = set()

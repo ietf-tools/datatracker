@@ -466,3 +466,7 @@ form.navbar-form input.form-control.input-sm { width: 141px; }
 #interim-request-form .fieldset.template {
     display: none;
 }
+
+#interim-request-form .time-field {
+    width: 100px;
+}

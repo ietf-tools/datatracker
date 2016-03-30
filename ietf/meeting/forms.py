@@ -3,6 +3,7 @@ import re
 
 from django import forms
 from django.core.validators import ValidationError
+from django.forms import BaseFormSet
 from django.forms.fields import Field
 from django.utils.encoding import force_text
 from django.utils import six
@@ -110,6 +111,27 @@ class GroupModelChoiceField(forms.ModelChoiceField):
     def label_from_instance(self, obj):
         return obj.acronym
 
+'''
+class BaseSessionFormSet(BaseFormSet):
+    def save_new_objects(self, commit=True):
+        self.new_objects = []
+        for form in self.extra_forms:
+            if not form.has_changed():
+                continue
+            # If someone has marked an add form for deletion, don't save the
+            # object.
+            if self.can_delete and self._should_delete_form(form):
+                continue
+            self.new_objects.append(self.save_new(form, commit=commit))
+            if not commit:
+                self.saved_forms.append(form)
+        return self.new_objects
+
+    def save(self,commit=True):
+        #return self.save_existing_objects(commit) + self.save_new_objects(commit)
+        return self.save_new_objects(commit)
+'''
+
 # -------------------------------------------------
 # Forms
 # -------------------------------------------------
@@ -140,10 +162,16 @@ class InterimRequestForm(forms.Form):
 
         self.fields['group'].queryset = queryset
 
+        # if there's only one possibility make it the default
+        if len(queryset) == 1:
+            self.fields['group'].initial = queryset[0]
+
 class InterimSessionForm(forms.Form):
     date = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1" }, label='Date', required=True)
     time = forms.TimeField()
+    utc_time = forms.TimeField()
     duration = DurationField()
+    end_time = forms.TimeField()
     remote_instructions = forms.CharField(max_length=1024,required=False)
     agenda = forms.CharField(required=False,widget=forms.Textarea)
     agenda_note = forms.CharField(max_length=255,required=False)
