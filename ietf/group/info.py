@@ -755,7 +755,7 @@ def make_dot(group):
 @cache_page(60 * 60)
 def dependencies(request, acronym, group_type=None, output_type="pdf"):
     group = get_group_or_404(acronym, group_type)
-    if not group.features.has_documents:
+    if not group.features.has_documents or output_type not in ["dot", "pdf", "svg"]:
         raise Http404
 
     dothandle, dotname = mkstemp()
