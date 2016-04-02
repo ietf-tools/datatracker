@@ -370,6 +370,11 @@ def email(request, id):
 def history(request, id):
     """Show the history for a specific IPR disclosure"""
     ipr = get_object_or_404(IprDisclosureBase, id=id).get_child()
+
+    if not has_role(request.user, 'Secretariat'):
+        if ipr.state.slug != 'posted':
+            raise Http404
+
     events = ipr.iprevent_set.all().order_by("-time", "-id").select_related("by")
     if not has_role(request.user, "Secretariat"):
         events = events.exclude(type='private_comment')
