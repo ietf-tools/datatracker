@@ -41,9 +41,8 @@ from ietf.utils.pdf import pdf_pages
 
 from ietf.doc.fields import SearchableDocumentsField
 
-def materials(request, meeting_num=None):
-    meeting = get_meeting(meeting_num)
-
+def materials(request, num=None):
+    meeting = get_meeting(num)
     begin_date = meeting.get_submission_start_date()
     cut_off_date = meeting.get_submission_cut_off_date()
     cor_cut_off_date = meeting.get_submission_correction_date()
@@ -52,24 +51,24 @@ def materials(request, meeting_num=None):
         pass
     elif now > cor_cut_off_date:
         return render(request, "meeting/materials_upload_closed.html", {
-            'meeting_num': meeting_num,
+            'meeting_num': meeting.number,
             'begin_date': begin_date,
             'cut_off_date': cut_off_date,
             'cor_cut_off_date': cor_cut_off_date
         })
 
-    #sessions  = Session.objects.filter(meeting__number=meeting_num, timeslot__isnull=False)
+    #sessions  = Session.objects.filter(meeting__number=meeting.number, timeslot__isnull=False)
     schedule = get_schedule(meeting, None)
-    sessions  = Session.objects.filter(meeting__number=meeting_num, timeslotassignments__schedule=schedule).select_related()
+    sessions  = Session.objects.filter(meeting__number=meeting.number, timeslotassignments__schedule=schedule).select_related()
     plenaries = sessions.filter(name__icontains='plenary')
     ietf      = sessions.filter(group__parent__type__slug = 'area').exclude(group__acronym='edu')
     irtf      = sessions.filter(group__parent__acronym = 'irtf')
     training  = sessions.filter(group__acronym__in=['edu','iaoc'])
     iab       = sessions.filter(group__parent__acronym = 'iab')
 
-    cache_version = Document.objects.filter(session__meeting__number=meeting_num).aggregate(Max('time'))["time__max"]
+    cache_version = Document.objects.filter(session__meeting__number=meeting.number).aggregate(Max('time'))["time__max"]
     return render(request, "meeting/materials.html", {
-        'meeting_num': meeting_num,
+        'meeting_num': meeting.number,
         'plenaries': plenaries, 'ietf': ietf, 'training': training, 'irtf': irtf, 'iab': iab,
         'cut_off_date': cut_off_date,
         'cor_cut_off_date': cor_cut_off_date,
