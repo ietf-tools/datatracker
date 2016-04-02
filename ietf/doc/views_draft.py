@@ -26,7 +26,7 @@ from ietf.doc.mails import ( email_pulled_from_rfc_queue, email_resurrect_reques
 from ietf.doc.utils import ( add_state_change_event, can_adopt_draft,
     get_tags_for_stream_id, nice_consensus,
     update_reminder, update_telechat, make_notify_changed_event, get_initial_notify,
-    set_replaces_for_document )
+    set_replaces_for_document, default_consensus )
 from ietf.doc.lastcall import request_last_call
 from ietf.doc.fields import SearchableDocAliasesField
 from ietf.group.models import Group, Role
@@ -1104,6 +1104,10 @@ def edit_consensus(request, name):
 
     e = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
     prev_consensus = e and e.consensus
+    if (not e):
+        prev_consensus=default_consensus(doc)
+    else:
+        prev_consensus = e and e.consensus
 
     if request.method == 'POST':
         form = ConsensusForm(request.POST)
@@ -1143,7 +1147,7 @@ def request_publication(request, name):
     if not is_authorized_in_doc_stream(request.user, doc):
         return HttpResponseForbidden("You do not have the necessary permissions to view this page")
 
-    consensus_event = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
+    # consensus_event = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
 
     m = Message()
     m.frm = request.user.person.formatted_email()
@@ -1214,7 +1218,8 @@ def request_publication(request, name):
                                    doc=doc,
                                    message=m,
                                    next_state=next_state,
-                                   consensus_filled_in= ( (consensus_event != None) and (consensus_event.consensus != None) ),
+                                   # consensus_filled_in= ( (consensus_event != None) and (consensus_event.consensus != None) ),
+                                   consensus_filled_in= ( True )
                                    ),
                               context_instance = RequestContext(request))
 
