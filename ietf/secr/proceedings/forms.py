@@ -5,7 +5,6 @@ from django.conf import settings
 from django.template.defaultfilters import filesizeformat
 
 from ietf.doc.models import Document
-from ietf.group.models import Group
 from ietf.name.models import DocTypeName
 from ietf.meeting.models import Meeting, Session
 
