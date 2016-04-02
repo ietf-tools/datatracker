@@ -1147,7 +1147,7 @@ def request_publication(request, name):
     if not is_authorized_in_doc_stream(request.user, doc):
         return HttpResponseForbidden("You do not have the necessary permissions to view this page")
 
-    # consensus_event = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
+    consensus_event = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
 
     m = Message()
     m.frm = request.user.person.formatted_email()
@@ -1213,13 +1213,17 @@ def request_publication(request, name):
         form = PublicationForm(initial=dict(subject=subject,
                                             body=body))
 
+	if doc.stream_id and doc.stream_id == "ietf":
+		cfi= True;
+	else: 
+		cfi= (consensus_event != None) and (consensus_event.consensus != None) ;
+
     return render_to_response('doc/draft/request_publication.html',
                               dict(form=form,
                                    doc=doc,
                                    message=m,
                                    next_state=next_state,
-                                   # consensus_filled_in= ( (consensus_event != None) and (consensus_event.consensus != None) ),
-                                   consensus_filled_in= ( True )
+                                   consensus_filled_in=(cfi),
                                    ),
                               context_instance = RequestContext(request))
 
