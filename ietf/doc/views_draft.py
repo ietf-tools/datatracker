@@ -314,7 +314,7 @@ def replaces(request, name):
     doc = get_object_or_404(Document, docalias__name=name)
     if doc.type_id != 'draft':
         raise Http404
-    if not (has_role(request.user, ("Secretariat", "Area Director"))
+    if not (has_role(request.user, ("Secretariat", "Area Director", "WG Chair", "RG Chair", "WG Secretary", "RG Secretary"))
             or is_authorized_in_doc_stream(request.user, doc)):
         return HttpResponseForbidden("You do not have the necessary permissions to view this page")
 
