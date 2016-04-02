@@ -5,7 +5,6 @@ from django.conf import settings
 from django.template.defaultfilters import filesizeformat
 
 from ietf.doc.models import Document
-from ietf.group.models import Group
 from ietf.name.models import DocTypeName
 from ietf.meeting.models import Meeting, Session
 
@@ -22,14 +21,6 @@ VALID_BLUESHEET_EXTENSIONS = ('.pdf','.jpg','.jpeg')
 #----------------------------------------------------------
 # Forms
 #----------------------------------------------------------
-
-class AjaxChoiceField(forms.ChoiceField):
-    '''
-    Special ChoiceField to use when populating options with Ajax.  The submitted value
-    is not in the initial choices list so we need to override valid_value().
-    '''
-    def valid_value(self, value):
-        return True
 
 class EditSlideForm(forms.ModelForm):
     class Meta:
@@ -52,26 +43,14 @@ class InterimMeetingForm(forms.Form):
         return cleaned_data
 
 class RecordingForm(forms.Form):
-    group = forms.CharField(max_length=40)
     external_url = forms.URLField(label='Url')
-    session = AjaxChoiceField(choices=(('','----'),))
+    session = forms.ModelChoiceField(queryset=Session.objects,empty_label='')
     
-    def clean_session(self):
-        '''
-        Emulate ModelChoiceField functionality
-        '''
-        id = self.cleaned_data.get('session')
-        try:
-            return Session.objects.get(id=id)
-        except Session.DoesNotExist:
-            raise forms.ValidationError('Invalid Session')
-    
-    def clean_group(self):
-        acronym = self.cleaned_data.get('group')
-        try:
-            return Group.objects.get(acronym=acronym)
-        except Group.DoesNotExist:
-            raise forms.ValidationError('Invalid group name')
+    def __init__(self, *args, **kwargs):
+        self.meeting = kwargs.pop('meeting')
+        super(RecordingForm, self).__init__(*args,**kwargs)
+        self.fields['session'].queryset = Session.objects.filter(meeting=self.meeting,
+            type__in=('session','plenary','other'),status='sched').order_by('group__acronym')
 
 class RecordingEditForm(forms.ModelForm):
     class Meta:

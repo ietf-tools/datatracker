@@ -57,16 +57,16 @@ def check_audio_files(group,meeting):
             url = 'https://www.ietf.org/audio/ietf{}/{}'.format(meeting.number,os.path.basename(file))
             doc = Document.objects.filter(external_url=url).first()
             if not doc:
-                create_recording(session,meeting,group,url)
+                create_recording(session,url)
 
 
-def create_recording(session,meeting,group,url):
+def create_recording(session,url):
     '''
     Creates the Document type=recording, setting external_url and creating
     NewRevisionDocEvent
     '''
-    sequence = get_next_sequence(group,meeting,'recording')
-    name = 'recording-{}-{}-{}'.format(meeting.number,group.acronym,sequence)
+    sequence = get_next_sequence(session.group,session.meeting,'recording')
+    name = 'recording-{}-{}-{}'.format(session.meeting.number,session.group.acronym,sequence)
     time = session.official_timeslotassignment().timeslot.time.strftime('%Y-%m-%d %H:%M')
     if url.endswith('mp3'):
         title = 'Audio recording for {}'.format(time)
@@ -76,7 +76,7 @@ def create_recording(session,meeting,group,url):
     doc = Document.objects.create(name=name,
                                   title=title,
                                   external_url=url,
-                                  group=group,
+                                  group=session.group,
                                   rev='00',
                                   type_id='recording')
     doc.set_state(State.objects.get(type='recording', slug='active'))
