@@ -36,6 +36,7 @@ RUN apt-get update && apt-get install -qy \
 	ca-certificates \
 	colordiff \
 	gawk \
+	ipython \
 	less \
 	libmysqlclient-dev \
 	libsvn1/wheezy-backports \
