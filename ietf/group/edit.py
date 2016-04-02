@@ -16,7 +16,7 @@ from ietf.doc.utils import get_tags_for_stream_id
 from ietf.doc.utils_charter import charter_name_for_group
 from ietf.group.models import ( Group, Role, GroupEvent, GroupHistory, GroupStateName,
     GroupStateTransitions, GroupTypeName, GroupURL, ChangeStateGroupEvent )
-from ietf.group.utils import save_group_in_history, can_manage_group_type
+from ietf.group.utils import save_group_in_history, can_manage_group_type, can_manage_team_group
 from ietf.group.utils import get_group_or_404
 from ietf.ietfauth.utils import has_role
 from ietf.person.fields import SearchableEmailsField
@@ -199,20 +199,25 @@ def submit_initial_charter(request, group_type=None, acronym=None):
 def edit(request, group_type=None, acronym=None, action="edit"):
     """Edit or create a group, notifying parties as
     necessary and logging changes as group events."""
-    if not can_manage_group_type(request.user, group_type):
+    group = get_group_or_404(acronym, group_type)
+    if not group_type and group:
+        group_type = group.type_id
+
+    if group_type == "team":
+        can_edit = can_manage_team_group(request.user, group) or group.has_role(request.user, "chair")
+    else:
+        can_edit = can_manage_group_type(request.user, group_type)
+
+    if not can_edit:
         return HttpResponseForbidden("You don't have permission to access this view")
 
     if action == "edit":
-        group = get_object_or_404(Group, acronym=acronym)
         new_group = False
     elif action in ("create","charter"):
         group = None
         new_group = True
     else:
         raise Http404
-
-    if not group_type and group:
-        group_type = group.type_id
 
     if request.method == 'POST':
         form = GroupForm(request.POST, group=group, group_type=group_type)
