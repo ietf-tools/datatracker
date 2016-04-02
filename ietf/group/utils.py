@@ -91,13 +91,16 @@ def can_manage_group_type(user, group_type):
 
     return has_role(user, 'Secretariat')
 
-def can_manage_team_group(user, group):
-    if group.type_id != "team":
-        return False
-    elif group.is_decendant_of("ietf") and has_role(user, ('Area Director', 'Secretariat')):
-        return True
-    elif group.is_decendant_of("irtf") and has_role(user, ('IRTF Chair', 'Secretariat')):
-        return True
+def can_manage_group(user, group):
+    if group.type_id == "rg":
+        return has_role(user, ('IRTF Chair', 'Secretariat'))
+    elif group.type_id == "wg":
+        return has_role(user, ('Area Director', 'Secretariat'))
+    elif group.type_id == "team":
+        if group.is_decendant_of("ietf"):
+            return has_role(user, ('Area Director', 'Secretariat'))
+        elif group.is_decendant_of("irtf"):
+            return has_role(user, ('IRTF Chair', 'Secretariat'))
     return has_role(user, ('Secretariat'))
 
 def milestone_reviewer_for_group_type(group_type):

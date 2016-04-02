@@ -82,7 +82,7 @@ class Group(GroupInfo):
 
     def is_decendant_of(self, sought_parent):
         p = self.parent
-        while (p != None):
+        while ((p != None) and (p != self)):
             if p.acronym == sought_parent:
                 return True
             p = p.parent

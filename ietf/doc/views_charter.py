@@ -23,7 +23,7 @@ from ietf.doc.utils_charter import ( historic_milestones_for_charter,
     derive_new_work_text )
 from ietf.doc.mails import email_state_changed, email_charter_internal_review
 from ietf.group.models import ChangeStateGroupEvent, MilestoneGroupEvent
-from ietf.group.utils import save_group_in_history, save_milestone_in_history, can_manage_group_type
+from ietf.group.utils import save_group_in_history, save_milestone_in_history, can_manage_group
 from ietf.ietfauth.utils import has_role, role_required
 from ietf.name.models import GroupStateName
 from ietf.person.models import Person
@@ -58,7 +58,7 @@ def change_state(request, name, option=None):
     charter = get_object_or_404(Document, type="charter", name=name)
     group = charter.group
 
-    if not can_manage_group_type(request.user, group.type_id):
+    if not can_manage_group(request.user, group):
         return HttpResponseForbidden("You don't have permission to access this view")
 
     chartering_type = get_chartering_type(charter)
@@ -246,7 +246,7 @@ def change_title(request, name, option=None):
     logging the title as a comment."""
     charter = get_object_or_404(Document, type="charter", name=name)
     group = charter.group
-    if not can_manage_group_type(request.user, group.type_id):
+    if not can_manage_group(request.user, group):
         return HttpResponseForbidden("You don't have permission to access this view")
     login = request.user.person
     if request.method == 'POST':
@@ -359,7 +359,7 @@ def submit(request, name=None, option=None):
     charter = get_object_or_404(Document, type="charter", name=name)
     group = charter.group
 
-    if not can_manage_group_type(request.user, group.type_id):
+    if not can_manage_group(request.user, group):
         return HttpResponseForbidden("You don't have permission to access this view")
 
     path = os.path.join(settings.CHARTER_PATH, '%s-%s.txt' % (charter.canonical_name(), charter.rev))

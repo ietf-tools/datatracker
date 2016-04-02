@@ -1125,5 +1125,44 @@ class StatusUpdateTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(chair.group.latest_event(type='status_update').desc,'This came from a file.')
        
+class GroupParentLoopTests(TestCase):
 
-        
+    def test_group_parent_loop(self):
+        make_test_data()
+        mars = Group.objects.get(acronym="mars")
+        test1 = Group.objects.create(
+            type_id="team",
+            acronym="testteam1",
+            name="Test One",
+            description="The test team 1 is testing.",
+            state_id="active",
+            parent = mars,
+        )
+        test2 = Group.objects.create(
+            type_id="team",
+            acronym="testteam2",
+            name="Test Two",
+            description="The test team 2 is testing.",
+            state_id="active",
+            parent = test1,
+        )
+        # Change the parent of Mars to make a loop
+        mars.parent = test2
+
+        # In face of the loop in the parent links, the code should not loop forever
+        import signal
+
+        def timeout_handler(signum, frame):
+            raise Exception("Infinite loop in parent links is not handeled properly.")
+
+        signal.signal(signal.SIGALRM, timeout_handler)
+        signal.alarm(1)   # One second
+        try:
+            test2.is_decendant_of("ietf")
+        except Exception:
+            raise
+        finally:
+            signal.alarm(0)
+
+        # If we get here, then there is not an infinite loop
+        return
