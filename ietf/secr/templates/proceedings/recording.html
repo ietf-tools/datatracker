@@ -5,10 +5,12 @@
 
 {% block extrastyle %}{{ block.super }}
 <link rel="stylesheet" type="text/css" href="{% static 'secr/css/jquery-ui-1.11.4.custom.css' %}" />
+<link rel="stylesheet" href="{% static 'select2/select2.css' %}">
 {% endblock %}
 
 {% block extrahead %}{{ block.super }}
   <script type="text/javascript" src="{% static 'secr/js/jquery-ui-1.11.4.custom.min.js' %}"></script>
+  <script src="{% static 'select2/select2.min.js' %}"></script>
   <script type="text/javascript" src="{% static 'secr/js/proceedings-recording.js' %}"></script>
 {% endblock %}
 
@@ -57,21 +59,30 @@
            </tr>
          </thead>
          <tbody>
+         
          {% for session in sessions %}
-         <tr>
-           <td>{{ session.group.acronym }}</td>
-           <td>{{ session.official_timeslotassignment.timeslot.time|date:"m-d H:i" }}</td>
            {% if session.recordings %}
-             <td class="document-name" >{{ session.recordings.0.name }}</td>
-             <td><a href="{{ session.recordings.first.href }}">{{ session.recordings.0.href }}</a></td>
-             <td><a href="{% url "proceedings_recording_edit" meeting_num=meeting.number name=session.recordings.0.name %}">Edit</a></td>
+             {% for recording in session.recordings %}
+             <tr>
+             <td>{{ session.group.acronym }}</td>
+             <td>{{ session.official_timeslotassignment.timeslot.time|date:"m-d H:i" }}</td>
+             <td class="document-name" >{{ recording.name }}</td>
+             <td><a href="{{ recording.href }}">{{ recording.href }}</a></td>
+             <td><a href="{% url "proceedings_recording_edit" meeting_num=meeting.number name=recording.name %}">Edit</a></td>
+             </tr>
+             {% endfor %}
            {% else %}
+             <tr>
+             <td>{{ session.group.acronym }}</td>
+             <td>{{ session.official_timeslotassignment.timeslot.time|date:"m-d H:i" }}</td>
              <td></td>
              <td></td>
              <td></td>
+             </tr>
            {% endif %}
-         </tr>
+
          {% endfor %}
+         
          </tbody>
        </table>
      </div> <!-- inline-group -->

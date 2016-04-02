@@ -278,33 +278,6 @@ def ajax_generate_proceedings(request, meeting_num):
     )
 
 @jsonapi
-def ajax_get_sessions(request, meeting_num, acronym):
-    '''
-    Ajax function to get session info for group / meeting
-    returns JSON format response: [{id:session_id, value:session info},...]
-    If there are no sessions an empty list is returned.
-    '''
-    results=[]
-    try:
-        meeting = Meeting.objects.get(number=meeting_num)
-        group = Group.objects.get(acronym=acronym)
-    except ObjectDoesNotExist:
-        return results
-        
-    sessions = Session.objects.filter(meeting=meeting,group=group,status='sched')
-    
-    # order by time scheduled
-    sessions = sorted(sessions,key = lambda x: x.official_timeslotassignment().timeslot.time)
-    
-    for n,session in enumerate(sessions,start=1):
-        timeslot = session.official_timeslotassignment().timeslot
-        val = '{}: {} {}'.format(n,timeslot.time.strftime('%m-%d %H:%M'),timeslot.location.name)
-        d = {'id':session.id, 'value': val}
-        results.append(d)
-
-    return results
-    
-@jsonapi
 def ajax_order_slide(request):
     '''
     Ajax function to change the order of presentation slides.
@@ -629,12 +602,11 @@ def recording(request, meeting_num):
     session.
     '''
     meeting = get_object_or_404(Meeting, number=meeting_num)
-    sessions = meeting.session_set.filter(type='session',status='sched').order_by('group__acronym')
+    sessions = meeting.session_set.filter(type__in=('session','plenary','other'),status='sched').order_by('group__acronym')
     
     if request.method == 'POST':
-        form = RecordingForm(request.POST)
+        form = RecordingForm(request.POST,meeting=meeting)
         if form.is_valid():
-            group = form.cleaned_data['group']
             external_url =  form.cleaned_data['external_url']
             session = form.cleaned_data['session']
             
@@ -642,16 +614,16 @@ def recording(request, meeting_num):
                 messages.error(request, "Recording already exists")
                 return redirect('proceedings_recording', meeting_num=meeting_num)
             else:
-                create_recording(session,meeting,group,external_url)
+                create_recording(session,external_url)
             
             # rebuild proceedings
-            create_proceedings(meeting,group)
+            create_proceedings(meeting,session.group)
             
             messages.success(request,'Recording added')
             return redirect('proceedings_recording', meeting_num=meeting_num)
     
     else:
-        form = RecordingForm()
+        form = RecordingForm(meeting=meeting)
     
     return render_to_response('proceedings/recording.html',{
         'meeting':meeting,
