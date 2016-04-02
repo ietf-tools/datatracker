@@ -55,11 +55,10 @@ type_ietf_only_patterns_id_optional = [
     url(r'^agenda/room-view(?:.html)?/?$', views.room_view),
     url(r'^week-view(?:.html)?/?$', views.week_view),
     url(r'^room-view(?:.html)?/$', views.room_view),
+    url(r'^materials(?:.html)?/$',     views.materials),
 ]
 
 urlpatterns = [
-    # TODO - views.material should take num instead of meeting_num so it can move into one of the above lists
-    url(r'^(?P<meeting_num>\d+)/materials(?:.html)?/?$', views.materials),
     url(r'^requests.html$', RedirectView.as_view(url='/meeting/requests', permanent=True)),
     url(r'^(?P<num>\d+)/requests.html$', RedirectView.as_view(url='/meeting/%(num)s/requests', permanent=True)),
     url(r'^(?P<num>[A-Za-z0-9._+-]+)/', include(safe_for_all_meeting_types)),
