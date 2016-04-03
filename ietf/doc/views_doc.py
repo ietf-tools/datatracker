@@ -49,7 +49,7 @@ from ietf.doc.models import ( Document, DocAlias, DocHistory, DocEvent, BallotDo
 from ietf.doc.utils import ( add_links_in_new_revision_events, augment_events_with_revision,
     can_adopt_draft, get_chartering_type, get_document_content, get_tags_for_stream_id,
     needed_ballot_positions, nice_consensus, prettify_std_name, update_telechat, has_same_ballot,
-    get_initial_notify, make_notify_changed_event, crawl_history)
+    get_initial_notify, make_notify_changed_event, crawl_history, default_consensus)
 from ietf.community.models import CommunityList
 from ietf.group.models import Role
 from ietf.group.utils import can_manage_group_type, can_manage_materials
@@ -282,7 +282,7 @@ def document_main(request, name, rev=None):
         can_edit_notify = can_edit_shepherd_writeup
         can_edit_consensus = False
 
-        consensus = None
+        consensus = nice_consensus(default_consensus(doc))
         if doc.stream_id == "ietf" and iesg_state:
             show_in_states = set(IESG_BALLOT_ACTIVE_STATES)
             show_in_states.update(('approved','ann','rfcqueue','pub'))

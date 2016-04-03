@@ -1,6 +1,6 @@
 # -*- conf-mode -*-
 
-^/personal/anurag_nc/6.18.2.dev0@11071 # Doesn't pass tests, needs rework
+/personal/anurag_nc/6.18.2.dev0@11071 # Doesn't pass tests, needs rework
 /personal/rcross/v6.8.1.dev0@10727	# Loads of whitespace changes.  Pyflakes issue already fixed
 /personal/lars/6.11.1.dev0@10537	# Downgrades the PT fonts to a limited unicode range, renames them, and removes copyright from css file.
 branch/iola/event-saving-refactor-r10076 @ 10190
