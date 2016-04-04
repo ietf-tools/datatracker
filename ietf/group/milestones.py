@@ -12,7 +12,7 @@ from ietf.doc.models import DocEvent
 from ietf.doc.utils import get_chartering_type
 from ietf.doc.fields import SearchableDocumentsField
 from ietf.group.models import GroupMilestone, MilestoneGroupEvent
-from ietf.group.utils import (save_milestone_in_history, can_manage_group_type, milestone_reviewer_for_group_type,
+from ietf.group.utils import (save_milestone_in_history, can_manage_group, milestone_reviewer_for_group_type,
                               get_group_or_404)
 from ietf.name.models import GroupMilestoneStateName
 from ietf.group.mails import email_milestones_changed
@@ -93,8 +93,8 @@ def edit_milestones(request, acronym, group_type=None, milestone_set="current"):
         raise Http404
 
     needs_review = False
-    if not can_manage_group_type(request.user, group.type_id):
-        if group.role_set.filter(name="chair", person__user=request.user):
+    if not can_manage_group(request.user, group):
+        if group.has_role(request.user, "chair"):
             if milestone_set == "current":
                 needs_review = True
         else:
@@ -329,8 +329,9 @@ def reset_charter_milestones(request, group_type, acronym):
     if not group.features.has_milestones:
         raise Http404
     
-    if (not can_manage_group_type(request.user, group_type) and
-        not group.role_set.filter(name="chair", person__user=request.user)):
+    can_manage = can_manage_group(request.user, group)
+    is_chair = group.has_role(request.user, "chair")
+    if (not can_manage) and (not is_chair):
         return HttpResponseForbidden("You are not chair of this group.")
 
     current_milestones = group.groupmilestone_set.filter(state="active")

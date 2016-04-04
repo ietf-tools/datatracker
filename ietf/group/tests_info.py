@@ -25,7 +25,7 @@ from ietf.name.models import DocTagName, GroupStateName, GroupTypeName
 from ietf.person.models import Person, Email
 from ietf.utils.test_utils import TestCase, unicontent
 from ietf.utils.mail import outbox, empty_outbox
-from ietf.utils.test_data import make_test_data
+from ietf.utils.test_data import make_test_data, create_person
 from ietf.utils.test_utils import login_testing_unauthorized
 from ietf.group.factories import GroupFactory, RoleFactory, GroupEventFactory
 from ietf.meeting.factories import SessionFactory
@@ -240,6 +240,17 @@ class GroupPagesTests(TestCase):
             self.assertTrue(milestone.docs.all()[0].name in unicontent(r))
 
     def test_group_about(self):
+
+        def verify_cannot_edit_group(username):
+            self.client.login(username=username, password=username+"+password")
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 403)
+
+        def verify_can_edit_group(username):
+            self.client.login(username=username, password=username+"+password")
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+
         make_test_data()
         group = Group.objects.create(
             type_id="team",
@@ -247,7 +258,9 @@ class GroupPagesTests(TestCase):
             name="Test Team",
             description="The test team is testing.",
             state_id="active",
+            parent = Group.objects.get(acronym="farfut"),
         )
+        create_person(group, "chair", name="Testteam Chairman", username="teamchairman")
 
         for url in [group.about_url(),
                     urlreverse('ietf.group.info.group_about',kwargs=dict(acronym=group.acronym)),
@@ -259,6 +272,14 @@ class GroupPagesTests(TestCase):
             self.assertTrue(group.name in unicontent(r))
             self.assertTrue(group.acronym in unicontent(r))
             self.assertTrue(group.description in unicontent(r))
+
+        url = urlreverse('ietf.group.edit.edit', kwargs=dict(acronym=group.acronym))
+
+        for username in ['plain','iana','iab chair','irtf chair','marschairman']:
+            verify_cannot_edit_group(username)
+
+        for username in ['secretary','teamchairman','ad']:
+            verify_can_edit_group(username)
 
     def test_materials(self):
         make_test_data()
@@ -1104,5 +1125,44 @@ class StatusUpdateTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(chair.group.latest_event(type='status_update').desc,'This came from a file.')
        
+class GroupParentLoopTests(TestCase):
 
-        
+    def test_group_parent_loop(self):
+        make_test_data()
+        mars = Group.objects.get(acronym="mars")
+        test1 = Group.objects.create(
+            type_id="team",
+            acronym="testteam1",
+            name="Test One",
+            description="The test team 1 is testing.",
+            state_id="active",
+            parent = mars,
+        )
+        test2 = Group.objects.create(
+            type_id="team",
+            acronym="testteam2",
+            name="Test Two",
+            description="The test team 2 is testing.",
+            state_id="active",
+            parent = test1,
+        )
+        # Change the parent of Mars to make a loop
+        mars.parent = test2
+
+        # In face of the loop in the parent links, the code should not loop forever
+        import signal
+
+        def timeout_handler(signum, frame):
+            raise Exception("Infinite loop in parent links is not handeled properly.")
+
+        signal.signal(signal.SIGALRM, timeout_handler)
+        signal.alarm(1)   # One second
+        try:
+            test2.is_decendant_of("ietf")
+        except Exception:
+            raise
+        finally:
+            signal.alarm(0)
+
+        # If we get here, then there is not an infinite loop
+        return

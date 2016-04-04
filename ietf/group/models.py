@@ -80,6 +80,14 @@ class Group(GroupInfo):
             role_names = [role_names]
         return user.is_authenticated() and self.role_set.filter(name__in=role_names, person__user=user).exists()
 
+    def is_decendant_of(self, sought_parent):
+        p = self.parent
+        while ((p != None) and (p != self)):
+            if p.acronym == sought_parent:
+                return True
+            p = p.parent
+        return False
+
     def is_bof(self):
         return (self.state.slug in ["bof", "bof-conc"])
 

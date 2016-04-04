@@ -55,7 +55,7 @@ from ietf.doc.utils import get_chartering_type
 from ietf.doc.templatetags.ietf_filters import clean_whitespace
 from ietf.group.models import Group, Role, ChangeStateGroupEvent
 from ietf.name.models import GroupTypeName
-from ietf.group.utils import get_charter_text, can_manage_group_type, milestone_reviewer_for_group_type, can_provide_status_update
+from ietf.group.utils import get_charter_text, can_manage_group_type, can_manage_group, milestone_reviewer_for_group_type, can_provide_status_update
 from ietf.group.utils import can_manage_materials, get_group_or_404
 from ietf.utils.pipe import pipe
 from ietf.utils.textupload import get_cleaned_text_file_content
@@ -365,7 +365,7 @@ def construct_group_menu_context(request, group, selected, group_type, others):
     actions = []
 
     is_chair = group.has_role(request.user, "chair")
-    can_manage = can_manage_group_type(request.user, group.type_id)
+    can_manage = can_manage_group(request.user, group)
 
     if group.features.has_milestones:
         if group.state_id != "proposed" and (is_chair or can_manage):
@@ -374,7 +374,7 @@ def construct_group_menu_context(request, group, selected, group_type, others):
     if group.features.has_materials and can_manage_materials(request.user, group):
         actions.append((u"Upload material", urlreverse("ietf.doc.views_material.choose_material_type", kwargs=kwargs)))
 
-    if group.type_id in ("rg", "wg") and group.state_id != "conclude" and can_manage:
+    if group.state_id != "conclude" and (is_chair or can_manage):
         actions.append((u"Edit group", urlreverse("group_edit", kwargs=kwargs)))
 
     if group.features.customize_workflow and (is_chair or can_manage):
@@ -489,7 +489,7 @@ def group_about(request, acronym, group_type=None):
     e = group.latest_event(type__in=("changed_state", "requested_close",))
     requested_close = group.state_id != "conclude" and e and e.type == "requested_close"
 
-    can_manage = can_manage_group_type(request.user, group.type_id)
+    can_manage = can_manage_group(request.user, group)
 
     can_provide_update = can_provide_status_update(request.user, group)
     status_update = group.latest_event(type="status_update")
