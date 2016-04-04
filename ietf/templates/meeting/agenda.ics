@@ -3,7 +3,7 @@ VERSION:2.0
 METHOD:PUBLISH
 PRODID:-//IETF//datatracker.ietf.org ical agenda//EN
 {{schedule.meeting.vtimezone}}{% for item in assignments %}{% if item.session.historic_group %}BEGIN:VEVENT
-UID:ietf-{{schedule.meeting.number}}-{{item.timeslot.pk}}
+UID:ietf-{{schedule.meeting.number}}-{{item.timeslot.pk}}-{{item.session.group.acronym}}
 SUMMARY:{% if item.session.name %}{{item.session.name|ics_esc}}{% else %}{% if not item.session.historic_group %}{{item.timeslot.name|ics_esc}}{% else %}{{item.session.historic_group.acronym|lower}} - {{item.session.historic_group.name}}{% endif%}{%endif%}
 {% if item.timeslot.show_location %}LOCATION:{{item.timeslot.get_location}}
 {% endif %}STATUS:{{item.session.ical_status}}
