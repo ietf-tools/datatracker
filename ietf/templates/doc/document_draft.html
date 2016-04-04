@@ -253,13 +253,15 @@
 	</tr>
       {% endif %}
 
-      {% if presentations or can_edit_stream_info %}
+      {% if presentations or user|has_role:"Secretariat,Area Director,WG Chair,WG Secretary,RG Chair,RG Secretary,IRTF Chair,Team Chair" or can_edit_stream_info %}
         <tr>
           <th></th>
           <th>On Agenda</th>
           <td class="edit">
-            {% if not snapshot and can_edit_stream_info %}
+            {% if not snapshot %}
+             {% if user|has_role:"Secretariat,Area Director,WG Chair,WG Secretary,RG Chair,RG Secretary,IRTF Chair,Team Chair" or can_edit_stream_info %}
               {% doc_edit_button "ietf.doc.views_doc.all_presentations" name=doc.name %}
+             {% endif %}
             {% endif %}
           </td>
   
