@@ -17,6 +17,7 @@
       <tr>
         <th>Team</th>
         <th>Name</th>
+        <th>Area</th>
         <th>AD</th>
         <th>Secretaries</th>
         <th>Chairs</th>
@@ -27,6 +28,7 @@
         <tr>
           <td><a href="{% url "ietf.group.info.group_home" acronym=group.acronym %}">{{ group.acronym }}</a></td>
           <td>{{ group.name }}</td>
+          <td><a href="{% url "ietf.group.info.group_home" acronym=group.parent.acronym %}">{{ group.parent.acronym }}</a></td>
           <td>
             {% for ad in group.ads %}
               <a href="mailto:{{ ad.email.address }}">{{ ad.person.plain_name }}</a>{% if not forloop.last %}, {% endif %}
