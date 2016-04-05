@@ -1,3 +1,62 @@
+ietfdb (6.19.0) ietf; urgency=high
+
+  **IETF 95 Code Sprint**
+
+  This release contains datatracker bugfixes and enhancements from the IETF-95
+  Code Sprint.  This brings many small but useful bugfixes and enhancements,
+  as described below. Many thanks to everyone who contributed!
+
+  Some additional contribution which have been received after the code sprint
+  will be released later in the week.  Keep the fixes coming :-)
+
+  * Merged in [11085] from bartosz.balazinski@interdigital.com:
+    Added validation for the dependency graph output type (one of 'dot',
+    'pdf', 'svg').  Added an area column to the directorate summary page.
+    Commit fixes bug #1887, fixes bug #1940.  
+
+  * Merged in [11080] from rjsparks@nostrum.com:
+    Show the link for editing what agendas a document appears on more
+    liberally. Fixes #1935.  
+
+  * Merged in [11079] from kivinen@iki.fi:
+    Fixed ICS UIDs so they are unique, even if the timeslot is same.
+    Fixes issue #1522.  
+
+  * Merged in [11064] [11082] from housley@vigilsec.com:
+    The secretariat and the Team Chair can now edit team groups. In addition,
+    if the team in within the IETF, Area Directors can edit it. And, if the
+    team is within the IRTF, the IRTF Chair can edit it.  Cleaned up the
+    checking permission for a user to manage a group. Also, cleanly handle a
+    set of group parent links did for a loop. Fixes issue #1915.
+
+  * Added links back to the group pages from the group names on the meeting 
+    materials page.
+
+  * Merged in [11083] from stephen.farrell@cs.tcd.ie, with some tweaks:
+    Assigned default consensus for IETF stream documents, partly fixing #1403
+    - IRTF/IAB may want more, this just does IETF stream.
+
+  * Merged in [11070] from housley@vigilsec.com:
+    Only the Secretariat can see the history for parked IPR statements. 
+    Fixes issue #1922. 
+
+  * Merged in [11075] from ben@nostrum.com:
+    Allow meetings/materials to be queried without an explicit meeting number.
+    Fixes issue #1934.  
+
+  * Merged in [11072] from rcross@amsl.com:
+    Add ability to enter recording URLs for non working group sessions. 
+    Fixes issue #1885.  
+
+  * Merged in [11058] from rjsparks@nostrum.com:
+    Allow WG/RG Chairs and secretaries to edit the replaces relationship for
+    any document, not just the documents in their groups. Fixes issue #1939.
+
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  05 Apr 2016 10:38:27 -0700
+
+
+
 ietfdb (6.18.1) ietf; urgency=low
 
   This is a small bugfix release.
