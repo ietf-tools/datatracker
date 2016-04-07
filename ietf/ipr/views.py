@@ -562,6 +562,17 @@ def post(request, id):
     
 def search(request):
     search_type = request.GET.get("submit")
+    # query field
+    q = ''
+    # legacy support
+    if not search_type and request.GET.get("option", None) == "document_search":
+        docname = request.GET.get("document_search", "")
+        if docname.startswith("draft-"):
+            search_type = "draft"
+            q = docname
+        if docname.startswith("rfc"):
+            search_type = "rfc"
+            q = docname
     if search_type:
         form = SearchForm(request.GET)
         docid = request.GET.get("id") or request.GET.get("id_document_tag") or ""
@@ -574,7 +585,6 @@ def search(request):
             states = IprDisclosureStateName.objects.values_list('slug',flat=True)
         
         # get query field
-        q = ''
         if request.GET.get(search_type):
             q = request.GET.get(search_type)
 
