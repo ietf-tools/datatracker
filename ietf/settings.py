@@ -45,6 +45,10 @@ ADMINS = (
 
 ALLOWED_HOSTS = [".ietf.org", ".ietf.org.", "209.208.19.216", "4.31.198.44", ]
 
+# This is used to construct the path to manage.py, in order to run management
+# commands, for instance in etc/cron.d/datatracker
+DEPLOYMENT_DIR = '/a/www/ietf-datatracker'
+
 # Server name of the tools server
 TOOLS_SERVER = 'tools.' + IETF_DOMAIN
 TOOLS_SERVER_URL = 'https://' + TOOLS_SERVER
@@ -472,7 +476,7 @@ IDSUBMIT_REPOSITORY_PATH = INTERNET_DRAFT_PATH
 IDSUBMIT_STAGING_PATH = '/a/www/www6s/staging/'
 IDSUBMIT_STAGING_URL = '//www.ietf.org/staging/'
 IDSUBMIT_IDNITS_BINARY = '/a/www/ietf-datatracker/scripts/idnits'
-IDSUBMIT_PYANG_COMMAND = 'pyang -p %(workdir)s --verbose --ietf  %(model)s'
+IDSUBMIT_PYANG_COMMAND = 'pyang -p %(modpath)s --verbose --ietf  %(model)s'
 
 IDSUBMIT_CHECKER_CLASSES = (
     "ietf.submit.checkers.DraftIdnitsChecker",
@@ -503,6 +507,10 @@ IDSUBMIT_MAX_DAILY_SAME_GROUP = 150
 IDSUBMIT_MAX_DAILY_SAME_GROUP_SIZE = 450 # in MB
 IDSUBMIT_MAX_DAILY_SUBMISSIONS = 1000
 IDSUBMIT_MAX_DAILY_SUBMISSIONS_SIZE = 2000 # in MB
+
+YANG_RFC_MODEL_DIR = '/a/www/ietf-ftp/yang/rfcmod/'
+YANG_DRAFT_MODEL_DIR = '/a/www/ietf-ftp/yang/draftmod/'
+YANG_INVAL_MODEL_DIR = '/a/www/ietf-ftp/yang/invalmod/'
 
 XML_LIBRARY = "/www/tools.ietf.org/tools/xml2rfc/web/public/rfc/"
 

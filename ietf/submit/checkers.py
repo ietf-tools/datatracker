@@ -138,9 +138,15 @@ class DraftYangChecker(object):
 
         for model in model_list:
             path = os.path.join(workdir, model)
+            modpath = ':'.join([
+                                workdir,
+                                settings.YANG_RFC_MODEL_DIR,
+                                settings.YANG_DRAFT_MODEL_DIR,
+                                settings.YANG_INVAL_MODEL_DIR,
+                            ])
             with open(path) as file:
                 text = file.readlines()
-            cmd = settings.IDSUBMIT_PYANG_COMMAND % {"workdir": workdir, "model": path, }
+            cmd = settings.IDSUBMIT_PYANG_COMMAND % {"modpath": modpath, "model": path, }
             code, out, err = pipe(cmd)
             errors = 0
             warnings = 0

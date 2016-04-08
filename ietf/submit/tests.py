@@ -1,12 +1,13 @@
 import datetime
 import os
 import shutil
-
-from django.conf import settings
-
-from django.core.urlresolvers import reverse as urlreverse
+import sys
 from StringIO import StringIO
 from pyquery import PyQuery
+
+from django.conf import settings
+from django.core.urlresolvers import reverse as urlreverse
+from django.core.management import call_command
 
 import debug                            # pyflakes:ignore
 
@@ -39,14 +40,21 @@ class SubmitTests(TestCase):
         os.mkdir(self.archive_dir)
         settings.INTERNET_DRAFT_ARCHIVE_DIR = self.archive_dir
         
+        self.saved_yang_model_dir = settings.YANG_DRAFT_MODEL_DIR
+        self.yang_model_dir = os.path.abspath("tmp-yang-model-dir")
+        os.mkdir(self.yang_model_dir)
+        settings.YANG_DRAFT_MODEL_DIR = self.yang_model_dir
+
     def tearDown(self):
         shutil.rmtree(self.staging_dir)
         shutil.rmtree(self.repository_dir)
         shutil.rmtree(self.archive_dir)
+        shutil.rmtree(self.yang_model_dir)
         settings.IDSUBMIT_STAGING_PATH = self.saved_idsubmit_staging_path
         settings.INTERNET_DRAFT_PATH = self.saved_internet_draft_path
         settings.IDSUBMIT_REPOSITORY_PATH = self.saved_idsubmit_repository_path
         settings.INTERNET_DRAFT_ARCHIVE_DIR = self.saved_archive_dir
+        settings.YANG_DRAFT_MODEL_DIR = self.saved_yang_model_dir
 
 
     def submission_file(self, name, rev, group, format, templatename):
@@ -234,6 +242,15 @@ class SubmitTests(TestCase):
 
     def test_submit_new_wg_txt(self):
         self.submit_new_wg(["txt"])
+
+        # Test yang module extraction management command
+        saved_sys_stdout = sys.stdout
+        sys.stdout = StringIO()
+        call_command('populate_yang_model_dirs')
+        self.assertIn('Extracting to', sys.stdout.getvalue())
+        sys.stdout.close()
+        sys.stdout = saved_sys_stdout
+        self.assertTrue(os.path.exists(os.path.join(settings.YANG_DRAFT_MODEL_DIR, "ietf-mpls@2015-10-16.yang")))
 
     def text_submit_new_wg_xml(self):
         self.submit_new_wg(["xml"])
