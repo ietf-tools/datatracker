@@ -1,8 +1,10 @@
 # -*- indent-with-tabs: 0 -*-
 #
-# Update the local copies of the IETF rfc and draft repositories
-# 
-# Every hour
+# This file controls the datatracker-related cronjobs.  It's intended to be
+# symlinked into /etc/init.d/ .  It is a crontab in order to be able to add
+# actions which don't fit into the daily or hourly pattern.  It, and daily
+# and hourly scripts it triggers, are part of the datatracker repository in
+# order to handle cronjob changes that go together with code changes well.
 
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
 

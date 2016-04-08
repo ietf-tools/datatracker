@@ -45,9 +45,6 @@ ADMINS = (
 
 ALLOWED_HOSTS = [".ietf.org", ".ietf.org.", "209.208.19.216", "4.31.198.44", ]
 
-# This is used to construct the path to manage.py, in order to run management
-# commands, for instance in etc/cron.d/datatracker
-DEPLOYMENT_DIR = '/a/www/ietf-datatracker'
 
 # Server name of the tools server
 TOOLS_SERVER = 'tools.' + IETF_DOMAIN
