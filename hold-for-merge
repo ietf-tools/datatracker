@@ -1,5 +1,6 @@
 # -*- conf-mode -*-
 
+/personal/anurag_nc/6.18.2.dev0@11096	# Adds email validation as per issue #839, but at the cost of not being able to make the recipient name part of the notification list.
 /personal/anurag_nc/6.18.2.dev0@11084	# Unneccessary rollback
 /personal/anurag_nc/6.18.2.dev0@11071   # Doesn't pass tests, needs rework
 /personal/rcross/v6.8.1.dev0@10727	# Loads of whitespace changes.  Pyflakes issue already fixed
