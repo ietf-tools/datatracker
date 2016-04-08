@@ -1,0 +1,17 @@
+# -*- indent-with-tabs: 0 -*-
+#
+# Update the local copies of the IETF rfc and draft repositories
+# 
+# Every hour
+
+PATH=/sbin:/usr/sbin:/bin:/usr/bin
+
+DTDIR=/a/www/ietf-datatracker/web
+
+# m h dom mon dow user  command
+
+05 00   *  *  *   root  $DTDIR/bin/daily
+
+05 1-23 *  *  *	  root  $DTDIR/bin/hourly
+
+

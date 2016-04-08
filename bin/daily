@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# Nightly datatracker jobs
+
+DTDIR=/a/www/ietf-datatracker/web
+
+cd $DTDIR/
+
+# Set up the virtual environment
+source $DTDIR/bin/activate
+
+# Run the hourly jobs first
+$DTDIR/bin/hourly
+
+# Populate the yang repositories
+$DTDIR/ietf/manage.py populate_yang_model_dirs
+
+# Expire internet drafts
+$DTDIR/ietf/bin/expire-ids
+
+# Expire last calls
+$DTDIR/ietf/bin/expire-last-calls
+
+# Run an extended version of the rfc editor update, to catch changes
+# with backdated timestamps
+$DTDIR/ietf/bin/rfc-editor-index-updates -d 1969-01-01
+
