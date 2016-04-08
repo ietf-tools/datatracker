@@ -39,6 +39,8 @@ from tempfile import mkstemp
 import datetime
 from collections import OrderedDict
 
+import debug              # pyflakes:ignore
+
 from django import forms
 from django.shortcuts import render, redirect
 from django.template.loader import render_to_string
@@ -504,6 +506,30 @@ def group_about(request, acronym, group_type=None):
                       "can_provide_status_update": can_provide_update,
                       "status_update": status_update,
                   }))
+
+def all_status(request):
+    wgs = Group.objects.filter(type='wg',state__in=['active','bof'])
+    rgs = Group.objects.filter(type='rg',state__in=['active','proposed'])
+
+    wg_reports = []
+    for wg in wgs:
+        e = wg.latest_event(type='status_update')
+        if e:
+            wg_reports.append(e)
+
+    wg_reports.sort(key=lambda x: (x.group.parent.acronym,datetime.datetime.now()-x.time))
+
+    rg_reports = []
+    for rg in rgs:
+        e = rg.latest_event(type='status_update')
+        if e:
+            rg_reports.append(e)
+
+    return render(request, 'group/all_status.html',
+                  { 'wg_reports': wg_reports,
+                    'rg_reports': rg_reports,
+                  }
+                 )
 
 def group_about_status(request, acronym, group_type=None):
     group = get_group_or_404(acronym, group_type)
