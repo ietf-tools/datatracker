@@ -211,7 +211,8 @@ GROUP_EVENT_CHOICES = [
     ("info_changed", "Changed metadata"),
     ("requested_close", "Requested closing group"),
     ("changed_milestone", "Changed milestone"),
-    ("sent_notification", "Sent notification")
+    ("sent_notification", "Sent notification"),
+    ("status_update", "Status update"),
     ]
 
 class GroupEvent(models.Model):
