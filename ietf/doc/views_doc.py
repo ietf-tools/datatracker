@@ -908,6 +908,7 @@ def document_json(request, name, rev=None):
 
     data["name"] = doc.name
     data["rev"] = doc.rev
+    data["pages"] = doc.pages
     data["time"] = doc.time.strftime("%Y-%m-%d %H:%M:%S")
     data["group"] = None
     if doc.group:

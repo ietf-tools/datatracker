@@ -696,6 +696,9 @@ class DocTestCase(TestCase):
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_json", kwargs=dict(name=doc.name)))
         self.assertEqual(r.status_code, 200)
+        data = json.loads(r.content)
+        self.assertEqual(doc.name, data['name'])
+        self.assertEqual(doc.pages,data['pages'])
 
     def test_writeup(self):
         doc = make_test_data()

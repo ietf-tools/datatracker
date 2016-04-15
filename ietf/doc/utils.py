@@ -582,6 +582,8 @@ def crawl_history(doc):
                         'published': e.time.isoformat(),
                         'url': url,
                     }
+                    if d.history_set.filter(rev=e.newrevisiondocevent.rev).exists():
+                        history[url]['pages'] = d.history_set.filter(rev=e.newrevisiondocevent.rev).first().pages
 
     if doc.type_id == "draft":
         e = doc.latest_event(type='published_rfc')
@@ -595,5 +597,7 @@ def crawl_history(doc):
             'published': e.time.isoformat(),
             'url': url
         }
+        if doc.history_set.filter(rev=e.newrevisiondocevent.rev).exists():
+            history[url]['pages'] = doc.history_set.filter(rev=e.newrevisiondocevent.rev).first().pages
     history = history.values()
     return sorted(history, key=lambda x: x['published'])
