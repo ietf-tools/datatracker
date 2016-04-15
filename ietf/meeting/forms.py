@@ -140,7 +140,8 @@ class InterimRequestForm(forms.Form):
     group = GroupModelChoiceField(queryset = Group.objects.filter(type__in=('wg','rg'),state='active').order_by('acronym'))
     face_to_face = forms.BooleanField(required=False)
     meeting_type = forms.ChoiceField(choices=(("single", "Single"), ("multi-day", "Multi-Day"), ('series','Series')), required=False, initial='single', widget=forms.RadioSelect)
-
+    approved = forms.BooleanField(required=False)
+    
     def __init__(self, request, *args, **kwargs):
         super(InterimRequestForm, self).__init__(*args, **kwargs)
         self.user = request.user
@@ -169,9 +170,10 @@ class InterimRequestForm(forms.Form):
 class InterimSessionForm(forms.Form):
     date = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1" }, label='Date', required=True)
     time = forms.TimeField()
-    utc_time = forms.TimeField()
+    time_utc = forms.TimeField(required=False)
     duration = DurationField()
-    end_time = forms.TimeField()
+    end_time = forms.TimeField(required=False)
+    end_time_utc = forms.TimeField(required=False)
     remote_instructions = forms.CharField(max_length=1024,required=False)
     agenda = forms.CharField(required=False,widget=forms.Textarea)
     agenda_note = forms.CharField(max_length=255,required=False)
@@ -179,6 +181,10 @@ class InterimSessionForm(forms.Form):
     country = forms.ChoiceField(choices=countries,required=False)
     timezone = forms.ChoiceField(choices=timezones)
 
+    def __init__(self, *args, **kwargs):
+        super(InterimSessionForm, self).__init__(*args, **kwargs)
+        self.fields['timezone'].initial = 'UTC'
+        
     def _save_agenda(self, text):
         pass
 

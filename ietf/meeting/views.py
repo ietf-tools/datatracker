@@ -9,6 +9,7 @@ from tempfile import mkstemp
 from collections import OrderedDict, Counter
 import csv
 import json
+import pytz
 
 import debug                            # pyflakes:ignore
 
@@ -890,6 +891,23 @@ def session_details(request, num, acronym ):
                     'type_counter': type_counter,
                   })
 
+# -------------------------------------------------
+# Interim Views
+# -------------------------------------------------
+
+def ajax_get_utc(request):
+    '''Ajax view that takes arguments time and timezone and returns UTC'''
+    time = request.GET.get('time')
+    timezone = request.GET.get('timezone')
+    hour,minute = time.split(':')
+    dt = datetime.datetime(2016,1,1,int(hour),int(minute))
+    tz = pytz.timezone(timezone)
+    aware_dt = tz.localize(dt, is_dst=None)
+    utc_dt = aware_dt.astimezone(pytz.utc)
+    utc = utc_dt.strftime('%H:%M')
+    context_data = {'timezone':timezone,'time':time,'utc':utc}
+    return HttpResponse(json.dumps(context_data),content_type='application/json')
+    
 @role_required('Area Director','Secretariat','IRTF Chair','WG Chair')
 def interim_request(request):
     '''View for requesting an interim meeting'''
@@ -917,7 +935,7 @@ def interim_request(request):
         else:
             assert False, (form.errors, formset.errors)
     else:
-        form = InterimRequestForm(request=request,initial={'meeting_type':'single'})
+        form = InterimRequestForm(request=request,initial={'meeting_type':'single','timezone':'UTC'})
         formset = SessionFormset()
 
     return render(request, "meeting/interim_request.html", {"form":form, "formset":formset})
@@ -925,7 +943,7 @@ def interim_request(request):
 def ical_upcoming(request):
     '''ICAL upcoming meetings'''
     today = datetime.datetime.today()
-    meetings = Meeting.objects.filter(date__gt=today)    
+    meetings = Meeting.objects.filter(date__gt=today)
 
     return render(request, "meeting/upcoming.ics", {
         "meetings": meetings,

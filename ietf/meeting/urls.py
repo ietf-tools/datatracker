@@ -58,6 +58,7 @@ type_ietf_only_patterns_id_optional = [
 
 urlpatterns = [
     # TODO - views.material should take num instead of meeting_num so it can move into one of the above lists
+    url(r'^ajax/get-utc/$', views.ajax_get_utc),
     url(r'^(?P<meeting_num>\d+)/materials(?:.html)?/?$', views.materials),
     url(r'^requests.html$', RedirectView.as_view(url='/meeting/requests', permanent=True)),
     url(r'^(?P<num>\d+)/requests.html$', RedirectView.as_view(url='/meeting/%(num)s/requests', permanent=True)),
@@ -70,5 +71,4 @@ urlpatterns = [
     url(r'^interim/request/$', views.interim_request),
     url(r'^$', views.current_materials),
 ]
-
 
