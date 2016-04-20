@@ -5,22 +5,26 @@ var interimRequest = {
         // get elements
         interimRequest.form = $(this);
         interimRequest.addButton = $('#add_session');
-        interimRequest.faceToFace = $('#id_face_to_face');
+        interimRequest.inPerson = $('#id_in_person');
         // bind functions
         $('.select2-field').select2();
-        $('#add_session').click(interimRequest.addSession);
+        interimRequest.addButton.click(interimRequest.addSession);
         $('.btn-delete').click(interimRequest.deleteSession);
-        $('#id_face_to_face').change(interimRequest.toggleLocation);
-        $('input[name="meeting_type"]').change(interimRequest.checkAddButton);
+        interimRequest.inPerson.change(interimRequest.toggleLocation);
+        //$('input[name="meeting_type"]').change(interimRequest.checkAddButton);
+        $('input[name="meeting_type"]').change(interimRequest.meetingTypeChanged);
         $('input[name$="-duration"]').blur(interimRequest.calculateEndTime);
         $('input[name$="-time"]').blur(interimRequest.calculateEndTime);
         //$('input[name$="-time"]').blur(interimRequest.setUTC);
         $('input[name$="-time"]').blur(interimRequest.updateInfo);
         $('input[name$="-end_time"]').change(interimRequest.updateInfo);
         $('select[name$="-timezone"]').change(interimRequest.timezoneChange);
+        //interimRequest.form.submit(interimRequest.onSubmit);
         // init
-        interimRequest.faceToFace.each(interimRequest.toggleLocation);
+        interimRequest.inPerson.each(interimRequest.toggleLocation);
         interimRequest.checkAddButton();
+        interimRequest.checkHelpText();
+        //interimRequest.showRequired();
     },
 
     addSession : function() {
@@ -53,18 +57,27 @@ var interimRequest = {
             setupSelect2Field($(this));
         });
 
-        //if(interimRequest.faceToFace.prop('checked')){
-            var first_session = $(".fieldset:first");
-            el.find("input[name$='city']").val(first_session.find("input[name$='city']").val());
-            el.find("select[name$='country']").val(first_session.find("select[name$='country']").val());
-            el.find("select[name$='timezone']").val(first_session.find("select[name$='timezone']").val());
-        //}
-
+        // copy field contents
+        var first_session = $(".fieldset:first");
+        el.find("input[name$='city']").val(first_session.find("input[name$='city']").val());
+        el.find("select[name$='country']").val(first_session.find("select[name$='country']").val());
+        el.find("select[name$='timezone']").val(first_session.find("select[name$='timezone']").val());
+        el.find("input[name$='remote_instructions']").val(first_session.find("input[name$='remote_instructions']").val());
+        
         if(meeting_type == 'multi-day'){
             el.find(".location").prop('disabled', true);
         }
         
         $('.btn-delete').removeClass("hidden");
+    },
+
+    onSubmit : function() {
+        // must remove required attribute from non visible fields
+        var template = $(this).find(".template");
+        //template.find('input,textarea,select').filter('[required]').prop('required',false);
+        var x = template.find('input,textarea,select')
+        alert(x.length);
+        return true;
     },
 
     updateInfo : function() {
@@ -124,6 +137,30 @@ var interimRequest = {
             interimRequest.addButton.show();
         }
     },
+    
+    checkHelpText : function() {
+        var meeting_type = $('input[name="meeting_type"]:checked').val();
+        if(meeting_type == 'single'){
+            $('.meeting-type-help').hide();
+        } else if(meeting_type == 'multi-day') {
+            $('.meeting-type-help').hide();
+            $('.mth-multi').show();
+        } else if(meeting_type == 'series') {
+            $('.meeting-type-help').hide();
+            $('.mth-series').show();
+        }
+    },
+    
+    checkInPerson : function() {
+        var meeting_type = $('input[name="meeting_type"]:checked').val();
+        if(meeting_type == 'series'){
+            interimRequest.inPerson.prop('disabled', true);
+            interimRequest.inPerson.prop('checked', false);
+            interimRequest.toggleLocation();
+        } else {
+            interimRequest.inPerson.prop('disabled', false);
+        }
+    },
 
     get_formatted_time : function (d) {
         // returns time from Date object as HH:MM
@@ -151,6 +188,12 @@ var interimRequest = {
         return interimRequest.pad(hours) + ":" + interimRequest.pad(minutes);
     },
     
+    meetingTypeChanged : function () {
+        interimRequest.checkAddButton();
+        interimRequest.checkInPerson();
+        interimRequest.checkHelpText();
+    },
+    
     pad : function(str) {
         // zero pads string 00
         if(str.length == 1){
@@ -167,6 +210,12 @@ var interimRequest = {
         var d = new Date(2000,1,1,values[0],values[1]);
         utc.val(interimRequest.get_formatted_utc_time(d) + " UTC");
         //alert(utc.attr("id"));
+    },
+    
+    showRequired : function() {
+        // add a required class on labels on forms that should have
+        // explicit requirement asterisks
+        //$("form.show-required").find("input[required],select[required],textarea[required]").closest(".form-group").find("label").first().addClass("required");
     },
     
     timezoneChange : function() {

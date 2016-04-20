@@ -22,61 +22,69 @@
 
     <div class="form-group form-inline">
         <div class="col-md-offset-2">
-        
-        <div class="col-md-2">
-        <!-- <div class="checkbox"> -->
-            <label class="checkbox-inline">{% render_field form.face_to_face %}<strong>Face to Face</strong></label>
-        <!-- </div> -->
+            <div class="col-md-2">
+                <label class="checkbox-inline">{% render_field form.in_person %}<strong>In Person</strong></label>
+            </div>
+
+            <div class="col-md-2">
+                <label class="checkbox-inline">{% render_field form.approved %}<strong>Preapproved by AD</strong></label>
+            </div>
+
+            <div class="col-md-2 radio-inline"><strong>Meeting Type:</strong></div>
+            
+            <label class="radio-inline">
+                <input type="radio" value="single" checked="checked" name="meeting_type">Single
+            </label>
+            <label class="radio-inline">
+                <input type="radio" value="multi-day" name="meeting_type">Multi-Day
+            </label>
+            <label class="radio-inline">
+                <input type="radio" value="series" name="meeting_type">Series
+            </label>
+        </div> <!-- col-md-offset-2 -->
+    </div> <!-- form-group form-inline -->
+
+
+    <div class="form-group meeting-type-help mth-multi">
+        <div class="col-md-offset-2">
+            <div class="col-md-10">
+                <p class="help-block">Use Multi-Day to request one meeting with sessions over multiple days.</p>
+            </div>
         </div>
-
-        <div class="col-md-2">
-        <!-- <div class="checkbox"> -->
-            <label class="checkbox-inline">{% render_field form.approved %}<strong>Approved</strong></label>
-        <!-- </div> -->
-        </div>
-
-        <!-- <div id="meeting-type-options"> -->
-        <div class="col-md-2 radio-inline"><strong>Meeting Type:</strong></div>
-        <label class="radio-inline">
-            <input type="radio" value="single" checked="checked" name="meeting_type">Single
-        </label>
-        <label class="radio-inline">
-            <input type="radio" value="multi-day" name="meeting_type">Multi-Day
-        </label>
-        <label class="radio-inline">
-            <input type="radio" value="series" name="meeting_type">Series
-        </label>
-        <!-- </div> -->
-
-
-        </div>
-        
     </div>
-
+    
+    <div class="form-group meeting-type-help mth-series">
+        <div class="col-md-offset-2">
+            <div class="col-md-10">
+                <p class="help-block">Use Series to request a number of separate meetings.  In Person series is not supported.</p>
+            </div>
+        </div>
+    </div>
+    
     {{ formset.management_form }}
     {% for form in formset %}
     <div class="fieldset{% if forloop.last %} template{% endif %}" >    
     <div class="form-group">
-        <label for="face-to_face" class="col-md-2 control-label">Location</label>
+        <label for="id_form-{{ forloop.counter0 }}-city" class="col-md-2 control-label">Location</label>
         <div class="col-md-10 form-inline">
             {% render_field form.city class="form-control location" placeholder="City" %}
-            {% render_field form.country class="form-control location" %}
+            {% render_field form.country class="form-control location" placeholder="Country" %}
             {% render_field form.timezone class="form-control" %}
         </div>
     </div>
     
     <div class="form-group">
-        <label for="id_date" class="col-md-2 control-label">Date</label>
+        <label for="id_form-{{ forloop.counter0 }}-date" class="col-md-2 control-label required">Date</label>
         <div class="col-md-2">{% render_field form.date class="form-control" %}</div>
     </div>
     
     <div class="form-group">
-        <label for="id_time" class="col-md-2 control-label">Start Time</label>
+        <label for="id_form-{{ forloop.counter0 }}-time" class="col-md-2 control-label required">Start Time</label>
         <div class="col-md-3 form-inline">
             {% render_field form.time class="form-control time-field" placeholder="HH:MM" %}
             {% render_field form.time_utc class="form-control time-field computed" disabled="disabled" placeholder="UTC" %}
         </div>
-        <label for="id_end_time" class="col-md-2 control-label">End Time</label>
+        <label for="id_form-{{ forloop.counter0 }}-end_time" class="col-md-2 control-label">End Time</label>
         <div class="col-md-4 form-inline">
         {% render_field form.end_time class="form-control time-field computed" placeholder="HH:MM" disabled="disabled" %}
         {% render_field form.end_time_utc class="form-control time-field computed" disabled="disabled" placeholder="UTC" %}
@@ -84,7 +92,7 @@
     </div>
 
     <div class="form-group">
-        <label for="id_duration" class="col-md-2 control-label">Duration</label>
+        <label for="id_duration" class="col-md-2 control-label required">Duration</label>
         <div class="col-md-2">{% render_field form.duration class="form-control time-field" placeholder="HH:MM" %}</div>
     </div>
 

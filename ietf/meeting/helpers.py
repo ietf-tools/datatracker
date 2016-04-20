@@ -17,8 +17,9 @@ import debug                            # pyflakes:ignore
 from ietf.doc.models import Document
 from ietf.group.models import Group
 from ietf.ietfauth.utils import has_role, user_is_person
+from ietf.liaisons.utils import get_person_for_user
 from ietf.person.models  import Person
-from ietf.meeting.models import Meeting, Schedule
+from ietf.meeting.models import Meeting, Schedule, TimeSlot, SchedTimeSessAssignment
 from ietf.utils.history import find_history_active_at, find_history_replacements_active_at
 from ietf.utils.pipe import pipe
 
@@ -285,6 +286,10 @@ def session_constraint_expire(request,session):
     if key is not None and cache.has_key(key):
         cache.delete(key)
 
+# -------------------------------------------------
+# Interim Meeting Helpers
+# -------------------------------------------------
+
 def get_earliest_session(session_formset):
     '''Return earliest InterimSessionForm from formset'''
     earliest = session_formset[0]
@@ -300,20 +305,79 @@ def get_next_interim_number(group,date):
     sequence = Meeting.objects.filter(number__startswith='interim-%s-%s' % (date.year,group.acronym)).count() + 1
     return 'interim-%s-%s-%s' % (date.year,group.acronym,sequence)
 
-def create_interim_meeting(request_form,session_form):
-    '''Create an Interim meeting, given an InterimRequestForm and InterimSessionForm'''    
-    group = request_form.cleaned_data.get('group')
-    date = session_form.cleaned_data.get('date')
+def create_interim_meeting(group,date,city='',country='',timezone='UTC',person=None):
+    '''Helper function to create interim meeting and associated schedule'''
+    if not person:
+        person = Person.objects.get(name="(System)")
     number = get_next_interim_number(group,date)
-    city = session_form.cleaned_data.get('city')
-    country = session_form.cleaned_data.get('country')
-    timezone = session_form.cleaned_data.get('timezone')
-    if not request_form.cleaned_data.get('face_to_face'):
-        timezone = 'UTC'
     meeting = Meeting.objects.create(number=number,type_id='interim',date=date,city=city,
         country=country,time_zone=timezone)
-    schedule = Schedule.objects.create(meeting=meeting, owner=request_form.person, visible=True, public=True)
+    schedule = Schedule.objects.create(meeting=meeting, owner=person, visible=True, public=True)
     meeting.agenda = schedule
     meeting.save()
     return meeting
 
+def create_interim_meeting_from_forms(request_form,session_form):
+    '''Create an Interim meeting, given an InterimRequestForm and InterimSessionForm'''
+    group = request_form.cleaned_data.get('group')
+    date = session_form.cleaned_data.get('date')
+    city = session_form.cleaned_data.get('city')
+    country = session_form.cleaned_data.get('country')
+    timezone = session_form.cleaned_data.get('timezone')
+    person = request_form.person
+    return create_interim_meeting(group=group,date=date,city=city,country=country,timezone=timezone,person=person)
+
+def assign_interim_session(session,time):
+    '''Helper function to create a timeslot and assign the interim session''' 
+    slot = TimeSlot.objects.create(meeting=session.meeting, type_id="session",
+        duration=session.requested_duration, time=time)
+    SchedTimeSessAssignment.objects.create(timeslot=slot, session=session, schedule=session.meeting.agenda)
+
+def can_approve_interim_request(meeting,user):
+    '''Returns True if the user has permissions to approve an interim meeting request'''
+    if meeting.type.slug != 'interim':
+        return False
+    if has_role(user, 'Secretariat'):
+        return True
+    person = get_person_for_user(user)
+    session = meeting.session_set.first()
+    if not session:
+        return False
+    group = session.group
+    if group.type.slug == 'wg' and group.parent.role_set.filter(name='ad',person=person):
+        return True
+    if group.type.slug == 'rg' and group.parent.role_set.filter(name='chair',person=person):
+        return True
+    return False
+
+def can_edit_interim_request(meeting,user):
+    '''Returns True if the user can edit the interim meeting request'''
+    
+    if can_approve_interim_request(meeting,user):
+        return True
+    
+    return False
+
+def can_request_interim_meeting(user):
+    if has_role(user, ('Secretariat','Area Director','WG Chair','IRTF Chair', 'RG Chair')):
+        return True
+    return False
+
+def can_view_interim_request(meeting,user):
+    '''Returns True if the user can see the pending interim request in the pending interim view'''
+    if meeting.type.slug != 'interim':
+        return False
+    if has_role(user, 'Secretariat'):
+        return True
+    person = get_person_for_user(user)
+    session = meeting.session_set.first()
+    if not session:
+        return False
+    group = session.group
+    if has_role(user, 'Area Director') and group.type.slug == 'wg':
+        return True
+    if has_role(user, 'IRTF Chair') and group.type.slug == 'rg':
+        return True
+    if group.role_set.filter(name='chair',person=person):
+        return True
+    return False

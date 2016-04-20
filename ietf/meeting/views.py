@@ -14,7 +14,7 @@ import pytz
 import debug                            # pyflakes:ignore
 
 from django import forms
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden, Http404
 from django.contrib import messages
 from django.core.urlresolvers import reverse
@@ -37,19 +37,14 @@ from ietf.meeting.helpers import get_wg_list, find_ads_for_meeting
 from ietf.meeting.helpers import get_meeting, get_schedule, agenda_permissions, get_meetings
 from ietf.meeting.helpers import preprocess_assignments_for_agenda, read_agenda_file
 from ietf.meeting.helpers import convert_draft_to_pdf, get_earliest_session
-from ietf.meeting.helpers import create_interim_meeting
+from ietf.meeting.helpers import create_interim_meeting_from_forms
+from ietf.meeting.helpers import can_view_interim_request, can_approve_interim_request
+from ietf.meeting.helpers import can_request_interim_meeting
 from ietf.utils.pipe import pipe
 from ietf.utils.pdf import pdf_pages
 
 from .forms import InterimRequestForm, InterimSessionForm
 
-# -------------------------------------------------
-# Helper Functions
-# -------------------------------------------------
-def can_request_interim_meeting(user):
-    if has_role(user, ('Secretariat','Area Director','WG Chair','IRTF Chair')):
-        return True
-    return False
 
 # -------------------------------------------------
 # View Functions
@@ -907,8 +902,20 @@ def ajax_get_utc(request):
     utc = utc_dt.strftime('%H:%M')
     context_data = {'timezone':timezone,'time':time,'utc':utc}
     return HttpResponse(json.dumps(context_data),content_type='application/json')
+
+@role_required('Area Director','Secretariat','IRTF Chair','WG Chair','RG Chair')
+def interim_pending(request):
+    '''View which shows interim meeting requests pending approval'''
+    meetings = Meeting.objects.filter(type='interim',session__status='apprw')
+
+    meetings = [ m for m in meetings if can_view_interim_request(m,request.user)]
+    for meeting in meetings:
+        if can_approve_interim_request(meeting,request.user):
+            meeting.can_approve = True
     
-@role_required('Area Director','Secretariat','IRTF Chair','WG Chair')
+    return render(request, "meeting/interim_pending.html", {"meetings":meetings})
+    
+@role_required('Area Director','Secretariat','IRTF Chair','WG Chair', 'RG Chair')
 def interim_request(request):
     '''View for requesting an interim meeting'''
     SessionFormset = formset_factory(InterimSessionForm, extra=2)
@@ -916,20 +923,22 @@ def interim_request(request):
     if request.method == 'POST':
         form = InterimRequestForm(request, data=request.POST)
         formset = SessionFormset(data=request.POST)
-        person = request.user.person
+        #person = request.user.person
         if form.is_valid() and formset.is_valid():
             group = form.cleaned_data.get('group')
             meeting_type = form.cleaned_data.get('meeting_type')
             
             # pre create meeting
             if meeting_type in ('single','multi-day'):
-                meeting = create_interim_meeting(request_form=form,session_form=get_earliest_session(formset))
+                meeting = create_interim_meeting_from_forms(
+                    request_form=form,
+                    session_form=get_earliest_session(formset))
             
             for f in formset.forms:
                 if not f.has_changed():
                     continue
                 if meeting_type == 'series':
-                    meeting = create_interim_meeting(form,f)
+                    meeting = create_interim_meeting_from_forms(form,f)
                 f.save(request,group,meeting)
             return redirect(upcoming)
         else:
@@ -939,6 +948,21 @@ def interim_request(request):
         formset = SessionFormset()
 
     return render(request, "meeting/interim_request.html", {"form":form, "formset":formset})
+
+@role_required('Area Director','Secretariat','IRTF Chair','WG Chair', 'RG Chair')
+def interim_request_details(request, number):
+    '''View details of an interim meeting reqeust'''
+    meeting = get_object_or_404(Meeting,number=number)
+    sessions = meeting.session_set.all()
+    can_edit = can_view_interim_request(meeting,request.user)
+    can_approve = can_approve_interim_request(meeting,request.user)
+
+    return render(request, "meeting/interim_request_details.html",{
+        "meeting":meeting,
+        "sessions":sessions,
+        "can_edit":can_edit,
+        "can_approve":can_approve,
+        })
 
 def ical_upcoming(request):
     '''ICAL upcoming meetings'''

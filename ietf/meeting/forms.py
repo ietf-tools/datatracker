@@ -3,18 +3,19 @@ import re
 
 from django import forms
 from django.core.validators import ValidationError
-from django.forms import BaseFormSet
 from django.forms.fields import Field
 from django.utils.encoding import force_text
 from django.utils import six
 
 from ietf.group.models import Group
 from ietf.ietfauth.utils import has_role
-from ietf.meeting.models import Meeting, Schedule, TimeSlot, Session, SchedTimeSessAssignment, countries, timezones
+from ietf.meeting.models import Session, countries, timezones
+from ietf.meeting.helpers import assign_interim_session
 from ietf.utils.fields import DatepickerDateField
 
 # need to insert empty option for use in ChoiceField
-countries.insert(0, ('', '-'*9 ))
+#countries.insert(0, ('', '-'*9 ))
+countries.insert(0, ('', ''))
 timezones.insert(0, ('', '-'*9 ))
 
 # -------------------------------------------------
@@ -138,7 +139,7 @@ class BaseSessionFormSet(BaseFormSet):
 
 class InterimRequestForm(forms.Form):
     group = GroupModelChoiceField(queryset = Group.objects.filter(type__in=('wg','rg'),state='active').order_by('acronym'))
-    face_to_face = forms.BooleanField(required=False)
+    in_person = forms.BooleanField(required=False)
     meeting_type = forms.ChoiceField(choices=(("single", "Single"), ("multi-day", "Multi-Day"), ('series','Series')), required=False, initial='single', widget=forms.RadioSelect)
     approved = forms.BooleanField(required=False)
     
@@ -160,7 +161,8 @@ class InterimRequestForm(forms.Form):
             queryset = Group.objects.filter(type="rg", state="active").order_by('acronym')
         elif has_role(self.user, "WG Chair"):
             queryset = Group.objects.filter(type="wg", state="active", role__person=self.person, role__name="chair").distinct().order_by('acronym')
-
+        elif has_role(self.user, "RG Chair"):
+            queryset = Group.objects.filter(type="rg", state="active", role__person=self.person, role__name="chair").distinct().order_by('acronym')
         self.fields['group'].queryset = queryset
 
         # if there's only one possibility make it the default
@@ -168,10 +170,11 @@ class InterimRequestForm(forms.Form):
             self.fields['group'].initial = queryset[0]
 
 class InterimSessionForm(forms.Form):
-    date = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1" }, label='Date', required=True)
-    time = forms.TimeField()
+    # unset: date,time,duration
+    date = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1" }, label='Date', required=False)
+    time = forms.TimeField(required=False)
     time_utc = forms.TimeField(required=False)
-    duration = DurationField()
+    duration = DurationField(required=False)
     end_time = forms.TimeField(required=False)
     end_time_utc = forms.TimeField(required=False)
     remote_instructions = forms.CharField(max_length=1024,required=False)
@@ -196,17 +199,16 @@ class InterimSessionForm(forms.Form):
         time = self.cleaned_data.get('time')
         duration = self.cleaned_data.get('duration')
         remote_instructions = self.cleaned_data.get('remote_instructions')
-
-        slot = TimeSlot.objects.create(meeting=meeting, type_id="session", duration=duration,
-            time=datetime.datetime.combine(date, time))
+        time=datetime.datetime.combine(date, time)
         session = Session.objects.create(meeting=meeting,
             group=group,
             requested_by=person,
+            requested_duration=duration,
             status_id='apprw',
             type_id='session',
             remote_instructions=remote_instructions,
             agenda_note=agenda_note,)
-        SchedTimeSessAssignment.objects.create(timeslot=slot, session=session, schedule=meeting.agenda)
-
+        assign_interim_session(session,time)
+       
         if agenda:
             self._save_agenda(agenda)
