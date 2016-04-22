@@ -1,0 +1,11 @@
+The {{ group.name }} ({{ group.acronym }}) Working Group will hold a
+virtual interim meeting on {{ meeting.date }} from {{ start }} to
+{{ end }} UTC.
+
+Agenda:
+[AGENDA]
+
+To join the interim meeting:
+{{ meeting.session_set.all.0.remote_instructions }}
+
+[ADDITIONAL INFORMATION]

@@ -13,10 +13,12 @@ from pyquery import PyQuery
 from ietf.doc.models import Document
 from ietf.group.models import Group
 from ietf.meeting.helpers import can_approve_interim_request, can_view_interim_request
+from ietf.meeting.helpers import get_announcement_initial
 from ietf.meeting.models import Session, TimeSlot, Meeting
 from ietf.meeting.test_data import make_meeting_test_data
 from ietf.name.models import SessionStatusName
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized, unicontent
+from ietf.utils.mail import outbox
 
 class MeetingTests(TestCase):
     def setUp(self):
@@ -363,7 +365,7 @@ class InterimTests(TestCase):
         self.assertEqual(len(q("a:contains('Announce')")),0)
         self.client.logout()
         # secretariat
-        username = "ad"
+        username = "secretary"
         self.client.login(username=username, password= username + "+password")
         r = self.client.get(url)
         q = PyQuery(r.content)
@@ -390,6 +392,13 @@ class InterimTests(TestCase):
         login_testing_unauthorized(self,"secretary",url)
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
+        initial = r.context['form'].initial
+        # send announcement
+        len_before = len(outbox)
+        r = self.client.post(url,initial)
+        self.assertRedirects(r,urlreverse('ietf.meeting.views.interim_announce'))
+        self.assertEqual(len(outbox),len_before+1)
+        self.assertTrue('WG Virtual Meeting' in outbox[-1]['Subject'])
 
     def test_interim_approve(self):
         make_meeting_test_data()

@@ -39,11 +39,12 @@ from ietf.meeting.helpers import preprocess_assignments_for_agenda, read_agenda_
 from ietf.meeting.helpers import convert_draft_to_pdf, get_earliest_session
 from ietf.meeting.helpers import create_interim_meeting_from_forms
 from ietf.meeting.helpers import can_view_interim_request, can_approve_interim_request
-from ietf.meeting.helpers import can_request_interim_meeting
+from ietf.meeting.helpers import can_request_interim_meeting, get_announcement_initial
+from ietf.utils.mail import send_mail_message
 from ietf.utils.pipe import pipe
 from ietf.utils.pdf import pdf_pages
 
-from .forms import InterimRequestForm, InterimSessionForm
+from .forms import InterimRequestForm, InterimSessionForm, InterimAnnounceForm
 
 
 def get_menu_entries(request):
@@ -930,8 +931,23 @@ def interim_announce(request):
 def interim_send_announcement(request,number):
     '''View for sending the announcement of a new interim meeting'''
     meeting = get_object_or_404(Meeting,number=number)
+    group = meeting.session_set.first().group
+    
+    if request.method == 'POST':
+        form = InterimAnnounceForm(request.POST, initial=get_announcement_initial(meeting))
+        if form.is_valid():
+            message = form.save(user=request.user)
+            message.related_groups.add(group)
+            meeting.session_set.update(status_id='sched')
+            send_mail_message(request,message)
+            messages.success(request, 'Interim meeting announcement sent')
+            return redirect(interim_announce)
 
-    return render(request, "meeting/interim_send_announcement.html") 
+    form = InterimAnnounceForm(initial=get_announcement_initial(meeting))
+
+    return render(request, "meeting/interim_send_announcement.html", {
+        'meeting': meeting,
+        'form': form}) 
 
 @role_required('Area Director','Secretariat','IRTF Chair','WG Chair','RG Chair')
 def interim_pending(request):
@@ -940,7 +956,6 @@ def interim_pending(request):
     menu_entries = get_menu_entries(request)
     selected_menu_entry = 'pending'
     
-
     meetings = [ m for m in meetings if can_view_interim_request(m,request.user)]
     for meeting in meetings:
         if can_approve_interim_request(meeting,request.user):

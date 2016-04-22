@@ -11,6 +11,7 @@ from ietf.group.models import Group
 from ietf.ietfauth.utils import has_role
 from ietf.meeting.models import Session, countries, timezones
 from ietf.meeting.helpers import assign_interim_session
+from ietf.message.models import Message
 from ietf.utils.fields import DatepickerDateField
 
 # need to insert empty option for use in ChoiceField
@@ -156,13 +157,13 @@ class InterimRequestForm(forms.Form):
         if has_role(self.user, "Secretariat"):
             return  # don't reduce group options
         if has_role(self.user, "Area Director"):
-            queryset = Group.objects.filter(type="wg", state="active").order_by('acronym')
+            queryset = Group.objects.filter(type="wg", state__in=("active","proposed")).order_by('acronym')
         elif has_role(self.user, "IRTF Chair"):
-            queryset = Group.objects.filter(type="rg", state="active").order_by('acronym')
+            queryset = Group.objects.filter(type="rg", state__in=("active","proposed")).order_by('acronym')
         elif has_role(self.user, "WG Chair"):
-            queryset = Group.objects.filter(type="wg", state="active", role__person=self.person, role__name="chair").distinct().order_by('acronym')
+            queryset = Group.objects.filter(type="wg", state__in=("active","proposed"), role__person=self.person, role__name="chair").distinct().order_by('acronym')
         elif has_role(self.user, "RG Chair"):
-            queryset = Group.objects.filter(type="rg", state="active", role__person=self.person, role__name="chair").distinct().order_by('acronym')
+            queryset = Group.objects.filter(type="rg", state__in=("active","proposed"), role__person=self.person, role__name="chair").distinct().order_by('acronym')
         self.fields['group'].queryset = queryset
 
         # if there's only one possibility make it the default
@@ -216,3 +217,20 @@ class InterimSessionForm(forms.Form):
        
         if agenda:
             self._save_agenda(agenda)
+
+class InterimAnnounceForm(forms.ModelForm):
+
+    class Meta:
+        model = Message
+        fields = ('to','frm','cc','bcc','reply_to','subject','body')
+
+    #def __init__(self):
+    #    super(InterimAnnounceForm, self).__init__(*args,**kwargs)
+    
+    def save(self, *args, **kwargs):
+        user = kwargs.pop('user')
+        message = super(InterimAnnounceForm, self).save(commit=False)
+        message.by = user.person
+        message.save()
+
+        return message

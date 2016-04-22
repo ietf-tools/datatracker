@@ -14,6 +14,38 @@
   {% origin %}
   <h1>Announce Interim Meeting</h1>
 
+  <form method="post" role="form" class="form-horizontal">
+  {% csrf_token %}
+  
+    <div class="fieldset" >
+
+    <div class="form-group">
+        <label for="id_to" class="col-md-2 control-label">To</label>
+        <div class="col-md-10">{% render_field form.to class="form-control" readonly="readonly" %}</div>
+    </div>
+    <div class="form-group">
+        <label for="id_cc" class="col-md-2 control-label">Cc</label>
+        <div class="col-md-10">{% render_field form.cc class="form-control" %}</div>
+    </div>
+    <div class="form-group">
+        <label for="id_from" class="col-md-2 control-label">From</label>
+        <div class="col-md-10">{% render_field form.frm class="form-control" readonly="readonly" %}</div>
+    </div>
+    <div class="form-group">
+        <label for="id_subject" class="col-md-2 control-label">Subject</label>
+        <div class="col-md-10">{% render_field form.subject class="form-control" readonly="readonly" %}</div>
+    </div>
+    <div class="form-group">
+        <label for="id_body" class="col-md-2 control-label">Body</label>
+        <div class="col-md-10">{% render_field form.body class="form-control" %}</div>
+    </div>
+
+    </div> <!-- fieldset -->
+
+    <input class="btn btn-default" type="submit" value="Send" name='send' />
+    <a class="btn btn-danger pull-right" href="{% url 'ietf.meeting.views.interim_announce' %}">Cancel</a>
+
+  </form>
 
 {% endblock %}
 

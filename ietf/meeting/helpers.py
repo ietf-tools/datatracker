@@ -11,6 +11,7 @@ from django.conf import settings
 from django.core.cache import cache
 from django.utils.cache import get_cache_key
 from django.shortcuts import get_object_or_404
+from django.template.loader import render_to_string
 
 import debug                            # pyflakes:ignore
 
@@ -289,6 +290,22 @@ def session_constraint_expire(request,session):
 # -------------------------------------------------
 # Interim Meeting Helpers
 # -------------------------------------------------
+def get_announcement_initial(meeting):
+    '''Returns a dictionary suitable to initialize an InterimAnnouncementForm (Message ModelForm)'''
+    group = meeting.session_set.first().group
+    in_person = bool(meeting.city)
+    initial = {}
+    initial['to'] = settings.INTERIM_ANNOUNCE_TO_EMAIL
+    initial['cc'] = group.list_email
+    initial['frm'] = settings.INTERIM_ANNOUNCE_FROM_EMAIL
+    if in_person:
+        desc = 'Interim'
+    else:
+        desc = 'Virtual'
+    initial['subject'] = '%s (%s) WG %s Meeting: %s' % (group.name,group.acronym,desc,meeting.date)
+    body = render_to_string('meeting/interim_announcement.txt', locals())
+    initial['body'] = body
+    return initial
 
 def get_earliest_session(session_formset):
     '''Return earliest InterimSessionForm from formset'''
