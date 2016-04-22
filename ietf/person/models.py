@@ -71,7 +71,9 @@ class PersonInfo(models.Model):
         else:
             return ""
     def formatted_email(self):
-        e = self.email_set.order_by("-active", "-time").first()
+        e = self.email_set.filter(primary=True).first()
+        if not e:
+            e = self.email_set.order_by("-active", "-time").first()
         if e:
             return e.formatted_email()
         else:
