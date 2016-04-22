@@ -903,6 +903,21 @@ def ajax_get_utc(request):
     context_data = {'timezone':timezone,'time':time,'utc':utc}
     return HttpResponse(json.dumps(context_data),content_type='application/json')
 
+
+@role_required('Secretariat',)
+def interim_announce(request):
+    '''View which shows interim meeting requests awaiting announcement'''
+    meetings = Meeting.objects.filter(type='interim',session__status='scheda')
+
+    return render(request, "meeting/interim_announce.html", {"meetings":meetings}) 
+
+@role_required('Secretariat',)
+def interim_send_announcement(request,number):
+    '''View for sending the announcement of a new interim meeting'''
+    meeting = get_object_or_404(Meeting,number=number)
+
+    return render(request, "meeting/interim_send_announcement.html") 
+
 @role_required('Area Director','Secretariat','IRTF Chair','WG Chair','RG Chair')
 def interim_pending(request):
     '''View which shows interim meeting requests pending approval'''
@@ -926,6 +941,7 @@ def interim_request(request):
         #person = request.user.person
         if form.is_valid() and formset.is_valid():
             group = form.cleaned_data.get('group')
+            is_approved = form.cleaned_data.get('approved', False)
             meeting_type = form.cleaned_data.get('meeting_type')
             
             # pre create meeting
@@ -939,7 +955,7 @@ def interim_request(request):
                     continue
                 if meeting_type == 'series':
                     meeting = create_interim_meeting_from_forms(form,f)
-                f.save(request,group,meeting)
+                f.save(request,group,meeting,is_approved)
             return redirect(upcoming)
         else:
             assert False, (form.errors, formset.errors)
@@ -956,6 +972,16 @@ def interim_request_details(request, number):
     sessions = meeting.session_set.all()
     can_edit = can_view_interim_request(meeting,request.user)
     can_approve = can_approve_interim_request(meeting,request.user)
+
+    if request.method == 'POST':
+        if request.POST.get('approve'):
+            meeting.session_set.update(status_id='scheda')
+            if has_role(request.user, 'Secretariat'):
+                return redirect(interim_send_announcement, number=number)
+        if request.POST.get('disapprove'):
+            pass
+        if request.POST.get('cancel'):
+            pass
 
     return render(request, "meeting/interim_request_details.html",{
         "meeting":meeting,
@@ -976,7 +1002,7 @@ def ical_upcoming(request):
 def upcoming(request):
     '''List of upcoming meetings'''
     today = datetime.datetime.today()
-    meetings = Meeting.objects.filter(date__gte=today).order_by('date')
+    meetings = Meeting.objects.filter(date__gte=today,session__status__in=('sched','canceled')).order_by('date')
 
     # extract groups hierarchy
     seen = set()

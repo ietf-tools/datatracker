@@ -191,7 +191,7 @@ class InterimSessionForm(forms.Form):
     def _save_agenda(self, text):
         pass
 
-    def save(self, request, group, meeting):
+    def save(self, request, group, meeting, is_approved):
         person = request.user.person
         agenda = self.cleaned_data.get('agenda')
         agenda_note = self.cleaned_data.get('agenda_note')
@@ -199,12 +199,16 @@ class InterimSessionForm(forms.Form):
         time = self.cleaned_data.get('time')
         duration = self.cleaned_data.get('duration')
         remote_instructions = self.cleaned_data.get('remote_instructions')
-        time=datetime.datetime.combine(date, time)
+        time = datetime.datetime.combine(date, time)
+        if is_approved:
+            status_id = 'scheda'
+        else:
+            status_id = 'apprw'
         session = Session.objects.create(meeting=meeting,
             group=group,
             requested_by=person,
             requested_duration=duration,
-            status_id='apprw',
+            status_id=status_id,
             type_id='session',
             remote_instructions=remote_instructions,
             agenda_note=agenda_note,)

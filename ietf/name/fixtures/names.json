@@ -2026,6 +2026,16 @@
  "fields": {
   "order": 0,
   "used": true,
+  "name": "Scheduled - Announcement to be sent",
+  "desc": ""
+ },
+ "model": "name.sessionstatusname",
+ "pk": "scheda"
+},
+{
+ "fields": {
+  "order": 0,
+  "used": true,
   "name": "Cancelled",
   "desc": ""
  },

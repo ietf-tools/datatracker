@@ -18,6 +18,8 @@
     <dd>{{ sessions.0.group.acronym }}
     <dt>Requested By</dt>
     <dd>{{ sessions.0.requested_by }}
+    <dt>Status</dt>
+    <dd>{{ sessions.0.status }}</dd>
     <dt>City</dt>
     <dd>{{ meeting.city }}</dd>
     <dt>Country</dt>
@@ -44,7 +46,8 @@
     <a class="btn btn-default" href="">Edit</a>
   {% endif %}
   {% if can_approve %}
-    <input class="btn btn-default" type="submit" value="Approve" name='approved' />
+    <input class="btn btn-default" type="submit" value="Approve" name='approve' />
+    <input class="btn btn-default" type="submit" value="Disapprove" name='disapprove' />
   {% endif %}
   {% if can_edit %}  
     <input class="btn btn-default" type="submit" value="Cancel" name='cancel' />
