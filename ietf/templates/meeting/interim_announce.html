@@ -14,6 +14,16 @@
   {% origin %}
   <h1>Announce Interim Meeting</h1>
 
+    {% if menu_entries %}
+      <ul class="nav nav-tabs" role="tablist">
+        {% for name, url in menu_entries %}
+          <li {% if selected_menu_entry == name.lower %}class="active"{% endif %}>
+            <a href="{{ url }}">{{ name }}</a>
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+    
     {% if meetings %}
       <table id="announce-interim-meetings-table" class="table table-condensed table-striped">
         <thead>

@@ -19,6 +19,7 @@
 
       <h1>IETF Upcoming Meetings</h1>
 
+      <p>See also <a href="https://www.ietf.org/meeting/upcoming.html">here</a></p>
       <div class="panel-group" id="accordion">
         <div class="panel panel-default">
           <div class="panel-heading">
@@ -80,6 +81,16 @@
           </div> <!-- panel-collapse -->
         </div> <!-- panel -->
       </div> <!-- panel-group -->
+
+      {% if menu_entries %}
+      <ul class="nav nav-tabs" role="tablist">
+        {% for name, url in menu_entries %}
+          <li {% if selected_menu_entry == name.lower %}class="active"{% endif %}>
+            <a href="{{ url }}">{{ name }}</a>
+          </li>
+        {% endfor %}
+      </ul>
+      {% endif %}
 
       {% if menu_actions %}
         <div class="buttonlist">

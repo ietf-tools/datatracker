@@ -46,6 +46,16 @@ from ietf.utils.pdf import pdf_pages
 from .forms import InterimRequestForm, InterimSessionForm
 
 
+def get_menu_entries(request):
+    '''Setup menu entries for interim meeting view tabs'''
+    entries = []
+    if has_role(request.user, ('Area Director','Secretariat','IRTF Chair','WG Chair', 'RG Chair')):
+        entries.append(("Upcoming", reverse("ietf.meeting.views.upcoming")))
+        entries.append(("Pending", reverse("ietf.meeting.views.interim_pending")))
+        if has_role(request.user, "Secretariat"):
+            entries.append(("Announce", reverse("ietf.meeting.views.interim_announce")))
+    return entries
+
 # -------------------------------------------------
 # View Functions
 # -------------------------------------------------
@@ -908,8 +918,13 @@ def ajax_get_utc(request):
 def interim_announce(request):
     '''View which shows interim meeting requests awaiting announcement'''
     meetings = Meeting.objects.filter(type='interim',session__status='scheda')
+    menu_entries = get_menu_entries(request)
+    selected_menu_entry = 'announce'
 
-    return render(request, "meeting/interim_announce.html", {"meetings":meetings}) 
+    return render(request, "meeting/interim_announce.html", {
+        'menu_entries': menu_entries,
+        'selected_menu_entry': selected_menu_entry,
+        'meetings' :meetings}) 
 
 @role_required('Secretariat',)
 def interim_send_announcement(request,number):
@@ -922,13 +937,19 @@ def interim_send_announcement(request,number):
 def interim_pending(request):
     '''View which shows interim meeting requests pending approval'''
     meetings = Meeting.objects.filter(type='interim',session__status='apprw')
+    menu_entries = get_menu_entries(request)
+    selected_menu_entry = 'pending'
+    
 
     meetings = [ m for m in meetings if can_view_interim_request(m,request.user)]
     for meeting in meetings:
         if can_approve_interim_request(meeting,request.user):
             meeting.can_approve = True
     
-    return render(request, "meeting/interim_pending.html", {"meetings":meetings})
+    return render(request, "meeting/interim_pending.html", {
+        'menu_entries': menu_entries,
+        'selected_menu_entry':selected_menu_entry,
+        'meetings': meetings})
     
 @role_required('Area Director','Secretariat','IRTF Chair','WG Chair', 'RG Chair')
 def interim_request(request):
@@ -1004,7 +1025,7 @@ def upcoming(request):
     today = datetime.datetime.today()
     meetings = Meeting.objects.filter(date__gte=today,session__status__in=('sched','canceled')).order_by('date')
 
-    # extract groups hierarchy
+    # extract groups hierarchy for display filter
     seen = set()
     groups = [ m.session_set.first().group for m in meetings.filter(type='interim') ]
     group_parents = []
@@ -1023,6 +1044,10 @@ def upcoming(request):
 
         p.group_list.sort(key=lambda g: g.acronym)
 
+    # add menu entries
+    menu_entries = get_menu_entries(request)
+    selected_menu_entry = 'upcoming'
+    
     # add menu actions
     actions = []
     if can_request_interim_meeting(request.user):
@@ -1031,5 +1056,7 @@ def upcoming(request):
     return render(request, "meeting/upcoming.html",
                   { 'meetings':meetings,
                     'menu_actions': actions,
+                    'menu_entries': menu_entries,
+                    'selected_menu_entry':selected_menu_entry,
                     'group_parents':group_parents,
                   })

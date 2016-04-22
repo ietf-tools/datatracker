@@ -14,6 +14,15 @@
   {% origin %}
   <h1>Pending Interim Meetings</h1>
 
+    {% if menu_entries %}
+      <ul class="nav nav-tabs" role="tablist">
+        {% for name, url in menu_entries %}
+          <li {% if selected_menu_entry == name.lower %}class="active"{% endif %}>
+            <a href="{{ url }}">{{ name }}</a>
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
 
     {% if meetings %}
       <table id="pending-interim-meetings-table" class="table table-condensed table-striped">

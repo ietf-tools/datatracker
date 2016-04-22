@@ -341,6 +341,36 @@ class EditTests(TestCase):
 # -------------------------------------------------
 
 class InterimTests(TestCase):
+    def check_interim_tabs(self, url):
+        '''Helper function to check interim meeting list tabs'''
+        # no logged in -  no tabs
+        r = self.client.get(url)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q("ul.nav-tabs")),0)
+        # plain user -  no tabs
+        username = "plain"
+        self.client.login(username=username, password= username + "+password")
+        r = self.client.get(url)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q("ul.nav-tabs")),0)
+        self.client.logout()
+        # privileged user
+        username = "ad"
+        self.client.login(username=username, password= username + "+password")
+        r = self.client.get(url)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q("a:contains('Pending')")),1)
+        self.assertEqual(len(q("a:contains('Announce')")),0)
+        self.client.logout()
+        # secretariat
+        username = "ad"
+        self.client.login(username=username, password= username + "+password")
+        r = self.client.get(url)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q("a:contains('Pending')")),1)
+        self.assertEqual(len(q("a:contains('Announce')")),1)
+        self.client.logout()
+
     def test_interim_announce(self):
         make_meeting_test_data()
         url = urlreverse("ietf.meeting.views.interim_announce")
@@ -373,7 +403,8 @@ class InterimTests(TestCase):
 
     def test_upcoming(self):
         make_meeting_test_data()
-        r = self.client.get("/meeting/upcoming/")
+        url = urlreverse("ietf.meeting.views.upcoming")
+        r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         today = datetime.date.today()
         mars_interim = Meeting.objects.filter(date__gt=today,type='interim',session__group__acronym='mars',session__status='sched').first()
@@ -383,6 +414,7 @@ class InterimTests(TestCase):
         # cancelled session
         q = PyQuery(r.content)
         self.assertTrue('CANCELLED' in q('[id*="-ames"]').text())
+        self.check_interim_tabs(url)
 
     def test_upcoming_ics(self):
         make_meeting_test_data()
@@ -597,6 +629,7 @@ class InterimTests(TestCase):
         q = PyQuery(r.content)
         self.assertEqual(len(q("#pending-interim-meetings-table tr"))-1, count)
         self.client.logout()
+
 
     def test_can_approve_interim_request(self):
         make_meeting_test_data()
