@@ -6,7 +6,6 @@ import urlparse
 from django.core.urlresolvers import reverse as urlreverse
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.http import HttpRequest
 
 from pyquery import PyQuery
 
@@ -695,6 +694,26 @@ class InterimTests(TestCase):
         login_testing_unauthorized(self,"secretary",url)
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
+
+    def test_interim_request_disapprove(self):
+        make_meeting_test_data()
+        meeting = Meeting.objects.filter(type='interim',session__status='apprw',session__group__acronym='mars').first()
+        url = urlreverse('ietf.meeting.views.interim_request_details',kwargs={'number':meeting.number})
+        login_testing_unauthorized(self,"secretary",url)
+        r = self.client.post(url,{'disapprove':'Disapprove'})
+        self.assertEqual(r.status_code, 200)
+        for session in meeting.session_set.all():
+            self.assertEqual(session.status_id,'disappr')
+
+    def test_interim_request_cancel(self):
+        make_meeting_test_data()
+        meeting = Meeting.objects.filter(type='interim',session__status='apprw',session__group__acronym='mars').first()
+        url = urlreverse('ietf.meeting.views.interim_request_details',kwargs={'number':meeting.number})
+        login_testing_unauthorized(self,"secretary",url)
+        r = self.client.post(url,{'cancel':'Cancel'})
+        self.assertEqual(r.status_code, 200)
+        for session in meeting.session_set.all():
+            self.assertEqual(session.status_id,'canceledpa')
 
     def test_interim_request_details_permissions(self):
         make_meeting_test_data()

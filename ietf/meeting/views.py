@@ -992,6 +992,7 @@ def interim_request(request):
                 if meeting_type == 'series':
                     meeting = create_interim_meeting_from_forms(form,f)
                 f.save(request,group,meeting,is_approved)
+            messages.success(request,'Interim meeting request submitted')
             return redirect(upcoming)
         else:
             assert False, (form.errors, formset.errors)
@@ -1012,12 +1013,18 @@ def interim_request_details(request, number):
     if request.method == 'POST':
         if request.POST.get('approve'):
             meeting.session_set.update(status_id='scheda')
+            messages.success(request,'Interim meeting approved')
             if has_role(request.user, 'Secretariat'):
                 return redirect(interim_send_announcement, number=number)
         if request.POST.get('disapprove'):
-            pass
+            meeting.session_set.update(status_id='disappr')
+            messages.success(request,'Interim meeting disapproved')
         if request.POST.get('cancel'):
-            pass
+            if meeting.session_set.first().status.slug == 'sched':
+                meeting.session_set.update(status_id='canceled')
+            else:
+                meeting.session_set.update(status_id='canceledpa')
+            messages.success(request,'Interim meeting cancelled')
 
     return render(request, "meeting/interim_request_details.html",{
         "meeting":meeting,

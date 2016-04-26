@@ -6,7 +6,7 @@ from django.db import migrations
 def populate_names(apps, schema_editor):
     SessionStatusName = apps.get_model("name", "SessionStatusName")
     SessionStatusName.objects.create(slug="scheda",name="Scheduled - Announcement to be sent")
-
+    SessionStatusName.objects.create(slug="canceledpa",name="Cancelled - Pre Announcement")
 
 class Migration(migrations.Migration):
 

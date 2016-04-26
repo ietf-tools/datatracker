@@ -43,14 +43,18 @@
   <form method="post">
   {% csrf_token %}
   {% if can_edit %}
-    <a class="btn btn-default" href="">Edit</a>
+    {% if sessions.0.status.slug == 'apprw' or sessions.0.status.slug == 'scheda' %}
+        <a class="btn btn-default" href="">Edit</a>
+    {% endif %}
   {% endif %}
-  {% if can_approve %}
+  {% if can_approve and sessions.0.status.slug == 'apprw' %}
     <input class="btn btn-default" type="submit" value="Approve" name='approve' />
     <input class="btn btn-default" type="submit" value="Disapprove" name='disapprove' />
   {% endif %}
-  {% if can_edit %}  
-    <input class="btn btn-default" type="submit" value="Cancel" name='cancel' />
+  {% if can_edit %}
+    {% if sessions.0.status.slug == 'apprw' or sessions.0.status.slug == 'scheda' or sessions.0.status.slug == 'sched' %}
+        <input class="btn btn-default" type="submit" value="Cancel" name='cancel' />
+    {% endif %}
   {% endif %}
   </form>
 

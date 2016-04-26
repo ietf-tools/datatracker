@@ -595,6 +595,8 @@ def emailwrap(email):
 
 @register.filter
 def document_content(doc):
+    if doc is None:
+        return None
     path = os.path.join(doc.get_file_path(),doc.filename_with_rev())
     return get_document_content(doc.name,path,markup=False)
 

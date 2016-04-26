@@ -94,6 +94,7 @@ def make_immutable_base_data():
     create_person(opsarea, "ad")
     sops = create_group(name="Server Operations", acronym="sops", type_id="wg", parent=opsarea)
     create_person(sops, "chair", name="Sops Chairman", username="sopschairman")
+    create_person(sops, "secr", name="Sops Secretary", username="sopssecretary")
 
     # create a bunch of ads for swarm tests
     for i in range(1, 10):

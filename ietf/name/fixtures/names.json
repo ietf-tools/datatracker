@@ -2046,6 +2046,16 @@
  "fields": {
   "order": 0,
   "used": true,
+  "name": "Cancelled - Pre Announcement",
+  "desc": ""
+ },
+ "model": "name.sessionstatusname",
+ "pk": "canceledpa"
+},
+{
+ "fields": {
+  "order": 0,
+  "used": true,
   "name": "Disapproved",
   "desc": ""
  },

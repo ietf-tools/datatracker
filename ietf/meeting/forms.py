@@ -8,7 +8,7 @@ from django.forms.fields import Field
 from django.utils.encoding import force_text
 from django.utils import six
 
-from ietf.doc.models import Document, DocAlias, DocEvent, State, NewRevisionDocEvent
+from ietf.doc.models import Document, DocAlias, State, NewRevisionDocEvent
 from ietf.group.models import Group
 from ietf.ietfauth.utils import has_role
 from ietf.meeting.models import Session, countries, timezones

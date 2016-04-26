@@ -2,7 +2,7 @@
 virtual interim meeting on {{ meeting.date }} from {{ meeting.session_set.first | session_start_time | date:"H:i" }} to {{ meeting.session_set.first | session_end_time | date:"H:i" }} UTC.
 
 Agenda:
-{{ meeting.session_set.first.agenda | document_content }}
+{{ meeting.session_set.first.agenda | document_content | default_if_none:"(No agenda submitted)" }}
 
 To join the interim meeting:
 {{ meeting.session_set.first.remote_instructions }}
