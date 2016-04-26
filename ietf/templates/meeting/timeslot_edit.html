@@ -181,10 +181,4 @@ promiselist.push(ts_promise);
      Are you sure you want to delete this entire timeslot?
 </div>
 
-{% if server_mode %}
-	{% if server_mode != "production" %}
-	<button onclick="TowTruck(this); return false;">Start TowTruck</button>
-	{% endif %}
-{% endif %}
-
 {% endblock %}

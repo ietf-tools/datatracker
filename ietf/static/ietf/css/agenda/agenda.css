@@ -968,13 +968,6 @@ td.ourconflicts, td.theirconflicts {
     font-style:italic;
 }
 
-/* this is for the agenda summary page */
-.towtruck {
-  position: fixed;
-  bottom: 5px;
-  right: 15px;
-}
-
 .agenda_list_title {
   font-size: 44px;
   font-family: "Lucida Grande",Helvetica,Arial,Verdana,sans-serif;
