@@ -1,4 +1,5 @@
 import datetime
+import os
 import re
 
 from django import forms
@@ -7,11 +8,13 @@ from django.forms.fields import Field
 from django.utils.encoding import force_text
 from django.utils import six
 
+from ietf.doc.models import Document, DocAlias, DocEvent, State, NewRevisionDocEvent
 from ietf.group.models import Group
 from ietf.ietfauth.utils import has_role
 from ietf.meeting.models import Session, countries, timezones
 from ietf.meeting.helpers import assign_interim_session
 from ietf.message.models import Message
+from ietf.secr.utils.meeting import get_upload_root
 from ietf.utils.fields import DatepickerDateField
 
 # need to insert empty option for use in ChoiceField
@@ -189,7 +192,7 @@ class InterimSessionForm(forms.Form):
         super(InterimSessionForm, self).__init__(*args, **kwargs)
         self.fields['timezone'].initial = 'UTC'
         
-    def _save_agenda(self, text):
+    def _save_agenda(self, session):
         pass
 
     def save(self, request, group, meeting, is_approved):
@@ -216,7 +219,26 @@ class InterimSessionForm(forms.Form):
         assign_interim_session(session,time)
        
         if agenda:
-            self._save_agenda(agenda)
+            # create objects
+            filename = 'agenda-interim-%s-%s' % (group.acronym,time.strftime("%Y-%m-%d-%H%M"))
+            doc = Document.objects.create(type_id='agenda',group=group,name=filename,rev='00')
+            doc.set_state(State.objects.get(type=doc.type,slug='active'))
+            DocAlias.objects.create(name=doc.name, document=doc)
+            session.sessionpresentation_set.create(document=doc,rev=doc.rev)
+            NewRevisionDocEvent.objects.create(type='new_revision',
+                by=request.user.person,
+                doc=doc,
+                rev=doc.rev,
+                desc='New revision available')
+            # write file
+            path = os.path.join(get_upload_root(meeting),'agenda',doc.filename_with_rev())
+            directory = os.path.dirname(path)
+            if not os.path.exists(directory):
+                os.makedirs(directory)
+            with open(path, "w") as file:
+                file.write(agenda)
+
+        return session
 
 class InterimAnnounceForm(forms.ModelForm):
 

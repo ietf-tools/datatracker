@@ -510,8 +510,13 @@ class InterimTests(TestCase):
         timeslot = session.official_timeslotassignment().timeslot
         self.assertEqual(timeslot.time,dt)
         self.assertEqual(timeslot.duration,duration)
+        # ensure agenda document was created
+        self.assertEqual(session.materials.count(),1)
+        doc = session.materials.first()
+        path = os.path.join(doc.get_file_path(),doc.filename_with_rev())
+        self.assertTrue(os.path.exists(path))
 
-    def test_interim_request_single_f2f(self):
+    def test_interim_request_single_in_person(self):
         make_meeting_test_data()
         group = Group.objects.get(acronym='mars')
         date = datetime.date.today() + datetime.timedelta(days=30)

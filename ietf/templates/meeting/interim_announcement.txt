@@ -1,11 +1,10 @@
-The {{ group.name }} ({{ group.acronym }}) Working Group will hold a
-virtual interim meeting on {{ meeting.date }} from {{ start }} to
-{{ end }} UTC.
+{% load ietf_filters %}The {{ group.name }} ({{ group.acronym }}) Working Group will hold a
+virtual interim meeting on {{ meeting.date }} from {{ meeting.session_set.first | session_start_time | date:"H:i" }} to {{ meeting.session_set.first | session_end_time | date:"H:i" }} UTC.
 
 Agenda:
-[AGENDA]
+{{ meeting.session_set.first.agenda | document_content }}
 
 To join the interim meeting:
-{{ meeting.session_set.all.0.remote_instructions }}
+{{ meeting.session_set.first.remote_instructions }}
 
 [ADDITIONAL INFORMATION]
