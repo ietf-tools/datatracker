@@ -15,7 +15,7 @@
   <div id="read_only">
     <p>You do not have access this agenda. It belongs to {{ schedule.owner }}.</p>
 
-    <p><a href="{% url "ietf.meeting.views.edit_agendas" meeting.number %}">List your meetings</a>.</p>
+    <p><a href="{% url "ietf.meeting.views.list_agendas" meeting.number %}">List your meetings</a>.</p>
 
     <div class="wrapper custom_text_stuff"></div>
   </div>

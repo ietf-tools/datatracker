@@ -3,84 +3,32 @@
 {% load origin %}
 {% load staticfiles %}
 {% load ietf_filters %}
-{% load humanize %}
+{% load bootstrap3 %}
 
 {% block title %}IETF {{ meeting.number }} Meeting Agenda: {{schedule.owner}} / {{ schedule.name }}{% endblock %}
-{% load agenda_custom_tags %}
-{% block pagehead %}
-<link rel='stylesheet' type='text/css' href="{% static 'ietf/css/agenda/jquery-ui-themes/jquery-ui-1.8.11.custom.css' %}" />
-<link rel='stylesheet' type='text/css' href="{% static 'ietf/css/agenda/base2.css' %}" />
-<link rel='stylesheet' type='text/css' href="{% static 'ietf/css/agenda/agenda.css' %}" />
-{% endblock pagehead %}
-
-{% block js %}
-<script type="text/javascript" src="{% static 'ietf/js/agenda/jquery-1.8.2.min.js' %}"></script>
-<script src="{% static 'jquery.cookie/jquery.cookie.js' %}"></script>
-<script>
-jQuery.ajaxSetup({
-    crossDomain: false, // obviates need for sameOrigin test
-    beforeSend: function(xhr, settings) {
-        if (!csrfSafeMethod(settings.type)) {
-            xhr.setRequestHeader("X-CSRFToken", $.cookie('csrftoken'));
-        }
-    }
-});
-</script>
-<script type='text/javascript' src="{% static 'ietf/js/agenda/jquery-ui-1.9.0.custom/jquery-ui.custom.js' %}"></script>
-<script type='text/javascript' src="{% static 'ietf/js/agenda/jquery-ui-1.9.0.custom/jquery.ui.widget.js' %}"></script>
-<script type='text/javascript' src="{% static 'ietf/js/agenda/jquery-ui-1.9.0.custom/jquery.ui.droppable.js' %}"></script>
-<script type='text/javascript' src="{% static 'ietf/js/agenda/jquery-ui-1.9.0.custom/jquery.ui.sortable.js' %}"></script>
-<script type='text/javascript' src="{% static 'ietf/js/agenda/jquery-ui-1.9.0.custom/jquery.ui.accordion.js' %}"></script>
-<script type='text/javascript' src="{% static 'ietf/js/agenda/jquery-ui-1.9.0.custom/jquery.ui.draggable.js' %}"></script>
-
-<script type='text/javascript' src="{% static 'ietf/js/agenda/agenda_listeners.js' %}"></script>
-<script type='text/javascript' src="{% static 'ietf/js/agenda/agenda_helpers.js' %}"></script>
-<script type='text/javascript' src="{% static 'ietf/js/agenda/agenda_property_utils.js' %}"></script>
-<script type='text/javascript' src="{% static 'ietf/js/agenda/agenda_properties_edit.js' %}"></script>
-{% endblock js %}
 
 {% block content %}
   {% origin %}
-</tr></table></div>
-<div class="wrapper custom_text_stuff">
-<div style="ui-icon ui-icon-arrow-1-w" id="close_ietf_menubar">
-&lt;
-</div>
 
-<div href="{{ meeting.json_url }}" class="agenda_list_title">
-<p>Meeting {{meeting.number}}</p>
-</div>
+<h1>IETF {{meeting.number}}</h1>
+<h2>Schedule: {{schedule.owner}}/{{schedule.name}} ({{schedule.official_token }})
+    {% if not schedule.is_official %}
+      <a class="btn btn-default btn-sm" href="{% url 'ietf.meeting.views.make_schedule_official' num=meeting.number owner=schedule.owner.email_address name=schedule.name %}">Make this the official schedule</a>
+      <a class="btn btn-warning btn-sm" href="{% url 'ietf.meeting.views.delete_schedule' num=meeting.number owner=schedule.owner.email_address name=schedule.name %}">Delete this schedule</a>
+    {% endif %}
+</h2>
 
-<div id="agenda_edit_properties">
-  <div id="title">
-    <p>Schedule: {{schedule.owner}}/{{schedule.name}}</p>
-    <!-- done with table to reuse code from table view -->
-    <table class="agenda_list"><tr></tr><tr agenda_name="{{schedule.name}}" id="agenda_name_{{schedule.name|slugify}}" ><td>
-    <span class="styled_button agenda_official_mark {{schedule.official_class}}">{{ schedule.official_token }}</span>
-    </td></tr></table>
-  </div>
+<div>
 
-  <form action="{{schedule.json_url}}" method="POST">
-  <fieldset>
-     <table>
-        {{ form.as_table }}
-
-     <tr>
-       <td></td>
-       <td colspan=2><input type="button" name="save" value="save" onClick="save_agenda(this.form)" class="styled_button">
-       <a id="agenda_cancel_url" href="{% url "ietf.meeting.views.edit_agendas" meeting.number %}"><span class="styled_button agenda_cancel">Cancel</span></a></td>
-       <td><span class="styled_button agenda_delete">DEL</span></td>
-     </tr>
-     </table>
-  </fieldset>
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {% bootstrap_form form %}
+    {% buttons %}
+        <input class="btn btn-primary" type="submit" value="Save" name="save">
+        <a href="{% url 'ietf.meeting.views.list_agendas' num=meeting.number %}" class="btn btn-default">Cancel</a>
+    {% endbuttons %}
   </form>
-</div>
-
-<div class="dialog" id="agenda_delete_dialog">
-     Are you sure you want to delete this agenda?
-</div>
 
 </div>
-
 
 {% endblock %}
