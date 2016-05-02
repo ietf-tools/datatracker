@@ -234,10 +234,7 @@ class DocumentInfo(models.Model):
 
     def has_rfc_editor_note(self):
         e = self.latest_event(WriteupDocEvent, type="changed_rfc_editor_note_text")
-        if e and (e.text != ""):
-            return e.time
-        else:
-            return None
+        return e != None and (e.text != "")
 
     def meeting_related(self):
         answer = False
