@@ -14,10 +14,10 @@ from ietf.utils.mail import send_mail_preformatted
 
 class PersonInfo(models.Model):
     time = models.DateTimeField(default=datetime.datetime.now)      # When this Person record entered the system
-    name = models.CharField(max_length=255, db_index=True) # The normal unicode form of the name.  This must be
+    name = models.CharField("Full Name (Unicode)", max_length=255, db_index=True) # The normal unicode form of the name.  This must be
                                                         # set to the same value as the ascii-form if equal.
-    ascii = models.CharField(max_length=255)            # The normal ascii-form of the name.
-    ascii_short = models.CharField(max_length=32, null=True, blank=True)      # The short ascii-form of the name.  Also in alias table if non-null
+    ascii = models.CharField("Full Name (ASCII)", max_length=255)            # The normal ascii-form of the name.
+    ascii_short = models.CharField("Abbreviated Name (ASCII)", max_length=32, null=True, blank=True)      # The short ascii-form of the name.  Also in alias table if non-null
     address = models.TextField(max_length=255, blank=True)
     affiliation = models.CharField(max_length=255, blank=True)
 
