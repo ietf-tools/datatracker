@@ -1124,6 +1124,13 @@ class StatusUpdateTests(TestCase):
         response = self.client.post(url,dict(txt=test_file,submit_response="1"))
         self.assertEqual(response.status_code, 302)
         self.assertEqual(chair.group.latest_event(type='status_update').desc,'This came from a file.')
+
+    def test_view_all_status_updates(self):
+        GroupEventFactory(type='status_update',desc='blah blah blah',group__type_id='wg')
+        GroupEventFactory(type='status_update',desc='blah blah blah',group__type_id='rg')
+        url = urlreverse('ietf.group.info.all_status')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code,200)
        
 class GroupParentLoopTests(TestCase):
 

@@ -10,6 +10,7 @@ urlpatterns = patterns('',
     (r'^chartering/create/(?P<group_type>(wg|rg))/$', 'ietf.group.edit.edit', {'action': "charter"}, "group_create"),
     (r'^concluded/$', 'ietf.group.info.concluded_groups'),
     (r'^email-aliases/$', 'ietf.group.info.email_aliases'),
+    (r'^all-status/$', 'ietf.group.info.all_status'),
     (r'^(?P<acronym>[a-zA-Z0-9-._]+)/$', 'ietf.group.info.group_home', None, "group_home"),
     (r'^(?P<acronym>[a-zA-Z0-9-._]+)/', include('ietf.group.urls_info_details')),
 )
