@@ -40,10 +40,20 @@ class SubmitTests(TestCase):
         os.mkdir(self.archive_dir)
         settings.INTERNET_DRAFT_ARCHIVE_DIR = self.archive_dir
         
-        self.saved_yang_model_dir = settings.YANG_DRAFT_MODEL_DIR
-        self.yang_model_dir = os.path.abspath("tmp-yang-model-dir")
-        os.mkdir(self.yang_model_dir)
-        settings.YANG_DRAFT_MODEL_DIR = self.yang_model_dir
+        self.saved_yang_rfc_model_dir = settings.YANG_RFC_MODEL_DIR
+        self.yang_rfc_model_dir = os.path.abspath("tmp-yang-rfc-model-dir")
+        os.mkdir(self.yang_rfc_model_dir)
+        settings.YANG_RFC_MODEL_DIR = self.yang_rfc_model_dir
+
+        self.saved_yang_draft_model_dir = settings.YANG_DRAFT_MODEL_DIR
+        self.yang_draft_model_dir = os.path.abspath("tmp-yang-draft-model-dir")
+        os.mkdir(self.yang_draft_model_dir)
+        settings.YANG_DRAFT_MODEL_DIR = self.yang_draft_model_dir
+
+        self.saved_yang_inval_model_dir = settings.YANG_INVAL_MODEL_DIR
+        self.yang_inval_model_dir = os.path.abspath("tmp-yang-inval-model-dir")
+        os.mkdir(self.yang_inval_model_dir)
+        settings.YANG_INVAL_MODEL_DIR = self.yang_inval_model_dir
 
     def tearDown(self):
         shutil.rmtree(self.staging_dir)
@@ -54,7 +64,9 @@ class SubmitTests(TestCase):
         settings.INTERNET_DRAFT_PATH = self.saved_internet_draft_path
         settings.IDSUBMIT_REPOSITORY_PATH = self.saved_idsubmit_repository_path
         settings.INTERNET_DRAFT_ARCHIVE_DIR = self.saved_archive_dir
-        settings.YANG_DRAFT_MODEL_DIR = self.saved_yang_model_dir
+        settings.YANG_RFC_MODEL_DIR = self.saved_yang_rfc_model_dir
+        settings.YANG_DRAFT_MODEL_DIR = self.saved_yang_draft_model_dir
+        settings.YANG_INVAL_MODEL_DIR = self.saved_yang_inval_model_dir
 
 
     def submission_file(self, name, rev, group, format, templatename):
