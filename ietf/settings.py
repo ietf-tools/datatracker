@@ -349,6 +349,7 @@ TEST_CODE_COVERAGE_EXCLUDE = [
     "*/tests*",
     "*/admin.py",
     "*/migrations/*",
+    "*/management/commands/*",
     "ietf/settings*",
     "ietf/utils/test_runner.py",
 ]
