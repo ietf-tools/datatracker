@@ -35,3 +35,7 @@ Planned work in rough order
 
 * Small nomcom refactoring: associate Feedback records with Person
   instead of User.
+
+* Consistency fix:  in settings.py, name directory settings consistently withhhh
+  ..._DIR; reserving ..._PATH for settings with PATH semantics (':'-separated lists
+  of directories)
