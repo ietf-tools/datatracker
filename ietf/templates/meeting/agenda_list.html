@@ -3,91 +3,48 @@
 {% load origin %}
 {% load staticfiles %}
 {% load ietf_filters %}
-{% load humanize %}
 
-{% block title %}IETF {{ meeting.number }} Meeting Agenda{% endblock %}
-{% load agenda_custom_tags %}
-{% block pagehead %}
-  <link rel='stylesheet' type='text/css' href="{% static 'ietf/css/agenda/jquery-ui-themes/jquery-ui-1.8.11.custom.css' %}" />
-  <link rel='stylesheet' type='text/css' href="{% static 'ietf/css/agenda/base2.css' %}" />
-  <link rel='stylesheet' type='text/css' href="{% static 'ietf/css/agenda/agenda.css' %}" />
-{% endblock pagehead %}
-
-{% block js %}
-  <script type="text/javascript" src="{% static 'ietf/js/agenda/jquery-1.8.2.min.js' %}"></script>
-  <script src="{% static 'jquery.cookie/jquery.cookie.js' %}"></script>
-  <script>
-   jQuery.ajaxSetup({
-       crossDomain: false, // obviates need for sameOrigin test
-       beforeSend: function(xhr, settings) {
-           if (!csrfSafeMethod(settings.type)) {
-               xhr.setRequestHeader("X-CSRFToken", $.cookie('csrftoken'));
-           }
-       }
-   });
-  </script>
-  <script type='text/javascript' src="{% static 'ietf/js/agenda/jquery-ui-1.9.0.custom/jquery-ui.custom.js' %}"></script>
-  <script type='text/javascript' src="{% static 'ietf/js/agenda/jquery-ui-1.9.0.custom/jquery.ui.widget.js' %}"></script>
-  <script type='text/javascript' src="{% static 'ietf/js/agenda/jquery-ui-1.9.0.custom/jquery.ui.droppable.js' %}"></script>
-  <script type='text/javascript' src="{% static 'ietf/js/agenda/jquery-ui-1.9.0.custom/jquery.ui.sortable.js' %}"></script>
-  <script type='text/javascript' src="{% static 'ietf/js/agenda/jquery-ui-1.9.0.custom/jquery.ui.accordion.js' %}"></script>
-  <script type='text/javascript' src="{% static 'ietf/js/agenda/jquery-ui-1.9.0.custom/jquery.ui.draggable.js' %}"></script>
-
-  <script type='text/javascript' src="{% static 'ietf/js/agenda/agenda_listeners.js' %}"></script>
-  <script type='text/javascript' src="{% static 'ietf/js/agenda/agenda_helpers.js' %}"></script>
-  <script type='text/javascript' src="{% static 'ietf/js/agenda/agenda_property_utils.js' %}"></script>
-  <script type='text/javascript' src="{% static 'ietf/js/agenda/agendas_edit.js' %}"></script>
-{% endblock js %}
-
+{% block title %}IETF {{ meeting.number }} Meeting Agenda List{% endblock %}
 
 {% block content %}
   {% origin %}
-  <div class="wrapper custom_text_stuff">
-    <div style="ui-icon ui-icon-arrow-1-w" id="close_ietf_menubar">
-      &lt;
-    </div>
+  <h1>IETF {{meeting.number}} Agenda List</h1>
 
-    <div href="{{ meeting.json_url }}" class="agenda_list_title">
-      <p>Meeting {{meeting.number}}</p>
-    </div>
+{% comment %}
+  <div> 
+    <p><a href="{% url "ietf.meeting.views.edit_timeslots" meeting.number %}">Edit Timeslots</a></p>
+  </div>
+{% endcomment %}
 
-    <div class="agenda_list_edit">
-      <p><a href="{% url "ietf.meeting.views.edit_timeslots" meeting.number %}">Edit Timeslots</a></p>
-    </div>
-
-    <div id="class_list" class="agenda_list">
-      <table>
-        <tr>
-	  <th></th>
-	  <th>Owner</th>
-	  <th>Name</th>
-	  <th>Visible</th>
-	  <th>Public</th>
-        </tr>
-        {% for agenda in schedules %}
-          <tr agenda_name="{{agenda.name}}" id="agenda_name_{{agenda.name|slugify}}" href="{{agenda.base_url}}" class="{{agenda.official_class}}_row">
-	    <td class="agenda_mark agenda_data"> <span class="styled_button agenda_official_mark {{agenda.official_class}}">{{ agenda.official_token }}</span></td>
-	    <td class="agenda_data"> <span class="agenda_owner">{{ agenda.owner }}</span> </td>
-	    <td class="agenda_data">
-              <a href="{% url "ietf.meeting.views.edit_agenda" agenda.meeting.number agenda.owner_email agenda.name %}"><span class="agenda_name">{{ agenda.name }}</span></a>
-	    </td>
-	    <td class="agenda_data"> <span class="agenda_visible {{agenda.visible_class}}">{{ agenda.visible_token }}</span></a></td>
-            <td class="agenda_data"> <span class="agenda_public {{agenda.public_class}}">{{ agenda.public_token }}</span></td>
-            <td class="agenda_mark agenda_data"> <a href="{% url "ietf.meeting.views.edit_agenda_properties" agenda.meeting.number agenda.owner_email agenda.name %}"><span class="styled_button agenda_edit">EDIT</span></a> </td>
-            <td class="agenda_mark agenda_data"> <span class="styled_button agenda_delete">DEL</span> </td>
+  <div>
+  {% regroup schedules by is_official as classed_schedules %}
+    {% for class in classed_schedules %}
+      <div class="panel panel-default">
+        <div class="panel-heading">{{class.grouper|yesno:"Official,Unofficial"}} Schedule{{class.list|length|pluralize}}</div>
+        <div class="panel-body">
+          <table class="table table-condensed table-striped">
+            <tr>
+              <th class="col-md-4">Name</th>
+              <th class="col-md-4">Owner</th>
+              <th class="col-md-1">Visible</th>
+              <th class="col-md-1">Public</th>
+              <th class="col-md-1"></th>
+            </tr>
+            {% for agenda in class.list %}
+            <tr>
+              <td><a href="{% url "ietf.meeting.views.edit_agenda" agenda.meeting.number agenda.owner_email agenda.name %}">
+                    {{ agenda.name }}</a></td>
+              <td>{{ agenda.owner }}</td>
+              <td>{{ agenda.visible_token }}</td>
+              <td>{{ agenda.public_token }}</td>
+              <td><a class="btn btn-default" href="{% url "ietf.meeting.views.edit_agenda_properties" agenda.meeting.number agenda.owner_email agenda.name %}">
+                  EDIT</a></td>
           </tr>
-        {% endfor %}
-      </table>
+          {% endfor %}
+        </table>
+      </div>
     </div>
-
-    <div class="dialog" id="agenda_delete_dialog">
-      Are you sure you want to delete this agenda?
-    </div>
-
-    <div class="dialog" id="agenda_notpublic_dialog">
-      You can not mark an agenda as official, if it is not public.
-    </div>
-
+   {% endfor %}
   </div>
 
-{% endblock %}
+{% endblock content %}

@@ -304,30 +304,33 @@ def edit_agenda(request, num=None, owner=None, name=None):
 
 ##############################################################################
 #  show the properties associated with an agenda (visible, public)
-#    this page uses ajax POST requests to the API
 #
 AgendaPropertiesForm = modelform_factory(Schedule, fields=('name','visible', 'public'))
 
 @role_required('Area Director','Secretariat')
-@ensure_csrf_cookie
 def edit_agenda_properties(request, num=None, owner=None, name=None):
     meeting  = get_meeting(num)
     person   = get_person_by_email(owner)
     schedule = get_schedule_by_name(meeting, person, name)
     if schedule is None:
         raise Http404("No meeting information for meeting %s owner %s schedule %s available" % (num, owner, name))
-    form     = AgendaPropertiesForm(instance=schedule)
 
     cansee, canedit, secretariat = agenda_permissions(meeting, schedule, request.user)
 
     if not (canedit or has_role(request.user,'Secretariat')):
         return HttpResponseForbidden("You may not edit this agenda")
     else:
+        if request.method == 'POST':
+            form = AgendaPropertiesForm(instance=schedule,data=request.POST)
+            if form.is_valid():
+               form.save()
+               return HttpResponseRedirect(reverse('ietf.meeting.views.list_agendas',kwargs={'num': num}))
+        else: 
+            form = AgendaPropertiesForm(instance=schedule)
         return render(request, "meeting/properties_edit.html",
                                              {"schedule":schedule,
                                               "form":form,
                                               "meeting":meeting,
-                                              "hide_menu": True,
                                           })
 
 ##############################################################################
@@ -335,11 +338,7 @@ def edit_agenda_properties(request, num=None, owner=None, name=None):
 #
 
 @role_required('Area Director','Secretariat')
-@ensure_csrf_cookie
-def edit_agendas(request, num=None, order=None):
-
-    #if request.method == 'POST':
-    #    return agenda_create(request, num, owner, name)
+def list_agendas(request, num=None ):
 
     meeting = get_meeting(num)
     user = request.user
@@ -350,10 +349,11 @@ def edit_agendas(request, num=None, order=None):
 
     schedules = schedules.order_by('owner', 'name')
 
+    schedules = sorted(list(schedules),key=lambda x:not x.is_official)
+
     return render(request, "meeting/agenda_list.html",
                                          {"meeting":   meeting,
-                                          "schedules": schedules.all(),
-                                          "hide_menu": True,
+                                          "schedules": schedules,
                                           })
 
 @ensure_csrf_cookie
@@ -927,3 +927,62 @@ def add_session_drafts(request, session_id, num):
                     'already_linked': session.sessionpresentation_set.filter(document__type_id='draft'),
                     'form': form,
                   })
+
+@role_required('Secretariat')
+def make_schedule_official(request, num, owner, name):
+
+    meeting  = get_meeting(num)
+    person   = get_person_by_email(owner)
+    schedule = get_schedule_by_name(meeting, person, name)
+
+    if schedule is None:
+        raise Http404
+
+    if request.method == 'POST':
+        if not (schedule.public and schedule.visible):
+            schedule.public = True
+            schedule.visible = True
+            schedule.save()
+        meeting.agenda = schedule
+        meeting.save()
+        return HttpResponseRedirect(reverse('ietf.meeting.views.list_agendas',kwargs={'num':num}))
+
+    if not schedule.public:
+        messages.warning(request,"This schedule will be made public as it is made official.")
+
+    if not schedule.visible:
+        messages.warning(request,"This schedule will be made visible as it is made official.")
+
+    return render(request, "meeting/make_schedule_official.html",
+                  { 'schedule' : schedule,
+                    'meeting' : meeting,
+                  }
+                 )
+    
+
+@role_required('Secretariat','Area Director')
+def delete_schedule(request, num, owner, name):
+
+    meeting  = get_meeting(num)
+    person   = get_person_by_email(owner)
+    schedule = get_schedule_by_name(meeting, person, name)
+
+    if schedule.name=='Empty-Schedule':
+        return HttpResponseForbidden('You may not delete the default empty schedule')
+
+    if schedule == meeting.agenda:
+        return HttpResponseForbidden('You may not delete the official agenda for %s'%meeting)
+
+    if not ( has_role(request.user, 'Secretariat') or person.user == request.user ):
+        return HttpResponseForbidden("You may not delete other user's schedules")
+
+    if request.method == 'POST':
+        schedule.delete()
+        return HttpResponseRedirect(reverse('ietf.meeting.views.list_agendas',kwargs={'num':num}))
+
+    return render(request, "meeting/delete_schedule.html",
+                  { 'schedule' : schedule,
+                    'meeting' : meeting,
+                  }
+                 )
+  

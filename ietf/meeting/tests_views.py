@@ -11,13 +11,13 @@ from django.conf import settings
 from pyquery import PyQuery
 
 from ietf.doc.models import Document
-from ietf.meeting.models import Session, TimeSlot
+from ietf.meeting.models import Session, TimeSlot, Meeting
 from ietf.meeting.test_data import make_meeting_test_data
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized, unicontent
 
 from ietf.person.factories import PersonFactory
 from ietf.group.factories import GroupFactory
-from ietf.meeting.factories import SessionFactory, SessionPresentationFactory
+from ietf.meeting.factories import SessionFactory, SessionPresentationFactory, ScheduleFactory, MeetingFactory
 from ietf.doc.factories import DocumentFactory
 
 class MeetingTests(TestCase):
@@ -401,3 +401,48 @@ class SessionDetailsTests(TestCase):
         q = PyQuery(r.content)
         self.assertEqual(1,len(q(".alert-warning:contains('may affect published proceedings')")))
 
+class EditScheduleListTests(TestCase):
+    def setUp(self):
+        self.mtg = MeetingFactory(type_id='ietf')
+        ScheduleFactory(meeting=self.mtg,name='Empty-Schedule')
+
+    def test_list_agendas(self):
+        url = urlreverse('ietf.meeting.views.list_agendas',kwargs={'num':self.mtg.number})
+        login_testing_unauthorized(self,"secretary",url)
+        r = self.client.get(url)
+        self.assertTrue(r.status_code, 200)
+
+    def test_delete_schedule(self):
+        url = urlreverse('ietf.meeting.views.delete_schedule',
+                         kwargs={'num':self.mtg.number,
+                                 'owner':self.mtg.agenda.owner.email_address(),
+                                 'name':self.mtg.agenda.name,
+                         })
+        login_testing_unauthorized(self,"secretary",url)
+        r = self.client.get(url)
+        self.assertTrue(r.status_code, 403)
+        r = self.client.post(url,{'save':1})
+        self.assertTrue(r.status_code, 403)
+        self.assertEqual(self.mtg.schedule_set.count(),2)
+        self.mtg.agenda=None
+        self.mtg.save()
+        r = self.client.get(url)
+        self.assertTrue(r.status_code, 200)
+        r = self.client.post(url,{'save':1})
+        self.assertTrue(r.status_code, 302)
+        self.assertEqual(self.mtg.schedule_set.count(),1)
+
+    def test_make_schedule_official(self):
+        schedule = self.mtg.schedule_set.exclude(id=self.mtg.agenda.id).first()
+        url = urlreverse('ietf.meeting.views.make_schedule_official',
+                         kwargs={'num':self.mtg.number,
+                                 'owner':schedule.owner.email_address(),
+                                 'name':schedule.name,
+                         })
+        login_testing_unauthorized(self,"secretary",url)
+        r = self.client.get(url)
+        self.assertTrue(r.status_code, 200)
+        r = self.client.post(url,{'save':1})
+        self.assertTrue(r.status_code, 302)
+        mtg = Meeting.objects.get(number=self.mtg.number)
+        self.assertEqual(mtg.agenda,schedule)
