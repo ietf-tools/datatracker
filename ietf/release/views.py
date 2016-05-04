@@ -13,20 +13,7 @@ import changelog
 
 # workaround for thread import lock problem, http://bugs.python.org/issue7980
 import time                             
-time.strptime('1984', '%Y')             # this will happen lazily when changelog calls tzparse later, otherwise
-
-
-# workaround for thread import lock problem, http://bugs.python.org/issue7980
-import time
-time.strptime('1984', '%Y')
-
-# workaround for thread import lock problem, http://bugs.python.org/issue7980
-import time
-time.strptime('1984', '%Y')
-
-# workaround for thread import lock problem, http://bugs.python.org/issue7980
-import time
-time.strptime('1984', '%Y')
+time.strptime('1984', '%Y')             # we do this to force lib loading, instead of it happening lazily when changelog calls tzparse later
 
 def trac_links(text):
     # changeset links
