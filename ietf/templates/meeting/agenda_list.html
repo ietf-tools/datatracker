@@ -88,13 +88,6 @@
       You can not mark an agenda as official, if it is not public.
     </div>
 
-    <div class="towtruck">
-      {% if server_mode %}
-        {% if server_mode != "production" %}
-          <button onclick="TowTruck(this); return false;">Start TowTruck</button>
-        {% endif %}
-      {% endif %}
-    </div>
   </div>
 
 {% endblock %}
