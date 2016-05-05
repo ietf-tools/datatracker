@@ -1,3 +1,78 @@
+ietfdb (6.20.0) ietf; urgency=high
+
+  **Better Yang model support, Reworked meeting schedule management, Release management of cron jobs**
+
+  This is a mixed feature and bugfix release.  It provides additional
+  support for Yang models, reworked pages for meeting schedule
+  management, adds a crontab file as part of the release managed files,
+  and provides a whole bunch of bugfixes.  Details below:
+
+  * Merged in [11137] from rjsparks@nostrum.com:
+    Reworked the pages that manage all the possible schedules for a 
+    meeting. Removed a lot of custom javascript. Fixes issue #1921.  
+
+  * Merged in [11133] from rjsparks@nostrum.com:
+    Cleanup: Remove hooks for TowTruck.  
+
+  * Merged in [11132] from rjsparks@nostrum.com:
+    Minor template typo correction.  
+
+  * Merged in [11129] from rjsparks@nostrum.com:
+    Have person.formatted_email() return the primary address if one is so 
+    marked. Fixes issue #1928.  
+
+  * Merged in [11128] from rjsparks@nostrum.com:
+    Leave out the sentence about consensus when requesting publication as 
+    the ISE. Fixes issue #1952.  
+
+  * Merged in [11122] from rjsparks@nostrum.com:
+    Add page counts to doc.json. Fixes issue #1936.  
+
+  * Merged in [11120] from rcross@amsl.com:
+    Update announcement tool permissions for new IAOC chair.   
+
+  * Merged in [11118] from rcross@amsl.com:
+    Move standalone monthly report scripts to bin directory.   
+
+  * Merged in [11116] from rjsparks@nostrum.com:
+    Add an entry to GROUP_EVENT_CHOICES for status updates. Fixes issue #1948.  
+
+  * Excluded management commands from code coverage figures -- testing is 
+    possible but in many cases would be so slow that the test suite would 
+    become much more painful to run.
+
+  * Merged in [11112] and [11113] from rjsparks@nostrum.com:
+    Add a page to show the active status reports all in one place. Fixes 
+    issue #1951.
+
+  * Tweaked the field names of Person name fields to make the intended use 
+    clearer.
+
+  * Fixed the function has_rfc_editor_note() to return boolean -- datetime 
+    cannot be serialized as JSON, so /iesg/agenda/agenda.json was broken when 
+    there was an rfc-editor-note.
+
+  * Added a crontab file to be symlinked from /etc/cron.d/, and related 
+    scripts to be run from cron.  Requires refactoring of CronRunner and 
+    NightRunner scripts before activation, to avoid duplicate runs.
+
+  * Added a django management command to populate yang model libraries from 
+    RFCs and drafts.
+
+  * Add support for legacy IPR search arguments, for compatibility with old 
+    ipr search URLs.
+
+  * Additional fix for issue issue #1950, removing the double slash.
+
+  * Added a missing '?join' to each group's xmpp link on the charter pages,
+    and removed an unwanted double slash.  Fixes issue #1950
+
+  * Fixed the multiple (incorrect) extension problem for some materials 
+    links.  Fixes issue #1947.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  05 May 2016 12:37:18 +0000
+
+
 ietfdb (6.19.0) ietf; urgency=high
 
   **IETF 95 Code Sprint**
@@ -190,7 +265,7 @@ ietfdb (6.17.0) ietf; urgency=medium
 
 ietfdb (6.16.0) ietf; urgency=medium
 
-  **Yang validation of draft submissions**
+  **Yang Validation of Draft Submissions**
 
   This release adds Yang validation of submitted drafts which contain
   Yang code, through a new plug-in architecture which makes it easy to 
@@ -223,7 +298,7 @@ ietfdb (6.16.0) ietf; urgency=medium
 
 ietfdb (6.15.0) ietf; urgency=medium
 
-  **Session docs, WG List Archive Tab, RFC Note enhancements**
+  **Session Docs, WG List Archive Tab, RFC Note enhancements**
 
   This release provides a number of nice enhancements:
 
