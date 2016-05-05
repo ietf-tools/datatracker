@@ -80,7 +80,8 @@ def index(request):
 #     return HttpResponseRedirect(redirect_to)
 
 def create_account(request):
-    success = False
+    to_email = None
+
     if request.method == 'POST':
         form = RegistrationForm(request.POST)
         if form.is_valid():
@@ -103,7 +104,7 @@ def create_account(request):
 
     return render(request, 'registration/create.html', {
         'form': form,
-        'success': success,
+        'to_email': to_email,
     })
 
 def confirm_account(request, auth):
@@ -140,10 +141,12 @@ def confirm_account(request, auth):
                                                name=email,
                                                ascii=email)
             if not email_obj:
-                email_obj = Email.objects.create(address=email,
-                                                 person=person)
-            email_obj.person = person
-            email_obj.save()
+                email_obj = Email.objects.create(address=email, person=person)
+            else:
+                if not email_obj.person:
+                    email_obj.person = person
+                    email_obj.save()
+
             person.user = user
             person.save()
 
@@ -315,6 +318,8 @@ def confirm_password_reset(request, auth):
             user.save()
             # password is also stored in htpasswd file
             save_htpasswd_file(user.username, password)
+
+            success = True
     else:
         form = PasswordForm()
 

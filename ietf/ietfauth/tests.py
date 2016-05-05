@@ -8,7 +8,7 @@ from django.core.urlresolvers import reverse as urlreverse
 from django.contrib.auth.models import User
 from django.conf import settings
 
-from ietf.utils.test_utils import TestCase, login_testing_unauthorized
+from ietf.utils.test_utils import TestCase, login_testing_unauthorized, unicontent
 from ietf.utils.test_data import make_test_data
 from ietf.utils.mail import outbox, empty_outbox
 from ietf.person.models import Person, Email
@@ -89,6 +89,7 @@ class IetfAuthTests(TestCase):
         empty_outbox()
         r = self.client.post(url, { 'email': email })
         self.assertEqual(r.status_code, 200)
+        self.assertTrue("Account created" in unicontent(r.content))
         self.assertEqual(len(outbox), 1)
 
         # go to confirm page
