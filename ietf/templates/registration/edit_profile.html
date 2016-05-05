@@ -2,7 +2,7 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
 
-{% load widget_tweaks %}
+{% load widget_tweaks bootstrap3 %}
 
 {% block title %}Profile for {{ user }}{% endblock %}
 
@@ -13,36 +13,12 @@
   <form class="form-horizontal" method="post">
     {% csrf_token %}
 
+    {% bootstrap_form_errors person_form 'non_fields' %}
+
     <div class="form-group">
       <label class="col-sm-2 control-label">User name</label>
       <div class="col-sm-10">
         <p class="form-control-static">{{ user.username }}</p>
-      </div>
-    </div>
-
-    <div class="form-group">
-      <label class="col-sm-2 control-label">Roles</label>
-      <div class="col-sm-10">
-        {% for role in roles %}
-          <div class="row">
-	    <div class="col-sm-5">
-	      <select class="form-control" name="role_email_{{role.id}}">
-	        {% for email in emails %}
-	          <option value="{{email.address}}" {% if email.address == role.email.address %}selected{% endif %}>
-	            {% if email.active %}
-	              {{email}}
-	            {% else %}
-	              ({{email}})
-	            {% endif %}
-	          </option>
-	        {% endfor %}
-	      </select>
-	    </div>
-	    <div class="col-sm-7">
-	      <div class="help-block">Email to use for <i>{{ role.name|lower }}</i> role in {{ role.group.acronym|upper }} ({{ role.group.type }}).</div>
-	    </div>
-          </div>
-        {% endfor %}
       </div>
     </div>
 
@@ -54,8 +30,8 @@
 	    {% for email in emails %}
 	      <div class="checkbox">
 	        <label>
-	          <input type="checkbox" name="{{email.address}}" {% if email.active %}checked{% endif %} onchange="style_email(0, this)">
-	          {{email}}
+                  <input type="checkbox" name="active_emails" value="{{ email.pk }}" {% if email.active %}checked{% endif %}>
+                  {{ email }}
 	        </label>
 	      </div>
 	    {% endfor %}
@@ -67,85 +43,23 @@
       </div>
     </div>
 
+    {% for f in new_email_forms %}
+      {% bootstrap_field f.new_email layout="horizontal" show_label=False %}
+    {% endfor %}
+    
     <div class="form-group">
       <div class="col-sm-offset-2 col-sm-10">
-        <button class="btn btn-default btn-sm" onclick="add_email(); return false">Add email address</button>
+        <div class="new-emails"></div>
+
+        <button class="btn btn-default btn-sm add-email">Add email address</button>
       </div>
     </div>
 
-    <div class="form-group">
-      <label class="col-sm-2 control-label">{{person_form.name.label}}</label>
-      <div class="col-sm-10">
-        <div class="row">
-	  <div class="col-sm-5">
-	    {{person_form.name|add_class:"form-control"}}
-	  </div>
-	  <div class="col-sm-7">
-	    <div class="help-block">The preferred form of your name.</div>
-	  </div>
-        </div>
-      </div>
-    </div>
+    {% for role in roles %}
+      {% bootstrap_field role.email_form.email layout="horizontal" show_label=False %}
+    {% endfor %}
 
-    <div class="form-group">
-      <label class="col-sm-2 control-label">{{person_form.ascii.label}}</label>
-      <div class="col-sm-10">
-        <div class="row">
-	  <div class="col-sm-5">
-	    {{person_form.ascii|add_class:"form-control"}}
-	  </div>
-	  <div class="col-sm-7">
-	    <div class="help-block">Your name as rendered in ASCII (Latin, unaccented) characters.</div>
-	  </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="form-group">
-      <label class="col-sm-2 control-label">{{person_form.ascii_short.label}}</label>
-      <div class="col-sm-10">
-        <div class="row">
-	  <div class="col-sm-5">
-	    {{person_form.ascii_short|add_class:"form-control"}}
-	  </div>
-	  <div class="col-sm-7">
-	    <span class="help-block">
-	       Example: A. Nonymous.  Fill in this with initials and surname only if 
-	       taking the initials and surname of your ASCII name above produces an incorrect
-	       initials-only form. (Blank is ok).
-	    </span>
-	  </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="form-group">
-      <label class="col-sm-2 control-label">{{person_form.affiliation.label}}</label>
-      <div class="col-sm-10">
-        <div class="row">
-	  <div class="col-sm-5">
-	    {{person_form.affiliation|add_class:"form-control"}}
-	  </div>
-	  <div class="col-sm-7">
-	    <div class="help-block">Employer, university, sponsor, etc.</div>
-	  </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="form-group">
-      <label class="col-sm-2 control-label">Postal address</label>
-      <div class="col-sm-10">
-        <div class="row">
-	  <div class="col-sm-5">
-	    {{person_form.address|add_class:"form-control"}}
-	  </div>
-	  <div class="col-sm-7">
-	    <div class="help-block">Postal mailing address.</div>
-	  </div>
-        </div>
-      </div>
-    </div>
+    {% bootstrap_form person_form layout="horizontal" %}
 
     <div class="form-group">
       <div class="col-sm-offset-2 col-sm-10">
@@ -158,23 +72,24 @@
 {% block js %}
   <script>
    $(document).ready(function() {
-       $("input[type=checkbox]").each(style_email);
+       $("input[name=active_emails]").on("change keypress click", function () {
+           if (this.checked) {
+               $(this).parent().addClass("text-success");;
+               $(this).parent().removeClass("text-danger line-through");
+           } else {
+               $(this).parent().addClass("text-danger line-through");
+               $(this).parent().removeClass("text-success");
+           }
+       }).trigger("change");
+
+       $(".add-email").click(function(e) {
+           e.preventDefault();
+
+           var container = $(this).closest("form").find(".new-emails");
+
+           $('<input class="form-control" name="new_email" placeholder="Enter new email address...">').appendTo(container).focus();
+       })
    });
-
-   function style_email(i, e) {
-       if (e.checked) {
-           $(e).parent().addClass("text-success");;
-           $(e).parent().removeClass("text-danger line-through");
-       } else {
-           $(e).parent().addClass("text-danger line-through");
-           $(e).parent().removeClass("text-success");
-       }
-   }
-
-   function add_email() {
-       $("#emails").append('<input type="email" class="form-control" name="new_email_' + $.now() + '" placeholder="Enter new email address...">');
-       $("#emails").children().last().focus();
-   }
   </script>
 {% endblock %}
 

@@ -14,12 +14,15 @@ from ietf.utils.mail import send_mail_preformatted
 
 class PersonInfo(models.Model):
     time = models.DateTimeField(default=datetime.datetime.now)      # When this Person record entered the system
-    name = models.CharField("Full Name (Unicode)", max_length=255, db_index=True) # The normal unicode form of the name.  This must be
-                                                        # set to the same value as the ascii-form if equal.
-    ascii = models.CharField("Full Name (ASCII)", max_length=255)            # The normal ascii-form of the name.
-    ascii_short = models.CharField("Abbreviated Name (ASCII)", max_length=32, null=True, blank=True)      # The short ascii-form of the name.  Also in alias table if non-null
-    address = models.TextField(max_length=255, blank=True)
-    affiliation = models.CharField(max_length=255, blank=True)
+    # The normal unicode form of the name.  This must be
+    # set to the same value as the ascii-form if equal.
+    name = models.CharField("Full Name (Unicode)", max_length=255, db_index=True, help_text="Preferred form of name.")
+    # The normal ascii-form of the name.
+    ascii = models.CharField("Full Name (ASCII)", max_length=255, help_text="Name as rendered in ASCII (Latin, unaccented) characters.")
+    # The short ascii-form of the name.  Also in alias table if non-null
+    ascii_short = models.CharField("Abbreviated Name (ASCII)", max_length=32, null=True, blank=True, help_text="Example: A. Nonymous.  Fill in this with initials and surname only if taking the initials and surname of the ASCII name above produces an incorrect initials-only form. (Blank is OK).")
+    affiliation = models.CharField(max_length=255, blank=True, help_text="Employer, university, sponsor, etc.")
+    address = models.TextField(max_length=255, blank=True, help_text="Postal mailing address.")
 
     def __unicode__(self):
         return self.plain_name()

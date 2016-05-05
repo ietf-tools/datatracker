@@ -9,10 +9,12 @@
 {% block content %}
   {% origin %}
 
-  {% if success %}
+  {% if to_email %}
     <h1>Account created successfully</h1>
+
     <p>Your account creation request has been successfully received.</p>
-    <p>We have sent you an email with instructions on how to complete the process.</p>
+
+    <p>We have sent an email to {{ to_email }} with instructions on how to complete the process.</p>
 
   {% else %}
     <div class="row">
