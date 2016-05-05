@@ -1,6 +1,6 @@
 ietfdb (6.20.0) ietf; urgency=high
 
-  **Better Yang model support, Reworked meeting schedule management, Release management of cron jobs**
+  **Better yang support, reworked schedule management, cronjob release management**
 
   This is a mixed feature and bugfix release.  It provides additional
   support for Yang models, reworked pages for meeting schedule
