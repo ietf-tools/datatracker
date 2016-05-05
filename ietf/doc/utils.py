@@ -597,7 +597,7 @@ def crawl_history(doc):
             'published': e.time.isoformat(),
             'url': url
         }
-        if doc.history_set.filter(rev=e.newrevisiondocevent.rev).exists():
+        if hasattr(e, 'newrevisiondocevent') and doc.history_set.filter(rev=e.newrevisiondocevent.rev).exists():
             history[url]['pages'] = doc.history_set.filter(rev=e.newrevisiondocevent.rev).first().pages
     history = history.values()
     return sorted(history, key=lambda x: x['published'])
