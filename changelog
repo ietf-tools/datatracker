@@ -62,8 +62,6 @@ ietfdb (6.20.0) ietf; urgency=high
   * Add support for legacy IPR search arguments, for compatibility with old 
     ipr search URLs.
 
-  * Additional fix for issue issue #1950, removing the double slash.
-
   * Added a missing '?join' to each group's xmpp link on the charter pages,
     and removed an unwanted double slash.  Fixes issue #1950
 
