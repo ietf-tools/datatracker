@@ -13,7 +13,7 @@
     <h1>Account creation successful</h1>
 
     <p>Your account with login {{ email }} has been created, using the password you have selected.</p>
-    <a type="a" class="btn btn-primary" href="{% url "account_login" %}" rel="nofollow">Sign in</a>
+    <a type="a" class="btn btn-primary" href="{% url "django.contrib.auth.views.login" %}" rel="nofollow">Sign in</a>
 
   {% else %}
     <h1>Complete account creation</h1>

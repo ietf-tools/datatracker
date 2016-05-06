@@ -85,9 +85,10 @@ class ResetPasswordForm(forms.Form):
     username = forms.EmailField(label="Your email (lowercase)")
 
     def clean_username(self):
+        import ietf.ietfauth.views
         username = self.cleaned_data["username"]
         if not User.objects.filter(username=username).exists():
-            raise forms.ValidationError(mark_safe("Didn't find a matching account. If you don't have an account yet, you can <a href=\"{}\">create one</a>.".format(urlreverse("create_account"))))
+            raise forms.ValidationError(mark_safe("Didn't find a matching account. If you don't have an account yet, you can <a href=\"{}\">create one</a>.".format(urlreverse(ietf.ietfauth.views.create_account))))
         return username
 
 

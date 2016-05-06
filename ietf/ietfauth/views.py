@@ -114,7 +114,7 @@ def confirm_account(request, auth):
         raise Http404("Invalid or expired auth")
 
     if User.objects.filter(username=email).exists():
-        return redirect("account_profile")
+        return redirect(profile)
 
     success = False
     if request.method == 'POST':

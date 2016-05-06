@@ -5,6 +5,7 @@ from urlparse import urlsplit
 from pyquery import PyQuery
 
 from django.core.urlresolvers import reverse as urlreverse
+import django.contrib.auth.views
 from django.contrib.auth.models import User
 from django.conf import settings
 
@@ -14,6 +15,7 @@ from ietf.utils.mail import outbox, empty_outbox
 from ietf.person.models import Person, Email
 from ietf.group.models import Group, Role, RoleName
 from ietf.ietfauth.htpasswd import update_htpasswd_file
+import ietf.ietfauth.views
 
 class IetfAuthTests(TestCase):
     def setUp(self):
@@ -36,29 +38,29 @@ class IetfAuthTests(TestCase):
         settings.HTDIGEST_REALM = self.saved_htdigest_realm
 
     def test_index(self):
-        self.assertEqual(self.client.get(urlreverse("ietf.ietfauth.views.index")).status_code, 200)
+        self.assertEqual(self.client.get(urlreverse(ietf.ietfauth.views.index)).status_code, 200)
 
     def test_login_and_logout(self):
         make_test_data()
 
         # try logging in without a next
-        r = self.client.get(urlreverse("account_login"))
+        r = self.client.get(urlreverse(django.contrib.auth.views.login))
         self.assertEqual(r.status_code, 200)
 
-        r = self.client.post(urlreverse("account_login"), {"username":"plain", "password":"plain+password"})
+        r = self.client.post(urlreverse(django.contrib.auth.views.login), {"username":"plain", "password":"plain+password"})
         self.assertEqual(r.status_code, 302)
-        self.assertEqual(urlsplit(r["Location"])[2], "/accounts/profile/")
+        self.assertEqual(urlsplit(r["Location"])[2], urlreverse(ietf.ietfauth.views.profile))
 
         # try logging out
-        r = self.client.get(urlreverse("account_logout"))
+        r = self.client.get(urlreverse(django.contrib.auth.views.logout))
         self.assertEqual(r.status_code, 200)
 
-        r = self.client.get(urlreverse("account_profile"))
+        r = self.client.get(urlreverse(ietf.ietfauth.views.profile))
         self.assertEqual(r.status_code, 302)
-        self.assertEqual(urlsplit(r["Location"])[2], "/accounts/login/")
+        self.assertEqual(urlsplit(r["Location"])[2], urlreverse(django.contrib.auth.views.login))
 
         # try logging in with a next
-        r = self.client.post(urlreverse("account_login") + "?next=/foobar", {"username":"plain", "password":"plain+password"})
+        r = self.client.post(urlreverse(django.contrib.auth.views.login) + "?next=/foobar", {"username":"plain", "password":"plain+password"})
         self.assertEqual(r.status_code, 302)
         self.assertEqual(urlsplit(r["Location"])[2], "/foobar")
 
@@ -87,7 +89,7 @@ class IetfAuthTests(TestCase):
     def test_create_account(self):
         make_test_data()
 
-        url = urlreverse('create_account')
+        url = urlreverse(ietf.ietfauth.views.create_account)
 
         # get
         r = self.client.get(url)
@@ -126,7 +128,7 @@ class IetfAuthTests(TestCase):
         username = "plain"
         email_address = Email.objects.filter(person__user__username=username).first().address
 
-        url = urlreverse('account_profile')
+        url = urlreverse(ietf.ietfauth.views.profile)
         login_testing_unauthorized(self, username, url)
 
 
@@ -228,7 +230,7 @@ class IetfAuthTests(TestCase):
 
 
     def test_reset_password(self):
-        url = urlreverse('password_reset')
+        url = urlreverse(ietf.ietfauth.views.password_reset)
 
         user = User.objects.create(username="someone@example.com", email="someone@example.com")
         user.set_password("forgotten")

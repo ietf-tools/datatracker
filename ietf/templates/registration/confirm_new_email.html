@@ -14,13 +14,13 @@
     {% bootstrap_form_errors form %}
 
     <p>
-      <a class="btn btn-default" href="{% url "account_profile" %}">Edit profile</a>
+      <a class="btn btn-default" href="{% url "ietf.ietfauth.views.profile" %}">Edit profile</a>
     </p>
   {% elif new_email_obj %}
     <p>Your account {{ username }} has been updated to include the email address {{ email }}.</p>
 
     <p>
-      <a class="btn btn-default" href="{% url "account_profile" %}">Edit profile</a>
+      <a class="btn btn-default" href="{% url "ietf.ietfauth.views.profile" %}">Edit profile</a>
     </p>
   {% else %}
       <p>Confirm that you want to add the email address {{ email }} to your account {{ username }}.</p>

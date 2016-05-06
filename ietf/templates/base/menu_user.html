@@ -22,7 +22,7 @@
     {% endif %}
   {% endif %}
 
-  <li><a href="{% url "create_account" %}">{% if request.user.is_authenticated %}Manage account{% else %}New account{% endif %}</a></li>
+  <li><a href="{% url "ietf.ietfauth.views.create_account" %}">{% if request.user.is_authenticated %}Manage account{% else %}New account{% endif %}</a></li>
   <li><a href="{%url "ietf.cookies.views.preferences" %}" rel="nofollow">Preferences</a></li>
 
   {% if user|has_role:"Area Director" %}

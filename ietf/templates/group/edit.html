@@ -32,7 +32,7 @@
 
   <p class="alert alert-info">Note that persons with authorization to manage information, e.g.
     chairs and delegates, need a datatracker account to actually do
-    so. New accounts can be <a href="{% url "create_account" %}">created here</a>.</p>
+    so. New accounts can be <a href="{% url "ietf.ietfauth.views.create_account" %}">created here</a>.</p>
 
   <form class="form-horizontal" method="post">
     {% csrf_token %}
