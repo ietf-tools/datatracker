@@ -50,7 +50,7 @@
 	      <td>{{ doc.display_name }}</td>
 	      <td>{{ doc.get_state }}</td>
               <td><a href="{{ doc.get_absolute_url }}">{{ doc.title }}</a></td>
-              <td><a class="btn btn-danger btn-xs" href="{% if cl.user %}{% url "community_personal_untrack_document" doc.pk %}{% else %}{% url "community_group_untrack_document" %}{% endif %}">Remove</a></td>
+              <td><a class="btn btn-danger btn-xs" href="{% if cl.user %}{% url "ietf.community.views.untrack_document" username=cl.user.username name=doc.pk %}{% else %}{% url "community_group_untrack_document" acronym=cl.group.acronym name=doc.pk %}{% endif %}">Remove</a></td>
 	    </tr>
 	  {% endfor %}
         </tbody>

@@ -52,7 +52,7 @@
   {% endif %}
 
   {% if user and user.is_authenticated %}
-    <li><a href="{% url "community_personal_view_list" user.username %}">My tracked docs</a></li>
+    <li><a href="{% url "ietf.community.views.view_list" user.username %}">My tracked docs</a></li>
 
     {% for g in user|managed_groups %}
       <li><a href="{% url "group_docs" g.acronym %}">{{ g.acronym }} {{ g.type.slug }} docs</a></li>

@@ -378,7 +378,8 @@ def construct_group_menu_context(request, group, selected, group_type, others):
     if group.features.has_documents:
         clist = CommunityList.objects.filter(group=group).first()
         if clist and can_manage_community_list(request.user, clist):
-            actions.append((u'Manage document list', urlreverse('community_group_manage_list', kwargs=kwargs)))
+            import ietf.community.views
+            actions.append((u'Manage document list', urlreverse(ietf.community.views.manage_list, kwargs=kwargs)))
 
     if group.features.has_materials and can_manage_materials(request.user, group):
         actions.append((u"Upload material", urlreverse("ietf.doc.views_material.choose_material_type", kwargs=kwargs)))

@@ -24,8 +24,9 @@ class CommunityList(models.Model):
         return self.long_name()
 
     def get_absolute_url(self):
+        import ietf.community.views
         if self.user:
-            return urlreverse("community_personal_view_list", kwargs={ 'username': self.user.username })
+            return urlreverse(ietf.community.views.view_list, kwargs={ 'username': self.user.username })
         elif self.group:
             return urlreverse("group_docs", kwargs={ 'acronym': self.group.acronym })
         return ""

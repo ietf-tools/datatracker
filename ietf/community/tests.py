@@ -8,6 +8,7 @@ from django.contrib.auth.models import User
 from ietf.community.models import CommunityList, SearchRule, EmailSubscription
 from ietf.community.utils import docs_matching_community_list_rule, community_list_rules_matching_doc
 from ietf.community.utils import reset_name_contains_index_for_rule
+import ietf.community.views
 from ietf.group.utils import setup_default_community_list_for_group
 from ietf.doc.models import State
 from ietf.doc.utils import add_state_change_event
@@ -63,7 +64,7 @@ class CommunityListTests(TestCase):
     def test_view_list(self):
         draft = make_test_data()
 
-        url = urlreverse("community_personal_view_list", kwargs={ "username": "plain" })
+        url = urlreverse(ietf.community.views.view_list, kwargs={ "username": "plain" })
 
         # without list
         r = self.client.get(url)
@@ -85,7 +86,7 @@ class CommunityListTests(TestCase):
     def test_manage_personal_list(self):
         draft = make_test_data()
 
-        url = urlreverse("community_personal_manage_list", kwargs={ "username": "plain" })
+        url = urlreverse(ietf.community.views.manage_list, kwargs={ "username": "plain" })
         login_testing_unauthorized(self, "plain", url)
 
         r = self.client.get(url)
@@ -149,7 +150,7 @@ class CommunityListTests(TestCase):
     def test_manage_group_list(self):
         draft = make_test_data()
 
-        url = urlreverse("community_group_manage_list", kwargs={ "acronym": draft.group.acronym })
+        url = urlreverse(ietf.community.views.manage_list, kwargs={ "acronym": draft.group.acronym })
         setup_default_community_list_for_group(draft.group)
         login_testing_unauthorized(self, "marschairman", url)
 
@@ -160,7 +161,7 @@ class CommunityListTests(TestCase):
     def test_track_untrack_document(self):
         draft = make_test_data()
 
-        url = urlreverse("community_personal_track_document", kwargs={ "username": "plain", "name": draft.name })
+        url = urlreverse(ietf.community.views.track_document, kwargs={ "username": "plain", "name": draft.name })
         login_testing_unauthorized(self, "plain", url)
 
         # track
@@ -173,7 +174,7 @@ class CommunityListTests(TestCase):
         self.assertEqual(list(clist.added_docs.all()), [draft])
 
         # untrack
-        url = urlreverse("community_personal_untrack_document", kwargs={ "username": "plain", "name": draft.name })
+        url = urlreverse(ietf.community.views.untrack_document, kwargs={ "username": "plain", "name": draft.name })
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 
@@ -185,7 +186,7 @@ class CommunityListTests(TestCase):
     def test_track_untrack_document_through_ajax(self):
         draft = make_test_data()
 
-        url = urlreverse("community_personal_track_document", kwargs={ "username": "plain", "name": draft.name })
+        url = urlreverse(ietf.community.views.track_document, kwargs={ "username": "plain", "name": draft.name })
         login_testing_unauthorized(self, "plain", url)
 
         # track
@@ -196,7 +197,7 @@ class CommunityListTests(TestCase):
         self.assertEqual(list(clist.added_docs.all()), [draft])
 
         # untrack
-        url = urlreverse("community_personal_untrack_document", kwargs={ "username": "plain", "name": draft.name })
+        url = urlreverse(ietf.community.views.untrack_document, kwargs={ "username": "plain", "name": draft.name })
         r = self.client.post(url, HTTP_X_REQUESTED_WITH='XMLHttpRequest')
         self.assertEqual(r.status_code, 200)
         self.assertEqual(json.loads(r.content)["success"], True)
@@ -206,7 +207,7 @@ class CommunityListTests(TestCase):
     def test_csv(self):
         draft = make_test_data()
 
-        url = urlreverse("community_personal_csv", kwargs={ "username": "plain" })
+        url = urlreverse(ietf.community.views.export_to_csv, kwargs={ "username": "plain" })
 
         # without list
         r = self.client.get(url)
@@ -229,7 +230,7 @@ class CommunityListTests(TestCase):
     def test_csv_for_group(self):
         draft = make_test_data()
 
-        url = urlreverse("community_group_csv", kwargs={ "acronym": draft.group.acronym })
+        url = urlreverse(ietf.community.views.export_to_csv, kwargs={ "acronym": draft.group.acronym })
 
         setup_default_community_list_for_group(draft.group)
 
@@ -240,7 +241,7 @@ class CommunityListTests(TestCase):
     def test_feed(self):
         draft = make_test_data()
 
-        url = urlreverse("community_personal_feed", kwargs={ "username": "plain" })
+        url = urlreverse(ietf.community.views.feed, kwargs={ "username": "plain" })
 
         # without list
         r = self.client.get(url)
@@ -267,7 +268,7 @@ class CommunityListTests(TestCase):
     def test_feed_for_group(self):
         draft = make_test_data()
 
-        url = urlreverse("community_group_feed", kwargs={ "acronym": draft.group.acronym })
+        url = urlreverse(ietf.community.views.feed, kwargs={ "acronym": draft.group.acronym })
 
         setup_default_community_list_for_group(draft.group)
 
@@ -278,7 +279,7 @@ class CommunityListTests(TestCase):
     def test_subscription(self):
         draft = make_test_data()
 
-        url = urlreverse("community_personal_subscription", kwargs={ "username": "plain" })
+        url = urlreverse(ietf.community.views.subscription, kwargs={ "username": "plain" })
 
         login_testing_unauthorized(self, "plain", url)
 
@@ -315,7 +316,7 @@ class CommunityListTests(TestCase):
     def test_subscription_for_group(self):
         draft = make_test_data()
 
-        url = urlreverse("community_group_subscription", kwargs={ "acronym": draft.group.acronym })
+        url = urlreverse(ietf.community.views.subscription, kwargs={ "acronym": draft.group.acronym })
 
         setup_default_community_list_for_group(draft.group)
 
