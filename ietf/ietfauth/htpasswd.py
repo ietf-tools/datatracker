@@ -2,7 +2,7 @@ import subprocess, hashlib
 
 from django.conf import settings
 
-def save_htpasswd_file(username, password):
+def update_htpasswd_file(username, password):
     if getattr(settings, 'USE_PYTHON_HTDIGEST', None):
         pass_file = settings.HTPASSWD_FILE
         realm = settings.HTDIGEST_REALM

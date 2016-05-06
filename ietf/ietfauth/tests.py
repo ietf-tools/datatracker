@@ -13,19 +13,25 @@ from ietf.utils.test_data import make_test_data
 from ietf.utils.mail import outbox, empty_outbox
 from ietf.person.models import Person, Email
 from ietf.group.models import Group, Role, RoleName
+from ietf.ietfauth.htpasswd import update_htpasswd_file
 
 class IetfAuthTests(TestCase):
     def setUp(self):
+        self.saved_use_python_htdigest = getattr(settings, "USE_PYTHON_HTDIGEST", None)
+        settings.USE_PYTHON_HTDIGEST = True
+
         self.saved_htpasswd_file = settings.HTPASSWD_FILE
         self.htpasswd_dir = os.path.abspath("tmp-htpasswd-dir")
         os.mkdir(self.htpasswd_dir)
         settings.HTPASSWD_FILE = os.path.join(self.htpasswd_dir, "htpasswd")
         open(settings.HTPASSWD_FILE, 'a').close() # create empty file
+
         self.saved_htdigest_realm = getattr(settings, "HTDIGEST_REALM", None)
         settings.HTDIGEST_REALM = "test-realm"
 
     def tearDown(self):
         shutil.rmtree(self.htpasswd_dir)
+        settings.USE_PYTHON_HTDIGEST = self.saved_use_python_htdigest
         settings.HTPASSWD_FILE = self.saved_htpasswd_file
         settings.HTDIGEST_REALM = self.saved_htdigest_realm
 
@@ -71,8 +77,11 @@ class IetfAuthTests(TestCase):
     def username_in_htpasswd_file(self, username):
         with open(settings.HTPASSWD_FILE) as f:
             for l in f:
-                if l.startswith(username + ":" + settings.HTDIGEST_REALM):
+                if l.startswith(username + ":"):
                     return True
+        with open(settings.HTPASSWD_FILE) as f:
+            print f.read()
+
         return False
 
     def test_create_account(self):
@@ -260,3 +269,18 @@ class IetfAuthTests(TestCase):
         q = PyQuery(r.content)
         self.assertEqual(len(q("form .has-error")), 0)
         self.assertTrue(self.username_in_htpasswd_file(user.username))
+
+    def test_htpasswd_file_with_python(self):
+        # make sure we test both Python and call-out to binary
+        settings.USE_PYTHON_HTDIGEST = True
+
+        update_htpasswd_file("foo", "passwd")
+        self.assertTrue(self.username_in_htpasswd_file("foo"))
+
+    def test_htpasswd_file_with_htpasswd_binary(self):
+        # make sure we test both Python and call-out to binary
+        settings.USE_PYTHON_HTDIGEST = False
+
+        update_htpasswd_file("foo", "passwd")
+        self.assertTrue(self.username_in_htpasswd_file("foo"))
+        

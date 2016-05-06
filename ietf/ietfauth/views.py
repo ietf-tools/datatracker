@@ -45,7 +45,7 @@ from django.contrib.auth.models import User
 from ietf.group.models import Role
 from ietf.ietfauth.forms import RegistrationForm, PasswordForm, ResetPasswordForm, TestEmailForm
 from ietf.ietfauth.forms import PersonForm, RoleEmailForm, NewEmailForm
-from ietf.ietfauth.htpasswd import save_htpasswd_file
+from ietf.ietfauth.htpasswd import update_htpasswd_file
 from ietf.person.models import Person, Email, Alias
 from ietf.utils.mail import send_mail
 
@@ -126,7 +126,7 @@ def confirm_account(request, auth):
             user.set_password(password)
             user.save()
             # password is also stored in htpasswd file
-            save_htpasswd_file(email, password)
+            update_htpasswd_file(email, password)
 
             # make sure the rest of the person infrastructure is
             # well-connected
@@ -317,7 +317,7 @@ def confirm_password_reset(request, auth):
             user.set_password(password)
             user.save()
             # password is also stored in htpasswd file
-            save_htpasswd_file(user.username, password)
+            update_htpasswd_file(user.username, password)
 
             success = True
     else:
