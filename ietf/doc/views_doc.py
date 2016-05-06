@@ -36,7 +36,6 @@ from django.http import HttpResponse, Http404 , HttpResponseForbidden
 from django.shortcuts import render, render_to_response, get_object_or_404, redirect
 from django.template import RequestContext
 from django.template.loader import render_to_string
-from django.core.exceptions import ObjectDoesNotExist
 from django.core.urlresolvers import reverse as urlreverse
 from django.conf import settings
 from django import forms
@@ -50,7 +49,7 @@ from ietf.doc.utils import ( add_links_in_new_revision_events, augment_events_wi
     can_adopt_draft, get_chartering_type, get_document_content, get_tags_for_stream_id,
     needed_ballot_positions, nice_consensus, prettify_std_name, update_telechat, has_same_ballot,
     get_initial_notify, make_notify_changed_event, crawl_history, default_consensus)
-from ietf.community.models import CommunityList
+from ietf.community.utils import augment_docs_with_tracking_info
 from ietf.group.models import Role
 from ietf.group.utils import can_manage_group, can_manage_materials
 from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream, user_is_person, role_required
@@ -345,15 +344,7 @@ def document_main(request, name, rev=None):
             elif can_edit_stream_info and (not iesg_state or iesg_state.slug == 'watching'):
                 actions.append(("Submit to IESG for Publication", urlreverse('doc_to_iesg', kwargs=dict(name=doc.name))))
 
-        tracking_document = False
-        if request.user.is_authenticated():
-            try:
-                clist = CommunityList.objects.get(user=request.user)
-                clist.update()
-                if clist.get_documents().filter(name=doc.name).count() > 0:
-                    tracking_document = True
-            except ObjectDoesNotExist:
-                pass
+        augment_docs_with_tracking_info([doc], request.user)
 
         replaces = [d.name for d in doc.related_that_doc("replaces")]
         replaced_by = [d.name for d in doc.related_that("replaces")]
@@ -420,7 +411,6 @@ def document_main(request, name, rev=None):
                                        shepherd_writeup=shepherd_writeup,
                                        search_archive=search_archive,
                                        actions=actions,
-                                       tracking_document=tracking_document,
                                        presentations=presentations,
                                        ),
                                   context_instance=RequestContext(request))

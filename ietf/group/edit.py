@@ -17,7 +17,7 @@ from ietf.doc.utils_charter import charter_name_for_group
 from ietf.group.models import ( Group, Role, GroupEvent, GroupHistory, GroupStateName,
     GroupStateTransitions, GroupTypeName, GroupURL, ChangeStateGroupEvent )
 from ietf.group.utils import save_group_in_history, can_manage_group
-from ietf.group.utils import get_group_or_404
+from ietf.group.utils import get_group_or_404, setup_default_community_list_for_group
 from ietf.ietfauth.utils import has_role
 from ietf.person.fields import SearchableEmailsField
 from ietf.person.models import Person, Email
@@ -230,6 +230,9 @@ def edit(request, group_type=None, acronym=None, action="edit"):
                                               type=GroupTypeName.objects.get(slug=group_type),
                                               state=clean["state"]
                                               )
+
+                    if group.features.has_documents:
+                        setup_default_community_list_for_group(group)
 
                 e = ChangeStateGroupEvent(group=group, type="changed_state")
                 e.time = group.time

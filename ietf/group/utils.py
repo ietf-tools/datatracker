@@ -8,6 +8,9 @@ from ietf.group.models import Group, RoleHistory
 from ietf.person.models import Email
 from ietf.utils.history import get_history_object_for, copy_many_to_many_for_history
 from ietf.ietfauth.utils import has_role
+from ietf.community.models import CommunityList, SearchRule
+from ietf.community.utils import reset_name_contains_index_for_rule
+from ietf.doc.models import State
 
 
 def save_group_in_history(group):
@@ -124,3 +127,25 @@ def get_group_or_404(acronym, group_type):
         possible_groups = possible_groups.filter(type=group_type)
 
     return get_object_or_404(possible_groups, acronym=acronym)
+
+def setup_default_community_list_for_group(group):
+    clist = CommunityList.objects.create(group=group)
+    SearchRule.objects.create(
+        community_list=clist,
+        rule_type="group",
+        group=group,
+        state=State.objects.get(slug="active", type="draft"),
+    )
+    SearchRule.objects.create(
+        community_list=clist,
+        rule_type="group_rfc",
+        group=group,
+        state=State.objects.get(slug="rfc", type="draft"),
+    )
+    related_docs_rule = SearchRule.objects.create(
+        community_list=clist,
+        rule_type="name_contains",
+        text=r"^draft-[^-]+-%s-" % group.acronym,
+        state=State.objects.get(slug="active", type="draft"),
+    )
+    reset_name_contains_index_for_rule(related_docs_rule)

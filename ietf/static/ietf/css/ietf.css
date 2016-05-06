@@ -448,3 +448,14 @@ form.navbar-form input.form-control.input-sm { width: 141px; }
     padding: inherit;
     outline: inherit;
 }
+
+/* Community lists */
+
+label#list-feeds {
+  display: inline-block;
+  font-weight: normal;
+}
+
+.email-subscription button[type=submit] {
+  margin-left: 3em;
+}

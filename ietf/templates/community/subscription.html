@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+
+{% load bootstrap3 %}
+
+{% block title %}Subscription to {{ clist.long_name }}{% endblock %}
+
+{% block content %}
+  {% origin %}
+
+  <h1>Subscription to {{ clist.long_name }}</h1>
+
+  {% bootstrap_messages %}
+
+  <p>Get notified when changes happen to any of the tracked documents.</p>
+
+  {% if existing_subscriptions %}
+    <h2>Existing subscriptions</h2>
+
+    <ul class="list-group">
+      {% for s in existing_subscriptions %}
+        <li class="list-group-item email-subscription">
+          <form method="post">
+            {% csrf_token %}
+            <code>{{ s.email.address }}</code> - {{ s.get_notify_on_display }}
+            <input type="hidden" name="subscription_id" value="{{ s.pk }}">
+            <button class="btn btn-danger btn-sm" type="submit" name="action" value="unsubscribe">Unsubscribe</button>
+          </form>
+        </li>
+      {% endfor %}
+    </ul>
+
+    <p><a class="btn btn-default" href="{{ clist.get_absolute_url }}">Back to list</a></p>
+
+  {% endif %}
+
+  <h2>Add new subscription</h2>
+
+  <p class="text-muted">The email addresses you can choose between are those registered in <a href="{% url "account_profile" %}">your profile</a>.</p>
+
+  {% if form.fields.email.queryset %}
+    <form method="post">
+      {% csrf_token %}
+      {% bootstrap_form form %}
+
+      {% buttons %}
+      <a class="btn btn-default" href="{{ clist.get_absolute_url }}">Back to list</a>
+
+      <button type="submit" name="action" value="subscribe" class="btn btn-primary">Subscribe</button>
+      {% endbuttons %}
+    </form>
+  {% else %}
+    <div class="alert alert-danger">You do not have any active email addresses registered with your account. Go to <a href="{% url "account_profile" %}">your profile and add or activate one</a>.</div>
+
+    <a class="btn btn-default" href="{{ clist.get_absolute_url }}">Back to list</a>
+  {% endif %}
+{% endblock %}

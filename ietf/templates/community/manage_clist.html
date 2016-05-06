@@ -49,8 +49,8 @@
 	    <tr>
 	      <td>{{ doc.display_name }}</td>
 	      <td>{{ doc.get_state }}</td>
-	      <td><a href="{{ doc.get_absolute_url }}">{{ doc.title }}</a></td>
-	      <td><a class="btn btn-danger btn-xs" href="{% url "community_remove_document" cl.pk doc.pk %}">Remove</a></td>
+              <td><a href="{{ doc.get_absolute_url }}">{{ doc.title }}</a></td>
+              <td><a class="btn btn-danger btn-xs" href="{% if cl.user %}{% url "community_personal_untrack_document" doc.pk %}{% else %}{% url "community_group_untrack_document" %}{% endif %}">Remove</a></td>
 	    </tr>
 	  {% endfor %}
         </tbody>

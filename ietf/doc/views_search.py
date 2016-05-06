@@ -35,7 +35,6 @@ import datetime, re
 from django import forms
 from django.conf import settings
 from django.core.cache import cache
-from django.core.exceptions import ObjectDoesNotExist
 from django.core.urlresolvers import reverse as urlreverse
 from django.db.models import Q
 from django.http import Http404, HttpResponseBadRequest, HttpResponse, HttpResponseRedirect
@@ -44,16 +43,15 @@ from django.utils.cache import _generate_cache_key
 
 import debug                            # pyflakes:ignore
 
-from ietf.community.models import CommunityList
-from ietf.doc.models import ( Document, DocHistory, DocAlias, State, RelatedDocument,
-    DocEvent, LastCallDocEvent, TelechatDocEvent, IESG_SUBSTATE_TAGS )
-from ietf.doc.expire import expirable_draft
+from ietf.doc.models import ( Document, DocHistory, DocAlias, State,
+    LastCallDocEvent, IESG_SUBSTATE_TAGS )
 from ietf.doc.fields import select2_id_doc_name_json
 from ietf.group.models import Group
 from ietf.idindex.index import active_drafts_index_by_group
 from ietf.name.models import DocTagName, DocTypeName, StreamName
 from ietf.person.models import Person
 from ietf.utils.draft_search import normalize_draftname
+from ietf.doc.utils_search import prepare_document_table
 
 
 class SearchForm(forms.Form):
@@ -62,7 +60,7 @@ class SearchForm(forms.Form):
     activedrafts = forms.BooleanField(required=False, initial=True)
     olddrafts = forms.BooleanField(required=False, initial=False)
 
-    by = forms.ChoiceField(choices=[(x,x) for x in ('author','group','area','ad','state','stream')], required=False, initial='wg')
+    by = forms.ChoiceField(choices=[(x,x) for x in ('author','group','area','ad','state','stream')], required=False, initial='group')
     author = forms.CharField(required=False)
     group = forms.CharField(required=False)
     stream = forms.ModelChoiceField(StreamName.objects.all().order_by('name'), empty_label="any stream", required=False)
@@ -81,7 +79,7 @@ class SearchForm(forms.Form):
             ("ad", "AD"), ("-ad", "AD (desc)"), ),
         required=False, widget=forms.HiddenInput)
 
-    doctypes = DocTypeName.objects.filter(used=True).exclude(slug='draft').order_by('name');
+    doctypes = forms.ModelMultipleChoiceField(queryset=DocTypeName.objects.filter(used=True).exclude(slug='draft').order_by('name'), required=False)
 
     def __init__(self, *args, **kwargs):
         super(SearchForm, self).__init__(*args, **kwargs)
@@ -123,126 +121,27 @@ class SearchForm(forms.Form):
             q['state'] = q['substate'] = None
         return q
 
-def wrap_value(v):
-    return lambda: v
-
-def fill_in_search_attributes(docs):
-    # fill in some attributes for the search results to save some
-    # hairy template code and avoid repeated SQL queries
-
-    docs_dict = dict((d.pk, d) for d in docs)
-    doc_ids = docs_dict.keys()
-
-    rfc_aliases = dict(DocAlias.objects.filter(name__startswith="rfc", document__in=doc_ids).values_list("document_id", "name"))
-
-    # latest event cache
-    event_types = ("published_rfc",
-                   "changed_ballot_position",
-                   "started_iesg_process",
-                   "new_revision")
-    for d in docs:
-        d.latest_event_cache = dict()
-        for e in event_types:
-            d.latest_event_cache[e] = None
-
-    for e in DocEvent.objects.filter(doc__in=doc_ids, type__in=event_types).order_by('time'):
-        docs_dict[e.doc_id].latest_event_cache[e.type] = e
-
-    # telechat date, can't do this with above query as we need to get TelechatDocEvents out
-    seen = set()
-    for e in TelechatDocEvent.objects.filter(doc__in=doc_ids, type="scheduled_for_telechat").order_by('-time'):
-        if e.doc_id not in seen:
-            d = docs_dict[e.doc_id]
-            d.telechat_date = wrap_value(d.telechat_date(e))
-            seen.add(e.doc_id)
-
-    # misc
-    for d in docs:
-        # emulate canonical name which is used by a lot of the utils
-        d.canonical_name = wrap_value(rfc_aliases[d.pk] if d.pk in rfc_aliases else d.name)
-
-        if d.rfc_number() != None and d.latest_event_cache["published_rfc"]:
-            d.latest_revision_date = d.latest_event_cache["published_rfc"].time
-        elif d.latest_event_cache["new_revision"]:
-            d.latest_revision_date = d.latest_event_cache["new_revision"].time
-        else:
-            d.latest_revision_date = d.time
-
-        if d.type_id == "draft":
-            if d.get_state_slug() == "rfc":
-                d.search_heading = "RFC"
-            elif d.get_state_slug() in ("ietf-rm", "auth-rm"):
-                d.search_heading = "Withdrawn Internet-Draft"
-            else:
-                d.search_heading = "%s Internet-Draft" % d.get_state()
-        else:
-            d.search_heading = "%s" % (d.type,);
-
-        d.expirable = expirable_draft(d)
-
-        if d.get_state_slug() != "rfc":
-            d.milestones = d.groupmilestone_set.filter(state="active").order_by("time").select_related("group")
-
-
-
-    # RFCs
-
-    # errata
-    erratas = set(Document.objects.filter(tags="errata", name__in=rfc_aliases.keys()).distinct().values_list("name", flat=True))
-    for d in docs:
-        d.has_errata = d.name in erratas
-
-    # obsoleted/updated by
-    for a in rfc_aliases:
-        d = docs_dict[a]
-        d.obsoleted_by_list = []
-        d.updated_by_list = []
-
-    xed_by = RelatedDocument.objects.filter(target__name__in=rfc_aliases.values(),
-                                            relationship__in=("obs", "updates")).select_related('target__document_id')
-    rel_rfc_aliases = dict(DocAlias.objects.filter(name__startswith="rfc",
-                                                   document__in=[rel.source_id for rel in xed_by]).values_list('document_id', 'name'))
-    for rel in xed_by:
-        d = docs_dict[rel.target.document_id]
-        if rel.relationship_id == "obs":
-            l = d.obsoleted_by_list
-        elif rel.relationship_id == "updates":
-            l = d.updated_by_list
-        l.append(rel_rfc_aliases[rel.source_id].upper())
-        l.sort()
-
-
 def retrieve_search_results(form, all_types=False):
-
     """Takes a validated SearchForm and return the results."""
+
     if not form.is_valid():
         raise ValueError("SearchForm doesn't validate: %s" % form.errors)
 
     query = form.cleaned_data
 
-    types=[];
-    meta = {}
-
-    if (query['activedrafts'] or query['olddrafts'] or query['rfcs']):
-        types.append('draft')
-
-    # Advanced document types are data-driven, so we need to read them from the
-    # raw form.data field (and track their checked/unchecked state ourselves)
-    meta['checked'] = {}
-    alltypes = DocTypeName.objects.exclude(slug='draft').order_by('name');
-    for doctype in alltypes:
-        if form.data.__contains__('include-' + doctype.slug):
-            types.append(doctype.slug)
-            meta['checked'][doctype.slug] = True
-
-    if len(types) == 0 and not all_types:
-        return ([], {})
-
-    MAX = 500
-
     if all_types:
         docs = Document.objects.all()
     else:
+        types = []
+
+        if query['activedrafts'] or query['olddrafts'] or query['rfcs']:
+            types.append('draft')
+
+        types.extend(query["doctypes"])
+
+        if not types:
+            return []
+
         docs = Document.objects.filter(type__in=types)
 
     # name
@@ -281,104 +180,7 @@ def retrieve_search_results(form, all_types=False):
     elif by == "stream":
         docs = docs.filter(stream=query["stream"])
 
-    # evaluate and fill in attribute results immediately to cut down
-    # the number of queries
-    docs = docs.select_related("ad", "ad__person", "std_level", "intended_std_level", "group", "stream")
-    docs = docs.prefetch_related("states__type", "tags")
-    results = list(docs[:MAX])
-
-    fill_in_search_attributes(results)
-
-    # sort
-    def sort_key(d):
-        res = []
-
-        rfc_num = d.rfc_number()
-
-
-        if d.type_id == "draft":
-            res.append(["Active", "Expired", "Replaced", "Withdrawn", "RFC"].index(d.search_heading.split()[0] ))
-        else:
-            res.append(d.type_id);
-            res.append("-");
-            res.append(d.get_state_slug());
-            res.append("-");
-
-        if query["sort"] in ["title", "-title"]:
-            res.append(d.title)
-        elif query["sort"]  in ["date", "-date" ]:
-            res.append(str(d.latest_revision_date))
-        elif query["sort"]  in ["status", "-status"]:
-            if rfc_num != None:
-                res.append(int(rfc_num))
-            else:
-                res.append(d.get_state().order if d.get_state() else None)
-        elif query["sort"]  in ["ipr", "-ipr"]:
-            res.append(len(d.ipr()))
-        elif query["sort"]  in ["ad", "-ad"]:
-            if rfc_num != None:
-                res.append(int(rfc_num))
-            elif d.get_state_slug() == "active":
-                if d.get_state("draft-iesg"):
-                    res.append(d.get_state("draft-iesg").order)
-                else:
-                    res.append(0)
-        else:
-            if rfc_num != None:
-                res.append(int(rfc_num))
-            else:
-                res.append(d.canonical_name())
-
-        return res
-
-    results.sort(key=sort_key, reverse=query["sort"].startswith("-"))
-
-    # fill in a meta dict with some information for rendering the result table
-    if len(results) == MAX:
-        meta['max'] = MAX
-    meta['by'] = query['by']
-    meta['advanced'] = bool(query['by'] or len(meta['checked']))
-
-    meta['headers'] = [{'title': 'Document', 'key':'document'},
-                       {'title': 'Title', 'key':'title'},
-                       {'title': 'Date', 'key':'date'},
-                       {'title': 'Status', 'key':'status'},
-                       {'title': 'IPR', 'key':'ipr'},
-                       {'title': 'AD / Shepherd', 'key':'ad'}]
-
-    if hasattr(form.data, "urlencode"): # form was fed a Django QueryDict, not local plain dict
-        d = form.data.copy()
-        for h in meta['headers']:
-            sort = query.get('sort')
-            if sort.endswith(h['key']):
-                h['sorted'] = True
-                if sort.startswith('-'):
-                    h['direction'] = 'desc'
-                    d["sort"] = h["key"]                    
-                else:
-                    h['direction'] = 'asc'
-                    d["sort"] = "-" + h["key"]
-            else:
-                d["sort"] = h["key"]
-            h["sort_url"] = "?" + d.urlencode()
-                
-    return (results, meta)
-
-
-def get_doc_is_tracked(request, results):
-    # Determine whether each document is being tracked or not, and remember
-    # that so we can display the proper track/untrack option.
-    doc_is_tracked = { }
-    if request.user.is_authenticated():
-        try:
-            clist = CommunityList.objects.get(user=request.user)
-            clist.update()
-        except ObjectDoesNotExist:
-            return doc_is_tracked
-        for doc in results:
-            if clist.get_documents().filter(name=doc.name).count() > 0:
-                doc_is_tracked[doc.name] = True
-    return doc_is_tracked
+    return docs
 
 def search(request):
     if request.GET:
@@ -395,17 +197,16 @@ def search(request):
         if not form.is_valid():
             return HttpResponseBadRequest("form not valid: %s" % form.errors)
 
-        results, meta = retrieve_search_results(form)
+        results = retrieve_search_results(form)
+        results, meta = prepare_document_table(request, results, get_params)
         meta['searching'] = True
     else:
         form = SearchForm()
         results = []
-        meta = { 'by': None, 'advanced': False, 'searching': False }
-
-    doc_is_tracked = get_doc_is_tracked(request, results)
+        meta = { 'by': None, 'searching': False }
 
     return render(request, 'doc/search/search.html', {
-        'form':form, 'docs':results, 'doc_is_tracked':doc_is_tracked, 'meta':meta, },
+        'form':form, 'docs':results, 'meta':meta, },
     )
 
 def frontpage(request):
@@ -472,7 +273,7 @@ def search_for_name(request, name):
     else:
         for t in doctypenames:
             if n.startswith(t.prefix):
-                search_args += "&include-%s=on" % t.slug
+                search_args += "&doctypes=%s" % t.slug
                 break
         else:
             search_args += "&rfcs=on&activedrafts=on&olddrafts=on"
@@ -579,8 +380,9 @@ def docs_for_ad(request, name):
         raise Http404
     form = SearchForm({'by':'ad','ad': ad.id,
                        'rfcs':'on', 'activedrafts':'on', 'olddrafts':'on',
-                       'sort': 'status'})
-    results, meta = retrieve_search_results(form, all_types=True)
+                       'sort': 'status',
+                       'doctypes': list(DocTypeName.objects.filter(used=True).exclude(slug='draft').values_list("pk", flat=True))})
+    results, meta = prepare_document_table(request, retrieve_search_results(form), form.data)
     results.sort(key=ad_dashboard_sort_key)
     del meta["headers"][-1]
     #
@@ -594,7 +396,7 @@ def docs_for_ad(request, name):
 def drafts_in_last_call(request):
     lc_state = State.objects.get(type="draft-iesg", slug="lc").pk
     form = SearchForm({'by':'state','state': lc_state, 'rfcs':'on', 'activedrafts':'on'})
-    results, meta = retrieve_search_results(form)
+    results, meta = prepare_document_table(request, retrieve_search_results(form), form.data)
 
     return render(request, 'doc/drafts_in_last_call.html', {
         'form':form, 'docs':results, 'meta':meta

@@ -20,7 +20,7 @@ from django.template.defaultfilters import urlize
 
 from ietf.doc.models import Document, DocAlias, DocEvent, State
 from ietf.group.models import Group, GroupEvent, GroupMilestone, GroupStateTransitions 
-from ietf.group.utils import save_group_in_history
+from ietf.group.utils import save_group_in_history, setup_default_community_list_for_group
 from ietf.name.models import DocTagName, GroupStateName, GroupTypeName
 from ietf.person.models import Person, Email
 from ietf.utils.test_utils import TestCase, unicontent
@@ -191,20 +191,21 @@ class GroupPagesTests(TestCase):
             name=draft2.name,
             )
 
+        setup_default_community_list_for_group(group)
+
         url = urlreverse('ietf.group.info.group_documents', kwargs=dict(group_type=group.type_id, acronym=group.acronym))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertTrue(draft.name in unicontent(r))
         self.assertTrue(group.name in unicontent(r))
         self.assertTrue(group.acronym in unicontent(r))
-
         self.assertTrue(draft2.name in unicontent(r))
 
         # Make sure that a logged in user is presented with an opportunity to add results to their community list
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(url)
         q = PyQuery(r.content)
-        self.assertTrue(any([draft2.name in x.attrib['href'] for x in q('table td a.community-list-add-remove-doc')]))
+        self.assertTrue(any([draft2.name in x.attrib['href'] for x in q('table td a.track-untrack-doc')]))
 
         # test the txt version too while we're at it
         url = urlreverse('ietf.group.info.group_documents_txt', kwargs=dict(group_type=group.type_id, acronym=group.acronym))
