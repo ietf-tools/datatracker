@@ -995,7 +995,7 @@ class Session(models.Model):
         return Constraint.objects.filter(target=self.group, meeting=self.meeting).order_by('name__name')
 
     def timeslotassignment_for_agenda(self, schedule):
-        return self.timeslotassignments.filter(schedule=schedule)[0]
+        return self.timeslotassignments.filter(schedule=schedule).first()
 
     def official_timeslotassignment(self):
         return self.timeslotassignment_for_agenda(self.meeting.agenda)

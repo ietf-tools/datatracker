@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
-{% load staticfiles bootstrap3 widget_tweaks %}
+{% load staticfiles bootstrap3 widget_tweaks ietf_filters %}
 
 {% block title %}Interim Request Details{% endblock %}
 
@@ -32,7 +32,7 @@
       <dt>Start Time</dt>
       <dd>{{ session.official_timeslotassignment.timeslot.time|date:"H:i" }}
       <dt>Duration</dt>
-      <dd>{{ session.requested_duration }}
+      <dd>{{ session.requested_duration|format_timedelta }}
       <dt>Remote Instructions</dt>
       <dd>{{ session.remote_instructions }}
       <dt>Agenda Note</dt>
@@ -44,7 +44,7 @@
   {% csrf_token %}
   {% if can_edit %}
     {% if sessions.0.status.slug == 'apprw' or sessions.0.status.slug == 'scheda' %}
-        <a class="btn btn-default" href="">Edit</a>
+        <a class="btn btn-default" href="{% url 'ietf.meeting.views.interim_request_edit' number=meeting.number %}">Edit</a>
     {% endif %}
   {% endif %}
   {% if can_approve and sessions.0.status.slug == 'apprw' %}

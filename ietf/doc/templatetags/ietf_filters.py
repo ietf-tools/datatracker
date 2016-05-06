@@ -610,3 +610,9 @@ def session_end_time(session):
     timeslot = session.official_timeslotassignment().timeslot
     return timeslot.time + timeslot.duration
 
+@register.filter
+def format_timedelta(timedelta):
+    s = timedelta.seconds
+    hours, remainder = divmod(s, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    return '{hours:02d}:{minutes:02d}'.format(hours=hours,minutes=minutes)

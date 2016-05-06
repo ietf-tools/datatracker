@@ -9,22 +9,27 @@ from django.utils.encoding import force_text
 from django.utils import six
 
 from ietf.doc.models import Document, DocAlias, State, NewRevisionDocEvent
+from ietf.doc.utils import get_document_content
 from ietf.group.models import Group
 from ietf.ietfauth.utils import has_role
-from ietf.meeting.models import Session, countries, timezones
-from ietf.meeting.helpers import assign_interim_session
+from ietf.meeting.models import Session, Meeting, Schedule, countries, timezones
+from ietf.meeting.helpers import get_next_interim_number, assign_interim_session
+from ietf.meeting.helpers import is_meeting_approved
 from ietf.message.models import Message
+from ietf.person.models import Person
 from ietf.secr.utils.meeting import get_upload_root
 from ietf.utils.fields import DatepickerDateField
 
 # need to insert empty option for use in ChoiceField
-#countries.insert(0, ('', '-'*9 ))
+# countries.insert(0, ('', '-'*9 ))
 countries.insert(0, ('', ''))
-timezones.insert(0, ('', '-'*9 ))
+timezones.insert(0, ('', '-' * 9))
 
 # -------------------------------------------------
 # DurationField from Django 1.8
 # -------------------------------------------------
+
+
 def duration_string(duration):
     days = duration.days
     seconds = duration.seconds
@@ -36,13 +41,18 @@ def duration_string(duration):
     hours = minutes // 60
     minutes = minutes % 60
 
-    string = '{:02d}:{:02d}:{:02d}'.format(hours, minutes, seconds)
+    # string = '{:02d}:{:02d}:{:02d}'.format(hours, minutes, seconds)
+    string = '{:02d}:{:02d}'.format(hours, minutes)
     if days:
         string = '{} '.format(days) + string
     if microseconds:
         string += '.{:06d}'.format(microseconds)
 
     return string
+
+custom_duration_re = re.compile(
+    r'^(?P<hours>\d+):(?P<minutes>\d+)$'
+)
 
 standard_duration_re = re.compile(
     r'^'
@@ -67,6 +77,7 @@ iso8601_duration_re = re.compile(
     r'$'
 )
 
+
 def parse_duration(value):
     """Parses a duration string and returns a datetime.timedelta.
 
@@ -74,7 +85,9 @@ def parse_duration(value):
 
     Also supports ISO 8601 representation.
     """
-    match = standard_duration_re.match(value)
+    match = custom_duration_re.match(value)
+    if not match:
+        match = standard_duration_re.match(value)
     if not match:
         match = iso8601_duration_re.match(value)
     if match:
@@ -83,6 +96,7 @@ def parse_duration(value):
             kw['microseconds'] = kw['microseconds'].ljust(6, '0')
         kw = {k: float(v) for k, v in six.iteritems(kw) if v is not None}
         return datetime.timedelta(**kw)
+
 
 class DurationField(Field):
     default_error_messages = {
@@ -109,6 +123,7 @@ class DurationField(Field):
 # Helpers
 # -------------------------------------------------
 
+
 class GroupModelChoiceField(forms.ModelChoiceField):
     '''
     Custom ModelChoiceField, changes the label to a more readable format
@@ -116,43 +131,42 @@ class GroupModelChoiceField(forms.ModelChoiceField):
     def label_from_instance(self, obj):
         return obj.acronym
 
-'''
-class BaseSessionFormSet(BaseFormSet):
-    def save_new_objects(self, commit=True):
-        self.new_objects = []
-        for form in self.extra_forms:
-            if not form.has_changed():
-                continue
-            # If someone has marked an add form for deletion, don't save the
-            # object.
-            if self.can_delete and self._should_delete_form(form):
-                continue
-            self.new_objects.append(self.save_new(form, commit=commit))
-            if not commit:
-                self.saved_forms.append(form)
-        return self.new_objects
-
-    def save(self,commit=True):
-        #return self.save_existing_objects(commit) + self.save_new_objects(commit)
-        return self.save_new_objects(commit)
-'''
-
 # -------------------------------------------------
 # Forms
 # -------------------------------------------------
 
-class InterimRequestForm(forms.Form):
-    group = GroupModelChoiceField(queryset = Group.objects.filter(type__in=('wg','rg'),state='active').order_by('acronym'))
+
+class InterimMeetingModelForm(forms.ModelForm):
+    group = GroupModelChoiceField(queryset=Group.objects.filter(type__in=('wg', 'rg'), state='active').order_by('acronym'))
     in_person = forms.BooleanField(required=False)
-    meeting_type = forms.ChoiceField(choices=(("single", "Single"), ("multi-day", "Multi-Day"), ('series','Series')), required=False, initial='single', widget=forms.RadioSelect)
+    meeting_type = forms.ChoiceField(choices=(
+        ("single", "Single"),
+        ("multi-day", "Multi-Day"),
+        ('series', 'Series')), required=False, initial='single', widget=forms.RadioSelect)
     approved = forms.BooleanField(required=False)
-    
+    city = forms.CharField(max_length=255, required=False)
+    country = forms.ChoiceField(choices=countries, required=False)
+    time_zone = forms.ChoiceField(choices=timezones)
+
+    class Meta:
+        model = Meeting
+        fields = ('group', 'in_person', 'meeting_type', 'approved', 'city', 'country', 'time_zone')
+
     def __init__(self, request, *args, **kwargs):
-        super(InterimRequestForm, self).__init__(*args, **kwargs)
+        super(InterimMeetingModelForm, self).__init__(*args, **kwargs)
         self.user = request.user
         self.person = self.user.person
-        self.fields["group"].widget.attrs["class"] = "select2-field"
+        self.is_edit = bool(self.instance.pk)
+        self.fields['group'].widget.attrs['class'] = "select2-field"
+        self.fields['time_zone'].initial = 'UTC'
         self.set_group_options()
+        if self.is_edit:
+            self.fields['group'].initial = self.instance.session_set.first().group
+            self.fields['group'].widget.attrs['disabled'] = True
+            if self.instance.city or self.instance.country:
+                self.fields['in_person'].initial = True
+            if is_meeting_approved(self.instance):
+                self.fields['approved'].initial = True
 
     def set_group_options(self):
         '''Set group options based on user accessing the form'''
@@ -160,40 +174,132 @@ class InterimRequestForm(forms.Form):
         if has_role(self.user, "Secretariat"):
             return  # don't reduce group options
         if has_role(self.user, "Area Director"):
-            queryset = Group.objects.filter(type="wg", state__in=("active","proposed")).order_by('acronym')
+            queryset = Group.objects.filter(type="wg", state__in=("active", "proposed")).order_by('acronym')
         elif has_role(self.user, "IRTF Chair"):
-            queryset = Group.objects.filter(type="rg", state__in=("active","proposed")).order_by('acronym')
+            queryset = Group.objects.filter(type="rg", state__in=("active", "proposed")).order_by('acronym')
         elif has_role(self.user, "WG Chair"):
-            queryset = Group.objects.filter(type="wg", state__in=("active","proposed"), role__person=self.person, role__name="chair").distinct().order_by('acronym')
+            queryset = Group.objects.filter(type="wg", state__in=("active", "proposed"), role__person=self.person, role__name="chair").distinct().order_by('acronym')
         elif has_role(self.user, "RG Chair"):
-            queryset = Group.objects.filter(type="rg", state__in=("active","proposed"), role__person=self.person, role__name="chair").distinct().order_by('acronym')
+            queryset = Group.objects.filter(type="rg", state__in=("active", "proposed"), role__person=self.person, role__name="chair").distinct().order_by('acronym')
         self.fields['group'].queryset = queryset
 
         # if there's only one possibility make it the default
         if len(queryset) == 1:
             self.fields['group'].initial = queryset[0]
 
+    def save(self, *args, **kwargs):
+        '''Save must handle fields not included in the form: date,number,type_id'''
+        date = kwargs.pop('date')
+        group = self.cleaned_data.get('group')
+        meeting = super(InterimMeetingModelForm, self).save(commit=False)
+        if not meeting.type_id:
+            meeting.type_id = 'interim'
+        if not meeting.number:
+            meeting.number = get_next_interim_number(group, date)
+        meeting.date = date
+        if kwargs.get('commit', True):
+            # create schedule with meeting
+            if not meeting.agenda:
+                meeting.agenda = Schedule.objects.create(
+                    meeting=meeting,
+                    owner=Person.objects.get(name='(System)'))
+            meeting.save()
+
+        return meeting
+
+
+class InterimSessionModelForm(forms.ModelForm):
+    date = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1"}, label='Date', required=False)
+    time = forms.TimeField(widget=forms.TimeInput(format='%H:%M'), required=False)
+    time_utc = forms.TimeField(required=False)
+    requested_duration = DurationField(required=False)
+    end_time = forms.TimeField(required=False)
+    end_time_utc = forms.TimeField(required=False)
+    remote_instructions = forms.CharField(max_length=1024, required=False)
+    agenda = forms.CharField(required=False, widget=forms.Textarea)
+    agenda_note = forms.CharField(max_length=255, required=False)
+
+    class Meta:
+        model = Session
+        fields = ('date', 'time', 'time_utc', 'requested_duration', 'end_time',
+                  'end_time_utc', 'remote_instructions', 'agenda', 'agenda_note')
+
+    def __init__(self, *args, **kwargs):
+        if 'user' in kwargs:
+            self.user = kwargs.pop('user')
+        if 'group' in kwargs:
+            self.group = kwargs.pop('group')
+        if 'is_approved' in kwargs:
+            self.is_approved = kwargs.pop('is_approved')
+        super(InterimSessionModelForm, self).__init__(*args, **kwargs)
+        self.is_edit = bool(self.instance.pk)
+        # setup fields that aren't intrinsic to the Session object
+        if self.is_edit:
+            self.initial['date'] = self.instance.official_timeslotassignment().timeslot.time
+            self.initial['time'] = self.instance.official_timeslotassignment().timeslot.time
+            if self.instance.agenda():
+                doc = self.instance.agenda()
+                path = os.path.join(doc.get_file_path(), doc.filename_with_rev())
+                self.initial['agenda'] = get_document_content(os.path.basename(path), path, markup=False)
+
+    def save(self, *args, **kwargs):
+        """NOTE: as the baseform of an inlineformset self.save(commit=True)
+        never gets called"""
+        session = super(InterimSessionModelForm, self).save(commit=kwargs.get('commit', True))
+        if self.is_approved:
+            session.status_id = 'scheda'
+        else:
+            session.status_id = 'apprw'
+        session.group = self.group
+        session.type_id = 'session'
+        if not self.instance.pk:
+            session.requested_by = self.user.person
+
+        return session
+
+    def save_agenda(self):
+        if self.instance.agenda():
+            doc = self.instance.agenda()
+            doc.rev = str(int(doc.rev) + 1).zfill(2)
+            doc.save()
+        else:
+            filename = 'agenda-interim-{group}-{date}-{time}'.format(
+                group=self.group.acronym,
+                date=self.cleaned_data['date'].strftime("%Y-%m-%d-"),
+                time=self.cleaned_data['time'].strftime("%H%M"))
+            doc = Document.objects.create(
+                type_id='agenda',
+                group=self.group,
+                name=filename,
+                rev='00')
+            doc.set_state(State.objects.get(type=doc.type, slug='active'))
+            DocAlias.objects.create(name=doc.name, document=doc)
+            self.instance.sessionpresentation_set.create(document=doc, rev=doc.rev)
+            NewRevisionDocEvent.objects.create(
+                type='new_revision',
+                by=self.user.person,
+                doc=doc,
+                rev=doc.rev,
+                desc='New revision available')
+        # write file
+        path = os.path.join(get_upload_root(self.instance.meeting), 'agenda', doc.filename_with_rev())
+        directory = os.path.dirname(path)
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        with open(path, "w") as file:
+            file.write(self.cleaned_data['agenda'])
+
+
 class InterimSessionForm(forms.Form):
-    # unset: date,time,duration
-    date = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1" }, label='Date', required=False)
+    date = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1"}, label='Date', required=False)
     time = forms.TimeField(required=False)
     time_utc = forms.TimeField(required=False)
     duration = DurationField(required=False)
     end_time = forms.TimeField(required=False)
     end_time_utc = forms.TimeField(required=False)
-    remote_instructions = forms.CharField(max_length=1024,required=False)
-    agenda = forms.CharField(required=False,widget=forms.Textarea)
-    agenda_note = forms.CharField(max_length=255,required=False)
-    city = forms.CharField(max_length=255,required=False)
-    country = forms.ChoiceField(choices=countries,required=False)
-    timezone = forms.ChoiceField(choices=timezones)
-
-    def __init__(self, *args, **kwargs):
-        super(InterimSessionForm, self).__init__(*args, **kwargs)
-        self.fields['timezone'].initial = 'UTC'
-        
-    def _save_agenda(self, session):
-        pass
+    remote_instructions = forms.CharField(max_length=1024, required=False)
+    agenda = forms.CharField(required=False, widget=forms.Textarea)
+    agenda_note = forms.CharField(max_length=255, required=False)
 
     def save(self, request, group, meeting, is_approved):
         person = request.user.person
@@ -208,7 +314,8 @@ class InterimSessionForm(forms.Form):
             status_id = 'scheda'
         else:
             status_id = 'apprw'
-        session = Session.objects.create(meeting=meeting,
+        session = Session.objects.create(
+            meeting=meeting,
             group=group,
             requested_by=person,
             requested_duration=duration,
@@ -216,22 +323,23 @@ class InterimSessionForm(forms.Form):
             type_id='session',
             remote_instructions=remote_instructions,
             agenda_note=agenda_note,)
-        assign_interim_session(session,time)
-       
+        assign_interim_session(session, time)
+
         if agenda:
             # create objects
-            filename = 'agenda-interim-%s-%s' % (group.acronym,time.strftime("%Y-%m-%d-%H%M"))
-            doc = Document.objects.create(type_id='agenda',group=group,name=filename,rev='00')
-            doc.set_state(State.objects.get(type=doc.type,slug='active'))
+            filename = 'agenda-interim-%s-%s' % (group.acronym, time.strftime("%Y-%m-%d-%H%M"))
+            doc = Document.objects.create(type_id='agenda', group=group, name=filename, rev='00')
+            doc.set_state(State.objects.get(type=doc.type, slug='active'))
             DocAlias.objects.create(name=doc.name, document=doc)
-            session.sessionpresentation_set.create(document=doc,rev=doc.rev)
-            NewRevisionDocEvent.objects.create(type='new_revision',
+            session.sessionpresentation_set.create(document=doc, rev=doc.rev)
+            NewRevisionDocEvent.objects.create(
+                type='new_revision',
                 by=request.user.person,
                 doc=doc,
                 rev=doc.rev,
                 desc='New revision available')
             # write file
-            path = os.path.join(get_upload_root(meeting),'agenda',doc.filename_with_rev())
+            path = os.path.join(get_upload_root(meeting), 'agenda', doc.filename_with_rev())
             directory = os.path.dirname(path)
             if not os.path.exists(directory):
                 os.makedirs(directory)
@@ -240,15 +348,13 @@ class InterimSessionForm(forms.Form):
 
         return session
 
+
 class InterimAnnounceForm(forms.ModelForm):
 
     class Meta:
         model = Message
-        fields = ('to','frm','cc','bcc','reply_to','subject','body')
+        fields = ('to', 'frm', 'cc', 'bcc', 'reply_to', 'subject', 'body')
 
-    #def __init__(self):
-    #    super(InterimAnnounceForm, self).__init__(*args,**kwargs)
-    
     def save(self, *args, **kwargs):
         user = kwargs.pop('user')
         message = super(InterimAnnounceForm, self).save(commit=False)

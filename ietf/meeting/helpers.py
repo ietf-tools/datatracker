@@ -16,6 +16,7 @@ from django.template.loader import render_to_string
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import Document
+from ietf.doc.utils import get_document_content
 from ietf.group.models import Group
 from ietf.ietfauth.utils import has_role, user_is_person
 from ietf.liaisons.utils import get_person_for_user
@@ -290,67 +291,31 @@ def session_constraint_expire(request,session):
 # -------------------------------------------------
 # Interim Meeting Helpers
 # -------------------------------------------------
-def get_announcement_initial(meeting):
-    '''Returns a dictionary suitable to initialize an InterimAnnouncementForm (Message ModelForm)'''
-    group = meeting.session_set.first().group
-    in_person = bool(meeting.city)
-    initial = {}
-    initial['to'] = settings.INTERIM_ANNOUNCE_TO_EMAIL
-    initial['cc'] = group.list_email
-    initial['frm'] = settings.INTERIM_ANNOUNCE_FROM_EMAIL
-    if in_person:
-        desc = 'Interim'
+
+
+def assign_interim_session(form):
+    """Helper function to create a timeslot and assign the interim session"""
+    time = datetime.datetime.combine(
+        form.cleaned_data['date'],
+        form.cleaned_data['time'])
+    session = form.instance
+    if session.official_timeslotassignment():
+        slot = session.official_timeslotassignment().timeslot
+        slot.time = time
+        slot.save()
     else:
-        desc = 'Virtual'
-    initial['subject'] = '%s (%s) WG %s Meeting: %s' % (group.name,group.acronym,desc,meeting.date)
-    body = render_to_string('meeting/interim_announcement.txt', locals())
-    initial['body'] = body
-    return initial
+        slot = TimeSlot.objects.create(
+            meeting=session.meeting,
+            type_id="session",
+            duration=session.requested_duration,
+            time=time)
+        SchedTimeSessAssignment.objects.create(
+            timeslot=slot,
+            session=session,
+            schedule=session.meeting.agenda)
 
-def get_earliest_session(session_formset):
-    '''Return earliest InterimSessionForm from formset'''
-    earliest = session_formset[0]
-    if len(session_formset) == 1:
-        return earliest
-    for form in session_formset[1:]:
-        date = form.cleaned_data.get('date')
-        if date and date < earliest.cleaned_data.get('date'):
-            earliest = form
-    return earliest
 
-def get_next_interim_number(group,date):
-    sequence = Meeting.objects.filter(number__startswith='interim-%s-%s' % (date.year,group.acronym)).count() + 1
-    return 'interim-%s-%s-%s' % (date.year,group.acronym,sequence)
-
-def create_interim_meeting(group,date,city='',country='',timezone='UTC',person=None):
-    '''Helper function to create interim meeting and associated schedule'''
-    if not person:
-        person = Person.objects.get(name="(System)")
-    number = get_next_interim_number(group,date)
-    meeting = Meeting.objects.create(number=number,type_id='interim',date=date,city=city,
-        country=country,time_zone=timezone)
-    schedule = Schedule.objects.create(meeting=meeting, owner=person, visible=True, public=True)
-    meeting.agenda = schedule
-    meeting.save()
-    return meeting
-
-def create_interim_meeting_from_forms(request_form,session_form):
-    '''Create an Interim meeting, given an InterimRequestForm and InterimSessionForm'''
-    group = request_form.cleaned_data.get('group')
-    date = session_form.cleaned_data.get('date')
-    city = session_form.cleaned_data.get('city')
-    country = session_form.cleaned_data.get('country')
-    timezone = session_form.cleaned_data.get('timezone')
-    person = request_form.person
-    return create_interim_meeting(group=group,date=date,city=city,country=country,timezone=timezone,person=person)
-
-def assign_interim_session(session,time):
-    '''Helper function to create a timeslot and assign the interim session''' 
-    slot = TimeSlot.objects.create(meeting=session.meeting, type_id="session",
-        duration=session.requested_duration, time=time)
-    SchedTimeSessAssignment.objects.create(timeslot=slot, session=session, schedule=session.meeting.agenda)
-
-def can_approve_interim_request(meeting,user):
+def can_approve_interim_request(meeting, user):
     '''Returns True if the user has permissions to approve an interim meeting request'''
     if meeting.type.slug != 'interim':
         return False
@@ -361,26 +326,29 @@ def can_approve_interim_request(meeting,user):
     if not session:
         return False
     group = session.group
-    if group.type.slug == 'wg' and group.parent.role_set.filter(name='ad',person=person):
+    if group.type.slug == 'wg' and group.parent.role_set.filter(name='ad', person=person):
         return True
-    if group.type.slug == 'rg' and group.parent.role_set.filter(name='chair',person=person):
+    if group.type.slug == 'rg' and group.parent.role_set.filter(name='chair', person=person):
         return True
     return False
 
-def can_edit_interim_request(meeting,user):
+
+def can_edit_interim_request(meeting, user):
     '''Returns True if the user can edit the interim meeting request'''
-    
-    if can_approve_interim_request(meeting,user):
+
+    if can_approve_interim_request(meeting, user):
         return True
-    
+
     return False
+
 
 def can_request_interim_meeting(user):
-    if has_role(user, ('Secretariat','Area Director','WG Chair','IRTF Chair', 'RG Chair')):
+    if has_role(user, ('Secretariat', 'Area Director', 'WG Chair', 'IRTF Chair', 'RG Chair')):
         return True
     return False
 
-def can_view_interim_request(meeting,user):
+
+def can_view_interim_request(meeting, user):
     '''Returns True if the user can see the pending interim request in the pending interim view'''
     if meeting.type.slug != 'interim':
         return False
@@ -395,6 +363,129 @@ def can_view_interim_request(meeting,user):
         return True
     if has_role(user, 'IRTF Chair') and group.type.slug == 'rg':
         return True
-    if group.role_set.filter(name='chair',person=person):
+    if group.role_set.filter(name='chair', person=person):
         return True
     return False
+
+
+def create_interim_meeting(group, date, city='', country='', timezone='UTC',
+                           person=None):
+    """Helper function to create interim meeting and associated schedule"""
+    if not person:
+        person = Person.objects.get(name='(System)')
+    number = get_next_interim_number(group, date)
+    meeting = Meeting.objects.create(
+        number=number,
+        type_id='interim',
+        date=date,
+        city=city,
+        country=country,
+        time_zone=timezone)
+    schedule = Schedule.objects.create(
+        meeting=meeting,
+        owner=person,
+        visible=True,
+        public=True)
+    meeting.agenda = schedule
+    meeting.save()
+    return meeting
+
+
+def get_announcement_initial(meeting):
+    '''Returns a dictionary suitable to initialize an InterimAnnouncementForm (Message ModelForm)'''
+    group = meeting.session_set.first().group
+    in_person = bool(meeting.city)
+    initial = {}
+    initial['to'] = settings.INTERIM_ANNOUNCE_TO_EMAIL
+    initial['cc'] = group.list_email
+    initial['frm'] = settings.INTERIM_ANNOUNCE_FROM_EMAIL
+    if in_person:
+        desc = 'Interim'
+    else:
+        desc = 'Virtual'
+    initial['subject'] = '%s (%s) WG %s Meeting: %s' % (group.name, group.acronym, desc, meeting.date)
+    body = render_to_string('meeting/interim_announcement.txt', locals())
+    initial['body'] = body
+    return initial
+
+
+def get_earliest_session_date(formset):
+    '''Return earliest date from InterimSession Formset'''
+    return sorted([f.cleaned_data['date'] for f in formset.forms if f.cleaned_data.get('date')])[0]
+
+
+def get_interim_initial(meeting):
+    '''Returns a dictionary suitable to initialize a InterimRequestForm'''
+    initial = {}
+    initial['group'] = meeting.session_set.first().group
+    if meeting.city:
+        initial['in_person'] = True
+    else:
+        initial['in_person'] = False
+    if meeting.session_set.count() > 1:
+        initial['meeting_type'] = 'multi-day'
+    else:
+        initial['meeting_type'] = 'single'
+    if meeting.session_set.first().status.slug == 'apprw':
+        initial['approved'] = False
+    else:
+        initial['approved'] = True
+    return initial
+
+
+def get_interim_session_initial(meeting):
+    '''Returns a list of dictionaries suitable to initialize a InterimSessionForm'''
+    initials = []
+    for session in meeting.session_set.all():
+        initial = {}
+        initial['date'] = session.official_timeslotassignment().timeslot.time
+        initial['time'] = session.official_timeslotassignment().timeslot.time
+        initial['duration'] = session.requested_duration
+        initial['remote_instructions'] = session.remote_instructions
+        initial['agenda_note'] = session.agenda_note
+        doc = session.agenda()
+        if doc:
+            path = os.path.join(doc.get_file_path(), doc.filename_with_rev())
+            initial['agenda'] = get_document_content(os.path.basename(path), path, markup=False)
+        initials.append(initial)
+
+    return initials
+
+
+def is_meeting_approved(meeting):
+    """Returns True if the meeting is approved"""
+    if meeting.session_set.first().status.slug == 'apprw':
+        return False
+    else:
+        return True
+
+
+def get_next_interim_number(group, date):
+    """Returns a unique number to use for the next interim meeting for
+    *group*"""
+    meetings = Meeting.objects.filter(
+        number__startswith='interim-{year}-{group}'.format(
+            year=date.year,
+            group=group.acronym))
+    if meetings:
+        sequences = [int(m.number.split('-')[-1]) for m in meetings]
+        last_sequence = sorted(sequences)[-1]
+    else:
+        last_sequence = 0
+    return 'interim-{year}-{group}-{sequence}'.format(
+        year=date.year,
+        group=group.acronym,
+        sequence=last_sequence + 1)
+
+
+def sessions_post_save(forms):
+    """Helper function to perform various post save operations on each form of a
+    InterimSessionModelForm formset"""
+
+    for form in forms:
+        if not form.has_changed():
+            continue
+        if ('date' in form.changed_data) or ('time' in form.changed_data):
+            assign_interim_session(form)
+        if 'agenda' in form.changed_data:
+            form.save_agenda()

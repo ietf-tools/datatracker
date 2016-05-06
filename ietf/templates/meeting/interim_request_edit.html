@@ -3,7 +3,7 @@
 {% load origin %}
 {% load staticfiles bootstrap3 widget_tweaks %}
 
-{% block title %}Interim Request{% endblock %}
+{% block title %}Edit Interim Request{% endblock %}
 
 {% block pagehead %}
   <link rel="stylesheet" href="{% static 'select2/select2.css' %}">
@@ -13,12 +13,14 @@
 
 {% block content %}
   {% origin %}
-  <h1>Interim Meeting Request</h1>
+  <h1>Edit Interim Meeting Request</h1>
 
   <form id="interim-request-form" role="form" method="post" class="form-horizontal">
     {% csrf_token %}
 
     {% bootstrap_field form.group layout='horizontal' %}
+
+    <input type="hidden" name="group" value="{{ form.group.value }}">
 
     <div class="form-group form-inline">
         <div class="col-md-offset-2">
@@ -30,6 +32,7 @@
                 <label class="checkbox-inline">{% render_field form.approved %}<strong>Preapproved by AD</strong></label>
             </div>
 
+            <!-- 
             <div class="col-md-2 radio-inline"><strong>Meeting Type:</strong></div>
             
             <label class="radio-inline">
@@ -41,28 +44,13 @@
             <label class="radio-inline">
                 <input type="radio" value="series" name="meeting_type">Series
             </label>
+            -->
+
         </div> <!-- col-md-offset-2 -->
     </div> <!-- form-group form-inline -->
-
-
-    <div class="form-group meeting-type-help mth-multi">
-        <div class="col-md-offset-2">
-            <div class="col-md-10">
-                <p class="help-block">Use Multi-Day to request one meeting with sessions over multiple days.</p>
-            </div>
-        </div>
-    </div>
-    
-    <div class="form-group meeting-type-help mth-series">
-        <div class="col-md-offset-2">
-            <div class="col-md-10">
-                <p class="help-block">Use Series to request a number of separate meetings.  In Person series is not supported.</p>
-            </div>
-        </div>
-    </div>
     
     <div class="form-group">
-        <label for="id_session_set-{{ forloop.counter0 }}-city" class="col-md-2 control-label">Location</label>
+        <label for="id_form-{{ forloop.counter0 }}-city" class="col-md-2 control-label">Location</label>
         <div class="col-md-10 form-inline">
             {% render_field form.city class="form-control location" placeholder="City" %}
             {% render_field form.country class="form-control location" placeholder="Country" %}
@@ -73,7 +61,9 @@
     {{ formset.management_form }}
     {% for form in formset %}
     <div class="fieldset{% if forloop.last %} template{% endif %}" >    
-    
+ 
+    <input id="id_session_set-{{ forloop.counter0 }}-id" name="session_set-{{ forloop.counter0 }}-id" type="hidden" value="{{ form.instance.pk|default_if_none:"" }}">
+
     <div class="form-group">
         <label for="id_session_set-{{ forloop.counter0 }}-date" class="col-md-2 control-label required">Date</label>
         <div class="col-md-2">{% render_field form.date class="form-control" %}</div>
