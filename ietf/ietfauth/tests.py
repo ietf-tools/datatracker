@@ -241,14 +241,14 @@ class IetfAuthTests(TestCase):
         self.assertEqual(r.status_code, 200)
 
         # ask for reset, wrong username
-        r = self.client.post(url, { 'email': "nobody@example.com" })
+        r = self.client.post(url, { 'username': "nobody@example.com" })
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertTrue(len(q("form .has-error")) > 0)
 
         # ask for reset
         empty_outbox()
-        r = self.client.post(url, { 'email': user.username })
+        r = self.client.post(url, { 'username': user.username })
         self.assertEqual(r.status_code, 200)
         self.assertEqual(len(outbox), 1)
 

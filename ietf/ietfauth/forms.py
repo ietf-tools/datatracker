@@ -82,13 +82,13 @@ class RoleEmailForm(forms.Form):
 
 
 class ResetPasswordForm(forms.Form):
-    email = forms.EmailField(label="Your email (lowercase)")
+    username = forms.EmailField(label="Your email (lowercase)")
 
-    def clean_email(self):
-        email = self.cleaned_data["email"]
-        if not User.objects.filter(username=email).exists():
+    def clean_username(self):
+        username = self.cleaned_data["username"]
+        if not User.objects.filter(username=username).exists():
             raise forms.ValidationError(mark_safe("Didn't find a matching account. If you don't have an account yet, you can <a href=\"{}\">create one</a>.".format(urlreverse("create_account"))))
-        return email
+        return username
 
 
 class TestEmailForm(forms.Form):

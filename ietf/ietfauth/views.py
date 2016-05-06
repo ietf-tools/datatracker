@@ -276,18 +276,19 @@ def password_reset(request):
     if request.method == 'POST':
         form = ResetPasswordForm(request.POST)
         if form.is_valid():
-            to_email = form.cleaned_data['email']
+            username = form.cleaned_data['username']
 
-            auth = django.core.signing.dumps(to_email, salt="password_reset")
+            auth = django.core.signing.dumps(username, salt="password_reset")
 
             domain = Site.objects.get_current().domain
             subject = 'Confirm password reset at %s' % domain
             from_email = settings.DEFAULT_FROM_EMAIL
+            to_email = username # form validation makes sure that this is an email address
 
             send_mail(request, to_email, from_email, subject, 'registration/password_reset_email.txt', {
                 'domain': domain,
                 'auth': auth,
-                'username': to_email,
+                'username': username,
                 'expire': settings.DAYS_TO_EXPIRE_REGISTRATION_LINK,
             })
 
@@ -302,11 +303,11 @@ def password_reset(request):
 
 def confirm_password_reset(request, auth):
     try:
-        email = django.core.signing.loads(auth, salt="password_reset", max_age=settings.DAYS_TO_EXPIRE_REGISTRATION_LINK * 24 * 60 * 60)
+        username = django.core.signing.loads(auth, salt="password_reset", max_age=settings.DAYS_TO_EXPIRE_REGISTRATION_LINK * 24 * 60 * 60)
     except django.core.signing.BadSignature:
         raise Http404("Invalid or expired auth")
 
-    user = get_object_or_404(User, username=email)
+    user = get_object_or_404(User, username=username)
 
     success = False
     if request.method == 'POST':
@@ -325,7 +326,7 @@ def confirm_password_reset(request, auth):
 
     return render(request, 'registration/change_password.html', {
         'form': form,
-        'email': email,
+        'username': username,
         'success': success,
     })
 
