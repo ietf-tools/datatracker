@@ -309,6 +309,12 @@ BOOTSTRAP3 = {
 
     # Class to indicate error
     'form_error_class': 'bootstrap3-error',
+
+    'field_renderers': {
+        'default': 'ietf.utils.bootstrap.SeparateErrorsFromHelpTextFieldRenderer',
+        'inline': 'bootstrap3.renderers.InlineFieldRenderer',
+    },
+    
 }
 
 INTERNAL_IPS = (
