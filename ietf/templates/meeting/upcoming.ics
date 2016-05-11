@@ -2,9 +2,9 @@
 VERSION:2.0
 METHOD:PUBLISH
 PRODID:-//IETF//datatracker.ietf.org ical upcoming//EN
-{% for meeting in meetings %}BEGIN:VEVENT
-UID:ietf-{{meeting.number}}-{{meeting.session_set.all.0.pk}}
-SUMMARY:{% if item.session.name %}{{item.session.name|ics_esc}}{% else %}{% if not item.session.historic_group %}{{item.timeslot.name|ics_esc}}{% else %}{{item.session.historic_group.acronym|lower}} - {{item.session.historic_group.name}}{% endif%}{%endif%}
+{% for item in assignments %}BEGIN:VEVENT
+UID:ietf-{{item.session.meeting.number}}-{{item.timeslot.pk}}
+SUMMARY:{% if item.session.name %}{{item.session.name|ics_esc}}{% else %}{{item.session.group.acronym|lower}} - {{item.session.group.name}}{%endif%}
 {% if item.timeslot.show_location %}LOCATION:{{item.timeslot.get_location}}
 {% endif %}STATUS:{{item.session.ical_status}}
 CLASS:PUBLIC

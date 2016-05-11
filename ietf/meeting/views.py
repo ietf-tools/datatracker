@@ -21,7 +21,7 @@ from django.core.urlresolvers import reverse
 from django.db.models import Min, Max
 from django.conf import settings
 from django.forms.models import modelform_factory, inlineformset_factory
-from django.forms import ModelForm, formset_factory
+from django.forms import ModelForm
 from django.utils.functional import curry
 from django.views.decorators.csrf import ensure_csrf_cookie
 
@@ -40,13 +40,12 @@ from ietf.meeting.helpers import preprocess_assignments_for_agenda, read_agenda_
 from ietf.meeting.helpers import convert_draft_to_pdf, get_earliest_session_date
 from ietf.meeting.helpers import can_view_interim_request, can_approve_interim_request
 from ietf.meeting.helpers import can_request_interim_meeting, get_announcement_initial
-from ietf.meeting.helpers import get_interim_initial, get_interim_session_initial
 from ietf.meeting.helpers import sessions_post_save, is_meeting_approved
 from ietf.utils.mail import send_mail_message
 from ietf.utils.pipe import pipe
 from ietf.utils.pdf import pdf_pages
 
-from .forms import InterimMeetingModelForm, InterimSessionForm, InterimAnnounceForm, InterimSessionModelForm
+from .forms import InterimMeetingModelForm, InterimAnnounceForm, InterimSessionModelForm
 
 
 def get_menu_entries(request):
@@ -960,7 +959,7 @@ def interim_send_announcement(request, number):
                'RG Chair')
 def interim_pending(request):
     '''View which shows interim meeting requests pending approval'''
-    meetings = Meeting.objects.filter(type='interim', session__status='apprw')
+    meetings = Meeting.objects.filter(type='interim', session__status='apprw').distinct()
     menu_entries = get_menu_entries(request)
     selected_menu_entry = 'pending'
 
@@ -1126,22 +1125,11 @@ def interim_request_edit(request, number):
         "formset": formset})
 
 
-def ical_upcoming(request):
-    '''ICAL upcoming meetings'''
-    today = datetime.datetime.today()
-    meetings = Meeting.objects.filter(date__gt=today)
-
-    return render(request, "meeting/upcoming.ics", {
-        "meetings": meetings,
-    }, content_type="text/calendar")
-
-
 def upcoming(request):
     '''List of upcoming meetings'''
     today = datetime.datetime.today()
-    meetings = Meeting.objects.filter(
-        date__gte=today,
-        session__status__in=('sched', 'canceled')).order_by('date')
+    meetings = Meeting.objects.filter(date__gte=today).exclude(
+        session__status__in=('apprw', 'schedpa')).order_by('date')
 
     # extract groups hierarchy for display filter
     seen = set()
@@ -1170,12 +1158,40 @@ def upcoming(request):
     # add menu actions
     actions = []
     if can_request_interim_meeting(request.user):
-        actions.append(("Request new interim meeting",
-                        reverse("ietf.meeting.views.interim_request")))
+        actions.append(('Request new interim meeting',
+                        reverse('ietf.meeting.views.interim_request')))
+    actions.append(('Download as .ics',
+                    reverse('ietf.meeting.views.upcoming_ical')))
 
-    return render(request, "meeting/upcoming.html", {
+    return render(request, 'meeting/upcoming.html', {
                   'meetings': meetings,
                   'menu_actions': actions,
                   'menu_entries': menu_entries,
                   'selected_menu_entry': selected_menu_entry,
                   'group_parents': group_parents})
+
+
+def upcoming_ical(request):
+    '''Return Upcoming meetings in iCalendar file'''
+    filters = request.GET.getlist('filters')
+    #assert False, filters
+    today = datetime.datetime.today()
+    meetings = Meeting.objects.filter(date__gte=today).exclude(
+        session__status__in=('apprw', 'schedpa')).order_by('date')
+
+    assignments = []
+    for meeting in meetings:
+        items = meeting.agenda.assignments.order_by(
+            'session__type__slug', 'timeslot__time')
+        assignments.extend(items)
+
+    # apply filters
+    if filters:
+        assignments = [a for a in assignments if
+                       a.session.group.acronym in filters or
+                       a.session.group.parent.acronym in filters]
+
+
+    return render(request, 'meeting/upcoming.ics', {
+        'assignments': assignments,
+    }, content_type='text/calendar')

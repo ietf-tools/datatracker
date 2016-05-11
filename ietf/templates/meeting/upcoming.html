@@ -113,7 +113,7 @@
             <tbody>
               {% for meeting in meetings %}
                 {% if meeting.type.slug == 'interim' %}
-                  <tr id="row-{{ forloop.counter }}-{{ meeting.session_set.all.0.group.acronym }}">
+                  <tr id="row-{{ forloop.counter }}-{{ meeting.session_set.first.group.parent.acronym }}-{{ meeting.session_set.first.group.acronym }}">
                 {% else %}
                   <tr id="row-{{ forloop.counter }}-ietf">
                 {% endif %}  

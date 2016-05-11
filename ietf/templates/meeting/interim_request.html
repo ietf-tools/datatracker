@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
-{% load staticfiles bootstrap3 widget_tweaks %}
+{% load staticfiles bootstrap3 widget_tweaks ietf_filters %}
 
 {% block title %}Interim Request{% endblock %}
 
@@ -26,9 +26,11 @@
                 <label class="checkbox-inline">{% render_field form.in_person %}<strong>In Person</strong></label>
             </div>
 
+            {% if user|has_role:"Secretariat,Area Director,IRTF Chair" %}
             <div class="col-md-2">
                 <label class="checkbox-inline">{% render_field form.approved %}<strong>Preapproved by AD</strong></label>
             </div>
+            {% endif %}
 
             <div class="col-md-2 radio-inline"><strong>Meeting Type:</strong></div>
             
@@ -98,13 +100,13 @@
     </div>
 
     <div class="form-group">
-        <label for="id_session_set-{{ forloop.counter0 }}-remote_instructions" class="col-md-2 control-label">Remote Instructions</label>
-        <div class="col-md-10">{% render_field form.remote_instructions class="form-control" placeholder="ie. Webex address" %}</div>
+        <label for="id_session_set-{{ forloop.counter0 }}-remote_instructions" class="col-md-2 control-label required">Remote Instructions</label>
+        <div class="col-md-10">{% render_field form.remote_instructions class="form-control" placeholder="Webex URL" %}<p class="help-block">"Remote participation is not supported" or "Remote participation information will be obtained at the time of approval" are acceptable values.  See <a href="">here</a> for more on remote participation support.</p></div>
     </div>
 
     <div class="form-group">
         <label for="id_session_set-{{ forloop.counter0 }}-agenda" class="col-md-2 control-label">Agenda</label>
-        <div class="col-md-10">{% render_field form.agenda class="form-control" rows="6" placeholder="paste agenda here" %}</div>
+        <div class="col-md-10">{% render_field form.agenda class="form-control" rows="6" placeholder="Paste agenda here" %}</div>
     </div>
         
     <div class="form-group">
@@ -127,7 +129,7 @@
       <a class="btn btn-default pull-right" href="{% url 'ietf.meeting.views.upcoming' %}">Back</a>
     {% endbuttons %}
     </div>
-    
+
   </form>
 
 {% endblock %}

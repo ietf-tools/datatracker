@@ -14,7 +14,7 @@ from ietf.group.models import Group
 from ietf.ietfauth.utils import has_role
 from ietf.meeting.models import Session, Meeting, Schedule, countries, timezones
 from ietf.meeting.helpers import get_next_interim_number, assign_interim_session
-from ietf.meeting.helpers import is_meeting_approved
+from ietf.meeting.helpers import is_meeting_approved, get_next_agenda_name
 from ietf.message.models import Message
 from ietf.person.models import Person
 from ietf.secr.utils.meeting import get_upload_root
@@ -159,6 +159,7 @@ class InterimMeetingModelForm(forms.ModelForm):
         self.is_edit = bool(self.instance.pk)
         self.fields['group'].widget.attrs['class'] = "select2-field"
         self.fields['time_zone'].initial = 'UTC'
+        self.fields['approved'].initial = True
         self.set_group_options()
         if self.is_edit:
             self.fields['group'].initial = self.instance.session_set.first().group
@@ -215,7 +216,7 @@ class InterimSessionModelForm(forms.ModelForm):
     requested_duration = DurationField(required=False)
     end_time = forms.TimeField(required=False)
     end_time_utc = forms.TimeField(required=False)
-    remote_instructions = forms.CharField(max_length=1024, required=False)
+    remote_instructions = forms.CharField(max_length=1024, required=True)
     agenda = forms.CharField(required=False, widget=forms.Textarea)
     agenda_note = forms.CharField(max_length=255, required=False)
 
@@ -263,10 +264,7 @@ class InterimSessionModelForm(forms.ModelForm):
             doc.rev = str(int(doc.rev) + 1).zfill(2)
             doc.save()
         else:
-            filename = 'agenda-interim-{group}-{date}-{time}'.format(
-                group=self.group.acronym,
-                date=self.cleaned_data['date'].strftime("%Y-%m-%d-"),
-                time=self.cleaned_data['time'].strftime("%H%M"))
+            filename = get_next_agenda_name(meeting=self.instance.meeting)
             doc = Document.objects.create(
                 type_id='agenda',
                 group=self.group,

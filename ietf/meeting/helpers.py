@@ -461,8 +461,8 @@ def is_meeting_approved(meeting):
 
 
 def get_next_interim_number(group, date):
-    """Returns a unique number to use for the next interim meeting for
-    *group*"""
+    """Returns a unique string to use for the next interim meeting for
+    *group*, used for Meeting.number field."""
     meetings = Meeting.objects.filter(
         number__startswith='interim-{year}-{group}'.format(
             year=date.year,
@@ -475,8 +475,22 @@ def get_next_interim_number(group, date):
     return 'interim-{year}-{group}-{sequence}'.format(
         year=date.year,
         group=group.acronym,
-        sequence=last_sequence + 1)
+        sequence=str(last_sequence + 1).zfill(2))
 
+
+def get_next_agenda_name(meeting):
+    """Returns the next name to use for an agenda document for *meeting*"""
+    group = meeting.session_set.first().group
+    documents = Document.objects.filter(type='agenda', session__meeting=meeting)
+    if documents:
+        sequences = [int(d.name.split('-')[-1]) for d in documents]
+        last_sequence = sorted(sequences)[-1]
+    else:
+        last_sequence = 0
+    return 'agenda-{meeting}-{group}-{sequence}'.format(
+        meeting=meeting.number,
+        group=group.acronym,
+        sequence=str(last_sequence + 1).zfill(2))
 
 def sessions_post_save(forms):
     """Helper function to perform various post save operations on each form of a

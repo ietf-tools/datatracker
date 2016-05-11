@@ -101,7 +101,6 @@ var interimRequest = {
         return false;
     },
 
-
     calculateEndTime : function() {
         // gets called when either start_time or duration change
         var fieldset = $(this).parents(".fieldset");

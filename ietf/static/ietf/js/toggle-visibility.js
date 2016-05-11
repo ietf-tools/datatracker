@@ -8,18 +8,14 @@ function toggle_visibility() {
    $(".pickviewneg").addClass("active");
 
    if (h) {
-       // if there are items in the hash, hide all rows that are
-       // hidden by default, show all rows that are shown by default
+       // if there are items in the hash, hide all rows
        $('[id^="row-"]').hide();
-       //$.each($(".pickviewneg").text().trim().split(/ +/), function (i, v) {
-       //    v = v.trim().toLowerCase();
-       //    $('[id^="row-"]').filter('[id*="-' + v + '"]').show();
-       //});
 
        // show the customizer
        $("#customize").collapse("show");
 
        // loop through the has items and change the UI element and row visibilities accordingly
+       var query_array = [];
        $.each(h.split(","), function (i, v) {
            if (v.indexOf("-") == 0) {
                // this is a "negative" item: when present, hide these rows
@@ -32,20 +28,21 @@ function toggle_visibility() {
                $('[id^="row-"]').filter('[id*="-' + v + '"]').show();
                $(".view." + v).find("button").addClass("active disabled");
                $("button.pickview." + v).addClass("active");
+               query_array.push("filters=" + v)
            }
        });
 
-       // show the week view
-       //$("#weekview").attr("src", "week-view.html" + window.location.hash).removeClass("hidden");
-
-       // show the custom .ics link
-       //$("#ical-link").attr("href",$("#ical-link").attr("href").split("?")[0]+"?"+h);
-       //$("#ical-link").removeClass("hidden");
-
+       // adjust the custom .ics link
+       var link = $('a[href*="upcoming.ics"]');
+       var new_href = link.attr("href").split("?")[0]+"?"+query_array.join("&");
+       link.attr("href",new_href);
+       
    } else {
-       // if the hash is empty, show all and hide weekview
+       // if the hash is empty, show all
        $('[id^="row-"]').show();
-       //$("#ical-link, #weekview").addClass("hidden");
+       // adjust the custom .ics link
+       var link = $('a[href*="upcoming.ics"]');
+       link.attr("href",link.attr("href").split("?")[0]);
    }
 }
 

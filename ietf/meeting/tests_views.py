@@ -6,14 +6,12 @@ import urlparse
 from django.core.urlresolvers import reverse as urlreverse
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.db import transaction
 
 from pyquery import PyQuery
 
 from ietf.doc.models import Document
 from ietf.group.models import Group
 from ietf.meeting.helpers import can_approve_interim_request, can_view_interim_request
-from ietf.meeting.helpers import get_announcement_initial
 from ietf.meeting.models import Session, TimeSlot, Meeting
 from ietf.meeting.test_data import make_meeting_test_data
 from ietf.name.models import SessionStatusName
@@ -416,20 +414,31 @@ class InterimTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         today = datetime.date.today()
-        mars_interim = Meeting.objects.filter(date__gt=today,type='interim',session__group__acronym='mars',session__status='sched').first()
-        ames_interim = Meeting.objects.filter(date__gt=today,type='interim',session__group__acronym='ames',session__status='canceled').first()
+        mars_interim = Meeting.objects.filter(date__gt=today, type='interim', session__group__acronym='mars', session__status='sched').first()
+        ames_interim = Meeting.objects.filter(date__gt=today, type='interim', session__group__acronym='ames', session__status='canceled').first()
         self.assertTrue(mars_interim.number in r.content)
         self.assertTrue(ames_interim.number in r.content)
+        self.assertTrue('IETF - 42' in r.content)
         # cancelled session
         q = PyQuery(r.content)
         self.assertTrue('CANCELLED' in q('[id*="-ames"]').text())
         self.check_interim_tabs(url)
 
-    def test_upcoming_ics(self):
+    def test_upcoming_ical(self):
         make_meeting_test_data()
-        r = self.client.get("/meeting/upcoming.ics/")
+        url = urlreverse("ietf.meeting.views.upcoming_ical")
+        r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.get('Content-Type'),"text/calendar")
+        self.assertEqual(r.get('Content-Type'), "text/calendar")
+        self.assertEqual(r.content.count('UID'), 5)
+        # check filtered output
+        url = url + '?filters=mars'
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.get('Content-Type'), "text/calendar")
+        # print r.content
+        self.assertEqual(r.content.count('UID'), 2)
+
 
     def test_interim_request_permissions(self):
         '''Ensure only authorized users see link to request interim meeting'''
@@ -469,45 +478,6 @@ class InterimTests(TestCase):
         self.assertEqual(Group.objects.filter(type__in=('wg','rg'),state='active').count(),
             len(q("#id_group option")) -1 )  # -1 for options placeholder
 
-    def test_temp(self):
-        from django.forms.models import modelform_factory, inlineformset_factory
-        from ietf.meeting.forms import InterimSessionModelForm
-        from django.utils.functional import curry
-
-        make_meeting_test_data()
-        group = Group.objects.get(acronym='mars')
-        date = datetime.date.today() + datetime.timedelta(days=30)
-        time = datetime.datetime.now().time().replace(microsecond=0,second=0)
-        dt = datetime.datetime.combine(date, time)
-        duration = datetime.timedelta(hours=3)
-        remote_instructions = 'Use webex'
-        agenda = 'Intro. Slides. Discuss.'
-        agenda_note = 'On second level'
-        self.client.login(username="secretary", password="secretary+password")
-        data = {'group':group.pk,
-                'meeting_type':'single',
-                'city':'',
-                'country':'',
-                'time_zone':'UTC',
-                'session_set-0-date':date.strftime("%Y-%m-%d"),
-                'session_set-0-time':time.strftime('%H:%M'),
-                'session_set-0-requested_duration':'03:00:00',
-                'session_set-0-remote_instructions':remote_instructions,
-                'session_set-0-agenda':agenda,
-                'session_set-0-agenda_note':agenda_note,
-                'session_set-TOTAL_FORMS':1,
-                'session_set-INITIAL_FORMS':0,
-                'session_set-MIN_NUM_FORMS':0,
-                'session_set-MAX_NUM_FORMS':1000}
-
-        user = User.objects.get(username='secretary')
-        is_approved = False
-        meeting = Meeting.objects.order_by('id').last()
-        SessionFormset = inlineformset_factory(Meeting, Session, form=InterimSessionModelForm, can_delete=False, extra=2)
-        SessionFormset.form = staticmethod(curry(InterimSessionModelForm, user=user,group=group,is_approved=is_approved))
-        formset = SessionFormset(instance=meeting, data=data)
-        #assert False, (formset.management_form)
-        formset.save()
 
     def test_interim_request_single(self):
         make_meeting_test_data()
@@ -542,7 +512,7 @@ class InterimTests(TestCase):
         meeting = Meeting.objects.order_by('id').last()
         self.assertEqual(meeting.type_id,'interim')
         self.assertEqual(meeting.date,date)
-        self.assertEqual(meeting.number,'interim-%s-%s-%s' % (date.year,group.acronym,1))
+        self.assertEqual(meeting.number,'interim-%s-%s-%s' % (date.year,group.acronym,'01'))
         self.assertEqual(meeting.city,'')
         self.assertEqual(meeting.country,'')
         self.assertEqual(meeting.time_zone,'UTC')
@@ -592,7 +562,7 @@ class InterimTests(TestCase):
         meeting = Meeting.objects.order_by('id').last()
         self.assertEqual(meeting.type_id,'interim')
         self.assertEqual(meeting.date,date)
-        self.assertEqual(meeting.number,'interim-%s-%s-%s' % (date.year,group.acronym,1))
+        self.assertEqual(meeting.number,'interim-%s-%s-%s' % (date.year,group.acronym,'01'))
         self.assertEqual(meeting.city,city)
         self.assertEqual(meeting.country,country)
         self.assertEqual(meeting.time_zone,time_zone)
@@ -645,7 +615,7 @@ class InterimTests(TestCase):
         meeting = Meeting.objects.order_by('id').last()
         self.assertEqual(meeting.type_id,'interim')
         self.assertEqual(meeting.date,date)
-        self.assertEqual(meeting.number,'interim-%s-%s-%s' % (date.year,group.acronym,1))
+        self.assertEqual(meeting.number,'interim-%s-%s-%s' % (date.year,group.acronym,'01'))
         self.assertEqual(meeting.city,city)
         self.assertEqual(meeting.country,country)
         self.assertEqual(meeting.time_zone,time_zone)
@@ -712,7 +682,7 @@ class InterimTests(TestCase):
         meeting = meetings[1]
         self.assertEqual(meeting.type_id,'interim')
         self.assertEqual(meeting.date,date)
-        self.assertEqual(meeting.number,'interim-%s-%s-%s' % (date.year,group.acronym,1))
+        self.assertEqual(meeting.number,'interim-%s-%s-%s' % (date.year,group.acronym,'01'))
         self.assertEqual(meeting.city,city)
         self.assertEqual(meeting.country,country)
         self.assertEqual(meeting.time_zone,time_zone)
@@ -727,7 +697,7 @@ class InterimTests(TestCase):
         meeting = meetings[0]
         self.assertEqual(meeting.type_id,'interim')
         self.assertEqual(meeting.date,date2)
-        self.assertEqual(meeting.number,'interim-%s-%s-%s' % (date.year,group.acronym,2))
+        self.assertEqual(meeting.number,'interim-%s-%s-%s' % (date.year,group.acronym,'02'))
         self.assertEqual(meeting.city,city)
         self.assertEqual(meeting.country,country)
         self.assertEqual(meeting.time_zone,time_zone)
