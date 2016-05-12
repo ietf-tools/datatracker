@@ -1,5 +1,5 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}{% load origin %}{% origin %}
-{% load ietf_filters community_tags wg_menu streams_menu active_groups_menu %}
+{% load ietf_filters managed_groups wg_menu streams_menu active_groups_menu %}
 
 {% if flavor != "top" %}
   {% include "base/menu_user.html" %}
@@ -51,14 +51,14 @@
     <li><a href="{% url "submit_approvals" %}">Approve a draft</a></li>
   {% endif %}
 
-  {% get_user_managed_lists user as community_lists %}
-  {% if community_lists %}
-    <li><a href="{{ community_lists.personal.get_manage_url }}">My tracked docs</a></li>
-    {% for cl in community_lists.group %}
-      <li><a href="{{ cl.get_manage_url }}">{{ cl.short_name }} {{cl.group.type.slug}} docs</a></li>
+  {% if user and user.is_authenticated %}
+    <li><a href="{% url "ietf.community.views.view_list" user.username %}">My tracked docs</a></li>
+
+    {% for g in user|managed_groups %}
+      <li><a href="{% url "group_docs" g.acronym %}">{{ g.acronym }} {{ g.type.slug }} docs</a></li>
     {% endfor %}
   {% else %}
-    <li><a rel="nofollow" href="/accounts/login/?next={{request.get_full_path|urlencode}}">Sign in to track docs</a></li>
+    <li><a rel="nofollow" href="/accounts/login/?next={{ request.get_full_path|urlencode }}">Sign in to track docs</a></li>
   {% endif %}
 
   {% if user|has_role:"Area Director,Secretariat" %}

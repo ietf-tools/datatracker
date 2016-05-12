@@ -42,10 +42,10 @@
 		<label class="control-label" for="id_olddrafts">{{ form.olddrafts }} Internet-Draft (expired, replaced or withdrawn)</label>
 	      </div>
 
-	      {% for doc_type in form.doctypes %}
+              {% for value, label in form.fields.doctypes.choices %}
 	        <div class="checkbox">
-		  <label class="control-label" for="id_{{doc_type.slug}}">
-                    <input type="checkbox" class="advdoctype" {% if doc_type.slug in meta.checked %}checked{% endif %} name="include-{{doc_type.slug}}" id="id_{{doc_type.slug}}"/>{{doc_type|safe|capfirst_allcaps}}
+                  <label class="control-label" for="id_doctypes_{{ value }}">
+                    <input type="checkbox" class="advdoctype" {% if value in form.doctypes.value %}checked{% endif %} name="doctypes" value="{{ value }}" id="id_doctypes_{{ value }}"/>{{ label|safe|capfirst_allcaps}}
 		  </label>
 	        </div>
 	      {% endfor %}
@@ -54,7 +54,7 @@
 
 	  <div class="form-group search_field">
 	    <div class="col-sm-4">
-	      <input type="radio" name="by" value="author" {% if meta.by == "author" %}checked{% endif %}/>
+              <input type="radio" name="by" value="author" {% if form.by.value == "author" %}checked{% endif %} id="id_author"/>
 	      <label for="id_author" class="control-label">Author</label>
 	    </div>
 	    <div class="col-sm-8">
@@ -64,7 +64,7 @@
 
 	  <div class="form-group search_field">
 	    <div class="col-sm-4">
-	      <input type="radio" name="by" value="group" {% if meta.by == "group" %}checked{% endif %}/>
+              <input type="radio" name="by" value="group" {% if form.by.value == "group" %}checked{% endif %} id="id_group"/>
 	      <label for="id_group" class="control-label">WG</label>
 	    </div>
 	    <div class="col-sm-8">
@@ -75,7 +75,7 @@
 
 	  <div class="form-group search_field">
 	    <div class="col-sm-4">
-	      <input type="radio" name="by" value="area" {% if meta.by == "area" %}checked{% endif %}/>
+              <input type="radio" name="by" value="area" {% if form.by.value == "area" %}checked{% endif %} id="id_area"/>
 	      <label for="id_area" class="control-label">Area</label>
 	    </div>
 	    <div class="col-sm-8">
@@ -85,7 +85,7 @@
 
 	  <div class="form-group search_field">
 	    <div class="col-sm-4">
-	      <input type="radio" name="by" value="ad" {% if meta.by == "ad" %}checked{% endif %}/>
+              <input type="radio" name="by" value="ad" {% if form.by.value == "ad" %}checked{% endif %} id="id_ad"/>
 	      <label for="id_ad" class="control-label">AD</label>
 	    </div>
 	    <div class="col-sm-8">
@@ -95,7 +95,7 @@
 
 	  <div class="form-group search_field">
 	    <div class="col-sm-4">
-	      <input type="radio" name="by" value="state" {% if meta.by == "state" %}checked{% endif %}/>
+              <input type="radio" name="by" value="state" {% if form.by.value == "state" %}checked{% endif %} id="id_state"/>
 	      <label for="id_state" class="control-label">IESG State</label>
 	    </div>
 	    <div class="col-sm-4">
@@ -108,7 +108,7 @@
 
 	  <div class="form-group search_field">
 	    <div class="col-sm-4">
-	      <input type="radio" name="by" value="stream" {% if meta.by == "stream" %}checked{% endif %}/>
+              <input type="radio" name="by" value="stream" {% if form.by.value == "stream" %}checked{% endif %} id="id_stream"/>
 	      <label for="id_stream" class="control-label">Stream</label>
 	    </div>
 	    <div class="col-sm-4">

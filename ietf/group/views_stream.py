@@ -5,7 +5,8 @@ from django.template import RequestContext
 from django.http import Http404, HttpResponseForbidden
 from django import forms
 
-from ietf.doc.views_search import SearchForm, retrieve_search_results
+from ietf.doc.models import Document
+from ietf.doc.utils_search import prepare_document_table
 from ietf.group.models import Group, GroupEvent, Role
 from ietf.group.utils import save_group_in_history
 from ietf.ietfauth.utils import has_role
@@ -27,9 +28,9 @@ def stream_documents(request, acronym):
     group = get_object_or_404(Group, acronym=acronym)
     editable = has_role(request.user, "Secretariat") or group.has_role(request.user, "chair")
     stream = StreamName.objects.get(slug=acronym)
-    form = SearchForm({'by':'stream', 'stream':acronym,
-                       'rfcs':'on', 'activedrafts':'on'})
-    docs, meta = retrieve_search_results(form)
+
+    qs = Document.objects.filter(states__type="draft", states__slug__in=["active", "rfc"], stream=acronym)
+    docs, meta = prepare_document_table(request, qs)
     return render_to_response('group/stream_documents.html', {'stream':stream, 'docs':docs, 'meta':meta, 'editable':editable }, context_instance=RequestContext(request))
 
 class StreamEditForm(forms.Form):

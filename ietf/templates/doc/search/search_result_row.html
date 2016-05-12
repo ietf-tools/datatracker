@@ -13,15 +13,12 @@
 
   <td>
     {% if user.is_authenticated %}
-      {% if doc.name in doc_is_tracked %}
-        <a href="{% url "community_remove_track_document" doc.name %}" class="community-list-add-remove-doc" title="Remove from your personal ID list">
-          <span class="fa fa-bookmark"></span>
-        </a>
-      {% else %}
-        <a href="{% url "community_add_track_document" doc.name %}" class="community-list-add-remove-doc" title="Add to your personal ID list">
-          <span class="fa fa-bookmark-o"></span>
-        </a>
-      {% endif %}
+      <a href="{% url "ietf.community.views.untrack_document" username=request.user.username name=doc.name %}" class="track-untrack-doc {% if not doc.tracked_in_personal_community_list %}hide{% endif %}" title="Remove from your personal ID list">
+        <span class="fa fa-bookmark"></span>
+      </a>
+      <a href="{% url "ietf.community.views.track_document" username=request.user.username name=doc.name %}" class="track-untrack-doc {% if doc.tracked_in_personal_community_list %}hide{% endif %}" title="Add to your personal ID list">
+        <span class="fa fa-bookmark-o"></span>
+      </a>
     {% endif %}
   </td>
 

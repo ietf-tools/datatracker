@@ -1,352 +1,268 @@
 import csv
 import uuid
 import datetime
-import hashlib
 import json
 
-from django.db import IntegrityError
-from django.conf import settings
-from django.contrib.auth import REDIRECT_FIELD_NAME
-from django.http import HttpResponse, Http404, HttpResponseRedirect
-from django.shortcuts import get_object_or_404, render_to_response
-from django.template import RequestContext
-from django.utils.http import urlquote
+from django.http import HttpResponse, HttpResponseForbidden, HttpResponseRedirect, Http404
+from django.shortcuts import get_object_or_404, render
+from django.contrib.auth.decorators import login_required
+from django.utils.html import strip_tags
 
-from ietf.community.models import CommunityList, Rule, EmailSubscription
-from ietf.community.forms import RuleForm, DisplayForm, SubscribeForm, UnSubscribeForm
-from ietf.group.models import Group
-from ietf.doc.models import DocEvent, DocAlias
+from ietf.community.models import SearchRule, EmailSubscription
+from ietf.community.forms import SearchRuleTypeForm, SearchRuleForm, AddDocumentsForm, SubscriptionForm
+from ietf.community.utils import lookup_community_list, can_manage_community_list
+from ietf.community.utils import docs_tracked_by_community_list, docs_matching_community_list_rule
+from ietf.community.utils import states_of_significant_change, reset_name_contains_index_for_rule
+from ietf.doc.models import DocEvent, Document
+from ietf.doc.utils_search import prepare_document_table
 
+def view_list(request, username=None):
+    clist = lookup_community_list(username)
 
-def _manage_list(request, clist):
-    display_config = clist.get_display_config()
-    if request.method == 'POST' and request.POST.get('save_rule', None):
-        rule_form = RuleForm(request.POST, clist=clist)
-        display_form = DisplayForm(instance=display_config)
-        if rule_form.is_valid():
-            try:
-                rule_form.save()
-            except IntegrityError:
-                pass;
-            rule_form = RuleForm(clist=clist)
-            display_form = DisplayForm(instance=display_config)
-    elif request.method == 'POST' and request.POST.get('save_display', None):
-        display_form = DisplayForm(request.POST, instance=display_config)
-        rule_form = RuleForm(clist=clist)
-        if display_form.is_valid():
-            display_form.save()
-            rule_form = RuleForm(clist=clist)
-            display_form = DisplayForm(instance=display_config)
+    docs = docs_tracked_by_community_list(clist)
+    docs, meta = prepare_document_table(request, docs, request.GET)
+
+    subscribed = request.user.is_authenticated() and EmailSubscription.objects.filter(community_list=clist, email__person__user=request.user)
+
+    return render(request, 'community/view_list.html', {
+        'clist': clist,
+        'docs': docs,
+        'meta': meta,
+        'can_manage_list': can_manage_community_list(request.user, clist),
+        'subscribed': subscribed,
+    })
+
+@login_required
+def manage_list(request, username=None, acronym=None, group_type=None):
+    # we need to be a bit careful because clist may not exist in the
+    # database so we can't call related stuff on it yet
+    clist = lookup_community_list(username, acronym)
+
+    if not can_manage_community_list(request.user, clist):
+        return HttpResponseForbidden("You do not have permission to access this view")
+
+    action = request.POST.get('action')
+
+    if request.method == 'POST' and action == 'add_documents':
+        add_doc_form = AddDocumentsForm(request.POST)
+        if add_doc_form.is_valid():
+            if clist.pk is None:
+                clist.save()
+
+            for d in add_doc_form.cleaned_data['documents']:
+                clist.added_docs.add(d)
+
+            return HttpResponseRedirect("")
     else:
-        rule_form = RuleForm(clist=clist)
-        display_form = DisplayForm(instance=display_config)
-    clist = CommunityList.objects.get(id=clist.id)
-    return render_to_response('community/manage_clist.html',
-                              {'cl': clist,
-                               'dc': display_config,
-                               'display_form': display_form,
-                               'rule_form': rule_form},
-                              context_instance=RequestContext(request))
+        add_doc_form = AddDocumentsForm()
+
+    if request.method == 'POST' and action == 'remove_document':
+        document_pk = request.POST.get('document')
+        if clist.pk is not None and document_pk:
+            document = get_object_or_404(clist.added_docs, pk=document_pk)
+            clist.added_docs.remove(document)
+
+            return HttpResponseRedirect("")
+
+    if request.method == 'POST' and action == 'add_rule':
+        rule_type_form = SearchRuleTypeForm(request.POST)
+        if rule_type_form.is_valid():
+            rule_type = rule_type_form.cleaned_data['rule_type']
+
+        if rule_type:
+            rule_form = SearchRuleForm(clist, rule_type, request.POST)
+            if rule_form.is_valid():
+                if clist.pk is None:
+                    clist.save()
+
+                rule = rule_form.save(commit=False)
+                rule.community_list = clist
+                rule.rule_type = rule_type
+                rule.save()
+                if rule.rule_type == "name_contains":
+                    reset_name_contains_index_for_rule(rule)
+
+                return HttpResponseRedirect("")
+    else:
+        rule_type_form = SearchRuleTypeForm()
+        rule_form = None
+
+    if request.method == 'POST' and action == 'remove_rule':
+        rule_pk = request.POST.get('rule')
+        if clist.pk is not None and rule_pk:
+            rule = get_object_or_404(SearchRule, pk=rule_pk, community_list=clist)
+            rule.delete()
+
+        return HttpResponseRedirect("")
+
+    rules = clist.searchrule_set.all() if clist.pk is not None else []
+    for r in rules:
+        r.matching_documents_count = docs_matching_community_list_rule(r).count()
+
+    empty_rule_forms = { rule_type: SearchRuleForm(clist, rule_type) for rule_type, _ in SearchRule.RULE_TYPES }
+
+    total_count = docs_tracked_by_community_list(clist).count()
+
+    return render(request, 'community/manage_list.html', {
+        'clist': clist,
+        'rules': rules,
+        'individually_added': clist.added_docs.all() if clist.pk is not None else [],
+        'rule_type_form': rule_type_form,
+        'rule_form': rule_form,
+        'empty_rule_forms': empty_rule_forms,
+        'total_count': total_count,
+        'add_doc_form': add_doc_form,
+    })
 
 
-def manage_personal_list(request):
-    user = request.user
-    if not user.is_authenticated():
-        path = urlquote(request.get_full_path())
-        tup = settings.LOGIN_URL, REDIRECT_FIELD_NAME, path
-        return HttpResponseRedirect('%s?%s=%s' % tup)
-    clist = CommunityList.objects.get_or_create(user=request.user)[0]
-    if not clist.check_manager(request.user):
-        path = urlquote(request.get_full_path())
-        tup = settings.LOGIN_URL, REDIRECT_FIELD_NAME, path
-        return HttpResponseRedirect('%s?%s=%s' % tup)
-    return _manage_list(request, clist)
+@login_required
+def track_document(request, name, username=None, acronym=None):
+    doc = get_object_or_404(Document, docalias__name=name)
+
+    if request.method == "POST":
+        clist = lookup_community_list(username, acronym)
+        if not can_manage_community_list(request.user, clist):
+            return HttpResponseForbidden("You do not have permission to access this view")
+
+        if clist.pk is None:
+            clist.save()
+
+        clist.added_docs.add(doc)
+
+        if request.is_ajax():
+            return HttpResponse(json.dumps({ 'success': True }), content_type='text/plain')
+        else:
+            return HttpResponseRedirect(clist.get_absolute_url())
+
+    return render(request, "community/track_document.html", {
+        "name": doc.name,
+    })
+
+@login_required
+def untrack_document(request, name, username=None, acronym=None):
+    doc = get_object_or_404(Document, docalias__name=name)
+    clist = lookup_community_list(username, acronym)
+    if not can_manage_community_list(request.user, clist):
+        return HttpResponseForbidden("You do not have permission to access this view")
+
+    if request.method == "POST":
+        if clist.pk is not None:
+            clist.added_docs.remove(doc)
+
+        if request.is_ajax():
+            return HttpResponse(json.dumps({ 'success': True }), content_type='text/plain')
+        else:
+            return HttpResponseRedirect(clist.get_absolute_url())
+
+    return render(request, "community/untrack_document.html", {
+        "name": doc.name,
+    })
 
 
-def manage_group_list(request, acronym):
-    group = get_object_or_404(Group, acronym=acronym)
-    if group.type.slug not in ('area', 'wg'):
-        raise Http404
-    clist = CommunityList.objects.get_or_create(group=group)[0]
-    if not clist.check_manager(request.user):
-        path = urlquote(request.get_full_path())
-        tup = settings.LOGIN_URL, REDIRECT_FIELD_NAME, path
-        return HttpResponseRedirect('%s?%s=%s' % tup)
-    return _manage_list(request, clist)
+def export_to_csv(request, username=None, acronym=None, group_type=None):
+    clist = lookup_community_list(username, acronym)
 
+    response = HttpResponse(content_type='text/csv')
 
-def add_track_document(request, document_name):
-    """supports the "Track this document" functionality
-    
-    This is exposed in the document view and in document search results."""
-    if not request.user.is_authenticated():
-        path = urlquote(request.get_full_path())
-        tup = settings.LOGIN_URL, REDIRECT_FIELD_NAME, path
-        return HttpResponseRedirect('%s?%s=%s' % tup)
-    doc = get_object_or_404(DocAlias, name=document_name).document
-    clist = CommunityList.objects.get_or_create(user=request.user)[0]
-    clist.update()
-    return add_document_to_list(request, clist, doc)
+    if clist.group:
+        filename = "%s-draft-list.csv" % clist.group.acronym
+    else:
+        filename = "draft-list.csv"
 
-def remove_track_document(request, document_name):
-    """supports the "Untrack this document" functionality
-    
-    This is exposed in the document view and in document search results."""
-    clist = CommunityList.objects.get_or_create(user=request.user)[0]
-    if not clist.check_manager(request.user):
-        path = urlquote(request.get_full_path())
-        tup = settings.LOGIN_URL, REDIRECT_FIELD_NAME, path
-        return HttpResponseRedirect('%s?%s=%s' % tup)
-    doc = get_object_or_404(DocAlias, name=document_name).document
-    clist.added_ids.remove(doc)
-    clist.update()
-    return HttpResponse(json.dumps({'success': True}), content_type='text/plain')
+    response['Content-Disposition'] = 'attachment; filename=%s' % filename
 
-def remove_document(request, list_id, document_name):
-    clist = get_object_or_404(CommunityList, pk=list_id)
-    if not clist.check_manager(request.user):
-        path = urlquote(request.get_full_path())
-        tup = settings.LOGIN_URL, REDIRECT_FIELD_NAME, path
-        return HttpResponseRedirect('%s?%s=%s' % tup)
-    doc = get_object_or_404(DocAlias, name=document_name).document
-    clist.added_ids.remove(doc)
-    clist.update()
-    return HttpResponseRedirect(clist.get_manage_url())
+    writer = csv.writer(response, dialect=csv.excel, delimiter=',')
 
-def add_document_to_list(request, clist, doc):
-    if not clist.check_manager(request.user):
-        path = urlquote(request.get_full_path())
-        tup = settings.LOGIN_URL, REDIRECT_FIELD_NAME, path
-        return HttpResponseRedirect('%s?%s=%s' % tup)
-    clist.added_ids.add(doc)
-    return HttpResponse(json.dumps({'success': True}), content_type='text/plain')
+    header = [
+        "Name",
+        "Title",
+        "Date of latest revision",
+        "Status in the IETF process",
+        "Associated group",
+        "Associated AD",
+        "Date of latest change",
+    ]
+    writer.writerow(header)
 
+    docs = docs_tracked_by_community_list(clist).select_related('type', 'group', 'ad')
+    for doc in docs.prefetch_related("states", "tags"):
+        row = []
+        row.append(doc.name)
+        row.append(doc.title)
+        e = doc.latest_event(type='new_revision')
+        row.append(e.time.strftime("%Y-%m-%d") if e else "")
+        row.append(strip_tags(doc.friendly_state()))
+        row.append(doc.group.acronym if doc.group else "")
+        row.append(unicode(doc.ad) if doc.ad else "")
+        e = doc.latest_event()
+        row.append(e.time.strftime("%Y-%m-%d") if e else "")
+        writer.writerow([v.encode("utf-8") for v in row])
 
-def remove_rule(request, list_id, rule_id):
-    clist = get_object_or_404(CommunityList, pk=list_id)
-    if not clist.check_manager(request.user):
-        path = urlquote(request.get_full_path())
-        tup = settings.LOGIN_URL, REDIRECT_FIELD_NAME, path
-        return HttpResponseRedirect('%s?%s=%s' % tup)
-    rule = get_object_or_404(Rule, pk=rule_id)
-    rule.delete()
-    return HttpResponseRedirect(clist.get_manage_url())
+    return response
 
+def feed(request, username=None, acronym=None, group_type=None):
+    clist = lookup_community_list(username, acronym)
 
-def _view_list(request, clist):
-    display_config = clist.get_display_config()
-    return render_to_response('community/public/view_list.html',
-                              {'cl': clist,
-                               'dc': display_config,
-                              },
-                              context_instance=RequestContext(request))
+    significant = request.GET.get('significant', '') == '1'
 
+    documents = docs_tracked_by_community_list(clist).values_list('pk', flat=True)
+    since = datetime.datetime.now() - datetime.timedelta(days=14)
 
-def view_personal_list(request, secret):
-    clist = get_object_or_404(CommunityList, secret=secret)
-    return _view_list(request, clist)
+    events = DocEvent.objects.filter(
+        doc__in=documents,
+        time__gte=since,
+    ).distinct().order_by('-time', '-id').select_related("doc")
 
-
-def view_group_list(request, acronym):
-    group = get_object_or_404(Group, acronym=acronym)
-    clist = get_object_or_404(CommunityList, group=group)
-    return _view_list(request, clist)
-
-
-def _atom_view(request, clist, significant=False):
-    documents = [i['pk'] for i in clist.get_documents().values('pk')]
-    startDate = datetime.datetime.now() - datetime.timedelta(days=14)
-
-    notifications = DocEvent.objects.filter(doc__pk__in=documents, time__gte=startDate)\
-                                            .distinct()\
-                                            .order_by('-time', '-id')
     if significant:
-        notifications = notifications.filter(listnotification__significant=True)
+        events = events.filter(type="changed_state", statedocevent__state__in=list(states_of_significant_change()))
 
     host = request.get_host()
     feed_url = 'https://%s%s' % (host, request.get_full_path())
     feed_id = uuid.uuid5(uuid.NAMESPACE_URL, feed_url.encode('utf-8'))
-    title = '%s RSS Feed' % clist.long_name()
+    title = u'%s RSS Feed' % clist.long_name()
     if significant:
-        subtitle = 'Document significant changes'
+        subtitle = 'Significant document changes'
     else:
         subtitle = 'Document changes'
 
-    return render_to_response('community/public/atom.xml',
-                              {'cl': clist,
-                               'entries': notifications,
-                               'title': title,
-                               'subtitle': subtitle,
-                               'id': feed_id.get_urn(),
-                               'updated': datetime.datetime.today(),
-                              },
-                              content_type='text/xml',
-                              context_instance=RequestContext(request))
+    return render(request, 'community/atom.xml', {
+        'clist': clist,
+        'entries': events[:50],
+        'title': title,
+        'subtitle': subtitle,
+        'id': feed_id.get_urn(),
+        'updated': datetime.datetime.now(),
+    }, content_type='text/xml')
 
 
-def changes_personal_list(request, secret):
-    clist = get_object_or_404(CommunityList, secret=secret)
-    return _atom_view(request, clist)
-
-
-def changes_group_list(request, acronym):
-    group = get_object_or_404(Group, acronym=acronym)
-    clist = get_object_or_404(CommunityList, group=group)
-    return _atom_view(request, clist)
-
-
-def significant_personal_list(request, secret):
-    clist = get_object_or_404(CommunityList, secret=secret)
-    return _atom_view(request, clist, significant=True)
-
-
-def significant_group_list(request, acronym):
-    group = get_object_or_404(Group, acronym=acronym)
-    clist = get_object_or_404(CommunityList, group=group)
-    return _atom_view(request, clist, significant=True)
-
-
-def _csv_list(request, clist):
-    display_config = clist.get_display_config()
-    response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = 'attachment; filename=draft-list.csv'
-
-    writer = csv.writer(response, dialect=csv.excel, delimiter=',')
-    header = []
-    fields = display_config.get_all_fields()
-    for field in fields:
-        header.append(field.description)
-    writer.writerow(header)
-
-    for doc in clist.get_documents():
-        row = []
-        for field in fields:
-            row.append(field().get_value(doc, raw=True))
-        writer.writerow(row)
-    return response
-
-
-def csv_personal_list(request):
-    user = request.user
-    if not user.is_authenticated():
-        path = urlquote(request.get_full_path())
-        tup = settings.LOGIN_URL, REDIRECT_FIELD_NAME, path
-        return HttpResponseRedirect('%s?%s=%s' % tup)
-    clist = CommunityList.objects.get_or_create(user=user)[0]
-    if not clist.check_manager(user):
-        path = urlquote(request.get_full_path())
-        tup = settings.LOGIN_URL, REDIRECT_FIELD_NAME, path
-        return HttpResponseRedirect('%s?%s=%s' % tup)
-    return _csv_list(request, clist)
-
-
-def csv_group_list(request, acronym):
-    group = get_object_or_404(Group, acronym=acronym)
-    if group.type.slug not in ('area', 'wg'):
+@login_required
+def subscription(request, username=None, acronym=None, group_type=None):
+    clist = lookup_community_list(username, acronym)
+    if clist.pk is None:
         raise Http404
-    clist = CommunityList.objects.get_or_create(group=group)[0]
-    if not clist.check_manager(request.user):
-        path = urlquote(request.get_full_path())
-        tup = settings.LOGIN_URL, REDIRECT_FIELD_NAME, path
-        return HttpResponseRedirect('%s?%s=%s' % tup)
-    return _csv_list(request, clist)
 
-def view_csv_personal_list(request, secret):
-    clist = get_object_or_404(CommunityList, secret=secret)
-    return _csv_list(request, clist)
+    existing_subscriptions = EmailSubscription.objects.filter(community_list=clist, email__person__user=request.user)
 
-def _subscribe_list(request, clist, significant):
-    success = False
     if request.method == 'POST':
-        form = SubscribeForm(data=request.POST, clist=clist, significant=significant)
-        if form.is_valid():
-            form.save()
-            success = True
+        action = request.POST.get("action")
+        if action == "subscribe":
+            form = SubscriptionForm(request.user, clist, request.POST)
+            if form.is_valid():
+                subscription = form.save(commit=False)
+                subscription.community_list = clist
+                subscription.save()
+
+                return HttpResponseRedirect("")
+
+        elif action == "unsubscribe":
+            existing_subscriptions.filter(pk=request.POST.get("subscription_id")).delete()
+
+            return HttpResponseRedirect("")
     else:
-        form = SubscribeForm(clist=clist, significant=significant)
-    return render_to_response('community/public/subscribe.html',
-                              {'cl': clist,
-                               'form': form,
-                               'success': success,
-                              },
-                              context_instance=RequestContext(request))
+        form = SubscriptionForm(request.user, clist)
 
-
-def _unsubscribe_list(request, clist, significant):
-    success = False
-    if request.method == 'POST':
-        form = UnSubscribeForm(data=request.POST, clist=clist, significant=significant)
-        if form.is_valid():
-            form.save()
-            success = True
-    else:
-        form = UnSubscribeForm(clist=clist, significant=significant)
-    return render_to_response('community/public/unsubscribe.html',
-                              {'cl': clist,
-                               'form': form,
-                               'success': success,
-                               'significant': significant,
-                              },
-                              context_instance=RequestContext(request))
-
-
-def subscribe_personal_list(request, secret, significant=False):
-    clist = get_object_or_404(CommunityList, secret=secret)
-    return _subscribe_list(request, clist, significant=significant)
-
-
-def subscribe_group_list(request, acronym, significant=False):
-    group = get_object_or_404(Group, acronym=acronym)
-    clist = get_object_or_404(CommunityList, group=group)
-    return _subscribe_list(request, clist, significant=significant)
-
-
-def unsubscribe_personal_list(request, secret, significant=False):
-    clist = get_object_or_404(CommunityList, secret=secret)
-    return _unsubscribe_list(request, clist, significant=significant)
-
-
-def unsubscribe_group_list(request, acronym, significant=False):
-    group = get_object_or_404(Group, acronym=acronym)
-    clist = get_object_or_404(CommunityList, group=group)
-    return _unsubscribe_list(request, clist, significant=significant)
-
-
-def confirm_subscription(request, list_id, email, date, confirm_hash, significant=False):
-    clist = get_object_or_404(CommunityList, pk=list_id)
-    valid = hashlib.md5('%s%s%s%s%s' % (settings.SECRET_KEY, date, email, 'subscribe', significant)).hexdigest() == confirm_hash
-    if not valid:
-        raise Http404
-    (subscription, created) = EmailSubscription.objects.get_or_create(
-        community_list=clist,
-        email=email,
-        significant=significant)
-    return render_to_response('community/public/subscription_confirm.html',
-                              {'cl': clist,
-                               'significant': significant,
-                              },
-                              context_instance=RequestContext(request))
-
-
-def confirm_significant_subscription(request, list_id, email, date, confirm_hash):
-    return confirm_subscription(request, list_id, email, date, confirm_hash, significant=True)
-
-
-def confirm_unsubscription(request, list_id, email, date, confirm_hash, significant=False):
-    clist = get_object_or_404(CommunityList, pk=list_id)
-    valid = hashlib.md5('%s%s%s%s%s' % (settings.SECRET_KEY, date, email, 'unsubscribe', significant)).hexdigest() == confirm_hash
-    if not valid:
-        raise Http404
-    EmailSubscription.objects.filter(
-        community_list=clist,
-        email=email,
-        significant=significant).delete()
-    return render_to_response('community/public/unsubscription_confirm.html',
-                              {'cl': clist,
-                               'significant': significant,
-                              },
-                              context_instance=RequestContext(request))
-
-
-def confirm_significant_unsubscription(request, list_id, email, date, confirm_hash):
-    return confirm_unsubscription(request, list_id, email, date, confirm_hash, significant=True)
+    return render(request, 'community/subscription.html', {
+        'clist': clist,
+        'form': form,
+        'existing_subscriptions': existing_subscriptions,
+    })

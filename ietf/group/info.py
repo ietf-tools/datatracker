@@ -42,7 +42,7 @@ from collections import OrderedDict
 import debug              # pyflakes:ignore
 
 from django import forms
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.template.loader import render_to_string
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.conf import settings
@@ -51,14 +51,16 @@ from django.views.decorators.cache import cache_page
 from django.db.models import Q
 from django.utils.safestring import mark_safe
 
-from ietf.doc.views_search import SearchForm, retrieve_search_results, get_doc_is_tracked
 from ietf.doc.models import Document, State, DocAlias, RelatedDocument
 from ietf.doc.utils import get_chartering_type
 from ietf.doc.templatetags.ietf_filters import clean_whitespace
+from ietf.doc.utils_search import prepare_document_table
 from ietf.group.models import Group, Role, ChangeStateGroupEvent
 from ietf.name.models import GroupTypeName
 from ietf.group.utils import get_charter_text, can_manage_group_type, can_manage_group, milestone_reviewer_for_group_type, can_provide_status_update
 from ietf.group.utils import can_manage_materials, get_group_or_404
+from ietf.community.utils import docs_tracked_by_community_list, can_manage_community_list
+from ietf.community.models import CommunityList, EmailSubscription
 from ietf.utils.pipe import pipe
 from ietf.utils.textupload import get_cleaned_text_file_content
 from ietf.settings import MAILING_LIST_INFO_URL
@@ -373,6 +375,12 @@ def construct_group_menu_context(request, group, selected, group_type, others):
         if group.state_id != "proposed" and (is_chair or can_manage):
             actions.append((u"Edit milestones", urlreverse("group_edit_milestones", kwargs=kwargs)))
 
+    if group.features.has_documents:
+        clist = CommunityList.objects.filter(group=group).first()
+        if clist and can_manage_community_list(request.user, clist):
+            import ietf.community.views
+            actions.append((u'Manage document list', urlreverse(ietf.community.views.manage_list, kwargs=kwargs)))
+
     if group.features.has_materials and can_manage_materials(request.user, group):
         actions.append((u"Upload material", urlreverse("ietf.doc.views_material.choose_material_type", kwargs=kwargs)))
 
@@ -397,36 +405,23 @@ def construct_group_menu_context(request, group, selected, group_type, others):
 
     return d
 
-def search_for_group_documents(group):
-    form = SearchForm({ 'by':'group', 'group': group.acronym or "", 'rfcs':'on', 'activedrafts': 'on' })
-    docs, meta = retrieve_search_results(form)
+def prepare_group_documents(request, group, clist):
+    found_docs, meta = prepare_document_table(request, docs_tracked_by_community_list(clist), request.GET)
 
-    # get the related docs
-    form_related = SearchForm({ 'by':'group', 'name': u'-%s-' % group.acronym, 'activedrafts': 'on' })
-    raw_docs_related, meta_related = retrieve_search_results(form_related)
-
+    docs = []
     docs_related = []
-    for d in raw_docs_related:
-        parts = d.name.split("-", 2);
-        # canonical form draft-<name|ietf|irtf>-wg-etc
-        if len(parts) >= 3 and parts[1] not in ("ietf", "irtf") and parts[2].startswith(group.acronym + "-") and d not in docs:
+
+    # split results
+    for d in found_docs:
+        # non-WG drafts and call for WG adoption are considered related
+        if (d.group != group
+            or (d.stream_id and d.get_state_slug("draft-stream-%s" % d.stream_id) in ("c-adopt", "wg-cand"))):
             d.search_heading = "Related Internet-Draft"
             docs_related.append(d)
-
-    # move call for WG adoption to related
-    cleaned_docs = []
-    docs_related_names = set(d.name for d in docs_related)
-    for d in docs:
-        if d.stream_id and d.get_state_slug("draft-stream-%s" % d.stream_id) in ("c-adopt", "wg-cand"):
-            if d.name not in docs_related_names:
-                d.search_heading = "Related Internet-Draft"
-                docs_related.append(d)
         else:
-            cleaned_docs.append(d)
+            docs.append(d)
 
-    docs = cleaned_docs
-
-    docs_related.sort(key=lambda d: d.name)
+    meta_related = meta.copy()
 
     return docs, meta, docs_related, meta_related
 
@@ -442,17 +437,19 @@ def group_documents(request, acronym, group_type=None):
     if not group.features.has_documents:
         raise Http404
 
-    docs, meta, docs_related, meta_related = search_for_group_documents(group)
+    clist = get_object_or_404(CommunityList, group=group)
 
-    doc_is_tracked = get_doc_is_tracked(request, docs)
-    doc_is_tracked.update(get_doc_is_tracked(request, docs_related))
+    docs, meta, docs_related, meta_related = prepare_group_documents(request, group, clist)
+
+    subscribed = request.user.is_authenticated() and EmailSubscription.objects.filter(community_list=clist, email__person__user=request.user)
 
     context = construct_group_menu_context(request, group, "documents", group_type, {
                 'docs': docs,
                 'meta': meta,
                 'docs_related': docs_related,
                 'meta_related': meta_related,
-                'doc_is_tracked': doc_is_tracked,
+                'subscribed': subscribed,
+                'clist': clist,
                 })
 
     return render(request, 'group/group_documents.html', context)
@@ -463,7 +460,9 @@ def group_documents_txt(request, acronym, group_type=None):
     if not group.features.has_documents:
         raise Http404
 
-    docs, meta, docs_related, meta_related = search_for_group_documents(group)
+    clist = get_object_or_404(CommunityList, group=group)
+
+    docs, meta, docs_related, meta_related = prepare_group_documents(request, group, clist)
 
     for d in docs:
         d.prefix = d.get_state().name

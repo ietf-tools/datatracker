@@ -60,7 +60,7 @@ from ietf.iesg.models import TelechatDate
 from ietf.iesg.utils import telechat_page_count
 from ietf.ietfauth.utils import has_role, role_required, user_is_person
 from ietf.person.models import Person
-from ietf.doc.views_search import fill_in_search_attributes
+from ietf.doc.utils_search import fill_in_document_table_attributes
 
 def review_decisions(request, year=None):
     events = DocEvent.objects.filter(type__in=("iesg_disapproved", "iesg_approved"))
@@ -370,7 +370,7 @@ def agenda_documents(request):
         sections = agenda_sections()
         # augment the docs with the search attributes, since we're using
         # the search_result_row view to display them (which expects them)
-        fill_in_search_attributes(docs_by_date[date])
+        fill_in_document_table_attributes(docs_by_date[date])
         fill_in_agenda_docs(date, sections, docs_by_date[date])
 
         telechats.append({

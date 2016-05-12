@@ -501,11 +501,8 @@
       </ul>
     </div>
     {% if user.is_authenticated %}
-      {% if tracking_document %}
-        <a class="btn btn-default btn-xs community-list-add-remove-doc" href="{% url "community_remove_track_document" doc.name %}" title="Remove from your personal ID list"><span class="fa fa-bookmark-o"></span> Untrack</a>
-      {% else %}
-        <a class="btn btn-default btn-xs community-list-add-remove-doc" href="{% url "community_add_track_document" doc.name %}" title="Add to your personal ID list"><span class="fa fa-bookmark"></span> Track</a>
-      {% endif %}
+      <a class="btn btn-default btn-xs track-untrack-doc {% if not doc.tracked_in_personal_community_list %}hide{% endif %}" href="{% url "ietf.community.views.untrack_document" username=user.username name=doc.name %}" title="Remove from your personal ID list"><span class="fa fa-bookmark"></span> Untrack</a>
+      <a class="btn btn-default btn-xs track-untrack-doc {% if doc.tracked_in_personal_community_list %}hide{% endif %}" href="{% url "ietf.community.views.track_document" username=user.username name=doc.name %}" title="Add to your personal ID list"><span class="fa fa-bookmark-o"></span> Track</a>
     {% endif %}
 
     {% if can_edit and iesg_state %}
