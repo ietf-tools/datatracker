@@ -1,6 +1,7 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+from tqdm import tqdm
 from django.db import migrations, models
 
 def port_rules_to_typed_system(apps, schema_editor):
@@ -21,7 +22,11 @@ def port_rules_to_typed_system(apps, schema_editor):
         return person_qs
 
 
-    for rule in SearchRule.objects.all().iterator():
+    print("")
+    print("   * Port Rules to Typed System")
+    print("     Expect an initial rule count of around 550 here, as of May 2016:")
+    print("     rule count: %s" % SearchRule.objects.all().count())
+    for rule in tqdm(SearchRule.objects.all()):
         handled = False
 
         if rule.rule_type in ['wg_asociated', 'area_asociated', 'wg_asociated_rfc', 'area_asociated_rfc']:
@@ -112,10 +117,14 @@ def port_rules_to_typed_system(apps, schema_editor):
         else:
             rule.delete()
             #print "NOT HANDLED", rule.pk, rule.rule_type, rule.value
+    print("     rule count: %s" % SearchRule.objects.all().count())
 
 def delete_extra_person_rules(apps, schema_editor):
     SearchRule = apps.get_model("community", "SearchRule")
+    print("")
+    print("   * Delete Extra Person Rules")
     SearchRule.objects.exclude(person=None).filter(value="").delete()
+    print("     rule count: %s" % SearchRule.objects.all().count())
 
 RENAMED_RULES = [
     ('wg_asociated', 'group'),
@@ -141,25 +150,33 @@ def rename_rule_type_forwards(apps, schema_editor):
 
     renamings = dict(RENAMED_RULES)
 
-    for r in SearchRule.objects.all():
+    print("")
+    print("   * Rename Rule Type Forwards")
+    for r in tqdm(SearchRule.objects.all()):
         if r.rule_type in renamings:
             r.rule_type = renamings[r.rule_type]
             r.save()
+    print("     rule count: %s" % SearchRule.objects.all().count())
 
 def rename_rule_type_backwards(apps, schema_editor):
     SearchRule = apps.get_model("community", "SearchRule")
 
     renamings = dict((to, fro) for fro, to in RENAMED_RULES)
 
-    for r in SearchRule.objects.all():
+    print("")
+    print("   * Rename Rule Type Backwards")
+    for r in tqdm(SearchRule.objects.all()):
         if r.rule_type in renamings:
             r.rule_type = renamings[r.rule_type]
             r.save()
+    print("     rule count: %s" % SearchRule.objects.all().count())
 
 def get_rid_of_empty_lists(apps, schema_editor):
     CommunityList = apps.get_model("community", "CommunityList")
 
-    for cl in CommunityList.objects.all():
+    print("")
+    print("   * Get Rid of Empty Lists")
+    for cl in tqdm(CommunityList.objects.all()):
         if not cl.added_docs.exists() and not cl.searchrule_set.exists() and not cl.emailsubscription_set.exists():
             cl.delete()
 
@@ -168,7 +185,9 @@ def move_email_subscriptions_to_preregistered_email(apps, schema_editor):
     Email = apps.get_model("person", "Email")
     Person = apps.get_model("person", "Person")
 
-    for e in EmailSubscription.objects.all():
+    print("")
+    print("   * Move Email Subscriptions to Preregistered Email")
+    for e in tqdm(EmailSubscription.objects.all()):
         email_obj = None
         try:
             email_obj = Email.objects.get(address=e.email)
@@ -191,6 +210,8 @@ def move_email_subscriptions_to_preregistered_email(apps, schema_editor):
 def fill_in_notify_on(apps, schema_editor):
     EmailSubscription = apps.get_model("community", "EmailSubscription")
 
+#    print("")
+#    print("   * Fill In Notify On")
     EmailSubscription.objects.filter(significant=False, notify_on="all")
     EmailSubscription.objects.filter(significant=True, notify_on="significant")
 
@@ -204,7 +225,9 @@ def add_group_community_lists(apps, schema_editor):
     active_state = State.objects.get(slug="active", type="draft")
     rfc_state = State.objects.get(slug="rfc", type="draft")
 
-    for g in Group.objects.filter(type__in=("rg", "wg")):
+    print("")
+    print("   * Add Group Community Lists")
+    for g in tqdm(Group.objects.filter(type__in=("rg", "wg"))):
         clist = CommunityList.objects.filter(group=g).first()
         if clist:
             SearchRule.objects.get_or_create(community_list=clist, rule_type="group", group=g, state=active_state)
@@ -218,6 +241,7 @@ def add_group_community_lists(apps, schema_editor):
             SearchRule.objects.create(community_list=clist, rule_type="group_rfc", group=g, state=rfc_state)
             r = SearchRule.objects.create(community_list=clist, rule_type="name_contains", text=r"^draft-[^-]+-%s-" % g.acronym, state=active_state)
             r.name_contains_index = Document.objects.filter(docalias__name__regex=r.text)
+    print("     rule count: %s" % SearchRule.objects.all().count())
 
 def noop(apps, schema_editor):
     pass
