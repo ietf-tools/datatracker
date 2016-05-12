@@ -108,7 +108,7 @@ class SubmitTests(TestCase):
         r = self.client.post(url, files)
         if r.status_code != 302:
             q = PyQuery(r.content)
-            print(q('div.has-error span.help-block div').text)
+            print(q('div.has-error div.alert').text)
 
         self.assertEqual(r.status_code, 302)
 
@@ -785,7 +785,7 @@ class SubmitTests(TestCase):
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertTrue(len(q("form .has-error")) > 0)
-        m = q('div.has-error span.help-block').text()
+        m = q('div.has-error div.alert').text()
 
         return r, q, m
         

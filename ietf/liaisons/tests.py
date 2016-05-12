@@ -944,7 +944,7 @@ class LiaisonManagementTests(TestCase):
         r = self.client.post(url,post_data)
         if r.status_code != 302:
             q = PyQuery(r.content)
-            print(q('div.has-error span.help-block div').text())
+            print(q('div.has-error div.alert').text())
             print r.content
         self.assertEqual(r.status_code, 302)
         self.assertEqual(liaison.attachments.count(),2)
