@@ -32,27 +32,25 @@
 
 # Copyright The IETF Trust 2007, All Rights Reserved
 
-import datetime
-import hashlib
-#import json
-
 from django.conf import settings
-from django.template import RequestContext
 from django.http import Http404  #, HttpResponse, HttpResponseRedirect
-from django.shortcuts import render_to_response
+from django.shortcuts import render, redirect, get_object_or_404
 #from django.contrib.auth import REDIRECT_FIELD_NAME, authenticate, login
 from django.contrib.auth.decorators import login_required
-#from django.contrib.auth.models import User
 #from django.utils.http import urlquote
-#from django.utils.translation import ugettext as _
-from django.core.exceptions import ValidationError
+import django.core.signing
+from django.contrib.sites.models import Site
+from django.contrib.auth.models import User
 
 from ietf.group.models import Role
-from ietf.ietfauth.forms import RegistrationForm, PasswordForm, RecoverPasswordForm, TestEmailForm, PersonForm
-from ietf.person.models import Person, Email
+from ietf.ietfauth.forms import RegistrationForm, PasswordForm, ResetPasswordForm, TestEmailForm
+from ietf.ietfauth.forms import PersonForm, RoleEmailForm, NewEmailForm
+from ietf.ietfauth.htpasswd import update_htpasswd_file
+from ietf.person.models import Person, Email, Alias
+from ietf.utils.mail import send_mail
 
 def index(request):
-    return render_to_response('registration/index.html', context_instance=RequestContext(request))
+    return render(request, 'registration/index.html')
 
 # def url_login(request, user, passwd):
 #     user = authenticate(username=user, password=passwd)
@@ -81,154 +79,257 @@ def index(request):
 #         redirect_to = settings.LOGIN_REDIRECT_URL
 #     return HttpResponseRedirect(redirect_to)
 
+def create_account(request):
+    to_email = None
+
+    if request.method == 'POST':
+        form = RegistrationForm(request.POST)
+        if form.is_valid():
+            to_email = form.cleaned_data['email']
+
+            auth = django.core.signing.dumps(to_email, salt="create_account")
+
+            domain = Site.objects.get_current().domain
+            subject = 'Confirm registration at %s' % domain
+            from_email = settings.DEFAULT_FROM_EMAIL
+
+            send_mail(request, to_email, from_email, subject, 'registration/creation_email.txt', {
+                'domain': domain,
+                'auth': auth,
+                'username': to_email,
+                'expire': settings.DAYS_TO_EXPIRE_REGISTRATION_LINK,
+            })
+    else:
+        form = RegistrationForm()
+
+    return render(request, 'registration/create.html', {
+        'form': form,
+        'to_email': to_email,
+    })
+
+def confirm_account(request, auth):
+    try:
+        email = django.core.signing.loads(auth, salt="create_account", max_age=settings.DAYS_TO_EXPIRE_REGISTRATION_LINK * 24 * 60 * 60)
+    except django.core.signing.BadSignature:
+        raise Http404("Invalid or expired auth")
+
+    if User.objects.filter(username=email).exists():
+        return redirect(profile)
+
+    success = False
+    if request.method == 'POST':
+        form = PasswordForm(request.POST)
+        if form.is_valid():
+            password = form.cleaned_data["password"]
+
+            user = User.objects.create(username=email, email=email)
+            user.set_password(password)
+            user.save()
+            # password is also stored in htpasswd file
+            update_htpasswd_file(email, password)
+
+            # make sure the rest of the person infrastructure is
+            # well-connected
+            email_obj = Email.objects.filter(address=email).first()
+
+            person = None
+            if email_obj and email_obj.person:
+                person = email_obj.person
+
+            if not person:
+                person = Person.objects.create(user=user,
+                                               name=email,
+                                               ascii=email)
+            if not email_obj:
+                email_obj = Email.objects.create(address=email, person=person)
+            else:
+                if not email_obj.person:
+                    email_obj.person = person
+                    email_obj.save()
+
+            person.user = user
+            person.save()
+
+            success = True
+    else:
+        form = PasswordForm()
+
+    return render(request, 'registration/confirm_account.html', {
+        'form': form,
+        'email': email,
+        'success': success,
+    })
+
 @login_required
 def profile(request):
     roles = []
     person = None
+
     try:
         person = request.user.person
     except Person.DoesNotExist:
-        return render_to_response('registration/missing_person.html', context_instance=RequestContext(request))
+        return render(request, 'registration/missing_person.html')
+
+    roles = Role.objects.filter(person=person, group__state='active').order_by('name__name', 'group__name')
+    emails = Email.objects.filter(person=person).order_by('-active','-time')
+    new_email_forms = []
 
     if request.method == 'POST':
-        form = PersonForm(request.POST, instance=person)
-        success = False
-        new_emails = None
-        error = None
-        if form.is_valid():
-            try:
-                form.save()
-                success = True
-                new_emails = form.new_emails
-            except Exception as e:
-                error = e
-            
-        return render_to_response('registration/confirm_profile_update.html',
-            { 'success': success, 'new_emails': new_emails, 'error': error} ,
-                              context_instance=RequestContext(request))
+        person_form = PersonForm(request.POST, instance=person)
+        for r in roles:
+            r.email_form = RoleEmailForm(r, request.POST, prefix="role_%s" % r.pk)
+
+        for e in request.POST.getlist("new_email", []):
+            new_email_forms.append(NewEmailForm({ "new_email": e }))
+
+        forms_valid = [person_form.is_valid()] + [r.email_form.is_valid() for r in roles] + [f.is_valid() for f in new_email_forms]
+
+        email_confirmations = []
+
+        if all(forms_valid):
+            updated_person = person_form.save()
+
+            for f in new_email_forms:
+                to_email = f.cleaned_data["new_email"]
+                if not to_email:
+                    continue
+
+                email_confirmations.append(to_email)
+
+                auth = django.core.signing.dumps([person.user.username, to_email], salt="add_email")
+
+                domain = Site.objects.get_current().domain
+                subject = u'Confirm email address for %s' % person.name
+                from_email = settings.DEFAULT_FROM_EMAIL
+
+                send_mail(request, to_email, from_email, subject, 'registration/add_email_email.txt', {
+                    'domain': domain,
+                    'auth': auth,
+                    'email': to_email,
+                    'person': person,
+                    'expire': settings.DAYS_TO_EXPIRE_REGISTRATION_LINK,
+                })
+                
+
+            for r in roles:
+                e = r.email_form.cleaned_data["email"]
+                if r.email_id != e.pk:
+                    r.email = e
+                    r.save()
+
+            active_emails = request.POST.getlist("active_emails", [])
+            for email in emails:
+                email.active = email.pk in active_emails
+                email.save()
+
+            # Make sure the alias table contains any new and/or old names.
+            existing_aliases = set(Alias.objects.filter(person=person).values_list("name", flat=True))
+            curr_names = set(x for x in [updated_person.name, updated_person.ascii, updated_person.ascii_short] if x)
+            new_aliases = curr_names - existing_aliases
+            for name in new_aliases:
+                Alias.objects.create(person=updated_person, name=name)
+
+            return render(request, 'registration/confirm_profile_update.html', {
+                'email_confirmations': email_confirmations,
+            })
     else:
-        roles = Role.objects.filter(person=person,group__state='active').order_by('name__name','group__name')
-        emails = Email.objects.filter(person=person).order_by('-active','-time')
+        for r in roles:
+            r.email_form = RoleEmailForm(r, prefix="role_%s" % r.pk)
 
         person_form = PersonForm(instance=person)
 
-        return render_to_response('registration/edit_profile.html',
-            { 'user': request.user, 'emails': emails, 'person': person, 
-              'roles': roles, 'person_form': person_form } ,
-                              context_instance=RequestContext(request))
+    return render(request, 'registration/edit_profile.html', {
+        'user': request.user,
+        'person': person,
+        'person_form': person_form,
+        'roles': roles,
+        'emails': emails,
+        'new_email_forms': new_email_forms,
+    })
 
-def confirm_new_email(request, username, date, email, hash):
-    valid = hashlib.md5('%s%s%s%s' % (settings.SECRET_KEY, date, email, username)).hexdigest() == hash
-    if not valid:
-        raise Http404
-    request_date = datetime.date(int(date[:4]), int(date[4:6]), int(date[6:]))
-    if datetime.date.today() > (request_date + datetime.timedelta(days=settings.DAYS_TO_EXPIRE_REGISTRATION_LINK)):
-        raise Http404
-    success = False
-
-    person = None
-    error = None
-    new_email = None
-
+def confirm_new_email(request, auth):
     try:
-        # First, check whether this address exists (to give a more sensible
-        # error when a duplicate is created).
-        existing_email = Email.objects.get(address=email)
-        print existing_email
-        existing_person = existing_email.person 
-        print existing_person
-        error = {'address': ["Email address '%s' is already assigned to user '%s' (%s)" %
-            (email, existing_person.user, existing_person.name)]}
-    except Exception:
-        try:
-            person = Person.objects.get(user__username=username)
-            new_email = Email(address=email, person=person, active=True, time=datetime.datetime.now())
-            new_email.full_clean()
-            new_email.save()
-            success = True
-        except Person.DoesNotExist:
-            error = {'person': ["No such user: %s" % (username)]}
-        except ValidationError as e:
-            error = e.message_dict
+        username, email = django.core.signing.loads(auth, salt="add_email", max_age=settings.DAYS_TO_EXPIRE_REGISTRATION_LINK * 24 * 60 * 60)
+    except django.core.signing.BadSignature:
+        raise Http404("Invalid or expired auth")
 
-    return render_to_response('registration/confirm_new_email.html',
-                              { 'username': username, 'email': email,
-                                'success': success, 'error': error,
-                                'record': new_email},
-                              context_instance=RequestContext(request))
+    person = get_object_or_404(Person, user__username=username)
 
+    # do another round of validation since the situation may have
+    # changed since submitting the request
+    form = NewEmailForm({ "new_email": email })
+    can_confirm = form.is_valid() and email
+    new_email_obj = None
+    if request.method == 'POST' and can_confirm and request.POST.get("action") == "confirm":
+        new_email_obj = Email.objects.create(address=email, person=person)
 
-def create_account(request):
+    return render(request, 'registration/confirm_new_email.html', {
+        'username': username,
+        'email': email,
+        'can_confirm': can_confirm,
+        'form': form,
+        'new_email_obj': new_email_obj,
+    })
+
+def password_reset(request):
     success = False
     if request.method == 'POST':
-        form = RegistrationForm(request.POST)
+        form = ResetPasswordForm(request.POST)
         if form.is_valid():
-            form.request = request
-            form.save()
+            username = form.cleaned_data['username']
+
+            auth = django.core.signing.dumps(username, salt="password_reset")
+
+            domain = Site.objects.get_current().domain
+            subject = 'Confirm password reset at %s' % domain
+            from_email = settings.DEFAULT_FROM_EMAIL
+            to_email = username # form validation makes sure that this is an email address
+
+            send_mail(request, to_email, from_email, subject, 'registration/password_reset_email.txt', {
+                'domain': domain,
+                'auth': auth,
+                'username': username,
+                'expire': settings.DAYS_TO_EXPIRE_REGISTRATION_LINK,
+            })
+
             success = True
     else:
-        form = RegistrationForm()
-    return render_to_response('registration/create.html',
-                              {'form': form,
-                               'success': success},
-                              context_instance=RequestContext(request))
+        form = ResetPasswordForm()
+    return render(request, 'registration/password_reset.html', {
+        'form': form,
+        'success': success,
+    })
 
 
-def process_confirmation(request, username, date, realm, hash):
-    valid = hashlib.md5('%s%s%s%s' % (settings.SECRET_KEY, date, username, realm)).hexdigest() == hash
-    if not valid:
-        raise Http404
-    request_date = datetime.date(int(date[:4]), int(date[4:6]), int(date[6:]))
-    if datetime.date.today() > (request_date + datetime.timedelta(days=settings.DAYS_TO_EXPIRE_REGISTRATION_LINK)):
-        raise Http404
+def confirm_password_reset(request, auth):
+    try:
+        username = django.core.signing.loads(auth, salt="password_reset", max_age=settings.DAYS_TO_EXPIRE_REGISTRATION_LINK * 24 * 60 * 60)
+    except django.core.signing.BadSignature:
+        raise Http404("Invalid or expired auth")
+
+    user = get_object_or_404(User, username=username)
+
     success = False
     if request.method == 'POST':
-        form = PasswordForm(request.POST, username=username)
+        form = PasswordForm(request.POST)
         if form.is_valid():
-            form.save()                 # Also updates the httpd password file
+            password = form.cleaned_data["password"]
+
+            user.set_password(password)
+            user.save()
+            # password is also stored in htpasswd file
+            update_htpasswd_file(user.username, password)
+
             success = True
     else:
-        form = PasswordForm(username=username)
-    return form, username, success
+        form = PasswordForm()
 
-def confirm_account(request, username, date, realm, hash):
-    form, username, success = process_confirmation(request, username, date, realm, hash)
-    return render_to_response('registration/confirm.html',
-                              {'form': form, 'email': username, 'success': success},
-                              context_instance=RequestContext(request))
+    return render(request, 'registration/change_password.html', {
+        'form': form,
+        'username': username,
+        'success': success,
+    })
 
-
-def password_reset_view(request):
-    success = False
-    if request.method == 'POST':
-        form = RecoverPasswordForm(request.POST)
-        if form.is_valid():
-            form.request = request
-            form.save()
-            success = True
-    else:
-        form = RecoverPasswordForm()
-    return render_to_response('registration/password_reset.html',
-                              {'form': form,
-                               'success': success},
-                              context_instance=RequestContext(request))
-
-
-def confirm_password_reset(request, username, date, realm, hash):
-    form, username, success = process_confirmation(request, username, date, realm, hash)
-    return render_to_response('registration/change_password.html',
-                              {'form': form,
-                               'success': success,
-                               'username': username},
-                              context_instance=RequestContext(request))
-
-# def ajax_check_username(request):
-#     username = request.GET.get('username', '')
-#     error = False
-#     if User.objects.filter(username=username).count():
-#         error = _('This email address is already registered')
-#     return HttpResponse(json.dumps({'error': error}), content_type='text/plain')
-    
 def test_email(request):
     """Set email address to which email generated in the system will be sent."""
     if settings.SERVER_MODE == "production":
@@ -249,11 +350,10 @@ def test_email(request):
     else:
         form = TestEmailForm(initial=dict(email=request.COOKIES.get('testmailcc')))
 
-    r = render_to_response('ietfauth/testemail.html',
-                           dict(form=form,
-                                cookie=cookie if cookie != None else request.COOKIES.get("testmailcc", "")
-                                ),
-                           context_instance=RequestContext(request))
+    r = render(request, 'ietfauth/testemail.html', {
+        "form": form,
+        "cookie": cookie if cookie != None else request.COOKIES.get("testmailcc", "")
+    })
 
     if cookie != None:
         r.set_cookie("testmailcc", cookie)

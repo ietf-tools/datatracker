@@ -1,12 +1,9 @@
 {% autoescape off %}
 Hello,
 
-We have received a request to add the email address '{{ email }}'
-to the user account '{{ user }}' at '{{ domain }}'. 
-If you requested this change, please confirm that this is your email
-address by clicking on following link:
+{% filter wordwrap:73 %}We have received a request to add the email address {{ email }} to the user account '{{ person.user }}' at {{ domain }}. If you requested this change, please confirm that this is your email address by clicking on following link:{% endfilter %}
 
-   https://{{ domain }}{% url "confirm_new_email" user today email auth %}
+   https://{{ domain }}{% url "ietf.ietfauth.views.confirm_new_email" auth %}
 
 This link will expire in {{ expire }} days.
 

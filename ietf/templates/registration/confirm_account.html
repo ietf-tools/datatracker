@@ -12,13 +12,13 @@
   {% if success %}
     <h1>Account creation successful</h1>
 
-    <p>Your account with login name {{ email }} has been created, using the password you have selected.</p>
-    <a type="a" class="btn btn-primary" href="/accounts/login/" rel="nofollow">Sign in</a>
+    <p>Your account with login {{ email }} has been created, using the password you have selected.</p>
+    <a type="a" class="btn btn-primary" href="{% url "django.contrib.auth.views.login" %}" rel="nofollow">Sign in</a>
 
   {% else %}
     <h1>Complete account creation</h1>
 
-    <p>In order to complete the setup of your account with login name {{ email }}, please choose a password:</p>
+    <p>In order to complete the setup of your account with login {{ email }}, please choose a password:</p>
     <form method="post">
       {% csrf_token %}
       {% bootstrap_form form %}

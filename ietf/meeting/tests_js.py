@@ -45,8 +45,7 @@ class ScheduleEditTests(StaticLiveServerTestCase):
         return '%s%s'%(self.live_server_url,urlreverse(*args,**kwargs))
 
     def login(self):
-        #url = self.absreverse('ietf.ietfauth.views.login')
-        url = '%s%s'%(self.live_server_url,'/accounts/login')
+        url = '%s%s'%(self.live_server_url, urlreverse('django.contrib.auth.views.login'))
         self.driver.get(url)
         self.driver.find_element_by_name('username').send_keys('plain')
         self.driver.find_element_by_name('password').send_keys('plain+password')

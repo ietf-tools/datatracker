@@ -1,12 +1,9 @@
 {% autoescape off %}
 Hello,
 
-We have received an account creation request for {{ username }}
-at {{ domain }}.  In order to set a new password for the 
-{{ username }} account, please go to the following link and
-follow the instructions there:
+{% filter wordwrap:73 %}We have received an account creation request for {{ username }} at {{ domain }}.  In order to set a new password for the {{ username }} account, please go to the following link and follow the instructions there:{% endfilter %}
 
-   https://{{ domain }}{% url "confirm_account" username today realm auth %}
+   https://{{ domain }}{% url "ietf.ietfauth.views.confirm_account" auth %}
 
 This link will expire in {{ expire }} days.
 

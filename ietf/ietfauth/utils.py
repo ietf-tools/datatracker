@@ -138,4 +138,3 @@ def is_authorized_in_doc_stream(user, doc):
         group_req = Q()
 
     return Role.objects.filter(Q(name__in=("chair", "secr", "delegate", "auth"), person__user=user) & group_req).exists()
-
