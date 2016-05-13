@@ -212,8 +212,8 @@ def fill_in_notify_on(apps, schema_editor):
 
 #    print("")
 #    print("   * Fill In Notify On")
-    EmailSubscription.objects.filter(significant=False, notify_on="all")
-    EmailSubscription.objects.filter(significant=True, notify_on="significant")
+    EmailSubscription.objects.filter(significant=False).update(notify_on="all")
+    EmailSubscription.objects.filter(significant=True).update(notify_on="significant")
 
 def add_group_community_lists(apps, schema_editor):
     Group = apps.get_model("group", "Group")
