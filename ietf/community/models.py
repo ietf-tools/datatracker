@@ -74,6 +74,8 @@ class SearchRule(models.Model):
     # when new documents are submitted
     name_contains_index = models.ManyToManyField(Document)
 
+    def __unicode__(self):
+        return "%s %s %s/%s/%s/%s" % (self.community_list, self.rule_type, self.state, self.group, self.person, self.text)
 
 class EmailSubscription(models.Model):
     community_list = models.ForeignKey(CommunityList)
