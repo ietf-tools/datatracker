@@ -425,7 +425,7 @@ def customize_workflow(request, group_type, acronym):
 
             # redirect so the back button works correctly, otherwise
             # repeated POSTs fills up the history
-            return redirect("ietf.group.edit.customize_workflow", group_type=group.type_id, acronym=group.acronym)
+            return redirect("ietf.group.views_edit.customize_workflow", group_type=group.type_id, acronym=group.acronym)
 
         if action == "setnextstates":
             try:
@@ -442,7 +442,7 @@ def customize_workflow(request, group_type, acronym):
                 transitions, _ = GroupStateTransitions.objects.get_or_create(group=group, state=state)
                 transitions.next_states = next_states
 
-            return redirect("ietf.group.edit.customize_workflow", group_type=group.type_id, acronym=group.acronym)
+            return redirect("ietf.group.views_edit.customize_workflow", group_type=group.type_id, acronym=group.acronym)
 
         if action == "settagactive":
             active = request.POST.get("active") == "1"
@@ -456,7 +456,7 @@ def customize_workflow(request, group_type, acronym):
             else:
                 group.unused_tags.add(tag)
 
-            return redirect("ietf.group.edit.customize_workflow", group_type=group.type_id, acronym=group.acronym)
+            return redirect("ietf.group.views_edit.customize_workflow", group_type=group.type_id, acronym=group.acronym)
 
     # put some info for the template on tags and states
     unused_tags = group.unused_tags.all().values_list('slug', flat=True)

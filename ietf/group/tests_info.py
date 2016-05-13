@@ -43,7 +43,7 @@ class GroupPagesTests(TestCase):
         draft = make_test_data()
         group = draft.group
 
-        url = urlreverse('ietf.group.info.active_groups', kwargs=dict(group_type="wg"))
+        url = urlreverse('ietf.group.views.active_groups', kwargs=dict(group_type="wg"))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertTrue(group.parent.name in unicontent(r))
@@ -51,32 +51,32 @@ class GroupPagesTests(TestCase):
         self.assertTrue(group.name in unicontent(r))
         self.assertTrue(group.ad_role().person.plain_name() in unicontent(r))
 
-        url = urlreverse('ietf.group.info.active_groups', kwargs=dict(group_type="rg"))
+        url = urlreverse('ietf.group.views.active_groups', kwargs=dict(group_type="rg"))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertTrue('Active research groups' in unicontent(r))
 
-        url = urlreverse('ietf.group.info.active_groups', kwargs=dict(group_type="area"))
+        url = urlreverse('ietf.group.views.active_groups', kwargs=dict(group_type="area"))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertTrue("Far Future (farfut)" in unicontent(r))
 
-        url = urlreverse('ietf.group.info.active_groups', kwargs=dict(group_type="ag"))
+        url = urlreverse('ietf.group.views.active_groups', kwargs=dict(group_type="ag"))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertTrue("Active area groups" in unicontent(r))
 
-        url = urlreverse('ietf.group.info.active_groups', kwargs=dict(group_type="dir"))
+        url = urlreverse('ietf.group.views.active_groups', kwargs=dict(group_type="dir"))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertTrue("Active directorates" in unicontent(r))
 
-        url = urlreverse('ietf.group.info.active_groups', kwargs=dict(group_type="team"))
+        url = urlreverse('ietf.group.views.active_groups', kwargs=dict(group_type="team"))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertTrue("Active teams" in unicontent(r))
 
-        url = urlreverse('ietf.group.info.active_groups', kwargs=dict())
+        url = urlreverse('ietf.group.views.active_groups', kwargs=dict())
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertTrue("Directorate" in unicontent(r))
@@ -84,7 +84,7 @@ class GroupPagesTests(TestCase):
 
         for slug in GroupTypeName.objects.exclude(slug__in=['wg','rg','ag','area','dir','team']).values_list('slug',flat=True):
             with self.assertRaises(NoReverseMatch):
-                url=urlreverse('ietf.group.info.active_groups', kwargs=dict(group_type=slug))
+                url=urlreverse('ietf.group.views.active_groups', kwargs=dict(group_type=slug))
 
     def test_wg_summaries(self):
         draft = make_test_data()
@@ -95,7 +95,7 @@ class GroupPagesTests(TestCase):
         with open(os.path.join(self.charter_dir, "%s-%s.txt" % (group.charter.canonical_name(), group.charter.rev)), "w") as f:
             f.write("This is a charter.")
 
-        url = urlreverse('ietf.group.info.wg_summary_area', kwargs=dict(group_type="wg"))
+        url = urlreverse('ietf.group.views.wg_summary_area', kwargs=dict(group_type="wg"))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertTrue(group.parent.name in unicontent(r))
@@ -103,14 +103,14 @@ class GroupPagesTests(TestCase):
         self.assertTrue(group.name in unicontent(r))
         self.assertTrue(chair.address in unicontent(r))
 
-        url = urlreverse('ietf.group.info.wg_summary_acronym', kwargs=dict(group_type="wg"))
+        url = urlreverse('ietf.group.views.wg_summary_acronym', kwargs=dict(group_type="wg"))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertTrue(group.acronym in unicontent(r))
         self.assertTrue(group.name in unicontent(r))
         self.assertTrue(chair.address in unicontent(r))
         
-        url = urlreverse('ietf.group.info.wg_charters', kwargs=dict(group_type="wg"))
+        url = urlreverse('ietf.group.views.wg_charters', kwargs=dict(group_type="wg"))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertTrue(group.acronym in unicontent(r))
@@ -119,7 +119,7 @@ class GroupPagesTests(TestCase):
         self.assertTrue(chair.address in unicontent(r))
         self.assertTrue("This is a charter." in unicontent(r))
 
-        url = urlreverse('ietf.group.info.wg_charters_by_acronym', kwargs=dict(group_type="wg"))
+        url = urlreverse('ietf.group.views.wg_charters_by_acronym', kwargs=dict(group_type="wg"))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertTrue(group.acronym in unicontent(r))
@@ -133,7 +133,7 @@ class GroupPagesTests(TestCase):
         group = draft.group
         group.charter.set_state(State.objects.get(used=True, type="charter", slug="intrev"))
 
-        url = urlreverse('ietf.group.info.chartering_groups')
+        url = urlreverse('ietf.group.views.chartering_groups')
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
@@ -145,7 +145,7 @@ class GroupPagesTests(TestCase):
         group.state = GroupStateName.objects.get(used=True, slug="conclude")
         group.save()
 
-        url = urlreverse('ietf.group.info.concluded_groups')
+        url = urlreverse('ietf.group.views.concluded_groups')
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
@@ -157,7 +157,7 @@ class GroupPagesTests(TestCase):
         group.state_id = "bof"
         group.save()
 
-        url = urlreverse('ietf.group.info.bofs', kwargs=dict(group_type="wg"))
+        url = urlreverse('ietf.group.views.bofs', kwargs=dict(group_type="wg"))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
@@ -193,7 +193,7 @@ class GroupPagesTests(TestCase):
 
         setup_default_community_list_for_group(group)
 
-        url = urlreverse('ietf.group.info.group_documents', kwargs=dict(group_type=group.type_id, acronym=group.acronym))
+        url = urlreverse('ietf.group.views.group_documents', kwargs=dict(group_type=group.type_id, acronym=group.acronym))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertTrue(draft.name in unicontent(r))
@@ -208,7 +208,7 @@ class GroupPagesTests(TestCase):
         self.assertTrue(any([draft2.name in x.attrib['href'] for x in q('table td a.track-untrack-doc')]))
 
         # test the txt version too while we're at it
-        url = urlreverse('ietf.group.info.group_documents_txt', kwargs=dict(group_type=group.type_id, acronym=group.acronym))
+        url = urlreverse('ietf.group.views.group_documents_txt', kwargs=dict(group_type=group.type_id, acronym=group.acronym))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertTrue(draft.name in unicontent(r))
@@ -229,8 +229,8 @@ class GroupPagesTests(TestCase):
         milestone.docs.add(draft)
 
         for url in [group.about_url(),
-                    urlreverse('ietf.group.info.group_about',kwargs=dict(acronym=group.acronym)),
-                    urlreverse('ietf.group.info.group_about',kwargs=dict(acronym=group.acronym,group_type=group.type_id)),
+                    urlreverse('ietf.group.views.group_about',kwargs=dict(acronym=group.acronym)),
+                    urlreverse('ietf.group.views.group_about',kwargs=dict(acronym=group.acronym,group_type=group.type_id)),
                    ]:
             r = self.client.get(url)
             self.assertEqual(r.status_code, 200)
@@ -264,8 +264,8 @@ class GroupPagesTests(TestCase):
         create_person(group, "chair", name="Testteam Chairman", username="teamchairman")
 
         for url in [group.about_url(),
-                    urlreverse('ietf.group.info.group_about',kwargs=dict(acronym=group.acronym)),
-                    urlreverse('ietf.group.info.group_about',kwargs=dict(acronym=group.acronym,group_type=group.type_id)),
+                    urlreverse('ietf.group.views.group_about',kwargs=dict(acronym=group.acronym)),
+                    urlreverse('ietf.group.views.group_about',kwargs=dict(acronym=group.acronym,group_type=group.type_id)),
                    ]:
             url = group.about_url()
             r = self.client.get(url)
@@ -274,7 +274,7 @@ class GroupPagesTests(TestCase):
             self.assertTrue(group.acronym in unicontent(r))
             self.assertTrue(group.description in unicontent(r))
 
-        url = urlreverse('ietf.group.edit.edit', kwargs=dict(acronym=group.acronym))
+        url = urlreverse('ietf.group.views_edit.edit', kwargs=dict(acronym=group.acronym))
 
         for username in ['plain','iana','iab chair','irtf chair','marschairman']:
             verify_cannot_edit_group(username)
@@ -323,7 +323,7 @@ class GroupPagesTests(TestCase):
             type="added_comment",
             by=Person.objects.get(name="(System)"))
 
-        url = urlreverse('ietf.group.info.history', kwargs=dict(group_type=group.type_id, acronym=group.acronym))
+        url = urlreverse('ietf.group.views.history', kwargs=dict(group_type=group.type_id, acronym=group.acronym))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertTrue(e.desc in unicontent(r))
@@ -548,8 +548,8 @@ class GroupEditTests(TestCase):
     def test_initial_charter(self):
         make_test_data()
         group = Group.objects.get(acronym="mars")
-        for url in [ urlreverse('ietf.group.edit.submit_initial_charter', kwargs={'acronym':group.acronym}),
-                     urlreverse('ietf.group.edit.submit_initial_charter', kwargs={'acronym':group.acronym,'group_type':group.type_id}),
+        for url in [ urlreverse('ietf.group.views_edit.submit_initial_charter', kwargs={'acronym':group.acronym}),
+                     urlreverse('ietf.group.views_edit.submit_initial_charter', kwargs={'acronym':group.acronym,'group_type':group.type_id}),
                    ]:
             login_testing_unauthorized(self, "secretary", url)
             r = self.client.get(url,follow=True)
@@ -563,7 +563,7 @@ class GroupEditTests(TestCase):
 
         group = Group.objects.get(acronym="mars")
 
-        url = urlreverse('ietf.group.edit.conclude', kwargs=dict(group_type=group.type_id, acronym=group.acronym))
+        url = urlreverse('ietf.group.views_edit.conclude', kwargs=dict(group_type=group.type_id, acronym=group.acronym))
         login_testing_unauthorized(self, "secretary", url)
 
         # normal get
@@ -870,7 +870,7 @@ class CustomizeWorkflowTests(TestCase):
 
         group = Group.objects.get(acronym="mars")
 
-        url = urlreverse('ietf.group.edit.customize_workflow', kwargs=dict(group_type=group.type_id, acronym=group.acronym))
+        url = urlreverse('ietf.group.views_edit.customize_workflow', kwargs=dict(group_type=group.type_id, acronym=group.acronym))
         login_testing_unauthorized(self, "secretary", url)
 
         state = State.objects.get(used=True, type="draft-stream-ietf", slug="wg-lc")
@@ -969,24 +969,24 @@ expand-ames-chairs@virtual.ietf.org                              mars_chair@ietf
             self.assertTrue(all([x in unicontent(r) for x in ['mars-ads@','mars-chairs@']]))
             self.assertFalse(any([x in unicontent(r) for x in ['ames-ads@','ames-chairs@']]))
 
-        url = urlreverse('ietf.group.info.email_aliases', kwargs=dict())
+        url = urlreverse('ietf.group.views.email_aliases', kwargs=dict())
         login_testing_unauthorized(self, "plain", url)
         r = self.client.get(url)
         self.assertTrue(r.status_code,200)
         self.assertTrue(all([x in unicontent(r) for x in ['mars-ads@','mars-chairs@','ames-ads@','ames-chairs@']]))
 
-        url = urlreverse('ietf.group.info.email_aliases', kwargs=dict(group_type="wg"))
+        url = urlreverse('ietf.group.views.email_aliases', kwargs=dict(group_type="wg"))
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
         self.assertTrue('mars-ads@' in unicontent(r))
 
-        url = urlreverse('ietf.group.info.email_aliases', kwargs=dict(group_type="rg"))
+        url = urlreverse('ietf.group.views.email_aliases', kwargs=dict(group_type="rg"))
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
         self.assertFalse('mars-ads@' in unicontent(r))
 
     def testExpansions(self):
-        url = urlreverse('ietf.group.info.email', kwargs=dict(acronym="mars"))
+        url = urlreverse('ietf.group.views.email', kwargs=dict(acronym="mars"))
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
         self.assertTrue('Email aliases' in unicontent(r))
@@ -1029,7 +1029,7 @@ class MeetingInfoTests(TestCase):
 
 
     def test_meeting_info(self):
-        url = urlreverse('ietf.group.info.meetings',kwargs={'acronym':self.group.acronym})
+        url = urlreverse('ietf.group.views.meetings',kwargs={'acronym':self.group.acronym})
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200) 
         q = PyQuery(response.content)
@@ -1049,7 +1049,7 @@ class StatusUpdateTests(TestCase):
     def test_unsupported_group_types(self):
 
         def ensure_updates_dont_show(group,user):
-            url = urlreverse('ietf.group.info.group_about',kwargs={'acronym':group.acronym})
+            url = urlreverse('ietf.group.views.group_about',kwargs={'acronym':group.acronym})
             if user:
                 self.client.login(username=user.username,password='%s+password'%user.username)
             response = self.client.get(url)
@@ -1059,7 +1059,7 @@ class StatusUpdateTests(TestCase):
             self.client.logout()
 
         def ensure_cant_edit(group,user):
-            url = urlreverse('ietf.group.info.group_about_status_edit',kwargs={'acronym':group.acronym})
+            url = urlreverse('ietf.group.views.group_about_status_edit',kwargs={'acronym':group.acronym})
             if user:
                 self.client.login(username=user.username,password='%s+password'%user.username)
             response = self.client.get(url)
@@ -1075,7 +1075,7 @@ class StatusUpdateTests(TestCase):
     def test_see_status_update(self):
         chair = RoleFactory(name_id='chair',group__type_id='wg')
         GroupEventFactory(type='status_update',group=chair.group)
-        url = urlreverse('ietf.group.info.group_about',kwargs={'acronym':chair.group.acronym}) 
+        url = urlreverse('ietf.group.views.group_about',kwargs={'acronym':chair.group.acronym}) 
         response = self.client.get(url)
         self.assertEqual(response.status_code,200)
         q=PyQuery(response.content)
@@ -1092,7 +1092,7 @@ class StatusUpdateTests(TestCase):
     def test_view_status_update(self):
         chair = RoleFactory(name_id='chair',group__type_id='wg')
         event = GroupEventFactory(type='status_update',group=chair.group)
-        url = urlreverse('ietf.group.info.group_about_status',kwargs={'acronym':chair.group.acronym}) 
+        url = urlreverse('ietf.group.views.group_about_status',kwargs={'acronym':chair.group.acronym}) 
         response = self.client.get(url)
         self.assertEqual(response.status_code,200)
         q=PyQuery(response.content)
@@ -1107,7 +1107,7 @@ class StatusUpdateTests(TestCase):
     def test_edit_status_update(self):
         chair = RoleFactory(name_id='chair',group__type_id='wg')
         event = GroupEventFactory(type='status_update',group=chair.group)
-        url = urlreverse('ietf.group.info.group_about_status_edit',kwargs={'acronym':chair.group.acronym}) 
+        url = urlreverse('ietf.group.views.group_about_status_edit',kwargs={'acronym':chair.group.acronym}) 
         response = self.client.get(url)
         self.assertEqual(response.status_code,404)
         self.client.login(username=chair.person.user.username,password='%s+password'%chair.person.user.username)
@@ -1129,7 +1129,7 @@ class StatusUpdateTests(TestCase):
     def test_view_all_status_updates(self):
         GroupEventFactory(type='status_update',desc='blah blah blah',group__type_id='wg')
         GroupEventFactory(type='status_update',desc='blah blah blah',group__type_id='rg')
-        url = urlreverse('ietf.group.info.all_status')
+        url = urlreverse('ietf.group.views.all_status')
         response = self.client.get(url)
         self.assertEqual(response.status_code,200)
        

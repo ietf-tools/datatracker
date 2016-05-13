@@ -68,8 +68,8 @@ class GroupDocDependencyGraphTests(TestCase):
         make_test_data()
         for group in Group.objects.filter(Q(type="wg") | Q(type="rg")):
             client = Client(Accept='text/plain')
-            for url in [ urlreverse("ietf.group.info.dependencies",kwargs=dict(acronym=group.acronym,output_type="dot")),
-                         urlreverse("ietf.group.info.dependencies",kwargs=dict(acronym=group.acronym,group_type=group.type_id,output_type="dot")),
+            for url in [ urlreverse("ietf.group.views.dependencies",kwargs=dict(acronym=group.acronym,output_type="dot")),
+                         urlreverse("ietf.group.views.dependencies",kwargs=dict(acronym=group.acronym,group_type=group.type_id,output_type="dot")),
                        ]:
                 r = client.get(url)
                 self.assertTrue(r.status_code == 200, "Failed to receive "
@@ -81,8 +81,8 @@ class GroupDocDependencyGraphTests(TestCase):
         make_test_data()
         for group in Group.objects.filter(Q(type="wg") | Q(type="rg")):
             client = Client(Accept='application/pdf')
-            for url in [ urlreverse("ietf.group.info.dependencies",kwargs=dict(acronym=group.acronym,output_type="pdf")),
-                         urlreverse("ietf.group.info.dependencies",kwargs=dict(acronym=group.acronym,group_type=group.type_id,output_type="pdf")),
+            for url in [ urlreverse("ietf.group.views.dependencies",kwargs=dict(acronym=group.acronym,output_type="pdf")),
+                         urlreverse("ietf.group.views.dependencies",kwargs=dict(acronym=group.acronym,group_type=group.type_id,output_type="pdf")),
                        ]:
                 r = client.get(url)
                 self.assertTrue(r.status_code == 200, "Failed to receive "
@@ -94,8 +94,8 @@ class GroupDocDependencyGraphTests(TestCase):
         make_test_data()
         for group in Group.objects.filter(Q(type="wg") | Q(type="rg")):
             client = Client(Accept='image/svg+xml')
-            for url in [ urlreverse("ietf.group.info.dependencies",kwargs=dict(acronym=group.acronym,output_type="svg")),
-                         urlreverse("ietf.group.info.dependencies",kwargs=dict(acronym=group.acronym,group_type=group.type_id,output_type="svg")),
+            for url in [ urlreverse("ietf.group.views.dependencies",kwargs=dict(acronym=group.acronym,output_type="svg")),
+                         urlreverse("ietf.group.views.dependencies",kwargs=dict(acronym=group.acronym,group_type=group.type_id,output_type="svg")),
                        ]:
                 r = client.get(url)
                 self.assertTrue(r.status_code == 200, "Failed to receive "
@@ -141,7 +141,7 @@ class GroupDerivedArchiveTests(TestCase):
         group = GroupFactory()
         group.list_archive = 'https://mailarchive.ietf.org/arch/browse/%s/'%group.acronym
         group.save()
-        url = urlreverse("ietf.group.info.derived_archives",kwargs=dict(acronym=group.acronym))
+        url = urlreverse("ietf.group.views.derived_archives",kwargs=dict(acronym=group.acronym))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
@@ -153,7 +153,7 @@ class GroupDerivedArchiveTests(TestCase):
         group = GroupFactory()
         group.list_archive = 'https://alienarchive.example.com'
         group.save()
-        url = urlreverse("ietf.group.info.derived_archives",kwargs=dict(acronym=group.acronym))
+        url = urlreverse("ietf.group.views.derived_archives",kwargs=dict(acronym=group.acronym))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)

@@ -23,7 +23,7 @@ def group_menu_data(request):
 
     groups_by_parent = defaultdict(list)
     for g in groups:
-        url = urlreverse("ietf.group.info.group_home", kwargs={ 'group_type': g.type_id, 'acronym': g.acronym })
+        url = urlreverse("ietf.group.views.group_home", kwargs={ 'group_type': g.type_id, 'acronym': g.acronym })
         groups_by_parent[g.parent_id].append({ 'acronym': g.acronym, 'name': escape(g.name), 'url': url })
 
     return JsonResponse(groups_by_parent)

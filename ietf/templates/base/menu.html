@@ -14,9 +14,9 @@
     <ul class="dropdown-menu" role="menu">
   {% endif %}
 
-  <li><a href="{% url "ietf.group.info.active_groups" group_type="wg" %}">Active WGs</a></li>
-  <li><a href="{% url "ietf.group.info.active_groups" group_type="rg" %}">Active RGs</a></li>
-  <li class="dropdown-submenu group-menu"><a href="{% url "ietf.group.info.active_groups" %}">Other</a>{% active_groups_menu %} </li>
+  <li><a href="{% url "ietf.group.views.active_groups" group_type="wg" %}">Active WGs</a></li>
+  <li><a href="{% url "ietf.group.views.active_groups" group_type="rg" %}">Active RGs</a></li>
+  <li class="dropdown-submenu group-menu"><a href="{% url "ietf.group.views.active_groups" %}">Other</a>{% active_groups_menu %} </li>
 
   {% if flavor == "top" %}<li class="divider hidden-xs"></li>{% endif %}
   <li {%if flavor == "top" %}class="dropdown-header visible-lg-block"{% else %}class="nav-header hidden-nojs"{% endif %}>By area/parent</li>
@@ -25,12 +25,12 @@
 
   {% if flavor == "top" %}<li class="divider hidden-xs"></li>{% endif %}
   <li {%if flavor == "top" %}class="dropdown-header hidden-xs"{% else %}class="nav-header"{% endif %}>New work</li>
-  <li><a href="{% url "ietf.group.info.chartering_groups" %}">Chartering groups</a></li>
-  <li><a href="{% url "ietf.group.info.bofs" group_type="wg" %}">BOFs</a></li>
+  <li><a href="{% url "ietf.group.views.chartering_groups" %}">Chartering groups</a></li>
+  <li><a href="{% url "ietf.group.views.bofs" group_type="wg" %}">BOFs</a></li>
 
   {% if flavor == "top" %}<li class="divider hidden-xs"></li>{% endif %}
   <li {%if flavor == "top" %}class="dropdown-header hidden-xs"{% else %}class="nav-header"{% endif %}>Other groups</li>
-  <li><a href="{% url "ietf.group.info.concluded_groups" %}">Concluded groups</a></li>
+  <li><a href="{% url "ietf.group.views.concluded_groups" %}">Concluded groups</a></li>
   <li><a href="https://www.ietf.org/list/nonwg.html">Non-WG lists</a></li>
 
 {% if flavor == "top" %}</ul>{% endif %}

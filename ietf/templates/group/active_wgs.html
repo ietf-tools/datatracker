@@ -17,9 +17,9 @@
 
       <h1>Active IETF working groups</h1>
 
-      <a class="btn btn-default" href="{% url "ietf.group.info.concluded_groups" %}">Concluded WGs</a>
+      <a class="btn btn-default" href="{% url "ietf.group.views.concluded_groups" %}">Concluded WGs</a>
       <a class="btn btn-default" href="https://www.ietf.org/dyn/wg/charter/history/">Historic charters</a>
-      <a class="btn btn-default" href="{% url "ietf.group.info.all_status" %}">Status Reports</a>
+      <a class="btn btn-default" href="{% url "ietf.group.views.all_status" %}">Status Reports</a>
 
       {% for area in areas %}
         <h2 class="anchor-target" id="{{area.acronym}}">{{ area.name }} ({{ area.acronym }})</h2>
@@ -59,7 +59,7 @@
             <tbody>
 	      {% for group in area.groups %}
 	        <tr>
-	          <td><a href="{% url "ietf.group.info.group_home" group_type=group.type_id acronym=group.acronym %}">{{ group.acronym }}</a></td>
+	          <td><a href="{% url "ietf.group.views.group_home" group_type=group.type_id acronym=group.acronym %}">{{ group.acronym }}</a></td>
 	          <td>
 		     <a href="mailto:{{ group.ad_role.email.address }}" title="{{ group.ad_role.person.plain_name }} &lt;{{ group.ad_role.email.address }}&gt;">{{ group.ad_role.person.plain_name.split.0 }}</a>
 	          </td>

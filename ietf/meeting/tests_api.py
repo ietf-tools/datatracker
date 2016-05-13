@@ -180,7 +180,7 @@ class ApiTests(TestCase):
         make_meeting_test_data()
         group = Group.objects.get(acronym="mars")
 
-        url = urlreverse("ietf.group.ajax.group_json", kwargs=dict(acronym=group.acronym))
+        url = urlreverse("ietf.group.views_ajax.group_json", kwargs=dict(acronym=group.acronym))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         info = json.loads(r.content)

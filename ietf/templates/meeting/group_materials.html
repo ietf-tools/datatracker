@@ -10,7 +10,7 @@
     {% if session.name %}
       <div class="anchor-target" id="{{ session.name|slugify }}">{{ session.name }}</div>
     {% else %}
-      <div class="anchor-target" id="{{session.group.acronym}}"><a href="{% url 'ietf.group.info.group_home' acronym=session.group.acronym %}">{{session.group.acronym}}</a></div>
+      <div class="anchor-target" id="{{session.group.acronym}}"><a href="{% url 'ietf.group.views.group_home' acronym=session.group.acronym %}">{{session.group.acronym}}</a></div>
       {% if session.group.state.slug == "bof" %}
         <span class="label label-success">{{ session.group.state.slug|upper }}</span>
       {% endif %}

@@ -23,7 +23,7 @@
     <tbody>
     {% for group in teams %}
         <tr>
-          <td><a href="{% url "ietf.group.info.group_home" acronym=group.acronym %}">{{ group.acronym }}</a></td>
+          <td><a href="{% url "ietf.group.views.group_home" acronym=group.acronym %}">{{ group.acronym }}</a></td>
           <td>{{ group.name }}</td>
           <td>
             {% for chair in group.chairs %}

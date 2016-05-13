@@ -17,7 +17,7 @@
 	      <div class="btn-group-vertical btn-block">
 	        {% for group in area.active_groups %}
 	          <div class="btn-group btn-group-xs btn-group-justified">
-	            <a href="{% url "ietf.group.info.group_home" group_type=group.type_id acronym=group.acronym %}" class="btn btn-default">
+	            <a href="{% url "ietf.group.views.group_home" group_type=group.type_id acronym=group.acronym %}" class="btn btn-default">
 		      {{group.acronym}}
 	            </a>
 	          </div>
@@ -29,7 +29,7 @@
 	    <div class="btn-group-vertical btn-block">
 	      {% for group in rgs %}
 	        <div class="btn-group btn-group-xs btn-group-justified">
-	          <a href="{% url "ietf.group.info.group_home" group_type=group.type_id acronym=group.acronym %}" class="btn btn-default">
+	          <a href="{% url "ietf.group.views.group_home" group_type=group.type_id acronym=group.acronym %}" class="btn btn-default">
 	            {{group.acronym}}
 	          </a>
 	        </div>

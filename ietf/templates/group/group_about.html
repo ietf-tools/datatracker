@@ -57,7 +57,7 @@
           {% else %}
             (None)
             {% if user|has_role:"Area Director,Secretariat" %}
-              <a class="btn btn-warning btn-xs" href="{% url "ietf.group.edit.submit_initial_charter" group_type=group.type_id acronym=group.acronym %}">Submit charter</a>
+              <a class="btn btn-warning btn-xs" href="{% url "ietf.group.views_edit.submit_initial_charter" group_type=group.type_id acronym=group.acronym %}">Submit charter</a>
             {% endif %}
           {% endif %}
         </td>
@@ -74,9 +74,9 @@
            {% else %}
               (None)
            {% endif %}
-           <a class="btn btn-default btn-xs" href="{% url "ietf.group.info.group_about_status" acronym=group.acronym %}">Show</a>
+           <a class="btn btn-default btn-xs" href="{% url "ietf.group.views.group_about_status" acronym=group.acronym %}">Show</a>
            {% if can_provide_status_update %}
-             <a class="btn btn-default btn-xs" href="{% url "ietf.group.info.group_about_status_edit" acronym=group.acronym %}">Edit</a>
+             <a class="btn btn-default btn-xs" href="{% url "ietf.group.views.group_about_status_edit" acronym=group.acronym %}">Edit</a>
            {% endif %}
         </td>
       </tr>

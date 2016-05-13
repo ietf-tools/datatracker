@@ -12,11 +12,11 @@
 <p>When changing the area structure, the IESG can decide which members are responsible for new and changed areas, including making one sitting AD responsible for multiple areas, but the IESG can only add new members through the <a href="https://www.ietf.org/nomcom/index.html">nomcom process</a>.</p>
 <p>The primary task of area management is handled by one or two Area Directors per area. An AD may be advised by one or more directorates, which are created, selected, chaired and if necessary disbanded by the AD. Directorates may be specific to an area, specific to a technology, or chartered in some other fashion.</p>
 <p>The ADs for an area are jointly responsible for making sure the WGs in the area are well coordinated, that there is coverage for the technologies needed in the area, and that the challenges most important to the Internet in that area are indeed being worked on.</p>
-<ul><li>A full list of active working groups, sorted by area, may be found at <a href="{% url 'ietf.group.info.active_groups' group_type='wg'%}">{% url 'ietf.group.info.active_groups' group_type='wg' %}</a>.</li></ul>
+<ul><li>A full list of active working groups, sorted by area, may be found at <a href="{% url 'ietf.group.views.active_groups' group_type='wg'%}">{% url 'ietf.group.views.active_groups' group_type='wg' %}</a>.</li></ul>
 <p>The IESG decides which areas working groups belong to. The charter of each area is listed below.</p>
 
   {% for area in areas %}
-  <h2><a href="{%url 'ietf.group.info.active_groups' group_type='wg'%}#{{area.acronym}}">{{area.name}} ({{area.acronym}})</a></h2>
+  <h2><a href="{%url 'ietf.group.views.active_groups' group_type='wg'%}#{{area.acronym}}">{{area.name}} ({{area.acronym}})</a></h2>
   <pre class="pasted">{{area.description}}</pre>
   {% endfor %}
 <p>For more information about the role of the IESG in areas and working groups, please see <a href="https://www.ietf.org/rfc/rfc3710.txt">RFC 3710 ("An IESG charter")</a>, section 6 and <a href="https://www.ietf.org/rfc/rfc2418.txt">RFC 2418 ("IETF Working Group Guidelines and Procedures")</a>.</p>

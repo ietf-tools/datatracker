@@ -21,7 +21,7 @@
     <tbody>
     {% for typename in grouptypes %}
         <tr>
-          <td><a href="{% url "ietf.group.info.active_groups" group_type=typename.slug%}">{{ typename.name }}</a></td>
+          <td><a href="{% url "ietf.group.views.active_groups" group_type=typename.slug%}">{{ typename.name }}</a></td>
           <td>{{ typename.desc }}</td>
         </tr>
     {% endfor %}

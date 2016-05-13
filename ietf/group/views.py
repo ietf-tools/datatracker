@@ -338,27 +338,27 @@ def construct_group_menu_context(request, group, selected, group_type, others):
     # menu entries
     entries = []
     if group.features.has_documents:
-        entries.append(("Documents", urlreverse("ietf.group.info.group_documents", kwargs=kwargs)))
+        entries.append(("Documents", urlreverse("ietf.group.views.group_documents", kwargs=kwargs)))
     if group.features.has_chartering_process:
         entries.append(("Charter", urlreverse("group_charter", kwargs=kwargs)))
     else:
         entries.append(("About", urlreverse("group_about", kwargs=kwargs)))
     if group.features.has_materials and get_group_materials(group).exists():
-        entries.append(("Materials", urlreverse("ietf.group.info.materials", kwargs=kwargs)))
+        entries.append(("Materials", urlreverse("ietf.group.views.materials", kwargs=kwargs)))
     if group.type_id in ('rg','wg','team'):
-        entries.append(("Meetings", urlreverse("ietf.group.info.meetings", kwargs=kwargs)))
-    entries.append(("Email expansions", urlreverse("ietf.group.info.email", kwargs=kwargs)))
-    entries.append(("History", urlreverse("ietf.group.info.history", kwargs=kwargs)))
+        entries.append(("Meetings", urlreverse("ietf.group.views.meetings", kwargs=kwargs)))
+    entries.append(("Email expansions", urlreverse("ietf.group.views.email", kwargs=kwargs)))
+    entries.append(("History", urlreverse("ietf.group.views.history", kwargs=kwargs)))
 
     if group.list_archive.startswith("http:") or group.list_archive.startswith("https:") or group.list_archive.startswith("ftp:"):
         if 'mailarchive.ietf.org' in group.list_archive:
-            entries.append(("List archive", urlreverse("ietf.group.info.derived_archives", kwargs=kwargs)))
+            entries.append(("List archive", urlreverse("ietf.group.views.derived_archives", kwargs=kwargs)))
         else:
             entries.append((mark_safe("List archive &raquo;"), group.list_archive))
 
     if group.features.has_documents:
         kwargs["output_type"] = "svg"
-        entries.append((mark_safe("Dependency graph &raquo;"), urlreverse("ietf.group.info.dependencies", kwargs=kwargs)))
+        entries.append((mark_safe("Dependency graph &raquo;"), urlreverse("ietf.group.views.dependencies", kwargs=kwargs)))
         del kwargs["output_type"]
 
     if group.has_tools_page():
@@ -388,10 +388,10 @@ def construct_group_menu_context(request, group, selected, group_type, others):
         actions.append((u"Edit group", urlreverse("group_edit", kwargs=kwargs)))
 
     if group.features.customize_workflow and (is_chair or can_manage):
-        actions.append((u"Customize workflow", urlreverse("ietf.group.edit.customize_workflow", kwargs=kwargs)))
+        actions.append((u"Customize workflow", urlreverse("ietf.group.views_edit.customize_workflow", kwargs=kwargs)))
 
     if group.state_id in ("active", "dormant") and not group.type_id in ["sdo", "rfcedtyp", "isoc", ] and can_manage:
-        actions.append((u"Request closing group", urlreverse("ietf.group.edit.conclude", kwargs=kwargs)))
+        actions.append((u"Request closing group", urlreverse("ietf.group.views_edit.conclude", kwargs=kwargs)))
 
     d = {
         "group": group,
@@ -573,7 +573,7 @@ def group_about_status_edit(request, acronym, group_type=None):
                     type='status_update',
                     desc=update_text,
                 ) 
-                return redirect('ietf.group.info.group_about',acronym=group.acronym)
+                return redirect('ietf.group.views.group_about',acronym=group.acronym)
         else:
             form = None
     else:

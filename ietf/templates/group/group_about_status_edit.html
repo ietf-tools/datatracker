@@ -20,7 +20,7 @@
 
     {% buttons %}
       <button type="submit" class="btn btn-primary" name="submit_response" value="Submit">Submit</button>
-      <a class="btn btn-default pull-right" href="{% url "ietf.group.info.group_about" acronym=group.acronym %}">Back</a>
+      <a class="btn btn-default pull-right" href="{% url "ietf.group.views.group_about" acronym=group.acronym %}">Back</a>
     {% endbuttons %}
   </form>
 
