@@ -37,7 +37,7 @@
 
   <h2>Add new subscription</h2>
 
-  <p class="text-muted">The email addresses you can choose between are those registered in <a href="{% url "account_profile" %}">your profile</a>.</p>
+  <p class="text-muted">The email addresses you can choose between are those registered in <a href="{% url "ietf.ietfauth.views.profile" %}">your profile</a>.</p>
 
   {% if form.fields.email.queryset %}
     <form method="post">
@@ -51,7 +51,7 @@
       {% endbuttons %}
     </form>
   {% else %}
-    <div class="alert alert-danger">You do not have any active email addresses registered with your account. Go to <a href="{% url "account_profile" %}">your profile and add or activate one</a>.</div>
+    <div class="alert alert-danger">You do not have any active email addresses registered with your account. Go to <a href="{% url "ietf.ietfauth.views.profile" %}">your profile and add or activate one</a>.</div>
 
     <a class="btn btn-default" href="{{ clist.get_absolute_url }}">Back to list</a>
   {% endif %}
