@@ -24,7 +24,7 @@ def check_cdn_directory_exists(app_configs, **kwargs):
 
 @checks.register('files')
 def check_group_email_aliases_exists(app_configs, **kwargs):
-    from ietf.group.info import check_group_email_aliases
+    from ietf.group.views import check_group_email_aliases
     errors = []
     try:
         ok = check_group_email_aliases()
