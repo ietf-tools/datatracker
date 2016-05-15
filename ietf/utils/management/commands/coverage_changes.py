@@ -12,6 +12,7 @@ import debug                            # pyflakes:ignore
 
 class Command(BaseCommand):
     help = "Compare coverage between the latest release and the latest test run."
+    args = "[master_json latest_json]"
     option_list = BaseCommand.option_list + (
         make_option('--sections', default='template,url,code', dest='sections',
             help='Specify which kinds of coverage changes to show. Default: %default'),
