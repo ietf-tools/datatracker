@@ -12,8 +12,8 @@ DTDIR=/a/www/ietf-datatracker/web
 
 # m h dom mon dow user  command
 
-05 00   *  *  *   root  $DTDIR/bin/daily
+05 00   *  *  *   wwwrun  test -x $DTDIR/bin/daily  && $DTDIR/bin/daily
 
-05 1-23 *  *  *	  root  $DTDIR/bin/hourly
+05 1-23 *  *  *   wwwrun  test -x $DTDIR/bin/hourly && $DTDIR/bin/hourly
 
 
