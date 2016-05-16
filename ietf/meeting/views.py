@@ -41,6 +41,8 @@ from ietf.meeting.helpers import convert_draft_to_pdf, get_earliest_session_date
 from ietf.meeting.helpers import can_view_interim_request, can_approve_interim_request
 from ietf.meeting.helpers import can_request_interim_meeting, get_announcement_initial
 from ietf.meeting.helpers import sessions_post_save, is_meeting_approved
+from ietf.meeting.helpers import send_interim_cancellation_notice
+from ietf.meeting.helpers import send_interim_approval_request
 from ietf.utils.mail import send_mail_message
 from ietf.utils.pipe import pipe
 from ietf.utils.pdf import pdf_pages
@@ -959,7 +961,7 @@ def interim_send_announcement(request, number):
                'RG Chair')
 def interim_pending(request):
     '''View which shows interim meeting requests pending approval'''
-    meetings = Meeting.objects.filter(type='interim', session__status='apprw').distinct()
+    meetings = Meeting.objects.filter(type='interim', session__status='apprw').distinct().order_by('date')
     menu_entries = get_menu_entries(request)
     selected_menu_entry = 'pending'
 
@@ -1006,14 +1008,16 @@ def interim_request(request):
                 formset = SessionFormset(instance=meeting, data=request.POST)
                 formset.is_valid()
                 formset.save()
-
-                # post save
                 sessions_post_save(formset)
+
+                if not is_approved:
+                    send_interim_approval_request(meetings=[meeting])
 
             # series require special handling, each session gets it's own
             # meeting object we won't see this on edit because series are
             # subsequently dealt with individually
             elif meeting_type == 'series':
+                series = []
                 SessionFormset.form = staticmethod(curry(
                     InterimSessionModelForm,
                     user=request.user,
@@ -1032,9 +1036,11 @@ def interim_request(request):
                     session = session_form.save(commit=False)
                     session.meeting = meeting
                     session.save()
-
-                    # post save
+                    series.append(meeting)
                     sessions_post_save([session_form])
+
+                if not is_approved:
+                    send_interim_approval_request(meetings=series)
 
             messages.success(request, 'Interim meeting request submitted')
             return redirect(upcoming)
@@ -1071,6 +1077,7 @@ def interim_request_details(request, number):
         if request.POST.get('cancel'):
             if meeting.session_set.first().status.slug == 'sched':
                 meeting.session_set.update(status_id='canceled')
+                send_interim_cancellation_notice(meeting)
             else:
                 meeting.session_set.update(status_id='canceledpa')
             messages.success(request, 'Interim meeting cancelled')
@@ -1129,7 +1136,7 @@ def upcoming(request):
     '''List of upcoming meetings'''
     today = datetime.datetime.today()
     meetings = Meeting.objects.filter(date__gte=today).exclude(
-        session__status__in=('apprw', 'schedpa')).order_by('date')
+        session__status__in=('apprw', 'schedpa', 'canceledpa')).order_by('date')
 
     # extract groups hierarchy for display filter
     seen = set()

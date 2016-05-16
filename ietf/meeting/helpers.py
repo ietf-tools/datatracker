@@ -9,6 +9,7 @@ from django.http import HttpRequest, Http404
 from django.db.models import Max, Q, Prefetch, F
 from django.conf import settings
 from django.core.cache import cache
+from django.core.urlresolvers import reverse
 from django.utils.cache import get_cache_key
 from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string
@@ -20,9 +21,11 @@ from ietf.doc.utils import get_document_content
 from ietf.group.models import Group
 from ietf.ietfauth.utils import has_role, user_is_person
 from ietf.liaisons.utils import get_person_for_user
+from ietf.mailtrigger.utils import gather_address_lists
 from ietf.person.models  import Person
 from ietf.meeting.models import Meeting, Schedule, TimeSlot, SchedTimeSessAssignment
 from ietf.utils.history import find_history_active_at, find_history_replacements_active_at
+from ietf.utils.mail import send_mail
 from ietf.utils.pipe import pipe
 
 def find_ads_for_meeting(meeting):
@@ -278,7 +281,6 @@ def agenda_permissions(meeting, schedule, user):
     return cansee, canedit, secretariat
 
 def session_constraint_expire(request,session):
-    from django.core.urlresolvers import reverse
     from ajax import session_constraints
     path = reverse(session_constraints, args=[session.meeting.number, session.pk])
     temp_request = HttpRequest()
@@ -491,6 +493,61 @@ def get_next_agenda_name(meeting):
         meeting=meeting.number,
         group=group.acronym,
         sequence=str(last_sequence + 1).zfill(2))
+
+def send_interim_approval_request(meetings):
+    """Sends an email to the secretariat, group chairs, and resposnible area
+    director or the IRTF chair noting that approval has been requested for a
+    new interim meeting.  Takes a list of one or more meetings."""
+    group = meetings[0].session_set.first().group
+    requester = meetings[0].session_set.first().requested_by
+    (to_email, cc_list) = gather_address_lists('session_requested',group=group,person=requester)
+    from_email = ('"IETF Meeting Session Request Tool"','session_request_developers@ietf.org')
+    subject = '{group} - New Interim Meeting Request'.format(group=group.acronym)
+    template = 'meeting/interim_approval_request.txt'
+    approval_urls = []
+    for meeting in meetings:
+        url = settings.IDTRACKER_BASE_URL + reverse('ietf.meeting.views.interim_request_details', kwargs={'number': meeting.number})
+        approval_urls.append(url)
+    if len(meetings) > 1:
+        is_series = True
+    else:
+        is_series = False
+    context = locals()
+    send_mail(None,
+              to_email,
+              from_email,
+              subject,
+              template,
+              context,
+              cc=cc_list)
+
+def send_interim_cancellation_notice(meeting):
+    """Sends an email that a scheduled interim meeting has been cancelled."""
+    session = meeting.session_set.first()
+    group = session.group
+    to_email = settings.INTERIM_ANNOUNCE_TO_EMAIL
+    (_, cc_list) = gather_address_lists('session_request_cancelled',group=group)
+    from_email = settings.INTERIM_ANNOUNCE_FROM_EMAIL
+    subject = '{group} ({acronym}) {type} Interim Meeting Cancelled (was {date})'.format(
+        group=group.name,
+        acronym=group.acronym,
+        type=group.type.slug.upper(),
+        date=meeting.date.strftime('%Y-%m-%d'))
+    start_time = session.official_timeslotassignment().timeslot.time
+    end_time = start_time + session.requested_duration
+    if meeting.session_set.filter(status='sched').count() > 1:
+        is_multi_day = True
+    else:
+        is_multi_day = False
+    template = 'meeting/interim_cancellation_notice.txt'
+    context = locals()
+    send_mail(None,
+              to_email,
+              from_email,
+              subject,
+              template,
+              context,
+              cc=cc_list)
 
 def sessions_post_save(forms):
     """Helper function to perform various post save operations on each form of a

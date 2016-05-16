@@ -12,6 +12,8 @@ from pyquery import PyQuery
 from ietf.doc.models import Document
 from ietf.group.models import Group
 from ietf.meeting.helpers import can_approve_interim_request, can_view_interim_request
+from ietf.meeting.helpers import send_interim_approval_request
+from ietf.meeting.helpers import send_interim_cancellation_notice
 from ietf.meeting.models import Session, TimeSlot, Meeting
 from ietf.meeting.test_data import make_meeting_test_data
 from ietf.name.models import SessionStatusName
@@ -817,3 +819,19 @@ class InterimTests(TestCase):
         login_testing_unauthorized(self,"plain",url)
         r = self.client.get(url)
         self.assertEqual(r.status_code, 403)
+
+    def test_send_interim_approval_request(self):
+        make_meeting_test_data()
+        meeting = Meeting.objects.filter(type='interim',session__status='apprw',session__group__acronym='mars').first()
+        length_before = len(outbox)
+        send_interim_approval_request(meetings=[meeting])
+        self.assertEqual(len(outbox),length_before+1)
+        self.assertTrue('New Interim Meeting Request' in outbox[-1]['Subject'])
+
+    def test_send_interim_cancellation_notice(self):
+        make_meeting_test_data()
+        meeting = Meeting.objects.filter(type='interim',session__status='sched',session__group__acronym='mars').first()
+        length_before = len(outbox)
+        send_interim_cancellation_notice(meeting=meeting)
+        self.assertEqual(len(outbox),length_before+1)
+        self.assertTrue('Interim Meeting Cancelled' in outbox[-1]['Subject'])

@@ -224,7 +224,7 @@ def create_interim_directory():
 
     # produce date sorted output
     page = 'proceedings.html'
-    meetings = InterimMeeting.objects.order_by('-date')
+    meetings = InterimMeeting.objects.filter(session__status='sched').order_by('-date')
     response = render(HttpRequest(), 'proceedings/interim_directory.html',{'meetings': meetings})
     path = os.path.join(settings.SECR_INTERIM_LISTING_DIR, page)
     f = open(path,'w')
@@ -233,7 +233,7 @@ def create_interim_directory():
 
     # produce group sorted output
     page = 'proceedings-bygroup.html'
-    qs = InterimMeeting.objects.all()
+    qs = InterimMeeting.objects.filter(session__status='sched')
     meetings = sorted(qs, key=lambda a: a.group().acronym)
     response = render(HttpRequest(), 'proceedings/interim_directory.html',{'meetings': meetings})
     path = os.path.join(settings.SECR_INTERIM_LISTING_DIR, page)

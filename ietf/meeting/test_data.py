@@ -3,7 +3,7 @@ import datetime
 from ietf.doc.models import Document, State
 from ietf.group.models import Group
 from ietf.meeting.models import Meeting, Room, TimeSlot, Session, Schedule, SchedTimeSessAssignment, ResourceAssociation, SessionPresentation
-from ietf.meeting.helpers import create_interim_meeting, assign_interim_session
+from ietf.meeting.helpers import create_interim_meeting
 from ietf.name.models import RoomResourceName
 from ietf.person.models import Person
 from ietf.utils.test_data import make_test_data
