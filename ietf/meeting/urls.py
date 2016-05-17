@@ -73,6 +73,7 @@ urlpatterns = [
     url(r'^interim/request/$', views.interim_request),
     url(r'^interim/request/(?P<number>[A-Za-z0-9._+-]+)/$', views.interim_request_details),
     url(r'^interim/request/(?P<number>[A-Za-z0-9._+-]+)/edit/$', views.interim_request_edit),
+    url(r'^interim/request/(?P<number>[A-Za-z0-9._+-]+)/cancel/$', views.interim_request_cancel),
     url(r'^interim/pending/$', views.interim_pending),
     url(r'^$', views.current_materials),
 ]

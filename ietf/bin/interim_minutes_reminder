@@ -1,0 +1,23 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# -*- Python -*-
+#
+'''
+This script calls ietf.meeting.helpers.check_interim_minutes() which sends
+a reminder email for interim meetings that occurred 10 days ago but still
+don't have minutes.
+'''
+
+# Set PYTHONPATH and load environment variables for standalone script -----------------
+import os, sys
+basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+sys.path = [ basedir ] + sys.path
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ietf.settings")
+
+import django
+django.setup()
+# -------------------------------------------------------------------------------------
+
+from ietf.meeting.helpers import check_interim_minutes
+
+check_interim_minutes()

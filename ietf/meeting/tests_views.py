@@ -14,8 +14,9 @@ from ietf.group.models import Group
 from ietf.meeting.helpers import can_approve_interim_request, can_view_interim_request
 from ietf.meeting.helpers import send_interim_approval_request
 from ietf.meeting.helpers import send_interim_cancellation_notice
+from ietf.meeting.helpers import send_interim_minutes_reminder
 from ietf.meeting.models import Session, TimeSlot, Meeting
-from ietf.meeting.test_data import make_meeting_test_data
+from ietf.meeting.test_data import make_meeting_test_data, make_interim_meeting
 from ietf.name.models import SessionStatusName
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized, unicontent
 from ietf.utils.mail import outbox
@@ -794,13 +795,45 @@ class InterimTests(TestCase):
 
     def test_interim_request_cancel(self):
         make_meeting_test_data()
-        meeting = Meeting.objects.filter(type='interim',session__status='apprw',session__group__acronym='mars').first()
-        url = urlreverse('ietf.meeting.views.interim_request_details',kwargs={'number':meeting.number})
-        login_testing_unauthorized(self,"secretary",url)
-        r = self.client.post(url,{'cancel':'Cancel'})
+        meeting = Meeting.objects.filter(type='interim', session__status='apprw', session__group__acronym='mars').first()
+        url = urlreverse('ietf.meeting.views.interim_request_details', kwargs={'number': meeting.number})
+        # ensure no cancel button for unauthorized user
+        self.client.login(username="ameschairman", password="ameschairman+password")
+        r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q("a.btn:contains('Cancel')")),0)
+        # ensure cancel button for authorized user
+        self.client.login(username="marschairman", password="marschairman+password")
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q("a.btn:contains('Cancel')")),1)
+        # ensure fail unauthorized
+        url = urlreverse('ietf.meeting.views.interim_request_cancel', kwargs={'number': meeting.number})
+        comments = 'Bob cannot make it'
+        self.client.login(username="ameschairman", password="ameschairman+password")
+        r = self.client.post(url, {'comments': comments})
+        self.assertEqual(r.status_code, 403)
+        # test cancelling before announcement
+        self.client.login(username="marschairman", password="marschairman+password")
+        length_before = len(outbox)
+        r = self.client.post(url, {'comments': comments})
+        self.assertRedirects(r, urlreverse('ietf.meeting.views.upcoming'))
         for session in meeting.session_set.all():
-            self.assertEqual(session.status_id,'canceledpa')
+            self.assertEqual(session.status_id, 'canceledpa')
+            self.assertEqual(session.comments, comments)
+        self.assertEqual(len(outbox), length_before)     # no email notice
+        # test cancelling after announcement
+        meeting = Meeting.objects.filter(type='interim', session__status='sched', session__group__acronym='mars').first()
+        url = urlreverse('ietf.meeting.views.interim_request_cancel', kwargs={'number': meeting.number})
+        r = self.client.post(url, {'comments': comments})
+        self.assertRedirects(r, urlreverse('ietf.meeting.views.upcoming'))
+        for session in meeting.session_set.all():
+            self.assertEqual(session.status_id, 'canceled')
+            self.assertEqual(session.comments, comments)
+        self.assertEqual(len(outbox), length_before + 1)
+        self.assertTrue('Interim Meeting Cancelled' in outbox[-1]['Subject'])
 
     def test_interim_request_edit(self):
         make_meeting_test_data()
@@ -835,3 +868,13 @@ class InterimTests(TestCase):
         send_interim_cancellation_notice(meeting=meeting)
         self.assertEqual(len(outbox),length_before+1)
         self.assertTrue('Interim Meeting Cancelled' in outbox[-1]['Subject'])
+
+    def test_send_interim_minutes_reminder(self):
+        make_meeting_test_data()
+        group = Group.objects.get(acronym='mars')
+        date = datetime.datetime.today() - datetime.timedelta(days=10)
+        meeting = make_interim_meeting(group=group, date=date, status='sched')
+        length_before = len(outbox)
+        send_interim_minutes_reminder(meeting=meeting)
+        self.assertEqual(len(outbox),length_before+1)
+        self.assertTrue('Action Required: Minutes' in outbox[-1]['Subject'])

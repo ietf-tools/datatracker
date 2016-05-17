@@ -53,7 +53,7 @@
   {% endif %}
   {% if can_edit %}
     {% if sessions.0.status.slug == 'apprw' or sessions.0.status.slug == 'scheda' or sessions.0.status.slug == 'sched' %}
-        <input class="btn btn-default" type="submit" value="Cancel" name='cancel' />
+        <a class="btn btn-default" href="{% url 'ietf.meeting.views.interim_request_cancel' number=meeting.number %}">Cancel</a>
     {% endif %}
   {% endif %}
   </form>

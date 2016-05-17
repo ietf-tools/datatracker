@@ -4681,6 +4681,14 @@
 },
 {
  "fields": {
+  "template": null,
+  "desc": "The group's secretaries"
+ },
+ "model": "mailtrigger.recipient",
+ "pk": "group_secretaries"
+},
+{
+ "fields": {
   "template": "{{ changed_personnel | join:\", \" }}",
   "desc": "Any personnel who were added or deleted when a group's personnel changes"
  },
@@ -5901,6 +5909,20 @@
  },
  "model": "mailtrigger.mailtrigger",
  "pk": "session_scheduled"
+},
+{
+ "fields": {
+  "cc": [
+   "group_responsible_directors"
+  ],
+  "to": [
+   "group_chairs",
+   "group_secretaries"
+  ],
+  "desc": "Recipients when a group is sent a reminder to submit minutes for a session"
+ },
+ "model": "mailtrigger.mailtrigger",
+ "pk": "session_minutes_reminder"
 },
 {
  "fields": {

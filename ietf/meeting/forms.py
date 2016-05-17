@@ -360,3 +360,14 @@ class InterimAnnounceForm(forms.ModelForm):
         message.save()
 
         return message
+
+
+class InterimCancelForm(forms.Form):
+    group = forms.CharField(max_length=255,required=False)
+    date = forms.DateField(required=False)
+    comments = forms.CharField(required=False, widget=forms.Textarea(attrs={'placeholder': 'enter optional comments here'}))
+
+    def __init__(self, *args, **kwargs):
+        super(InterimCancelForm, self).__init__(*args, **kwargs)
+        self.fields['group'].widget.attrs['disabled'] = True
+        self.fields['date'].widget.attrs['disabled'] = True

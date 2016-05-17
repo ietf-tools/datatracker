@@ -16,7 +16,6 @@ def make_interim_meeting(group,date,status='sched'):
         attendees=10, requested_by=system_person,
         requested_duration=20, status_id=status,
         scheduled=datetime.datetime.now(),type_id="session")
-    #assign_interim_session(session,time)
     slot = TimeSlot.objects.create(
         meeting=meeting,
         type_id="session",

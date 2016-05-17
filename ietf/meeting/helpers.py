@@ -549,6 +549,39 @@ def send_interim_cancellation_notice(meeting):
               context,
               cc=cc_list)
 
+
+def send_interim_minutes_reminder(meeting):
+    """Sends an email reminding chairs to submit minutes of interim *meeting*"""
+    session = meeting.session_set.first()
+    group = session.group
+    (to_email, cc_list) = gather_address_lists('session_minutes_reminder',group=group)
+    from_email = 'proceedings@ietf.org'
+    subject = 'Action Required: Minutes from {group} ({acronym}) {type} Interim Meeting on {date}'.format(
+        group=group.name,
+        acronym=group.acronym,
+        type=group.type.slug.upper(),
+        date=meeting.date.strftime('%Y-%m-%d'))
+    template = 'meeting/interim_minutes_reminder.txt'
+    context = locals()
+    send_mail(None,
+              to_email,
+              from_email,
+              subject,
+              template,
+              context,
+              cc=cc_list)
+
+
+def check_interim_minutes():
+    """Finds interim meetings that occured 10 days ago, if they don't
+    have minutes send a reminder."""
+    date = datetime.datetime.today() - datetime.timedelta(days=10)
+    meetings = Meeting.objects.filter(type='interim', session__status='sched', date=date)
+    for meeting in meetings:
+        if not meeting.session_set.first().minutes():
+            send_interim_minutes_reminder(meeting)
+
+
 def sessions_post_save(forms):
     """Helper function to perform various post save operations on each form of a
     InterimSessionModelForm formset"""

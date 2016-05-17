@@ -47,7 +47,8 @@ from ietf.utils.mail import send_mail_message
 from ietf.utils.pipe import pipe
 from ietf.utils.pdf import pdf_pages
 
-from .forms import InterimMeetingModelForm, InterimAnnounceForm, InterimSessionModelForm
+from .forms import (InterimMeetingModelForm, InterimAnnounceForm, InterimSessionModelForm,
+    InterimCancelForm)
 
 
 def get_menu_entries(request):
@@ -1058,6 +1059,34 @@ def interim_request(request):
 
 @role_required('Area Director', 'Secretariat', 'IRTF Chair', 'WG Chair',
                'RG Chair')
+def interim_request_cancel(request, number):
+    '''View for cancelling an interim meeting request'''
+    meeting = get_object_or_404(Meeting, number=number)
+    group = meeting.session_set.first().group
+    if not can_view_interim_request(meeting, request.user):
+        return HttpResponseForbidden("You do not have permissions to cancel this meeting request")
+
+    if request.method == 'POST':
+        form = InterimCancelForm(request.POST)
+        if form.is_valid():
+            if 'comments' in form.changed_data:
+                meeting.session_set.update(comments=form.cleaned_data.get('comments'))
+            if meeting.session_set.first().status.slug == 'sched':
+                meeting.session_set.update(status_id='canceled')
+                send_interim_cancellation_notice(meeting)
+            else:
+                meeting.session_set.update(status_id='canceledpa')
+            messages.success(request, 'Interim meeting cancelled')
+            return redirect(upcoming)
+    else:
+        form = InterimCancelForm(initial={'group': group.acronym, 'date': meeting.date})
+
+    return render(request, "meeting/interim_request_cancel.html", {
+        "form": form})
+
+
+@role_required('Area Director', 'Secretariat', 'IRTF Chair', 'WG Chair',
+               'RG Chair')
 def interim_request_details(request, number):
     '''View details of an interim meeting reqeust'''
     meeting = get_object_or_404(Meeting, number=number)
@@ -1074,13 +1103,6 @@ def interim_request_details(request, number):
         if request.POST.get('disapprove'):
             meeting.session_set.update(status_id='disappr')
             messages.success(request, 'Interim meeting disapproved')
-        if request.POST.get('cancel'):
-            if meeting.session_set.first().status.slug == 'sched':
-                meeting.session_set.update(status_id='canceled')
-                send_interim_cancellation_notice(meeting)
-            else:
-                meeting.session_set.update(status_id='canceledpa')
-            messages.success(request, 'Interim meeting cancelled')
 
     return render(request, "meeting/interim_request_details.html", {
         "meeting": meeting,
