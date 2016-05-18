@@ -604,6 +604,9 @@ USER_PREFERENCE_DEFAULTS = {
     "left_menu"     : "on",
 }
 
+TRAC_ADMIN_CMD = "/usr/bin/trac-admin"
+TRAC_WIKI_DIR = "/a/www/www6s/trac"
+TRAC_SVN_DIR = "/a/svn/group"
 
 # Put the production SECRET_KEY in settings_local.py, and also any other
 # sensitive or site-specific changes.  DO NOT commit settings_local.py to svn.
