@@ -51,10 +51,20 @@
     <input class="btn btn-default" type="submit" value="Approve" name='approve' />
     <input class="btn btn-default" type="submit" value="Disapprove" name='disapprove' />
   {% endif %}
+  {% if user|has_role:"Secretariat" and sessions.0.status.slug == 'scheda' %}
+        <a class="btn btn-default" href="{% url 'ietf.meeting.views.interim_send_announcement' number=meeting.number %}">Announce</a>
+  {% endif %}
   {% if can_edit %}
     {% if sessions.0.status.slug == 'apprw' or sessions.0.status.slug == 'scheda' or sessions.0.status.slug == 'sched' %}
         <a class="btn btn-default" href="{% url 'ietf.meeting.views.interim_request_cancel' number=meeting.number %}">Cancel</a>
     {% endif %}
+  {% endif %}
+  {% if sessions.0.status.slug == "apprw" %}
+        <a class="btn btn-default" href="{% url 'ietf.meeting.views.interim_pending' %}">Back</a>
+  {% elif sessions.0.status.slug == "scheda" %}
+        <a class="btn btn-default" href="{% url 'ietf.meeting.views.interim_announce' %}">Back</a>
+  {% else %}
+        <a class="btn btn-default" href="{% url 'ietf.meeting.views.upcoming' %}">Back</a>
   {% endif %}
   </form>
 

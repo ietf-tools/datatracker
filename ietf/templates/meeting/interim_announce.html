@@ -47,7 +47,7 @@
                 <td>ietf</td>
               {% endif %}
               <td>
-                <a href="{% url 'ietf.meeting.views.interim_send_announcement' number=meeting.number %}">{{ meeting.number }}</a>
+                <a href="{% url 'ietf.meeting.views.interim_request_details' number=meeting.number %}">{{ meeting.number }}</a>
               </td>
             </tr>
           {% endfor %}

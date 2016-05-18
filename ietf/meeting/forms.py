@@ -13,7 +13,7 @@ from ietf.doc.utils import get_document_content
 from ietf.group.models import Group
 from ietf.ietfauth.utils import has_role
 from ietf.meeting.models import Session, Meeting, Schedule, countries, timezones
-from ietf.meeting.helpers import get_next_interim_number, assign_interim_session
+from ietf.meeting.helpers import get_next_interim_number
 from ietf.meeting.helpers import is_meeting_approved, get_next_agenda_name
 from ietf.message.models import Message
 from ietf.person.models import Person
@@ -168,6 +168,9 @@ class InterimMeetingModelForm(forms.ModelForm):
                 self.fields['in_person'].initial = True
             if is_meeting_approved(self.instance):
                 self.fields['approved'].initial = True
+            else:
+                self.fields['approved'].initial = False
+            self.fields['approved'].widget.attrs['disabled'] = True
 
     def set_group_options(self):
         '''Set group options based on user accessing the form'''
@@ -200,11 +203,12 @@ class InterimMeetingModelForm(forms.ModelForm):
         meeting.date = date
         if kwargs.get('commit', True):
             # create schedule with meeting
+            meeting.save()  # pre-save so we have meeting.pk for schedule
             if not meeting.agenda:
                 meeting.agenda = Schedule.objects.create(
                     meeting=meeting,
                     owner=Person.objects.get(name='(System)'))
-            meeting.save()
+            meeting.save()  # save with agenda
 
         return meeting
 
@@ -287,7 +291,7 @@ class InterimSessionModelForm(forms.ModelForm):
         with open(path, "w") as file:
             file.write(self.cleaned_data['agenda'])
 
-
+'''
 class InterimSessionForm(forms.Form):
     date = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1"}, label='Date', required=False)
     time = forms.TimeField(required=False)
@@ -345,7 +349,7 @@ class InterimSessionForm(forms.Form):
                 file.write(agenda)
 
         return session
-
+'''
 
 class InterimAnnounceForm(forms.ModelForm):
 

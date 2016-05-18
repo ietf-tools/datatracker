@@ -802,13 +802,13 @@ class InterimTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q("a.btn:contains('Cancel')")),0)
+        self.assertEqual(len(q("a.btn:contains('Cancel')")), 0)
         # ensure cancel button for authorized user
         self.client.login(username="marschairman", password="marschairman+password")
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q("a.btn:contains('Cancel')")),1)
+        self.assertEqual(len(q("a.btn:contains('Cancel')")), 1)
         # ensure fail unauthorized
         url = urlreverse('ietf.meeting.views.interim_request_cancel', kwargs={'number': meeting.number})
         comments = 'Bob cannot make it'
@@ -822,7 +822,7 @@ class InterimTests(TestCase):
         self.assertRedirects(r, urlreverse('ietf.meeting.views.upcoming'))
         for session in meeting.session_set.all():
             self.assertEqual(session.status_id, 'canceledpa')
-            self.assertEqual(session.comments, comments)
+            self.assertEqual(session.agenda_note, comments)
         self.assertEqual(len(outbox), length_before)     # no email notice
         # test cancelling after announcement
         meeting = Meeting.objects.filter(type='interim', session__status='sched', session__group__acronym='mars').first()
@@ -831,15 +831,20 @@ class InterimTests(TestCase):
         self.assertRedirects(r, urlreverse('ietf.meeting.views.upcoming'))
         for session in meeting.session_set.all():
             self.assertEqual(session.status_id, 'canceled')
-            self.assertEqual(session.comments, comments)
+            self.assertEqual(session.agenda_note, comments)
         self.assertEqual(len(outbox), length_before + 1)
         self.assertTrue('Interim Meeting Cancelled' in outbox[-1]['Subject'])
 
     def test_interim_request_edit(self):
         make_meeting_test_data()
-        meeting = Meeting.objects.filter(type='interim',session__status='apprw',session__group__acronym='mars').first()
-        url = urlreverse('ietf.meeting.views.interim_request_edit',kwargs={'number':meeting.number})
-        login_testing_unauthorized(self,"secretary",url)
+        meeting = Meeting.objects.filter(type='interim', session__status='apprw', session__group__acronym='mars').first()
+        url = urlreverse('ietf.meeting.views.interim_request_edit', kwargs={'number': meeting.number})
+        # test unauthorized access
+        self.client.login(username="ameschairman", password="ameschairman+password")
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 403)
+        # test authorized use
+        login_testing_unauthorized(self, "secretary", url)
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 

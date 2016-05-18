@@ -3,6 +3,6 @@ The {{ group.name }} ({{ group.acronym }}) {% if not meeting.city %}virtual {% e
 interim meeting for {{ meeting.date|date:"Y-m-d" }} from {{ start_time|time:"H:i" }} to {{ end_time|time:"H:i" }} {{ meeting.time_zone }}
 has been cancelled.
 
-{{ additional_information }}
+{{ meeting.session_set.0.agenda_note }}
 
 

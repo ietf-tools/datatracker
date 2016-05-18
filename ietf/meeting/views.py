@@ -1070,7 +1070,7 @@ def interim_request_cancel(request, number):
         form = InterimCancelForm(request.POST)
         if form.is_valid():
             if 'comments' in form.changed_data:
-                meeting.session_set.update(comments=form.cleaned_data.get('comments'))
+                meeting.session_set.update(agenda_note=form.cleaned_data.get('comments'))
             if meeting.session_set.first().status.slug == 'sched':
                 meeting.session_set.update(status_id='canceled')
                 send_interim_cancellation_notice(meeting)
@@ -1116,6 +1116,9 @@ def interim_request_details(request, number):
 def interim_request_edit(request, number):
     '''Edit details of an interim meeting reqeust'''
     meeting = get_object_or_404(Meeting, number=number)
+    if not can_view_interim_request(meeting, request.user):
+        return HttpResponseForbidden("You do not have permissions to edit this meeting request")
+
     SessionFormset = inlineformset_factory(
         Meeting,
         Session,
@@ -1203,7 +1206,6 @@ def upcoming(request):
 def upcoming_ical(request):
     '''Return Upcoming meetings in iCalendar file'''
     filters = request.GET.getlist('filters')
-    #assert False, filters
     today = datetime.datetime.today()
     meetings = Meeting.objects.filter(date__gte=today).exclude(
         session__status__in=('apprw', 'schedpa')).order_by('date')
