@@ -1,3 +1,34 @@
+ietfdb (6.21.0) ietf; urgency=medium
+
+  **Rewritten document tracking support**
+
+  The part of the datatracker that lets community members set up personal
+  document tracking lists and notifications has been in need of refactoring
+  for quite some time.  This release brings in a thorough refactoring and
+  simplification of that code, with improved management of both personal
+  and group lists.
+
+  Here is an excerpt from the changelog:
+
+  * Merged in ^/branch/iola/community-list-cleanup-r11172@11175 from
+    olau@iola.dk, which provides rewritten community document tracking and
+    notification.
+
+  * Merged in ^/branch/iola/account-registration-fixes-r11167@11179 from 
+    olau@iola.dk, which contains fixes and refactoring for the account 
+    registration code, in order to better support the coming community app 
+    refactoring.
+
+  * Modified a few tests to handle the improved handling of error messages 
+    (not conflating them with help text any more).
+
+  * Improved the crontab support. 
+
+  * Improved the help info for the coverage_changes management command.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  19 May 2016 12:43:38 -0700
+
+
 ietfdb (6.20.0) ietf; urgency=high
 
   **Better yang support, reworked schedule management, cronjob release management**
