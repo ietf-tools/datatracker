@@ -703,7 +703,10 @@ EVENT_TYPES = [
 
     # RFC Editor
     ("rfc_editor_received_announcement", "Announcement was received by RFC Editor"),
-    ("requested_publication", "Publication at RFC Editor requested")
+    ("requested_publication", "Publication at RFC Editor requested"),
+
+    # review
+    ("requested_review", "Requested review"),
     ]
 
 class DocEvent(models.Model):

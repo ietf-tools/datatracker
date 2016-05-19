@@ -192,6 +192,28 @@
 	</td>
       </tr>
 
+      {% if review_requests or can_request_review %}
+      <tr>
+        <th></th>
+        <th>Reviews</th>
+	<td class="edit"></td>
+        <td>
+          {% for r in review_requests %}
+            <div>
+              <a href="{% url "ietf.doc.views_review.review" doc.name r.pk %}">{{ r.team.acronym|upper }} {{ r.type.name }} Review ({{ r.state.name }})</a>
+            </div>
+          {% endfor %}
+
+          {% if can_request_review %}
+            <div>
+              <a class="btn btn-default btn-xs" href="{% url "ietf.doc.views_review.request_review" doc.name %}"><span class="fa fa-check-circle-o"></span> Request review</a>
+            </div>
+          {% endif %}
+        </td>
+      </tr>
+      {% endif %}
+
+      
       {% if conflict_reviews %}
 	<tr>
           <th></th>

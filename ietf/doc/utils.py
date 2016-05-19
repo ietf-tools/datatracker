@@ -16,7 +16,7 @@ from ietf.doc.models import DocEvent, ConsensusDocEvent, BallotDocEvent, NewRevi
 from ietf.doc.models import save_document_in_history
 from ietf.name.models import DocReminderTypeName, DocRelationshipName
 from ietf.group.models import Role
-from ietf.ietfauth.utils import has_role
+from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream
 from ietf.utils import draft, markup_txt
 from ietf.utils.mail import send_mail
 from ietf.mailtrigger.utils import gather_address_lists
@@ -89,6 +89,15 @@ def can_adopt_draft(user, doc):
                                     group__state="active",
                                     person__user=user).exists())
 
+def can_request_review_of_doc(user, doc):
+    if not user.is_authenticated():
+        return False
+
+    from ietf.review.utils import active_review_teams
+    if Role.objects.filter(name="reviewer", person__user=user, group__in=active_review_teams()):
+        return True
+
+    return is_authorized_in_doc_stream(user, doc)
 
 def two_thirds_rule( recused=0 ):
     # For standards-track, need positions from 2/3 of the non-recused current IESG.

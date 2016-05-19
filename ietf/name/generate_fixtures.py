@@ -1,5 +1,7 @@
 #!/usr/bin/python
 
+# simple script for exporting name related base data for the tests
+
 # boiler plate
 import os, sys
 import django

@@ -188,7 +188,7 @@
   "order": 0,
   "revname": "Conflict reviewed by",
   "used": true,
-  "name": "Conflict reviews",
+  "name": "conflict reviews",
   "desc": ""
  },
  "model": "name.docrelationshipname",
@@ -1754,6 +1754,205 @@
 },
 {
  "fields": {
+  "order": 1,
+  "used": true,
+  "name": "Requested",
+  "desc": ""
+ },
+ "model": "name.reviewrequeststatename",
+ "pk": "requested"
+},
+{
+ "fields": {
+  "order": 2,
+  "used": true,
+  "name": "Accepted",
+  "desc": ""
+ },
+ "model": "name.reviewrequeststatename",
+ "pk": "accepted"
+},
+{
+ "fields": {
+  "order": 3,
+  "used": true,
+  "name": "Rejected",
+  "desc": ""
+ },
+ "model": "name.reviewrequeststatename",
+ "pk": "rejected"
+},
+{
+ "fields": {
+  "order": 4,
+  "used": true,
+  "name": "Withdrawn",
+  "desc": ""
+ },
+ "model": "name.reviewrequeststatename",
+ "pk": "withdrawn"
+},
+{
+ "fields": {
+  "order": 5,
+  "used": true,
+  "name": "Overtaken By Events",
+  "desc": ""
+ },
+ "model": "name.reviewrequeststatename",
+ "pk": "overtaken"
+},
+{
+ "fields": {
+  "order": 6,
+  "used": true,
+  "name": "No Response",
+  "desc": ""
+ },
+ "model": "name.reviewrequeststatename",
+ "pk": "noresponse"
+},
+{
+ "fields": {
+  "order": 7,
+  "used": true,
+  "name": "Completed",
+  "desc": ""
+ },
+ "model": "name.reviewrequeststatename",
+ "pk": "completed"
+},
+{
+ "fields": {
+  "order": 1,
+  "used": true,
+  "teams": [],
+  "name": "Almost Ready",
+  "desc": ""
+ },
+ "model": "name.reviewresultname",
+ "pk": "almost-ready"
+},
+{
+ "fields": {
+  "order": 2,
+  "used": true,
+  "teams": [],
+  "name": "Has Issues",
+  "desc": ""
+ },
+ "model": "name.reviewresultname",
+ "pk": "issues"
+},
+{
+ "fields": {
+  "order": 3,
+  "used": true,
+  "teams": [],
+  "name": "Has Nits",
+  "desc": ""
+ },
+ "model": "name.reviewresultname",
+ "pk": "nits"
+},
+{
+ "fields": {
+  "order": 4,
+  "used": true,
+  "teams": [],
+  "name": "Not Ready",
+  "desc": ""
+ },
+ "model": "name.reviewresultname",
+ "pk": "not-ready"
+},
+{
+ "fields": {
+  "order": 5,
+  "used": true,
+  "teams": [],
+  "name": "On the Right Track",
+  "desc": ""
+ },
+ "model": "name.reviewresultname",
+ "pk": "right-track"
+},
+{
+ "fields": {
+  "order": 6,
+  "used": true,
+  "teams": [],
+  "name": "Ready",
+  "desc": ""
+ },
+ "model": "name.reviewresultname",
+ "pk": "ready"
+},
+{
+ "fields": {
+  "order": 7,
+  "used": true,
+  "teams": [],
+  "name": "Ready with Issues",
+  "desc": ""
+ },
+ "model": "name.reviewresultname",
+ "pk": "ready-issues"
+},
+{
+ "fields": {
+  "order": 8,
+  "used": true,
+  "teams": [],
+  "name": "Ready with Nits",
+  "desc": ""
+ },
+ "model": "name.reviewresultname",
+ "pk": "ready-nits"
+},
+{
+ "fields": {
+  "order": 9,
+  "used": true,
+  "teams": [],
+  "name": "Serious Issues",
+  "desc": ""
+ },
+ "model": "name.reviewresultname",
+ "pk": "serious-issues"
+},
+{
+ "fields": {
+  "order": 1,
+  "used": true,
+  "name": "Early",
+  "desc": ""
+ },
+ "model": "name.reviewtypename",
+ "pk": "early"
+},
+{
+ "fields": {
+  "order": 2,
+  "used": true,
+  "name": "Last Call",
+  "desc": ""
+ },
+ "model": "name.reviewtypename",
+ "pk": "lc"
+},
+{
+ "fields": {
+  "order": 3,
+  "used": true,
+  "name": "Telechat",
+  "desc": ""
+ },
+ "model": "name.reviewtypename",
+ "pk": "telechat"
+},
+{
+ "fields": {
   "order": 0,
   "used": true,
   "name": "CEO",
@@ -1941,6 +2140,16 @@
  },
  "model": "name.rolename",
  "pk": "matman"
+},
+{
+ "fields": {
+  "order": 14,
+  "used": true,
+  "name": "Reviewer",
+  "desc": ""
+ },
+ "model": "name.rolename",
+ "pk": "reviewer"
 },
 {
  "fields": {

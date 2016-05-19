@@ -273,6 +273,7 @@ INSTALLED_APPS = (
     'ietf.person',
     'ietf.redirects',
     'ietf.release',
+    'ietf.review',
     'ietf.submit',
     'ietf.sync',
     'ietf.utils',
