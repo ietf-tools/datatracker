@@ -6,25 +6,31 @@
 # $DTDIR/etc/cron.d/datatracker which should be symlinked from
 # /etc/cron.d/
 
+# Run the hourly jobs first
+$DTDIR/bin/hourly
+
+# Datatracker directory
 DTDIR=/a/www/ietf-datatracker/web
 cd $DTDIR/
 
+logger -p user.info -t cron "Running $DTDIR/bin/daily"
+
 # Set up the virtual environment
 source $DTDIR/bin/activate
-
-# Run the hourly jobs first
-$DTDIR/bin/hourly
 
 # Populate the yang repositories
 $DTDIR/ietf/manage.py populate_yang_model_dirs
 
 # Expire internet drafts
-$DTDIR/ietf/bin/expire-ids
+# Enable when removed from /a/www/ietf-datatracker/scripts/Cron-runner:
+#$DTDIR/ietf/bin/expire-ids
 
 # Expire last calls
-$DTDIR/ietf/bin/expire-last-calls
+# Enable when removed from /a/www/ietf-datatracker/scripts/Cron-runner:
+#$DTDIR/ietf/bin/expire-last-calls
 
 # Run an extended version of the rfc editor update, to catch changes
 # with backdated timestamps
-$DTDIR/ietf/bin/rfc-editor-index-updates -d 1969-01-01
+# Enable when removed from /a/www/ietf-datatracker/scripts/Cron-runner:
+#$DTDIR/ietf/bin/rfc-editor-index-updates -d 1969-01-01
 
