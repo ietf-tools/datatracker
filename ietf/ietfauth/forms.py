@@ -1,6 +1,8 @@
 import re
 
 from django import forms
+from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.forms import ModelForm
 from django.db import models
 from django.contrib.auth.models import User
@@ -64,6 +66,11 @@ class NewEmailForm(forms.Form):
             existing = Email.objects.filter(address=email).first()
             if existing:
                 raise forms.ValidationError("Email address '%s' is already assigned to account '%s' (%s)" % (existing, existing.person and existing.person.user, existing.person))
+
+        for pat in settings.EXLUDED_PERSONAL_EMAIL_REGEX_PATTERNS:
+            if re.search(pat, email):
+                raise ValidationError("This email address is not valid in a datatracker account")
+
         return email
 
 
@@ -76,7 +83,7 @@ class RoleEmailForm(forms.Form):
         f = self.fields["email"]
         f.label = u"%s in %s" % (role.name, role.group.acronym.upper())
         f.help_text = u"Email to use for <i>%s</i> role in %s" % (role.name, role.group.name)
-        f.queryset = f.queryset.filter(models.Q(person=role.person_id) | models.Q(role=role))
+        f.queryset = f.queryset.filter(models.Q(person=role.person_id) | models.Q(role=role)).distinct()
         f.initial = role.email_id
         f.choices = [(e.pk, e.address if e.active else u"({})".format(e.address)) for e in f.queryset]
 

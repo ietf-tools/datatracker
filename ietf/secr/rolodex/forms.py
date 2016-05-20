@@ -1,6 +1,7 @@
 from django import forms
+from django.conf import settings
 from django.contrib.auth.models import User
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.validators import validate_email
 
 from ietf.person.models import Email, Person
@@ -86,6 +87,10 @@ class NewEmailForm(EmailForm):
 
         if address:
             validate_email(address)
+
+            for pat in settings.EXLUDED_PERSONAL_EMAIL_REGEX_PATTERNS:
+                if re.search(pat, address):
+                    raise ValidationError("This email address is not valid in a datatracker account")
 
         return address
         
