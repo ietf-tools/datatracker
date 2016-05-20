@@ -2,7 +2,6 @@ import datetime
 
 from django.http import HttpResponseForbidden
 from django.shortcuts import render, get_object_or_404, redirect
-from django.core.urlresolvers import reverse as urlreverse
 from django import forms
 from django.contrib.auth.decorators import login_required
 
@@ -12,7 +11,6 @@ from ietf.ietfauth.utils import is_authorized_in_doc_stream
 from ietf.review.models import ReviewRequest, ReviewRequestStateName
 from ietf.review.utils import active_review_teams
 from ietf.utils.fields import DatepickerDateField
-
 
 class RequestReviewForm(forms.ModelForm):
     deadline_date = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={ "autoclose": "1", "start-date": "+0d" })
@@ -87,7 +85,8 @@ def request_review(request, name):
                 type="requested_review",
                 doc=doc,
                 by=request.user.person,
-                desc="{} review by {} requested".format(review_req.type.name, review_req.team.acronym.upper()),
+                desc="Requested {} review by {}".format(review_req.type.name, review_req.team.acronym.upper()),
+                time=review_req.time,
             )
 
             # FIXME: if I'm a reviewer, auto-assign to myself?
@@ -101,8 +100,41 @@ def request_review(request, name):
         'form': form,
     })
 
-def review(request, name, request_id):
+def review_request(request, name, request_id):
     doc = get_object_or_404(Document, name=name)
-    review_request = get_object_or_404(ReviewRequest, pk=request_id)
+    review_req = get_object_or_404(ReviewRequest, pk=request_id)
 
-    print doc, review_request
+    return render(request, 'doc/review/review_request.html', {
+        'doc': doc,
+        'review_req': review_req,
+        'can_withdraw_request': review_req.state_id in ["requested", "accepted"] and is_authorized_in_doc_stream(request.user, doc),
+    })
+
+def withdraw_request(request, name, request_id):
+    doc = get_object_or_404(Document, name=name)
+    review_req = get_object_or_404(ReviewRequest, pk=request_id, state__in=["requested", "accepted"])
+
+    if not is_authorized_in_doc_stream(request.user, doc):
+        return HttpResponseForbidden("You do not have permission to perform this action")
+
+    if request.method == "POST" and request.POST.get("action") == "withdraw":
+        review_req.state = ReviewRequestStateName.objects.get(slug="withdrawn")
+        review_req.save()
+
+        DocEvent.objects.create(
+            type="withdrew_review_request",
+            doc=doc,
+            by=request.user.person,
+            desc="Withdrew request for {} review by {}".format(review_req.type.name, review_req.team.acronym.upper()),
+        )
+
+        if review_req.state_id != "requested":
+            # FIXME: handle this case - by emailing?
+            pass
+
+        return redirect(review_request, name=review_req.doc.name, request_id=review_req.pk)
+
+    return render(request, 'doc/review/withdraw_request.html', {
+        'doc': doc,
+        'review_req': review_req,
+    })

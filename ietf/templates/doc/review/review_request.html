@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2016, All Rights Reserved #}
+{% load origin bootstrap3 static %}
+
+{% block title %}Review request for {{ review_req.doc.name }}{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <h1>Review request<br><small>{{ review_req.doc.name }}</small></h1>
+
+  <table class="table table-condensed">
+    <tbody class="meta">
+      <tr>
+        <th>Request</th>
+        <th>Review of</th>
+        <td>
+          {% if review_req.requested_rev %}
+            <a href="{% url "doc_view" name=review_req.doc.name rev=review_req.requested_rev %}">{{ review_req.doc.name }}-<b>{{ review_req.requested_rev }}</b></a>
+          {% else %}
+            <a href="{% url "doc_view" name=review_req.doc.name %}">{{ review_req.doc.name }}</a>
+          {% endif %}
+        </td>
+      </tr>
+
+      <tr>
+        <th></th>
+        <th>Type</th>
+        <td>{{ review_req.type.name }} Review</td>
+      </tr>
+
+      <tr>
+        <th></th>
+        <th>Team</th>
+        <td>{{ review_req.team.acronym|upper }}</td>
+      </tr>
+
+      <tr>
+        <th></th>
+        <th>Deadline</th>
+        <td>
+          {% if review_req.deadline|date:"H:i" != "23:59" %}
+            {{ review_req.deadline|date:"Y-m-d H:i" }}
+          {% else %}
+            {{ review_req.deadline|date:"Y-m-d" }}
+          {% endif %}
+        </td>
+      </tr>
+
+      <tr>
+        <th></th>
+        <th>Requested</th>
+        <td>{{ review_req.time|date:"Y-m-d" }}</td>
+      </tr>
+    </tbody>
+
+    <tbody class="meta">
+      <tr>
+        <th>Review</th>
+        <th>State</th>
+        <td>{{ review_req.state.name }}</td>
+      </tr>
+
+      {% if review_req.reviewer %}
+        <tr>
+          <th></th>
+          <th>Reviewer</th>
+          <td>{{ review_req.reviewer.role.person }}</td>
+        </tr>
+      {% endif %}
+
+      {% if review_req.review %}
+        <tr>
+          <th></th>
+          <th>Review</th>
+          <td><a href="{{ review_req.review.get_absolute_url }}">{{ review_req.review.name }}</a></td>
+        </tr>
+      {% endif %}
+
+      {% if review_req.reviewed_rev %}
+        <tr>
+          <th></th>
+          <th>Reviewed revision</th>
+          <td><a href="">{{ review_req.reviewed_rev }}</a></td>
+        </tr>
+      {% endif %}
+
+      {% if review_req.result %}
+        <tr>
+          <th></th>
+          <th>Result of review</th>
+          <td>{{ review_req.result.name }</td>
+        </tr>
+      {% endif %}
+    </tbody>
+  </table>
+
+  <div class="buttonlist">
+    {% if can_withdraw_request %}
+      <a class="btn btn-default btn-xs" href="{% url "ietf.doc.views_review.withdraw_request" name=doc.name request_id=review_req.pk %}"><span class="fa fa-ban"></span> Withdraw request</a>
+    {% endif %}
+  </div>
+
+{% endblock %}

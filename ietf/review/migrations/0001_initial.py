@@ -21,7 +21,7 @@ class Migration(migrations.Migration):
                 ('available', models.DateTimeField(help_text=b'When will this reviewer be available again', null=True, blank=True)),
                 ('filter_re', models.CharField(max_length=255, blank=True)),
                 ('skip_next', models.IntegerField(help_text=b'Skip the next N review assignments')),
-                ('role', models.ForeignKey(to='group.Role')),
+                ('role', models.OneToOneField(to='group.Role')),
             ],
             options={
             },

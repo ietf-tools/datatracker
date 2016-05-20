@@ -200,7 +200,7 @@
         <td>
           {% for r in review_requests %}
             <div>
-              <a href="{% url "ietf.doc.views_review.review" doc.name r.pk %}">{{ r.team.acronym|upper }} {{ r.type.name }} Review ({{ r.state.name }})</a>
+              <a href="{% url "ietf.doc.views_review.review_request" doc.name r.pk %}">{{ r.team.acronym|upper }} {{ r.type.name }} Review ({{ r.state.name }})</a>
             </div>
           {% endfor %}
 

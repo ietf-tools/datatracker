@@ -23,7 +23,7 @@
     {% bootstrap_field form.requested_rev layout="horizontal" %}
 
     {% buttons %}
-      <button type="submit" class="btn btn-primary" name="save_addresses" value="Save">Request review</button>
+      <button type="submit" class="btn btn-primary">Request review</button>
       <a class="btn btn-default pull-right" href="{% url "doc_view" name=doc.canonical_name %}">Back</a>
     {% endbuttons %}
   </form>

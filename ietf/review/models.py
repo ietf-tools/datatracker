@@ -10,7 +10,7 @@ class Reviewer(models.Model):
     of admin data associated with the reviewer in the particular team.
     There will be one record for each combination of reviewer and team.
     """
-    role        = models.ForeignKey(Role)
+    role        = models.OneToOneField(Role)
     frequency   = models.IntegerField(help_text="Can review every N days")
     available   = models.DateTimeField(blank=True, null=True, help_text="When will this reviewer be available again")
     filter_re   = models.CharField(max_length=255, blank=True)

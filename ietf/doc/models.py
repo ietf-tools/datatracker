@@ -707,6 +707,7 @@ EVENT_TYPES = [
 
     # review
     ("requested_review", "Requested review"),
+    ("withdrew_review_request", "Withdrew review"),
     ]
 
 class DocEvent(models.Model):

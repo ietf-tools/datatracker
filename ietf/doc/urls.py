@@ -36,7 +36,6 @@ from django.views.generic import RedirectView
 from ietf.doc import views_search, views_draft, views_ballot
 from ietf.doc import views_status_change
 from ietf.doc import views_doc
-from ietf.doc import views_review
 
 session_patterns = [
     url(r'^add$', views_doc.add_sessionpresentation),
@@ -74,8 +73,7 @@ urlpatterns = patterns('',
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/ballot/$', views_doc.document_ballot, name="doc_ballot"),
     (r'^(?P<name>[A-Za-z0-9._+-]+)/(?:(?P<rev>[0-9-]+)/)?doc.json$', views_doc.document_json),
     (r'^(?P<name>[A-Za-z0-9._+-]+)/ballotpopup/(?P<ballot_id>[0-9]+)/$', views_doc.ballot_popup),
-    url(r'^(?P<name>[A-Za-z0-9._+-]+)/requestreview/$', views_review.request_review),
-    url(r'^(?P<name>[A-Za-z0-9._+-]+)/review/(?P<request_id>[0-9]+)/$', views_review.review),
+    url(r'^(?P<name>[A-Za-z0-9._+-]+)/reviewrequest/', include("ietf.doc.urls_review")),
 
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/email-aliases/$', RedirectView.as_view(pattern_name='doc_email', permanent=False),name='doc_specific_email_aliases'),
 
