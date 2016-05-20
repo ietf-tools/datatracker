@@ -357,8 +357,7 @@ ietfdb (6.15.0) ietf; urgency=medium
     - Remove the day/seq urls from the materials tree.
     - Allow sessionpresentation.rev to be None, meaning 'current version'.
     - Streamlined workflows to focus on current versions of a draft as a default.
-    - Allow adding and editing sessionpresentations when looking at a specific 
-      document.
+    - Allow adding and editing sessionpresentations when looking at a specific document.
     - Allow adding drafts when looking at a specific session.
     - Add the meeting tab to 'team' groups.
     - Refactored several utility classes and expanded on factories.
