@@ -137,7 +137,7 @@ class GroupModelChoiceField(forms.ModelChoiceField):
 
 
 class InterimMeetingModelForm(forms.ModelForm):
-    group = GroupModelChoiceField(queryset=Group.objects.filter(type__in=('wg', 'rg'), state='active').order_by('acronym'))
+    group = GroupModelChoiceField(queryset=Group.objects.filter(type__in=('wg', 'rg'), state__in=('active', 'proposed')).order_by('acronym'), required=False)
     in_person = forms.BooleanField(required=False)
     meeting_type = forms.ChoiceField(choices=(
         ("single", "Single"),
@@ -172,9 +172,16 @@ class InterimMeetingModelForm(forms.ModelForm):
                 self.fields['approved'].initial = False
             self.fields['approved'].widget.attrs['disabled'] = True
 
+    def clean(self):
+        super(InterimMeetingModelForm, self).clean()
+        cleaned_data = self.cleaned_data
+        if not cleaned_data.get('group'):
+            raise forms.ValidationError("You must select a group")
+
+        return self.cleaned_data
+
     def set_group_options(self):
         '''Set group options based on user accessing the form'''
-
         if has_role(self.user, "Secretariat"):
             return  # don't reduce group options
         if has_role(self.user, "Area Director"):
@@ -215,9 +222,9 @@ class InterimMeetingModelForm(forms.ModelForm):
 
 class InterimSessionModelForm(forms.ModelForm):
     date = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1"}, label='Date', required=False)
-    time = forms.TimeField(widget=forms.TimeInput(format='%H:%M'), required=False)
+    time = forms.TimeField(widget=forms.TimeInput(format='%H:%M'), required=True)
     time_utc = forms.TimeField(required=False)
-    requested_duration = DurationField(required=False)
+    requested_duration = DurationField(required=True)
     end_time = forms.TimeField(required=False)
     end_time_utc = forms.TimeField(required=False)
     remote_instructions = forms.CharField(max_length=1024, required=True)
@@ -246,6 +253,14 @@ class InterimSessionModelForm(forms.ModelForm):
                 doc = self.instance.agenda()
                 path = os.path.join(doc.get_file_path(), doc.filename_with_rev())
                 self.initial['agenda'] = get_document_content(os.path.basename(path), path, markup=False)
+
+    def clean_date(self):
+        '''Date field validator.  We can't use required on the input because
+        it is a datepicker widget'''
+        date = self.cleaned_data.get('date')
+        if not date:
+            raise forms.ValidationError('Required field')
+        return date
 
     def save(self, *args, **kwargs):
         """NOTE: as the baseform of an inlineformset self.save(commit=True)
@@ -291,68 +306,8 @@ class InterimSessionModelForm(forms.ModelForm):
         with open(path, "w") as file:
             file.write(self.cleaned_data['agenda'])
 
-'''
-class InterimSessionForm(forms.Form):
-    date = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1"}, label='Date', required=False)
-    time = forms.TimeField(required=False)
-    time_utc = forms.TimeField(required=False)
-    duration = DurationField(required=False)
-    end_time = forms.TimeField(required=False)
-    end_time_utc = forms.TimeField(required=False)
-    remote_instructions = forms.CharField(max_length=1024, required=False)
-    agenda = forms.CharField(required=False, widget=forms.Textarea)
-    agenda_note = forms.CharField(max_length=255, required=False)
-
-    def save(self, request, group, meeting, is_approved):
-        person = request.user.person
-        agenda = self.cleaned_data.get('agenda')
-        agenda_note = self.cleaned_data.get('agenda_note')
-        date = self.cleaned_data.get('date')
-        time = self.cleaned_data.get('time')
-        duration = self.cleaned_data.get('duration')
-        remote_instructions = self.cleaned_data.get('remote_instructions')
-        time = datetime.datetime.combine(date, time)
-        if is_approved:
-            status_id = 'scheda'
-        else:
-            status_id = 'apprw'
-        session = Session.objects.create(
-            meeting=meeting,
-            group=group,
-            requested_by=person,
-            requested_duration=duration,
-            status_id=status_id,
-            type_id='session',
-            remote_instructions=remote_instructions,
-            agenda_note=agenda_note,)
-        assign_interim_session(session, time)
-
-        if agenda:
-            # create objects
-            filename = 'agenda-interim-%s-%s' % (group.acronym, time.strftime("%Y-%m-%d-%H%M"))
-            doc = Document.objects.create(type_id='agenda', group=group, name=filename, rev='00')
-            doc.set_state(State.objects.get(type=doc.type, slug='active'))
-            DocAlias.objects.create(name=doc.name, document=doc)
-            session.sessionpresentation_set.create(document=doc, rev=doc.rev)
-            NewRevisionDocEvent.objects.create(
-                type='new_revision',
-                by=request.user.person,
-                doc=doc,
-                rev=doc.rev,
-                desc='New revision available')
-            # write file
-            path = os.path.join(get_upload_root(meeting), 'agenda', doc.filename_with_rev())
-            directory = os.path.dirname(path)
-            if not os.path.exists(directory):
-                os.makedirs(directory)
-            with open(path, "w") as file:
-                file.write(agenda)
-
-        return session
-'''
 
 class InterimAnnounceForm(forms.ModelForm):
-
     class Meta:
         model = Message
         fields = ('to', 'frm', 'cc', 'bcc', 'reply_to', 'subject', 'body')
@@ -367,7 +322,7 @@ class InterimAnnounceForm(forms.ModelForm):
 
 
 class InterimCancelForm(forms.Form):
-    group = forms.CharField(max_length=255,required=False)
+    group = forms.CharField(max_length=255, required=False)
     date = forms.DateField(required=False)
     comments = forms.CharField(required=False, widget=forms.Textarea(attrs={'placeholder': 'enter optional comments here'}))
 

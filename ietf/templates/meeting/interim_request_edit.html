@@ -31,21 +31,6 @@
             <div class="col-md-2">
                 <label class="checkbox-inline">{% render_field form.approved %}<strong>Preapproved by AD</strong></label>
             </div>
-
-            <!-- 
-            <div class="col-md-2 radio-inline"><strong>Meeting Type:</strong></div>
-            
-            <label class="radio-inline">
-                <input type="radio" value="single" checked="checked" name="meeting_type">Single
-            </label>
-            <label class="radio-inline">
-                <input type="radio" value="multi-day" name="meeting_type">Multi-Day
-            </label>
-            <label class="radio-inline">
-                <input type="radio" value="series" name="meeting_type">Series
-            </label>
-            -->
-
         </div> <!-- col-md-offset-2 -->
     </div> <!-- form-group form-inline -->
     
@@ -64,16 +49,18 @@
  
     <input id="id_session_set-{{ forloop.counter0 }}-id" name="session_set-{{ forloop.counter0 }}-id" type="hidden" value="{{ form.instance.pk|default_if_none:"" }}">
 
-    <div class="form-group">
+    <div class="form-group{% if form.date.errors %} alert alert-danger{% endif %}">
         <label for="id_session_set-{{ forloop.counter0 }}-date" class="col-md-2 control-label required">Date</label>
         <div class="col-md-2">{% render_field form.date class="form-control" %}</div>
+        {% if form.date.errors %}<span class="help-inline">{{ form.date.errors }}</span>{% endif %}
     </div>
     
-    <div class="form-group">
+    <div class="form-group {% if form.time.errors %}alert alert-danger{% endif %}">
         <label for="id_session_set-{{ forloop.counter0 }}-time" class="col-md-2 control-label required">Start Time</label>
         <div class="col-md-3 form-inline">
             {% render_field form.time class="form-control time-field" placeholder="HH:MM" %}
             {% render_field form.time_utc class="form-control time-field computed" disabled="disabled" placeholder="UTC" %}
+            {% if form.time.errors %}<span class="help-inline">{{ form.time.errors }}</span>{% endif %}
         </div>
         <label for="id_session_set-{{ forloop.counter0 }}-end_time" class="col-md-2 control-label">End Time</label>
         <div class="col-md-4 form-inline">
@@ -82,14 +69,16 @@
         </div>
     </div>
 
-    <div class="form-group">
+    <div class="form-group{% if form.requested_duration.errors %} alert alert-danger{% endif %}">
         <label for="id_session_set-{{ forloop.counter0 }}-requested_duration" class="col-md-2 control-label required">Duration</label>
         <div class="col-md-2">{% render_field form.requested_duration class="form-control time-field" placeholder="HH:MM" %}</div>
+        {% if form.requested_duration.errors %}<span class="help-inline">{{ form.requested_duration.errors }}</span>{% endif %}
     </div>
 
-    <div class="form-group">
-        <label for="id_session_set-{{ forloop.counter0 }}-remote_instructions" class="col-md-2 control-label">Remote Instructions</label>
+    <div class="form-group{% if form.remote_instructions.errors %} alert alert-danger{% endif %}">
+        <label for="id_session_set-{{ forloop.counter0 }}-remote_instructions" class="col-md-2 control-label required">Remote Instructions</label>
         <div class="col-md-10">{% render_field form.remote_instructions class="form-control" placeholder="ie. Webex address" %}</div>
+        {% if form.remote_instructions.errors %}<span class="help-inline">{{ form.remote_instructions.errors }}</span>{% endif %}
     </div>
 
     <div class="form-group">

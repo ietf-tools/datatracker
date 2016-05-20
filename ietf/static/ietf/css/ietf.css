@@ -470,3 +470,8 @@ form.navbar-form input.form-control.input-sm { width: 141px; }
 #interim-request-form .time-field {
     width: 100px;
 }
+
+ul.errorlist {
+    list-style-type: none;
+    padding-left:0;
+}

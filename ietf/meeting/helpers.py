@@ -337,11 +337,21 @@ def can_approve_interim_request(meeting, user):
 
 def can_edit_interim_request(meeting, user):
     '''Returns True if the user can edit the interim meeting request'''
-
-    if can_approve_interim_request(meeting, user):
+    if meeting.type.slug != 'interim':
+        return False
+    if has_role(user, 'Secretariat'):
         return True
-
-    return False
+    person = get_person_for_user(user)
+    session = meeting.session_set.first()
+    if not session:
+        return False
+    group = session.group
+    if group.role_set.filter(name='chair', person=person):
+        return True
+    elif can_approve_interim_request(meeting, user):
+        return True
+    else:
+        return False
 
 
 def can_request_interim_meeting(user):

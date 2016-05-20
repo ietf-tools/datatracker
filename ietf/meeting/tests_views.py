@@ -1,3 +1,4 @@
+import json
 import os
 import shutil
 import datetime
@@ -349,67 +350,67 @@ class InterimTests(TestCase):
         # no logged in -  no tabs
         r = self.client.get(url)
         q = PyQuery(r.content)
-        self.assertEqual(len(q("ul.nav-tabs")),0)
+        self.assertEqual(len(q("ul.nav-tabs")), 0)
         # plain user -  no tabs
         username = "plain"
-        self.client.login(username=username, password= username + "+password")
+        self.client.login(username=username, password=username + "+password")
         r = self.client.get(url)
         q = PyQuery(r.content)
-        self.assertEqual(len(q("ul.nav-tabs")),0)
+        self.assertEqual(len(q("ul.nav-tabs")), 0)
         self.client.logout()
         # privileged user
         username = "ad"
-        self.client.login(username=username, password= username + "+password")
+        self.client.login(username=username, password=username + "+password")
         r = self.client.get(url)
         q = PyQuery(r.content)
-        self.assertEqual(len(q("a:contains('Pending')")),1)
-        self.assertEqual(len(q("a:contains('Announce')")),0)
+        self.assertEqual(len(q("a:contains('Pending')")), 1)
+        self.assertEqual(len(q("a:contains('Announce')")), 0)
         self.client.logout()
         # secretariat
         username = "secretary"
-        self.client.login(username=username, password= username + "+password")
+        self.client.login(username=username, password=username + "+password")
         r = self.client.get(url)
         q = PyQuery(r.content)
-        self.assertEqual(len(q("a:contains('Pending')")),1)
-        self.assertEqual(len(q("a:contains('Announce')")),1)
+        self.assertEqual(len(q("a:contains('Pending')")), 1)
+        self.assertEqual(len(q("a:contains('Announce')")), 1)
         self.client.logout()
 
     def test_interim_announce(self):
         make_meeting_test_data()
         url = urlreverse("ietf.meeting.views.interim_announce")
-        meeting = Meeting.objects.filter(type='interim',session__group__acronym='mars').first()
+        meeting = Meeting.objects.filter(type='interim', session__group__acronym='mars').first()
         session = meeting.session_set.first()
         session.status = SessionStatusName.objects.get(slug='scheda')
         session.save()
-        login_testing_unauthorized(self,"secretary",url)
+        login_testing_unauthorized(self, "secretary", url)
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertTrue(meeting.number in r.content)
 
     def test_interim_send_announcement(self):
         make_meeting_test_data()
-        meeting = Meeting.objects.filter(type='interim',session__status='apprw',session__group__acronym='mars').first()
-        url = urlreverse("ietf.meeting.views.interim_send_announcement", kwargs={'number':meeting.number})
-        login_testing_unauthorized(self,"secretary",url)
+        meeting = Meeting.objects.filter(type='interim', session__status='apprw', session__group__acronym='mars').first()
+        url = urlreverse("ietf.meeting.views.interim_send_announcement", kwargs={'number': meeting.number})
+        login_testing_unauthorized(self, "secretary", url)
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         initial = r.context['form'].initial
         # send announcement
         len_before = len(outbox)
-        r = self.client.post(url,initial)
-        self.assertRedirects(r,urlreverse('ietf.meeting.views.interim_announce'))
-        self.assertEqual(len(outbox),len_before+1)
+        r = self.client.post(url, initial)
+        self.assertRedirects(r, urlreverse('ietf.meeting.views.interim_announce'))
+        self.assertEqual(len(outbox), len_before + 1)
         self.assertTrue('WG Virtual Meeting' in outbox[-1]['Subject'])
 
     def test_interim_approve(self):
         make_meeting_test_data()
-        meeting = Meeting.objects.filter(type='interim',session__status='apprw',session__group__acronym='mars').first()
-        url = urlreverse('ietf.meeting.views.interim_request_details',kwargs={'number':meeting.number})
-        login_testing_unauthorized(self,"secretary",url)
-        r = self.client.post(url,{'approve':'approve'})
-        self.assertRedirects(r,urlreverse('ietf.meeting.views.interim_send_announcement',kwargs={'number':meeting.number}))
+        meeting = Meeting.objects.filter(type='interim', session__status='apprw', session__group__acronym='mars').first()
+        url = urlreverse('ietf.meeting.views.interim_request_details', kwargs={'number': meeting.number})
+        login_testing_unauthorized(self, "secretary", url)
+        r = self.client.post(url, {'approve': 'approve'})
+        self.assertRedirects(r, urlreverse('ietf.meeting.views.interim_send_announcement', kwargs={'number': meeting.number}))
         for session in meeting.session_set.all():
-            self.assertEqual(session.status.slug,'scheda')
+            self.assertEqual(session.status.slug, 'scheda')
 
     def test_upcoming(self):
         make_meeting_test_data()
@@ -478,8 +479,8 @@ class InterimTests(TestCase):
         r = self.client.get("/meeting/interim/request/")
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(Group.objects.filter(type__in=('wg','rg'),state='active').count(),
-            len(q("#id_group option")) -1 )  # -1 for options placeholder
+        self.assertEqual(Group.objects.filter(type__in=('wg', 'rg'), state__in=('active', 'proposed')).count(),
+            len(q("#id_group option")) - 1)  # -1 for options placeholder
 
 
     def test_interim_request_single(self):
@@ -883,3 +884,28 @@ class InterimTests(TestCase):
         send_interim_minutes_reminder(meeting=meeting)
         self.assertEqual(len(outbox),length_before+1)
         self.assertTrue('Action Required: Minutes' in outbox[-1]['Subject'])
+
+
+class AjaxTests(TestCase):
+    def test_ajax_get_utc(self):
+        # test bad queries
+        url = urlreverse('ietf.meeting.views.ajax_get_utc') + "?date=2016-1-1&time=badtime&timezone=UTC"
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        data = json.loads(r.content)
+        self.assertEqual(data["error"], True)
+        url = urlreverse('ietf.meeting.views.ajax_get_utc') + "?date=2016-1-1&time=25:99&timezone=UTC"
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        data = json.loads(r.content)
+        self.assertEqual(data["error"], True)
+        # test good query
+        url = urlreverse('ietf.meeting.views.ajax_get_utc') + "?date=2016-1-1&time=12:00&timezone=US/Pacific"
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        data = json.loads(r.content)
+        self.assertTrue('timezone' in data)
+        self.assertTrue('time' in data)
+        self.assertTrue('utc' in data)
+        self.assertTrue('error' not in data)
+        self.assertEqual(data['utc'], '20:00')

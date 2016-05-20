@@ -22,6 +22,7 @@ from django.db.models import Min, Max
 from django.conf import settings
 from django.forms.models import modelform_factory, inlineformset_factory
 from django.forms import ModelForm
+from django.template.loader import render_to_string
 from django.utils.functional import curry
 from django.views.decorators.csrf import ensure_csrf_cookie
 
@@ -39,6 +40,7 @@ from ietf.meeting.helpers import get_meeting, get_schedule, agenda_permissions, 
 from ietf.meeting.helpers import preprocess_assignments_for_agenda, read_agenda_file
 from ietf.meeting.helpers import convert_draft_to_pdf, get_earliest_session_date
 from ietf.meeting.helpers import can_view_interim_request, can_approve_interim_request
+from ietf.meeting.helpers import can_edit_interim_request
 from ietf.meeting.helpers import can_request_interim_meeting, get_announcement_initial
 from ietf.meeting.helpers import sessions_post_save, is_meeting_approved
 from ietf.meeting.helpers import send_interim_cancellation_notice
@@ -910,8 +912,17 @@ def ajax_get_utc(request):
     '''Ajax view that takes arguments time and timezone and returns UTC'''
     time = request.GET.get('time')
     timezone = request.GET.get('timezone')
+    date = request.GET.get('date')
+    time_re = re.compile(r'^\d{2}:\d{2}')
+    if not time_re.match(time):
+        return HttpResponse(json.dumps({'error': True}),
+                            content_type='application/json')
     hour, minute = time.split(':')
-    dt = datetime.datetime(2016, 1, 1, int(hour), int(minute))
+    if not (int(hour) <= 23 and int(minute) <= 59):
+        return HttpResponse(json.dumps({'error': True}),
+                            content_type='application/json')
+    year, month, day = date.split('-')
+    dt = datetime.datetime(int(year), int(month), int(day), int(hour), int(minute))
     tz = pytz.timezone(timezone)
     aware_dt = tz.localize(dt, is_dst=None)
     utc_dt = aware_dt.astimezone(pytz.utc)
@@ -1045,8 +1056,7 @@ def interim_request(request):
 
             messages.success(request, 'Interim meeting request submitted')
             return redirect(upcoming)
-        else:
-            assert False, (form.errors, formset.errors)
+
     else:
         form = InterimMeetingModelForm(request=request,
                                        initial={'meeting_type': 'single'})
@@ -1091,7 +1101,7 @@ def interim_request_details(request, number):
     '''View details of an interim meeting reqeust'''
     meeting = get_object_or_404(Meeting, number=number)
     sessions = meeting.session_set.all()
-    can_edit = can_view_interim_request(meeting, request.user)
+    can_edit = can_edit_interim_request(meeting, request.user)
     can_approve = can_approve_interim_request(meeting, request.user)
 
     if request.method == 'POST':
@@ -1145,8 +1155,7 @@ def interim_request_edit(request, number):
 
             messages.success(request, 'Interim meeting request saved')
             return redirect(interim_request_details, number=number)
-        else:
-            assert False, (form.errors, formset.errors)
+
     else:
         form = InterimMeetingModelForm(request=request, instance=meeting)
         formset = SessionFormset(instance=meeting)
@@ -1161,7 +1170,7 @@ def upcoming(request):
     '''List of upcoming meetings'''
     today = datetime.datetime.today()
     meetings = Meeting.objects.filter(date__gte=today).exclude(
-        session__status__in=('apprw', 'schedpa', 'canceledpa')).order_by('date')
+        session__status__in=('apprw', 'scheda', 'canceledpa')).order_by('date')
 
     # extract groups hierarchy for display filter
     seen = set()
@@ -1222,7 +1231,17 @@ def upcoming_ical(request):
                        a.session.group.acronym in filters or
                        a.session.group.parent.acronym in filters]
 
+    # gather vtimezones
+    vtimezones = set()
+    for meeting in meetings:
+        if meeting.vtimezone():
+            vtimezones.add(meeting.vtimezone())
+    vtimezones = ''.join(vtimezones)
 
-    return render(request, 'meeting/upcoming.ics', {
-        'assignments': assignments,
-    }, content_type='text/calendar')
+    # icalendar response file should have '\r\n' line endings per RFC5545
+    response = render_to_string('meeting/upcoming.ics', {
+        'vtimezones': vtimezones,
+        'assignments': assignments})
+    response = re.sub("\r(?!\n)|(?<!\r)\n", "\r\n", response)
+
+    return HttpResponse(response, content_type='text/calendar')

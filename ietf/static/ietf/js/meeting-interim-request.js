@@ -81,6 +81,7 @@ var interimRequest = {
         }
         var url = "/meeting/ajax/get-utc";
         var fieldset = $(this).parents(".fieldset");
+        var date = fieldset.find("input[name$='-date']").val();
         var timezone = interimRequest.timezone.val();
         var name = $(this).attr("id") + "_utc";
         var utc = fieldset.find("#" + name);
@@ -90,7 +91,8 @@ var interimRequest = {
             cache: false,
             async: true,
             dataType: 'json',
-            data: {time: time,
+            data: {date: date,
+                   time: time,
                    timezone: timezone},
             success: function(response){
                 if (!response.error) {
