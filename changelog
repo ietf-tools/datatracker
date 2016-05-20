@@ -26,7 +26,7 @@ ietfdb (6.21.0) ietf; urgency=medium
 
   * Improved the help info for the coverage_changes management command.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  19 May 2016 12:43:38 -0700
+ -- Henrik Levkowetz <henrik@levkowetz.com>  20 May 2016 10:21:30 +0000
 
 
 ietfdb (6.20.0) ietf; urgency=high
