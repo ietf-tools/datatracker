@@ -62,21 +62,25 @@ class FileParser(object):
         regexp = re.compile(r'&|\|\/|;|\*|\s|\$')
         chars = regexp.findall(name)
         if chars:
-            self.parsed_info.add_error('Invalid characters were found in the name of the file which was just submitted: %s' % ', '.join(set(chars)))
+            self.parsed_info.add_error(u'Invalid characters were found in the name of the file which was just submitted: %s' % ', '.join(set(chars)))
 
     def parse_max_size(self):
         max_size = settings.IDSUBMIT_MAX_DRAFT_SIZE[self.ext]
         if self.fd.size > max_size:
-            self.parsed_info.add_error('File size is larger than the permitted maximum of %s' % filesizeformat(max_size))
+            s = filesizeformat(max_size)
+            debug.traceback()
+            debug.type('s')
+            debug.show('s')
+            self.parsed_info.add_error(u'File size is larger than the permitted maximum of %s' % filesizeformat(max_size))
         self.parsed_info.metadata.file_size = self.fd.size
 
     def parse_filename_extension(self):
         if not self.fd.name.lower().endswith('.'+self.ext):
-            self.parsed_info.add_error('Expected the %s file to have extension ".%s", found the name "%s"' % (self.ext.upper(), self.ext, self.fd.name))
+            self.parsed_info.add_error(u'Expected the %s file to have extension ".%s", found the name "%s"' % (self.ext.upper(), self.ext, self.fd.name))
 
     def parse_file_type(self):
         self.fd.file.seek(0)
         content = self.fd.file.read(4096)
         mimetype = magic.from_buffer(content, mime=True)
         if not mimetype == self.mimetype:
-            self.parsed_info.add_error('Expected an %s file of type "%s", found one of type "%s"' % (self.ext.upper(), self.mimetype, mimetype))
+            self.parsed_info.add_error(u'Expected an %s file of type "%s", found one of type "%s"' % (self.ext.upper(), self.mimetype, mimetype))
