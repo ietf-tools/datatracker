@@ -67,10 +67,6 @@ class FileParser(object):
     def parse_max_size(self):
         max_size = settings.IDSUBMIT_MAX_DRAFT_SIZE[self.ext]
         if self.fd.size > max_size:
-            s = filesizeformat(max_size)
-            debug.traceback()
-            debug.type('s')
-            debug.show('s')
             self.parsed_info.add_error(u'File size is larger than the permitted maximum of %s' % filesizeformat(max_size))
         self.parsed_info.metadata.file_size = self.fd.size
 
