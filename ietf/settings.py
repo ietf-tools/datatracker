@@ -497,10 +497,10 @@ IDSUBMIT_FILE_TYPES = (
     'ps',
 )
 IDSUBMIT_MAX_DRAFT_SIZE =  {
-    'txt':  6*1024*1024,  # Max size of txt draft file in bytes
-    'xml': 10*1024*1024,  # Max size of xml draft file in bytes
-    'pdf': 10*1024*1024,
-    'ps' : 10*1024*1024,
+    'txt':  2*1024*1024,  # Max size of txt draft file in bytes
+    'xml':  3*1024*1024,  # Max size of xml draft file in bytes
+    'pdf':  6*1024*1024,
+    'ps' :  6*1024*1024,
 }
 
 IDSUBMIT_MAX_DAILY_SAME_DRAFT_NAME = 20
@@ -605,8 +605,12 @@ USER_PREFERENCE_DEFAULTS = {
 }
 
 TRAC_ADMIN_CMD = "/usr/bin/trac-admin"
-TRAC_WIKI_DIR = "/a/www/www6s/trac"
-TRAC_SVN_DIR = "/a/svn/group"
+TRAC_WIKI_DIR_ROOT = "/a/www/www6s/trac/"
+TRAC_WIKI_DIR_PATTERN = os.path.join(TRAC_WIKI_DIR_ROOT, "%s")
+TRAC_WIKI_URL_PATTERN = "https://trac.ietf.org/trac/%s/wiki"
+TRAC_ISSUE_URL_PATTERN = "https://trac.ietf.org/trac/%s/report/1"
+TRAC_SVN_DIR_PATTERN = "/a/svn/group/%s"
+TRAC_SVN_URL_PATTERN = "https://svn.ietf.org/svn/group/%s/"
 
 # Email addresses people attempt to set for their account will be checked
 # against the following list of regex expressions with re.search(pat, addr):
