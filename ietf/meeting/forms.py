@@ -17,7 +17,6 @@ from ietf.meeting.helpers import get_next_interim_number
 from ietf.meeting.helpers import is_meeting_approved, get_next_agenda_name
 from ietf.message.models import Message
 from ietf.person.models import Person
-from ietf.secr.utils.meeting import get_upload_root
 from ietf.utils.fields import DatepickerDateField
 
 # need to insert empty option for use in ChoiceField
@@ -288,7 +287,8 @@ class InterimSessionModelForm(forms.ModelForm):
                 type_id='agenda',
                 group=self.group,
                 name=filename,
-                rev='00')
+                rev='00',
+                external_url='{}-00.txt'.format(filename))
             doc.set_state(State.objects.get(type=doc.type, slug='active'))
             DocAlias.objects.create(name=doc.name, document=doc)
             self.instance.sessionpresentation_set.create(document=doc, rev=doc.rev)
@@ -299,7 +299,7 @@ class InterimSessionModelForm(forms.ModelForm):
                 rev=doc.rev,
                 desc='New revision available')
         # write file
-        path = os.path.join(get_upload_root(self.instance.meeting), 'agenda', doc.filename_with_rev())
+        path = os.path.join(self.instance.meeting.get_materials_path(), 'agenda', doc.filename_with_rev())
         directory = os.path.dirname(path)
         if not os.path.exists(directory):
             os.makedirs(directory)

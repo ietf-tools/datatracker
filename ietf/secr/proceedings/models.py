@@ -4,7 +4,6 @@ from django.conf import settings
 from django.db import models
 
 from ietf.meeting.models import Meeting
-from ietf.secr.utils.meeting import get_upload_root
 
 
 class InterimManager(models.Manager):
@@ -43,8 +42,7 @@ class InterimMeeting(Meeting):
             return None
         
     def get_proceedings_path(self, group=None):
-        path = os.path.join(get_upload_root(self),'proceedings.html')
-        return path
+        return os.path.join(self.get_materials_path(),'proceedings.html')
     
     def get_proceedings_url(self, group=None):
         '''

@@ -414,9 +414,9 @@ DOC_HREFS = {
 }
 
 MEETING_DOC_HREFS = {
-    "agenda": "/meeting/{meeting}/agenda/{doc.group.acronym}/",
-    "minutes": "https://www.ietf.org/proceedings/{meeting}/minutes/{doc.external_url}",
-    "slides": "https://www.ietf.org/proceedings/{meeting}/slides/{doc.external_url}",
+    "agenda": "/meeting/{meeting.number}/agenda/{doc.group.acronym}/",
+    "minutes": "https://www.ietf.org/proceedings/{meeting.number}/minutes/{doc.external_url}",
+    "slides": "https://www.ietf.org/proceedings/{meeting.number}/slides/{doc.external_url}",
     "recording": "{doc.external_url}",
 }
 

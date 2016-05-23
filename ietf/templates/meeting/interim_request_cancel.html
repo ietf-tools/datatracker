@@ -23,7 +23,7 @@
     <div class="form-group"
     {% buttons %}
       <button type="submit" class="btn btn-primary">Submit</button>
-      <a class="btn btn-default pull-right" href="{% url 'ietf.meeting.views.upcoming' %}">Back</a>
+      <a class="btn btn-default pull-right" href="{% url 'ietf.meeting.views.interim_request_details' number=meeting.number %}">Back</a>
     {% endbuttons %}
     </div>
     

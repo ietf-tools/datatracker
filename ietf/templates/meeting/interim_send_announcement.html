@@ -43,7 +43,7 @@
     </div> <!-- fieldset -->
 
     <input class="btn btn-default" type="submit" value="Send" name='send' />
-    <a class="btn btn-danger pull-right" href="{% url 'ietf.meeting.views.interim_announce' %}">Cancel</a>
+    <a class="btn btn-default pull-right" href="{% url 'ietf.meeting.views.interim_request_details' number=meeting.number %}">Back</a>
 
   </form>
 

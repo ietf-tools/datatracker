@@ -1092,7 +1092,8 @@ def interim_request_cancel(request, number):
         form = InterimCancelForm(initial={'group': group.acronym, 'date': meeting.date})
 
     return render(request, "meeting/interim_request_cancel.html", {
-        "form": form})
+        "form": form,
+        "meeting": meeting})
 
 
 @role_required('Area Director', 'Secretariat', 'IRTF Chair', 'WG Chair',

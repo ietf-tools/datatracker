@@ -23,7 +23,7 @@ from ietf.secr.proceedings.models import InterimMeeting    # proxy model
 from ietf.secr.proceedings.models import Registration
 from ietf.secr.utils.document import get_rfc_num
 from ietf.secr.utils.group import groups_by_session
-from ietf.secr.utils.meeting import get_upload_root, get_proceedings_path, get_materials, get_session
+from ietf.secr.utils.meeting import get_proceedings_path, get_materials, get_session
 
 
 # -------------------------------------------------
@@ -264,7 +264,7 @@ def create_proceedings(meeting, group, is_final=False):
 
     docs = Document.objects.filter(group=group,type='draft').order_by('time')
 
-    meeting_root = get_upload_root(meeting)
+    meeting_root = meeting.get_materials_path()
     if meeting.type.slug == 'ietf':
         url_root = "%sproceedings/%s/" % (settings.MEDIA_URL,meeting.number)
     else:

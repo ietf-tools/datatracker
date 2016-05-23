@@ -120,7 +120,7 @@ class DocumentInfo(models.Model):
 
         meeting = None
         if meeting_related:
-            meeting = self.name.split("-")[1]
+            meeting = self.session_set.first().meeting
 
         return format.format(doc=self,meeting=meeting)
 
