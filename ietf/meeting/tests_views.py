@@ -790,7 +790,7 @@ class InterimTests(TestCase):
         url = urlreverse('ietf.meeting.views.interim_request_details',kwargs={'number':meeting.number})
         login_testing_unauthorized(self,"secretary",url)
         r = self.client.post(url,{'disapprove':'Disapprove'})
-        self.assertEqual(r.status_code, 200)
+        self.assertRedirects(r, urlreverse('ietf.meeting.views.interim_pending'))
         for session in meeting.session_set.all():
             self.assertEqual(session.status_id,'disappr')
 

@@ -1105,14 +1105,17 @@ def interim_request_details(request, number):
     can_approve = can_approve_interim_request(meeting, request.user)
 
     if request.method == 'POST':
-        if request.POST.get('approve'):
+        if request.POST.get('approve') and can_approve_interim_request(meeting, request.user):
             meeting.session_set.update(status_id='scheda')
             messages.success(request, 'Interim meeting approved')
             if has_role(request.user, 'Secretariat'):
                 return redirect(interim_send_announcement, number=number)
-        if request.POST.get('disapprove'):
+            else:
+                return redirect(interim_pending)
+        if request.POST.get('disapprove') and can_approve_interim_request(meeting, request.user):
             meeting.session_set.update(status_id='disappr')
             messages.success(request, 'Interim meeting disapproved')
+            return redirect(interim_pending)
 
     return render(request, "meeting/interim_request_details.html", {
         "meeting": meeting,
@@ -1126,7 +1129,7 @@ def interim_request_details(request, number):
 def interim_request_edit(request, number):
     '''Edit details of an interim meeting reqeust'''
     meeting = get_object_or_404(Meeting, number=number)
-    if not can_view_interim_request(meeting, request.user):
+    if not can_edit_interim_request(meeting, request.user):
         return HttpResponseForbidden("You do not have permissions to edit this meeting request")
 
     SessionFormset = inlineformset_factory(
