@@ -48,8 +48,7 @@ from ietf.doc.models import ( Document, DocAlias, DocHistory, DocEvent, BallotDo
 from ietf.doc.utils import ( add_links_in_new_revision_events, augment_events_with_revision,
     can_adopt_draft, get_chartering_type, get_document_content, get_tags_for_stream_id,
     needed_ballot_positions, nice_consensus, prettify_std_name, update_telechat, has_same_ballot,
-    get_initial_notify, make_notify_changed_event, crawl_history, default_consensus,
-    can_request_review_of_doc )
+    get_initial_notify, make_notify_changed_event, crawl_history, default_consensus )
 from ietf.community.utils import augment_docs_with_tracking_info
 from ietf.group.models import Role
 from ietf.group.utils import can_manage_group, can_manage_materials
@@ -63,6 +62,7 @@ from ietf.mailtrigger.utils import gather_relevant_expansions
 from ietf.meeting.models import Session
 from ietf.meeting.utils import group_sessions, get_upcoming_manageable_sessions, sort_sessions
 from ietf.review.models import ReviewRequest
+from ietf.review.utils import can_request_review_of_doc
 
 def render_document_top(request, doc, tab, name):
     tabs = []

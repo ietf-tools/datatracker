@@ -89,22 +89,6 @@ def can_adopt_draft(user, doc):
                                     group__state="active",
                                     person__user=user).exists())
 
-def can_request_review_of_doc(user, doc):
-    if not user.is_authenticated():
-        return False
-
-    from ietf.review.utils import active_review_teams
-    if Role.objects.filter(name="reviewer", person__user=user, group__in=active_review_teams()):
-        return True
-
-    return is_authorized_in_doc_stream(user, doc)
-
-def can_manage_review_requests_for_team(user, team):
-    if not user.is_authenticated():
-        return False
-
-    return Role.objects.filter(name="secretary", person__user=user, group=team).exists() or has_role(user, "Secretariat")
-
 def two_thirds_rule( recused=0 ):
     # For standards-track, need positions from 2/3 of the non-recused current IESG.
     active = Role.objects.filter(name="ad",group__type="area",group__state="active").count()

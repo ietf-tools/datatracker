@@ -60,19 +60,25 @@
         <td>{{ review_req.state.name }}</td>
       </tr>
 
-      {% if review_req.reviewer %}
         <tr>
           <th></th>
           <th>Reviewer</th>
           <td>
-            {{ review_req.reviewer.role.person }}
+            {% if review_req.reviewer %}
+              {{ review_req.reviewer.person }}
+            {% else %}
+              None assigned yet
+            {% endif %}
 
-            {% if can_reject_request_assignment %}
-              <a class="btn btn-default btn-xs" href="{% url "ietf.doc.views_review.reject_request_assignment" name=doc.name request_id=review_req.pk %}"><span class="fa fa-ban"></span> Reject request assignment</a>
+            {% if can_assign_reviewer %}
+              <a class="btn btn-default btn-xs" href="{% url "ietf.doc.views_review.assign_reviewer" name=doc.name request_id=review_req.pk %}"><span class="fa fa-user"></span> {% if review_req.reviewer %}Reassign{% else %}Assign{% endif %} reviewer</a>
+            {% endif %}
+
+            {% if can_reject_reviewer_assignment %}
+              <a class="btn btn-default btn-xs" href="{% url "ietf.doc.views_review.reject_reviewer_assignment" name=doc.name request_id=review_req.pk %}"><span class="fa fa-ban"></span> Reject reviewer assignment</a>
             {% endif %}
           </td>
         </tr>
-      {% endif %}
 
       {% if review_req.review %}
         <tr>
@@ -94,7 +100,7 @@
         <tr>
           <th></th>
           <th>Result of review</th>
-          <td>{{ review_req.result.name }</td>
+          <td>{{ review_req.result.name }}</td>
         </tr>
       {% endif %}
     </tbody>
