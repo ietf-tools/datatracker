@@ -99,6 +99,12 @@ def can_request_review_of_doc(user, doc):
 
     return is_authorized_in_doc_stream(user, doc)
 
+def can_manage_review_requests_for_team(user, team):
+    if not user.is_authenticated():
+        return False
+
+    return Role.objects.filter(name="secretary", person__user=user, group=team).exists() or has_role(user, "Secretariat")
+
 def two_thirds_rule( recused=0 ):
     # For standards-track, need positions from 2/3 of the non-recused current IESG.
     active = Role.objects.filter(name="ad",group__type="area",group__state="active").count()

@@ -6,8 +6,8 @@ from django import forms
 from django.contrib.auth.decorators import login_required
 
 from ietf.doc.models import Document, NewRevisionDocEvent, DocEvent
-from ietf.doc.utils import can_request_review_of_doc
-from ietf.ietfauth.utils import is_authorized_in_doc_stream
+from ietf.doc.utils import can_request_review_of_doc, can_manage_review_requests_for_team
+from ietf.ietfauth.utils import is_authorized_in_doc_stream, user_is_person
 from ietf.review.models import ReviewRequest, ReviewRequestStateName
 from ietf.review.utils import active_review_teams
 from ietf.utils.fields import DatepickerDateField
@@ -104,10 +104,21 @@ def review_request(request, name, request_id):
     doc = get_object_or_404(Document, name=name)
     review_req = get_object_or_404(ReviewRequest, pk=request_id)
 
+    is_reviewer = review_req.reviewer and user_is_person(request.user, review_req.reviewer.role.person)
+    can_manage_req = can_manage_review_requests_for_team(request.user, review_req.team)
+
+    can_withdraw_request = (review_req.state_id in ["requested", "accepted"]
+                            and is_authorized_in_doc_stream(request.user, doc))
+
+    can_reject_request_assignment = (review_req.state_id in ["requested", "accepted"]
+                                     and review_req.reviewer_id is not None
+                                     and (is_reviewer or can_manage_req))
+
     return render(request, 'doc/review/review_request.html', {
         'doc': doc,
         'review_req': review_req,
-        'can_withdraw_request': review_req.state_id in ["requested", "accepted"] and is_authorized_in_doc_stream(request.user, doc),
+        'can_withdraw_request': can_withdraw_request,
+        'can_reject_request_assignment': can_reject_request_assignment,
     })
 
 def withdraw_request(request, name, request_id):
@@ -122,7 +133,7 @@ def withdraw_request(request, name, request_id):
         review_req.save()
 
         DocEvent.objects.create(
-            type="withdrew_review_request",
+            type="changed_review_request",
             doc=doc,
             by=request.user.person,
             desc="Withdrew request for {} review by {}".format(review_req.type.name, review_req.team.acronym.upper()),
@@ -135,6 +146,56 @@ def withdraw_request(request, name, request_id):
         return redirect(review_request, name=review_req.doc.name, request_id=review_req.pk)
 
     return render(request, 'doc/review/withdraw_request.html', {
+        'doc': doc,
+        'review_req': review_req,
+    })
+
+class RejectRequestAssignmentForm(forms.Form):
+    message_to_secretary = forms.CharField(widget=forms.Textarea, required=False, help_text="Optional explanation of rejection, will be emailed to team secretary")
+
+def reject_request_assignment(request, name, request_id):
+    doc = get_object_or_404(Document, name=name)
+    review_req = get_object_or_404(ReviewRequest, pk=request_id, state__in=["requested", "accepted"])
+
+    if not review_req.reviewer:
+        return redirect(review_request, name=review_req.doc.name, request_id=review_req.pk)
+
+    is_reviewer = user_is_person(request.user, review_req.reviewer.role.person)
+    can_manage_req = can_manage_review_requests_for_team(request.user, review_req.team)
+
+    if not (is_reviewer or can_manage_req):
+        return HttpResponseForbidden("You do not have permission to perform this action")
+
+    if request.method == "POST" and request.POST.get("action") == "reject":
+        # reject the old request
+        prev_state = review_req.state
+        review_req.state = ReviewRequestStateName.objects.get(slug="rejected")
+        review_req.save()
+
+        # assignment of reviewer is currently considered minutia, so
+        # not reported in the log
+        if prev_state.slug == "accepted":
+            DocEvent.objects.create(
+                type="changed_review_request",
+                doc=doc,
+                by=request.user.person,
+                desc="Request for {} review by {} is unassigned".format(review_req.type.name, review_req.team.acronym.upper()),
+            )
+
+        # make a new, open review request
+        ReviewRequest.objects.create(
+            time=review_req.time,
+            type=review_req.type,
+            doc=review_req.doc,
+            team=review_req.team,
+            deadline=review_req.deadline,
+            requested_rev=review_req.requested_rev,
+            state=prev_state,
+        )
+
+        return redirect(review_request, name=review_req.doc.name, request_id=review_req.pk)
+
+    return render(request, 'doc/review/reject_request_assignment.html', {
         'doc': doc,
         'review_req': review_req,
     })

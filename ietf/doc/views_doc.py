@@ -357,7 +357,7 @@ def document_main(request, name, rev=None):
         published = doc.latest_event(type="published_rfc")
         started_iesg_process = doc.latest_event(type="started_iesg_process")
 
-        review_requests = ReviewRequest.objects.filter(doc=doc)
+        review_requests = ReviewRequest.objects.filter(doc=doc).exclude(state__in=["withdrawn", "rejected"])
 
         return render_to_response("doc/document_draft.html",
                                   dict(doc=doc,

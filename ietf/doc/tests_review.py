@@ -108,16 +108,63 @@ class ReviewTests(TestCase):
         review_req.state = ReviewRequestStateName.objects.get(slug="accepted")
         review_req.save()
 
-        url = urlreverse('ietf.doc.views_review.withdraw_request', kwargs={ "name": doc.name, "request_id": review_req.pk })
-        login_testing_unauthorized(self, "secretary", url)
+        withdraw_url = urlreverse('ietf.doc.views_review.withdraw_request', kwargs={ "name": doc.name, "request_id": review_req.pk })
 
-        r = self.client.get(url)
+
+        # follow link
+        req_url = urlreverse('ietf.doc.views_review.review_request', kwargs={ "name": doc.name, "request_id": review_req.pk })
+        self.client.login(username="secretary", password="secretary+password")
+        r = self.client.get(req_url)
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(withdraw_url in unicontent(r))
+        self.client.logout()
+
+        # get withdraw page
+        login_testing_unauthorized(self, "secretary", withdraw_url)
+        r = self.client.get(withdraw_url)
         self.assertEqual(r.status_code, 200)
 
         # withdraw
-        r = self.client.post(url, { "action": "withdraw" })
+        r = self.client.post(withdraw_url, { "action": "withdraw" })
         self.assertEqual(r.status_code, 302)
 
         review_req = reload_db_objects(review_req)
         self.assertEqual(review_req.state_id, "withdrawn")
-        self.assertEqual(doc.latest_event().type, "withdrew_review_request")
+        e = doc.latest_event()
+        self.assertEqual(e.type, "changed_review_request")
+        self.assertTrue("Withdrew" in e.desc)
+
+    def test_reject_request_assignment(self):
+        doc = make_test_data()
+        review_req = make_review_data(doc)
+        review_req.state = ReviewRequestStateName.objects.get(slug="accepted")
+        review_req.save()
+
+        reject_url = urlreverse('ietf.doc.views_review.reject_request_assignment', kwargs={ "name": doc.name, "request_id": review_req.pk })
+
+
+        # follow link
+        req_url = urlreverse('ietf.doc.views_review.review_request', kwargs={ "name": doc.name, "request_id": review_req.pk })
+        self.client.login(username="secretary", password="secretary+password")
+        r = self.client.get(req_url)
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(reject_url in unicontent(r))
+        self.client.logout()
+
+        # get reject page
+        login_testing_unauthorized(self, "secretary", reject_url)
+        r = self.client.get(reject_url)
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(unicode(review_req.reviewer.role.person) in unicontent(r))
+
+        # reject
+        r = self.client.post(reject_url, { "action": "reject" })
+        self.assertEqual(r.status_code, 302)
+
+        review_req = reload_db_objects(review_req)
+        self.assertEqual(review_req.state_id, "rejected")
+        e = doc.latest_event()
+        self.assertEqual(e.type, "changed_review_request")
+        self.assertTrue("unassigned" in e.desc)
+        self.assertEqual(ReviewRequest.objects.filter(doc=review_req.doc, team=review_req.team, state="accepted").count(), 1)
+        

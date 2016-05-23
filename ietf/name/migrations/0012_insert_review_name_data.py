@@ -12,7 +12,9 @@ def insert_initial_review_data(apps, schema_editor):
     ReviewRequestStateName.objects.get_or_create(slug="withdrawn", name="Withdrawn", order=4)
     ReviewRequestStateName.objects.get_or_create(slug="overtaken", name="Overtaken By Events", order=5)
     ReviewRequestStateName.objects.get_or_create(slug="noresponse", name="No Response", order=6)
-    ReviewRequestStateName.objects.get_or_create(slug="completed", name="Completed", order=7)
+    ReviewRequestStateName.objects.get_or_create(slug="part-completed", name="Partially Completed", order=6)
+    ReviewRequestStateName.objects.get_or_create(slug="completed", name="Completed", order=8)
+
 
     ReviewTypeName = apps.get_model("name", "ReviewTypeName")
     ReviewTypeName.objects.get_or_create(slug="early", name="Early", order=1)

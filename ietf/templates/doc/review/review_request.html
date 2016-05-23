@@ -64,7 +64,13 @@
         <tr>
           <th></th>
           <th>Reviewer</th>
-          <td>{{ review_req.reviewer.role.person }}</td>
+          <td>
+            {{ review_req.reviewer.role.person }}
+
+            {% if can_reject_request_assignment %}
+              <a class="btn btn-default btn-xs" href="{% url "ietf.doc.views_review.reject_request_assignment" name=doc.name request_id=review_req.pk %}"><span class="fa fa-ban"></span> Reject request assignment</a>
+            {% endif %}
+          </td>
         </tr>
       {% endif %}
 

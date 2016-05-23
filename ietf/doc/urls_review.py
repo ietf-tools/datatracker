@@ -5,5 +5,6 @@ urlpatterns = patterns('',
     url(r'^$', views_review.request_review),
     url(r'^(?P<request_id>[0-9]+)/$', views_review.review_request),
     url(r'^(?P<request_id>[0-9]+)/withdraw/$', views_review.withdraw_request),
+    url(r'^(?P<request_id>[0-9]+)/rejectassignment/$', views_review.reject_request_assignment),
 )
 
