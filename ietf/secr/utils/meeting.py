@@ -28,7 +28,7 @@ def get_proceedings_path(meeting,group):
     if meeting.type_id == 'ietf':
         path = os.path.join(meeting.get_materials_path(),group.acronym + '.html')
     elif meeting.type_id == 'interim':
-        path = os.path.join(meeting.get_materials.path(),'proceedings.html')
+        path = os.path.join(meeting.get_materials_path(),'proceedings.html')
     return path
 
 def get_proceedings_url(meeting,group=None):
