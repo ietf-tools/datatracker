@@ -107,17 +107,28 @@ def review_request(request, name, request_id):
     review_req = get_object_or_404(ReviewRequest, pk=request_id)
 
     is_reviewer = review_req.reviewer and user_is_person(request.user, review_req.reviewer.person)
-    can_manage_req = can_manage_review_requests_for_team(request.user, review_req.team)
+    can_manage_request = can_manage_review_requests_for_team(request.user, review_req.team)
 
     can_withdraw_request = (review_req.state_id in ["requested", "accepted"]
-                            and is_authorized_in_doc_stream(request.user, doc))
+                            and (is_authorized_in_doc_stream(request.user, doc)
+                                 or can_manage_request))
 
     can_assign_reviewer = (review_req.state_id in ["requested", "accepted"]
                            and is_authorized_in_doc_stream(request.user, doc))
 
+    can_accept_reviewer_assignment = (review_req.state_id == "requested"
+                                      and review_req.reviewer_id is not None
+                                      and (is_reviewer or can_manage_request))
+
     can_reject_reviewer_assignment = (review_req.state_id in ["requested", "accepted"]
                                       and review_req.reviewer_id is not None
-                                      and (is_reviewer or can_manage_req))
+                                      and (is_reviewer or can_manage_request))
+
+    if request.method == "POST" and request.POST.get("action") == "accept" and can_accept_reviewer_assignment:
+        review_req.state = ReviewRequestStateName.objects.get(slug="accepted")
+        review_req.save()
+
+        return redirect(review_request, name=review_req.doc.name, request_id=review_req.pk)
 
     return render(request, 'doc/review/review_request.html', {
         'doc': doc,
@@ -125,6 +136,7 @@ def review_request(request, name, request_id):
         'can_withdraw_request': can_withdraw_request,
         'can_reject_reviewer_assignment': can_reject_reviewer_assignment,
         'can_assign_reviewer': can_assign_reviewer,
+        'can_accept_reviewer_assignment': can_accept_reviewer_assignment,
     })
 
 def withdraw_request(request, name, request_id):
@@ -183,9 +195,9 @@ def assign_reviewer(request, name, request_id):
     doc = get_object_or_404(Document, name=name)
     review_req = get_object_or_404(ReviewRequest, pk=request_id, state__in=["requested", "accepted"])
 
-    can_manage_req = can_manage_review_requests_for_team(request.user, review_req.team)
+    can_manage_request = can_manage_review_requests_for_team(request.user, review_req.team)
 
-    if not can_manage_req:
+    if not can_manage_request:
         return HttpResponseForbidden("You do not have permission to perform this action")
 
     if request.method == "POST" and request.POST.get("action") == "assign":
@@ -215,9 +227,9 @@ def reject_reviewer_assignment(request, name, request_id):
         return redirect(review_request, name=review_req.doc.name, request_id=review_req.pk)
 
     is_reviewer = user_is_person(request.user, review_req.reviewer.person)
-    can_manage_req = can_manage_review_requests_for_team(request.user, review_req.team)
+    can_manage_request = can_manage_review_requests_for_team(request.user, review_req.team)
 
-    if not (is_reviewer or can_manage_req):
+    if not (is_reviewer or can_manage_request):
         return HttpResponseForbidden("You do not have permission to perform this action")
 
     if request.method == "POST" and request.POST.get("action") == "reject":

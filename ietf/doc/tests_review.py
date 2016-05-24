@@ -4,6 +4,8 @@ import datetime
 
 from django.core.urlresolvers import reverse as urlreverse
 
+from pyquery import PyQuery
+
 import debug                            # pyflakes:ignore
 
 from ietf.review.models import ReviewRequest, Reviewer
@@ -168,6 +170,27 @@ class ReviewTests(TestCase):
         self.assertEqual(len(outbox), 2)
         self.assertTrue("cancelled your assignment" in unicode(outbox[0]))
         self.assertTrue("assigned" in unicode(outbox[1]))
+
+    def test_accept_reviewer_assignment(self):
+        doc = make_test_data()
+        review_req = make_review_data(doc)
+        review_req.state = ReviewRequestStateName.objects.get(slug="requested")
+        review_req.save()
+
+        url = urlreverse('ietf.doc.views_review.review_request', kwargs={ "name": doc.name, "request_id": review_req.pk })
+        username = review_req.reviewer.person.user.username
+        self.client.login(username=username, password=username + "+password")
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertTrue(q("[name=action][value=accept]"))
+
+        # accept
+        r = self.client.post(url, { "action": "accept" })
+        self.assertEqual(r.status_code, 302)
+
+        review_req = reload_db_objects(review_req)
+        self.assertEqual(review_req.state_id, "accepted")
 
     def test_reject_reviewer_assignment(self):
         doc = make_test_data()
