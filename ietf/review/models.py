@@ -27,7 +27,7 @@ class ReviewRequest(models.Model):
     time          = models.DateTimeField(auto_now_add=True)
     type          = models.ForeignKey(ReviewTypeName)
     doc           = models.ForeignKey(Document, related_name='review_request_set')
-    team          = models.ForeignKey(Group)
+    team          = models.ForeignKey(Group, limit_choices_to=~models.Q(reviewresultname=None))
     deadline      = models.DateTimeField()
     requested_rev = models.CharField(verbose_name="requested revision", max_length=16, blank=True, help_text="Fill in if a specific revision is to be reviewed, e.g. 02")
 

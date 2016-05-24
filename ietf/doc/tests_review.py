@@ -107,6 +107,7 @@ class ReviewTests(TestCase):
         self.assertEqual(r.status_code, 200)
 
         # withdraw
+        empty_outbox()
         r = self.client.post(withdraw_url, { "action": "withdraw" })
         self.assertEqual(r.status_code, 302)
 
@@ -115,6 +116,8 @@ class ReviewTests(TestCase):
         e = doc.latest_event()
         self.assertEqual(e.type, "changed_review_request")
         self.assertTrue("Withdrew" in e.desc)
+        self.assertEqual(len(outbox), 1)
+        self.assertTrue("withdrawn" in unicode(outbox[0]))
 
     def test_assign_reviewer(self):
         doc = make_test_data()
@@ -140,6 +143,7 @@ class ReviewTests(TestCase):
         self.assertEqual(r.status_code, 200)
 
         # assign
+        empty_outbox()
         reviewer = Role.objects.filter(name="reviewer", group=review_req.team).first()
         r = self.client.post(assign_url, { "action": "assign", "reviewer": reviewer.pk })
         self.assertEqual(r.status_code, 302)
@@ -147,8 +151,11 @@ class ReviewTests(TestCase):
         review_req = reload_db_objects(review_req)
         self.assertEqual(review_req.state_id, "requested")
         self.assertEqual(review_req.reviewer, reviewer)
+        self.assertEqual(len(outbox), 1)
+        self.assertTrue("assigned" in unicode(outbox[0]))
 
         # re-assign
+        empty_outbox()
         review_req.state = ReviewRequestStateName.objects.get(slug="accepted")
         review_req.save()
         reviewer = Role.objects.filter(name="reviewer", group=review_req.team).exclude(pk=reviewer.pk).first()
@@ -156,8 +163,11 @@ class ReviewTests(TestCase):
         self.assertEqual(r.status_code, 302)
 
         review_req = reload_db_objects(review_req)
-        self.assertEqual(review_req.state_id, "requested")
+        self.assertEqual(review_req.state_id, "requested") # check that state is reset
         self.assertEqual(review_req.reviewer, reviewer)
+        self.assertEqual(len(outbox), 2)
+        self.assertTrue("cancelled your assignment" in unicode(outbox[0]))
+        self.assertTrue("assigned" in unicode(outbox[1]))
 
     def test_reject_reviewer_assignment(self):
         doc = make_test_data()
@@ -194,4 +204,5 @@ class ReviewTests(TestCase):
         self.assertTrue("rejected" in e.desc)
         self.assertEqual(ReviewRequest.objects.filter(doc=review_req.doc, team=review_req.team, state="requested").count(), 1)
         self.assertEqual(len(outbox), 1)
-        
+        self.assertTrue("Test message" in unicode(outbox[0]))
+

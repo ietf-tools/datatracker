@@ -10,8 +10,9 @@ from ietf.ietfauth.utils import is_authorized_in_doc_stream, user_is_person
 from ietf.name.models import ReviewRequestStateName
 from ietf.group.models import Role
 from ietf.review.models import ReviewRequest
-from ietf.review.utils import active_review_teams, assign_review_request_to_reviewer
-from ietf.review.utils import can_request_review_of_doc, can_manage_review_requests_for_team
+from ietf.review.utils import (active_review_teams, assign_review_request_to_reviewer,
+                               can_request_review_of_doc, can_manage_review_requests_for_team,
+                               email_about_review_request)
 from ietf.utils.fields import DatepickerDateField
 
 class RequestReviewForm(forms.ModelForm):
@@ -134,6 +135,7 @@ def withdraw_request(request, name, request_id):
         return HttpResponseForbidden("You do not have permission to perform this action")
 
     if request.method == "POST" and request.POST.get("action") == "withdraw":
+        prev_state = review_req.state
         review_req.state = ReviewRequestStateName.objects.get(slug="withdrawn")
         review_req.save()
 
@@ -144,9 +146,12 @@ def withdraw_request(request, name, request_id):
             desc="Withdrew request for {} review by {}".format(review_req.type.name, review_req.team.acronym.upper()),
         )
 
-        if review_req.state_id != "requested":
-            # FIXME: handle this case - by emailing?
-            pass
+        if prev_state.slug != "requested":
+            email_about_review_request(
+                request, review_req,
+                "Withdrew review request for %s" % review_req.doc.name,
+                "Review request has been withdrawn by %s." % request.user.person,
+                by=request.user.person, notify_secretary=False, notify_reviewer=True)
 
         return redirect(review_request, name=review_req.doc.name, request_id=review_req.pk)
 
@@ -187,7 +192,7 @@ def assign_reviewer(request, name, request_id):
         form = AssignReviewerForm(review_req, request.POST)
         if form.is_valid():
             reviewer = form.cleaned_data["reviewer"]
-            assign_review_request_to_reviewer(review_req, reviewer, request.user.person)
+            assign_review_request_to_reviewer(request, review_req, reviewer)
 
             return redirect(review_request, name=review_req.doc.name, request_id=review_req.pk)
     else:
@@ -216,35 +221,48 @@ def reject_reviewer_assignment(request, name, request_id):
         return HttpResponseForbidden("You do not have permission to perform this action")
 
     if request.method == "POST" and request.POST.get("action") == "reject":
-        # reject the request
-        review_req.state = ReviewRequestStateName.objects.get(slug="rejected")
-        review_req.save()
+        form = RejectReviewerAssignmentForm(request.POST)
+        if form.is_valid():
+            # reject the request
+            review_req.state = ReviewRequestStateName.objects.get(slug="rejected")
+            review_req.save()
 
-        DocEvent.objects.create(
-            type="changed_review_request",
-            doc=review_req.doc,
-            by=request.user.person,
-            desc="Assignment of request for {} review by {} to {} was rejected".format(
-                review_req.type.name,
-                review_req.team.acronym.upper(),
-                review_req.reviewer.person,
-            ),
-        )
-        
-        # make a new unassigned review request
-        new_review_req = ReviewRequest.objects.create(
-            time=review_req.time,
-            type=review_req.type,
-            doc=review_req.doc,
-            team=review_req.team,
-            deadline=review_req.deadline,
-            requested_rev=review_req.requested_rev,
-            state=ReviewRequestStateName.objects.get(slug="requested"),
-        )
+            DocEvent.objects.create(
+                type="changed_review_request",
+                doc=review_req.doc,
+                by=request.user.person,
+                desc="Assignment of request for {} review by {} to {} was rejected".format(
+                    review_req.type.name,
+                    review_req.team.acronym.upper(),
+                    review_req.reviewer.person,
+                ),
+            )
 
-        return redirect(review_request, name=new_review_req.doc.name, request_id=new_review_req.pk)
+            # make a new unassigned review request
+            new_review_req = ReviewRequest.objects.create(
+                time=review_req.time,
+                type=review_req.type,
+                doc=review_req.doc,
+                team=review_req.team,
+                deadline=review_req.deadline,
+                requested_rev=review_req.requested_rev,
+                state=ReviewRequestStateName.objects.get(slug="requested"),
+            )
+
+            msg = u"Reviewer assignment rejected by %s." % request.user.person
+
+            m = form.cleaned_data.get("message_to_secretary")
+            if m:
+                msg += "\n\n" + "Explanation:" + "\n" + m
+
+            email_about_review_request(request, review_req, "Reviewer assignment rejected", msg, by=request.user.person, notify_secretary=True, notify_reviewer=True)
+
+            return redirect(review_request, name=new_review_req.doc.name, request_id=new_review_req.pk)
+    else:
+        form = RejectReviewerAssignmentForm()
 
     return render(request, 'doc/review/reject_reviewer_assignment.html', {
         'doc': doc,
         'review_req': review_req,
+        'form': form,
     })

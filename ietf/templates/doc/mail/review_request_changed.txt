@@ -1,0 +1,7 @@
+{% autoescape off %}
+  {{ review_req.type.name }} review of: {{ review_req.doc.name }}{% if review_req.requested_rev %}-{{ review_req.requested_rev }}{% endif %}
+  https://{{ domain }}{% url "ietf.doc.views_review.review_request" name=review_req.doc.name request_id=review_req.pk %}
+
+{{ msg|wordwrap:72 }}
+
+{% endautoescape %}
