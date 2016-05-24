@@ -71,7 +71,7 @@
             {% endif %}
 
             {% if can_accept_reviewer_assignment %}
-              <form style="display:inline" method="post" action="{% url "ietf.doc.views_review.review_request" name=doc.name request_id=review_req.pk %}"><button class="btn btn-default btn-xs" type="submit" name="action" value="accept"><span class="fa fa-check"></span> Accept</button></form>
+              <form style="display:inline" method="post" action="{% url "ietf.doc.views_review.review_request" name=doc.name request_id=review_req.pk %}">{% csrf_token %}<button class="btn btn-default btn-xs" type="submit" name="action" value="accept"><span class="fa fa-check"></span> Accept</button></form>
             {% endif %}
 
             {% if can_reject_reviewer_assignment %}
