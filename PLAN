@@ -45,3 +45,11 @@ Planned work in rough order
 * Consistency fix:  in settings.py, name directory settings consistently with
   ..._DIR; reserving ..._PATH for settings with PATH semantics (':'-separated lists
   of directories)
+
+* For documents with Yang modules, add links to the extracted modules (possibly in
+  multiple formats -- pyang can generate a large number of alternative formats)
+
+* When we get to the point where we can produce pdf from xml+media, remove the
+  pdf upload possibility -- it's a definite attack vector.  Possibly start scanning
+  pdf files for /JS and /JavaScript (and workarounds to hide Javascript)
+
