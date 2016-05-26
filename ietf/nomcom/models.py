@@ -4,7 +4,6 @@ import os
 from django.db import models
 from django.db.models.signals import post_delete
 from django.conf import settings
-from django.core.files.storage import FileSystemStorage
 from django.contrib.auth.models import User
 from django.template.loader import render_to_string
 from django.template.defaultfilters import linebreaks
@@ -22,6 +21,8 @@ from ietf.nomcom.utils import (initialize_templates_for_group,
                                initialize_requirements_for_position,
                                delete_nomcom_templates)
 
+from ietf.utils.storage import NoLocationMigrationFileSystemStorage
+
 
 def upload_path_handler(instance, filename):
     return os.path.join(instance.group.acronym, 'public.cert')
@@ -31,14 +32,6 @@ class ReminderDates(models.Model):
     date = models.DateField()
     nomcom = models.ForeignKey('NomCom')
 
-
-class NoLocationMigrationFileSystemStorage(FileSystemStorage):
-
-    def deconstruct(obj):
-        path, args, kwargs = FileSystemStorage.deconstruct(obj)
-        kwargs["location"] = None
-        return (path, args, kwargs)
-    
 
 class NomCom(models.Model):
     public_key = models.FileField(storage=NoLocationMigrationFileSystemStorage(location=settings.NOMCOM_PUBLIC_KEYS_DIR),

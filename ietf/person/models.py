@@ -2,15 +2,19 @@
 
 import datetime
 from urlparse import urljoin
+from hashids import Hashids
 
 from django.conf import settings
 
 from django.db import models
 from django.contrib.auth.models import User
 from django.template.loader import render_to_string
+from django.utils.text import slugify
+
 
 from ietf.person.name import name_parts, initials
 from ietf.utils.mail import send_mail_preformatted
+from ietf.utils.storage import NoLocationMigrationFileSystemStorage
 
 class PersonInfo(models.Model):
     time = models.DateTimeField(default=datetime.datetime.now)      # When this Person record entered the system
@@ -23,6 +27,9 @@ class PersonInfo(models.Model):
     ascii_short = models.CharField("Abbreviated Name (ASCII)", max_length=32, null=True, blank=True, help_text="Example: A. Nonymous.  Fill in this with initials and surname only if taking the initials and surname of the ASCII name above produces an incorrect initials-only form. (Blank is OK).")
     affiliation = models.CharField(max_length=255, blank=True, help_text="Employer, university, sponsor, etc.")
     address = models.TextField(max_length=255, blank=True, help_text="Postal mailing address.")
+    biography = models.TextField(blank=True, help_text="Short biography for use on leadership pages.")
+    photo = models.ImageField(storage=NoLocationMigrationFileSystemStorage(location=settings.PHOTOS_DIR),upload_to=settings.PHOTO_URL_PREFIX,blank=True)
+    photo_thumb = models.ImageField(storage=NoLocationMigrationFileSystemStorage(location=settings.PHOTOS_DIR),upload_to=settings.PHOTO_URL_PREFIX,blank=True)
 
     def __unicode__(self):
         return self.plain_name()
@@ -84,6 +91,11 @@ class PersonInfo(models.Model):
     def full_name_as_key(self):
         # this is mostly a remnant from the old views, needed in the menu
         return self.plain_name().lower().replace(" ", ".")
+
+    def photo_name(self,thumb=False):
+        hasher = Hashids(salt='Person photo name salt',min_length=5)
+        return '%s-%s%s' % ( slugify(self.ascii), hasher.encode(self.id), '-th' if thumb else '' )
+
     class Meta:
         abstract = True
 
