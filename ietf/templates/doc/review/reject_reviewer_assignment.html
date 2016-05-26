@@ -13,6 +13,8 @@
   <form method="post">
     {% csrf_token %}
 
+    {% bootstrap_form form %}
+
     {% buttons %}
     <a class="btn btn-default" href="{% url "ietf.doc.views_review.review_request" name=doc.canonical_name request_id=review_req.pk %}">Cancel</a>
     <button type="submit" class="btn btn-primary" name="action" value="reject">Reject assignment</button>
