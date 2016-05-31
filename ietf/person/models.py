@@ -101,9 +101,11 @@ class Person(PersonInfo):
                                             settings=settings
                                             ))
                 send_mail_preformatted(None, msg)
-        self.alias_set.get_or_create(name=self.name)
+        if not self.name in [ a.name for a in self.alias_set.filter(name=self.name) ]:
+            self.alias_set.create(name=self.name)
         if self.ascii and self.name != self.ascii:
-            self.alias_set.get_or_create(name=self.ascii)
+            if not self.ascii in [ a.name for a in self.alias_set.filter(name=self.ascii) ]:
+                self.alias_set.create(name=self.ascii)
 
     #this variable, if not None, may be used by url() to keep the sitefqdn.
     default_hostscheme = None
