@@ -104,6 +104,8 @@ MEDIA_URL = 'https://www.ietf.org/'
 IETF_ID_URL = MEDIA_URL + 'id/'
 IETF_ID_ARCHIVE_URL = MEDIA_URL + 'archive/id/'
 
+PHOTOS_DIR = '/a/www/www6/'
+PHOTO_URL_PREFIX = 'photos/'
 
 # Absolute path to the directory static files should be collected to.
 # Example: "/var/www/example.com/static/"

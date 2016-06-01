@@ -870,3 +870,12 @@ def derived_archives(request, acronym=None, group_type=None):
                      'group':group,
                      'list_acronym':list_acronym,
                   }))
+
+def chair_photos(request, group_type=None):
+    if not group_type=='wg':
+        raise Http404
+    chair_roles = sorted(Role.objects.filter(group__type='wg',group__state='active',name_id='chair'),key=lambda x: x.person.last_name()+x.person.name+x.group.acronym)
+    for role in chair_roles:
+        role.last_initial = role.person.last_name()[0]
+    return render(request, 'group/chair_photos.html', {'chair_roles':chair_roles})
+
