@@ -1,0 +1,218 @@
+#!/usr/bin/env python
+
+import os, sys, shutil, pathlib
+
+# boilerplate
+basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
+sys.path = [ basedir ] + sys.path
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ietf.settings")
+
+import django
+django.setup()
+
+import debug
+
+from ietf.group.models import Role, Person
+
+old_images_dir = django.conf.settings.OLD_PHOTOS_DIR
+new_images_dir = django.conf.settings.PHOTOS_DIR
+
+if not os.path.exists(old_images_dir):
+    print("Old images directory does not exist: %s" % old_images_dir)
+    sys.exit(1)
+if not os.path.exists(new_images_dir):
+    print("New images directory does not exist: %s" % new_images_dir)
+    sys.exit(1)
+
+old_image_files = []
+
+
+for (dirpath, dirnames, filenames) in os.walk(old_images_dir):
+    if len(filenames) == 0:
+        print("No image files found in %s" % old_images_dir)
+        sys.exit(2)
+    old_image_files.extend(filenames)
+    break # Only interested in the files in the top directory
+
+old_image_files = [ f.name.decode('utf8') for f in pathlib.Path(old_images_dir).iterdir() if f.is_file() and not f.suffix.lower() in ['.lck'] ]
+
+interesting_persons = set()
+
+interesting_persons.update(list(Person.objects.all()))
+
+name_alias = {
+    "andy":     ["andrew", ],
+    "ben":      ["benjamin", ],
+    "bill":     ["william", ],
+    "bob":      ["robert", ],
+    "chris":    ["christopher", "christian"],
+    "dan":      ["daniel", ],
+    "dave":     ["david", ],
+    "dick":     ["richard", ],
+    "fred":     ["alfred", ],
+    "geoff":    ["geoffrey", ],
+    "jake":     ["jacob", ],
+    "jerry":    ["gerald", ],
+    "jim":      ["james", ],
+    "joe":      ["joseph", ],
+    "jon":      ["jonathan", ],
+    "mike":     ["michael", ],
+    "ned":      ["edward", ],
+    "pete":     ["peter", ],
+    "ron":      ["ronald", ],
+    "russ":     ["russel", ],
+    "steve":    ["stephen", ],
+    "ted":      ["edward", ],
+    "terry":    ["terence", ],
+    "tom":      ["thomas", ],
+    "wes":      ["wesley", ],
+    "will":     ["william", ],
+
+    "beth":     ["elizabeth", ],
+    "liz":      ["elizabeth", ],
+    "lynn":     ["carolyn", ],
+    "pat":      ["patricia", "patrick", ],
+    "sue":      ["susan", ],
+}
+# Add lookups from long to short, from the initial set
+for key,value in name_alias.items():
+    for item in value:
+        if item in name_alias:
+            name_alias[item] += [ key ];
+        else:
+            name_alias[item] = [ key ];
+
+exceptions = {
+'Aboba' : 'aboba-bernard',
+'Bernardos' : 'cano-carlos',
+'Bormann' : 'bormann-carsten',
+'Hinden' : 'hinden-bob',
+'Hutton' : 'hutton-andy',
+'Narten' : 'narten-thomas', # but there's no picture of him 
+'O\'Donoghue' : 'odonoghue-karen',
+'Przygienda' : 'przygienda-antoni', 
+'Salowey' : 'salowey-joe',
+'Gunter Van de Velde' : 'vandevelde-gunter',
+'Eric Vyncke' : 'vynke-eric',
+'Zuniga' : 'zuniga-carlos-juan',
+'Zhen Cao' : 'zhen-cao',
+'Jamal Hadi Salim': 'hadi-salim-jamal',
+}
+
+# Manually copied Bo Burman and Thubert Pascal from wg/photos/
+# Manually copied Victor Pascual (main image, not thumb) from wg/
+# Manually copied Eric Vync?ke (main image, not thumb) from wg/photos/
+# Manually copied Danial King (main image, not thumb) from wg/photos/
+# Manually copied the thumb (not labelled as such) for Tianran Zhou as both the main and thumb image from wg/photos/
+
+processed_files = []
+
+for person in sorted(list(interesting_persons),key=lambda x:x.last_name()+x.ascii):
+    substr_pattern = None
+    for exception in exceptions:
+        if exception in person.ascii:
+            substr_pattern = exceptions[exception]
+            break
+    if not person.ascii.strip():
+        print("   Setting person.ascii for %s" % person.name)
+        person.ascii = person.name.encode('ascii', errors='replace')
+        debug.show('person.ascii')
+    name_parts = person.ascii.lower().split()
+    if not substr_pattern:
+        substr_pattern = u'-'.join(name_parts[-1:]+name_parts[0:1])
+
+    candidates = [x for x in old_image_files if x.lower().startswith(substr_pattern)]
+    # If no joy, try a short name
+    if not candidates and name_parts[0] in name_alias:
+        for alias in name_alias[name_parts[0]]:
+            substr_pattern = u'-'.join(name_parts[-1:]+[alias])
+            candidates += [x for x in old_image_files if x.lower().startswith(substr_pattern)]
+        if candidates:
+            print("   Used '%s %s' instead of '%s %s'" % (alias, name_parts[-1], name_parts[0], name_parts[-1], ))
+    # If still no joy, reverse the name order (necessary for Deng Hui, for instance)
+    if not candidates:
+        substr_pattern = u'-'.join(name_parts[0:1]+name_parts[-1:])
+        candidates = [x for x in old_image_files if x.lower().startswith(substr_pattern)]
+        if candidates:
+            print("   Used '%s %s' instead of '%s %s'" % (name_parts[-1], name_parts[0], name_parts[0], name_parts[-1], ))
+    # If still no joy, try with Person.plain_name() (necessary for Donald Eastlake)
+    if not candidates:
+        name_parts = person.plain_name().lower().split()
+        substr_pattern = u'-'.join(name_parts[-1:]+name_parts[0:1])
+        candidates = [x for x in old_image_files if x.lower().startswith(substr_pattern)]
+        # If no joy, try a short name
+        if not candidates and name_parts[0] in name_alias:
+            for alias in name_alias[name_parts[0]]:
+                substr_pattern = u'-'.join(name_parts[-1:]+[alias])
+                candidates += [x for x in old_image_files if x.lower().startswith(substr_pattern)]
+            if candidates:
+                print("   Used '%s %s' instead of '%s %s'" % (alias, name_parts[-1], name_parts[0], name_parts[-1], ))
+
+    # Fixup for other exceptional cases
+
+    if person.ascii=="David Oran":
+        candidates = ['oran-dave-th.jpg','oran-david.jpg']
+
+    if person.ascii=="Susan Hares":
+        candidates = ['hares-sue-th.jpg','hares-susan.JPG']
+
+    if person.ascii=="Mahesh Jethanandani":
+        candidates = ['Mahesh-Jethanandani-th.jpg','Jethanandani-Mahesh.jpg']
+
+    processed_files += [ c for c in candidates ]
+
+    if len(candidates) not in [0,1,2]:
+        candidates = [x for x in candidates if not '00' in x]
+
+    if len(candidates) == 1:
+        candidates = candidates + candidates
+
+    if len(candidates) not in [0,2]:
+        thumb = [ c for c in candidates if '-th.' in c ][0]
+        photo = [ c for c in candidates if '-th.' not in c ][0]
+        trunc = [thumb, photo]
+        print("   Truncating %s to %s" % (candidates, trunc))
+        candidates = trunc
+        
+    if candidates and '-th' in candidates[1]:
+        candidates.reverse()
+        
+
+    # At this point we either have no candidates or two. If two, the first will be the thumb
+
+    def copy(old, new):
+        if not os.path.exists(new):
+            print("Copying "+old+" to "+new)
+            shutil.copy(old, new)
+            shutil.copystat(old, new)
+
+    if len(candidates)==2:
+        old_name = candidates[1]
+        old_thumb_name = candidates[0]
+        old_name_ext = os.path.splitext(old_name)[1]
+        old_thumb_name_ext = os.path.splitext(old_thumb_name)[1]
+
+        new_name = person.photo_name(thumb=False)+old_name_ext.lower()
+        new_thumb_name = person.photo_name(thumb=True)+old_thumb_name_ext.lower()
+
+        copy( os.path.join(old_images_dir,old_name), os.path.join(new_images_dir,new_name) )
+
+        #
+        copy( os.path.join(old_images_dir,old_thumb_name),  os.path.join(new_images_dir,new_thumb_name) )
+
+print("")
+not_processed = 0
+for file in pathlib.Path(old_images_dir).iterdir():
+    if ( file.is_file()
+        and not file.suffix.lower() in ['.txt', '.lck', '.html',]
+        and not file.name.startswith('index.')
+        and not file.name.startswith('milestoneupdate')
+        and not file.name.startswith('nopicture')
+        and not file.name.startswith('robots.txt')
+    ):
+        if not file.name.decode('utf8') in processed_files:
+            not_processed += 1
+            print(u"Not processed: "+file.name.decode('utf8'))
+print("")
+print("")
+print("Not processed: %s files" % not_processed)
