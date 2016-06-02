@@ -27,16 +27,24 @@
         {% regroup letter.list by person as person_groups %}
         {% for person_with_groups in person_groups %}
          <li>
-         <div class="well">
+         <div class="well photo-thumbnail">
+	   <div>
            {% if person_with_groups.grouper.photo_thumb %}
-             <img width=100px src="{{person_with_groups.grouper.photo_thumb.url}}"/>
-           {% endif %}
-           {% if person_with_groups.grouper.photo %}
-             <div><a href="{{person_with_groups.grouper.photo.url}}"><strong>{{person_with_groups.grouper.plain_name}}</strong></a></div>
+	      <a href="{{person_with_groups.grouper.photo.url}}">
+		 <img width=100px src="{{person_with_groups.grouper.photo_thumb.url}}"/>
+	      </a>
            {% else %}
-             <div><strong>{{person_with_groups.grouper.plain_name}}</strong></div>
+		 <img width=100px src="{{ MEDIA_URL }}photos/nopictureavailable.jpg"/>
            {% endif %}
-           <div>
+	   </div>
+	   <div class="photo-name">
+           {% if person_with_groups.grouper.photo %}
+             <a href="{{person_with_groups.grouper.photo.url}}"><strong>{{person_with_groups.grouper.plain_name}}</strong></a>
+           {% else %}
+	     <strong>{{person_with_groups.grouper.plain_name}}</strong>
+           {% endif %}
+	   </div>
+           <div class="photo-role-list">
            {% for role in person_with_groups.list %}   
                {{role.group.acronym}}
            {% endfor %}

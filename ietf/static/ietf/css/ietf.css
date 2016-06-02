@@ -459,3 +459,8 @@ label#list-feeds {
 .email-subscription button[type=submit] {
   margin-left: 3em;
 }
+
+.photo-name {
+  height: 3em;
+}
+
