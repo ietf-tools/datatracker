@@ -28,8 +28,8 @@ class PersonInfo(models.Model):
     affiliation = models.CharField(max_length=255, blank=True, help_text="Employer, university, sponsor, etc.")
     address = models.TextField(max_length=255, blank=True, help_text="Postal mailing address.")
     biography = models.TextField(blank=True, help_text="Short biography for use on leadership pages.")
-    photo = models.ImageField(storage=NoLocationMigrationFileSystemStorage(location=settings.PHOTOS_DIR),upload_to=settings.PHOTO_URL_PREFIX,blank=True)
-    photo_thumb = models.ImageField(storage=NoLocationMigrationFileSystemStorage(location=settings.PHOTOS_DIR),upload_to=settings.PHOTO_URL_PREFIX,blank=True)
+    photo = models.ImageField(storage=NoLocationMigrationFileSystemStorage(location=settings.PHOTOS_DIR),upload_to=settings.PHOTOS_DIRNAME,blank=True)
+    photo_thumb = models.ImageField(storage=NoLocationMigrationFileSystemStorage(location=settings.PHOTOS_DIR),upload_to=settings.PHOTOS_DIRNAME,blank=True)
 
     def __unicode__(self):
         return self.plain_name()

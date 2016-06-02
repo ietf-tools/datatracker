@@ -24,10 +24,10 @@ def forward(apps,schema_editor):
     for person in Person.objects.all():
         dirty = False
         if photo_name(person,thumb=False) in image_basenames:
-            person.photo = os.path.join(settings.PHOTO_URL_PREFIX, image_filenames[image_basenames.index(photo_name(person,thumb=False))])
+            person.photo = os.path.join(settings.PHOTOS_DIRNAME, image_filenames[image_basenames.index(photo_name(person,thumb=False))])
             dirty = True
         if photo_name(person,thumb=True) in image_basenames:
-            person.photo_thumb = os.path.join(settings.PHOTO_URL_PREFIX, image_filenames[image_basenames.index(photo_name(person,thumb=True))])
+            person.photo_thumb = os.path.join(settings.PHOTOS_DIRNAME, image_filenames[image_basenames.index(photo_name(person,thumb=True))])
             dirty = True
         if dirty:
             person.save()
