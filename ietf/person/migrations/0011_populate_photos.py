@@ -15,7 +15,7 @@ def photo_name(person,thumb=False):
 
 def forward(apps,schema_editor):
     Person = apps.get_model('person','Person')
-    images_dir = os.path.join(settings.PHOTOS_DIR,settings.PHOTO_URL_PREFIX)
+    images_dir = settings.PHOTOS_DIR
     image_filenames = []
     for (dirpath, dirnames, filenames) in os.walk(images_dir):
         image_filenames.extend(filenames)
@@ -24,16 +24,22 @@ def forward(apps,schema_editor):
     for person in Person.objects.all():
         dirty = False
         if photo_name(person,thumb=False) in image_basenames:
-            person.photo = image_filenames[image_basenames.index(photo_name(person,thumb=False))]
+            person.photo = os.path.join(settings.PHOTO_URL_PREFIX, image_filenames[image_basenames.index(photo_name(person,thumb=False))])
             dirty = True
         if photo_name(person,thumb=True) in image_basenames:
-            person.photo_thumb = image_filenames[image_basenames.index(photo_name(person,thumb=True))]
+            person.photo_thumb = os.path.join(settings.PHOTO_URL_PREFIX, image_filenames[image_basenames.index(photo_name(person,thumb=True))])
             dirty = True
         if dirty:
             person.save()
 
 def reverse(apps, schema_editor):
-    pass
+    Person = apps.get_model('person','Person')
+    for person in Person.objects.filter(photo__gt=''):
+        person.photo = None
+        person.save()
+    for person in Person.objects.filter(photo_thumb__gt=''):
+        person.photo_thumb = None
+        person.save()
 
 class Migration(migrations.Migration):
 
