@@ -389,10 +389,10 @@ class Document(DocumentInfo):
                 else:
                     filename = self.external_url
                 if meeting.type_id == 'ietf':
-                    url = '%sproceedings/%s/%s/%s' % (settings.MEDIA_URL,meeting.number,self.type_id,filename)
+                    url = '%sproceedings/%s/%s/%s' % (settings.IETF_HOST_URL,meeting.number,self.type_id,filename)
                 elif meeting.type_id == 'interim':
                     url = "%sproceedings/interim/%s/%s/%s/%s" % (
-                        settings.MEDIA_URL,
+                        settings.IETF_HOST_URL,
                         meeting.date.strftime('%Y/%m/%d'),
                         session.group.acronym,
                         self.type_id,

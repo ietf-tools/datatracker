@@ -100,12 +100,15 @@ USE_I18N = False
 
 USE_TZ = False
 
-MEDIA_URL = 'https://www.ietf.org/'
-IETF_ID_URL = MEDIA_URL + 'id/'
-IETF_ID_ARCHIVE_URL = MEDIA_URL + 'archive/id/'
+MEDIA_ROOT = '/a/www/www6s/lib/dt/media/'
+MEDIA_URL  = 'https://www.ietf.org/lib/dt/media/'
+PHOTOS_DIRNAME = 'photo'
+PHOTOS_DIR = MEDIA_ROOT + PHOTOS_DIRNAME
 
-PHOTOS_DIR = '/a/www/www6/'
-PHOTO_URL_PREFIX = 'photos/'
+IETF_HOST_URL = 'https://www.ietf.org/'
+IETF_ID_URL = IETF_HOST_URL + 'id/'
+IETF_ID_ARCHIVE_URL = IETF_HOST_URL + 'archive/id/'
+
 
 # Absolute path to the directory static files should be collected to.
 # Example: "/var/www/example.com/static/"

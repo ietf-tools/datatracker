@@ -2,6 +2,7 @@
 
 from django.conf import settings
 from django.conf.urls import patterns, include
+from django.conf.urls.static import static
 from django.contrib import admin
 from django.views.generic import TemplateView
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
@@ -82,15 +83,11 @@ if settings.SERVER_MODE in ('development', 'test'):
             ## maybe preserve some static legacy URLs ?
             (r'^(?P<path>(?:images|css|js)/.*)$', 'django.views.static.serve', {'document_root': settings.STATIC_ROOT+'ietf/'}),
         )
+        + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     )
 
-# This is needed to serve files which are not handled by collectstatic :
-# if settings.SERVER_MODE in ('development', 'test'):
-#     urlpatterns += patterns('',
-#         (r'^(?P<path>(?:images|css|js|test|static)/.*)$', 'django.views.static.serve', {'document_root': settings.STATIC_LOCAL}),
-#         (r'^(?P<path>admin/(?:img|css|js)/.*)$', 'django.views.static.serve', {'document_root': settings.STATIC_LOCAL}),
-#         (r'^(?P<path>secretariat/(img|css|js)/.*)$', 'django.views.static.serve', {'document_root': settings.STATIC_LOCAL}),
-#         (r'^(?P<path>robots\.txt)$', 'django.views.static.serve', {'document_root': settings.STATIC_LOCAL+"dev/"}),
-#         (r'^_test500/$', lambda x: None),
-#         (r'^environment/$', 'ietf.help.views.environment'),
-# 	)
+import debug
+debug.debug = True
+debug.show('static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)')
+
+

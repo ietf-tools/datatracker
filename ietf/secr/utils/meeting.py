@@ -36,13 +36,13 @@ def get_proceedings_path(meeting,group):
 
 def get_proceedings_url(meeting,group=None):
     if meeting.type_id == 'ietf':
-        url = "%sproceedings/%s/" % (settings.MEDIA_URL,meeting.number)
+        url = "%sproceedings/%s/" % (settings.IETF_HOST_URL,meeting.number)
         if group:
             url = url + "%s.html" % group.acronym
 
     elif meeting.type_id == 'interim':
         url = "%sproceedings/interim/%s/%s/proceedings.html" % (
-            settings.MEDIA_URL,
+            settings.IETF_HOST_URL,
             meeting.date.strftime('%Y/%m/%d'),
             group.acronym)
     return url
