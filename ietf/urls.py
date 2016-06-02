@@ -86,8 +86,3 @@ if settings.SERVER_MODE in ('development', 'test'):
         + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     )
 
-import debug
-debug.debug = True
-debug.show('static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)')
-
-
