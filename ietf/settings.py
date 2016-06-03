@@ -105,6 +105,14 @@ MEDIA_URL  = 'https://www.ietf.org/lib/dt/media/'
 PHOTOS_DIRNAME = 'photo'
 PHOTOS_DIR = MEDIA_ROOT + PHOTOS_DIRNAME
 
+OLD_PHOTO_DIRS = [
+    '/a/www/www6/wg/images',
+    '/a/www/www6/iesg/bio/photo',
+    '/a/www/iab/wp-content/IAB-uploads/2015/03/',
+    '/a/www/iab/wp-content/IAB-uploads/2015/08/',
+    '/a/www/iab/wp-content/IAB-uploads/2016/03/',
+]
+
 IETF_HOST_URL = 'https://www.ietf.org/'
 IETF_ID_URL = IETF_HOST_URL + 'id/'
 IETF_ID_ARCHIVE_URL = IETF_HOST_URL + 'archive/id/'
