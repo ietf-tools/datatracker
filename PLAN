@@ -7,20 +7,22 @@ Updated: $Date$
 Planned work in rough order
 ===========================
 
+* Schema changes: Person.bio and Person.photo, with derived photo pages
+
+* Modified account creation, with safeguards against spammer accounts
+
+* Interim meeting management project merge, which will also fix the interim
+  materials 404 errors.
+
 * Glue code for WG issue trackers and wiki:
   - create new trackers on group creation
   - update access lists on group chair/secretary changes
   - update components on new group documents
 
-* Schema changes: Person.bio and Person.photo
+* Schema Changes: floorplan, document tags, external links for groups.  Add
+  Berlin floorplans manually.
 
 * Add "Waiting for implementation" and "Held by WG" states, with comment field
-
-* Schema Changes: floorplan, document tags, external links for groups
-
-* Modified account creation, with safeguards against spammer accounts
-
-* Interim meeting management project merge
 
 * Glue code to trigger generation of htmlized documents on www.ietf.org
 
