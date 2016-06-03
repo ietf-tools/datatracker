@@ -8,6 +8,7 @@ Planned work in rough order
 ===========================
 
 * Schema changes: Person.bio and Person.photo, with derived photo pages
+  for WG Chairs, IESG, and IAB
 
 * Modified account creation, with safeguards against spammer accounts
 
