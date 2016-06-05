@@ -48,7 +48,7 @@
 	       </div>
 	       <div class="photo-name">
 	       {% if person_with_groups.grouper.photo %}
-		 <a href="{{person_with_groups.grouper.photo.url}}"><strong>{{person_with_groups.grouper.plain_name}}</strong></a>
+		 <a href="{% url 'ietf.person.views.profile' email_or_name=person_with_groups.grouper.name %}"><strong>{{person_with_groups.grouper.plain_name}}</strong></a>
 	       {% else %}
 		 <strong>{{person_with_groups.grouper.plain_name}}</strong>
 	       {% endif %}

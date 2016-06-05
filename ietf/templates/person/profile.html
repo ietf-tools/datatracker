@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+
+{% block title %}Profile for {{ person }}{% endblock %}
+
+{% block content %}
+
+  {% origin %}
+  <h1>{{ person }}</h1>
+
+  <div class="bio-text">
+     <img class="bio-photo" src="{{ person.photo.url }}" alt="Photo of {{ person }}" />
+     {{ person.biography }}
+  </div>
+
+{% endblock %}

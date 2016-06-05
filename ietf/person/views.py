@@ -1,7 +1,9 @@
-from django.http import HttpResponse
-from django.db.models import Q
 
-from ietf.person.models import Email, Person
+from django.db.models import Q
+from django.http import HttpResponse
+from django.shortcuts import render, get_object_or_404
+
+from ietf.person.models import Email, Person, Alias
 from ietf.person.fields import select2_id_name_json
 
 def ajax_select2_search(request, model_name):
@@ -47,3 +49,11 @@ def ajax_select2_search(request, model_name):
     objs = objs.distinct()[page:page + 10]
 
     return HttpResponse(select2_id_name_json(objs), content_type='application/json')
+
+def profile(request, email_or_name):
+    person = None
+    if '@' in email_or_name:
+        person = get_object_or_404(Email, address=email_or_name).person
+    else:
+        person = get_object_or_404(Alias, name=email_or_name).person
+    return render(request, 'person/profile.html', {'person': person})
