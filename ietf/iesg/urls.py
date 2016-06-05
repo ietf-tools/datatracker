@@ -53,4 +53,5 @@ urlpatterns = patterns('',
     (r'^agenda/telechat-(?:(?P<date>\d{4}-\d{2}-\d{2})-)?docs.tgz', "ietf.iesg.views.telechat_docs_tarfile"),
     (r'^discusses/$', "ietf.iesg.views.discusses"),
     (r'^milestones/$', "ietf.iesg.views.milestones_needing_review"),
+    (r'^photos/$', "ietf.iesg.views.photos"),
 )

@@ -15,6 +15,15 @@
   {% origin %}
   <h1>IESG discuss positions</h1>
 
+  <ul class="nav nav-tabs" role="tablist">
+     <li class="      "><a href="/iesg/agenda/">IESG Agenda</a></li>
+     <li class="      "><a href="/iesg/agenda/documents/">Documents on future agendas</a></li>
+     <li class="active"><a href="/iesg/discusses/">DISCUSS positions</a></li>
+     <li class="      "><a href="{% url "ietf.iesg.views.photos" %}">IESG Photos</a></li>
+  </ul>
+
+
+
   {% if user|has_role:"Area Director" %}
     <p class="btn-group" data-toggle="buttons">
       <label class="btn btn-default active discuss">

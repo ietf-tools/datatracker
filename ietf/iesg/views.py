@@ -54,7 +54,7 @@ from django.contrib.sites.models import Site
 
 from ietf.doc.models import Document, TelechatDocEvent, LastCallDocEvent, ConsensusDocEvent, DocEvent, IESG_BALLOT_ACTIVE_STATES
 from ietf.doc.utils import update_telechat, augment_events_with_revision
-from ietf.group.models import GroupMilestone
+from ietf.group.models import GroupMilestone, Role
 from ietf.iesg.agenda import agenda_data, agenda_sections, fill_in_agenda_docs, get_agenda_date
 from ietf.iesg.models import TelechatDate
 from ietf.iesg.utils import telechat_page_count
@@ -474,3 +474,10 @@ def milestones_needing_review(request):
                                    ),
                               context_instance=RequestContext(request))
 
+def photos(request):
+    roles = sorted(Role.objects.filter(group__type='area', group__state='active', name_id='ad'),key=lambda x: "" if x.group.acronym=="gen" else x.group.acronym)
+    for role in roles:
+        role.last_initial = role.person.last_name()[0]
+    return render(request, 'iesg/photos.html', {'group_type': 'IESG', 'role': '', 'roles': roles })
+
+    
