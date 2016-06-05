@@ -108,7 +108,12 @@ PHOTOS_DIR = MEDIA_ROOT + PHOTOS_DIRNAME
 OLD_PHOTO_DIRS = [
     '/a/www/www6/wg/images',
     '/a/www/www6/iesg/bio/photo',
+    '/a/www/iab/wp-content/IAB-uploads/2010/10/',
+    '/a/www/iab/wp-content/IAB-uploads/2011/05/',
+    '/a/www/iab/wp-content/IAB-uploads/2014/02/',
+    '/a/www/iab/wp-content/IAB-uploads/2015/02/',
     '/a/www/iab/wp-content/IAB-uploads/2015/03/',
+    '/a/www/iab/wp-content/IAB-uploads/2015/06/',
     '/a/www/iab/wp-content/IAB-uploads/2015/08/',
     '/a/www/iab/wp-content/IAB-uploads/2016/03/',
 ]
