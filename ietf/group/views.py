@@ -358,7 +358,7 @@ def construct_group_menu_context(request, group, selected, group_type, others):
 
     if group.features.has_documents:
         kwargs["output_type"] = "svg"
-        entries.append((mark_safe("Dependency graph &raquo;"), urlreverse("ietf.group.views.dependencies", kwargs=kwargs)))
+        entries.append((mark_safe("Dependencies &raquo;"), urlreverse("ietf.group.views.dependencies", kwargs=kwargs)))
         del kwargs["output_type"]
 
     if group.has_tools_page():
@@ -871,11 +871,9 @@ def derived_archives(request, acronym=None, group_type=None):
                      'list_acronym':list_acronym,
                   }))
 
-def chair_photos(request, group_type=None):
-    if not group_type=='wg':
-        raise Http404
-    chair_roles = sorted(Role.objects.filter(group__type='wg',group__state='active',name_id='chair'),key=lambda x: x.person.last_name()+x.person.name+x.group.acronym)
-    for role in chair_roles:
+def photos(request, group_type=None):
+    roles = sorted(Role.objects.filter(group__type=group_type, group__state='active', name_id='chair'),key=lambda x: x.person.last_name()+x.person.name+x.group.acronym)
+    for role in roles:
         role.last_initial = role.person.last_name()[0]
-    return render(request, 'group/chair_photos.html', {'chair_roles':chair_roles})
+    return render(request, 'group/photos.html', {'group_type': group_type, 'role': 'Chair', 'roles': roles })
 
