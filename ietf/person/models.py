@@ -94,7 +94,8 @@ class PersonInfo(models.Model):
 
     def photo_name(self,thumb=False):
         hasher = Hashids(salt='Person photo name salt',min_length=5)
-        return '%s-%s%s' % ( slugify(self.ascii), hasher.encode(self.id), '-th' if thumb else '' )
+        _, first, _, last, _ = name_parts(self.ascii)
+        return '%s-%s%s' % ( slugify("%s %s" % (first, last)), hasher.encode(self.id), '-th' if thumb else '' )
 
     class Meta:
         abstract = True
