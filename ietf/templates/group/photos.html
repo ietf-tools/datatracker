@@ -14,9 +14,9 @@
   {% origin %}
   {% load ietf_filters %}
 
-  <h1>Chair Photos</h1>
+  <h1>{{ group_type | upper }} {{ role }} Photos</h1>
 
-  {% regroup chair_roles by last_initial as alphabet_blocks %}
+  {% regroup roles by last_initial as alphabet_blocks %}
   <div class="col-md-11">
   {% for letter in alphabet_blocks %}
    <div class="row anchor-target" id="{{letter.grouper}}">
