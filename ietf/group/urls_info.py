@@ -19,6 +19,6 @@ urlpatterns = patterns('',
     (r'^bofs/$', views.bofs),
     (r'^email-aliases/$', 'ietf.group.views.email_aliases'),
     (r'^bofs/create/$', views_edit.edit, {'action': "create"}, "bof_create"),
-    (r'^photos/$', views.photos),
+    (r'^photos/$', views.all_photos),
     (r'^(?P<acronym>[a-zA-Z0-9-._]+)/', include('ietf.group.urls_info_details')),
 )

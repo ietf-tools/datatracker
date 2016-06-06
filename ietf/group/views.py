@@ -871,9 +871,16 @@ def derived_archives(request, acronym=None, group_type=None):
                      'list_acronym':list_acronym,
                   }))
 
-def photos(request, group_type=None):
+def all_photos(request, group_type=None):
     roles = sorted(Role.objects.filter(group__type=group_type, group__state='active', name_id='chair'),key=lambda x: x.person.last_name()+x.person.name+x.group.acronym)
     for role in roles:
         role.last_initial = role.person.last_name()[0]
     return render(request, 'group/photos.html', {'group_type': group_type, 'role': 'Chair', 'roles': roles })
+
+def group_photos(request, group_type=None, acronym=None):
+    group = get_object_or_404(Group, acronym=acronym)
+    roles = sorted(Role.objects.filter(group__acronym=acronym),key=lambda x: x.name.name+x.person.last_name())
+    for role in roles:
+        role.last_initial = role.person.last_name()[0]
+    return render(request, 'group/group_photos.html', {'group_type': group_type, 'roles': roles, 'group':group })
 
