@@ -271,6 +271,7 @@ INSTALLED_APPS = (
     'form_utils',
     'tastypie',
     'widget_tweaks',
+    'django_markup',
     # IETF apps
     'ietf.api',
     'ietf.community',
@@ -626,6 +627,20 @@ TRAC_ADMIN_CMD = "/usr/bin/trac-admin"
 TRAC_WIKI_DIR = "/a/www/www6s/trac"
 TRAC_SVN_DIR = "/a/svn/group"
 
+MARKUP_SETTINGS = {
+    'restructuredtext': {
+        'settings_overrides': {
+            'initial_header_level': 3,
+            'doctitle_xform': False,
+            'footnote_references': 'superscript',
+            'trim_footnote_reference_space': True,
+            'default_reference_context': 'view',
+            'link_base': ''
+        }
+    }
+}
+
+
 # Put the production SECRET_KEY in settings_local.py, and also any other
 # sensitive or site-specific changes.  DO NOT commit settings_local.py to svn.
 from settings_local import *            # pyflakes:ignore
@@ -651,3 +666,4 @@ if SERVER_MODE != 'production':
     if 'SECRET_KEY' not in locals():
         SECRET_KEY = 'PDwXboUq!=hPjnrtG2=ge#N$Dwy+wn@uivrugwpic8mxyPfHka'
     ALLOWED_HOSTS = ['*',]
+    

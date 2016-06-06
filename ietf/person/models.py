@@ -27,7 +27,7 @@ class PersonInfo(models.Model):
     ascii_short = models.CharField("Abbreviated Name (ASCII)", max_length=32, null=True, blank=True, help_text="Example: A. Nonymous.  Fill in this with initials and surname only if taking the initials and surname of the ASCII name above produces an incorrect initials-only form. (Blank is OK).")
     affiliation = models.CharField(max_length=255, blank=True, help_text="Employer, university, sponsor, etc.")
     address = models.TextField(max_length=255, blank=True, help_text="Postal mailing address.")
-    biography = models.TextField(blank=True, help_text="Short biography for use on leadership pages.")
+    biography = models.TextField(blank=True, help_text="Short biography for use on leadership pages. Use plain text or reStructuredText markup.")
     photo = models.ImageField(storage=NoLocationMigrationFileSystemStorage(location=settings.PHOTOS_DIR),upload_to=settings.PHOTOS_DIRNAME,blank=True)
     photo_thumb = models.ImageField(storage=NoLocationMigrationFileSystemStorage(location=settings.PHOTOS_DIR),upload_to=settings.PHOTOS_DIRNAME,blank=True)
 

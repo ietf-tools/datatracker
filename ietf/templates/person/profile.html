@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
+{% load markup_tags %}
 
 {% block title %}Profile for {{ person }}{% endblock %}
 
@@ -11,7 +12,7 @@
 
   <div class="bio-text">
      <img class="bio-photo" src="{{ person.photo.url }}" alt="Photo of {{ person }}" />
-     {{ person.biography }}
+     {{ person.biography | apply_markup:"restructuredtext" }}
   </div>
 
 {% endblock %}
