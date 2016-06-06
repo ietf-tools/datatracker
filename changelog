@@ -1,5 +1,11 @@
 ietfdb (6.21.1) ietf; urgency=medium
 
+  * Changed the acceptable mime type for uploaded xml files to be either 
+    text/xml or application/xml.
+
+  * Fixed a bug found by rjsparks@nostrum.com in the submission test text 
+    output.
+
   * Fixed a problem with person alias updates where get_or_create() could 
     find two results for one alias name because utf8_general_ci collation would 
     match multiple different utf8 forms to the same name.
