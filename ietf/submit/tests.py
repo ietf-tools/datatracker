@@ -109,7 +109,7 @@ class SubmitTests(TestCase):
         r = self.client.post(url, files)
         if r.status_code != 302:
             q = PyQuery(r.content)
-            print(q('div.has-error div.alert').text)
+            print(q('div.has-error div.alert').text())
 
         self.assertEqual(r.status_code, 302)
 
