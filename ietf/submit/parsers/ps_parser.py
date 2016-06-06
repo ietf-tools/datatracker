@@ -3,7 +3,7 @@ from ietf.submit.parsers.base import FileParser
 
 class PSParser(FileParser):
     ext = 'ps'
-    mimetype = 'application/postscript'
+    mimetypes = ['application/postscript', ]
 
     # If some error is found after this method invocation
     # no other file parsing is recommended

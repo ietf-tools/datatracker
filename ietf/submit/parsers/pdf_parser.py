@@ -3,7 +3,7 @@ from ietf.submit.parsers.base import FileParser
 
 class PDFParser(FileParser):
     ext = 'pdf'
-    mimetype = 'application/pdf'
+    mimetypes = ['application/pdf', ]
 
     # If some error is found after this method invocation
     # no other file parsing is recommended

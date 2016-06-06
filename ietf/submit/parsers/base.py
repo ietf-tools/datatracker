@@ -41,7 +41,7 @@ class ParseInfo(object):
 
 class FileParser(object):
     ext = None
-    mimetype = None
+    mimetypes = []
 
     def __init__(self, fd):
         self.fd = fd
@@ -78,5 +78,5 @@ class FileParser(object):
         self.fd.file.seek(0)
         content = self.fd.file.read(4096)
         mimetype = magic.from_buffer(content, mime=True)
-        if not mimetype == self.mimetype:
-            self.parsed_info.add_error(u'Expected an %s file of type "%s", found one of type "%s"' % (self.ext.upper(), self.mimetype, mimetype))
+        if not mimetype in self.mimetypes:
+            self.parsed_info.add_error(u'Expected an %s file of type "%s", found one of type "%s"' % (self.ext.upper(), '" or "'.join(self.mimetypes), mimetype))

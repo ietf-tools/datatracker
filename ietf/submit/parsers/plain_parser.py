@@ -5,7 +5,7 @@ from ietf.submit.parsers.base import FileParser
 
 class PlainParser(FileParser):
     ext = 'txt'
-    mimetype = 'text/plain'
+    mimetypes = ['text/plain', ]
 
     def __init__(self, fd):
         super(PlainParser, self).__init__(fd)
