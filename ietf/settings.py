@@ -616,6 +616,10 @@ TRAC_SVN_URL_PATTERN = "https://svn.ietf.org/svn/group/%s/"
 # against the following list of regex expressions with re.search(pat, addr):
 EXLUDED_PERSONAL_EMAIL_REGEX_PATTERNS = ["@ietf.org$"]
 
+# Email addresses people attempt to set for their account will be checked
+# against the following list of regex expressions with re.search(pat, addr):
+EXLUDED_PERSONAL_EMAIL_REGEX_PATTERNS = ["@ietf.org$"]
+
 # Put the production SECRET_KEY in settings_local.py, and also any other
 # sensitive or site-specific changes.  DO NOT commit settings_local.py to svn.
 from settings_local import *            # pyflakes:ignore
