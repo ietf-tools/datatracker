@@ -1,5 +1,8 @@
 ietfdb (6.21.1) ietf; urgency=medium
 
+  This is a bugfix patch release, in preparation for an upcoming feature
+  release.  Excerpt from the commitlog:
+
   * Changed the acceptable mime type for uploaded xml files to be either 
     text/xml or application/xml.
 
