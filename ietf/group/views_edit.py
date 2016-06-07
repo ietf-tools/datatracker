@@ -393,8 +393,10 @@ def conclude(request, acronym, group_type=None):
     })
 
 @login_required
-def customize_workflow(request, group_type, acronym):
+def customize_workflow(request, group_type=None, acronym=None):
     group = get_group_or_404(acronym, group_type)
+    if not group_type:
+        group_type = group.type_id
     if not group.features.customize_workflow:
         raise Http404
 
