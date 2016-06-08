@@ -31,6 +31,10 @@ Planned work in rough order
 
 * Upgrade to Django 1.8 / 1.9
 
+* Add support for internationalised email addresses according to RFC 6531
+  when sending email (this is not supported by smtplib under Python 2.7,
+  so will need support code in the application until we migrate to Python 3.5)
+
 * Meeting materials enhancements
 
 * Transition to PostgreSQL
@@ -41,6 +45,9 @@ Planned work in rough order
 
 * When draft XML source is available, take references from that instead
   of extracting them from the text version.
+
+* Transition to running under Python 3.x (probably 3.5) instead of 2.7
+
 
 * Small nomcom refactoring: associate Feedback records with Person
   instead of User.
