@@ -224,7 +224,7 @@ def profile(request):
 
             # Make sure the alias table contains any new and/or old names.
             existing_aliases = set(Alias.objects.filter(person=person).values_list("name", flat=True))
-            curr_names = set(x for x in [updated_person.name, updated_person.ascii, updated_person.ascii_short] if x)
+            curr_names = set(x for x in [updated_person.name, updated_person.ascii, updated_person.ascii_short, updated_person.plain_name(), ] if x)
             new_aliases = curr_names - existing_aliases
             for name in new_aliases:
                 Alias.objects.create(person=updated_person, name=name)
