@@ -1,0 +1,61 @@
+{% extends "group/group_base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin staticfiles %}
+
+{% block morecss %}
+.well { max-width: 150px;}
+{% endblock %}
+
+{% block title %}{{ group }} ({{group.acronym}}) Photos{% endblock %}
+
+{% block bodyAttrs %}data-spy="scroll" data-target="#affix"{% endblock %}
+
+{% block group_content %}
+  {% origin %}
+  {% load ietf_filters %}
+
+  <h1>{{ group }} ({{group.acronym}}) Photos</h1>
+
+  {% regroup roles by name as role_groups %}
+  <div class="col-md-10">
+  {% for role_name in role_groups %}
+   <div class="row anchor-target" id="{{role_name.grouper|urlencode}}">
+    <div class="panel panel-default">
+      <div class="panel-heading">{{role_name.grouper}}{{role_name.list|pluralize}}</div>
+      <div class="panel-body">
+        <ul class="list-inline">
+        {% regroup role_name.list by person as person_groups %}
+        {% for person_with_groups in person_groups %}
+         <li>
+	 {% if person_with_groups.grouper.photo %}<a href="{% url 'ietf.person.views.profile' email_or_name=person_with_groups.grouper.plain_name %}">{% endif %}
+         <div class="well photo-thumbnail">
+	   <div>
+           {% if person_with_groups.grouper.photo_thumb %}
+		 <img width=100 src="{{person_with_groups.grouper.photo_thumb.url}}" alt="Photo of {{person_with_groups.grouper.name}}" />
+           {% else %}
+		 <img width=100 src="{{ MEDIA_URL }}photos/nopictureavailable.jpg" alt="No picture available"/>
+           {% endif %}
+	   </div>
+	   <div >
+	     <strong>{{person_with_groups.grouper.plain_name}}</strong>
+	   </div>
+         </div>
+	 {% if person_with_groups.grouper.photo %}</a>{% endif %}
+         </li>
+        {% endfor %}
+        </ul>
+      </div>
+    </div>
+   </div>
+  {% endfor %}
+  </div>
+
+  <div class="col-md-1 hidden-print bs-docs-sidebar" id="affix">
+    <ul class="nav nav-pills nav-stacked small fixed" data-spy="affix">
+      {% for role_name in role_groups %}
+        <li><a href="#{{role_name.grouper|urlencode}}">{{role_name.grouper}}</a></li>
+      {% endfor %}
+    </ul>
+  </div>
+
+{% endblock %}

@@ -36,29 +36,25 @@
 	    {% regroup letter.list by person as person_groups %}
 	    {% for person_with_groups in person_groups %}
 	     <li>
+	     {% if person_with_groups.grouper.photo %}<a href="{% url 'ietf.person.views.profile' email_or_name=person_with_groups.grouper.plain_name %}">{% endif %}
 	     <div class="well photo-thumbnail">
 	       <div>
 	       {% if person_with_groups.grouper.photo_thumb %}
-		  <a href="{{person_with_groups.grouper.photo.url}}">
-		     <img width=100px src="{{person_with_groups.grouper.photo_thumb.url}}"/>
-		  </a>
+		     <img width=100 src="{{person_with_groups.grouper.photo_thumb.url}}"  alt="Photo of {{person_with_groups.grouper.name}}"/>
 	       {% else %}
-		     <img width=100px src="{{ MEDIA_URL }}photos/nopictureavailable.jpg"/>
+		     <img width=100 src="{{ MEDIA_URL }}photos/nopictureavailable.jpg" alt="No photo available"/>
 	       {% endif %}
 	       </div>
 	       <div class="photo-name">
-	       {% if person_with_groups.grouper.photo %}
-		 <a href="{% url 'ietf.person.views.profile' email_or_name=person_with_groups.grouper.name %}"><strong>{{person_with_groups.grouper.plain_name}}</strong></a>
-	       {% else %}
-		 <strong>{{person_with_groups.grouper.plain_name}}</strong>
-	       {% endif %}
+		  <strong>{{person_with_groups.grouper.plain_name}}</strong>
 	       </div>
 	       <div class="photo-role-list">
 	       {% for role in person_with_groups.list %}   
-		   {{role.group.acronym}}
+		  <a href="{% url 'ietf.group.views.group_home' acronym=role.group.acronym %}">{{role.group.acronym}}</a>
 	       {% endfor %}
 	       </div>
 	     </div>
+	     {% if person_with_groups.grouper.photo %}</a>{% endif %}
 	     </li>
 	    {% endfor %}
 	    </ul>
