@@ -28,8 +28,8 @@ class PersonInfo(models.Model):
     affiliation = models.CharField(max_length=255, blank=True, help_text="Employer, university, sponsor, etc.")
     address = models.TextField(max_length=255, blank=True, help_text="Postal mailing address.")
     biography = models.TextField(blank=True, help_text="Short biography for use on leadership pages. Use plain text or reStructuredText markup.")
-    photo = models.ImageField(storage=NoLocationMigrationFileSystemStorage(location=settings.PHOTOS_DIR),upload_to=settings.PHOTOS_DIRNAME,blank=True)
-    photo_thumb = models.ImageField(storage=NoLocationMigrationFileSystemStorage(location=settings.PHOTOS_DIR),upload_to=settings.PHOTOS_DIRNAME,blank=True)
+    photo = models.ImageField(storage=NoLocationMigrationFileSystemStorage(location=settings.PHOTOS_DIR),upload_to=settings.PHOTOS_DIRNAME,blank=True, default=None)
+    photo_thumb = models.ImageField(storage=NoLocationMigrationFileSystemStorage(location=settings.PHOTOS_DIR),upload_to=settings.PHOTOS_DIRNAME,blank=True, default=None)
 
     def __unicode__(self):
         return self.plain_name()
@@ -44,8 +44,6 @@ class PersonInfo(models.Model):
             prefix, first, middle, last, suffix = self.ascii_parts()
             return (first and first[0]+"." or "")+(middle or "")+" "+last+(suffix and " "+suffix or "")
     def plain_name(self):
-        if self.ascii_short:
-            return self.ascii_short
         prefix, first, middle, last, suffix = name_parts(self.name)
         return u" ".join([first, last])
     def initials(self):
@@ -95,7 +93,7 @@ class PersonInfo(models.Model):
     def photo_name(self,thumb=False):
         hasher = Hashids(salt='Person photo name salt',min_length=5)
         _, first, _, last, _ = name_parts(self.ascii)
-        return '%s-%s%s' % ( slugify("%s %s" % (first, last)), hasher.encode(self.id), '-th' if thumb else '' )
+        return u'%s-%s%s' % ( slugify(u"%s %s" % (first, last)), hasher.encode(self.id), '-th' if thumb else '' )
 
     class Meta:
         abstract = True
