@@ -12,76 +12,87 @@
 
   <table class="table table-condensed">
     <thead><tr><th colspan="3"></th></tr></thead>
-     <tbody class="meta">
-    <tr>
-      <th>{{ group.type.name }}</th>
-      <th>Name</th>
-      <td>{{ group.name }}</td>
-    </tr>
-
-    <tr>
-      <td></td>
-      <th>Acronym</th>
-      <td>{{ group.acronym }}</td>
-    </tr>
-
-    <tr>
-      <td></td>
-      {% if group.parent and group.parent.type_id == "area" %}
-        <th>{{ group.parent.type.name }}</th>
-        <td>{{ group.parent.name }} ({{ group.parent.acronym }})</td>
-      {% else %}
-        <th></th><td></td>
-      {% endif %}
-    </tr>
-
-    <tr>
-      <td></td>
-      <th>State</th>
-      <td>
-        {{ group.state.name }}
-        {% if requested_close %}
-          <div class="label label-info">In the process of being closed</div>
-        {% endif %}
-      </td>
-    </tr>
-
-    {% if group.features.has_chartering_process %}
+    <tbody class="meta">
       <tr>
-        <td></td>
-        <th>Charter</th>
-        <td>
-          {% if group.charter %}
-            <a href="{% url "doc_view" name=group.charter.name %}">{{ group.charter.name }}-{{ group.charter.rev }}</a>
-            <span class="label label-info">{{ group.charter.get_state.name }}</span>
-          {% else %}
-            (None)
-            {% if user|has_role:"Area Director,Secretariat" %}
-              <a class="btn btn-warning btn-xs" href="{% url "ietf.group.views_edit.submit_initial_charter" group_type=group.type_id acronym=group.acronym %}">Submit charter</a>
-            {% endif %}
-          {% endif %}
-        </td>
+	<th>{{ group.type.name }}</th>
+	<th>Name</th>
+	<td>{{ group.name }}</td>
       </tr>
-    {% endif %}
 
-    {% if can_provide_status_update or status_update %}
-      <tr id='status_update'>
-        <td></td>
-        <th>Status Update</th>
-        <td>
-           {% if status_update %}
-              (last changed {{status_update.time|date:"Y-m-d"}})
-           {% else %}
-              (None)
-           {% endif %}
-           <a class="btn btn-default btn-xs" href="{% url "ietf.group.views.group_about_status" acronym=group.acronym %}">Show</a>
-           {% if can_provide_status_update %}
-             <a class="btn btn-default btn-xs" href="{% url "ietf.group.views.group_about_status_edit" acronym=group.acronym %}">Edit</a>
-           {% endif %}
-        </td>
+      <tr>
+	<td></td>
+	<th>Acronym</th>
+	<td>{{ group.acronym }}</td>
       </tr>
-    {% endif %}
 
+      <tr>
+	<td></td>
+	{% if group.parent and group.parent.type_id == "area" %}
+	  <th>{{ group.parent.type.name }}</th>
+	  <td>{{ group.parent.name }} ({{ group.parent.acronym }})</td>
+	{% else %}
+	  <th></th><td></td>
+	{% endif %}
+      </tr>
+
+      <tr>
+	<td></td>
+	<th>State</th>
+	<td>
+	  {{ group.state.name }}
+	  {% if requested_close %}
+	    <div class="label label-info">In the process of being closed</div>
+	  {% endif %}
+	</td>
+      </tr>
+
+      {% if group.features.has_chartering_process %}
+	<tr>
+	  <td></td>
+	  <th>Charter</th>
+	  <td>
+	    {% if group.charter %}
+	      <a href="{% url "doc_view" name=group.charter.name %}">{{ group.charter.name }}-{{ group.charter.rev }}</a>
+	      <span class="label label-info">{{ group.charter.get_state.name }}</span>
+	    {% else %}
+	      (None)
+	      {% if user|has_role:"Area Director,Secretariat" %}
+		<a class="btn btn-warning btn-xs" href="{% url "ietf.group.views_edit.submit_initial_charter" group_type=group.type_id acronym=group.acronym %}">Submit charter</a>
+	      {% endif %}
+	    {% endif %}
+	  </td>
+	</tr>
+      {% endif %}
+
+      {% if can_provide_status_update or status_update %}
+	<tr id='status_update'>
+	  <td></td>
+	  <th>Status Update</th>
+	  <td>
+	     {% if status_update %}
+		(last changed {{status_update.time|date:"Y-m-d"}})
+	     {% else %}
+		(None)
+	     {% endif %}
+	     <a class="btn btn-default btn-xs" href="{% url "ietf.group.views.group_about_status" acronym=group.acronym %}">Show</a>
+	     {% if can_provide_status_update %}
+	       <a class="btn btn-default btn-xs" href="{% url "ietf.group.views.group_about_status_edit" acronym=group.acronym %}">Edit</a>
+	     {% endif %}
+	  </td>
+	</tr>
+      {% endif %}
+
+      {% if group.features.has_documents %}
+	<tr id='dependency_graph'>
+	  <td></td>
+	  <th>Dependencies</th>
+	  <td>
+	     <a href="{% url 'ietf.group.views.dependencies' group_type=group.type_id acronym=group.acronym output_type='svg' %}">
+		Document dependency graph (SVG)
+	     </a>
+	  </td>
+	</tr>
+      {% endif %}
 
       {% with group.groupurl_set.all as urls %}
         {% if urls %}
@@ -89,6 +100,10 @@
           <td></td>
           <th>More info</th>
           <td>
+	    {% if group.has_tools_page %}	     
+              <a href="https://tools.ietf.org/{{ group.type_id }}/{{ group.acronym }}/">Tools page</a>
+	      {% if urls %}<br>{% endif %}
+	    {% endif %}
             {% for url in urls %}
               <a href="{{ url.url }}">{% firstof url.name url.url %}</a>{% if not forloop.last %}<br>{% endif %}
             {% endfor %}
@@ -97,27 +112,28 @@
         {% endif %}
       {% endwith %}
     </tbody>
+
     <tbody class="meta">
-    {% for slug, label, roles in group.personnel %}
-      <tr>
-	{% if forloop.first %}
-	<th>Personnel</th>
-  {% else %}
-  <td></td>
-	{% endif %}
-        <th>{{ label }}</th>
-        <td>
-          {% for r in roles %}
-            <span class="fa fa-envelope-o"></span>
-            <a href="mailto:{{ r.email.address }}">{{ r.person.plain_name }}</a>
-            <br>
-          {% endfor %}
-        </td>
-      </tr>
-    {% endfor %}
+      {% for slug, label, roles in group.personnel %}
+        <tr>
+	  {% if forloop.first %}
+	    <th>Personnel</th>
+	  {% else %}
+	    <td></td>
+	  {% endif %}
+	  <th>{{ label }}</th>
+	  <td>
 
+
+	    {% for r in roles %}
+	      <span class="fa fa-envelope-o"></span>
+	      <a href="mailto:{{ r.email.address }}">{{ r.person.plain_name }}</a>
+	      <br>
+	    {% endfor %}
+	  </td>
+        </tr>
+      {% endfor %}
     </tbody>
-
 
     {% if group.list_email %}
     <tbody class="meta">
