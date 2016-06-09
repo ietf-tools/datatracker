@@ -8,10 +8,16 @@
 {% block content %}
 
   {% origin %}
-  <h1>{{ person }}</h1>
+  <h1>{{ person.name }}</h1>
 
   <div class="bio-text">
-     <img class="bio-photo" src="{{ person.photo.url }}" alt="Photo of {{ person }}" />
+     {% if person.photo %}
+     <a href="{{person.photo.url}}">
+       <img class="bio-photo" src="{{ person.photo.url }}" alt="Photo of {{ person }}" />
+     </a>
+     {% else %}
+       <img class="bio-photo" src="{{ MEDIA_URL }}photos/nopictureavailable.jpg" alt="No photo available"/>
+     {% endif %}
      {{ person.biography | apply_markup:"restructuredtext" }}
   </div>
 
