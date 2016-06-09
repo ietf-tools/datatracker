@@ -7,6 +7,8 @@ from django.contrib import admin
 from django.views.generic import TemplateView
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 
+import debug                            # pyflakes:ignore
+
 from ietf.liaisons.sitemaps import LiaisonMap
 from ietf.ipr.sitemaps import IPRMap
 from ietf import api
@@ -76,13 +78,15 @@ for n,a in api._api_list:
 
 # This is needed to serve files during testing
 if settings.SERVER_MODE in ('development', 'test'):
-    urlpatterns += ( staticfiles_urlpatterns()
-        + patterns('',
+    save_debug = settings.DEBUG
+    settings.DEBUG = True
+    urlpatterns += staticfiles_urlpatterns()
+    urlpatterns += patterns('',
             (r'^_test500/$', lambda x: None),
             (r'^environment/$', 'ietf.help.views.environment'),
             ## maybe preserve some static legacy URLs ?
             (r'^(?P<path>(?:images|css|js)/.*)$', 'django.views.static.serve', {'document_root': settings.STATIC_ROOT+'ietf/'}),
         )
-        + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-    )
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    settings.DEBUG = save_debug
 
