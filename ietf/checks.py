@@ -71,7 +71,7 @@ def check_doc_email_aliases_exists(app_configs, **kwargs):
 @checks.register('directories')
 def check_id_submission_directories(app_configs, **kwargs):
     errors = []
-    for s in ("IDSUBMIT_STAGING_PATH", "IDSUBMIT_REPOSITORY_PATH", "INTERNET_DRAFT_ARCHIVE_DIR"):
+    for s in ("IDSUBMIT_STAGING_PATH", "IDSUBMIT_REPOSITORY_PATH", "INTERNET_DRAFT_ARCHIVE_DIR", ):
         p = getattr(settings, s)
         if not os.path.exists(p):
             errors.append(checks.Critical(
@@ -142,3 +142,21 @@ def check_id_submission_checkers(app_configs, **kwargs):
                 id = "datatracker.E0011",
             ))
     return errors
+
+@checks.register('directories')
+def check_media_directories(app_configs, **kwargs):
+    errors = []
+    for s in ("PHOTOS_DIR", ):
+        p = getattr(settings, s)
+        if not os.path.exists(p):
+            errors.append(checks.Critical(
+                "A directory used for media uploads and serves does not exist at the path given\n"
+                "in the settings file.  The setting is:\n"
+                "    %s = %s" % (s, p),
+                hint = ("Please either update the local settings to point at the correct directory,"
+                    "or if the setting is correct, create the directory."),
+                id = "datatracker.E0012",
+            ))
+    return errors
+
+    
