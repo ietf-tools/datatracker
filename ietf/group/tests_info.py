@@ -359,13 +359,22 @@ class GroupPagesTests(TestCase):
         chairs = Role.objects.filter(group__type='wg', group__state='active', name_id='chair')
         self.assertEqual(len(q('div.photo-thumbnail img')), chairs.count())
 
-    def test_group_photos(self):
+    def test_wg_photos(self):
         make_test_data()
         url = urlreverse("ietf.group.views.group_photos", kwargs={'group_type':'wg', 'acronym':'mars'})
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         roles = Role.objects.filter(group__acronym='mars')
+        self.assertEqual(len(q('div.photo-thumbnail img')), roles.count())
+
+    def test_group_photos(self):
+        make_test_data()
+        url = urlreverse("ietf.group.views.group_photos", kwargs={'acronym':'iab'})
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        roles = Role.objects.filter(group__acronym='iab')
         self.assertEqual(len(q('div.photo-thumbnail img')), roles.count())
 
 class GroupEditTests(TestCase):
