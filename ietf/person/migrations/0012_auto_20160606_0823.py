@@ -21,13 +21,13 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='person',
             name='photo',
-            field=models.ImageField(storage=ietf.utils.storage.NoLocationMigrationFileSystemStorage(location=None), upload_to=b'photos', blank=True),
+            field=models.ImageField(default=None, storage=ietf.utils.storage.NoLocationMigrationFileSystemStorage(location=None), upload_to=b'photos', blank=True),
             preserve_default=True,
         ),
         migrations.AlterField(
             model_name='person',
             name='photo_thumb',
-            field=models.ImageField(storage=ietf.utils.storage.NoLocationMigrationFileSystemStorage(location=None), upload_to=b'photos', blank=True),
+            field=models.ImageField(default=None, storage=ietf.utils.storage.NoLocationMigrationFileSystemStorage(location=None), upload_to=b'photos', blank=True),
             preserve_default=True,
         ),
         migrations.AlterField(
@@ -39,13 +39,13 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='personhistory',
             name='photo',
-            field=models.ImageField(storage=ietf.utils.storage.NoLocationMigrationFileSystemStorage(location=None), upload_to=b'photos', blank=True),
+            field=models.ImageField(default=None, storage=ietf.utils.storage.NoLocationMigrationFileSystemStorage(location=None), upload_to=b'photos', blank=True),
             preserve_default=True,
         ),
         migrations.AlterField(
             model_name='personhistory',
             name='photo_thumb',
-            field=models.ImageField(storage=ietf.utils.storage.NoLocationMigrationFileSystemStorage(location=None), upload_to=b'photos', blank=True),
+            field=models.ImageField(default=None, storage=ietf.utils.storage.NoLocationMigrationFileSystemStorage(location=None), upload_to=b'photos', blank=True),
             preserve_default=True,
         ),
     ]
