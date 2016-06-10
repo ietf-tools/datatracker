@@ -19,7 +19,7 @@ from django.utils.html import escape
 from django.template.defaultfilters import urlize
 
 from ietf.doc.models import Document, DocAlias, DocEvent, State
-from ietf.group.models import Group, GroupEvent, GroupMilestone, GroupStateTransitions 
+from ietf.group.models import Group, GroupEvent, GroupMilestone, GroupStateTransitions, Role
 from ietf.group.utils import save_group_in_history, setup_default_community_list_for_group
 from ietf.name.models import DocTagName, GroupStateName, GroupTypeName
 from ietf.person.models import Person, Email
@@ -349,6 +349,33 @@ class GroupPagesTests(TestCase):
         self.assertTrue(ge.desc in unicontent(r))
         self.assertTrue(de.desc in unicontent(r))
 
+
+    def test_chair_photos(self):
+        make_test_data()
+        url = urlreverse("ietf.group.views.chair_photos", kwargs={'group_type':'wg'})
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        chairs = Role.objects.filter(group__type='wg', group__state='active', name_id='chair')
+        self.assertEqual(len(q('div.photo-thumbnail img')), chairs.count())
+
+    def test_wg_photos(self):
+        make_test_data()
+        url = urlreverse("ietf.group.views.group_photos", kwargs={'group_type':'wg', 'acronym':'mars'})
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        roles = Role.objects.filter(group__acronym='mars')
+        self.assertEqual(len(q('div.photo-thumbnail img')), roles.count())
+
+    def test_group_photos(self):
+        make_test_data()
+        url = urlreverse("ietf.group.views.group_photos", kwargs={'acronym':'iab'})
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        roles = Role.objects.filter(group__acronym='iab')
+        self.assertEqual(len(q('div.photo-thumbnail img')), roles.count())
 
 class GroupEditTests(TestCase):
     def setUp(self):

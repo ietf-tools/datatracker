@@ -1,0 +1,292 @@
+#!/usr/bin/env python
+
+import os, re, sys, shutil, pathlib
+from collections import namedtuple
+from PIL import Image
+
+# boilerplate
+basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
+sys.path = [ basedir ] + sys.path
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "ietf.settings")
+
+import django
+django.setup()
+
+from django.conf import settings
+from django.utils.text import slugify
+
+import debug
+
+from ietf.group.models import Role, Person
+from ietf.person.name import name_parts
+
+old_images_dir = ''
+new_images_dir = settings.PHOTOS_DIR
+
+if not os.path.exists(new_images_dir):
+    print("New images directory does not exist: %s" % new_images_dir)
+    sys.exit(1)
+
+old_image_files = []
+for dir in settings.OLD_PHOTO_DIRS:
+    if not os.path.exists(dir):
+        print("Old images directory does not exist: %s" % dir)
+        sys.exit(1)
+    old_image_files += [ f for f in pathlib.Path(dir).iterdir() if f.is_file() and f.suffix.lower() in ['.jpg', '.jpeg', '.png'] ]
+
+photo = namedtuple('photo', ['path', 'name', 'ext', 'width', 'height', 'time', 'file'])
+
+old_images = []
+for f in old_image_files:
+    path = str(f)
+    img = Image.open(path)
+    old_images.append(photo(path, f.stem.decode('utf8'), f.suffix, img.size[0], img.size[1], f.stat().st_mtime, f))
+
+# Fix up some names:
+
+def fix_missing_surnames(images):
+    replacement = {
+        "alissa": "alissa-cooper",
+        "alissa1": "alissa-cooper",
+        "andrei": "andrei-robachevsky",
+        "bernard": "bernard-aboba",
+        "danny": "danny-mcpherson",
+        "danny1": "danny-mcpherson",
+        "dthaler": "dave-thaler",
+        "eliot-mug": "eliot-lear",
+        "erik.nordmark-300": "erik-nordmark",
+        "hannes": "hannes-tschofenig",
+        "hildebrand": "joe-hildebrand",
+        "housley": "russ-housley",
+        "jariarkko": "jari-arkko",
+        "joel": "joel-jaeggli",
+        "joel1": "joel-jaeggli",
+        "joel2": "joel-jaeggli",
+        "jon": "jon-peterson",
+        "kessens": "david-kessens",
+        "klensin": "john-klensin",
+        "lars": "lars-eggert",
+        "lars1": "lars-eggert",
+        "marc_blanchet": "marc-blanchet",
+        "marcelo": "marcelo-bagnulo",
+        "olaf": "olaf-kolkman",
+        "olaf1": "olaf-kolkman",
+        "ross": "ross-callon",
+        "spencer": "spencer-dawkins",
+        "spencer1": "spencer-dawkins",
+        "vijay": "vijay-gurbani",
+        "xing": "xing-li",
+    }
+
+    for i in range(len(images)):
+        img = images[i]
+        name = re.sub('-[0-9]+x[0-9]+', '', img.name)
+        if '/iab/' in img.path and name in replacement:
+            name = replacement[name]
+            images[i] = photo(img.path, name, img.ext, img.width, img.height, img.time, img.file)
+
+
+fix_missing_surnames(old_images)
+
+interesting_persons = set(Person.objects.all())
+
+name_alias = {
+    u"andy":     [u"andrew", ],
+    u"ben":      [u"benjamin", ],
+    u"bill":     [u"william", ],
+    u"bob":      [u"robert", ],
+    u"chris":    [u"christopher", u"christian"],
+    u"dan":      [u"daniel", ],
+    u"dave":     [u"david", ],
+    u"dick":     [u"richard", ],
+    u"fred":     [u"alfred", ],
+    u"geoff":    [u"geoffrey", ],
+    u"jake":     [u"jacob", ],
+    u"jerry":    [u"gerald", ],
+    u"jim":      [u"james", ],
+    u"joe":      [u"joseph", ],
+    u"jon":      [u"jonathan", ],
+    u"mike":     [u"michael", ],
+    u"ned":      [u"edward", ],
+    u"pete":     [u"peter", ],
+    u"ron":      [u"ronald", ],
+    u"russ":     [u"russel", ],
+    u"steve":    [u"stephen", ],
+    u"ted":      [u"edward", ],
+    u"terry":    [u"terence", ],
+    u"tom":      [u"thomas", ],
+    u"wes":      [u"wesley", ],
+    u"will":     [u"william", ],
+
+    u"beth":     [u"elizabeth", ],
+    u"liz":      [u"elizabeth", ],
+    u"lynn":     [u"carolyn", ],
+    u"pat":      [u"patricia", u"patrick", ],
+    u"sue":      [u"susan", ],
+}
+# Add lookups from long to short, from the initial set
+for key,value in name_alias.items():
+    for item in value:
+        if item in name_alias:
+            name_alias[item] += [ key ];
+        else:
+            name_alias[item] = [ key ];
+
+exceptions = {
+'Aboba' : 'aboba-bernard',
+'Bernardos' : 'cano-carlos',
+'Bormann' : 'bormann-carsten',
+'Hinden' : 'hinden-bob',
+'Hutton' : 'hutton-andy',
+'Narten' : 'narten-thomas', # but there's no picture of him 
+'O\'Donoghue' : 'odonoghue-karen',
+'Przygienda' : 'przygienda-antoni', 
+'Salowey' : 'salowey-joe',
+'Gunter Van de Velde' : 'vandevelde-gunter',
+'Eric Vyncke' : 'vynke-eric',
+'Zuniga' : 'zuniga-carlos-juan',
+'Zhen Cao' : 'zhen-cao',
+'Jamal Hadi Salim': 'hadi-salim-jamal',
+}
+
+# Manually copied Bo Burman and Thubert Pascal from wg/photos/
+# Manually copied Victor Pascual (main image, not thumb) from wg/
+# Manually copied Eric Vync?ke (main image, not thumb) from wg/photos/
+# Manually copied Danial King (main image, not thumb) from wg/photos/
+# Manually copied the thumb (not labelled as such) for Tianran Zhou as both the main and thumb image from wg/photos/
+
+processed_files = []
+
+for person in sorted(list(interesting_persons),key=lambda x:x.last_name()+x.ascii):
+    substr_pattern = None
+    for exception in exceptions:
+        if exception in person.ascii:
+            substr_pattern = exceptions[exception]
+            break
+    if not person.ascii.strip():
+        print("   Setting person.ascii for %s" % person.name)
+        person.ascii = person.name.encode('ascii', errors='replace').decode('ascii')
+
+    _, first, _, last, _ = person.ascii_parts()
+    first = first.lower()
+    last  = last. lower()
+    if not substr_pattern:
+        substr_pattern = slugify("%s %s" % (last, first))
+
+    if first in ['', '<>'] or last in ['', '<>']:
+        continue
+
+    #debug.show('1, substr_pattern')
+
+    candidates = [x for x in old_images if x.name.lower().startswith(substr_pattern)]
+    # Also check the reverse the name order (necessary for Deng Hui, for instance)
+    substr_pattern = slugify("%s %s" % (first, last))
+    #debug.show('2, substr_pattern')
+    prev_len = len(candidates)
+    candidates += [x for x in old_images if x.name.lower().startswith(substr_pattern)]
+    if prev_len < len(candidates) :
+        print("   Found match with '%s %s' for '%s %s'" % (last, first, first, last, ))
+    # If no joy, try a short name
+    if first in name_alias:
+        prev_len = len(candidates)
+        for alias in name_alias[first]:
+            substr_pattern = slugify("%s %s" % (last, alias))
+            #debug.show('3, substr_pattern')
+            candidates += [x for x in old_images if x.name.lower().startswith(substr_pattern)]
+        if prev_len < len(candidates):
+            print("   Found match with '%s %s' for '%s %s'" % (alias, last, first, last, ))
+
+
+#     # If still no joy, try with Person.plain_name() (necessary for Donald Eastlake)
+#     if not candidates:
+#         prefix, first, middle, last, suffix = person.name_parts()
+#         name_parts = person.plain_name().lower().split()
+# 
+#         substr_pattern = u'-'.join(name_parts[-1:]+name_parts[0:1])
+#         candidates = [x for x in old_images if x.name.lower().startswith(substr_pattern)]
+#         # If no joy, try a short name
+#         if not candidates and first in name_alias:
+#             prev_len = len(candidates)
+#             for alias in name_alias[first]:
+#                 substr_pattern = u'-'.join(name_parts[-1:]+[alias])
+#                 candidates += [x for x in old_images if x.name.lower().startswith(substr_pattern)]
+#             if prev_len < len(candidates) :
+#                 print("   Used '%s %s' instead of '%s %s'" % (alias, last, first, last, ))
+
+#     # Fixup for other exceptional cases
+#     if person.ascii=="David Oran":
+#         candidates = ['oran-dave-th.jpg','oran-david.jpg']
+# 
+#     if person.ascii=="Susan Hares":
+#         candidates = ['hares-sue-th.jpg','hares-susan.JPG']
+# 
+#     if person.ascii=="Mahesh Jethanandani":
+#         candidates = ['Mahesh-Jethanandani-th.jpg','Jethanandani-Mahesh.jpg']
+
+    processed_files += [ c.path for c in candidates ]
+
+    # We now have a list of candidate photos.
+    # * Consider anything less than 200x200 a thumbnail
+    # * For the full photo, sort by size (width) and time
+    # * For the thumbnail:
+    #    - first look for a square photo less than 200x200
+    #    - if none found, then for the first in the sorted list less than 200x200
+    #    - if none found, then the smallest photo
+    if candidates:
+        candidates.sort(key=lambda x: "%04d-%d" % (x.width, x.time))
+        iesg_cand = [ c for c in candidates if '/iesg/' in  c.path ]
+        iab_cand =  [ c for c in candidates if '/iab/' in  c.path ]
+        if iesg_cand:
+            full = iesg_cand[-1]
+            thumb = iesg_cand[-1]
+        elif iab_cand:
+            full = iab_cand[-1]
+            thumb = iab_cand[0]
+        else:
+            full = candidates[-1]
+            thumbs = [ c for c in candidates if c.width==c.height and c.width <= 200 ]
+            if not thumbs:
+                thumbs = [ c for c in candidates if c.width==c.height ]
+            if not thumbs:
+                thumbs = [ c for c in candidates if c.width <= 200 ]
+            if not thumbs:
+                thumbs = candidates[:1]
+            thumb = thumbs[-1]
+        candidates = [ thumb, full ]
+
+    # At this point we either have no candidates or two. If two, the first will be the thumb
+
+    def copy(old, new):
+        if not os.path.exists(new):
+            print("Copying "+old+" to "+new)
+            shutil.copy(old, new)
+            shutil.copystat(old, new)
+
+    assert(len(candidates) in [0,2])
+    if len(candidates)==2:
+        thumb, full = candidates
+
+        new_name = person.photo_name(thumb=False)+full.ext.lower()
+        new_thumb_name = person.photo_name(thumb=True)+thumb.ext.lower()
+
+        copy( full.path, os.path.join(new_images_dir,new_name) )
+
+        #
+        copy( thumb.path,  os.path.join(new_images_dir,new_thumb_name) )
+
+
+print("")
+not_processed = 0
+for file in old_image_files:
+    if ( file.is_file()
+        and not file.suffix.lower() in ['.txt', '.lck', '.html',]
+        and not file.name.startswith('index.')
+        and not file.name.startswith('milestoneupdate')
+        and not file.name.startswith('nopicture')
+        and not file.name.startswith('robots.txt')
+    ):
+        if not str(file).decode('utf8') in processed_files:
+            not_processed += 1
+            print(u"Not processed: "+str(file).decode('utf8'))
+print("")
+print("Not processed: %s files" % not_processed)

@@ -269,10 +269,10 @@ def create_proceedings(meeting, group, is_final=False):
 
     meeting_root = get_upload_root(meeting)
     if meeting.type.slug == 'ietf':
-        url_root = "%sproceedings/%s/" % (settings.MEDIA_URL,meeting.number)
+        url_root = "%sproceedings/%s/" % (settings.IETF_HOST_URL,meeting.number)
     else:
         url_root = "%sproceedings/interim/%s/%s/" % (
-            settings.MEDIA_URL,
+            settings.IETF_HOST_URL,
             meeting.date.strftime('%Y/%m/%d'),
             group.acronym)
     
@@ -407,7 +407,7 @@ def gen_areas(context):
 
     # append proceedings URL
     for group in gmet + gnot:
-        group.proceedings_url = "%sproceedings/%s/%s.html" % (settings.MEDIA_URL,meeting.number,group.acronym)
+        group.proceedings_url = "%sproceedings/%s/%s.html" % (settings.IETF_HOST_URL,meeting.number,group.acronym)
 
     for (counter,area) in enumerate(context['areas'], start=1):
         groups_met = {'wg':filter(lambda a: a.parent==area and a.state.slug not in ('bof','bof-conc') and a.type_id=='wg',gmet),
@@ -584,7 +584,7 @@ def gen_research(context):
 
     # append proceedings URL
     for group in groups:
-        group.proceedings_url = "%sproceedings/%s/%s.html" % (settings.MEDIA_URL,meeting.number,group.acronym)
+        group.proceedings_url = "%sproceedings/%s/%s.html" % (settings.IETF_HOST_URL,meeting.number,group.acronym)
 
     html = render_to_response('proceedings/rg_irtf.html',{
         'meeting': meeting,

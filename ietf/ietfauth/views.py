@@ -44,7 +44,7 @@ from django.contrib.auth.models import User
 
 from ietf.group.models import Role
 from ietf.ietfauth.forms import RegistrationForm, PasswordForm, ResetPasswordForm, TestEmailForm
-from ietf.ietfauth.forms import PersonForm, RoleEmailForm, NewEmailForm
+from ietf.ietfauth.forms import get_person_form, RoleEmailForm, NewEmailForm
 from ietf.ietfauth.htpasswd import update_htpasswd_file
 from ietf.person.models import Person, Email, Alias
 from ietf.utils.mail import send_mail
@@ -175,7 +175,7 @@ def profile(request):
     new_email_forms = []
 
     if request.method == 'POST':
-        person_form = PersonForm(request.POST, instance=person)
+        person_form = get_person_form(request.POST, instance=person)
         for r in roles:
             r.email_form = RoleEmailForm(r, request.POST, prefix="role_%s" % r.pk)
 
@@ -224,7 +224,7 @@ def profile(request):
 
             # Make sure the alias table contains any new and/or old names.
             existing_aliases = set(Alias.objects.filter(person=person).values_list("name", flat=True))
-            curr_names = set(x for x in [updated_person.name, updated_person.ascii, updated_person.ascii_short] if x)
+            curr_names = set(x for x in [updated_person.name, updated_person.ascii, updated_person.ascii_short, updated_person.plain_name(), ] if x)
             new_aliases = curr_names - existing_aliases
             for name in new_aliases:
                 Alias.objects.create(person=updated_person, name=name)
@@ -236,7 +236,7 @@ def profile(request):
         for r in roles:
             r.email_form = RoleEmailForm(r, prefix="role_%s" % r.pk)
 
-        person_form = PersonForm(instance=person)
+        person_form = get_person_form(instance=person)
 
     return render(request, 'registration/edit_profile.html', {
         'user': request.user,

@@ -11,7 +11,7 @@ from pyquery import PyQuery
 
 from ietf.doc.models import DocEvent, BallotDocEvent, BallotPositionDocEvent, TelechatDocEvent
 from ietf.doc.models import Document, DocAlias, State, RelatedDocument
-from ietf.group.models import Group, GroupMilestone
+from ietf.group.models import Group, GroupMilestone, Role
 from ietf.iesg.agenda import get_agenda_date, agenda_data
 from ietf.iesg.models import TelechatDate
 from ietf.name.models import StreamName
@@ -66,6 +66,14 @@ class IESGTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertTrue(draft.name in unicontent(r))
 
+    def test_photos(self):
+        url = urlreverse("ietf.iesg.views.photos")
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        ads = Role.objects.filter(group__type='area', group__state='active', name_id='ad')
+        self.assertEqual(len(q('div.photo-thumbnail img')), ads.count())
+        
 class IESGAgendaTests(TestCase):
     def setUp(self):
         make_test_data()

@@ -100,9 +100,27 @@ USE_I18N = False
 
 USE_TZ = False
 
-MEDIA_URL = 'https://www.ietf.org/'
-IETF_ID_URL = MEDIA_URL + 'id/'
-IETF_ID_ARCHIVE_URL = MEDIA_URL + 'archive/id/'
+MEDIA_ROOT = '/a/www/www6s/lib/dt/media/'
+MEDIA_URL  = 'https://www.ietf.org/lib/dt/media/'
+PHOTOS_DIRNAME = 'photo'
+PHOTOS_DIR = MEDIA_ROOT + PHOTOS_DIRNAME
+
+OLD_PHOTO_DIRS = [
+    '/a/www/www6/wg/images',
+    '/a/www/www6/iesg/bio/photo',
+    '/a/www/iab/wp-content/IAB-uploads/2010/10/',
+    '/a/www/iab/wp-content/IAB-uploads/2011/05/',
+    '/a/www/iab/wp-content/IAB-uploads/2014/02/',
+    '/a/www/iab/wp-content/IAB-uploads/2015/02/',
+    '/a/www/iab/wp-content/IAB-uploads/2015/03/',
+    '/a/www/iab/wp-content/IAB-uploads/2015/06/',
+    '/a/www/iab/wp-content/IAB-uploads/2015/08/',
+    '/a/www/iab/wp-content/IAB-uploads/2016/03/',
+]
+
+IETF_HOST_URL = 'https://www.ietf.org/'
+IETF_ID_URL = IETF_HOST_URL + 'id/'
+IETF_ID_ARCHIVE_URL = IETF_HOST_URL + 'archive/id/'
 
 
 # Absolute path to the directory static files should be collected to.
@@ -253,6 +271,7 @@ INSTALLED_APPS = (
     'form_utils',
     'tastypie',
     'widget_tweaks',
+    'django_markup',
     # IETF apps
     'ietf.api',
     'ietf.community',
@@ -582,17 +601,19 @@ SELENIUM_TESTS_ONLY = False
 DRAFT_ALIAS_DOMAIN = IETF_DOMAIN
 GROUP_ALIAS_DOMAIN = IETF_DOMAIN
 
+TEST_DATA_DIR = os.path.abspath(BASE_DIR + "/../test/data")
+
 # Path to the email alias lists.  Used by ietf.utils.aliases
-DRAFT_ALIASES_PATH = os.path.abspath(BASE_DIR + "/../test/data/draft-aliases")
-DRAFT_VIRTUAL_PATH = os.path.abspath(BASE_DIR + "/../test/data/draft-virtual")
+DRAFT_ALIASES_PATH = os.path.join(TEST_DATA_DIR + "draft-aliases")
+DRAFT_VIRTUAL_PATH = os.path.join(TEST_DATA_DIR + "draft-virtual")
 
 # Set debug apps in DEV_APPS settings_local
 DEV_APPS = ()
 DEV_MIDDLEWARE_CLASSES = ()
 DRAFT_VIRTUAL_DOMAIN = "virtual.ietf.org"
 
-GROUP_ALIASES_PATH = os.path.abspath(BASE_DIR + "/../test/data/group-aliases")
-GROUP_VIRTUAL_PATH = os.path.abspath(BASE_DIR + "/../test/data/group-virtual")
+GROUP_ALIASES_PATH = os.path.join(TEST_DATA_DIR + "group-aliases")
+GROUP_VIRTUAL_PATH = os.path.join(TEST_DATA_DIR + "group-virtual")
 GROUP_VIRTUAL_DOMAIN = "virtual.ietf.org"
 
 POSTCONFIRM_PATH   = "/a/postconfirm/wrapper"
@@ -616,9 +637,18 @@ TRAC_SVN_URL_PATTERN = "https://svn.ietf.org/svn/group/%s/"
 # against the following list of regex expressions with re.search(pat, addr):
 EXLUDED_PERSONAL_EMAIL_REGEX_PATTERNS = ["@ietf.org$"]
 
-# Email addresses people attempt to set for their account will be checked
-# against the following list of regex expressions with re.search(pat, addr):
-EXLUDED_PERSONAL_EMAIL_REGEX_PATTERNS = ["@ietf.org$"]
+MARKUP_SETTINGS = {
+    'restructuredtext': {
+        'settings_overrides': {
+            'initial_header_level': 3,
+            'doctitle_xform': False,
+            'footnote_references': 'superscript',
+            'trim_footnote_reference_space': True,
+            'default_reference_context': 'view',
+            'link_base': ''
+        }
+    }
+}
 
 # Put the production SECRET_KEY in settings_local.py, and also any other
 # sensitive or site-specific changes.  DO NOT commit settings_local.py to svn.
@@ -645,3 +675,4 @@ if SERVER_MODE != 'production':
     if 'SECRET_KEY' not in locals():
         SECRET_KEY = 'PDwXboUq!=hPjnrtG2=ge#N$Dwy+wn@uivrugwpic8mxyPfHka'
     ALLOWED_HOSTS = ['*',]
+    

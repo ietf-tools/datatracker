@@ -38,6 +38,7 @@ RUN apt-get update && apt-get install -qy \
 	gawk \
 	ipython \
 	less \
+	libjpeg8-dev \
 	libmysqlclient-dev \
 	libsvn1/wheezy-backports \
 	libxml2-dev \

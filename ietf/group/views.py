@@ -347,23 +347,14 @@ def construct_group_menu_context(request, group, selected, group_type, others):
         entries.append(("Materials", urlreverse("ietf.group.views.materials", kwargs=kwargs)))
     if group.type_id in ('rg','wg','team'):
         entries.append(("Meetings", urlreverse("ietf.group.views.meetings", kwargs=kwargs)))
-    entries.append(("Email expansions", urlreverse("ietf.group.views.email", kwargs=kwargs)))
     entries.append(("History", urlreverse("ietf.group.views.history", kwargs=kwargs)))
-
+    entries.append(("Photos", urlreverse("ietf.group.views.group_photos", kwargs=kwargs)))
+    entries.append(("Email expansions", urlreverse("ietf.group.views.email", kwargs=kwargs)))
     if group.list_archive.startswith("http:") or group.list_archive.startswith("https:") or group.list_archive.startswith("ftp:"):
         if 'mailarchive.ietf.org' in group.list_archive:
-            entries.append(("List archive", urlreverse("ietf.group.views.derived_archives", kwargs=kwargs)))
+            entries.append(("list archive", urlreverse("ietf.group.views.derived_archives", kwargs=kwargs)))
         else:
             entries.append((mark_safe("List archive &raquo;"), group.list_archive))
-
-    if group.features.has_documents:
-        kwargs["output_type"] = "svg"
-        entries.append((mark_safe("Dependency graph &raquo;"), urlreverse("ietf.group.views.dependencies", kwargs=kwargs)))
-        del kwargs["output_type"]
-
-    if group.has_tools_page():
-        entries.append((mark_safe("Tools page &raquo;"), "https://tools.ietf.org/%s/%s/" % (group.type_id, group.acronym)))
-
 
     # actions
     actions = []
@@ -870,3 +861,39 @@ def derived_archives(request, acronym=None, group_type=None):
                      'group':group,
                      'list_acronym':list_acronym,
                   }))
+
+def chair_photos(request, group_type=None):
+    roles = sorted(Role.objects.filter(group__type=group_type, group__state='active', name_id='chair'),key=lambda x: x.person.last_name()+x.person.name+x.group.acronym)
+    for role in roles:
+        role.last_initial = role.person.last_name()[0]
+    return render(request, 'group/all_photos.html', {'group_type': group_type, 'role': 'Chair', 'roles': roles })
+
+def reorder_roles(roles, role_names):
+    list = []
+    for name in role_names:
+        list += [ r for r in roles if r.name_id == name ]
+    list += [ r for r in roles if not r in list ]
+    return list
+    
+def group_photos(request, group_type=None, acronym=None):
+    group = get_object_or_404(Group, acronym=acronym)
+    roles = sorted(Role.objects.filter(group__acronym=acronym),key=lambda x: x.name.name+x.person.last_name())
+
+    if   group.type_id in ['wg', 'rg', ]:
+        roles = reorder_roles(roles, ['chair', 'secr'])
+    elif group.type_id in ['nomcom', ]:
+        roles = reorder_roles(roles, ['chair', 'member', 'advisor', ])
+    elif group.type_id in ['team', ]:
+        roles = reorder_roles(roles, ['chair', 'member', 'matman', ])
+    elif group.type_id in ['sdo', ]:
+        roles = reorder_roles(roles, ['liaiman', ])
+    else:
+        pass
+    for role in roles:
+        role.last_initial = role.person.last_name()[0]
+    return render(request, 'group/group_photos.html',
+                  construct_group_menu_context(request, group, "photos", group_type, {
+                      'group_type': group_type,
+                      'roles': roles,
+                      'group':group }))
+

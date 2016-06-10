@@ -459,3 +459,21 @@ label#list-feeds {
 .email-subscription button[type=submit] {
   margin-left: 3em;
 }
+
+.photo-name {
+  height: 3em;
+}
+
+.bio-text {
+	max-width: 85ex;
+}
+.bio-photo {
+	float: left;
+	margin: 0.3em 1em 0.5em 0.1em;
+	max-width: 200px;
+}
+
+.nav-tabs > li > a {
+	background-color: #f8f8f8;
+	border: 1px solid #e0e0e0;
+}

@@ -9,6 +9,8 @@ from django.contrib.auth.models import User
 from django.utils.html import mark_safe
 from django.core.urlresolvers import reverse as urlreverse
 
+import debug                            # pyflakes:ignore
+
 from ietf.person.models import Person, Email
 
 
@@ -45,16 +47,30 @@ def ascii_cleaner(supposedly_ascii):
         raise forms.ValidationError("Please only enter ASCII characters.")
     return supposedly_ascii
 
-class PersonForm(ModelForm):
-    class Meta:
-        model = Person
-        exclude = ('time', 'user')
+def get_person_form(*args, **kwargs):
 
-    def clean_ascii(self):
-        return ascii_cleaner(self.cleaned_data.get("ascii") or u"")
+    exclude_list = ['time', 'user', 'photo_thumb', ]
 
-    def clean_ascii_short(self):
-        return ascii_cleaner(self.cleaned_data.get("ascii_short") or u"")
+    person = kwargs['instance']
+    roles = person.role_set.all()
+    if not roles:
+        exclude_list += ['biography', 'photo', ]
+
+    class PersonForm(ModelForm):
+        class Meta:
+            model = Person
+            exclude = exclude_list
+
+        def __init__(self, *args, **kwargs):
+            super(ModelForm, self).__init__(*args, **kwargs)
+
+        def clean_ascii(self):
+            return ascii_cleaner(self.cleaned_data.get("ascii") or u"")
+
+        def clean_ascii_short(self):
+            return ascii_cleaner(self.cleaned_data.get("ascii_short") or u"")
+
+    return PersonForm(*args, **kwargs)
 
 
 class NewEmailForm(forms.Form):

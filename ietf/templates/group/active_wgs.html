@@ -20,6 +20,7 @@
       <a class="btn btn-default" href="{% url "ietf.group.views.concluded_groups" %}">Concluded WGs</a>
       <a class="btn btn-default" href="https://www.ietf.org/dyn/wg/charter/history/">Historic charters</a>
       <a class="btn btn-default" href="{% url "ietf.group.views.all_status" %}">Status Reports</a>
+      <a class="btn btn-default" href="{% url "ietf.group.views.chair_photos" group_type="wg" %}">Chair Photos</a>
 
       {% for area in areas %}
         <h2 class="anchor-target" id="{{area.acronym}}">{{ area.name }} ({{ area.acronym }})</h2>

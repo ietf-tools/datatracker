@@ -20,15 +20,15 @@
 
 {% block content %}
   {% origin %}
-  <div class="row">
-    <div class="col-md-10">
 
       <h1>IESG agenda: {{ date }} </h1>
 
-      <p class="buttonlist">
-        <a class="btn btn-default" role="button" href="/iesg/agenda/documents/">Documents on future agendas</a>
-        <a class="btn btn-default" role="button" href="/iesg/discusses/">DISCUSS positions</a>
-      </p>
+      <ul class="nav nav-tabs" role="tablist">
+	 <li class="active"><a href="/iesg/agenda/">IESG Agenda</a></li>
+	 <li class="      "><a href="/iesg/agenda/documents/">Documents on future agendas</a></li>
+	 <li class="      "><a href="/iesg/discusses/">DISCUSS positions</a></li>
+	 <li class="      "><a href="{% url "ietf.iesg.views.photos" %}">IESG Photos</a></li>
+      </ul>
 
       {% for num, section in sections %}
 
@@ -130,6 +130,4 @@
 	  {% endif %}
 	{% endfor %}
       </ul>
-    </div>
-  </div>
 {% endblock content %}

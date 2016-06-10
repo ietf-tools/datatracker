@@ -17,3 +17,11 @@ IDSUBMIT_IDNITS_BINARY = "/usr/local/bin/idnits"
 IDSUBMIT_REPOSITORY_PATH = "test/id/"
 IDSUBMIT_STAGING_PATH = "test/staging/"
 INTERNET_DRAFT_ARCHIVE_DIR = "test/archive/"
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+MEDIA_ROOT = BASE_DIR + '/media/'
+MEDIA_URL = '/media/'
+
+PHOTOS_DIRNAME = 'photos'
+PHOTOS_DIR = MEDIA_ROOT + PHOTOS_DIRNAME

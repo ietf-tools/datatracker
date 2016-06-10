@@ -52,7 +52,7 @@ class InterimMeeting(Meeting):
         '''
         if os.path.exists(self.get_proceedings_path()):
             url = "%sproceedings/interim/%s/%s/proceedings.html" % (
-                settings.MEDIA_URL,
+                settings.IETF_HOST_URL,
                 self.date.strftime('%Y/%m/%d'),
                 self.group().acronym)
             return url
