@@ -1,3 +1,23 @@
+ietfdb (6.22.0) ietf; urgency=medium
+
+  **Support for profile photo and biograpy**
+
+  This release brings in basic support for having a biography and a photo
+  associated with a person's profile in the datatracker.  This makes it
+  possible to provide photo presentation pages for the IESG
+  [https://dt.ietf.org/iesg/photos], the IAB [https://dt.ietf.org/group/iab],
+  WG chairs, [https://dt.ietf.org/wg], etc.
+
+  It is of course possible to extend this to displaying photos as part of many
+  other regular datracker pages, but this first release only aims at making
+  photos available for use cases such as the IESG, IAB, and WG Chair pages
+  already present (and manually maintained) at www.ietf.org.  Since the
+  datatracker already has the information on which the sitting ADs, WG Chairs,
+  etc. are, this release makes it feasible to automatically keep pages such as
+  https://www.ietf.org/iesg/members.html up-to-date.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  10 Jun 2016 09:45:36 +0000
+
 ietfdb (6.21.1) ietf; urgency=medium
 
   This is a bugfix patch release, in preparation for an upcoming feature
