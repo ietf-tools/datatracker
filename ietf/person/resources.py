@@ -25,6 +25,8 @@ class PersonResource(ModelResource):
             "ascii_short": ALL,
             "address": ALL,
             "affiliation": ALL,
+            "photo": ALL,
+            "biography": ALL,
             "user": ALL_WITH_RELATIONS,
         }
 api.person.register(PersonResource())
