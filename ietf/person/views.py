@@ -53,9 +53,9 @@ def ajax_select2_search(request, model_name):
     return HttpResponse(select2_id_name_json(objs), content_type='application/json')
 
 def profile(request, email_or_name):
-    person = None
+
     if '@' in email_or_name:
-        person = get_object_or_404(Email, address=email_or_name).person
+        persons = [ get_object_or_404(Email, address=email_or_name).person, ]
     else:
         aliases = Alias.objects.filter(name=email_or_name)
         persons = set([ a.person for a in aliases ])
