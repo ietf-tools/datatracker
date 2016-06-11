@@ -6,19 +6,29 @@
 {% block title %}Profile for {{ person }}{% endblock %}
 
 {% block content %}
-
   {% origin %}
-  <h1>{{ person.name }}</h1>
-
-  <div class="bio-text">
-     {% if person.photo %}
-     <a href="{{person.photo.url}}">
-       <img class="bio-photo" src="{{ person.photo.url }}" alt="Photo of {{ person }}" />
-     </a>
-     {% else %}
-       <img class="bio-photo" src="{{ MEDIA_URL }}photos/nopictureavailable.jpg" alt="No photo available"/>
-     {% endif %}
-     {{ person.biography | apply_markup:"restructuredtext" }}
+  {% if persons|length > 1 %}
+  <div class="col-md-12">
+     <h4>Duplicate person records found. This is an error.  Showing all:</h4>
+     <hr>
   </div>
+  {% endif %}
+  {% for person in persons %}
+  <div class="col-md-12">
+    {% if not forloop.first %}<hr>{% endif %}
 
+    <h1>{{ person.name }}</h1>
+
+    <div class="bio-text">
+       {% if person.photo %}
+       <a href="{{person.photo.url}}">
+	 <img class="bio-photo" src="{{ person.photo.url }}" alt="Photo of {{ person }}" />
+       </a>
+       {% else %}
+	 <img class="bio-photo" src="{{ MEDIA_URL }}photos/nopictureavailable.jpg" alt="No photo available"/>
+       {% endif %}
+       {{ person.biography | apply_markup:"restructuredtext" }}
+    </div>
+  </div>
+  {% endfor %}
 {% endblock %}

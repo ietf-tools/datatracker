@@ -1,7 +1,9 @@
 
 from django.db.models import Q
-from django.http import HttpResponse
+from django.http import HttpResponse, Http404
 from django.shortcuts import render, get_object_or_404
+
+import debug                            # pyflakes:ignore
 
 from ietf.person.models import Email, Person, Alias
 from ietf.person.fields import select2_id_name_json
@@ -55,5 +57,8 @@ def profile(request, email_or_name):
     if '@' in email_or_name:
         person = get_object_or_404(Email, address=email_or_name).person
     else:
-        person = get_object_or_404(Alias, name=email_or_name).person
-    return render(request, 'person/profile.html', {'person': person})
+        aliases = Alias.objects.filter(name=email_or_name)
+        persons = set([ a.person for a in aliases ])
+        if not persons:
+            raise Http404
+    return render(request, 'person/profile.html', {'persons': persons})
