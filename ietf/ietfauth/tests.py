@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 import os, shutil
 from urlparse import urlsplit
-
 from pyquery import PyQuery
+from unittest import skipIf
 
 from django.core.urlresolvers import reverse as urlreverse
 import django.contrib.auth.views
@@ -16,6 +16,14 @@ from ietf.person.models import Person, Email
 from ietf.group.models import Group, Role, RoleName
 from ietf.ietfauth.htpasswd import update_htpasswd_file
 import ietf.ietfauth.views
+
+if os.path.exists(settings.HTPASSWD_COMMAND):
+    skip_htpasswd_command = False
+    skip_message = ""
+else:
+    skip_htpasswd_command = True
+    skip_message = ("The binary for htpasswd wasn't found "
+                    "in the locations indicated in settings.py.")
 
 class IetfAuthTests(TestCase):
     def setUp(self):
@@ -279,6 +287,7 @@ class IetfAuthTests(TestCase):
         update_htpasswd_file("foo", "passwd")
         self.assertTrue(self.username_in_htpasswd_file("foo"))
 
+    @skipIf(skip_htpasswd_command, skip_message)
     def test_htpasswd_file_with_htpasswd_binary(self):
         # make sure we test both Python and call-out to binary
         settings.USE_PYTHON_HTDIGEST = False
