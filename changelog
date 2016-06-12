@@ -12,11 +12,13 @@ ietfdb (6.22.0) ietf; urgency=medium
   other regular datracker pages, but this first release only aims at making
   photos available for use cases such as the IESG, IAB, and WG Chair pages
   already present (and manually maintained) at www.ietf.org.  Since the
-  datatracker already has the information on which the sitting ADs, WG Chairs,
+  datatracker already has the information on who the sitting ADs, WG Chairs,
   etc. are, this release makes it feasible to automatically keep pages such as
-  https://www.ietf.org/iesg/members.html up-to-date.
+  https://www.ietf.org/iesg/members.html up-to-date by pulling role, photo,
+  and bio information from the datatracker.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  10 Jun 2016 09:45:36 +0000
+ -- Henrik Levkowetz <henrik@levkowetz.com>  12 Jun 2016 10:44:03 +0000
+
 
 ietfdb (6.21.1) ietf; urgency=medium
 
