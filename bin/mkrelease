@@ -276,4 +276,4 @@ cat ~/src/db/release-mail-v$VER.txt | $do mail -s "New datatracker release: v$VE
 
 $do toolsfeed control changelog /www/tools.ietf.org/tools/atomfeed.xml
 $do toolpush /www/tools.ietf.org/tools/atomfeed.xml
-pip install -r minimum-requirements.txt
+pip install -q -r minimum-requirements.txt
