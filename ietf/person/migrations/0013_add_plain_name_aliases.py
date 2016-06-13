@@ -6,9 +6,15 @@ from django.db import migrations
 from ietf.person.name import name_parts
 
 def plain_name(self):
+    if '<>' in self.name:
+        return None
     prefix, first, middle, last, suffix = name_parts(self.name)
     if not first and last:
         return None
+    if first.isupper():
+        first = first.capitalize()
+    if last.isupper():
+        last = last.capitalize()
     return u" ".join([first, last])
 
 def add_plain_name_aliases(apps, schema_editor):
