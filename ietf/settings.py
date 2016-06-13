@@ -603,6 +603,10 @@ BADNESS_MUCHTOOBIG = 500
 SELENIUM_TESTS = False
 SELENIUM_TESTS_ONLY = False
 
+# Set debug apps in DEV_APPS settings_local
+DEV_APPS = ()
+DEV_MIDDLEWARE_CLASSES = ()
+
 # Domain which hosts draft and wg alias lists
 DRAFT_ALIAS_DOMAIN = IETF_DOMAIN
 GROUP_ALIAS_DOMAIN = IETF_DOMAIN
@@ -612,10 +616,6 @@ TEST_DATA_DIR = os.path.abspath(BASE_DIR + "/../test/data")
 # Path to the email alias lists.  Used by ietf.utils.aliases
 DRAFT_ALIASES_PATH = os.path.join(TEST_DATA_DIR, "draft-aliases")
 DRAFT_VIRTUAL_PATH = os.path.join(TEST_DATA_DIR, "draft-virtual")
-
-# Set debug apps in DEV_APPS settings_local
-DEV_APPS = ()
-DEV_MIDDLEWARE_CLASSES = ()
 DRAFT_VIRTUAL_DOMAIN = "virtual.ietf.org"
 
 GROUP_ALIASES_PATH = os.path.join(TEST_DATA_DIR, "group-aliases")
