@@ -14,7 +14,7 @@ class NameModel(models.Model):
 
     class Meta:
         abstract = True
-        ordering = ['order']
+        ordering = ['order', 'name']
 
 class GroupStateName(NameModel):
     """BOF, Proposed, Active, Dormant, Concluded, Abandoned"""
