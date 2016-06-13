@@ -1,3 +1,26 @@
+ietfdb (6.22.1) ietf; urgency=low
+
+  This is a small bugfix release which fixes a number of issues which made
+  some manual actions necessary in order to use the 6.22.0 release in
+  development mode.
+
+  * Added a missing __init__.py file.
+
+  * Added default media and photo directories for use in development.  
+    Changed settings to point to the media dir in development.
+
+  * Fixed a bug in the default alias-file settings.
+
+  * Improved data migration for plain_name aliases.
+
+  * Tweaked indentation of inline python in the mkdevbranch bash script.
+
+  * Tweaked bin/mkrelease to be more quiet.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  13 Jun 2016 07:05:26 -0700
+
+
+
 ietfdb (6.22.0) ietf; urgency=medium
 
   **Support for profile photo and biograpy**
