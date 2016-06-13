@@ -100,10 +100,16 @@ USE_I18N = False
 
 USE_TZ = False
 
-MEDIA_ROOT = '/a/www/www6s/lib/dt/media/'
-MEDIA_URL  = 'https://www.ietf.org/lib/dt/media/'
-PHOTOS_DIRNAME = 'photo'
-PHOTOS_DIR = MEDIA_ROOT + PHOTOS_DIRNAME
+if SERVER_MODE == 'production':
+    MEDIA_ROOT = '/a/www/www6s/lib/dt/media/'
+    MEDIA_URL  = 'https://www.ietf.org/lib/dt/media/'
+    PHOTOS_DIRNAME = 'photo'
+    PHOTOS_DIR = os.path.join(MEDIA_ROOT, PHOTOS_DIRNAME)
+else:
+    MEDIA_ROOT = os.path.join(os.path.dirname(BASE_DIR), 'media')
+    MEDIA_URL = '/media/'
+    PHOTOS_DIRNAME = 'photo'
+    PHOTOS_DIR = os.path.join(MEDIA_ROOT, PHOTOS_DIRNAME)
 
 OLD_PHOTO_DIRS = [
     '/a/www/www6/wg/images',
@@ -597,11 +603,6 @@ BADNESS_MUCHTOOBIG = 500
 SELENIUM_TESTS = False
 SELENIUM_TESTS_ONLY = False
 
-# Set debug apps in DEV_APPS settings_local
-DEV_APPS = ()
-DEV_MIDDLEWARE_CLASSES = ()
-DRAFT_VIRTUAL_DOMAIN = "virtual.ietf.org"
-
 # Domain which hosts draft and wg alias lists
 DRAFT_ALIAS_DOMAIN = IETF_DOMAIN
 GROUP_ALIAS_DOMAIN = IETF_DOMAIN
@@ -609,11 +610,16 @@ GROUP_ALIAS_DOMAIN = IETF_DOMAIN
 TEST_DATA_DIR = os.path.abspath(BASE_DIR + "/../test/data")
 
 # Path to the email alias lists.  Used by ietf.utils.aliases
-DRAFT_ALIASES_PATH = os.path.join(TEST_DATA_DIR, "draft-aliases")
-DRAFT_VIRTUAL_PATH = os.path.join(TEST_DATA_DIR, "draft-virtual")
+DRAFT_ALIASES_PATH = os.path.join(TEST_DATA_DIR + "draft-aliases")
+DRAFT_VIRTUAL_PATH = os.path.join(TEST_DATA_DIR + "draft-virtual")
 
-GROUP_ALIASES_PATH = os.path.join(TEST_DATA_DIR, "group-aliases")
-GROUP_VIRTUAL_PATH = os.path.join(TEST_DATA_DIR, "group-virtual")
+# Set debug apps in DEV_APPS settings_local
+DEV_APPS = ()
+DEV_MIDDLEWARE_CLASSES = ()
+DRAFT_VIRTUAL_DOMAIN = "virtual.ietf.org"
+
+GROUP_ALIASES_PATH = os.path.join(TEST_DATA_DIR + "group-aliases")
+GROUP_VIRTUAL_PATH = os.path.join(TEST_DATA_DIR + "group-virtual")
 GROUP_VIRTUAL_DOMAIN = "virtual.ietf.org"
 
 POSTCONFIRM_PATH   = "/a/postconfirm/wrapper"
@@ -649,6 +655,10 @@ MARKUP_SETTINGS = {
         }
     }
 }
+
+MAILMAN_LIB_DIR = '/usr/lib/mailman'
+
+
 
 # Put the production SECRET_KEY in settings_local.py, and also any other
 # sensitive or site-specific changes.  DO NOT commit settings_local.py to svn.
