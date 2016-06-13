@@ -17,7 +17,7 @@ ietfdb (6.22.1) ietf; urgency=low
 
   * Tweaked bin/mkrelease to be more quiet.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  13 Jun 2016 07:05:26 -0700
+ -- Henrik Levkowetz <henrik@levkowetz.com>  13 Jun 2016 15:02:47 +0000
 
 
 
