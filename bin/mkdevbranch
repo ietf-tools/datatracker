@@ -147,15 +147,15 @@ else
     for n in $(seq $((num-3)) $num); do
 	trac-admin /www/tools.ietf.org/tools/ietfdb wiki export IETF${n}SprintSignUp	\
 	    | egrep "^\|\|" | tail -n +2 | python -c '
-    import sys, re
-    afile = open("aliases")
-    aliases = dict([ line.strip().split(None,1) for line in afile.read().splitlines() ])
-    for line in sys.stdin:
-	blank, name, email, rest = line.strip().split("||", 3)
-	login, dummy  = re.split("[@.]", email, 1)
-	if login in aliases:
-	    login = aliases[login]
-	print "\t".join((login.strip().lower(), email.strip().lower(), name.strip())) ' \
+import sys, re
+afile = open("aliases")
+aliases = dict([ line.strip().split(None,1) for line in afile.read().splitlines() ])
+for line in sys.stdin:
+    blank, name, email, rest = line.strip().split("||", 3)
+    login, dummy  = re.split("[@.]", email, 1)
+    if login in aliases:
+	login = aliases[login]
+    print "\t".join((login.strip().lower(), email.strip().lower(), name.strip())) ' \
 	    | update $progdir/sprint$n.txt
     done
 
