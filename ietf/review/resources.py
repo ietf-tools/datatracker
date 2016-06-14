@@ -7,7 +7,7 @@ from tastypie.cache import SimpleCache
 from ietf import api
 from ietf.api import ToOneField                         # pyflakes:ignore
 
-from ietf.review.models import *                            # pyflakes:ignore
+from ietf.review.models import Reviewer, ReviewRequest
 
 
 from ietf.person.resources import PersonResource
