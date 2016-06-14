@@ -571,6 +571,21 @@ def document_main(request, name, rev=None):
                                        ),
                                   context_instance=RequestContext(request))
 
+
+    if doc.type_id == "review":
+        basename = "{}-{}.txt".format(doc.name, doc.rev)
+        pathname = os.path.join(doc.get_file_path(), basename)
+        content = get_document_content(basename, pathname, split=False)
+
+        return render(request, "doc/document_review.html",
+                      dict(doc=doc,
+                           top=top,
+                           content=content,
+                           revisions=revisions,
+                           latest_rev=latest_rev,
+                           snapshot=snapshot,
+                      ))
+
     raise Http404
 
 
