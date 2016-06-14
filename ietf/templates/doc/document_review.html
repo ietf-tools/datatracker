@@ -16,18 +16,19 @@
     <thead id="message-row">
        <tr>
 	  {% if doc.rev != latest_rev %}
-	  <th colspan="3" class="alert-warning">The information below is for an old version of the document</th>
+          <th colspan="4" class="alert-warning">The information below is for an old version of the document</th>
 	  {% else %}
-	  <th colspan="3"></th>
+          <th colspan="4"></th>
 	  {% endif %}  
        </tr>
     </thead>
 
     <tbody class="meta">
       <tr>
-        <th class="col-md-1">Team</th>
-        <td class="edit col-md-1"></td>
-        <td class="col-md-10">
+        <th></th>
+        <th>Team</th>
+        <td class="edit"></td>
+        <td>
           {{ doc.group.name }}
           <a href="{{ doc.group.about_url }}">({{ doc.group.acronym }})</a>
 
@@ -38,27 +39,47 @@
       </tr>
 
       <tr>
+        <th></th>
         <th>Title</th>
         <td class="edit"></td>
         <td>{{ doc.title }}</td>
       </tr>
 
+      {% if doc.get_state_slug != "active" %}
       <tr>
+        <th></th>
         <th>State</th>
         <td class="edit"></td>
         <td>{{ doc.get_state.name }}</td>
       </tr>
+      {% endif %}
 
       {% if review_req %}
         <tr>
+          <th></th>
+          <th>Request</th>
+          <td class="edit"></td>
+          <td>{{ review_req.type.name }} - <a href="{% url "ietf.doc.views_review.review_request" review_req.doc.name review_req.pk %}">requested {{ review_req.time|date:"Y-m-d" }}</a></td>
+        </tr>
+
+        <tr>
+          <th></th>
+          <th>Reviewer</th>
+          <td class="edit"></td>
+          <td>{{ review_req.reviewer.person }}</td>
+        </tr>
+
+        <tr>
+          <th></th>
           <th>Review result</th>
           <td class="edit"></td>
-          <td><a href="{% url "ietf.doc.views_review.review_request" review_req.doc.name review_req.pk %}">{{ review_req.result.name }}</a></td>
+          <td>{{ review_req.result.name }}</td>
         </tr>
       {% endif %}
 
       {% if doc.external_url %}
         <tr>
+          <th></th>
           <th>Posted at</th>
           <td class="edit"></td>
           <td><a href="{{ doc.external_url }}">{{ doc.external_url }}</a></td>
@@ -66,6 +87,7 @@
       {% endif %}
 
       <tr>
+        <th></th>
         <th>Last updated</th>
         <td class="edit"></td>
         <td>{{ doc.time|date:"Y-m-d" }}</td>

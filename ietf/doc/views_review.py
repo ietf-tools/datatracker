@@ -390,7 +390,7 @@ def complete_review(request, name, request_id):
 
             review.type = DocTypeName.objects.get(slug="review")
             review.rev = "00"
-            review.title = "Review of {}-{}".format(review_req.doc.name, review_req.reviewed_rev)
+            review.title = "{} Review of {}-{}".format(review_req.type.name, review_req.doc.name, form.cleaned_data["reviewed_rev"])
             review.group = review_req.team
             if review_submission == "link":
                 review.external_url = form.cleaned_data['review_url']
