@@ -28,6 +28,9 @@ def add_plain_name_aliases(apps, schema_editor):
             alias = Alias(name=name, person=person)
             alias.save()
 
+def noop(apps, schema_editor):
+    pass
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -35,5 +38,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(add_plain_name_aliases),
+        migrations.RunPython(add_plain_name_aliases, noop),
     ]
