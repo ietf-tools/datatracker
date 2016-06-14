@@ -1,3 +1,5 @@
+# Copyright The IETF Trust 2016, All Rights Reserved
+
 from django.core.urlresolvers import reverse as urlreverse
 
 from pyquery import PyQuery

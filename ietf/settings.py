@@ -650,6 +650,14 @@ MARKUP_SETTINGS = {
     }
 }
 
+MAILMAN_LIB_DIR = '/usr/lib/mailman'
+
+# This is the number of seconds required between subscribing to an ietf
+# mailing list and datatracker account creation being accepted
+LIST_ACCOUNT_DELAY = 60*60*25           # 25 hours
+ACCOUNT_REQUEST_EMAIL = 'account-request@ietf.org'
+
+
 # Put the production SECRET_KEY in settings_local.py, and also any other
 # sensitive or site-specific changes.  DO NOT commit settings_local.py to svn.
 from settings_local import *            # pyflakes:ignore
