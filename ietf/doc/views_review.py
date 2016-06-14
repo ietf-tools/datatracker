@@ -9,7 +9,7 @@ from django.utils.html import mark_safe
 from django.core.exceptions import ValidationError
 from django.template.loader import render_to_string
 
-from ietf.doc.models import Document, NewRevisionDocEvent, DocEvent, State
+from ietf.doc.models import Document, NewRevisionDocEvent, DocEvent, State, DocAlias
 from ietf.ietfauth.utils import is_authorized_in_doc_stream, user_is_person
 from ietf.name.models import ReviewRequestStateName, ReviewResultName, DocTypeName
 from ietf.group.models import Role
@@ -396,6 +396,7 @@ def complete_review(request, name, request_id):
                 review.external_url = form.cleaned_data['review_url']
             review.save()
             review.set_state(State.objects.get(type="review", slug="active"))
+            DocAlias.objects.create(document=review, name=review.name)
 
             NewRevisionDocEvent.objects.create(
                 type="new_revision",
