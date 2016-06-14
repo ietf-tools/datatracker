@@ -49,6 +49,14 @@
         <td>{{ doc.get_state.name }}</td>
       </tr>
 
+      {% if review_req %}
+        <tr>
+          <th>Review result</th>
+          <td class="edit"></td>
+          <td><a href="{% url "ietf.doc.views_review.review_request" review_req.doc.name review_req.pk %}">{{ review_req.result.name }}</a></td>
+        </tr>
+      {% endif %}
+
       {% if doc.external_url %}
         <tr>
           <th>Posted at</th>

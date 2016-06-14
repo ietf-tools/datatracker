@@ -104,10 +104,20 @@
         </td>
       </tr>
 
+      {% if review_req.review and review_req.review.external_url %}
+        <tr>
+          <th></th>
+          <th>Posted at</th>
+          <td>
+            <a href="{{ review_req.review.external_url }}">{{ review_req.review.external_url }}</a>
+          </td>
+        </tr>
+      {% endif %}
+
       {% if review_req.reviewed_rev %}
         <tr>
           <th></th>
-          <th>Reviewed revision</th>
+          <th>Reviewed rev.</th>
           <td><a href="{% url "doc_view" name=review_req.doc.name rev=review_req.reviewed_rev %}">{{ review_req.reviewed_rev }}</a> {% if review_req.reviewed_rev != review_req.doc.rev %}(currently at {{ review_req.doc.rev }}){% endif %}</td>
         </tr>
       {% endif %}
@@ -115,7 +125,7 @@
       {% if review_req.result %}
         <tr>
           <th></th>
-          <th>Result of review</th>
+          <th>Review result</th>
           <td>{{ review_req.result.name }}</td>
         </tr>
       {% endif %}

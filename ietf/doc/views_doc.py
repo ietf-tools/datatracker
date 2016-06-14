@@ -577,6 +577,8 @@ def document_main(request, name, rev=None):
         pathname = os.path.join(doc.get_file_path(), basename)
         content = get_document_content(basename, pathname, split=False)
 
+        review_req = ReviewRequest.objects.filter(review=doc.name).first()
+
         return render(request, "doc/document_review.html",
                       dict(doc=doc,
                            top=top,
@@ -584,6 +586,7 @@ def document_main(request, name, rev=None):
                            revisions=revisions,
                            latest_rev=latest_rev,
                            snapshot=snapshot,
+                           review_req=review_req,
                       ))
 
     raise Http404
