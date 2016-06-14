@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.models import Document, DocAlias, State, DocumentAuthor, BallotType, DocEvent, BallotDocEvent, RelatedDocument
+from ietf.doc.models import Document, DocAlias, State, DocumentAuthor, BallotType, DocEvent, BallotDocEvent, RelatedDocument, NewRevisionDocEvent
 from ietf.group.models import Group, GroupHistory, Role, RoleHistory
 from ietf.iesg.models import TelechatDate
 from ietf.ipr.models import HolderIprDisclosure, IprDocRel, IprDisclosureStateName, IprLicenseTypeName
@@ -247,11 +247,12 @@ def make_test_data():
         desc="Started IESG process",
         )
 
-    DocEvent.objects.create(
+    NewRevisionDocEvent.objects.create(
         type="new_revision",
         by=ad,
         doc=draft,
         desc="New revision available",
+        rev="01",
         )
 
     BallotDocEvent.objects.create(

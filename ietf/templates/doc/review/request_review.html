@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2016, All Rights Reserved #}
+{% load origin bootstrap3 static %}
+
+{% block pagehead %}
+  <link rel="stylesheet" href="{% static 'bootstrap-datepicker/css/bootstrap-datepicker3.min.css' %}">
+{% endblock %}
+
+{% block title %}Request review of {{ doc.name }} {% endblock %}
+
+{% block content %}
+  {% origin %}
+  <h1>Request review<br><small>{{ doc.name }}</small></h1>
+
+  <p>Submit a request to have the document reviewed.</p>
+
+  <form class="form-horizontal" method="post">
+    {% csrf_token %}
+    {% bootstrap_field form.type layout="horizontal" %}
+    {% bootstrap_field form.team layout="horizontal" %}
+    {% bootstrap_field form.deadline_date layout="horizontal" %}
+    {% bootstrap_field form.deadline_time layout="horizontal" %}
+    {% bootstrap_field form.requested_rev layout="horizontal" %}
+
+    {% buttons %}
+      <button type="submit" class="btn btn-primary">Request review</button>
+      <a class="btn btn-default pull-right" href="{% url "doc_view" name=doc.canonical_name %}">Back</a>
+    {% endbuttons %}
+  </form>
+{% endblock %}
+
+{% block js %}
+  <script src="{% static 'bootstrap-datepicker/js/bootstrap-datepicker.min.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2016, All Rights Reserved #}
+{% load origin bootstrap3 static %}
+
+{% block title %}Reject review assignment for {{ review_req.doc.name }}{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <h1>Reject review assignment<br><small>{{ review_req.doc.name }}</small></h1>
+
+  <p>{{ review_req.reviewer.person }} is currently assigned to do the review. Do you want to reject this assignment?</p>
+
+  <form method="post">
+    {% csrf_token %}
+
+    {% bootstrap_form form %}
+
+    {% buttons %}
+    <a class="btn btn-default" href="{% url "ietf.doc.views_review.review_request" name=doc.canonical_name request_id=review_req.pk %}">Cancel</a>
+    <button type="submit" class="btn btn-primary" name="action" value="reject">Reject assignment</button>
+    {% endbuttons %}
+  </form>
+
+{% endblock %}

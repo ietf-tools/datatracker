@@ -89,7 +89,6 @@ def can_adopt_draft(user, doc):
                                     group__state="active",
                                     person__user=user).exists())
 
-
 def two_thirds_rule( recused=0 ):
     # For standards-track, need positions from 2/3 of the non-recused current IESG.
     active = Role.objects.filter(name="ad",group__type="area",group__state="active").count()

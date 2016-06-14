@@ -298,6 +298,7 @@ INSTALLED_APPS = (
     'ietf.person',
     'ietf.redirects',
     'ietf.release',
+    'ietf.review',
     'ietf.submit',
     'ietf.sync',
     'ietf.utils',
@@ -428,6 +429,7 @@ MEETING_RECORDINGS_DIR = '/a/www/audio'
 
 # Mailing list info URL for lists hosted on the IETF servers
 MAILING_LIST_INFO_URL = "https://www.ietf.org/mailman/listinfo/%(list_addr)s"
+MAILING_LIST_ARCHIVE_URL = "https://mailarchive.ietf.org"
 
 # Liaison Statement Tool settings (one is used in DOC_HREFS below)
 LIAISON_UNIVERSAL_FROM = 'Liaison Statement Management Tool <lsmt@' + IETF_DOMAIN + '>'

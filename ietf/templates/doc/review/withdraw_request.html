@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2016, All Rights Reserved #}
+{% load origin bootstrap3 static %}
+
+{% block title %}Withdraw review request for {{ review_req.doc.name }}{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <h1>Withdraw review request<br><small>{{ review_req.doc.name }}</small></h1>
+
+  <p>Do you want to withdraw the review request?</p>
+
+  <form method="post">
+    {% csrf_token %}
+
+    {% buttons %}
+    <a class="btn btn-default" href="{% url "ietf.doc.views_review.review_request" name=doc.canonical_name request_id=review_req.pk %}">Cancel</a>
+    <button type="submit" class="btn btn-primary" name="action" value="withdraw">Withdraw request</button>
+    {% endbuttons %}
+  </form>
+
+{% endblock %}
