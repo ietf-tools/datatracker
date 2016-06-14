@@ -459,3 +459,16 @@ label#list-feeds {
 .email-subscription button[type=submit] {
   margin-left: 3em;
 }
+
+/* Review flow */
+
+form.complete-review .mail-archive-search .query-input {
+  width: 30em;
+}
+
+form.complete-review .mail-archive-search .results .list-group {
+  margin-left: 1em;
+  margin-right: 1em;
+  margin-bottom: 0.5em;
+}
+

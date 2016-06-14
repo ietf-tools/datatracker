@@ -19,6 +19,10 @@
           {% else %}
             <a href="{% url "doc_view" name=review_req.doc.name %}">{{ review_req.doc.name }}</a>
           {% endif %}
+
+          {% if can_withdraw_request %}
+            <a class="btn btn-danger btn-xs" href="{% url "ietf.doc.views_review.withdraw_request" name=doc.name request_id=review_req.pk %}"><span class="fa fa-ban"></span> Withdraw request</a>
+          {% endif %}
         </td>
       </tr>
 
@@ -60,43 +64,51 @@
         <td>{{ review_req.state.name }}</td>
       </tr>
 
-        <tr>
-          <th></th>
-          <th>Reviewer</th>
-          <td>
-            {% if review_req.reviewer %}
-              {{ review_req.reviewer.person }}
-            {% else %}
-              None assigned yet
-            {% endif %}
+      <tr>
+        <th></th>
+        <th>Reviewer</th>
+        <td>
+          {% if review_req.reviewer %}
+            {{ review_req.reviewer.person }}
+          {% else %}
+            None assigned yet
+          {% endif %}
 
-            {% if can_accept_reviewer_assignment %}
-              <form style="display:inline" method="post" action="{% url "ietf.doc.views_review.review_request" name=doc.name request_id=review_req.pk %}">{% csrf_token %}<button class="btn btn-default btn-xs" type="submit" name="action" value="accept"><span class="fa fa-check"></span> Accept</button></form>
-            {% endif %}
+          {% if can_accept_reviewer_assignment %}
+            <form style="display:inline" method="post" action="{% url "ietf.doc.views_review.review_request" name=doc.name request_id=review_req.pk %}">{% csrf_token %}<button class="btn btn-default btn-xs" type="submit" name="action" value="accept"><span class="fa fa-check"></span> Accept</button></form>
+          {% endif %}
 
-            {% if can_reject_reviewer_assignment %}
-              <a class="btn btn-default btn-xs" href="{% url "ietf.doc.views_review.reject_reviewer_assignment" name=doc.name request_id=review_req.pk %}"><span class="fa fa-ban"></span> Reject</a>
-            {% endif %}
+          {% if can_reject_reviewer_assignment %}
+            <a class="btn btn-warning btn-xs" href="{% url "ietf.doc.views_review.reject_reviewer_assignment" name=doc.name request_id=review_req.pk %}"><span class="fa fa-ban"></span> Reject</a>
+          {% endif %}
 
-            {% if can_assign_reviewer %}
-              <a class="btn btn-default btn-xs" href="{% url "ietf.doc.views_review.assign_reviewer" name=doc.name request_id=review_req.pk %}"><span class="fa fa-user"></span> {% if review_req.reviewer %}Reassign{% else %}Assign{% endif %} reviewer</a>
-            {% endif %}
-          </td>
-        </tr>
+          {% if can_assign_reviewer %}
+            <a class="btn btn-default btn-xs" href="{% url "ietf.doc.views_review.assign_reviewer" name=doc.name request_id=review_req.pk %}"><span class="fa fa-user"></span> {% if review_req.reviewer %}Reassign{% else %}Assign{% endif %} reviewer</a>
+          {% endif %}
+        </td>
+      </tr>
 
-      {% if review_req.review %}
-        <tr>
-          <th></th>
-          <th>Review</th>
-          <td><a href="{{ review_req.review.get_absolute_url }}">{{ review_req.review.name }}</a></td>
-        </tr>
-      {% endif %}
+      <tr>
+        <th></th>
+        <th>Review</th>
+        <td>
+          {% if review_req.review %}
+            <a href="{{ review_req.review.get_absolute_url }}">{{ review_req.review.name }}</a>
+          {% else %}
+            Not completed yet
+          {% endif %}
+          
+          {% if can_complete_review %}
+            <a class="btn btn-primary btn-xs" href="{% url "ietf.doc.views_review.complete_review" name=doc.name request_id=review_req.pk %}"><span class="fa fa-pencil-square-o"></span> Complete review</a>
+          {% endif %}
+        </td>
+      </tr>
 
       {% if review_req.reviewed_rev %}
         <tr>
           <th></th>
           <th>Reviewed revision</th>
-          <td><a href="">{{ review_req.reviewed_rev }}</a></td>
+          <td><a href="{% url "doc_view" name=review_req.doc.name rev=review_req.reviewed_rev %}">{{ review_req.reviewed_rev }}</a> {% if review_req.reviewed_rev != review_req.doc.rev %}(currently at {{ review_req.doc.rev }}){% endif %}</td>
         </tr>
       {% endif %}
 
@@ -109,11 +121,5 @@
       {% endif %}
     </tbody>
   </table>
-
-  <div class="buttonlist">
-    {% if can_withdraw_request %}
-      <a class="btn btn-default btn-xs" href="{% url "ietf.doc.views_review.withdraw_request" name=doc.name request_id=review_req.pk %}"><span class="fa fa-ban"></span> Withdraw request</a>
-    {% endif %}
-  </div>
 
 {% endblock %}

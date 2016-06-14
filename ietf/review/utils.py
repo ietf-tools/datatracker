@@ -3,7 +3,7 @@ from django.contrib.sites.models import Site
 from ietf.group.models import Group, Role
 from ietf.doc.models import DocEvent
 from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream
-from ietf.review.models import ReviewRequestStateName
+from ietf.review.models import ReviewRequestStateName, ReviewRequest
 from ietf.utils.mail import send_mail
 
 def active_review_teams():
@@ -21,6 +21,17 @@ def can_manage_review_requests_for_team(user, team):
         return False
 
     return Role.objects.filter(name__in=["secretary", "delegate"], person__user=user, group=team).exists() or has_role(user, "Secretariat")
+
+def make_new_review_request_from_existing(review_req):
+    obj = ReviewRequest()
+    obj.time = review_req.time
+    obj.type = review_req.type
+    obj.doc = review_req.doc
+    obj.team = review_req.team
+    obj.deadline = review_req.deadline
+    obj.requested_rev = review_req.requested_rev
+    obj.state = ReviewRequestStateName.objects.get(slug="requested")
+    return obj
 
 def email_about_review_request(request, review_req, subject, msg, by, notify_secretary, notify_reviewer):
     """Notify possibly both secretary and reviewer about change, skipping
@@ -47,7 +58,6 @@ def email_about_review_request(request, review_req, subject, msg, by, notify_sec
         "review_req": review_req,
         "msg": msg,
     })
-
 
 def assign_review_request_to_reviewer(request, review_req, reviewer):
     assert review_req.state_id in ("requested", "accepted")

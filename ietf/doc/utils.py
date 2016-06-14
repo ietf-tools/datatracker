@@ -16,7 +16,7 @@ from ietf.doc.models import DocEvent, ConsensusDocEvent, BallotDocEvent, NewRevi
 from ietf.doc.models import save_document_in_history
 from ietf.name.models import DocReminderTypeName, DocRelationshipName
 from ietf.group.models import Role
-from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream
+from ietf.ietfauth.utils import has_role
 from ietf.utils import draft, markup_txt
 from ietf.utils.mail import send_mail
 from ietf.mailtrigger.utils import gather_address_lists

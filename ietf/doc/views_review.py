@@ -1,19 +1,36 @@
-import datetime
+import datetime, os, email.utils
 
-from django.http import HttpResponseForbidden
+from django.contrib.sites.models import Site
+from django.http import HttpResponseForbidden, JsonResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django import forms
 from django.contrib.auth.decorators import login_required
+from django.utils.html import mark_safe
+from django.core.exceptions import ValidationError
+from django.template.loader import render_to_string
 
-from ietf.doc.models import Document, NewRevisionDocEvent, DocEvent
+from ietf.doc.models import Document, NewRevisionDocEvent, DocEvent, State
 from ietf.ietfauth.utils import is_authorized_in_doc_stream, user_is_person
-from ietf.name.models import ReviewRequestStateName
+from ietf.name.models import ReviewRequestStateName, ReviewResultName, DocTypeName
 from ietf.group.models import Role
 from ietf.review.models import ReviewRequest
 from ietf.review.utils import (active_review_teams, assign_review_request_to_reviewer,
                                can_request_review_of_doc, can_manage_review_requests_for_team,
-                               email_about_review_request)
+                               email_about_review_request, make_new_review_request_from_existing)
+from ietf.review import mailarch
 from ietf.utils.fields import DatepickerDateField
+from ietf.utils.text import skip_prefix
+from ietf.utils.textupload import get_cleaned_text_file_content
+from ietf.utils.mail import send_mail
+
+def clean_doc_revision(doc, rev):
+    if rev:
+        rev = rev.rjust(2, "0")
+
+        if not NewRevisionDocEvent.objects.filter(doc=doc, rev=rev).exists():
+            raise forms.ValidationError("Could not find revision \"{}\" of the document.".format(rev))
+
+    return rev
 
 class RequestReviewForm(forms.ModelForm):
     deadline_date = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={ "autoclose": "1", "start-date": "+0d" })
@@ -47,14 +64,7 @@ class RequestReviewForm(forms.ModelForm):
         return v
 
     def clean_requested_rev(self):
-        rev = self.cleaned_data.get("requested_rev")
-        if rev:
-            rev = rev.rjust(2, "0")
-
-            if not NewRevisionDocEvent.objects.filter(doc=self.doc, rev=rev).exists():
-                raise forms.ValidationError("Could not find revision '{}' of the document.".format(rev))
-
-        return rev
+        return clean_doc_revision(self.doc, self.cleaned_data.get("requested_rev"))
 
     def clean(self):
         deadline_date = self.cleaned_data.get('deadline_date')
@@ -114,16 +124,20 @@ def review_request(request, name, request_id):
                                  or can_manage_request))
 
     can_assign_reviewer = (review_req.state_id in ["requested", "accepted"]
-                           and is_authorized_in_doc_stream(request.user, doc))
+                           and can_manage_request)
 
     can_accept_reviewer_assignment = (review_req.state_id == "requested"
-                                      and review_req.reviewer_id is not None
+                                      and review_req.reviewer
                                       and (is_reviewer or can_manage_request))
 
     can_reject_reviewer_assignment = (review_req.state_id in ["requested", "accepted"]
-                                      and review_req.reviewer_id is not None
+                                      and review_req.reviewer
                                       and (is_reviewer or can_manage_request))
 
+    can_complete_review = (review_req.state_id in ["requested", "accepted"]
+                           and review_req.reviewer
+                           and (is_reviewer or can_manage_request))
+    
     if request.method == "POST" and request.POST.get("action") == "accept" and can_accept_reviewer_assignment:
         review_req.state = ReviewRequestStateName.objects.get(slug="accepted")
         review_req.save()
@@ -137,8 +151,10 @@ def review_request(request, name, request_id):
         'can_reject_reviewer_assignment': can_reject_reviewer_assignment,
         'can_assign_reviewer': can_assign_reviewer,
         'can_accept_reviewer_assignment': can_accept_reviewer_assignment,
+        'can_complete_review': can_complete_review,
     })
 
+@login_required
 def withdraw_request(request, name, request_id):
     doc = get_object_or_404(Document, name=name)
     review_req = get_object_or_404(ReviewRequest, pk=request_id, state__in=["requested", "accepted"])
@@ -191,6 +207,7 @@ class AssignReviewerForm(forms.Form):
         if review_req.reviewer:
             f.initial = review_req.reviewer_id
 
+@login_required
 def assign_reviewer(request, name, request_id):
     doc = get_object_or_404(Document, name=name)
     review_req = get_object_or_404(ReviewRequest, pk=request_id, state__in=["requested", "accepted"])
@@ -217,8 +234,9 @@ def assign_reviewer(request, name, request_id):
     })
 
 class RejectReviewerAssignmentForm(forms.Form):
-    message_to_secretary = forms.CharField(widget=forms.Textarea, required=False, help_text="Optional explanation of rejection, will be emailed to team secretary")
+    message_to_secretary = forms.CharField(widget=forms.Textarea, required=False, help_text="Optional explanation of rejection, will be emailed to team secretary if filled in")
 
+@login_required
 def reject_reviewer_assignment(request, name, request_id):
     doc = get_object_or_404(Document, name=name)
     review_req = get_object_or_404(ReviewRequest, pk=request_id, state__in=["requested", "accepted"])
@@ -251,21 +269,13 @@ def reject_reviewer_assignment(request, name, request_id):
             )
 
             # make a new unassigned review request
-            new_review_req = ReviewRequest.objects.create(
-                time=review_req.time,
-                type=review_req.type,
-                doc=review_req.doc,
-                team=review_req.team,
-                deadline=review_req.deadline,
-                requested_rev=review_req.requested_rev,
-                state=ReviewRequestStateName.objects.get(slug="requested"),
-            )
+            new_review_req = make_new_review_request_from_existing(review_req)
+            new_review_req.save()
 
-            msg = u"Reviewer assignment rejected by %s." % request.user.person
-
-            m = form.cleaned_data.get("message_to_secretary")
-            if m:
-                msg += "\n\n" + "Explanation:" + "\n" + m
+            msg = render_to_string("doc/mail/reviewer_assignment_rejected.txt", {
+                "by": request.user.person,
+                "message_to_secretary": form.cleaned_data.get("message_to_secretary")
+            })
 
             email_about_review_request(request, review_req, "Reviewer assignment rejected", msg, by=request.user.person, notify_secretary=True, notify_reviewer=True)
 
@@ -278,3 +288,215 @@ def reject_reviewer_assignment(request, name, request_id):
         'review_req': review_req,
         'form': form,
     })
+
+class CompleteReviewForm(forms.Form):
+    state = forms.ModelChoiceField(queryset=ReviewRequestStateName.objects.filter(slug__in=("completed", "part-completed")).order_by("-order"), widget=forms.RadioSelect, initial="completed")
+    reviewed_rev = forms.CharField(label="Reviewed revision", max_length=4)
+    result = forms.ModelChoiceField(queryset=ReviewResultName.objects.filter(used=True), widget=forms.RadioSelect, empty_label=None)
+    ACTIONS = [
+        ("enter", "Enter review content (automatically posts to {mailing_list})"),
+        ("upload", "Upload review content in text file (automatically posts to {mailing_list})"),
+        ("link", "Link to review message already sent to {mailing_list}"),
+    ]
+    review_submission = forms.ChoiceField(choices=ACTIONS, widget=forms.RadioSelect)
+
+    review_url = forms.URLField(label="Link to message", required=False)
+    review_file = forms.FileField(label="Text file to upload", required=False)
+    review_content = forms.CharField(widget=forms.Textarea, required=False)
+
+    def __init__(self, review_req, *args, **kwargs):
+        self.review_req = review_req
+
+        super(CompleteReviewForm, self).__init__(*args, **kwargs)
+
+        doc = self.review_req.doc
+
+        known_revisions = NewRevisionDocEvent.objects.filter(doc=doc).order_by("-time").values_list("rev", flat=True)
+
+        self.fields["state"].choices = [
+            (slug, "{} - extra reviewer is to be assigned".format(label)) if slug == "part-completed" else (slug, label)
+            for slug, label in self.fields["state"].choices
+        ]
+
+        self.fields["reviewed_rev"].help_text = mark_safe(
+            " ".join("<a class=\"rev label label-default\">{}</a>".format(r)
+                     for r in known_revisions))
+
+        self.fields["result"].queryset = self.fields["result"].queryset.filter(teams=review_req.team)
+        self.fields["review_submission"].choices = [
+            (k, label.format(mailing_list=review_req.team.list_email or "[error: team has no mailing list set]"))
+            for k, label in self.fields["review_submission"].choices
+        ]
+
+    def clean_reviewed_rev(self):
+        return clean_doc_revision(self.review_req.doc, self.cleaned_data.get("reviewed_rev"))
+
+    def clean_review_content(self):
+        return self.cleaned_data["review_content"].replace("\r", "")
+
+    def clean_review_file(self):
+        return get_cleaned_text_file_content(self.cleaned_data["review_file"])
+
+    def clean(self):
+        def require_field(f):
+            if not self.cleaned_data.get(f):
+                self.add_error(f, ValidationError("You must fill in this field."))
+
+        submission_method = self.cleaned_data.get("review_submission")
+        if submission_method == "enter":
+            require_field("review_content")
+        elif submission_method == "upload":
+            require_field("review_file")
+        elif submission_method == "link":
+            require_field("review_url")
+            require_field("review_content")
+
+@login_required
+def complete_review(request, name, request_id):
+    doc = get_object_or_404(Document, name=name)
+    review_req = get_object_or_404(ReviewRequest, pk=request_id, state__in=["requested", "accepted"])
+
+    if not review_req.reviewer:
+        return redirect(review_request, name=review_req.doc.name, request_id=review_req.pk)
+
+    is_reviewer = user_is_person(request.user, review_req.reviewer.person)
+    can_manage_request = can_manage_review_requests_for_team(request.user, review_req.team)
+
+    if not (is_reviewer or can_manage_request):
+        return HttpResponseForbidden("You do not have permission to perform this action")
+
+    if request.method == "POST":
+        form = CompleteReviewForm(review_req, request.POST, request.FILES)
+        if form.is_valid():
+            review_submission = form.cleaned_data['review_submission']
+
+            # create review doc
+            for i in range(1, 100):
+                name_components = [
+                    "review",
+                    review_req.team.acronym,
+                    review_req.type.slug,
+                    review_req.reviewer.person.ascii_parts()[3],
+                    skip_prefix(review_req.doc.name, "draft-"),
+                    form.cleaned_data["reviewed_rev"],
+                ]
+                if i > 1:
+                    name_components.append(str(i))
+
+                name = "-".join(c for c in name_components if c).lower()
+                if not Document.objects.filter(name=name).exists():
+                    review = Document.objects.create(name=name)
+                    break
+
+            review.type = DocTypeName.objects.get(slug="review")
+            review.rev = "00"
+            review.title = "Review of {}".format(review_req.doc.name)
+            review.group = review_req.team
+            if review_submission == "link":
+                review.external_url = form.cleaned_data['review_url']
+            review.save()
+            review.set_state(State.objects.get(type="review", slug="active"))
+
+            NewRevisionDocEvent.objects.create(
+                type="new_revision",
+                doc=review,
+                by=request.user.person,
+                rev=doc.rev,
+                desc='New revision available',
+                time=doc.time,
+            )
+
+            # save file on disk
+            if review_submission == "upload":
+                encoded_content = form.cleaned_data['review_file']
+            else:
+                encoded_content = form.cleaned_data['review_content'].encode("utf-8")
+
+            filename = os.path.join(review.get_file_path(), '{}-{}.txt'.format(review.name, review.rev))
+            with open(filename, 'wb') as destination:
+                destination.write(encoded_content)
+
+            # close review request
+            review_req.state = form.cleaned_data["state"]
+            review_req.reviewed_rev = form.cleaned_data["reviewed_rev"]
+            review_req.result = form.cleaned_data["result"]
+            review_req.review = review
+            review_req.save()
+
+            DocEvent.objects.create(
+                type="changed_review_request",
+                doc=review_req.doc,
+                by=request.user.person,
+                desc="Request for {} review by {} {}".format(
+                    review_req.type.name,
+                    review_req.team.acronym.upper(),
+                    review_req.state.name,
+                ),
+            )
+
+            if review_req.state_id == "part-completed":
+                new_review_req = make_new_review_request_from_existing(review_req)
+                new_review_req.save()
+
+                subject = "Review of {}-{} completed partially".format(review_req.doc.name, review_req.reviewed_rev)
+
+                msg = render_to_string("doc/mail/partially_completed_review.txt", {
+                    "domain": Site.objects.get_current().domain,
+                    "by": request.user.person,
+                    "new_review_req": new_review_req,
+                })
+
+                email_about_review_request(request, review_req, subject, msg, request.user.person, notify_secretary=True, notify_reviewer=False)
+
+            if review_submission != "link" and review_req.team.list_email:
+                # email the review
+                subject = "{} of {}-{}".format("Partial review" if review_req.state_id == "part-completed" else "Review", review_req.doc.name, review_req.reviewed_rev)
+                msg = send_mail(request, [(review_req.team.name, review_req.team.list_email)], None,
+                                subject,
+                                "doc/mail/completed_review.txt", {
+                                    "review_req": review_req,
+                                    "content": encoded_content.decode("utf-8"),
+                                })
+
+                list_name = mailarch.list_name_from_email(review_req.team.list_email)
+                if list_name:
+                    review.external_url = mailarch.construct_message_url(list_name, email.utils.unquote(msg["Message-ID"]))
+                    review.save()
+
+            return redirect("doc_view", name=review_req.review.name)
+    else:
+        form = CompleteReviewForm(review_req)
+
+    mail_archive_query_urls = mailarch.construct_query_urls(review_req)
+
+    return render(request, 'doc/review/complete_review.html', {
+        'doc': doc,
+        'review_req': review_req,
+        'form': form,
+        'mail_archive_query_urls': mail_archive_query_urls,
+    })
+
+def search_mail_archive(request, name, request_id):
+    #doc = get_object_or_404(Document, name=name)
+    review_req = get_object_or_404(ReviewRequest, pk=request_id, state__in=["requested", "accepted"])
+
+    is_reviewer = user_is_person(request.user, review_req.reviewer.person)
+    can_manage_request = can_manage_review_requests_for_team(request.user, review_req.team)
+
+    if not (is_reviewer or can_manage_request):
+        return HttpResponseForbidden("You do not have permission to perform this action")
+
+    res = mailarch.construct_query_urls(review_req, query=request.GET.get("query"))
+    if not res:
+        return JsonResponse({ "error": "Couldn't do lookup in mail archive - don't know where to look"})
+
+    MAX_RESULTS = 30
+
+    try:
+        res["messages"] = mailarch.retrieve_messages(res["query_data_url"])[:MAX_RESULTS]
+    except Exception as e:
+        res["error"] = "Retrieval from mail archive failed: {}".format(unicode(e))
+        # raise # useful when debugging
+
+    return JsonResponse(res)
+
