@@ -92,8 +92,8 @@ def create_account(request):
         form = RegistrationForm(request.POST)
         if form.is_valid():
             to_email = form.cleaned_data['email'] # This will be lowercase if form.is_valid()
-            existing = Subscribed.objects.filter(address=to_email).first()
-            ok_to_create = ( Whitelisted.objects.filter(address=to_email).exists()
+            existing = Subscribed.objects.filter(email=to_email).first()
+            ok_to_create = ( Whitelisted.objects.filter(email=to_email).exists()
                 or existing and (existing.time + TimeDelta(seconds=settings.LIST_ACCOUNT_DELAY)) < DateTime.now() )
             if ok_to_create:
                 auth = django.core.signing.dumps(to_email, salt="create_account")
@@ -377,8 +377,8 @@ def add_account_whitelist(request):
     if request.method == 'POST':
         form = WhitelistForm(request.POST)
         if form.is_valid():
-            address = form.cleaned_data['address']
-            entry = Whitelisted(address=address, by=request.user.person)
+            email = form.cleaned_data['email']
+            entry = Whitelisted(email=email, by=request.user.person)
             entry.save()
             success = True
     else:

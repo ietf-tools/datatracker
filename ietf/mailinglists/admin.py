@@ -12,12 +12,12 @@ admin.site.register(List, ListAdmin)
 
 
 class SubscribedAdmin(admin.ModelAdmin):
-    list_display = ('id', 'time', 'address')
+    list_display = ('id', 'time', 'email')
     raw_id_fields = ('lists',)
-    search_fields = ('address',)
+    search_fields = ('email',)
 admin.site.register(Subscribed, SubscribedAdmin)
 
 
 class WhitelistedAdmin(admin.ModelAdmin):
-    list_display = ('id', 'time', 'address', 'by')
+    list_display = ('id', 'time', 'email', 'by')
 admin.site.register(Whitelisted, WhitelistedAdmin)

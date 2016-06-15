@@ -53,9 +53,9 @@ class Command(BaseCommand):
                 list, created = List.objects.get_or_create(name=mlist.real_name, description=mlist.description, advertised=mlist.advertised)
                 # The following calls return lowercased addresses
                 members = mlist.getRegularMemberKeys() + mlist.getDigestMemberKeys()
-                known = [ s.address for s in Subscribed.objects.filter(lists__name=name) ]
+                known = [ s.email for s in Subscribed.objects.filter(lists__name=name) ]
                 for addr in members:
                     if not addr in known:
                         self.note("  Adding subscribed: %s" % (addr))
-                        new, created = Subscribed.objects.get_or_create(address=addr)
+                        new, created = Subscribed.objects.get_or_create(email=addr)
                         new.lists.add(list)

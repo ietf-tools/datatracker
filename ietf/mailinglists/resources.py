@@ -22,7 +22,7 @@ class WhitelistedResource(ModelResource):
         filtering = { 
             "id": ALL,
             "time": ALL,
-            "address": ALL,
+            "email": ALL,
             "by": ALL_WITH_RELATIONS,
         }
 api.mailinglists.register(WhitelistedResource())
@@ -51,7 +51,7 @@ class SubscribedResource(ModelResource):
         filtering = { 
             "id": ALL,
             "time": ALL,
-            "address": ALL,
+            "email": ALL,
             "lists": ALL_WITH_RELATIONS,
         }
 api.mailinglists.register(SubscribedResource())

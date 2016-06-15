@@ -8,7 +8,7 @@ import django.core.validators
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('person', '0014_auto_20160613_0751'),
+        ('person', '0013_add_plain_name_aliases'),
         ('mailinglists', '0001_initial'),
     ]
 
@@ -30,7 +30,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('time', models.DateTimeField(auto_now_add=True)),
-                ('address', models.CharField(max_length=64, validators=[django.core.validators.EmailValidator()])),
+                ('email', models.CharField(max_length=64, validators=[django.core.validators.EmailValidator()])),
                 ('lists', models.ManyToManyField(to='mailinglists.List')),
             ],
             options={
@@ -42,7 +42,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('time', models.DateTimeField(auto_now_add=True)),
-                ('address', models.CharField(max_length=64, validators=[django.core.validators.EmailValidator()])),
+                ('email', models.CharField(max_length=64, verbose_name=b'Email address', validators=[django.core.validators.EmailValidator()])),
                 ('by', models.ForeignKey(to='person.Person')),
             ],
             options={

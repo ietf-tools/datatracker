@@ -155,7 +155,7 @@ class IetfAuthTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertIn("Add a whitelist entry", unicontent(r))
 
-        r = self.client.post(urlreverse(ietf.ietfauth.views.add_account_whitelist), {"address": email})
+        r = self.client.post(urlreverse(ietf.ietfauth.views.add_account_whitelist), {"email": email})
         self.assertEqual(r.status_code, 200)
         self.assertIn("Whitelist entry creation successful", unicontent(r))
 
@@ -172,7 +172,7 @@ class IetfAuthTests(TestCase):
         saved_delay = settings.LIST_ACCOUNT_DELAY
         settings.LIST_ACCOUNT_DELAY = 1
         email = "subscribed@example.com"
-        s = Subscribed(address=email)
+        s = Subscribed(email=email)
         s.save()
         time.sleep(1.1)
         self.register_and_verify(email)
