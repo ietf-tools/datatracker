@@ -49,7 +49,7 @@ def ascii_cleaner(supposedly_ascii):
 
 def get_person_form(*args, **kwargs):
 
-    exclude_list = ['time', 'user', 'photo_thumb', ]
+    exclude_list = ['time', 'user', 'photo_thumb', 'photo', ]
 
     person = kwargs['instance']
     roles = person.role_set.all()
