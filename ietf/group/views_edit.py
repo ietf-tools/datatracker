@@ -137,7 +137,7 @@ class GroupForm(forms.Form):
         cleaned_data = super(GroupForm, self).clean()
         state = cleaned_data.get('state', None)
         parent = cleaned_data.get('parent', None)
-        if state.slug in ['bof', ] and not parent:
+        if state and (state.slug in ['bof', ] and not parent):
             raise forms.ValidationError("You requested the creation of a BoF, but specified no parent area.  A parent is required when creating a bof.")
         return cleaned_data
 
