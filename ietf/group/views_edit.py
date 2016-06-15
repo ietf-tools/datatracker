@@ -133,6 +133,13 @@ class GroupForm(forms.Form):
                     MAX_GROUP_DELEGATES, len(self.cleaned_data["delegates"]) - MAX_GROUP_DELEGATES))
         return self.cleaned_data["delegates"]
 
+    def clean(self):
+        cleaned_data = super(GroupForm, self).clean()
+        state = cleaned_data.get('state', None)
+        parent = cleaned_data.get('parent', None)
+        if state.slug in ['bof', ] and not parent:
+            raise forms.ValidationError("You requested the creation of a BoF, but specified no parent area.  A parent is required when creating a bof.")
+        return cleaned_data
 
 def format_urls(urls, fs="\n"):
     res = []
