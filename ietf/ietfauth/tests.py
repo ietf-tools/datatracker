@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
-import os, shutil
+from __future__ import unicode_literals
+
+import os, shutil, time
 from urlparse import urlsplit
 from pyquery import PyQuery
 from unittest import skipIf
@@ -15,6 +17,8 @@ from ietf.utils.mail import outbox, empty_outbox
 from ietf.person.models import Person, Email
 from ietf.group.models import Group, Role, RoleName
 from ietf.ietfauth.htpasswd import update_htpasswd_file
+from ietf.mailinglists.models import Subscribed
+
 import ietf.ietfauth.views
 
 if os.path.exists(settings.HTPASSWD_COMMAND):
@@ -94,7 +98,7 @@ class IetfAuthTests(TestCase):
 
         return False
 
-    def test_create_account(self):
+    def test_create_account_failure(self):
         make_test_data()
 
         url = urlreverse(ietf.ietfauth.views.create_account)
@@ -103,12 +107,21 @@ class IetfAuthTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 
-        # register email
+        # register email and verify failure
         email = 'new-account@example.com'
         empty_outbox()
         r = self.client.post(url, { 'email': email })
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("Account created" in unicontent(r))
+        self.assertIn("Account creation failed", unicontent(r))
+
+    def register_and_verify(self, email):
+        url = urlreverse(ietf.ietfauth.views.create_account)
+
+        # register email
+        empty_outbox()
+        r = self.client.post(url, { 'email': email })
+        self.assertEqual(r.status_code, 200)
+        self.assertIn("Account created", unicontent(r))
         self.assertEqual(len(outbox), 1)
 
         # go to confirm page
@@ -129,6 +142,41 @@ class IetfAuthTests(TestCase):
         self.assertEqual(Email.objects.filter(person__user__username=email).count(), 1)
 
         self.assertTrue(self.username_in_htpasswd_file(email))
+
+    def test_create_whitelisted_account(self):
+        email = "new-account@example.com"
+
+        # add whitelist entry
+        r = self.client.post(urlreverse(django.contrib.auth.views.login), {"username":"secretary", "password":"secretary+password"})
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(urlsplit(r["Location"])[2], urlreverse(ietf.ietfauth.views.profile))
+
+        r = self.client.get(urlreverse(ietf.ietfauth.views.add_account_whitelist))
+        self.assertEqual(r.status_code, 200)
+        self.assertIn("Add a whitelist entry", unicontent(r))
+
+        r = self.client.post(urlreverse(ietf.ietfauth.views.add_account_whitelist), {"email": email})
+        self.assertEqual(r.status_code, 200)
+        self.assertIn("Whitelist entry creation successful", unicontent(r))
+
+        # log out
+        r = self.client.get(urlreverse(django.contrib.auth.views.logout))
+        self.assertEqual(r.status_code, 200)
+
+        # register and verify whitelisted email
+        self.register_and_verify(email)
+
+
+    def test_create_subscribed_account(self):
+        # verify creation with email in subscribed list
+        saved_delay = settings.LIST_ACCOUNT_DELAY
+        settings.LIST_ACCOUNT_DELAY = 1
+        email = "subscribed@example.com"
+        s = Subscribed(email=email)
+        s.save()
+        time.sleep(1.1)
+        self.register_and_verify(email)
+        settings.LIST_ACCOUNT_DELAY = saved_delay
 
     def test_profile(self):
         make_test_data()

@@ -12,6 +12,7 @@ from django.core.urlresolvers import reverse as urlreverse
 import debug                            # pyflakes:ignore
 
 from ietf.person.models import Person, Email
+from ietf.mailinglists.models import Whitelisted
 
 
 class RegistrationForm(forms.Form):
@@ -118,3 +119,9 @@ class ResetPasswordForm(forms.Form):
 class TestEmailForm(forms.Form):
     email = forms.EmailField(required=False)
 
+class WhitelistForm(ModelForm):
+    class Meta:
+        model = Whitelisted
+        exclude = ['by', 'time' ]
+
+    

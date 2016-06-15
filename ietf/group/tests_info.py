@@ -396,6 +396,8 @@ class GroupEditTests(TestCase):
 
         bof_state = GroupStateName.objects.get(slug="bof")
 
+        area = Group.objects.filter(type="area").first()
+
         # normal get
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
@@ -412,21 +414,30 @@ class GroupEditTests(TestCase):
         # acronym contains non-alphanumeric
         r = self.client.post(url, dict(acronym="test...", name="Testing WG", state=bof_state.pk))
         self.assertEqual(r.status_code, 200)
+        self.assertTrue(len(q('form .has-error')) > 0)
 
         # acronym contains hyphen
         r = self.client.post(url, dict(acronym="test-wg", name="Testing WG", state=bof_state.pk))
         self.assertEqual(r.status_code, 200)
+        self.assertTrue(len(q('form .has-error')) > 0)
 
         # acronym too short
         r = self.client.post(url, dict(acronym="t", name="Testing WG", state=bof_state.pk))
         self.assertEqual(r.status_code, 200)
+        self.assertTrue(len(q('form .has-error')) > 0)
 
         # acronym doesn't start with an alpha character
         r = self.client.post(url, dict(acronym="1startwithalpha", name="Testing WG", state=bof_state.pk))
         self.assertEqual(r.status_code, 200)
+        self.assertTrue(len(q('form .has-error')) > 0)
 
-        # creation
+        # no parent group given
         r = self.client.post(url, dict(acronym="testwg", name="Testing WG", state=bof_state.pk))
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(len(q('form .has-error')) > 0)
+
+        # Ok creation
+        r = self.client.post(url, dict(acronym="testwg", name="Testing WG", state=bof_state.pk, parent=area.pk))
         self.assertEqual(r.status_code, 302)
         self.assertEqual(len(Group.objects.filter(type="wg")), num_wgs + 1)
         group = Group.objects.get(acronym="testwg")

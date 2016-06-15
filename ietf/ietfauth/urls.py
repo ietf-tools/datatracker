@@ -3,6 +3,8 @@
 from django.conf.urls import patterns, url
 from django.contrib.auth.views import login, logout
 
+from ietf.ietfauth.views import add_account_whitelist
+
 urlpatterns = patterns('ietf.ietfauth.views',
         url(r'^$', 'index'),
 #        url(r'^login/$', 'ietf_login'),
@@ -18,4 +20,5 @@ urlpatterns = patterns('ietf.ietfauth.views',
         url(r'^reset/$', 'password_reset'),
         url(r'^reset/confirm/(?P<auth>[^/]+)/$', 'confirm_password_reset'),
         url(r'^confirmnewemail/(?P<auth>[^/]+)/$', 'confirm_new_email'),
+        (r'whitelist/add/?$', add_account_whitelist),
 )

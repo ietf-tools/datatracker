@@ -41,6 +41,7 @@
     <li><a href="/admin/iesg/telechatagendaitem/">Management items</a></li>
     <li><a href="{% url "ietf.iesg.views.milestones_needing_review" %}">Milestones</a></li>
     <li><a href="{% url "ietf.sync.views.discrepancies" %}">Sync discrepancies</a>
+    <li><a href="{% url "ietf.ietfauth.views.add_account_whitelist" %}">Account whitelist</a>
   {% endif %}
 
   {% if user|has_role:"IANA" %}

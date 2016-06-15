@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2016, All Rights Reserved #}
+{% load origin %}
+
+{% load bootstrap3 %}
+
+{% block title %}Set up test email address{% endblock %}
+
+{% block content %}
+  {% origin %}
+  {% if success %}
+    <h1>Whitelist entry creation successful</h1>
+
+    <p>
+
+      Please ask the requestor to try the
+      <a href="{% url 'ietf.ietfauth.views.create_account'%}">account creation form</a>
+      again, with the whitelisted email address.
+
+    </p>
+
+  {% else %}
+    <h1>Add a whitelist entry for account creation.</h1>
+
+    <p>
+       When an email request comes in for assistance with account creation
+       because the automated account creation has failed, you can add the
+       address to an account creation whitelist here.
+    </p>
+    <p>
+       Before you do so, please complete the following 3 verification steps:
+       <ol>
+	  <li>
+
+	     Has the person provided relevant information in his request, or has he simply
+	     copied the text from the account creation failure message?  All genuine (non-spam)
+	     account creation requests seen between 2009 and 2016 for tools.ietf.org have
+	     contained a reasonable request message, rather than just copy-pasting the account
+	     creation failure message.  If there's no proper request message, step 2 below can
+	     be performed to make sure the request is bogus, but if that also fails, no further
+	     effort should be needed.
+
+	  </li>
+	  <li>
+
+	     Google for the person's name within the ietf.org site: "Jane Doe site:ietf.org".  If
+	     found, and the email address matches an address used in drafts or discussions,
+	     things are fine, and it's OK to add the address to the whitelist using this form,
+	     and ask the person to please try the
+	     <a href="{% url 'ietf.ietfauth.views.create_account' %}">account creation form</a> again.
+
+	  </li>
+	  <li>
+
+	     <p>
+
+	     If google finds no trace of the person being an ietf participant, he or she could
+	     still be somebody who is just getting involved in IETF work.  A datatracker account
+	     is probably not necessary, but in case this is a legitimate request, please email
+	     the person and ask:
+
+	     </p>
+	     <blockquote>
+		"Which wgs do you require a password for?"
+	     </blockquote>
+
+	     <p>
+
+	     This is a bit of a trick question, because it is very unlikely that somebody who
+	     isn't involved in IETF work will give a reasonable response, while almost any answer
+	     from somebody who is doing IETF work will show that they have some clue.
+
+	     </p>
+	     <p>
+
+	     If the answer to this question shows clue, then add the address to the whitelist
+	     using this form, and ask the person to please try the
+	     <a href="{% url 'ietf.ietfauth.views.create_account' %}"> account creation form</a> again.
+
+	     </p>
+	  </li>
+       </ol>
+    </p>
+    <form role-"form" method="post">
+      {% csrf_token %}
+      {% bootstrap_form form %}
+
+      {% buttons %}
+	<button class="btn btn-primary" type="submit">Add address to account creation whitelist</button>
+      {% endbuttons %}
+    </form>
+  {% endif %}
+{% endblock %}

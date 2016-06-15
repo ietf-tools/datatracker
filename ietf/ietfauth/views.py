@@ -32,6 +32,8 @@
 
 # Copyright The IETF Trust 2007, All Rights Reserved
 
+from datetime import datetime as DateTime, timedelta as TimeDelta
+
 from django.conf import settings
 from django.http import Http404  #, HttpResponse, HttpResponseRedirect
 from django.shortcuts import render, redirect, get_object_or_404
@@ -42,10 +44,14 @@ import django.core.signing
 from django.contrib.sites.models import Site
 from django.contrib.auth.models import User
 
+import debug                            # pyflakes:ignore
+
 from ietf.group.models import Role
-from ietf.ietfauth.forms import RegistrationForm, PasswordForm, ResetPasswordForm, TestEmailForm
+from ietf.ietfauth.forms import RegistrationForm, PasswordForm, ResetPasswordForm, TestEmailForm, WhitelistForm
 from ietf.ietfauth.forms import get_person_form, RoleEmailForm, NewEmailForm
 from ietf.ietfauth.htpasswd import update_htpasswd_file
+from ietf.ietfauth.utils import role_required
+from ietf.mailinglists.models import Subscribed, Whitelisted
 from ietf.person.models import Person, Email, Alias
 from ietf.utils.mail import send_mail
 
@@ -85,20 +91,25 @@ def create_account(request):
     if request.method == 'POST':
         form = RegistrationForm(request.POST)
         if form.is_valid():
-            to_email = form.cleaned_data['email']
+            to_email = form.cleaned_data['email'] # This will be lowercase if form.is_valid()
+            existing = Subscribed.objects.filter(email=to_email).first()
+            ok_to_create = ( Whitelisted.objects.filter(email=to_email).exists()
+                or existing and (existing.time + TimeDelta(seconds=settings.LIST_ACCOUNT_DELAY)) < DateTime.now() )
+            if ok_to_create:
+                auth = django.core.signing.dumps(to_email, salt="create_account")
 
-            auth = django.core.signing.dumps(to_email, salt="create_account")
+                domain = Site.objects.get_current().domain
+                subject = 'Confirm registration at %s' % domain
+                from_email = settings.DEFAULT_FROM_EMAIL
 
-            domain = Site.objects.get_current().domain
-            subject = 'Confirm registration at %s' % domain
-            from_email = settings.DEFAULT_FROM_EMAIL
-
-            send_mail(request, to_email, from_email, subject, 'registration/creation_email.txt', {
-                'domain': domain,
-                'auth': auth,
-                'username': to_email,
-                'expire': settings.DAYS_TO_EXPIRE_REGISTRATION_LINK,
-            })
+                send_mail(request, to_email, from_email, subject, 'registration/creation_email.txt', {
+                    'domain': domain,
+                    'auth': auth,
+                    'username': to_email,
+                    'expire': settings.DAYS_TO_EXPIRE_REGISTRATION_LINK,
+                })
+            else:
+                return render(request, 'registration/manual.html', { 'account_request_email': settings.ACCOUNT_REQUEST_EMAIL })
     else:
         form = RegistrationForm()
 
@@ -359,3 +370,22 @@ def test_email(request):
         r.set_cookie("testmailcc", cookie)
 
     return r
+
+@role_required('Secretariat')
+def add_account_whitelist(request):
+    success = False
+    if request.method == 'POST':
+        form = WhitelistForm(request.POST)
+        if form.is_valid():
+            email = form.cleaned_data['email']
+            entry = Whitelisted(email=email, by=request.user.person)
+            entry.save()
+            success = True
+    else:
+        form = WhitelistForm()
+
+    return render(request, 'ietfauth/whitelist_form.html', {
+        'form': form,
+        'success': success,
+    })
+
