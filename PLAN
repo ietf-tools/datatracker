@@ -7,11 +7,6 @@ Updated: $Date$
 Planned work in rough order
 ===========================
 
-* Schema changes: Person.bio and Person.photo, with derived photo pages
-  for WG Chairs, IESG, and IAB
-
-* Modified account creation, with safeguards against spammer accounts
-
 * Interim meeting management project merge, which will also fix the interim
   materials 404 errors.
 
@@ -25,8 +20,6 @@ Planned work in rough order
 
 * Add "Waiting for implementation" and "Held by WG" states, with comment field
 
-* Glue code to trigger generation of htmlized documents on www.ietf.org
-
 * Review tracking project merge
 
 * Upgrade to Django 1.8 / 1.9
@@ -35,9 +28,13 @@ Planned work in rough order
   when sending email (this is not supported by smtplib under Python 2.7,
   so will need support code in the application until we migrate to Python 3.5)
 
+* Add support for IAB Programs
+
 * Meeting materials enhancements
 
 * Transition to PostgreSQL
+
+* Glue code to trigger generation of htmlized documents on www.ietf.org
 
 * Performance analysis of database table and index setup
 
@@ -62,4 +59,9 @@ Planned work in rough order
 * When we get to the point where we can produce pdf from xml+media, remove the
   pdf upload possibility -- it's a definite attack vector.  Possibly start scanning
   pdf files for /JS and /JavaScript (and workarounds to hide Javascript)
+
+* Add one or more API description pages with examples of common queries
+
+* Add role lists and additional relevant information to the personal profile
+  pages
 
