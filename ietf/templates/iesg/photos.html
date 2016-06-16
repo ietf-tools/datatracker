@@ -30,7 +30,11 @@
       {% for letter in alphabet_blocks %}
        <div class="row anchor-target" id="{{letter.grouper}}">
 	<div class="panel panel-default">
-	  <div class="panel-heading">{{letter.grouper}}</div>
+	  <div class="panel-heading">
+	     <a href="{% url 'ietf.group.views.group_home' acronym=letter.grouper %}">
+		{{letter.list.0.group.name}}
+	     </a>
+	  </div>
 	  <div class="panel-body">
 	    <ul class="list-inline">
 	    {% regroup letter.list by person as person_groups %}
@@ -45,13 +49,8 @@
 		     <img width=100 src="{{ MEDIA_URL }}photo/nopictureavailable.jpg" alt="No photo available"/>
 	       {% endif %}
 	       </div>
-	       <div class="photo-name">
+	       <div class="photo-name" style="height: 60px;">
 		  <strong>{{person_with_groups.grouper.plain_name}}</strong>
-	       </div>
-	       <div class="photo-role-list">
-	       {% for role in person_with_groups.list %}   
-		  <a href="{% url 'ietf.group.views.group_home' acronym=role.group.acronym %}">{{role.group.acronym}}</a>
-	       {% endfor %}
 	       </div>
 	     </div>
 	     {% if person_with_groups.grouper.photo %}</a>{% endif %}
