@@ -8,7 +8,33 @@ import debug                            # pyflakes:ignore
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
+sys.path.append(settings.MAILMAN_LIB_DIR)
+
+from Mailman import Utils
+from Mailman import MailList
+
 from ietf.mailinglists.models import List, Subscribed
+
+def import_mailman_listinfo(verbosity=0):
+    def note(msg):
+        if verbosity > 1:
+            sys.stdout.write(msg)
+            sys.stdout.write('\n')
+
+    for name in Utils.list_names():
+        mlist = MailList.MailList(name, lock=False)
+        note("List: %s" % mlist.internal_name())
+        if mlist.advertised:
+            list, created = List.objects.get_or_create(name=mlist.real_name, description=mlist.description, advertised=mlist.advertised)
+            # The following calls return lowercased addresses
+            members = mlist.getRegularMemberKeys() + mlist.getDigestMemberKeys()
+            known = [ s.email for s in Subscribed.objects.filter(lists__name=name) ]
+            for addr in members:
+                if not addr in known:
+                    note("  Adding subscribed: %s" % (addr))
+                    new, created = Subscribed.objects.get_or_create(email=addr)
+                    new.lists.add(list)
+
 
 class Command(BaseCommand):
     """
@@ -26,9 +52,6 @@ class Command(BaseCommand):
             
     #option_list = BaseCommand.option_list + (       )
 
-    def note(self, msg):    
-        if self.verbosity > 1:
-            self.stdout.write(msg)
 
     def handle(self, *filenames, **options):
         """
@@ -39,23 +62,6 @@ class Command(BaseCommand):
 
         """
 
-        self.verbosity = int(options.get('verbosity'))
+        verbosity = int(options.get('verbosity'))
 
-        sys.path.append(settings.MAILMAN_LIB_DIR)
-
-        from Mailman import Utils
-        from Mailman import MailList
-
-        for name in Utils.list_names():
-            mlist = MailList.MailList(name, lock=False)
-            self.note("List: %s" % mlist.internal_name())
-            if mlist.advertised:
-                list, created = List.objects.get_or_create(name=mlist.real_name, description=mlist.description, advertised=mlist.advertised)
-                # The following calls return lowercased addresses
-                members = mlist.getRegularMemberKeys() + mlist.getDigestMemberKeys()
-                known = [ s.email for s in Subscribed.objects.filter(lists__name=name) ]
-                for addr in members:
-                    if not addr in known:
-                        self.note("  Adding subscribed: %s" % (addr))
-                        new, created = Subscribed.objects.get_or_create(email=addr)
-                        new.lists.add(list)
+        import_mailman_listinfo(verbosity)
