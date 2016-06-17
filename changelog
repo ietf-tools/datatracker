@@ -1,3 +1,27 @@
+ietfdb (6.23.0) ietf; urgency=low
+
+  **Additional account creation safeguards**
+
+  This release provides additional safeguards against malicious account
+  creation, and support functions to let the secretariat manually bypass the
+  safeguards when needed.
+
+  * Merged in ^/personal/henrik/6.22.1-acctdeps which provides additional
+    account creation requirements.
+
+  * Changed the IESG photo page to show full area name instead of area acronym
+    in each box heading.  Linked the area name to the area page.  Removed the
+    area acronym under each picture.  Tweaked the vertical alignment of photo
+    wells.  Fixes an issue raised by housley@vigilsec.com
+
+  * Fixed some tests.
+
+  * Added a clean() method to the Group creation form which requires a BoF to
+    have a parent group.  Fixes issue #1970.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  17 Jun 2016 13:20:18 +0000
+
+
 ietfdb (6.22.2) ietf; urgency=low
 
   This is a patch release which updates various web assets (json libs
