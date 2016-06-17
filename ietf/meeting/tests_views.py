@@ -461,6 +461,15 @@ class EditScheduleListTests(TestCase):
 # -------------------------------------------------
 
 class InterimTests(TestCase):
+    def setUp(self):
+        self.materials_dir = os.path.abspath(settings.TEST_MATERIALS_DIR)
+        if not os.path.exists(self.materials_dir):
+            os.mkdir(self.materials_dir)
+        settings.AGENDA_PATH = self.materials_dir
+
+    def tearDown(self):
+        shutil.rmtree(self.materials_dir)
+
     def check_interim_tabs(self, url):
         '''Helper function to check interim meeting list tabs'''
         # no logged in -  no tabs
