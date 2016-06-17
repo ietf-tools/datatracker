@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+
+{% load ietf_filters staticfiles %}
+
+{% block pagehead %}
+<link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
+{% endblock %}
+
+{% block bodyAttrs %}data-spy="scroll" data-target="#affix"{% endblock %}
+
+{% block title %}IETF Upcoming Meetings{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <div class="row">
+    <div class="col-md-10">
+
+      <h1>IETF Upcoming Meetings</h1>
+
+      <p>For more on regular IETF meetings see <a href="https://www.ietf.org/meeting/upcoming.html">here</a></p>
+      <div class="panel-group" id="accordion">
+        <div class="panel panel-default">
+          <div class="panel-heading">
+            <h4 class="panel-title">
+              <a data-toggle="collapse" data-parent="#accordion" href="#customize">
+                <span class="fa fa-caret-down"></span> Customize the meeting list...
+              </a>
+            </h4>
+          </div> <!-- panel-heading -->
+
+          <div id="customize" class="panel-collapse collapse">
+            <div class="panel-body">
+              <p>
+                You can customize the list to show only selected groups
+                by clicking on groups and areas in the table below.
+                To be able to return to the customized view later, bookmark the resulting URL.
+              </p>
+
+              {% if group_parents|length %}
+                <p>Groups displayed in <b><i>italics</i></b> are BOFs.</p>
+
+                <table class="table table-condensed">
+                  <thead>
+                    <tr>
+                      {% for p in group_parents %}
+                        <th style="width:{% widthratio 1 group_parents|length 100 %}%">
+                          <button class="btn btn-default btn-block pickview {{p.acronym|lower}}">{{p.acronym|upper}}</button>
+                        </th>
+                      {% endfor %}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      {% for p in group_parents %}
+                        <td class="view {{p.acronym|lower}}">
+                          <div class="btn-group-vertical btn-block">
+                            {% for group in p.group_list %}
+                              <div class="btn-group btn-group-xs btn-group-justified">
+                                <button class="btn btn-default pickview {{group.acronym}}">
+                                  {% if group.is_bof %}
+                                    <i>{{group.acronym}}</i>
+                                  {% else %}
+                                    {{group.acronym}}
+                                  {% endif %}
+                                </button>
+                              </div> <!-- button-group -->
+                            {% endfor %}
+                          </div> <!-- button-group-vertical -->
+                        </td>
+                      {% endfor %}
+                    </tr>
+                  </tbody>
+                </table>
+              {% else %}
+                <blockquote><i>No meetings have been scheduled yet.</i></blockquote>
+              {% endif %}
+            
+            </div> <!-- panel-body -->
+          </div> <!-- panel-collapse -->
+        </div> <!-- panel -->
+      </div> <!-- panel-group -->
+
+      {% if menu_entries %}
+      <ul class="nav nav-tabs" role="tablist">
+        {% for name, url in menu_entries %}
+          <li {% if selected_menu_entry == name.lower %}class="active"{% endif %}>
+            <a href="{{ url }}">{{ name }}</a>
+          </li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+
+      {% if menu_actions %}
+        <div class="buttonlist">
+          {% for name, url in menu_actions %}
+            <a class="btn btn-default" href="{{ url }}">{{ name }}</a>
+          {% endfor %}
+        </div>
+      {% endif %}
+  
+        {% if meetings %}
+          <h3></h3>
+          <table class="table table-condensed table-striped tablesorter">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Group</th>
+                <th>Name</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for meeting in meetings %}
+                {% if meeting.type.slug == 'interim' %}
+                  <tr id="row-{{ forloop.counter }}-{{ meeting.session_set.first.group.parent.acronym }}-{{ meeting.session_set.first.group.acronym }}">
+                {% else %}
+                  <tr id="row-{{ forloop.counter }}-ietf">
+                {% endif %}  
+                  <td>{{ meeting.date }}</td>
+                  {% if meeting.type.slug == 'interim' %}
+                    <td>{{ meeting.session_set.all.0.group.acronym }}</td>
+                  {% else %}
+                    <td>ietf</td>
+                  {% endif %}
+                  <td>
+                  {% if meeting.type.slug == "interim" %}
+                    <a href="{% url 'ietf.meeting.views.session_details' num=meeting.number acronym=meeting.session_set.all.0.group.acronym %}">{{ meeting.number }}{% if meeting.session_set.all.0.status.slug == "canceled" %}&nbsp&nbsp<span class="label label-warning">CANCELLED</span>{% endif %}</a>
+                  {% else %}
+                    <a href="{% url 'ietf.meeting.views.agenda' num=meeting.number %}">IETF - {{ meeting.number }}</a>
+                  {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <h3>No upcoming meetings</h3>
+        {% endif %}
+
+    </div>
+  </div>
+{% endblock %}
+
+{% block js %}
+<script src="{% static "jquery.tablesorter/js/jquery.tablesorter.combined.min.js" %}"></script>
+<script src="{% static 'ietf/js/toggle-visibility.js' %}"></script>
+{% endblock %}

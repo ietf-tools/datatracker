@@ -3,10 +3,30 @@ import datetime
 from ietf.doc.models import Document, State
 from ietf.group.models import Group
 from ietf.meeting.models import Meeting, Room, TimeSlot, Session, Schedule, SchedTimeSessAssignment, ResourceAssociation, SessionPresentation
+from ietf.meeting.helpers import create_interim_meeting
 from ietf.name.models import RoomResourceName
 from ietf.person.models import Person
 from ietf.utils.test_data import make_test_data
 
+def make_interim_meeting(group,date,status='sched'):
+    system_person = Person.objects.get(name="(System)")
+    time = datetime.datetime.combine(date, datetime.time(9))
+    meeting = create_interim_meeting(group=group,date=date)
+    session = Session.objects.create(meeting=meeting, group=group,
+        attendees=10, requested_by=system_person,
+        requested_duration=20, status_id=status,
+        remote_instructions='http://webex.com',
+        scheduled=datetime.datetime.now(),type_id="session")
+    slot = TimeSlot.objects.create(
+        meeting=meeting,
+        type_id="session",
+        duration=session.requested_duration,
+        time=time)
+    SchedTimeSessAssignment.objects.create(
+        timeslot=slot,
+        session=session,
+        schedule=session.meeting.agenda)
+    return meeting
 
 def make_meeting_test_data():
     if not Group.objects.filter(acronym='mars'):
@@ -77,6 +97,16 @@ def make_meeting_test_data():
     doc.set_state(State.objects.get(type='reuse_policy',slug='single'))
     mars_session.sessionpresentation_set.add(SessionPresentation(session=mars_session,document=doc,rev=doc.rev))
     
+    # Future Interim Meetings
+    date = datetime.date.today() + datetime.timedelta(days=365)
+    date2 = datetime.date.today() + datetime.timedelta(days=1000)
+    ames = Group.objects.get(acronym="ames")
+
+    make_interim_meeting(group=mars,date=date,status='sched')
+    make_interim_meeting(group=mars,date=date2,status='apprw')
+    make_interim_meeting(group=ames,date=date,status='canceled')
+    make_interim_meeting(group=ames,date=date2,status='apprw')
+
     return meeting
 
 

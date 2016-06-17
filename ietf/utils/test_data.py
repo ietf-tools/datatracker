@@ -89,6 +89,13 @@ def make_immutable_base_data():
     area = create_group(name="Far Future", acronym="farfut", type_id="area", parent=ietf)
     create_person(area, "ad", name="Areað Irector", username="ad", email_address="aread@ietf.org")
 
+    # second area
+    opsarea = create_group(name="Operations", acronym="ops", type_id="area", parent=ietf)
+    create_person(opsarea, "ad")
+    sops = create_group(name="Server Operations", acronym="sops", type_id="wg", parent=opsarea)
+    create_person(sops, "chair", name="Sops Chairman", username="sopschairman")
+    create_person(sops, "secr", name="Sops Secretary", username="sopssecretary")
+
     # create a bunch of ads for swarm tests
     for i in range(1, 10):
         u = User.objects.create(username="ad%s" % i)
@@ -116,6 +123,7 @@ def make_immutable_base_data():
 def make_test_data():
     area = Group.objects.get(acronym="farfut")
     ad = Person.objects.get(user__username="ad")
+    irtf = Group.objects.get(acronym='irtf')
 
     # mars WG
     group = Group.objects.create(
@@ -166,6 +174,30 @@ def make_test_data():
     group.charter = charter
     group.save()
 
+    # irg RG
+    irg_rg = Group.objects.create(
+        name="Internet Research Group",
+        acronym="irg",
+        state_id="active",
+        type_id="rg",
+        parent=irtf,
+        list_email="irg-rg@ietf.org",
+        )
+    #charter = Document.objects.create(
+    #    name="charter-ietf-" + group.acronym,
+    #    type_id="charter",
+    #    title=group.name,
+    #    group=group,
+    #    rev="00",
+    #    )
+    #charter.set_state(State.objects.get(used=True, slug="infrev", type="charter"))
+    #DocAlias.objects.create(
+    #    name=charter.name,
+    #    document=charter
+    #    )
+    #group.charter = charter
+    #group.save()
+
     # plain IETF'er
     u = User.objects.create(username="plain")
     u.set_password("plain+password")
@@ -186,6 +218,8 @@ def make_test_data():
     create_person(ames_wg, "secr", name="Mr Secretary", username="amessecretary")
     ames_wg.role_set.get_or_create(name_id='ad',person=ad,email=ad.role_email('ad'))
     ames_wg.save()
+
+    create_person(irg_rg, "chair", name="Irg Chair Man", username="irgchairman")
 
     # old draft
     old_draft = Document.objects.create(

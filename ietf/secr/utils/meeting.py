@@ -29,9 +29,9 @@ def get_materials(group,meeting):
 
 def get_proceedings_path(meeting,group):
     if meeting.type_id == 'ietf':
-        path = os.path.join(get_upload_root(meeting),group.acronym + '.html')
+        path = os.path.join(meeting.get_materials_path(),group.acronym + '.html')
     elif meeting.type_id == 'interim':
-        path = os.path.join(get_upload_root(meeting),'proceedings.html')
+        path = os.path.join(meeting.get_materials_path(),'proceedings.html')
     return path
 
 def get_proceedings_url(meeting,group=None):
@@ -75,15 +75,3 @@ def get_timeslot(session, schedule=None):
     else:
         return None
 
-def get_upload_root(meeting):
-    path = ''
-    if meeting.type.slug == 'ietf':
-        path = os.path.join(settings.AGENDA_PATH,meeting.number)
-    elif meeting.type.slug == 'interim':
-        path = os.path.join(settings.AGENDA_PATH,
-                            'interim',
-                            meeting.date.strftime('%Y'),
-                            meeting.date.strftime('%m'),
-                            meeting.date.strftime('%d'),
-                            meeting.session_set.all()[0].group.acronym)
-    return path

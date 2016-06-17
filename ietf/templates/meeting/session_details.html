@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
-{% load origin %}
+{% load origin ietf_filters %}
 
 {% block title %}{{ meeting }} : {{ acronym }}{% endblock %}
 
@@ -14,6 +14,9 @@
    {% if can_manage_materials %}
    {% if session.status.slug == 'sched' or session.status.slug == 'schedw' %}
    <div class="buttonlist">
+     {% if meeting.type.slug == 'interim' and user|has_role:"Secretariat" %}
+        <a class="btn btn-default" href="{% url 'ietf.meeting.views.interim_request_details' number=meeting.number %}">Meeting Details</a>
+     {% endif %}
      <a class="btn btn-default" href="{% url 'ietf.secr.proceedings.views.upload_unified' meeting_num=session.meeting.number acronym=session.group.acronym %}">
         Upload/Edit materials 
      </a>

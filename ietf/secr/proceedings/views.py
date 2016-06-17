@@ -22,7 +22,7 @@ from ietf.secr.sreq.forms import GroupSelectForm
 from ietf.secr.utils.decorators import check_permissions, sec_only
 from ietf.secr.utils.document import get_full_path
 from ietf.secr.utils.group import get_my_groups, groups_by_session
-from ietf.secr.utils.meeting import get_upload_root, get_materials, get_timeslot, get_proceedings_path, get_proceedings_url
+from ietf.secr.utils.meeting import get_materials, get_timeslot, get_proceedings_path, get_proceedings_url
 from ietf.doc.models import Document, DocAlias, DocEvent, State, NewRevisionDocEvent
 from ietf.group.models import Group
 from ietf.ietfauth.utils import has_role, role_required
@@ -68,9 +68,9 @@ def get_doc_filename(doc):
     session = doc.session_set.all()[0]
     meeting = session.meeting
     if doc.external_url:
-        return os.path.join(get_upload_root(meeting),doc.type.slug,doc.external_url)
+        return os.path.join(meeting.get_materials_path(),doc.type.slug,doc.external_url)
     else:
-        path = os.path.join(get_upload_root(meeting),doc.type.slug,doc.name)
+        path = os.path.join(meeting.get_materials_path(),doc.type.slug,doc.name)
         files = glob.glob(path + '.*')
         # TODO we might want to choose from among multiple files using some logic
         return files[0]
@@ -156,18 +156,18 @@ def get_next_order_num(session):
 def handle_upload_file(file,filename,meeting,subdir):
     '''
     This function takes a file object, a filename and a meeting object and subdir as string.
-    It saves the file to the appropriate directory, get_upload_root() + subdir.
+    It saves the file to the appropriate directory, get_materials_path() + subdir.
     If the file is a zip file, it creates a new directory in 'slides', which is the basename of the
     zip file and unzips the file in the new directory.
     '''
     base, extension = os.path.splitext(filename)
 
     if extension == '.zip':
-        path = os.path.join(get_upload_root(meeting),subdir,base)
+        path = os.path.join(meeting.get_materials_path(),subdir,base)
         if not os.path.exists(path):
             os.mkdir(path)
     else:
-        path = os.path.join(get_upload_root(meeting),subdir)
+        path = os.path.join(meeting.get_materials_path(),subdir)
         if not os.path.exists(path):
             os.makedirs(path)
 
@@ -191,7 +191,7 @@ def make_directories(meeting):
     '''
     This function takes a meeting object and creates the appropriate materials directories
     '''
-    path = get_upload_root(meeting)
+    path = meeting.get_materials_path()
     os.umask(0)
     for leaf in ('slides','agenda','minutes','id','rfc','bluesheets'):
         target = os.path.join(path,leaf)
@@ -374,7 +374,7 @@ def delete_interim_meeting(request, meeting_num):
     group = sessions[0].group
 
     # delete directories
-    path = get_upload_root(meeting)
+    path = meeting.get_materials_path()
 
     # do a quick sanity check on this path before we go and delete it
     parts = path.split('/')

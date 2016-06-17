@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+{% load staticfiles bootstrap3 widget_tweaks %}
+
+{% block title %}Edit Interim Request{% endblock %}
+
+{% block pagehead %}
+  <link rel="stylesheet" href="{% static 'select2/select2.css' %}">
+  <link rel="stylesheet" href="{% static 'select2-bootstrap-css/select2-bootstrap.min.css' %}">
+  <link rel="stylesheet" href="{% static 'bootstrap-datepicker/css/bootstrap-datepicker3.min.css' %}">
+{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <h1>Edit Interim Meeting Request</h1>
+
+  <form id="interim-request-form" role="form" method="post" class="form-horizontal">
+    {% csrf_token %}
+
+    {% bootstrap_field form.group layout='horizontal' %}
+
+    <input type="hidden" name="group" value="{{ form.group.value }}">
+
+    <div class="form-group form-inline">
+        <div class="col-md-offset-2">
+            <div class="col-md-2">
+                <label class="checkbox-inline">{% render_field form.in_person %}<strong>In Person</strong></label>
+            </div>
+
+            <div class="col-md-2">
+                <label class="checkbox-inline">{% render_field form.approved %}<strong>Preapproved by AD</strong></label>
+            </div>
+        </div> <!-- col-md-offset-2 -->
+    </div> <!-- form-group form-inline -->
+    
+    <div class="form-group">
+        <label for="id_session_set-{{ forloop.counter0 }}-city" class="col-md-2 control-label">Location</label>
+        <div class="col-md-10 form-inline">
+            {% render_field form.city class="form-control location" placeholder="City" %}
+            {% render_field form.country class="form-control location" style="width: 30%" %}
+            <div id="timezone-field">
+            {% render_field form.time_zone class="form-control" %}
+            <span class="help-block">Local Timezone</span></div>
+        </div>
+    </div>
+
+    {{ formset.management_form }}
+    {% for form in formset %}
+    <div class="fieldset{% if forloop.last %} template{% endif %}" >    
+ 
+    <input id="id_session_set-{{ forloop.counter0 }}-id" name="session_set-{{ forloop.counter0 }}-id" type="hidden" value="{{ form.instance.pk|default_if_none:"" }}">
+
+    <div class="form-group{% if form.date.errors %} alert alert-danger{% endif %}">
+        <label for="id_session_set-{{ forloop.counter0 }}-date" class="col-md-2 control-label required">Date</label>
+        <div class="col-md-2">{% render_field form.date class="form-control" %}</div>
+        {% if form.date.errors %}<span class="help-inline">{{ form.date.errors }}</span>{% endif %}
+    </div>
+    
+    <div class="form-group {% if form.time.errors or form.requested_duration.errors %}alert alert-danger{% endif %}">
+        <label for="id_session_set-{{ forloop.counter0 }}-time" class="col-md-2 control-label required">Start Time</label>
+        <div class="col-md-3 form-inline">
+            {% render_field form.time class="form-control time-field" placeholder="HH:MM" %}
+            <div id="id_session_set-{{ forloop.counter0 }}-time_utc" class="utc-time"></div>
+            <span class="help-block">Local Time</span>
+            {% if form.time.errors %}<span class="help-inline">{{ form.time.errors }}</span>{% endif %}
+        </div>
+        <label for="id_session_set-{{ forloop.counter0 }}-requested_duration" class="col-md-1 control-label required">Duration</label>
+        <div class="col-md-1">{% render_field form.requested_duration class="form-control time-field" placeholder="HH:MM" %}{% if form.requested_duration.errors %}<span class="help-inline">{{ form.requested_duration.errors }}</span>{% endif %}</div>
+        <label for="id_session_set-{{ forloop.counter0 }}-end_time" class="col-md-2 control-label">End Time</label>
+        <div class="col-md-3 form-inline">
+        {% render_field form.end_time class="form-control time-field computed" placeholder="HH:MM" disabled="disabled" %}
+        <div id="id_session_set-{{ forloop.counter0 }}-end_time_utc" class="utc-time"></div>
+        </div>
+    </div>
+
+    <div class="form-group{% if form.remote_instructions.errors %} alert alert-danger{% endif %}">
+        <label for="id_session_set-{{ forloop.counter0 }}-remote_instructions" class="col-md-2 control-label required">Remote Instructions</label>
+        <div class="col-md-10">{% render_field form.remote_instructions class="form-control" placeholder="ie. Webex address" %}</div>
+        {% if form.remote_instructions.errors %}<span class="help-inline">{{ form.remote_instructions.errors }}</span>{% endif %}
+    </div>
+
+    <div class="form-group">
+        <label for="id_session_set-{{ forloop.counter0 }}-agenda" class="col-md-2 control-label">Agenda</label>
+        <div class="col-md-10">{% render_field form.agenda class="form-control" rows="6" placeholder="paste agenda here" %}</div>
+    </div>
+        
+    <div class="form-group">
+        <label for="id_session_set-{{ forloop.counter0 }}-agenda_note" class="col-md-2 control-label">Additional Information</label>
+        <div class="col-md-10">{% render_field form.agenda_note class="form-control" %}</div>
+    </div>
+    <button name="id_session_set-{{ forloop.counter0 }}-delete-button" type="button" class="btn btn-default hidden btn-delete">Delete</button>
+    </div>  <!-- fieldset -->
+    {% endfor %}
+
+    <div class="form-group">
+    <div class="col-md-10">
+    <button id="add_session" type="button" class="btn btn-default"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span>Add Session</button>
+    </div>
+    </div>
+
+    <div class="form-group"
+    {% buttons %}
+      <button type="submit" class="btn btn-primary">Submit</button>
+      <a class="btn btn-default pull-right" href="{% url 'ietf.meeting.views.interim_request_details' number=meeting.number %}">Back</a>
+    {% endbuttons %}
+    </div>
+    
+  </form>
+
+{% endblock %}
+
+{% block js %}
+  <script src="{% static 'bootstrap-datepicker/js/bootstrap-datepicker.min.js' %}"></script>
+  <script src="{% static 'select2/select2.min.js' %}"></script>
+  <script src="{% static 'ietf/js/meeting-interim-request.js' %}"></script>
+{% endblock %}

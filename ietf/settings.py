@@ -447,9 +447,9 @@ DOC_HREFS = {
 }
 
 MEETING_DOC_HREFS = {
-    "agenda": "/meeting/{meeting}/agenda/{doc.group.acronym}/",
-    "minutes": "https://www.ietf.org/proceedings/{meeting}/minutes/{doc.external_url}",
-    "slides": "https://www.ietf.org/proceedings/{meeting}/slides/{doc.external_url}",
+    "agenda": "/meeting/{meeting.number}/agenda/{doc.group.acronym}/",
+    "minutes": "https://www.ietf.org/proceedings/{meeting.number}/minutes/{doc.external_url}",
+    "slides": "https://www.ietf.org/proceedings/{meeting.number}/slides/{doc.external_url}",
     "recording": "{doc.external_url}",
 }
 
@@ -494,6 +494,10 @@ NOMINEE_FEEDBACK_TYPES = ['comment', 'questio', 'nomina']
 IDSUBMIT_FROM_EMAIL = 'IETF I-D Submission Tool <idsubmission@ietf.org>'
 IDSUBMIT_ANNOUNCE_FROM_EMAIL = 'internet-drafts@ietf.org'
 IDSUBMIT_ANNOUNCE_LIST_EMAIL = 'i-d-announce@ietf.org'
+
+# Interim Meeting Tool settings
+INTERIM_ANNOUNCE_FROM_EMAIL = 'IESG Secretary <iesg-secretary@ietf.org>'
+INTERIM_ANNOUNCE_TO_EMAIL = 'IETF Announcement List <ietf-announce@ietf.org>' 
 
 # Days from meeting to day of cut off dates on submit -- cutoff_time_utc is added to this
 IDSUBMIT_DEFAULT_CUTOFF_DAY_OFFSET_00 = 13

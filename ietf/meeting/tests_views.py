@@ -1,3 +1,4 @@
+import json
 import os
 import shutil
 import datetime
@@ -7,13 +8,21 @@ import debug           # pyflakes:ignore
 
 from django.core.urlresolvers import reverse as urlreverse
 from django.conf import settings
+from django.contrib.auth.models import User
 
 from pyquery import PyQuery
 
 from ietf.doc.models import Document
+from ietf.group.models import Group
+from ietf.meeting.helpers import can_approve_interim_request, can_view_interim_request
+from ietf.meeting.helpers import send_interim_approval_request
+from ietf.meeting.helpers import send_interim_cancellation_notice
+from ietf.meeting.helpers import send_interim_minutes_reminder
 from ietf.meeting.models import Session, TimeSlot, Meeting
-from ietf.meeting.test_data import make_meeting_test_data
+from ietf.meeting.test_data import make_meeting_test_data, make_interim_meeting
+from ietf.name.models import SessionStatusName
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized, unicontent
+from ietf.utils.mail import outbox
 
 from ietf.person.factories import PersonFactory
 from ietf.group.factories import GroupFactory
@@ -446,3 +455,599 @@ class EditScheduleListTests(TestCase):
         self.assertTrue(r.status_code, 302)
         mtg = Meeting.objects.get(number=self.mtg.number)
         self.assertEqual(mtg.agenda,schedule)
+
+# -------------------------------------------------
+# Interim Meeting Tests
+# -------------------------------------------------
+
+class InterimTests(TestCase):
+    def check_interim_tabs(self, url):
+        '''Helper function to check interim meeting list tabs'''
+        # no logged in -  no tabs
+        r = self.client.get(url)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q("ul.nav-tabs")), 0)
+        # plain user -  no tabs
+        username = "plain"
+        self.client.login(username=username, password=username + "+password")
+        r = self.client.get(url)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q("ul.nav-tabs")), 0)
+        self.client.logout()
+        # privileged user
+        username = "ad"
+        self.client.login(username=username, password=username + "+password")
+        r = self.client.get(url)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q("a:contains('Pending')")), 1)
+        self.assertEqual(len(q("a:contains('Announce')")), 0)
+        self.client.logout()
+        # secretariat
+        username = "secretary"
+        self.client.login(username=username, password=username + "+password")
+        r = self.client.get(url)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q("a:contains('Pending')")), 1)
+        self.assertEqual(len(q("a:contains('Announce')")), 1)
+        self.client.logout()
+
+    def test_interim_announce(self):
+        make_meeting_test_data()
+        url = urlreverse("ietf.meeting.views.interim_announce")
+        meeting = Meeting.objects.filter(type='interim', session__group__acronym='mars').first()
+        session = meeting.session_set.first()
+        session.status = SessionStatusName.objects.get(slug='scheda')
+        session.save()
+        login_testing_unauthorized(self, "secretary", url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(meeting.number in r.content)
+
+    def test_interim_send_announcement(self):
+        make_meeting_test_data()
+        meeting = Meeting.objects.filter(type='interim', session__status='apprw', session__group__acronym='mars').first()
+        url = urlreverse("ietf.meeting.views.interim_send_announcement", kwargs={'number': meeting.number})
+        login_testing_unauthorized(self, "secretary", url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        initial = r.context['form'].initial
+        # send announcement
+        len_before = len(outbox)
+        r = self.client.post(url, initial)
+        self.assertRedirects(r, urlreverse('ietf.meeting.views.interim_announce'))
+        self.assertEqual(len(outbox), len_before + 1)
+        self.assertTrue('WG Virtual Meeting' in outbox[-1]['Subject'])
+
+    def test_interim_approve(self):
+        make_meeting_test_data()
+        meeting = Meeting.objects.filter(type='interim', session__status='apprw', session__group__acronym='mars').first()
+        url = urlreverse('ietf.meeting.views.interim_request_details', kwargs={'number': meeting.number})
+        login_testing_unauthorized(self, "secretary", url)
+        r = self.client.post(url, {'approve': 'approve'})
+        self.assertRedirects(r, urlreverse('ietf.meeting.views.interim_send_announcement', kwargs={'number': meeting.number}))
+        for session in meeting.session_set.all():
+            self.assertEqual(session.status.slug, 'scheda')
+
+    def test_upcoming(self):
+        make_meeting_test_data()
+        url = urlreverse("ietf.meeting.views.upcoming")
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        today = datetime.date.today()
+        mars_interim = Meeting.objects.filter(date__gt=today, type='interim', session__group__acronym='mars', session__status='sched').first()
+        ames_interim = Meeting.objects.filter(date__gt=today, type='interim', session__group__acronym='ames', session__status='canceled').first()
+        self.assertTrue(mars_interim.number in r.content)
+        self.assertTrue(ames_interim.number in r.content)
+        self.assertTrue('IETF - 42' in r.content)
+        # cancelled session
+        q = PyQuery(r.content)
+        self.assertTrue('CANCELLED' in q('[id*="-ames"]').text())
+        self.check_interim_tabs(url)
+
+    def test_upcoming_ical(self):
+        make_meeting_test_data()
+        url = urlreverse("ietf.meeting.views.upcoming_ical")
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.get('Content-Type'), "text/calendar")
+        self.assertEqual(r.content.count('UID'), 5)
+        # check filtered output
+        url = url + '?filters=mars'
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.get('Content-Type'), "text/calendar")
+        # print r.content
+        self.assertEqual(r.content.count('UID'), 2)
+
+
+    def test_interim_request_permissions(self):
+        '''Ensure only authorized users see link to request interim meeting'''
+        make_meeting_test_data()
+
+        # test unauthorized not logged in
+        upcoming_url = urlreverse("ietf.meeting.views.upcoming")
+        request_url = urlreverse("ietf.meeting.views.interim_request")
+        r = self.client.get(upcoming_url)
+        self.assertNotContains(r,'Request new interim meeting')
+
+        # test unauthorized user
+        login_testing_unauthorized(self,"plain",request_url)
+        r = self.client.get(upcoming_url)
+        self.assertNotContains(r,'Request new interim meeting')
+        r = self.client.get(request_url)
+        self.assertEqual(r.status_code, 403) 
+        self.client.logout()
+
+        # test authorized
+        for username in ('secretary','ad','marschairman','irtf-chair','irgchairman'):
+            self.client.login(username=username, password= username + "+password")
+            r = self.client.get(upcoming_url)
+            self.assertContains(r,'Request new interim meeting')
+            r = self.client.get(request_url)
+            self.assertEqual(r.status_code, 200)
+            self.client.logout()
+
+    def test_interim_request_options(self):
+        make_meeting_test_data()
+
+        # secretariat can request for any group
+        self.client.login(username="secretary", password="secretary+password")
+        r = self.client.get("/meeting/interim/request/")
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(Group.objects.filter(type__in=('wg', 'rg'), state__in=('active', 'proposed')).count(),
+            len(q("#id_group option")) - 1)  # -1 for options placeholder
+
+
+    def test_interim_request_single(self):
+        make_meeting_test_data()
+        group = Group.objects.get(acronym='mars')
+        date = datetime.date.today() + datetime.timedelta(days=30)
+        time = datetime.datetime.now().time().replace(microsecond=0,second=0)
+        dt = datetime.datetime.combine(date, time)
+        duration = datetime.timedelta(hours=3)
+        remote_instructions = 'Use webex'
+        agenda = 'Intro. Slides. Discuss.'
+        agenda_note = 'On second level'
+        self.client.login(username="secretary", password="secretary+password")
+        data = {'group':group.pk,
+                'meeting_type':'single',
+                'city':'',
+                'country':'',
+                'time_zone':'UTC',
+                'session_set-0-date':date.strftime("%Y-%m-%d"),
+                'session_set-0-time':time.strftime('%H:%M'),
+                'session_set-0-requested_duration':'03:00:00',
+                'session_set-0-remote_instructions':remote_instructions,
+                'session_set-0-agenda':agenda,
+                'session_set-0-agenda_note':agenda_note,
+                'session_set-TOTAL_FORMS':1,
+                'session_set-INITIAL_FORMS':0,
+                'session_set-MIN_NUM_FORMS':0,
+                'session_set-MAX_NUM_FORMS':1000}
+
+        r = self.client.post(urlreverse("ietf.meeting.views.interim_request"),data)
+        
+        self.assertRedirects(r,urlreverse('ietf.meeting.views.upcoming'))
+        meeting = Meeting.objects.order_by('id').last()
+        self.assertEqual(meeting.type_id,'interim')
+        self.assertEqual(meeting.date,date)
+        self.assertEqual(meeting.number,'interim-%s-%s-%s' % (date.year,group.acronym,'01'))
+        self.assertEqual(meeting.city,'')
+        self.assertEqual(meeting.country,'')
+        self.assertEqual(meeting.time_zone,'UTC')
+        session = meeting.session_set.first()
+        self.assertEqual(session.remote_instructions,remote_instructions)
+        self.assertEqual(session.agenda_note,agenda_note)
+        timeslot = session.official_timeslotassignment().timeslot
+        self.assertEqual(timeslot.time,dt)
+        self.assertEqual(timeslot.duration,duration)
+        # ensure agenda document was created
+        self.assertEqual(session.materials.count(),1)
+        doc = session.materials.first()
+        path = os.path.join(doc.get_file_path(),doc.filename_with_rev())
+        self.assertTrue(os.path.exists(path))
+
+    def test_interim_request_single_in_person(self):
+        make_meeting_test_data()
+        group = Group.objects.get(acronym='mars')
+        date = datetime.date.today() + datetime.timedelta(days=30)
+        time = datetime.datetime.now().time().replace(microsecond=0,second=0)
+        dt = datetime.datetime.combine(date, time)
+        duration = datetime.timedelta(hours=3)
+        city = 'San Francisco'
+        country = 'US'
+        time_zone = 'US/Pacific'
+        remote_instructions = 'Use webex'
+        agenda = 'Intro. Slides. Discuss.'
+        agenda_note = 'On second level'
+        self.client.login(username="secretary", password="secretary+password")
+        data = {'group':group.pk,
+                'meeting_type':'single',
+                'city':city,
+                'country':country,
+                'time_zone':time_zone,
+                'session_set-0-date':date.strftime("%Y-%m-%d"),
+                'session_set-0-time':time.strftime('%H:%M'),
+                'session_set-0-requested_duration':'03:00:00',
+                'session_set-0-remote_instructions':remote_instructions,
+                'session_set-0-agenda':agenda,
+                'session_set-0-agenda_note':agenda_note,
+                'session_set-TOTAL_FORMS':1,
+                'session_set-INITIAL_FORMS':0}
+
+        r = self.client.post(urlreverse("ietf.meeting.views.interim_request"),data)
+        
+        self.assertRedirects(r,urlreverse('ietf.meeting.views.upcoming'))
+        meeting = Meeting.objects.order_by('id').last()
+        self.assertEqual(meeting.type_id,'interim')
+        self.assertEqual(meeting.date,date)
+        self.assertEqual(meeting.number,'interim-%s-%s-%s' % (date.year,group.acronym,'01'))
+        self.assertEqual(meeting.city,city)
+        self.assertEqual(meeting.country,country)
+        self.assertEqual(meeting.time_zone,time_zone)
+        session = meeting.session_set.first()
+        self.assertEqual(session.remote_instructions,remote_instructions)
+        self.assertEqual(session.agenda_note,agenda_note)
+        timeslot = session.official_timeslotassignment().timeslot
+        self.assertEqual(timeslot.time,dt)
+        self.assertEqual(timeslot.duration,duration)
+
+    def test_interim_request_multi_day(self):
+        make_meeting_test_data()
+        date = datetime.date.today() + datetime.timedelta(days=30)
+        date2 = date + datetime.timedelta(days=1)
+        time = datetime.datetime.now().time().replace(microsecond=0,second=0)
+        dt = datetime.datetime.combine(date, time)
+        dt2 = datetime.datetime.combine(date2, time)
+        duration = datetime.timedelta(hours=3)
+        group = Group.objects.get(acronym='mars')
+        city = 'San Francisco'
+        country = 'US'
+        time_zone = 'US/Pacific'
+        remote_instructions = 'Use webex'
+        agenda = 'Intro. Slides. Discuss.'
+        agenda_note = 'On second level'
+        self.client.login(username="secretary", password="secretary+password")
+        data = {'group':group.pk,
+                'meeting_type':'multi-day',
+                'city':city,
+                'country':country,
+                'time_zone':time_zone,
+                'session_set-0-date':date.strftime("%Y-%m-%d"),
+                'session_set-0-time':time.strftime('%H:%M'),
+                'session_set-0-requested_duration':'03:00:00',
+                'session_set-0-remote_instructions':remote_instructions,
+                'session_set-0-agenda':agenda,
+                'session_set-0-agenda_note':agenda_note,
+                'session_set-1-date':date2.strftime("%Y-%m-%d"),
+                'session_set-1-time':time.strftime('%H:%M'),
+                'session_set-1-requested_duration':'03:00:00',
+                'session_set-1-remote_instructions':remote_instructions,
+                'session_set-1-agenda':agenda,
+                'session_set-1-agenda_note':agenda_note,
+                'session_set-TOTAL_FORMS':2,
+                'session_set-INITIAL_FORMS':0}
+
+        r = self.client.post(urlreverse("ietf.meeting.views.interim_request"),data)
+        
+        self.assertRedirects(r,urlreverse('ietf.meeting.views.upcoming'))
+        meeting = Meeting.objects.order_by('id').last()
+        self.assertEqual(meeting.type_id,'interim')
+        self.assertEqual(meeting.date,date)
+        self.assertEqual(meeting.number,'interim-%s-%s-%s' % (date.year,group.acronym,'01'))
+        self.assertEqual(meeting.city,city)
+        self.assertEqual(meeting.country,country)
+        self.assertEqual(meeting.time_zone,time_zone)
+        self.assertEqual(meeting.session_set.count(),2)
+        # first sesstion
+        session = meeting.session_set.all()[0]
+        self.assertEqual(session.remote_instructions,remote_instructions)
+        timeslot = session.official_timeslotassignment().timeslot
+        self.assertEqual(timeslot.time,dt)
+        self.assertEqual(timeslot.duration,duration)
+        self.assertEqual(session.agenda_note,agenda_note)
+        # second sesstion
+        session = meeting.session_set.all()[1]
+        self.assertEqual(session.remote_instructions,remote_instructions)
+        timeslot = session.official_timeslotassignment().timeslot
+        self.assertEqual(timeslot.time,dt2)
+        self.assertEqual(timeslot.duration,duration)
+        self.assertEqual(session.agenda_note,agenda_note)
+
+    def test_interim_request_series(self):
+        make_meeting_test_data()
+        meeting_count_before = Meeting.objects.filter(type='interim').count()
+        date = datetime.date.today() + datetime.timedelta(days=30)
+        date2 = date + datetime.timedelta(days=1)
+        time = datetime.datetime.now().time().replace(microsecond=0,second=0)
+        dt = datetime.datetime.combine(date, time)
+        dt2 = datetime.datetime.combine(date2, time)
+        duration = datetime.timedelta(hours=3)
+        group = Group.objects.get(acronym='mars')
+        city = ''
+        country = ''
+        time_zone = 'US/Pacific'
+        remote_instructions = 'Use webex'
+        agenda = 'Intro. Slides. Discuss.'
+        agenda_note = 'On second level'
+        self.client.login(username="secretary", password="secretary+password")
+        data = {'group':group.pk,
+                'meeting_type':'series',
+                'city':city,
+                'country':country,
+                'time_zone':time_zone,
+                'session_set-0-date':date.strftime("%Y-%m-%d"),
+                'session_set-0-time':time.strftime('%H:%M'),
+                'session_set-0-requested_duration':'03:00:00',
+                'session_set-0-remote_instructions':remote_instructions,
+                'session_set-0-agenda':agenda,
+                'session_set-0-agenda_note':agenda_note,
+                'session_set-1-date':date2.strftime("%Y-%m-%d"),
+                'session_set-1-time':time.strftime('%H:%M'),
+                'session_set-1-requested_duration':'03:00:00',
+                'session_set-1-remote_instructions':remote_instructions,
+                'session_set-1-agenda':agenda,
+                'session_set-1-agenda_note':agenda_note,
+                'session_set-TOTAL_FORMS':2,
+                'session_set-INITIAL_FORMS':0}
+
+        r = self.client.post(urlreverse("ietf.meeting.views.interim_request"),data)
+        
+        self.assertRedirects(r,urlreverse('ietf.meeting.views.upcoming'))
+        meeting_count_after = Meeting.objects.filter(type='interim').count()
+        self.assertEqual(meeting_count_after,meeting_count_before + 2)
+        meetings = Meeting.objects.order_by('-id')[:2]
+        # first meeting
+        meeting = meetings[1]
+        self.assertEqual(meeting.type_id,'interim')
+        self.assertEqual(meeting.date,date)
+        self.assertEqual(meeting.number,'interim-%s-%s-%s' % (date.year,group.acronym,'01'))
+        self.assertEqual(meeting.city,city)
+        self.assertEqual(meeting.country,country)
+        self.assertEqual(meeting.time_zone,time_zone)
+        self.assertEqual(meeting.session_set.count(),1)
+        session = meeting.session_set.first()
+        self.assertEqual(session.remote_instructions,remote_instructions)
+        timeslot = session.official_timeslotassignment().timeslot
+        self.assertEqual(timeslot.time,dt)
+        self.assertEqual(timeslot.duration,duration)
+        self.assertEqual(session.agenda_note,agenda_note)
+        # second meeting
+        meeting = meetings[0]
+        self.assertEqual(meeting.type_id,'interim')
+        self.assertEqual(meeting.date,date2)
+        self.assertEqual(meeting.number,'interim-%s-%s-%s' % (date.year,group.acronym,'02'))
+        self.assertEqual(meeting.city,city)
+        self.assertEqual(meeting.country,country)
+        self.assertEqual(meeting.time_zone,time_zone)
+        self.assertEqual(meeting.session_set.count(),1)
+        session = meeting.session_set.first()
+        self.assertEqual(session.remote_instructions,remote_instructions)
+        timeslot = session.official_timeslotassignment().timeslot
+        self.assertEqual(timeslot.time,dt2)
+        self.assertEqual(timeslot.duration,duration)
+        self.assertEqual(session.agenda_note,agenda_note)
+
+
+    def test_interim_pending(self):
+        make_meeting_test_data()
+        url = urlreverse('ietf.meeting.views.interim_pending')
+        count = Meeting.objects.filter(type='interim',session__status='apprw').distinct().count()
+
+        # unpriviledged user
+        login_testing_unauthorized(self,"plain",url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 403) 
+        
+        # secretariat
+        login_testing_unauthorized(self,"secretary",url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q("#pending-interim-meetings-table tr"))-1, count)
+        self.client.logout()
+
+
+    def test_can_approve_interim_request(self):
+        make_meeting_test_data()
+        # unprivileged user
+        user = User.objects.get(username='plain')
+        group = Group.objects.get(acronym='mars')
+        meeting = Meeting.objects.filter(type='interim',session__status='apprw',session__group=group).first()
+        self.assertFalse(can_approve_interim_request(meeting=meeting,user=user))
+        # Secretariat
+        user = User.objects.get(username='secretary')
+        self.assertTrue(can_approve_interim_request(meeting=meeting,user=user))
+        # related AD
+        user = User.objects.get(username='ad')
+        self.assertTrue(can_approve_interim_request(meeting=meeting,user=user))
+        # other AD
+        user = User.objects.get(username='ops-ad')
+        self.assertFalse(can_approve_interim_request(meeting=meeting,user=user))
+        # WG Chair
+        user = User.objects.get(username='marschairman')
+        self.assertFalse(can_approve_interim_request(meeting=meeting,user=user))
+
+    def test_can_view_interim_request(self):
+        make_meeting_test_data()
+        # unprivileged user
+        user = User.objects.get(username='plain')
+        group = Group.objects.get(acronym='mars')
+        meeting = Meeting.objects.filter(type='interim',session__status='apprw',session__group=group).first()
+        self.assertFalse(can_view_interim_request(meeting=meeting,user=user))
+        # Secretariat
+        user = User.objects.get(username='secretary')
+        self.assertTrue(can_view_interim_request(meeting=meeting,user=user))
+        # related AD
+        user = User.objects.get(username='ad')
+        self.assertTrue(can_view_interim_request(meeting=meeting,user=user))
+        # other AD
+        user = User.objects.get(username='ops-ad')
+        self.assertTrue(can_view_interim_request(meeting=meeting,user=user))
+        # WG Chair
+        user = User.objects.get(username='marschairman')
+        self.assertTrue(can_view_interim_request(meeting=meeting,user=user))
+        # Other WG Chair
+        user = User.objects.get(username='ameschairman')
+        self.assertFalse(can_view_interim_request(meeting=meeting,user=user))
+
+    def test_interim_request_details(self):
+        make_meeting_test_data()
+        meeting = Meeting.objects.filter(type='interim',session__status='apprw',session__group__acronym='mars').first()
+        url = urlreverse('ietf.meeting.views.interim_request_details',kwargs={'number':meeting.number})
+        login_testing_unauthorized(self,"secretary",url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+
+    def test_interim_request_disapprove(self):
+        make_meeting_test_data()
+        meeting = Meeting.objects.filter(type='interim',session__status='apprw',session__group__acronym='mars').first()
+        url = urlreverse('ietf.meeting.views.interim_request_details',kwargs={'number':meeting.number})
+        login_testing_unauthorized(self,"secretary",url)
+        r = self.client.post(url,{'disapprove':'Disapprove'})
+        self.assertRedirects(r, urlreverse('ietf.meeting.views.interim_pending'))
+        for session in meeting.session_set.all():
+            self.assertEqual(session.status_id,'disappr')
+
+    def test_interim_request_cancel(self):
+        make_meeting_test_data()
+        meeting = Meeting.objects.filter(type='interim', session__status='apprw', session__group__acronym='mars').first()
+        url = urlreverse('ietf.meeting.views.interim_request_details', kwargs={'number': meeting.number})
+        # ensure no cancel button for unauthorized user
+        self.client.login(username="ameschairman", password="ameschairman+password")
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q("a.btn:contains('Cancel')")), 0)
+        # ensure cancel button for authorized user
+        self.client.login(username="marschairman", password="marschairman+password")
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q("a.btn:contains('Cancel')")), 1)
+        # ensure fail unauthorized
+        url = urlreverse('ietf.meeting.views.interim_request_cancel', kwargs={'number': meeting.number})
+        comments = 'Bob cannot make it'
+        self.client.login(username="ameschairman", password="ameschairman+password")
+        r = self.client.post(url, {'comments': comments})
+        self.assertEqual(r.status_code, 403)
+        # test cancelling before announcement
+        self.client.login(username="marschairman", password="marschairman+password")
+        length_before = len(outbox)
+        r = self.client.post(url, {'comments': comments})
+        self.assertRedirects(r, urlreverse('ietf.meeting.views.upcoming'))
+        for session in meeting.session_set.all():
+            self.assertEqual(session.status_id, 'canceledpa')
+            self.assertEqual(session.agenda_note, comments)
+        self.assertEqual(len(outbox), length_before)     # no email notice
+        # test cancelling after announcement
+        meeting = Meeting.objects.filter(type='interim', session__status='sched', session__group__acronym='mars').first()
+        url = urlreverse('ietf.meeting.views.interim_request_cancel', kwargs={'number': meeting.number})
+        r = self.client.post(url, {'comments': comments})
+        self.assertRedirects(r, urlreverse('ietf.meeting.views.upcoming'))
+        for session in meeting.session_set.all():
+            self.assertEqual(session.status_id, 'canceled')
+            self.assertEqual(session.agenda_note, comments)
+        self.assertEqual(len(outbox), length_before + 1)
+        self.assertTrue('Interim Meeting Cancelled' in outbox[-1]['Subject'])
+
+    def test_interim_request_edit(self):
+        make_meeting_test_data()
+        meeting = Meeting.objects.filter(type='interim', session__status='apprw', session__group__acronym='mars').first()
+        group = meeting.session_set.first().group
+        url = urlreverse('ietf.meeting.views.interim_request_edit', kwargs={'number': meeting.number})
+        # test unauthorized access
+        self.client.login(username="ameschairman", password="ameschairman+password")
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 403)
+        # test authorized use
+        login_testing_unauthorized(self, "secretary", url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        # post changes
+        length_before = len(outbox)
+        form_initial = r.context['form'].initial
+        formset_initial =  r.context['formset'].forms[0].initial
+        new_time = formset_initial['time'] + datetime.timedelta(hours=1)
+        data = {'group':group.pk,
+                'meeting_type':'single',
+                'session_set-0-id':meeting.session_set.first().id,
+                'session_set-0-date':formset_initial['date'].strftime('%Y-%m-%d'),
+                'session_set-0-time':new_time.strftime('%H:%M'),
+                'session_set-0-requested_duration':formset_initial['requested_duration'],
+                'session_set-0-remote_instructions':formset_initial['remote_instructions'],
+                #'session_set-0-agenda':formset_initial['agenda'],
+                'session_set-0-agenda_note':formset_initial['agenda_note'],
+                'session_set-TOTAL_FORMS':1,
+                'session_set-INITIAL_FORMS':1}
+        data.update(form_initial)
+        r = self.client.post(url, data)
+        self.assertRedirects(r, urlreverse('ietf.meeting.views.interim_request_details', kwargs={'number': meeting.number}))
+        self.assertEqual(len(outbox),length_before+1)
+        self.assertTrue('CHANGED' in outbox[-1]['Subject'])
+        session = meeting.session_set.first()
+        timeslot = session.official_timeslotassignment().timeslot
+        self.assertEqual(timeslot.time,new_time)
+        
+        
+    def test_interim_request_details_permissions(self):
+        make_meeting_test_data()
+        meeting = Meeting.objects.filter(type='interim',session__status='apprw',session__group__acronym='mars').first()
+        url = urlreverse('ietf.meeting.views.interim_request_details',kwargs={'number':meeting.number})
+
+        # unprivileged user
+        login_testing_unauthorized(self,"plain",url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 403)
+
+    def test_send_interim_approval_request(self):
+        make_meeting_test_data()
+        meeting = Meeting.objects.filter(type='interim',session__status='apprw',session__group__acronym='mars').first()
+        length_before = len(outbox)
+        send_interim_approval_request(meetings=[meeting])
+        self.assertEqual(len(outbox),length_before+1)
+        self.assertTrue('New Interim Meeting Request' in outbox[-1]['Subject'])
+
+    def test_send_interim_cancellation_notice(self):
+        make_meeting_test_data()
+        meeting = Meeting.objects.filter(type='interim',session__status='sched',session__group__acronym='mars').first()
+        length_before = len(outbox)
+        send_interim_cancellation_notice(meeting=meeting)
+        self.assertEqual(len(outbox),length_before+1)
+        self.assertTrue('Interim Meeting Cancelled' in outbox[-1]['Subject'])
+
+    def test_send_interim_minutes_reminder(self):
+        make_meeting_test_data()
+        group = Group.objects.get(acronym='mars')
+        date = datetime.datetime.today() - datetime.timedelta(days=10)
+        meeting = make_interim_meeting(group=group, date=date, status='sched')
+        length_before = len(outbox)
+        send_interim_minutes_reminder(meeting=meeting)
+        self.assertEqual(len(outbox),length_before+1)
+        self.assertTrue('Action Required: Minutes' in outbox[-1]['Subject'])
+
+
+class AjaxTests(TestCase):
+    def test_ajax_get_utc(self):
+        # test bad queries
+        url = urlreverse('ietf.meeting.views.ajax_get_utc') + "?date=2016-1-1&time=badtime&timezone=UTC"
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        data = json.loads(r.content)
+        self.assertEqual(data["error"], True)
+        url = urlreverse('ietf.meeting.views.ajax_get_utc') + "?date=2016-1-1&time=25:99&timezone=UTC"
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        data = json.loads(r.content)
+        self.assertEqual(data["error"], True)
+        # test good query
+        url = urlreverse('ietf.meeting.views.ajax_get_utc') + "?date=2016-1-1&time=12:00&timezone=US/Pacific"
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        data = json.loads(r.content)
+        self.assertTrue('timezone' in data)
+        self.assertTrue('time' in data)
+        self.assertTrue('utc' in data)
+        self.assertTrue('error' not in data)
+        self.assertEqual(data['utc'], '20:00')

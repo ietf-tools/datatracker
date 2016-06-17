@@ -3,12 +3,14 @@
 import textwrap
 import re
 import datetime
+import os
 import types
 from email.utils import parseaddr
 
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import ConsensusDocEvent
+from ietf.doc.utils import get_document_content
 from django import template
 from django.conf import settings
 from django.utils.html import escape, fix_ampersands
@@ -590,3 +592,27 @@ def urlize_html(html, autoescape=False):
 def emailwrap(email):
     email = str(email)
     return mark_safe(email.replace('@', '<wbr>@'))
+
+@register.filter
+def document_content(doc):
+    if doc is None:
+        return None
+    path = os.path.join(doc.get_file_path(),doc.filename_with_rev())
+    return get_document_content(doc.name,path,markup=False)
+
+@register.filter
+def session_start_time(session):
+    timeslot = session.official_timeslotassignment().timeslot
+    return timeslot.time
+
+@register.filter
+def session_end_time(session):
+    timeslot = session.official_timeslotassignment().timeslot
+    return timeslot.time + timeslot.duration
+
+@register.filter
+def format_timedelta(timedelta):
+    s = timedelta.seconds
+    hours, remainder = divmod(s, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    return '{hours:02d}:{minutes:02d}'.format(hours=hours,minutes=minutes)

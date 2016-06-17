@@ -26,7 +26,7 @@ from ietf.secr.proceedings.models import InterimMeeting    # proxy model
 from ietf.secr.proceedings.models import Registration
 from ietf.secr.utils.document import get_rfc_num
 from ietf.secr.utils.group import groups_by_session
-from ietf.secr.utils.meeting import get_upload_root, get_proceedings_path, get_materials, get_session
+from ietf.secr.utils.meeting import get_proceedings_path, get_materials, get_session
 
 
 # -------------------------------------------------
@@ -227,7 +227,7 @@ def create_interim_directory():
 
     # produce date sorted output
     page = 'proceedings.html'
-    meetings = InterimMeeting.objects.order_by('-date')
+    meetings = InterimMeeting.objects.filter(session__status='sched').order_by('-date')
     response = render(HttpRequest(), 'proceedings/interim_directory.html',{'meetings': meetings})
     path = os.path.join(settings.SECR_INTERIM_LISTING_DIR, page)
     f = open(path,'w')
@@ -236,7 +236,7 @@ def create_interim_directory():
 
     # produce group sorted output
     page = 'proceedings-bygroup.html'
-    qs = InterimMeeting.objects.all()
+    qs = InterimMeeting.objects.filter(session__status='sched')
     meetings = sorted(qs, key=lambda a: a.group().acronym)
     response = render(HttpRequest(), 'proceedings/interim_directory.html',{'meetings': meetings})
     path = os.path.join(settings.SECR_INTERIM_LISTING_DIR, page)
@@ -267,7 +267,7 @@ def create_proceedings(meeting, group, is_final=False):
 
     docs = Document.objects.filter(group=group,type='draft').order_by('time')
 
-    meeting_root = get_upload_root(meeting)
+    meeting_root = meeting.get_materials_path()
     if meeting.type.slug == 'ietf':
         url_root = "%sproceedings/%s/" % (settings.IETF_HOST_URL,meeting.number)
     else:

@@ -9,17 +9,23 @@ from django.http import HttpRequest, Http404
 from django.db.models import Max, Q, Prefetch, F
 from django.conf import settings
 from django.core.cache import cache
+from django.core.urlresolvers import reverse
 from django.utils.cache import get_cache_key
 from django.shortcuts import get_object_or_404
+from django.template.loader import render_to_string
 
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import Document
+from ietf.doc.utils import get_document_content
 from ietf.group.models import Group
 from ietf.ietfauth.utils import has_role, user_is_person
+from ietf.liaisons.utils import get_person_for_user
+from ietf.mailtrigger.utils import gather_address_lists
 from ietf.person.models  import Person
-from ietf.meeting.models import Meeting
+from ietf.meeting.models import Meeting, Schedule, TimeSlot, SchedTimeSessAssignment
 from ietf.utils.history import find_history_active_at, find_history_replacements_active_at
+from ietf.utils.mail import send_mail
 from ietf.utils.pipe import pipe
 
 def find_ads_for_meeting(meeting):
@@ -275,7 +281,6 @@ def agenda_permissions(meeting, schedule, user):
     return cansee, canedit, secretariat
 
 def session_constraint_expire(request,session):
-    from django.core.urlresolvers import reverse
     from ajax import session_constraints
     path = reverse(session_constraints, args=[session.meeting.number, session.pk])
     temp_request = HttpRequest()
@@ -285,4 +290,334 @@ def session_constraint_expire(request,session):
     if key is not None and cache.has_key(key):
         cache.delete(key)
 
+# -------------------------------------------------
+# Interim Meeting Helpers
+# -------------------------------------------------
 
+
+def assign_interim_session(form):
+    """Helper function to create a timeslot and assign the interim session"""
+    time = datetime.datetime.combine(
+        form.cleaned_data['date'],
+        form.cleaned_data['time'])
+    session = form.instance
+    if session.official_timeslotassignment():
+        slot = session.official_timeslotassignment().timeslot
+        slot.time = time
+        slot.save()
+    else:
+        slot = TimeSlot.objects.create(
+            meeting=session.meeting,
+            type_id="session",
+            duration=session.requested_duration,
+            time=time)
+        SchedTimeSessAssignment.objects.create(
+            timeslot=slot,
+            session=session,
+            schedule=session.meeting.agenda)
+
+
+def can_approve_interim_request(meeting, user):
+    '''Returns True if the user has permissions to approve an interim meeting request'''
+    if meeting.type.slug != 'interim':
+        return False
+    if has_role(user, 'Secretariat'):
+        return True
+    person = get_person_for_user(user)
+    session = meeting.session_set.first()
+    if not session:
+        return False
+    group = session.group
+    if group.type.slug == 'wg' and group.parent.role_set.filter(name='ad', person=person):
+        return True
+    if group.type.slug == 'rg' and group.parent.role_set.filter(name='chair', person=person):
+        return True
+    return False
+
+
+def can_edit_interim_request(meeting, user):
+    '''Returns True if the user can edit the interim meeting request'''
+    if meeting.type.slug != 'interim':
+        return False
+    if has_role(user, 'Secretariat'):
+        return True
+    person = get_person_for_user(user)
+    session = meeting.session_set.first()
+    if not session:
+        return False
+    group = session.group
+    if group.role_set.filter(name='chair', person=person):
+        return True
+    elif can_approve_interim_request(meeting, user):
+        return True
+    else:
+        return False
+
+
+def can_request_interim_meeting(user):
+    if has_role(user, ('Secretariat', 'Area Director', 'WG Chair', 'IRTF Chair', 'RG Chair')):
+        return True
+    return False
+
+
+def can_view_interim_request(meeting, user):
+    '''Returns True if the user can see the pending interim request in the pending interim view'''
+    if meeting.type.slug != 'interim':
+        return False
+    if has_role(user, 'Secretariat'):
+        return True
+    person = get_person_for_user(user)
+    session = meeting.session_set.first()
+    if not session:
+        return False
+    group = session.group
+    if has_role(user, 'Area Director') and group.type.slug == 'wg':
+        return True
+    if has_role(user, 'IRTF Chair') and group.type.slug == 'rg':
+        return True
+    if group.role_set.filter(name='chair', person=person):
+        return True
+    return False
+
+
+def create_interim_meeting(group, date, city='', country='', timezone='UTC',
+                           person=None):
+    """Helper function to create interim meeting and associated schedule"""
+    if not person:
+        person = Person.objects.get(name='(System)')
+    number = get_next_interim_number(group, date)
+    meeting = Meeting.objects.create(
+        number=number,
+        type_id='interim',
+        date=date,
+        city=city,
+        country=country,
+        time_zone=timezone)
+    schedule = Schedule.objects.create(
+        meeting=meeting,
+        owner=person,
+        visible=True,
+        public=True)
+    meeting.agenda = schedule
+    meeting.save()
+    return meeting
+
+
+def get_announcement_initial(meeting, is_change=False):
+    '''Returns a dictionary suitable to initialize an InterimAnnouncementForm
+    (Message ModelForm)'''
+    group = meeting.session_set.first().group
+    in_person = bool(meeting.city)
+    initial = {}
+    initial['to'] = settings.INTERIM_ANNOUNCE_TO_EMAIL
+    initial['cc'] = group.list_email
+    initial['frm'] = settings.INTERIM_ANNOUNCE_FROM_EMAIL
+    if in_person:
+        desc = 'Interim'
+    else:
+        desc = 'Virtual'
+    if is_change:
+        change = ' CHANGED'
+    else:
+        change = ''
+    if group.type.slug == 'rg':
+        type = 'RG'
+    elif group.type.slug == 'wg' and group.state.slug == 'bof':
+        type = 'BOF'
+    else:
+        type = 'WG'
+    initial['subject'] = '{name} ({acronym}) {type} {desc} Meeting: {date}{change}'.format(
+        name=group.name, 
+        acronym=group.acronym,
+        type=type,
+        desc=desc,
+        date=meeting.date,
+        change=change)
+    body = render_to_string('meeting/interim_announcement.txt', locals())
+    initial['body'] = body
+    return initial
+
+
+def get_earliest_session_date(formset):
+    '''Return earliest date from InterimSession Formset'''
+    return sorted([f.cleaned_data['date'] for f in formset.forms if f.cleaned_data.get('date')])[0]
+
+
+def get_interim_initial(meeting):
+    '''Returns a dictionary suitable to initialize a InterimRequestForm'''
+    initial = {}
+    initial['group'] = meeting.session_set.first().group
+    if meeting.city:
+        initial['in_person'] = True
+    else:
+        initial['in_person'] = False
+    if meeting.session_set.count() > 1:
+        initial['meeting_type'] = 'multi-day'
+    else:
+        initial['meeting_type'] = 'single'
+    if meeting.session_set.first().status.slug == 'apprw':
+        initial['approved'] = False
+    else:
+        initial['approved'] = True
+    return initial
+
+
+def get_interim_session_initial(meeting):
+    '''Returns a list of dictionaries suitable to initialize a InterimSessionForm'''
+    initials = []
+    for session in meeting.session_set.all():
+        initial = {}
+        initial['date'] = session.official_timeslotassignment().timeslot.time
+        initial['time'] = session.official_timeslotassignment().timeslot.time
+        initial['duration'] = session.requested_duration
+        initial['remote_instructions'] = session.remote_instructions
+        initial['agenda_note'] = session.agenda_note
+        doc = session.agenda()
+        if doc:
+            path = os.path.join(doc.get_file_path(), doc.filename_with_rev())
+            initial['agenda'] = get_document_content(os.path.basename(path), path, markup=False)
+        initials.append(initial)
+
+    return initials
+
+
+def is_meeting_approved(meeting):
+    """Returns True if the meeting is approved"""
+    if meeting.session_set.first().status.slug == 'apprw':
+        return False
+    else:
+        return True
+
+
+def get_next_interim_number(group, date):
+    """Returns a unique string to use for the next interim meeting for
+    *group*, used for Meeting.number field."""
+    meetings = Meeting.objects.filter(
+        number__startswith='interim-{year}-{group}'.format(
+            year=date.year,
+            group=group.acronym))
+    if meetings:
+        sequences = [int(m.number.split('-')[-1]) for m in meetings]
+        last_sequence = sorted(sequences)[-1]
+    else:
+        last_sequence = 0
+    return 'interim-{year}-{group}-{sequence}'.format(
+        year=date.year,
+        group=group.acronym,
+        sequence=str(last_sequence + 1).zfill(2))
+
+
+def get_next_agenda_name(meeting):
+    """Returns the next name to use for an agenda document for *meeting*"""
+    group = meeting.session_set.first().group
+    documents = Document.objects.filter(type='agenda', session__meeting=meeting)
+    if documents:
+        sequences = [int(d.name.split('-')[-1]) for d in documents]
+        last_sequence = sorted(sequences)[-1]
+    else:
+        last_sequence = 0
+    return 'agenda-{meeting}-{group}-{sequence}'.format(
+        meeting=meeting.number,
+        group=group.acronym,
+        sequence=str(last_sequence + 1).zfill(2))
+
+
+def send_interim_approval_request(meetings):
+    """Sends an email to the secretariat, group chairs, and resposnible area
+    director or the IRTF chair noting that approval has been requested for a
+    new interim meeting.  Takes a list of one or more meetings."""
+    group = meetings[0].session_set.first().group
+    requester = meetings[0].session_set.first().requested_by
+    (to_email, cc_list) = gather_address_lists('session_requested',group=group,person=requester)
+    from_email = ('"IETF Meeting Session Request Tool"','session_request_developers@ietf.org')
+    subject = '{group} - New Interim Meeting Request'.format(group=group.acronym)
+    template = 'meeting/interim_approval_request.txt'
+    approval_urls = []
+    for meeting in meetings:
+        url = settings.IDTRACKER_BASE_URL + reverse('ietf.meeting.views.interim_request_details', kwargs={'number': meeting.number})
+        approval_urls.append(url)
+    if len(meetings) > 1:
+        is_series = True
+    else:
+        is_series = False
+    context = locals()
+    send_mail(None,
+              to_email,
+              from_email,
+              subject,
+              template,
+              context,
+              cc=cc_list)
+
+
+def send_interim_cancellation_notice(meeting):
+    """Sends an email that a scheduled interim meeting has been cancelled."""
+    session = meeting.session_set.first()
+    group = session.group
+    to_email = settings.INTERIM_ANNOUNCE_TO_EMAIL
+    (_, cc_list) = gather_address_lists('session_request_cancelled',group=group)
+    from_email = settings.INTERIM_ANNOUNCE_FROM_EMAIL
+    subject = '{group} ({acronym}) {type} Interim Meeting Cancelled (was {date})'.format(
+        group=group.name,
+        acronym=group.acronym,
+        type=group.type.slug.upper(),
+        date=meeting.date.strftime('%Y-%m-%d'))
+    start_time = session.official_timeslotassignment().timeslot.time
+    end_time = start_time + session.requested_duration
+    if meeting.session_set.filter(status='sched').count() > 1:
+        is_multi_day = True
+    else:
+        is_multi_day = False
+    template = 'meeting/interim_cancellation_notice.txt'
+    context = locals()
+    send_mail(None,
+              to_email,
+              from_email,
+              subject,
+              template,
+              context,
+              cc=cc_list)
+
+
+def send_interim_minutes_reminder(meeting):
+    """Sends an email reminding chairs to submit minutes of interim *meeting*"""
+    session = meeting.session_set.first()
+    group = session.group
+    (to_email, cc_list) = gather_address_lists('session_minutes_reminder',group=group)
+    from_email = 'proceedings@ietf.org'
+    subject = 'Action Required: Minutes from {group} ({acronym}) {type} Interim Meeting on {date}'.format(
+        group=group.name,
+        acronym=group.acronym,
+        type=group.type.slug.upper(),
+        date=meeting.date.strftime('%Y-%m-%d'))
+    template = 'meeting/interim_minutes_reminder.txt'
+    context = locals()
+    send_mail(None,
+              to_email,
+              from_email,
+              subject,
+              template,
+              context,
+              cc=cc_list)
+
+
+def check_interim_minutes():
+    """Finds interim meetings that occured 10 days ago, if they don't
+    have minutes send a reminder."""
+    date = datetime.datetime.today() - datetime.timedelta(days=10)
+    meetings = Meeting.objects.filter(type='interim', session__status='sched', date=date)
+    for meeting in meetings:
+        if not meeting.session_set.first().minutes():
+            send_interim_minutes_reminder(meeting)
+
+
+def sessions_post_save(forms):
+    """Helper function to perform various post save operations on each form of a
+    InterimSessionModelForm formset"""
+    for form in forms:
+        if not form.has_changed():
+            continue
+        if ('date' in form.changed_data) or ('time' in form.changed_data):
+            assign_interim_session(form)
+        if 'agenda' in form.changed_data:
+            form.save_agenda()

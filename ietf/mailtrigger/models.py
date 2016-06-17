@@ -157,6 +157,14 @@ class Recipient(models.Model):
                 addrs.extend(Recipient.objects.get(slug='stream_managers').gather(**{'streams':['irtf']}))
         return addrs
 
+    def gather_group_secretaries(self, **kwargs):
+        addrs = []
+        if 'group' in kwargs:
+            group = kwargs['group']
+            if not group.acronym=='none':
+                addrs.extend(group.role_set.filter(name='secr').values_list('email__address',flat=True))
+        return addrs
+
     def gather_doc_group_responsible_directors(self, **kwargs):
         addrs = []
         if 'doc' in kwargs:

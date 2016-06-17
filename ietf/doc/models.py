@@ -120,7 +120,7 @@ class DocumentInfo(models.Model):
 
         meeting = None
         if meeting_related:
-            meeting = self.name.split("-")[1]
+            meeting = self.session_set.first().meeting
 
         return format.format(doc=self,meeting=meeting)
 
@@ -388,15 +388,7 @@ class Document(DocumentInfo):
                     filename = os.path.splitext(self.external_url)[0]
                 else:
                     filename = self.external_url
-                if meeting.type_id == 'ietf':
-                    url = '%sproceedings/%s/%s/%s' % (settings.IETF_HOST_URL,meeting.number,self.type_id,filename)
-                elif meeting.type_id == 'interim':
-                    url = "%sproceedings/interim/%s/%s/%s/%s" % (
-                        settings.IETF_HOST_URL,
-                        meeting.date.strftime('%Y/%m/%d'),
-                        session.group.acronym,
-                        self.type_id,
-                        filename)
+                url = '%sproceedings/%s/%s/%s' % (settings.IETF_HOST_URL,meeting.number,self.type_id,filename)
                 return url
         return urlreverse('doc_view', kwargs={ 'name': name }, urlconf="ietf.urls")
 

@@ -63,13 +63,22 @@ type_ietf_only_patterns_id_optional = [
 ]
 
 urlpatterns = [
+    url(r'^ajax/get-utc/$', views.ajax_get_utc),
     url(r'^requests.html$', RedirectView.as_view(url='/meeting/requests', permanent=True)),
     url(r'^(?P<num>\d+)/requests.html$', RedirectView.as_view(url='/meeting/%(num)s/requests', permanent=True)),
     url(r'^(?P<num>[A-Za-z0-9._+-]+)/', include(safe_for_all_meeting_types)),
     # The optionals have to go first, otherwise the agenda/(owner)/(name)/ patterns match things they shouldn't
     url(r'^(?:(?P<num>\d+)/)?', include(type_ietf_only_patterns_id_optional)),
     url(r'^(?P<num>\d+)/', include(type_ietf_only_patterns)),
+    url(r'^upcoming/$', views.upcoming),
+    url(r'^upcoming.ics/$', views.upcoming_ical),
+    url(r'^interim/announce/$', views.interim_announce),
+    url(r'^interim/announce/(?P<number>[A-Za-z0-9._+-]+)/$', views.interim_send_announcement),
+    url(r'^interim/request/$', views.interim_request),
+    url(r'^interim/request/(?P<number>[A-Za-z0-9._+-]+)/$', views.interim_request_details),
+    url(r'^interim/request/(?P<number>[A-Za-z0-9._+-]+)/edit/$', views.interim_request_edit),
+    url(r'^interim/request/(?P<number>[A-Za-z0-9._+-]+)/cancel/$', views.interim_request_cancel),
+    url(r'^interim/pending/$', views.interim_pending),
     url(r'^$', views.current_materials),
 ]
-
 

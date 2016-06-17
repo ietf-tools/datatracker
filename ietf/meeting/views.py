@@ -9,6 +9,7 @@ from tempfile import mkstemp
 from collections import OrderedDict, Counter
 import csv
 import json
+import pytz
 
 import debug                            # pyflakes:ignore
 
@@ -19,10 +20,13 @@ from django.contrib import messages
 from django.core.urlresolvers import reverse
 from django.db.models import Min, Max
 from django.conf import settings
-from django.forms.models import modelform_factory
+from django.forms.models import modelform_factory, inlineformset_factory
 from django.forms import ModelForm
+from django.template.loader import render_to_string
+from django.utils.functional import curry
 from django.views.decorators.csrf import ensure_csrf_cookie
 
+from ietf.doc.fields import SearchableDocumentsField
 from ietf.doc.models import Document, State, DocEvent
 from ietf.group.models import Group
 from ietf.group.utils import can_manage_materials
@@ -35,11 +39,42 @@ from ietf.meeting.helpers import get_modified_from_assignments
 from ietf.meeting.helpers import get_wg_list, find_ads_for_meeting
 from ietf.meeting.helpers import get_meeting, get_schedule, agenda_permissions, get_meetings
 from ietf.meeting.helpers import preprocess_assignments_for_agenda, read_agenda_file
-from ietf.meeting.helpers import convert_draft_to_pdf
+from ietf.meeting.helpers import convert_draft_to_pdf, get_earliest_session_date
+from ietf.meeting.helpers import can_view_interim_request, can_approve_interim_request
+from ietf.meeting.helpers import can_edit_interim_request
+from ietf.meeting.helpers import can_request_interim_meeting, get_announcement_initial
+from ietf.meeting.helpers import sessions_post_save, is_meeting_approved
+from ietf.meeting.helpers import send_interim_cancellation_notice
+from ietf.meeting.helpers import send_interim_approval_request
+from ietf.utils.mail import send_mail_message
 from ietf.utils.pipe import pipe
 from ietf.utils.pdf import pdf_pages
 
-from ietf.doc.fields import SearchableDocumentsField
+from .forms import (InterimMeetingModelForm, InterimAnnounceForm, InterimSessionModelForm,
+    InterimCancelForm)
+
+
+def get_menu_entries(request):
+    '''Setup menu entries for interim meeting view tabs'''
+    entries = []
+    if has_role(request.user, ('Area Director','Secretariat','IRTF Chair','WG Chair', 'RG Chair')):
+        entries.append(("Upcoming", reverse("ietf.meeting.views.upcoming")))
+        entries.append(("Pending", reverse("ietf.meeting.views.interim_pending")))
+        if has_role(request.user, "Secretariat"):
+            entries.append(("Announce", reverse("ietf.meeting.views.interim_announce")))
+    return entries
+
+def send_interim_change_notice(request, meeting):
+    """Sends an email notifying changes to a previously scheduled / announced meeting"""
+    group = meeting.session_set.first().group
+    form = InterimAnnounceForm(get_announcement_initial(meeting, is_change=True))
+    message = form.save(user=request.user)
+    message.related_groups.add(group)
+    send_mail_message(request, message)
+
+# -------------------------------------------------
+# View Functions
+# -------------------------------------------------
 
 def materials(request, num=None):
     meeting = get_meeting(num)
@@ -986,3 +1021,369 @@ def delete_schedule(request, num, owner, name):
                   }
                  )
   
+# -------------------------------------------------
+# Interim Views
+# -------------------------------------------------
+
+
+def ajax_get_utc(request):
+    '''Ajax view that takes arguments time, timezone, date and returns UTC data'''
+    time = request.GET.get('time')
+    timezone = request.GET.get('timezone')
+    date = request.GET.get('date')
+    time_re = re.compile(r'^\d{2}:\d{2}')
+    # validate input
+    if not time_re.match(time) or not date:
+        return HttpResponse(json.dumps({'error': True}),
+                            content_type='application/json')
+    hour, minute = time.split(':')
+    if not (int(hour) <= 23 and int(minute) <= 59):
+        return HttpResponse(json.dumps({'error': True}),
+                            content_type='application/json')
+    year, month, day = date.split('-')
+    dt = datetime.datetime(int(year), int(month), int(day), int(hour), int(minute))
+    tz = pytz.timezone(timezone)
+    aware_dt = tz.localize(dt, is_dst=None)
+    utc_dt = aware_dt.astimezone(pytz.utc)
+    utc = utc_dt.strftime('%H:%M')
+    # calculate utc day offset
+    naive_utc_dt = utc_dt.replace(tzinfo=None)
+    utc_day_offset = (naive_utc_dt.date() - dt.date()).days
+    html = "<span>{utc} UTC</span>".format(utc=utc)
+    if utc_day_offset != 0:
+        html = html + "<span class='day-offset'> {0:+d} Day</span>".format(utc_day_offset)
+    context_data = {'timezone': timezone, 
+                    'time': time, 
+                    'utc': utc, 
+                    'utc_day_offset': utc_day_offset,
+                    'html': html}
+    return HttpResponse(json.dumps(context_data),
+                        content_type='application/json')
+
+
+@role_required('Secretariat',)
+def interim_announce(request):
+    '''View which shows interim meeting requests awaiting announcement'''
+    meetings = Meeting.objects.filter(type='interim', session__status='scheda').distinct()
+    menu_entries = get_menu_entries(request)
+    selected_menu_entry = 'announce'
+
+    return render(request, "meeting/interim_announce.html", {
+        'menu_entries': menu_entries,
+        'selected_menu_entry': selected_menu_entry,
+        'meetings': meetings})
+
+
+@role_required('Secretariat',)
+def interim_send_announcement(request, number):
+    '''View for sending the announcement of a new interim meeting'''
+    meeting = get_object_or_404(Meeting, number=number)
+    group = meeting.session_set.first().group
+
+    if request.method == 'POST':
+        form = InterimAnnounceForm(request.POST,
+                                   initial=get_announcement_initial(meeting))
+        if form.is_valid():
+            message = form.save(user=request.user)
+            message.related_groups.add(group)
+            meeting.session_set.update(status_id='sched')
+            send_mail_message(request, message)
+            messages.success(request, 'Interim meeting announcement sent')
+            return redirect(interim_announce)
+
+    form = InterimAnnounceForm(initial=get_announcement_initial(meeting))
+
+    return render(request, "meeting/interim_send_announcement.html", {
+        'meeting': meeting,
+        'form': form})
+
+
+@role_required('Area Director', 'Secretariat', 'IRTF Chair', 'WG Chair',
+               'RG Chair')
+def interim_pending(request):
+    '''View which shows interim meeting requests pending approval'''
+    meetings = Meeting.objects.filter(type='interim', session__status='apprw').distinct().order_by('date')
+    menu_entries = get_menu_entries(request)
+    selected_menu_entry = 'pending'
+
+    meetings = [m for m in meetings if can_view_interim_request(
+        m, request.user)]
+    for meeting in meetings:
+        if can_approve_interim_request(meeting, request.user):
+            meeting.can_approve = True
+
+    return render(request, "meeting/interim_pending.html", {
+        'menu_entries': menu_entries,
+        'selected_menu_entry': selected_menu_entry,
+        'meetings': meetings})
+
+
+@role_required('Area Director', 'Secretariat', 'IRTF Chair', 'WG Chair',
+               'RG Chair')
+def interim_request(request):
+    '''View for requesting an interim meeting'''
+    SessionFormset = inlineformset_factory(
+        Meeting,
+        Session,
+        form=InterimSessionModelForm,
+        can_delete=False, extra=2)
+
+    if request.method == 'POST':
+        form = InterimMeetingModelForm(request, data=request.POST)
+        formset = SessionFormset(instance=Meeting(), data=request.POST)
+        if form.is_valid() and formset.is_valid():
+            group = form.cleaned_data.get('group')
+            is_approved = form.cleaned_data.get('approved', False)
+            meeting_type = form.cleaned_data.get('meeting_type')
+
+            # pre create meeting
+            if meeting_type in ('single', 'multi-day'):
+                meeting = form.save(date=get_earliest_session_date(formset))
+
+                # need to use curry here to pass custom variable to form init
+                SessionFormset.form = staticmethod(curry(
+                    InterimSessionModelForm,
+                    user=request.user,
+                    group=group,
+                    is_approved=is_approved))
+                formset = SessionFormset(instance=meeting, data=request.POST)
+                formset.is_valid()
+                formset.save()
+                sessions_post_save(formset)
+
+                if not is_approved:
+                    send_interim_approval_request(meetings=[meeting])
+
+            # series require special handling, each session gets it's own
+            # meeting object we won't see this on edit because series are
+            # subsequently dealt with individually
+            elif meeting_type == 'series':
+                series = []
+                SessionFormset.form = staticmethod(curry(
+                    InterimSessionModelForm,
+                    user=request.user,
+                    group=group,
+                    is_approved=is_approved))
+                formset = SessionFormset(instance=Meeting(), data=request.POST)
+                formset.is_valid()  # re-validate
+                for session_form in formset.forms:
+                    if not session_form.has_changed():
+                        continue
+                    # create meeting
+                    form = InterimMeetingModelForm(request, data=request.POST)
+                    form.is_valid()
+                    meeting = form.save(date=session_form.cleaned_data['date'])
+                    # create save session
+                    session = session_form.save(commit=False)
+                    session.meeting = meeting
+                    session.save()
+                    series.append(meeting)
+                    sessions_post_save([session_form])
+
+                if not is_approved:
+                    send_interim_approval_request(meetings=series)
+
+            messages.success(request, 'Interim meeting request submitted')
+            return redirect(upcoming)
+
+    else:
+        form = InterimMeetingModelForm(request=request,
+                                       initial={'meeting_type': 'single'})
+        formset = SessionFormset()
+
+    return render(request, "meeting/interim_request.html", {
+        "form": form,
+        "formset": formset})
+
+
+@role_required('Area Director', 'Secretariat', 'IRTF Chair', 'WG Chair',
+               'RG Chair')
+def interim_request_cancel(request, number):
+    '''View for cancelling an interim meeting request'''
+    meeting = get_object_or_404(Meeting, number=number)
+    group = meeting.session_set.first().group
+    if not can_view_interim_request(meeting, request.user):
+        return HttpResponseForbidden("You do not have permissions to cancel this meeting request")
+
+    if request.method == 'POST':
+        form = InterimCancelForm(request.POST)
+        if form.is_valid():
+            if 'comments' in form.changed_data:
+                meeting.session_set.update(agenda_note=form.cleaned_data.get('comments'))
+            if meeting.session_set.first().status.slug == 'sched':
+                meeting.session_set.update(status_id='canceled')
+                send_interim_cancellation_notice(meeting)
+            else:
+                meeting.session_set.update(status_id='canceledpa')
+            messages.success(request, 'Interim meeting cancelled')
+            return redirect(upcoming)
+    else:
+        form = InterimCancelForm(initial={'group': group.acronym, 'date': meeting.date})
+
+    return render(request, "meeting/interim_request_cancel.html", {
+        "form": form,
+        "meeting": meeting})
+
+
+@role_required('Area Director', 'Secretariat', 'IRTF Chair', 'WG Chair',
+               'RG Chair')
+def interim_request_details(request, number):
+    '''View details of an interim meeting reqeust'''
+    meeting = get_object_or_404(Meeting, number=number)
+    sessions = meeting.session_set.all()
+    can_edit = can_edit_interim_request(meeting, request.user)
+    can_approve = can_approve_interim_request(meeting, request.user)
+
+    if request.method == 'POST':
+        if request.POST.get('approve') and can_approve_interim_request(meeting, request.user):
+            meeting.session_set.update(status_id='scheda')
+            messages.success(request, 'Interim meeting approved')
+            if has_role(request.user, 'Secretariat'):
+                return redirect(interim_send_announcement, number=number)
+            else:
+                return redirect(interim_pending)
+        if request.POST.get('disapprove') and can_approve_interim_request(meeting, request.user):
+            meeting.session_set.update(status_id='disappr')
+            messages.success(request, 'Interim meeting disapproved')
+            return redirect(interim_pending)
+
+    return render(request, "meeting/interim_request_details.html", {
+        "meeting": meeting,
+        "sessions": sessions,
+        "can_edit": can_edit,
+        "can_approve": can_approve})
+
+
+@role_required('Area Director', 'Secretariat', 'IRTF Chair', 'WG Chair',
+               'RG Chair')
+def interim_request_edit(request, number):
+    '''Edit details of an interim meeting reqeust'''
+    meeting = get_object_or_404(Meeting, number=number)
+    if not can_edit_interim_request(meeting, request.user):
+        return HttpResponseForbidden("You do not have permissions to edit this meeting request")
+
+    SessionFormset = inlineformset_factory(
+        Meeting,
+        Session,
+        form=InterimSessionModelForm,
+        can_delete=False,
+        extra=1)
+
+    if request.method == 'POST':
+        form = InterimMeetingModelForm(request=request, instance=meeting,
+                                       data=request.POST)
+        group = Group.objects.get(pk=form.data['group'])
+        is_approved = is_meeting_approved(meeting)
+        SessionFormset.form = staticmethod(curry(
+            InterimSessionModelForm,
+            user=request.user,
+            group=group,
+            is_approved=is_approved))
+        formset = SessionFormset(instance=meeting,
+                                 data=request.POST)
+        if form.is_valid() and formset.is_valid():
+            meeting = form.save(date=get_earliest_session_date(formset))
+            formset.save()
+            sessions_post_save(formset)
+
+            message = 'Interim meeting request saved'
+            if form.has_changed() or formset.has_changed():
+                send_interim_change_notice(request, meeting)
+                message = message + ' and change announcement sent'
+            messages.success(request, message)
+            return redirect(interim_request_details, number=number)
+        else:
+            assert False, (form.errors, formset.errors)
+
+    else:
+        form = InterimMeetingModelForm(request=request, instance=meeting)
+        formset = SessionFormset(instance=meeting)
+
+    return render(request, "meeting/interim_request_edit.html", {
+        "meeting": meeting,
+        "form": form,
+        "formset": formset})
+
+
+def upcoming(request):
+    '''List of upcoming meetings'''
+    today = datetime.datetime.today()
+    meetings = Meeting.objects.filter(date__gte=today).exclude(
+        session__status__in=('apprw', 'scheda', 'canceledpa')).order_by('date')
+
+    # extract groups hierarchy for display filter
+    seen = set()
+    groups = [m.session_set.first().group for m
+              in meetings.filter(type='interim')]
+    group_parents = []
+    for g in groups:
+        if g.parent.acronym not in seen:
+            group_parents.append(g.parent)
+            seen.add(g.parent.acronym)
+
+    seen = set()
+    for p in group_parents:
+        p.group_list = []
+        for g in groups:
+            if g.acronym not in seen and g.parent == p:
+                p.group_list.append(g)
+                seen.add(g.acronym)
+
+        p.group_list.sort(key=lambda g: g.acronym)
+
+    # add menu entries
+    menu_entries = get_menu_entries(request)
+    selected_menu_entry = 'upcoming'
+
+    # add menu actions
+    actions = []
+    if can_request_interim_meeting(request.user):
+        actions.append(('Request new interim meeting',
+                        reverse('ietf.meeting.views.interim_request')))
+    actions.append(('Download as .ics',
+                    reverse('ietf.meeting.views.upcoming_ical')))
+
+    return render(request, 'meeting/upcoming.html', {
+                  'meetings': meetings,
+                  'menu_actions': actions,
+                  'menu_entries': menu_entries,
+                  'selected_menu_entry': selected_menu_entry,
+                  'group_parents': group_parents})
+
+
+def upcoming_ical(request):
+    '''Return Upcoming meetings in iCalendar file'''
+    filters = request.GET.getlist('filters')
+    today = datetime.datetime.today()
+    meetings = Meeting.objects.filter(date__gte=today).exclude(
+        session__status__in=('apprw', 'schedpa')).order_by('date')
+
+    assignments = []
+    for meeting in meetings:
+        items = meeting.agenda.assignments.order_by(
+            'session__type__slug', 'timeslot__time')
+        assignments.extend(items)
+
+    # apply filters
+    if filters:
+        assignments = [a for a in assignments if
+                       a.session.group.acronym in filters or
+                       a.session.group.parent.acronym in filters]
+
+    # gather vtimezones
+    vtimezones = set()
+    for meeting in meetings:
+        if meeting.vtimezone():
+            vtimezones.add(meeting.vtimezone())
+    vtimezones = ''.join(vtimezones)
+
+    # icalendar response file should have '\r\n' line endings per RFC5545
+    response = render_to_string('meeting/upcoming.ics', {
+        'vtimezones': vtimezones,
+        'assignments': assignments})
+    response = re.sub("\r(?!\n)|(?<!\r)\n", "\r\n", response)
+
+    response = HttpResponse(response, content_type='text/calendar')
+    response['Content-Disposition'] = 'attachment; filename="upcoming.ics"'
+    return response
+    

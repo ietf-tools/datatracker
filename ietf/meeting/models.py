@@ -143,17 +143,7 @@ class Meeting(models.Model):
         return date + datetime.timedelta(days=-date.weekday(), weeks=1)
 
     def get_materials_path(self):
-        path = ''
-        if self.type_id == 'ietf':
-            path = os.path.join(settings.AGENDA_PATH,self.number)
-        elif self.type_id == 'interim':
-            path = os.path.join(settings.AGENDA_PATH,
-                            'interim',
-                            self.date.strftime('%Y'),
-                            self.date.strftime('%m'),
-                            self.date.strftime('%d'),
-                            self.session_set.all()[0].group.acronym)
-        return path
+        return os.path.join(settings.AGENDA_PATH,self.number)
     
     # the various dates are currently computed
     def get_submission_start_date(self):
@@ -919,6 +909,7 @@ class Session(models.Model):
     status = models.ForeignKey(SessionStatusName)
     scheduled = models.DateTimeField(null=True, blank=True)
     modified = models.DateTimeField(auto_now=True)
+    remote_instructions = models.CharField(blank=True,max_length=1024)
 
     materials = models.ManyToManyField(Document, through=SessionPresentation, blank=True)
     resources = models.ManyToManyField(ResourceAssociation)
@@ -1007,7 +998,7 @@ class Session(models.Model):
         return Constraint.objects.filter(target=self.group, meeting=self.meeting).order_by('name__name')
 
     def timeslotassignment_for_agenda(self, schedule):
-        return self.timeslotassignments.filter(schedule=schedule)[0]
+        return self.timeslotassignments.filter(schedule=schedule).first()
 
     def official_timeslotassignment(self):
         return self.timeslotassignment_for_agenda(self.meeting.agenda)

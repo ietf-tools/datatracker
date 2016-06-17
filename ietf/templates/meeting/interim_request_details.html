@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+{% load staticfiles bootstrap3 widget_tweaks ietf_filters %}
+
+{% block title %}Interim Request Details{% endblock %}
+
+{% block pagehead %}
+  <link rel="stylesheet" href="{% static 'select2/select2.css' %}">
+  <link rel="stylesheet" href="{% static 'select2-bootstrap-css/select2-bootstrap.min.css' %}">
+{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <h1>Interim Meeting Request Details</h1>
+  <dl class="dl-horizontal">
+    <dt>Group</dt>
+    <dd>{{ sessions.0.group.acronym }}
+    <dt>Requested By</dt>
+    <dd>{{ sessions.0.requested_by }}
+    <dt>Status</dt>
+    <dd>{{ sessions.0.status }}</dd>
+    <dt>City</dt>
+    <dd>{{ meeting.city }}</dd>
+    <dt>Country</dt>
+    <dd>{{ meeting.country }}</dd>
+    <dt>Timezone</dt>
+    <dd>{{ meeting.time_zone }}</dd>
+    {% for session in sessions %}
+      <br>
+      <dt>Date</dt>
+      <dd>{{ session.official_timeslotassignment.timeslot.time|date:"Y-m-d" }}
+      <dt>Start Time</dt>
+      <dd>{{ session.official_timeslotassignment.timeslot.time|date:"H:i" }}
+      <dt>Duration</dt>
+      <dd>{{ session.requested_duration|format_timedelta }}
+      <dt>Remote Instructions</dt>
+      <dd>{{ session.remote_instructions }}
+      <dt>Additional Info</dt>
+      <dd>{{ session.agenda_note }}</dd>
+    {% endfor %}
+  </dl>
+
+  <form method="post">
+  {% csrf_token %}
+  {% if can_edit %}
+        <a class="btn btn-default" href="{% url 'ietf.meeting.views.interim_request_edit' number=meeting.number %}">Edit</a>
+  {% endif %}
+  {% if can_approve and sessions.0.status.slug == 'apprw' %}
+    <input class="btn btn-default" type="submit" value="Approve" name='approve' />
+    <input class="btn btn-default" type="submit" value="Disapprove" name='disapprove' />
+  {% endif %}
+  {% if user|has_role:"Secretariat" and sessions.0.status.slug == 'scheda' %}
+        <a class="btn btn-default" href="{% url 'ietf.meeting.views.interim_send_announcement' number=meeting.number %}">Announce</a>
+  {% endif %}
+  {% if can_edit %}
+    {% if sessions.0.status.slug == 'apprw' or sessions.0.status.slug == 'scheda' or sessions.0.status.slug == 'sched' %}
+        <a class="btn btn-default" href="{% url 'ietf.meeting.views.interim_request_cancel' number=meeting.number %}">Cancel Meeting</a>
+    {% endif %}
+  {% endif %}
+  {% if sessions.0.status.slug == "apprw" %}
+        <a class="btn btn-default" href="{% url 'ietf.meeting.views.interim_pending' %}">Back</a>
+  {% elif sessions.0.status.slug == "scheda" %}
+        <a class="btn btn-default" href="{% url 'ietf.meeting.views.interim_announce' %}">Back</a>
+  {% elif sessions.0.status.slug == "sched" %}
+        <a class="btn btn-default" href="{% url 'ietf.meeting.views.session_details' num=meeting.number acronym=meeting.session_set.first.group.acronym %}">Back</a>
+  {% else %}
+        <a class="btn btn-default" href="{% url 'ietf.meeting.views.upcoming' %}">Back</a>
+  {% endif %}
+  </form>
+
+{% endblock %}
+
+{% block js %}
+  <script src="{% static 'select2/select2.min.js' %}"></script>
+  <script src="{% static 'ietf/js/meeting-interim-request.js' %}"></script>
+{% endblock %}

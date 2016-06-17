@@ -1,0 +1,16 @@
+{% load ams_filters %}
+
+Please note that we have not yet received minutes from the
+{{ group.name }} ({{ group.acronym }}) interim meeting held
+on {{ meeting.date|date:"Y-m-d"}}.  As per the IESG Guidence on Interim Meetings,
+Conference Calls and Jabber Sessions [1], detailed minutes must 
+be provided within 10 days of the event.
+
+At your earliest convenience, please upload meeting minutes, as 
+well as any presentations from your sessions by using the Meeting
+Materials Manager found here:
+https://datatracker.ietf.org/secr/proceedings/.
+Alternatively, you are welcome to send them to proceedings@ietf.org
+for manual posting.
+
+[1] http://www.ietf.org/iesg/statement/interim-meetings.html

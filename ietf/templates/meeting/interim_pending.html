@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+{% load staticfiles bootstrap3 widget_tweaks %}
+
+{% block title %}Interim Pending{% endblock %}
+
+{% block pagehead %}
+  <link rel="stylesheet" href="{% static 'select2/select2.css' %}">
+  <link rel="stylesheet" href="{% static 'select2-bootstrap-css/select2-bootstrap.min.css' %}">
+{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <h1>Pending Interim Meetings</h1>
+
+    {% if menu_entries %}
+      <ul class="nav nav-tabs" role="tablist">
+        {% for name, url in menu_entries %}
+          <li {% if selected_menu_entry == name.lower %}class="active"{% endif %}>
+            <a href="{{ url }}">{{ name }}</a>
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    {% if meetings %}
+      <table id="pending-interim-meetings-table" class="table table-condensed table-striped">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Group</th>
+            <th>Name</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for meeting in meetings %}
+            {% if meeting.type.slug == 'interim' %}
+              <tr id="row-{{ forloop.counter }}-{{ meeting.session_set.all.0.group.acronym }}">
+            {% else %}
+              <tr id="row-{{ forloop.counter }}-ietf">
+            {% endif %}  
+              <td>{{ meeting.date }}</td>
+              {% if meeting.type.slug == 'interim' %}
+                <td>{{ meeting.session_set.all.0.group.acronym }}</td>
+              {% else %}
+                <td>ietf</td>
+              {% endif %}
+              <td>
+              {% if meeting.type.slug == "interim" %}
+                <a href="{% url 'ietf.meeting.views.interim_request_details' number=meeting.number %}">{{ meeting.number }}{% if meeting.session_set.all.0.status.slug == "canceled" %} -- CANCELLED --{% endif %}</a>
+              {% else %}
+                <a href="{% url 'ietf.meeting.views.interim_request_details' number=meeting.number %}">IETF - {{ meeting.number }}</a>
+              {% endif %}
+              </td>
+              <td>{% if meeting.can_approve %}<span class="label label-success">can approve</span>{% endif %}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <h3>No pending interim meetings</h3>
+    {% endif %}
+
+{% endblock %}
+
+{% block js %}
+  <script src="{% static 'select2/select2.min.js' %}"></script>
+  <script src="{% static 'ietf/js/meeting-interim-request.js' %}"></script>
+{% endblock %}

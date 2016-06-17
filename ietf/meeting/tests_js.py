@@ -72,6 +72,25 @@ class ScheduleEditTests(StaticLiveServerTestCase):
         time.sleep(0.1) # The API that modifies the database runs async
         self.assertEqual(SchedTimeSessAssignment.objects.filter(session__meeting__number=42,session__group__acronym='mars').count(),0)
 
+@skipIf(skip_selenium, skip_message)
+class InterimRequestTests(StaticLiveServerTestCase):
+    def setUp(self):
+        condition_data()
+        self.driver = webdriver.PhantomJS(service_log_path=settings.TEST_GHOSTDRIVER_LOG_PATH)
+        self.driver.set_window_size(1024,768)
+        
+    def absreverse(self,*args,**kwargs):
+        return '%s%s'%(self.live_server_url,urlreverse(*args,**kwargs))
+        
+    def testInterimRequest(self):
+        url = self.absreverse('ietf.meeting.views.interim_request')
+        self.driver.get(url)
+        element = self.driver.find_element_by_id('id_form-0-date')
+        self.assertTrue(element)
+
+    def testJustSitThere(self):
+        time.sleep(10000)
+        
 # The following are useful debugging tools
 
 # If you add this to a LiveServerTestCase and run just this test, you can browse

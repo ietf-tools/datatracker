@@ -1,0 +1,19 @@
+{% load ietf_filters %}{% if is_change %}MEETING DETAILS HAVE CHANGED.  SEE LATEST DETAILS BELOW.
+
+{% endif %}The {{ group.name }} ({{ group.acronym }}) {% if group.type.slug == "rg" %}Research Group{% elif group.state.slug == "active" %}Working Group{% elif group.state.slug == 'bof' %}BOF{% endif %} will hold
+{% if meeting.session_set.count == 1 %}a{% if meeting.city %}n {% else %} virtual {% endif %}interim meeting on {{ meeting.date }} from {{ meeting.session_set.first | session_start_time | date:"H:i" }} to {{ meeting.session_set.first | session_end_time | date:"H:i" }} {{ meeting.time_zone }}.
+{% else %}a multi-day {% if not meeting.city %}virtual {% endif %}interim meeting.
+
+{% for session in meeting.session_set.all %}Session {{ forloop.counter }}:
+{{ session | session_start_time | date:"Y-m-d" }}     {{ session | session_start_time | date:"H:i" }} to {{ session | session_end_time | date:"H:i" }}  {{ meeting.time_zone }}
+{% endfor %}{% endif %}
+{% if meeting.city %}Meeting Location:
+{{ meeting.city }}, {{ meeting.country }}
+
+{% endif %}Agenda:
+{{ meeting.session_set.first.agenda | document_content | default_if_none:"(No agenda submitted)" }}
+
+To participate remotely in the interim meeting:
+{{ meeting.session_set.first.remote_instructions }}
+
+{{ meeting.session_set.first.agenda_note }}
