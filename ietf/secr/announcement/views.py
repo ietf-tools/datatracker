@@ -76,8 +76,14 @@ def main(request):
 @check_for_cancel('../')
 def confirm(request):
 
+    if request.session.get('data',None):
+        data = request.session['data']
+    else:
+        messages.error(request, 'No session data.  Your session may have expired or cookies are disallowed.')
+        return redirect('announcement')
+
     if request.method == 'POST':
-        form = AnnounceForm(request.session['data'],user=request.user)
+        form = AnnounceForm(data, user=request.user)
         message = form.save(user=request.user,commit=True)
         extra = {'Reply-To':message.reply_to}
         send_mail_text(None,
@@ -93,12 +99,6 @@ def confirm(request):
         clear_non_auth(request.session)
 
         messages.success(request, 'The announcement was sent.')
-        return redirect('announcement')
-
-    if request.session.get('data',None):
-        data = request.session['data']
-    else:
-        messages.error(request, 'No session data.  Your session may have expired or cookies are disallowed.')
         return redirect('announcement')
 
     if data['to'] == 'Other...':
