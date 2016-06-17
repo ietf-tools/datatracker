@@ -12,6 +12,7 @@ sys.path.append(settings.MAILMAN_LIB_DIR)
 
 from Mailman import Utils
 from Mailman import MailList
+from Mailman import MemberAdaptor
 
 from ietf.mailinglists.models import List, Subscribed
 
@@ -28,13 +29,22 @@ def import_mailman_listinfo(verbosity=0):
             list, created = List.objects.get_or_create(name=mlist.real_name, description=mlist.description, advertised=mlist.advertised)
             # The following calls return lowercased addresses
             members = mlist.getRegularMemberKeys() + mlist.getDigestMemberKeys()
-            known = [ s.email for s in Subscribed.objects.filter(lists__name=name) ]
+            members = [ m for m in members if mlist.getDeliveryStatus(m) == MemberAdaptor.ENABLED ]
+            known = Subscribed.objects.filter(lists__name=name).values_list('email', flat=True)
+            for addr in known:
+                if not addr in members:
+                    note("  Removing subscription: %s" % (addr))
+                    old = Subscribed.objects.get(email=addr)
+                    old.lists.remove(list)
+                    if old.lists.count() == 0:
+                        note("    Removing address with no subscriptions: %s" % (addr))
+                        old.delete()
             for addr in members:
                 if not addr in known:
-                    note("  Adding subscribed: %s" % (addr))
+                    note("  Adding subscription: %s" % (addr))
                     new, created = Subscribed.objects.get_or_create(email=addr)
                     new.lists.add(list)
-
+    
 
 class Command(BaseCommand):
     """
