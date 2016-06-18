@@ -5,17 +5,28 @@
           <th class="col-md-2"></th>
           <th class="col-md-1"></th>
           <th class="col-md-1"></th>
-          <th class="col-md-6"></th>
+          <th class="col-md-1"></th>
+          <th class="col-md-1"></th>
         </tr>
       </thead>
       <tbody>
       {% for s in sessions %}
         <tr>
-         <td>{% ifchanged s.meeting %}{% if s.meeting.type.slug == 'ietf' %}IETF{% endif %}{{s.meeting.number}}{% endifchanged %}</td>
          <td>
+	   {% ifchanged s.meeting %}
+	     {% if s.meeting.type.slug == 'ietf' %}
+	       <a href="{% url 'ietf.meeting.views.agenda' num=s.meeting.number %}">
+	       IETF {{s.meeting.number}}
+	       </a>
+	     {% else %}
+	       {{s.meeting.number}}
+	     {% endif %}
+	   {% endifchanged %}
+	 </td>
+         <td class="text-right">
            {% if s.name %}{{ s.name }}<br>{% endif %}
            {% if s.status.slug == "sched" %}
-            {% if s.meeting.type.slug == 'ietf' %}{{s.time|date:"D M d, Y Hi"}}{% else %}{{s.time|date:"D M d, Y"}}{% endif %}
+	     {{s.time|date:"D M d, Y"}}
           {% else %}
             {{s.status}}
           {% endif %}
@@ -26,6 +37,7 @@
             {% endif %}
           {% endif %}
          </td>
+	 <td class="text-center">{% if s.meeting.type.slug == 'ietf' %}{{s.time|date:"H:i"}}{% endif %}</td>
          <td>{% if s.agenda %}<a href="{{ s.agenda.get_absolute_url }}">Agenda</a>{% endif %}</td>
          <td>{% if s.minutes %}<a href="{{ s.minutes.get_absolute_url }}">Minutes</a>{% endif %}</td>
          <td><a href="{% url 'ietf.meeting.views.session_details' num=s.meeting.number acronym=s.group.acronym %}">Materials</a></td>
