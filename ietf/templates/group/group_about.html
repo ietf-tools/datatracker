@@ -95,7 +95,7 @@
       {% endif %}
 
       {% with group.groupurl_set.all as urls %}
-        {% if urls %}
+        {% if urls or group.has_tools_page %}
 	<tr>
           <td></td>
           <th>More info</th>
