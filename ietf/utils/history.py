@@ -42,7 +42,7 @@ def find_history_replacements_active_at(objects, time):
     # through SQL we just grab all of them and sort it out ourselves
     changed_objects = [o for o in objects if o.time > time]
 
-    histories = history_model.objects.filter(**{ relation_name + "__in": changed_objects }).order_by(relation_name, "-time")
+    histories = history_model.objects.filter(**{ relation_name + "__in": changed_objects }).order_by(relation_name, "-time", "-id")
 
     history_for_obj = { o.pk: o for o in objects }
     skip = None
