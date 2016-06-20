@@ -1,4 +1,6 @@
-# Copyright (C) 2009-2010 Nokia Corporation and/or its subsidiary(-ies).
+# Copyright The IETF Trust 2016, All Rights Reserved
+
+# Parts Copyright (C) 2009-2010 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
 #
 # Redistribution and use in source and binary forms, with or without
