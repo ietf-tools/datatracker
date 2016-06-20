@@ -160,3 +160,20 @@ def check_media_directories(app_configs, **kwargs):
     return errors
 
     
+@checks.register('directories')
+def check_proceedings_directories(app_configs, **kwargs):
+    errors = []
+    for s in ("AGENDA_PATH", ):
+        p = getattr(settings, s)
+        if not os.path.exists(p):
+            errors.append(checks.Critical(
+                "A directory used for meeting materials does not exist at the path given\n"
+                "in the settings file.  The setting is:\n"
+                "    %s = %s" % (s, p),
+                hint = ("Please either update the local settings to point at the correct directory,"
+                    "or if the setting is correct, create the directory."),
+                id = "datatracker.E0013",
+            ))
+    return errors
+
+    
