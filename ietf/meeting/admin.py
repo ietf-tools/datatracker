@@ -90,6 +90,7 @@ admin.site.register(Schedule, ScheduleAdmin)
 class SchedTimeSessAssignmentAdmin(admin.ModelAdmin):
     list_display = ["id", "schedule", "timeslot", "session", "modified"]
     list_filter = ["timeslot__meeting", "schedule"]
+    raw_id_fields = ["timeslot", "session", "schedule", "extendedfrom", ]
 
 admin.site.register(SchedTimeSessAssignment, SchedTimeSessAssignmentAdmin)
 
