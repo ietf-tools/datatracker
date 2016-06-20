@@ -10,6 +10,7 @@ from collections import OrderedDict, Counter
 import csv
 import json
 import pytz
+from pyquery import PyQuery
 
 import debug                            # pyflakes:ignore
 
@@ -592,11 +593,22 @@ def session_agenda(request, num, session):
             return HttpResponse(content, content_type="text/plain; charset=%s"%settings.DEFAULT_CHARSET)
         elif ext == "pdf":
             return HttpResponse(content, content_type="application/pdf")
+        elif ext in ["html", "htm"]:
+            d = PyQuery(content)
+            d("head title").empty()
+            d("head title").append(str(agenda))
+            d('meta[http-equiv]').remove()
+            content = "<!doctype html>" + d.html()
+        elif not content:
+            content = "<p>Could not read agenda file '%s'</p>" % agenda.external_url
+            content = (html5_preamble % agenda) + content + html5_postamble
+            agenda = "Error"
         else:
-            if not content:
-                content = "<p>Could not read agenda file '%s'</p>" % agenda.external_url
-                agenda = "Error"
-            return HttpResponse((html5_preamble % agenda) + content + html5_postamble)
+            content = "<p>Unrecognized agend file '%s'</p>" % agenda.external_url
+            content = (html5_preamble % agenda) + content + html5_postamble
+            agenda = "Error"
+
+        return HttpResponse(content)
 
     raise Http404("No agenda for the %s session of IETF %s is available" % (session, num))
 
