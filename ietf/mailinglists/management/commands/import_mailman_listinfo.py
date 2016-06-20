@@ -10,9 +10,14 @@ from django.core.management.base import BaseCommand
 
 sys.path.append(settings.MAILMAN_LIB_DIR)
 
-from Mailman import Utils
-from Mailman import MailList
-from Mailman import MemberAdaptor
+have_mailman = False
+try:
+    from Mailman import Utils
+    from Mailman import MailList
+    from Mailman import MemberAdaptor
+    have_mailman = True
+except ImportError:
+    pass
 
 from ietf.mailinglists.models import List, Subscribed
 
@@ -21,6 +26,10 @@ def import_mailman_listinfo(verbosity=0):
         if verbosity > 1:
             sys.stdout.write(msg)
             sys.stdout.write('\n')
+
+    if not have_mailman:
+        note("Could not import mailman modules -- skipping import of mailman list info")
+        return
 
     for name in Utils.list_names():
         mlist = MailList.MailList(name, lock=False)
