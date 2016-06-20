@@ -27,6 +27,7 @@ from ietf.doc.models import Document, DocAlias, DocEvent, State, NewRevisionDocE
 from ietf.group.models import Group
 from ietf.ietfauth.utils import has_role, role_required
 from ietf.meeting.models import Meeting, Session, TimeSlot, SchedTimeSessAssignment
+from ietf.meeting.helpers import get_next_interim_number
 from ietf.secr.proceedings.forms import EditSlideForm, InterimMeetingForm, RecordingForm, RecordingEditForm, ReplaceSlideForm, UnifiedUploadForm
 from ietf.secr.proceedings.proc_utils import ( gen_acknowledgement, gen_agenda, gen_areas,
     gen_attendees, gen_group_pages, gen_index, gen_irtf, gen_overview, gen_plenaries,
@@ -101,20 +102,6 @@ def get_extras(meeting):
         if timeslot and timeslot.type.slug == 'session' and session.materials.all():
             groups.append(session.group)
     return groups
-
-def get_next_interim_num(acronym,date):
-    '''
-    This function takes a group acronym and date object and returns the next number to use for an
-    interim meeting.  The format is interim-[year]-[acronym]-[1-99]
-    '''
-    base = 'interim-%s-%s-' % (date.year, acronym)
-    # can't use count() to calculate the next number in case one was deleted
-    meetings = Meeting.objects.filter(type='interim',number__startswith=base)
-    if meetings:
-        nums = sorted([ int(x.number.split('-')[-1]) for x in meetings ])
-        return base + str(nums[-1] + 1)
-    else:
-        return base + '1'
 
 def get_next_slide_num(session):
     '''
@@ -445,7 +432,7 @@ def interim(request, acronym):
         form = InterimMeetingForm(request.POST) # A form bound to the POST data
         if form.is_valid():
             date = form.cleaned_data['date']
-            number = get_next_interim_num(acronym,date)
+            number = get_next_interim_number(acronym,date)
             meeting=Meeting.objects.create(type_id='interim',
                                            date=date,
                                            number=number)

@@ -205,7 +205,7 @@ class InterimMeetingModelForm(forms.ModelForm):
         if not meeting.type_id:
             meeting.type_id = 'interim'
         if not meeting.number:
-            meeting.number = get_next_interim_number(group, date)
+            meeting.number = get_next_interim_number(group.acronym, date)
         meeting.date = date
         if kwargs.get('commit', True):
             # create schedule with meeting

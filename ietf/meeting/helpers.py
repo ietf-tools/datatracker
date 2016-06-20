@@ -385,7 +385,7 @@ def create_interim_meeting(group, date, city='', country='', timezone='UTC',
     """Helper function to create interim meeting and associated schedule"""
     if not person:
         person = Person.objects.get(name='(System)')
-    number = get_next_interim_number(group, date)
+    number = get_next_interim_number(group.acronym, date)
     meeting = Meeting.objects.create(
         number=number,
         type_id='interim',
@@ -488,24 +488,19 @@ def is_meeting_approved(meeting):
     else:
         return True
 
-
-def get_next_interim_number(group, date):
-    """Returns a unique string to use for the next interim meeting for
-    *group*, used for Meeting.number field."""
-    meetings = Meeting.objects.filter(
-        number__startswith='interim-{year}-{group}'.format(
-            year=date.year,
-            group=group.acronym))
+def get_next_interim_number(acronym,date):
+    '''
+    This function takes a group acronym and date object and returns the next number
+    to use for an interim meeting.  The format is interim-[year]-[acronym]-[01-99]
+    '''
+    base = 'interim-%s-%s-' % (date.year, acronym)
+    # can't use count() to calculate the next number in case one was deleted
+    meetings = Meeting.objects.filter(type='interim', number__startswith=base)
     if meetings:
-        sequences = [int(m.number.split('-')[-1]) for m in meetings]
-        last_sequence = sorted(sequences)[-1]
+        serial = sorted([ int(x.number.split('-')[-1]) for x in meetings ])[-1]
     else:
-        last_sequence = 0
-    return 'interim-{year}-{group}-{sequence}'.format(
-        year=date.year,
-        group=group.acronym,
-        sequence=str(last_sequence + 1).zfill(2))
-
+        serial = 0
+    return "%s%02d" % (base, serial+1)
 
 def get_next_agenda_name(meeting):
     """Returns the next name to use for an agenda document for *meeting*"""
