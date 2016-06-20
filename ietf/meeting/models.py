@@ -935,7 +935,9 @@ class Session(models.Model):
             return l
 
     def agenda(self):
-        return self.get_material("agenda", only_one=True)
+        if not hasattr(self, "_agenda_cache"):
+            self._agenda_cache = self.get_material("agenda", only_one=True)
+        return self._agenda_cache
 
     def minutes(self):
         return self.get_material("minutes", only_one=True)
@@ -944,7 +946,9 @@ class Session(models.Model):
         return list(self.get_material("recording", only_one=False))
 
     def slides(self):
-        return list(self.get_material("slides", only_one=False))
+        if not hasattr(self, "_slides_cache"):
+            self._slides_cache = list(self.get_material("slides", only_one=False))
+        return self._slides_cache
 
     def drafts(self):
         return list(self.materials.filter(type='draft'))
