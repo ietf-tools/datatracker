@@ -781,6 +781,9 @@ class InterimTests(TestCase):
         agenda = 'Intro. Slides. Discuss.'
         agenda_note = 'On second level'
         self.client.login(username="secretary", password="secretary+password")
+        r = self.client.get(urlreverse("ietf.meeting.views.interim_request"))
+        self.assertEqual(r.status_code, 200)
+
         data = {'group':group.pk,
                 'meeting_type':'series',
                 'city':city,
