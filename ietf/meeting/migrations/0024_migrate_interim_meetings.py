@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 
 import datetime
 import os
+import re
 import subprocess
 
 from django.conf import settings
@@ -33,7 +34,7 @@ def copy_materials(meeting):
         os.makedirs(target)
     subprocess.call(['rsync','-a',source,target])
 
-def migrate_interim_meetings(apps, schema_editor):
+def migrate_interim_meetings_forward(apps, schema_editor):
     """For all existing interim meetings create an official schedule and timeslot assignments"""
     Meeting = apps.get_model("meeting", "Meeting")
     Schedule = apps.get_model("meeting", "Schedule")
@@ -44,30 +45,58 @@ def migrate_interim_meetings(apps, schema_editor):
 
     meetings = Meeting.objects.filter(type='interim')
     for meeting in meetings:
+        single_digit_serial = re.search('^(.+)-([0-9])$', meeting.number)
+        dirty = False
+        if single_digit_serial:
+            name   = single_digit_serial.group(1)
+            serial = single_digit_serial.group(2)
+            meeting.number = "%s-%02d" % (name, int(serial))
+            dirty = True
         if not meeting.agenda:
             meeting.agenda = Schedule.objects.create(
                 meeting=meeting,
                 owner=system,
                 name='Official')
+            dirty = True
+        if dirty:
             meeting.save()
+            dirty = False
         session = meeting.session_set.first()   # all legacy interim meetings have one session
         time = datetime.datetime.combine(meeting.date, datetime.time(0))
-        slot = TimeSlot.objects.create(
-            meeting=meeting,
-            type_id="session",
-            duration=session.requested_duration,
-            time=time)
-        SchedTimeSessAssignment.objects.create(
+        if TimeSlot.objects.filter(meeting=meeting, type_id="session", time=time).exists():
+            slot = TimeSlot.objects.get(meeting=meeting, type_id="session", time=time).exists()
+        else:
+            slot = TimeSlot.objects.create(
+                meeting=meeting,
+                type_id="session",
+                duration=session.requested_duration,
+                time=time)
+        SchedTimeSessAssignment.objects.get_or_create(
             timeslot=slot,
             session=session,
             schedule=meeting.agenda)
 
-def migrate_interim_materials_files(apps, schema_editor):
+def migrate_interim_meetings_backward(apps, schema_editor):
+    Meeting = apps.get_model("meeting", "Meeting")
+    meetings = Meeting.objects.filter(type='interim')
+    for meeting in meetings:
+        zero_digit_serial = re.search('^(.+)-0([0-9])$', meeting.number)
+        if zero_digit_serial:
+            name   = zero_digit_serial.group(1)
+            serial = zero_digit_serial.group(2)
+            meeting.number = "%s-%s" % (name, serial)
+            meeting.save()
+
+def migrate_interim_materials_files_forward(apps, schema_editor):
     """Copy interim materials files to new location"""
     Meeting = apps.get_model("meeting", "Meeting")
     
     for meeting in Meeting.objects.filter(type='interim'):
         copy_materials(meeting)
+        
+def migrate_interim_materials_files_backward(apps, schema_editor):
+    """Copy interim materials files to new location"""
+    pass
         
 class Migration(migrations.Migration):
 
@@ -76,6 +105,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(migrate_interim_meetings),
-        migrations.RunPython(migrate_interim_materials_files),
+        migrations.RunPython(migrate_interim_meetings_forward, migrate_interim_meetings_backward),
+        migrations.RunPython(migrate_interim_materials_files_forward, migrate_interim_materials_files_backward),
     ]
