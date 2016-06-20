@@ -70,6 +70,7 @@ urlpatterns = [
     # The optionals have to go first, otherwise the agenda/(owner)/(name)/ patterns match things they shouldn't
     url(r'^(?:(?P<num>\d+)/)?', include(type_ietf_only_patterns_id_optional)),
     url(r'^(?P<num>\d+)/', include(type_ietf_only_patterns)),
+    url(r'^(?P<num>interim-[a-z0-9-]+)/', include(type_ietf_only_patterns)),
     url(r'^upcoming/$', views.upcoming),
     url(r'^upcoming.ics/$', views.upcoming_ical),
     url(r'^interim/announce/$', views.interim_announce),
