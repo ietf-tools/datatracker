@@ -121,11 +121,10 @@ def check_html_valid(url, response, args):
     key = url
     if not args.validate_all:
         # derive a key for urls like this by replacing primary keys
-        key = re.sub("\?.*$",       "", key)
         key = re.sub("#.*$",       "", key)
         key = re.sub("/.+@.+/",    "/x@x.org/", key)
-        key = re.sub("/[0-9.]+/",   "/nnnn/", key)
         key = re.sub("/[0-9.]+/",   "/mmmm/", key)
+        key = re.sub("/[0-9.]+/",   "/nnnn/", key)
         key = re.sub("/ag/[a-z0-9-]+/",   "/ag/foo/", key)
         key = re.sub("/area/[a-z0-9-]+/",   "/area/foo/", key)
         key = re.sub("/bcp[0-9]+/",   "/bcpnnn/", key)
@@ -134,6 +133,7 @@ def check_html_valid(url, response, args):
         key = re.sub("/draft-[a-z0-9-]+/",   "/draft-foo/", key)
         key = re.sub("/group/[a-z0-9-]+/",   "/group/foo/", key)
         key = re.sub("/ipr/search/.*",   "/ipr/search/", key)
+        key = re.sub("/meeting/[0-9]+/agenda/[0-9a-z]+/",   "/meeting/nn/agenda/foo/", key)
         key = re.sub("/release/[0-9dev.]+/",   "/release/n.n.n/", key)
         key = re.sub("/rfc[0-9]+/",   "/rfcnnnn/", key)
         key = re.sub("/rg/[a-z0-9-]+/",   "/rg/foo/", key)
@@ -145,7 +145,7 @@ def check_html_valid(url, response, args):
         key = re.sub("/submit/status/nnnn/[0-9a-f]+/", "/submit/status/nnnn/bar/", key)
         key = re.sub("/team/[a-z0-9-]+/",   "/team/foo/", key)
         key = re.sub("/wg/[a-z0-9-]+/",   "/wg/foo/", key)
-        key = re.sub("/meeting/[0-9]+/agenda/[0-9a-z]+/",   "/meeting/nn/agenda/foo/", key)
+        key = re.sub("\?.*$",       "", key)
 
         for slug in doc_types:
             key = re.sub("/%s-.*/"%slug, "/%s-nnnn/"%slug, key)
@@ -193,8 +193,9 @@ def skip_url(url):
     for pattern in (
             "^/community/[0-9]+/remove_document/",
             "^/community/personal/",
-            # Skip most of the slow pdf composite generation urls
+            # Skip most of the slow pdf composite generation urls and svg urls
             "^/meeting/[0-9]+/agenda/[0-9b-z].*-drafts\\.pdf",
+            "^/wg/[a-z0-9-]+/deps/svg/",
         ):
         if re.search(pattern, url):
             return True
