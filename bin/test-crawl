@@ -72,6 +72,9 @@ def note(s):
 def strip_url(url):
     if url.startswith("http://testserver"):
         url = url[len("http://testserver"):]
+    fragment_url = re.search("^(.+)#[a-z_.-]+$", url)
+    if fragment_url:
+        url = fragment_url.group(1)
     return url
 
 def extract_html_urls(content):
@@ -142,6 +145,7 @@ def check_html_valid(url, response, args):
         key = re.sub("/submit/status/nnnn/[0-9a-f]+/", "/submit/status/nnnn/bar/", key)
         key = re.sub("/team/[a-z0-9-]+/",   "/team/foo/", key)
         key = re.sub("/wg/[a-z0-9-]+/",   "/wg/foo/", key)
+        key = re.sub("/meeting/[0-9]+/agenda/[0-9a-z]+/",   "/meeting/nn/agenda/foo/", key)
 
         for slug in doc_types:
             key = re.sub("/%s-.*/"%slug, "/%s-nnnn/"%slug, key)
@@ -189,6 +193,8 @@ def skip_url(url):
     for pattern in (
             "^/community/[0-9]+/remove_document/",
             "^/community/personal/",
+            # Skip most of the slow pdf composite generation urls
+            "^/meeting/[0-9]+/agenda/[0-9b-z].*-drafts\\.pdf",
         ):
         if re.search(pattern, url):
             return True
