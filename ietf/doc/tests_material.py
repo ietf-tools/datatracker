@@ -27,6 +27,7 @@ class GroupMaterialTests(TestCase):
             os.makedirs(os.path.join(self.materials_dir, "slides"))
         settings.DOCUMENT_PATH_PATTERN = self.materials_dir + "/{doc.type_id}/"
 
+        self.save_agenda_dir = settings.AGENDA_PATH
         self.agenda_dir = os.path.abspath("tmp-agenda-dir")
         if not os.path.exists(self.agenda_dir):
             os.makedirs(os.path.join(self.agenda_dir, "42", "slides"))
@@ -35,6 +36,7 @@ class GroupMaterialTests(TestCase):
     def tearDown(self):
         shutil.rmtree(self.materials_dir)
         shutil.rmtree(self.agenda_dir)
+        settings.AGENDA_PATH = self.save_agenda_dir
 
     def create_slides(self):
         make_test_data()
