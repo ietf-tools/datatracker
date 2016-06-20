@@ -34,7 +34,7 @@ class MeetingFactory(factory.DjangoModelFactory):
             else:
                 return '%02d'%(n+80)
         else:
-            return 'interim-%d-%s-%d'%(self.date.year,GroupFactory().acronym,n)
+            return 'interim-%d-%s-%02d'%(self.date.year,GroupFactory().acronym,n)
 
     @factory.post_generation
     def populate_agenda(self, create, extracted, **kwargs):
