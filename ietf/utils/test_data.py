@@ -331,7 +331,7 @@ def make_test_data():
 
     # interim meeting
     Meeting.objects.create(
-        number="interim-2015-mars-1",
+        number="interim-2015-mars-01",
         type_id='interim',
         date=datetime.date(2015,1,1),
         city="New York",
