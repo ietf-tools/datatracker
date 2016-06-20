@@ -594,6 +594,7 @@ def session_agenda(request, num, session):
         elif ext == "pdf":
             return HttpResponse(content, content_type="application/pdf")
         elif ext in ["html", "htm"]:
+            content=re.sub("(\r\n|\r)", "\n", content)
             d = PyQuery(content)
             d("head title").empty()
             d("head title").append(str(agenda))
