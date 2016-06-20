@@ -251,7 +251,7 @@
 
                   <td>
                     {% if item.session.agenda %}
-                      <a href="/meeting/{{ schedule.meeting.number }}/agenda/{{ item.session.historic_group.acronym }}/">
+		      <a href="{{ item.session.agenda.href }}">
                     {% endif %}
                     {% if item.timeslot.type.slug == 'plenary' %}
                       {{item.timeslot.name}}
