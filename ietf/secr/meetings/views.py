@@ -16,7 +16,7 @@ from django.utils.functional import curry
 
 from ietf.ietfauth.utils import role_required
 from ietf.utils.mail import send_mail
-from ietf.meeting.helpers import get_meeting, make_directories
+from ietf.meeting.helpers import get_meeting, make_materials_directories
 from ietf.meeting.models import Meeting, Session, Room, TimeSlot, SchedTimeSessAssignment, Schedule
 from ietf.group.models import Group, GroupEvent
 from ietf.person.models import Person
@@ -314,7 +314,18 @@ def add(request):
             meeting.save()
 
             #Create Physical new meeting directory and subdirectories
-            make_directories(meeting)
+            path = meeting.get_materials_path()
+            # Default umask is 0x022, meaning strip write premission for group and others.
+            # Change this temporarily to 0x0, to keep write permission for group and others.
+            # (WHY??) (Note: this code is old -- was present already when the secretariat code
+            # was merged with the regular datatracker code; then in secr/proceedings/views.py
+            # in make_directories())
+            saved_umask = os.umask(0)   
+            for leaf in ('slides','agenda','minutes','id','rfc','bluesheets'):
+                target = os.path.join(path,leaf)
+                if not os.path.exists(target):
+                    os.makedirs(target)
+            os.umask(saved_umask)
 
             messages.success(request, 'The Meeting was created successfully!')
             return redirect('meetings')
