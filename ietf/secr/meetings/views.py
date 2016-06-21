@@ -454,8 +454,11 @@ def non_session(request, meeting_id, schedule_name):
     
     check_nonsession(meeting,schedule)
 
-    slots = TimeSlot.objects.filter(meeting=meeting,type__in=('break','reg','other','plenary','lead')).order_by('-type__name','time')
-
+    slots = TimeSlot.objects.filter(meeting=meeting)
+    slots = slots.filter(sessionassignments__schedule=schedule)
+    slots = slots.filter(type__in=('break','reg','other','plenary','lead'))
+    slots = slots.order_by('-type__name','time')
+    
     if request.method == 'POST':
         form = NonSessionForm(request.POST)
         if form.is_valid():
