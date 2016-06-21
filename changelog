@@ -1,3 +1,44 @@
+ietfdb (6.24.0) ietf; urgency=high
+
+  **Interim meeting management**
+
+  This release adds support for management of Interim Meetings by merging in
+  ^/branch/amsl/interim/6.21.0 from rcross@amsl.com.  ADs and chairs can
+  request virtual or in person meetings.  Authorized users have access to
+  views for approval, scheduling and notification of interim meetings.  Users
+  can view a sortable / filterable list of upcoming meetings and download
+  iCalendar files.  For complete details see here the statement of work:
+  https://datatracker.ietf.org/doc/draft-sparks-genarea-interim-management/ 
+
+  There are also some unrelated minor tweaks, as part of this release:
+
+  * Added a score of setting save/restores to test setup/teardown actions.
+
+  * Tweaked the test crawler a bit to skip some slow and meaningless checks.
+
+  * Updated docker/settings_local.py
+
+  * Avoid multiple doctype declarations and other html errors by parsing 
+    sesion agenda html files and inserting our title and doctype.
+
+  * Added caching to some meeting methods which are called multiple times 
+    when generating the IETF agenda.
+
+  * Fixed a bug in find-history-replacement-active-at() where multiple 
+    history entries with the same timestamp would be unordered.  This led to 
+    the wrong historic group info being shown in some cases (e.g.,  
+    meeting/86/agenda would show dmmnew instead of dmm, leading to wrong agenda 
+    links)
+
+  * Tweaked the styling of meeting rows to avoid wrapping the interim 
+    meeting names, and added meeting links for the IETF meetings.
+
+  * Moved a check for session data being present up to before we try to use it
+    in announcement.views.confirm(), fixing a server 500 error.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  21 Jun 2016 19:15:08 +0000
+
+
 ietfdb (6.23.0) ietf; urgency=low
 
   **Additional account creation safeguards**
