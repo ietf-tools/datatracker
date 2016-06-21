@@ -16,7 +16,7 @@ from django.utils.functional import curry
 
 from ietf.ietfauth.utils import role_required
 from ietf.utils.mail import send_mail
-from ietf.meeting.helpers import get_meeting, make_materials_directories
+from ietf.meeting.helpers import get_meeting
 from ietf.meeting.models import Meeting, Session, Room, TimeSlot, SchedTimeSessAssignment, Schedule
 from ietf.group.models import Group, GroupEvent
 from ietf.person.models import Person
