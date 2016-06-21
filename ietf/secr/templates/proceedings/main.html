@@ -53,7 +53,8 @@
             {% for meeting in interim_meetings %}
     
                   <tr class = "{% cycle 'row1' 'row2' %}">
-                    <td><a href="{% url "proceedings_upload_unified" meeting_num=meeting.number acronym=meeting.group.acronym %}">{{ meeting.group.acronym|ljust:"8" }} - {{ meeting.date }}</a></td>
+                    <td>{{ meeting.group.acronym }}</td>
+                    <td><a href="{% url "proceedings_upload_unified" meeting_num=meeting.number acronym=meeting.group.acronym %}">{{ meeting.date }}</a></td>
                   </tr>
             {% endfor %}
           </tbody>
