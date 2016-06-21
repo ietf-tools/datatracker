@@ -22,9 +22,4 @@ urlpatterns = patterns('ietf.secr.proceedings.views',
         'upload_unified', name='proceedings_upload_unified'),
     url(r'^(?P<meeting_num>\d{1,3}|interim-\d{4}-[A-Za-z0-9_\-\+]+)/(?P<acronym>[A-Za-z0-9_\-\+]+)/$',
         'upload_unified', name='proceedings_upload_unified'),
-    # interim stuff
-    url(r'^interim/$', 'select_interim', name='proceedings_select_interim'),
-    url(r'^interim/(?P<meeting_num>interim-\d{4}-[A-Za-z0-9_\-\+]+)/delete/$', 'delete_interim_meeting',
-        name='proceedings_delete_interim_meeting'),
-    url(r'^interim/(?P<acronym>[A-Za-z0-9_\-\+]+)/$', 'interim', name='proceedings_interim'),
 )

@@ -517,6 +517,18 @@ def get_next_agenda_name(meeting):
         sequence=str(last_sequence + 1).zfill(2))
 
 
+def make_directories(meeting):
+    '''
+    This function takes a meeting object and creates the appropriate materials directories
+    '''
+    path = meeting.get_materials_path()
+    os.umask(0)
+    for leaf in ('slides','agenda','minutes','id','rfc','bluesheets'):
+        target = os.path.join(path,leaf)
+        if not os.path.exists(target):
+            os.makedirs(target)
+
+
 def send_interim_approval_request(meetings):
     """Sends an email to the secretariat, group chairs, and resposnible area
     director or the IRTF chair noting that approval has been requested for a

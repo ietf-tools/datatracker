@@ -2,7 +2,6 @@ import datetime
 import glob
 import itertools
 import os
-import shutil
 import subprocess
 
 import debug                            # pyflakes:ignore
@@ -27,12 +26,11 @@ from ietf.doc.models import Document, DocAlias, DocEvent, State, NewRevisionDocE
 from ietf.group.models import Group
 from ietf.ietfauth.utils import has_role, role_required
 from ietf.meeting.models import Meeting, Session, TimeSlot, SchedTimeSessAssignment
-from ietf.meeting.helpers import get_next_interim_number
-from ietf.secr.proceedings.forms import EditSlideForm, InterimMeetingForm, RecordingForm, RecordingEditForm, ReplaceSlideForm, UnifiedUploadForm
+
+from ietf.secr.proceedings.forms import EditSlideForm, RecordingForm, RecordingEditForm, ReplaceSlideForm, UnifiedUploadForm
 from ietf.secr.proceedings.proc_utils import ( gen_acknowledgement, gen_agenda, gen_areas,
     gen_attendees, gen_group_pages, gen_index, gen_irtf, gen_overview, gen_plenaries,
-    gen_progress, gen_research, gen_training, create_proceedings, create_interim_directory,
-    create_recording )
+    gen_progress, gen_research, gen_training, create_proceedings, create_recording )
 from ietf.utils.log import log
 
 # -------------------------------------------------
@@ -173,17 +171,6 @@ def handle_upload_file(file,filename,meeting,subdir):
     if extension == '.zip':
         os.chdir(path)
         os.system('unzip %s' % filename)
-
-def make_directories(meeting):
-    '''
-    This function takes a meeting object and creates the appropriate materials directories
-    '''
-    path = meeting.get_materials_path()
-    os.umask(0)
-    for leaf in ('slides','agenda','minutes','id','rfc','bluesheets'):
-        target = os.path.join(path,leaf)
-        if not os.path.exists(target):
-            os.makedirs(target)
 
 def parsedate(d):
     '''
@@ -349,33 +336,6 @@ def delete_material(request,slide_id):
 
     return HttpResponseRedirect(url)
 
-@role_required('Secretariat')
-def delete_interim_meeting(request, meeting_num):
-    '''
-    This view deletes the specified Interim Meeting and any material that has been
-    uploaded for it.  The pattern in urls.py ensures we don't call this with a regular
-    meeting number.
-    '''
-    meeting = get_object_or_404(Meeting, number=meeting_num)
-    sessions = Session.objects.filter(meeting=meeting)
-    group = sessions[0].group
-
-    # delete directories
-    path = meeting.get_materials_path()
-
-    # do a quick sanity check on this path before we go and delete it
-    parts = path.split('/')
-    assert parts[-1] == group.acronym
-
-    if os.path.exists(path):
-        shutil.rmtree(path)
-
-    meeting.delete()
-    sessions.delete()
-
-    url = reverse('proceedings_interim', kwargs={'acronym':group.acronym})
-    return HttpResponseRedirect(url)
-
 @check_permissions
 def edit_slide(request, slide_id):
     '''
@@ -414,55 +374,6 @@ def edit_slide(request, slide_id):
         'form':form},
         RequestContext(request, {}),
     )
-
-@role_required(*AUTHORIZED_ROLES)
-def interim(request, acronym):
-    '''
-    This view presents the user with a list of interim meetings for the specified group.
-    The user can select a meeting to manage or create a new interim meeting by entering
-    a date.
-    '''
-    group = get_object_or_404(Group, acronym=acronym)
-    if request.method == 'POST': # If the form has been submitted...
-        button_text = request.POST.get('submit', '')
-        if button_text == 'Back':
-            url = reverse('proceedings_select_interim')
-            return HttpResponseRedirect(url)
-
-        form = InterimMeetingForm(request.POST) # A form bound to the POST data
-        if form.is_valid():
-            date = form.cleaned_data['date']
-            number = get_next_interim_number(acronym,date)
-            meeting=Meeting.objects.create(type_id='interim',
-                                           date=date,
-                                           number=number)
-
-            # create session to associate this meeting with a group and hold material
-            Session.objects.create(meeting=meeting,
-                                   group=group,
-                                   requested_by=request.user.person,
-                                   status_id='sched',
-                                   type_id='session',
-                                  )
-
-            create_interim_directory()
-            make_directories(meeting)
-
-            messages.success(request, 'Meeting created')
-            url = reverse('proceedings_interim', kwargs={'acronym':acronym})
-            return HttpResponseRedirect(url)
-    else:
-        form = InterimMeetingForm(initial={'group_acronym_id':acronym}) # An unbound form
-
-    meetings = Meeting.objects.filter(type='interim',session__group__acronym=acronym).order_by('date')
-
-    return render_to_response('proceedings/interim_meeting.html',{
-        'group': group,
-        'meetings':meetings,
-        'form':form},
-        RequestContext(request, {}),
-    )
-
 
 @role_required(*AUTHORIZED_ROLES)
 def main(request):
@@ -794,38 +705,6 @@ def select(request, meeting_num):
         'last_run': last_run,
         'proceedings_url': proceedings_url,
         'ppt_count': ppt_count},
-        RequestContext(request,{}),
-    )
-
-@role_required(*AUTHORIZED_ROLES)
-def select_interim(request):
-    '''
-    A screen to select which group you want to upload Interim material for.  Works for Secretariat staff
-    and external (ADs, chairs, etc)
-    '''
-    if request.method == 'POST':
-        redirect_url = reverse('proceedings_interim', kwargs={'acronym':request.POST['group']})
-        return HttpResponseRedirect(redirect_url)
-
-    if has_role(request.user, "Secretariat"):
-        # initialize working groups form
-        choices = build_choices(Group.objects.active_wgs())
-        group_form = GroupSelectForm(choices=choices)
-
-        # per Alexa, not supporting Interim IRTF meetings at this time
-        # intialize IRTF form
-        #choices = build_choices(Group.objects.filter(type='wg', state='active')
-        #irtf_form = GroupSelectForm(choices=choices)
-
-    else:
-        # these forms aren't used for non-secretariat
-        groups = get_my_groups(request.user)
-        choices = build_choices(groups)
-        group_form = GroupSelectForm(choices=choices)
-
-    return render_to_response('proceedings/interim_select.html', {
-        'group_form': group_form},
-        #'irtf_form': irtf_form,
         RequestContext(request,{}),
     )
 

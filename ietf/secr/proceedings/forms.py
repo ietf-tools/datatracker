@@ -6,7 +6,7 @@ from django.template.defaultfilters import filesizeformat
 
 from ietf.doc.models import Document
 from ietf.name.models import DocTypeName
-from ietf.meeting.models import Meeting, Session
+from ietf.meeting.models import Session
 
 
 # ---------------------------------------------
@@ -26,21 +26,6 @@ class EditSlideForm(forms.ModelForm):
     class Meta:
         model = Document
         fields = ('title',)
-
-class InterimMeetingForm(forms.Form):
-    date = forms.DateField(help_text="(YYYY-MM-DD Format, please)")
-    group_acronym_id = forms.CharField(widget=forms.HiddenInput())
-    
-    def clean(self):
-        super(InterimMeetingForm, self).clean()
-        cleaned_data = self.cleaned_data
-        # need to use get() here, if the date field isn't valid it won't exist
-        date = cleaned_data.get('date','')
-        group_acronym_id = cleaned_data["group_acronym_id"]
-        qs = Meeting.objects.filter(type='interim',date=date,session__group__acronym=group_acronym_id)
-        if qs:
-            raise forms.ValidationError('A meeting already exists for this date.')
-        return cleaned_data
 
 class RecordingForm(forms.Form):
     external_url = forms.URLField(label='Url')

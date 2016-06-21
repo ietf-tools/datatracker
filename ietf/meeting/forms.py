@@ -13,7 +13,7 @@ from ietf.doc.utils import get_document_content
 from ietf.group.models import Group
 from ietf.ietfauth.utils import has_role
 from ietf.meeting.models import Session, Meeting, Schedule, countries, timezones
-from ietf.meeting.helpers import get_next_interim_number
+from ietf.meeting.helpers import get_next_interim_number, make_directories
 from ietf.meeting.helpers import is_meeting_approved, get_next_agenda_name
 from ietf.message.models import Message
 from ietf.person.models import Person
@@ -215,6 +215,9 @@ class InterimMeetingModelForm(forms.ModelForm):
                     meeting=meeting,
                     owner=Person.objects.get(name='(System)'))
             meeting.save()  # save with agenda
+            
+            # create directories
+            make_directories(meeting)
 
         return meeting
 

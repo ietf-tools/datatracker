@@ -16,7 +16,7 @@ from django.utils.functional import curry
 
 from ietf.ietfauth.utils import role_required
 from ietf.utils.mail import send_mail
-from ietf.meeting.helpers import get_meeting
+from ietf.meeting.helpers import get_meeting, make_directories
 from ietf.meeting.models import Meeting, Session, Room, TimeSlot, SchedTimeSessAssignment, Schedule
 from ietf.group.models import Group, GroupEvent
 from ietf.person.models import Person
@@ -24,7 +24,7 @@ from ietf.secr.meetings.blue_sheets import create_blue_sheets
 from ietf.secr.meetings.forms import ( BaseMeetingRoomFormSet, MeetingModelForm,
     MeetingRoomForm, NewSessionForm, NonSessionEditForm, NonSessionForm, TimeSlotForm,
     UploadBlueSheetForm, get_next_slot )
-from ietf.secr.proceedings.views import build_choices, handle_upload_file, make_directories
+from ietf.secr.proceedings.views import build_choices, handle_upload_file
 from ietf.secr.sreq.forms import GroupSelectForm
 from ietf.secr.sreq.views import get_initial_session
 from ietf.secr.utils.meeting import get_session, get_timeslot
