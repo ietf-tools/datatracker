@@ -113,6 +113,10 @@ cwd=${PWD##*/}
 branch=$1
 rev=$2
 fix=$3
+
+# remove leading 'r' from rev, if present
+rev=${rev#r}
+
 repo=$(echo -n "$(svn info | grep "^Repository Root: " | sed 's/Repository Root: //')")
 
 note "Identify the branch:"
@@ -127,6 +131,9 @@ elif svn info ${repo}/$branch > /dev/null 2>&1; then
 else
     die "Could not find a branch matching '$branch'"
 fi
+
+note "Svn update, to make sure we don't have a mixed revision working copy"
+svn update -q
 
 mergelog=$(mktemp)
 svn propget svn:mergeinfo . > $mergelog
