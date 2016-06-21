@@ -13,6 +13,7 @@ import debug                             # pyflakes:ignore
 from ietf.group.models import Role, Group
 from ietf.group.utils import get_group_role_emails, get_child_group_role_emails, get_group_ad_emails
 from ietf.group.factories import GroupFactory
+from ietf.utils.test_utils import set_coverage_checking
 from ietf.utils.test_data import make_test_data
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase, unicontent
 
@@ -63,6 +64,12 @@ class StreamTests(TestCase):
 
 @skipIf(skip_dot_to_pdf, skip_message)
 class GroupDocDependencyGraphTests(TestCase):
+
+    def setUp(self):
+        set_coverage_checking(False)
+
+    def tearDown(self):
+        set_coverage_checking(True)
 
     def test_group_document_dependency_dotfile(self):
         make_test_data()

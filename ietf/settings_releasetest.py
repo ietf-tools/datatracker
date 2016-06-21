@@ -28,14 +28,6 @@ class DisableMigrations(object):
 
 MIGRATION_MODULES = DisableMigrations()
 
-# Set the SKIP_* variables to True in order to disable tests which won't
-# normally run on developer's laptop, in order to not create
-# release-coverage.json data which sets people up for test suite failures on a
-# clean checkout
-
-SKIP_DOT_TO_PDF = True
-SKIP_SELENIUM = True
-
 DATABASES = {
     'default': {
         'NAME': 'test.db',

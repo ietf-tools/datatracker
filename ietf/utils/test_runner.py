@@ -222,7 +222,7 @@ class CoverageTest(TestCase):
             # only running some tests, then of course the coverage is going to be low.
             if self.runner.run_full_test_suite:
                 # Permit 0.02% variation in results -- otherwise small code changes become a pain
-                fudge_factor = 0.0002   # 0.02% -- a small change in the last digit we show
+                fudge_factor = 0.00005   # 0.005% -- a small change, less than the last digit we show
                 self.assertGreaterEqual(test_coverage, master_coverage - fudge_factor,
                     msg = "The %s coverage percentage is now lower (%.2f%%) than for version %s (%.2f%%)" %
                         ( test, test_coverage*100, latest_coverage_version, master_coverage*100, ))

@@ -10,6 +10,7 @@ import debug                            # pyflakes:ignore
 from ietf.group import colors
 from ietf.meeting.test_data import make_meeting_test_data
 from ietf.meeting.models import SchedTimeSessAssignment
+from ietf.utils.test_utils import set_coverage_checking
 from ietf import settings
 
 skip_selenium = getattr(settings,'SKIP_SELENIUM',None)
@@ -33,9 +34,13 @@ def condition_data():
 @skipIf(skip_selenium, skip_message)
 class ScheduleEditTests(StaticLiveServerTestCase):
     def setUp(self):
+        set_coverage_checking(False)
         condition_data()
         self.driver = webdriver.PhantomJS(service_log_path=settings.TEST_GHOSTDRIVER_LOG_PATH)
         self.driver.set_window_size(1024,768)
+
+    def tearDown(self):
+        set_coverage_checking(True)        
 
     def debugSnapshot(self,filename='debug_this.png'):
         self.driver.execute_script("document.body.bgColor = 'white';")
@@ -75,10 +80,14 @@ class ScheduleEditTests(StaticLiveServerTestCase):
 @skipIf(skip_selenium, skip_message)
 class InterimRequestTests(StaticLiveServerTestCase):
     def setUp(self):
+        set_coverage_checking(False)
         condition_data()
         self.driver = webdriver.PhantomJS(service_log_path=settings.TEST_GHOSTDRIVER_LOG_PATH)
         self.driver.set_window_size(1024,768)
         
+    def tearDown(self):
+        set_coverage_checking(True)
+
     def absreverse(self,*args,**kwargs):
         return '%s%s'%(self.live_server_url,urlreverse(*args,**kwargs))
         

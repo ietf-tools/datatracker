@@ -18,6 +18,7 @@ from ietf.person.models import Person, Email
 from ietf.group.models import Group, Role, RoleName
 from ietf.ietfauth.htpasswd import update_htpasswd_file
 from ietf.mailinglists.models import Subscribed
+from ietf.utils.decorators import skip_coverage
 
 import ietf.ietfauth.views
 
@@ -336,6 +337,7 @@ class IetfAuthTests(TestCase):
         self.assertTrue(self.username_in_htpasswd_file("foo"))
 
     @skipIf(skip_htpasswd_command, skip_message)
+    @skip_coverage
     def test_htpasswd_file_with_htpasswd_binary(self):
         # make sure we test both Python and call-out to binary
         settings.USE_PYTHON_HTDIGEST = False
