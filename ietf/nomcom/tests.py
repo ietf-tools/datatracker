@@ -50,13 +50,15 @@ def get_cert_files():
     return client_test_cert_files
 
 def build_test_public_keys_dir(obj):
+    obj.saved_nomcom_public_keys_dir = settings.NOMCOM_PUBLIC_KEYS_DIR
     obj.nomcom_public_keys_dir = os.path.abspath("tmp-nomcom-public-keys-dir")
     if not os.path.exists(obj.nomcom_public_keys_dir):
         os.mkdir(obj.nomcom_public_keys_dir)
     settings.NOMCOM_PUBLIC_KEYS_DIR = obj.nomcom_public_keys_dir
 
 def clean_test_public_keys_dir(obj):
-        shutil.rmtree(obj.nomcom_public_keys_dir)
+    settings.NOMCOM_PUBLIC_KEYS_DIR = obj.saved_nomcom_public_keys_dir
+    shutil.rmtree(obj.nomcom_public_keys_dir)
 
 class NomcomViewsTest(TestCase):
     """Tests to create a new nomcom"""
@@ -1107,9 +1109,11 @@ class NewActiveNomComTests(TestCase):
         build_test_public_keys_dir(self)
         self.nc = NomComFactory.create(**nomcom_kwargs_for_year())
         self.chair = self.nc.group.role_set.filter(name='chair').first().person
+        self.saved_days_to_expire_nomination_link = settings.DAYS_TO_EXPIRE_NOMINATION_LINK
 
     def tearDown(self):
         clean_test_public_keys_dir(self)
+        settings.DAYS_TO_EXPIRE_NOMINATION_LINK = self.saved_days_to_expire_nomination_link
 
     def test_help(self):
         url = reverse('nomcom_chair_help',kwargs={'year':self.nc.year()})

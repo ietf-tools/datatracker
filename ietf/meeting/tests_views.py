@@ -34,9 +34,11 @@ class MeetingTests(TestCase):
         self.materials_dir = os.path.abspath(settings.TEST_MATERIALS_DIR)
         if not os.path.exists(self.materials_dir):
             os.mkdir(self.materials_dir)
+        self.saved_agenda_path = settings.AGENDA_PATH
         settings.AGENDA_PATH = self.materials_dir
 
     def tearDown(self):
+        settings.AGENDA_PATH = self.saved_agenda_path
         shutil.rmtree(self.materials_dir)
 
     def write_materials_file(self, meeting, doc, content):
@@ -465,9 +467,11 @@ class InterimTests(TestCase):
         self.materials_dir = os.path.abspath(settings.TEST_MATERIALS_DIR)
         if not os.path.exists(self.materials_dir):
             os.mkdir(self.materials_dir)
+        self.saved_agenda_path = settings.AGENDA_PATH
         settings.AGENDA_PATH = self.materials_dir
 
     def tearDown(self):
+        settings.AGENDA_PATH = self.saved_agenda_path
         shutil.rmtree(self.materials_dir)
 
     def check_interim_tabs(self, url):

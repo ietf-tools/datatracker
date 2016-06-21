@@ -484,7 +484,9 @@ class StatusChangeSubmitTests(TestCase):
         self.test_dir = os.path.abspath("tmp-status-change-testdir")
         if not os.path.exists(self.test_dir):
             os.mkdir(self.test_dir)
+        self.saved_status_change_path = settings.STATUS_CHANGE_PATH
         settings.STATUS_CHANGE_PATH = self.test_dir
 
     def tearDown(self):
+        settings.STATUS_CHANGE_PATH = self.saved_status_change_path
         shutil.rmtree(self.test_dir)

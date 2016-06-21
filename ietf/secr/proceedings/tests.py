@@ -66,15 +66,19 @@ class BluesheetTestCase(TestCase):
         self.proceedings_dir = os.path.abspath("tmp-proceedings-dir")
         if not os.path.exists(self.proceedings_dir):
             os.mkdir(self.proceedings_dir)
+        self.saved_agenda_path = settings.AGENDA_PATH
         settings.AGENDA_PATH = self.proceedings_dir
         
         self.interim_listing_dir = os.path.abspath("tmp-interim-listing-dir")
         if not os.path.exists(self.interim_listing_dir):
             os.mkdir(self.interim_listing_dir)
+        self.saved_secr_interim_listing_dir = settings.SECR_INTERIM_LISTING_DIR
         settings.SECR_INTERIM_LISTING_DIR = self.interim_listing_dir
         
     def tearDown(self):
+        settings.AGENDA_PATH = self.saved_agenda_path
         shutil.rmtree(self.proceedings_dir)
+        settings.SECR_INTERIM_LISTING_DIR = self.saved_secr_interim_listing_dir
         shutil.rmtree(self.interim_listing_dir)
         
     def test_upload(self):

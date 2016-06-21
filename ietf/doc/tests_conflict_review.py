@@ -391,7 +391,9 @@ class ConflictReviewSubmitTests(TestCase):
         make_test_data()
         self.test_dir = os.path.abspath("tmp-conflict-review-testdir")
         os.mkdir(self.test_dir)
+        self.saved_conflict_review_path = settings.CONFLICT_REVIEW_PATH
         settings.CONFLICT_REVIEW_PATH = self.test_dir
 
     def tearDown(self):
+        settings.CONFLICT_REVIEW_PATH = self.saved_conflict_review_path
         shutil.rmtree(self.test_dir)

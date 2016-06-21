@@ -420,13 +420,17 @@ Man                    Expires September 22, 2015               [Page 3]
         self.id_dir = os.path.abspath("tmp-id-dir")
         if not os.path.exists(self.id_dir):
             os.mkdir(self.id_dir)
+        self.saved_internet_draft_path = settings.INTERNET_DRAFT_PATH
         settings.INTERNET_DRAFT_PATH = self.id_dir
+        self.saved_internet_all_drafts_archive_dir = settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR
         settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR = self.id_dir
         f = open(os.path.join(self.id_dir, 'draft-ietf-mars-test-01.txt'), 'w')
         f.write(self.draft_text)
         f.close()
 
     def tearDown(self):
+        settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR = self.saved_internet_all_drafts_archive_dir
+        settings.INTERNET_DRAFT_PATH = self.saved_internet_draft_path
         shutil.rmtree(self.id_dir)
 
     def test_document_draft(self):

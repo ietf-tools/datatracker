@@ -15,9 +15,11 @@ class IndexTests(TestCase):
         self.id_dir = os.path.abspath("tmp-id-dir")
         if not os.path.exists(self.id_dir):
             os.mkdir(self.id_dir)
+        self.saved_internet_draft_path = settings.INTERNET_DRAFT_PATH
         settings.INTERNET_DRAFT_PATH = self.id_dir
 
     def tearDown(self):
+        settings.INTERNET_DRAFT_PATH = self.saved_internet_draft_path
         shutil.rmtree(self.id_dir)
         
     def write_draft_file(self, name, size):

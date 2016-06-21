@@ -320,12 +320,14 @@ class ManagementCommandTests(TestCase):
 
 class LiaisonManagementTests(TestCase):
     def setUp(self):
+        self.saved_liaison_attach_path = settings.LIAISON_ATTACH_PATH
         self.liaison_dir = os.path.abspath("tmp-liaison-dir")
         if not os.path.exists(self.liaison_dir):
             os.mkdir(self.liaison_dir)
         settings.LIAISON_ATTACH_PATH = self.liaison_dir
 
     def tearDown(self):
+        settings.LIAISON_ATTACH_PATH = self.saved_liaison_attach_path
         shutil.rmtree(self.liaison_dir)
 
     def test_add_restrictions(self):

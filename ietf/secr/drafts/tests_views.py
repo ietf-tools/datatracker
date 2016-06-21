@@ -28,6 +28,7 @@ class SecrDraftsTestCase(TestCase):
         os.mkdir(self.archive_dir)
         settings.INTERNET_DRAFT_ARCHIVE_DIR = self.archive_dir
 
+        self.saved_idsubmit_manual_staging_dir = settings.IDSUBMIT_MANUAL_STAGING_DIR
         self.manual_dir =  os.path.abspath("tmp-submit-manual-dir")
         os.mkdir(self.manual_dir)
         settings.IDSUBMIT_MANUAL_STAGING_DIR = self.manual_dir
@@ -38,6 +39,7 @@ class SecrDraftsTestCase(TestCase):
         shutil.rmtree(self.manual_dir)
         settings.INTERNET_DRAFT_PATH = self.saved_internet_draft_path
         settings.INTERNET_DRAFT_ARCHIVE_DIR = self.saved_internet_draft_archive_dir
+        settings.IDSUBMIT_MANUAL_STAGING_DIR = self.saved_idsubmit_manual_staging_dir
         
     def test_abstract(self):
         draft = make_test_data()

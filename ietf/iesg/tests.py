@@ -96,6 +96,7 @@ class IESGAgendaTests(TestCase):
         self.draft_dir = os.path.abspath("tmp-agenda-draft-dir")
         if not os.path.exists(self.draft_dir):
             os.mkdir(self.draft_dir)
+        self.saved_internet_draft_path = settings.INTERNET_DRAFT_PATH
         settings.INTERNET_DRAFT_PATH = self.draft_dir
 
         for d in self.telechat_docs.values():
@@ -107,6 +108,7 @@ class IESGAgendaTests(TestCase):
 
 
     def tearDown(self):
+        settings.INTERNET_DRAFT_PATH = self.saved_internet_draft_path
         shutil.rmtree(self.draft_dir)
 
     def test_fill_in_agenda_docs(self):

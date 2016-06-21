@@ -26,9 +26,11 @@ class EditCharterTests(TestCase):
     def setUp(self):
         self.charter_dir = os.path.abspath("tmp-charter-dir")
         os.mkdir(self.charter_dir)
+        self.saved_charter_path = settings.CHARTER_PATH
         settings.CHARTER_PATH = self.charter_dir
 
     def tearDown(self):
+        settings.CHARTER_PATH = self.saved_charter_path
         shutil.rmtree(self.charter_dir)
 
     def test_startstop_process(self):

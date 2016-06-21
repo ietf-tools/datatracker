@@ -34,9 +34,11 @@ class GroupPagesTests(TestCase):
     def setUp(self):
         self.charter_dir = os.path.abspath("tmp-charter-dir")
         os.mkdir(self.charter_dir)
+        self.saved_charter_path = settings.CHARTER_PATH
         settings.CHARTER_PATH = self.charter_dir
 
     def tearDown(self):
+        settings.CHARTER_PATH = self.saved_charter_path
         shutil.rmtree(self.charter_dir)
 
     def test_active_groups(self):
@@ -381,9 +383,11 @@ class GroupEditTests(TestCase):
     def setUp(self):
         self.charter_dir = os.path.abspath("tmp-charter-dir")
         os.mkdir(self.charter_dir)
+        self.saved_charter_path = settings.CHARTER_PATH
         settings.CHARTER_PATH = self.charter_dir
 
     def tearDown(self):
+        settings.CHARTER_PATH = self.saved_charter_path
         shutil.rmtree(self.charter_dir)
 
     def test_create(self):
@@ -989,11 +993,11 @@ ames-chairs@ietf.org                                             xfilter-mars-ch
 expand-ames-chairs@virtual.ietf.org                              mars_chair@ietf.org
 """)
         self.group_alias_file.close()
-        self.save_group_virtual_path = settings.GROUP_VIRTUAL_PATH
+        self.saved_group_virtual_path = settings.GROUP_VIRTUAL_PATH
         settings.GROUP_VIRTUAL_PATH = self.group_alias_file.name
 
     def tearDown(self):
-        settings.GROUP_VIRTUAL_PATH = self.save_group_virtual_path
+        settings.GROUP_VIRTUAL_PATH = self.saved_group_virtual_path
         os.unlink(self.group_alias_file.name)
 
     def testAliases(self):
