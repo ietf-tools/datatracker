@@ -11,6 +11,7 @@ from ietf.group import colors
 from ietf.meeting.test_data import make_meeting_test_data
 from ietf.meeting.models import SchedTimeSessAssignment
 from ietf.utils.test_utils import set_coverage_checking
+from ietf.utils.pipe import pipe
 from ietf import settings
 
 skip_selenium = getattr(settings,'SKIP_SELENIUM',None)
@@ -23,7 +24,13 @@ else:
         from selenium.webdriver.common.action_chains import ActionChains
     except ImportError as e:
         skip_selenium = True
-        skip_message = str(e)
+        skip_message = "     Skipping selenium tests: %s" % e
+    code, out, err = pipe('phantomjs -v')
+    if not code == 0:
+        skip_selenium = True
+        skip_message = "     Skipping selenium tests: 'phantomjs' executable not found."
+    if skip_selenium:
+        sys.stderr.write(skip_message+'\n')
 
 def condition_data():
         make_meeting_test_data()
@@ -40,6 +47,7 @@ class ScheduleEditTests(StaticLiveServerTestCase):
         self.driver.set_window_size(1024,768)
 
     def tearDown(self):
+        self.driver.close()
         set_coverage_checking(True)        
 
     def debugSnapshot(self,filename='debug_this.png'):
@@ -77,29 +85,6 @@ class ScheduleEditTests(StaticLiveServerTestCase):
         time.sleep(0.1) # The API that modifies the database runs async
         self.assertEqual(SchedTimeSessAssignment.objects.filter(session__meeting__number=42,session__group__acronym='mars').count(),0)
 
-@skipIf(skip_selenium, skip_message)
-class InterimRequestTests(StaticLiveServerTestCase):
-    def setUp(self):
-        set_coverage_checking(False)
-        condition_data()
-        self.driver = webdriver.PhantomJS(service_log_path=settings.TEST_GHOSTDRIVER_LOG_PATH)
-        self.driver.set_window_size(1024,768)
-        
-    def tearDown(self):
-        set_coverage_checking(True)
-
-    def absreverse(self,*args,**kwargs):
-        return '%s%s'%(self.live_server_url,urlreverse(*args,**kwargs))
-        
-    def testInterimRequest(self):
-        url = self.absreverse('ietf.meeting.views.interim_request')
-        self.driver.get(url)
-        element = self.driver.find_element_by_id('id_form-0-date')
-        self.assertTrue(element)
-
-    def testJustSitThere(self):
-        time.sleep(10000)
-        
 # The following are useful debugging tools
 
 # If you add this to a LiveServerTestCase and run just this test, you can browse

@@ -29,6 +29,7 @@ python-dateutil>=2.2
 python-magic>=0.4.6
 python-memcached>=1.48		# for django.core.cache.backends.memcached
 pytz>=2014.7
+selenium>=2.42
 six>=1.8.0
 tqdm>=3.5.0
 Unidecode>=0.4.18
