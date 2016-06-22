@@ -5,9 +5,11 @@
 {% block title %}Release information{% endblock %}
 
 {% block morecss %}
-.version { text-align: right; padding: 0.1em 0.5em; min-width: 4em; }
-.date { text-align: right; padding: 0.1em 0.5em; min-width: 8em; }
-.comment { text-align: left;  padding: 0.1em 0.5em; }
+.year-row	{ background-color: white; }
+.version-row	{ vertical-align: top; }
+.version	{ text-align: right; padding: 0.1em 0.5em; min-width: 4em; }
+.date		{ text-align: right; padding: 0.1em 0.5em; min-width: 8em; }
+.release-title	{ padding: 0.1em 0.5em; }
 {% endblock %}
 
 {% block content %}
@@ -49,19 +51,24 @@
  -- {{entry.author}} &lt;{{entry.email}}&gt;  {{entry.date}}</pre>
 
   <h2>Release list:</h2>
-  <table style="margin-left: 3em">
+  <table style="margin-left: 3em" class="table-striped">
+     <tbody
   {% for item in releases %}
       {% ifchanged %}
-      <tr>
-        <td><h3>{{ item.date|slice:"7:11" }}</h3></td>
-        <td></td>
-        <td></td>
+      </tbody>
+      <thead>
+      <tr class="year-row">
+        <th><h3>{{ item.date|slice:"7:11" }}</h3></tth>
+        <th></th>
+        <th></th>
       </tr>
+      </thead>
+      <tbody>
       {% endifchanged %}    
-      <tr>
+      <tr class="version-row">
         <td class="version"><a href="/release/{{item.version}}/">{{ item.version }}</a></td>
         <td class="date">{{ item.date|slice:":11" }}</td>
-        <td class="comment">{{ item.title }}</td>       
+        <td class="release-title">{{ item.title }}</td>       
       </tr>
   {% endfor %}
   </table>
