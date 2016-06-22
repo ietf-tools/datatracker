@@ -39,7 +39,10 @@ Planned work in rough order
 
 * Transition to PostgreSQL
 
-* Glue code to trigger generation of htmlized documents on www.ietf.org
+* Break out the htmlization code used on tools in a library, and use that
+  in the datatracker rendering, replacing the simpler code currently in use.
+
+* Glue code to trigger generation of htmlized documents on www.ietf.org ??
 
 * Performance analysis of database table and index setup
 
