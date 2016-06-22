@@ -1,3 +1,6 @@
+# Copyright The IETF Trust 2016, All Rights Reserved
+
+import sys
 import time
 from pyquery import PyQuery 
 from unittest import skipIf
