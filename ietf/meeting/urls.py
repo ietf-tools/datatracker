@@ -17,7 +17,7 @@ type_ietf_only_patterns = [
     url(r'^agenda/(?P<owner>[-A-Za-z0-9\'+._]+@[A-Za-z0-9-._]+)/(?P<name>[A-Za-z0-9-:_]+)/delete$', views.delete_schedule),
     url(r'^agenda/(?P<owner>[-A-Za-z0-9\'+._]+@[A-Za-z0-9-._]+)/(?P<name>[A-Za-z0-9-:_]+)/make_official$', views.make_schedule_official),
 # The following view is broken?
-    url(r'^agenda/(?P<owner>[-A-Za-z0-9\'+._]+@[A-Za-z0-9-._]+)/(?P<name>[A-Za-z0-9-:_]+).(?P<ext>.html)?/?$', views.agenda),
+    url(r'^agenda/(?P<owner>[-A-Za-z0-9\'+._]+@[A-Za-z0-9-._]+)/(?P<name>[A-Za-z0-9-:_]+)(\.(?P<ext>.html))?/?$', views.agenda),
     url(r'^agenda/(?P<owner>[-A-Za-z0-9\'+._]+@[A-Za-z0-9-._]+)/(?P<name>[A-Za-z0-9-:_]+)/permissions$', ajax.agenda_permission_api),
     url(r'^agenda/(?P<owner>[-A-Za-z0-9\'+._]+@[A-Za-z0-9-._]+)/(?P<name>[A-Za-z0-9-:_]+)/session/(?P<assignment_id>\d+).json$', ajax.assignment_json),
     url(r'^agenda/(?P<owner>[-A-Za-z0-9\'+._]+@[A-Za-z0-9-._]+)/(?P<name>[A-Za-z0-9-:_]+)/sessions.json$',      ajax.assignments_json),
