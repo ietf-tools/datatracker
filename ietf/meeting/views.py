@@ -393,7 +393,7 @@ def list_agendas(request, num=None ):
                                           })
 
 @ensure_csrf_cookie
-def agenda(request, num=None, name=None, base=None, ext=None):
+def agenda(request, num=None, name=None, base=None, ext=None, owner=None):
     base = base if base else 'agenda'
     ext = ext if ext else '.html'
     mimetype = {
@@ -414,7 +414,12 @@ def agenda(request, num=None, name=None, base=None, ext=None):
         else:
             raise Http404
 
-    schedule = get_schedule(meeting, name)
+    if name is None:
+        schedule = get_schedule(meeting, name)
+    else:
+        person   = get_person_by_email(owner)
+        schedule = get_schedule_by_name(meeting, person, name)
+
     if schedule == None:
         base = base.replace("-utc", "")
         return render(request, "meeting/no-"+base+ext, {'meeting':meeting }, content_type=mimetype[ext])
