@@ -1,5 +1,11 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}{% load origin %}{% origin %}
 {# assumes meeting is in context #}
+{% if schedule != meeting.agenda %}
+<h3 class="alert alert-danger text-center">
+   This is schedule {{schedule.owner.email}}/{{ schedule.name }}, not the official schedule.
+</h3>
+{% endif %}
+
 <h1>
   IETF {{ meeting.number }} Meeting Agenda
   <br>
