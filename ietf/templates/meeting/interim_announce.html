@@ -3,7 +3,7 @@
 {% load origin %}
 {% load staticfiles bootstrap3 widget_tweaks %}
 
-{% block title %}Announce Interim Meeting{% endblock %}
+{% block title %}Interim Meetings to be Announced{% endblock %}
 
 {% block pagehead %}
   <link rel="stylesheet" href="{% static 'select2/select2.css' %}">
@@ -12,7 +12,7 @@
 
 {% block content %}
   {% origin %}
-  <h1>Announce Interim Meeting</h1>
+  <h1>Interim Meetings to be Announced</h1>
 
     {% if menu_entries %}
       <ul class="nav nav-tabs" role="tablist">
@@ -54,7 +54,7 @@
         </tbody>
       </table>
     {% else %}
-      <h3>No interim meetings waiting announcement</h3>
+      <h3>No interim meetings awaiting announcement</h3>
     {% endif %}
 
 {% endblock %}

@@ -54,7 +54,7 @@
                 <a href="{% url 'ietf.meeting.views.interim_request_details' number=meeting.number %}">IETF - {{ meeting.number }}</a>
               {% endif %}
               </td>
-              <td>{% if meeting.can_approve %}<span class="label label-success">can approve</span>{% endif %}</td>
+              <td>{% if meeting.can_approve %}<span class="label label-success">can be approved</span>{% endif %}</td>
             </tr>
           {% endfor %}
         </tbody>
