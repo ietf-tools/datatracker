@@ -295,8 +295,3 @@ class TestCase(django.test.TestCase):
         self.assertTrue(resp['Content-Type'].startswith('text/html'))
         self.assertValidHTML(resp.content)
 
-def set_coverage_checking(flag=True):
-    if flag:
-        settings.TEST_CODE_COVERAGE_CHECKER.collector.resume()
-    else:
-        settings.TEST_CODE_COVERAGE_CHECKER.collector.pause()

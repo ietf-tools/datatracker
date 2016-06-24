@@ -13,7 +13,7 @@ import debug                            # pyflakes:ignore
 from ietf.group import colors
 from ietf.meeting.test_data import make_meeting_test_data
 from ietf.meeting.models import SchedTimeSessAssignment
-from ietf.utils.test_utils import set_coverage_checking
+from ietf.utils.test_runner import set_coverage_checking
 from ietf.utils.pipe import pipe
 from ietf import settings
 

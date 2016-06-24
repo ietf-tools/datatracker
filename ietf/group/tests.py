@@ -13,7 +13,7 @@ import debug                             # pyflakes:ignore
 from ietf.group.models import Role, Group
 from ietf.group.utils import get_group_role_emails, get_child_group_role_emails, get_group_ad_emails
 from ietf.group.factories import GroupFactory
-from ietf.utils.test_utils import set_coverage_checking
+from ietf.utils.test_runner import set_coverage_checking
 from ietf.utils.test_data import make_test_data
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase, unicontent
 

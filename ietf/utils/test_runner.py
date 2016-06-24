@@ -70,6 +70,10 @@ test_database_name = None
 old_destroy = None
 old_create = None
 
+template_coverage_collection = None
+url_coverage_collection = None
+
+
 def safe_create_1(self, verbosity, *args, **kwargs):
     global test_database_name, old_create
     print "     Creating test database..."
@@ -103,13 +107,16 @@ def safe_destroy_0_1(*args, **kwargs):
     return old_destroy(*args, **kwargs)
 
 def template_coverage_loader(template_name, dirs):
-    loaded_templates.add(str(template_name))
+    if template_coverage_collection == True:
+        loaded_templates.add(str(template_name))
     raise TemplateDoesNotExist
 template_coverage_loader.is_usable = True
 
 class RecordUrlsMiddleware(object):
     def process_request(self, request):
-        visited_urls.add(request.path)
+        global url_coverage_collection
+        if url_coverage_collection == True:
+            visited_urls.add(request.path)
 
 def get_url_patterns(module, apps=None):
     def include(name):
@@ -174,6 +181,18 @@ def save_test_results(failures, test_labels):
             tfile.write("%s OK\n" % (timestr, ))
     tfile.close()
 
+
+def set_coverage_checking(flag=True):
+    global template_coverage_collection
+    global url_coverage_collection
+    if flag:
+        settings.TEST_CODE_COVERAGE_CHECKER.collector.resume()
+        template_coverage_collection = True
+        url_coverage_collection = True
+    else:
+        settings.TEST_CODE_COVERAGE_CHECKER.collector.pause()
+        template_coverage_collection = False
+        url_coverage_collection = False
 
 class CoverageReporter(Reporter):
     def report(self):
@@ -325,6 +344,9 @@ class IetfTestRunner(DiscoverRunner):
         super(IetfTestRunner, self).__init__(**kwargs)
 
     def setup_test_environment(self, **kwargs):
+        global template_coverage_collection
+        global url_coverage_collection
+
         ietf.utils.mail.test_mode = True
         ietf.utils.mail.SMTP_ADDR['ip4'] = '127.0.0.1'
         ietf.utils.mail.SMTP_ADDR['port'] = 2025
@@ -359,7 +381,10 @@ class IetfTestRunner(DiscoverRunner):
             }
 
             settings.TEMPLATE_LOADERS = ('ietf.utils.test_runner.template_coverage_loader',) + settings.TEMPLATE_LOADERS
+            template_coverage_collection = True
+
             settings.MIDDLEWARE_CLASSES = ('ietf.utils.test_runner.RecordUrlsMiddleware',) + settings.MIDDLEWARE_CLASSES
+            url_coverage_collection = True
 
             self.code_coverage_checker = settings.TEST_CODE_COVERAGE_CHECKER
             if not self.code_coverage_checker._started:
