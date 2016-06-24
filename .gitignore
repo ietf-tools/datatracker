@@ -33,6 +33,7 @@
 /mergequeue
 /minimum-requirements.txt
 /pip-selfcheck.json
+/selenium
 /settings_local.py
 /share
 /static
