@@ -1,4 +1,5 @@
 import os
+import time
 
 from django.conf import settings
 from django.core import checks
@@ -52,14 +53,14 @@ def check_doc_email_aliases_exists(app_configs, **kwargs):
     try:
         ok = check_doc_email_aliases()
         if not ok:
-            errors.append(checks.Critical(
+            errors.append(checks.Error(
                 "Found no aliases in the document email aliases file\n'%s'."%settings.DRAFT_ALIASES_PATH,
                 hint="Please run ietf/bin/generate-draft-aliases to generate them.",
                 obj=None,
                 id="datatracker.E0004",
             ))
     except IOError as e:
-        errors.append(checks.Critical(
+        errors.append(checks.Error(
             "Could not read document email aliases:\n   %s" % e,
             hint="Please run ietf/bin/generate-draft-aliases to generate them.",
             obj=None,
@@ -176,4 +177,35 @@ def check_proceedings_directories(app_configs, **kwargs):
             ))
     return errors
 
+@checks.register('cache')
+def check_cache(app_configs, **kwargs):
+    errors = []
+    if settings.SERVER_MODE == 'production':
+        from django.core.cache import cache
+        def cache_error(msg, errnum):
+            return checks.Warning(
+                ( "A cache test failed with the message:\n    '%s'.\n"
+                "This indicates that the cache is unavailable or not working as expected.\n"
+                "It will impact performance, but isn't fatal.  The default cache is:\n"
+                "    CACHES['default']['BACKEND'] = %s\n") % (
+                    msg,
+                    settings.CACHES["default"]["BACKEND"],
+                ),
+                hint = "Please check that the configured cache backend is available.\n",
+                id = "datatracker.%s" % errnum,
+            )
+        key = "ietf:checks:check_cache"
+        val = os.urandom(32)
+        wait = 1
+        cache.set(key, val, wait)
+        if not cache.get(key) == val:
+            errors.append(cache_error("Could not get value from cache", "E0014"))
+        time.sleep(wait+1)
+        # should have timed out
+        if cache.get(key) == val:
+            errors.append(cache_error("Cache value didn't time out", "E0015"))
+        cache.set(key, val, settings.SESSION_COOKIE_AGE)
+        if not cache.get(key) == val:
+            errors.append(cache_error("Cache didn't accept session cookie age", "E0016"))
+    return errors
     
