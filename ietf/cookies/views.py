@@ -34,7 +34,7 @@ def preferences(request, **kwargs):
     request.COOKIES.update(preferences)
     response = render("cookies/settings.html", preferences, context_instance=RequestContext(request))
     for key in new_cookies:
-        response.set_cookie(key, new_cookies[key], settings.SESSION_COOKIE_AGE)
+        response.set_cookie(key, new_cookies[key], settings.PREFERENCES_COOKIE_AGE)
     for key in del_cookies:
         response.delete_cookie(key)
     return response

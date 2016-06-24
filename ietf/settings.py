@@ -204,11 +204,19 @@ LOGGING['handlers']['mail_admins']['filters'] += [ 'skip_unreadable_posts' ]
 # End logging
 # ------------------------------------------------------------------------
 
-#SESSION_COOKIE_AGE = 60 * 60 * 24 * 7 * 2 # Age of cookie, in seconds: 2 weeks.
-SESSION_COOKIE_AGE = 60 * 60 * 24 * 365 * 50 # Age of cookie, in seconds: 50 years
 
+# SESSION_COOKIE_AGE = 60 * 60 * 24 * 7 * 2 # Age of cookie, in seconds: 2 weeks (django default)
+SESSION_COOKIE_AGE = 60 * 60 * 24 * 7 * 4 # Age of cookie, in seconds: 4 weeks
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+# We want to use the JSON serialisation, as it's safer -- but there is /secr/
+# code which stashes objects in the session that can't be JSON serialized.
+# Switch when that code is rewritten.
+#SESSION_SERIALIZER = "django.contrib.sessions.serializers.JSONSerializer"
 SESSION_SERIALIZER = 'django.contrib.sessions.serializers.PickleSerializer'
+SESSION_ENGINE = "django.contrib.sessions.backends.cache"
+SESSION_SAVE_EVERY_REQUEST = True
+
+PREFERENCES_COOKIE_AGE = 60 * 60 * 24 * 365 * 50 # Age of cookie, in seconds: 50 years
 
 TEMPLATE_LOADERS = (
     ('django.template.loaders.cached.Loader', (
@@ -383,6 +391,7 @@ TEST_CODE_COVERAGE_EXCLUDE = [
     "*/management/commands/*",
     "ietf/settings*",
     "ietf/utils/test_runner.py",
+    "ietf/checks.py",
 ]
 
 TEST_COVERAGE_MASTER_FILE = os.path.join(BASE_DIR, "../release-coverage.json.gz")
@@ -690,6 +699,8 @@ if SERVER_MODE != 'production':
              'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
          }
     }
+    SESSION_ENGINE = "django.contrib.sessions.backends.db"
+
     if 'SECRET_KEY' not in locals():
         SECRET_KEY = 'PDwXboUq!=hPjnrtG2=ge#N$Dwy+wn@uivrugwpic8mxyPfHka'
     ALLOWED_HOSTS = ['*',]
