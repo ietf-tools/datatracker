@@ -53,7 +53,7 @@
     </div> <!-- form-group form-inline -->
 
 
-    <div class="form-group meeting-type-help mth-multi">
+    <div class="form-group meeting-type-help mth-multi" style="display: none;">
         <div class="col-md-offset-2">
             <div class="col-md-10">
                 <p class="help-block">Use Multi-Day to request one meeting with sessions over multiple days.</p>
@@ -61,7 +61,7 @@
         </div>
     </div>
     
-    <div class="form-group meeting-type-help mth-series">
+    <div class="form-group meeting-type-help mth-series" style="display: none;">
         <div class="col-md-offset-2">
             <div class="col-md-10">
                 <p class="help-block">Use Series to request a number of separate meetings.  In Person series is not supported.</p>
@@ -128,17 +128,17 @@
     {% endfor %}
 
     <div class="form-group">
-    <div class="col-md-10">
-    <button id="add_session" type="button" class="btn btn-default"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span>Add Session</button>
+    <div class="col-md-12">
+    <button id="add_session" type="button" class="btn btn-default" style="display: none;"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span>Add Session</button>
     </div>
     </div>
 
-    <div class="form-group"
     {% buttons %}
+      <div class="col-md-12">
       <button type="submit" class="btn btn-primary">Submit</button>
       <a class="btn btn-default pull-right" href="{% url 'ietf.meeting.views.upcoming' %}">Back</a>
+      </div>
     {% endbuttons %}
-    </div>
 
   </form>
 
