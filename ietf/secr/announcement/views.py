@@ -18,26 +18,27 @@ def check_access(user):
     This function takes a Django User object and returns true if the user has access to
     the Announcement app.
     '''
-    person = user.person
-    groups_with_access = ("iab", "isoc", "isocbot", "rsoc", "ietf", "iaoc", "rse", "mentor","ietf-trust")
-    if Role.objects.filter(person=person,
-                           group__acronym__in=groups_with_access,
-                           name="chair") or has_role(user, ["Secretariat","IAD"]):
-        return True
-    if Role.objects.filter(name="chair",
-                           group__acronym__startswith="nomcom",
-                           group__state="active",
-                           group__type="nomcom",
-                           person=person):
-        return True
-    if Role.objects.filter(person=person,
-                           group__acronym='iab',
-                           name='execdir'):
-        return True
-    if Role.objects.filter(person=person,
-                           group__acronym='isoc',
-                           name='ceo'):
-        return True
+    if hasattr(user, "person"):
+        person = user.person
+        groups_with_access = ("iab", "isoc", "isocbot", "rsoc", "ietf", "iaoc", "rse", "mentor","ietf-trust")
+        if Role.objects.filter(person=person,
+                               group__acronym__in=groups_with_access,
+                               name="chair") or has_role(user, ["Secretariat","IAD"]):
+            return True
+        if Role.objects.filter(name="chair",
+                               group__acronym__startswith="nomcom",
+                               group__state="active",
+                               group__type="nomcom",
+                               person=person):
+            return True
+        if Role.objects.filter(person=person,
+                               group__acronym='iab',
+                               name='execdir'):
+            return True
+        if Role.objects.filter(person=person,
+                               group__acronym='isoc',
+                               name='ceo'):
+            return True
 
     return False
 
