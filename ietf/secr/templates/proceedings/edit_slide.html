@@ -9,8 +9,6 @@
 {% block breadcrumbs %}{{ block.super }}
   {% if meeting.type_id == "interim" %}
     &raquo; <a href="{% url "proceedings" %}">Proceedings</a>
-    &raquo; <a href="{% url "proceedings_select_interim" %}">Interim Select Group</a>
-    &raquo; <a href="{% url "proceedings_interim" acronym=group.acronym %}">{{ group.acronym }}</a>
     &raquo; <a href="{% url "proceedings_upload_unified" meeting_num=meeting.number acronym=group.acronym %}">{{ meeting }}</a>
     &raquo; {{ slide.title }}
   {% else %}
