@@ -32,14 +32,14 @@ jQuery.ajaxSetup({
 <script type='text/javascript' src="{% static 'ietf/js/agenda/jquery-ui-1.9.0.custom/jquery.ui.sortable.js' %}"></script>
 <script type='text/javascript' src="{% static 'ietf/js/agenda/jquery-ui-1.9.0.custom/jquery.ui.accordion.js' %}"></script>
 <script type='text/javascript' src="{% static 'ietf/js/agenda/jquery-ui-1.9.0.custom/jquery.ui.draggable.js' %}"></script>
-<script type='text/javascript' src="{% static 'ietf/js/agenda/jquery-ui-1.9.0.custom/jquery.ui.datetime.js' %}"></script>
+<script type='text/javascript' src="{% static 'ietf/js/agenda/jquery-ui-1.9.0.custom/jquery.ui.datepicker.js' %}"></script>
 
 <!-- source (MIT License) http://momentjs.com/ https://github.com/moment/moment/ -->
 <script type='text/javascript' src="{% static 'ietf/js/agenda/moment.min.js' %}"></script>
 
 <!-- source (MIT License) : https://github.com/trentrichardson/jQuery-Timepicker-Addon -->
 <script type='text/javascript' src="{% static 'ietf/js/agenda/jquery-ui-timepicker/jquery-ui-timepicker-addon.js' %}"></script>
-<script type='text/javascript' src="{% static 'ietf/js/agenda/jquery-ui-timepicker/jquery-ui-sliderAccess.js.js' %}"></script>
+<script type='text/javascript' src="{% static 'ietf/js/agenda/jquery-ui-timepicker/jquery-ui-sliderAccess.js' %}"></script>
 <link rel='stylesheet' type='text/css' href="{% static 'ietf/css/agenda/jquery-ui-timepicker-addon.css' %}" />
 
 <script type='text/javascript' src="{% static 'ietf/js/agenda/spin/dist/spin.min.js' %}"></script>
@@ -138,7 +138,10 @@ promiselist.push(ts_promise);
       <div class="resource_list">
       {% for resource in r.resources.all %}
       <span class="resource_image">
-      <img src="{% static 'ietf/images/{{ resource.icon }}' %}" height=24 alt="{{resource.desc}}" title="{{resource.desc}}"/>
+	 {% if resource.id == "project" %} <img src="{% static 'ietf/images/projector.png' %}" height=24 alt="{{resource.desc}}" title="{{resource.desc}}"/>{% endif %}
+	 {% if resource.id == "proj2" %} <img src="{% static 'ietf/images/projector2.png' %}" height=24 alt="{{resource.desc}}" title="{{resource.desc}}"/>{% endif %}
+	 {% if resource.id == "meetecho" %} <img src="{% static 'ietf/images/meetecho-mini.png' %}" height=24 alt="{{resource.desc}}" title="{{resource.desc}}"/>{% endif %}
+	 {% if resource.id == "boardroom" %} <img src="{% static 'ietf/images/projector.png' %}" height=24 alt="{{resource.desc}}" title="{{resource.desc}}"/>{% endif %}
       </span>
       {% endfor %}
       </div>
