@@ -50,7 +50,7 @@ def showballoticon(doc):
         if doc.get_state_slug("draft-iesg") not in IESG_BALLOT_ACTIVE_STATES:
             return False
     elif doc.type_id == "charter":
-        if doc.get_state_slug() not in ("intrev", "iesgrev"):
+        if doc.get_state_slug() not in ("intrev", "extrev", "iesgrev"):
             return False
     elif doc.type_id == "conflrev":
        if doc.get_state_slug() not in ("iesgeval","defer"):
