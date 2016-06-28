@@ -1,3 +1,89 @@
+ietfdb (6.25.0) ietf; urgency=high
+
+  **Enhanced testing**
+
+  This release brings in added tests for template parsing and checking the
+  correspondence between the dynamic and static resources that templates
+  reference, and the url patterns and static resources that are actually
+  available.  It makes the test coverage figures more consistent across test
+  runs, checks for proper cache functioning, and adds functionality to the
+  coverage_changes management command.  It also fixes a number of bugs for
+  issues found as a result of the improved testing.  Finally, it changes to
+  memory-based session storage, instead of database-based.
+
+  Excerpt from the commit log:
+
+  * Added 3 tests which checks 1) that all templates can be parsed and 
+    loaded, 2) that url template-tags refer to an urlconf callback that exists, 
+    and 3) that static template-tags resolve to urls that work.  This was 
+    prompted by some 500 errors earlier which weren't caught by existing texts.
+
+  * Cached the list of template paths in test_runner.py so we can call it 
+    multiple times cheaply.
+
+  * Merged in [11479] from rcross@amsl.com:
+    Remove references to non-existent views from templates.
+
+  * Fixed some missing and mistyped web assets found with 
+    test_template_statics_exists().
+
+  * Fixed a place where a logged-in user without associcated Person would 
+    cause a 500 instead of 403.
+
+  * Added settings to use the cache back-end for sessions.  Separated out 
+    the preference cookie age from the session age.  Made the session age 
+    refresh on each access, and set the session timeout to 4 weeks of no access.
+
+  * Refactored the code to skip coverage testing a bit, and added skipping 
+    of template and url coverage.
+
+  * Added a production-mode check to verify that the cache is functioning 
+    as expected.
+
+  * Added missing right-angle for a div.  Made some form elements initially 
+    display: none in order to avoid elements jumping around on initial form 
+    rendering.  Fixed alignment of Submit and Back buttons, by proper nesting 
+    and col-md- class.
+
+  * Added a banner on top of the agenda view of unofficial agendas (which 
+    now work) indicating that it's not the official agenda.
+
+  * Added an optional parameter 'owner' to meeting.views.agenda().  Fixed 
+    issues #1959 and #1615
+
+  * Fixed a buggy urlpattern regexp which would eat up the last character 
+    in an url if not given an extension.
+
+  * Added the ability to list absolute coverage data, not only show 
+    relative differences, to the coverage_changes management command.
+
+  * Added to PLAN: lift in draft htmlization lib from tools.ietf.org
+
+  * Added a check for the phantomjs binary to the skip-selenium tests in 
+    ietf/meeting/tests_js.py, in order to be able to add selenium to 
+    requirements.txt.  This will make the selenium tests run if phantomjs is 
+    available on the system, without manually having to install the selenium 
+    module.  This should make the buildbot run the selenium tests, too.
+
+  * Tweaked the release page a bit, fixing vertical alignment of revision 
+    comments when breaking across lines, comment appearance on iPads, and 
+    introducing striped tables.
+
+  * Changed the code test coverage checking to never register coverage 
+    counts for tests that are sometimes skipped.  Removed now unwanted skip 
+    settings from the releasetest settings.
+
+  * Removed dead templates.
+
+  * Removed dead code.
+
+  * Language tweaks
+
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  28 Jun 2016 02:22:54 -0700
+
+
+
 ietfdb (6.24.0) ietf; urgency=high
 
   **Interim meeting management**
