@@ -7,16 +7,14 @@ Updated: $Date$
 Planned work in rough order
 ===========================
 
-* Interim meeting management project merge, which will also fix the interim
-  materials 404 errors.
+* Schema Changes: floorplan.  Add Berlin floorplans manually.
 
 * Glue code for WG issue trackers and wiki:
   - create new trackers on group creation
   - update access lists on group chair/secretary changes
   - update components on new group documents
 
-* Schema Changes: floorplan, document tags, external links for groups.  Add
-  Berlin floorplans manually.
+* Schema Changes: tags, external links for groups.
 
 * Add "Waiting for implementation" and "Held by WG" states, with comment field
 
