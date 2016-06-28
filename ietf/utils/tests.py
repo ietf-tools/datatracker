@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os.path
+import types
 #import json
 #from pathlib import Path
 
@@ -9,12 +10,18 @@ from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
 
 from django.conf import settings
+from django.template import Context
+from django.template.defaulttags import URLNode
+from django.templatetags.static import StaticNode
+from django.template.loaders.filesystem import Loader
 from django.test import TestCase
 
 import debug                            # pyflakes:ignore
 
+import ietf.urls
 from ietf.utils.management.commands import pyflakes
 from ietf.utils.mail import send_mail_text, send_mail_mime, outbox 
+from ietf.utils.test_runner import get_template_paths
 
 class PyFlakesTestCase(TestCase):
 
@@ -65,6 +72,118 @@ class TestSMTPServer(TestCase):
         self.assertEqual(len(outbox),len_before+2)
 
 
+def get_callbacks(urllist):
+    callbacks = set()
+    for entry in urllist:
+        if hasattr(entry, 'url_patterns'):
+            callbacks.update(get_callbacks(entry.url_patterns))
+        else:
+            if hasattr(entry, '_callback_str'):
+                callbacks.add(unicode(entry._callback_str))
+            if (hasattr(entry, 'callback') and entry.callback
+                and type(entry.callback) in [types.FunctionType, types.MethodType ]):
+                callbacks.add("%s.%s" % (entry.callback.__module__, entry.callback.__name__))
+            if hasattr(entry, 'name') and entry.name:
+                callbacks.add(unicode(entry.name))
+            # There are some entries we don't handle here, mostly clases
+            # (such as Feed subclasses)
+
+    return list(callbacks)
+
+class TemplateChecksTestCase(TestCase):
+
+    paths = []
+    templates = {}
+
+    def setUp(self):
+        self.loader = Loader()
+        self.paths = list(get_template_paths())
+        self.paths.sort()
+        for path in self.paths:
+            try:
+                self.templates[path], _ = self.loader.load_template(path)
+            except Exception:
+                pass
+
+    def tearDown(self):
+        pass
+
+    def test_parse_templates(self):
+        errors = []
+        for path in self.paths:
+            if not path in self.templates:
+                try:
+                    self.loader.load_template(path)
+                except Exception as e:
+                    errors.append((path, e))
+        if errors:
+            messages = [ "Parsing template '%s' failed with error: %s" % (path, ex) for (path, ex) in errors ]
+            raise self.failureException("Template parsing failed for %s templates:\n  %s" % (len(errors), "\n  ".join(messages)))
+
+    def apply_template_test(self, func, node_type, msg, *args, **kwargs):
+        errors = []
+        for path, template in self.templates.items():
+            origin = str(template.origin).replace(settings.BASE_DIR, '')
+            for node in template:
+                for child in node.get_nodes_by_type(node_type):
+                    errors += func(child, origin, *args, **kwargs)
+        if errors:
+            errors = list(set(errors))
+            errors.sort()
+            messages = [ msg % (k, v) for (k, v) in errors ]
+            raise self.failureException("Found %s errors when trying to %s:\n  %s" %(len(errors), func.__name__.replace('_',' '), "\n  ".join(messages)))
+
+    def test_template_url_lookup(self):
+        """
+        This test doesn't do full url resolving, using the appropriate contexts, as it
+        simply doesn't have any context to use.  It only looks if there exists a URL
+        pattern with the appropriate callback, callback string, or name.  If no matching
+        urlconf can be found, a full resolution would also fail.
+        """
+        #
+        def check_that_url_tag_callbacks_exists(node, origin, callbacks):
+            """
+            Check that an URLNode's callback is in callbacks.
+            """
+            cb = node.view_name.token.strip("\"'")
+            if cb in callbacks:
+                return []
+            else:
+                return [ (origin, cb), ]
+        #
+
+        callbacks = get_callbacks(ietf.urls.urlpatterns)
+        self.apply_template_test(check_that_url_tag_callbacks_exists, URLNode, 'In %s: Could not find urlpattern for "%s"', callbacks)
+
+    def test_template_statics_exists(self):
+        """
+        This test checks that every static template tag found in the template files found
+        by utils.test_runner.get_template_paths() actually resolves to a file that can be
+        served.  If collectstatic is correctly set up and used, the results should apply
+        to both development and production mode.
+        """
+        #
+        def check_that_static_tags_resolve(node, origin, checked):
+            """
+            Check that a StaticNode resolves to an url that can be served.
+            """
+            url = node.render(Context((), {}))
+            if url in checked:
+                return []
+            else:
+                r = self.client.get(url)
+                if r.status_code == 200:
+                    checked[url] = origin
+                    return []
+                else:
+                    return [(origin, url), ]
+        #
+        checked = {}
+        # the test client will only return static files when settings.DEBUG is True:
+        saved_debug = settings.DEBUG
+        settings.DEBUG = True
+        self.apply_template_test(check_that_static_tags_resolve, StaticNode, 'In %s: Could not find static file for "%s"', checked)
+        settings.DEBUG = saved_debug
 
 
 ## One might think that the code below would work, but it doesn't ...
