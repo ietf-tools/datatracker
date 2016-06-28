@@ -147,23 +147,29 @@ def get_url_patterns(module, apps=None):
             res.append((item.regex.pattern, item))
     return res
 
-def get_templates(apps=None):
-    templates = set()
-    templatepaths = settings.TEMPLATE_DIRS
-    for templatepath in templatepaths:
-        for dirpath, dirs, files in os.walk(templatepath):
-            if ".svn" in dirs:
-                dirs.remove(".svn")
-            relative_path = dirpath[len(templatepath)+1:]
-            for file in files:
-                if file.endswith("~") or file.startswith("#"):
-                    continue
-                if relative_path != "":
-                    file = os.path.join(relative_path, file)
-                templates.add(file)
-    if apps:
-        templates = [ t for t in templates if t.split(os.path.sep)[0] in apps ]
-    return templates
+_all_templates = None
+def get_template_paths(apps=None):
+    global _all_templates
+    if not _all_templates:
+        # TODO: Add app templates to the full list, if we are using
+        # django.template.loaders.app_directories.Loader
+        templates = set()
+        templatepaths = settings.TEMPLATE_DIRS
+        for templatepath in templatepaths:
+            for dirpath, dirs, files in os.walk(templatepath):
+                if ".svn" in dirs:
+                    dirs.remove(".svn")
+                relative_path = dirpath[len(templatepath)+1:]
+                for file in files:
+                    if file.endswith("~") or file.startswith("#"):
+                        continue
+                    if relative_path != "":
+                        file = os.path.join(relative_path, file)
+                    templates.add(file)
+        if apps:
+            templates = [ t for t in templates if t.split(os.path.sep)[0] in apps ]
+        _all_templates = templates
+    return _all_templates
 
 def save_test_results(failures, test_labels):
     # Record the test result in a file, in order to be able to check the
@@ -252,7 +258,7 @@ class CoverageTest(TestCase):
         global loaded_templates
         if self.runner.check_coverage:
             apps = [ app.split('.')[-1] for app in self.runner.test_apps ]
-            all = get_templates(apps)
+            all = get_template_paths(apps)
             # The calculations here are slightly complicated by the situation
             # that loaded_templates also contain nomcom page templates loaded
             # from the database.  However, those don't appear in all
