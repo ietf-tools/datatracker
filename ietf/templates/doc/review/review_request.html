@@ -19,10 +19,6 @@
           {% else %}
             <a href="{% url "doc_view" name=review_req.doc.name %}">{{ review_req.doc.name }}</a>
           {% endif %}
-
-          {% if can_withdraw_request %}
-            <a class="btn btn-danger btn-xs" href="{% url "ietf.doc.views_review.withdraw_request" name=doc.name request_id=review_req.pk %}"><span class="fa fa-ban"></span> Withdraw request</a>
-          {% endif %}
         </td>
       </tr>
 
@@ -74,16 +70,28 @@
             None assigned yet
           {% endif %}
 
-          {% if can_accept_reviewer_assignment %}
-            <form style="display:inline" method="post" action="{% url "ietf.doc.views_review.review_request" name=doc.name request_id=review_req.pk %}">{% csrf_token %}<button class="btn btn-default btn-xs" type="submit" name="action" value="accept"><span class="fa fa-check"></span> Accept</button></form>
-          {% endif %}
-
-          {% if can_reject_reviewer_assignment %}
-            <a class="btn btn-warning btn-xs" href="{% url "ietf.doc.views_review.reject_reviewer_assignment" name=doc.name request_id=review_req.pk %}"><span class="fa fa-ban"></span> Reject</a>
-          {% endif %}
-
           {% if can_assign_reviewer %}
             <a class="btn btn-default btn-xs" href="{% url "ietf.doc.views_review.assign_reviewer" name=doc.name request_id=review_req.pk %}"><span class="fa fa-user"></span> {% if review_req.reviewer %}Reassign{% else %}Assign{% endif %} reviewer</a>
+          {% endif %}
+
+          {% if review_req.reviewer %}
+            {% if can_reject_reviewer_assignment or can_accept_reviewer_assignment %}
+              <div class="reviewer-assignment-not-accepted">
+                {% if review_req.state_id == "requested"%}
+                  <em>Assignment not accepted yet:</em>
+                {% else %}
+                  <em>Assignment accepted:</em>
+                {% endif %}
+
+                {% if can_reject_reviewer_assignment %}
+                  <a class="btn btn-danger btn-xs" href="{% url "ietf.doc.views_review.reject_reviewer_assignment" name=doc.name request_id=review_req.pk %}"><span class="fa fa-ban"></span> Reject</a>
+                {% endif %}
+                
+                {% if can_accept_reviewer_assignment %}
+                  <form style="display:inline" method="post" action="{% url "ietf.doc.views_review.review_request" name=doc.name request_id=review_req.pk %}">{% csrf_token %}<button class="btn btn-success btn-xs" type="submit" name="action" value="accept"><span class="fa fa-check"></span> Accept</button></form>
+                {% endif %}
+              </div>
+            {% endif %}
           {% endif %}
         </td>
       </tr>
@@ -97,7 +105,7 @@
           {% else %}
             Not completed yet
           {% endif %}
-          
+
           {% if can_complete_review %}
             <a class="btn btn-primary btn-xs" href="{% url "ietf.doc.views_review.complete_review" name=doc.name request_id=review_req.pk %}"><span class="fa fa-pencil-square-o"></span> Complete review</a>
           {% endif %}
@@ -132,4 +140,11 @@
     </tbody>
   </table>
 
+  <div>
+    {% if can_withdraw_request %}
+      <a class="btn btn-danger btn-xs" href="{% url "ietf.doc.views_review.withdraw_request" name=doc.name request_id=review_req.pk %}"><span class="fa fa-ban"></span> Withdraw request</a>
+    {% endif %}
+  </div>
+
+  
 {% endblock %}
