@@ -16,8 +16,12 @@ type_ietf_only_patterns = [
     url(r'^agenda/(?P<owner>[-A-Za-z0-9\'+._]+@[A-Za-z0-9-._]+)/(?P<name>[A-Za-z0-9-:_]+)/details$', views.edit_agenda_properties),
     url(r'^agenda/(?P<owner>[-A-Za-z0-9\'+._]+@[A-Za-z0-9-._]+)/(?P<name>[A-Za-z0-9-:_]+)/delete$', views.delete_schedule),
     url(r'^agenda/(?P<owner>[-A-Za-z0-9\'+._]+@[A-Za-z0-9-._]+)/(?P<name>[A-Za-z0-9-:_]+)/make_official$', views.make_schedule_official),
-# The following view is broken?
     url(r'^agenda/(?P<owner>[-A-Za-z0-9\'+._]+@[A-Za-z0-9-._]+)/(?P<name>[A-Za-z0-9-:_]+)(\.(?P<ext>.html))?/?$', views.agenda),
+    url(r'^agenda/(?P<owner>[-A-Za-z0-9\'+._]+@[A-Za-z0-9-._]+)/(?P<name>[A-Za-z0-9-:_]+)/week-view(?:.html)?/?$', views.week_view),
+    url(r'^agenda/(?P<owner>[-A-Za-z0-9\'+._]+@[A-Za-z0-9-._]+)/(?P<name>[A-Za-z0-9-:_]+)/room-view(?:.html)?/?$', views.room_view),
+    url(r'^agenda/(?P<owner>[-A-Za-z0-9\'+._]+@[A-Za-z0-9-._]+)/(?P<name>[A-Za-z0-9-:_]+)/by-room/?$', views.agenda_by_room),
+    url(r'^agenda/(?P<owner>[-A-Za-z0-9\'+._]+@[A-Za-z0-9-._]+)/(?P<name>[A-Za-z0-9-:_]+)/by-type/?$', views.agenda_by_type),
+    url(r'^agenda/(?P<owner>[-A-Za-z0-9\'+._]+@[A-Za-z0-9-._]+)/(?P<name>[A-Za-z0-9-:_]+)/by-type/(?P<type>[a-z]+)$', views.agenda_by_type),
     url(r'^agenda/(?P<owner>[-A-Za-z0-9\'+._]+@[A-Za-z0-9-._]+)/(?P<name>[A-Za-z0-9-:_]+)/permissions$', ajax.agenda_permission_api),
     url(r'^agenda/(?P<owner>[-A-Za-z0-9\'+._]+@[A-Za-z0-9-._]+)/(?P<name>[A-Za-z0-9-:_]+)/session/(?P<assignment_id>\d+).json$', ajax.assignment_json),
     url(r'^agenda/(?P<owner>[-A-Za-z0-9\'+._]+@[A-Za-z0-9-._]+)/(?P<name>[A-Za-z0-9-:_]+)/sessions.json$',      ajax.assignments_json),

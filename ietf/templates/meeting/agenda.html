@@ -46,9 +46,15 @@
         <a href="https://tools.ietf.org/agenda/{{schedule.meeting.number}}/">Tools-style agenda</a>
         {% if user|has_role:"Secretariat,Area Director,IAB" %}
           |
-          <a href="{% url 'ietf.meeting.views.agenda_by_room' num=schedule.meeting.number%}">List by Room</a> |
-          <a href="{% url 'ietf.meeting.views.agenda_by_type' num=schedule.meeting.number%}">List by Type</a> |
-          <a href="{% url 'ietf.meeting.views.room_view' num=schedule.meeting.number%}">Room Grid</a>
+          {% if schedule != meeting.agenda %}
+            <a href="{% url 'ietf.meeting.views.agenda_by_room' num=schedule.meeting.number name=schedule.name owner=schedule.owner.email %}">List by Room</a> |
+            <a href="{% url 'ietf.meeting.views.agenda_by_type' num=schedule.meeting.number name=schedule.name owner=schedule.owner.email %}">List by Type</a> |
+            <a href="{% url 'ietf.meeting.views.room_view' num=schedule.meeting.number name=schedule.name owner=schedule.owner.email %}">Room Grid</a>
+          {% else %}
+            <a href="{% url 'ietf.meeting.views.agenda_by_room' num=schedule.meeting.number%}">List by Room</a> |
+            <a href="{% url 'ietf.meeting.views.agenda_by_type' num=schedule.meeting.number%}">List by Type</a> |
+            <a href="{% url 'ietf.meeting.views.room_view' num=schedule.meeting.number%}">Room Grid</a>
+          {% endif %}
         {% endif %}
       </p>
 

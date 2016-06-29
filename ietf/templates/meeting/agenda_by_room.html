@@ -17,6 +17,7 @@ li.sessionlistentry { font-size:62%; }
 {% block title %}Agenda for {{meeting}} by Room{% endblock %}
 
 {% block content %}
+{% include "meeting/meeting_heading.html" with meeting=schedule.meeting updated=meeting.updated %}
 <h1>Agenda for {{meeting}} by Room</h1>
 <ul class="daylist">
 {% for day,sessions in ss_by_day.items %}
