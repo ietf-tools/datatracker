@@ -380,15 +380,18 @@ class Document(DocumentInfo):
         name = self.name
         if self.type_id == "draft" and self.get_state_slug() == "rfc":
             name = self.canonical_name()
-        elif self.type_id in ('slides','agenda','minutes','bluesheets'):
+        elif self.type_id in ('slides','agenda','minutes','bluesheets','recording'):
             session = self.session_set.first()
             if session:
                 meeting = session.meeting
-                if self.type_id in ('agenda','minutes'):
-                    filename = os.path.splitext(self.external_url)[0]
+                if self.type_id == 'recording':
+                    url = self.external_url
                 else:
-                    filename = self.external_url
-                url = '%sproceedings/%s/%s/%s' % (settings.IETF_HOST_URL,meeting.number,self.type_id,filename)
+                    if self.type_id in ('agenda','minutes'):
+                        filename = os.path.splitext(self.external_url)[0]
+                    else:
+                        filename = self.external_url
+                    url = '%sproceedings/%s/%s/%s' % (settings.IETF_HOST_URL,meeting.number,self.type_id,filename)
                 return url
         return urlreverse('doc_view', kwargs={ 'name': name }, urlconf="ietf.urls")
 
