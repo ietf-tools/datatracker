@@ -49,10 +49,9 @@ class InterimMeeting(Meeting):
         If the proceedings file doesn't exist return empty string.  For use in templates.
         '''
         if os.path.exists(self.get_proceedings_path()):
-            url = "%sproceedings/interim/%s/%s/proceedings.html" % (
+            url = "%sproceedings/%s/proceedings.html" % (
                 settings.IETF_HOST_URL,
-                self.date.strftime('%Y/%m/%d'),
-                self.group().acronym)
+                self.number)
             return url
         else:
             return ''

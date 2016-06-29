@@ -35,16 +35,11 @@ def get_proceedings_path(meeting,group):
     return path
 
 def get_proceedings_url(meeting,group=None):
-    if meeting.type_id == 'ietf':
-        url = "%sproceedings/%s/" % (settings.IETF_HOST_URL,meeting.number)
-        if group:
-            url = url + "%s.html" % group.acronym
-
+    url = '%sproceedings/%s/' % (settings.IETF_HOST_URL,meeting.number)
+    if meeting.type_id == 'ietf' and group:
+        url = url + '%s.html' % group.acronym
     elif meeting.type_id == 'interim':
-        url = "%sproceedings/interim/%s/%s/proceedings.html" % (
-            settings.IETF_HOST_URL,
-            meeting.date.strftime('%Y/%m/%d'),
-            group.acronym)
+        url = url + 'proceedings.html'
     return url
     
 def get_session(timeslot, schedule=None):
