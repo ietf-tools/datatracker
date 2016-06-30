@@ -4,6 +4,8 @@ import shutil
 from pyquery import PyQuery
 from StringIO import StringIO
 
+import debug         # pyflakes:ignore
+
 from django.conf import settings
 from django.core.urlresolvers import reverse
 
@@ -13,7 +15,7 @@ from ietf.meeting.test_data import make_meeting_test_data
 from ietf.person.models import Person
 from ietf.secr.meetings.forms import get_times
 from ietf.utils.mail import outbox
-from ietf.utils.test_utils import TestCase
+from ietf.utils.test_utils import TestCase 
 
 
 class SecrMeetingTestCase(TestCase):
@@ -60,7 +62,7 @@ class SecrMeetingTestCase(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         q = PyQuery(response.content)
-        self.assertEqual(len(q('#id_schedule_selector option')),2)
+        self.assertEqual(len(q('#id_schedule_selector option')),3)
          
     def test_add_meeting(self):
         "Add Meeting"
@@ -181,6 +183,7 @@ class SecrMeetingTestCase(TestCase):
         # test delete
         # first unschedule sessions so we can delete
         SchedTimeSessAssignment.objects.filter(schedule=meeting.agenda).delete()
+        SchedTimeSessAssignment.objects.filter(schedule=meeting.unofficial_schedule).delete()
         self.client.login(username="secretary", password="secretary+password")
         post_dict = {
             'room-TOTAL_FORMS':  q('input[name="room-TOTAL_FORMS"]').val(),

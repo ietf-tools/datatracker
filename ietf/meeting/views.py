@@ -545,25 +545,33 @@ def agenda_csv(schedule, filtered_assignments):
     return response
 
 @role_required('Area Director','Secretariat','IAB')
-def agenda_by_room(request,num=None):
+def agenda_by_room(request, num=None, name=None, owner=None):
     meeting = get_meeting(num) 
-    schedule = get_schedule(meeting)
+    if name is None:
+        schedule = get_schedule(meeting)
+    else:
+        person   = get_person_by_email(owner)
+        schedule = get_schedule_by_name(meeting, person, name)
     ss_by_day = OrderedDict()
     for day in schedule.assignments.dates('timeslot__time','day'):
         ss_by_day[day]=[]
     for ss in schedule.assignments.order_by('timeslot__location__functional_name','timeslot__location__name','timeslot__time'):
         day = ss.timeslot.time.date()
         ss_by_day[day].append(ss)
-    return render(request,"meeting/agenda_by_room.html",{"meeting":meeting,"ss_by_day":ss_by_day})
+    return render(request,"meeting/agenda_by_room.html",{"meeting":meeting,"schedule":schedule,"ss_by_day":ss_by_day})
 
 @role_required('Area Director','Secretariat','IAB')
-def agenda_by_type(request,num=None,type=None):
+def agenda_by_type(request, num=None, type=None, name=None, owner=None):
     meeting = get_meeting(num) 
-    schedule = get_schedule(meeting)
+    if name is None:
+        schedule = get_schedule(meeting)
+    else:
+        person   = get_person_by_email(owner)
+        schedule = get_schedule_by_name(meeting, person, name)
     assignments = schedule.assignments.order_by('session__type__slug','timeslot__time')
     if type:
         assignments = assignments.filter(session__type__slug=type)
-    return render(request,"meeting/agenda_by_type.html",{"meeting":meeting,"assignments":assignments})
+    return render(request,"meeting/agenda_by_type.html",{"meeting":meeting,"schedule":schedule,"assignments":assignments})
 
 @role_required('Area Director','Secretariat','IAB')
 def agenda_by_type_ics(request,num=None,type=None):
@@ -712,9 +720,14 @@ def session_draft_pdf(request, num, session):
     os.unlink(pdfn)
     return HttpResponse(pdf_contents, content_type="application/pdf")
 
-def week_view(request, num=None):
+def week_view(request, num=None, name=None, owner=None):
     meeting = get_meeting(num)
-    schedule = get_schedule(meeting)
+
+    if name is None:
+        schedule = get_schedule(meeting)
+    else:
+        person   = get_person_by_email(owner)
+        schedule = get_schedule_by_name(meeting, person, name)
 
     if not schedule:
         raise Http404
@@ -772,14 +785,20 @@ def week_view(request, num=None):
     })
 
 @role_required('Area Director','Secretariat','IAB')
-def room_view(request, num=None):
+def room_view(request, num=None, name=None, owner=None):
     meeting = get_meeting(num)
 
     rooms = meeting.room_set.order_by('functional_name','name')
     if rooms.count() == 0:
         raise Http404
 
-    assignments = meeting.agenda.assignments.all()
+    if name is None:
+        schedule = get_schedule(meeting)
+    else:
+        person   = get_person_by_email(owner)
+        schedule = get_schedule_by_name(meeting, person, name)
+
+    assignments = schedule.assignments.all()
     unavailable = meeting.timeslot_set.filter(type__slug='unavail')
     if (unavailable.count() + assignments.count()) == 0 :
         raise Http404
@@ -822,7 +841,7 @@ def room_view(request, num=None):
         ss.day = (ss.timeslot.time-base_day).days
 
     template = "meeting/room-view.html"
-    return render(request, template,{"meeting":meeting,"unavailable":unavailable,"assignments":assignments,"rooms":rooms,"days":days})
+    return render(request, template,{"meeting":meeting,"schedule":schedule,"unavailable":unavailable,"assignments":assignments,"rooms":rooms,"days":days})
 
 def ical_agenda(request, num=None, name=None, ext=None):
     meeting = get_meeting(num)

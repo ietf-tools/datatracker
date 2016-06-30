@@ -25,12 +25,13 @@ li.daylistentry { margin-left:2em; font-weight: 400; }
 {% block title %}Agenda for {{meeting}} by Session Type{% endblock %}
 
 {% block content %}
+{% include "meeting/meeting_heading.html" with meeting=schedule.meeting updated=meeting.updated %}
 <h1>Agenda for {{meeting}} by Session Type</h1>
 {% regroup assignments by session.type.slug as type_list %}
 <ul class="typelist">
 {% for type in type_list %}
   <li class="typelistentry {% cycle 'even' 'odd' %}">
-    {{type.grouper}} <a id="ical-link" class="btn btn-primary" href="{% url "ietf.meeting.views.agenda_by_type_ics" num=meeting.number type=type.grouper %}">Download to Calendar</a>
+    {{type.grouper}} {% if schedule == meeting.agenda %}<a id="ical-link" class="btn btn-primary" href="{% url "ietf.meeting.views.agenda_by_type_ics" num=meeting.number type=type.grouper %}">Download to Calendar</a>{% endif %}
     <ul class="daylist">
     {% regroup type.list by timeslot.time|date:"l Y-M-d" as daylist %}
     {% for day in daylist %}

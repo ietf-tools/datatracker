@@ -68,7 +68,7 @@ class MeetingTests(TestCase):
     def test_agenda(self):
         meeting = make_meeting_test_data()
         session = Session.objects.filter(meeting=meeting, group__acronym="mars").first()
-        slot = TimeSlot.objects.get(sessionassignments__session=session)
+        slot = TimeSlot.objects.get(sessionassignments__session=session,sessionassignments__schedule=meeting.agenda)
 
         self.write_materials_files(meeting, session)
 
@@ -105,6 +105,10 @@ class MeetingTests(TestCase):
         self.assertTrue(slot.location.name in agenda_content)
 
         self.assertTrue(time_interval in agenda_content)
+
+        r = self.client.get(urlreverse("ietf.meeting.views.agenda", kwargs=dict(num=meeting.number,name=meeting.unofficial_schedule.name,owner=meeting.unofficial_schedule.owner.email())))
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue('not the official schedule' in unicontent(r))
 
         # CSV
         r = self.client.get(urlreverse("ietf.meeting.views.agenda", kwargs=dict(num=meeting.number, ext=".csv")))
@@ -149,6 +153,11 @@ class MeetingTests(TestCase):
         r = self.client.get(url)
         self.assertTrue(all([x in unicontent(r) for x in ['mars','IESG Breakfast','Test Room','Breakfast Room']]))
 
+        url = urlreverse("ietf.meeting.views.agenda_by_room",kwargs=dict(num=meeting.number,name=meeting.unofficial_schedule.name,owner=meeting.unofficial_schedule.owner.email()))
+        r = self.client.get(url)
+        self.assertTrue(all([x in unicontent(r) for x in ['mars','Test Room',]]))
+        self.assertFalse('IESG Breakfast' in unicontent(r))
+
     def test_agenda_by_type(self):
         meeting = make_meeting_test_data()
 
@@ -156,6 +165,11 @@ class MeetingTests(TestCase):
         login_testing_unauthorized(self,"secretary",url)
         r = self.client.get(url)
         self.assertTrue(all([x in unicontent(r) for x in ['mars','IESG Breakfast','Test Room','Breakfast Room']]))
+
+        url = urlreverse("ietf.meeting.views.agenda_by_type",kwargs=dict(num=meeting.number,name=meeting.unofficial_schedule.name,owner=meeting.unofficial_schedule.owner.email()))
+        r = self.client.get(url)
+        self.assertTrue(all([x in unicontent(r) for x in ['mars','Test Room',]]))
+        self.assertFalse('IESG Breakfast' in unicontent(r))
 
         url = urlreverse("ietf.meeting.views.agenda_by_type",kwargs=dict(num=meeting.number,type='session'))
         r = self.client.get(url)
@@ -167,12 +181,23 @@ class MeetingTests(TestCase):
         self.assertFalse(any([x in unicontent(r) for x in ['mars','Test Room']]))
         self.assertTrue(all([x in unicontent(r) for x in ['IESG Breakfast','Breakfast Room']]))
 
+        url = urlreverse("ietf.meeting.views.agenda_by_type",kwargs=dict(num=meeting.number,type='lead',name=meeting.unofficial_schedule.name,owner=meeting.unofficial_schedule.owner.email()))
+        r = self.client.get(url)
+        self.assertFalse(any([x in unicontent(r) for x in ['IESG Breakfast','Breakfast Room']]))
+
     def test_agenda_room_view(self):
         meeting = make_meeting_test_data()
         url = urlreverse("ietf.meeting.views.room_view",kwargs=dict(num=meeting.number))
         login_testing_unauthorized(self,"secretary",url)
         r = self.client.get(url)
+        self.assertEqual(r.status_code,200)
         self.assertTrue(all([x in unicontent(r) for x in ['mars','IESG Breakfast','Test Room','Breakfast Room']]))
+        url = urlreverse("ietf.meeting.views.room_view",kwargs=dict(num=meeting.number,name=meeting.unofficial_schedule.name,owner=meeting.unofficial_schedule.owner.email()))
+        r = self.client.get(url)
+        self.assertEqual(r.status_code,200)
+        self.assertTrue(all([x in unicontent(r) for x in ['mars','Test Room','Breakfast Room']]))
+        self.assertFalse('IESG Breakfast' in unicontent(r))
+
 
     def test_materials(self):
         meeting = make_meeting_test_data()
@@ -338,12 +363,12 @@ class EditTests(TestCase):
     def test_slot_to_the_right(self):
         meeting = make_meeting_test_data()
         session = Session.objects.filter(meeting=meeting, group__acronym="mars").first()
-        mars_scheduled = session.timeslotassignments.get()
-        mars_slot = TimeSlot.objects.get(sessionassignments__session=session)
+        mars_scheduled = session.timeslotassignments.get(schedule__name='test-agenda')
+        mars_slot = TimeSlot.objects.get(sessionassignments__session=session,sessionassignments__schedule__name='test-agenda')
         mars_ends = mars_slot.time + mars_slot.duration
 
         session = Session.objects.filter(meeting=meeting, group__acronym="ames").first()
-        ames_slot_qs = TimeSlot.objects.filter(sessionassignments__session=session)
+        ames_slot_qs = TimeSlot.objects.filter(sessionassignments__session=session,sessionassignments__schedule__name='test-agenda')
 
         ames_slot_qs.update(time=mars_ends + datetime.timedelta(seconds=11 * 60))
         self.assertTrue(not mars_slot.slot_to_the_right)

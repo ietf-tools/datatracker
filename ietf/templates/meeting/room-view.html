@@ -169,7 +169,8 @@
 
        var timelabel_width = width * 0.020;
        var header_height = height * 0.05;
-       var header_offset = $('#daytabs').height();
+       var header_offset = $('#daytabs').outerHeight(true)+$('#mtgheader').outerHeight(true);
+       console.log($('#mtgheader').outerHeight(true))
 
        var num_days = {{days|length}};
        var num_minutes = day_end - day_start;
@@ -581,6 +582,7 @@
   </script>
 </head>
 <body onload="draw_calendar()" onresize="draw_calendar()" id="body">
+  <div id="mtgheader" style="overflow:auto">{% include "meeting/meeting_heading.html" with meeting=schedule.meeting updated=schedule.meeting.updated %}</div>
   <div id="daycontainer" role="tabpanel">
     <ul id="daytabs" class="nav nav-tabs" role="tablist">
     {% for day in days %}

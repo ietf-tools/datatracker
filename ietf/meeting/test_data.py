@@ -37,6 +37,7 @@ def make_meeting_test_data():
 
     meeting = Meeting.objects.get(number="42", type="ietf")
     schedule = Schedule.objects.create(meeting=meeting, owner=plainman, name="test-agenda", visible=True, public=True)
+    unofficial_schedule = Schedule.objects.create(meeting=meeting, owner=plainman, name="test-unofficial-agenda", visible=True, public=True)
     pname = RoomResourceName.objects.create(name='projector',slug='proj')
     projector = ResourceAssociation.objects.create(name=pname,icon="notfound.png",desc="Basic projector")
     room = Room.objects.create(meeting=meeting, name="Test Room", capacity=123)
@@ -45,39 +46,47 @@ def make_meeting_test_data():
     breakfast_room.session_types.add("lead")
     room.resources = [projector]
 
+    # slots
+    slot1 = TimeSlot.objects.create(meeting=meeting, type_id="session", duration=30 * 60, location=room,
+                                    time=datetime.datetime.combine(datetime.date.today(), datetime.time(9, 30)))
+    slot2 = TimeSlot.objects.create(meeting=meeting, type_id="session", duration=30 * 60, location=room,
+                                    time=datetime.datetime.combine(datetime.date.today(), datetime.time(10, 30)))
+    breakfast_slot = TimeSlot.objects.create(meeting=meeting, type_id="lead", duration=90 * 60,
+                                   location=breakfast_room, 
+                                   time=datetime.datetime.combine(datetime.date.today(),datetime.time(7,0)))
     # mars WG
     mars = Group.objects.get(acronym='mars')
-    slot = TimeSlot.objects.create(meeting=meeting, type_id="session", duration=30 * 60, location=room,
-                                   time=datetime.datetime.combine(datetime.date.today(), datetime.time(9, 30)))
     mars_session = Session.objects.create(meeting=meeting, group=mars,
                                           attendees=10, requested_by=system_person,
                                           requested_duration=20, status_id="schedw",
                                           scheduled=datetime.datetime.now(),type_id="session")
     mars_session.resources = [projector]
-    SchedTimeSessAssignment.objects.create(timeslot=slot, session=mars_session, schedule=schedule)
+    SchedTimeSessAssignment.objects.create(timeslot=slot1, session=mars_session, schedule=schedule)
+    SchedTimeSessAssignment.objects.create(timeslot=slot2, session=mars_session, schedule=unofficial_schedule)
 
     # ames WG
-    slot = TimeSlot.objects.create(meeting=meeting, type_id="session", duration=30 * 60, location=room,
-                                   time=datetime.datetime.combine(datetime.date.today(), datetime.time(10, 30)))
     ames_session = Session.objects.create(meeting=meeting, group=Group.objects.get(acronym="ames"),
                                           attendees=10, requested_by=system_person,
                                           requested_duration=20, status_id="schedw",
                                           scheduled=datetime.datetime.now(),type_id="session")
-    SchedTimeSessAssignment.objects.create(timeslot=slot, session=ames_session, schedule=schedule)
+    SchedTimeSessAssignment.objects.create(timeslot=slot2, session=ames_session, schedule=schedule)
+    SchedTimeSessAssignment.objects.create(timeslot=slot1, session=ames_session, schedule=unofficial_schedule)
 
     # IESG breakfast
-    breakfast_slot = TimeSlot.objects.create(meeting=meeting, type_id="lead", duration=90 * 60,
-                                   location=breakfast_room, 
-                                   time=datetime.datetime.combine(datetime.date.today(),datetime.time(7,0)))
     iesg_session = Session.objects.create(meeting=meeting, group=Group.objects.get(acronym="iesg"),
                                           name="IESG Breakfast",
                                           attendees=25, requested_by=system_person,
                                           requested_duration=20, status_id="schedw",
                                           scheduled=datetime.datetime.now(),type_id="lead")
     SchedTimeSessAssignment.objects.create(timeslot=breakfast_slot, session=iesg_session, schedule=schedule)
+    # No breakfast on unofficial schedule
 
     meeting.agenda = schedule
     meeting.save()
+
+    # Convenience for the tests
+    meeting.unofficial_schedule = unofficial_schedule
+    
 
     doc = Document.objects.create(name='agenda-mars-ietf-42', type_id='agenda', title="Agenda", external_url="agenda-mars.txt",group=mars,rev='00')
     doc.set_state(State.objects.get(type=doc.type_id, slug="active"))
