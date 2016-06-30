@@ -268,14 +268,8 @@ def create_proceedings(meeting, group, is_final=False):
     docs = Document.objects.filter(group=group,type='draft').order_by('time')
 
     meeting_root = meeting.get_materials_path()
-    if meeting.type.slug == 'ietf':
-        url_root = "%sproceedings/%s/" % (settings.IETF_HOST_URL,meeting.number)
-    else:
-        url_root = "%sproceedings/interim/%s/%s/" % (
-            settings.IETF_HOST_URL,
-            meeting.date.strftime('%Y/%m/%d'),
-            group.acronym)
-    
+    url_root = "%sproceedings/%s/" % (settings.IETF_HOST_URL,meeting.number)
+
     # Only do these tasks if we are running official proceedings generation,
     # otherwise skip them for expediency.  This procedure is called any time meeting
     # materials are uploaded/deleted, and we don't want to do all this work each time.
