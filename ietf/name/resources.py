@@ -453,7 +453,6 @@ class ReviewResultNameResource(ModelResource):
             "desc": ALL,
             "used": ALL,
             "order": ALL,
-            "teams": ALL_WITH_RELATIONS,
         }
 api.name.register(ReviewResultNameResource())
 

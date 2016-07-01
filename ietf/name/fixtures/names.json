@@ -1821,11 +1821,11 @@
   "desc": ""
  },
  "model": "name.reviewrequeststatename",
- "pk": "noresponse"
+ "pk": "no-response"
 },
 {
  "fields": {
-  "order": 6,
+  "order": 7,
   "used": true,
   "name": "Partially Completed",
   "desc": ""
@@ -1847,7 +1847,6 @@
  "fields": {
   "order": 1,
   "used": true,
-  "teams": [],
   "name": "Serious Issues",
   "desc": ""
  },
@@ -1858,7 +1857,6 @@
  "fields": {
   "order": 2,
   "used": true,
-  "teams": [],
   "name": "Has Issues",
   "desc": ""
  },
@@ -1869,7 +1867,6 @@
  "fields": {
   "order": 3,
   "used": true,
-  "teams": [],
   "name": "Has Nits",
   "desc": ""
  },
@@ -1880,7 +1877,6 @@
  "fields": {
   "order": 4,
   "used": true,
-  "teams": [],
   "name": "Not Ready",
   "desc": ""
  },
@@ -1891,7 +1887,6 @@
  "fields": {
   "order": 5,
   "used": true,
-  "teams": [],
   "name": "On the Right Track",
   "desc": ""
  },
@@ -1902,7 +1897,6 @@
  "fields": {
   "order": 6,
   "used": true,
-  "teams": [],
   "name": "Almost Ready",
   "desc": ""
  },
@@ -1913,7 +1907,6 @@
  "fields": {
   "order": 7,
   "used": true,
-  "teams": [],
   "name": "Ready with Issues",
   "desc": ""
  },
@@ -1924,7 +1917,6 @@
  "fields": {
   "order": 8,
   "used": true,
-  "teams": [],
   "name": "Ready with Nits",
   "desc": ""
  },
@@ -1935,7 +1927,6 @@
  "fields": {
   "order": 9,
   "used": true,
-  "teams": [],
   "name": "Ready",
   "desc": ""
  },
@@ -1971,6 +1962,16 @@
  },
  "model": "name.reviewtypename",
  "pk": "telechat"
+},
+{
+ "fields": {
+  "order": 4,
+  "used": false,
+  "name": "Unknown",
+  "desc": ""
+ },
+ "model": "name.reviewtypename",
+ "pk": "unknown"
 },
 {
  "fields": {

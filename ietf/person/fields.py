@@ -139,3 +139,23 @@ class SearchableEmailField(SearchableEmailsField):
         return super(SearchableEmailField, self).clean(value).first()
 
 
+class PersonEmailChoiceField(forms.ModelChoiceField):
+    """ModelChoiceField targeting Email and displaying choices with the
+    person name as well as the email address. Needs further
+    restrictions, e.g. on role, to useful."""
+    def __init__(self, *args, **kwargs):
+        if not "queryset" in kwargs:
+            kwargs["queryset"] = Email.objects.select_related("person")
+
+        self.label_with = kwargs.pop("label_with", None)
+
+        super(PersonEmailChoiceField, self).__init__(*args, **kwargs)
+
+    def label_from_instance(self, email):
+        if self.label_with == "person":
+            return unicode(email.person)
+        elif self.label_with == "email":
+            return email.address
+        else:
+            return u"{} <{}>".format(email.person, email.address)
+

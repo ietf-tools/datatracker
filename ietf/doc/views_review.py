@@ -12,8 +12,8 @@ from django.template.loader import render_to_string
 from ietf.doc.models import Document, NewRevisionDocEvent, DocEvent, State, DocAlias
 from ietf.ietfauth.utils import is_authorized_in_doc_stream, user_is_person
 from ietf.name.models import ReviewRequestStateName, ReviewResultName, DocTypeName
-from ietf.group.models import Role
 from ietf.review.models import ReviewRequest
+from ietf.person.fields import PersonEmailChoiceField
 from ietf.review.utils import (active_review_teams, assign_review_request_to_reviewer,
                                can_request_review_of_doc, can_manage_review_requests_for_team,
                                email_about_review_request, make_new_review_request_from_existing)
@@ -188,22 +188,13 @@ def withdraw_request(request, name, request_id):
         'review_req': review_req,
     })
 
-class PersonEmailLabeledRoleModelChoiceField(forms.ModelChoiceField):
-    def __init__(self, *args, **kwargs):
-        if not "queryset" in kwargs:
-            kwargs["queryset"] = Role.objects.select_related("person", "email")
-        super(PersonEmailLabeledRoleModelChoiceField, self).__init__(*args, **kwargs)
-
-    def label_from_instance(self, role):
-        return u"{} <{}>".format(role.person.name, role.email.address)
-
 class AssignReviewerForm(forms.Form):
-    reviewer = PersonEmailLabeledRoleModelChoiceField(widget=forms.RadioSelect, empty_label="(None)", required=False)
+    reviewer = PersonEmailChoiceField(widget=forms.RadioSelect, empty_label="(None)", required=False)
 
     def __init__(self, review_req, *args, **kwargs):
         super(AssignReviewerForm, self).__init__(*args, **kwargs)
         f = self.fields["reviewer"]
-        f.queryset = f.queryset.filter(name="reviewer", group=review_req.team)
+        f.queryset = f.queryset.filter(role__name="reviewer", role__group=review_req.team)
         if review_req.reviewer:
             f.initial = review_req.reviewer_id
 
@@ -212,9 +203,7 @@ def assign_reviewer(request, name, request_id):
     doc = get_object_or_404(Document, name=name)
     review_req = get_object_or_404(ReviewRequest, pk=request_id, state__in=["requested", "accepted"])
 
-    can_manage_request = can_manage_review_requests_for_team(request.user, review_req.team)
-
-    if not can_manage_request:
+    if not can_manage_review_requests_for_team(request.user, review_req.team):
         return HttpResponseForbidden("You do not have permission to perform this action")
 
     if request.method == "POST" and request.POST.get("action") == "assign":
@@ -322,7 +311,7 @@ class CompleteReviewForm(forms.Form):
             " ".join("<a class=\"rev label label-default\">{}</a>".format(r)
                      for r in known_revisions))
 
-        self.fields["result"].queryset = self.fields["result"].queryset.filter(teams=review_req.team)
+        self.fields["result"].queryset = self.fields["result"].queryset.filter(reviewteamresult__team=review_req.team)
         self.fields["review_submission"].choices = [
             (k, label.format(mailing_list=review_req.team.list_email or "[error: team has no mailing list set]"))
             for k, label in self.fields["review_submission"].choices
@@ -428,10 +417,12 @@ def complete_review(request, name, request_id):
                 type="changed_review_request",
                 doc=review_req.doc,
                 by=request.user.person,
-                desc="Request for {} review by {} {}".format(
+                desc="Request for {} review by {} {}: {}. Reviewer: {}".format(
                     review_req.type.name,
                     review_req.team.acronym.upper(),
                     review_req.state.name,
+                    review_req.result.name,
+                    review_req.reviewer,
                 ),
             )
 

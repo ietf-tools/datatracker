@@ -7,7 +7,7 @@ from tastypie.cache import SimpleCache
 from ietf import api
 from ietf.api import ToOneField                         # pyflakes:ignore
 
-from ietf.review.models import Reviewer, ReviewRequest
+from ietf.review.models import Reviewer, ReviewRequest, ReviewTeamResult
 
 
 from ietf.person.resources import PersonResource
@@ -62,4 +62,23 @@ class ReviewRequestResource(ModelResource):
             "result": ALL_WITH_RELATIONS,
         }
 api.review.register(ReviewRequestResource())
+
+
+
+from ietf.group.resources import GroupResource
+from ietf.name.resources import ReviewResultNameResource
+class ReviewTeamResultResource(ModelResource):
+    team             = ToOneField(GroupResource, 'team')
+    result           = ToOneField(ReviewResultNameResource, 'result')
+    class Meta:
+        queryset = ReviewTeamResult.objects.all()
+        serializer = api.Serializer()
+        cache = SimpleCache()
+        #resource_name = 'reviewteamresult'
+        filtering = { 
+            "id": ALL,
+            "team": ALL_WITH_RELATIONS,
+            "result": ALL_WITH_RELATIONS,
+        }
+api.review.register(ReviewTeamResultResource())
 

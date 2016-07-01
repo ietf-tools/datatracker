@@ -13,6 +13,7 @@ from ietf.ipr.models import HolderIprDisclosure, IprDocRel, IprDisclosureStateNa
 from ietf.meeting.models import Meeting
 from ietf.name.models import StreamName, DocRelationshipName
 from ietf.person.models import Person, Email
+from ietf.review.models import ReviewRequest, Reviewer, ReviewResultName, ReviewTeamResult
 
 def create_person(group, role_name, name=None, username=None, email_address=None, password=None):
     """Add person/user/email and role."""
@@ -357,3 +358,31 @@ def make_test_data():
     #other_doc_factory('recording','recording-42-mars-1-00')
 
     return draft
+
+def make_review_data(doc):
+    team = Group.objects.create(state_id="active", acronym="reviewteam", name="Review Team", type_id="team")
+    for r in ReviewResultName.objects.filter(slug__in=["issues", "ready-issues", "ready", "not-ready"]):
+        ReviewTeamResult.objects.create(team=team, result=r)
+
+    p = Person.objects.get(user__username="plain")
+    email = p.email_set.first()
+    Role.objects.create(name_id="reviewer", person=p, email=email, group=team)
+    Reviewer.objects.create(team=team, person=p, frequency=14, skip_next=0)
+
+    review_req = ReviewRequest.objects.create(
+        doc=doc,
+        team=team,
+        type_id="early",
+        deadline=datetime.datetime.now() + datetime.timedelta(days=20),
+        state_id="accepted",
+        reviewer=email,
+    )
+
+    p = Person.objects.get(user__username="marschairman")
+    Role.objects.create(name_id="reviewer", person=p, email=p.email_set.first(), group=team)
+
+    p = Person.objects.get(user__username="secretary")
+    Role.objects.create(name_id="secretary", person=p, email=p.email_set.first(), group=team)
+    
+    return review_req
+

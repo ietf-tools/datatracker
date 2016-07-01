@@ -12,41 +12,14 @@ from pyquery import PyQuery
 
 import debug                            # pyflakes:ignore
 
-from ietf.review.models import ReviewRequest, Reviewer
+from ietf.review.models import ReviewRequest, ReviewTeamResult
 import ietf.review.mailarch
-from ietf.person.models import Person
-from ietf.group.models import Group, Role
+from ietf.person.models import Email
 from ietf.name.models import ReviewResultName, ReviewRequestStateName
 from ietf.utils.test_utils import TestCase
-from ietf.utils.test_data import make_test_data
+from ietf.utils.test_data import make_test_data, make_review_data
 from ietf.utils.test_utils import login_testing_unauthorized, unicontent, reload_db_objects
 from ietf.utils.mail import outbox, empty_outbox
-
-def make_review_data(doc):
-    team = Group.objects.create(state_id="active", acronym="reviewteam", name="Review Team", type_id="team")
-    team.reviewresultname_set.add(ReviewResultName.objects.filter(slug__in=["issues", "ready-issues", "ready", "not-ready"]))
-
-    p = Person.objects.get(user__username="plain")
-    role = Role.objects.create(name_id="reviewer", person=p, email=p.email_set.first(), group=team)
-    Reviewer.objects.create(team=team, person=p, frequency=14, skip_next=0)
-
-    review_req = ReviewRequest.objects.create(
-        doc=doc,
-        team=team,
-        type_id="early",
-        deadline=datetime.datetime.now() + datetime.timedelta(days=20),
-        state_id="ready",
-        reviewer=role,
-        reviewed_rev="01",
-    )
-
-    p = Person.objects.get(user__username="marschairman")
-    role = Role.objects.create(name_id="reviewer", person=p, email=p.email_set.first(), group=team)
-
-    p = Person.objects.get(user__username="secretary")
-    role = Role.objects.create(name_id="secretary", person=p, email=p.email_set.first(), group=team)
-    
-    return review_req
 
 class ReviewTests(TestCase):
     def setUp(self):
@@ -169,7 +142,7 @@ class ReviewTests(TestCase):
 
         # assign
         empty_outbox()
-        reviewer = Role.objects.filter(name="reviewer", group=review_req.team).first()
+        reviewer = Email.objects.filter(role__name="reviewer", role__group=review_req.team).first()
         r = self.client.post(assign_url, { "action": "assign", "reviewer": reviewer.pk })
         self.assertEqual(r.status_code, 302)
 
@@ -183,7 +156,7 @@ class ReviewTests(TestCase):
         empty_outbox()
         review_req.state = ReviewRequestStateName.objects.get(slug="accepted")
         review_req.save()
-        reviewer = Role.objects.filter(name="reviewer", group=review_req.team).exclude(pk=reviewer.pk).first()
+        reviewer = Email.objects.filter(role__name="reviewer", role__group=review_req.team).exclude(pk=reviewer.pk).first()
         r = self.client.post(assign_url, { "action": "assign", "reviewer": reviewer.pk })
         self.assertEqual(r.status_code, 302)
 
@@ -335,7 +308,7 @@ class ReviewTests(TestCase):
         review_req.save()
         review_req.team.list_email = "{}@ietf.org".format(review_req.team.acronym)
         for r in ReviewResultName.objects.filter(slug__in=("issues", "ready")):
-            review_req.team.reviewresultname_set.add(r)
+            ReviewTeamResult.objects.get_or_create(team=review_req.team, result=r)
         review_req.team.save()
 
         url = urlreverse('ietf.doc.views_review.complete_review', kwargs={ "name": doc.name, "request_id": review_req.pk })
@@ -373,7 +346,7 @@ class ReviewTests(TestCase):
         test_file.name = "unnamed"
 
         r = self.client.post(url, data={
-            "result": ReviewResultName.objects.get(teams=review_req.team, slug="ready").pk,
+            "result": ReviewResultName.objects.get(reviewteamresult__team=review_req.team, slug="ready").pk,
             "state": ReviewRequestStateName.objects.get(slug="completed").pk,
             "reviewed_rev": review_req.doc.rev,
             "review_submission": "upload",
@@ -408,7 +381,7 @@ class ReviewTests(TestCase):
         empty_outbox()
 
         r = self.client.post(url, data={
-            "result": ReviewResultName.objects.get(teams=review_req.team, slug="ready").pk,
+            "result": ReviewResultName.objects.get(reviewteamresult__team=review_req.team, slug="ready").pk,
             "state": ReviewRequestStateName.objects.get(slug="completed").pk,
             "reviewed_rev": review_req.doc.rev,
             "review_submission": "enter",
@@ -439,7 +412,7 @@ class ReviewTests(TestCase):
         empty_outbox()
 
         r = self.client.post(url, data={
-            "result": ReviewResultName.objects.get(teams=review_req.team, slug="ready").pk,
+            "result": ReviewResultName.objects.get(reviewteamresult__team=review_req.team, slug="ready").pk,
             "state": ReviewRequestStateName.objects.get(slug="completed").pk,
             "reviewed_rev": review_req.doc.rev,
             "review_submission": "link",
@@ -467,7 +440,7 @@ class ReviewTests(TestCase):
         empty_outbox()
 
         r = self.client.post(url, data={
-            "result": ReviewResultName.objects.get(teams=review_req.team, slug="ready").pk,
+            "result": ReviewResultName.objects.get(reviewteamresult__team=review_req.team, slug="ready").pk,
             "state": ReviewRequestStateName.objects.get(slug="part-completed").pk,
             "reviewed_rev": review_req.doc.rev,
             "review_submission": "enter",
@@ -501,7 +474,7 @@ class ReviewTests(TestCase):
         url = urlreverse('ietf.doc.views_review.complete_review', kwargs={ "name": review_req.doc.name, "request_id": review_req.pk })
 
         r = self.client.post(url, data={
-            "result": ReviewResultName.objects.get(teams=review_req.team, slug="ready").pk,
+            "result": ReviewResultName.objects.get(reviewteamresult__team=review_req.team, slug="ready").pk,
             "state": ReviewRequestStateName.objects.get(slug="completed").pk,
             "reviewed_rev": review_req.doc.rev,
             "review_submission": "enter",

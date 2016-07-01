@@ -96,5 +96,4 @@ class ReviewResultName(NameModel):
     """Almost ready, Has issues, Has nits, Not Ready,
     On the right track, Ready, Ready with issues,
     Ready with nits, Serious Issues"""
-    teams = models.ManyToManyField("group.Group", help_text="Which teams this result can be set for. This also implicitly defines which teams are review teams - if there are no possible review results defined for a given team, it can't be a review team.", blank=True)
 

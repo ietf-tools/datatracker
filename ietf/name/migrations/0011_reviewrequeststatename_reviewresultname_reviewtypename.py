@@ -35,7 +35,6 @@ class Migration(migrations.Migration):
                 ('desc', models.TextField(blank=True)),
                 ('used', models.BooleanField(default=True)),
                 ('order', models.IntegerField(default=0)),
-                ('teams', models.ManyToManyField(help_text=b"Which teams this result can be set for. This also implicitly defines which teams are review teams - if there are no possible review results defined for a given team, it can't be a review team.", to='group.Group', blank=True)),
             ],
             options={
                 'ordering': ['order'],

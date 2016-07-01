@@ -462,6 +462,11 @@ label#list-feeds {
 
 /* Review flow */
 
+.reviewer-assignment-not-accepted {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
 form.complete-review .mail-archive-search .query-input {
   width: 30em;
 }
@@ -471,6 +476,16 @@ form.complete-review .mail-archive-search .results .list-group {
   margin-right: 1em;
   margin-bottom: 0.5em;
 }
+
+.closed-review-filter {
+  margin-bottom: 1em;
+}
+
+form.review-requests .reviewer-controls, form.review-requests .close-controls {
+  display: none;
+}
+
+/* Profile */
 
 .photo-name {
   height: 3em;

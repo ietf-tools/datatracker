@@ -11,14 +11,15 @@ def insert_initial_review_data(apps, schema_editor):
     ReviewRequestStateName.objects.get_or_create(slug="rejected", name="Rejected", order=3)
     ReviewRequestStateName.objects.get_or_create(slug="withdrawn", name="Withdrawn", order=4)
     ReviewRequestStateName.objects.get_or_create(slug="overtaken", name="Overtaken By Events", order=5)
-    ReviewRequestStateName.objects.get_or_create(slug="noresponse", name="No Response", order=6)
-    ReviewRequestStateName.objects.get_or_create(slug="part-completed", name="Partially Completed", order=6)
+    ReviewRequestStateName.objects.get_or_create(slug="no-response", name="No Response", order=6)
+    ReviewRequestStateName.objects.get_or_create(slug="part-completed", name="Partially Completed", order=7)
     ReviewRequestStateName.objects.get_or_create(slug="completed", name="Completed", order=8)
 
     ReviewTypeName = apps.get_model("name", "ReviewTypeName")
     ReviewTypeName.objects.get_or_create(slug="early", name="Early", order=1)
     ReviewTypeName.objects.get_or_create(slug="lc", name="Last Call", order=2)
     ReviewTypeName.objects.get_or_create(slug="telechat", name="Telechat", order=3)
+    ReviewTypeName.objects.get_or_create(slug="unknown", name="Unknown", order=4, used=False)
 
     ReviewResultName = apps.get_model("name", "ReviewResultName")
     ReviewResultName.objects.get_or_create(slug="serious-issues", name="Serious Issues", order=1)

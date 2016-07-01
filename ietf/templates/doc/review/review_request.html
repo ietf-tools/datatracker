@@ -102,8 +102,10 @@
         <td>
           {% if review_req.review %}
             <a href="{{ review_req.review.get_absolute_url }}">{{ review_req.review.name }}</a>
-          {% else %}
+          {% elif review_req.state_id == "requested" or review_req.state_id == "accepted" %}
             Not completed yet
+          {% else %}
+            Not available
           {% endif %}
 
           {% if can_complete_review %}
