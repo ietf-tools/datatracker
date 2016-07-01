@@ -1,8 +1,9 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
 import datetime
-from urlparse import urljoin
 from hashids import Hashids
+from unidecode import unidecode
+from urlparse import urljoin
 
 from django.conf import settings
 
@@ -44,8 +45,20 @@ class PersonInfo(models.Model):
             prefix, first, middle, last, suffix = self.ascii_parts()
             return (first and first[0]+"." or "")+(middle or "")+" "+last+(suffix and " "+suffix or "")
     def plain_name(self):
-        prefix, first, middle, last, suffix = name_parts(self.name)
-        return u" ".join([first, last])
+        if not hasattr(self, '_cached_plain_name'):
+            prefix, first, middle, last, suffix = name_parts(self.name)
+            self._cached_plain_name = u" ".join([first, last])
+        return self._cached_plain_name
+    def ascii_name(self):
+        if not hasattr(self, '_cached_ascii_name'):
+            if self.ascii:
+                # It's possibly overkill with unidecode() here, but needed until
+                # we're validating the content of the ascii field, and have
+                # verified that the field is ascii clean in the database:
+                self._cached_ascii_name = unidecode(self.ascii) 
+            else:
+                self._cached_ascii_name = unidecode(self.plain_name())
+        return self._cached_ascii_name
     def initials(self):
         return initials(self.ascii or self.name)
     def last_name(self):
