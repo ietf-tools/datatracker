@@ -36,7 +36,7 @@ from ietf.utils.log import log
 # -------------------------------------------------
 # Globals 
 # -------------------------------------------------
-AUTHORIZED_ROLES=('WG Chair','WG Secretary','RG Chair','AG Secretary','IRTF Chair','IETF Trust Chair','IAB Group Chair','IAOC Chair','IAD','Area Director','Secretariat','Team Chair')
+AUTHORIZED_ROLES=('WG Chair','WG Secretary','RG Chair','RG Secretary', 'AG Secretary','IRTF Chair','IETF Trust Chair','IAB Group Chair','IAOC Chair','IAD','Area Director','Secretariat','Team Chair')
 # -------------------------------------------------
 # Helper Functions
 # -------------------------------------------------
