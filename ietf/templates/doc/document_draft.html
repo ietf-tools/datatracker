@@ -201,9 +201,12 @@
           {% for r in review_requests %}
             <div>
               {% if r.state_id == "completed" or r.state_id == "part-completed" %}
-                <a href="{% url "doc_view" r.review.name %}">{{ r.team.acronym|upper }} {{ r.type.name }} Review{% if r.reviewed_rev and r.reviewed_rev != doc.rev %} (of -{{ r.reviewed_rev }}){% endif %}: {{ r.result.name }} {% if r.state_id == "part-completed" %}(partially completed){% endif %} - reviewer: {{ r.reviewer.person }}</a>
+                <a href="{% if r.review %}{% url "doc_view" r.review.name %}{% else %}{% url "ietf.doc.views_review.review_request" r.doc_id r.pk %}{% endif %}">
+                  {{ r.team.acronym|upper }} {{ r.type.name }} Review{% if r.reviewed_rev and r.reviewed_rev != doc.rev %} (of -{{ r.reviewed_rev }}){% endif %}:
+                  {{ r.result.name }} {% if r.state_id == "part-completed" %}(partially completed){% endif %}
+                  - reviewer: {{ r.reviewer.person }}</a>
               {% else %}
-                <a href="{% url "ietf.doc.views_review.review_request" doc.name r.pk %}">{{ r.team.acronym|upper }} {{ r.type.name }} Review{% if r.reviewer %} (reviewer: {{ r.reviewer.person }}){% endif %}</a>
+                <a href="{% url "ietf.doc.views_review.review_request" r.doc_id r.pk %}">{{ r.team.acronym|upper }} {{ r.type.name }} Review{% if r.reviewer %} (reviewer: {{ r.reviewer.person }}){% endif %}</a>
               {% endif %}
             </div>
           {% endfor %}
