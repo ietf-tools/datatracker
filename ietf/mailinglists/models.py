@@ -18,6 +18,8 @@ class Subscribed(models.Model):
     lists = models.ManyToManyField(List)
     def __unicode__(self):
         return "<Subscribed: %s at %s>" % (self.email, self.time)
+    class Meta:
+        verbose_name_plural = "Subscribed"
 
 class Whitelisted(models.Model):
     time = models.DateTimeField(auto_now_add=True)
@@ -25,4 +27,6 @@ class Whitelisted(models.Model):
     by = models.ForeignKey(Person)
     def __unicode__(self):
         return "<Whitelisted: %s at %s>" % (self.email, self.time)
-    
+    class Meta:
+        verbose_name_plural = "Whitelisted"
+
