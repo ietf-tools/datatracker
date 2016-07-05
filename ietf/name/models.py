@@ -89,7 +89,7 @@ class LiaisonStatementTagName(NameModel):
     "Action Required, Action Taken"
 class ReviewRequestStateName(NameModel):
     """Requested, Accepted, Rejected, Withdrawn, Overtaken By Events,
-    No Response, Partially Completed, Completed"""
+    No Response, No Review of Version, No Review of Document, Partially Completed, Completed"""
 class ReviewTypeName(NameModel):
     """Early Review, Last Call, Telechat"""
 class ReviewResultName(NameModel):

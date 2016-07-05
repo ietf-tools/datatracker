@@ -161,6 +161,8 @@ with db_con.cursor() as c:
         doc_metadata[(row.docname, row.version)] = doc_metadata[row.docname] = (parse_timestamp(row.deadline), parse_timestamp(row.telechat), parse_timestamp(row.lcend), row.status)
 
 
+system_person = Person.objects.get(name="(System)")
+
 with db_con.cursor() as c:
     c.execute("select * from reviews order by reviewid;")
 
@@ -207,6 +209,7 @@ with db_con.cursor() as c:
                 "state": states["requested"],
                 "type": type_name,
                 "deadline": deadline,
+                "requested_by": system_person,
             }
         )
 

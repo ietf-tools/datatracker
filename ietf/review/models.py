@@ -42,6 +42,7 @@ class ReviewRequest(models.Model):
     doc           = models.ForeignKey(Document, related_name='review_request_set')
     team          = models.ForeignKey(Group, limit_choices_to=~models.Q(reviewteamresult=None))
     deadline      = models.DateTimeField()
+    requested_by  = models.ForeignKey(Person)
     requested_rev = models.CharField(verbose_name="requested revision", max_length=16, blank=True, help_text="Fill in if a specific revision is to be reviewed, e.g. 02")
 
     # Fields filled in as reviewer is assigned and as the review is

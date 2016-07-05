@@ -14,7 +14,7 @@ import debug                            # pyflakes:ignore
 
 from ietf.review.models import ReviewRequest, ReviewTeamResult
 import ietf.review.mailarch
-from ietf.person.models import Email
+from ietf.person.models import Email, Person
 from ietf.name.models import ReviewResultName, ReviewRequestStateName
 from ietf.utils.test_utils import TestCase
 from ietf.utils.test_data import make_test_data, make_review_data
@@ -57,7 +57,8 @@ class ReviewTests(TestCase):
             "type": "early",
             "team": review_team.pk,
             "deadline_date": deadline_date.isoformat(),
-            "requested_rev": "01"
+            "requested_rev": "01",
+            "requested_by": Person.objects.get(user__username="plain").pk,
         })
         self.assertEqual(r.status_code, 302)
 
@@ -82,13 +83,13 @@ class ReviewTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertTrue(review_req.team.acronym.upper() in unicontent(r))
 
-    def test_withdraw_request(self):
+    def test_close_request(self):
         doc = make_test_data()
         review_req = make_review_data(doc)
         review_req.state = ReviewRequestStateName.objects.get(slug="accepted")
         review_req.save()
 
-        withdraw_url = urlreverse('ietf.doc.views_review.withdraw_request', kwargs={ "name": doc.name, "request_id": review_req.pk })
+        close_url = urlreverse('ietf.doc.views_review.close_request', kwargs={ "name": doc.name, "request_id": review_req.pk })
 
 
         # follow link
@@ -96,26 +97,26 @@ class ReviewTests(TestCase):
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(req_url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(withdraw_url in unicontent(r))
+        self.assertTrue(close_url in unicontent(r))
         self.client.logout()
 
-        # get withdraw page
-        login_testing_unauthorized(self, "secretary", withdraw_url)
-        r = self.client.get(withdraw_url)
+        # get close page
+        login_testing_unauthorized(self, "secretary", close_url)
+        r = self.client.get(close_url)
         self.assertEqual(r.status_code, 200)
 
-        # withdraw
+        # close
         empty_outbox()
-        r = self.client.post(withdraw_url, { "action": "withdraw" })
+        r = self.client.post(close_url, { "close_reason": "withdrawn" })
         self.assertEqual(r.status_code, 302)
 
         review_req = reload_db_objects(review_req)
         self.assertEqual(review_req.state_id, "withdrawn")
         e = doc.latest_event()
         self.assertEqual(e.type, "changed_review_request")
-        self.assertTrue("Withdrew" in e.desc)
+        self.assertTrue("closed" in e.desc.lower())
         self.assertEqual(len(outbox), 1)
-        self.assertTrue("withdrawn" in unicode(outbox[0]))
+        self.assertTrue("closed" in unicode(outbox[0]).lower())
 
     def test_assign_reviewer(self):
         doc = make_test_data()

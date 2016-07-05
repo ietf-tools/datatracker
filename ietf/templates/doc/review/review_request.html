@@ -51,6 +51,12 @@
         <th>Requested</th>
         <td>{{ review_req.time|date:"Y-m-d" }}</td>
       </tr>
+
+      <tr>
+        <th></th>
+        <th>Requested by</th>
+        <td>{{ review_req.requested_by }}</td>
+      </tr>
     </tbody>
 
     <tbody class="meta">
@@ -143,8 +149,8 @@
   </table>
 
   <div>
-    {% if can_withdraw_request %}
-      <a class="btn btn-danger btn-xs" href="{% url "ietf.doc.views_review.withdraw_request" name=doc.name request_id=review_req.pk %}"><span class="fa fa-ban"></span> Withdraw request</a>
+    {% if can_close_request %}
+      <a class="btn btn-danger btn-xs" href="{% url "ietf.doc.views_review.close_request" name=doc.name request_id=review_req.pk %}"><span class="fa fa-ban"></span> Close request</a>
     {% endif %}
   </div>
 

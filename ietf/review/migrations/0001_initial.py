@@ -42,6 +42,7 @@ class Migration(migrations.Migration):
                 ('result', models.ForeignKey(blank=True, to='name.ReviewResultName', null=True)),
                 ('review', models.OneToOneField(null=True, blank=True, to='doc.Document')),
                 ('reviewer', models.ForeignKey(blank=True, to='person.Email', null=True)),
+                ('requested_by', models.ForeignKey(to='person.Person')),
                 ('state', models.ForeignKey(to='name.ReviewRequestStateName')),
                 ('team', models.ForeignKey(to='group.Group')),
                 ('type', models.ForeignKey(to='name.ReviewTypeName')),

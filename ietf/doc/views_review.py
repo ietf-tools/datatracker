@@ -10,13 +10,14 @@ from django.core.exceptions import ValidationError
 from django.template.loader import render_to_string
 
 from ietf.doc.models import Document, NewRevisionDocEvent, DocEvent, State, DocAlias
-from ietf.ietfauth.utils import is_authorized_in_doc_stream, user_is_person
+from ietf.ietfauth.utils import is_authorized_in_doc_stream, user_is_person, has_role
 from ietf.name.models import ReviewRequestStateName, ReviewResultName, DocTypeName
 from ietf.review.models import ReviewRequest
-from ietf.person.fields import PersonEmailChoiceField
+from ietf.person.fields import PersonEmailChoiceField, SearchablePersonField
 from ietf.review.utils import (active_review_teams, assign_review_request_to_reviewer,
                                can_request_review_of_doc, can_manage_review_requests_for_team,
-                               email_about_review_request, make_new_review_request_from_existing)
+                               email_review_request_change, make_new_review_request_from_existing,
+                               close_review_request_states, close_review_request)
 from ietf.review import mailarch
 from ietf.utils.fields import DatepickerDateField
 from ietf.utils.text import skip_prefix
@@ -38,7 +39,7 @@ class RequestReviewForm(forms.ModelForm):
 
     class Meta:
         model = ReviewRequest
-        fields = ('type', 'team', 'deadline', 'requested_rev')
+        fields = ('requested_by', 'type', 'team', 'deadline', 'requested_rev')
 
     def __init__(self, user, doc, *args, **kwargs):
         super(RequestReviewForm, self).__init__(*args, **kwargs)
@@ -56,6 +57,12 @@ class RequestReviewForm(forms.ModelForm):
 
         self.fields["deadline"].required = False
         self.fields["requested_rev"].label = "Document revision"
+
+        if has_role(user, "Secretariat"):
+            self.fields["requested_by"] = SearchablePersonField()
+        else:
+            self.fields["requested_by"].widget = forms.HiddenInput()
+            self.fields["requested_by"].initial = user.person.pk
 
     def clean_deadline_date(self):
         v = self.cleaned_data.get('deadline_date')
@@ -119,9 +126,9 @@ def review_request(request, name, request_id):
     is_reviewer = review_req.reviewer and user_is_person(request.user, review_req.reviewer.person)
     can_manage_request = can_manage_review_requests_for_team(request.user, review_req.team)
 
-    can_withdraw_request = (review_req.state_id in ["requested", "accepted"]
-                            and (is_authorized_in_doc_stream(request.user, doc)
-                                 or can_manage_request))
+    can_close_request = (review_req.state_id in ["requested", "accepted"]
+                         and (is_authorized_in_doc_stream(request.user, doc)
+                              or can_manage_request))
 
     can_assign_reviewer = (review_req.state_id in ["requested", "accepted"]
                            and can_manage_request)
@@ -147,46 +154,54 @@ def review_request(request, name, request_id):
     return render(request, 'doc/review/review_request.html', {
         'doc': doc,
         'review_req': review_req,
-        'can_withdraw_request': can_withdraw_request,
+        'can_close_request': can_close_request,
         'can_reject_reviewer_assignment': can_reject_reviewer_assignment,
         'can_assign_reviewer': can_assign_reviewer,
         'can_accept_reviewer_assignment': can_accept_reviewer_assignment,
         'can_complete_review': can_complete_review,
     })
 
+
+class CloseReviewRequestForm(forms.Form):
+    close_reason = forms.ModelChoiceField(queryset=close_review_request_states(), widget=forms.RadioSelect, empty_label=None)
+
+    def __init__(self, can_manage_request, *args, **kwargs):
+        super(CloseReviewRequestForm, self).__init__(*args, **kwargs)
+
+        if not can_manage_request:
+            self.fields["close_reason"].queryset = self.fields["close_reason"].queryset.filter(slug__in=["withdrawn"])
+
+        if len(self.fields["close_reason"].queryset) == 1:
+            self.fields["close_reason"].initial = self.fields["close_reason"].queryset.first().pk
+            self.fields["close_reason"].widget = forms.HiddenInput()
+
+
 @login_required
-def withdraw_request(request, name, request_id):
+def close_request(request, name, request_id):
     doc = get_object_or_404(Document, name=name)
     review_req = get_object_or_404(ReviewRequest, pk=request_id, state__in=["requested", "accepted"])
 
-    if not is_authorized_in_doc_stream(request.user, doc):
+    can_request = is_authorized_in_doc_stream(request.user, doc)
+    can_manage_request = can_manage_review_requests_for_team(request.user, review_req.team)
+
+    if not (can_request or can_manage_request):
         return HttpResponseForbidden("You do not have permission to perform this action")
 
-    if request.method == "POST" and request.POST.get("action") == "withdraw":
-        prev_state = review_req.state
-        review_req.state = ReviewRequestStateName.objects.get(slug="withdrawn")
-        review_req.save()
-
-        DocEvent.objects.create(
-            type="changed_review_request",
-            doc=doc,
-            by=request.user.person,
-            desc="Withdrew request for {} review by {}".format(review_req.type.name, review_req.team.acronym.upper()),
-        )
-
-        if prev_state.slug != "requested":
-            email_about_review_request(
-                request, review_req,
-                "Withdrew review request for %s" % review_req.doc.name,
-                "Review request has been withdrawn by %s." % request.user.person,
-                by=request.user.person, notify_secretary=False, notify_reviewer=True)
+    if request.method == "POST":
+        form = CloseReviewRequestForm(can_manage_request, request.POST)
+        if form.is_valid():
+            close_review_request(request, review_req, form.cleaned_data["close_reason"])
 
         return redirect(review_request, name=review_req.doc.name, request_id=review_req.pk)
+    else:
+        form = CloseReviewRequestForm(can_manage_request)
 
-    return render(request, 'doc/review/withdraw_request.html', {
+    return render(request, 'doc/review/close_request.html', {
         'doc': doc,
         'review_req': review_req,
+        'form': form,
     })
+
 
 class AssignReviewerForm(forms.Form):
     reviewer = PersonEmailChoiceField(widget=forms.RadioSelect, empty_label="(None)", required=False)
@@ -266,7 +281,7 @@ def reject_reviewer_assignment(request, name, request_id):
                 "message_to_secretary": form.cleaned_data.get("message_to_secretary")
             })
 
-            email_about_review_request(request, review_req, "Reviewer assignment rejected", msg, by=request.user.person, notify_secretary=True, notify_reviewer=True)
+            email_review_request_change(request, review_req, "Reviewer assignment rejected", msg, by=request.user.person, notify_secretary=True, notify_reviewer=True, notify_requested_by=False)
 
             return redirect(review_request, name=new_review_req.doc.name, request_id=new_review_req.pk)
     else:
@@ -438,7 +453,7 @@ def complete_review(request, name, request_id):
                     "new_review_req": new_review_req,
                 })
 
-                email_about_review_request(request, review_req, subject, msg, request.user.person, notify_secretary=True, notify_reviewer=False)
+                email_review_request_change(request, review_req, subject, msg, request.user.person, notify_secretary=True, notify_reviewer=False, notify_requested_by=False)
 
             if review_submission != "link" and review_req.team.list_email:
                 # email the review

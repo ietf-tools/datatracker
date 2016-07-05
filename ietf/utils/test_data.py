@@ -375,6 +375,7 @@ def make_review_data(doc):
         type_id="early",
         deadline=datetime.datetime.now() + datetime.timedelta(days=20),
         state_id="accepted",
+        requested_by=p,
         reviewer=email,
     )
 

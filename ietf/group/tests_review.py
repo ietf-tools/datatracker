@@ -7,7 +7,7 @@ from django.core.urlresolvers import reverse as urlreverse
 from ietf.utils.test_data import make_test_data, make_review_data
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase, unicontent, reload_db_objects
 from ietf.review.models import ReviewRequest
-from ietf.person.models import Email
+from ietf.person.models import Email, Person
 import ietf.group.views_review
 
 class ReviewTests(TestCase):
@@ -28,6 +28,7 @@ class ReviewTests(TestCase):
             deadline=datetime.datetime.combine(datetime.date.today() + datetime.timedelta(days=30), datetime.time(23, 59, 59)),
             state_id="accepted",
             reviewer=review_req1.reviewer,
+            requested_by=Person.objects.get(user__username="plain"),
         )
 
         review_req3 = ReviewRequest.objects.create(
@@ -36,6 +37,7 @@ class ReviewTests(TestCase):
             type_id="early",
             deadline=datetime.datetime.combine(datetime.date.today() + datetime.timedelta(days=30), datetime.time(23, 59, 59)),
             state_id="requested",
+            requested_by=Person.objects.get(user__username="plain"),
         )
 
         # get

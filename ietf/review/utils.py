@@ -6,6 +6,7 @@ from django.contrib.sites.models import Site
 from ietf.group.models import Group, Role
 from ietf.doc.models import Document, DocEvent, State, LastCallDocEvent
 from ietf.iesg.models import TelechatDate
+from ietf.person.models import Person
 from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream
 from ietf.review.models import ReviewRequest, ReviewRequestStateName, ReviewTypeName
 from ietf.utils.mail import send_mail
@@ -14,6 +15,9 @@ from ietf.doc.utils import extract_complete_replaces_ancestor_mapping_for_docs
 def active_review_teams():
     # if there's a ReviewTeamResult defined, it's a review team
     return Group.objects.filter(state="active").exclude(reviewteamresult=None)
+
+def close_review_request_states():
+    return ReviewRequestStateName.objects.filter(used=True).exclude(slug__in=["requested", "accepted", "rejected", "part-completed", "completed"])
 
 def can_request_review_of_doc(user, doc):
     if not user.is_authenticated():
@@ -35,30 +39,44 @@ def make_new_review_request_from_existing(review_req):
     obj.team = review_req.team
     obj.deadline = review_req.deadline
     obj.requested_rev = review_req.requested_rev
+    obj.requested_by = review_req.requested_by
     obj.state = ReviewRequestStateName.objects.get(slug="requested")
     return obj
 
-def email_about_review_request(request, review_req, subject, msg, by, notify_secretary, notify_reviewer):
+def email_review_request_change(request, review_req, subject, msg, by, notify_secretary, notify_reviewer, notify_requested_by):
     """Notify possibly both secretary and reviewer about change, skipping
     a party if the change was done by that party."""
 
-    def extract_email_addresses(objs):
-        if any(o.person == by for o in objs if o):
-            return []
-        else:
-            return [o.formatted_email() for o in objs if o]
+    system_email = Person.objects.get(name="(System)").formatted_email()
 
     to = []
 
-    if notify_secretary:
-        to += extract_email_addresses(Role.objects.filter(name__in=["secretary", "delegate"], group=review_req.team).distinct())
-    if notify_reviewer:
-        to += extract_email_addresses([review_req.reviewer])
+    def extract_email_addresses(objs):
+        if any(o.person == by for o in objs if o):
+            l = []
+        else:
+            l = []
+            for o in objs:
+                if o:
+                    e = o.formatted_email()
+                    if e != system_email:
+                        l.append(e)
 
+        for e in l:
+            if e not in to:
+                to.append(e)
+
+    if notify_secretary:
+        extract_email_addresses(Role.objects.filter(name__in=["secretary", "delegate"], group=review_req.team).distinct())
+    if notify_reviewer:
+        extract_email_addresses([review_req.reviewer])
+    if notify_requested_by:
+        extract_email_addresses([review_req.requested_by.email()])
+        
     if not to:
         return
 
-    send_mail(request, list(set(to)), None, subject, "doc/mail/review_request_changed.txt", {
+    send_mail(request, to, None, subject, "doc/mail/review_request_changed.txt", {
         "domain": Site.objects.get_current().domain,
         "review_req": review_req,
         "msg": msg,
@@ -71,11 +89,11 @@ def assign_review_request_to_reviewer(request, review_req, reviewer):
         return
 
     if review_req.reviewer:
-        email_about_review_request(
+        email_review_request_change(
             request, review_req,
             "Unassigned from review of %s" % review_req.doc.name,
             "%s has cancelled your assignment to the review." % request.user.person,
-            by=request.user.person, notify_secretary=False, notify_reviewer=True)
+            by=request.user.person, notify_secretary=False, notify_reviewer=True, notify_requested_by=False)
 
     review_req.state = ReviewRequestStateName.objects.get(slug="requested")
     review_req.reviewer = reviewer
@@ -92,11 +110,36 @@ def assign_review_request_to_reviewer(request, review_req, reviewer):
         ),
     )
 
-    email_about_review_request(
+    email_review_request_change(
         request, review_req,
         "Assigned to review of %s" % review_req.doc.name,
         "%s has assigned you to review the document." % request.user.person,
-        by=request.user.person, notify_secretary=False, notify_reviewer=True)
+        by=request.user.person, notify_secretary=False, notify_reviewer=True, notify_requested_by=False)
+
+def close_review_request(request, review_req, close_state):
+    suggested_req = review_req.pk is None
+
+    prev_state = review_req.state
+    review_req.state = close_state
+    if close_state.slug == "no-review-version":
+        review_req.reviewed_rev = review_req.doc.rev # save rev for later reference
+    review_req.save()
+
+    if not suggested_req:
+        DocEvent.objects.create(
+            type="changed_review_request",
+            doc=review_req.doc,
+            by=request.user.person,
+            desc="Closed request for {} review by {} with state '{}'".format(
+                review_req.type.name, review_req.team.acronym.upper(), close_state.name),
+        )
+
+        if prev_state.slug != "requested":
+            email_review_request_change(
+                request, review_req,
+                "Closed review request for {}: {}".format(review_req.doc.name, close_state.name),
+                "Review request has been closed by {}.".format(request.user.person),
+                by=request.user.person, notify_secretary=False, notify_reviewer=True, notify_requested_by=True)
 
 def suggested_review_requests_for_team(team):
     def fixup_deadline(d):
@@ -104,11 +147,13 @@ def suggested_review_requests_for_team(team):
             d = d - datetime.timedelta(seconds=1) # 23:59:59 is treated specially in the view code
         return d
 
+    system_person = Person.objects.get(name="(System)")
+
     seen_deadlines = {}
 
     requests = {}
 
-    if True:
+    if True: # FIXME
         # in Last Call
         last_call_type = ReviewTypeName.objects.get(slug="lc")
         last_call_docs = Document.objects.filter(states=State.objects.get(type="draft-iesg", slug="lc", used=True))
@@ -125,12 +170,13 @@ def suggested_review_requests_for_team(team):
                 doc=doc,
                 team=team,
                 deadline=deadline,
+                requested_by=system_person,
             )
 
             seen_deadlines[doc.pk] = deadline
 
 
-    if True:
+    if True: # FIXME
         # on Telechat Agenda
         telechat_dates = list(TelechatDate.objects.active().order_by('date').values_list("date", flat=True)[:4])
 
@@ -153,6 +199,7 @@ def suggested_review_requests_for_team(team):
                 doc=doc,
                 team=team,
                 deadline=deadline,
+                requested_by=system_person,
             )
 
             seen_deadlines[doc.pk] = deadline

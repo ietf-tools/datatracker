@@ -4,10 +4,11 @@ from django.contrib.auth.decorators import login_required
 from django import forms
 
 from ietf.review.models import ReviewRequest, ReviewRequestStateName
-from ietf.review.utils import (can_manage_review_requests_for_team,
+from ietf.review.utils import (can_manage_review_requests_for_team, close_review_request_states,
                                extract_revision_ordered_review_requests_for_documents,
                                assign_review_request_to_reviewer,
-#                               email_about_review_request, make_new_review_request_from_existing,
+                               close_review_request,
+#                               email_review_request_change, make_new_review_request_from_existing,
                                suggested_review_requests_for_team)
 from ietf.group.utils import get_group_or_404
 from ietf.person.fields import PersonEmailChoiceField
@@ -21,14 +22,7 @@ class ManageReviewRequestForm(forms.Form):
 
     action = forms.ChoiceField(choices=ACTIONS, widget=forms.HiddenInput, required=False)
 
-    CLOSE_OPTIONS = [
-        ("noreviewversion", "No review of this version"),
-        ("noreviewdocument", "No review of document"),
-        ("withdraw", "Withdraw request"),
-        ("no-response", "No response"),
-        ("overtaken", "Overtaken by events"),
-    ]
-    close = forms.ChoiceField(choices=CLOSE_OPTIONS, required=False)
+    close = forms.ModelChoiceField(queryset=close_review_request_states(), required=False)
 
     reviewer = PersonEmailChoiceField(empty_label="(None)", required=False, label_with="person")
 
@@ -44,9 +38,9 @@ class ManageReviewRequestForm(forms.Form):
         close_initial = None
         if review_req.pk is None:
             if review_req.latest_reqs:
-                close_initial = "noreviewversion"
+                close_initial = "no-review-version"
             else:
-                close_initial = "noreviewdocument"
+                close_initial = "no-review-document"
         elif review_req.reviewer:
             close_initial = "no-response"
         else:
@@ -54,6 +48,9 @@ class ManageReviewRequestForm(forms.Form):
 
         if close_initial:
             self.fields["close"].initial = close_initial
+
+        if review_req.pk is None:
+            self.fields["close"].queryset = self.fields["close"].queryset.filter(slug__in=["noreviewversion", "noreviewdocument"])
 
         self.fields["close"].widget.attrs["class"] = "form-control input-sm"
 
@@ -115,18 +112,13 @@ def manage_review_requests(request, acronym, group_type=None):
             form_results.append(req.form.is_valid())
 
         if all(form_results):
-            for req in review_requests:
-                action = req.form.cleaned_data.get("action")
+            for review_req in review_requests:
+                action = review_req.form.cleaned_data.get("action")
                 if action == "assign":
-                    assign_review_request_to_reviewer(request, req, req.form.cleaned_data["reviewer"])
+                    assign_review_request_to_reviewer(request, review_req, review_req.form.cleaned_data["reviewer"])
                 elif action == "close":
-                    close_reason = req.form.cleaned_data["close"]
-                    if close_reason in ("withdraw", "no-response", "overtaken"):
-                        req.state = ReviewRequestStateName.objects.get(slug=close_reason, used=True)
-                        req.save()
-                        # FIXME: notify?
-                    else:
-                        FIXME
+                    close_review_request(request, review_req, review_req.form.cleaned_data["close"])
+
 
             kwargs = { "acronym": group.acronym }
             if group_type:
