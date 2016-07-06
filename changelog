@@ -1,3 +1,38 @@
+ietfdb (6.25.1) ietf; urgency=low
+
+  This is a patch release, in preparation for an upcoming feature release.
+  Excerpt from the commitlog:
+
+  * Configured the plural form of 2 models.
+
+  * Merged in [11512] from rjsparks@nostrum.com:
+    Allow RG secretaries to manipulate meeting materials. Fixes #1836.  
+
+  * In the internet-draft submission status page, point at the datatracker 
+    page for the document, rather than the repository copy of the document.
+
+  * Added a method Person.ascii_name() for use when generating 1id-*.txt 
+    files.  Added caching for Person.plain_name(). Fixes a problem with 
+    non-ascii names in 1id-*.txt which lead to non-ascii names in xml2rfc 
+    reference files.
+
+  * Merged in [11504] from rcross@amsl.com:
+    Removed old interim proceedings location reference.
+
+  * Merged in [11501] from rjsparks@nostrum.com:
+    Changed the search results for recordings to link to the actual recording.
+    Fixes #1895.  
+
+  * Merged in [11500] from rjsparks@nostrum.com:
+    Allow non-official schedules to be viewed in the same ways the official 
+    schedule for a meeting can be viewed. Fixes #1959.  
+
+  * Merged in [11498] from rcross@amsl.com:
+    Fixed interim meeting get_proceedings_url() functions.   
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  06 Jul 2016 06:52:43 +0000
+
+
 ietfdb (6.25.0) ietf; urgency=high
 
   **Enhanced testing**
