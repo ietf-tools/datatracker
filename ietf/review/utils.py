@@ -245,12 +245,22 @@ def extract_revision_ordered_review_requests_for_documents(queryset, names):
         front = replaces.get(name, [])
         res[name].extend(requests_for_each_doc.get(name, []))
 
+        seen = set()
+
         while front:
             replaces_reqs = []
+            next_front = []
             for replaces_name in front:
+                if replaces_name in seen:
+                    continue
+
+                seen.add(replaces_name)
+
                 reqs = requests_for_each_doc.get(replaces_name, [])
                 if reqs:
                     replaces_reqs.append(reqs)
+
+                next_front.extend(replaces.get(replaces_name, []))
 
             # in case there are multiple replaces, move the ones with
             # the latest reviews up front
@@ -260,6 +270,6 @@ def extract_revision_ordered_review_requests_for_documents(queryset, names):
                 res[name].extend(reqs)
 
             # move one level down
-            front = [n for l in requests_for_each_doc.get(replaces_name, []) for n in l]
+            front = next_front
 
     return res
