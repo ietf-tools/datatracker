@@ -3,7 +3,7 @@ from django.http import Http404, HttpResponseForbidden
 from django.contrib.auth.decorators import login_required
 from django import forms
 
-from ietf.review.models import ReviewRequest, ReviewRequestStateName
+from ietf.review.models import ReviewRequest
 from ietf.review.utils import (can_manage_review_requests_for_team, close_review_request_states,
                                extract_revision_ordered_review_requests_for_documents,
                                assign_review_request_to_reviewer,
@@ -62,11 +62,8 @@ class ManageReviewRequestForm(forms.Form):
         self.fields["reviewer"].widget.attrs["class"] = "form-control input-sm"
 
         if self.is_bound:
-            action = self.data.get("action")
-            if action == "close":
+            if self.data.get("action") == "close":
                 self.fields["close"].required = True
-            elif action == "assign":
-                self.fields["reviewer"].required = True
 
 
 @login_required

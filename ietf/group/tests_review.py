@@ -6,11 +6,73 @@ from django.core.urlresolvers import reverse as urlreverse
 
 from ietf.utils.test_data import make_test_data, make_review_data
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase, unicontent, reload_db_objects
-from ietf.review.models import ReviewRequest
+from ietf.review.models import ReviewRequest, ReviewRequestStateName
+from ietf.doc.models import TelechatDocEvent
+from ietf.iesg.models import TelechatDate
 from ietf.person.models import Email, Person
+from ietf.review.utils import suggested_review_requests_for_team
 import ietf.group.views_review
 
 class ReviewTests(TestCase):
+    def test_suggested_review_requests(self):
+        doc = make_test_data()
+        review_req = make_review_data(doc)
+        team = review_req.team
+
+        # put on telechat
+        TelechatDocEvent.objects.create(
+            type="scheduled_for_telechat",
+            by=Person.objects.get(name="(System)"),
+            doc=doc,
+            telechat_date=TelechatDate.objects.all().first().date,
+        )
+        doc.rev = "10"
+        doc.save()
+
+        prev_rev = "{:02}".format(int(doc.rev) - 1)
+
+        # blocked by existing request
+        review_req.requested_rev = ""
+        review_req.save()
+
+        self.assertEqual(len(suggested_review_requests_for_team(team)), 0)
+
+        # ... but not to previous version
+        review_req.requested_rev = prev_rev
+        review_req.save()
+        suggestions = suggested_review_requests_for_team(team)
+        self.assertEqual(len(suggestions), 1)
+        self.assertEqual(suggestions[0].doc, doc)
+        self.assertEqual(suggestions[0].team, team)
+
+        # blocked by non-versioned refusal
+        review_req.requested_rev = ""
+        review_req.state = ReviewRequestStateName.objects.get(slug="no-review-document")
+        review_req.save()
+
+        self.assertEqual(list(suggested_review_requests_for_team(team)), [])
+
+        # blocked by versioned refusal
+        review_req.reviewed_rev = doc.rev
+        review_req.state = ReviewRequestStateName.objects.get(slug="no-review-document")
+        review_req.save()
+
+        self.assertEqual(list(suggested_review_requests_for_team(team)), [])
+
+        # blocked by completion
+        review_req.state = ReviewRequestStateName.objects.get(slug="completed")
+        review_req.save()
+
+        self.assertEqual(list(suggested_review_requests_for_team(team)), [])
+
+        # ... but not to previous version
+        review_req.reviewed_rev = prev_rev
+        review_req.state = ReviewRequestStateName.objects.get(slug="completed")
+        review_req.save()
+
+        self.assertEqual(len(suggested_review_requests_for_team(team)), 1)
+        
+
     def test_manage_review_requests(self):
         doc = make_test_data()
         review_req1 = make_review_data(doc)

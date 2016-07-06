@@ -153,6 +153,8 @@ def suggested_review_requests_for_team(team):
 
     requests = {}
 
+    requested_state = ReviewRequestStateName.objects.get(slug="requested", used=True)
+
     if True: # FIXME
         # in Last Call
         last_call_type = ReviewTypeName.objects.get(slug="lc")
@@ -171,6 +173,7 @@ def suggested_review_requests_for_team(team):
                 team=team,
                 deadline=deadline,
                 requested_by=system_person,
+                state=requested_state,
             )
 
             seen_deadlines[doc.pk] = deadline
@@ -200,6 +203,7 @@ def suggested_review_requests_for_team(team):
                 team=team,
                 deadline=deadline,
                 requested_by=system_person,
+                state=requested_state,
             )
 
             seen_deadlines[doc.pk] = deadline
@@ -210,11 +214,19 @@ def suggested_review_requests_for_team(team):
         existing_requests[r.doc_id].append(r)
 
     def blocks(existing, request):
-        return (existing.doc_id == request.doc_id
-                and existing.reviewed_rev == request.doc.rev
-                and existing.state_id not in ("part-completed", "rejected", "overtaken"))
+        if existing.doc_id != request.doc_id:
+            return False
 
-    res = [r for r in requests.itervalues() if not any(blocks(e, r) for e in existing_requests[r.doc_id])]
+        no_review_document = existing.state_id == "no-review-document"
+        pending = (existing.state_id in ("requested", "accepted")
+                   and (not existing.requested_rev or existing.requested_rev == request.doc.rev))
+        completed_or_closed = (existing.state_id not in ("part-completed", "rejected", "overtaken", "no-response")
+                               and existing.reviewed_rev == request.doc.rev)
+
+        return no_review_document or pending or completed_or_closed
+
+    res = [r for r in requests.itervalues()
+           if not any(blocks(e, r) for e in existing_requests[r.doc_id])]
     res.sort(key=lambda r: (r.deadline, r.doc_id))
     return res
 
