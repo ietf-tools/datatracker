@@ -52,11 +52,13 @@
         <td>{{ review_req.time|date:"Y-m-d" }}</td>
       </tr>
 
-      <tr>
-        <th></th>
-        <th>Requested by</th>
-        <td>{{ review_req.requested_by }}</td>
-      </tr>
+      {% if review_req.requested_by.name != "(System)" %}
+        <tr>
+          <th></th>
+          <th>Requested by</th>
+          <td>{{ review_req.requested_by }}</td>
+        </tr>
+      {% endif %}
     </tbody>
 
     <tbody class="meta">
