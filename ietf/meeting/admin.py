@@ -1,9 +1,10 @@
 from django.contrib import admin
 
-from ietf.meeting.models import Meeting, Room, Session, TimeSlot, Constraint, Schedule, SchedTimeSessAssignment, ResourceAssociation
+from ietf.meeting.models import (Meeting, Room, Session, TimeSlot, Constraint, Schedule,
+    SchedTimeSessAssignment, ResourceAssociation, FloorPlan)
 
 class RoomAdmin(admin.ModelAdmin):
-    list_display = ["id", "meeting", "name", "capacity", ]
+    list_display = ["id", "meeting", "name", "capacity", "x1", "y1", "x2", "y2", ]
     list_filter = ["meeting"]
     ordering = ["-meeting"]
 
@@ -98,3 +99,8 @@ admin.site.register(SchedTimeSessAssignment, SchedTimeSessAssignmentAdmin)
 class ResourceAssociationAdmin(admin.ModelAdmin):
     list_display = ["desc", "icon", "desc", ]
 admin.site.register(ResourceAssociation, ResourceAssociationAdmin)
+
+class FloorPlanAdmin(admin.ModelAdmin):
+    list_display = ['id', 'meeting', 'name', 'order', 'image', ]
+    raw_id_fields = ['meeting', ]
+admin.site.register(FloorPlan, FloorPlanAdmin)

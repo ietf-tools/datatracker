@@ -8,7 +8,7 @@ from tastypie.cache import SimpleCache
 from ietf import api
 
 from ietf.meeting.models import ( Meeting, ResourceAssociation, Constraint, Room, Schedule, Session,
-                                TimeSlot, SchedTimeSessAssignment, SessionPresentation )
+                                TimeSlot, SchedTimeSessAssignment, SessionPresentation, FloorPlan )
 
 from ietf.name.resources import MeetingTypeNameResource
 class MeetingResource(ModelResource):
@@ -83,11 +83,28 @@ class ConstraintResource(ModelResource):
         }
 api.meeting.register(ConstraintResource())
 
+class FloorPlanResource(ModelResource):
+    meeting          = ToOneField(MeetingResource, 'meeting')
+    class Meta:
+        queryset = FloorPlan.objects.all()
+        serializer = api.Serializer()
+        cache = SimpleCache()
+        #resource_name = 'floorplan'
+        filtering = { 
+            "id": ALL,
+            "name": ALL,
+            "order": ALL,
+            "image": ALL,
+            "meeting": ALL_WITH_RELATIONS,
+        }
+api.meeting.register(FloorPlanResource())
+
 from ietf.name.resources import TimeSlotTypeNameResource
 class RoomResource(ModelResource):
     meeting          = ToOneField(MeetingResource, 'meeting')
     resources        = ToManyField(ResourceAssociationResource, 'resources', null=True)
     session_types    = ToManyField(TimeSlotTypeNameResource, 'session_types', null=True)
+    floorplan        = ToOneField(FloorPlanResource, 'floorplan', null=True)
     class Meta:
         cache = SimpleCache()
         queryset = Room.objects.all()
@@ -101,6 +118,7 @@ class RoomResource(ModelResource):
             "meeting": ALL_WITH_RELATIONS,
             "resources": ALL_WITH_RELATIONS,
             "session_types": ALL_WITH_RELATIONS,
+            "floorplan": ALL_WITH_RELATIONS,
         }
 api.meeting.register(RoomResource())
 
