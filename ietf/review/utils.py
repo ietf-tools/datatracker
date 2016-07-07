@@ -2,13 +2,14 @@ import datetime
 from collections import defaultdict
 
 from django.contrib.sites.models import Site
+from django.db import models
 
 from ietf.group.models import Group, Role
 from ietf.doc.models import Document, DocEvent, State, LastCallDocEvent
 from ietf.iesg.models import TelechatDate
 from ietf.person.models import Person
 from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream
-from ietf.review.models import ReviewRequest, ReviewRequestStateName, ReviewTypeName
+from ietf.review.models import ReviewRequest, ReviewRequestStateName, ReviewTypeName, Reviewer
 from ietf.utils.mail import send_mail
 from ietf.doc.utils import extract_complete_replaces_ancestor_mapping_for_docs
 
@@ -273,3 +274,60 @@ def extract_revision_ordered_review_requests_for_documents(queryset, names):
             front = next_front
 
     return res
+
+def construct_review_request_assignment_choices(possible_emails, team, review_req=None):
+    possible_emails = list(possible_emails)
+
+    reviewers = { r.person_id: r for r in Reviewer.objects.filter(team=team, person__in=[e.person_id for e in possible_emails]) }
+
+    latest_assignment_for_reviewer = dict(ReviewRequest.objects.filter(
+        reviewer__in=possible_emails,
+    ).values_list("reviewer").annotate(models.Max("time")))
+
+    now = datetime.datetime.now()
+
+    rankings = []
+    for e in possible_emails:
+        reviewer = reviewers.get(e.person_id)
+        if not reviewer:
+            reviewer = Reviewer()
+
+        days_past = None
+        latest = latest_assignment_for_reviewer.get(e.pk)
+        if latest is not None:
+            days_past = (now - latest).days - reviewer.frequency
+
+        # FIXME:
+        # positive:  (Perhaps do these separately? As initial values?)
+        # has done review of previous rev
+        # would like to review
+
+        # blocks:
+        # connections to doc + filter_re
+        # has rejected same request/completed partial review
+        # is unavailable_until
+
+        if days_past is None:
+            ready_for = "first time"
+        else:
+            d = int(round(days_past))
+            if d > 0:
+                ready_for = "ready for {} {}".format(d, "day" if d == 1 else "days")
+            else:
+                d = -d
+                ready_for = "frequency exceeded - ready in {} {}".format(d, "day" if d == 1 else "days")
+
+        label = "{}: {}".format(e.person, ready_for)
+
+        rank = (-100000 if days_past is None else -days_past,)
+
+        rankings.append({
+            "email": e,
+            "rank": rank,
+            "label": label,
+        })
+
+    rankings.sort(key=lambda r: r["rank"])
+
+    # FIXME: empty choices
+    return [(r["email"].pk, r["label"]) for r in rankings]

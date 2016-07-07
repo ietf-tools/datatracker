@@ -8,7 +8,8 @@ from ietf.review.utils import (can_manage_review_requests_for_team, close_review
                                extract_revision_ordered_review_requests_for_documents,
                                assign_review_request_to_reviewer,
                                close_review_request,
-#                               email_review_request_change, make_new_review_request_from_existing,
+                               construct_review_request_assignment_choices,
+#                               make_new_review_request_from_existing,
                                suggested_review_requests_for_team)
 from ietf.group.utils import get_group_or_404
 from ietf.person.fields import PersonEmailChoiceField
@@ -58,7 +59,7 @@ class ManageReviewRequestForm(forms.Form):
             role__name="reviewer",
             role__group=review_req.team,
         )
-
+        self.fields["reviewer"].choices = construct_review_request_assignment_choices(self.fields["reviewer"].queryset, review_req.team, review_req)
         self.fields["reviewer"].widget.attrs["class"] = "form-control input-sm"
 
         if self.is_bound:

@@ -11,7 +11,14 @@ class Reviewer(models.Model):
     reviewer and team."""
     team        = models.ForeignKey(Group)
     person      = models.ForeignKey(Person)
-    frequency   = models.IntegerField(default=30, help_text="Can review every N days")
+    FREQUENCIES = [
+        (7, "Once per week"),
+        (14, "Once per fortnight"),
+        (30, "Once per month"),
+        (60, "Once per two months"),
+        (90, "Once per quarter"),
+    ]
+    frequency   = models.IntegerField(default=30, help_text="Can review every N days", choices=FREQUENCIES)
     unavailable_until = models.DateTimeField(blank=True, null=True, help_text="When will this reviewer be available again")
     filter_re   = models.CharField(max_length=255, blank=True)
     skip_next   = models.IntegerField(default=0, help_text="Skip the next N review assignments")

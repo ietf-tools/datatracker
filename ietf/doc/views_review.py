@@ -17,7 +17,8 @@ from ietf.person.fields import PersonEmailChoiceField, SearchablePersonField
 from ietf.review.utils import (active_review_teams, assign_review_request_to_reviewer,
                                can_request_review_of_doc, can_manage_review_requests_for_team,
                                email_review_request_change, make_new_review_request_from_existing,
-                               close_review_request_states, close_review_request)
+                               close_review_request_states, close_review_request,
+                               construct_review_request_assignment_choices)
 from ietf.review import mailarch
 from ietf.utils.fields import DatepickerDateField
 from ietf.utils.text import skip_prefix
@@ -212,6 +213,8 @@ class AssignReviewerForm(forms.Form):
         f.queryset = f.queryset.filter(role__name="reviewer", role__group=review_req.team)
         if review_req.reviewer:
             f.initial = review_req.reviewer_id
+        f.choices = construct_review_request_assignment_choices(f.queryset, review_req.team, review_req)
+
 
 @login_required
 def assign_reviewer(request, name, request_id):
