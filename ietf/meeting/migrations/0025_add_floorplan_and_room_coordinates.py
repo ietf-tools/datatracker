@@ -56,4 +56,8 @@ class Migration(migrations.Migration):
             field=models.SmallIntegerField(default=None, null=True, blank=True),
             preserve_default=True,
         ),
+        migrations.AlterModelOptions(
+            name='room',
+            options={'ordering': ['-meeting', 'name']},
+        ),
     ]
