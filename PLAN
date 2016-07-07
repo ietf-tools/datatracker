@@ -7,8 +7,6 @@ Updated: $Date$
 Planned work in rough order
 ===========================
 
-* Schema Changes: floorplan.  Add Berlin floorplans manually.
-
 * Glue code for WG issue trackers and wiki:
   - create new trackers on group creation
   - update access lists on group chair/secretary changes
@@ -41,6 +39,13 @@ Planned work in rough order
   in the datatracker rendering, replacing the simpler code currently in use.
 
 * Glue code to trigger generation of htmlized documents on www.ietf.org ??
+
+* Review and change the draft submission and handling code to deal with UTF-8
+  instead of ascii before upload of utf-8 drafts should be permitted.  In
+  ietf.submit.views.upload_submission(), for instance, there's a file open()
+  which should be codecs.open() with the appropriate encoding.  In general,
+  there are about 100 file open() which should be reviewed and changed to
+  codecs.open() unless that's clearly not right.
 
 * Performance analysis of database table and index setup
 
