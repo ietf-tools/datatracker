@@ -1,3 +1,17 @@
+ietfdb (6.26.0) ietf; urgency=high
+
+  **Meeting floor plans**
+
+  This release adds basic support for meeting venue floorplans and room
+  location, including JSON API access to floorplan images and room
+  coordinates.  Floorplan data for IETF 96 in Berlin is also provided in a
+  data migration.  Not part of this release, but planned for a later release,
+  is support for arrows pointing out rooms, and secretariat support for room
+  location input.  Merged in from ^/personal/henrik/6.25.2-floorplans.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  07 Jul 2016 13:08:48 -0700
+
+
 ietfdb (6.25.1) ietf; urgency=low
 
   This is a patch release, in preparation for an upcoming feature release.
