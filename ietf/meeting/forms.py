@@ -1,6 +1,7 @@
 import datetime
 import os
 import re
+import codecs
 
 from django import forms
 from django.core.validators import ValidationError
@@ -304,7 +305,7 @@ class InterimSessionModelForm(forms.ModelForm):
         directory = os.path.dirname(path)
         if not os.path.exists(directory):
             os.makedirs(directory)
-        with open(path, "w") as file:
+        with codecs.open(path, "w", encoding='utf-8') as file:
             file.write(self.cleaned_data['agenda'])
 
 
