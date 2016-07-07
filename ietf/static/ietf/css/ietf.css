@@ -110,6 +110,7 @@ div.anchor-target:before {
   height: 65px;
   margin-top: -65px;
 }
+div.anchor-target { z-index: 0; }
 
 /* Make the panel title font normally large */
 .panel-title { font-size: 14px }
@@ -124,6 +125,7 @@ label.required:after { content: "\2217"; color: #a94442; font-weight: bold; }
 
 /* Add some margin to tabs */
 .nav-tabs[role=tablist] { margin-bottom: 0.7em; }
+.nav a { z-index: 100; }
 
 /* Styles needed for the ballot table */
 /*
