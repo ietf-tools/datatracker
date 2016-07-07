@@ -546,6 +546,7 @@ class SubmitTests(TestCase):
 
         # edit
         mailbox_before = len(outbox)
+        # FIXME If this test is started before midnight, and ends after, it will fail
         document_date = datetime.date.today() - datetime.timedelta(days=-3)
         r = self.client.post(edit_url, {
             "edit-title": "some title",
