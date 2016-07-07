@@ -616,3 +616,7 @@ def format_timedelta(timedelta):
     hours, remainder = divmod(s, 3600)
     minutes, seconds = divmod(remainder, 60)
     return '{hours:02d}:{minutes:02d}'.format(hours=hours,minutes=minutes)
+
+@register.filter()
+def nbsp(value):
+    return mark_safe("&nbsp;".join(value.split(' ')))
