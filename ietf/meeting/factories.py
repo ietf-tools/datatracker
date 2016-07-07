@@ -3,8 +3,9 @@ import random
 import datetime
 
 from django.db.models import Max
+from django.core.files.base import ContentFile
 
-from ietf.meeting.models import Meeting, Session, Schedule, TimeSlot, SessionPresentation
+from ietf.meeting.models import Meeting, Session, Schedule, TimeSlot, SessionPresentation, FloorPlan
 from ietf.group.factories import GroupFactory
 from ietf.person.factories import PersonFactory
 
@@ -106,3 +107,18 @@ class SessionPresentationFactory(factory.DjangoModelFactory):
     def rev(self):
         return self.document.rev
 
+class FloorPlanFactory(factory.DjangoModelFactory):
+    class Meta:
+        model = FloorPlan
+
+    name = factory.Sequence(lambda n: u'Venue Floor %d' % n)
+    meeting = factory.SubFactory(MeetingFactory)
+    order = factory.Sequence(lambda n: n)
+    image = factory.LazyAttribute(
+            lambda _: ContentFile(
+                factory.django.ImageField()._make_data(
+                    {'width': 1024, 'height': 768}
+                ), 'floorplan.jpg'
+            )
+        )
+        
