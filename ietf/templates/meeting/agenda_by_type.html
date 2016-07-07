@@ -2,13 +2,15 @@
 {% block morecss %}
 
 ul.typelist { list-style:none; padding-left:0; }
-li.typelistentry { font-size:162%; font-weight:700; }
+li h2 { font-weight: 600; margin-top: 0.5em; }
+li h3 { font-weight: 400; margin-top: 0.5em; }
 li.even { background-color:#EDF5FF; }
 li.odd { background-color:white; }
 ul.daylist {list-style:none; padding-left:0; margin-bottom:20px;}
 li.daylistentry { margin-left:2em; font-weight: 400; }
 
-.sessiontable {margin-left:2em; font-size:62%;}
+
+.sessiontable {margin-left: 2em; }
 .sessiontable td {padding-right: 1em;}
 
 .typelabel { font-size:162%; font-weight:700; }
@@ -25,18 +27,18 @@ li.daylistentry { margin-left:2em; font-weight: 400; }
 {% block title %}Agenda for {{meeting}} by Session Type{% endblock %}
 
 {% block content %}
-{% include "meeting/meeting_heading.html" with meeting=schedule.meeting updated=meeting.updated %}
-<h1>Agenda for {{meeting}} by Session Type</h1>
+{% include "meeting/meeting_heading.html" with meeting=schedule.meeting updated=meeting.updated selected="by-type"  title_extra="by Session Type" %}
+
 {% regroup assignments by session.type.slug as type_list %}
 <ul class="typelist">
 {% for type in type_list %}
   <li class="typelistentry {% cycle 'even' 'odd' %}">
-    {{type.grouper}} {% if schedule == meeting.agenda %}<a id="ical-link" class="btn btn-primary" href="{% url "ietf.meeting.views.agenda_by_type_ics" num=meeting.number type=type.grouper %}">Download to Calendar</a>{% endif %}
+    <h2>{{type.grouper|title}}</h2> {% if schedule == meeting.agenda %}<a id="ical-link" class="btn btn-primary" href="{% url "ietf.meeting.views.agenda_by_type_ics" num=meeting.number type=type.grouper %}">Download to Calendar</a>{% endif %}
     <ul class="daylist">
     {% regroup type.list by timeslot.time|date:"l Y-M-d" as daylist %}
     {% for day in daylist %}
       <li class="daylistentry">
-        {{ day.grouper }}
+        <h3>{{ day.grouper }}</h3>
         <table class="sessiontable">
         {% for ss in day.list %}
           <tr>

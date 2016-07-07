@@ -1,24 +1,57 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}{% load origin %}{% origin %}
 {# assumes meeting is in context #}
-{% if schedule != meeting.agenda %}
-<h3 class="alert alert-danger text-center">
-   This is schedule {{schedule.owner.email}}/{{ schedule.name }}, not the official schedule.
-</h3>
-{% endif %}
+{% load origin %}
+{% load ietf_filters %}
 
-<h1>
-  IETF {{ meeting.number }} Meeting Agenda
-  <br>
-  <small>
-    {{ meeting.city }}, {{ meeting.date|date:"F j" }} -
-    {% if meeting.date.month != meeting.end_date.month %}
-      {{ meeting.end_date|date:"F " }}
-    {% endif %}
-    {{ meeting.end_date|date:"j, Y" }}
-    <span class="pull-right">
-     Updated {{ updated|date:"Y-m-d \a\t G:i:s (T)" }}
-    </span>
+      {% origin %}
 
-  </small>
+      {% if schedule != meeting.agenda %}
+      <h3 class="alert alert-danger text-center">
+	 This is schedule {{schedule.owner.email}}/{{ schedule.name }}, not the official schedule.
+      </h3>
+      {% endif %}
 
-</h1>
+      <h1>
+	IETF {{ meeting.number }} Meeting Agenda {{ title_extra }}
+	<br>
+	<small>
+	  {{ meeting.city }}, {{ meeting.date|date:"F j" }} -
+	  {% if meeting.date.month != meeting.end_date.month %}
+	    {{ meeting.end_date|date:"F " }}
+	  {% endif %}
+	  {{ meeting.end_date|date:"j, Y" }}
+	  {% if updated %}
+	  <span class="pull-right">
+	   Updated {{ updated|date:"Y-m-d \a\t G:i:s (T)" }}
+	  </span>
+	  {% endif %}
+	</small>
+      </h1>
+
+      <ul class="nav nav-tabs" role="tablist">
+	<li {% if selected == "agenda" %}class="active"{% endif %}>
+	    <a href="{% url 'ietf.meeting.views.agenda' num=schedule.meeting.number %}">Agenda</a></li>
+	<li {% if selected == "agenda-utc" %}class="active"{% endif %}>
+	    <a href="{% url 'ietf.meeting.views.agenda' num=schedule.meeting.number utc='-utc' %}">UTC Agenda</a></li>
+	{% if user|has_role:"Secretariat,Area Director,IAB" %}
+          {% if schedule != meeting.agenda %}
+	    <li {% if selected == "by-room" %}class="active"{% endif %}>
+		<a href="{% url 'ietf.meeting.views.agenda_by_room' num=schedule.meeting.number name=schedule.name owner=schedule.owner.email %}">by Room</a></li>
+	    <li {% if selected == "by-type" %}class="active"{% endif %}>
+		<a href="{% url 'ietf.meeting.views.agenda_by_type' num=schedule.meeting.number name=schedule.name owner=schedule.owner.email %}">by Type</a></li>
+	    <li {% if selected == "room-view" %}class="active"{% endif %}>
+		<a href="{% url 'ietf.meeting.views.room_view'      num=schedule.meeting.number name=schedule.name owner=schedule.owner.email %}">Room grid</a></li>
+	  {% else %}
+	    <li {% if selected == "by-room" %}class="active"{% endif %}>
+		<a href="{% url 'ietf.meeting.views.agenda_by_room' num=schedule.meeting.number %}">by Room</a></li>
+	    <li {% if selected == "by-type" %}class="active"{% endif %}>
+		<a href="{% url 'ietf.meeting.views.agenda_by_type' num=schedule.meeting.number %}">by Type</a></li>
+	    <li {% if selected == "room-view" %}class="active"{% endif %}>
+		<a href="{% url 'ietf.meeting.views.room_view'      num=schedule.meeting.number %}">Room grid</a></li>
+	  {% endif %}
+	{% endif %}
+	<li {% if selected == "floor-plan" %}class="active"{% endif %}>
+	    <a href="{% url 'ietf.meeting.views.floor_plan' num=schedule.meeting.number %}">Floor plan</a></li>
+	<li><a href="{% url 'ietf.meeting.views.agenda' num=schedule.meeting.number ext='.txt' %}">Plaintext</a></li>
+	<li><a href="https://tools.ietf.org/agenda/{{schedule.meeting.number}}/">Tools-style &raquo;</a></li>
+      </ul>

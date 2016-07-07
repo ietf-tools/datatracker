@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 {% block morecss %}
 ul.daylist { list-style:none; padding-left:0; }
-li.daylistentry { font-size:162%; font-weight:700; }
+li h2 { font-weight: 600; margin-top: 0.5em; }
+li h3 { font-weight: 400; margin-top: 0.5em; }
 li.even { background-color:#EDF5FF; }
 li.odd { background-color:white; }
-ul.roomlist {list-style:none; padding-left:0; margin-bottom:20px;}
+ul.roomlist {list-style:none; margin-top: 0.5em; }
 li.roomlistentry { font-weight: 400; }
 ul.sessionlist { list-style:none; padding-left:2em; margin-bottom:10px;}
-li.sessionlistentry { font-size:62%; }
 
 .type-lead:after { content: " (DO NOT POST)"; color:red; }
 .type-offagenda:after { content:" (not published on agenda)"; }
@@ -17,25 +17,26 @@ li.sessionlistentry { font-size:62%; }
 {% block title %}Agenda for {{meeting}} by Room{% endblock %}
 
 {% block content %}
-{% include "meeting/meeting_heading.html" with meeting=schedule.meeting updated=meeting.updated %}
-<h1>Agenda for {{meeting}} by Room</h1>
-<ul class="daylist">
-{% for day,sessions in ss_by_day.items %}
-<li class="daylistentry {% cycle 'even' 'odd' %}">{{day|date:'l, j F Y'}}
-{% regroup sessions by timeslot.get_functional_location as room_list %}
-<ul class="roomlist">
-{% for room in room_list %}
-<li class="roomlistentry">{{room.grouper|default:"Location Unavailable"}}
-<ul class="sessionlist">
-{% for ss in room.list %}
-<li class="sessionlistentry type-{{ss.timeslot.type.slug}}">{{ss.timeslot.time|date:"H:i"}}-{{ss.timeslot.end_time|date:"H:i"}} {{ss.session.short_name}}</li>
-{% endfor %}
-</ul>
-</li>
-{% endfor %}
-</ul>
-</li>
-{% endfor %}
-</ul>
+
+  {% include "meeting/meeting_heading.html" with meeting=schedule.meeting updated=meeting.updated selected="by-room" title_extra="by Room" %}
+
+  <ul class="daylist">
+    {% for day,sessions in ss_by_day.items %}
+      <li class="daylistentry {% cycle 'even' 'odd' %}"><h2>{{day|date:'l, j F Y'}}</h2>
+	{% regroup sessions by timeslot.get_functional_location as room_list %}
+	<ul class="roomlist">
+	  {% for room in room_list %}
+	    <li class="roomlistentry"><h3>{{room.grouper|default:"Location Unavailable"}}</h3>
+	      <ul class="sessionlist">
+		{% for ss in room.list %}
+		  <li class="sessionlistentry type-{{ss.timeslot.type.slug}}">{{ss.timeslot.time|date:"H:i"}}-{{ss.timeslot.end_time|date:"H:i"}} {{ss.session.short_name}}</li>
+		{% endfor %}
+	      </ul>
+	    </li>
+	  {% endfor %}
+	</ul>
+      </li>
+    {% endfor %}
+  </ul>
 {% endblock %}
 
