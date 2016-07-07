@@ -582,7 +582,7 @@
   </script>
 </head>
 <body onload="draw_calendar()" onresize="draw_calendar()" id="body">
-  <div id="mtgheader" style="overflow:auto">{% include "meeting/meeting_heading.html" with meeting=schedule.meeting updated=schedule.meeting.updated %}</div>
+  <div id="mtgheader" style="overflow:auto">{% include "meeting/meeting_heading.html" with meeting=schedule.meeting updated=schedule.meeting.updated selected="room-view" title_extra="Room Grid" %}</div>
   <div id="daycontainer" role="tabpanel">
     <ul id="daytabs" class="nav nav-tabs" role="tablist">
     {% for day in days %}

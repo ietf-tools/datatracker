@@ -556,11 +556,17 @@ YANG_INVAL_MODEL_DIR = '/a/www/ietf-ftp/yang/invalmod/'
 
 XML_LIBRARY = "/www/tools.ietf.org/tools/xml2rfc/web/public/rfc/"
 
+# === Meeting Related Settings =================================================
+
 MEETING_MATERIALS_SUBMISSION_START_DAYS = -90
 MEETING_MATERIALS_SUBMISSION_CUTOFF_DAYS = 26
 MEETING_MATERIALS_SUBMISSION_CORRECTION_DAYS = 50
 
 INTERNET_DRAFT_DAYS_TO_EXPIRE = 185
+
+FLOORPLAN_MEDIA_DIR = 'floor'
+
+# ==============================================================================
 
 DOT_BINARY = '/usr/bin/dot'
 UNFLATTEN_BINARY= '/usr/bin/unflatten'

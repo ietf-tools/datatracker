@@ -25,6 +25,7 @@ from ietf.group.models import Group
 from ietf.group.utils import can_manage_materials
 from ietf.name.models import MeetingTypeName, TimeSlotTypeName, SessionStatusName, ConstraintName, RoomResourceName
 from ietf.person.models import Person
+from ietf.utils.storage import NoLocationMigrationFileSystemStorage
 
 countries = pytz.country_names.items()
 countries.sort(lambda x,y: cmp(x[1], y[1]))
@@ -274,6 +275,8 @@ class Meeting(models.Model):
     class Meta:
         ordering = ["-date", "id"]
 
+# === Rooms, Resources, Floorplans =============================================
+
 class ResourceAssociation(models.Model):
     name = models.ForeignKey(RoomResourceName)
     #url  = models.UrlField()       # not sure what this was for.
@@ -298,6 +301,15 @@ class Room(models.Model):
     capacity = models.IntegerField(null=True, blank=True)
     resources = models.ManyToManyField(ResourceAssociation, blank = True)
     session_types = models.ManyToManyField(TimeSlotTypeName, blank = True)
+    # floorplan-related properties
+    floorplan = models.ForeignKey('FloorPlan', null=True, blank=True, default=None)
+    # floorplan: room pixel position : (0,0) is top left of image, (xd, yd)
+    # is room width, height.
+    x1 = models.SmallIntegerField(null=True, blank=True, default=None)
+    y1 = models.SmallIntegerField(null=True, blank=True, default=None)
+    x2 = models.SmallIntegerField(null=True, blank=True, default=None)
+    y2 = models.SmallIntegerField(null=True, blank=True, default=None)
+    # end floorplan-related stuff
 
     def __unicode__(self):
         return "%s size: %s" % (self.name, self.capacity)
@@ -332,6 +344,36 @@ class Room(models.Model):
             'capacity':             self.capacity,
             }
 
+    def left(self):
+        return min(self.x1, self.x2) if (self.x1 and self.x2) else 0
+    def top(self):
+        return min(self.y1, self.y2) if (self.y1 and self.y2) else 0
+    def right(self):
+        return max(self.x1, self.x2) if (self.x1 and self.x2) else 0
+    def bottom(self):
+        return max(self.y1, self.y2) if (self.y1 and self.y2) else 0
+    def functional_display_name(self):
+        if not self.functional_name:
+            return ""
+        if self.functional_name.lower().startswith('breakout'):
+            return ""
+        if self.functional_name[0].isdigit():
+            return ""
+        return self.functional_name
+    class Meta:
+        ordering = ["-meeting", "name"]
+
+def floorplan_path(instance, filename):
+    root, ext = os.path.splitext(filename)
+    return u"%s/floorplan-%s-%s%s" % (settings.FLOORPLAN_MEDIA_DIR, instance.meeting.number, slugify(instance.name), ext)
+
+class FloorPlan(models.Model):
+    name    = models.CharField(max_length=255)
+    meeting = models.ForeignKey(Meeting)
+    order   = models.SmallIntegerField()
+    image   = models.ImageField(storage=NoLocationMigrationFileSystemStorage(), upload_to=floorplan_path, blank=True, default=None)
+
+# === Schedules, Sessions, Timeslots and Assignments ===========================
 
 class TimeSlot(models.Model):
     """
@@ -1307,3 +1349,4 @@ class Session(models.Model):
         if self.badness_test(1):
             self.badness_log(1, "badgroup: %s badness = %u\n" % (self.group.acronym, badness))
         return badness
+

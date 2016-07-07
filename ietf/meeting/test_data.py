@@ -40,7 +40,7 @@ def make_meeting_test_data():
     unofficial_schedule = Schedule.objects.create(meeting=meeting, owner=plainman, name="test-unofficial-agenda", visible=True, public=True)
     pname = RoomResourceName.objects.create(name='projector',slug='proj')
     projector = ResourceAssociation.objects.create(name=pname,icon="notfound.png",desc="Basic projector")
-    room = Room.objects.create(meeting=meeting, name="Test Room", capacity=123)
+    room = Room.objects.create(meeting=meeting, name="Test Room", capacity=123, functional_name="Testing Ground")
     breakfast_room = Room.objects.create(meeting=meeting, name="Breakfast Room", capacity=40)
     room.session_types.add("session")
     breakfast_room.session_types.add("lead")

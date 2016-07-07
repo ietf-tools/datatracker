@@ -32,7 +32,7 @@ from ietf.doc.models import Document, State, DocEvent
 from ietf.group.models import Group
 from ietf.group.utils import can_manage_materials
 from ietf.ietfauth.utils import role_required, has_role
-from ietf.meeting.models import Meeting, Session, Schedule, Room
+from ietf.meeting.models import Meeting, Session, Schedule, Room, FloorPlan
 from ietf.meeting.helpers import get_areas, get_person_by_email, get_schedule_by_name
 from ietf.meeting.helpers import build_all_agenda_slices, get_wg_name_list
 from ietf.meeting.helpers import get_all_assignments_from_schedule
@@ -393,7 +393,7 @@ def list_agendas(request, num=None ):
                                           })
 
 @ensure_csrf_cookie
-def agenda(request, num=None, name=None, base=None, ext=None, owner=None):
+def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""):
     base = base if base else 'agenda'
     ext = ext if ext else '.html'
     mimetype = {
@@ -1424,3 +1424,15 @@ def upcoming_ical(request):
     response['Content-Disposition'] = 'attachment; filename="upcoming.ics"'
     return response
     
+
+def floor_plan(request, num=None, floor=None, ):
+    meeting = get_meetings(num).first()
+    schedule = meeting.agenda
+    floors = FloorPlan.objects.filter(meeting=meeting).order_by('order')
+    if floor:
+        floors = floors.filter(name=floor)
+    return render(request, 'meeting/floor-plan.html', {
+            "schedule": schedule,
+            "number": num,
+            "floors": floors,
+        })

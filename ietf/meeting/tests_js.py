@@ -46,7 +46,7 @@ class ScheduleEditTests(StaticLiveServerTestCase):
     def setUp(self):
         set_coverage_checking(False)
         condition_data()
-        self.driver = webdriver.PhantomJS(service_log_path=settings.TEST_GHOSTDRIVER_LOG_PATH)
+        self.driver = webdriver.PhantomJS(port=0, service_log_path=settings.TEST_GHOSTDRIVER_LOG_PATH)
         self.driver.set_window_size(1024,768)
 
     def tearDown(self):

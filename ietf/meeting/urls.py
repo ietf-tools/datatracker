@@ -52,7 +52,7 @@ type_ietf_only_patterns = [
 ]
 
 type_ietf_only_patterns_id_optional = [
-    url(r'^agenda(-utc)?(?P<ext>.html)?/?$',     views.agenda),
+    url(r'^agenda(?P<utc>-utc)?(?P<ext>.html)?/?$',     views.agenda),
     url(r'^agenda(?P<ext>.txt)$', views.agenda),
     url(r'^agenda(?P<ext>.csv)$', views.agenda),
     url(r'^agenda/edit$', views.edit_agenda),
@@ -61,6 +61,8 @@ type_ietf_only_patterns_id_optional = [
     url(r'^agenda.ics$', views.ical_agenda),
     url(r'^agenda/week-view(?:.html)?/?$', views.week_view),
     url(r'^agenda/room-view(?:.html)?/?$', views.room_view),
+    url(r'^agenda/floor-plan/?$', views.floor_plan),
+    url(r'^agenda/floor-plan/(?P<floor>[-a-z0-9_]+)/?$', views.floor_plan),
     url(r'^week-view(?:.html)?/?$', views.week_view),
     url(r'^room-view(?:.html)?/$', views.room_view),
     url(r'^materials(?:.html)?/$',     views.materials),
