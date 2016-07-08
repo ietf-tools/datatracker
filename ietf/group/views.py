@@ -355,6 +355,8 @@ def construct_group_menu_context(request, group, selected, group_type, others):
             entries.append(("List archive", urlreverse("ietf.group.views.derived_archives", kwargs=kwargs)))
         else:
             entries.append((mark_safe("List archive &raquo;"), group.list_archive))
+    if group.has_tools_page():
+        entries.append((mark_safe("Tools &raquo;"), "https://tools.ietf.org/%s/%s/" % (group.type_id, group.acronym)))
 
     # actions
     actions = []

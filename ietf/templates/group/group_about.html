@@ -95,15 +95,11 @@
       {% endif %}
 
       {% with group.groupurl_set.all as urls %}
-        {% if urls or group.has_tools_page %}
+        {% if urls %}
 	<tr>
           <td></td>
           <th>More info</th>
           <td>
-	    {% if group.has_tools_page %}	     
-              <a href="https://tools.ietf.org/{{ group.type_id }}/{{ group.acronym }}/">Tools page</a>
-	      {% if urls %}<br>{% endif %}
-	    {% endif %}
             {% for url in urls %}
               <a href="{{ url.url }}">{% firstof url.name url.url %}</a>{% if not forloop.last %}<br>{% endif %}
             {% endfor %}
