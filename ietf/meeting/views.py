@@ -25,6 +25,7 @@ from django.forms.models import modelform_factory, inlineformset_factory
 from django.forms import ModelForm
 from django.template.loader import render_to_string
 from django.utils.functional import curry
+from django.utils.text import slugify
 from django.views.decorators.csrf import ensure_csrf_cookie
 
 from ietf.doc.fields import SearchableDocumentsField
@@ -1430,7 +1431,7 @@ def floor_plan(request, num=None, floor=None, ):
     schedule = meeting.agenda
     floors = FloorPlan.objects.filter(meeting=meeting).order_by('order')
     if floor:
-        floors = floors.filter(name=floor)
+        floors = [ f for f in floors if slugify(f.name) == floor ]
     return render(request, 'meeting/floor-plan.html', {
             "schedule": schedule,
             "number": num,

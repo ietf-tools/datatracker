@@ -9,6 +9,7 @@ import debug           # pyflakes:ignore
 from django.core.urlresolvers import reverse as urlreverse
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.utils.text import slugify
 
 from pyquery import PyQuery
 
@@ -1104,9 +1105,13 @@ class FloorPlanTests(TestCase):
     def test_floor_plan_page(self):
         make_meeting_test_data()
         meeting = Meeting.objects.filter(type_id='ietf').order_by('id').last()
-        FloorPlanFactory.create(meeting=meeting)
+        floorplan = FloorPlanFactory.create(meeting=meeting)
 
         url = urlreverse('ietf.meeting.views.floor_plan')
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+
+        url = urlreverse('ietf.meeting.views.floor_plan', kwargs={'floor': slugify(floorplan.name)} )
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         
