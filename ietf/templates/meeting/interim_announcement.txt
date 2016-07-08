@@ -13,7 +13,7 @@
 {% endif %}Agenda:
 {{ meeting.session_set.first.agenda | document_content | default_if_none:"(No agenda submitted)" }}
 
-To participate remotely in the interim meeting:
+Information about remote participation:
 {{ meeting.session_set.first.remote_instructions }}
 
 {{ meeting.session_set.first.agenda_note }}
