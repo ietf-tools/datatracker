@@ -88,11 +88,12 @@ class Rss201WithNamespacesFeed(Rss201rev2Feed):
     def add_item_elements(self, handler, item):
         super(Rss201WithNamespacesFeed, self).add_item_elements(handler, item)
 
-        for element_name in ['abstract','accessRights', 'format', ]:
+        for element_name in ['abstract','accessRights', 'format', 'publisher',]:
             dc_item_name = 'dcterms_%s' % element_name
             dc_element_name = 'dcterms:%s' % element_name
+            attrs= {'xsi:type':'dcterms:local'} if element_name == 'publisher' else {}
             if dc_item_name in item and item[dc_item_name] is not None:
-                handler.addQuickElement(dc_element_name,item[dc_item_name])
+                handler.addQuickElement(dc_element_name,item[dc_item_name],attrs)
 
         if 'doi' in item and item['doi'] is not None:
            handler.addQuickElement('dcterms:identifier',item['doi'],{'xsi:type':'dcterms:doi'})
@@ -141,6 +142,7 @@ class RfcFeed(Feed):
 
         #TODO 
         # R104 Publisher (Mandatory - but we need a string from them first)
+        extra.update({'dcterms_publisher':'rfc-editor.org'})
 
         #TODO MAYBE (Optional stuff)
         # R108 License
