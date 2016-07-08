@@ -11,6 +11,9 @@ ietfdb (6.26.0) ietf; urgency=high
 
   There are also a few bugfixes included:
 
+  * Brought back, by popular demand, a tab with the link to a group's tools 
+    pages (which was removed in release 6.25.0).
+
   * Save submitted session agendas as UTF-8, not as ascii.  Should fix a few
     server 500 errors on session agenda uploads.
 
