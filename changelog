@@ -45,7 +45,7 @@ ietfdb (6.26.0) ietf; urgency=high
   * Merged in [11498] from rcross@amsl.com:
     Fix interim meeting get_proceedings_url() functions.   
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  07 Jul 2016 13:08:48 -0700
+ -- Henrik Levkowetz <henrik@levkowetz.com>  08 Jul 2016 11:32:06 +0000
 
 
 ietfdb (6.25.1) ietf; urgency=low
