@@ -20,6 +20,7 @@ class GroupStateName(NameModel):
     """BOF, Proposed, Active, Dormant, Concluded, Abandoned"""
 class GroupTypeName(NameModel):
     """IETF, Area, WG, RG, Team, etc."""
+    verbose_name = models.CharField(max_length=255, default="")
 class GroupMilestoneStateName(NameModel):
     """Active, Deleted, For Review, Chartering"""
 class RoleName(NameModel):
