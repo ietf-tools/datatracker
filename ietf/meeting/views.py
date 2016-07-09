@@ -1225,8 +1225,9 @@ def interim_request(request):
             return redirect(upcoming)
 
     else:
-        form = InterimMeetingModelForm(request=request,
-                                       initial={'meeting_type': 'single'})
+        initial = {'meeting_type': 'single', 'group': request.GET.get('group', '')}
+        form = InterimMeetingModelForm(request=request, 
+                                       initial=initial)
         formset = SessionFormset()
 
     return render(request, "meeting/interim_request.html", {
