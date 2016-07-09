@@ -18,12 +18,15 @@
     top: 0;
     left: 0;
 }
+.floor-plan img {
+    padding: 0;
+}
 .rooms a {
     text-decoration: underline;
 }
 {% endblock %}
 
-{% block bodyAttrs %}data-spy="scroll" data-target="#affix"{% endblock %}
+{% block bodyAttrs %}onload="automaticarrow(); checkParams();" data-spy="scroll" data-target="#affix"{% endblock %}
 
 {% block content %}
   {% origin %}
@@ -43,17 +46,16 @@
 	  <div class="anchor-target" id="{{floor.name|slugify}}"></div>
 	  <h3>{{ floor.name }}</h3>
 	  <div class="floor-plan">
-	    <img class="col-md-12 col-sm-12 col-xs-12" src="{{ floor.image.url }}" >
+	    <img id="{{floor.name|slugify}}-image" class="col-md-12 col-sm-12 col-xs-12" src="{{ floor.image.url }}" >
 	    <!-- We need as many of these as we can have individual rooms combining into one -->
-	    <div id="{{floor.name|slugify}}-arrowdiv"  style="position: absolute; left: 0; top: 67.5px; visibility: hidden;"><img id="arrow" src="{% static 'ietf/images/arrow-ani.gif' %}"></div>
+	    <div id="{{floor.name|slugify}}-arrowdiv0" style="position: absolute; left: 0; top: 67.5px; visibility: hidden;"><img id="arrow" src="{% static 'ietf/images/arrow-ani.gif' %}"></div>
 	    <div id="{{floor.name|slugify}}-arrowdiv1" style="position: absolute; left: 0; top: 67.5px; visibility: hidden;"><img id="arrow" src="{% static 'ietf/images/arrow-ani.gif' %}"></div>
 	    <div id="{{floor.name|slugify}}-arrowdiv2" style="position: absolute; left: 0; top: 67.5px; visibility: hidden;"><img id="arrow" src="{% static 'ietf/images/arrow-ani.gif' %}"></div>
 	    <div id="{{floor.name|slugify}}-arrowdiv3" style="position: absolute; left: 0; top: 67.5px; visibility: hidden;"><img id="arrow" src="{% static 'ietf/images/arrow-ani.gif' %}"></div>
 	  </div>
 	  <div class="rooms">
 	    {% for room in floor.room_set.all %}
-	      {#<a href="javascript: setarrow('{{room.name|slugify}}','{{floor.name|slugify}}')">{{ room.name|nbsp }}</a>#}
-	      {{ room.name|nbsp }}
+	      <a href="javascript: setarrow('{{room.name|slugify}}')">{{ room.name|nbsp }}</a>
 	    {% endfor %}
 	  </div>
 	  <div class="row"></div>
@@ -87,19 +89,19 @@
 
     function findroom(nm)
     {
-	var left = 0, top = 0, right = 0, bottom = 0;
+	var left = 0, top = 0, right = 0, bottom = 0, floor="", width=0;
 
 	if (0) { }
 	{% for room in meeting.room_set.all %}
-	else if (nm == '{{room.name|slugify}}') { left = {{room.left}}; top = {{room.top}}; right = {{room.right}}; bottom = {{room.bottom}}; }{% endfor %}
+	else if (nm == '{{room.name|slugify}}') { left = {{room.left}}; top = {{room.top}}; right = {{room.right}}; bottom = {{room.bottom}}; floor='{{room.floorplan.name|slugify}}'; width={{room.floorplan.image.width}}; }{% endfor %}
 
 	{% for room in meeting.room_set.all %}{% if room.functional_display_name %}
-	else if (nm == '{{room.functional_name|slugify}}') { left = {{room.left}}; top = {{room.top}}; right = {{room.right}}; bottom = {{room.bottom}}; }{% endif %}{% endfor %}
+	else if (nm == '{{room.functional_name|slugify}}') { left = {{room.left}}; top = {{room.top}}; right = {{room.right}}; bottom = {{room.bottom}}; floor='{{room.floorplan.name|slugify}}'; width={{room.floorplan.image.width}}; }{% endif %}{% endfor %}
 
 	else return null;
 
 	// alert("nm=" + nm + ",left=" + left + ",top=" + top + ",r=" + right + ",b=" + bottom);
-	return [left, top, right, bottom];
+	return [left, top, right, bottom, floor, width];
     }
   </script>
 {% endwith %}

@@ -52,18 +52,15 @@ function roomcoords(nm)
 	    if (nmi[2] > nm0[2]) nm0[2] = nmi[2];
 	    if (nmi[3] > nm0[3]) nm0[3] = nmi[3];
 	}
-	return [nm0[0], nm0[1], nm0[2], nm0[3]];
+	return [nm0[0], nm0[1], nm0[2], nm0[3], nm0[4], nm0[5]];
     } else {
 	return findroom(nm);
     }
 }
 
-function setarrow(nm, fl)
+function setarrow(nm)
 // Place an arrow at the center of a given room name (or list of room names separated by "/").
 {
-    for (var i = 0; i < arrowsuffixlist.length; i++) {
-       removearrow(arrowsuffixlist[i], fl);
-    }
     for (var i = 0; i < arguments.length; i+=2) {
        nm = roommap(arguments[i]);
        if (verbose) alert("nm=" + nm);
@@ -74,17 +71,26 @@ function setarrow(nm, fl)
 	  if (verbose) alert("roomcoords returned: " + ret);
 	  if (!ret) continue;
 
-	  var left = ret[0], top = ret[1], right = ret[2], bottom = ret[3], offsetleft = -25, offsettop = -25;
-	  if (verbose) alert("left=" + left + ", top=" + top + ", right=" + right + ", bottom=" + bottom);
+	  var left = ret[0], top = ret[1], right = ret[2], bottom = ret[3], floor=ret[4], width=ret[5], offsetleft = -25, offsettop = -25;
+	  if (verbose) alert("left=" + left + ", top=" + top + ", right=" + right + ", bottom=" + bottom + ", floor=" + floor + ", width=" + width);
 	  //alert("left=" + left + ", top=" + top + ", right=" + right + ", bottom=" + bottom);
-	  var arrowdiv = fl+'-arrowdiv' + (j > 0 ? j : "");
+	  // calculate arrow position
+	  for (var i = 0; i < arrowsuffixlist.length; i++) {
+	      removearrow(arrowsuffixlist[i], floor);
+	  }
+	  arrow_left = (left + (right - left) / 2 );
+	  arrow_top  = (top + (bottom - top) / 2 );
+	  // scale the coordinates to match image scaling
+	  var img = document.getElementById(floor+"-image");
+	  scale = img.width / width;
+	  arrow_left = arrow_left * scale;
+	  arrow_top  = arrow_top  * scale;
+	  var arrowdiv = floor+'-arrowdiv'+j;
 	  //if (verbose) alert("arrowdiv: " + arrowdiv);
 	  var adiv = document.getElementById(arrowdiv);
-	  // if (verbose) alert("looking for 'arrowdiv'+" + j);
 	  if (adiv) {
-	      //if (verbose) alert("adiv found");
-	      adiv.style.left = left + (right - left) / 2 + offsetleft;
-	      adiv.style.top = top + (bottom - top) / 2 + offsettop;
+	      adiv.style.left = arrow_left + offsetleft + "px";
+	      adiv.style.top  = arrow_top + offsettop + "px";
 	      adiv.style.visibility = "visible";
 	  }
       }
