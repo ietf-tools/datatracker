@@ -630,4 +630,4 @@ def comma_separated_list(seq, end_word="and"):
         
 @register.filter()
 def role_names(roles):
-    return list(set([ r.name.name for r in roles ]))
+    return list(set([ "%s %s" % (r.group.name, r.name.name) for r in roles ]))

@@ -1,8 +1,8 @@
 {% load ietf_filters %}
 ---------------------------------------------------------
-Working Group Name: {{ group.name|safe }}
-Area Name: {{ group.parent }}
-Session Requester: {{ requester }}
+{{ group.type.verbose_name }} Name: {{ group.name|safe }}
+{% if group.type.slug == "wg"  or group.type.slug == "directorate" or group.type.slug == "team" %}Area Name: {{ group.parent }}
+{% endif %}Session Requester: {{ requester }}
 
 {% if meeting.city %}City: {{ meeting.city }}
 Country: {{ meeting.country }}
@@ -14,7 +14,7 @@ Timezone: {{ meeting.time_zone }}
 Date: {{ session.official_timeslotassignment.timeslot.time|date:"Y-m-d" }}
 Start Time: {{ session.official_timeslotassignment.timeslot.time|date:"H:i" }}
 Duration: {{ session.requested_duration|format_timedelta }}
-Remote Instructions: {{ session.remote_instructions }}
+Remote Participation Information: {{ session.remote_instructions }}
 Agenda Note: {{ session.agenda_note }}
 {% endfor %}
 ---------------------------------------------------------

@@ -1,4 +1,4 @@
-{% load ams_filters %}
+{% load ams_filters %}{% load ietf_filters %}
 A new interim meeting {% if is_series %}series {% endif %}request has just been submitted by {{ requester }}.
 
 This request requires approval by the {{ group.interim_approval_roles|role_names|comma_separated_list:"or" }}
