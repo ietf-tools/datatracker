@@ -1,3 +1,52 @@
+ietfdb (6.27.0) ietf; urgency=high
+
+  **Floor plan enhancements**
+
+  This release builds on 6.26.0 to provide enhanced floor plan and room
+  location functionality.  The room names on the agenda now link to the
+  datatracker floor plan with a blinking arrow showing the room location on
+  the floor plan, just as on Tony Hansen's floor plans on tools.ietf.org.  The
+  floor plan page shifts to the correct floor when showing a room location.
+  The floor plan page now lists functional names, in addition to room names.
+  Both floor plans and blinking arrows now adapt to various screen sizes, and
+  should be functional on smartphones, tablets, and laptops.
+
+  There are also some bug fixes and enhancements unrelated to the floor plans:
+
+  * Fixed various issues with the interim approval request email text when 
+    used for non-WG groups (RGs, for instance).  Added supporting template 
+    filter functions. Related to issues #1979 and #1980.
+
+  * Modified the Alias test-data factory to work around a problem with the
+    backend collapsing aliases with accented and unaccented versions of the
+    same name.
+
+  * Added a 'verbose_name' attribute to the GroupTypeName table, with 
+    updated admin and a data migration to provide verbose group names.
+
+  * Added support in the interim meeting request form for taking a group id 
+    parameter as query arg.
+
+  * Replaced the hardcoded 'Area Director' approval role in the interim
+    approval notification email text with a group-dependent list of approval
+    roles.  Fixes issue #1980.
+
+  * Pre-filled the group choice in the interim meeting request form when
+    linked from a button in the group's meeting tab.
+
+  * Split up the action buttons on the group meeing tab to put buttons after
+    the 'close group' button on a new line.  Added an interim meeting request
+    button.
+
+  * Modified the interim announcement text to be less rude if remote
+    participation isn't supported.  Fixes issue #1979.
+
+  * Merged in [11530] from rjsparks@nostrum.com:
+    Adds a publisher to the digital preservation feed.  
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  09 Jul 2016 14:55:47 -0700
+
+
 ietfdb (6.26.0) ietf; urgency=high
 
   **Meeting floor plans**
