@@ -68,7 +68,16 @@ class PersonFactory(factory.DjangoModelFactory):
 class AliasFactory(factory.DjangoModelFactory):
     class Meta:
         model = Alias
-        django_get_or_create = ('name',)
+
+    @classmethod
+    def _create(cls, model_class, *args, **kwargs):
+        person = kwargs['person']
+        name = kwargs['name']
+        existing_aliases = set(model_class.objects.filter(person=person).values_list('name', flat=True))
+        if not name in existing_aliases:
+            obj = model_class(*args, **kwargs)
+            obj.save()
+            return obj
 
     name = factory.Faker('name')
 
