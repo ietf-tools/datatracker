@@ -355,7 +355,7 @@ class Room(models.Model):
     def functional_display_name(self):
         if not self.functional_name:
             return ""
-        if self.functional_name.lower().startswith('breakout'):
+        if 'breakout' in self.functional_name.lower():
             return ""
         if self.functional_name[0].isdigit():
             return ""
