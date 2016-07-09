@@ -22,7 +22,12 @@
     padding: 0;
 }
 .rooms a {
+    
     text-decoration: underline;
+}
+hr.slim {
+    margin-top: 1.3ex;
+    margin-bottom: 1ex;
 }
 {% endblock %}
 
@@ -53,9 +58,19 @@
 	    <div id="{{floor.name|slugify}}-arrowdiv2" style="position: absolute; left: 0; top: 67.5px; visibility: hidden;"><img id="arrow" src="{% static 'ietf/images/arrow-ani.gif' %}"></div>
 	    <div id="{{floor.name|slugify}}-arrowdiv3" style="position: absolute; left: 0; top: 67.5px; visibility: hidden;"><img id="arrow" src="{% static 'ietf/images/arrow-ani.gif' %}"></div>
 	  </div>
-	  <div class="rooms">
-	    {% for room in floor.room_set.all %}
-	      <a href="javascript: setarrow('{{room.name|slugify}}')">{{ room.name|nbsp }}</a>
+	  <div class="rooms small">
+	    {% for f in floors %}
+	      {% for room in f.room_set.all %}
+		<a href="javascript: setarrow('{{room.name|slugify}}')">{{ room.name|nbsp }}</a>&ensp;
+	      {% endfor %}
+	    {% endfor %}
+	    <hr class="slim">
+	    {% for f in floors %}
+	      {% for room in f.room_set.all %}
+	        {% if room.functional_display_name %}
+		<a href="javascript: setarrow('{{room.name|slugify}}')">{{ room.functional_display_name|nbsp }}</a>&ensp;
+		{% endif %}
+	      {% endfor %}
 	    {% endfor %}
 	  </div>
 	  <div class="row"></div>
@@ -76,7 +91,8 @@
   <script src="{% static 'ietf/js/room_params.js' %}"></script>
   <script>
     // These must match the 'arrowdiv' divs above
-    var arrowsuffixlist = [ '', '1', '2', '3' ];
+    var arrowsuffixlist = [ '0', '1', '2', '3' ];
+    var floorlist = [{% for floor in floors %}{% if not forloop.first %}, {%endif%}'{{floor.name|slugify}}'{% endfor %}];
 
     function roommap(nm)
     {

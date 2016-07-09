@@ -61,6 +61,13 @@ function roomcoords(nm)
 function setarrow(nm)
 // Place an arrow at the center of a given room name (or list of room names separated by "/").
 {
+    for (var f = 0; f < floorlist.length; f++) {
+	floor = floorlist[f];
+	for (var i = 0; i < arrowsuffixlist.length; i++) {
+	    removearrow(arrowsuffixlist[i], floor);
+	}
+    }
+
     for (var i = 0; i < arguments.length; i+=2) {
        nm = roommap(arguments[i]);
        if (verbose) alert("nm=" + nm);
@@ -75,9 +82,6 @@ function setarrow(nm)
 	  if (verbose) alert("left=" + left + ", top=" + top + ", right=" + right + ", bottom=" + bottom + ", floor=" + floor + ", width=" + width);
 	  //alert("left=" + left + ", top=" + top + ", right=" + right + ", bottom=" + bottom);
 	  // calculate arrow position
-	  for (var i = 0; i < arrowsuffixlist.length; i++) {
-	      removearrow(arrowsuffixlist[i], floor);
-	  }
 	  arrow_left = (left + (right - left) / 2 );
 	  arrow_top  = (top + (bottom - top) / 2 );
 	  // scale the coordinates to match image scaling
@@ -92,6 +96,7 @@ function setarrow(nm)
 	      adiv.style.left = arrow_left + offsetleft + "px";
 	      adiv.style.top  = arrow_top + offsettop + "px";
 	      adiv.style.visibility = "visible";
+	      window.location.hash = floor;
 	  }
       }
    }
