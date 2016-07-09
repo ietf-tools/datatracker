@@ -193,7 +193,11 @@
 	          </td>
                   <td colspan="3">
                     {% if item.timeslot.show_location and item.timeslot.get_location %}
+		      {% if schedule.meeting.number|add:"0" < 96 %}
                       <a href="https://tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{ item.timeslot.get_location|slugify }}">{{item.timeslot.get_location|split:"/"|join:"/<wbr>"}}</a>
+		      {% else %}
+		      <a href="{% url 'ietf.meeting.views.floor_plan' num=schedule.meeting.number %}?room={{ item.timeslot.get_location|slugify }}">{{item.timeslot.get_location|split:"/"|join:"/<wbr>"}}</a>
+		      {% endif %}
 	            {% endif %}
 	          </td>
                   <td colspan="2">
@@ -215,7 +219,11 @@
 		    </th>
 		    <td colspan="3">
 		      {% if item.timeslot.show_location and item.timeslot.get_location %}
+			{% if schedule.meeting.number|add:"0" < 96 %}
 			<a href="https://tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{ item.timeslot.get_location|slugify }}">{{item.timeslot.get_location|split:"/"|join:"/<wbr>"}}</a>
+			{% else %}
+			<a href="{% url 'ietf.meeting.views.floor_plan' num=schedule.meeting.number %}?room={{ item.timeslot.get_location|slugify }}">{{item.timeslot.get_location|split:"/"|join:"/<wbr>"}}</a>
+			{% endif %}
 		      {% endif %}
 		    </td>
 
@@ -224,7 +232,11 @@
 
                     <td>
                       {% if item.timeslot.show_location and item.timeslot.get_location %}
-                        <a href="https://tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{ item.timeslot.get_location|slugify }}">{{item.timeslot.get_location|split:"/"|join:"/<wbr>"}}</a>
+			{% if schedule.meeting.number|add:"0" < 96 %}
+			<a href="https://tools.ietf.org/agenda/{{schedule.meeting.number}}/venue/?room={{ item.timeslot.get_location|slugify }}">{{item.timeslot.get_location|split:"/"|join:"/<wbr>"}}</a>
+			{% else %}
+			<a href="{% url 'ietf.meeting.views.floor_plan' num=schedule.meeting.number %}?room={{ item.timeslot.get_location|slugify }}">{{item.timeslot.get_location|split:"/"|join:"/<wbr>"}}</a>
+			{% endif %}
                       {% endif %}
                     </td>
 
