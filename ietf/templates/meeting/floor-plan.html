@@ -31,7 +31,7 @@ hr.slim {
 }
 {% endblock %}
 
-{% block bodyAttrs %}onload="automaticarrow(); checkParams();" data-spy="scroll" data-target="#affix"{% endblock %}
+{% block bodyAttrs %}onload="automaticarrow(); checkParams();"{% endblock %}
 
 {% block content %}
   {% origin %}
@@ -46,7 +46,7 @@ hr.slim {
 
 
     <div class="row">
-      <div class="col-md-10">
+      <div class="col-md-12">
 	{% for floor in floors %}
 	  <div class="anchor-target" id="{{floor.name|slugify}}"></div>
 	  <h3>{{ floor.name }}</h3>
@@ -75,13 +75,6 @@ hr.slim {
 	  </div>
 	  <div class="row"></div>
 	{% endfor %}
-      </div>
-      <div class="col-md-2 hidden-print bs-docs-sidebar" id="affix">
-	<ul class="nav nav-pills nav-stacked small" data-spy="affix">
-	  {% for floor in floors %}
-	  <li><a href="#{{floor.name|slugify}}">{{ floor.name }}</a></li>
-	  {% endfor %}
-	</ul>
       </div>
     </div>
 {% endblock %}
