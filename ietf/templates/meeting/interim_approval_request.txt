@@ -1,7 +1,8 @@
 {% load ams_filters %}
 A new interim meeting {% if is_series %}series {% endif %}request has just been submitted by {{ requester }}.
 
-This request requires approval by the Area Director.
+This request requires approval by the {{ group.interim_approval_roles|role_names|comma_separated_list:"or" }}
+
 The meeting{{ meetings|pluralize }} can be approved here: 
 {% for url in approval_urls %}{{ url }}
 {% endfor %}

@@ -53,6 +53,9 @@ class GroupInfo(models.Model):
             kwargs["group_type"] = self.type_id
         return urlreverse(self.features.about_page, kwargs=kwargs)
 
+    def interim_approval_roles(self):
+        return list(set([ role for role in self.parent.role_set.filter(name__in=['ad', 'chair']) ]))
+
     class Meta:
         abstract = True
 

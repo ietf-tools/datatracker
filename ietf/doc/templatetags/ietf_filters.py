@@ -620,3 +620,14 @@ def format_timedelta(timedelta):
 @register.filter()
 def nbsp(value):
     return mark_safe("&nbsp;".join(value.split(' ')))
+
+@register.filter()
+def comma_separated_list(seq, end_word="and"):
+    if len(seq) < 2:
+        return u"".join(seq)
+    else:
+        return u", ".join(seq[:-1]) + u" %s %s"%(end_word, seq[-1])
+        
+@register.filter()
+def role_names(roles):
+    return list(set([ r.name.name for r in roles ]))
