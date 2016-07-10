@@ -44,7 +44,7 @@ ietfdb (6.27.0) ietf; urgency=high
   * Merged in [11530] from rjsparks@nostrum.com:
     Adds a publisher to the digital preservation feed.  
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  09 Jul 2016 14:55:47 -0700
+ -- Henrik Levkowetz <henrik@levkowetz.com>  10 Jul 2016 16:07:07 +0000
 
 
 ietfdb (6.26.0) ietf; urgency=high
