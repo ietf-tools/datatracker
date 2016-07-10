@@ -4,7 +4,7 @@ from ietf.meeting.models import (Meeting, Room, Session, TimeSlot, Constraint, S
     SchedTimeSessAssignment, ResourceAssociation, FloorPlan)
 
 class RoomAdmin(admin.ModelAdmin):
-    list_display = ["id", "meeting", "name", "capacity", "x1", "y1", "x2", "y2", ]
+    list_display = ["id", "meeting", "name", "capacity", "functional_name", "x1", "y1", "x2", "y2", ]
     list_filter = ["meeting"]
     ordering = ["-meeting"]
 
