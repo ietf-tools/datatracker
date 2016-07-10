@@ -52,7 +52,7 @@ def forward(apps, schema_editor):
     for item in rooms:
         name, floor_id, x1, y1, x2, y2 = item
         try:
-            room = Room.objects.get(name=name, meeting=meeting)
+            room, created = Room.objects.get_or_create(name=name, meeting=meeting)
             room.floorplan_id = floor_id
             room.x1 = x1
             room.y1 = y1
