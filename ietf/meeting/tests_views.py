@@ -9,7 +9,6 @@ import debug           # pyflakes:ignore
 from django.core.urlresolvers import reverse as urlreverse
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.utils.text import slugify
 
 from pyquery import PyQuery
 

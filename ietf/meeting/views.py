@@ -25,7 +25,6 @@ from django.forms.models import modelform_factory, inlineformset_factory
 from django.forms import ModelForm
 from django.template.loader import render_to_string
 from django.utils.functional import curry
-from django.utils.text import slugify
 from django.views.decorators.csrf import ensure_csrf_cookie
 
 from ietf.doc.fields import SearchableDocumentsField
