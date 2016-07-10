@@ -201,6 +201,13 @@ class MeetingTests(TestCase):
         self.assertFalse('IESG Breakfast' in unicontent(r))
 
 
+    def test_agenda_week_view(self):
+        meeting = make_meeting_test_data()
+        url = urlreverse("ietf.meeting.views.week_view",kwargs=dict(num=meeting.number)) + "#farfut"
+        r = self.client.get(url)
+        self.assertEqual(r.status_code,200)
+        self.assertTrue(all([x in unicontent(r) for x in ['var IETF', 'setAgendaColor', 'draw_calendar', ]]))
+
     def test_materials(self):
         meeting = make_meeting_test_data()
         session = Session.objects.filter(meeting=meeting, group__acronym="mars").first()
