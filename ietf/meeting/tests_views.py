@@ -24,6 +24,7 @@ from ietf.meeting.test_data import make_meeting_test_data, make_interim_meeting
 from ietf.name.models import SessionStatusName
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized, unicontent
 from ietf.utils.mail import outbox
+from ietf.utils.text import xslugify
 
 from ietf.person.factories import PersonFactory
 from ietf.group.factories import GroupFactory
@@ -1111,7 +1112,7 @@ class FloorPlanTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 
-        url = urlreverse('ietf.meeting.views.floor_plan', kwargs={'floor': slugify(floorplan.name)} )
+        url = urlreverse('ietf.meeting.views.floor_plan', kwargs={'floor': xslugify(floorplan.name)} )
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         

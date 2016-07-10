@@ -51,6 +51,7 @@ from ietf.meeting.helpers import send_interim_approval_request
 from ietf.utils.mail import send_mail_message
 from ietf.utils.pipe import pipe
 from ietf.utils.pdf import pdf_pages
+from ietf.utils.text import xslugify
 
 from .forms import (InterimMeetingModelForm, InterimAnnounceForm, InterimSessionModelForm,
     InterimCancelForm)
@@ -1432,7 +1433,7 @@ def floor_plan(request, num=None, floor=None, ):
     schedule = meeting.agenda
     floors = FloorPlan.objects.filter(meeting=meeting).order_by('order')
     if floor:
-        floors = [ f for f in floors if slugify(f.name) == floor ]
+        floors = [ f for f in floors if xslugify(f.name) == floor ]
     return render(request, 'meeting/floor-plan.html', {
             "schedule": schedule,
             "number": num,

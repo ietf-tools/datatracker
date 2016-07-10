@@ -3,6 +3,7 @@
 {% load origin %}
 
 {% load ietf_filters %}
+{% load textfilters %}
 {% load staticfiles %}
 
 {% block title %}
@@ -48,27 +49,27 @@ hr.slim {
     <div class="row">
       <div class="col-md-12">
 	{% for floor in floors %}
-	  <div class="anchor-target" id="{{floor.name|slugify}}"></div>
+	  <div class="anchor-target" id="{{floor.name|xslugify}}"></div>
 	  <h3>{{ floor.name }}</h3>
 	  <div class="floor-plan">
-	    <img id="{{floor.name|slugify}}-image" class="col-md-12 col-sm-12 col-xs-12" src="{{ floor.image.url }}" >
+	    <img id="{{floor.name|xslugify}}-image" class="col-md-12 col-sm-12 col-xs-12" src="{{ floor.image.url }}" >
 	    <!-- We need as many of these as we can have individual rooms combining into one -->
-	    <div id="{{floor.name|slugify}}-arrowdiv0" style="position: absolute; left: 0; top: 67.5px; visibility: hidden;"><img id="arrow" src="{% static 'ietf/images/arrow-ani.gif' %}"></div>
-	    <div id="{{floor.name|slugify}}-arrowdiv1" style="position: absolute; left: 0; top: 67.5px; visibility: hidden;"><img id="arrow" src="{% static 'ietf/images/arrow-ani.gif' %}"></div>
-	    <div id="{{floor.name|slugify}}-arrowdiv2" style="position: absolute; left: 0; top: 67.5px; visibility: hidden;"><img id="arrow" src="{% static 'ietf/images/arrow-ani.gif' %}"></div>
-	    <div id="{{floor.name|slugify}}-arrowdiv3" style="position: absolute; left: 0; top: 67.5px; visibility: hidden;"><img id="arrow" src="{% static 'ietf/images/arrow-ani.gif' %}"></div>
+	    <div id="{{floor.name|xslugify}}-arrowdiv0" style="position: absolute; left: 0; top: 67.5px; visibility: hidden;"><img id="arrow" src="{% static 'ietf/images/arrow-ani.gif' %}"></div>
+	    <div id="{{floor.name|xslugify}}-arrowdiv1" style="position: absolute; left: 0; top: 67.5px; visibility: hidden;"><img id="arrow" src="{% static 'ietf/images/arrow-ani.gif' %}"></div>
+	    <div id="{{floor.name|xslugify}}-arrowdiv2" style="position: absolute; left: 0; top: 67.5px; visibility: hidden;"><img id="arrow" src="{% static 'ietf/images/arrow-ani.gif' %}"></div>
+	    <div id="{{floor.name|xslugify}}-arrowdiv3" style="position: absolute; left: 0; top: 67.5px; visibility: hidden;"><img id="arrow" src="{% static 'ietf/images/arrow-ani.gif' %}"></div>
 	  </div>
 	  <div class="rooms small">
 	    {% for f in floors %}
 	      {% for room in f.room_set.all %}
-		<a href="javascript: setarrow('{{room.name|slugify}}')">{{ room.name|nbsp }}</a>&ensp;
+		<a href="javascript: setarrow('{{room.name|xslugify}}')">{{ room.name|nbsp }}</a>&ensp;
 	      {% endfor %}
 	    {% endfor %}
 	    <hr class="slim">
 	    {% for f in floors %}
 	      {% for room in f.room_set.all %}
 	        {% if room.functional_display_name %}
-		<a href="javascript: setarrow('{{room.name|slugify}}')">{{ room.functional_display_name|nbsp }}</a>&ensp;
+		<a href="javascript: setarrow('{{room.name|xslugify}}')">{{ room.functional_display_name|nbsp }}</a>&ensp;
 		{% endif %}
 	      {% endfor %}
 	    {% endfor %}
@@ -85,7 +86,7 @@ hr.slim {
   <script>
     // These must match the 'arrowdiv' divs above
     var arrowsuffixlist = [ '0', '1', '2', '3' ];
-    var floorlist = [{% for floor in floors %}{% if not forloop.first %}, {%endif%}'{{floor.name|slugify}}'{% endfor %}];
+    var floorlist = [{% for floor in floors %}{% if not forloop.first %}, {%endif%}'{{floor.name|xslugify}}'{% endfor %}];
 
     function roommap(nm)
     {
@@ -102,10 +103,10 @@ hr.slim {
 
 	if (0) { }
 	{% for room in meeting.room_set.all %}
-	else if (nm == '{{room.name|slugify}}') { left = {{room.left}}; top = {{room.top}}; right = {{room.right}}; bottom = {{room.bottom}}; floor='{{room.floorplan.name|slugify}}'; width={{room.floorplan.image.width}}; }{% endfor %}
+	else if (nm == '{{room.name|xslugify}}') { left = {{room.left}}; top = {{room.top}}; right = {{room.right}}; bottom = {{room.bottom}}; floor='{{room.floorplan.name|xslugify}}'; width={{room.floorplan.image.width}}; }{% endfor %}
 
 	{% for room in meeting.room_set.all %}{% if room.functional_display_name %}
-	else if (nm == '{{room.functional_name|slugify}}') { left = {{room.left}}; top = {{room.top}}; right = {{room.right}}; bottom = {{room.bottom}}; floor='{{room.floorplan.name|slugify}}'; width={{room.floorplan.image.width}}; }{% endif %}{% endfor %}
+	else if (nm == '{{room.functional_name|xslugify}}') { left = {{room.left}}; top = {{room.top}}; right = {{room.right}}; bottom = {{room.bottom}}; floor='{{room.floorplan.name|xslugify}}'; width={{room.floorplan.image.width}}; }{% endif %}{% endfor %}
 
 	else return null;
 

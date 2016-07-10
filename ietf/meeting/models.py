@@ -26,6 +26,7 @@ from ietf.group.utils import can_manage_materials
 from ietf.name.models import MeetingTypeName, TimeSlotTypeName, SessionStatusName, ConstraintName, RoomResourceName
 from ietf.person.models import Person
 from ietf.utils.storage import NoLocationMigrationFileSystemStorage
+from ietf.utils.text import xslugify
 
 countries = pytz.country_names.items()
 countries.sort(lambda x,y: cmp(x[1], y[1]))
@@ -365,7 +366,7 @@ class Room(models.Model):
 
 def floorplan_path(instance, filename):
     root, ext = os.path.splitext(filename)
-    return u"%s/floorplan-%s-%s%s" % (settings.FLOORPLAN_MEDIA_DIR, instance.meeting.number, slugify(instance.name), ext)
+    return u"%s/floorplan-%s-%s%s" % (settings.FLOORPLAN_MEDIA_DIR, instance.meeting.number, xslugify(instance.name), ext)
 
 class FloorPlan(models.Model):
     name    = models.CharField(max_length=255)
