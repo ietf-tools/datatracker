@@ -79,7 +79,7 @@ def manage_review_requests(request, acronym, group_type=None):
     review_requests += suggested_review_requests_for_team(group)
 
     document_requests = extract_revision_ordered_review_requests_for_documents(
-        ReviewRequest.objects.filter(state__in=("part-completed", "completed")).prefetch_related("result"),
+        ReviewRequest.objects.filter(state__in=("part-completed", "completed"), team=group).prefetch_related("result"),
         set(r.doc_id for r in review_requests),
     )
 
