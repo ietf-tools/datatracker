@@ -17,8 +17,8 @@ class Reviewer(models.Model):
         (7, "Once per week"),
         (14, "Once per fortnight"),
         (30, "Once per month"),
-        (60, "Once per two months"),
-        (90, "Once per quarter"),
+        (61, "Once per two months"),
+        (91, "Once per quarter"),
     ]
     frequency   = models.IntegerField(default=30, help_text="Can review every N days", choices=FREQUENCIES)
     unavailable_until = models.DateTimeField(blank=True, null=True, help_text="When will this reviewer be available again")
@@ -26,7 +26,7 @@ class Reviewer(models.Model):
     skip_next   = models.IntegerField(default=0, help_text="Skip the next N review assignments")
 
     def __unicode__(self):
-        return "{} in {}".format(self.person, self.team)
+        return u"{} in {}".format(self.person, self.team)
 
 class ReviewTeamResult(models.Model):
      """Captures that a result name is valid for a given team for new
