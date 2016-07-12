@@ -30,7 +30,7 @@ def can_manage_review_requests_for_team(user, team):
     if not user.is_authenticated():
         return False
 
-    return Role.objects.filter(name__in=["secretary", "delegate"], person__user=user, group=team).exists() or has_role(user, "Secretariat")
+    return Role.objects.filter(name__in=["secr", "delegate"], person__user=user, group=team).exists() or has_role(user, "Secretariat")
 
 def make_new_review_request_from_existing(review_req):
     obj = ReviewRequest()
