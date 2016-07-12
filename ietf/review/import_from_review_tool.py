@@ -55,7 +55,15 @@ with db_con.cursor() as c:
 with db_con.cursor() as c:
     c.execute("select distinct login from members where permissions like '%secretary%';")
     secretaries = { row[0] for row in c.fetchall() }
-    
+
+autopolicy_days = {
+    'weekly': 7,
+    'biweekly': 14,
+    'monthly': 30,
+    'bimonthly': 61,
+    'quarterly': 91,
+}
+
 known_personnel = {}
 with db_con.cursor() as c:
     c.execute("select * from members;")
@@ -72,7 +80,7 @@ with db_con.cursor() as c:
             if not person:
                 person, created = Person.objects.get_or_create(name=row.name, ascii=unidecode(row.name))
                 if created:
-                    print "created person", person
+                    print "created person", unicode(person).encode("utf-8")
                 existing_aliases = set(Alias.objects.filter(person=person).values_list("name", flat=True))
                 curr_names = set(x for x in [person.name, person.ascii, person.ascii_short, person.plain_name(), ] if x)
                 new_aliases = curr_names - existing_aliases
@@ -88,30 +96,31 @@ with db_con.cursor() as c:
         if "secretary" in row.permissions:
             role, created = Role.objects.get_or_create(name=RoleName.objects.get(slug="secr"), person=email.person, email=email, group=team)
             if created:
-                print "created role", role
+                print "created role", unicode(role).encode("utf-8")
 
         if row.login in known_reviewers:
             if row.comment != "Inactive" and row.available != 2145916800: # corresponds to 2038-01-01
-                assert not row.autopolicy or row.autopolicy == "monthly"
-
                 role, created  = Role.objects.get_or_create(name=RoleName.objects.get(slug="reviewer"), person=email.person, email=email, group=team)
 
                 if created:
-                    print "created role", role
+                    print "created role", unicode(role).encode("utf-8")
 
                 reviewer, created = Reviewer.objects.get_or_create(
                     team=team,
                     person=email.person,
                 )
                 if reviewer:
-                    print "created reviewer", reviewer
+                    print "created reviewer", reviewer.pk, unicode(reviewer).encode("utf-8")
 
-                if row.autopolicy == "monthly":
-                    reviewer.frequency = 30
+                if autopolicy_days.get(row.autopolicy):
+                    reviewer.frequency = autopolicy_days.get(row.autopolicy)
                 reviewer.unavailable_until = parse_timestamp(row.available)
                 reviewer.filter_re = row.donotassign
+                try:
+                    reviewer.skip_next = int(row.autopolicy)
+                except ValueError:
+                    pass
                 reviewer.save()
-
 
 # review requests
 
@@ -191,9 +200,9 @@ with db_con.cursor() as c:
         else:
             time = deadline
 
-        if not deadline and row.docstatus == "assigned":
+        if not deadline:
             # bogus row
-            print "SKIPPING WITH NO DEADLINE", time, row
+            print "SKIPPING WITH NO DEADLINE", time, row, meta
             continue
 
         if status == "done" and row.docstatus in ("assigned", "accepted"):
