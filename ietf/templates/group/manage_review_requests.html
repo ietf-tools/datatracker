@@ -56,7 +56,7 @@
               </td>
               <td>
                 {% if r.reviewer %}
-                  <button type="button" class="btn btn-default btn-sm reviewer-action" title="Click to reassign request">{{ r.reviewer.person }} {% if r.state_id == "accepted" %}<span class="label label-default">ack</span>{% endif %}</button>
+                  <button type="button" class="btn btn-default btn-sm reviewer-action" title="Click to reassign request">{{ r.reviewer.person }} {% if r.state_id == "accepted" %}<span class="label label-default">accp</span>{% endif %}</button>
                 {% else %}
                   <button type="button" class="btn btn-default btn-sm reviewer-action" title="Click to assign request"><em>not yet assigned</em></button>
                 {% endif %}
@@ -75,7 +75,7 @@
                 </span>
               </td>
               <td>
-                <button type="button" class="btn btn-default btn-sm close-action" title="Click to mark request for closure">Close</button>
+                <button type="button" class="btn btn-default btn-sm close-action">Close...</button>
 
                 <span class="close-controls form-inline">
                   {% spaceless %}
