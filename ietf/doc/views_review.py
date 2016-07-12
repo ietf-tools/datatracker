@@ -314,7 +314,7 @@ class CompleteReviewForm(forms.Form):
 
         doc = self.review_req.doc
 
-        known_revisions = NewRevisionDocEvent.objects.filter(doc=doc).order_by("-time").values_list("rev", flat=True)
+        known_revisions = NewRevisionDocEvent.objects.filter(doc=doc).order_by("time", "id").values_list("rev", flat=True)
 
         self.fields["state"].choices = [
             (slug, "{} - extra reviewer is to be assigned".format(label)) if slug == "part-completed" else (slug, label)
