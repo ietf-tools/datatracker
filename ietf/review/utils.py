@@ -113,7 +113,7 @@ def assign_review_request_to_reviewer(request, review_req, reviewer):
 
     email_review_request_change(
         request, review_req,
-        "Assigned to review of %s" % review_req.doc.name,
+        "Assigned to review %s" % review_req.doc.name,
         "%s has assigned you to review the document." % request.user.person,
         by=request.user.person, notify_secretary=False, notify_reviewer=True, notify_requested_by=False)
 
