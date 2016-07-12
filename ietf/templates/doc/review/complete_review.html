@@ -74,7 +74,6 @@
 
 {% block js %}
   <script>
-   var possibleRevisions = {{ possible_revisions_as_json|safe }};
    var searchMailArchiveUrl = "{% url "ietf.doc.views_review.search_mail_archive" name=review_req.doc.name request_id=review_req.pk %}";
   </script>
   <script src="{% static 'ietf/js/complete-review.js' %}"></script>
