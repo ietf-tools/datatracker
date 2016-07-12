@@ -12,10 +12,11 @@ from pyquery import PyQuery
 
 import debug                            # pyflakes:ignore
 
-from ietf.review.models import ReviewRequest, ReviewTeamResult
+from ietf.review.models import ReviewRequest, ReviewTeamResult, Reviewer
 import ietf.review.mailarch
 from ietf.person.models import Email, Person
-from ietf.name.models import ReviewResultName, ReviewRequestStateName
+from ietf.name.models import ReviewResultName, ReviewRequestStateName, ReviewTypeName
+from ietf.doc.models import DocumentAuthor
 from ietf.utils.test_utils import TestCase
 from ietf.utils.test_data import make_test_data, make_review_data
 from ietf.utils.test_utils import login_testing_unauthorized, unicontent, reload_db_objects
@@ -120,10 +121,39 @@ class ReviewTests(TestCase):
 
     def test_assign_reviewer(self):
         doc = make_test_data()
+
+        # set up some reviewer-suitability factors
+        plain_email = Email.objects.filter(person__user__username="plain").first()
+        DocumentAuthor.objects.create(
+            author=plain_email,
+            document=doc,
+        )
+        doc.rev = "10"
+        doc.save()
+
+        # review to assign to
         review_req = make_review_data(doc)
         review_req.state = ReviewRequestStateName.objects.get(slug="requested")
         review_req.reviewer = None
         review_req.save()
+
+        # previous review
+        ReviewRequest.objects.create(
+            time=datetime.datetime.now() - datetime.timedelta(days=100),
+            requested_by=Person.objects.get(name="(System)"),
+            doc=doc,
+            type=ReviewTypeName.objects.get(slug="early"),
+            team=review_req.team,
+            state=ReviewRequestStateName.objects.get(slug="completed"),
+            reviewed_rev="01",
+            deadline=datetime.datetime.now() - datetime.timedelta(days=80),
+            reviewer=plain_email,
+        )
+
+        reviewer_obj = Reviewer.objects.get(person__email=plain_email)
+        reviewer_obj.filter_re = doc.name
+        reviewer_obj.unavailable_until = datetime.datetime.now() + datetime.timedelta(days=10)
+        reviewer_obj.save()
 
         assign_url = urlreverse('ietf.doc.views_review.assign_reviewer', kwargs={ "name": doc.name, "request_id": review_req.pk })
 
@@ -140,6 +170,13 @@ class ReviewTests(TestCase):
         login_testing_unauthorized(self, "secretary", assign_url)
         r = self.client.get(assign_url)
         self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        plain_label = q("option[value=\"{}\"]".format(plain_email.address)).text().lower()
+        self.assertIn("ready for", plain_label)
+        self.assertIn("reviewed document before", plain_label)
+        self.assertIn("is author", plain_label)
+        self.assertIn("regexp matches", plain_label)
+        self.assertIn("unavailable until", plain_label)
 
         # assign
         empty_outbox()

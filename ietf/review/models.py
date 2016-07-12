@@ -1,3 +1,5 @@
+import datetime
+
 from django.db import models
 
 from ietf.doc.models import Document
@@ -44,7 +46,7 @@ class ReviewRequest(models.Model):
 
     # Fields filled in on the initial record creation - these
     # constitute the request part.
-    time          = models.DateTimeField(auto_now_add=True)
+    time          = models.DateTimeField(default=datetime.datetime.now)
     type          = models.ForeignKey(ReviewTypeName)
     doc           = models.ForeignKey(Document, related_name='review_request_set')
     team          = models.ForeignKey(Group, limit_choices_to=~models.Q(reviewteamresult=None))

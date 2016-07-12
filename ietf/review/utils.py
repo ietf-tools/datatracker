@@ -1,13 +1,13 @@
-import datetime
+import datetime, re
 from collections import defaultdict
 
 from django.contrib.sites.models import Site
 from django.db import models
 
 from ietf.group.models import Group, Role
-from ietf.doc.models import Document, DocEvent, State, LastCallDocEvent
+from ietf.doc.models import Document, DocEvent, State, LastCallDocEvent, DocumentAuthor, DocAlias
 from ietf.iesg.models import TelechatDate
-from ietf.person.models import Person
+from ietf.person.models import Person, Email
 from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream
 from ietf.review.models import ReviewRequest, ReviewRequestStateName, ReviewTypeName, Reviewer
 from ietf.utils.mail import send_mail
@@ -275,37 +275,79 @@ def extract_revision_ordered_review_requests_for_documents(queryset, names):
 
     return res
 
-def construct_review_request_assignment_choices(possible_emails, team, review_req=None):
-    possible_emails = list(possible_emails)
+def setup_reviewer_field(field, review_req):
+    field.queryset = field.queryset.filter(role__name="reviewer", role__group=review_req.team)
+    if review_req.reviewer:
+        field.initial = review_req.reviewer_id
+
+    choices = make_assignment_choices(field.queryset, review_req)
+    if not field.required:
+        choices = [("", field.empty_label)] + choices
+
+    field.choices = choices
+
+def make_assignment_choices(email_queryset, review_req):
+    doc = review_req.doc
+    team = review_req.team
+
+    possible_emails = list(email_queryset)
+
+    aliases = DocAlias.objects.filter(document=doc).values_list("name", flat=True)
 
     reviewers = { r.person_id: r for r in Reviewer.objects.filter(team=team, person__in=[e.person_id for e in possible_emails]) }
 
+    # time since past assignment
     latest_assignment_for_reviewer = dict(ReviewRequest.objects.filter(
         reviewer__in=possible_emails,
     ).values_list("reviewer").annotate(models.Max("time")))
 
+    # previous review of document
+    has_reviewed_previous = ReviewRequest.objects.filter(
+        doc=doc,
+        reviewer__in=possible_emails,
+        state="completed",
+    )
+
+    if review_req.pk is not None:
+        has_reviewed_previous = has_reviewed_previous.exclude(pk=review_req.pk)
+
+    has_reviewed_previous = set(has_reviewed_previous.values_list("reviewer", flat=True))
+
+    # review indications
+    would_like_to_review = set() # FIXME: fill in
+
+    # connections
+    connections = {}
+    # examine the closest connections last to let them override
+    for e in Email.objects.filter(pk__in=possible_emails, person=doc.ad_id):
+        connections[e] = "is associated Area Director"
+    for r in Role.objects.filter(group=doc.group_id, email__in=possible_emails).select_related("name"):
+        connections[r.email_id] = "is group {}".format(r.name)
+    if doc.shepherd_id:
+        connections[doc.shepherd_id] = "is shepherd of document"
+    for e in DocumentAuthor.objects.filter(document=doc, author__in=possible_emails).values_list("author", flat=True):
+        connections[e] = "is author of document"
+
     now = datetime.datetime.now()
 
-    rankings = []
+    def add_boolean_score(scores, direction, expr, expl):
+        scores.append(int(bool(expr)) * direction)
+        if expr:
+            explanations.append(expl)
+
+    ranking = []
     for e in possible_emails:
         reviewer = reviewers.get(e.person_id)
         if not reviewer:
             reviewer = Reviewer()
 
+        explanations = []
+        scores = [] # build up score in separate independent components
+
         days_past = None
         latest = latest_assignment_for_reviewer.get(e.pk)
         if latest is not None:
             days_past = (now - latest).days - reviewer.frequency
-
-        # FIXME:
-        # positive:  (Perhaps do these separately? As initial values?)
-        # has done review of previous rev
-        # would like to review
-
-        # blocks:
-        # connections to doc + filter_re
-        # has rejected same request/completed partial review
-        # is unavailable_until
 
         if days_past is None:
             ready_for = "first time"
@@ -315,19 +357,26 @@ def construct_review_request_assignment_choices(possible_emails, team, review_re
                 ready_for = "ready for {} {}".format(d, "day" if d == 1 else "days")
             else:
                 d = -d
-                ready_for = "frequency exceeded - ready in {} {}".format(d, "day" if d == 1 else "days")
+                ready_for = "frequency exceeded, ready in {} {}".format(d, "day" if d == 1 else "days")
 
-        label = "{}: {}".format(e.person, ready_for)
+        explanations.append(ready_for)
 
-        rank = (-100000 if days_past is None else -days_past,)
+        add_boolean_score(scores, +1, e.pk in has_reviewed_previous, "reviewed document before")
+        add_boolean_score(scores, +1, e.pk in would_like_to_review, "wants to review document")
+        add_boolean_score(scores, -1, e.pk in connections, connections.get(e.pk))
+        add_boolean_score(scores, -1, reviewer.filter_re and any(re.search(reviewer.filter_re, n) for n in aliases), "filter regexp matches")
+        add_boolean_score(scores, -1, reviewer.unavailable_until and reviewer.unavailable_until > now, "unavailable until {}".format((reviewer.unavailable_until or now).strftime("%Y-%m-%d %H:%M:%S")))
 
-        rankings.append({
+        scores.append(100000 if days_past is None else days_past)
+
+        label = "{}: {}".format(e.person, "; ".join(explanations))
+
+        ranking.append({
             "email": e,
-            "rank": rank,
+            "scores": scores,
             "label": label,
         })
 
-    rankings.sort(key=lambda r: r["rank"])
+    ranking.sort(key=lambda r: r["scores"], reverse=True)
 
-    # FIXME: empty choices
-    return [(r["email"].pk, r["label"]) for r in rankings]
+    return [(r["email"].pk, r["label"]) for r in ranking]
