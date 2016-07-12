@@ -233,6 +233,8 @@ with db_con.cursor() as c:
 
         # FIXME: add log entries
         # FIXME: add review from reviewurl
+        # FIXME: do something about missing result
+
         # adcomments   IGNORED
         # lccomments   IGNORED
         # nits         IGNORED
@@ -240,4 +242,8 @@ with db_con.cursor() as c:
 
         #print meta and meta[0], telechat, lcend, req.type
 
-        print "imported review", row.reviewid, "as", req.pk, req.time, req.deadline, req.type, req.doc_id
+        if req.state_id == "requested" and req.doc.get_state_slug("draft-iesg") in ["approved", "ann", "rfcqueue", "pub"]:
+            req.state = states["overtaken"]
+            req.save()
+
+        print "imported review", row.reviewid, "as", req.pk, req.time, req.deadline, req.type, req.doc_id, req.state, req.doc.get_state_slug("draft-iesg")
