@@ -573,7 +573,7 @@ def document_main(request, name, rev=None):
 
 
     if doc.type_id == "review":
-        basename = "{}-{}.txt".format(doc.name, doc.rev)
+        basename = "{}.txt".format(doc.name, doc.rev)
         pathname = os.path.join(doc.get_file_path(), basename)
         content = get_document_content(basename, pathname, split=False)
 

@@ -377,11 +377,12 @@ def complete_review(request, name, request_id):
             for i in range(1, 100):
                 name_components = [
                     "review",
-                    review_req.team.acronym,
-                    review_req.type.slug,
-                    review_req.reviewer.person.ascii_parts()[3],
                     skip_prefix(review_req.doc.name, "draft-"),
                     form.cleaned_data["reviewed_rev"],
+                    review_req.team.acronym,
+                    review_req.type.slug if review_req.type.slug != "unknown" else "",
+                    review_req.reviewer.person.ascii_parts()[3],
+                    datetime.date.today().isoformat(),
                 ]
                 if i > 1:
                     name_components.append(str(i))
@@ -416,7 +417,7 @@ def complete_review(request, name, request_id):
             else:
                 encoded_content = form.cleaned_data['review_content'].encode("utf-8")
 
-            filename = os.path.join(review.get_file_path(), '{}-{}.txt'.format(review.name, review.rev))
+            filename = os.path.join(review.get_file_path(), '{}.txt'.format(review.name, review.rev))
             with open(filename, 'wb') as destination:
                 destination.write(encoded_content)
 

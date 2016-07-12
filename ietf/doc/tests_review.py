@@ -401,7 +401,7 @@ class ReviewTests(TestCase):
         self.assertTrue(review_req.team.acronym.lower() in review_req.review.name)
         self.assertTrue(review_req.doc.rev in review_req.review.name)
 
-        with open(os.path.join(self.review_subdir, review_req.review.name + "-" + review_req.review.rev + ".txt")) as f:
+        with open(os.path.join(self.review_subdir, review_req.review.name + ".txt")) as f:
             self.assertEqual(f.read(), "This is a review\nwith two lines")
 
         self.assertEqual(len(outbox), 1)
@@ -432,7 +432,7 @@ class ReviewTests(TestCase):
         review_req = reload_db_objects(review_req)
         self.assertEqual(review_req.state_id, "completed")
 
-        with open(os.path.join(self.review_subdir, review_req.review.name + "-" + review_req.review.rev + ".txt")) as f:
+        with open(os.path.join(self.review_subdir, review_req.review.name + ".txt")) as f:
             self.assertEqual(f.read(), "This is a review\nwith two lines")
 
         self.assertEqual(len(outbox), 1)
@@ -463,7 +463,7 @@ class ReviewTests(TestCase):
         review_req = reload_db_objects(review_req)
         self.assertEqual(review_req.state_id, "completed")
 
-        with open(os.path.join(self.review_subdir, review_req.review.name + "-" + review_req.review.rev + ".txt")) as f:
+        with open(os.path.join(self.review_subdir, review_req.review.name + ".txt")) as f:
             self.assertEqual(f.read(), "This is a review\nwith two lines")
 
         self.assertEqual(len(outbox), 0)
