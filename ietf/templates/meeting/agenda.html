@@ -317,13 +317,57 @@
 		      </div>
 		    </div>
 		  </td>
-		  <td class="text-nowrap">
+		  <td class="text-nowrap text-right">
 		  <span class="hidden-xs">
 		    {% if item.session.agenda %}
-		      <button class="btn btn-default btn-xs" data-toggle="modal" data-target="#modal-{{item.slug}}"><span class="fa fa-arrows-alt" title="Show meeting materials"></span></button>
+		      <button class="btn btn-default btn-xs" data-toggle="modal" data-target="#modal-{{item.slug}}" title="Show meeting materials"><span class="fa fa-arrows-alt"></span></button>
 		      <a class="btn btn-default btn-xs" href="/meeting/{{schedule.meeting.number}}/agenda/{{item.session.historic_group.acronym}}-drafts.tgz" title="Download meeting materials as .tar archive"><span class="fa fa-file-archive-o"></span></a>
 		      <a class="btn btn-default btn-xs" href="/meeting/{{ schedule.meeting.number }}/agenda/{{item.session.historic_group.acronym}}-drafts.pdf" title="Download meeting materials as PDF file"><span class="fa fa-file-pdf-o"></span></a>
 		    {% endif %}
+		      <a class="btn btn-default btn-xs" href="http://etherpad.tools.ietf.org:9000/p/notes-ietf-{{ schedule.meeting.number }}-{{item.session.historic_group.acronym}}?useMonospaceFont=true" title="Etherpad for note-takers"><span class="fa fa-edit"></span></a>
+		      {# show stream buttons up till end of session, then show archive buttons #}
+		      {% if now < item.timeslot.end_time %}
+		        <!-- Jabber -->
+			<a class="btn btn-default btn-xs"
+			  href="xmpp:{{item.session.historic_group.acronym}}@jabber.ietf.org?join"
+			  title="Jabber room for {{item.session.historic_group.acronym}}"><span class="fa fa-lightbulb-o"></span>
+			</a>
+			<!-- Video stream (meetecho) -->
+			{% if item.timeslot.location.video_stream_url %}
+			  <a class="btn btn-default btn-xs"
+			    href="{{ item.timeslot.location.video_stream_url }}"
+			    title="Meetecho video stream"><span class="fa fa-video-camera"></span>
+			  </a>
+			{% endif %}
+			<!-- Audio stream -->
+			{% if item.timeslot.location.audio_stream_url %}
+			  <a class="btn btn-default btn-xs"
+			    href="{{item.timeslot.location.audio_stream_url }}"
+			    title="Audio stream"><span class="glyphicon glyphicon-headphones"></span>
+			  </a>
+			{% endif %}
+		      {% else %}
+		        <!-- Jabber logs -->
+			{% if schedule.meeting.number|add:"0" >= 60 %}
+		        <a class="btn btn-default btn-xs"
+			  href="https://www.ietf.org/jabber/logs/{{item.session.historic_group.acronym}}"
+			  title="Jabber logs for {{item.session.historic_group.acronym}}">
+			   <span class="fa fa-stack">
+			     <i class="fa fa-file-o fa-stack-1x"></i>
+			     <i class="fa fa-lightbulb-o fa-stack-1x"></i>
+			   </span>
+			</a>
+			{% endif %}
+			<!-- Video recording -->
+		        {% if schedule.meeting.number|add:"0" >= 80 %}
+		        <a class="btn btn-default btn-xs"
+			  href="http://www.meetecho.com/ietf{{schedule.meeting.number}}/recordings#{{item.session.historic_group.acronym.upper}}"
+			  title="Meetecho video recording"><span class="fa fa-file-video-o"></span>
+			</a>
+			{% endif %}
+			<!-- Audio recording -->
+			{# <a class="btn btn-default btn-xs" href="" title="Audio recording"><span class="fa fa-file-audio-o"></span></a>#}
+		      {% endif %}
 		    </span>
 		  </td>
 		</tr>
