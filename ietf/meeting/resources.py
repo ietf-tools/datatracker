@@ -8,7 +8,8 @@ from tastypie.cache import SimpleCache
 from ietf import api
 
 from ietf.meeting.models import ( Meeting, ResourceAssociation, Constraint, Room, Schedule, Session,
-                                TimeSlot, SchedTimeSessAssignment, SessionPresentation, FloorPlan )
+                                TimeSlot, SchedTimeSessAssignment, SessionPresentation, FloorPlan,
+                                UrlResource)
 
 from ietf.name.resources import MeetingTypeNameResource
 class MeetingResource(ModelResource):
@@ -251,4 +252,23 @@ class SessionPresentationResource(ModelResource):
             "document": ALL_WITH_RELATIONS,
         }
 api.meeting.register(SessionPresentationResource())
+
+
+
+from ietf.name.resources import RoomResourceNameResource
+class UrlResourceResource(ModelResource):
+    name             = ToOneField(RoomResourceNameResource, 'name')
+    room             = ToOneField(RoomResource, 'room')
+    class Meta:
+        queryset = UrlResource.objects.all()
+        serializer = api.Serializer()
+        cache = SimpleCache()
+        #resource_name = 'urlresource'
+        filtering = { 
+            "id": ALL,
+            "url": ALL,
+            "name": ALL_WITH_RELATIONS,
+            "room": ALL_WITH_RELATIONS,
+        }
+api.meeting.register(UrlResourceResource())
 

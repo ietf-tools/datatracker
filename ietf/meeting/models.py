@@ -280,7 +280,6 @@ class Meeting(models.Model):
 
 class ResourceAssociation(models.Model):
     name = models.ForeignKey(RoomResourceName)
-    #url  = models.UrlField()       # not sure what this was for.
     icon = models.CharField(max_length=64)       # icon to be found in /static/img
     desc = models.CharField(max_length=256)
 
@@ -344,7 +343,7 @@ class Room(models.Model):
             'name':                 self.name,
             'capacity':             self.capacity,
             }
-
+    # floorplan support
     def left(self):
         return min(self.x1, self.x2) if (self.x1 and self.x2) else 0
     def top(self):
@@ -361,8 +360,23 @@ class Room(models.Model):
         if self.functional_name[0].isdigit():
             return ""
         return self.functional_name
+    # audio stream support
+    def audio_stream_url(self):
+        urlresource = self.urlresource_set.filter(name_id='audiostream').first()
+        return urlresource.url if urlresource else None
+    def video_stream_url(self):
+        urlresource = self.urlresource_set.filter(name_id__in=['meetecho', ]).first()
+        return urlresource.url if urlresource else None
+    #
     class Meta:
         ordering = ["-meeting", "name"]
+
+
+class UrlResource(models.Model):
+    "For things like audio stream urls, meetecho stream urls"
+    name    = models.ForeignKey(RoomResourceName)
+    room    = models.ForeignKey(Room)
+    url     = models.URLField(null=True, blank=True)
 
 def floorplan_path(instance, filename):
     root, ext = os.path.splitext(filename)
@@ -373,6 +387,9 @@ class FloorPlan(models.Model):
     meeting = models.ForeignKey(Meeting)
     order   = models.SmallIntegerField()
     image   = models.ImageField(storage=NoLocationMigrationFileSystemStorage(), upload_to=floorplan_path, blank=True, default=None)
+    #
+    def __unicode__(self):
+        return 'floorplan-%s-%s' % (self.meeting.number, xslugify(self.name))
 
 # === Schedules, Sessions, Timeslots and Assignments ===========================
 
@@ -423,6 +440,7 @@ class TimeSlot(models.Model):
             location = "(no location)"
 
         return u"%s: %s-%s %s, %s" % (self.meeting.number, self.time.strftime("%m-%d %H:%M"), (self.time + self.duration).strftime("%H:%M"), self.name, location)
+
     def end_time(self):
         return self.time + self.duration
 
@@ -452,26 +470,28 @@ class TimeSlot(models.Model):
             name_parts.append(location)
         return ' - '.join(name_parts)
 
-    @property
     def tz(self):
-        if self.meeting.time_zone:
-            return pytz.timezone(self.meeting.time_zone)
-        else:
-            return None
+        if not hasattr(self, '_cached_tz'):
+            if self.meeting.time_zone:
+                self._cached_tz = pytz.timezone(self.meeting.time_zone)
+            else:
+                self._cached_tz = None
+        return self._cached_tz
+
     def tzname(self):
-        if self.tz:
-            return self.tz.tzname(self.time)
+        if self.tz():
+            return self.tz().tzname(self.time)
         else:
             return ""
     def utc_start_time(self):
-        if self.tz:
-            local_start_time = self.tz.localize(self.time)
+        if self.tz():
+            local_start_time = self.tz().localize(self.time)
             return local_start_time.astimezone(pytz.utc)
         else:
             return None
     def utc_end_time(self):
-        if self.tz:
-            local_end_time = self.tz.localize(self.end_time())
+        if self.tz():
+            local_end_time = self.tz().localize(self.end_time())
             return local_end_time.astimezone(pytz.utc)
         else:
             return None
