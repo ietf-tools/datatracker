@@ -7,7 +7,7 @@ from ietf.meeting import views
 from ietf.meeting import ajax
 
 safe_for_all_meeting_types = [
-    url(r'^session/(?P<acronym>[A-Za-z0-9_\-\+]+)/$',  views.session_details),
+    url(r'^session/(?P<acronym>[-a-z0-9]+)/$',  views.session_details),
     url(r'^session/(?P<session_id>\d+)/drafts$',  views.add_session_drafts),
 ]
 
@@ -69,16 +69,9 @@ type_ietf_only_patterns_id_optional = [
 ]
 
 urlpatterns = [
+    # First patterns which start with unique strings
+    url(r'^$', views.current_materials),
     url(r'^ajax/get-utc/$', views.ajax_get_utc),
-    url(r'^requests.html$', RedirectView.as_view(url='/meeting/requests', permanent=True)),
-    url(r'^(?P<num>\d+)/requests.html$', RedirectView.as_view(url='/meeting/%(num)s/requests', permanent=True)),
-    url(r'^(?P<num>[A-Za-z0-9._+-]+)/', include(safe_for_all_meeting_types)),
-    # The optionals have to go first, otherwise the agenda/(owner)/(name)/ patterns match things they shouldn't
-    url(r'^(?:(?P<num>\d+)/)?', include(type_ietf_only_patterns_id_optional)),
-    url(r'^(?P<num>\d+)/', include(type_ietf_only_patterns)),
-    url(r'^(?P<num>interim-[a-z0-9-]+)/', include(type_ietf_only_patterns)),
-    url(r'^upcoming/$', views.upcoming),
-    url(r'^upcoming.ics/$', views.upcoming_ical),
     url(r'^interim/announce/$', views.interim_announce),
     url(r'^interim/announce/(?P<number>[A-Za-z0-9._+-]+)/$', views.interim_send_announcement),
     url(r'^interim/request/$', views.interim_request),
@@ -86,6 +79,17 @@ urlpatterns = [
     url(r'^interim/request/(?P<number>[A-Za-z0-9._+-]+)/edit/$', views.interim_request_edit),
     url(r'^interim/request/(?P<number>[A-Za-z0-9._+-]+)/cancel/$', views.interim_request_cancel),
     url(r'^interim/pending/$', views.interim_pending),
-    url(r'^$', views.current_materials),
+    url(r'^requests.html$', RedirectView.as_view(url='/meeting/requests', permanent=True)),
+    url(r'^upcoming/$', views.upcoming),
+    url(r'^upcoming.ics/$', views.upcoming_ical),
+    # Then patterns from more specific to less
+    url(r'^(?P<num>interim-[a-z0-9-]+)/', include(type_ietf_only_patterns)),
+    url(r'^(?P<num>\d+)/requests.html$', RedirectView.as_view(url='/meeting/%(num)s/requests', permanent=True)),
+    # The optionals have to go first of these two, otherwise the agenda/(owner)/(name)/ patterns match things they shouldn't
+    url(r'^(?:(?P<num>\d+)/)?', include(type_ietf_only_patterns_id_optional)),
+    url(r'^(?P<num>\d+)/', include(type_ietf_only_patterns)),
+    #
+    url(r'^(?P<num>\d+)/', include(safe_for_all_meeting_types)),
+    url(r'^(?P<num>interim-[a-z0-9-]+)/', include(safe_for_all_meeting_types)),
 ]
 

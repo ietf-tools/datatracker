@@ -11,7 +11,7 @@ urlpatterns = patterns('',
     (r'^concluded/$', 'ietf.group.views.concluded_groups'),
     (r'^email-aliases/$', 'ietf.group.views.email_aliases'),
     (r'^all-status/$', 'ietf.group.views.all_status'),
-    (r'^(?P<acronym>[a-zA-Z0-9-._]+)/$', 'ietf.group.views.group_home', None, "group_home"),
-    (r'^(?P<acronym>[a-zA-Z0-9-._]+)/', include('ietf.group.urls_info_details')),
+    (r'^(?P<acronym>[-a-z0-9]+)/$', 'ietf.group.views.group_home', None, "group_home"),
+    (r'^(?P<acronym>[-a-z0-9]+)/', include('ietf.group.urls_info_details')),
 )
 
