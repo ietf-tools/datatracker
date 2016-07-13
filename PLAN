@@ -76,5 +76,10 @@ Planned work in rough order
 * Add role lists and additional relevant information to the personal profile
   pages
 
+* Increase the requirements on valid email addresses in draft submissions --
+  contacting authors is hard if they don't provide an email address.
+
 * Make it possible to let time run backwards in the database (creation timestamps,
   universal changelog)
+
+
