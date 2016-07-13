@@ -114,7 +114,7 @@ template_coverage_loader.is_usable = True
 
 class RecordUrlsMiddleware(object):
     def process_request(self, request):
-        global url_coverage_collection
+        global url_coverage_collection, visited_urls
         if url_coverage_collection == True:
             visited_urls.add(request.path)
 
