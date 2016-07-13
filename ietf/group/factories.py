@@ -7,7 +7,7 @@ class GroupFactory(factory.DjangoModelFactory):
         model = Group
 
     name = factory.Faker('sentence',nb_words=6)
-    acronym = factory.Sequence(lambda n: 'acronym_%d' %n)
+    acronym = factory.Sequence(lambda n: 'acronym%d' %n)
 
 class RoleFactory(factory.DjangoModelFactory):
     class Meta:
