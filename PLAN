@@ -76,3 +76,5 @@ Planned work in rough order
 * Add role lists and additional relevant information to the personal profile
   pages
 
+* Make it possible to let time run backwards in the database (creation timestamps,
+  universal changelog)
