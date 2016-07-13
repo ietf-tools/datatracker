@@ -25,7 +25,8 @@ def getclass(frame):
 
 def getcaller():
     parent, pfile, pline, pfunction, lines, index = inspect.stack()[2]
-    pmodule = inspect.getmoduleinfo(pfile)[0]
+    moduleinfo = inspect.getmoduleinfo(pfile)
+    pmodule = moduleinfo[0] if moduleinfo else None
     pclass = getclass(parent)
     return (pmodule, pclass, pfunction, pfile, pline)
 
