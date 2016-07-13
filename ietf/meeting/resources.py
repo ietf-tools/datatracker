@@ -263,7 +263,7 @@ class UrlResourceResource(ModelResource):
         queryset = UrlResource.objects.all()
         serializer = api.Serializer()
         cache = SimpleCache()
-        #resource_name = 'urlresource'
+        resource_name = 'urlresource'
         filtering = { 
             "id": ALL,
             "url": ALL,
