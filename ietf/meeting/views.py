@@ -461,6 +461,7 @@ def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""
         "filtered_assignments": filtered_assignments,
         "updated": updated,
         "group_parents": group_parents,
+        "now": datetime.datetime.now(),
     }, content_type=mimetype[ext])
 
 def agenda_csv(schedule, filtered_assignments):
