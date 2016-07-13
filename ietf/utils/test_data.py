@@ -13,6 +13,7 @@ from ietf.ipr.models import HolderIprDisclosure, IprDocRel, IprDisclosureStateNa
 from ietf.meeting.models import Meeting
 from ietf.name.models import StreamName, DocRelationshipName
 from ietf.person.models import Person, Email
+from ietf.group.utils import setup_default_community_list_for_group
 
 def create_person(group, role_name, name=None, username=None, email_address=None, password=None):
     """Add person/user/email and role."""
@@ -149,6 +150,8 @@ def make_test_data():
         name=charter.name,
         document=charter
         )
+    setup_default_community_list_for_group(group)
+
     # ames WG
     group = Group.objects.create(
         name="Asteroid Mining Equipment Standardization Group",
@@ -173,6 +176,7 @@ def make_test_data():
         )
     group.charter = charter
     group.save()
+    setup_default_community_list_for_group(group)
 
     # irg RG
     irg_rg = Group.objects.create(

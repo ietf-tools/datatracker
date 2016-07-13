@@ -20,7 +20,7 @@ from django.template.defaultfilters import urlize
 
 from ietf.doc.models import Document, DocAlias, DocEvent, State
 from ietf.group.models import Group, GroupEvent, GroupMilestone, GroupStateTransitions, Role
-from ietf.group.utils import save_group_in_history, setup_default_community_list_for_group
+from ietf.group.utils import save_group_in_history, reset_name_contains_index_for_rule
 from ietf.name.models import DocTagName, GroupStateName, GroupTypeName
 from ietf.person.models import Person, Email
 from ietf.utils.test_utils import TestCase, unicontent
@@ -29,6 +29,7 @@ from ietf.utils.test_data import make_test_data, create_person
 from ietf.utils.test_utils import login_testing_unauthorized
 from ietf.group.factories import GroupFactory, RoleFactory, GroupEventFactory
 from ietf.meeting.factories import SessionFactory
+from ietf.community.models import CommunityList
 
 class GroupPagesTests(TestCase):
     def setUp(self):
@@ -87,6 +88,22 @@ class GroupPagesTests(TestCase):
         for slug in GroupTypeName.objects.exclude(slug__in=['wg','rg','ag','area','dir','team']).values_list('slug',flat=True):
             with self.assertRaises(NoReverseMatch):
                 url=urlreverse('ietf.group.views.active_groups', kwargs=dict(group_type=slug))
+
+    def test_group_home(self):
+        draft = make_test_data()
+        group = draft.group
+
+        url = urlreverse('ietf.group.views.group_home', kwargs=dict(acronym=group.acronym))
+        next = urlreverse('ietf.group.views.group_documents', kwargs=dict(acronym=group.acronym))
+        r = self.client.get(url)
+        self.assertRedirects(r, next)
+        r = self.client.get(next)
+        self.assertTrue(group.acronym in unicontent(r))
+        self.assertTrue(group.name in unicontent(r))
+        for word in ['Documents', 'Date', 'Status', 'IPR', 'AD', 'Shepherd']:
+            self.assertTrue(word in unicontent(r))
+        self.assertTrue(draft.name in unicontent(r))
+        self.assertTrue(draft.title in unicontent(r))
 
     def test_wg_summaries(self):
         draft = make_test_data()
@@ -193,7 +210,9 @@ class GroupPagesTests(TestCase):
             name=draft2.name,
             )
 
-        setup_default_community_list_for_group(group)
+        clist = CommunityList.objects.get(group=group)
+        related_docs_rule = clist.searchrule_set.get(rule_type='name_contains')
+        reset_name_contains_index_for_rule(related_docs_rule)
 
         url = urlreverse('ietf.group.views.group_documents', kwargs=dict(group_type=group.type_id, acronym=group.acronym))
         r = self.client.get(url)
