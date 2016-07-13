@@ -3,7 +3,7 @@ import subprocess
 import os
 import json
 
-from django.http import HttpResponse, HttpResponseForbidden, HttpResponseServerError, HttpResponseRedirect, Http404
+from django.http import HttpResponse, HttpResponseForbidden, HttpResponseRedirect, Http404
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.conf import settings
@@ -15,6 +15,7 @@ from ietf.doc.models import DeletedEvent, StateDocEvent
 from ietf.ietfauth.utils import role_required, has_role
 from ietf.sync.discrepancies import find_discrepancies
 from ietf.utils.serialize import object_as_shallow_dict
+from ietf.utils.log import log
 
 SYNC_BIN_PATH = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../bin"))
 
@@ -75,30 +76,29 @@ def notify(request, org, notification):
 
     if request.method == "POST":
         def runscript(name):
-            p = subprocess.Popen(["python", os.path.join(SYNC_BIN_PATH, name)],
-                                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-            out, _ = p.communicate()
-            return (p.returncode, out)
+            cmd = ["python", os.path.join(SYNC_BIN_PATH, name)]
+            cmdstring = " ".join(cmd)
+            p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            out, err = p.communicate()
+            if p.returncode:
+                log("Subprocess error %s when running '%s': %s %s" % (p.returncode, cmd, err, out))
+                raise subprocess.CalledProcessError(p.returncode, cmdstring, "\n".join([err, out]))
 
-        import syslog
-        syslog.syslog("Running sync script from notify view POST")
+        log("Running sync script from notify view POST")
 
         if notification == "protocols":
-            failed, out = runscript("iana-protocols-updates")
+            runscript("iana-protocols-updates")
 
         if notification == "changes":
-            failed, out = runscript("iana-changes-updates")
+            runscript("iana-changes-updates")
 
         if notification == "queue":
-            failed, out = runscript("rfc-editor-queue-updates")
+            runscript("rfc-editor-queue-updates")
 
         if notification == "index":
-            failed, out = runscript("rfc-editor-index-updates")
+            runscript("rfc-editor-index-updates")
 
-        if failed:
-            return HttpResponseServerError("FAIL\n\n" + out, content_type="text/plain; charset=%s"%settings.DEFAULT_CHARSET)
-        else:
-            return HttpResponse("OK", content_type="text/plain; charset=%s"%settings.DEFAULT_CHARSET)
+        return HttpResponse("OK", content_type="text/plain; charset=%s"%settings.DEFAULT_CHARSET)
 
     return render_to_response('sync/notify.html',
                               dict(org=known_orgs[org],
