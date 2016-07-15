@@ -8,6 +8,8 @@ from django.core.urlresolvers import reverse as urlreverse
 
 from ietf.doc.models import ( Document, State, DocEvent, BallotDocEvent,
     BallotPositionDocEvent, LastCallDocEvent, WriteupDocEvent, TelechatDocEvent )
+from ietf.doc.factories import DocumentFactory
+from ietf.group.factories import GroupFactory
 from ietf.group.models import Group, Role
 from ietf.name.models import BallotPositionName
 from ietf.iesg.models import TelechatDate
@@ -713,3 +715,44 @@ class DeferUndeferTestCase(TestCase):
 
     def setUp(self):
         make_test_data()
+
+class RegenerateLastCallTestCase(TestCase):
+
+    def test_regenerate_last_call(self):
+        group = GroupFactory(type_id='individ')
+        draft = DocumentFactory.create(stream_id='ietf',group=group)
+        draft.docalias_set.create(name=draft.name) # factory should do this
+        draft.set_state(State.objects.get(type='draft',slug='active'))
+        draft.set_state(State.objects.get(type='draft-iesg',slug='pub-req'))
+        draft.intended_std_level_id='ps'
+        draft.save()
+    
+        url = urlreverse('doc_ballot_lastcall', kwargs=dict(name=draft.name))
+        login_testing_unauthorized(self, "secretary", url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+
+        r = self.client.post(url, dict(regenerate_last_call_text="1"))
+        self.assertEqual(r.status_code, 200)
+        draft = Document.objects.get(name=draft.name)
+        lc_text = draft.latest_event(WriteupDocEvent, type="changed_last_call_text").text
+        self.assertTrue("Subject: Last Call" in lc_text)
+        self.assertFalse("contains normative down" in lc_text)
+
+        rfc = DocumentFactory.create(stream_id='ise')
+        rfc.docalias_set.create(name=rfc.name)
+        rfc_alias = rfc.docalias_set.create(name='rfc6666')
+        rfc.set_state(State.objects.get(type='draft',slug='rfc'))
+        rfc.set_state(State.objects.get(type='draft-iesg',slug='pub'))
+        rfc.std_level_id='inf'
+        rfc.save()
+
+        draft.relateddocument_set.create(target=rfc_alias,relationship_id='refnorm')
+
+        r = self.client.post(url, dict(regenerate_last_call_text="1"))
+        self.assertEqual(r.status_code, 200)
+        draft = Document.objects.get(name=draft.name)
+        lc_text = draft.latest_event(WriteupDocEvent, type="changed_last_call_text").text
+        self.assertTrue('contains these normative down' in lc_text)
+        self.assertTrue('rfc6666' in lc_text)
+        self.assertTrue('Independent Submission Editor stream' in lc_text)

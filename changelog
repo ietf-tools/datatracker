@@ -1,3 +1,30 @@
+ietfdb (6.27.1) ietf; urgency=medium
+
+  This is a patch release with a few bugfixes, in preparation for the
+  IETF 96 Code Sprint.
+
+  * Updated the version requirement for pyquery.
+
+  * Added a test case for group home.
+
+  * There were multiple different regex patterns in different urlpattern
+    declarations, with some of them permitting characters which should not
+    occur in group acronym.  Changed them to consistently use [-a-z0-9]+ .
+
+  * If an external RfcEd/IANA command fails, capture stderr and raise an
+    Exception.
+
+  * Added links to Jabber room, Etherpad, Audio stream, and Meetecho video
+    participation, up to the time a session ends; switching out Jabber,
+    Meetecho and Audio streams with links to logs or recordings after the
+    end of a session.
+
+  * Made all the scripts under ietf/bin/ set up the environment the same 
+    way.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  13 Jul 2016 13:56:55 -0700
+
+
 ietfdb (6.27.0) ietf; urgency=high
 
   **Floor plan enhancements**
