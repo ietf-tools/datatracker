@@ -1,7 +1,15 @@
 import factory
 
-from ietf.doc.models import Document, DocEvent, NewRevisionDocEvent
-from ietf.person.factories import PersonFactory
+from ietf.doc.models import Document, DocEvent, NewRevisionDocEvent, DocAlias, State
+
+def draft_name_generator(type_id,group,n):
+        return '%s-%s-%s-%s%d'%( 
+              type_id,
+              'bogusperson',
+              group.acronym if group else 'netherwhere',
+              'musings',
+              n,
+            )
 
 class DocumentFactory(factory.DjangoModelFactory):
     class Meta:
@@ -10,26 +18,47 @@ class DocumentFactory(factory.DjangoModelFactory):
     type_id = 'draft'
     title = factory.Faker('sentence',nb_words=6)
     rev = '00'
-    group = None
+    group = factory.SubFactory('ietf.group.factories.GroupFactory',type_id='individ')
+    std_level_id = None
+    intended_std_level_id = None
 
     @factory.lazy_attribute_sequence
     def name(self, n):
-        return '%s-%s-%s-%s%d'%( 
-              self.type_id,
-              'bogusperson',
-              self.group.acronym if self.group else 'netherwhere',
-              'musings',
-              n,
-            )
+        return draft_name_generator(self.type_id,self.group,n)
 
     newrevisiondocevent = factory.RelatedFactory('ietf.doc.factories.NewRevisionDocEventFactory','doc')
+
+    alias = factory.RelatedFactory('ietf.doc.factories.DocAliasFactory','document')
+
+    @factory.post_generation
+    def other_aliases(self, create, extracted, **kwargs):
+        if create and extracted:
+            for alias in extracted:
+                self.docalias_set.create(name=alias) 
+
+    @factory.post_generation
+    def states(self, create, extracted, **kwargs):
+        if create and extracted:
+            for (state_type_id,state_slug) in extracted:
+                self.set_state(State.objects.get(type_id=state_type_id,slug=state_slug))
+
+class DocAliasFactory(factory.DjangoModelFactory):
+    class Meta:
+        model = DocAlias
+
+    document = factory.SubFactory('ietf.doc.factories.DocumentFactory')
+
+    @factory.lazy_attribute
+    def name(self):
+        return self.document.name
+    
 
 class DocEventFactory(factory.DjangoModelFactory):
     class Meta:
         model = DocEvent
 
     type = 'added_comment'
-    by = factory.SubFactory(PersonFactory)
+    by = factory.SubFactory('ietf.person.factories.PersonFactory')
     doc = factory.SubFactory(DocumentFactory)
     desc = factory.Faker('sentence',nb_words=6)
 
