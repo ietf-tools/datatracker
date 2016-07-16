@@ -20,8 +20,8 @@ class IprDisclosureBase(models.Model):
     other_designations  = models.CharField("Designations for other contributions", blank=True, max_length=255)
     rel                 = models.ManyToManyField('self', through='RelatedIpr', symmetrical=False)
     state               = models.ForeignKey(IprDisclosureStateName)
-    submitter_name      = models.CharField(max_length=255)
-    submitter_email     = models.EmailField()
+    submitter_name      = models.CharField(max_length=255,blank=True)
+    submitter_email     = models.EmailField(blank=True)
     time                = models.DateTimeField(auto_now_add=True)
     title               = models.CharField(blank=True, max_length=255)
 
