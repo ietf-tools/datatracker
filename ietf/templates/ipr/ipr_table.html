@@ -21,22 +21,23 @@
         <td>
           {% if ipr.state_id == 'posted' or administrative_list %}
             <div><a href="{% url "ietf.ipr.views.show" ipr.id %}">{{ ipr.title }}</a></div>
+
+            {% for item in ipr.relatedipr_source_set.all %}
+              {% if item.target.state_id == 'posted' %}
+                <div>Updates ID <a href="{% url "ietf.ipr.views.show" item.target.id %}">#{{ item.target.id }}</a>.</div>
+              {% endif %}
+            {% endfor %}
+
+            {% for item in ipr.relatedipr_target_set.all %}
+              {% if item.source.state_id == "posted" %}
+                <div>Updated by ID <a href="{% url "ietf.ipr.views.show" item.source.id %}">#{{ item.source.id }}</a>.</div>
+              {% endif %}
+            {% endfor %}
+
           {% else %}
             <div>{{ ipr.title }}</div>
             <div><i>This IPR disclosure was removed at the request of the submitter.</i></div>
           {% endif %}
-
-          {% for item in ipr.relatedipr_source_set.all %}
-            {% if item.target.state_id == 'posted' %}
-              <div>Updates ID <a href="{% url "ietf.ipr.views.show" item.target.id %}">#{{ item.target.id }}</a>.</div>
-            {% endif %}
-          {% endfor %}
-
-          {% for item in ipr.relatedipr_target_set.all %}
-            {% if item.source.state_id == "posted" %}
-              <div>Updated by ID <a href="{% url "ietf.ipr.views.show" item.source.id %}">#{{ item.source.id }}</a>.</div>
-            {% endif %}
-          {% endfor %}
         </td>
 
         {% if administrative_list == 'pending' %}
