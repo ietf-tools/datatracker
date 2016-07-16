@@ -562,6 +562,23 @@ def send_interim_approval_request(meetings):
               context,
               cc=cc_list)
 
+def send_interim_announcement_request(meeting):
+    """Sends an email to the secretariat that approval has been granted for an
+    interim meeting which includes the link to send the official announcement"""
+    group = meeting.session_set.first().group
+    requester = meeting.session_set.first().requested_by
+    (to_email, cc_list) = gather_address_lists('session_requested',group=group,person=requester)
+    from_email = ('"IETF Meeting Session Request Tool"','session_request_developers@ietf.org')
+    subject = '{group} - Interim Meeting Approved'.format(group=group.acronym)
+    template = 'meeting/interim_announcement_request.txt'
+    announce_url = settings.IDTRACKER_BASE_URL + reverse('ietf.meeting.views.interim_request_details', kwargs={'number': meeting.number})
+    context = locals()
+    send_mail(None,
+              to_email,
+              from_email,
+              subject,
+              template,
+              context,)
 
 def send_interim_cancellation_notice(meeting):
     """Sends an email that a scheduled interim meeting has been cancelled."""

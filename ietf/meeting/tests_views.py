@@ -565,7 +565,20 @@ class InterimTests(TestCase):
         self.assertEqual(len(outbox), len_before + 1)
         self.assertTrue('WG Virtual Meeting' in outbox[-1]['Subject'])
 
-    def test_interim_approve(self):
+    def test_interim_approve_by_ad(self):
+        make_meeting_test_data()
+        meeting = Meeting.objects.filter(type='interim', session__status='apprw', session__group__acronym='mars').first()
+        url = urlreverse('ietf.meeting.views.interim_request_details', kwargs={'number': meeting.number})
+        length_before = len(outbox)
+        login_testing_unauthorized(self, "ad", url)
+        r = self.client.post(url, {'approve': 'approve'})
+        self.assertRedirects(r, urlreverse('ietf.meeting.views.interim_pending'))
+        for session in meeting.session_set.all():
+            self.assertEqual(session.status.slug, 'scheda')
+        self.assertEqual(len(outbox), length_before + 1)
+        self.assertTrue('Approved' in outbox[-1]['Subject'])
+
+    def test_interim_approve_by_secretariat(self):
         make_meeting_test_data()
         meeting = Meeting.objects.filter(type='interim', session__status='apprw', session__group__acronym='mars').first()
         url = urlreverse('ietf.meeting.views.interim_request_details', kwargs={'number': meeting.number})

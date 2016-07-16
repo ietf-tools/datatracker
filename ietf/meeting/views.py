@@ -47,6 +47,7 @@ from ietf.meeting.helpers import can_request_interim_meeting, get_announcement_i
 from ietf.meeting.helpers import sessions_post_save, is_meeting_approved
 from ietf.meeting.helpers import send_interim_cancellation_notice
 from ietf.meeting.helpers import send_interim_approval_request
+from ietf.meeting.helpers import send_interim_announcement_request
 from ietf.utils.mail import send_mail_message
 from ietf.utils.pipe import pipe
 from ietf.utils.pdf import pdf_pages
@@ -1281,6 +1282,7 @@ def interim_request_details(request, number):
             if has_role(request.user, 'Secretariat'):
                 return redirect(interim_send_announcement, number=number)
             else:
+                send_interim_announcement_request(meeting)
                 return redirect(interim_pending)
         if request.POST.get('disapprove') and can_approve_interim_request(meeting, request.user):
             meeting.session_set.update(status_id='disappr')
