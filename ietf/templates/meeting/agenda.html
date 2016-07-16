@@ -265,8 +265,12 @@
                       </a>
                     {% endif %}
 
-                    {% if item.session.historic_group.state_id = "bof" %}
+                    {% if item.session.historic_group.state_id == "bof" %}
                       <span class="label label-success pull-right">BOF</span>
+                    {% endif %}
+
+                    {% if item.session.status.slug == 'canceled' %}
+                      <span class="label label-danger pull-right">CANCELLED</span>
                     {% endif %}
 
                     {% if item.session.agenda_note %}
