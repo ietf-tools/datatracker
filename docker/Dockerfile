@@ -33,6 +33,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 # Install needed packages
 RUN apt-get update && apt-get install -qy \
+	bzip2 \
 	ca-certificates \
 	colordiff \
 	gawk \
