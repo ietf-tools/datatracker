@@ -16,3 +16,13 @@ def xslugify(value):
     lowercase.  Also strips leading and trailing whitespace.
     """
     return _xslugify(value)
+
+@register.filter(is_safe=True)
+@stringfilter
+def format(format, values):
+    if not isinstance(values, dict):
+        tmp = {}
+        for f in values._meta.fields:
+            tmp[f.name] = getattr(values, f.name)
+        values = tmp
+    return format.format(**values)

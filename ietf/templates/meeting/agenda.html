@@ -335,7 +335,7 @@
 			<!-- Video stream (meetecho) -->
 			{% if item.timeslot.location.video_stream_url %}
 			  <a class="btn btn-default btn-xs"
-			    href="{{ item.timeslot.location.video_stream_url }}"
+			    href="{{ item.timeslot.location.video_stream_url|format:item.session }}"
 			    title="Meetecho video stream"><span class="fa fa-video-camera"></span>
 			  </a>
 			{% endif %}
