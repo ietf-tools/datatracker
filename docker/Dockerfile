@@ -55,6 +55,7 @@ RUN apt-get update && apt-get install -qy \
 	rsync \
 	subversion/wheezy-backports \
 	sudo \
+	vim \
 	wget \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
