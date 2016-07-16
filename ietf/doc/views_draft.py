@@ -1092,10 +1092,11 @@ def edit_ad(request, name):
                               context_instance = RequestContext(request))
 
 class ConsensusForm(forms.Form):
-    consensus = forms.ChoiceField(choices=(("Unknown", "Unknown"), ("Yes", "Yes"), ("No", "No")), required=True)
+    consensus = forms.ChoiceField(choices=(("Unknown", "Unknown"), ("Yes", "Yes"), ("No", "No")),
+                  required=True, label="When published as an RFC, should the consensus boilerplate be included?")
 
 def edit_consensus(request, name):
-    """Change whether the draft is a consensus document or not."""
+    """When this draft is published as an RFC, should it include the consensus boilerplate or not."""
 
     doc = get_object_or_404(Document, type="draft", name=name)
 
@@ -1113,7 +1114,7 @@ def edit_consensus(request, name):
                 e = ConsensusDocEvent(doc=doc, type="changed_consensus", by=request.user.person)
                 e.consensus = {"Unknown":None,"Yes":True,"No":False}[form.cleaned_data["consensus"]]
                 if not e.consensus and doc.intended_std_level_id in ("std", "ds", "ps", "bcp"):
-                    return HttpResponseForbidden("BCPs and Standards Track documents must have consensus")
+                    return HttpResponseForbidden("BCPs and Standards Track documents must include the consensus boilerplate")
 
                 e.desc = "Changed consensus to <b>%s</b> from %s" % (nice_consensus(e.consensus),
                                                                      nice_consensus(prev_consensus))

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{# Copyright The IETF Trust 2016, All Rights Reserved #}
 {% load origin %}
 {% load staticfiles %}
 {% load ietf_filters %}
@@ -241,7 +241,7 @@
       {% if consensus and not doc.stream_id == 'ietf' %}
 	<tr>
 	  <th></th>
-	  <th>Consensus</th>
+	  <th>Consensus Boilerplate</th>
 	  <td class="edit">
 	    {% if can_edit or can_edit_stream_info %}
 	      <a class="btn btn-default btn-xs" href="{% url "doc_edit_consensus" name=doc.name %}">Edit</a>
@@ -355,7 +355,7 @@
         {% if consensus and doc.stream_id == 'ietf' %}
 	  <tr>
 	    <th></th>
-	    <th>Consensus</th>
+	    <th>Consensus Boilerplate</th>
 	    <td class="edit">
 	      {% if can_edit or can_edit_stream_info %}
 	      <a class="btn btn-default btn-xs" href="{% url "doc_edit_consensus" name=doc.name %}">Edit</a>
