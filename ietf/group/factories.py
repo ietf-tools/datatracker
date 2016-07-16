@@ -14,7 +14,7 @@ class RoleFactory(factory.DjangoModelFactory):
         model = Role
 
     group = factory.SubFactory(GroupFactory)
-    person = factory.SubFactory('ietf.doc.factories.PersonFactory')
+    person = factory.SubFactory('ietf.person.factories.PersonFactory')
     email = factory.LazyAttribute(lambda obj: obj.person.email())
 
 class GroupEventFactory(factory.DjangoModelFactory):
@@ -22,6 +22,6 @@ class GroupEventFactory(factory.DjangoModelFactory):
         model = GroupEvent
 
     group = factory.SubFactory(GroupFactory)
-    by = factory.SubFactory('ietf.doc.factories.PersonFactory')
+    by = factory.SubFactory('ietf.person.factories.PersonFactory')
     type = 'comment'
     desc = factory.Faker('paragraph')
