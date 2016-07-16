@@ -1,5 +1,5 @@
 # -*- conf-mode -*-
-setuptools>=1.2			# Require this first, to prevent later errors
+setuptools>=18.5			# Require this first, to prevent later errors
 #
 coverage>=4.0.1,!=4.0.2
 #cssselect>=0.6.1               # for PyQuery
@@ -14,7 +14,7 @@ docutils>=0.12
 factory-boy>=2.7.0
 # fake-factory==0.5.3		# from factory-boy
 hashids>=1.1.0
-html5lib>=0.90
+html5lib>=0.90,<0.99999999	# ietf.utils.html needs a rewrite for html5lib 1.x -- major code changes in sanitizer
 jsonfield>=1.0.3		# for SubmissionCheck.  This is https://github.com/bradjasper/django-jsonfield/.
 #lxml>=3.4.0                    # from PyQuery; 
 mimeparse>=0.1.3		# from TastyPie
