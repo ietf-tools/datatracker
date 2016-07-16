@@ -40,7 +40,7 @@ def check_audio_files(group,meeting):
     Example: ietf90-salonb-20140721-1710-pm3.mp3
     
     '''
-    for session in Session.objects.filter(group=group,meeting=meeting,status__in=('sched','schedw')):
+    for session in Session.objects.filter(group=group,meeting=meeting,status='sched'):
         try:
             timeslot = session.official_timeslotassignment().timeslot
         except IndexError:

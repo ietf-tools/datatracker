@@ -20,8 +20,8 @@ logger -p user.info -t cron "Running $DTDIR/bin/hourly"
 # $DTDIR/ietf/manage.py update_community_lists
 # 
 # # Polling backup for iana and rfc-editory post APIs
-# $DTDIR/ietf/bin/iana-changes-updates
-# $DTDIR/ietf/bin/iana-protocols-updates
+$DTDIR/ietf/bin/iana-changes-updates
+$DTDIR/ietf/bin/iana-protocols-updates
 # $DTDIR/ietf/bin/rfc-editor-index-updates
 # $DTDIR/ietf/bin/rfc-editor-queue-updates
 # 
@@ -35,35 +35,35 @@ logger -p user.info -t cron "Running $DTDIR/bin/hourly"
 # 	( cd /a/postfix; /usr/sbin/postalias -o group-aliases; ) && \
 # 	( cd /a/postfix; /usr/sbin/postmap -o group-virtual; )
 # 
-# # Generate some static files 
-# ID=/a/www/ietf-ftp/internet-drafts/
-# DOWNLOAD=/a/www/www6s/download/
-# 
-# export TMPDIR=/a/tmp
-# 
-# TMPFILE1=`mktemp` || exit 1
-# TMPFILE2=`mktemp` || exit 1
-# TMPFILE3=`mktemp` || exit 1
-# TMPFILE4=`mktemp` || exit 1
-# TMPFILE5=`mktemp` || exit 1
-# TMPFILE6=`mktemp` || exit 1
-# TMPFILE7=`mktemp` || exit 1
-# chmod a+r $TMPFILE1 $TMPFILE2 $TMPFILE3 $TMPFILE4 $TMPFILE5 $TMPFILE6 $TMPFILE7
-# 
-# python -m ietf.idindex.generate_all_id_txt >> $TMPFILE1
-# python -m ietf.idindex.generate_id_index_txt >> $TMPFILE2
-# python -m ietf.idindex.generate_id_abstracts_txt >> $TMPFILE3
-# cp $TMPFILE1 $TMPFILE4
-# cp $TMPFILE2 $TMPFILE5
-# cp $TMPFILE3 $TMPFILE6
-# python -m ietf.idindex.generate_all_id2_txt >> $TMPFILE7
-# 
-# mv $TMPFILE1 $ID/all_id.txt
-# mv $TMPFILE2 $ID/1id-index.txt
-# mv $TMPFILE3 $ID/1id-abstracts.txt
-# mv $TMPFILE4 $DOWNLOAD/id-all.txt
-# mv $TMPFILE5 $DOWNLOAD/id-index.txt
-# mv $TMPFILE6 $DOWNLOAD/id-abstract.txt
-# mv $TMPFILE7 $ID/all_id2.txt
-# 
+# Generate some static files 
+ID=/a/www/ietf-ftp/internet-drafts/
+DOWNLOAD=/a/www/www6s/download/
+
+export TMPDIR=/a/tmp
+
+TMPFILE1=`mktemp` || exit 1
+TMPFILE2=`mktemp` || exit 1
+TMPFILE3=`mktemp` || exit 1
+TMPFILE4=`mktemp` || exit 1
+TMPFILE5=`mktemp` || exit 1
+TMPFILE6=`mktemp` || exit 1
+TMPFILE7=`mktemp` || exit 1
+chmod a+r $TMPFILE1 $TMPFILE2 $TMPFILE3 $TMPFILE4 $TMPFILE5 $TMPFILE6 $TMPFILE7
+
+python -m ietf.idindex.generate_all_id_txt >> $TMPFILE1
+python -m ietf.idindex.generate_id_index_txt >> $TMPFILE2
+python -m ietf.idindex.generate_id_abstracts_txt >> $TMPFILE3
+cp $TMPFILE1 $TMPFILE4
+cp $TMPFILE2 $TMPFILE5
+cp $TMPFILE3 $TMPFILE6
+python -m ietf.idindex.generate_all_id2_txt >> $TMPFILE7
+
+mv $TMPFILE1 $ID/all_id.txt
+mv $TMPFILE2 $ID/1id-index.txt
+mv $TMPFILE3 $ID/1id-abstracts.txt
+mv $TMPFILE4 $DOWNLOAD/id-all.txt
+mv $TMPFILE5 $DOWNLOAD/id-index.txt
+mv $TMPFILE6 $DOWNLOAD/id-abstract.txt
+mv $TMPFILE7 $ID/all_id2.txt
+
 # exit 0
