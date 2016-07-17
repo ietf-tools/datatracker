@@ -8,7 +8,10 @@
 
 {% block nomcom_content %}
   {% origin %}
-  <h2>Edit members</h2>
+  <h2>
+     Edit members
+     <small>Fill in this form with the email addresses of nomcom members to register with the datatracker as nomcom members</small>
+  </h2>
 
   <form method="post">
     {% csrf_token %}

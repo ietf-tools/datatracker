@@ -61,7 +61,7 @@ def get_my_groups(user,conclude=False):
         return list()
 
     for group in all_groups:
-        if group.role_set.filter(person=person,name__in=('chair','secr')):
+        if group.role_set.filter(person=person,name__in=('chair','secr','ad')):
             my_groups.add(group)
             continue
         if group.parent and group.parent.role_set.filter(person=person,name__in=('ad','chair')):
