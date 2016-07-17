@@ -180,7 +180,10 @@ class TimeSlotForm(forms.Form):
 class NonSessionForm(TimeSlotForm):
     short = forms.CharField(max_length=32,label='Short Name',help_text='Enter an abbreviated session name (used for material file names)',required=False)
     type = forms.ModelChoiceField(queryset=TimeSlotTypeName.objects.filter(used=True).exclude(slug__in=('session',)),empty_label=None)
-    group = forms.ModelChoiceField(queryset=Group.objects.filter(acronym__in=('edu','ietf','iepg','tools','iesg','iab','iaoc')),help_text='Required for Session types: other, plenary',required=False)
+    group = forms.ModelChoiceField(
+        queryset=Group.objects.filter(type__in=['ietf','team'],state='active'),
+        help_text='Required for Session types: other, plenary',
+        required=False)
     show_location = forms.BooleanField(required=False)
 
     def clean(self):
