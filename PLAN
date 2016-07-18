@@ -82,4 +82,6 @@ Planned work in rough order
 * Make it possible to let time run backwards in the database (creation timestamps,
   universal changelog)
 
+* Change slugs which were limited by the former 8-character slug length limit to
+  be more readable (needs both code changes and migrations).
 
