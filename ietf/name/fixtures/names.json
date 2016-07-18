@@ -5510,6 +5510,17 @@
  "fields": {
   "cc": [],
   "to": [
+   "iesg_secretary"
+  ],
+  "desc": "Recipients when an interim meeting is approved and an announcement needs to be sent"
+ },
+ "model": "mailtrigger.mailtrigger",
+ "pk": "interim_approved"
+},
+{
+ "fields": {
+  "cc": [],
+  "to": [
    "ipr_submitter"
   ],
   "desc": "Recipients when the secretary follows up on an IPR disclosure submission"
