@@ -20,7 +20,7 @@
 {% endif %}{%          if item.timeslot.type.slug == "session" %}{% if item.session.historic_group  %}{% ifchanged %}
 
 {{ item.timeslot.time_desc }}  {{ item.timeslot.name }}
-{% endifchanged %}{{ item.timeslot.location.name|ljust:14 }}  	{{ item.session.historic_group.historic_parent.acronym|upper|ljust:4 }}	{{ item.session.historic_group.acronym|ljust:10 }}  	{{ item.session.historic_group.name }} {% if item.session.historic_group.state_id == "bof" %}BOF{% elif item.session.historic_group.type_id == "wg" %}WG{% endif %}{% if item.session.agenda_note %} - {{ item.session.agenda_note }}{% endif %}
+{% endifchanged %}{{ item.timeslot.location.name|ljust:14 }}  	{{ item.session.historic_group.historic_parent.acronym|upper|ljust:4 }}	{{ item.session.historic_group.acronym|ljust:10 }}  	{{ item.session.historic_group.name }} {% if item.session.historic_group.state_id == "bof" %}BOF{% elif item.session.historic_group.type_id == "wg" %}WG{% endif %}{% if item.session.agenda_note %} - {{ item.session.agenda_note }}{% endif %}{% if item.session.status.slug == 'canceled' %}  *** CANCELLED ***{% endif %}
 {% endif %}{% endif %}{% if item.timeslot.type.slug == "break" %}
 {{ item.timeslot.time_desc }}  {{ item.timeslot.name }}{% if schedule.meeting.break_area and item.timeslot.show_location %} - {{ schedule.meeting.break_area }}{% endif %}{% endif %}{%            if item.timeslot.type.slug == "other" %}
 {{ item.timeslot.time_desc }}  {{ item.timeslot.name }} - {{ item.timeslot.location.name }}{% endif %}{% endfor %}

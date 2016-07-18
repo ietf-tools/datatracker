@@ -1157,12 +1157,8 @@ class Session(models.Model):
     def ical_status(self):
         if self.status.slug == 'canceled': # sic
             return "CANCELLED"
-        elif (datetime.date.today() - self.meeting.date) > datetime.timedelta(days=5):
-            # this is a bit simpleminded, better would be to look at the
-            # time(s) of the timeslot(s) of the official meeting schedule.
-            return "CONFIRMED"
         else:
-            return "TENTATIVE"
+            return "CONFIRMED"
 
     def agenda_file(self):
         if not hasattr(self, '_agenda_file'):
