@@ -567,7 +567,7 @@ def send_interim_announcement_request(meeting):
     interim meeting which includes the link to send the official announcement"""
     group = meeting.session_set.first().group
     requester = meeting.session_set.first().requested_by
-    (to_email, cc_list) = gather_address_lists('session_requested',group=group,person=requester)
+    (to_email, cc_list) = gather_address_lists('interim_approved')
     from_email = ('"IETF Meeting Session Request Tool"','session_request_developers@ietf.org')
     subject = '{group} - Interim Meeting Approved'.format(group=group.acronym)
     template = 'meeting/interim_announcement_request.txt'
@@ -578,7 +578,8 @@ def send_interim_announcement_request(meeting):
               from_email,
               subject,
               template,
-              context,)
+              context,
+              cc_list)
 
 def send_interim_cancellation_notice(meeting):
     """Sends an email that a scheduled interim meeting has been cancelled."""

@@ -6011,5 +6011,16 @@
  },
  "model": "mailtrigger.mailtrigger",
  "pk": "sub_new_version"
+},
+{
+ "fields": {
+  "cc": [],
+  "to": [
+   "iesg_secretary"
+  ],
+  "desc": "Recipients when an interim meeting is approved and an announcement needs to be sent"
+ },
+ "model": "mailtrigger.mailtrigger",
+ "pk": "interim_approved"
 }
 ]
