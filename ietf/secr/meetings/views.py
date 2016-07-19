@@ -369,7 +369,9 @@ def blue_sheet_generate(request, meeting_id):
     '''
     meeting = get_object_or_404(Meeting, number=meeting_id)
 
-    groups = Group.objects.filter(session__meeting=meeting).order_by('acronym')
+    groups = Group.objects.filter(
+        type__in=['wg','rg'],
+        session__timeslotassignments__schedule=meeting.agenda).order_by('acronym')
     create_blue_sheets(meeting, groups)
 
     messages.success(request, 'Blue Sheets generated')
