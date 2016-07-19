@@ -22,7 +22,7 @@ from ietf.doc.mails import ( email_pulled_from_rfc_queue, email_resurrect_reques
     email_resurrection_completed, email_state_changed, email_stream_changed,
     email_stream_state_changed, email_stream_tags_changed, extra_automation_headers,
     generate_publication_request, email_adopted, email_intended_status_changed,
-    email_iesg_processing_document )
+    email_iesg_processing_document, email_ad_approved_doc )
 from ietf.doc.utils import ( add_state_change_event, can_adopt_draft,
     get_tags_for_stream_id, nice_consensus,
     update_reminder, update_telechat, make_notify_changed_event, get_initial_notify,
@@ -69,6 +69,7 @@ def change_state(request, name):
     """Change IESG state of Internet Draft, notifying parties as necessary
     and logging the change as a comment."""
     doc = get_object_or_404(Document, docalias__name=name)
+
     if (not doc.latest_event(type="started_iesg_process")) or doc.get_state_slug() == "expired":
         raise Http404
 
@@ -77,12 +78,14 @@ def change_state(request, name):
     if request.method == 'POST':
         form = ChangeStateForm(request.POST)
         form.docname=name
+
         if form.is_valid():
             new_state = form.cleaned_data['state']
             prev_state = doc.get_state("draft-iesg")
 
             tag = form.cleaned_data['substate']
             comment = form.cleaned_data['comment'].strip()
+
 
             # tag handling is a bit awkward since the UI still works
             # as if IESG tags are a substate
@@ -114,7 +117,9 @@ def change_state(request, name):
                 doc.save()
 
                 email_state_changed(request, doc, msg,'doc_state_edited')
-
+                
+                if new_state.slug == "approved" and new_tags == [] and has_role(request.user, "Area Director"):
+					email_ad_approved_doc(request, doc, comment)
 
                 if prev_state and prev_state.slug in ("ann", "rfcqueue") and new_state.slug not in ("rfcqueue", "pub"):
                     email_pulled_from_rfc_queue(request, doc, comment, prev_state, new_state)

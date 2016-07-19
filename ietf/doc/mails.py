@@ -28,7 +28,18 @@ def email_state_changed(request, doc, text, mailtrigger_id=None):
               dict(text=text,
                    url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()),
               cc=cc)
-
+    
+def email_ad_approved_doc(request, doc, text):
+	to = "iesg@iesg.org"
+	bcc = "iesg-secretary@ietf.org"
+	frm = request.user.person.formatted_email()
+	send_mail(request, to, frm,
+			  "Approved: %s" % doc.filename_with_rev(),
+			  "doc/mail/ad_approval_email.txt",
+			  dict(text=text,
+				   docname=doc.filename_with_rev()),
+			  bcc=bcc)
+    
 def email_stream_changed(request, doc, old_stream, new_stream, text=""):
     """Email the change text to the notify group and to the stream chairs"""
     streams = []
