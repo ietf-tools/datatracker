@@ -1456,7 +1456,7 @@ def proceedings(request, num=None):
     plenaries = sessions.filter(name__icontains='plenary')
     ietf      = sessions.filter(group__parent__type__slug = 'area').exclude(group__acronym='edu')
     irtf      = sessions.filter(group__parent__acronym = 'irtf')
-    training  = sessions.filter(group__acronym__in=['edu','iaoc'])
+    training  = sessions.filter(group__acronym__in=['edu','iaoc'], type_id__in=['session', 'other', ])
     iab       = sessions.filter(group__parent__acronym = 'iab')
 
     cache_version = Document.objects.filter(session__meeting__number=meeting.number).aggregate(Max('time'))["time__max"]
