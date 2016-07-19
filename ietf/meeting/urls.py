@@ -7,7 +7,7 @@ from ietf.meeting import views
 from ietf.meeting import ajax
 
 safe_for_all_meeting_types = [
-    url(r'^session/(?P<acronym>[-a-z0-9]+)/$',  views.session_details),
+    url(r'^session/(?P<acronym>[-a-z0-9]+)/?$',  views.session_details),
     url(r'^session/(?P<session_id>\d+)/drafts$',  views.add_session_drafts),
 ]
 
@@ -64,25 +64,25 @@ type_ietf_only_patterns_id_optional = [
     url(r'^floor-plan/?$', views.floor_plan),
     url(r'^floor-plan/(?P<floor>[-a-z0-9_]+)/?$', views.floor_plan),
     url(r'^week-view(?:.html)?/?$', views.week_view),
-    url(r'^room-view(?:.html)?/$', views.room_view),
-    url(r'^materials(?:.html)?/$', views.materials),
-    url(r'^proceedings(?:.html)?/$', views.proceedings),
+    url(r'^room-view(?:.html)?/?$', views.room_view),
+    url(r'^materials(?:.html)?/?$', views.materials),
+    url(r'^proceedings(?:.html)?/?$', views.proceedings),
 ]
 
 urlpatterns = [
     # First patterns which start with unique strings
     url(r'^$', views.current_materials),
-    url(r'^ajax/get-utc/$', views.ajax_get_utc),
-    url(r'^interim/announce/$', views.interim_announce),
-    url(r'^interim/announce/(?P<number>[A-Za-z0-9._+-]+)/$', views.interim_send_announcement),
-    url(r'^interim/request/$', views.interim_request),
-    url(r'^interim/request/(?P<number>[A-Za-z0-9._+-]+)/$', views.interim_request_details),
-    url(r'^interim/request/(?P<number>[A-Za-z0-9._+-]+)/edit/$', views.interim_request_edit),
-    url(r'^interim/request/(?P<number>[A-Za-z0-9._+-]+)/cancel/$', views.interim_request_cancel),
-    url(r'^interim/pending/$', views.interim_pending),
+    url(r'^ajax/get-utc/?$', views.ajax_get_utc),
+    url(r'^interim/announce/?$', views.interim_announce),
+    url(r'^interim/announce/(?P<number>[A-Za-z0-9._+-]+)/?$', views.interim_send_announcement),
+    url(r'^interim/request/?$', views.interim_request),
+    url(r'^interim/request/(?P<number>[A-Za-z0-9._+-]+)/?$', views.interim_request_details),
+    url(r'^interim/request/(?P<number>[A-Za-z0-9._+-]+)/edit/?$', views.interim_request_edit),
+    url(r'^interim/request/(?P<number>[A-Za-z0-9._+-]+)/cancel/?$', views.interim_request_cancel),
+    url(r'^interim/pending/?$', views.interim_pending),
     url(r'^requests.html$', RedirectView.as_view(url='/meeting/requests', permanent=True)),
-    url(r'^upcoming/$', views.upcoming),
-    url(r'^upcoming.ics/$', views.upcoming_ical),
+    url(r'^upcoming/?$', views.upcoming),
+    url(r'^upcoming.ics/?$', views.upcoming_ical),
     # Then patterns from more specific to less
     url(r'^(?P<num>interim-[a-z0-9-]+)/', include(type_ietf_only_patterns)),
     url(r'^(?P<num>\d+)/requests.html$', RedirectView.as_view(url='/meeting/%(num)s/requests', permanent=True)),
