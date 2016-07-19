@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+
+{% load ietf_filters staticfiles %}
+
+{% block pagehead %}
+<link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
+{% endblock %}
+
+{% block bodyAttrs %}data-spy="scroll" data-target="#affix"{% endblock %}
+
+{% block title %}IETF {{ meeting_num }} Proceedings {% endblock %}
+
+{% block content %}
+  {% origin %}
+  <div class="row">
+    <div class="col-md-10">
+
+      <h1>IETF {{ meeting_num }} Proceedings</h1>
+
+      <p class="alert alert-info">
+          <b>This page is under construction</b> 	
+      </p>
+
+      {# cache for 15 minutes, as long as there's no proceedings activity. takes 4-8 seconds to generate. #}
+      {% load cache %}
+      {% cache 900 ietf_meeting_materials meeting_num cache_version %}
+
+        {% with "True" as show_agenda %}
+          <!-- Plenaries -->
+          {% if plenaries %}
+            <h2 class="anchor-target" id="plenaries">Plenaries</h2>
+            <table class="table table-condensed table-striped tablesorter">
+              <thead>
+	        <tr>
+	          <th class="col-md-1">Group</th>
+	          <th class="col-md-1">Agenda</th>
+	          <th class="col-md-1">Minutes</th>
+	          <th class="col-md-6">Slides</th>
+	          <th class="col-md-3">Drafts</th>
+	        </tr>
+              </thead>
+
+              <tbody>
+	        {% for session in plenaries %}
+	          {% include "meeting/group_materials.html" %}
+	        {% endfor %}
+              </tbody>
+            </table>
+          {% endif %}
+
+          <!-- Working groups -->
+          {% regroup ietf|dictsort:"group.parent.acronym" by group.parent.name as areas %}
+          {% for sessions in areas %}
+            <h2 class="anchor-target" id="{{sessions.list.0.group.parent.acronym}}">{{sessions.list.0.group.parent.acronym|upper}} <small>{{ sessions.grouper }}</small></h2>
+            <table class="table table-condensed table-striped tablesorter">
+              <thead>
+	        <tr>
+	          <th class="col-md-1">Group</th>
+	          <th class="col-md-1">Agenda</th>
+	          <th class="col-md-1">Minutes</th>
+	          <th class="col-md-6">Slides</th>
+	          <th class="col-md-3">Drafts</th>
+	        </tr>
+              </thead>
+
+              <tbody>
+	        {% for session in sessions.list|dictsort:"group.acronym" %}
+	          {% ifchanged session.group.acronym %}
+	            {% include "meeting/group_materials.html" %}
+	          {% endifchanged %}
+	        {% endfor %}
+              </tbody>
+            </table>
+          {% endfor %}
+
+          <!-- Training Sessions -->
+          {% if training %}
+            {% with "False" as show_agenda %}
+              <h2 class="anchor-target" id="training">Training</h2>
+              <table class="table table-condensed table-striped tablesorter">
+                <thead>
+	          <tr>
+	          <th class="col-md-1">Group</th>
+	          <th class="col-md-1">Agenda</th>
+	          <th class="col-md-1">Minutes</th>
+	          <th class="col-md-6">Slides</th>
+	          <th class="col-md-3">Drafts</th>
+	          </tr>
+                </thead>
+
+                <tbody>
+	          {% for session in training %}
+	            {% ifchanged %}
+	              {% include "meeting/group_materials.html" %}
+	            {% endifchanged %}
+	          {% endfor %}
+                </tbody>
+              </table>
+            {% endwith %}
+          {% endif %}
+
+          <!-- IAB Sessions -->
+          {% if iab %}
+            <h2 class="anchor-target" id="iab">IAB <small>Internet Architecture Board</small></h2>
+            <table class="table table-condensed table-striped tablesorter">
+              <thead>
+	        <tr>
+	          <th class="col-md-1">Group</th>
+	          <th class="col-md-1">Agenda</th>
+	          <th class="col-md-1">Minutes</th>
+	          <th class="col-md-6">Slides</th>
+	          <th class="col-md-3">Drafts</th>
+	        </tr>
+              </thead>
+
+              <tbody>
+	        {% for session in iab %}
+	          {% ifchanged %}
+	            {% include "meeting/group_materials.html" %}
+	          {% endifchanged %}
+	        {% endfor %}
+              </tbody>
+            </table>
+          {% endif %}
+
+          <!-- IRTF Sessions -->
+          {% if irtf %}
+            <h2 class="anchor-target" id="irtf">IRTF <small>Internet Research Task Force</small></h2>
+            <table class="table table-condensed table-striped tablesorter">
+              <thead>
+	        <tr>
+	          <th class="col-md-1">Group</th>
+	          <th class="col-md-1">Agenda</th>
+	          <th class="col-md-1">Minutes</th>
+	          <th class="col-md-6">Slides</th>
+	          <th class="col-md-3">Drafts</th>
+	        </tr>
+              </thead>
+
+              <tbody>
+	        {% for session in irtf|dictsort:"group.acronym" %}
+	          {% ifchanged %}
+	            {% include "meeting/group_materials.html" %}
+	          {% endifchanged %}
+	        {% endfor %}
+              </tbody>
+            </table>
+          {% endif %}
+        {% endwith %}
+      {% endcache %}
+    </div>
+
+    <div class="col-md-2 hidden-print bs-docs-sidebar" id="affix">
+      <ul class="nav nav-pills nav-stacked small" data-spy="affix">
+        {% if plenaries %}
+          <li><a href="#plenaries">Plenaries</a></li>
+        {% endif %}
+        {% if ietf %}
+          {% regroup ietf|dictsort:"group.parent.acronym" by group.parent as areas %}
+          {% for area in areas %}
+            <li><a href="#{{area.grouper.acronym}}">{{ area.grouper.acronym|upper }}</a></li>
+          {% endfor %}
+        {% endif %}
+        {% if training %}
+          <li><a href="#training">Training</a></li>
+        {% endif %}
+        {% if iab %}
+          <li><a href="#iab">IAB</a></li>
+        {% endif %}
+        {% if irtf %}
+          <li><a href="#irtf">IRTF</a></li>
+        {% endif %}
+      </ul>
+    </div>
+  </div>
+{% endblock %}
+
+{% block js %}
+<script src="{% static "jquery.tablesorter/js/jquery.tablesorter.combined.min.js" %}"></script>
+{% endblock %}

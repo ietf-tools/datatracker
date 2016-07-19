@@ -248,6 +248,17 @@ class MeetingTests(TestCase):
         # FIXME: missing tests of .pdf/.tar generation (some code can
         # probably be lifted from similar tests in iesg/tests.py)
 
+    def test_proceedings(self):
+        meeting = make_meeting_test_data()
+        session = Session.objects.filter(meeting=meeting, group__acronym="mars").first()
+
+        self.write_materials_files(meeting, session)
+
+        url = urlreverse("ietf.meeting.views.proceedings", kwargs=dict(num=meeting.number))
+        login_testing_unauthorized(self,"secretary",url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+
     def test_feed(self):
         meeting = make_meeting_test_data()
         session = Session.objects.filter(meeting=meeting, group__acronym="mars").first()

@@ -65,7 +65,8 @@ type_ietf_only_patterns_id_optional = [
     url(r'^floor-plan/(?P<floor>[-a-z0-9_]+)/?$', views.floor_plan),
     url(r'^week-view(?:.html)?/?$', views.week_view),
     url(r'^room-view(?:.html)?/$', views.room_view),
-    url(r'^materials(?:.html)?/$',     views.materials),
+    url(r'^materials(?:.html)?/$', views.materials),
+    url(r'^proceedings(?:.html)?/$', views.proceedings),
 ]
 
 urlpatterns = [
