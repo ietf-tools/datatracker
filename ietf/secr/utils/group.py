@@ -70,11 +70,11 @@ def get_my_groups(user,conclude=False):
 
     return list(my_groups)
 
-def groups_by_session(user, meeting):
+def groups_by_session(user, meeting, types=None):
     '''
-    Takes a Django User object and a Meeting object
-    Returns a tuple scheduled_groups, unscheduled groups.  sorted lists of those groups that
-    the user has access to, secretariat defaults to all groups
+    Takes a Django User object, Meeting object and optionally string of meeting types to 
+    include.  Returns a tuple scheduled_groups, unscheduled groups.  sorted lists of those
+    groups that the user has access to, secretariat defaults to all groups
     If user=None than all groups are returned.
 
     For groups with a session, we must include "concluded" groups because we still want to know
@@ -94,4 +94,8 @@ def groups_by_session(user, meeting):
             if group.state_id not in ('conclude','bof-conc'):
                 groups_no_session.append(group)
 
+    if types:
+        groups_session = filter(lambda x: x.type_id in types,groups_session)
+        groups_no_session = filter(lambda x: x.type_id in types,groups_no_session)
+        
     return groups_session, groups_no_session
