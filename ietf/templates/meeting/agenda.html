@@ -201,9 +201,19 @@
 		      {% endif %}
 	            {% endif %}
 	          </td>
-                  <td colspan="2">
+                  <td>
 	            {{item.timeslot.name}}
 	          </td>
+		  <td class="col-md-2">
+		    <span class="hidden-xs">
+		      {% if item.timeslot.type.slug == 'other' %}
+			{% for slide in item.session.slides %}
+			  <a href="https://www.ietf.org/proceedings/{{meeting_num}}/slides/{{ slide.external_url }}">{{ slide.title|clean_whitespace }}</a>
+			  <br>
+			{% endfor %}
+		      {% endif %}
+		    </span>
+		  </td>
                 </tr>
             {% endif %}
 
@@ -380,7 +390,7 @@
 			<!-- Audio recording -->
 			{# <a class="btn btn-default btn-xs" href="" title="Audio recording"><span class="fa fa-file-audio-o"></span></a>#}
 		      {% endif %}
-		    </span>
+		  </span>
 		  </td>
 		</tr>
               {% endif %}
