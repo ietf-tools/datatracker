@@ -10,8 +10,21 @@
   {% origin %}
   <h2>
      Edit members
-     <small>Fill in this form with the email addresses of nomcom members to register them with the datatracker as nomcom members</small>
   </h2>
+
+  <div class="help-block">
+
+     Fill in this form with the email addresses of nomcom members to register
+     them with the datatracker as nomcom members.
+
+  </div>
+  <div class="help-block">
+
+     The email addresses should be the primary email addresses of the members'
+     datatracker accounts, and they should be entered as a comma-separated
+     list, with optional white-space.
+
+  </div>
 
   <form method="post">
     {% csrf_token %}
