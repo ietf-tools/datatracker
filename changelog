@@ -1,3 +1,75 @@
+ietfdb (6.29.0) ietf; urgency=high
+
+  **IETF 96 Code Sprint**
+
+  This release contains datatracker bugfixes and enhancements from the IETF-96
+  Code Sprint.  This brings in many useful bugfixes and enhancements, as
+  described below. Many thanks to everyone who contributed!
+
+  * Merged in [11702], [11712], and  [11713] from rjsparks@nostrum.com:
+    Repairs the javascript that renders the week-view calendar on the
+    agenda page. Fixes #1984.
+
+  * Merged in [11708] from rcross@amsl.com:
+    Restricted the session request options to groups of type WG,RG or AG.
+    Added a new mailtrigger to names fixture.  
+
+  * Merged in [11699] from rcross@amsl.com:
+    Changed blue_sheet_generate() to only generate blue sheets for WG and RG
+    group types that have sessions on the official schedule.  
+
+  * Merged in [11687] and [11710] from presnick@qti.qualcomm.com:
+    Generate a message to Secretariat and IESG when AD changes a draft state
+    to 'Approved'.  Fixes issue #796.
+
+  * Merged in [11697] from rcross@amsl.com:
+    Changed check_audio_files() to only consider sessions on the official
+    schedule.  Fixes some 500 errors.   
+
+  * Merged in [11690] from housley@vigilsec.com:
+    When the Secretariat marks a session as cancelled, the HTML agenda
+    shows a red CANCELLED box, the text shows *** CANCELLED ***, and (as
+    before) the .ics file includes STATUS:CANCELLED.  Fixes issue #1639. 
+
+  * Show only 'session' and 'other' type meetings on the materials page, 
+    especially do not show leadership meetings.
+
+  * Merged in [11686] from rcross@amsl.com:
+    A refactor to give the secretariat a broader selection of groups to choose
+    from when scheduling non-working group sessions.  
+
+  * Merged in [11681] from suresh.krishnan@ericsson.com:
+    Allow ADs to manage out of area working groups and upload proceedings for
+    them. Fixes issue #1648.  
+
+  * Merged in [11668] from suresh.krishnan@ericsson.com:
+    Fixed validation of submitter name and email when they are same as the 
+    holder's info. Fixes issue #1971.  
+
+  * Tweaked meetecho URLs, and added a new template filter for string
+    formatting.
+
+  * Merged in [11666] from housley@vigilsec.com:
+    Do not show updates related to a removed IPR disclosure.  Fixes #1983. 
+
+  * Merged in [11664] from rcross@amsl.com:
+    Send email to the secretariat when an interim meeting has been approved
+    and is waiting for announcement.  Uses a new mailtrigger: interim_approved.  
+
+  * Merged in [11663] from housley@vigilsec.com:
+    Clarify that the consensus field is talking about whether the doument will
+    include the consensus boilerplate when it is published as an RFC.  
+    Fixes issue #1955. 
+
+  * Merged in [11662] from rcross@amsl.com:
+    Fixed duplicate help-block issue on Interim Meeting Request Page.   
+
+  * Merged in [11656] from rjsparks@nostrum.com:
+    Enhanced factories to simplify test writing.  
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  20 Jul 2016 09:33:57 +0000
+
+
 ietfdb (6.28.0) ietf; urgency=medium
 
   **Jabber, Etherpad, Audio and Meetecho links on the agenda page**
