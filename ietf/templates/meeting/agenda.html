@@ -338,7 +338,11 @@
 		      <a class="btn btn-default btn-xs" href="/meeting/{{schedule.meeting.number}}/agenda/{{item.session.historic_group.acronym}}-drafts.tgz" title="Download meeting materials as .tar archive"><span class="fa fa-file-archive-o"></span></a>
 		      <a class="btn btn-default btn-xs" href="/meeting/{{ schedule.meeting.number }}/agenda/{{item.session.historic_group.acronym}}-drafts.pdf" title="Download meeting materials as PDF file"><span class="fa fa-file-pdf-o"></span></a>
 		    {% endif %}
-		      <a class="btn btn-default btn-xs" href="http://etherpad.tools.ietf.org:9000/p/notes-ietf-{{ schedule.meeting.number }}-{{item.session.historic_group.acronym}}?useMonospaceFont=true" title="Etherpad for note-takers"><span class="fa fa-edit"></span></a>
+		      {% if item.timeslot.type.slug == 'plenary' %}
+		        <a class="btn btn-default btn-xs" href="http://etherpad.tools.ietf.org:9000/p/notes-ietf-{{ schedule.meeting.number }}-plenary?useMonospaceFont=true" title="Etherpad for note-takers"><span class="fa fa-edit"></span></a>
+		      {% else %}
+		        <a class="btn btn-default btn-xs" href="http://etherpad.tools.ietf.org:9000/p/notes-ietf-{{ schedule.meeting.number }}-{{item.session.historic_group.acronym}}?useMonospaceFont=true" title="Etherpad for note-takers"><span class="fa fa-edit"></span></a>
+		      {% endif %}
 		      {# show stream buttons up till end of session, then show archive buttons #}
 		      {% if now < item.timeslot.end_time %}
 		        <!-- Jabber -->
