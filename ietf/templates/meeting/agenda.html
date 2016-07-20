@@ -332,10 +332,18 @@
 		      {# show stream buttons up till end of session, then show archive buttons #}
 		      {% if now < item.timeslot.end_time %}
 		        <!-- Jabber -->
-			<a class="btn btn-default btn-xs"
-			  href="xmpp:{{item.session.historic_group.acronym}}@jabber.ietf.org?join"
-			  title="Jabber room for {{item.session.historic_group.acronym}}"><span class="fa fa-lightbulb-o"></span>
-			</a>
+			{% if item.timeslot.type.slug == 'plenary' %}
+			  <a class="btn btn-default btn-xs"
+			    href="xmpp:plenary@jabber.ietf.org?join"
+			    title="Jabber room for {{item.timeslot.name}}"><span class="fa fa-lightbulb-o"></span>
+			  </a>
+			{% else %}
+			  <a class="btn btn-default btn-xs"
+			    href="xmpp:{{item.session.historic_group.acronym}}@jabber.ietf.org?join"
+			    title="Jabber room for {{item.session.historic_group.acronym}}"><span class="fa fa-lightbulb-o"></span>
+			  </a>
+			{% endif %}
+
 			<!-- Video stream (meetecho) -->
 			{% if item.timeslot.location.video_stream_url %}
 			  <a class="btn btn-default btn-xs"
