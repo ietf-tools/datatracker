@@ -1251,10 +1251,21 @@ class AdoptDraftForm(forms.Form):
             state_choices = State.objects.filter(type__in=['draft-stream-ietf','draft-stream-irtf'],slug__in=['wg-cand', 'c-adopt', 'adopt-wg', 'info', 'wg-doc'])
 
         self.fields['group'].choices = [(g.pk, '%s - %s' % (g.acronym, g.name)) for g in self.fields["group"].queryset]
+        self.fields['newstate'].choices = [('','-- Pick a state --')]
+        self.fields['newstate'].choices.extend([(x.pk,x.name + " (IETF)") for x in state_choices if x.type_id == 'draft-stream-ietf'])
+        self.fields['newstate'].choices.extend([(x.pk,x.name + " (IRTF)") for x in state_choices if x.type_id == 'draft-stream-irtf'])
 
-        self.fields['newstate'].choices = [(x.pk,x.name) for x in state_choices]
-        self.fields['newstate'].choices.insert(0,('','--------'))
-
+    def clean_newstate(self):
+        group = self.cleaned_data['group']
+        newstate = self.cleaned_data['newstate']
+        
+        if (newstate.type_id == 'draft-stream-ietf') and (group.type_id == 'rg'):
+            raise forms.ValidationError('Cannot assign IETF WG state to IRTF group')
+        elif (newstate.type_id == 'draft-stream-irtf') and (group.type_id == 'wg'):
+            raise forms.ValidationError('Cannot assign IRTF RG state to IETF group')
+        else:
+            return newstate
+               
 @login_required
 def adopt_draft(request, name):
     doc = get_object_or_404(Document, type="draft", name=name)
