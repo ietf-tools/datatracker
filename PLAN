@@ -18,6 +18,15 @@ Planned work in rough order
 
 * Review tracking project merge
 
+* Revisit Yang module checks:  Capture output also for passed tests.
+  Add second checker.  Fix extraction problems.
+
+* Revisit photo uploads: Add photo upload for people with roles.  Add
+  photos to wg pages and group overview pages.
+
+* Revisit floorplans: Add room coordinate input tool (javascript).
+  Add NOC object annotation possibilities.
+
 * Refactor to one function instead of having both Document.get_absolute_url()
   and Document.href(), which should do the same thing, but don't today.  Also
   change the default draft href to be the datatracker url now that we support
