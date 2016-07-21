@@ -31,7 +31,6 @@ class CommunityListResource(ModelResource):
         }
 api.community.register(CommunityListResource())
 
-from ietf.doc.resources import DocumentResource
 class SearchRuleResource(ModelResource):
     community_list   = ToOneField(CommunityListResource, 'community_list')
     class Meta:
