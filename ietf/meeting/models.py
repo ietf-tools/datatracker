@@ -1016,6 +1016,14 @@ class Session(models.Model):
     def drafts(self):
         return list(self.materials.filter(type='draft'))
 
+    def all_meeting_recordings(self):
+        recordings = []
+        sessions = sorted(self.meeting.session_set.filter(group=self.group),
+                          key = lambda x: x.official_timeslotassignment().timeslot.time)
+        for session in sessions:
+            recordings.extend(session.recordings())
+        return recordings
+            
     def all_meeting_drafts(self):
         drafts = []
         for session in self.meeting.session_set.filter(group=self.group):

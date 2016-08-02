@@ -38,6 +38,11 @@
       
     </td>
     <td>
+      {% for rec in session.all_meeting_recordings %}
+      <a href="{{rec.get_absolute_url}}">{{rec.title}}</a><br>
+      {% endfor %}
+    </td>
+    <td>
       {% with session.slides as slides %}
         {% for slide in slides %}
           <a href="https://www.ietf.org/proceedings/{{meeting_num}}/slides/{{ slide.external_url }}">{{ slide.title|clean_whitespace }}</a>
