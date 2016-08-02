@@ -35,6 +35,15 @@
           <span class="label label-warning">No minutes</span><br>
         {% endif %}
       {% endif %}
+      {% if session.all_meeting_bluesheets %}
+         {% if session.all_meeting_bluesheets|length == 1 %}
+              <a href="{{bs.0.get_absolute_url}}">Bluesheets</a></br>
+         {% else %}
+           {% for bs in session.all_meeting_bluesheets %}
+              <a href="{{bs.get_absolute_url}}">Bluesheets {{bs.sessionpresentation_set.first.session.official_timeslotassignment.timeslot.time|date:"D G:i"}}</a></br>
+           {% endfor %}
+        {% endif %}
+      {% endif %}
       
     </td>
     <td>
