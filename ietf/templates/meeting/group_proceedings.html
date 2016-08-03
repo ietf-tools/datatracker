@@ -1,5 +1,6 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}{% load origin %}{% origin %}
 {% load ietf_filters %}
+{% load proceedings_filters %}
 <tr>
   <td>
     {% comment %}
@@ -47,9 +48,15 @@
       
     </td>
     <td>
-      {% for rec in session.all_meeting_recordings %}
-      <a href="{{rec.get_absolute_url}}">{{rec.title}}</a><br>
-      {% endfor %}
+      {% if session.all_meeting_sessions_for_group|length == 1 %}
+        {% for rec in session.all_meeting_recordings %}
+          <a href="{{rec.get_absolute_url}}">{{rec|hack_recording_title:False}}</a><br>
+        {% endfor %}
+      {% else %}
+        {% for rec in session.all_meeting_recordings %}
+          <a href="{{rec.get_absolute_url}}">{{rec|hack_recording_title:True}}</a><br>
+        {% endfor %}
+      {% endif %}
     </td>
     <td>
       {% with session.slides as slides %}
