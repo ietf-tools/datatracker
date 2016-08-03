@@ -2,5 +2,5 @@
 
 A new review request has been registered for completing the review:
 
-https://{{ domain }}{% url "ietf.doc.views_review.review_request" name=new_review_req.doc.name request_id=new_review_req.pk %}
+{{ new_review_req_url }}
 {% endautoescape %}

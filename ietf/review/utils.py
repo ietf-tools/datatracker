@@ -1,8 +1,8 @@
 import datetime, re
 from collections import defaultdict
 
-from django.contrib.sites.models import Site
 from django.db import models
+from django.core.urlresolvers import reverse as urlreverse
 
 from ietf.group.models import Group, Role
 from ietf.doc.models import Document, DocEvent, State, LastCallDocEvent, DocumentAuthor, DocAlias
@@ -77,8 +77,10 @@ def email_review_request_change(request, review_req, subject, msg, by, notify_se
     if not to:
         return
 
+    url = urlreverse("ietf.doc.views_review.review_request", kwargs={ "name": review_req.doc.name, "request_id": review_req.pk })
+    url = request.build_absolute_uri(url)
     send_mail(request, to, None, subject, "doc/mail/review_request_changed.txt", {
-        "domain": Site.objects.get_current().domain,
+        "review_req_url": url,
         "review_req": review_req,
         "msg": msg,
     })

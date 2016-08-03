@@ -1,6 +1,5 @@
 import datetime, os, email.utils
 
-from django.contrib.sites.models import Site
 from django.http import HttpResponseForbidden, JsonResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django import forms
@@ -8,6 +7,7 @@ from django.contrib.auth.decorators import login_required
 from django.utils.html import mark_safe
 from django.core.exceptions import ValidationError
 from django.template.loader import render_to_string
+from django.core.urlresolvers import reverse as urlreverse
 
 from ietf.doc.models import Document, NewRevisionDocEvent, DocEvent, State, DocAlias
 from ietf.ietfauth.utils import is_authorized_in_doc_stream, user_is_person, has_role
@@ -447,8 +447,11 @@ def complete_review(request, name, request_id):
 
                 subject = "Review of {}-{} completed partially".format(review_req.doc.name, review_req.reviewed_rev)
 
+                url = urlreverse("ietf.doc.views_review.review_request", kwargs={ "name": new_review_req.doc.name, "request_id": new_review_req.pk })
+                url = request.build_absolute_uri(url)
+
                 msg = render_to_string("doc/mail/partially_completed_review.txt", {
-                    "domain": Site.objects.get_current().domain,
+                    'new_review_req_url': url,
                     "by": request.user.person,
                     "new_review_req": new_review_req,
                 })
