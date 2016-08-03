@@ -48,6 +48,10 @@ def ascii_cleaner(supposedly_ascii):
         raise forms.ValidationError("Please only enter ASCII characters.")
     return supposedly_ascii
 
+def prevent_at_symbol(name):
+    if "@" in name:
+        raise forms.ValidationError("Please fill in name - this looks like an email address (@ is not allowed in names).")
+
 def get_person_form(*args, **kwargs):
 
     exclude_list = ['time', 'user', 'photo_thumb', 'photo', ]
@@ -65,11 +69,20 @@ def get_person_form(*args, **kwargs):
         def __init__(self, *args, **kwargs):
             super(ModelForm, self).__init__(*args, **kwargs)
 
+        def clean_name(self):
+            name = self.cleaned_data.get("name") or u""
+            prevent_at_symbol(name)
+            return name
+
         def clean_ascii(self):
-            return ascii_cleaner(self.cleaned_data.get("ascii") or u"")
+            name = self.cleaned_data.get("ascii") or u""
+            prevent_at_symbol(name)
+            return ascii_cleaner(name)
 
         def clean_ascii_short(self):
-            return ascii_cleaner(self.cleaned_data.get("ascii_short") or u"")
+            name = self.cleaned_data.get("ascii_short") or u""
+            prevent_at_symbol(name)
+            return ascii_cleaner(name)
 
     return PersonForm(*args, **kwargs)
 
