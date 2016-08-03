@@ -9,6 +9,8 @@ from django.contrib.auth.models import User
 from django.utils.html import mark_safe
 from django.core.urlresolvers import reverse as urlreverse
 
+from unidecode import unidecode
+
 import debug                            # pyflakes:ignore
 
 from ietf.person.models import Person, Email
@@ -45,7 +47,7 @@ class PasswordForm(forms.Form):
 def ascii_cleaner(supposedly_ascii):
     outside_printable_ascii_pattern = r'[^\x20-\x7F]'
     if re.search(outside_printable_ascii_pattern, supposedly_ascii):
-        raise forms.ValidationError("Please only enter ASCII characters.")
+        raise forms.ValidationError("Only unaccented Latin characters are allowed.")
     return supposedly_ascii
 
 def prevent_at_symbol(name):
@@ -69,12 +71,31 @@ def get_person_form(*args, **kwargs):
         def __init__(self, *args, **kwargs):
             super(ModelForm, self).__init__(*args, **kwargs)
 
+            # blank ascii if it's the same as name
+            self.fields["ascii"].required = self.fields["ascii"].widget.is_required = False
+            self.fields["ascii"].help_text += " " + "Leave blank to use auto-reconstructed Latin version of name."
+
+            if self.initial.get("ascii") == self.initial.get("name"):
+                self.initial["ascii"] = ""
+
+            self.unidecoded_ascii = False
+
+            if self.data and not self.data.get("ascii", "").strip():
+                self.data = self.data.copy()
+                name = self.data["name"]
+                reconstructed_name = unidecode(name)
+                self.data["ascii"] = reconstructed_name
+                self.unidecoded_ascii = name != reconstructed_name
+
         def clean_name(self):
             name = self.cleaned_data.get("name") or u""
             prevent_at_symbol(name)
             return name
 
         def clean_ascii(self):
+            if self.unidecoded_ascii:
+                raise forms.ValidationError("Name contained non-ASCII characters, and was automatically reconstructed using only Latin characters. Check the result - if you are happy, just hit Submit again.")
+
             name = self.cleaned_data.get("ascii") or u""
             prevent_at_symbol(name)
             return ascii_cleaner(name)
