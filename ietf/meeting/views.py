@@ -11,6 +11,8 @@ import csv
 import json
 import pytz
 from pyquery import PyQuery
+from wsgiref.handlers import format_date_time
+from time import mktime
 
 import debug                            # pyflakes:ignore
 
@@ -28,7 +30,7 @@ from django.utils.functional import curry
 from django.views.decorators.csrf import ensure_csrf_cookie
 
 from ietf.doc.fields import SearchableDocumentsField
-from ietf.doc.models import Document, State, DocEvent
+from ietf.doc.models import Document, State, DocEvent, NewRevisionDocEvent
 from ietf.group.models import Group
 from ietf.group.utils import can_manage_materials
 from ietf.ietfauth.utils import role_required, has_role
@@ -891,6 +893,83 @@ def ical_agenda(request, num=None, name=None, ext=None):
         "assignments": assignments,
         "updated": updated
     }, content_type="text/calendar")
+
+def json_agenda(request, num=None ):
+    meeting = get_meeting(num)
+
+    sessions = []
+    room_names = set()
+    parent_acronyms = set()
+    for asgn in meeting.agenda.assignments.exclude(session__type__in=['lead','offagenda','break','reg']):
+        sessdict = dict()
+        sessdict['objtype'] = 'session'
+        if asgn.session.group.type_id in ['wg','rg']:
+            sessdict['group'] = asgn.session.group.acronym
+            sessdict['parent'] = asgn.session.group.parent.acronym
+            parent_acronyms.add(asgn.session.group.parent.acronym)
+        if asgn.session.name:
+            sessdict['name'] = asgn.session.name
+        elif asgn.session.short:
+            sessdict['name'] = asgn.session.short
+        else:
+            sessdict['name'] = asgn.session.group.name
+        sessdict['start'] = str(asgn.timeslot.time)
+        sessdict['duration'] = str(asgn.timeslot.duration)
+        sessdict['location'] = asgn.room_name
+        room_names.add(asgn.room_name) 
+        if asgn.session.agenda():
+            sessdict['agenda'] = '/api/v1/doc/document/%s'%asgn.session.agenda().name
+        if asgn.session.slides():
+            sessdict['slides'] = []
+            for slides in asgn.session.slides():
+                sessdict['slides'].append('/api/v1/doc/document/%s'%slides.name)
+        modified = asgn.session.modified
+        for doc in asgn.session.materials.all():
+            rev_docevent = doc.latest_event(NewRevisionDocEvent,'new_revision')
+            modified = max(modified, (rev_docevent and rev_docevent.time) or modified)
+        sessdict['modified'] = modified
+        sessions.append(sessdict)
+
+    rooms = []
+    for room in meeting.room_set.filter(name__in=room_names):
+        roomdict = dict()
+        roomdict['objtype'] = 'location'
+        roomdict['name'] = room.name
+        if room.floorplan:
+            roomdict['level_name'] = room.floorplan.name
+            roomdict['level_sort'] = room.floorplan.order
+        if room.x1 is not None:
+            roomdict['x'] = room.x1+(room.x2/2.0)
+            roomdict['y'] = room.y1+(room.y2/2.0)
+        roomdict['modified'] = room.time
+        if room.floorplan and room.floorplan.image:
+            roomdict['map'] = room.floorplan.image.url
+            roomdict['modified'] = max(room.time,room.floorplan.time)
+        rooms.append(roomdict)
+
+    parents = []
+    for parent in Group.objects.filter(acronym__in=parent_acronyms):
+        parentdict = dict()
+        parentdict['objtype'] = 'parent'
+        parentdict['name'] = parent.acronym
+        parentdict['description'] = parent.name
+        parentdict['modified'] = parent.time
+        parents.append(parentdict)
+
+    meetinfo = []
+    meetinfo.extend(sessions)
+    meetinfo.extend(rooms)
+    meetinfo.extend(parents)
+    meetinfo.sort(key=lambda x: x['modified'],reverse=True)
+    last_modified = meetinfo[0]['modified']
+    for obj in meetinfo:
+        obj['modified'] = obj['modified'].strftime('%Y-%m-%dT%H:%M:%S')
+
+    data = {"%s"%num: meetinfo}
+
+    response = HttpResponse(json.dumps(data, indent=2), content_type='application/json;charset=%s'%settings.DEFAULT_CHARSET)
+    response['Last-Modified'] = format_date_time(mktime(last_modified.timetuple()))
+    return response
 
 def meeting_requests(request, num=None):
     meeting = get_meeting(num)

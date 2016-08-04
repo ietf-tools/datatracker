@@ -3,6 +3,7 @@ import os
 import shutil
 import datetime
 import urlparse
+import random
 
 import debug           # pyflakes:ignore
 
@@ -1146,3 +1147,24 @@ class FloorPlanTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         
+class IphoneAppJsonTests(TestCase):
+    def setUp(self):
+        pass
+
+    def tearDown(self):
+        pass
+
+    def test_iphone_app_json(self):
+        make_meeting_test_data()
+        meeting = Meeting.objects.filter(type_id='ietf').order_by('id').last()
+        floorplan = FloorPlanFactory.create(meeting=meeting)
+        for room in meeting.room_set.all():
+            room.floorplan = floorplan
+            room.x1 = random.randint(0,100)
+            room.y1 = random.randint(0,100)
+            room.x2 = random.randint(0,100)
+            room.y2 = random.randint(0,100)
+            room.save()
+        url = urlreverse('ietf.meeting.views.json_agenda',kwargs={'num':meeting.number})
+        r = self.client.get(url)
+        self.assertEqual(r.status_code,200)

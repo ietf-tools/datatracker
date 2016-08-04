@@ -72,7 +72,7 @@ def agenda_permission_api(request, num, owner, name):
 ## ROOM API
 #############################################################################
 from django.forms.models import modelform_factory
-AddRoomForm = modelform_factory(Room, exclude=('meeting',))
+AddRoomForm = modelform_factory(Room, exclude=('meeting','time'))
 
 # no authorization required
 def timeslot_roomlist(request, mtg):

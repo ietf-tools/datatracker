@@ -296,6 +296,7 @@ class ResourceAssociation(models.Model):
 
 class Room(models.Model):
     meeting = models.ForeignKey(Meeting)
+    time = models.DateTimeField(default=datetime.datetime.now)
     name = models.CharField(max_length=255)
     functional_name = models.CharField(max_length=255, blank = True)
     capacity = models.IntegerField(null=True, blank=True)
@@ -384,6 +385,7 @@ def floorplan_path(instance, filename):
 
 class FloorPlan(models.Model):
     name    = models.CharField(max_length=255)
+    time    = models.DateTimeField(default=datetime.datetime.now)
     meeting = models.ForeignKey(Meeting)
     order   = models.SmallIntegerField()
     image   = models.ImageField(storage=NoLocationMigrationFileSystemStorage(), upload_to=floorplan_path, blank=True, default=None)

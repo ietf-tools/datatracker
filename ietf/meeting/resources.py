@@ -94,6 +94,7 @@ class FloorPlanResource(ModelResource):
         filtering = { 
             "id": ALL,
             "name": ALL,
+            "time": ALL,
             "order": ALL,
             "image": ALL,
             "meeting": ALL_WITH_RELATIONS,
@@ -114,6 +115,7 @@ class RoomResource(ModelResource):
         filtering = { 
             "id": ALL,
             "name": ALL,
+            "time": ALL,
             "functional_name": ALL,
             "capacity": ALL,
             "meeting": ALL_WITH_RELATIONS,
