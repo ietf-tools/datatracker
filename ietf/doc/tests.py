@@ -928,7 +928,7 @@ class DocumentMeetingTests(TestCase):
         self.other_group.role_set.create(name_id='chair',person=self.other_chair,email=self.other_chair.email())
 
         today = datetime.date.today()
-        cut_days = settings.MEETING_MATERIALS_SUBMISSION_CORRECTION_DAYS
+        cut_days = settings.MEETING_MATERIALS_DEFAULT_SUBMISSION_CORRECTION_DAYS
         self.past_cutoff = SessionFactory.create(meeting__type_id='ietf',group=self.group,meeting__date=today-datetime.timedelta(days=1+cut_days))
         self.past = SessionFactory.create(meeting__type_id='ietf',group=self.group,meeting__date=today-datetime.timedelta(days=cut_days/2))
         self.inprog = SessionFactory.create(meeting__type_id='ietf',group=self.group,meeting__date=today-datetime.timedelta(days=1))

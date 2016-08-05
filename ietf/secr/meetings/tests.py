@@ -77,6 +77,9 @@ class SecrMeetingTestCase(TestCase):
                          idsubmit_cutoff_day_offset_01=20,
                          idsubmit_cutoff_time_utc     =datetime.timedelta(hours=23, minutes=59, seconds=59),
                          idsubmit_cutoff_warning_days =datetime.timedelta(days=21),
+                         submission_start_day_offset=90,
+                         submission_cutoff_day_offset=26,
+                         submission_correction_day_offset=50,
                      )
         self.client.login(username='secretary', password='secretary+password')
         response = self.client.post(url, post_data, follow=True)
@@ -95,6 +98,9 @@ class SecrMeetingTestCase(TestCase):
                          idsubmit_cutoff_day_offset_01=20,
                          idsubmit_cutoff_time_utc     =datetime.timedelta(hours=23, minutes=59, seconds=59),
                          idsubmit_cutoff_warning_days =datetime.timedelta(days=21),
+                         submission_start_day_offset=90,
+                         submission_cutoff_day_offset=26,
+                         submission_correction_day_offset=50,
                     )
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.post(url, post_data,follow=True)
