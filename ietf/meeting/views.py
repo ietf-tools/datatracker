@@ -913,7 +913,7 @@ def json_agenda(request, num=None ):
             sessdict['name'] = asgn.session.short
         else:
             sessdict['name'] = asgn.session.group.name
-        sessdict['start'] = str(asgn.timeslot.time)
+        sessdict['start'] = asgn.timeslot.utc_start_time().strftime("%Y-%m-%dT%H:%M:%SZ")
         sessdict['duration'] = str(asgn.timeslot.duration)
         sessdict['location'] = asgn.room_name
         room_names.add(asgn.room_name) 
@@ -962,8 +962,10 @@ def json_agenda(request, num=None ):
     meetinfo.extend(parents)
     meetinfo.sort(key=lambda x: x['modified'],reverse=True)
     last_modified = meetinfo[0]['modified']
+
+    tz = pytz.timezone(meeting.time_zone)
     for obj in meetinfo:
-        obj['modified'] = obj['modified'].strftime('%Y-%m-%dT%H:%M:%S')
+        obj['modified'] = tz.localize(obj['modified']).astimezone(pytz.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
 
     data = {"%s"%num: meetinfo}
 
