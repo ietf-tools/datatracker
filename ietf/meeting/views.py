@@ -48,6 +48,7 @@ from ietf.meeting.helpers import sessions_post_save, is_meeting_approved
 from ietf.meeting.helpers import send_interim_cancellation_notice
 from ietf.meeting.helpers import send_interim_approval_request
 from ietf.meeting.helpers import send_interim_announcement_request
+from ietf.meeting.utils import finalize
 from ietf.utils.mail import send_mail_message
 from ietf.utils.pipe import pipe
 from ietf.utils.pdf import pdf_pages
@@ -1465,10 +1466,26 @@ def proceedings(request, num=None):
 
     cache_version = Document.objects.filter(session__meeting__number=meeting.number).aggregate(Max('time'))["time__max"]
     return render(request, "meeting/proceedings.html", {
-        'meeting_num': meeting.number,
+        'meeting': meeting,
         'plenaries': plenaries, 'ietf': ietf, 'training': training, 'irtf': irtf, 'iab': iab,
         'cut_off_date': cut_off_date,
         'cor_cut_off_date': cor_cut_off_date,
         'submission_started': now > begin_date,
         'cache_version': cache_version,
     })
+
+
+@role_required('Secretariat')
+def finalize_proceedings(request, num=None):
+
+    meeting = get_meeting(num)
+
+    if meeting.number <= 64 or not meeting.agenda.assignments.exists() or meeting.proceedings_final:
+        raise Http404
+
+    if request.method=='POST':
+        finalize(meeting)
+        return HttpResponseRedirect(reverse('ietf.meeting.views.proceedings',kwargs={'num':meeting.number}))
+    
+    return render(request, "meeting/finalize.html", {'meeting':meeting,})
+

@@ -25,14 +25,14 @@
       {% if session.agenda %}
         <a href="https://www.ietf.org/proceedings/{{meeting_num}}/agenda/{{ session.agenda }}">Agenda</a><br>
       {% else %}
-        {% if show_agenda == "True" %}
+        {% if show_agenda == "True" and not meeting.proceedings_final %}
           <span class="label label-warning">No agenda</span><br>
         {% endif %}
       {% endif %}
       {% if session.minutes %}
         <a href="https://www.ietf.org/proceedings/{{ meeting_num }}/minutes/{{ session.minutes }}">Minutes</a><br>
       {% else %}
-        {% if show_agenda == "True" %}
+        {% if show_agenda == "True" and not meeting.proceedings_final %}
           <span class="label label-warning">No minutes</span><br>
         {% endif %}
       {% endif %}
@@ -64,7 +64,9 @@
           <a href="https://www.ietf.org/proceedings/{{meeting_num}}/slides/{{ slide.external_url }}">{{ slide.title|clean_whitespace }}</a>
           <br>
         {% empty %}
-          <span class="label label-warning">No slides</span>
+          {% if not meeting.proceedings_final %}
+            <span class="label label-warning">No slides</span>
+          {% endif %}
         {% endfor %}
       {% endwith %}
     </td>
@@ -73,7 +75,9 @@
        {% for draft in drafts %}
          <a href="{% url "doc_view" name=draft.canonical_name %}">{{ draft.canonical_name }}</a><br>
        {% empty %} 
-         <span class="label label-warning">No drafts</span>
+         {% if not meeting.proceedings_final %}
+           <span class="label label-warning">No drafts</span>
+         {% endif %}
        {% endfor %}
      {% endwith %}
     </td>

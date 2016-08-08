@@ -32,6 +32,9 @@ class MeetingResource(ModelResource):
             "idsubmit_cutoff_day_offset_01": ALL,
             "idsubmit_cutoff_time_utc": ALL,
             "idsubmit_cutoff_warning_days": ALL,
+            "submission_start_day_offset": ALL,
+            "submmission_cutoff_day_offset": ALL,
+            "submission_correction_day_offset": ALL,
             "venue_name": ALL,
             "venue_addr": ALL,
             "break_area": ALL,
@@ -40,6 +43,7 @@ class MeetingResource(ModelResource):
             "session_request_lock_message": ALL,
             "type": ALL_WITH_RELATIONS,
             "agenda": ALL_WITH_RELATIONS,
+            "proceedings_final": ALL,
         }
 api.meeting.register(MeetingResource())
 
