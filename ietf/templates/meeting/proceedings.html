@@ -23,6 +23,14 @@
           <b>This page is under construction</b> 	
       </p>
 
+      <h2 class="anchor-target" id="introduction">Introduction</h2>
+      <div class="list-group">
+        <a class="list-group-item" href="{% url 'ietf.meeting.views.proceedings_acknowledgements' num=meeting_num %}">Acknowledgements</a>
+        <a class="list-group-item" href="#">IETF Overview</a>
+        <a class="list-group-item" href="#">Progress Report</a>
+        <a class="list-group-item" href="#">Attendees</a>
+      </div>
+      
       {# cache for 15 minutes, as long as there's no proceedings activity. takes 4-8 seconds to generate. #}
       {% load cache %}
       {% cache 900 ietf_meeting_materials meeting_num cache_version %}
@@ -154,6 +162,7 @@
 
     <div class="col-md-2 hidden-print bs-docs-sidebar" id="affix">
       <ul class="nav nav-pills nav-stacked small" data-spy="affix">
+        <li><a href="#introduction">Introduction</a></li>
         {% if plenaries %}
           <li><a href="#plenaries">Plenaries</a></li>
         {% endif %}

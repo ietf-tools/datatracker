@@ -1468,3 +1468,11 @@ def proceedings(request, num=None):
         'submission_started': now > begin_date,
         'cache_version': cache_version,
     })
+
+@role_required('Secretariat')
+def proceedings_acknowledgements(request, num=None):
+
+    meeting = get_meeting(num)
+    return render(request, "meeting/proceedings_acknowledgements.html", {
+        'meeting': meeting,
+    })

@@ -80,6 +80,7 @@ class Meeting(models.Model):
     agenda_note = models.TextField(blank=True, help_text="Text in this field will be placed at the top of the html agenda page for the meeting.  HTML can be used, but will not be validated.")
     agenda     = models.ForeignKey('Schedule',null=True,blank=True, related_name='+')
     session_request_lock_message = models.CharField(blank=True,max_length=255) # locked if not empty
+    acknowledgements = models.TextField(blank=True, help_text="Acknowledgements for use in meeting proceedings.  Use ReStructuredText markup.")
     
     def __unicode__(self):
         if self.type_id == "ietf":
