@@ -71,3 +71,19 @@ def sort_sessions(sessions):
     meeting_sorted = sorted(acronym_sorted,key=lambda x: x.meeting.number)
 
     return meeting_sorted
+
+def finalize(meeting):
+    end_date = meeting.end_date()
+    end_time = datetime.datetime.combine(end_date, datetime.datetime.min.time())+datetime.timedelta(days=1)
+    for session in meeting.session_set.all():
+        for sp in session.sessionpresentation_set.filter(document__type='draft',rev=None):
+            rev_before_end = [e for e in sp.document.docevent_set.filter(newrevisiondocevent__isnull=False).order_by('-time') if e.time <= end_time ]
+            if rev_before_end:
+                sp.rev = rev_before_end[-1].newrevisiondocevent.rev
+            else:
+                sp.rev = '00' 
+            sp.save()
+    meeting.proceedings_final = True
+    meeting.save()
+    return
+

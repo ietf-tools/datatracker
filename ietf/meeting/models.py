@@ -72,7 +72,15 @@ class Meeting(models.Model):
     idsubmit_cutoff_warning_days  = timedelta.fields.TimedeltaField(blank=True,
         default=settings.IDSUBMIT_DEFAULT_CUTOFF_WARNING_DAYS,
         help_text = "How long before the 00 cutoff to start showing cutoff warnings.  Use for example 21 days or 3 weeks.")
-    #
+    submission_start_day_offset = models.IntegerField(blank=True,
+        default=settings.MEETING_MATERIALS_DEFAULT_SUBMISSION_START_DAYS,
+        help_text = "The number of days before the meeting start date after which meeting materials will be accepted.")
+    submission_cutoff_day_offset = models.IntegerField(blank=True,
+        default=settings.MEETING_MATERIALS_DEFAULT_SUBMISSION_CUTOFF_DAYS,
+        help_text = "The number of days after the meeting start date in which new meeting materials will be accepted.")
+    submission_correction_day_offset = models.IntegerField(blank=True,
+        default=settings.MEETING_MATERIALS_DEFAULT_SUBMISSION_CORRECTION_DAYS,
+        help_text = "The number of days after the meeting start date in which updates to existing meeting materials will be accepted.")
     venue_name = models.CharField(blank=True, max_length=255)
     venue_addr = models.TextField(blank=True)
     break_area = models.CharField(blank=True, max_length=255)
@@ -80,6 +88,7 @@ class Meeting(models.Model):
     agenda_note = models.TextField(blank=True, help_text="Text in this field will be placed at the top of the html agenda page for the meeting.  HTML can be used, but will not be validated.")
     agenda     = models.ForeignKey('Schedule',null=True,blank=True, related_name='+')
     session_request_lock_message = models.CharField(blank=True,max_length=255) # locked if not empty
+    proceedings_final = models.BooleanField(default=False, help_text=u"Are the proceedings for this meeting complete?")
     
     def __unicode__(self):
         if self.type_id == "ietf":
@@ -149,11 +158,11 @@ class Meeting(models.Model):
     
     # the various dates are currently computed
     def get_submission_start_date(self):
-        return self.date + datetime.timedelta(days=settings.MEETING_MATERIALS_SUBMISSION_START_DAYS)
+        return self.date - datetime.timedelta(days=self.submission_start_day_offset)
     def get_submission_cut_off_date(self):
-        return self.date + datetime.timedelta(days=settings.MEETING_MATERIALS_SUBMISSION_CUTOFF_DAYS)
+        return self.date + datetime.timedelta(days=self.submission_cutoff_day_offset)
     def get_submission_correction_date(self):
-        return self.date + datetime.timedelta(days=settings.MEETING_MATERIALS_SUBMISSION_CORRECTION_DAYS)
+        return self.date + datetime.timedelta(days=self.submission_correction_day_offset)
 
     def get_schedule_by_name(self, name):
         return self.schedule_set.filter(name=name).first()
