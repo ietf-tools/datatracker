@@ -1201,6 +1201,9 @@ class StatusUpdateTests(TestCase):
         url = urlreverse('ietf.group.views.group_about_status_meeting',kwargs={'acronym':chair.group.acronym,'num':sess.meeting.number}) 
         response = self.client.get(url)
         self.assertEqual(response.status_code,200)
+        url = urlreverse('ietf.group.views.group_about_status_meeting',kwargs={'group_type':chair.group.type_id,'acronym':chair.group.acronym,'num':sess.meeting.number}) 
+        response = self.client.get(url)
+        self.assertEqual(response.status_code,200)
        
 class GroupParentLoopTests(TestCase):
 
