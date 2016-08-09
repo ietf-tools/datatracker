@@ -38,13 +38,18 @@
       {% endif %}
       {% if session.all_meeting_bluesheets %}
          {% if session.all_meeting_bluesheets|length == 1 %}
-              <a href="{{session.all_meeting_bluesheets.0.get_absolute_url}}">Bluesheets</a></br>
+              <a href="{{session.all_meeting_bluesheets.0.get_absolute_url}}">Bluesheets</a><br>
          {% else %}
            {% for bs in session.all_meeting_bluesheets %}
               <a href="{{bs.get_absolute_url}}">Bluesheets {{bs.sessionpresentation_set.first.session.official_timeslotassignment.timeslot.time|date:"D G:i"}}</a></br>
            {% endfor %}
         {% endif %}
       {% endif %}
+      {% with session.group|status_for_meeting:meeting as status %}
+        {% if status %}
+          <a href="{% url 'ietf.group.views.group_about_status_meeting' acronym=session.group.acronym num=meeting.number %}">Status</a><br>
+        {% endif %}
+      {% endwith %}
       
     </td>
     <td>
