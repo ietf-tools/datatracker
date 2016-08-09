@@ -34,7 +34,15 @@
 
       {# cache for 15 minutes, as long as there's no proceedings activity. takes 4-8 seconds to generate. #}
       {% load cache %}
-      {% cache 900 ietf_meeting_materials meeting.number cache_version %}
+      {% cache 900 ietf_meeting_proceedings meeting.number cache_version %}
+
+      <h2 class="anchor-target" id="introduction">Introduction</h2>
+      <div>
+        <a href="{% url 'ietf.meeting.views.proceedings_acknowledgements' num=meeting.number %}">Acknowledgements</a><br>
+        <a href="#">IETF Overview</a><br>
+        <a href="#">Progress Report</a><br>
+        <a href="#">Attendees</a><br>
+      </div> 
 
         {% with "True" as show_agenda %}
           <!-- Plenaries -->
@@ -163,6 +171,7 @@
 
     <div class="col-md-2 hidden-print bs-docs-sidebar" id="affix">
       <ul class="nav nav-pills nav-stacked small" data-spy="affix">
+        <li><a href="#introduction">Introduction</a></li>
         {% if plenaries %}
           <li><a href="#plenaries">Plenaries</a></li>
         {% endif %}

@@ -1555,7 +1555,6 @@ def proceedings(request, num=None):
         'cache_version': cache_version,
     })
 
-
 @role_required('Secretariat')
 def finalize_proceedings(request, num=None):
 
@@ -1570,3 +1569,10 @@ def finalize_proceedings(request, num=None):
     
     return render(request, "meeting/finalize.html", {'meeting':meeting,})
 
+@role_required('Secretariat')
+def proceedings_acknowledgements(request, num=None):
+
+    meeting = get_meeting(num)
+    return render(request, "meeting/proceedings_acknowledgements.html", {
+        'meeting': meeting,
+    })
