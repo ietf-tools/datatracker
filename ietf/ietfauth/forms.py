@@ -54,6 +54,11 @@ def prevent_at_symbol(name):
     if "@" in name:
         raise forms.ValidationError("Please fill in name - this looks like an email address (@ is not allowed in names).")
 
+def prevent_system_name(name):
+    name_without_spaces = name.replace(" ", "").replace("\t", "")
+    if "(system)" in name_without_spaces.lower():
+        raise forms.ValidationError("Please pick another name - this name is reserved.")
+
 def get_person_form(*args, **kwargs):
 
     exclude_list = ['time', 'user', 'photo_thumb', 'photo', ]
@@ -90,6 +95,7 @@ def get_person_form(*args, **kwargs):
         def clean_name(self):
             name = self.cleaned_data.get("name") or u""
             prevent_at_symbol(name)
+            prevent_system_name(name)
             return name
 
         def clean_ascii(self):
@@ -98,11 +104,13 @@ def get_person_form(*args, **kwargs):
 
             name = self.cleaned_data.get("ascii") or u""
             prevent_at_symbol(name)
+            prevent_system_name(name)
             return ascii_cleaner(name)
 
         def clean_ascii_short(self):
             name = self.cleaned_data.get("ascii_short") or u""
             prevent_at_symbol(name)
+            prevent_system_name(name)
             return ascii_cleaner(name)
 
     return PersonForm(*args, **kwargs)
