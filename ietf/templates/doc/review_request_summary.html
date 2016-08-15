@@ -5,6 +5,11 @@
       {{ review_request.result.name }} {% if review_request.state_id == "part-completed" %}(partially completed){% endif %}
       - reviewer: {{ review_request.reviewer.person }}</a>
   {% else %}
-    <a href="{% url "ietf.doc.views_review.review_request" review_request.doc_id review_request.pk %}">{{ review_request.team.acronym|upper }} {{ review_request.type.name }} Review{% if review_request.reviewer %} (reviewer: {{ review_request.reviewer.person }}){% endif %}</a>
+    <i>
+    <a href="{% url "ietf.doc.views_review.review_request" review_request.doc_id review_request.pk %}">{{ review_request.team.acronym|upper }} {{ review_request.type.name }} Review
+      {% if review_request.reviewer %}
+        - reviewer: {{ review_request.reviewer.person }}
+      {% endif %}
+      - due: {{ review_request.deadline|date:"Y-m-d" }}</a></i>
   {% endif %}
 </div>

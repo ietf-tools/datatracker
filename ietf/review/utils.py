@@ -32,6 +32,11 @@ def can_manage_review_requests_for_team(user, team):
 
     return Role.objects.filter(name__in=["secr", "delegate"], person__user=user, group=team).exists() or has_role(user, "Secretariat")
 
+def review_requests_to_list_for_doc(doc):
+    return ReviewRequest.objects.filter(doc=doc).exclude(
+        state__in=["withdrawn", "rejected", "overtaken", "no-response"]
+    ).order_by("-time", "-id")
+
 def make_new_review_request_from_existing(review_req):
     obj = ReviewRequest()
     obj.time = review_req.time

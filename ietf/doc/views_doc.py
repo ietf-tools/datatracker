@@ -62,7 +62,7 @@ from ietf.mailtrigger.utils import gather_relevant_expansions
 from ietf.meeting.models import Session
 from ietf.meeting.utils import group_sessions, get_upcoming_manageable_sessions, sort_sessions
 from ietf.review.models import ReviewRequest
-from ietf.review.utils import can_request_review_of_doc
+from ietf.review.utils import can_request_review_of_doc, review_requests_to_list_for_doc
 
 def render_document_top(request, doc, tab, name):
     tabs = []
@@ -357,7 +357,7 @@ def document_main(request, name, rev=None):
         published = doc.latest_event(type="published_rfc")
         started_iesg_process = doc.latest_event(type="started_iesg_process")
 
-        review_requests = ReviewRequest.objects.filter(doc=doc).exclude(state__in=["withdrawn", "rejected", "overtaken", "no-response"]).order_by("-time", "-id")
+        review_requests = review_requests_to_list_for_doc(doc)
 
         return render_to_response("doc/document_draft.html",
                                   dict(doc=doc,
@@ -581,7 +581,7 @@ def document_main(request, name, rev=None):
 
         other_reviews = []
         if review_req:
-            other_reviews = ReviewRequest.objects.filter(doc=review_req.doc, state__in=["completed", "part-completed"]).exclude(pk=review_req.pk).order_by("-time", "-id")
+            other_reviews = review_requests_to_list_for_doc(review_req.doc).exclude(pk=review_req.pk)
 
         return render(request, "doc/document_review.html",
                       dict(doc=doc,
