@@ -238,12 +238,15 @@ def get_ready_commits(repo, tree):
         note("Running '%s' ..." % cmd)
     commit_log = pipe(cmd)
     for line in commit_log.splitlines():
-        if re.search('^r[0-9]+ ', line):
+        if re.search('^r[0-9]+ \|', line):
             rev, who, when = split_loginfo(line)
             branch = None
             continue
         if (line.startswith('   M') or line.startswith('   A') or line.startswith('   D')) and branch == None:
             type, path = line[:4], line[5:]
+            if ' (from ' in path:
+                i = path.index(' (from ')
+                path = path[:i]
             branch = '/'.join(path.split('/')[1:4])
         elif re.search("(?i)((commit|branch) ready (for|to) merge)", line):
             if not rev in merged_revs:
@@ -306,18 +309,25 @@ for entry in ready:
             ready_commits[when] = output_line
         else:
             not_passed[when] = output_line
-
 unmerged_branch_commits = {}
 for branch in branches:
     note("Fetching commit information for branch %s" % branch)
     commits = []
     cmd = 'svn log -v -r 0:HEAD --stop-on-copy %s/%s/' % (repo, branch)
     commit_log = pipe(cmd)
-    for line in commit_log.splitlines()[3:]:
+    rev = None
+    mod = False
+    for line in commit_log.splitlines():
         if re.search('^r[0-9]+ ', line):
             rev, who, when = split_loginfo(line)
+        elif re.search('^   [AMD]', line):
+            if not ' (from ' in line:
+                mod = True
+        elif re.search('^-{72}$', line) and rev and mod:
             if not rev in merged_revs:
                 commits.append(rev)
+            rev = None
+            mod = False
     commits.sort()
     unmerged_branch_commits[branch] = commits
 
