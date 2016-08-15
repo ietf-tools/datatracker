@@ -213,6 +213,15 @@ class IetfAuthTests(TestCase):
         q = PyQuery(r.content)
         self.assertTrue(len(q("form .has-error")) > 0)
 
+        # edit details - blank ASCII
+        blank_ascii = base_data.copy()
+        blank_ascii["ascii"] = u""
+        r = self.client.post(url, blank_ascii)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertTrue(len(q("form .has-error")) > 0) # we get a warning about reconstructed name
+        self.assertEqual(q("input[name=ascii]").val(), base_data["ascii"])
+
         # edit details
         r = self.client.post(url, base_data)
         self.assertEqual(r.status_code, 200)
