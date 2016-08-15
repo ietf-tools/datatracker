@@ -180,6 +180,12 @@ class InterimMeetingModelForm(forms.ModelForm):
 
         return self.cleaned_data
 
+    def is_virtual(self):
+        if not self.is_bound or self.data.get('in_person'):
+            return False
+        else:
+            return True
+
     def set_group_options(self):
         '''Set group options based on user accessing the form'''
         if has_role(self.user, "Secretariat"):

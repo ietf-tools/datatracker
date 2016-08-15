@@ -1173,7 +1173,10 @@ def interim_request(request):
         formset = SessionFormset(instance=Meeting(), data=request.POST)
         if form.is_valid() and formset.is_valid():
             group = form.cleaned_data.get('group')
-            is_approved = form.cleaned_data.get('approved', False)
+            if form.is_virtual():
+                is_approved = True
+            else:
+                is_approved = form.cleaned_data.get('approved', False)
             meeting_type = form.cleaned_data.get('meeting_type')
 
             # pre create meeting
@@ -1193,6 +1196,8 @@ def interim_request(request):
 
                 if not is_approved:
                     send_interim_approval_request(meetings=[meeting])
+                elif not has_role(request.user, 'Secretariat'):
+                    send_interim_announcement_request(meeting=meeting)
 
             # series require special handling, each session gets it's own
             # meeting object we won't see this on edit because series are
@@ -1222,6 +1227,8 @@ def interim_request(request):
 
                 if not is_approved:
                     send_interim_approval_request(meetings=series)
+                elif not has_role(request.user, 'Secretariat'):
+                    send_interim_announcement_request(meeting=meeting)
 
             messages.success(request, 'Interim meeting request submitted')
             return redirect(upcoming)
