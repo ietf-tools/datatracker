@@ -9,7 +9,7 @@ from django.core.exceptions import ValidationError
 from django.template.loader import render_to_string
 from django.core.urlresolvers import reverse as urlreverse
 
-from ietf.doc.models import Document, NewRevisionDocEvent, DocEvent, State, DocAlias
+from ietf.doc.models import Document, NewRevisionDocEvent, DocEvent, State, DocAlias, LastCallDocEvent
 from ietf.ietfauth.utils import is_authorized_in_doc_stream, user_is_person, has_role
 from ietf.name.models import ReviewRequestStateName, ReviewResultName, DocTypeName
 from ietf.review.models import ReviewRequest
@@ -47,6 +47,7 @@ class RequestReviewForm(forms.ModelForm):
 
         self.doc = doc
 
+        self.fields['type'].queryset = self.fields['type'].queryset.filter(used=True)
         self.fields['type'].widget = forms.RadioSelect(choices=[t for t in self.fields['type'].choices if t[0]])
 
         f = self.fields["team"]
@@ -115,9 +116,22 @@ def request_review(request, name):
     else:
         form = RequestReviewForm(request.user, doc)
 
+    now = datetime.datetime.now()
+
+    lc_ends = None
+    e = doc.latest_event(LastCallDocEvent, type="sent_last_call")
+    if e and e.expires >= now:
+        lc_ends = e.expires
+
+    scheduled_for_telechat = doc.telechat_date()
+
     return render(request, 'doc/review/request_review.html', {
         'doc': doc,
         'form': form,
+        'lc_ends': lc_ends,
+        'lc_ends_days': (lc_ends - now).days if lc_ends else None,
+        'scheduled_for_telechat': scheduled_for_telechat,
+        'scheduled_for_telechat_days': (scheduled_for_telechat - now.date()).days if scheduled_for_telechat else None,
     })
 
 def review_request(request, name, request_id):
