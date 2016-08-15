@@ -579,6 +579,10 @@ def document_main(request, name, rev=None):
 
         review_req = ReviewRequest.objects.filter(review=doc.name).first()
 
+        other_reviews = []
+        if review_req:
+            other_reviews = ReviewRequest.objects.filter(doc=review_req.doc, state__in=["completed", "part-completed"]).exclude(pk=review_req.pk).order_by("-time", "-id")
+
         return render(request, "doc/document_review.html",
                       dict(doc=doc,
                            top=top,
@@ -587,6 +591,7 @@ def document_main(request, name, rev=None):
                            latest_rev=latest_rev,
                            snapshot=snapshot,
                            review_req=review_req,
+                           other_reviews=other_reviews,
                       ))
 
     raise Http404
