@@ -289,6 +289,9 @@ for entry in ready:
     for line in loginfo[3:]:
         type, path = line[:4], line[5:]
         if 'M' in type or 'A' in type or 'D' in type:
+            if ' (from ' in path:
+                i = path.index(' (from ')
+                path = path[:i]
             break
     # Get the test status
     try:
@@ -321,7 +324,7 @@ for branch in branches:
         if re.search('^r[0-9]+ ', line):
             rev, who, when = split_loginfo(line)
         elif re.search('^   [AMD]', line):
-            if not ' (from ' in line:
+            if not ' (from ' in line and not mod:
                 mod = True
         elif re.search('^-{72}$', line) and rev and mod:
             if not rev in merged_revs:
