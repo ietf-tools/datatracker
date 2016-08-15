@@ -10,10 +10,11 @@ from django.template.loader import render_to_string
 from django.core.urlresolvers import reverse as urlreverse
 
 from ietf.doc.models import Document, NewRevisionDocEvent, DocEvent, State, DocAlias, LastCallDocEvent
-from ietf.ietfauth.utils import is_authorized_in_doc_stream, user_is_person, has_role
 from ietf.name.models import ReviewRequestStateName, ReviewResultName, DocTypeName
 from ietf.review.models import ReviewRequest
+from ietf.group.models import Group
 from ietf.person.fields import PersonEmailChoiceField, SearchablePersonField
+from ietf.ietfauth.utils import is_authorized_in_doc_stream, user_is_person, has_role
 from ietf.review.utils import (active_review_teams, assign_review_request_to_reviewer,
                                can_request_review_of_doc, can_manage_review_requests_for_team,
                                email_review_request_change, make_new_review_request_from_existing,
@@ -35,12 +36,13 @@ def clean_doc_revision(doc, rev):
     return rev
 
 class RequestReviewForm(forms.ModelForm):
+    team = forms.ModelMultipleChoiceField(queryset=Group.objects.all(), widget=forms.CheckboxSelectMultiple)
     deadline_date = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={ "autoclose": "1", "start-date": "+0d" })
     deadline_time = forms.TimeField(widget=forms.TextInput(attrs={ 'placeholder': "HH:MM" }), help_text="If time is not specified, end of day is assumed", required=False)
 
     class Meta:
         model = ReviewRequest
-        fields = ('requested_by', 'type', 'team', 'deadline', 'requested_rev')
+        fields = ('requested_by', 'type', 'deadline', 'requested_rev')
 
     def __init__(self, user, doc, *args, **kwargs):
         super(RequestReviewForm, self).__init__(*args, **kwargs)
@@ -54,8 +56,8 @@ class RequestReviewForm(forms.ModelForm):
         f.queryset = active_review_teams()
         if not is_authorized_in_doc_stream(user, doc): # user is a reviewer
             f.queryset = f.queryset.filter(role__name="reviewer", role__person__user=user)
-        if len(f.queryset) < 6:
-            f.widget = forms.RadioSelect(choices=[t for t in f.choices if t[0]])
+
+        f.initial = [group.pk for group in f.queryset if can_manage_review_requests_for_team(user, group, allow_non_team_personnel=False)]
 
         self.fields["deadline"].required = False
         self.fields["requested_rev"].label = "Document revision"
@@ -69,7 +71,7 @@ class RequestReviewForm(forms.ModelForm):
     def clean_deadline_date(self):
         v = self.cleaned_data.get('deadline_date')
         if v < datetime.date.today():
-            raise forms.ValidationError("Select a future date.")
+            raise forms.ValidationError("Select today or a date in the future.")
         return v
 
     def clean_requested_rev(self):
@@ -98,18 +100,21 @@ def request_review(request, name):
         form = RequestReviewForm(request.user, doc, request.POST)
 
         if form.is_valid():
-            review_req = form.save(commit=False)
-            review_req.doc = doc
-            review_req.state = ReviewRequestStateName.objects.get(slug="requested", used=True)
-            review_req.save()
+            teams = form.cleaned_data["team"]
+            for team in teams:
+                review_req = form.save(commit=False)
+                review_req.doc = doc
+                review_req.state = ReviewRequestStateName.objects.get(slug="requested", used=True)
+                review_req.team = team
+                review_req.save()
 
-            DocEvent.objects.create(
-                type="requested_review",
-                doc=doc,
-                by=request.user.person,
-                desc="Requested {} review by {}".format(review_req.type.name, review_req.team.acronym.upper()),
-                time=review_req.time,
-            )
+                DocEvent.objects.create(
+                    type="requested_review",
+                    doc=doc,
+                    by=request.user.person,
+                    desc="Requested {} review by {}".format(review_req.type.name, review_req.team.acronym.upper()),
+                    time=review_req.time,
+                )
 
             return redirect('doc_view', name=doc.name)
 
