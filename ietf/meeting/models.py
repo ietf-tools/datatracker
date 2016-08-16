@@ -1010,6 +1010,9 @@ class Session(models.Model):
     def recordings(self):
         return list(self.get_material("recording", only_one=False))
 
+    def bluesheets(self):
+        return list(self.get_material("bluesheets", only_one=False))
+
     def slides(self):
         if not hasattr(self, "_slides_cache"):
             self._slides_cache = list(self.get_material("slides", only_one=False))
@@ -1018,9 +1021,28 @@ class Session(models.Model):
     def drafts(self):
         return list(self.materials.filter(type='draft'))
 
+    def all_meeting_sessions_for_group(self):
+        sessions = [s for s in self.meeting.session_set.filter(group=self.group,type=self.type) if s.official_timeslotassignment()]
+        return sorted(sessions, key = lambda x: x.official_timeslotassignment().timeslot.time)
+
+    def all_meeting_recordings(self):
+        recordings = []
+        sessions = self.all_meeting_sessions_for_group()
+        for session in sessions:
+            recordings.extend(session.recordings())
+        return recordings
+            
+    def all_meeting_bluesheets(self):
+        bluesheets = []
+        sessions = self.all_meeting_sessions_for_group()
+        for session in sessions:
+            bluesheets.extend(session.bluesheets())
+        return bluesheets
+            
     def all_meeting_drafts(self):
         drafts = []
-        for session in self.meeting.session_set.filter(group=self.group):
+        sessions = self.all_meeting_sessions_for_group()
+        for session in sessions:
             drafts.extend(session.drafts())
         return drafts
 

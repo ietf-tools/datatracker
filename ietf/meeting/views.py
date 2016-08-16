@@ -1525,6 +1525,10 @@ def floor_plan(request, num=None, floor=None, ):
 def proceedings(request, num=None):
 
     meeting = get_meeting(num)
+
+    if meeting.number <= 64 or not meeting.agenda.assignments.exists():
+            return HttpResponseRedirect( 'https://www.ietf.org/proceedings/%s' % num )
+
     begin_date = meeting.get_submission_start_date()
     cut_off_date = meeting.get_submission_cut_off_date()
     cor_cut_off_date = meeting.get_submission_correction_date()
