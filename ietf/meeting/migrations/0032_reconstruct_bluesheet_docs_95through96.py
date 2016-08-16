@@ -59,7 +59,7 @@ def reverse(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('meeting', '0028_add_audio_stream_data'),
+        ('meeting', '0031_add_proceedings_final'),
         ('doc', '0012_auto_20160207_0537'),
         ('group','0008_auto_20160505_0523'),
     ]

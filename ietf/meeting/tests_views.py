@@ -1146,7 +1146,7 @@ class FloorPlanTests(TestCase):
         url = urlreverse('ietf.meeting.views.floor_plan', kwargs={'floor': xslugify(floorplan.name)} )
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        
+
 class IphoneAppJsonTests(TestCase):
     def setUp(self):
         pass
@@ -1168,3 +1168,23 @@ class IphoneAppJsonTests(TestCase):
         url = urlreverse('ietf.meeting.views.json_agenda',kwargs={'num':meeting.number})
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
+
+class FinalizeProceedingsTests(TestCase):
+    def test_finalize_proceedings(self):
+        make_meeting_test_data()
+        meeting = Meeting.objects.filter(type_id='ietf').order_by('id').last()
+        meeting.session_set.filter(group__acronym='mars').first().sessionpresentation_set.create(document=Document.objects.filter(type='draft').first(),rev=None)
+
+        url = urlreverse('ietf.meeting.views.finalize_proceedings',kwargs={'num':meeting.number})
+        login_testing_unauthorized(self,"secretary",url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+
+        self.assertEqual(meeting.proceedings_final,False)
+        self.assertEqual(meeting.session_set.filter(group__acronym="mars").first().sessionpresentation_set.filter(document__type="draft").first().rev,None)
+        r = self.client.post(url,{'finalize':1})
+        self.assertEqual(r.status_code, 302)
+        meeting = Meeting.objects.get(pk=meeting.pk)
+        self.assertEqual(meeting.proceedings_final,True)
+        self.assertEqual(meeting.session_set.filter(group__acronym="mars").first().sessionpresentation_set.filter(document__type="draft").first().rev,'00')
+ 

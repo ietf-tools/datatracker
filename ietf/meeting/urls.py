@@ -68,6 +68,7 @@ type_ietf_only_patterns_id_optional = [
     url(r'^room-view(?:.html)?/?$', views.room_view),
     url(r'^materials(?:.html)?/?$', views.materials),
     url(r'^proceedings(?:.html)?/?$', views.proceedings),
+    url(r'^proceedings(?:.html)?/finalize/?$', views.finalize_proceedings),
 ]
 
 urlpatterns = [
