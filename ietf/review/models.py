@@ -7,7 +7,7 @@ from ietf.group.models import Group
 from ietf.person.models import Person, Email
 from ietf.name.models import ReviewTypeName, ReviewRequestStateName, ReviewResultName
 
-class Reviewer(models.Model):
+class ReviewerSettings(models.Model):
     """Keeps track of admin data associated with the reviewer in the
     particular team. There will be one record for each combination of
     reviewer and team."""
@@ -50,7 +50,7 @@ class ReviewRequest(models.Model):
     type          = models.ForeignKey(ReviewTypeName)
     doc           = models.ForeignKey(Document, related_name='review_request_set')
     team          = models.ForeignKey(Group, limit_choices_to=~models.Q(reviewteamresult=None))
-    deadline      = models.DateTimeField()
+    deadline      = models.DateField()
     requested_by  = models.ForeignKey(Person)
     requested_rev = models.CharField(verbose_name="requested revision", max_length=16, blank=True, help_text="Fill in if a specific revision is to be reviewed, e.g. 02")
 

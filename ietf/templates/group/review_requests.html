@@ -33,12 +33,8 @@
             <td>{{ r.type.name }}</td>
             <td>{% if r.time %}{{ r.time|date:"Y-m-d" }}{% else %}<em>auto-suggested</em>{% endif %}</td>
             <td>
-              {% if r.deadline|date:"H:i" != "23:59" %}
-                {{ r.deadline|date:"Y-m-d H:i" }}
-              {% else %}
-                {{ r.deadline|date:"Y-m-d" }}
-              {% endif %}
-              {% if r.due %}<span class="label label-warning">{{ r.due }} hour{{ r.due|pluralize }}</span>{% endif %}
+              {{ r.deadline|date:"Y-m-d" }}
+              {% if r.due %}<span class="label label-warning">{{ r.due }} day{{ r.due|pluralize }}</span>{% endif %}
             </td>
             <td>
               {% if r.reviewer %}
@@ -86,13 +82,7 @@
             <td><a href="{% url "ietf.doc.views_review.review_request" name=r.doc.name request_id=r.pk %}">{{ r.doc.name }}{% if r.requested_rev %}-{{ r.requested_rev }}{% endif %}</a></td>
             <td>{{ r.type }}</td>
             <td>{{ r.time|date:"Y-m-d" }}</td>
-            <td>
-              {% if r.deadline|date:"H:i" != "23:59" %}
-                {{ r.deadline|date:"Y-m-d H:i" }}
-              {% else %}
-                {{ r.deadline|date:"Y-m-d" }}
-              {% endif %}
-            </td>
+            <td>{{ r.deadline|date:"Y-m-d" }}</td>
             <td>
               {% if r.reviewer %}
                 {{ r.reviewer.person }}
@@ -104,7 +94,8 @@
             <td>
               {% if r.result %}
                 {{ r.result.name }}
-              {% endif %}</td>
+              {% endif %}
+            </td>
           </tr>
         {% endfor %}
       </tbody>

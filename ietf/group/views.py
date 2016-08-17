@@ -653,10 +653,10 @@ def review_requests(request, acronym, group_type=None):
 
     open_review_requests += suggested_review_requests_for_team(group)
 
-    now = datetime.datetime.now()
+    today = datetime.date.today()
     for r in open_review_requests:
-        delta = now - r.deadline
-        r.due = max(0, int(math.ceil(delta.total_seconds() / 3600.0)))
+        delta = today - r.deadline
+        r.due = max(0, delta.days())
 
     closed_review_requests = ReviewRequest.objects.filter(
         team=group,

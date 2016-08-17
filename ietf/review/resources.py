@@ -7,16 +7,16 @@ from tastypie.cache import SimpleCache
 from ietf import api
 from ietf.api import ToOneField                         # pyflakes:ignore
 
-from ietf.review.models import Reviewer, ReviewRequest, ReviewTeamResult
+from ietf.review.models import ReviewerSettings, ReviewRequest, ReviewTeamResult
 
 
 from ietf.person.resources import PersonResource
 from ietf.group.resources import GroupResource
-class ReviewerResource(ModelResource):
+class ReviewerSettingsResource(ModelResource):
     team             = ToOneField(GroupResource, 'team')
     person           = ToOneField(PersonResource, 'person')
     class Meta:
-        queryset = Reviewer.objects.all()
+        queryset = ReviewerSettings.objects.all()
         serializer = api.Serializer()
         cache = SimpleCache()
         #resource_name = 'reviewer'
@@ -29,7 +29,7 @@ class ReviewerResource(ModelResource):
             "team": ALL_WITH_RELATIONS,
             "person": ALL_WITH_RELATIONS,
         }
-api.review.register(ReviewerResource())
+api.review.register(ReviewerSettingsResource())
 
 from ietf.doc.resources import DocumentResource
 from ietf.group.resources import RoleResource, GroupResource

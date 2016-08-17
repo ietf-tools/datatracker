@@ -9,7 +9,7 @@ from ietf.doc.models import Document, DocEvent, State, LastCallDocEvent, Documen
 from ietf.iesg.models import TelechatDate
 from ietf.person.models import Person, Email
 from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream
-from ietf.review.models import ReviewRequest, ReviewRequestStateName, ReviewTypeName, Reviewer
+from ietf.review.models import ReviewRequest, ReviewRequestStateName, ReviewTypeName, ReviewerSettings
 from ietf.utils.mail import send_mail
 from ietf.doc.utils import extract_complete_replaces_ancestor_mapping_for_docs
 
@@ -151,11 +151,6 @@ def close_review_request(request, review_req, close_state):
                 by=request.user.person, notify_secretary=False, notify_reviewer=True, notify_requested_by=True)
 
 def suggested_review_requests_for_team(team):
-    def fixup_deadline(d):
-        if d.time() == datetime.time(0):
-            d = d - datetime.timedelta(seconds=1) # 23:59:59 is treated specially in the view code
-        return d
-
     system_person = Person.objects.get(name="(System)")
 
     seen_deadlines = {}
@@ -170,9 +165,9 @@ def suggested_review_requests_for_team(team):
         last_call_docs = Document.objects.filter(states=State.objects.get(type="draft-iesg", slug="lc", used=True))
         last_call_expires = { e.doc_id: e.expires for e in LastCallDocEvent.objects.order_by("time", "id") }
         for doc in last_call_docs:
-            deadline = fixup_deadline(last_call_expires.get(doc.pk)) if doc.pk in last_call_expires else datetime.datetime.now()
+            deadline = last_call_expires[doc.pk].date() if doc.pk in last_call_expires else datetime.date.today()
 
-            if deadline > seen_deadlines.get(doc.pk, datetime.datetime.max):
+            if deadline > seen_deadlines.get(doc.pk, datetime.date.max):
                 continue
 
             requests[doc.pk] = ReviewRequest(
@@ -200,9 +195,9 @@ def suggested_review_requests_for_team(team):
             if d not in telechat_dates:
                 continue
 
-            deadline = datetime.datetime.combine(d - telechat_deadline_delta, datetime.time(23, 59, 59))
+            deadline = d - telechat_deadline_delta
 
-            if deadline > seen_deadlines.get(doc.pk, datetime.datetime.max):
+            if deadline > seen_deadlines.get(doc.pk, datetime.date.max):
                 continue
 
             requests[doc.pk] = ReviewRequest(
@@ -302,7 +297,7 @@ def make_assignment_choices(email_queryset, review_req):
 
     aliases = DocAlias.objects.filter(document=doc).values_list("name", flat=True)
 
-    reviewers = { r.person_id: r for r in Reviewer.objects.filter(team=team, person__in=[e.person_id for e in possible_emails]) }
+    reviewers = { r.person_id: r for r in ReviewerSettings.objects.filter(team=team, person__in=[e.person_id for e in possible_emails]) }
 
     # time since past assignment
     latest_assignment_for_reviewer = dict(ReviewRequest.objects.filter(
@@ -347,7 +342,7 @@ def make_assignment_choices(email_queryset, review_req):
     for e in possible_emails:
         reviewer = reviewers.get(e.person_id)
         if not reviewer:
-            reviewer = Reviewer()
+            reviewer = ReviewerSettings()
 
         explanations = []
         scores = [] # build up score in separate independent components

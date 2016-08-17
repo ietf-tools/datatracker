@@ -12,7 +12,7 @@ from pyquery import PyQuery
 
 import debug                            # pyflakes:ignore
 
-from ietf.review.models import ReviewRequest, ReviewTeamResult, Reviewer
+from ietf.review.models import ReviewRequest, ReviewTeamResult, ReviewerSettings
 import ietf.review.mailarch
 from ietf.person.models import Email, Person
 from ietf.name.models import ReviewResultName, ReviewRequestStateName, ReviewTypeName
@@ -51,21 +51,20 @@ class ReviewTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 
-        deadline_date = datetime.date.today() + datetime.timedelta(days=10)
+        deadline = datetime.date.today() + datetime.timedelta(days=10)
 
         # post request
         r = self.client.post(url, {
             "type": "early",
             "team": review_team.pk,
-            "deadline_date": deadline_date.isoformat(),
+            "deadline": deadline.isoformat(),
             "requested_rev": "01",
             "requested_by": Person.objects.get(user__username="plain").pk,
         })
         self.assertEqual(r.status_code, 302)
 
         req = ReviewRequest.objects.get(doc=doc, state="requested")
-        self.assertEqual(req.deadline.date(), deadline_date)
-        self.assertEqual(req.deadline.time(), datetime.time(23, 59, 59))
+        self.assertEqual(req.deadline, deadline)
         self.assertEqual(req.team, review_team)
         self.assertEqual(req.requested_rev, "01")
         self.assertEqual(doc.latest_event().type, "requested_review")
@@ -146,14 +145,14 @@ class ReviewTests(TestCase):
             team=review_req.team,
             state=ReviewRequestStateName.objects.get(slug="completed"),
             reviewed_rev="01",
-            deadline=datetime.datetime.now() - datetime.timedelta(days=80),
+            deadline=datetime.date.today() - datetime.timedelta(days=80),
             reviewer=plain_email,
         )
 
-        reviewer_obj = Reviewer.objects.get(person__email=plain_email)
-        reviewer_obj.filter_re = doc.name
-        reviewer_obj.unavailable_until = datetime.datetime.now() + datetime.timedelta(days=10)
-        reviewer_obj.save()
+        reviewer_settings = ReviewerSettings.objects.get(person__email=plain_email)
+        reviewer_settings.filter_re = doc.name
+        reviewer_settings.unavailable_until = datetime.datetime.now() + datetime.timedelta(days=10)
+        reviewer_settings.save()
 
         assign_url = urlreverse('ietf.doc.views_review.assign_reviewer', kwargs={ "name": doc.name, "request_id": review_req.pk })
 

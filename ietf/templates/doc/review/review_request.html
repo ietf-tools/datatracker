@@ -50,13 +50,7 @@
       <tr>
         <th></th>
         <th>Deadline</th>
-        <td>
-          {% if review_req.deadline|date:"H:i" != "23:59" %}
-            {{ review_req.deadline|date:"Y-m-d H:i" }}
-          {% else %}
-            {{ review_req.deadline|date:"Y-m-d" }}
-          {% endif %}
-        </td>
+        <td>{{ review_req.deadline|date:"Y-m-d" }}</td>
       </tr>
 
       <tr>

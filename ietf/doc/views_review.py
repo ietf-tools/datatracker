@@ -37,8 +37,7 @@ def clean_doc_revision(doc, rev):
 
 class RequestReviewForm(forms.ModelForm):
     team = forms.ModelMultipleChoiceField(queryset=Group.objects.all(), widget=forms.CheckboxSelectMultiple)
-    deadline_date = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={ "autoclose": "1", "start-date": "+0d" })
-    deadline_time = forms.TimeField(widget=forms.TextInput(attrs={ 'placeholder': "HH:MM" }), help_text="If time is not specified, end of day is assumed", required=False)
+    deadline = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={ "autoclose": "1", "start-date": "+0d" })
 
     class Meta:
         model = ReviewRequest
@@ -59,7 +58,6 @@ class RequestReviewForm(forms.ModelForm):
 
         f.initial = [group.pk for group in f.queryset if can_manage_review_requests_for_team(user, group, allow_non_team_personnel=False)]
 
-        self.fields["deadline"].required = False
         self.fields["requested_rev"].label = "Document revision"
 
         if has_role(user, "Secretariat"):
@@ -68,26 +66,14 @@ class RequestReviewForm(forms.ModelForm):
             self.fields["requested_by"].widget = forms.HiddenInput()
             self.fields["requested_by"].initial = user.person.pk
 
-    def clean_deadline_date(self):
-        v = self.cleaned_data.get('deadline_date')
+    def clean_deadline(self):
+        v = self.cleaned_data.get('deadline')
         if v < datetime.date.today():
             raise forms.ValidationError("Select today or a date in the future.")
         return v
 
     def clean_requested_rev(self):
         return clean_doc_revision(self.doc, self.cleaned_data.get("requested_rev"))
-
-    def clean(self):
-        deadline_date = self.cleaned_data.get('deadline_date')
-        deadline_time = self.cleaned_data.get('deadline_time', None)
-
-        if deadline_date:
-            if deadline_time is None:
-                deadline_time = datetime.time(23, 59, 59)
-
-            self.cleaned_data["deadline"] = datetime.datetime.combine(deadline_date, deadline_time)
-
-        return self.cleaned_data
 
 @login_required
 def request_review(request, name):

@@ -87,7 +87,7 @@ class ReviewTests(TestCase):
             doc=review_req1.doc,
             team=review_req1.team,
             type_id="early",
-            deadline=datetime.datetime.combine(datetime.date.today() + datetime.timedelta(days=30), datetime.time(23, 59, 59)),
+            deadline=datetime.date.today() + datetime.timedelta(days=30),
             state_id="accepted",
             reviewer=review_req1.reviewer,
             requested_by=Person.objects.get(user__username="plain"),
@@ -97,7 +97,7 @@ class ReviewTests(TestCase):
             doc=review_req1.doc,
             team=review_req1.team,
             type_id="early",
-            deadline=datetime.datetime.combine(datetime.date.today() + datetime.timedelta(days=30), datetime.time(23, 59, 59)),
+            deadline=datetime.date.today() + datetime.timedelta(days=30),
             state_id="requested",
             requested_by=Person.objects.get(user__username="plain"),
         )

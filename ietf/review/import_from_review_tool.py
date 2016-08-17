@@ -16,7 +16,7 @@ django.setup()
 import datetime
 from collections import namedtuple
 from django.db import connections
-from ietf.review.models import ReviewRequest, Reviewer, ReviewResultName
+from ietf.review.models import ReviewRequest, ReviewerSettings, ReviewResultName
 from ietf.review.models import ReviewRequestStateName, ReviewTypeName, ReviewTeamResult
 from ietf.group.models import Group, Role, RoleName
 from ietf.person.models import Person, Email, Alias
@@ -105,7 +105,7 @@ with db_con.cursor() as c:
                 if created:
                     print "created role", unicode(role).encode("utf-8")
 
-                reviewer, created = Reviewer.objects.get_or_create(
+                reviewer, created = ReviewerSettings.objects.get_or_create(
                     team=team,
                     person=email.person,
                 )
@@ -217,7 +217,7 @@ with db_con.cursor() as c:
             defaults={
                 "state": states["requested"],
                 "type": type_name,
-                "deadline": deadline,
+                "deadline": deadline.date(),
                 "requested_by": system_person,
             }
         )
@@ -228,7 +228,7 @@ with db_con.cursor() as c:
         req.type = type_name
         req.time = time
         req.reviewed_rev = reviewed_rev
-        req.deadline = deadline
+        req.deadline = deadline.date()
         req.save()
 
         # FIXME: add log entries
