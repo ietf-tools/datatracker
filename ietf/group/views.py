@@ -656,7 +656,7 @@ def review_requests(request, acronym, group_type=None):
     today = datetime.date.today()
     for r in open_review_requests:
         delta = today - r.deadline
-        r.due = max(0, delta.days())
+        r.due = max(0, delta.days)
 
     closed_review_requests = ReviewRequest.objects.filter(
         team=group,
