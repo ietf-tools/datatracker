@@ -1,5 +1,7 @@
 from django import template
 
+import debug       # pyflakes:ignore
+
 register = template.Library()
 
 @register.filter

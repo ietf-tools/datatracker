@@ -39,48 +39,9 @@
 
   <hr />
   <p>
-  Use the form below to upload individual scanned blue sheet documents.
+  Use the session details page for a group to upload scanned bluesheets. The session details pages for a group can be reached from the meeting's <a href="{% url 'ietf.meeting.views.materials' num=meeting.number %}">materials page</a>.
   </p>
-  <form id="rolodex-add-form" enctype="multipart/form-data" action="" method="post">{% csrf_token %}
-    <table class="full-width amstable">
-      <col width="200">
-      {{ form.as_table }}
-    </table>
-  
-    <div class="button-group">
-      <ul>
-        <li><button type="submit" name="submit" value="Submit">Submit</button></li>
-        <li><button type="button" onclick="window.location='../'">Back</button></li>
-      </ul>
-    </div> <!-- button-group -->
-
-    </form>
 </div> <!-- module -->
-
-{% if uploaded_files %}
-  <br>
-  <div class="module interim-container">
-    <h2>Uploaded Files</h2>
-    <div class="inline-related last-related">
-    <table class="full-width">
-      <thead>
-        <tr> 
-          <th>Filename</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for file in uploaded_files %}
-           <tr class="{% cycle 'row1' 'row2' %}">
-             <td>{{ file }}</td>
-           </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-    </div> <!-- inline-related -->
-  </div> <!-- module -->
-  
-{% endif %}
-
 
 {% endblock %}
 

@@ -1,0 +1,4 @@
+{% load ietf_filters session_filters %}
+{% if user|has_role:"Secretariat" or session|can_manage_materials:user and not session.is_material_submission_cutoff %}
+<a class="button btn-default btn-sm" href="{% url 'ietf.meeting.views.session_details' num=session.meeting.number acronym=session.group.acronym %}">Edit</a>
+{% endif %}
