@@ -23,6 +23,9 @@
      <a class="btn btn-default" href="{% url 'ietf.meeting.views.add_session_drafts' session_id=session.pk num=session.meeting.number %}">
         Link additional drafts to session
      </a>
+     {% if user|has_role:"Secretariat" %}
+       <a class="btn btn-default" href="{% url 'ietf.meeting.views.upload_session_bluesheets' session_id=session.pk num=session.meeting.number %}">Upload Bluesheets</a>
+     {% endif %}
      {% if not type_counter.agenda %}
        <span class="label label-warning">This session does not yet have an agenda</span>
      {% endif %}

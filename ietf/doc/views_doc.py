@@ -521,7 +521,7 @@ def document_main(request, name, rev=None):
 
     # TODO : Add "recording", and "bluesheets" here when those documents are appropriately
     #        created and content is made available on disk
-    if doc.type_id in ("slides", "agenda", "minutes"):
+    if doc.type_id in ("slides", "agenda", "minutes", "bluesheets",):
         can_manage_material = can_manage_materials(request.user, doc.group)
         presentations = doc.future_presentations()
         if doc.meeting_related():
@@ -540,7 +540,7 @@ def document_main(request, name, rev=None):
         for g in globs:
             extension = os.path.splitext(g)[1]
             t = os.path.splitext(g)[1].lstrip(".")
-            url = doc.href()
+            url = doc.get_absolute_url() if doc.type_id=='bluesheets' else doc.href()
             urlbase, urlext = os.path.splitext(url)
             if not url.endswith("/") and not url.endswith(extension):
                 url = urlbase + extension

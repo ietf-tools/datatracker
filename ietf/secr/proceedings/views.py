@@ -31,6 +31,7 @@ from ietf.secr.proceedings.forms import EditSlideForm, RecordingForm, RecordingE
 from ietf.secr.proceedings.proc_utils import ( gen_acknowledgement, gen_agenda, gen_areas,
     gen_attendees, gen_group_pages, gen_index, gen_irtf, gen_overview, gen_plenaries,
     gen_progress, gen_research, gen_training, create_proceedings, create_recording )
+from ietf.secr.proceedings.utils import handle_upload_file
 from ietf.utils.log import log
 
 # -------------------------------------------------
@@ -137,40 +138,6 @@ def get_next_order_num(session):
     max_order = session.materials.aggregate(Max('order'))['order__max']
 
     return max_order + 1 if max_order else 1
-
-def handle_upload_file(file,filename,meeting,subdir):
-    '''
-    This function takes a file object, a filename and a meeting object and subdir as string.
-    It saves the file to the appropriate directory, get_materials_path() + subdir.
-    If the file is a zip file, it creates a new directory in 'slides', which is the basename of the
-    zip file and unzips the file in the new directory.
-    '''
-    base, extension = os.path.splitext(filename)
-
-    if extension == '.zip':
-        path = os.path.join(meeting.get_materials_path(),subdir,base)
-        if not os.path.exists(path):
-            os.mkdir(path)
-    else:
-        path = os.path.join(meeting.get_materials_path(),subdir)
-        if not os.path.exists(path):
-            os.makedirs(path)
-
-    # agendas and minutes can only have one file instance so delete file if it already exists
-    if subdir in ('agenda','minutes'):
-        old_files = glob.glob(os.path.join(path,base) + '.*')
-        for f in old_files:
-            os.remove(f)
-
-    destination = open(os.path.join(path,filename), 'wb+')
-    for chunk in file.chunks():
-        destination.write(chunk)
-    destination.close()
-
-    # unzip zipfile
-    if extension == '.zip':
-        os.chdir(path)
-        os.system('unzip %s' % filename)
 
 def parsedate(d):
     '''

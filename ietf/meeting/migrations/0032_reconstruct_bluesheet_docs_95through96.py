@@ -12,6 +12,7 @@ def official_time(session):
 
 def forward(apps, schema_editor):
     Document = apps.get_model('doc','Document')
+    NewRevisionDocEvent = apps.get_model('doc','NewRevisionDocEvent')
     State = apps.get_model('doc','State')
     Group = apps.get_model('group','Group')
     Meeting = apps.get_model('meeting', 'Meeting')
@@ -46,12 +47,14 @@ def forward(apps, schema_editor):
                 doc = Document.objects.create(
                           name=bs[n][:-4],
                           type_id='bluesheets',
-                          title='Bluesheets IETF%d : %s : %s ' % (num,acronym,official_time(sess[n]).timeslot.time.strftime('%a %H:%M')),
+                          title='Bluesheets IETF%d : %s : %s' % (num,acronym,official_time(sess[n]).timeslot.time.strftime('%a %H:%M')),
                           group=group,
                           rev='00',
                           external_url=bs[n],
                       )
                 doc.states.add(active)
+                doc.docalias_set.create(name=doc.name)
+                NewRevisionDocEvent.objects.create(doc=doc,time=doc.time,by_id=1,type='new_revision',desc='New revision available: %s'%doc.rev,rev=doc.rev)
                 sess[n].sessionpresentation_set.create(document=doc,rev='00')
 
 def reverse(apps, schema_editor):

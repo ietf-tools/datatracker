@@ -51,6 +51,8 @@ from ietf.meeting.helpers import send_interim_cancellation_notice
 from ietf.meeting.helpers import send_interim_approval_request
 from ietf.meeting.helpers import send_interim_announcement_request
 from ietf.meeting.utils import finalize
+from ietf.person.models import Person
+from ietf.secr.proceedings.utils import handle_upload_file
 from ietf.utils.mail import send_mail_message
 from ietf.utils.pipe import pipe
 from ietf.utils.pdf import pdf_pages
@@ -1083,6 +1085,67 @@ def add_session_drafts(request, session_id, num):
                     'session_number': session_number,
                     'already_linked': session.sessionpresentation_set.filter(document__type_id='draft'),
                     'form': form,
+                  })
+
+class UploadBlueSheetForm(forms.Form):
+    file = forms.FileField(label='Bluesheet scan to upload')
+
+@role_required('Secretariat')
+def upload_session_bluesheets(request, session_id, num):
+    # num is redundant, but we're dragging it along an artifact of where we are in the current URL structure
+    session = get_object_or_404(Session,pk=session_id)
+
+    session_number = None
+    sessions = get_sessions(session.meeting.number,session.group.acronym)
+    if len(sessions) > 1:
+       session_number = 1 + sessions.index(session)
+
+    bluesheet_sp = session.sessionpresentation_set.filter(document__type='bluesheets').first()
+    
+    if request.method == 'POST':
+        form = UploadBlueSheetForm(request.POST,request.FILES)
+        if form.is_valid():
+            file = request.FILES['file']
+            _, ext = os.path.splitext(file.name)
+            if bluesheet_sp:
+                doc = bluesheet_sp.document
+                doc.rev = '%02d' % (int(doc.rev)+1)
+            else:
+                sess_time = session.official_timeslotassignment().timeslot.time
+                if session.meeting.type_id=='ietf':
+                    name = 'bluesheets-%s-%s-%s' % (session.meeting.number, 
+                                                    session.group.acronym, 
+                                                    sess_time.strftime("%Y%m%d%H%M"))
+                    title = 'Bluesheets IETF%s: %s : %s' % (session.meeting.number, 
+                                                            session.group.acronym, 
+                                                            sess_time.strftime("%a %H:%M"))
+                else:
+                    name = 'bluesheets-%s-%s' % (session.meeting.number, sess_time.strftime("%Y%m%d%H%M"))
+                    title = 'Bluesheets %s: %s' % (session.meeting.number, sess_time.strftime("%a %H:%M"))
+                doc = Document.objects.create(
+                          name = name,
+                          type_id = 'bluesheets',
+                          title = title,
+                          group = session.group,
+                          rev = '00',
+                      )
+                doc.states.add(State.objects.get(type_id='bluesheets',slug='active'))
+                doc.docalias_set.create(name=doc.name)
+                session.sessionpresentation_set.create(document=doc,rev='00')
+            filename = '%s-%s%s'% ( doc.name, doc.rev, ext)
+            doc.external_url = filename
+            doc.save()
+            NewRevisionDocEvent.objects.create(doc=doc,time=doc.time,by=Person.objects.get(name='(System)'),type='new_revision',desc='New revision available: %s'%doc.rev,rev=doc.rev)
+            handle_upload_file(file, filename, session.meeting, 'bluesheets')
+            return redirect('ietf.meeting.views.session_details',num=num,acronym=session.group.acronym)
+    else: 
+        form = UploadBlueSheetForm()
+
+    return render(request, "meeting/upload_session_bluesheets.html", 
+                  {'session': session,
+                   'session_number': session_number,
+                   'bluesheet_sp' : bluesheet_sp,
+                   'form': form,
                   })
 
 @role_required('Secretariat')

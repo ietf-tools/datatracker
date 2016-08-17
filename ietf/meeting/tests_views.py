@@ -12,6 +12,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 
 from pyquery import PyQuery
+from StringIO import StringIO
 
 from ietf.doc.models import Document
 from ietf.group.models import Group
@@ -1198,3 +1199,45 @@ class FinalizeProceedingsTests(TestCase):
         self.assertEqual(meeting.proceedings_final,True)
         self.assertEqual(meeting.session_set.filter(group__acronym="mars").first().sessionpresentation_set.filter(document__type="draft").first().rev,'00')
  
+class BluesheetsTests(TestCase):
+    def test_upload_blusheets(self):
+        session = SessionFactory(meeting__type_id='ietf')
+        url = urlreverse('ietf.meeting.views.upload_session_bluesheets',kwargs={'num':session.meeting.number,'session_id':session.id})
+        login_testing_unauthorized(self,"secretary",url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertFalse(q("div.alert"))
+        self.assertFalse(session.sessionpresentation_set.exists())
+        test_file = StringIO('this is some text for a test')
+        test_file.name = "not_really.pdf"
+        r = self.client.post(url,dict(file=test_file))
+        self.assertEqual(r.status_code, 302)
+        bs_doc = session.sessionpresentation_set.filter(document__type_id='bluesheets').first().document
+        self.assertEqual(bs_doc.rev,'00')
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertTrue(q("div.alert"))
+        test_file = StringIO('this is some different text for a test')
+        test_file.name = "also_not_really.pdf"
+        r = self.client.post(url,dict(file=test_file))
+        self.assertEqual(r.status_code, 302)
+        bs_doc = Document.objects.get(pk=bs_doc.pk)
+        self.assertEqual(bs_doc.rev,'01')
+         
+    def test_upload_bluesheets_interim(self):
+        session=SessionFactory(meeting__type_id='interim')
+        url = urlreverse('ietf.meeting.views.upload_session_bluesheets',kwargs={'num':session.meeting.number,'session_id':session.id})
+        login_testing_unauthorized(self,"secretary",url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertFalse(q("div.alert"))
+        self.assertFalse(session.sessionpresentation_set.exists())
+        test_file = StringIO('this is some text for a test')
+        test_file.name = "not_really.pdf"
+        r = self.client.post(url,dict(file=test_file))
+        self.assertEqual(r.status_code, 302)
+        bs_doc = session.sessionpresentation_set.filter(document__type_id='bluesheets').first().document
+        self.assertEqual(bs_doc.rev,'00')

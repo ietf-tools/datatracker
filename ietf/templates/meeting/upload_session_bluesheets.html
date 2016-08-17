@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin staticfiles bootstrap3 %}
+
+{% block title %}Upload Bluesheets for {{ session.meeting }} : {{ session.group.acronym }}{% endblock %}
+
+{% block content %}
+  {% origin %}
+
+  <h1>Upload Bluesheets for {{ session.meeting }} : {{ session.group.acronym }}{% if session.name %} : {{session.name}}{% endif %}</h1>
+{% if session_number %}<h2> Session {{session_number}} : {{session.official_timeslotassignment.timeslot.time|date:"D M-d-Y Hi"}}</h2>{% endif %} 
+
+  {% if bluesheet_sp %}
+    <div class="alert alert-warning">
+    Bluesheets have alrady been uploaded for this session. 
+    See <a href="{% url 'ietf.doc.views_doc.document_main' name=bluesheet_sp.document.name %}">{{bluesheet_sp.document.name}}-{{bluesheet_sp.document.rev}}</a>.
+    Continue with this upload to provide an updated version of that document.
+    </div>
+  {% endif %}
+
+  <form enctype="multipart/form-data" method="post">
+    {% csrf_token %}
+    {% bootstrap_form form %}
+    {% buttons %}
+      <button type="submit" class="btn btn-primary">Upload</button>
+    {% endbuttons %}
+  </form>
+
+
+{% endblock %}
