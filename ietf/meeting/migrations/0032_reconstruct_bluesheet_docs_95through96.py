@@ -21,6 +21,8 @@ def forward(apps, schema_editor):
     for num in [95, 96]:
         mtg = Meeting.objects.get(number=num)
         bs_path = '%s/bluesheets/'% os.path.join(settings.AGENDA_PATH,mtg.number)
+        if not os.path.exists(bs_path):
+            os.makedirs(bs_path)
         bs_files = os.listdir(bs_path)
         bs_acronyms = set([x[14:-7] for x in bs_files])
         group_acronyms = set([x.group.acronym for x in mtg.session_set.all() if official_time(x) and x.group.type_id in ['wg','rg','ag'] and not x.agenda_note.lower().startswith('cancel')])
@@ -54,7 +56,7 @@ def forward(apps, schema_editor):
 
 def reverse(apps, schema_editor):
     Document = apps.get_model('doc','Document')
-    Document.objects.filter(type_id='bluesheets',sessionpresentation__session__meeting__number_in=[95,96]).exclude(group__acronym='openpgp').delete()
+    Document.objects.filter(type_id='bluesheets',sessionpresentation__session__meeting__number__in=[95,96]).exclude(group__acronym='openpgp').delete()
 
 class Migration(migrations.Migration):
 
