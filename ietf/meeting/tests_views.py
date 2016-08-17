@@ -27,7 +27,7 @@ from ietf.utils.mail import outbox
 from ietf.utils.text import xslugify
 
 from ietf.person.factories import PersonFactory
-from ietf.group.factories import GroupFactory
+from ietf.group.factories import GroupFactory, GroupEventFactory
 from ietf.meeting.factories import ( SessionFactory, SessionPresentationFactory, ScheduleFactory,
     MeetingFactory, FloorPlanFactory )
 from ietf.doc.factories import DocumentFactory
@@ -252,6 +252,9 @@ class MeetingTests(TestCase):
     def test_proceedings(self):
         meeting = make_meeting_test_data()
         session = Session.objects.filter(meeting=meeting, group__acronym="mars").first()
+        GroupEventFactory(group=session.group,type='status_update')
+        SessionPresentationFactory(document__type_id='recording',session=session)
+        SessionPresentationFactory(document__type_id='recording',session=session,document__title="Audio recording for tests")
 
         self.write_materials_files(meeting, session)
 
