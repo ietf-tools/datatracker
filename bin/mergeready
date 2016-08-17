@@ -266,6 +266,7 @@ hold   = get_changeset_list_from_file(repo, 'hold-for-merge')
 ready += get_ready_commits(repo, 'personal')
 ready += get_ready_commits(repo, 'branch/amsl')
 ready += get_ready_commits(repo, 'branch/iola')
+ready += get_ready_commits(repo, 'branch/proceedings')
 
 ready_commits = {}
 all_commits = {}
@@ -346,10 +347,12 @@ for key in keys:
         unmerged = True
         sys.stderr.write("There are unmerged commits ahead of r%s on branch %s:\n" % (rev, branch))
         for j in range(0,i):
-            sys.stderr.write("  %s:\n" % unmerged_branch_commits[branch][j])
-            commit_comment = pipe("svn log -c %s ^/" % unmerged_branch_commits[branch][j]).splitlines()[3:-1]
-            for l in commit_comment:
-                sys.stderr.write("    %s\n" % l)
+            commit = unmerged_branch_commits[branch][j]
+            if commit != rev:
+                sys.stderr.write("  %s:\n" % commit)
+                commit_comment = pipe("svn log -c %s ^/" % commit).splitlines()[3:-1]
+                for l in commit_comment:
+                    sys.stderr.write("    %s\n" % l)
             del unmerged_branch_commits[branch][j]
         sys.stderr.write("\n")
     del unmerged_branch_commits[branch][0]
