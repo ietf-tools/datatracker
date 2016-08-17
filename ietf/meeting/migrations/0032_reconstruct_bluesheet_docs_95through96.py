@@ -3,6 +3,8 @@ from __future__ import unicode_literals
 
 import os
 
+import debug         # pyflakes:ignore
+
 from django.db import migrations
 from django.conf import settings
 
@@ -19,14 +21,20 @@ def forward(apps, schema_editor):
 
     active = State.objects.get(type_id='bluesheets',slug='active')
 
+    print
+    print "Attention: The following anomalies are expected:"
+    print "There are no bluesheets for nmlrg at IETF95 or for cellar at IETF96."
+    print "At IETF95, netmod and opsec have a different number of bluesheets than sessions."
+    print "Please report any other warnings issued during the production migration to RjS."
+
     for num in [95, 96]:
         mtg = Meeting.objects.get(number=num)
         bs_path = '%s/bluesheets/'% os.path.join(settings.AGENDA_PATH,mtg.number)
         if not os.path.exists(bs_path):
             os.makedirs(bs_path)
         bs_files = os.listdir(bs_path)
-        bs_acronyms = set([x[14:-7] for x in bs_files])
-        group_acronyms = set([x.group.acronym for x in mtg.session_set.all() if official_time(x) and x.group.type_id in ['wg','rg','ag'] and not x.agenda_note.lower().startswith('cancel')])
+        bs_acronyms = set([x[14:].split('-')[0] for x in bs_files])
+        group_acronyms = set([x.group.acronym for x in mtg.session_set.filter(status_id='sched') if official_time(x) and x.group.type_id in ['wg','rg','ag'] and not x.agenda_note.lower().startswith('cancel')])
 
         if  bs_acronyms-group_acronyms:
             print "Warning IETF%s : groups that have bluesheets but did not appear to meet: %s"%(num,list(bs_acronyms-group_acronyms))
