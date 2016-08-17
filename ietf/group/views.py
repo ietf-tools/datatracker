@@ -67,6 +67,7 @@ from ietf.settings import MAILING_LIST_INFO_URL
 from ietf.mailtrigger.utils import gather_relevant_expansions
 from ietf.ietfauth.utils import has_role
 from ietf.meeting.utils import group_sessions
+from ietf.meeting.helpers import get_meeting
 
 def roles(group, role_name):
     return Role.objects.filter(group=group, name=role_name).select_related("email", "person")
@@ -531,6 +532,17 @@ def group_about_status(request, acronym, group_type=None):
                   { 'group' : group,
                     'status_update': status_update,
                     'can_provide_status_update': can_provide_update,
+                  }
+                 )
+
+def group_about_status_meeting(request, acronym, num, group_type=None):
+    meeting = get_meeting(num)
+    group = get_group_or_404(acronym, group_type)
+    status_update = group.status_for_meeting(meeting)
+    return render(request, 'group/group_about_status_meeting.html',
+                  { 'group' : group,
+                    'status_update': status_update,
+                    'meeting': meeting,
                   }
                  )
 

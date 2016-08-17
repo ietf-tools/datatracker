@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+{% load staticfiles %}
+{% load bootstrap3 %}
+{% load ietf_filters %}
+
+{% block title %}
+    Status update for {{ group.type.name }} {{ group.acronym }} at {{meeting}}
+{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <h1>
+    Status update for {{ group.type.name }} {{ group.acronym }} at {{meeting}}
+  </h1>
+
+  <pre class="pasted">{{ status_update.desc|default:"(none)"|escape|urlize }}</pre>
+
+  <a class="btn btn-default pull-right" href="{% url "ietf.meeting.views.proceedings" num=meeting.number %}">Back</a>
+
+{% endblock %}

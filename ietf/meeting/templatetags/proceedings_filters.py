@@ -12,3 +12,7 @@ def hack_recording_title(recording,add_timestamp=False):
        return hacked_title
    else:
        return recording.title
+
+@register.filter
+def status_for_meeting(group,meeting):
+    return group.status_for_meeting(meeting)

@@ -157,6 +157,14 @@ class Group(GroupInfo):
                     return self.role_set.filter(**role_kwargs)
         return self.role_set.none()
 
+    def status_for_meeting(self,meeting):
+        end_date = meeting.end_date()+datetime.timedelta(days=1)
+        previous_meeting = meeting.previous_meeting()
+        status_events = self.groupevent_set.filter(type='status_update',time__lte=end_date).order_by('-time')
+        if previous_meeting:
+            status_events = status_events.filter(time__gte=previous_meeting.end_date()+datetime.timedelta(days=1))
+        return status_events.first()
+
 class GroupHistory(GroupInfo):
     group = models.ForeignKey(Group, related_name='history_set')
     acronym = models.CharField(max_length=40)

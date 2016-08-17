@@ -282,6 +282,9 @@ class Meeting(models.Model):
         ts = tz.localize(ts)
         return ts
 
+    def previous_meeting(self):
+        return Meeting.objects.filter(type=self.type,date__lt=self.date).order_by('-date').first()
+
     class Meta:
         ordering = ["-date", "id"]
 
