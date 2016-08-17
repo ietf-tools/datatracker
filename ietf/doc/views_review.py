@@ -96,6 +96,15 @@ def request_review(request, name):
     if not can_request_review_of_doc(request.user, doc):
         return HttpResponseForbidden("You do not have permission to perform this action")
 
+    now = datetime.datetime.now()
+
+    lc_ends = None
+    e = doc.latest_event(LastCallDocEvent, type="sent_last_call")
+    if e and e.expires >= now:
+        lc_ends = e.expires
+
+    scheduled_for_telechat = doc.telechat_date()
+
     if request.method == "POST":
         form = RequestReviewForm(request.user, doc, request.POST)
 
@@ -119,16 +128,14 @@ def request_review(request, name):
             return redirect('doc_view', name=doc.name)
 
     else:
-        form = RequestReviewForm(request.user, doc)
+        if lc_ends:
+            review_type = "lc"
+        elif scheduled_for_telechat:
+            review_type = "telechat"
+        else:
+            review_type = "early"
 
-    now = datetime.datetime.now()
-
-    lc_ends = None
-    e = doc.latest_event(LastCallDocEvent, type="sent_last_call")
-    if e and e.expires >= now:
-        lc_ends = e.expires
-
-    scheduled_for_telechat = doc.telechat_date()
+        form = RequestReviewForm(request.user, doc, initial={ "type": review_type })
 
     return render(request, 'doc/review/request_review.html', {
         'doc': doc,
