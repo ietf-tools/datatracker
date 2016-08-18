@@ -599,7 +599,7 @@ class InterimTests(TestCase):
         for session in meeting.session_set.all():
             self.assertEqual(session.status.slug, 'scheda')
         self.assertEqual(len(outbox), length_before + 1)
-        self.assertTrue('ready for announcement' in outbox[-1]['Subject'])
+        self.assertTrue('Approved' in outbox[-1]['Subject'])
 
     def test_interim_approve_by_secretariat(self):
         make_meeting_test_data()
@@ -682,7 +682,7 @@ class InterimTests(TestCase):
             len(q("#id_group option")) - 1)  # -1 for options placeholder
 
 
-    def test_interim_request_single_virtual(self):
+    def test_interim_request_single(self):
         make_meeting_test_data()
         group = Group.objects.get(acronym='mars')
         date = datetime.date.today() + datetime.timedelta(days=30)
@@ -692,8 +692,7 @@ class InterimTests(TestCase):
         remote_instructions = 'Use webex'
         agenda = 'Intro. Slides. Discuss.'
         agenda_note = 'On second level'
-        length_before = len(outbox)
-        self.client.login(username="marschairman", password="marschairman+password")
+        self.client.login(username="secretary", password="secretary+password")
         data = {'group':group.pk,
                 'meeting_type':'single',
                 'city':'',
@@ -711,6 +710,7 @@ class InterimTests(TestCase):
                 'session_set-MAX_NUM_FORMS':1000}
 
         r = self.client.post(urlreverse("ietf.meeting.views.interim_request"),data)
+        
         self.assertRedirects(r,urlreverse('ietf.meeting.views.upcoming'))
         meeting = Meeting.objects.order_by('id').last()
         self.assertEqual(meeting.type_id,'interim')
@@ -722,7 +722,6 @@ class InterimTests(TestCase):
         session = meeting.session_set.first()
         self.assertEqual(session.remote_instructions,remote_instructions)
         self.assertEqual(session.agenda_note,agenda_note)
-        self.assertEqual(session.status.slug,'scheda')
         timeslot = session.official_timeslotassignment().timeslot
         self.assertEqual(timeslot.time,dt)
         self.assertEqual(timeslot.duration,duration)
@@ -731,10 +730,6 @@ class InterimTests(TestCase):
         doc = session.materials.first()
         path = os.path.join(doc.get_file_path(),doc.filename_with_rev())
         self.assertTrue(os.path.exists(path))
-        # check notice to secretariat
-        self.assertEqual(len(outbox), length_before + 1)
-        self.assertTrue('interim meeting ready for announcement' in outbox[-1]['Subject'])
-        self.assertTrue('iesg-secretary@ietf.org' in outbox[-1]['To'])
 
     def test_interim_request_single_in_person(self):
         make_meeting_test_data()

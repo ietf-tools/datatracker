@@ -1319,7 +1319,6 @@ def interim_request(request):
         if form.is_valid() and formset.is_valid():
             group = form.cleaned_data.get('group')
             is_approved = form.cleaned_data.get('approved', False)
-            is_virtual = form.is_virtual()
             meeting_type = form.cleaned_data.get('meeting_type')
 
             # pre create meeting
@@ -1331,16 +1330,14 @@ def interim_request(request):
                     InterimSessionModelForm,
                     user=request.user,
                     group=group,
-                    is_approved_or_virtual=(is_approved or is_virtual)))
+                    is_approved=is_approved))
                 formset = SessionFormset(instance=meeting, data=request.POST)
                 formset.is_valid()
                 formset.save()
                 sessions_post_save(formset)
 
-                if not (is_approved or is_virtual):
+                if not is_approved:
                     send_interim_approval_request(meetings=[meeting])
-                elif not has_role(request.user, 'Secretariat'):
-                    send_interim_announcement_request(meeting=meeting)
 
             # series require special handling, each session gets it's own
             # meeting object we won't see this on edit because series are
@@ -1351,7 +1348,7 @@ def interim_request(request):
                     InterimSessionModelForm,
                     user=request.user,
                     group=group,
-                    is_approved_or_virtual=(is_approved or is_virtual)))
+                    is_approved=is_approved))
                 formset = SessionFormset(instance=Meeting(), data=request.POST)
                 formset.is_valid()  # re-validate
                 for session_form in formset.forms:
@@ -1368,10 +1365,8 @@ def interim_request(request):
                     series.append(meeting)
                     sessions_post_save([session_form])
 
-                if not (is_approved or is_virtual):
+                if not is_approved:
                     send_interim_approval_request(meetings=series)
-                elif not has_role(request.user, 'Secretariat'):
-                    send_interim_announcement_request(meeting=meeting)
 
             messages.success(request, 'Interim meeting request submitted')
             return redirect(upcoming)

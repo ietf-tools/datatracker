@@ -180,12 +180,6 @@ class InterimMeetingModelForm(forms.ModelForm):
 
         return self.cleaned_data
 
-    def is_virtual(self):
-        if not self.is_bound or self.data.get('in_person'):
-            return False
-        else:
-            return True
-
     def set_group_options(self):
         '''Set group options based on user accessing the form'''
         if has_role(self.user, "Secretariat"):
@@ -249,7 +243,7 @@ class InterimSessionModelForm(forms.ModelForm):
         if 'group' in kwargs:
             self.group = kwargs.pop('group')
         if 'is_approved' in kwargs:
-            self.is_approved_or_virtual = kwargs.pop('is_approved_or_virtual')
+            self.is_approved = kwargs.pop('is_approved')
         super(InterimSessionModelForm, self).__init__(*args, **kwargs)
         self.is_edit = bool(self.instance.pk)
         # setup fields that aren't intrinsic to the Session object
@@ -273,7 +267,7 @@ class InterimSessionModelForm(forms.ModelForm):
         """NOTE: as the baseform of an inlineformset self.save(commit=True)
         never gets called"""
         session = super(InterimSessionModelForm, self).save(commit=kwargs.get('commit', True))
-        if self.is_approved_or_virtual:
+        if self.is_approved:
             session.status_id = 'scheda'
         else:
             session.status_id = 'apprw'
