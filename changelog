@@ -1,3 +1,110 @@
+ietfdb (6.30.0) ietf; urgency=medium
+
+  **Proceedings page work and improved meeting support**
+
+  This release brings in new code to generate meeting proceedings pages,
+  available only to the secretariat at this time; it adds slide links to the
+  agenda for the Sunday sessions, provides a new json export of meeting data
+  optimised for the iPhone IETFers app, and improves the error checking of
+  form data for account creation.  It also fixes a number of bugs, as detailed
+  in the changelog extract below: 
+
+  * Merged in [11810] from rjsparks@nostrum.com:
+    Corrected some missed base template references in dbtemplate from 
+    the facelift effort.  
+
+  * Merged in [11792] from rcross@amsl.com:
+    Requests for virtual interim meeting should go directly Scheduled - 
+    Waiting for announcement state and an email notification sent to the 
+    secretariat.  Fixes issue #1994.
+
+  * Merged in [11789] from rcross@amsl.com:
+    Show timezone with interim meeting request information.  Fixes #1995.
+
+  * Merged in [11781] from rcross@amsl.com:
+    Fixed an issue with interim meeting series of more than two meetings.
+    Changed to not send meeting change notifications for meetings not yet
+    announced.  
+
+  * Merged in [11756] from rjsparks@nostrum.com:
+    Provides a custom json view of meetings optimized for the iphone app.  
+
+  * Merged in ^/branch/iola/account-ascii-fixes-r11748 from olau@iola.dk:
+
+    - Added a check for a reserved name in account registration
+    - Handle Person.ascii in edit profile better to try to ensure that
+      people fill it in correctly. Blank it out if it's unchanged from name
+      and use unidecode to set it automatically (with a warning if it
+      actually converts something).
+    - Throw a validation error if a profile name contains an @ sign upon
+      edit so that people do not forget to enter their name.
+
+  * Fixed the plenary etherpad name
+
+  * Added slide links to the Saturday/Sunday 'other' sessions.
+
+  * Fixed the plenary jabber room name
+
+  * Tweaked the help text for the nomcom member entry form.
+
+  * Merged in [11780] from rjsparks@nostrum.com:
+    Removed bluesheet upload from the secr/ bluesheets generation page.  Added
+    navigation to session details from the meeting materials view rows.  
+
+  * Merged in [11779] from rjsparks@nostrum.com:
+    Robustness improvements for the bluesheet migrations.  
+
+  * Merged in [11778] from rjsparks@nostrum.com:
+
+    - Enabled and refined document_main view for bluesheets.
+    - Improved migration for 95 and 96 bluesheets, adding DocAlias and DocEvent 
+      creation.
+    - Added bluesheet upload to the session details view.
+    - Moved a function out of secr/proceedings/views into its own util.py file to 
+      allow reusing it in other modules without introducing circular imports. 
+
+  * Merged in [11770] from rjsparks@nostrum.com:
+    Merged from rcross: Added Introduction header to proceedings. Added
+    Acknowlegements to the meeting model. Added a view for acknowlegements.  
+
+  * Merged in [11767] from rjsparks@nostrum.com:
+    Improved some test coverage.  
+
+  * Merged in [11766] from rjsparks@nostrum.com:
+    Added status reports to proceedings. added a view for the applicable
+    status report for a given meeting.  
+
+  * Merged in [11764] from rjsparks@nostrum.com:
+
+    - Moved the materials start, cutoff, and revision dates into the Meeting 
+      object
+    - Added a bit to meeting to note whether proceedings are final. 
+    - Updated the proceedings view to reflect the status of that bit. 
+    - Added a function that finalizes a meetings proceedings.
+    - Straightened out a migration numbering collision introduced in an earlier 
+      merge. 
+
+  * Merged in [11758] from rjsparks@nostrum.com:
+    Continued iterative-improvements to auto-generated proceedings:
+
+    - Migration to create documents and sessionpresentations for ietf95 and 96
+      bluesheets. Add bluesheets to proceedings.
+    - Refactored columns for proceedings to group agenda, minutes, and
+      bluesheets into one column.
+    - Added a column for recordings. Show the recordings for all sessions for
+      a group.
+    - Refactored all_meeting_* functions on session. Improved (with a hack) how
+      recordings are displayed.
+    - Added guards against very old meetings. For more modern, past, meetings,
+      added a warning that these are not the official proceedings and provide
+      a link to the official proceedings. 
+
+  * Merged in [11711] from rjsparks@nostrum.com:
+    Starting a page for direct rendering of proceedings.  
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  18 Aug 2016 09:32:09 -0700
+
+
 ietfdb (6.29.0) ietf; urgency=high
 
   **IETF 96 Code Sprint**
