@@ -1238,6 +1238,18 @@ class FinalizeProceedingsTests(TestCase):
         self.assertEqual(meeting.session_set.filter(group__acronym="mars").first().sessionpresentation_set.filter(document__type="draft").first().rev,'00')
  
 class BluesheetsTests(TestCase):
+
+    def setUp(self):
+        self.materials_dir = os.path.abspath(settings.TEST_MATERIALS_DIR)
+        if not os.path.exists(self.materials_dir):
+            os.mkdir(self.materials_dir)
+        self.saved_agenda_path = settings.AGENDA_PATH
+        settings.AGENDA_PATH = self.materials_dir
+
+    def tearDown(self):
+        settings.AGENDA_PATH = self.saved_agenda_path
+        shutil.rmtree(self.materials_dir)
+
     def test_upload_blusheets(self):
         session = SessionFactory(meeting__type_id='ietf')
         url = urlreverse('ietf.meeting.views.upload_session_bluesheets',kwargs={'num':session.meeting.number,'session_id':session.id})
