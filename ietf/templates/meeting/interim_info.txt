@@ -6,13 +6,12 @@
 
 {% if meeting.city %}City: {{ meeting.city }}
 Country: {{ meeting.country }}
-Timezone: {{ meeting.time_zone }}
 {% else %}Meeting Type: Virtual Meeting{% endif %}
 
 {% for session in meeting.session_set.all %}Session {{ forloop.counter }}:
 
 Date: {{ session.official_timeslotassignment.timeslot.time|date:"Y-m-d" }}
-Start Time: {{ session.official_timeslotassignment.timeslot.time|date:"H:i" }}
+Start Time: {{ session.official_timeslotassignment.timeslot.time|date:"H:i" }} {{ meeting.time_zone }}
 Duration: {{ session.requested_duration|format_timedelta }}
 Remote Participation Information: {{ session.remote_instructions }}
 Agenda Note: {{ session.agenda_note }}
