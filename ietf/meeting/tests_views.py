@@ -1038,9 +1038,48 @@ class InterimTests(TestCase):
         self.assertEqual(len(outbox), length_before + 1)
         self.assertTrue('Interim Meeting Cancelled' in outbox[-1]['Subject'])
 
-    def test_interim_request_edit(self):
+    def test_interim_request_edit_no_notice(self):
+        '''Edit a request.  No notice should go out if it hasn't been announced yet'''
         make_meeting_test_data()
         meeting = Meeting.objects.filter(type='interim', session__status='apprw', session__group__acronym='mars').first()
+        group = meeting.session_set.first().group
+        url = urlreverse('ietf.meeting.views.interim_request_edit', kwargs={'number': meeting.number})
+        # test unauthorized access
+        self.client.login(username="ameschairman", password="ameschairman+password")
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 403)
+        # test authorized use
+        login_testing_unauthorized(self, "secretary", url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        # post changes
+        length_before = len(outbox)
+        form_initial = r.context['form'].initial
+        formset_initial =  r.context['formset'].forms[0].initial
+        new_time = formset_initial['time'] + datetime.timedelta(hours=1)
+        data = {'group':group.pk,
+                'meeting_type':'single',
+                'session_set-0-id':meeting.session_set.first().id,
+                'session_set-0-date':formset_initial['date'].strftime('%Y-%m-%d'),
+                'session_set-0-time':new_time.strftime('%H:%M'),
+                'session_set-0-requested_duration':formset_initial['requested_duration'],
+                'session_set-0-remote_instructions':formset_initial['remote_instructions'],
+                #'session_set-0-agenda':formset_initial['agenda'],
+                'session_set-0-agenda_note':formset_initial['agenda_note'],
+                'session_set-TOTAL_FORMS':1,
+                'session_set-INITIAL_FORMS':1}
+        data.update(form_initial)
+        r = self.client.post(url, data)
+        self.assertRedirects(r, urlreverse('ietf.meeting.views.interim_request_details', kwargs={'number': meeting.number}))
+        self.assertEqual(len(outbox),length_before)
+        session = meeting.session_set.first()
+        timeslot = session.official_timeslotassignment().timeslot
+        self.assertEqual(timeslot.time,new_time)
+        
+    def test_interim_request_edit(self):
+        '''Edit request.  Send notice of change'''
+        make_meeting_test_data()
+        meeting = Meeting.objects.filter(type='interim', session__status='sched', session__group__acronym='mars').first()
         group = meeting.session_set.first().group
         url = urlreverse('ietf.meeting.views.interim_request_edit', kwargs={'number': meeting.number})
         # test unauthorized access
@@ -1075,7 +1114,6 @@ class InterimTests(TestCase):
         session = meeting.session_set.first()
         timeslot = session.official_timeslotassignment().timeslot
         self.assertEqual(timeslot.time,new_time)
-        
         
     def test_interim_request_details_permissions(self):
         make_meeting_test_data()

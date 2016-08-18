@@ -1474,7 +1474,7 @@ def interim_request_edit(request, number):
             sessions_post_save(formset)
 
             message = 'Interim meeting request saved'
-            if form.has_changed() or formset.has_changed():
+            if (form.has_changed() or formset.has_changed()) and meeting.session_set.filter(status='sched'):
                 send_interim_change_notice(request, meeting)
                 message = message + ' and change announcement sent'
             messages.success(request, message)

@@ -35,18 +35,19 @@ var interimRequest = {
         var total = +totalField.val();
         var meeting_type = $('input[name="meeting_type"]:checked').val();
 
-        el.find(':input').each(function() {
+        // increment formset counter
+        template.find(':input').each(function() {
             var name = $(this).attr('name').replace('-' + (total-1) + '-','-' + total + '-');
             var id = 'id_' + name;
             $(this).attr({'name': name, 'id': id}).val('');
         });
 
-        el.find('label').each(function() {
+        template.find('label').each(function() {
             var newFor = $(this).attr('for').replace('-' + (total-1) + '-','-' + total + '-');
             $(this).attr('for', newFor);
         });
         
-        el.find('div.utc-time').each(function() {
+        template.find('div.utc-time').each(function() {
             var newId = $(this).attr('id').replace('-' + (total-1) + '-','-' + total + '-');
             $(this).attr('id', newId);
         });
