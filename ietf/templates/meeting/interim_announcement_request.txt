@@ -1,5 +1,5 @@
 {% load ams_filters %}{% load ietf_filters %}
-An interim meeting for {{ group.acronym }} has just been approved.
+An interim meeting for {{ group.acronym }} has been approved or does not require approval and is ready for announcement.
 
 Use this link to officially announce the meeting:
 {{ announce_url }}
