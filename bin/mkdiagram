@@ -28,17 +28,16 @@ export PYTHONPATH="$PWD/.."
 echo "Validating..."
 ./manage.py validate
 
-echo "Dump tables"
-./manage.py sql $apps > tables.sql
 export PYTHONPATH=`dirname $PWD`
 module=${PWD##*/}
 export DJANGO_SETTINGS_MODULE=$module.settings
 export graph
 export title
+
 echo "Generate model graph"
 graph="models-with-names-and-events"
 title="New IETF Database schema"
-modelviz.py --exclude="$proxy,$legacy" --title "$title" $apps > $graph.dot && dot -Tpng $graph.dot > $graph.png
+${0%/*}/../ietf/manage.py graph_models --exclude="$proxy,$legacy" --title "$title" $apps > $graph.dot && dot -Tpng $graph.dot > $graph.png
 
 echo "Generate new model without names"
 graph="models-with-names"
