@@ -107,21 +107,52 @@ class ReviewTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertTrue(review_req1.doc.name in unicontent(r))
 
-        # close and assign
+        # can't save: conflict
         new_reviewer = Email.objects.get(role__name="reviewer", role__group=group, person__user__username="marschairman")
+        # provoke conflict by posting bogus data
         r = self.client.post(url, {
+            "reviewrequest": [str(review_req1.pk), str(review_req2.pk), str(123456)],
+
             # close
+            "r{}-existing_reviewer".format(review_req1.pk): "123456",
             "r{}-action".format(review_req1.pk): "close",
             "r{}-close".format(review_req1.pk): "no-response",
 
             # assign
+            "r{}-existing_reviewer".format(review_req2.pk): "123456",
+            "r{}-action".format(review_req2.pk): "assign",
+            "r{}-reviewer".format(review_req2.pk): new_reviewer.pk,
+
+            "action": "save",
+        })
+        self.assertEqual(r.status_code, 200)
+        content = unicontent(r).lower()
+        self.assertTrue("1 request closed" in content)
+        self.assertTrue("1 request opened" in content)
+        self.assertTrue("2 requests changed assignment" in content)
+
+        # close and assign
+        new_reviewer = Email.objects.get(role__name="reviewer", role__group=group, person__user__username="marschairman")
+        r = self.client.post(url, {
+            "reviewrequest": [str(review_req1.pk), str(review_req2.pk), str(review_req3.pk)],
+
+            # close
+            "r{}-existing_reviewer".format(review_req1.pk): review_req1.reviewer_id or "",
+            "r{}-action".format(review_req1.pk): "close",
+            "r{}-close".format(review_req1.pk): "no-response",
+
+            # assign
+            "r{}-existing_reviewer".format(review_req2.pk): review_req2.reviewer_id or "",
             "r{}-action".format(review_req2.pk): "assign",
             "r{}-reviewer".format(review_req2.pk): new_reviewer.pk,
 
             # no change
+            "r{}-existing_reviewer".format(review_req3.pk): review_req3.reviewer_id or "",
             "r{}-action".format(review_req3.pk): "",
             "r{}-close".format(review_req3.pk): "no-response",
             "r{}-reviewer".format(review_req3.pk): "",
+
+            "action": "save",
         })
         self.assertEqual(r.status_code, 302)
 
@@ -130,7 +161,3 @@ class ReviewTests(TestCase):
         self.assertEqual(review_req2.state_id, "requested")
         self.assertEqual(review_req2.reviewer, new_reviewer)
         self.assertEqual(review_req3.state_id, "requested")
-
-        # FIXME: test suggested
-
-

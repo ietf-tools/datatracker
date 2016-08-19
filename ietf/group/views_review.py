@@ -22,9 +22,7 @@ class ManageReviewRequestForm(forms.Form):
     ]
 
     action = forms.ChoiceField(choices=ACTIONS, widget=forms.HiddenInput, required=False)
-
     close = forms.ModelChoiceField(queryset=close_review_request_states(), required=False)
-
     reviewer = PersonEmailChoiceField(empty_label="(None)", required=False, label_with="person")
 
     def __init__(self, review_req, *args, **kwargs):
@@ -83,6 +81,8 @@ def manage_review_requests(request, acronym, group_type=None):
         set(r.doc_id for r in review_requests),
     )
 
+    # we need a mutable query dict
+    query_dict = request.POST.copy() if request.method == "POST" else None
     for req in review_requests:
         l = []
         # take all on the latest reviewed rev
@@ -98,14 +98,49 @@ def manage_review_requests(request, acronym, group_type=None):
 
         req.latest_reqs = l
 
-        req.form = ManageReviewRequestForm(req, request.POST if request.method == "POST" else None)
+        req.form = ManageReviewRequestForm(req, query_dict)
+
+    saving = False
+    newly_closed = newly_opened = newly_assigned = 0
 
     if request.method == "POST":
+        saving = request.POST.get("action") == "save"
+
+        # check for conflicts
+        review_requests_dict = { unicode(r.pk): r for r in review_requests }
+        posted_reqs = set(request.POST.getlist("reviewrequest", []))
+        current_reqs = set(review_requests_dict.iterkeys())
+
+        closed_reqs = posted_reqs - current_reqs
+        newly_closed += len(closed_reqs)
+
+        opened_reqs = current_reqs - posted_reqs
+        newly_opened += len(opened_reqs)
+        for r in opened_reqs:
+            review_requests_dict[r].form.add_error(None, "New request.")
+
+        for req in review_requests:
+            existing_reviewer = request.POST.get(req.form.prefix + "-existing_reviewer")
+            if existing_reviewer is None:
+                continue
+
+            if existing_reviewer != unicode(req.reviewer_id or ""):
+                msg = "Assignment was changed."
+                a = req.form["action"].value()
+                if a == "assign":
+                    msg += " Didn't assign reviewer."
+                elif a == "close":
+                    msg += " Didn't close request."
+                req.form.add_error(None, msg)
+                req.form.data[req.form.prefix + "-action"] = "" # cancel the action
+
+                newly_assigned += 1
+
         form_results = []
         for req in review_requests:
             form_results.append(req.form.is_valid())
 
-        if all(form_results):
+        if saving and all(form_results) and not (newly_closed > 0 or newly_opened > 0 or newly_assigned > 0):
             for review_req in review_requests:
                 action = review_req.form.cleaned_data.get("action")
                 if action == "assign":
@@ -113,16 +148,18 @@ def manage_review_requests(request, acronym, group_type=None):
                 elif action == "close":
                     close_review_request(request, review_req, review_req.form.cleaned_data["close"])
 
-
             kwargs = { "acronym": group.acronym }
             if group_type:
                 kwargs["group_type"] = group_type
             import ietf.group.views
             return redirect(ietf.group.views.review_requests, **kwargs)
 
-
     return render(request, 'group/manage_review_requests.html', {
         'group': group,
         'review_requests': review_requests,
+        'newly_closed': newly_closed,
+        'newly_opened': newly_opened,
+        'newly_assigned': newly_assigned,
+        'saving': saving,
     })
 

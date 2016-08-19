@@ -4,7 +4,7 @@
 
 {% load ietf_filters staticfiles bootstrap3 %}
 
-{% block title %}Manage pending review requests for {{ group.acronym }}{% endblock %}
+{% block title %}Manage open review requests for {{ group.acronym }}{% endblock %}
 
 {% block pagehead %}
   <link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
@@ -15,7 +15,23 @@
 
   <h1>Manage open review requests for {{ group.acronym }}</h1>
 
-  <p>For reference: <a href="{% url "ietf.group.views.review_requests" group_type=group.type_id acronym=group.acronym %}#closed-review-requests">closed review requests</a>
+  <p>Other options:
+    <a href="{% url "ietf.group.views.review_requests" group_type=group.type_id acronym=group.acronym %}#closed-review-requests">Closed review requests</a>
+    - <a href="FIXME">Email open assignments summary</a>
+  </p>
+
+  {% if newly_closed > 0 or newly_opened > 0 or newly_assigned > 0 %}
+    <p class="alert alert-danger">
+      Changes since last refresh:
+      {% if newly_closed %}{{ newly_closed }} request{{ newly_closed|pluralize }} closed.{% endif %}
+      {% if newly_opened %}{{ newly_opened }} request{{ newly_opened|pluralize }} opened.{% endif %}
+      {% if newly_assigned %}{{ newly_assigned }} request{{ newly_assigned|pluralize }} changed assignment.{% endif %}
+
+      {% if saving %}
+        Check that you are happy with the results, then re-save.
+      {% endif %}
+    </p>
+  {% endif %}
 
   {% if review_requests %}
     <form class="review-requests" method="post">{% csrf_token %}
@@ -33,7 +49,8 @@
         <tbody>
           {% for r in review_requests %}
             <tr>
-              <td><a href="{% if r.requested_rev %}{% url "doc_view" name=r.doc.name rev=r.requested_rev %}{% else %}{% url "doc_view" name=r.doc.name %}{% endif %}">{{ r.doc.name }}{% if r.requested_rev %}-{{ r.requested_rev }}{% endif %}</a>
+              <td>
+                <a href="{% if r.requested_rev %}{% url "doc_view" name=r.doc.name rev=r.requested_rev %}{% else %}{% url "doc_view" name=r.doc.name %}{% endif %}">{{ r.doc.name }}{% if r.requested_rev %}-{{ r.requested_rev }}{% endif %}</a>
                 {% if r.latest_reqs %}
                   <br>
                   <small>- prev. review:
@@ -43,6 +60,14 @@
                     {% endfor %}
                   </small>
                 {% endif %}
+
+                {% if r.form.non_field_errors %}
+                  <div class="alert alert-danger">
+                    {% for e in r.form.non_field_errors %}
+                      {{ e }}
+                    {% endfor %}
+                  </div>
+                {% endif %}
               </td>
               <td>{{ r.type.name }}</td>
               <td>{% if r.time %}{{ r.time|date:"Y-m-d" }}{% else %}<em>auto-suggested</em>{% endif %}</td>
@@ -51,6 +76,9 @@
                 {% if r.due %}<span class="label label-warning">{{ r.due }} day{{ r.due|pluralize }}</span>{% endif %}
               </td>
               <td>
+                <input type="hidden" name="reviewrequest" value="{{ r.pk }}">
+                <input type="hidden" name="{{ r.form.prefix }}-existing_reviewer" value="{{ r.reviewer_id }}">
+
                 {% if r.reviewer %}
                   <button type="button" class="btn btn-default btn-sm reviewer-action" title="Click to reassign request">{{ r.reviewer.person }} {% if r.state_id == "accepted" %}<span class="label label-default">accp</span>{% endif %}</button>
                 {% else %}
@@ -64,8 +92,11 @@
                     {{ r.form.reviewer }}
                     <button type="button" class="btn btn-default btn-sm undo" title="Undo assignment"><span class="fa fa-times"></span></button>
                     {% if r.form.reviewer.errors %}
-                      <br>
-                      {{ r.form.reviewer.errors }}
+                      <div class="alert alert-danger">
+                        {% for e in r.form.reviewer.errors %}
+                          {{ e }}
+                        {% endfor %}
+                      </div>
                     {% endif %}
                   {% endspaceless %}
                 </span>
@@ -91,7 +122,8 @@
 
       {% buttons %}
         <a href="{% url "ietf.group.views.review_requests" group_type=group.type_id acronym=group.acronym %}" class="btn btn-default pull-right">Cancel</a>
-        <button class="btn btn-primary" type="submit">Save changes</button>
+        <button class="btn btn-primary" type="submit" name="action" value="save">Save changes</button>
+        <button class="btn btn-default" type="submit" name="action" value="refresh">Refresh (keeping changes)</button>
       {% endbuttons %}
     </form>
   {% else %}

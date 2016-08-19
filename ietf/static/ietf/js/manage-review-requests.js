@@ -32,6 +32,15 @@ $(document).ready(function () {
     });
 
     form.find("[name$=\"-action\"]").each(function () {
-        console.log(this);
+        var v = $(this).val();
+        if (!v)
+            return;
+
+        var row = $(this).closest("tr");
+
+        if (v == "assign")
+            row.find(".reviewer-action").click();
+        else if (v == "close")
+            row.find(".close-action").click();
     });
 });
