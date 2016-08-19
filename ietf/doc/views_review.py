@@ -318,6 +318,7 @@ class CompleteReviewForm(forms.Form):
     review_url = forms.URLField(label="Link to message", required=False)
     review_file = forms.FileField(label="Text file to upload", required=False)
     review_content = forms.CharField(widget=forms.Textarea, required=False)
+    cc = forms.CharField(required=False, help_text="Email addresses to send to in addition to the review team list")
 
     def __init__(self, review_req, *args, **kwargs):
         self.review_req = review_req
@@ -478,7 +479,8 @@ def complete_review(request, name, request_id):
                                 "doc/mail/completed_review.txt", {
                                     "review_req": review_req,
                                     "content": encoded_content.decode("utf-8"),
-                                })
+                                },
+                                cc=form.cleaned_data["cc"])
 
                 list_name = mailarch.list_name_from_email(review_req.team.list_email)
                 if list_name:

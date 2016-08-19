@@ -106,8 +106,8 @@ $(document).ready(function () {
         var val = form.find("[name=review_submission]:checked").val();
 
         var shouldBeVisible = {
-            "enter": ['[name="review_content"]'],
-            "upload": ['[name="review_file"]'],
+            "enter": ['[name="review_content"]',  '[name="cc"]'],
+            "upload": ['[name="review_file"]',  '[name="cc"]'],
             "link": [".mail-archive-search", '[name="review_url"]', '[name="review_content"]']
         };
 
