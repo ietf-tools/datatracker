@@ -102,7 +102,7 @@ ietfdb (6.30.0) ietf; urgency=medium
   * Merged in [11711] from rjsparks@nostrum.com:
     Starting a page for direct rendering of proceedings.  
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  18 Aug 2016 09:32:09 -0700
+ -- Henrik Levkowetz <henrik@levkowetz.com>  20 Aug 2016 11:46:27 +0000
 
 
 ietfdb (6.29.0) ietf; urgency=high
