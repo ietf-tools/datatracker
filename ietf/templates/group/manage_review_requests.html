@@ -39,11 +39,9 @@
         <thead>
           <tr>
             <th>Document</th>
-            <th>Type</th>
-            <th>Requested</th>
             <th>Deadline</th>
-            <th>Reviewer</th>
-            <th>Close as...</th>
+            <th style="min-width:45%">Reviewer</th>
+            <th style="min-width:22%">Close as...</th>
           </tr>
         </thead>
         <tbody>
@@ -51,14 +49,22 @@
             <tr>
               <td>
                 <a href="{% if r.requested_rev %}{% url "doc_view" name=r.doc.name rev=r.requested_rev %}{% else %}{% url "doc_view" name=r.doc.name %}{% endif %}">{{ r.doc.name }}{% if r.requested_rev %}-{{ r.requested_rev }}{% endif %}</a>
-                {% if r.latest_reqs %}
-                  <br>
-                  <small>- prev. review:
-                    {% for rlatest in r.latest_reqs %}
-                      <a href="{% url "ietf.doc.views_review.review_request" name=rlatest.doc_id request_id=rlatest.pk %}">{{ rlatest.result.name }}</a>
-                      (<a href="{{ rfcdiff_base_url }}?url1={{ rlatest.doc.name }}-{{ rlatest.reviewed_rev }}&url2={{ r.doc.name }}-{{ r.doc.rev }}">diff</a>){% if not forloop.last %},{% endif %}
-                    {% endfor %}
+
+                <div>
+                  <small>
+                    {% if r.time %}{{ r.time|date:"Y-m-d" }}{% else %}<em>auto-suggested</em>{% endif %} - {{ r.type.name }}
                   </small>
+                </div>
+
+                {% if r.latest_reqs %}
+                  <div>
+                    <small>- prev. review:
+                      {% for rlatest in r.latest_reqs %}
+                        <a href="{% url "ietf.doc.views_review.review_request" name=rlatest.doc_id request_id=rlatest.pk %}">{{ rlatest.result.name }}</a>
+                        (<a href="{{ rfcdiff_base_url }}?url1={{ rlatest.doc.name }}-{{ rlatest.reviewed_rev }}&url2={{ r.doc.name }}-{{ r.doc.rev }}">diff</a>){% if not forloop.last %},{% endif %}
+                      {% endfor %}
+                    </small>
+                  </div>
                 {% endif %}
 
                 {% if r.form.non_field_errors %}
@@ -69,15 +75,13 @@
                   </div>
                 {% endif %}
               </td>
-              <td>{{ r.type.name }}</td>
-              <td>{% if r.time %}{{ r.time|date:"Y-m-d" }}{% else %}<em>auto-suggested</em>{% endif %}</td>
               <td>
                 {{ r.deadline|date:"Y-m-d" }}
                 {% if r.due %}<span class="label label-warning">{{ r.due }} day{{ r.due|pluralize }}</span>{% endif %}
               </td>
               <td>
                 <input type="hidden" name="reviewrequest" value="{{ r.pk }}">
-                <input type="hidden" name="{{ r.form.prefix }}-existing_reviewer" value="{{ r.reviewer_id }}">
+                <input type="hidden" name="{{ r.form.prefix }}-existing_reviewer" value="{{ r.reviewer_id|default:"" }}">
 
                 {% if r.reviewer %}
                   <button type="button" class="btn btn-default btn-sm reviewer-action" title="Click to reassign request">{{ r.reviewer.person }} {% if r.state_id == "accepted" %}<span class="label label-default">accp</span>{% endif %}</button>
@@ -90,7 +94,7 @@
                 <span class="reviewer-controls form-inline">
                   {% spaceless %}
                     {{ r.form.reviewer }}
-                    <button type="button" class="btn btn-default btn-sm undo" title="Undo assignment"><span class="fa fa-times"></span></button>
+                    <button type="button" class="btn btn-default btn-sm undo fa fa-times" title="Undo assignment"></button>
                     {% if r.form.reviewer.errors %}
                       <div class="alert alert-danger">
                         {% for e in r.form.reviewer.errors %}
