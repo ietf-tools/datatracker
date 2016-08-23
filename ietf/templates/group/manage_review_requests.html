@@ -17,7 +17,7 @@
 
   <p>Other options:
     <a href="{% url "ietf.group.views.review_requests" group_type=group.type_id acronym=group.acronym %}#closed-review-requests">Closed review requests</a>
-    - <a href="FIXME">Email open assignments summary</a>
+    - <a href="{% url "ietf.group.views_review.email_open_review_assignments" group_type=group.type_id acronym=group.acronym  %}">Email open assignments summary</a>
   </p>
 
   {% if newly_closed > 0 or newly_opened > 0 or newly_assigned > 0 %}

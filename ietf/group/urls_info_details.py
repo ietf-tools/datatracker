@@ -32,5 +32,6 @@ urlpatterns = patterns('',
     (r'^photos/$', views.group_photos),
     (r'^reviews/$', views.review_requests),
     (r'^reviews/manage/$', views_review.manage_review_requests),
+    (r'^reviews/email-assignments/$', views_review.email_open_review_assignments),
     url(r'^email-aliases/$', RedirectView.as_view(pattern_name='ietf.group.views.email',permanent=False),name='old_group_email_aliases'),
 )

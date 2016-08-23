@@ -12,6 +12,7 @@ from ietf.iesg.models import TelechatDate
 from ietf.person.models import Email, Person
 from ietf.review.utils import suggested_review_requests_for_team
 import ietf.group.views_review
+from ietf.utils.mail import outbox, empty_outbox
 
 class ReviewTests(TestCase):
     def test_suggested_review_requests(self):
@@ -79,7 +80,7 @@ class ReviewTests(TestCase):
 
         group = review_req1.team
 
-        url = urlreverse(ietf.group.views_review.manage_review_requests, kwargs={ 'acronym': group.acronym })
+        url = urlreverse(ietf.group.views_review.manage_review_requests, kwargs={ 'acronym': group.acronym, 'group_type': group.type_id })
 
         login_testing_unauthorized(self, "secretary", url)
 
@@ -161,3 +162,31 @@ class ReviewTests(TestCase):
         self.assertEqual(review_req2.state_id, "requested")
         self.assertEqual(review_req2.reviewer, new_reviewer)
         self.assertEqual(review_req3.state_id, "requested")
+
+    def test_email_open_review_assignments(self):
+        doc = make_test_data()
+        review_req1 = make_review_data(doc)
+
+        group = review_req1.team
+
+        url = urlreverse(ietf.group.views_review.email_open_review_assignments, kwargs={ 'acronym': group.acronym, 'group_type': group.type_id })
+        
+        login_testing_unauthorized(self, "secretary", url)
+
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(review_req1.doc.name in unicontent(r))
+
+        empty_outbox()
+        r = self.client.post(url, {
+            "to": group.list_email,
+            "subject": "Test subject",
+            "body": "Test body",
+            "action": "email",
+        })
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(len(outbox), 1)
+        self.assertTrue(group.list_email in outbox[0]["To"])
+        self.assertEqual(outbox[0]["subject"], "Test subject")
+        self.assertTrue("Test body" in unicode(outbox[0]))
+

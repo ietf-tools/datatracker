@@ -500,6 +500,11 @@ form.review-requests label {
   padding-right: 0.3em;
 }
 
+form.email-open-review-assignments [name=body] {
+  height: 50em;
+  font-family: monospace;
+}
+
 /* Profile */
 
 .photo-name {

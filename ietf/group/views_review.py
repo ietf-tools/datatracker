@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect
 from django.http import Http404, HttpResponseForbidden
 from django.contrib.auth.decorators import login_required
 from django import forms
+from django.template.loader import render_to_string
 
 from ietf.review.models import ReviewRequest
 from ietf.review.utils import (can_manage_review_requests_for_team, close_review_request_states,
@@ -9,10 +10,10 @@ from ietf.review.utils import (can_manage_review_requests_for_team, close_review
                                assign_review_request_to_reviewer,
                                close_review_request,
                                setup_reviewer_field,
-#                               make_new_review_request_from_existing,
                                suggested_review_requests_for_team)
 from ietf.group.utils import get_group_or_404
 from ietf.person.fields import PersonEmailChoiceField
+from ietf.utils.mail import send_mail_text
 
 
 class ManageReviewRequestForm(forms.Form):
@@ -166,5 +167,55 @@ def manage_review_requests(request, acronym, group_type=None):
         'newly_opened': newly_opened,
         'newly_assigned': newly_assigned,
         'saving': saving,
+    })
+
+class EmailOpenAssignmentsForm(forms.Form):
+    to = forms.EmailField(widget=forms.EmailInput(attrs={ "readonly": True }))
+    subject = forms.CharField()
+    body = forms.CharField(widget=forms.Textarea)
+
+@login_required
+def email_open_review_assignments(request, acronym, group_type=None):
+    group = get_group_or_404(acronym, group_type)
+    if not group.features.has_reviews:
+        raise Http404
+
+    if not can_manage_review_requests_for_team(request.user, group):
+        return HttpResponseForbidden("You do not have permission to perform this action")
+
+    review_requests = list(ReviewRequest.objects.filter(
+        team=group,
+        state__in=("requested", "accepted"),
+    ).exclude(
+        reviewer=None,
+    ).prefetch_related("reviewer", "type", "state", "doc").distinct().order_by("deadline", "reviewer"))
+
+    if request.method == "POST" and request.POST.get("action") == "email":
+        form = EmailOpenAssignmentsForm(request.POST)
+        if form.is_valid():
+            send_mail_text(request, form.cleaned_data["to"], None, form.cleaned_data["subject"], form.cleaned_data["body"])
+
+            kwargs = { "acronym": group.acronym }
+            if group_type:
+                kwargs["group_type"] = group_type
+
+            return redirect(manage_review_requests, **kwargs)
+    else:
+        to = group.list_email
+        subject = "Open review assignments in {}".format(group.acronym)
+        body = render_to_string("group/email_open_review_assignments.txt", {
+            "review_requests": review_requests,
+        })
+
+        form = EmailOpenAssignmentsForm(initial={
+            "to": to,
+            "subject": subject,
+            "body": body,
+        })
+
+    return render(request, 'group/email_open_review_assignments.html', {
+        'group': group,
+        'review_requests': review_requests,
+        'form': form,
     })
 
