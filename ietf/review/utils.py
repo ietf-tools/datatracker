@@ -333,19 +333,16 @@ def make_assignment_choices(email_queryset, review_req):
 
     now = datetime.datetime.now()
 
-    def add_boolean_score(scores, direction, expr, expl):
+    def add_boolean_score(scores, direction, expr, explanation):
         scores.append(int(bool(expr)) * direction)
         if expr:
-            explanations.append(expl)
+            explanations.append(explanation)
 
     ranking = []
     for e in possible_emails:
         reviewer = reviewers.get(e.person_id)
         if not reviewer:
             reviewer = ReviewerSettings()
-
-        explanations = []
-        scores = [] # build up score in separate independent components
 
         days_past = None
         latest = latest_assignment_for_reviewer.get(e.pk)
@@ -362,11 +359,17 @@ def make_assignment_choices(email_queryset, review_req):
                 d = -d
                 ready_for = "frequency exceeded, ready in {} {}".format(d, "day" if d == 1 else "days")
 
-        explanations.append(ready_for)
+
+        # we sort the reviewers by separate axes, listing the most
+        # important things first
+        scores = []
+        explanations = []
+
+        explanations.append(ready_for) # show ready for explanation first, but sort it after the other issues
 
         add_boolean_score(scores, +1, e.pk in has_reviewed_previous, "reviewed document before")
         add_boolean_score(scores, +1, e.pk in would_like_to_review, "wants to review document")
-        add_boolean_score(scores, -1, e.pk in connections, connections.get(e.pk))
+        add_boolean_score(scores, -1, e.pk in connections, connections.get(e.pk)) # reviewer is somehow connected: bad
         add_boolean_score(scores, -1, reviewer.filter_re and any(re.search(reviewer.filter_re, n) for n in aliases), "filter regexp matches")
         add_boolean_score(scores, -1, reviewer.unavailable_until and reviewer.unavailable_until > now, "unavailable until {}".format((reviewer.unavailable_until or now).strftime("%Y-%m-%d %H:%M:%S")))
 
