@@ -100,7 +100,7 @@
         <td class="edit"></td>
         <td>
           {% for review_request in other_reviews %}
-            {% include "doc/review_request_summary.html" with current_rev=review_req.reviewed_rev %}
+            {% include "doc/review_request_summary.html" with current_doc_name=review_req.doc_id current_rev=review_req.reviewed_rev %}
           {% endfor %}
         </td>
       </tr>

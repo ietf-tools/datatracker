@@ -34,9 +34,12 @@ def can_manage_review_requests_for_team(user, team, allow_non_team_personnel=Tru
             or (allow_non_team_personnel and has_role(user, "Secretariat")))
 
 def review_requests_to_list_for_doc(doc):
-    return ReviewRequest.objects.filter(doc=doc).exclude(
-        state__in=["withdrawn", "rejected", "overtaken", "no-response"]
-    ).order_by("-time", "-id")
+    return extract_revision_ordered_review_requests_for_documents(
+        ReviewRequest.objects.exclude(
+            state__in=["withdrawn", "rejected", "overtaken", "no-response"],
+        ).prefetch_related("result"),
+        [doc.name]
+    ).get(doc.pk, [])
 
 def make_new_review_request_from_existing(review_req):
     obj = ReviewRequest()
@@ -234,13 +237,15 @@ def suggested_review_requests_for_team(team):
     res.sort(key=lambda r: (r.deadline, r.doc_id), reverse=True)
     return res
 
-def extract_revision_ordered_review_requests_for_documents(queryset, names):
+def extract_revision_ordered_review_requests_for_documents(review_request_queryset, names):
+    """Extracts all review requests for document names (including replaced ancestors)."""
+
     names = set(names)
 
     replaces = extract_complete_replaces_ancestor_mapping_for_docs(names)
 
     requests_for_each_doc = defaultdict(list)
-    for r in queryset.filter(doc__in=set(e for l in replaces.itervalues() for e in l) | names).order_by("-reviewed_rev", "-time", "-id").iterator():
+    for r in review_request_queryset.filter(doc__in=set(e for l in replaces.itervalues() for e in l) | names).order_by("-reviewed_rev", "-time", "-id").iterator():
         requests_for_each_doc[r.doc_id].append(r)
 
     # now collect in breadth-first order to keep the revision order intact

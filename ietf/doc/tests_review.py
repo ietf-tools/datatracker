@@ -15,8 +15,8 @@ import debug                            # pyflakes:ignore
 from ietf.review.models import ReviewRequest, ReviewTeamResult, ReviewerSettings
 import ietf.review.mailarch
 from ietf.person.models import Email, Person
-from ietf.name.models import ReviewResultName, ReviewRequestStateName, ReviewTypeName
-from ietf.doc.models import DocumentAuthor
+from ietf.name.models import ReviewResultName, ReviewRequestStateName, ReviewTypeName, DocRelationshipName
+from ietf.doc.models import DocumentAuthor, Document, DocAlias, RelatedDocument
 from ietf.utils.test_utils import TestCase
 from ietf.utils.test_data import make_test_data, make_review_data
 from ietf.utils.test_utils import login_testing_unauthorized, unicontent, reload_db_objects
@@ -70,8 +70,23 @@ class ReviewTests(TestCase):
         self.assertEqual(doc.latest_event().type, "requested_review")
 
     def test_doc_page(self):
-        # FIXME: fill in
-        pass
+        doc = make_test_data()
+        review_req = make_review_data(doc)
+
+        # move the review request to a doubly-replaced document to
+        # check we can fish it out
+        old_doc = Document.objects.get(name="draft-foo-mars-test")
+        older_doc = Document.objects.create(name="draft-older")
+        older_docalias = DocAlias.objects.create(name=older_doc.name, document=older_doc)
+        RelatedDocument.objects.create(source=old_doc, target=older_docalias, relationship=DocRelationshipName.objects.get(slug='replaces'))
+        review_req.doc = older_doc
+        review_req.save()
+
+        url = urlreverse('doc_view', kwargs={ "name": doc.name })
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        content = unicontent(r)
+        self.assertTrue("{} Review".format(review_req.type.name) in content)
 
     def test_review_request(self):
         doc = make_test_data()

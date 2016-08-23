@@ -662,7 +662,7 @@ def review_requests(request, acronym, group_type=None):
         team=group,
     ).exclude(
         state__in=("requested", "accepted")
-    ).prefetch_related("reviewer", "type", "state").order_by("-time", "-id")
+    ).prefetch_related("reviewer", "type", "state", "doc").order_by("-time", "-id")
 
     since_choices = [
         (None, "1 month"),

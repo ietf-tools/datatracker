@@ -581,7 +581,7 @@ def document_main(request, name, rev=None):
 
         other_reviews = []
         if review_req:
-            other_reviews = review_requests_to_list_for_doc(review_req.doc).exclude(pk=review_req.pk)
+            other_reviews = [r for r in review_requests_to_list_for_doc(review_req.doc) if r != review_req]
 
         return render(request, "doc/document_review.html",
                       dict(doc=doc,

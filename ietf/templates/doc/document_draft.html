@@ -199,7 +199,7 @@
 	<td class="edit"></td>
         <td>
           {% for review_request in review_requests %}
-            {% include "doc/review_request_summary.html" with current_rev=doc.rev %}
+            {% include "doc/review_request_summary.html" with current_doc_name=doc.name current_rev=doc.rev %}
           {% endfor %}
 
           {% if can_request_review %}

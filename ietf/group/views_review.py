@@ -82,7 +82,8 @@ def manage_review_requests(request, acronym, group_type=None):
         set(r.doc_id for r in review_requests),
     )
 
-    # we need a mutable query dict
+    # we need a mutable query dict for resetting upon saving with
+    # conflicts
     query_dict = request.POST.copy() if request.method == "POST" else None
     for req in review_requests:
         l = []
