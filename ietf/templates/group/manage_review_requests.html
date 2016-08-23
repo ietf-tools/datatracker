@@ -40,8 +40,7 @@
           <tr>
             <th>Document</th>
             <th>Deadline</th>
-            <th style="min-width:45%">Reviewer</th>
-            <th style="min-width:22%">Close as...</th>
+            <th style="min-width:65%">Action</th>
           </tr>
         </thead>
         <tbody>
@@ -52,7 +51,7 @@
 
                 <div>
                   <small>
-                    <a href="{% url "ietf.doc.views_review.review_request" name=r.doc.name request_id=r.pk %}">R: {% if r.time %}{{ r.time|date:"Y-m-d" }}{% else %}<em>auto-suggested</em>{% endif %} - {{ r.type.name }}</a>
+                    <a {% if r.pk != None %}href="{% url "ietf.doc.views_review.review_request" name=r.doc.name request_id=r.pk %}"{% endif %}>{% if r.time %}Req: {{ r.time|date:"Y-m-d" }}{% else %}<em>auto-suggested</em>{% endif %} - {{ r.type.name }}</a>
                   </small>
                 </div>
 
@@ -75,7 +74,7 @@
                   </div>
                 {% endif %}
               </td>
-              <td>
+              <td class="deadline">
                 {{ r.deadline|date:"Y-m-d" }}
                 {% if r.due %}<span class="label label-warning">{{ r.due }} day{{ r.due|pluralize }}</span>{% endif %}
               </td>
@@ -83,40 +82,41 @@
                 <input type="hidden" name="reviewrequest" value="{{ r.pk }}">
                 <input type="hidden" name="{{ r.form.prefix }}-existing_reviewer" value="{{ r.reviewer_id|default:"" }}">
 
-                {% if r.reviewer %}
-                  <button type="button" class="btn btn-default btn-sm reviewer-action" title="Click to reassign request">{{ r.reviewer.person }} {% if r.state_id == "accepted" %}<span class="label label-default">accp</span>{% endif %}</button>
-                {% else %}
-                  <button type="button" class="btn btn-default btn-sm reviewer-action" title="Click to assign request"><em>not yet assigned</em></button>
-                {% endif %}
+                <span class="assign-action">
+                  {% if r.reviewer %}
+                    <button type="button" class="btn btn-default btn-sm" title="Click to reassign reviewer">{{ r.reviewer.person }}{% if r.state_id == "accepted" %} <span class="label label-default">accp</span>{% endif %}</button>
+                  {% else %}
+                    <button type="button" class="btn btn-default btn-sm" title="Click to assign reviewer"><em>not yet assigned</em></button>
+                  {% endif %}
+                </span>
 
                 {{ r.form.action }}
 
                 <span class="reviewer-controls form-inline">
-                  {% spaceless %}
-                    {{ r.form.reviewer }}
-                    <button type="button" class="btn btn-default btn-sm undo fa fa-times" title="Undo assignment" data-initial="{{ r.form.fields.reviewer.initial|default:"" }}"></button>
-                    {% if r.form.reviewer.errors %}
-                      <div class="alert alert-danger">
-                        {% for e in r.form.reviewer.errors %}
-                          {{ e }}
-                        {% endfor %}
-                      </div>
-                    {% endif %}
-                  {% endspaceless %}
+                  <label for="{{ r.form.reviewer.id_for_label }}">Assign:</label>
+                  {{ r.form.reviewer }}
+                  <button type="button" class="btn btn-default btn-sm undo" title="Cancel assignment" data-initial="{{ r.form.fields.reviewer.initial|default:"" }}">Cancel</button>
+                  {% if r.form.reviewer.errors %}
+                    <div class="alert alert-danger">
+                      {% for e in r.form.reviewer.errors %}
+                        {{ e }}
+                      {% endfor %}
+                    </div>
+                  {% endif %}
                 </span>
-              </td>
-              <td>
-                <button type="button" class="btn btn-default btn-sm close-action">Close...</button>
+
+                <span class="close-action">
+                  <button type="button" class="btn btn-default btn-sm">Close...</button>
+                </span>
 
                 <span class="close-controls form-inline">
-                  {% spaceless %}
-                    {{ r.form.close }}
-                    <button type="button" class="btn btn-default btn-sm undo" title="Undo closing"><span class="fa fa-times"></span></button>
-                    {% if r.form.close.errors %}
-                      <br>
-                      {{ r.form.close.errors }}
-                    {% endif %}
-                  {% endspaceless %}
+                  <label for="{{ r.form.reviewer.id_for_label }}">Close:</label>
+                  {{ r.form.close }}
+                  <button type="button" class="btn btn-default btn-sm undo" title="Cancel closing">Cancel</button>
+                  {% if r.form.close.errors %}
+                    <br>
+                    {{ r.form.close.errors }}
+                  {% endif %}
                 </span>
               </td>
             </tr>

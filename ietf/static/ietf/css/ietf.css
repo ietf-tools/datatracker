@@ -483,6 +483,21 @@ form.complete-review .mail-archive-search .results .list-group {
 
 form.review-requests .reviewer-controls, form.review-requests .close-controls {
   display: none;
+  padding-right: 1em;
+}
+
+form.review-requests .assign-action, form.review-requests .close-action {
+  display: inline-block;
+  min-width: 11em;
+}
+
+form.review-requests .deadline {
+  padding-top: 0.45em;
+}
+
+form.review-requests label {
+  font-weight: normal;
+  padding-right: 0.3em;
 }
 
 /* Profile */
