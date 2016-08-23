@@ -604,13 +604,15 @@ def session_agenda(request, num, session):
         agenda = d[0]
         html5_preamble = "<!doctype html><html lang=en><head><meta charset=utf-8><title>%s</title></head><body>"
         html5_postamble = "</body></html>"
-        content = read_agenda_file(num, agenda)
-        _, ext = os.path.splitext(agenda.external_url)
+        content, path = read_agenda_file(num, agenda)
+        _, ext = os.path.splitext(path)
         ext = ext.lstrip(".").lower()
 
+        if not content:
+            content = "Could not read agenda file '%s'" % path
+            return HttpResponse(content, content_type="text/plain; charset=%s"%settings.DEFAULT_CHARSET)
+
         if ext == "txt":
-            if not content:
-                content = "Could not read agenda file '%s'" % agenda.external_url
             return HttpResponse(content, content_type="text/plain; charset=%s"%settings.DEFAULT_CHARSET)
         elif ext == "pdf":
             return HttpResponse(content, content_type="application/pdf")
@@ -621,14 +623,9 @@ def session_agenda(request, num, session):
             d("head title").append(str(agenda))
             d('meta[http-equiv]').remove()
             content = "<!doctype html>" + d.html()
-        elif not content:
-            content = "<p>Could not read agenda file '%s'</p>" % agenda.external_url
-            content = (html5_preamble % agenda) + content + html5_postamble
-            agenda = "Error"
         else:
             content = "<p>Unrecognized agend file '%s'</p>" % agenda.external_url
             content = (html5_preamble % agenda) + content + html5_postamble
-            agenda = "Error"
 
         return HttpResponse(content)
 
@@ -645,7 +642,7 @@ def session_draft_list(num, session):
 
     drafts = set()
     for agenda in agendas:
-        content = read_agenda_file(num, agenda)
+        content, _ = read_agenda_file(num, agenda)
         if content:
             drafts.update(re.findall('(draft-[-a-z0-9]*)', content))
 
@@ -797,8 +794,8 @@ def room_view(request, num=None, name=None, owner=None):
     meeting = get_meeting(num)
 
     rooms = meeting.room_set.order_by('functional_name','name')
-    if rooms.count() == 0:
-        raise Http404
+    if not rooms.exists():
+        return HttpResponse("No rooms defined yet")
 
     if name is None:
         schedule = get_schedule(meeting)
@@ -808,8 +805,8 @@ def room_view(request, num=None, name=None, owner=None):
 
     assignments = schedule.assignments.all()
     unavailable = meeting.timeslot_set.filter(type__slug='unavail')
-    if (unavailable.count() + assignments.count()) == 0 :
-        raise Http404
+    if not (assignments.exists() or unavailable.exists()):
+        return HttpResponse("No sessions/timeslots available yet")
 
     earliest = None
     latest = None
@@ -1134,8 +1131,8 @@ def upload_session_bluesheets(request, session_id, num):
                 session.sessionpresentation_set.create(document=doc,rev='00')
             filename = '%s-%s%s'% ( doc.name, doc.rev, ext)
             doc.external_url = filename
-            doc.save()
-            NewRevisionDocEvent.objects.create(doc=doc,time=doc.time,by=Person.objects.get(name='(System)'),type='new_revision',desc='New revision available: %s'%doc.rev,rev=doc.rev)
+            e = NewRevisionDocEvent.objects.create(doc=doc,time=doc.time,by=Person.objects.get(name='(System)'),type='new_revision',desc='New revision available: %s'%doc.rev,rev=doc.rev)
+            doc.save_with_history([e])
             handle_upload_file(file, filename, session.meeting, 'bluesheets')
             return redirect('ietf.meeting.views.session_details',num=num,acronym=session.group.acronym)
     else: 

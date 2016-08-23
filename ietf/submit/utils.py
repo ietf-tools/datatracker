@@ -4,7 +4,7 @@ import datetime
 from django.conf import settings
 
 from ietf.doc.models import Document, State, DocAlias, DocEvent, DocumentAuthor
-from ietf.doc.models import NewRevisionDocEvent, save_document_in_history
+from ietf.doc.models import NewRevisionDocEvent
 from ietf.doc.models import RelatedDocument, DocRelationshipName
 from ietf.doc.utils import add_state_change_event, rebuild_reference_relations
 from ietf.doc.utils import set_replaces_for_document
@@ -109,19 +109,25 @@ def create_submission_event(request, submission, desc):
 
 
 def post_submission(request, submission):
+    # find out who did it
     system = Person.objects.get(name="(System)")
+    submitter_parsed = submission.submitter_parsed()
+    if submitter_parsed["name"] and submitter_parsed["email"]:
+        submitter = ensure_person_email_info_exists(submitter_parsed["name"], submitter_parsed["email"]).person
+        submitter_info = u'%s <%s>' % (submitter_parsed["name"], submitter_parsed["email"])
+    else:
+        submitter = system
+        submitter_info = system.name
 
+    # update draft attributes
     try:
         draft = Document.objects.get(name=submission.name)
-        save_document_in_history(draft)
     except Document.DoesNotExist:
-        draft = Document(name=submission.name)
-        draft.intended_std_level = None
+        draft = Document.objects.create(name=submission.name, type_id="draft")
 
     prev_rev = draft.rev
 
     draft.type_id = "draft"
-    draft.time = datetime.datetime.now()
     draft.title = submission.title
     group = submission.group or Group.objects.get(type="individ")
     if not (group.type_id == "individ" and draft.group and draft.group.type_id == "area"):
@@ -146,18 +152,23 @@ def post_submission(request, submission):
             draft.stream = StreamName.objects.get(slug=stream_slug)
 
     draft.expires = datetime.datetime.now() + datetime.timedelta(settings.INTERNET_DRAFT_DAYS_TO_EXPIRE)
-    draft.save()
 
-    submitter_parsed = submission.submitter_parsed()
-    if submitter_parsed["name"] and submitter_parsed["email"]:
-        submitter = ensure_person_email_info_exists(submitter_parsed["name"], submitter_parsed["email"]).person
-        submitter_info = u'%s <%s>' % (submitter_parsed["name"], submitter_parsed["email"])
-    else:
-        submitter = system
-        submitter_info = system.name
+    events = []
+
+    # new revision event
+    e = NewRevisionDocEvent.objects.create(
+        type="new_revision",
+        doc=draft,
+        rev=draft.rev,
+        by=submitter,
+        desc="New version available: <b>%s-%s.txt</b>" % (draft.name, draft.rev),
+    )
+    events.append(e)
+
+    # update related objects
+    DocAlias.objects.get_or_create(name=submission.name, document=draft)
 
     draft.set_state(State.objects.get(used=True, type="draft", slug="active"))
-    DocAlias.objects.get_or_create(name=submission.name, document=draft)
 
     update_authors(draft, submission)
 
@@ -165,29 +176,15 @@ def post_submission(request, submission):
     if trouble:
         log('Rebuild_reference_relations trouble: %s'%trouble)
 
-    # new revision event
-    e = NewRevisionDocEvent(type="new_revision", doc=draft, rev=draft.rev)
-    e.time = draft.time #submission.submission_date
-    e.by = submitter
-    e.desc = "New version available: <b>%s-%s.txt</b>" % (draft.name, draft.rev)
-    e.save()
-
-    if draft.stream_id == "ietf" and draft.group.type_id == "wg" and draft.rev == "00":
-        # automatically set state "WG Document"
-        draft.set_state(State.objects.get(used=True, type="draft-stream-%s" % draft.stream_id, slug="wg-doc"))
-
+    # automatic state changes
     if draft.get_state_slug("draft-iana-review") in ("ok-act", "ok-noact", "not-ok"):
         prev_state = draft.get_state("draft-iana-review")
         next_state = State.objects.get(used=True, type="draft-iana-review", slug="changed")
         draft.set_state(next_state)
-        add_state_change_event(draft, submitter, prev_state, next_state)
+        e = add_state_change_event(draft, submitter, prev_state, next_state)
+        if e:
+            events.append(e)
 
-    # clean up old files
-    if prev_rev != draft.rev:
-        from ietf.doc.expire import move_draft_files_to_archive
-        move_draft_files_to_archive(draft, prev_rev)
-
-    # automatic state changes
     state_change_msg = ""
 
     if not was_rfc and draft.tags.filter(slug="need-rev"):
@@ -198,8 +195,21 @@ def post_submission(request, submission):
         e.desc = "Sub state has been changed to <b>AD Followup</b> from <b>Revised ID Needed</b>"
         e.by = system
         e.save()
+        events.append(e)
 
         state_change_msg = e.desc
+
+    if draft.stream_id == "ietf" and draft.group.type_id == "wg" and draft.rev == "00":
+        # automatically set state "WG Document"
+        draft.set_state(State.objects.get(used=True, type="draft-stream-%s" % draft.stream_id, slug="wg-doc"))
+
+    # save history now that we're done with changes to the draft itself
+    draft.save_with_history(events)
+
+    # clean up old files
+    if prev_rev != draft.rev:
+        from ietf.doc.expire import move_draft_files_to_archive
+        move_draft_files_to_archive(draft, prev_rev)
 
     move_files_to_repository(submission)
     submission.state = DraftSubmissionStateName.objects.get(slug="posted")

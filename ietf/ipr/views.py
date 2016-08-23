@@ -357,7 +357,7 @@ def email(request, id):
             'to': addrs.to,
             'cc': addrs.cc,
             'frm': settings.IPR_EMAIL_FROM,
-            'subject': 'Regarding {}'.format(ipr.title),
+            'subject': u'Regarding {}'.format(ipr.title),
             'reply_to': reply_to,
         }
         form = MessageModelForm(initial=initial)

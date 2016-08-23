@@ -21,8 +21,10 @@
   <p>Use this to generate blue sheets for meeting sessions.</p>
   <ul class="none">
     <li>
-      <button onclick="window.location='{% url "meetings_blue_sheet_generate" meeting_id=meeting.number%}'">Generate Blue Sheets</button>
-      &nbsp;&nbsp;Last run: 
+      <form style="display:inline" method="post" action="{% url "meetings_blue_sheet_generate" meeting_id=meeting.number%}">{% csrf_token %}
+          <input type="submit" value="Generate Blue Sheets">
+      </form>
+      &nbsp;&nbsp;Last run:
       {% if last_run %}
         {{ last_run }}
       {% else %}

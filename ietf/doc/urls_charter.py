@@ -1,6 +1,7 @@
 # Copyright The IETF Trust 2011, All Rights Reserved
 
 from django.conf.urls import patterns, url
+from django.conf import settings
 
 urlpatterns = patterns('',
     url(r'^state/$', "ietf.doc.views_charter.change_state", name='charter_change_state'),
@@ -14,5 +15,5 @@ urlpatterns = patterns('',
     url(r'^ballotwriteupnotes/$', "ietf.doc.views_charter.ballot_writeupnotes"),
     url(r'^approve/$', "ietf.doc.views_charter.approve", name='charter_approve'),
     url(r'^submit/(?:(?P<option>initcharter|recharter)/)?$', "ietf.doc.views_charter.submit", name='charter_submit'),
-    url(r'^withmilestones-(?P<rev>[0-9-]+).txt$', "ietf.doc.views_charter.charter_with_milestones_txt", name='charter_with_milestones_txt'),
+    url(r'^withmilestones-%(rev)s.txt$' % settings.URL_REGEXPS, "ietf.doc.views_charter.charter_with_milestones_txt", name='charter_with_milestones_txt'),
 )

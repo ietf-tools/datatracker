@@ -18,18 +18,19 @@ from django.contrib.auth.models import User
 from django.utils.html import escape
 from django.template.defaultfilters import urlize
 
+from ietf.community.models import CommunityList
+from ietf.community.utils import reset_name_contains_index_for_rule
 from ietf.doc.models import Document, DocAlias, DocEvent, State
+from ietf.doc.utils_charter import charter_name_for_group
+from ietf.group.factories import GroupFactory, RoleFactory, GroupEventFactory
 from ietf.group.models import Group, GroupEvent, GroupMilestone, GroupStateTransitions, Role
-from ietf.group.utils import save_group_in_history, reset_name_contains_index_for_rule
+from ietf.group.utils import save_group_in_history
+from ietf.meeting.factories import SessionFactory
 from ietf.name.models import DocTagName, GroupStateName, GroupTypeName
 from ietf.person.models import Person, Email
-from ietf.utils.test_utils import TestCase, unicontent
 from ietf.utils.mail import outbox, empty_outbox
 from ietf.utils.test_data import make_test_data, create_person
-from ietf.utils.test_utils import login_testing_unauthorized
-from ietf.group.factories import GroupFactory, RoleFactory, GroupEventFactory
-from ietf.meeting.factories import SessionFactory
-from ietf.community.models import CommunityList
+from ietf.utils.test_utils import login_testing_unauthorized, TestCase, unicontent
 
 class GroupPagesTests(TestCase):
     def setUp(self):
@@ -465,8 +466,7 @@ class GroupEditTests(TestCase):
         self.assertEqual(len(Group.objects.filter(type="wg")), num_wgs + 1)
         group = Group.objects.get(acronym="testwg")
         self.assertEqual(group.name, "Testing WG")
-        self.assertEqual(group.charter.name, "charter-ietf-testwg")
-        self.assertEqual(group.charter.rev, "00-00")
+        self.assertEqual(charter_name_for_group(group), "charter-ietf-testwg")
 
     def test_create_rg(self):
 
@@ -492,9 +492,7 @@ class GroupEditTests(TestCase):
         self.assertEqual(len(Group.objects.filter(type="rg")), num_rgs + 1)
         group = Group.objects.get(acronym="testrg")
         self.assertEqual(group.name, "Testing RG")
-        self.assertEqual(group.charter.name, "charter-irtf-testrg")
-        self.assertEqual(group.charter.rev, "00-00")
-        self.assertEqual(group.parent.acronym,'irtf')
+        self.assertEqual(charter_name_for_group(group), "charter-irtf-testrg")
 
     def test_create_based_on_existing_bof(self):
         make_test_data()
@@ -605,19 +603,6 @@ class GroupEditTests(TestCase):
         self.assertTrue('Personnel change' in outbox[0]['Subject'])
         for prefix in ['ad1','ad2','aread','marschairman','marsdelegate']:
             self.assertTrue(prefix+'@' in outbox[0]['To'])
-
-    def test_initial_charter(self):
-        make_test_data()
-        group = Group.objects.get(acronym="mars")
-        for url in [ urlreverse('ietf.group.views_edit.submit_initial_charter', kwargs={'acronym':group.acronym}),
-                     urlreverse('ietf.group.views_edit.submit_initial_charter', kwargs={'acronym':group.acronym,'group_type':group.type_id}),
-                   ]:
-            login_testing_unauthorized(self, "secretary", url)
-            r = self.client.get(url,follow=True)
-            self.assertEqual(r.status_code,200) 
-            self.assertTrue(r.redirect_chain[0][0].endswith(urlreverse('charter_submit',kwargs={'name':group.charter.name,'option':'initcharter'})))
-            self.client.logout()
-                    
 
     def test_conclude(self):
         make_test_data()

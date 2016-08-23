@@ -17,7 +17,6 @@ from ietf.liaisons.models import LiaisonStatement
 class LiaisonStatementsFeed(Feed):
     feed_type = Atom1Feed
     link = reverse_lazy("ietf.liaisons.views.liaison_list")
-    description_template = "liaisons/feed_item_description.html"
 
     def get_object(self, request, kind, search=None):
         obj = {}
@@ -77,7 +76,10 @@ class LiaisonStatementsFeed(Feed):
             qs = qs.filter(**obj['filter'])
         if obj.has_key('limit'):
             qs = qs[:obj['limit']]
-        return qs
+
+        qs = qs.prefetch_related("attachments")
+
+	return qs
 
     def title(self, obj):
         return obj['title']
@@ -87,6 +89,12 @@ class LiaisonStatementsFeed(Feed):
 
     def item_title(self, item):
         return render_to_string("liaisons/liaison_title.html", { 'liaison': item }).strip()
+
+    def item_description(self, item):
+        return render_to_string("liaisons/feed_item_description.html", {
+            'liaison': item,
+            "attachments": item.attachments.all(),
+        })
 
     def item_link(self, item):
         return urlreverse("ietf.liaisons.views.liaison_detail", kwargs={ "object_id": item.pk })

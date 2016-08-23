@@ -33,8 +33,8 @@ class ConflictReviewTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 404)
 
-        doc.stream=StreamName.objects.get(slug='ise')
-        doc.save()
+        doc.stream = StreamName.objects.get(slug='ise')
+        doc.save_with_history([DocEvent.objects.create(doc=doc, type="changed_stream", by=Person.objects.get(user__username="secretary"), desc="Test")])
 
         # normal get should succeed and get a reasonable form
         r = self.client.get(url)
@@ -90,14 +90,14 @@ class ConflictReviewTests(TestCase):
 
 
         # can't start conflict reviews on documents in some other stream
-        doc.stream=StreamName.objects.get(slug='irtf')
-        doc.save()
+        doc.stream = StreamName.objects.get(slug='irtf')
+        doc.save_with_history([DocEvent.objects.create(doc=doc, type="changed_stream", by=Person.objects.get(user__username="secretary"), desc="Test")])
         r = self.client.get(url)
         self.assertEquals(r.status_code, 404)
 
         # successful get 
-        doc.stream=StreamName.objects.get(slug='ise')
-        doc.save()
+        doc.stream = StreamName.objects.get(slug='ise')
+        doc.save_with_history([DocEvent.objects.create(doc=doc, type="changed_stream", by=Person.objects.get(user__username="secretary"), desc="Test")])
         r = self.client.get(url)
         self.assertEquals(r.status_code, 200)
         q = PyQuery(r.content)
@@ -270,7 +270,6 @@ class ConflictReviewTests(TestCase):
         # Some additional setup
         create_ballot_if_not_open(doc,Person.objects.get(name="Sec Retary"),"conflrev")
         doc.set_state(State.objects.get(used=True, slug=approve_type+'-pend',type='conflrev'))
-        doc.save()
 
         # get
         r = self.client.get(url)

@@ -4,14 +4,14 @@ import re
 import datetime
 
 from django import forms
-from django.shortcuts import render, get_object_or_404, redirect
+from django.shortcuts import render, redirect
 from django.http import HttpResponse, HttpResponseForbidden, Http404, HttpResponseRedirect
 from django.utils.html import mark_safe
 from django.contrib.auth.decorators import login_required
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.models import Document, DocAlias, DocTagName, State
+from ietf.doc.models import DocTagName, State
 from ietf.doc.utils import get_tags_for_stream_id
 from ietf.doc.utils_charter import charter_name_for_group
 from ietf.group.models import ( Group, Role, GroupEvent, GroupHistory, GroupStateName,
@@ -150,57 +150,58 @@ def format_urls(urls, fs="\n"):
             res.append(u.url)
     return fs.join(res)
 
-def get_or_create_initial_charter(group, group_type):
-    charter_name = charter_name_for_group(group)
-
-    try:
-        charter = Document.objects.get(docalias__name=charter_name)
-    except Document.DoesNotExist:
-        charter = Document(
-            name=charter_name,
-            type_id="charter",
-            title=group.name,
-            group=group,
-            abstract=group.name,
-            rev="00-00",
-        )
-        charter.save()
-        charter.set_state(State.objects.get(used=True, type="charter", slug="notrev"))
-
-        # Create an alias as well
-        DocAlias.objects.create(name=charter.name, document=charter)
-
-    return charter
-
-@login_required
-def submit_initial_charter(request, group_type=None, acronym=None):
-
-    # This needs refactoring.
-    # The signature assumed you could have groups with the same name, but with different types, which we do not allow.
-    # Consequently, this can be called with an existing group acronym and a type 
-    # that doesn't match the existing group type. The code below essentially ignores the group_type argument.
-    #
-    # If possible, the use of get_or_create_initial_charter should be moved
-    # directly into charter_submit, and this function should go away.
-
-    if acronym==None:
-        raise Http404
-
-    group = get_object_or_404(Group, acronym=acronym)
-    if not group.features.has_chartering_process:
-        raise Http404
-
-    # This is where we start ignoring the passed in group_type
-    group_type = group.type_id
-
-    if not can_manage_group(request.user, group):
-        return HttpResponseForbidden("You don't have permission to access this view")
-
-    if not group.charter:
-        group.charter = get_or_create_initial_charter(group, group_type)
-        group.save()
-
-    return redirect('charter_submit', name=group.charter.name, option="initcharter")
+## XXX Remove after testing
+# def get_or_create_initial_charter(group, group_type):
+#     charter_name = charter_name_for_group(group)
+# 
+#     try:
+#         charter = Document.objects.get(docalias__name=charter_name)
+#     except Document.DoesNotExist:
+#         charter = Document(
+#             name=charter_name,
+#             type_id="charter",
+#             title=group.name,
+#             group=group,
+#             abstract=group.name,
+#             rev="00-00",
+#         )
+#         charter.save()
+#         charter.set_state(State.objects.get(used=True, type="charter", slug="notrev"))
+# 
+#         # Create an alias as well
+#         DocAlias.objects.create(name=charter.name, document=charter)
+# 
+#     return charter
+# 
+# @login_required
+# def submit_initial_charter(request, group_type=None, acronym=None):
+# 
+#     # This needs refactoring.
+#     # The signature assumed you could have groups with the same name, but with different types, which we do not allow.
+#     # Consequently, this can be called with an existing group acronym and a type 
+#     # that doesn't match the existing group type. The code below essentially ignores the group_type argument.
+#     #
+#     # If possible, the use of get_or_create_initial_charter should be moved
+#     # directly into charter_submit, and this function should go away.
+# 
+#     if acronym==None:
+#         raise Http404
+# 
+#     group = get_object_or_404(Group, acronym=acronym)
+#     if not group.features.has_chartering_process:
+#         raise Http404
+# 
+#     # This is where we start ignoring the passed in group_type
+#     group_type = group.type_id
+# 
+#     if not can_manage_group(request.user, group):
+#         return HttpResponseForbidden("You don't have permission to access this view")
+# 
+#     if not group.charter:
+#         group.charter = get_or_create_initial_charter(group, group_type)
+#         group.save()
+# 
+#     return redirect('charter_submit', name=group.charter.name, option="initcharter")
 
 @login_required
 def edit(request, group_type=None, acronym=None, action="edit"):
@@ -251,8 +252,9 @@ def edit(request, group_type=None, acronym=None, action="edit"):
                 save_group_in_history(group)
 
 
-            if action == "charter" and not group.charter:  # make sure we have a charter
-                group.charter = get_or_create_initial_charter(group, group_type)
+## XXX Remove after testing
+#             if action == "charter" and not group.charter:  # make sure we have a charter
+#                 group.charter = get_or_create_initial_charter(group, group_type)
 
             changes = []
 
@@ -334,7 +336,7 @@ def edit(request, group_type=None, acronym=None, action="edit"):
             group.save()
 
             if action=="charter":
-                return redirect('charter_submit', name=group.charter.name, option="initcharter")
+                return redirect('charter_submit', name=charter_name_for_group(group), option="initcharter")
 
             return HttpResponseRedirect(group.about_url())
     else: # form.is_valid()

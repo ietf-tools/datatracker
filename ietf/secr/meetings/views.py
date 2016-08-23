@@ -369,12 +369,13 @@ def blue_sheet_generate(request, meeting_id):
     '''
     meeting = get_object_or_404(Meeting, number=meeting_id)
 
-    groups = Group.objects.filter(
-        type__in=['wg','rg'],
-        session__timeslotassignments__schedule=meeting.agenda).order_by('acronym')
-    create_blue_sheets(meeting, groups)
+    if request.method == "POST":
+        groups = Group.objects.filter(
+            type__in=['wg','rg'],
+            session__timeslotassignments__schedule=meeting.agenda).order_by('acronym')
+        create_blue_sheets(meeting, groups)
 
-    messages.success(request, 'Blue Sheets generated')
+        messages.success(request, 'Blue Sheets generated')
     return redirect('meetings_blue_sheet', meeting_id=meeting.number)
 
 @role_required('Secretariat')

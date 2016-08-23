@@ -1,4 +1,4 @@
-{{login}} has requested publication of {{doc.name}}-{{doc.rev}} as {{doc.intended_std_level}} on behalf of the {{doc.group.acronym|upper}} working group.
+{{by}} has requested publication of {{doc.name}}-{{doc.rev}} as {{doc.intended_std_level}} on behalf of the {{doc.group.acronym|upper}} working group.
 
 Please verify the document's state at {{url}}
 

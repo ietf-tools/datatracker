@@ -9,8 +9,7 @@ from django.template.loader import render_to_string
 from django.conf import settings
 
 from ietf.doc.models import ( Document, DocAlias, State, DocEvent, BallotDocEvent,
-    BallotPositionDocEvent, NewRevisionDocEvent, WriteupDocEvent,
-    save_document_in_history, STATUSCHANGE_RELATIONS )
+    BallotPositionDocEvent, NewRevisionDocEvent, WriteupDocEvent, STATUSCHANGE_RELATIONS )
 from ietf.doc.forms import AdForm
 from ietf.doc.lastcall import request_last_call
 from ietf.doc.utils import get_document_content, add_state_change_event, update_telechat, close_open_ballots, create_ballot_if_not_open
@@ -51,16 +50,13 @@ def change_state(request, name, option=None):
 
             prev_state = status_change.get_state()
             if new_state != prev_state:
-                save_document_in_history(status_change)
-
                 status_change.set_state(new_state)
-                e = add_state_change_event(status_change, login, prev_state, new_state)
-
-                status_change.time = e.time
-                status_change.save()
+                events = []
+                events.append(add_state_change_event(status_change, login, prev_state, new_state))
+                status_change.save_with_history(events)
 
                 if new_state.slug == "iesgeval":
-                    create_ballot_if_not_open(status_change, login, "statchg", e.time)
+                    create_ballot_if_not_open(status_change, login, "statchg", status_change.time)
                     ballot = status_change.latest_event(BallotDocEvent, type="created_ballot")
                     if has_role(request.user, "Area Director") and not status_change.latest_event(BallotPositionDocEvent, ad=login, ballot=ballot, type="changed_ballot_position"):
 
@@ -151,20 +147,19 @@ def submit(request, name):
         if "submit_response" in request.POST:
             form = UploadForm(request.POST, request.FILES)
             if form.is_valid():
-                save_document_in_history(doc)
-
                 doc.rev = next_rev
 
+                events = []
                 e = NewRevisionDocEvent(doc=doc, by=login, type="new_revision")
                 e.desc = "New version available: <b>%s-%s.txt</b>" % (doc.canonical_name(), doc.rev)
                 e.rev = doc.rev
                 e.save()
+                events.append(e)
             
                 # Save file on disk
                 form.save(doc)
 
-                doc.time = datetime.datetime.now()
-                doc.save()
+                doc.save_with_history(events)
 
                 return redirect('doc_view', name=doc.name)
 
@@ -218,12 +213,12 @@ def edit_title(request, name):
         if form.is_valid():
 
             status_change.title = form.cleaned_data['title']
-            status_change.save()
-    
-            login = request.user.person
-            c = DocEvent(type="added_comment", doc=status_change, by=login)
+
+            c = DocEvent(type="added_comment", doc=status_change, by=request.user.person)
             c.desc = "Title changed to '%s'"%status_change.title
             c.save()
+
+            status_change.save_with_history([c])
 
             return redirect("doc_view", name=status_change.name)
 
@@ -248,15 +243,14 @@ def edit_ad(request, name):
     if request.method == 'POST':
         form = AdForm(request.POST)
         if form.is_valid():
-
             status_change.ad = form.cleaned_data['ad']
-            status_change.save()
-    
-            login = request.user.person
-            c = DocEvent(type="added_comment", doc=status_change, by=login)
+
+            c = DocEvent(type="added_comment", doc=status_change, by=request.user.person)
             c.desc = "Shepherding AD changed to "+status_change.ad.name
             c.save()
 
+            status_change.save_with_history([c])
+    
             return redirect("doc_view", name=status_change.name)
 
     else:
@@ -339,13 +333,13 @@ def approve(request, name):
 
         if formset.is_valid():
 
-            save_document_in_history(status_change)
-
             prev_state = status_change.get_state()
             new_state = State.objects.get(type='statchg', slug='appr-sent')
 
             status_change.set_state(new_state)
-            add_state_change_event(status_change, login, prev_state, new_state)
+
+            events = []
+            events.append(add_state_change_event(status_change, login, prev_state, new_state))
 
             close_open_ballots(status_change, login)
 
@@ -353,9 +347,9 @@ def approve(request, name):
             e.type = "iesg_approved"
             e.desc = "IESG has approved the status change"
             e.save()
+            events.append(e)
 
-            status_change.time = e.time
-            status_change.save()
+            status_change.save_with_history(events)
 
 
             for form in formset.forms:
@@ -524,16 +518,16 @@ def start_rfc_status_change(request,name):
             
             iesg_group = Group.objects.get(acronym='iesg')
 
-            status_change=Document( type_id = "statchg",
-                                    name = 'status-change-'+form.cleaned_data['document_name'],
-                                    title = form.cleaned_data['title'],
-                                    rev = "00",
-                                    ad = form.cleaned_data['ad'],
-                                    notify = form.cleaned_data['notify'],
-                                    stream_id = 'ietf',
-                                    group = iesg_group,
-                                  )
-            status_change.save()
+            status_change = Document.objects.create(
+                type_id="statchg",
+                name='status-change-'+form.cleaned_data['document_name'],
+                title=form.cleaned_data['title'],
+                rev="00",
+                ad=form.cleaned_data['ad'],
+                notify=form.cleaned_data['notify'],
+                stream_id='ietf',
+                group=iesg_group,
+            )
             status_change.set_state(form.cleaned_data['create_in_state'])
 
             DocAlias.objects.create( name= 'status-change-'+form.cleaned_data['document_name'], document=status_change )
@@ -662,6 +656,8 @@ def last_call(request, name):
         if "save_last_call_text" in request.POST or "send_last_call_request" in request.POST:
             form = LastCallTextForm(request.POST)
             if form.is_valid():
+                events = []
+
                 t = form.cleaned_data['last_call_text']
                 if t != last_call_event.text:
                     e = WriteupDocEvent(doc=status_change, by=login)
@@ -671,17 +667,19 @@ def last_call(request, name):
                     e.text = t
                     e.save()
 
-                if "send_last_call_request" in request.POST:
-                    save_document_in_history(status_change)
+                    events.append(e)
 
+                if "send_last_call_request" in request.POST:
                     prev_state = status_change.get_state()
                     new_state = State.objects.get(type='statchg', slug='lc-req')
 
                     status_change.set_state(new_state)
                     e = add_state_change_event(status_change, login, prev_state, new_state)
+                    if e:
+                        events.append(e)
 
-                    status_change.time = (e and e.time) or datetime.datetime.now()
-                    status_change.save()
+                    if events:
+                        status_change.save_with_history(events)
 
                     request_last_call(request, status_change)
 

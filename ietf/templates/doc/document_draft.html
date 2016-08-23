@@ -93,7 +93,7 @@
 	  <th></th>
 	  <th>Replaces</th>
 	  <td class="edit">
-	    {% if can_edit_stream_info %}
+            {% if can_edit_stream_info and not snapshot %}
 	      <a class="btn btn-default btn-xs" href="{% url "doc_change_replaces" name=doc.name %}">Edit</a>
 	    {% endif %}
 	  </td>
@@ -120,7 +120,7 @@
               <th></th>
               <th>Possibly Replaces</th>
               <td class="edit">
-                {% if can_edit_replaces %}
+                {% if can_edit_replaces and not snapshot %}
                   <a class="btn btn-default btn-xs" href="{% url "doc_review_possibly_replaces" name=doc.name %}">Edit</a>
                 {% endif %}
               </td>
@@ -135,7 +135,7 @@
               <th></th>
               <th>Possibly Replaced By</th>
               <td class="edit">
-                {% if can_edit_replaces %}
+                {% if can_edit_replaces and not snapshot %}
                   {% comment %}<a class="btn btn-default btn-xs" href="{% url "doc_review_possibly_replaces" name=doc.name %}">Edit</a>{% endcomment %}
                 {% endif %}
               </td>
@@ -150,7 +150,7 @@
         <th></th>
 	<th>Stream</th>
 	<td class="edit">
-	  {% if can_change_stream %}
+          {% if can_change_stream and not snapshot %}
 	    <a class="btn btn-default btn-xs" href="{% url "doc_change_stream" name=doc.name %}">Edit</a>
 	  {% endif %}
 	</td>
@@ -164,8 +164,8 @@
 	  <th></th>
 	  <th>Intended RFC status</th>
 	  <td class="edit">
-	    {% if can_edit or can_edit_stream_info %}
-	      <a class="btn btn-default btn-xs" href="{% url "doc_change_intended_status" name=doc.name %}">Edit</a>
+            {% if can_edit_stream_info and not snapshot %}
+              <a class="btn btn-default btn-xs" href="{% url "doc_change_intended_status" name=doc.name %}">Edit</a>
 	    {% endif %}
 	  </td>
 	  <td>
@@ -216,7 +216,7 @@
 	     {% endif %}
 	  </th>
 	  <td class="edit">
-	    {% if doc.stream and can_edit_stream_info %}
+            {% if doc.stream and can_edit_stream_info and doc.stream.slug != "legacy" and not snapshot %}
 	      <a class="btn btn-default btn-xs" href="{% url "doc_change_stream_state" name=doc.name state_type=stream_state_type_slug %}">Edit</a>
 	    {% endif %}
 	  </td>
@@ -243,7 +243,7 @@
 	  <th></th>
 	  <th>Consensus Boilerplate</th>
 	  <td class="edit">
-	    {% if can_edit or can_edit_stream_info %}
+            {% if can_edit_stream_info and not snapshot %}
 	      <a class="btn btn-default btn-xs" href="{% url "doc_edit_consensus" name=doc.name %}">Edit</a>
 	    {% endif %}
 	  </td>
@@ -280,7 +280,8 @@
 	  <th></th>
 	  <th>Document shepherd</th>
 	  <td class="edit">
-	    {% if can_edit_stream_info %}
+
+	    {% if can_edit_stream_info and not snapshot %}
 	      <a class="btn btn-default btn-xs" href="{% url "doc_edit_shepherd" name=doc.name %}">Edit</a>
 	    {% elif is_shepherd %}
 	      <a class="btn btn-default btn-xs" href="{% url "doc_change_shepherd_email" name=doc.name %}">Change Email</a>
@@ -357,7 +358,7 @@
 	    <th></th>
 	    <th>Consensus Boilerplate</th>
 	    <td class="edit">
-	      {% if can_edit or can_edit_stream_info %}
+	      {% if can_edit or can_edit_stream_info and not snapshot %}
 	      <a class="btn btn-default btn-xs" href="{% url "doc_edit_consensus" name=doc.name %}">Edit</a>
 	      {% endif %}
 	    </td>
@@ -371,7 +372,7 @@
 	  <th></th>
 	  <th>Telechat date</th>
 	  <td class="edit">
-	    {% if can_edit %}
+	    {% if can_edit and not snapshot %}
 	    <a class="btn btn-default btn-xs" href="{% url "doc_change_telechat_date" name=doc.name %}">Edit</a>
 	    {% endif %}
 	  </td>
@@ -412,7 +413,7 @@
 	      <th></th>
 	      <th>IESG note</th>
 	      <td class="edit">
-	        {% if can_edit %}
+	        {% if can_edit and not snapshot %}
 		  <a class="btn btn-default btn-xs" href="{% url "doc_change_iesg_note" name=doc.name %}">Edit</a>
 	        {% endif %}
 	    </td>
@@ -427,7 +428,7 @@
 	  <th></th>
 	  <th>Send notices to</th>
 	  <td class="edit">
-	    {% if can_edit_notify %}
+	    {% if can_edit_notify and not snapshot %}
 	      <a class="btn btn-default btn-xs" href="{% url "doc_change_notify" name=doc.name %}">Edit</a>
 	    {% endif %}
 	  </td>
@@ -445,7 +446,7 @@
 	<th>IANA</th>
 	<th><a href="{% url "ietf.help.views.state" doc=doc.type.slug type="iana-review" %}">IANA review state</a></th>
 	<td class="edit">
-	  {% if can_edit_iana_state %}
+          {% if can_edit_iana_state and not snapshot %}
 	    <a class="btn btn-default btn-xs" href="{% url "doc_change_iana_state" name=doc.name state_type="iana-review" %}">Edit</a>
 	  {% endif %}
 	</td>
@@ -458,7 +459,7 @@
         <th></th>
 	<th>IANA action state</th>
 	<td class="edit">
-	  {% if can_edit_iana_state %}
+          {% if can_edit_iana_state and not snapshot %}
 	    <a class="btn btn-default btn-xs" href="{% url "doc_change_iana_state" name=doc.name state_type="iana-action" %}">Edit</a>
 	  {% endif %}
 	</td>

@@ -331,12 +331,15 @@ class RFCSyncTests(TestCase):
         draft_filename = "%s-%s.txt" % (doc.name, doc.rev)
         self.write_draft_file(draft_filename, 5000)
 
-        changed,_ = rfceditor.update_docs_from_rfc_index(data, today - datetime.timedelta(days=30))
+        changes = []
+        for cs, d, rfc_published in rfceditor.update_docs_from_rfc_index(data, today - datetime.timedelta(days=30)):
+            changes.append(cs)
 
         doc = Document.objects.get(name=doc.name)
 
-        self.assertEqual(doc.docevent_set.all()[0].type, "published_rfc")
-        self.assertEqual(doc.docevent_set.all()[0].time.date(), today)
+        self.assertEqual(doc.docevent_set.all()[0].type, "sync_from_rfc_editor")
+        self.assertEqual(doc.docevent_set.all()[1].type, "published_rfc")
+        self.assertEqual(doc.docevent_set.all()[1].time.date(), today)
         self.assertTrue("errata" in doc.tags.all().values_list("slug", flat=True))
         self.assertTrue(DocAlias.objects.filter(name="rfc1234", document=doc))
         self.assertTrue(DocAlias.objects.filter(name="bcp1", document=doc))
@@ -354,7 +357,7 @@ class RFCSyncTests(TestCase):
         self.assertTrue(os.path.exists(os.path.join(self.archive_dir, draft_filename)))
 
         # make sure we can apply it again with no changes
-        changed,_ = rfceditor.update_docs_from_rfc_index(data, today - datetime.timedelta(days=30))
+        changed = list(rfceditor.update_docs_from_rfc_index(data, today - datetime.timedelta(days=30)))
         self.assertEqual(len(changed), 0)
 
 

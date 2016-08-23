@@ -18,8 +18,7 @@ from django.conf import settings
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import ( Document, DocAlias, DocRelationshipName, RelatedDocument, State,
-    DocEvent, BallotPositionDocEvent, LastCallDocEvent, WriteupDocEvent, NewRevisionDocEvent,
-    save_document_in_history )
+    DocEvent, BallotPositionDocEvent, LastCallDocEvent, WriteupDocEvent, NewRevisionDocEvent )
 from ietf.doc.factories import DocumentFactory
 from ietf.group.models import Group
 from ietf.group.factories import GroupFactory
@@ -115,10 +114,11 @@ class SearchTests(TestCase):
 
     def test_search_for_name(self):
         draft = make_test_data()
-        save_document_in_history(draft)
+        draft.save_with_history([DocEvent.objects.create(doc=draft, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
+
         prev_rev = draft.rev
         draft.rev = "%02d" % (int(prev_rev) + 1)
-        draft.save()
+        draft.save_with_history([DocEvent.objects.create(doc=draft, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
 
         # exact match
         r = self.client.get(urlreverse("doc_search_for_name", kwargs=dict(name=draft.name)))
@@ -521,9 +521,8 @@ Man                    Expires September 22, 2015               [Page 3]
         # draft published as RFC
         draft.set_state(State.objects.get(type="draft", slug="rfc"))
         draft.std_level_id = "bcp"
-        draft.save()
+        draft.save_with_history([DocEvent.objects.create(doc=draft, type="published_rfc", by=Person.objects.get(name="(System)"))])
 
-        DocEvent.objects.create(doc=draft, type="published_rfc", by=Person.objects.get(name="(System)"))
 
         rfc_alias = DocAlias.objects.create(name="rfc123456", document=draft)
         bcp_alias = DocAlias.objects.create(name="bcp123456", document=draft)
@@ -572,9 +571,10 @@ Man                    Expires September 22, 2015               [Page 3]
                        ]:
             doc = Document.objects.get(name=docname)
             # give it some history
-            save_document_in_history(doc)
-            doc.rev="01"
-            doc.save()
+            doc.save_with_history([DocEvent.objects.create(doc=doc, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
+
+            doc.rev = "01"
+            doc.save_with_history([DocEvent.objects.create(doc=doc, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
 
             r = self.client.get(urlreverse("doc_view", kwargs=dict(name=doc.name)))
             self.assertEqual(r.status_code, 200)
@@ -631,7 +631,8 @@ class DocTestCase(TestCase):
         doc = make_test_data()
         ballot = doc.active_ballot()
 
-        save_document_in_history(doc)
+        # make sure we have some history
+        doc.save_with_history([DocEvent.objects.create(doc=doc, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
 
         pos = BallotPositionDocEvent.objects.create(
             doc=doc,
@@ -659,9 +660,8 @@ class DocTestCase(TestCase):
         # Now simulate a new revision and make sure positions on older revisions are marked as such
         oldrev = doc.rev
         e = NewRevisionDocEvent.objects.create(doc=doc,rev='%02d'%(int(doc.rev)+1),type='new_revision',by=Person.objects.get(name="(System)"))
-        save_document_in_history(doc)
         doc.rev = e.rev
-        doc.save()
+        doc.save_with_history([e])
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=doc.name)))
         self.assertEqual(r.status_code, 200)
         self.assertTrue( '(%s for -%s)' % (pos.comment_time.strftime('%Y-%m-%d'), oldrev) in unicontent(r))

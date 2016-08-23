@@ -9,7 +9,7 @@ from django.utils.http import urlquote
 from django.conf import settings
 
 from ietf.doc.mails import email_state_changed
-from ietf.doc.models import Document, DocEvent, State, StateDocEvent, StateType, save_document_in_history
+from ietf.doc.models import Document, DocEvent, State, StateDocEvent, StateType
 from ietf.doc.utils import add_state_change_event
 from ietf.person.models import Person
 from ietf.utils.timezone import local_timezone_to_utc, email_time_to_local_timezone, utc_to_local_timezone
@@ -201,15 +201,14 @@ def update_history_with_changes(changes, send_email=True):
                     added_events.append(e)
 
                 if not StateDocEvent.objects.filter(doc=doc, time__gt=timestamp, state_type=state_type):
-                    save_document_in_history(doc)
                     doc.set_state(state)
+
+                    if e:
+                        doc.save_with_history([e])
 
                     if send_email and (state != prev_state):
                         email_state_changed(None, doc, "IANA %s state changed to %s" % (kind, state.name),'doc_iana_state_changed')
 
-                if doc.time < timestamp:
-                    doc.time = timestamp
-                    doc.save()
 
     return added_events, warnings
 

@@ -155,7 +155,7 @@ class EditModelForm(forms.ModelForm):
             # setup replaced
             self.fields['review_by_rfc_editor'].initial = bool(self.instance.tags.filter(slug='rfc-rev'))
 
-    def save(self, force_insert=False, force_update=False, commit=True):
+    def save(self, commit=False):
         m = super(EditModelForm, self).save(commit=False)
         state = self.cleaned_data['state']
         iesg_state = self.cleaned_data['iesg_state']
@@ -176,11 +176,8 @@ class EditModelForm(forms.ModelForm):
             else:
                 m.tags.remove('rfc-rev')
 
-        m.time = datetime.datetime.now()
         # handle replaced by
 
-        if commit:
-            m.save()
         return m
 
     # field must contain filename of existing draft
@@ -274,14 +271,12 @@ class RfcModelForm(forms.ModelForm):
         self.fields['title'].widget = forms.Textarea()
         self.fields['std_level'].required = True
 
-    def save(self, force_insert=False, force_update=False, commit=True):
+    def save(self, force_insert=False, force_update=False, commit=False):
         obj = super(RfcModelForm, self).save(commit=False)
 
         # create DocAlias
         DocAlias.objects.create(document=self.instance,name="rfc%d" % self.cleaned_data['rfc_number'])
 
-        if commit:
-            obj.save()
         return obj
 
     def clean_rfc_number(self):

@@ -14,7 +14,7 @@
   <h1>RFC status changes</h1>
 
   {% if user|has_role:"Area Director,Secretariat" %}
-    <p><a class="btn btn-default" href="{% url "start_rfc_status_change" name='' %}">New RFC status change</a></p>
+    <p><a class="btn btn-default" href="{% url "start_rfc_status_change" %}">New RFC status change</a></p>
   {% endif %}
 
   {% regroup docs by get_state as state_groups %}

@@ -34,6 +34,8 @@ def can_edit_liaison(user, liaison):
     - liaison is outgoing and user has approval authority
     - user is liaison manager of all SDOs involved
     '''
+    if not user.is_authenticated():
+        return False
     if has_role(user, "Secretariat"):
         return True
 

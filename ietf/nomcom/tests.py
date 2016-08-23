@@ -125,7 +125,7 @@ class NomcomViewsTest(TestCase):
     def create_nominees_for_states(self, base_state):
         cnominee = Nominee.objects.get(email__person__user__username=COMMUNITY_USER)
         position = Position.objects.get(name='APP')
-        NomineePosition.objects.create(position=position,
+        nom_pos = NomineePosition.objects.create(position=position,
                                                           nominee=cnominee,
                                                           state=NomineePositionStateName.objects.get(slug=base_state))
         position = Position.objects.get(name='INT')
@@ -136,12 +136,13 @@ class NomcomViewsTest(TestCase):
         NomineePosition.objects.create(position=position,
                                                           nominee=cnominee,
                                                           state=NomineePositionStateName.objects.get(slug=base_state))
+        return nom_pos
 
     def test_private_index_post_accept(self):
-        self.create_nominees_for_states('pending')
+        nom_pos = self.create_nominees_for_states('pending')
         login_testing_unauthorized(self, CHAIR_USER, self.private_index_url)
         test_data = {"action": "set_as_accepted",
-                     "selected": [1]}
+                     "selected": [nom_pos.pk]}
         r = self.client.post(self.private_index_url, test_data)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
@@ -150,10 +151,10 @@ class NomcomViewsTest(TestCase):
         self.client.logout()
 
     def test_private_index_post_decline(self):
-        self.create_nominees_for_states('pending')
+        nom_pos = self.create_nominees_for_states('pending')
         login_testing_unauthorized(self, CHAIR_USER, self.private_index_url)
         test_data = {"action": "set_as_declined",
-                     "selected": [1]}
+                     "selected": [nom_pos.pk]}
         r = self.client.post(self.private_index_url, test_data)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
@@ -162,10 +163,10 @@ class NomcomViewsTest(TestCase):
         self.client.logout()
 
     def test_private_index_post_pending(self):
-        self.create_nominees_for_states('declined')
+        nom_pos = self.create_nominees_for_states('declined')
         login_testing_unauthorized(self, CHAIR_USER, self.private_index_url)
         test_data = {"action": "set_as_pending",
-                     "selected": [1]}
+                     "selected": [nom_pos.pk]}
         r = self.client.post(self.private_index_url, test_data)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)

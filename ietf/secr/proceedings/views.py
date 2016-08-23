@@ -24,6 +24,7 @@ from ietf.secr.utils.group import get_my_groups, groups_by_session
 from ietf.secr.utils.meeting import get_materials, get_timeslot, get_proceedings_path, get_proceedings_url
 from ietf.doc.models import Document, DocAlias, DocEvent, State, NewRevisionDocEvent
 from ietf.group.models import Group
+from ietf.person.models import Person
 from ietf.ietfauth.utils import has_role, role_required
 from ietf.meeting.models import Meeting, Session, TimeSlot, SchedTimeSessAssignment
 
@@ -168,7 +169,14 @@ def post_process(doc):
         # change extension
         base,ext = os.path.splitext(doc.external_url)
         doc.external_url = base + '.pdf'
-        doc.save()
+
+        e = DocEvent.objects.create(
+            type='changed_document',
+            by=Person.objects.get(name="(System)"),
+            doc=doc,
+            desc='Converted document to PDF',
+        )
+        doc.save_with_history([e])
         
 # -------------------------------------------------
 # AJAX Functions
@@ -289,9 +297,12 @@ def delete_material(request,slide_id):
     doc.set_state(state)
 
     # create   deleted_document
-    DocEvent.objects.create(doc=doc,
-                            by=request.user.person,
-                            type='deleted')
+    e = DocEvent.objects.create(doc=doc,
+                                by=request.user.person,
+                                type='deleted',
+                                desc="State set to deleted")
+
+    doc.save_with_history([e])
 
     create_proceedings(meeting,group)
 
@@ -436,7 +447,13 @@ def process_pdfs(request, meeting_num):
         path = os.path.join(settings.SECR_PROCEEDINGS_DIR,meeting_num,'slides',pdf_file)
         if os.path.exists(path):
             doc.external_url = pdf_file
-            doc.save()
+            e = DocEvent.objects.create(
+                type='changed_document',
+                by=Person.objects.get(name="(System)"),
+                doc=doc,
+                desc='Set URL to PDF version',
+            )
+            doc.save_with_history([e])
             count += 1
         else:
             warn_count += 1
@@ -515,7 +532,15 @@ def recording_edit(request, meeting_num, name):
         form = RecordingEditForm(request.POST, instance=recording)
         if form.is_valid():
             # save record and rebuild proceedings
-            form.save()
+            form.save(commit=False)
+            e = DocEvent.objects.create(
+                type='changed_document',
+                by=request.user.person,
+                doc=recording,
+                desc=u'Changed URL to %s' % recording.external_url,
+            )
+            recording.save_with_history([e])
+
             create_proceedings(meeting,recording.group)
             messages.success(request,'Recording saved')
             return redirect('proceedings_recording', meeting_num=meeting_num)
@@ -561,13 +586,15 @@ def replace_slide(request, slide_id):
             handle_upload_file(file,disk_filename,meeting,'slides')
 
             new_slide.external_url = disk_filename
-            new_slide.save()
-            post_process(new_slide)
-            
+
             # create DocEvent uploaded
-            DocEvent.objects.create(doc=slide,
-                                    by=request.user.person,
-                                    type='uploaded')
+            e = DocEvent.objects.create(doc=slide,
+                                        by=request.user.person,
+                                        type='uploaded',
+                                        desc="Uploaded")
+            new_slide.save_with_history([e])
+
+            post_process(new_slide)
 
             # rebuild proceedings.html
             create_proceedings(meeting,group)
@@ -761,7 +788,6 @@ def upload_unified(request, meeting_num, acronym=None, session_id=None):
                     doc.title = doc.name
             else:
                 doc.title = '%s for %s at %s' % (material_type.slug.capitalize(), group.acronym.upper(), meeting)
-            doc.save()
 
             DocAlias.objects.get_or_create(name=doc.name, document=doc)
 
@@ -785,12 +811,13 @@ def upload_unified(request, meeting_num, acronym=None, session_id=None):
                     s.sessionpresentation_set.create(document=doc,rev=doc.rev)
 
             # create NewRevisionDocEvent instead of uploaded, per Ole
-            NewRevisionDocEvent.objects.create(type='new_revision',
-                                       by=request.user.person,
-                                       doc=doc,
-                                       rev=doc.rev,
-                                       desc='New revision available',
-                                       time=now)
+            e = NewRevisionDocEvent.objects.create(type='new_revision',
+                                                   by=request.user.person,
+                                                   doc=doc,
+                                                   rev=doc.rev,
+                                                   desc='New revision available')
+
+            doc.save_with_history([e])
             
             post_process(doc)
             create_proceedings(meeting,group)

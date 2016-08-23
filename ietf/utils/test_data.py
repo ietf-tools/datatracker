@@ -348,10 +348,8 @@ def make_test_data():
     DocAlias.objects.create(name=doc.name, document=doc)
 
     # an irtf submission mid review
-    doc = Document.objects.create(name='draft-imaginary-irtf-submission', type_id='draft',rev='00')
+    doc = Document.objects.create(name='draft-imaginary-irtf-submission', type_id='draft',rev='00', stream=StreamName.objects.get(slug='irtf'))
     docalias = DocAlias.objects.create(name=doc.name, document=doc)
-    doc.stream = StreamName.objects.get(slug='irtf')
-    doc.save()
     doc.set_state(State.objects.get(type="draft", slug="active"))
     crdoc = Document.objects.create(name='conflict-review-imaginary-irtf-submission', type_id='conflrev', rev='00', notify="fsm@ietf.org")
     DocAlias.objects.create(name=crdoc.name, document=crdoc)
@@ -362,15 +360,12 @@ def make_test_data():
     iesg = Group.objects.get(acronym='iesg')
     doc = Document.objects.create(name='status-change-imaginary-mid-review',type_id='statchg', rev='00', notify="fsm@ietf.org",group=iesg)
     doc.set_state(State.objects.get(slug='needshep',type__slug='statchg'))
-    doc.save()
     docalias = DocAlias.objects.create(name='status-change-imaginary-mid-review',document=doc)
 
     # Some things for a status change to affect
     def rfc_for_status_change_test_factory(name,rfc_num,std_level_id):
-        target_rfc = Document.objects.create(name=name, type_id='draft', std_level_id=std_level_id)
+        target_rfc = Document.objects.create(name=name, type_id='draft', std_level_id=std_level_id, notify="%s@ietf.org"%name)
         target_rfc.set_state(State.objects.get(slug='rfc',type__slug='draft'))
-        target_rfc.notify = "%s@ietf.org"%name
-        target_rfc.save()
         docalias = DocAlias.objects.create(name=name,document=target_rfc)
         docalias = DocAlias.objects.create(name='rfc%d'%rfc_num,document=target_rfc) # pyflakes:ignore
         return target_rfc

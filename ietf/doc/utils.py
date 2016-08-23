@@ -7,13 +7,13 @@ import datetime
 from django.conf import settings
 from django.db.models.query import EmptyQuerySet
 from django.forms import ValidationError
-from django.utils.html import strip_tags, escape
+from django.utils.html import escape
 from django.core.urlresolvers import reverse as urlreverse
 
-from ietf.doc.models import Document, DocHistory, State
-from ietf.doc.models import DocAlias, RelatedDocument, BallotType, DocReminder
+from ietf.doc.models import Document, DocHistory, State, DocumentAuthor, DocHistoryAuthor
+from ietf.doc.models import DocAlias, RelatedDocument, RelatedDocHistory, BallotType, DocReminder
 from ietf.doc.models import DocEvent, ConsensusDocEvent, BallotDocEvent, NewRevisionDocEvent, StateDocEvent
-from ietf.doc.models import save_document_in_history
+from ietf.doc.models import TelechatDocEvent
 from ietf.name.models import DocReminderTypeName, DocRelationshipName
 from ietf.group.models import Role
 from ietf.ietfauth.utils import has_role
@@ -21,23 +21,43 @@ from ietf.utils import draft, markup_txt
 from ietf.utils.mail import send_mail
 from ietf.mailtrigger.utils import gather_address_lists
 
-import debug              # pyflakes:ignore
+def save_document_in_history(doc):
+    """Save a snapshot of document and related objects in the database."""
+    def get_model_fields_as_dict(obj):
+        return dict((field.name, getattr(obj, field.name))
+                    for field in obj._meta.fields
+                    if field is not obj._meta.pk)
 
-#TODO FIXME - it would be better if this lived in ietf/doc/mails.py, but there's
-#        an import order issue to work out.
-def email_update_telechat(request, doc, text):
-    (to, cc) = gather_address_lists('doc_telechat_details_changed',doc=doc)
+    # copy fields
+    fields = get_model_fields_as_dict(doc)
+    fields["doc"] = doc
+    fields["name"] = doc.canonical_name()
 
-    if not to:
-        return
+    dochist = DocHistory(**fields)
+    dochist.save()
 
-    text = strip_tags(text)
-    send_mail(request, to, None,
-              "Telechat update notice: %s" % doc.file_tag(),
-              "doc/mail/update_telechat.txt",
-              dict(text=text,
-                   url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()),
-              cc=cc)
+    # copy many to many
+    for field in doc._meta.many_to_many:
+        if field.rel.through and field.rel.through._meta.auto_created:
+            setattr(dochist, field.name, getattr(doc, field.name).all())
+
+    # copy remaining tricky many to many
+    def transfer_fields(obj, HistModel):
+        mfields = get_model_fields_as_dict(item)
+        # map doc -> dochist
+        for k, v in mfields.iteritems():
+            if v == doc:
+                mfields[k] = dochist
+        HistModel.objects.create(**mfields)
+
+    for item in RelatedDocument.objects.filter(source=doc):
+        transfer_fields(item, RelatedDocHistory)
+
+    for item in DocumentAuthor.objects.filter(document=doc):
+        transfer_fields(item, DocHistoryAuthor)
+                
+    return dochist
+
 
 def get_state_types(doc):
     res = []
@@ -360,7 +380,6 @@ def make_notify_changed_event(request, doc, by, new_notify, time=None):
     # events to match
     if doc.type.slug=='charter':
         event_type = 'changed_document'
-        save_document_in_history(doc)
     else:
         event_type = 'added_comment'
 
@@ -375,8 +394,6 @@ def make_notify_changed_event(request, doc, by, new_notify, time=None):
     return e
 
 def update_telechat(request, doc, by, new_telechat_date, new_returning_item=None):
-    from ietf.doc.models import TelechatDocEvent
-
     on_agenda = bool(new_telechat_date)
 
     prev = doc.latest_event(TelechatDocEvent, type="scheduled_for_telechat")
@@ -427,7 +444,11 @@ def update_telechat(request, doc, by, new_telechat_date, new_returning_item=None
             e.desc = "Removed telechat returning item indication"
 
     e.save()
+
+    from ietf.doc.mails import email_update_telechat
     email_update_telechat(request, doc, e.desc)
+
+    return e
 
 def rebuild_reference_relations(doc,filename=None):
     if doc.type.slug != 'draft':
@@ -474,13 +495,26 @@ def rebuild_reference_relations(doc,filename=None):
 
     return ret
 
-def set_replaces_for_document(request, doc, new_replaces, by, email_subject, email_comment=""):
+def set_replaces_for_document(request, doc, new_replaces, by, email_subject, comment=""):
     addrs = gather_address_lists('doc_replacement_changed',doc=doc)
     to = set(addrs.to)
     cc = set(addrs.cc)
 
     relationship = DocRelationshipName.objects.get(slug='replaces')
     old_replaces = doc.related_that_doc("replaces")
+
+    events = []
+
+    e = DocEvent(doc=doc, by=by, type='changed_document')
+    new_replaces_names = u", ".join(d.name for d in new_replaces) or u"None"
+    old_replaces_names = u", ".join(d.name for d in old_replaces) or u"None"
+    e.desc = u"This document now replaces <b>%s</b> instead of %s" % (new_replaces_names, old_replaces_names)
+    e.save()
+
+    events.append(e)
+
+    if comment:
+        events.append(DocEvent.objects.create(doc=doc, by=by, type="added_comment", desc=comment))
 
     for d in old_replaces:
         if d not in new_replaces:
@@ -500,19 +534,13 @@ def set_replaces_for_document(request, doc, new_replaces, by, email_subject, ema
             RelatedDocument.objects.create(source=doc, target=d, relationship=relationship)
             d.document.set_state(State.objects.get(type='draft', slug='repl'))
 
-    e = DocEvent(doc=doc, by=by, type='changed_document')
-    new_replaces_names = u", ".join(d.name for d in new_replaces) or u"None"
-    old_replaces_names = u", ".join(d.name for d in old_replaces) or u"None"
-    e.desc = u"This document now replaces <b>%s</b> instead of %s" % (new_replaces_names, old_replaces_names)
-    e.save()
-
     # make sure there are no lingering suggestions duplicating new replacements
     RelatedDocument.objects.filter(source=doc, target__in=new_replaces, relationship="possibly-replaces").delete()
 
     email_desc = e.desc.replace(", ", "\n    ")
 
-    if email_comment:
-        email_desc += "\n" + email_comment
+    if comment:
+        email_desc += "\n" + comment
 
     from ietf.doc.mails import html_to_text
 
@@ -524,6 +552,8 @@ def set_replaces_for_document(request, doc, new_replaces, by, email_subject, ema
                    doc=doc,
                    url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()),
               cc=list(cc))
+
+    return events
 
 def check_common_doc_name_rules(name):
     """Check common rules for document names for use in forms, throws

@@ -13,7 +13,7 @@
       });
       
       $('#generate-button').click(function(){
-          var ajax_load = "<p><h4 align='center'>Generating Proceedings.  This may take a few minutes.</h3><img class='loading' src='{% static 'secr/img/ajax-loader.gif' %}' alt='loading...' /></p>";
+          var ajax_load = '<p><h4 align="center">Generating Proceedings.  This may take a few minutes.</h3><img class="loading" src="{% static "secr/img/ajax-loader.gif" %}" alt="loading..." /></p>';
           var url = window.location.pathname;
           var parts = url.split("/");
           var loadUrl = "/secr/proceedings/ajax/generate-proceedings/" + parts[3] + "/";

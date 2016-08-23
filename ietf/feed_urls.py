@@ -1,5 +1,6 @@
 from django.conf.urls import patterns
 from django.views.generic import RedirectView
+from django.conf import settings
 
 from ietf.doc.feeds import DocumentChangesFeed, InLastCallFeed, RfcFeed
 from ietf.group.feeds import GroupChangesFeed
@@ -11,9 +12,9 @@ from ietf.meeting.feeds import LatestMeetingMaterialFeed
 urlpatterns = patterns(
     '',
     (r'^comments/(?P<remainder>.*)/$', RedirectView.as_view(url='/feed/document-changes/%(remainder)s/')),
-    (r'^document-changes/(?P<name>[A-Za-z0-9._+-]+)/$', DocumentChangesFeed()),
+    (r'^document-changes/%(name)s/$' % settings.URL_REGEXPS, DocumentChangesFeed()),
     (r'^last-call/$', InLastCallFeed()),
-    (r'^group-changes/(?P<acronym>[a-zA-Z0-9-]+)/$', GroupChangesFeed()),
+    (r'^group-changes/%(acronym)s/$' % settings.URL_REGEXPS, GroupChangesFeed()),
     (r'^iesg-agenda/$', IESGAgendaFeed()),
     (r'^ipr/$', LatestIprDisclosuresFeed()),
     (r'^liaison/(?P<kind>recent|from|to|subject)/(?:(?P<search>[^/]+)/)?$', LiaisonStatementsFeed()),

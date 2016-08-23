@@ -2,6 +2,7 @@
 
 from django.conf.urls import url, include
 from django.views.generic import RedirectView
+from django.conf import settings
 
 from ietf.meeting import views
 from ietf.meeting import ajax
@@ -12,21 +13,22 @@ safe_for_all_meeting_types = [
     url(r'^session/(?P<session_id>\d+)/bluesheets$', views.upload_session_bluesheets),
 ]
 
+
 type_ietf_only_patterns = [
-    url(r'^agenda/(?P<owner>[-A-Za-z0-9\'+._]+@[A-Za-z0-9-._]+)/(?P<name>[A-Za-z0-9-:_]+)/edit$', views.edit_agenda),
-    url(r'^agenda/(?P<owner>[-A-Za-z0-9\'+._]+@[A-Za-z0-9-._]+)/(?P<name>[A-Za-z0-9-:_]+)/details$', views.edit_agenda_properties),
-    url(r'^agenda/(?P<owner>[-A-Za-z0-9\'+._]+@[A-Za-z0-9-._]+)/(?P<name>[A-Za-z0-9-:_]+)/delete$', views.delete_schedule),
-    url(r'^agenda/(?P<owner>[-A-Za-z0-9\'+._]+@[A-Za-z0-9-._]+)/(?P<name>[A-Za-z0-9-:_]+)/make_official$', views.make_schedule_official),
-    url(r'^agenda/(?P<owner>[-A-Za-z0-9\'+._]+@[A-Za-z0-9-._]+)/(?P<name>[A-Za-z0-9-:_]+)(\.(?P<ext>.html))?/?$', views.agenda),
-    url(r'^agenda/(?P<owner>[-A-Za-z0-9\'+._]+@[A-Za-z0-9-._]+)/(?P<name>[A-Za-z0-9-:_]+)/week-view(?:.html)?/?$', views.week_view),
-    url(r'^agenda/(?P<owner>[-A-Za-z0-9\'+._]+@[A-Za-z0-9-._]+)/(?P<name>[A-Za-z0-9-:_]+)/room-view(?:.html)?/?$', views.room_view),
-    url(r'^agenda/(?P<owner>[-A-Za-z0-9\'+._]+@[A-Za-z0-9-._]+)/(?P<name>[A-Za-z0-9-:_]+)/by-room/?$', views.agenda_by_room),
-    url(r'^agenda/(?P<owner>[-A-Za-z0-9\'+._]+@[A-Za-z0-9-._]+)/(?P<name>[A-Za-z0-9-:_]+)/by-type/?$', views.agenda_by_type),
-    url(r'^agenda/(?P<owner>[-A-Za-z0-9\'+._]+@[A-Za-z0-9-._]+)/(?P<name>[A-Za-z0-9-:_]+)/by-type/(?P<type>[a-z]+)$', views.agenda_by_type),
-    url(r'^agenda/(?P<owner>[-A-Za-z0-9\'+._]+@[A-Za-z0-9-._]+)/(?P<name>[A-Za-z0-9-:_]+)/permissions$', ajax.agenda_permission_api),
-    url(r'^agenda/(?P<owner>[-A-Za-z0-9\'+._]+@[A-Za-z0-9-._]+)/(?P<name>[A-Za-z0-9-:_]+)/session/(?P<assignment_id>\d+).json$', ajax.assignment_json),
-    url(r'^agenda/(?P<owner>[-A-Za-z0-9\'+._]+@[A-Za-z0-9-._]+)/(?P<name>[A-Za-z0-9-:_]+)/sessions.json$',      ajax.assignments_json),
-    url(r'^agenda/(?P<owner>[-A-Za-z0-9\'+._]+@[A-Za-z0-9-._]+)/(?P<name>[A-Za-z0-9-:_]+).json$', ajax.agenda_infourl),
+    url(r'^agenda/%(owner)s/%(schedule_name)s/edit$' % settings.URL_REGEXPS, views.edit_agenda),
+    url(r'^agenda/%(owner)s/%(schedule_name)s/details$' % settings.URL_REGEXPS, views.edit_agenda_properties),
+    url(r'^agenda/%(owner)s/%(schedule_name)s/delete$' % settings.URL_REGEXPS, views.delete_schedule),
+    url(r'^agenda/%(owner)s/%(schedule_name)s/make_official$' % settings.URL_REGEXPS, views.make_schedule_official),
+    url(r'^agenda/%(owner)s/%(schedule_name)s(\.(?P<ext>.html))?/?$' % settings.URL_REGEXPS, views.agenda),
+    url(r'^agenda/%(owner)s/%(schedule_name)s/week-view(?:.html)?/?$' % settings.URL_REGEXPS, views.week_view),
+    url(r'^agenda/%(owner)s/%(schedule_name)s/room-view(?:.html)?/?$' % settings.URL_REGEXPS, views.room_view),
+    url(r'^agenda/%(owner)s/%(schedule_name)s/by-room/?$' % settings.URL_REGEXPS, views.agenda_by_room),
+    url(r'^agenda/%(owner)s/%(schedule_name)s/by-type/?$' % settings.URL_REGEXPS, views.agenda_by_type),
+    url(r'^agenda/%(owner)s/%(schedule_name)s/by-type/(?P<type>[a-z]+)$' % settings.URL_REGEXPS, views.agenda_by_type),
+    url(r'^agenda/%(owner)s/%(schedule_name)s/permissions$' % settings.URL_REGEXPS, ajax.agenda_permission_api),
+    url(r'^agenda/%(owner)s/%(schedule_name)s/session/(?P<assignment_id>\d+).json$' % settings.URL_REGEXPS, ajax.assignment_json),
+    url(r'^agenda/%(owner)s/%(schedule_name)s/sessions.json$' % settings.URL_REGEXPS,      ajax.assignments_json),
+    url(r'^agenda/%(owner)s/%(schedule_name)s.json$' % settings.URL_REGEXPS, ajax.agenda_infourl),
     url(r'^agenda/by-room$', views.agenda_by_room),
     url(r'^agenda/by-type$', views.agenda_by_type),
     url(r'^agenda/by-type/(?P<type>[a-z]+)$', views.agenda_by_type),

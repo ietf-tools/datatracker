@@ -55,6 +55,7 @@ from ietf.doc.models import Document, State, DocAlias, RelatedDocument
 from ietf.doc.utils import get_chartering_type
 from ietf.doc.templatetags.ietf_filters import clean_whitespace
 from ietf.doc.utils_search import prepare_document_table
+from ietf.doc.utils_charter import charter_name_for_group
 from ietf.group.models import Group, Role, ChangeStateGroupEvent
 from ietf.name.models import GroupTypeName
 from ietf.group.utils import get_charter_text, can_manage_group_type, can_manage_group, milestone_reviewer_for_group_type, can_provide_status_update
@@ -485,6 +486,9 @@ def group_about(request, acronym, group_type=None):
     requested_close = group.state_id != "conclude" and e and e.type == "requested_close"
 
     can_manage = can_manage_group(request.user, group)
+    charter_submit_url = "" 
+    if group.features.has_chartering_process: 
+        charter_submit_url = urlreverse("charter_submit", kwargs={ "name": charter_name_for_group(group) }) 
 
     can_provide_update = can_provide_status_update(request.user, group)
     status_update = group.latest_event(type="status_update")
@@ -498,6 +502,7 @@ def group_about(request, acronym, group_type=None):
                       "can_manage": can_manage,
                       "can_provide_status_update": can_provide_update,
                       "status_update": status_update,
+                      "charter_submit_url": charter_submit_url,
                   }))
 
 def all_status(request):

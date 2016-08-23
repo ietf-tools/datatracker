@@ -1,7 +1,8 @@
 from django.conf.urls import patterns, url
+from django.conf import settings
 
 urlpatterns = patterns('ietf.secr.roles.views',
     url(r'^$', 'main', name='roles'),
-    url(r'^ajax/get-roles/(?P<acronym>[-a-z0-9]+)/$', 'ajax_get_roles', name='roles_ajax_get_roles'),
-    url(r'^(?P<acronym>[-a-z0-9]+)/delete/(?P<id>\d{1,6})/$', 'delete_role', name='roles_delete_role'),
+    url(r'^ajax/get-roles/%(acronym)s/$' % settings.URL_REGEXPS, 'ajax_get_roles', name='roles_ajax_get_roles'),
+    url(r'^%(acronym)s/delete/(?P<id>\d{1,6})/$' % settings.URL_REGEXPS, 'delete_role', name='roles_delete_role'),
 )

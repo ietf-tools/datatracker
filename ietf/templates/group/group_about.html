@@ -36,14 +36,19 @@
       </tr>
 
       <tr>
-	<td></td>
-	<th>State</th>
-	<td>
-	  {{ group.state.name }}
-	  {% if requested_close %}
-	    <div class="label label-info">In the process of being closed</div>
-	  {% endif %}
-	</td>
+        <td></td>
+        <th>Charter</th>
+        <td>
+          {% if group.charter %}
+            <a href="{% url "doc_view" name=group.charter.name %}">{{ group.charter.name }}-{{ group.charter.rev }}</a>
+            <span class="label label-info">{{ group.charter.get_state.name }}</span>
+          {% else %}
+            (None)
+            {% if user|has_role:"Area Director,Secretariat" %}
+              <a class="btn btn-warning btn-xs" href="{{ charter_submit_url }}">Submit charter</a>
+            {% endif %}
+          {% endif %}
+        </td>
       </tr>
 
       {% if group.features.has_chartering_process %}
@@ -57,7 +62,7 @@
 	    {% else %}
 	      (None)
 	      {% if user|has_role:"Area Director,Secretariat" %}
-		<a class="btn btn-warning btn-xs" href="{% url "ietf.group.views_edit.submit_initial_charter" group_type=group.type_id acronym=group.acronym %}">Submit charter</a>
+		<a class="btn btn-warning btn-xs" href="{{ charter_submit_url }}">Submit charter</a>
 	      {% endif %}
 	    {% endif %}
 	  </td>
