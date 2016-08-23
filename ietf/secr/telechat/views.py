@@ -6,7 +6,7 @@ from django.forms.formsets import formset_factory
 from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.template import RequestContext
 
-from ietf.doc.models import DocEvent, Document, BallotDocEvent, BallotPositionDocEvent, WriteupDocEvent, save_document_in_history
+from ietf.doc.models import DocEvent, Document, BallotDocEvent, BallotPositionDocEvent, WriteupDocEvent
 from ietf.doc.utils import get_document_content, add_state_change_event
 from ietf.person.models import Person
 from ietf.doc.lastcall import request_last_call
@@ -254,8 +254,6 @@ def doc_detail(request, date, name):
                 new_tags = [tag] if tag else []
 
                 if state_form.changed_data:
-                    save_document_in_history(doc)
-
                     if 'state' in state_form.changed_data:
                         doc.set_state(new_state)
 
@@ -265,8 +263,8 @@ def doc_detail(request, date, name):
 
                     e = add_state_change_event(doc, login, prev_state, new_state,
                                                prev_tags=prev_tags, new_tags=new_tags)
-                    doc.time = (e and e.time) or datetime.datetime.now()
-                    doc.save()
+                    if e:
+                        doc.save_with_history([e])
 
                     email_state_changed(request, doc, e.desc, 'doc_state_edited')
     

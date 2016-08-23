@@ -208,9 +208,9 @@ def read_agenda_file(num, doc):
     path = os.path.join(settings.AGENDA_PATH, "%s/agenda/%s" % (num, doc.external_url))
     if os.path.exists(path):
         with open(path) as f:
-            return f.read()
+            return f.read(), path
     else:
-        return None
+        return None, path
 
 def convert_draft_to_pdf(doc_name):
     inpath = os.path.join(settings.IDSUBMIT_REPOSITORY_PATH, doc_name + ".txt")

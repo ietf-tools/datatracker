@@ -18,7 +18,6 @@ from ietf.name.models import ( DocTypeName, DocTagName, StreamName, IntendedStdL
 from ietf.person.models import Email, Person
 from ietf.utils.admin import admin_link
 
-
 class StateType(models.Model):
     slug = models.CharField(primary_key=True, max_length=30) # draft, draft-iesg, charter, ...
     label = models.CharField(max_length=255, help_text="Label that should be used (e.g. in admin) for state drop-down for this type of state") # State, IESG state, WG state, ...
@@ -431,6 +430,27 @@ class Document(DocumentInfo):
             name = name.upper()
         return name
 
+    def save_with_history(self, events):
+        """Save document and put a snapshot in the history models where they
+        can be retrieved later. You must pass in at least one event
+        with a description of what happened."""
+
+        assert events, "You must always add at least one event to describe the changes in the history log"
+        self.time = max(self.time, events[0].time)
+
+        self._has_an_event_so_saving_is_allowed = True
+        self.save()
+        del self._has_an_event_so_saving_is_allowed
+
+        from ietf.doc.utils import save_document_in_history
+        save_document_in_history(self)
+
+    def save(self, *args, **kwargs):
+        # if there's no primary key yet, we can allow the save to go
+        # through to break the cycle between the document and any
+        # events
+        assert kwargs.get("force_insert", False) or getattr(self, "_has_an_event_so_saving_is_allowed", None), "Use .save_with_history to save documents"
+        super(Document, self).save(*args, **kwargs)
 
     def telechat_date(self, e=None):
         if not e:
@@ -572,50 +592,6 @@ class DocHistory(DocumentInfo):
         verbose_name = "document history"
         verbose_name_plural = "document histories"
 
-def save_document_in_history(doc):
-    """This should be called before saving changes to a Document instance,
-    so that the DocHistory entries contain all previous states, while
-    the Document entry contain the current state.  XXX TODO: Call this
-    directly from Document.save(), and add event listeners for save()
-    on related objects so we can save as needed when they change, too.
-    """
-    def get_model_fields_as_dict(obj):
-        return dict((field.name, getattr(obj, field.name))
-                    for field in obj._meta.fields
-                    if field is not obj._meta.pk)
-
-    # copy fields
-    fields = get_model_fields_as_dict(doc)
-    fields["doc"] = doc
-    fields["name"] = doc.canonical_name()
-    
-    dochist = DocHistory(**fields)
-    dochist.save()
-
-    # copy many to many
-    for field in doc._meta.many_to_many:
-        if field.rel.through and field.rel.through._meta.auto_created:
-            setattr(dochist, field.name, getattr(doc, field.name).all())
-
-    # copy remaining tricky many to many
-    def transfer_fields(obj, HistModel):
-        mfields = get_model_fields_as_dict(item)
-        # map doc -> dochist
-        for k, v in mfields.iteritems():
-            if v == doc:
-                mfields[k] = dochist
-        HistModel.objects.create(**mfields)
-
-    for item in RelatedDocument.objects.filter(source=doc):
-        transfer_fields(item, RelatedDocHistory)
-
-    for item in DocumentAuthor.objects.filter(document=doc):
-        transfer_fields(item, DocHistoryAuthor)
-                
-    return dochist
-        
-
-
 class DocAlias(models.Model):
     """This is used for documents that may appear under multiple names,
     and in particular for RFCs, which for continuity still keep the
@@ -698,7 +674,8 @@ EVENT_TYPES = [
 
     # RFC Editor
     ("rfc_editor_received_announcement", "Announcement was received by RFC Editor"),
-    ("requested_publication", "Publication at RFC Editor requested")
+    ("requested_publication", "Publication at RFC Editor requested"),
+    ("sync_from_rfc_editor", "Received updated information from RFC Editor"),
     ]
 
 class DocEvent(models.Model):
@@ -710,10 +687,11 @@ class DocEvent(models.Model):
     desc = models.TextField()
 
     def for_current_revision(self):
-        return self.time >= self.doc.latest_event(NewRevisionDocEvent,type='new_revision').time
+        e = self.doc.latest_event(NewRevisionDocEvent,type='new_revision')
+        return not e or (self.time, self.pk) >= (e.time, e.pk)
 
     def get_dochistory(self):
-        return DocHistory.objects.filter(time__lte=self.time,doc__name=self.doc.name).order_by('-time').first()
+        return DocHistory.objects.filter(time__lte=self.time,doc__name=self.doc.name).order_by('-time', '-pk').first()
 
     def __unicode__(self):
         return u"%s %s by %s at %s" % (self.doc.name, self.get_type_display().lower(), self.by.plain_name(), self.time)

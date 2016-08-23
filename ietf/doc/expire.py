@@ -6,7 +6,7 @@ import datetime, os, shutil, glob, re
 from pathlib import Path
 
 from ietf.utils.mail import send_mail
-from ietf.doc.models import Document, DocEvent, State, save_document_in_history, IESG_SUBSTATE_TAGS
+from ietf.doc.models import Document, DocEvent, State, IESG_SUBSTATE_TAGS
 from ietf.person.models import Person 
 from ietf.meeting.models import Meeting
 from ietf.doc.utils import add_state_change_event
@@ -129,8 +129,9 @@ def expire_draft(doc):
 
     system = Person.objects.get(name="(System)")
 
+    events = []
+
     # change the state
-    save_document_in_history(doc)
     if doc.latest_event(type='started_iesg_process'):
         new_state = State.objects.get(used=True, type="draft-iesg", slug="dead")
         prev_state = doc.get_state(new_state.type_id)
@@ -139,15 +140,13 @@ def expire_draft(doc):
             doc.set_state(new_state)
             doc.tags.remove(*prev_tags)
             e = add_state_change_event(doc, system, prev_state, new_state, prev_tags=prev_tags, new_tags=[])
+            if e:
+                events.append(e)
 
-        e = DocEvent(doc=doc, by=system)
-        e.type = "expired_document"
-        e.desc = "Document has expired"
-        e.save()
+    events.append(DocEvent.objects.create(doc=doc, by=system, type="expired_document", desc="Document has expired"))
 
     doc.set_state(State.objects.get(used=True, type="draft", slug="expired"))
-    doc.time = datetime.datetime.now()
-    doc.save()
+    doc.save_with_history(events)
 
 def clean_up_draft_files():
     """Move unidentified and old files out of the Internet Draft directory."""

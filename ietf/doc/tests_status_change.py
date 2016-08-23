@@ -24,7 +24,7 @@ from ietf.utils.test_utils import login_testing_unauthorized
 class StatusChangeTests(TestCase):
     def test_start_review(self):
 
-        url = urlreverse('start_rfc_status_change',kwargs=dict(name=""))
+        url = urlreverse('start_rfc_status_change')
         login_testing_unauthorized(self, "secretary", url)
 
         # normal get should succeed and get a reasonable form
@@ -105,7 +105,7 @@ class StatusChangeTests(TestCase):
         # successful change to Last Call Requested
         messages_before = len(outbox)
         doc.ad = Person.objects.get(user__username='ad')
-        doc.save()
+        doc.save_with_history([DocEvent.objects.create(doc=doc, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
         lc_req_pk = str(State.objects.get(slug='lc-req',type__slug='statchg').pk)
         r = self.client.post(url,dict(new_state=lc_req_pk))
         self.assertEquals(r.status_code, 200)
@@ -252,8 +252,8 @@ class StatusChangeTests(TestCase):
         # additional setup
         doc.relateddocument_set.create(target=DocAlias.objects.get(name='rfc9999'),relationship_id='tois')
         doc.relateddocument_set.create(target=DocAlias.objects.get(name='rfc9998'),relationship_id='tohist')
-        doc.ad =  Person.objects.get(name='Ad No2')
-        doc.save()
+        doc.ad = Person.objects.get(name='Ad No2')
+        doc.save_with_history([DocEvent.objects.create(doc=doc, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
         
         # get
         r = self.client.get(url)
@@ -296,9 +296,8 @@ class StatusChangeTests(TestCase):
         # Some additional setup
         doc.relateddocument_set.create(target=DocAlias.objects.get(name='rfc9999'),relationship_id='tois')
         doc.relateddocument_set.create(target=DocAlias.objects.get(name='rfc9998'),relationship_id='tohist')
-        create_ballot_if_not_open(doc,Person.objects.get(name="Sec Retary"),"statchg")
+        create_ballot_if_not_open(doc,Person.objects.get(user__username="secretary"),"statchg")
         doc.set_state(State.objects.get(slug='appr-pend',type='statchg'))
-        doc.save()
 
         # get
         r = self.client.get(url)

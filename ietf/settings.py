@@ -413,6 +413,16 @@ MAX_WG_DELEGATES = 3
 DATE_FORMAT = "Y-m-d"
 DATETIME_FORMAT = "Y-m-d H:i T"
 
+URL_REGEXPS = {
+    "acronym": r"(?P<acronym>[-a-z0-9]+)",
+    "charter": r"(?P<name>charter-[-a-z0-9]+)",
+    "date": r"(?P<date>\d{4}-\d{2}-\d{2})",
+    "name": r"(?P<name>[A-Za-z0-9._+-]+)",
+    "rev": r"(?P<rev>[0-9-]+)",
+    "owner": r"(?P<owner>[-A-Za-z0-9\'+._]+@[A-Za-z0-9-._]+)",
+    "schedule_name": r"(?P<name>[A-Za-z0-9-:_]+)",
+}
+
 # Override this in settings_local.py if needed
 # *_PATH variables ends with a slash/ .
 DOCUMENT_PATH_PATTERN = '/a/www/ietf-ftp/{doc.type_id}/'

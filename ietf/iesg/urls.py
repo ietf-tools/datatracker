@@ -34,6 +34,7 @@
 
 from django.conf.urls import patterns
 from django.views.generic import RedirectView
+from django.conf import settings
 
 urlpatterns = patterns('',
     (r'^telechat/.*$', RedirectView.as_view(url='https://www.ietf.org/iesg/minutes.html')),
@@ -41,16 +42,16 @@ urlpatterns = patterns('',
     (r'^telechatdates/$', RedirectView.as_view(url='/admin/iesg/telechatdate/')),
 
     (r'^decisions/(?:(?P<year>[0-9]{4})/)?$', "ietf.iesg.views.review_decisions"),
-    (r'^agenda/(?:(?P<date>\d{4}-\d{2}-\d{2})/)?$', "ietf.iesg.views.agenda"),
-    (r'^agenda/(?:(?P<date>\d{4}-\d{2}-\d{2})/)?agenda.txt$', "ietf.iesg.views.agenda_txt"),
-    (r'^agenda/(?:(?P<date>\d{4}-\d{2}-\d{2})/)?agenda.json$', "ietf.iesg.views.agenda_json"),
-    (r'^agenda/(?:(?P<date>\d{4}-\d{2}-\d{2})/)?scribe_template.html$', "ietf.iesg.views.agenda_scribe_template"),
-    (r'^agenda/(?:(?P<date>\d{4}-\d{2}-\d{2})/)?moderator_package.html$', "ietf.iesg.views.agenda_moderator_package"),
-    (r'^agenda/(?:(?P<date>\d{4}-\d{2}-\d{2})/)?agenda_package.txt$', "ietf.iesg.views.agenda_package"),
+    (r'^agenda/(?:%(date)s/)?$' % settings.URL_REGEXPS, "ietf.iesg.views.agenda"),
+    (r'^agenda/(?:%(date)s/)?agenda.txt$' % settings.URL_REGEXPS, "ietf.iesg.views.agenda_txt"),
+    (r'^agenda/(?:%(date)s/)?agenda.json$' % settings.URL_REGEXPS, "ietf.iesg.views.agenda_json"),
+    (r'^agenda/(?:%(date)s/)?scribe_template.html$' % settings.URL_REGEXPS, "ietf.iesg.views.agenda_scribe_template"),
+    (r'^agenda/(?:%(date)s/)?moderator_package.html$' % settings.URL_REGEXPS, "ietf.iesg.views.agenda_moderator_package"),
+    (r'^agenda/(?:%(date)s/)?agenda_package.txt$' % settings.URL_REGEXPS, "ietf.iesg.views.agenda_package"),
 
     (r'^agenda/documents.txt$', "ietf.iesg.views.agenda_documents_txt"),
     (r'^agenda/documents/$', "ietf.iesg.views.agenda_documents"),
-    (r'^agenda/telechat-(?:(?P<date>\d{4}-\d{2}-\d{2})-)?docs.tgz', "ietf.iesg.views.telechat_docs_tarfile"),
+    (r'^agenda/telechat-(?:%(date)s-)?docs.tgz' % settings.URL_REGEXPS, "ietf.iesg.views.telechat_docs_tarfile"),
     (r'^discusses/$', "ietf.iesg.views.discusses"),
     (r'^milestones/$', "ietf.iesg.views.milestones_needing_review"),
     (r'^photos/$', "ietf.iesg.views.photos"),

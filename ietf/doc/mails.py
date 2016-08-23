@@ -89,6 +89,21 @@ def email_iesg_processing_document(request, doc, changes):
 def html_to_text(html):
     return strip_tags(html.replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&").replace("<br>", "\n"))
     
+def email_update_telechat(request, doc, text):
+    (to, cc) = gather_address_lists('doc_telechat_details_changed',doc=doc)
+
+    if not to:
+        return
+    
+    text = strip_tags(text)
+    send_mail(request, to, None,
+              "Telechat update notice: %s" % doc.file_tag(),
+              "doc/mail/update_telechat.txt",
+              dict(text=text,
+                   url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()),
+              cc=cc)
+
+
 def generate_ballot_writeup(request, doc):
     e = doc.latest_event(type="iana_review")
     iana = e.desc if e else ""
@@ -99,8 +114,8 @@ def generate_ballot_writeup(request, doc):
     e.doc = doc
     e.desc = u"Ballot writeup was generated"
     e.text = unicode(render_to_string("doc/mail/ballot_writeup.txt", {'iana': iana}))
-    e.save()
-    
+
+    # caller is responsible for saving, if necessary
     return e
     
 def generate_ballot_rfceditornote(request, doc):
@@ -154,8 +169,8 @@ def generate_last_call_announcement(request, doc):
     e.doc = doc
     e.desc = u"Last call announcement was generated"
     e.text = unicode(mail)
-    e.save()
 
+    # caller is responsible for saving, if necessary
     return e
     
 
@@ -173,8 +188,8 @@ def generate_approval_mail(request, doc):
     e.doc = doc
     e.desc = u"Ballot approval text was generated"
     e.text = unicode(mail)
-    e.save()
 
+    # caller is responsible for saving, if necessary
     return e
 
 def generate_approval_mail_approved(request, doc):

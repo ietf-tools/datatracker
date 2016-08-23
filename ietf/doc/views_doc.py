@@ -315,24 +315,24 @@ def document_main(request, name, rev=None):
         # remaining actions
         actions = []
 
-        if can_adopt_draft(request.user, doc) and not doc.get_state_slug() in ["rfc"]:
+        if can_adopt_draft(request.user, doc) and not doc.get_state_slug() in ["rfc"] and not snapshot:
             actions.append(("Manage Document Adoption in Group", urlreverse('doc_adopt_draft', kwargs=dict(name=doc.name))))
 
-        if doc.get_state_slug() == "expired" and not resurrected_by and can_edit:
+        if doc.get_state_slug() == "expired" and not resurrected_by and can_edit and not snapshot:
             actions.append(("Request Resurrect", urlreverse('doc_request_resurrect', kwargs=dict(name=doc.name))))
 
-        if doc.get_state_slug() == "expired" and has_role(request.user, ("Secretariat",)):
+        if doc.get_state_slug() == "expired" and has_role(request.user, ("Secretariat",)) and not snapshot:
             actions.append(("Resurrect", urlreverse('doc_resurrect', kwargs=dict(name=doc.name))))
 
         if (doc.get_state_slug() not in ["rfc", "expired"] and doc.stream_id in ("ise", "irtf")
-            and can_edit_stream_info and not conflict_reviews):
+            and can_edit_stream_info and not conflict_reviews and not snapshot):
             label = "Begin IETF Conflict Review"
             if not doc.intended_std_level:
                 label += " (note that intended status is not set)"
             actions.append((label, urlreverse('conflict_review_start', kwargs=dict(name=doc.name))))
 
         if (doc.get_state_slug() not in ["rfc", "expired"] and doc.stream_id in ("iab", "ise", "irtf")
-            and can_edit_stream_info):
+            and can_edit_stream_info and not snapshot):
             label = "Request Publication"
             if not doc.intended_std_level:
                 label += " (note that intended status is not set)"
@@ -340,7 +340,7 @@ def document_main(request, name, rev=None):
                 label += " (Warning: the IESG state indicates ongoing IESG processing)"
             actions.append((label, urlreverse('doc_request_publication', kwargs=dict(name=doc.name))))
 
-        if doc.get_state_slug() not in ["rfc", "expired"] and doc.stream_id in ("ietf",):
+        if doc.get_state_slug() not in ["rfc", "expired"] and doc.stream_id in ("ietf",) and not snapshot:
             if not iesg_state and can_edit:
                 actions.append(("Begin IESG Processing", urlreverse('doc_edit_info', kwargs=dict(name=doc.name)) + "?new=1"))
             elif can_edit_stream_info and (not iesg_state or iesg_state.slug == 'watching'):
@@ -721,9 +721,10 @@ def document_writeup(request, name):
                          "<em>Draft</em> of message to be sent <em>after</em> approval:",
                          writeups))
 
-        writeups.append(("Announcement",
-                         text_from_writeup("changed_ballot_approval_text"),
-                         urlreverse("doc_ballot_approvaltext", kwargs=dict(name=doc.name))))
+        if doc.get_state("draft-iesg"):
+            writeups.append(("Announcement",
+                             text_from_writeup("changed_ballot_approval_text"),
+                             urlreverse("doc_ballot_approvaltext", kwargs=dict(name=doc.name))))
 
         writeups.append(("Ballot Text",
                          text_from_writeup("changed_ballot_writeup_text"),
@@ -1048,8 +1049,7 @@ def edit_notify(request, name):
                 if set(new_notify.split(',')) != set(doc.notify.split(',')):
                     e = make_notify_changed_event(request, doc, login.person, new_notify)
                     doc.notify = new_notify
-                    doc.time = e.time
-                    doc.save()
+                    doc.save_with_history([e])
                 return redirect('doc_view', name=doc.name)
 
         elif "regenerate_addresses" in request.POST:

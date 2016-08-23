@@ -12,7 +12,7 @@
   {% origin %}
   <h1>Charter submission<br><small>{{ group.acronym }} {{ group.type.name }}</small></h1>
 
-  <p class="alert alert-info">The text will be submitted as <b>charter-ietf-{{ name }}-{{ next_rev }}</b>.</p>
+  <p class="alert alert-info">The text will be submitted as <b>{{ name }}-{{ next_rev }}</b>.</p>
 
   <form enctype="multipart/form-data" method="post">
     {% csrf_token %}
@@ -20,7 +20,11 @@
 
     {% buttons %}
       <button type="submit" class="btn btn-primary">Submit</button>
-      <a class="btn btn-default pull-right" href="{% url "doc_view" name=group.charter.name %}">Back</a>
+      {% if group.charter %}
+        <a class="btn btn-default pull-right" href="{% url "doc_view" name=name %}">Back</a>
+      {% else %}
+        <a class="btn btn-default pull-right" href="{% url "group_charter" group_type=group.type_id acronym=group.acronym %}">Back</a>
+      {% endif %}
     {% endbuttons %}
   </form>
 

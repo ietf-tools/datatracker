@@ -16,7 +16,7 @@
       
       $('#id_group').change(function(){
         var loadUrl = "/secr/roles/ajax/get-roles/" + $(this).val() + "/";
-        var ajax_load = "<img class='loading' src='{% static 'secr/img/ajax-loader.gif' %}' alt='loading...' />";
+        var ajax_load = '<img class="loading" src="{% static "secr/img/ajax-loader.gif" %}" alt="loading..." />';
         var text = $(this).val();
         $("#id_group_acronym").val(text);
         $("#roles-list").html(ajax_load).load(loadUrl);  

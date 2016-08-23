@@ -42,6 +42,15 @@ class DocumentFactory(factory.DjangoModelFactory):
             for (state_type_id,state_slug) in extracted:
                 self.set_state(State.objects.get(type_id=state_type_id,slug=state_slug))
 
+    @classmethod
+    def _after_postgeneration(cls, obj, create, results=None):
+        """Save again the instance if creating and at least one hook ran."""
+        if create and results:
+            # Some post-generation hooks ran, and may have modified us.
+            obj._has_an_event_so_saving_is_allowed = True
+            obj.save()
+
+
 class DocAliasFactory(factory.DjangoModelFactory):
     class Meta:
         model = DocAlias

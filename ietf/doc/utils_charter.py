@@ -1,12 +1,17 @@
-import re, datetime, os
+import re, datetime, os, shutil
 
 from django.template.loader import render_to_string
 from django.conf import settings
+from django.utils.encoding import smart_text
 
 from ietf.doc.models import NewRevisionDocEvent, WriteupDocEvent 
+from ietf.group.models import ChangeStateGroupEvent
+from ietf.name.models import GroupStateName
 from ietf.utils.history import find_history_active_at
 from ietf.utils.mail import parse_preformatted
 from ietf.mailtrigger.utils import gather_address_lists
+from ietf.utils.log import log
+from ietf.group.utils import save_group_in_history
 
 def charter_name_for_group(group):
     if group.type_id == "rg":
@@ -15,6 +20,10 @@ def charter_name_for_group(group):
         top_org = "ietf"
 
     return "charter-%s-%s" % (top_org, group.acronym)
+
+def split_charter_name(charter_name):
+    top_org, group_acronym = charter_name.split("-", 2)[1:]
+    return top_org, group_acronym
 
 def next_revision(rev):
     if rev == "":
@@ -44,6 +53,45 @@ def read_charter_text(doc):
             return f.read()
     except IOError:
         return "Error: couldn't read charter text"
+
+def change_group_state_after_charter_approval(group, by):
+    new_state = GroupStateName.objects.get(slug="active")
+    if group.state == new_state:
+        return None
+
+    save_group_in_history(group)
+    group.state = new_state
+    group.time = datetime.datetime.now()
+    group.save()
+
+    # create an event for the group state change, too
+    e = ChangeStateGroupEvent(group=group, type="changed_state")
+    e.time = group.time
+    e.by = by
+    e.state_id = "active"
+    e.desc = "Charter approved, group active"
+    e.save()
+
+    return e
+
+def fix_charter_revision_after_approval(charter, by):
+    # according to spec, 00-02 becomes 01, so copy file and record new revision
+    try:
+        old = os.path.join(charter.get_file_path(), '%s-%s.txt' % (charter.canonical_name(), charter.rev))
+        new = os.path.join(charter.get_file_path(), '%s-%s.txt' % (charter.canonical_name(), next_approved_revision(charter.rev)))
+        shutil.copy(old, new)
+    except IOError:
+        log("There was an error copying %s to %s" % (old, new))
+
+    events = []
+    e = NewRevisionDocEvent(doc=charter, by=by, type="new_revision")
+    e.rev = next_approved_revision(charter.rev)
+    e.desc = "New version available: <b>%s-%s.txt</b>" % (charter.canonical_name(), e.rev)
+    e.save()
+    events.append(e)
+
+    charter.rev = e.rev
+    charter.save_with_history(events)
 
 def historic_milestones_for_charter(charter, rev):
     """Return GroupMilestone/GroupMilestoneHistory objects for charter
@@ -89,8 +137,8 @@ def generate_ballot_writeup(request, doc):
     e.doc = doc
     e.desc = u"Ballot writeup was generated"
     e.text = unicode(render_to_string("doc/charter/ballot_writeup.txt"))
-    e.save()
-    
+
+    # caller is responsible for saving, if necessary
     return e
 
 def default_action_text(group, charter, by):
@@ -119,7 +167,7 @@ def default_action_text(group, charter, by):
                                    cc=addrs.cc,
                                    ))
 
-    e.save()
+    # caller is responsible for saving, if necessary
     return e
 
 def derive_new_work_text(review_text,group):
@@ -131,11 +179,11 @@ def derive_new_work_text(review_text,group):
                                            'Reply_to':'<iesg@ietf.org>'})
     if not addrs.cc:
         del m['Cc']
-    return m.as_string()
+    return smart_text(m.as_string())
 
 def default_review_text(group, charter, by):
     now = datetime.datetime.now()
-    addrs=gather_address_lists('charter_external_review',group=group).as_strings(compact=False)
+    addrs = gather_address_lists('charter_external_review',group=group).as_strings(compact=False)
 
     e1 = WriteupDocEvent(doc=charter, by=by)
     e1.by = by
@@ -158,17 +206,16 @@ def default_review_text(group, charter, by):
                                    )
                               )
     e1.time = now
-    e1.save()
-    
+
     e2 = WriteupDocEvent(doc=charter, by=by)
     e2.by = by
     e2.type = "changed_new_work_text"
     e2.desc = "%s review text was changed" % group.type.name
     e2.text = derive_new_work_text(e1.text,group)
     e2.time = now
-    e2.save()
 
-    return (e1,e2)
+    # caller is responsible for saving, if necessary
+    return (e1, e2)
 
 def generate_issue_ballot_mail(request, doc, ballot):
     

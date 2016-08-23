@@ -7,8 +7,7 @@ from django.core.urlresolvers import reverse as urlreverse
 from django.core.validators import validate_email, ValidationError
 from django.db.models import Q, Prefetch
 from django.http import HttpResponse, HttpResponseForbidden
-from django.shortcuts import render, render_to_response, get_object_or_404, redirect
-from django.template import RequestContext
+from django.shortcuts import render, get_object_or_404, redirect
 
 from ietf.doc.models import Document
 from ietf.ietfauth.utils import role_required, has_role
@@ -345,12 +344,10 @@ def liaison_add(request, type=None, **kwargs):
     else:
         form = liaison_form_factory(request,type=type,**kwargs)
 
-    return render_to_response(
-        'liaisons/edit.html',
-        {'form': form,
-         'liaison': kwargs.get('instance')},
-        context_instance=RequestContext(request),
-    )
+    return render(request, 'liaisons/edit.html', {
+        'form': form,
+        'liaison': kwargs.get('instance')
+    })
 
 def liaison_history(request, object_id):
     """Show the history for a specific liaison statement"""
@@ -369,9 +366,10 @@ def liaison_history(request, object_id):
 def liaison_delete_attachment(request, object_id, attach_id):
     liaison = get_object_or_404(LiaisonStatement, pk=object_id)
     attach = get_object_or_404(LiaisonStatementAttachment, pk=attach_id)
-    if not ( request.user.is_authenticated() and can_edit_liaison(request.user, liaison) ):
+    if not can_edit_liaison(request.user, liaison):
         return HttpResponseForbidden("You are not authorized for this action")
 
+    # FIXME: this view should use POST instead of GET when deleting
     attach.removed = True
     attach.save()
 
@@ -387,7 +385,7 @@ def liaison_delete_attachment(request, object_id, attach_id):
 
 def liaison_detail(request, object_id):
     liaison = get_object_or_404(LiaisonStatement, pk=object_id)
-    can_edit = request.user.is_authenticated() and can_edit_liaison(request.user, liaison)
+    can_edit = can_edit_liaison(request.user, liaison)
     can_take_care = _can_take_care(liaison, request.user)
     can_reply = _can_reply(liaison, request.user)
     person = get_person_for_user(request.user)
@@ -414,7 +412,7 @@ def liaison_detail(request, object_id):
     relations_by = [i.target for i in liaison.source_of_set.filter(target__state__slug='posted')]
     relations_to = [i.source for i in liaison.target_of_set.filter(source__state__slug='posted')]
 
-    return render_to_response("liaisons/detail.html", {
+    return render(request, "liaisons/detail.html", {
         "liaison": liaison,
         'tabs': get_details_tabs(liaison, 'Statement'),
         "can_edit": can_edit,
@@ -422,11 +420,11 @@ def liaison_detail(request, object_id):
         "can_reply": can_reply,
         "relations_to": relations_to,
         "relations_by": relations_by,
-    }, context_instance=RequestContext(request))
+    })
 
 def liaison_edit(request, object_id):
     liaison = get_object_or_404(LiaisonStatement, pk=object_id)
-    if not (request.user.is_authenticated() and can_edit_liaison(request.user, liaison)):
+    if not can_edit_liaison(request.user, liaison):
         return HttpResponseForbidden('You do not have permission to edit this liaison statement')
     return liaison_add(request, instance=liaison)
 
@@ -434,35 +432,35 @@ def liaison_edit_attachment(request, object_id, doc_id):
     '''Edit the Liaison Statement attachment title'''
     liaison = get_object_or_404(LiaisonStatement, pk=object_id)
     doc = get_object_or_404(Document, pk=doc_id)
-    if not ( request.user.is_authenticated() and can_edit_liaison(request.user, liaison) ):
+    if not can_edit_liaison(request.user, liaison):
         return HttpResponseForbidden("You are not authorized for this action")
 
     if request.method == 'POST':
         form = EditAttachmentForm(request.POST)
         if form.is_valid():
             title = form.cleaned_data.get('title')
-            doc.title = title
-            doc.save()
 
             # create event
-            LiaisonStatementEvent.objects.create(
+            e = LiaisonStatementEvent.objects.create(
                 type_id='modified',
                 by=get_person_for_user(request.user),
                 statement=liaison,
                 desc='Attachment Title changed to {}'.format(title)
             )
+
+            doc.title = title
+            doc.save_with_history([e])
+
             messages.success(request,'Attachment title changed')
             return redirect('ietf.liaisons.views.liaison_detail', object_id=liaison.pk)
 
     else:
         form = EditAttachmentForm(initial={'title':doc.title})
 
-    return render_to_response(
-        'liaisons/edit_attachment.html',
-        {'form': form,
-         'liaison': liaison},
-        context_instance=RequestContext(request),
-    )
+    return render(request, 'liaisons/edit_attachment.html', {
+        'form': form,
+        'liaison': liaison
+    })
 
 def liaison_list(request, state='posted'):
     """A generic list view with tabs for different states: posted, pending, dead"""

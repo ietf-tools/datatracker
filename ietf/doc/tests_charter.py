@@ -12,7 +12,8 @@ import debug                            # pyflakes:ignore
 
 from ietf.doc.models import ( Document, State, BallotDocEvent, BallotType, NewRevisionDocEvent,
     TelechatDocEvent, WriteupDocEvent )
-from ietf.doc.utils_charter import next_revision, default_review_text, default_action_text 
+from ietf.doc.utils_charter import ( next_revision, default_review_text, default_action_text,
+    charter_name_for_group )
 from ietf.doc.utils import close_open_ballots
 from ietf.group.models import Group, GroupMilestone
 from ietf.iesg.models import TelechatDate
@@ -33,6 +34,10 @@ class EditCharterTests(TestCase):
         settings.CHARTER_PATH = self.saved_charter_path
         shutil.rmtree(self.charter_dir)
 
+    def write_charter_file(self, charter):
+        with open(os.path.join(self.charter_dir, "%s-%s.txt" % (charter.canonical_name(), charter.rev)), "w") as f:
+            f.write("This is a charter.")
+
     def test_startstop_process(self):
         make_test_data()
 
@@ -49,6 +54,8 @@ class EditCharterTests(TestCase):
             self.assertEqual(r.status_code, 200)
 
             # post
+            self.write_charter_file(charter)
+
             r = self.client.post(url, dict(message="test message"))
             self.assertEqual(r.status_code, 302)
             if option == "abandon":
@@ -312,6 +319,40 @@ class EditCharterTests(TestCase):
             self.assertEqual(f.read(),
                               "Windows line\nMac line\nUnix line\n" + utf_8_snippet)
 
+    def test_submit_initial_charter(self):
+        make_test_data()
+
+        group = Group.objects.get(acronym="mars")
+        # get rid of existing charter
+        charter = group.charter
+        group.charter = None
+        group.save()
+        charter.delete()
+        charter = None
+
+        url = urlreverse('charter_submit', kwargs=dict(name=charter_name_for_group(group)))
+        login_testing_unauthorized(self, "secretary", url)
+
+        # normal get
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('form input[name=txt]')), 1)
+
+        # create charter
+        test_file = StringIO("Simple test")
+        test_file.name = "unnamed"
+
+        r = self.client.post(url, dict(txt=test_file))
+        self.assertEqual(r.status_code, 302)
+
+        charter = Document.objects.get(name="charter-ietf-%s" % group.acronym)
+        self.assertEqual(charter.rev, "00-00")
+        self.assertTrue("new_revision" in charter.latest_event().type)
+
+        group = Group.objects.get(pk=group.pk)
+        self.assertEqual(group.charter, charter)
+
     def test_edit_review_announcement_text(self):
         draft = make_test_data()
         charter = draft.group.charter
@@ -424,7 +465,8 @@ class EditCharterTests(TestCase):
         url = urlreverse('ietf.doc.views_charter.ballot_writeupnotes', kwargs=dict(name=charter.name))
         login_testing_unauthorized(self, "secretary", url)
 
-        default_action_text(draft.group, charter, by)
+        e = default_action_text(draft.group, charter, by)
+        e.save()
 
         # normal get
         r = self.client.get(url)
@@ -456,8 +498,7 @@ class EditCharterTests(TestCase):
         url = urlreverse('charter_approve', kwargs=dict(name=charter.name))
         login_testing_unauthorized(self, "secretary", url)
 
-        with open(os.path.join(self.charter_dir, "%s-%s.txt" % (charter.canonical_name(), charter.rev)), "w") as f:
-            f.write("This is a charter.")
+        self.write_charter_file(charter)
 
         p = Person.objects.get(name="Areað Irector")
 

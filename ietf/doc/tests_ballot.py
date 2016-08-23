@@ -127,7 +127,7 @@ class EditPositionTests(TestCase):
     def test_send_ballot_comment(self):
         draft = make_test_data()
         draft.notify = "somebody@example.com"
-        draft.save()
+        draft.save_with_history([DocEvent.objects.create(doc=draft, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
 
         ad = Person.objects.get(name="Areað Irector")
 
@@ -219,8 +219,8 @@ class BallotWriteupsTests(TestCase):
                 regenerate_last_call_text="1"))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        draft = Document.objects.get(name=draft.name)
-        self.assertTrue("Subject: Last Call" in draft.latest_event(WriteupDocEvent, type="changed_last_call_text").text)
+        text = q("[name=last_call_text]").text()
+        self.assertTrue("Subject: Last Call" in text)
 
 
     def test_request_last_call(self):
@@ -231,12 +231,14 @@ class BallotWriteupsTests(TestCase):
         # give us an announcement to send
         r = self.client.post(url, dict(regenerate_last_call_text="1"))
         self.assertEqual(r.status_code, 200)
-        
+        q = PyQuery(r.content)
+        text = q("[name=last_call_text]").text()
+
         mailbox_before = len(outbox)
 
         # send
         r = self.client.post(url, dict(
-                last_call_text=draft.latest_event(WriteupDocEvent, type="changed_last_call_text").text,
+                last_call_text=text,
                 send_last_call_request="1"))
         draft = Document.objects.get(name=draft.name)
         self.assertEqual(draft.get_state_slug("draft-iesg"), "lc-req")
@@ -359,7 +361,6 @@ class BallotWriteupsTests(TestCase):
         # test regenerate
         r = self.client.post(url, dict(regenerate_approval_text="1"))
         self.assertEqual(r.status_code, 200)
-        draft = Document.objects.get(name=draft.name)
         self.assertTrue("Subject: Protocol Action" in draft.latest_event(WriteupDocEvent, type="changed_ballot_approval_text").text)
 
         # test regenerate when it's a disapprove
@@ -367,18 +368,16 @@ class BallotWriteupsTests(TestCase):
 
         r = self.client.post(url, dict(regenerate_approval_text="1"))
         self.assertEqual(r.status_code, 200)
-        draft = Document.objects.get(name=draft.name)
         self.assertTrue("NOT be published" in draft.latest_event(WriteupDocEvent, type="changed_ballot_approval_text").text)
 
         # test regenerate when it's a conflict review
         draft.group = Group.objects.get(type="individ")
         draft.stream_id = "irtf"
-        draft.save()
         draft.set_state(State.objects.get(used=True, type="draft-iesg", slug="iesg-eva"))
+        draft.save_with_history([DocEvent.objects.create(doc=draft, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
 
         r = self.client.post(url, dict(regenerate_approval_text="1"))
         self.assertEqual(r.status_code, 200)
-        draft = Document.objects.get(name=draft.name)
         self.assertTrue("Subject: Results of IETF-conflict review" in draft.latest_event(WriteupDocEvent, type="changed_ballot_approval_text").text)
         
     def test_edit_verify_permissions(self):
@@ -398,6 +397,8 @@ class BallotWriteupsTests(TestCase):
 
         draft = make_test_data()
 
+        events = []
+        
         e = WriteupDocEvent()
         e.type = "changed_ballot_approval_text"
         e.by = Person.objects.get(name="(System)")
@@ -405,6 +406,7 @@ class BallotWriteupsTests(TestCase):
         e.desc = u"Ballot approval text was generated"
         e.text = u"Test approval text."
         e.save()
+        events.append(e)
 
         e = WriteupDocEvent()
         e.type = "changed_ballot_writeup_text"
@@ -413,6 +415,7 @@ class BallotWriteupsTests(TestCase):
         e.desc = u"Ballot writeup was generated"
         e.text = u"Test ballot writeup text."
         e.save()
+        events.append(e)
 
         e = WriteupDocEvent()
         e.type = "changed_ballot_rfceditornote_text"
@@ -421,6 +424,7 @@ class BallotWriteupsTests(TestCase):
         e.desc = u"RFC Editor Note for ballot was generated"
         e.text = u"Test note to the RFC Editor text."
         e.save()
+        events.append(e)
 
         # IETF Stream Documents
         for p in ['doc_ballot_approvaltext','doc_ballot_writeupnotes','doc_ballot_rfceditornote']:
@@ -434,7 +438,7 @@ class BallotWriteupsTests(TestCase):
 
         # RFC Editor Notes for documents in the IAB Stream
         draft.stream_id = 'iab'
-        draft.save()
+        draft.save_with_history(events)
         url = urlreverse('doc_ballot_rfceditornote', kwargs=dict(name=draft.name))
 
         for username in ['plain','marschairman','ad','irtf chair','ise','iana']:
@@ -444,8 +448,12 @@ class BallotWriteupsTests(TestCase):
             verify_can_see(username, url)
 
         # RFC Editor Notes for documents in the IRTF Stream
+        e = DocEvent(doc=draft,by=Person.objects.get(name="(System)"),type='changed_stream')
+        e.desc = u"Changed stream to <b>%s</b>" % 'irtf'
+        e.save()
+
         draft.stream_id = 'irtf'
-        draft.save()
+        draft.save_with_history([e])
         url = urlreverse('doc_ballot_rfceditornote', kwargs=dict(name=draft.name))
 
         for username in ['plain','marschairman','ad','iab chair','ise','iana']:
@@ -455,8 +463,12 @@ class BallotWriteupsTests(TestCase):
             verify_can_see(username, url)
 
         # RFC Editor Notes for documents in the IAB Stream
+        e = DocEvent(doc=draft,by=Person.objects.get(name="(System)"),type='changed_stream')
+        e.desc = u"Changed stream to <b>%s</b>" % 'ise'
+        e.save()
+
         draft.stream_id = 'ise'
-        draft.save()
+        draft.save_with_history([e])
         url = urlreverse('doc_ballot_rfceditornote', kwargs=dict(name=draft.name))
 
         for username in ['plain','marschairman','ad','iab chair','irtf chair','iana']:
@@ -658,7 +670,6 @@ class DeferUndeferTestCase(TestCase):
         defer_states = dict(draft=['draft-iesg','defer'],conflrev=['conflrev','defer'],statchg=['statchg','defer'])
         if doc.type_id in defer_states:
             doc.set_state(State.objects.get(used=True, type=defer_states[doc.type_id][0],slug=defer_states[doc.type_id][1]))
-            doc.save()
 
         # get
         r = self.client.get(url)
