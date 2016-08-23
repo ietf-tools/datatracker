@@ -649,7 +649,7 @@ def review_requests(request, acronym, group_type=None):
 
     open_review_requests = list(ReviewRequest.objects.filter(
         team=group, state__in=("requested", "accepted")
-    ).prefetch_related("reviewer", "type", "state").order_by("time", "id"))
+    ).prefetch_related("reviewer", "type", "state").order_by("-time", "-id"))
 
     open_review_requests += suggested_review_requests_for_team(group)
 

@@ -231,7 +231,7 @@ def suggested_review_requests_for_team(team):
 
     res = [r for r in requests.itervalues()
            if not any(blocks(e, r) for e in existing_requests[r.doc_id])]
-    res.sort(key=lambda r: (r.deadline, r.doc_id))
+    res.sort(key=lambda r: (r.deadline, r.doc_id), reversed=True)
     return res
 
 def extract_revision_ordered_review_requests_for_documents(queryset, names):

@@ -123,7 +123,7 @@ class ReviewTests(TestCase):
             "r{}-action".format(review_req2.pk): "assign",
             "r{}-reviewer".format(review_req2.pk): new_reviewer.pk,
 
-            "action": "save",
+            "action": "save-continue",
         })
         self.assertEqual(r.status_code, 200)
         content = unicontent(r).lower()

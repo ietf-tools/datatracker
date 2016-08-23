@@ -1,5 +1,10 @@
 $(document).ready(function () {
     var form = $("form.review-requests");
+    var saveButtons = form.find("[name=action][value^=\"save\"]");
+
+    function updateSaveButtons() {
+        saveButtons.prop("disabled", form.find("[name$=\"-action\"][value][value!=\"\"]").length == 0);
+    }
 
     function setControlDisplay(row) {
         var action = row.find("[name$=\"-action\"]").val();
@@ -17,6 +22,8 @@ $(document).ready(function () {
             row.find(".reviewer-controls,.close-controls").hide();
             row.find(".assign-action,.close-action").show();
         }
+
+        updateSaveButtons();
     }
 
     form.find(".assign-action button").on("click", function () {
@@ -89,4 +96,6 @@ $(document).ready(function () {
         var row = $(this).closest("tr");
         setControlDisplay(row);
     });
+
+    updateSaveButtons();
 });

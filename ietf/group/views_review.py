@@ -72,7 +72,7 @@ def manage_review_requests(request, acronym, group_type=None):
 
     review_requests = list(ReviewRequest.objects.filter(
         team=group, state__in=("requested", "accepted")
-    ).prefetch_related("reviewer", "type", "state").order_by("time", "id"))
+    ).prefetch_related("reviewer", "type", "state").order_by("-time", "-id"))
 
     review_requests += suggested_review_requests_for_team(group)
 
@@ -104,7 +104,8 @@ def manage_review_requests(request, acronym, group_type=None):
     newly_closed = newly_opened = newly_assigned = 0
 
     if request.method == "POST":
-        saving = request.POST.get("action") == "save"
+        form_action = request.POST.get("action", "")
+        saving = form_action.startswith("save")
 
         # check for conflicts
         review_requests_dict = { unicode(r.pk): r for r in review_requests }
@@ -151,8 +152,12 @@ def manage_review_requests(request, acronym, group_type=None):
             kwargs = { "acronym": group.acronym }
             if group_type:
                 kwargs["group_type"] = group_type
-            import ietf.group.views
-            return redirect(ietf.group.views.review_requests, **kwargs)
+
+            if form_action == "save-continue":
+                return redirect(manage_review_requests, **kwargs)
+            else:
+                import ietf.group.views
+                return redirect(ietf.group.views.review_requests, **kwargs)
 
     return render(request, 'group/manage_review_requests.html', {
         'group': group,
