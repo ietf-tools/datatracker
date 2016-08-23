@@ -302,7 +302,6 @@ class ReviewTests(TestCase):
         review_req = make_review_data(doc)
         review_req.state = ReviewRequestStateName.objects.get(slug="accepted")
         review_req.save()
-        review_req.team.list_email = "{}@ietf.org".format(review_req.team.acronym)
         review_req.team.save()
 
         # test URL construction
@@ -343,7 +342,6 @@ class ReviewTests(TestCase):
         review_req = make_review_data(doc)
         review_req.state = ReviewRequestStateName.objects.get(slug="accepted")
         review_req.save()
-        review_req.team.list_email = "{}@ietf.org".format(review_req.team.acronym)
         for r in ReviewResultName.objects.filter(slug__in=("issues", "ready")):
             ReviewTeamResult.objects.get_or_create(team=review_req.team, result=r)
         review_req.team.save()

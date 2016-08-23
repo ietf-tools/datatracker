@@ -360,7 +360,7 @@ def make_test_data():
     return draft
 
 def make_review_data(doc):
-    team = Group.objects.create(state_id="active", acronym="reviewteam", name="Review Team", type_id="team")
+    team = Group.objects.create(state_id="active", acronym="reviewteam", name="Review Team", type_id="team", list_email="reviewteam@ietf.org")
     for r in ReviewResultName.objects.filter(slug__in=["issues", "ready-issues", "ready", "not-ready"]):
         ReviewTeamResult.objects.create(team=team, result=r)
 
