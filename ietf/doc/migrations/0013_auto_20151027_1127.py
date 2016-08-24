@@ -1,5 +1,7 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+
+import sys
 
 from django.db import migrations
 
@@ -16,6 +18,10 @@ def save_all_documents_in_history(apps, schema_editor):
     RelatedDocHistory = apps.get_model("doc", "RelatedDocHistory")
     DocumentAuthor = apps.get_model("doc", "DocumentAuthor")
     DocHistoryAuthor = apps.get_model("doc", "DocHistoryAuthor")
+
+    sys.stderr.write('\n'
+                    '    Ensuring that all documents have document history entries.\n'
+                    '    This could take as much as an hour to run.\n')
 
     def canonical_name(self):
         name = self.name
@@ -38,6 +44,8 @@ def save_all_documents_in_history(apps, schema_editor):
 
     def save_document_in_history(doc):
         """Save a snapshot of document and related objects in the database."""
+
+
         def get_model_fields_as_dict(obj):
             return dict((field.name, getattr(obj, field.name))
                         for field in obj._meta.fields
@@ -48,8 +56,21 @@ def save_all_documents_in_history(apps, schema_editor):
         fields["doc"] = doc
         fields["name"] = canonical_name(doc)
 
-        dochist = DocHistory(**fields)
-        dochist.save()
+        objs = DocHistory.objects.filter(**fields)
+        if objs.exists():
+            try:
+                dochist = objs.get(**fields)
+                sys.stderr.write('.')
+            except DocHistory.MultipleObjectsReturned:
+                dochist_list = list(objs)
+                for dochist in dochist_list[1:]:
+                    dochist.delete()
+                dochist = dochist_list[0]
+                sys.stderr.write('-')
+        else:
+            dochist = DocHistory(**fields)
+            dochist.save()
+            sys.stderr.write('+')
 
         # copy many to many
         for field in doc._meta.many_to_many:
@@ -82,8 +103,8 @@ def save_all_documents_in_history(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('doc', '0010_auto_20150930_0251'),
-        ('group', '0007_auto_20150930_0758'),
+        ('doc', '0012_auto_20160207_0537'),
+        ('group', '0009_auto_20150930_0758'),
     ]
 
     operations = [

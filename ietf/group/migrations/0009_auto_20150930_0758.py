@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 import os, datetime
 
@@ -108,7 +108,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('doc', '0010_auto_20150930_0251'),
-        ('group', '0006_auto_20150718_0509'),
+        ('group', '0008_auto_20160505_0523'),
     ]
 
     operations = [
