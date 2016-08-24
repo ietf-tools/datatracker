@@ -31,6 +31,7 @@ from ietf.utils.history import find_history_active_at
 from ietf.utils.mail import send_mail_preformatted 
 from ietf.utils.textupload import get_cleaned_text_file_content
 from ietf.group.mails import email_admin_re_charter
+from ietf.group.views import fill_in_charter_info
 
 class ChangeStateForm(forms.Form):
     charter_state = forms.ModelChoiceField(State.objects.filter(used=True, type="charter"), label="Charter state", empty_label=None, required=False)
@@ -421,6 +422,7 @@ def submit(request, name=None, option=None):
         except IOError:
             pass
         form = UploadForm(initial=init)
+        fill_in_charter_info(group)
     return render_to_response('doc/charter/submit.html',
                               {'form': form,
                                'next_rev': next_rev,
