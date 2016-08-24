@@ -20,6 +20,7 @@ from django.conf import settings
 from django.template.defaultfilters import date as date_format
 from django.utils.text import slugify
 
+from ietf.dbtemplate.models import DBTemplate
 from ietf.doc.models import Document
 from ietf.group.models import Group
 from ietf.group.utils import can_manage_materials
@@ -90,7 +91,8 @@ class Meeting(models.Model):
     session_request_lock_message = models.CharField(blank=True,max_length=255) # locked if not empty
     proceedings_final = models.BooleanField(default=False, help_text=u"Are the proceedings for this meeting complete?")
     acknowledgements = models.TextField(blank=True, help_text="Acknowledgements for use in meeting proceedings.  Use ReStructuredText markup.")
-    
+    overview = models.ForeignKey(DBTemplate, related_name='overview', null=True, editable=False)
+
     def __unicode__(self):
         if self.type_id == "ietf":
             return "IETF-%s" % (self.number)

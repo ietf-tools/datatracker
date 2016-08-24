@@ -368,7 +368,8 @@ RFCDIFF_BASE_URL = "https://www.ietf.org/rfcdiff"
 TEST_RUNNER = 'ietf.utils.test_runner.IetfTestRunner'
 
 # Fixtures which will be loaded before testing starts
-GLOBAL_TEST_FIXTURES = [ 'names','ietf.utils.test_data.make_immutable_base_data','nomcom_templates' ]
+GLOBAL_TEST_FIXTURES = [ 'names','ietf.utils.test_data.make_immutable_base_data',
+    'nomcom_templates','proceedings_templates' ]
 
 TEST_DIFF_FAILURE_DIR = "/tmp/test/failure/"
 
