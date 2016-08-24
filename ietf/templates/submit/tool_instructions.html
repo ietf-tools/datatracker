@@ -17,7 +17,7 @@
 
   <h3>Upload screen</h3>
   <p>
-    The Upload screen is the first screen that a user will see when he or she starts the I-D submission process. A user can submit four different formats of an I-D, plain text, XML, PDF, and postscript, at the same time. Failure to submit a plain-text version will cause an error, and an error screen will be displayed.
+    The Upload screen is the first screen that a user will see when he or she starts the I-D submission process. A user can submit four different formats of an I-D, plain text, XML, PDF, and postscript, at the same time. Failure to submit at least one of a plain-text or xml version will cause an error, and an error screen will be displayed.
   </p>
 
   <p>
@@ -26,7 +26,7 @@
   <table class="table table-condensed table-striped">
     <tr>
       <th>.txt format</th>
-      <td>Button to select a plain-text file of an I-D from a user's local file system. A plain-text version is mandatory and leaving the field blank will cause an error.</td>
+      <td>Button to select a plain-text file of an I-D from a user's local file system.</td>
     </tr>
     <tr>
       <th>.xml format</th>
@@ -42,13 +42,13 @@
     </tr>
     <tr>
       <th>Upload</th>
-      <td>Button to upload the document(s). The tool will begin parsing the plain-text document and validate the document. The parsed meta-data will be displayed for user confirmation along with the validation results.</td>
+      <td>Button to upload the document(s). The tool will begin parsing the plain-text document (or creating it from the xml if only xml is provided) and validate the document. The parsed meta-data will be displayed for user confirmation along with the validation results.</td>
     </tr>
   </table>
 
   <h3>Validation screen</h3>
   <p>
-    After a user uploads a plain-text version, or multiple versions of an I-D,  the tool will parse the plain-text version, validate the I-D, and display the validation results with option(s) for next steps. The validation includes: checking for all IPR-related notices and I-D boilerplate described in <a href="https://www.ietf.org/ietf/1id-guidelines.html">Guidelines to Authors of Internet-Drafts</a>; the required sections described in <a href="https://www.ietf.org/ID-Checklist.html">the I-D Check List</a>; the version number; and the creation date.
+    After a user uploads the document(s),  the tool will parse the plain-text version, validate the I-D, and display the validation results with option(s) for next steps. The validation includes: checking for all IPR-related notices and I-D boilerplate described in <a href="https://www.ietf.org/ietf/1id-guidelines.html">Guidelines to Authors of Internet-Drafts</a>; the required sections described in <a href="https://www.ietf.org/ID-Checklist.html">the I-D Check List</a>; the version number; and the creation date.
   </p>
 
   <p>
@@ -83,7 +83,7 @@
     <tr>
       <th>Post now</th>
       <td>
-	<p>Button to start the automated posting process with submitter authentication. Once clicked, an email message will be sent to the submitter whose email address was provided within the form. The submitter will need to open the email message via his or her email application, and click the link provided in the message body.</p>
+	<p>Button to start the automated posting process with submitter authentication. Once clicked, an email message will be sent to the parties who can verify the sybmission. For a new draft (-00), that will be the authors listed in the document. For -01 and subsequent drafts, the confirmation message is sent to the authors of the <b>previous</b> version. One of the recipients of the confirmation message will need to open the email message via his or her email application, and click the link provided in the message body.</p>
 	<p>Once a link in the email body is clicked, the document gets pushed to the IETF Web and FTP sites, a notification is sent to the authors of the document, and an I-D Action announcement will be sent out within the next 15 minutes.</p>
 	<p>If the document requires an additional approval from a chair of a working group, i.e., for submission of a 00 version of a working group document, then a message will be sent to the chairs of the working group for the approval. Once approved, the document will be immediately announced and available via the IETF Web and FTP sites.</p>
       </td>
