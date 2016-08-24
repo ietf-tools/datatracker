@@ -63,6 +63,7 @@ from ietf.meeting.models import Session
 from ietf.meeting.utils import group_sessions, get_upcoming_manageable_sessions, sort_sessions
 from ietf.review.models import ReviewRequest
 from ietf.review.utils import can_request_review_of_doc, review_requests_to_list_for_doc
+from ietf.review.utils import no_review_from_teams_on_doc
 
 def render_document_top(request, doc, tab, name):
     tabs = []
@@ -358,6 +359,7 @@ def document_main(request, name, rev=None):
         started_iesg_process = doc.latest_event(type="started_iesg_process")
 
         review_requests = review_requests_to_list_for_doc(doc)
+        no_review_from_teams = no_review_from_teams_on_doc(doc, rev or doc.rev)
 
         return render_to_response("doc/document_draft.html",
                                   dict(doc=doc,
@@ -420,6 +422,7 @@ def document_main(request, name, rev=None):
                                        actions=actions,
                                        presentations=presentations,
                                        review_requests=review_requests,
+                                       no_review_from_teams=no_review_from_teams,
                                        ),
                                   context_instance=RequestContext(request))
 

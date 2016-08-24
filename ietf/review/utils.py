@@ -35,11 +35,18 @@ def can_manage_review_requests_for_team(user, team, allow_non_team_personnel=Tru
 
 def review_requests_to_list_for_doc(doc):
     return extract_revision_ordered_review_requests_for_documents(
-        ReviewRequest.objects.exclude(
-            state__in=["withdrawn", "rejected", "overtaken", "no-response"],
+        ReviewRequest.objects.filter(
+            state__in=["requested", "accepted", "part-completed", "completed"],
         ).prefetch_related("result"),
         [doc.name]
     ).get(doc.pk, [])
+
+def no_review_from_teams_on_doc(doc, rev):
+    return Group.objects.filter(
+        reviewrequest__doc=doc,
+        reviewrequest__reviewed_rev=rev,
+        reviewrequest__state="no-review-version",
+    ).distinct()
 
 def make_new_review_request_from_existing(review_req):
     obj = ReviewRequest()
@@ -134,7 +141,7 @@ def close_review_request(request, review_req, close_state):
     prev_state = review_req.state
     review_req.state = close_state
     if close_state.slug == "no-review-version":
-        review_req.reviewed_rev = review_req.doc.rev # save rev for later reference
+        review_req.reviewed_rev = review_req.requested_rev or review_req.doc.rev # save rev for later reference
     review_req.save()
 
     if not suggested_req:
