@@ -4,8 +4,10 @@ Hi,
 The IETF datatracker draft submission service has received your draft
 {{ submission.name }}-{{ submission.rev }}, and requires a
 confirmation step in order to be able to complete the posting of
-the draft.
+the draft.{% if chair_notice %}
 
+The chairs have been copied since this is a group document whose author list has changed.
+{%endif%}
 Please follow this link to the page where you can confirm the posting:
 
 {{ confirm_url }}
