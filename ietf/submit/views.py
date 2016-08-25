@@ -208,6 +208,13 @@ def submission_status(request, submission_id, access_token=None):
 
     requires_prev_authors_approval = Document.objects.filter(name=submission.name)
 
+    group_authors_changed = False
+    doc = submission.existing_document()
+    if doc and doc.group:
+        old_authors = [i.author.formatted_email() for i in doc.documentauthor_set.all() if not i.author.invalid_address()]
+        new_authors = [u'"%s" <%s>' % (author["name"], author["email"]) for author in submission.authors_parsed() if author["email"]]
+        group_authors_changed = set(old_authors)!=set(new_authors)
+
     message = None
 
     if submission.state_id == "cancel":
@@ -253,7 +260,7 @@ def submission_status(request, submission_id, access_token=None):
                         submission.state = DraftSubmissionStateName.objects.get(slug="auth")
                     submission.save()
 
-                    sent_to = send_submission_confirmation(request, submission)
+                    sent_to = send_submission_confirmation(request, submission, chair_notice=group_authors_changed)
 
                     if submission.state_id == "aut-appr":
                         desc = u"sent confirmation email to previous authors: %s" % u", ".join(sent_to)

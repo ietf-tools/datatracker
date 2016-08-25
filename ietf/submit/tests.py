@@ -15,7 +15,7 @@ from ietf.utils.mail import outbox
 from ietf.utils.test_utils import TestCase
 from ietf.meeting.models import Meeting
 from ietf.submit.utils import expirable_submissions, expire_submission, ensure_person_email_info_exists
-from ietf.person.models import Person
+from ietf.person.models import Person, Email
 from ietf.group.models import Group
 from ietf.doc.models import Document, DocAlias, DocEvent, State, BallotDocEvent, BallotPositionDocEvent, DocumentAuthor
 from ietf.submit.models import Submission, Preapproval
@@ -263,14 +263,19 @@ class SubmitTests(TestCase):
     def text_submit_new_wg_txt_xml(self):
         self.submit_new_wg(["txt", "xml"])
 
-    def submit_existing(self, formats):
+    def submit_existing(self, formats, change_authors=True):
         # submit new revision of existing -> supply submitter info -> prev authors confirm
         draft = make_test_data()
-        prev_author = draft.documentauthor_set.all()[0]
+        if not change_authors:
+            draft.documentauthor_set.all().delete()
+            ensure_person_email_info_exists('Author Name','author@example.com')
+            draft.documentauthor_set.create(author=Email.objects.get(address='author@example.com'))
+        else:
+            # Make it such that one of the previous authors has an invalid email address
+            bogus_email = ensure_person_email_info_exists('Bogus Person',None)  
+            DocumentAuthor.objects.create(document=draft,author=bogus_email,order=draft.documentauthor_set.latest('order').order+1)
 
-        # Make it such that one of the previous authors has an invalid email address
-        bogus_email = ensure_person_email_info_exists('Bogus Person',None)  
-        DocumentAuthor.objects.create(document=draft,author=bogus_email,order=draft.documentauthor_set.latest('order').order+1)
+        prev_author = draft.documentauthor_set.all()[0]
 
         # pretend IANA reviewed it
         draft.set_state(State.objects.get(used=True, type="draft-iana-review", slug="not-ok"))
@@ -316,11 +321,18 @@ class SubmitTests(TestCase):
         self.assertTrue("Confirm submission" in confirm_email["Subject"])
         self.assertTrue(name in confirm_email["Subject"])
         self.assertTrue(prev_author.author.address in confirm_email["To"])
-        # submitter and new author can't confirm
-        self.assertTrue("author@example.com" not in confirm_email["To"])
+        if change_authors:
+            self.assertTrue("author@example.com" not in confirm_email["To"])
         self.assertTrue("submitter@example.com" not in confirm_email["To"])
         # Verify that mail wasn't sent to know invalid addresses
         self.assertTrue("unknown-email-" not in confirm_email["To"])
+        if change_authors:
+            # Since authors changed, ensure chairs are copied (and that the message says why)
+            self.assertTrue("chairs have been copied" in unicode(confirm_email))
+            self.assertTrue("mars-chairs@" in confirm_email["To"].lower())
+        else:
+            self.assertTrue("chairs have been copied" not in unicode(confirm_email))
+            self.assertTrue("mars-chairs@" not in confirm_email["To"].lower())
 
         confirm_url = self.extract_confirm_url(confirm_email)
 
@@ -373,6 +385,9 @@ class SubmitTests(TestCase):
     def test_submit_existing_txt_xml(self):
         self.submit_existing(["txt", "xml"])
 
+    def test_submit_existing_txt_preserve_authors(self):
+        self.submit_existing(["txt"],change_authors=False)
+
     def submit_new_individual(self, formats):
         # submit new -> supply submitter info -> confirm
         draft = make_test_data()
@@ -400,6 +415,7 @@ class SubmitTests(TestCase):
         # both submitter and author get email
         self.assertTrue("author@example.com" in confirm_email["To"])
         self.assertTrue("submitter@example.com" in confirm_email["To"])
+        self.assertFalse("chairs have been copied" in unicode(confirm_email))
 
         confirm_url = self.extract_confirm_url(outbox[-1])
 
@@ -430,6 +446,8 @@ class SubmitTests(TestCase):
 
     def test_submit_update_individual(self):
         draft = make_test_data()
+        draft.group = None
+        draft.save_with_history([DocEvent.objects.create(doc=draft, type="added_comment", by=Person.objects.get(user__username="secretary"), desc="Test")])
         replaces_count = draft.relateddocument_set.filter(relationship_id='replaces').count()
         name = draft.name
         rev = '%02d'%(int(draft.rev)+1)
@@ -454,6 +472,7 @@ class SubmitTests(TestCase):
         r = self.client.get(status_url)
         self.assertEqual(len(outbox), mailbox_before + 1)
         confirm_url = self.extract_confirm_url(outbox[-1])
+        self.assertFalse("chairs have been copied" in unicode(outbox[-1]))
         mailbox_before = len(outbox)
         r = self.client.post(confirm_url)
         self.assertEqual(r.status_code, 302)
