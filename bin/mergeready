@@ -353,7 +353,7 @@ for key in keys:
                 commit_comment = pipe("svn log -c %s ^/" % commit).splitlines()[3:-1]
                 for l in commit_comment:
                     sys.stderr.write("    %s\n" % l)
-            del unmerged_branch_commits[branch][j]
+        unmerged_branch_commits[branch] = unmerged_branch_commits[branch][i:]
         sys.stderr.write("\n")
     del unmerged_branch_commits[branch][0]
 
