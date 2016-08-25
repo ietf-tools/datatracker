@@ -1638,6 +1638,22 @@ def finalize_proceedings(request, num=None):
 def proceedings_acknowledgements(request, num=None):
 
     meeting = get_meeting(num)
+    if meeting.number < 95:
+        return HttpResponseRedirect( 'https://www.ietf.org/proceedings/%s/acknowledgement.html' % num )
     return render(request, "meeting/proceedings_acknowledgements.html", {
         'meeting': meeting,
+    })
+
+@role_required('Secretariat')
+def proceedings_overview(request, num=None):
+    '''Display Overview for given meeting'''
+    meeting = get_meeting(num)
+    if meeting.number < 95:
+        return HttpResponseRedirect( 'https://www.ietf.org/proceedings/%s/overview.html' % num )
+    overview_template = '/meeting/proceedings/%s/overview.rst' % meeting.number
+    template = render_to_string(overview_template, {})
+
+    return render(request, "meeting/proceedings_overview.html", {
+        'meeting': meeting,
+        'template': template,
     })

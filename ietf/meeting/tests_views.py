@@ -271,6 +271,35 @@ class MeetingTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 
+    def test_proceedings_overview(self):
+        '''Test proceedings IETF Overview page.
+        Note: old meetings aren't supported so need to add a new meeting then test.
+        '''
+        make_meeting_test_data()
+        # add meeting requires a previous meeting to work
+        date = datetime.date(2016,7,14)
+        Meeting.objects.create(type_id='ietf',date=date,number=96)
+        url = urlreverse('ietf.secr.meetings.views.add')
+        post_data = dict(number='97',city='Seoul',date='2016-11-13',country='KR',
+                         time_zone='Asia/Seoul',venue_name='Conrad Seoul',
+                         venue_addr='10 Gukjegeumyung-ro',
+                         idsubmit_cutoff_day_offset_00=13,
+                         idsubmit_cutoff_day_offset_01=20,
+                         idsubmit_cutoff_time_utc     =datetime.timedelta(hours=23, minutes=59, seconds=59),
+                         idsubmit_cutoff_warning_days =datetime.timedelta(days=21),
+                         submission_start_day_offset=90,
+                         submission_cutoff_day_offset=26,
+                         submission_correction_day_offset=50,
+                     )
+        self.client.login(username='secretary', password='secretary+password')
+        
+        response = self.client.post(url, post_data)
+        self.assertRedirects(response,urlreverse('ietf.secr.meetings.views.main'))
+        url = urlreverse('ietf.meeting.views.proceedings_overview',kwargs={'num':97})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue('The Internet Engineering Task Force' in response.content)
+
     def test_feed(self):
         meeting = make_meeting_test_data()
         session = Session.objects.filter(meeting=meeting, group__acronym="mars").first()
