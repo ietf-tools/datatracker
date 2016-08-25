@@ -14,6 +14,7 @@ from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.template import RequestContext
 from django.utils.functional import curry
 
+from ietf.dbtemplate.models import DBTemplate
 from ietf.ietfauth.utils import role_required
 from ietf.utils.mail import send_mail
 from ietf.meeting.helpers import get_meeting, make_materials_directories
@@ -313,8 +314,17 @@ def add(request):
             meeting.session_request_lock_message = previous_meeting.session_request_lock_message
             meeting.save()
 
-            #Create Physical new meeting directory and subdirectories
+            # Create Physical new meeting directory and subdirectories
             make_materials_directories(meeting)
+            
+            # Make copy of IETF Overview template
+            template = DBTemplate.objects.get(path='/meeting/proceedings/defaults/overview.rst')
+            template.id = None
+            template.path = '/meeting/proceedings/%s/overview.rst' % (meeting.number)
+            template.title = 'IETF %s Proceedings Overview' % (meeting.number)
+            template.save()
+            meeting.overview = template
+            meeting.save()
             
             messages.success(request, 'The Meeting was created successfully!')
             return redirect('meetings')

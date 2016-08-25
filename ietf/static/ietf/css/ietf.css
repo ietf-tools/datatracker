@@ -313,6 +313,10 @@ pre {
 
 /* misc pages */
 
+#dbtemplate-edit textarea {
+    font-family: monospace;
+}
+
 .liaison-group-col {
     min-width: 10em;
 }

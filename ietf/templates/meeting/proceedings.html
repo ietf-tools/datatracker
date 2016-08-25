@@ -39,7 +39,7 @@
       <h2 class="anchor-target" id="introduction">Introduction</h2>
       <div>
         <a href="{% url 'ietf.meeting.views.proceedings_acknowledgements' num=meeting.number %}">Acknowledgements</a><br>
-        <a href="#">IETF Overview</a><br>
+        <a href="{% url 'ietf.meeting.views.proceedings_overview' num=meeting.number %}">IETF Overview</a><br>
         <a href="#">Progress Report</a><br>
         <a href="#">Attendees</a><br>
       </div> 
