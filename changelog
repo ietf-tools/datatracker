@@ -2,6 +2,12 @@ ietfdb (6.31.0) ietf; urgency=low
 
   **Refactoring of saving document state and events**
 
+  This release contains a major refactoring of the way document state changes
+  are saved.  It contains a migration which takes a long time to run, but can
+  safely run at the same time as the system is in production.
+
+  Extract from the commit log:
+
   * Merged in ^/branch/iola/event-saving-refactor-r10291 (via
     ^/personal/henrik/6.30.1-eventsave), which refactors document saving to
     always use doc.save_with_history(events), and requires at least one
@@ -9,7 +15,7 @@ ietfdb (6.31.0) ietf; urgency=low
     regexes in url patterns into a dictionary.  As part of the merge, also did
     refactoring of newer code which didn't use the save_with_history() method.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  24 Aug 2016 22:11:05 -0700
+ -- Henrik Levkowetz <henrik@levkowetz.com>  25 Aug 2016 06:04:47 +0000
 
 
 ietfdb (6.30.0) ietf; urgency=medium
