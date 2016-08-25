@@ -27,7 +27,11 @@ class ProceedingsTestCase(TestCase):
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
-
+        # test chair access
+        self.client.logout()
+        self.client.login(username="marschairman", password="marschairman+password")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
 
 class RecordingTestCase(TestCase):
     def test_page(self):

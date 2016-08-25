@@ -372,7 +372,7 @@ def main(request):
         meetings = Meeting.objects.filter(type='ietf').order_by('-number')
     else:
         # select meetings still within the cutoff period
-        today = datetime.datetime.today()
+        today = datetime.date.today()
         meetings = [m for m in Meeting.objects.filter(type='ietf').order_by('-number') if m.get_submission_correction_date()>=today]
 
     groups = get_my_groups(request.user)
