@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 
 import sys
+from tqdm import tqdm
 
 from django.db import migrations
 
@@ -60,17 +61,14 @@ def save_all_documents_in_history(apps, schema_editor):
         if objs.exists():
             try:
                 dochist = objs.get(**fields)
-                sys.stderr.write('.')
             except DocHistory.MultipleObjectsReturned:
                 dochist_list = list(objs)
                 for dochist in dochist_list[1:]:
                     dochist.delete()
                 dochist = dochist_list[0]
-                sys.stderr.write('-')
         else:
             dochist = DocHistory(**fields)
             dochist.save()
-            sys.stderr.write('+')
 
         # copy many to many
         for field in doc._meta.many_to_many:
@@ -97,8 +95,12 @@ def save_all_documents_in_history(apps, schema_editor):
     from django.conf import settings
     settings.DEBUG = False # prevent out-of-memory problems
 
-    for d in Document.objects.iterator():
+    docs = Document.objects.all()
+    for d in tqdm(docs):
         save_document_in_history(d)
+
+def noop_backward(apps, schema_editor):
+    pass
 
 class Migration(migrations.Migration):
 
@@ -108,6 +110,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(fix_buggy_author_foreignkey),
-        migrations.RunPython(save_all_documents_in_history)
+        migrations.RunPython(fix_buggy_author_foreignkey, noop_backward),
+        migrations.RunPython(save_all_documents_in_history, noop_backward)
     ]
