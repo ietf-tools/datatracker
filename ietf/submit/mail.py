@@ -10,7 +10,7 @@ from ietf.message.models import Message
 from ietf.utils.accesstoken import generate_access_token
 from ietf.mailtrigger.utils import gather_address_lists
 
-def send_submission_confirmation(request, submission):
+def send_submission_confirmation(request, submission, chair_notice=False):
     subject = 'Confirm submission of I-D %s' % submission.name
     from_email = settings.IDSUBMIT_FROM_EMAIL
     (to_email, cc) = gather_address_lists('sub_confirmation_requested',submission=submission)
@@ -23,6 +23,7 @@ def send_submission_confirmation(request, submission):
                 'submission': submission,
                 'confirm_url': confirm_url,
                 'status_url': status_url,
+                'chair_notice': chair_notice,
               },
               cc=cc)
 

@@ -190,7 +190,8 @@ class Recipient(models.Model):
 
     def gather_submission_confirmers(self, **kwargs):
         """If a submitted document is revising an existing document, the confirmers 
-           are the authors of that existing document. Otherwise, the confirmers
+           are the authors of that existing document, and the chairs if the document is
+           a working group document and the author list has changed. Otherwise, the confirmers
            are the authors and submitter of the submitted document."""
 
         addrs=[]
@@ -198,7 +199,11 @@ class Recipient(models.Model):
             submission = kwargs['submission']
             doc=submission.existing_document()
             if doc:
-                addrs.extend([i.author.formatted_email() for i in doc.documentauthor_set.all() if not i.author.invalid_address()])
+                old_authors = [i.author.formatted_email() for i in doc.documentauthor_set.all() if not i.author.invalid_address()]
+                new_authors = [u'"%s" <%s>' % (author["name"], author["email"]) for author in submission.authors_parsed() if author["email"]]
+                addrs.extend(old_authors)
+                if doc.group and set(old_authors)!=set(new_authors):
+                    addrs.extend(Recipient.objects.get(slug='group_chairs').gather(**{'group':doc.group}))
             else:
                 addrs.extend([u"%s <%s>" % (author["name"], author["email"]) for author in submission.authors_parsed() if author["email"]])
                 if submission.submitter_parsed()["email"]: 
