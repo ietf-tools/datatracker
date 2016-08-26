@@ -19,4 +19,8 @@ django.setup()
 
 from ietf.secr.drafts.reports import report_progress_report
 
-print report_progress_report(sys.argv[1], sys.argv[2]),
+# handle unicode characters before attempting to print
+output = report_progress_report(sys.argv[1], sys.argv[2])
+output = output.replace(unichr(160),' ')     # replace NO-BREAK SPACE with space
+output = output.encode('ascii','replace')
+print output,
