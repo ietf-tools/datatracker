@@ -1,3 +1,34 @@
+ietfdb (6.31.1) ietf; urgency=low
+
+  * Merged in [11877] from rjsparks@nostrum.com:
+    Copy group chairs on confirmation email when a new group document 
+    revision is submitted that changes the author set. Fixes #1998.  
+
+  * Styled the textarea of the charter form to use a monospaced font.
+    Corrected the monospace font selection for the dbtemplate textarea.
+
+  * Merged in [11859] from rjsparks@nostrum.com:
+    Put WG summary information on the rechartering page. Fixes #2000.  
+
+  * Merged in [11856] from rcross@amslcom:
+    Added a missing meeting fixture.
+
+  * Merged in [11850] from rcross@amslcom:
+    Added support for the IETF Overview for the proceedings, including an
+    editable database-stored template; completed tests and migrations.
+
+  * Merged in [11855] from rjsparks@nostrum.com:
+    Updated the instructions page for the submit tool to reflect what 
+    currently happens.  
+
+  * Merged in [11849] from rcross@amsl.com:
+    Fixed a bug with main secr/proceedings page and added a test.
+
+  * Fixed a bug in the recent bin/mergeready code.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  26 Aug 2016 03:50:26 -0700
+
+
 ietfdb (6.31.0) ietf; urgency=low
 
   **Refactoring of saving document state and events**
