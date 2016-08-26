@@ -247,6 +247,7 @@ $do svn cp $REPO/$SRC $REPO/tags/dev/$DEV -m "Creating new tag 'tags/dev/$DEV' f
 
 $do svn update -q
 
+[ -d ~/src/db/mail ] || mkdir ~/src/db/mail
 echo "
 Hi,
 
@@ -267,7 +268,7 @@ Regards,
 
 	Henrik
 	(via the mkrelease script)
-" > ~/src/db/release-mail-v$VER.txt
+" > ~/src/db/mail/release-mail-v$VER.txt
 
 cat ~/src/db/release-mail-v$VER.txt | $do mail -s "New datatracker release: v$VER" housley@vigilsec.com rjs@nostrum.com henrik@levkowetz.com -c glen@amsl.com -c fenner@fenron.net -c cmorgan@amsl.com -c avezza@amsl.com -c amorris@amsl.com -c smccammon@amsl.com -c kmoreland@amsl.com -c olau@iola.dk -c mlarson@amsl.com $contributors
 
