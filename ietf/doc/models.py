@@ -18,6 +18,7 @@ from ietf.name.models import ( DocTypeName, DocTagName, StreamName, IntendedStdL
 from ietf.person.models import Email, Person
 from ietf.utils.admin import admin_link
 
+
 class StateType(models.Model):
     slug = models.CharField(primary_key=True, max_length=30) # draft, draft-iesg, charter, ...
     label = models.CharField(max_length=255, help_text="Label that should be used (e.g. in admin) for state drop-down for this type of state") # State, IESG state, WG state, ...
@@ -411,14 +412,17 @@ class Document(DocumentInfo):
         return e[0] if e else None
 
     def canonical_name(self):
+        from ietf.doc.utils_charter import charter_name_for_group # Imported locally to avoid circular imports
         name = self.name
         if self.type_id == "draft" and self.get_state_slug() == "rfc":
             a = self.docalias_set.filter(name__startswith="rfc")
             if a:
                 name = a[0].name
         elif self.type_id == "charter":
-            from ietf.doc.utils_charter import charter_name_for_group
-            return charter_name_for_group(self.chartered_group)
+            try:
+                name = charter_name_for_group(self.chartered_group)
+            except Group.DoesNotExist:
+                pass
         return name
 
     def canonical_docalias(self):
