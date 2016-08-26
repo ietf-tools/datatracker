@@ -314,7 +314,7 @@ pre {
 /* misc pages */
 
 #dbtemplate-edit textarea {
-    font-family: monospace;
+  font-family: "PT Mono", monospace, "Courier";
 }
 
 .liaison-group-col {
@@ -324,6 +324,10 @@ pre {
 #reset-charter-milestones .date {
   display: inline-block;
   min-width: 5em;
+}
+
+#charter-form textarea {
+  font-family: "PT Mono", monospace, "Courier";
 }
 
 #ipr-details dl.dl-horizontal dt {

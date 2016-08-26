@@ -82,7 +82,7 @@
 
   <p class="alert alert-info">The text will be submitted as <b>{{ name }}-{{ next_rev }}</b>.</p>
 
-  <form enctype="multipart/form-data" method="post">
+  <form enctype="multipart/form-data" method="post" id="charter-form">
     {% csrf_token %}
     {% bootstrap_form form %}
 
