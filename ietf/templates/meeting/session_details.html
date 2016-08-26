@@ -10,6 +10,7 @@
 
   {% for session in sessions %}
     <h2>{% if sessions|length > 1 %}Session {{ forloop.counter }} : {% endif %}{{ session.time }}{% if session.name %} : {{ session.name }}{% endif %}</h2>
+    {% if session.agenda_note %}<h3>{{session.agenda_note}}</h3>{% endif %}
 
    {% if can_manage_materials %}
    {% if session.status.slug == 'sched' or session.status.slug == 'schedw' %}
@@ -33,30 +34,73 @@
    {% endif %}
    {% endif %}
 
-    {% if session.filtered_sessionpresentation_set %}
-      <div class="panel panel-default">
-        <div class="panel-heading">Materials:</div>
-        <div class="panel-body">
-          <table class="table table-condensed table-striped">
-            {% for pres in session.filtered_sessionpresentation_set %}
-              {% if pres.document.type_id != 'bluesheets' and pres.document.type_id != 'recording' %}
-                <tr>
-                    <td>
-                        {% if pres.rev %}
-                           {% url 'doc_view' name=pres.document.name rev=pres.rev as url %}
-                        {% else %}
-                           {% url 'doc_view' name=pres.document.name as url %}
-                        {% endif %}
-                        <a href="{{url}}">{{pres.document.title}} ({{ pres.document.name }}{% if pres.rev %}-{{ pres.rev }}{% endif %})
-                        </a>
-                    </td>
-                </tr>
-              {% endif %}
-            {% endfor %}
-          </table>
-        </div>
-      </div>
-    {% endif %}
+        {% if session.filtered_artifacts %}
+          <div class="panel panel-default">
+            <div class="panel-heading">Artifacts</div>
+            <div class="panel-body">
+              <table class="table table-condensed table-striped">
+                {% for pres in session.filtered_artifacts %}
+                    <tr>
+                        <td>
+                            {% if pres.rev %}
+                               {% url 'doc_view' name=pres.document.name rev=pres.rev as url %}
+                            {% else %}
+                               {% url 'doc_view' name=pres.document.name as url %}
+                            {% endif %}
+                            <a href="{{url}}">{{pres.document.title}} ({{ pres.document.name }}{% if pres.rev %}-{{ pres.rev }}{% endif %})
+                            </a>
+                        </td>
+                    </tr>
+                {% endfor %}
+              </table>
+            </div>
+          </div>
+        {% endif %}
+        {% if session.filtered_slides %}
+          <div class="panel panel-default">
+            <div class="panel-heading">Slides</div>
+            <div class="panel-body">
+              <table class="table table-condensed table-striped">
+                {% for pres in session.filtered_slides %}
+                    <tr>
+                        <td>
+                            {% if pres.rev %}
+                               {% url 'doc_view' name=pres.document.name rev=pres.rev as url %}
+                            {% else %}
+                               {% url 'doc_view' name=pres.document.name as url %}
+                            {% endif %}
+                            <a href="{{url}}">{{pres.document.title}} ({{ pres.document.name }}{% if pres.rev %}-{{ pres.rev }}{% endif %})
+                            </a>
+                        </td>
+                    </tr>
+                {% endfor %}
+              </table>
+            </div>
+          </div>
+        {% endif %}
+        {% if session.filtered_drafts %}
+          <div class="panel panel-default">
+            <div class="panel-heading">Drafts</div>
+            <div class="panel-body">
+              <table class="table table-condensed table-striped">
+                {% for pres in session.filtered_drafts %}
+                    <tr>
+                        <td>
+                            {% if pres.rev %}
+                               {% url 'doc_view' name=pres.document.name rev=pres.rev as url %}
+                            {% else %}
+                               {% url 'doc_view' name=pres.document.name as url %}
+                            {% endif %}
+                            <a href="{{url}}">{{pres.document.title}} ({{ pres.document.name }}{% if pres.rev %}-{{ pres.rev }}{% endif %})
+                            </a>
+                        </td>
+                    </tr>
+                {% endfor %}
+              </table>
+            </div>
+          </div>
+        {% endif %}
+
   {% endfor %}
 
 {% endblock %}

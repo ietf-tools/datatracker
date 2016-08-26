@@ -109,6 +109,7 @@ class Migration(migrations.Migration):
     dependencies = [
         ('doc', '0010_auto_20150930_0251'),
         ('group', '0008_auto_20160505_0523'),
+        ('community', '0004_cleanup_data'),
     ]
 
     operations = [
