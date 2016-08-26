@@ -10,7 +10,75 @@
 
 {% block content %}
   {% origin %}
-  <h1>Charter submission<br><small>{{ group.acronym }} {{ group.type.name }}</small></h1>
+  <h1>Charter submission</h1>
+
+  <table class="table table-condensed">
+    <tbody class="meta">
+      <tr>
+        <th>{{ group.type.name }}</th>
+        <th>Name</th>
+        <td>{{ group.name }}</td>
+      </tr>
+
+      <tr>
+        <td></td>
+        <th>Acronym</th>
+        <td>{{ group.acronym }}</td>
+      </tr>
+
+      <tr>
+        <td></td>
+        {% if group.parent and group.parent.type_id == "area" %}
+          <th>{{ group.parent.type.name }}</th>
+          <td>{{ group.parent.name }} ({{ group.parent.acronym }})</td>
+        {% else %}
+          <th></th><td></td>
+        {% endif %}
+      </tr>
+      <tr>
+        <td></td>
+        <th>State</th>
+        <td>
+          {{ group.state.name }}
+          {% if requested_close %}
+            <div class="label label-info">In the process of being closed</div>
+          {% endif %}
+        </td>
+      </tr>
+    </tbody>
+    <tbody class="meta">
+      {% for slug, label, roles in group.personnel %}
+        <tr>
+          {% if forloop.first %}
+            <th>Personnel</th>
+          {% else %}
+            <td></td>
+          {% endif %}
+          <th>{{ label }}</th>
+          <td>
+  
+  
+            {% for r in roles %}
+              <span class="fa fa-envelope-o"></span>
+              <a href="mailto:{{ r.email.address }}">{{ r.person.plain_name }}</a>
+              <br>
+            {% endfor %}
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  
+    {% if group.list_email %}
+    <tbody class="meta">
+      <tr>
+         <th>Mailing list</th>
+         <th>Address</th><td>{{ group.list_email|urlize }}</td>
+      </tr>
+      <tr><td></td><th>To subscribe</th><td>{{ group.list_subscribe|urlize }}</td></tr>
+      <tr><td></td><th>Archive</th><td>{{ group.list_archive|urlize }}</td></tr>
+    </tbody>
+    {% endif %}
+  </table>
 
   <p class="alert alert-info">The text will be submitted as <b>{{ name }}-{{ next_rev }}</b>.</p>
 
