@@ -12,7 +12,7 @@ import json
 import pytz
 from pyquery import PyQuery
 from wsgiref.handlers import format_date_time
-from time import mktime
+from calendar import timegm
 
 import debug                            # pyflakes:ignore
 
@@ -963,10 +963,9 @@ def json_agenda(request, num=None ):
     meetinfo.extend(rooms)
     meetinfo.extend(parents)
     meetinfo.sort(key=lambda x: x['modified'],reverse=True)
-    last_modified = meetinfo[0]['modified']
+    last_modified = meetinfo and meetinfo[0]['modified']
 
     tz = pytz.timezone(settings.PRODUCTION_TIMEZONE)
-    last_modified = tz.localize(last_modified)
 
     for obj in meetinfo:
         obj['modified'] = tz.localize(obj['modified']).astimezone(pytz.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
@@ -974,7 +973,9 @@ def json_agenda(request, num=None ):
     data = {"%s"%num: meetinfo}
 
     response = HttpResponse(json.dumps(data, indent=2), content_type='application/json;charset=%s'%settings.DEFAULT_CHARSET)
-    response['Last-Modified'] = format_date_time(mktime(last_modified.timetuple()))
+    if last_modified:
+        last_modified = tz.localize(last_modified).astimezone(pytz.utc)
+        response['Last-Modified'] = format_date_time(timegm(last_modified.timetuple()))
     return response
 
 def meeting_requests(request, num=None):
