@@ -959,6 +959,7 @@ class SessionPresentation(models.Model):
     session = models.ForeignKey('Session')
     document = models.ForeignKey(Document)
     rev = models.CharField(verbose_name="revision", max_length=16, null=True, blank=True)
+    order = models.PositiveSmallIntegerField(default=0)
 
     class Meta:
         db_table = 'meeting_session_materials'

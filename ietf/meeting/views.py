@@ -1022,9 +1022,16 @@ def session_details(request, num, acronym ):
         else:
             session.time = session.status.name
 
+        session.filtered_artifacts = session.sessionpresentation_set.filter(document__type__slug__in=['agenda','minutes','bluesheets'])
+        session.filtered_slides    = session.sessionpresentation_set.filter(document__type__slug='slides').order_by('order')
+        session.filtered_drafts    = session.sessionpresentation_set.filter(document__type__slug='draft')
         # TODO FIXME Deleted materials shouldn't be in the sessionpresentation_set
-        session.filtered_sessionpresentation_set = [p for p in session.sessionpresentation_set.all() if p.document.get_state_slug(p.document.type_id)!='deleted']
-        type_counter.update([p.document.type.slug for p in session.filtered_sessionpresentation_set])
+        for qs in [session.filtered_artifacts,session.filtered_slides,session.filtered_drafts]:
+            qs = [p for p in qs if p.document.get_state_slug(p.document.type_id)!='deleted']
+            type_counter.update([p.document.type.slug for p in qs])
+
+        #session.filtered_sessionpresentation_set = [p for p in session.sessionpresentation_set.all() if p.document.get_state_slug(p.document.type_id)!='deleted']
+        #type_counter.update([p.document.type.slug for p in session.filtered_sessionpresentation_set])
 
     can_manage = can_manage_materials(request.user, Group.objects.get(acronym=acronym))
 
