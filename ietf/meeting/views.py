@@ -961,7 +961,7 @@ def json_agenda(request, num=None ):
     meetinfo.extend(rooms)
     meetinfo.extend(parents)
     meetinfo.sort(key=lambda x: x['modified'],reverse=True)
-    last_modified = meetinfo[0]['modified']
+    last_modified = meetinfo and meetinfo[0]['modified']
 
     tz = pytz.timezone(meeting.time_zone)
     for obj in meetinfo:
@@ -970,7 +970,8 @@ def json_agenda(request, num=None ):
     data = {"%s"%num: meetinfo}
 
     response = HttpResponse(json.dumps(data, indent=2), content_type='application/json;charset=%s'%settings.DEFAULT_CHARSET)
-    response['Last-Modified'] = format_date_time(mktime(last_modified.timetuple()))
+    if last_modified:
+        response['Last-Modified'] = format_date_time(mktime(last_modified.timetuple()))
     return response
 
 def meeting_requests(request, num=None):
