@@ -1,5 +1,33 @@
 ietfdb (6.31.1) ietf; urgency=low
 
+  This release adds more proceedings generation functionality, adds
+  slide ordering for session materials, adds caching for the json
+  export for the 'IETFers' iOS app, tweaks some fonts, and fixes a
+  number of bugs:
+
+  * Merged in [11891] from rjsparks@nostrum.com:
+    Modified agenda.json to properly handle meetings that do not have an 
+    agenda yet. Fixes #2003.  
+
+  * Merged in [11890] from rcross@amsl.com:
+    Modified the monthly progress report script to deal with unicode
+    characters in document titles.  
+
+  * Merged in [11889] from rcross@amsl.com:
+    Strip .py extension of report scripts to match the rest.  Add 
+    svn:executable to scripts that were missing it.   
+
+  * Added page caching for json_agenda().  Changed localization of naive 
+    time from database in json_agenda to use settings.PRODUCTION_TIMEZONE.
+
+  * Merged in [11888] from rjsparks@nostrum.com:
+    Added an order field to sessionpresentation to allow ordering slides. 
+    Reworked the session details page to break slides and drafts into their own 
+    sections.  
+
+  * Added handling for an exception which could occur for charter documents 
+    which does not have a matching chartered group.
+
   * Merged in [11877] from rjsparks@nostrum.com:
     Copy group chairs on confirmation email when a new group document 
     revision is submitted that changes the author set. Fixes #1998.  
