@@ -27,6 +27,7 @@ from django.forms.models import modelform_factory, inlineformset_factory
 from django.forms import ModelForm
 from django.template.loader import render_to_string
 from django.utils.functional import curry
+from django.views.decorators.cache import cache_page
 from django.views.decorators.csrf import ensure_csrf_cookie
 
 from ietf.doc.fields import SearchableDocumentsField
@@ -894,6 +895,7 @@ def ical_agenda(request, num=None, name=None, ext=None):
         "updated": updated
     }, content_type="text/calendar")
 
+@cache_page(15 * 60)
 def json_agenda(request, num=None ):
     meeting = get_meeting(num)
 
@@ -963,7 +965,9 @@ def json_agenda(request, num=None ):
     meetinfo.sort(key=lambda x: x['modified'],reverse=True)
     last_modified = meetinfo[0]['modified']
 
-    tz = pytz.timezone(meeting.time_zone)
+    tz = pytz.timezone(settings.PRODUCTION_TIMEZONE)
+    last_modified = tz.localize(last_modified)
+
     for obj in meetinfo:
         obj['modified'] = tz.localize(obj['modified']).astimezone(pytz.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
 
