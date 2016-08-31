@@ -18,7 +18,6 @@
 -0223400 +0170600 Africa/Windhoek
 +0515248 -1763929 America/Adak
 +0611305 -1495401 America/Anchorage
-+0170300 -0614800 America/Antigua
 -0071200 -0481200 America/Araguaina
 -0343600 -0582700 America/Argentina/Buenos_Aires
 -0282800 -0654700 America/Argentina/Catamarca
@@ -48,7 +47,6 @@
 +0210500 -0864600 America/Cancun
 +0103000 -0665600 America/Caracas
 +0045600 -0522000 America/Cayenne
-+0191800 -0812300 America/Cayman
 +0415100 -0873900 America/Chicago
 +0283800 -1060500 America/Chihuahua
 +0095600 -0840500 America/Costa_Rica
@@ -63,6 +61,7 @@
 +0533300 -1132800 America/Edmonton
 -0064000 -0695200 America/Eirunepe
 +0134200 -0891200 America/El_Salvador
++0584800 -1224200 America/Fort_Nelson
 -0034300 -0383000 America/Fortaleza
 +0461200 -0595700 America/Glace_Bay
 +0641100 -0514400 America/Godthab
@@ -105,7 +104,6 @@
 +0460600 -0644700 America/Moncton
 +0254000 -1001900 America/Monterrey
 -0345300 -0561100 America/Montevideo
-America/Montreal
 +0250500 -0772100 America/Nassau
 +0404251 -0740023 America/New_York
 +0490100 -0881600 America/Nipigon
@@ -129,7 +127,6 @@ America/Montreal
 +0502400 -1043900 America/Regina
 +0744144 -0944945 America/Resolute
 -0095800 -0674800 America/Rio_Branco
-+0301800 -1145200 America/Santa_Isabel
 -0022600 -0545200 America/Santarem
 -0332700 -0704000 America/Santiago
 +0182800 -0695400 America/Santo_Domingo
@@ -167,6 +164,7 @@ America/Montreal
 +0332100 +0442500 Asia/Baghdad
 +0402300 +0495100 Asia/Baku
 +0134500 +1003100 Asia/Bangkok
++0532200 +0834500 Asia/Barnaul
 +0335300 +0353000 Asia/Beirut
 +0425400 +0743600 Asia/Bishkek
 +0045600 +1145500 Asia/Brunei
@@ -223,6 +221,7 @@ America/Montreal
 +0354000 +0512600 Asia/Tehran
 +0272800 +0893900 Asia/Thimphu
 +0353916 +1394441 Asia/Tokyo
++0563000 +0845800 Asia/Tomsk
 +0475500 +1065300 Asia/Ulaanbaatar
 +0434800 +0873500 Asia/Urumqi
 +0643337 +1431336 Asia/Ust-Nera
@@ -253,6 +252,7 @@ America/Montreal
 -0335200 +1511300 Australia/Sydney
 +0522200 +0045400 Europe/Amsterdam
 +0423000 +0013100 Europe/Andorra
++0462100 +0480300 Europe/Astrakhan
 +0375800 +0234300 Europe/Athens
 +0445000 +0203000 Europe/Belgrade
 +0523000 +0132200 Europe/Berlin
@@ -267,6 +267,7 @@ America/Montreal
 +0410100 +0285800 Europe/Istanbul
 +0544300 +0203000 Europe/Kaliningrad
 +0502600 +0303100 Europe/Kiev
++0583600 +0493900 Europe/Kirov
 +0384300 -0090800 Europe/Lisbon
 +0513030 +0000731 Europe/London
 +0493600 +0060900 Europe/Luxembourg
@@ -286,6 +287,7 @@ America/Montreal
 +0592000 +0180300 Europe/Stockholm
 +0592500 +0244500 Europe/Tallinn
 +0412000 +0195000 Europe/Tirane
++0542000 +0482400 Europe/Ulyanovsk
 +0483700 +0221800 Europe/Uzhgorod
 +0481300 +0162000 Europe/Vienna
 +0544100 +0251900 Europe/Vilnius
@@ -322,7 +324,6 @@ America/Montreal
 +0090500 +1672000 Pacific/Kwajalein
 +0070900 +1711200 Pacific/Majuro
 -0090000 -1393000 Pacific/Marquesas
-+0281300 -1772200 Pacific/Midway
 +0003100 +1665500 Pacific/Nauru
 -0190100 -1695500 Pacific/Niue
 -0290300 +1675800 Pacific/Norfolk
@@ -333,7 +334,6 @@ America/Montreal
 +0065800 +1581300 Pacific/Pohnpei
 -0093000 +1471000 Pacific/Port_Moresby
 -0211400 -1594600 Pacific/Rarotonga
-+0151200 +1454500 Pacific/Saipan
 -0173200 -1493400 Pacific/Tahiti
 +0012500 +1730000 Pacific/Tarawa
 -0211000 -1751000 Pacific/Tongatapu

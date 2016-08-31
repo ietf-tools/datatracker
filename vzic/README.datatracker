@@ -1,0 +1,6 @@
+This directory contains an external program, vzic, which generates icalendar
+zone information files from the official tzdata files.  In order to update the
+iCalendar files used by the datatracker for zone information, run 'make zoneinfo'
+in this directory.  This will generate new zoneinfo data by fetching the
+latest tzdata file from ietf.org/timezones/tzdata-latest.tar.gz and running
+vzic to update the .ics files as needed.  

@@ -61,7 +61,7 @@ zoneinfo: vzic
 	mkdir -p tzdata
 	cd tzdata; wget -N http://www.ietf.org/timezones/tzdata-latest.tar.gz
 	cd tzdata; tar xzf tzdata-latest.tar.gz
-	vzic --olson-dir tzdata --pure
+	./vzic --olson-dir tzdata --pure
 
 # Dependencies.
 $(OBJECTS): vzic.h
