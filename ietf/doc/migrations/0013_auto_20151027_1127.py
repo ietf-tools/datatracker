@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
 import sys
@@ -32,7 +32,11 @@ def save_all_documents_in_history(apps, schema_editor):
             if a:
                 name = a[0].name
         elif self.type_id == "charter":
-            return charter_name_for_group(self.chartered_group)
+            try:
+                return charter_name_for_group(self.chartered_group)
+            except Exception as e:
+                print("Exception: %s" % e)
+                print("Document:  %s" % name)
         return name
 
     def charter_name_for_group(group):
