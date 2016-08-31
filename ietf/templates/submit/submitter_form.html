@@ -8,10 +8,17 @@
   please manually enter your name and email address.
 </p>
 
+{% load ietf_filters %}
+
 {% buttons %}
   {% for author in submission.authors_parsed %}
     <input type="button" class="author btn btn-default" data-name="{{ author.name  }}" data-email="{{ author.email }}" value="{{ author.name }}">
   {% endfor %}
 {% endbuttons %}
 
-{% bootstrap_form submitter_form %}
+{% bootstrap_form_errors submitter_form %}
+{% bootstrap_field submitter_form.name %}
+{% bootstrap_field submitter_form.email %}
+{% if user|has_role:"Secretariat" %}
+  {% bootstrap_field submitter_form.approvals_received %}
+{% endif %}

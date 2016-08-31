@@ -26,6 +26,9 @@
     <li {% if selected == "approvals" %}class="active"{% endif %}>
       <a href="{% url "submit_approvals" %}">Approvals</a>
     </li>
+    <li {% if selected == "manual_posts" %}class="active"{% endif %}>
+      <a href="{% url "submit_manualpost" %}">Manual Post Requests</a>
+    </li>
   </ul>
 
   {% block submit_content %}
