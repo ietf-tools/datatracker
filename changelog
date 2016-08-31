@@ -9,6 +9,9 @@ ietfdb (6.31.1) ietf; urgency=low
     the document had not been given a new time yet, after the eventsave 
     refactoring code changes of [11841].  Fixes issue #2004.
 
+  * Updated the zone information files used by the datatracker when generating
+    iCalendar content.
+
   * Merged in [11891] from rjsparks@nostrum.com:
     Modified agenda.json to properly handle meetings that do not have an 
     agenda yet. Fixes #2003.  
@@ -56,7 +59,7 @@ ietfdb (6.31.1) ietf; urgency=low
   * Merged in [11849] from rcross@amsl.com:
     Fixed a bug with main secr/proceedings page and added a test.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  26 Aug 2016 03:50:26 -0700
+ -- Henrik Levkowetz <henrik@levkowetz.com>  31 Aug 2016 14:20:19 +0000
 
 
 ietfdb (6.31.0) ietf; urgency=low
