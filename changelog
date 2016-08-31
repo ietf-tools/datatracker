@@ -5,6 +5,10 @@ ietfdb (6.31.1) ietf; urgency=low
   export for the 'IETFers' iOS app, tweaks some fonts, and fixes a
   number of bugs:
 
+  * Fixed a number of places where events were given the document time, but 
+    the document had not been given a new time yet, after the eventsave 
+    refactoring code changes of [11841].  Fixes issue #2004.
+
   * Merged in [11891] from rjsparks@nostrum.com:
     Modified agenda.json to properly handle meetings that do not have an 
     agenda yet. Fixes #2003.  
@@ -51,8 +55,6 @@ ietfdb (6.31.1) ietf; urgency=low
 
   * Merged in [11849] from rcross@amsl.com:
     Fixed a bug with main secr/proceedings page and added a test.
-
-  * Fixed a bug in the recent bin/mergeready code.
 
  -- Henrik Levkowetz <henrik@levkowetz.com>  26 Aug 2016 03:50:26 -0700
 
