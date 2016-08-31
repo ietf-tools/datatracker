@@ -23,13 +23,13 @@ import datetime
 
 from ietf import __version__
 
-DEBUG = True
+DEBUG = False
 TEMPLATE_DEBUG = DEBUG
 
 # Valid values:
 # 'production', 'test', 'development'
 # Override this in settings_local.py if it's not the desired setting:
-SERVER_MODE = 'development'
+SERVER_MODE = 'production'
 
 # Domain name of the IETF
 IETF_DOMAIN = 'ietf.org'
