@@ -270,9 +270,9 @@ Regards,
 	(via the mkrelease script)
 " > ~/src/db/mail/release-mail-v$VER.txt
 
-cat ~/src/db/release-mail-v$VER.txt | $do mail -s "New datatracker release: v$VER" housley@vigilsec.com rjs@nostrum.com henrik@levkowetz.com -c glen@amsl.com -c fenner@fenron.net -c cmorgan@amsl.com -c avezza@amsl.com -c amorris@amsl.com -c smccammon@amsl.com -c kmoreland@amsl.com -c olau@iola.dk -c mlarson@amsl.com $contributors
+cat ~/src/db/mail/release-mail-v$VER.txt | $do mail -s "New datatracker release: v$VER" housley@vigilsec.com rjs@nostrum.com henrik@levkowetz.com -c glen@amsl.com -c fenner@fenron.net -c cmorgan@amsl.com -c avezza@amsl.com -c amorris@amsl.com -c smccammon@amsl.com -c kmoreland@amsl.com -c olau@iola.dk -c mlarson@amsl.com $contributors
 
-cat ~/src/db/release-mail-v$VER.txt | $do mail -s "New datatracker release: v$VER" iesg@ietf.org wgchairs@ietf.org codesprints@ietf.org -b henrik@levkowetz.com
+cat ~/src/db/mail/release-mail-v$VER.txt | $do mail -s "New datatracker release: v$VER" iesg@ietf.org wgchairs@ietf.org codesprints@ietf.org -b henrik@levkowetz.com
 
 
 $do toolsfeed control changelog /www/tools.ietf.org/tools/atomfeed.xml
