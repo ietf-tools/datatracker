@@ -6,7 +6,8 @@ from tastypie.cache import SimpleCache
 
 from ietf import api
 
-from ietf.submit.models import Preapproval, SubmissionCheck, Submission, SubmissionEvent
+from ietf.submit.models import Preapproval, \
+    SubmissionCheck, Submission, SubmissionEmail, SubmissionEvent
 
 
 from ietf.person.resources import PersonResource
@@ -99,4 +100,32 @@ class SubmissionCheckResource(ModelResource):
             "submission": ALL_WITH_RELATIONS,
         }
 api.submit.register(SubmissionCheckResource())
+
+
+
+from ietf.person.resources import PersonResource
+from ietf.message.resources import MessageResource
+class SubmissionEmailResource(ModelResource):
+    submission       = ToOneField(SubmissionResource, 'submission')
+    by               = ToOneField(PersonResource, 'by', null=True)
+    submissionevent_ptr = ToOneField(SubmissionEventResource, 'submissionevent_ptr')
+    message          = ToOneField(MessageResource, 'message', null=True)
+    in_reply_to      = ToOneField(MessageResource, 'in_reply_to', null=True)
+    class Meta:
+        queryset = SubmissionEmail.objects.all()
+        serializer = api.Serializer()
+        cache = SimpleCache()
+        #resource_name = 'submissionemail'
+        filtering = { 
+            "id": ALL,
+            "time": ALL,
+            "desc": ALL,
+            "msgtype": ALL,
+            "submission": ALL_WITH_RELATIONS,
+            "by": ALL_WITH_RELATIONS,
+            "submissionevent_ptr": ALL_WITH_RELATIONS,
+            "message": ALL_WITH_RELATIONS,
+            "in_reply_to": ALL_WITH_RELATIONS,
+        }
+api.submit.register(SubmissionEmailResource())
 

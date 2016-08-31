@@ -28,6 +28,19 @@ class Message(models.Model):
     def __unicode__(self):
         return "'%s' %s -> %s" % (self.subject, self.frm, self.to)
 
+
+class MessageAttachment(models.Model):
+    message = models.ForeignKey(Message)
+    filename = models.CharField(max_length=255, db_index=True, blank=True)
+    content_type = models.CharField(max_length=255, blank=True)
+    encoding = models.CharField(max_length=255, blank=True)
+    removed = models.BooleanField(default=False)
+    body = models.TextField()
+
+    def __unicode__(self):
+        return self.filename
+
+
 class SendQueue(models.Model):
     time = models.DateTimeField(default=datetime.datetime.now)
     by = models.ForeignKey(Person)
