@@ -80,7 +80,8 @@ class DocumentInfo(models.Model):
         if self.type_id == "draft":
             return settings.INTERNET_DRAFT_PATH
         elif self.type_id in ("agenda", "minutes", "slides", "bluesheets") and self.meeting_related():
-            meeting = self.session_set.first().meeting
+            doc = self.doc if isinstance(self, DocHistory) else self
+            meeting = doc.session_set.first().meeting
             return os.path.join(meeting.get_materials_path(), self.type_id) + "/"
         elif self.type_id == "charter":
             return settings.CHARTER_PATH
@@ -120,7 +121,8 @@ class DocumentInfo(models.Model):
 
         meeting = None
         if meeting_related:
-            meeting = self.session_set.first().meeting
+            doc = self.doc if isinstance(self, DocHistory) else self
+            meeting = doc.session_set.first().meeting
 
         return format.format(doc=self,meeting=meeting)
 
