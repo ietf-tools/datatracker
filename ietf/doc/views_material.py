@@ -145,7 +145,6 @@ def edit_material(request, name=None, acronym=None, action=None, doc_type=None):
 
             if prev_rev != doc.rev:
                 e = NewRevisionDocEvent(type="new_revision", doc=doc, rev=doc.rev)
-                e.time = doc.time
                 e.by = request.user.person
                 e.desc = "New version available: <b>%s-%s</b>" % (doc.name, doc.rev)
                 e.save()
@@ -156,7 +155,6 @@ def edit_material(request, name=None, acronym=None, action=None, doc_type=None):
                 e.desc = u"Changed title to <b>%s</b>" % doc.title
                 if prev_title:
                     e.desc += u" from %s" % prev_title
-                e.time = doc.time
                 e.save()
                 events.append(e)
 

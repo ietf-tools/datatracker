@@ -1278,7 +1278,7 @@ def adopt_draft(request, name):
 
             # stream
             if doc.stream != new_stream:
-                e = DocEvent(type="changed_stream", time=doc.time, by=by, doc=doc)
+                e = DocEvent(type="changed_stream", by=by, doc=doc)
                 e.desc = u"Changed stream to <b>%s</b>" % new_stream.name
                 if doc.stream:
                     e.desc += u" from %s" % doc.stream.name
@@ -1291,7 +1291,7 @@ def adopt_draft(request, name):
 
             # group
             if group != doc.group:
-                e = DocEvent(type="changed_group", time=doc.time, by=by, doc=doc)
+                e = DocEvent(type="changed_group", by=by, doc=doc)
                 e.desc = u"Changed group to <b>%s (%s)</b>" % (group.name, group.acronym.upper())
                 if doc.group.type_id != "individ":
                     e.desc += " from %s (%s)" % (doc.group.name, doc.group.acronym.upper())
@@ -1300,7 +1300,7 @@ def adopt_draft(request, name):
                 doc.group = group
 
             new_notify = get_initial_notify(doc,extra=doc.notify)
-            events.append(make_notify_changed_event(request, doc, by, new_notify, doc.time))
+            events.append(make_notify_changed_event(request, doc, by, new_notify))
             doc.notify = new_notify
 
             comment = form.cleaned_data["comment"].strip()
@@ -1309,7 +1309,7 @@ def adopt_draft(request, name):
             prev_state = doc.get_state("draft-stream-%s" % doc.stream_id)
             if new_state != prev_state:
                 doc.set_state(new_state)
-                e = add_state_change_event(doc, by, prev_state, new_state, timestamp=doc.time)
+                e = add_state_change_event(doc, by, prev_state, new_state)
                 events.append(e)
 
                 due_date = None
@@ -1322,7 +1322,7 @@ def adopt_draft(request, name):
 
             # comment
             if comment:
-                e = DocEvent(type="added_comment", time=doc.time, by=by, doc=doc)
+                e = DocEvent(type="added_comment", by=by, doc=doc)
                 e.desc = comment
                 e.save()
                 events.append(e)
@@ -1427,7 +1427,7 @@ def change_stream_state(request, name, state_type):
             new_state = form.cleaned_data["new_state"]
             if new_state != prev_state:
                 doc.set_state(new_state)
-                e = add_state_change_event(doc, by, prev_state, new_state, timestamp=doc.time)
+                e = add_state_change_event(doc, by, prev_state, new_state)
                 events.append(e)
 
                 due_date = None
@@ -1445,7 +1445,7 @@ def change_stream_state(request, name, state_type):
             if existing_tags != new_tags:
                 doc.tags = new_tags
 
-                e = DocEvent(type="changed_document", time=doc.time, by=by, doc=doc)
+                e = DocEvent(type="changed_document", by=by, doc=doc)
                 added_tags = new_tags - existing_tags
                 removed_tags = existing_tags - new_tags
                 l = []
@@ -1461,7 +1461,7 @@ def change_stream_state(request, name, state_type):
 
             # comment
             if comment:
-                e = DocEvent(type="added_comment", time=doc.time, by=by, doc=doc)
+                e = DocEvent(type="added_comment", by=by, doc=doc)
                 e.desc = comment
                 e.save()
                 events.append(e)

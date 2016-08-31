@@ -1143,7 +1143,7 @@ def upload_session_bluesheets(request, session_id, num):
                 session.sessionpresentation_set.create(document=doc,rev='00')
             filename = '%s-%s%s'% ( doc.name, doc.rev, ext)
             doc.external_url = filename
-            e = NewRevisionDocEvent.objects.create(doc=doc,time=doc.time,by=Person.objects.get(name='(System)'),type='new_revision',desc='New revision available: %s'%doc.rev,rev=doc.rev)
+            e = NewRevisionDocEvent.objects.create(doc=doc, by=Person.objects.get(name='(System)'),type='new_revision',desc='New revision available: %s'%doc.rev,rev=doc.rev)
             doc.save_with_history([e])
             handle_upload_file(file, filename, session.meeting, 'bluesheets')
             return redirect('ietf.meeting.views.session_details',num=num,acronym=session.group.acronym)
