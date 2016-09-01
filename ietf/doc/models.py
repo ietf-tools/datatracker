@@ -330,7 +330,7 @@ class RelatedDocument(models.Model):
             return None
 
         if self.source.get_state().slug == 'rfc':
-            source_lvl = self.source.std_level.slug
+            source_lvl = self.source.std_level.slug if self.source.std_level else None
         elif self.source.intended_std_level:
             source_lvl = self.source.intended_std_level.slug
         else:
