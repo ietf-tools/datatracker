@@ -10,7 +10,7 @@ class Migration(migrations.Migration):
         # version than this migration expects. We use the historical version.
         DraftSubmissionStateName = apps.get_model("name", "DraftSubmissionStateName")
         DraftSubmissionStateName.objects.create(slug="waiting-for-draft",
-                                                name="Manual Post Awaiting Draft Upload",
+                                                name="Manual Post Waiting for Draft",
                                                 desc="",
                                                 used=True,
                                                 order=8)

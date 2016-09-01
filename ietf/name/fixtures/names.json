@@ -880,7 +880,7 @@
    "posted"
   ],
   "used": true,
-  "name": "Manual Post Awaiting Draft",
+  "name": "Manual Post Waiting for Draft",
   "desc": ""
  },
  "model": "name.draftsubmissionstatename",
@@ -4920,10 +4920,10 @@
 {
  "fields": {
   "template": "<ietf-manualpost@ietf.org>",
-  "desc": "The IETF manual post processing system"
+  "desc": "IETF manual post handling"
  },
  "model": "mailtrigger.recipient",
- "pk": "manualpost_message"
+ "pk": "submission_manualpost_handling"
 },
 {
  "fields": {

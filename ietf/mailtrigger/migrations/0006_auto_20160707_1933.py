@@ -10,15 +10,15 @@ def forward(apps, schema_editor):
 
     rc = Recipient.objects.create
 
-    rc(slug='manualpost_message',
-       desc='The IETF manual post processing system',
+    rc(slug='submission_manualpost_handling',
+       desc='IETF manual post handling',
        template='<ietf-manualpost@ietf.org>')
 
 
 def reverse(apps, schema_editor):
     Recipient=apps.get_model('mailtrigger','Recipient')
 
-    Recipient.objects.filter(slug='manualpost_message').delete()
+    Recipient.objects.filter(slug='submission_manualpost_handling').delete()
 
 
 class Migration(migrations.Migration):
