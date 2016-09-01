@@ -454,7 +454,7 @@ def update_docs_from_rfc_index(data, skip_older_than_date=None):
 
         for x in parse_relation_list(obsoletes):
             if not RelatedDocument.objects.filter(source=doc, target=x, relationship=relationship_obsoletes):
-                r = RelatedDocument.objects.create(RelatedDocument(source=doc, target=x, relationship=relationship_obsoletes))
+                r = RelatedDocument.objects.create(source=doc, target=x, relationship=relationship_obsoletes)
                 changes.append("created %s relation between %s and %s" % (r.relationship.name.lower(), prettify_std_name(r.source.name), prettify_std_name(r.target.name)))
 
         for x in parse_relation_list(updates):
