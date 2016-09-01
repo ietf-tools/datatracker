@@ -101,7 +101,7 @@
     </div>
   </div>
 
-  {% if submission.state_id == "manual-awaiting-draft" %}
+  {% if submission.state_id == "waiting-for-draft" %}
     <p class="alert alert-warning">
       This submission is awaiting the first draft upload.
     </p>
@@ -312,7 +312,7 @@
 
   {% if user|has_role:"Secretariat" %}
     <p></p>
-    <a id="send{{ submission.pk }}" class="btn btn-default" href="{% url "submission_send_email" submission_id=submission.pk %}" title="Email submitter"><span class="glyphicon glyphicon-envelope" aria-hidden="true"></span>Send Email</a>
+    <a id="send{{ submission.pk }}" class="btn btn-default" href="{% url "ietf.submit.views.send_submission_email" submission_id=submission.pk %}" title="Email submitter"><span class="glyphicon glyphicon-envelope" aria-hidden="true"></span>Send Email</a>
   {% endif %}
 
   {% if show_send_full_url %}
@@ -353,11 +353,11 @@
               {% if user.is_authenticated %}
                 <td> 
                   {% if  e.desc|startswith:"Received message" and user|has_role:"Secretariat" %}
-                    <a id="reply{{ submission.pk }}" class="btn btn-default btn-xs" href="{% url "submission_reply_email" submission_id=submission.pk message_id=e.submissionemail.pk %}" title="Reply"><span class="glyphicon glyphicon-envelope" aria-hidden="true"></span> Reply</a>
+                    <a id="reply{{ submission.pk }}" class="btn btn-default btn-xs" href="{% url "ietf.submit.views.send_submission_email" submission_id=submission.pk message_id=e.submissionemail.pk %}" title="Reply"><span class="glyphicon glyphicon-envelope" aria-hidden="true"></span> Reply</a>
                   {% endif %}
-                  Email: <a id="aw{{ submission.pk }}-{{ m.pk }}" href="{% url "submit_submission_email_by_hash" submission_id=submission.pk message_id=e.submissionemail.pk access_token=submission.access_token %}">{{ e.desc }}</a></td>
+                  Email: <a id="aw{{ submission.pk }}-{{ m.pk }}" href="{% url "ietf.submit.views.show_submission_email_message" submission_id=submission.pk message_id=e.submissionemail.pk access_token=submission.access_token %}">{{ e.desc }}</a></td>
               {% else %}
-                <td>Email: <a id="aw{{ submission.pk }}-{{ m.pk }}" href="{% url "submit_submission_email" submission_id=submission.pk message_id=e.submissionemail.pk %}">{{ e.desc }}</a></td>
+                <td>Email: <a id="aw{{ submission.pk }}-{{ m.pk }}" href="{% url "ietf.submit.views.show_submission_email_message" submission_id=submission.pk message_id=e.submissionemail.pk %}">{{ e.desc }}</a></td>
               {% endif %}
             {% endwith %}
           {%  else %}

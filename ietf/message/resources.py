@@ -8,7 +8,6 @@ from tastypie.cache import SimpleCache
 from ietf import api
 
 from ietf.message.models import Message, SendQueue, MessageAttachment
-
 from ietf.person.resources import PersonResource
 from ietf.group.resources import GroupResource
 from ietf.doc.resources import DocumentResource

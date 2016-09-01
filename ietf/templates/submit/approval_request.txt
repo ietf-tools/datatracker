@@ -4,7 +4,7 @@ Hi,
 Chair approval is needed for posting of {{ submission.name }}-{{ submission.rev }}.
 
 To approve the draft, go to this URL (note: you need to login to be able to approve):
-  https://{{ domain }}{% url "submit_submission_status_by_hash" submission_id=submission.pk access_token=submission.access_token %}
+  https://{{ domain }}{% url "ietf.submit.views.submission_status" submission_id=submission.pk access_token=submission.access_token %}
 
   File name       : {{ submission.name }}
   Revision        : {{ submission.rev }}

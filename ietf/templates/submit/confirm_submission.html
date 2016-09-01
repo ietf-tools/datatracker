@@ -14,7 +14,7 @@
     {% else %}
       <p>The submission is not in a state where it can be confirmed.</p>
 
-      <p>Go to the <a href="{% url "submit_submission_status" submission_id=submission.pk %}">status page</a>
+      <p>Go to the <a href="{% url "ietf.submit.views.submission_status" submission_id=submission.pk %}">status page</a>
         to see what has happened to it.</p>
     {% endif %}
   {% else %}
@@ -23,7 +23,7 @@
       <p class="error">Incorrect authorization key.</p>
 
       <p>Double-check the link you followed. If everything fails, you can go to
-        the <a href="{% url "submit_submission_status" submission_id=submission.pk %}">status page</a>,
+        the <a href="{% url "ietf.submit.views.submission_status" submission_id=submission.pk %}">status page</a>,
         cancel the submission and try again.</p>
     {% else %}
       <p>Authorization key accepted.</p>

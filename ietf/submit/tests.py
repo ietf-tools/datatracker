@@ -98,7 +98,7 @@ class SubmitTests(TestCase):
         self.assertTrue(os.path.exists(settings.IDSUBMIT_IDNITS_BINARY))
 
         # get
-        url = urlreverse('submit_upload_submission')
+        url = urlreverse('ietf.submit.views.upload_submission')
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
@@ -645,12 +645,12 @@ class SubmitTests(TestCase):
         self.do_submission(name, rev)
 
         # search status page
-        r = self.client.get(urlreverse("submit_search_submission"))
+        r = self.client.get(urlreverse("ietf.submit.views.search_submission"))
         self.assertEqual(r.status_code, 200)
         self.assertTrue("submission status" in unicontent(r))
 
         # search
-        r = self.client.post(urlreverse("submit_search_submission"), dict(name=name))
+        r = self.client.post(urlreverse("ietf.submit.views.search_submission"), dict(name=name))
         self.assertEqual(r.status_code, 302)
         unprivileged_status_url = r['Location']
 
@@ -690,7 +690,7 @@ class SubmitTests(TestCase):
         self.do_submission(name, rev)
 
         submission = Submission.objects.get(name=name)
-        url = urlreverse('submit_submission_status', kwargs=dict(submission_id=submission.pk))
+        url = urlreverse('ietf.submit.views.submission_status', kwargs=dict(submission_id=submission.pk))
 
         # check we got request full URL button
         r = self.client.get(url)
@@ -762,17 +762,17 @@ class SubmitTests(TestCase):
         self.assertEqual(s.state_id, "cancel")
 
     def test_help_pages(self):
-        r = self.client.get(urlreverse("submit_note_well"))
+        r = self.client.get(urlreverse("ietf.submit.views.note_well"))
         self.assertEquals(r.status_code, 200)
 
-        r = self.client.get(urlreverse("submit_tool_instructions"))
+        r = self.client.get(urlreverse("ietf.submit.views.tool_instructions"))
         self.assertEquals(r.status_code, 200)
         
     def test_blackout_access(self):
         make_test_data()
         
         # get
-        url = urlreverse('submit_upload_submission')
+        url = urlreverse('ietf.submit.views.upload_submission')
         # set meeting to today so we're in blackout period
         meeting = Meeting.get_current_meeting()
         meeting.date = datetime.datetime.utcnow()
@@ -802,7 +802,7 @@ class SubmitTests(TestCase):
         self.assertTrue(os.path.exists(settings.IDSUBMIT_IDNITS_BINARY))
 
         # get
-        url = urlreverse('submit_upload_submission')
+        url = urlreverse('ietf.submit.views.upload_submission')
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
@@ -850,7 +850,7 @@ class ApprovalsTestCase(TestCase):
     def test_approvals(self):
         make_test_data()
 
-        url = urlreverse('submit_approvals')
+        url = urlreverse('ietf.submit.views.approvals')
         self.client.login(username="marschairman", password="marschairman+password")
 
         Preapproval.objects.create(name="draft-ietf-mars-foo", by=Person.objects.get(user__username="marschairman"))
@@ -881,7 +881,7 @@ class ApprovalsTestCase(TestCase):
     def test_add_preapproval(self):
         make_test_data()
 
-        url = urlreverse('submit_add_preapproval')
+        url = urlreverse('ietf.submit.views.add_preapproval')
         login_testing_unauthorized(self, "marschairman", url)
 
         # get
@@ -908,7 +908,7 @@ class ApprovalsTestCase(TestCase):
 
         preapproval = Preapproval.objects.create(name="draft-ietf-mars-foo", by=Person.objects.get(user__username="marschairman"))
 
-        url = urlreverse('submit_cancel_preapproval', kwargs=dict(preapproval_id=preapproval.pk))
+        url = urlreverse('ietf.submit.views.cancel_preapproval', kwargs=dict(preapproval_id=preapproval.pk))
         login_testing_unauthorized(self, "marschairman", url)
 
         # get
@@ -927,7 +927,7 @@ class ManualPostsTestCase(TestCase):
     def test_manual_posts(self):
         make_test_data()
 
-        url = urlreverse('submit_manualpost')
+        url = urlreverse('ietf.submit.views.manualpost')
         # Secretariat has access
         self.client.login(username="secretary", password="secretary+password")
 
@@ -949,7 +949,7 @@ class ManualPostsTestCase(TestCase):
         self.assertEqual(len(q('.submissions a:contains("draft-ietf-mars-foo")')), 1)
         self.assertEqual(len(q('.submissions a:contains("draft-ietf-mars-bar")')), 0)
 
-    def test_awaiting_draft(self):
+    def test_waiting_for_draft(self):
         message_string = """To: somebody@ietf.org
 From: joe@test.com
 Date: {}
@@ -970,7 +970,7 @@ Thank you
                                  by = Person.objects.get(name="(System)"),
                                  msgtype = "msgin")
 
-        url = urlreverse('submit_manualpost')
+        url = urlreverse('ietf.submit.views.manualpost')
         # Secretariat has access
         self.client.login(username="secretary", password="secretary+password")
 
@@ -979,7 +979,7 @@ Thank you
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
 
-        self.assertEqual(len(q('.awaiting-draft a:contains("draft-my-new-draft")')), 1)
+        self.assertEqual(len(q('.waiting-for-draft a:contains("draft-my-new-draft")')), 1)
 
         # Same name should raise an error
         with self.assertRaises(Exception):
@@ -993,7 +993,7 @@ Thank you
                                  msgtype = "msgin")
 
         # Cancel this one
-        r = self.client.post(urlreverse("submit_cancel_awaiting_draft_by_hash"), {
+        r = self.client.post(urlreverse("ietf.submit.views.cancel_waiting_for_draft"), {
             "submission_id": submission.pk,
             "access_token": submission.access_token(),
         })
@@ -1002,7 +1002,7 @@ Thank you
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q('.awaiting-draft a:contains("draft-my-new-draft")')), 0)
+        self.assertEqual(len(q('.waiting-for-draft a:contains("draft-my-new-draft")')), 0)
 
         # Should now be able to add it again
         submission, submission_email_event = \
@@ -1016,7 +1016,7 @@ Thank you
                                  msgtype = "msgin")
 
 
-    def test_awaiting_draft_with_attachment(self):
+    def test_waiting_for_draft_with_attachment(self):
         frm = "joe@test.com"
         
         message_string = """To: somebody@ietf.org
@@ -1052,7 +1052,7 @@ ZSBvZiBsaW5lcyAtIGJ1dCBpdCBjb3VsZCBiZSBhIGRyYWZ0Cg==
                                  by = Person.objects.get(name="(System)"),
                                  msgtype = "msgin")
 
-        manualpost_page_url = urlreverse('submit_manualpost')
+        manualpost_page_url = urlreverse('ietf.submit.views.manualpost')
         # Secretariat has access
         self.client.login(username="secretary", password="secretary+password")
 
@@ -1135,7 +1135,7 @@ ZSBvZiBsaW5lcyAtIGJ1dCBpdCBjb3VsZCBiZSBhIGRyYWZ0Cg==
                               is_secretariat):
         # get the page listing manual posts
         r, q = self.request_and_parse(the_url)
-        selector = "#awaiting-draft a#add-submission-email{}:contains('Add email')". \
+        selector = "#waiting-for-draft a#add-submission-email{}:contains('Add email')". \
             format(submission.pk, submission_name_fragment)
 
         if is_secretariat:
@@ -1146,7 +1146,7 @@ ZSBvZiBsaW5lcyAtIGJ1dCBpdCBjb3VsZCBiZSBhIGRyYWZ0Cg==
             self.assertEqual(len(q(selector)), 0)
 
         # Find the link for our submission in those awaiting drafts
-        submission_url = self.get_href(q, "#awaiting-draft a#aw{}:contains({})".
+        submission_url = self.get_href(q, "#waiting-for-draft a#aw{}:contains({})".
                                        format(submission.pk, submission_name_fragment))
 
         # Follow the link to the status page for this submission
@@ -1317,7 +1317,7 @@ Subject: test
         # We're not testing the submission process - just the submission status 
 
         # get
-        url = urlreverse('submit_upload_submission')
+        url = urlreverse('ietf.submit.views.upload_submission')
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)

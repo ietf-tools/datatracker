@@ -31,9 +31,9 @@
           {% for s in manual %}
             <tr>
               {% if user.is_authenticated %}
-                <td><a href="{% url "submit_submission_status_by_hash" submission_id=s.pk access_token=s.access_token %}">{{ s.name }}-{{ s.rev }}</a></td>
+                <td><a href="{% url "ietf.submit.views.submission_status" submission_id=s.pk access_token=s.access_token %}">{{ s.name }}-{{ s.rev }}</a></td>
               {% else %}
-                <td><a href="{% url "submit_submission_status" submission_id=s.pk %}">{{ s.name }}-{{ s.rev }}</a></td>
+                <td><a href="{% url "ietf.submit.views.submission_status" submission_id=s.pk %}">{{ s.name }}-{{ s.rev }}</a></td>
               {% endif %}
               <td>{{ s.submission_date }}</td>
               <td>{% if s.passes_checks %}Ok{% else %}Fails{% endif %}</td>
@@ -46,10 +46,10 @@
 
     <h2 class="anchor-target" id="approvals">Submissions awaiting draft upload</h2>
 
-    {% if not awaiting_draft %}
-      <p id="no-awaiting-draft">There are no submissions awaiting draft upload.</p>
+    {% if not waiting_for_draft %}
+      <p id="no-waiting-for-draft">There are no submissions awaiting draft upload.</p>
     {% else %}
-      <table id="awaiting-draft" class="awaiting-draft table table-condensed table-striped tablesorter">
+      <table id="waiting-for-draft" class="waiting-for-draft table table-condensed table-striped tablesorter">
         <thead>
         <tr>
           <th>Name</th>
@@ -58,12 +58,12 @@
         </tr>
         </thead>
         <tbody>
-        {% for s in awaiting_draft %}
+        {% for s in waiting_for_draft %}
           <tr>
             {% if user.is_authenticated %}
-              <td><a id="aw{{ s.pk }}" href="{% url "submit_submission_status_by_hash" submission_id=s.pk access_token=s.access_token %}">{{ s.name }}</a></td>
+              <td><a id="aw{{ s.pk }}" href="{% url "ietf.submit.views.submission_status" submission_id=s.pk access_token=s.access_token %}">{{ s.name }}</a></td>
             {% else %}
-              <td><a id="aw{{ s.pk }}" href="{% url "submit_submission_status" submission_id=s.pk %}">{{ s.name }}</a></td>
+              <td><a id="aw{{ s.pk }}" href="{% url "ietf.submit.views.submission_status" submission_id=s.pk %}">{{ s.name }}</a></td>
             {% endif %}
             <td>{{ s.rev }}</td>
             <td>{{ s.submission_date }}</td>
@@ -79,7 +79,7 @@
               </td>
             {% endif %}
             {% if user|has_role:"Secretariat" %}
-              <td><a id="add-submission-email{{ s.pk }}" class="btn btn-default btn-xs" href="{% url "submit_manualpost_email_by_hash" submission_id=s.pk access_token=s.access_token %}">Add email</a></td>
+              <td><a id="add-submission-email{{ s.pk }}" class="btn btn-default btn-xs" href="{% url "ietf.submit.views.add_manualpost_email" submission_id=s.pk access_token=s.access_token %}">Add email</a></td>
             {% endif %}
           </tr>
         {% endfor %}
@@ -88,7 +88,7 @@
     {% endif %}
 
     {% if user|has_role:"Secretariat" %}
-      <a id="new-submission-email" class="btn btn-default btn-sm" href="{% url "submit_manualpost_email" %}">New submission from email</a>
+      <a id="new-submission-email" class="btn btn-default btn-sm" href="{% url "ietf.submit.views.add_manualpost_email" %}">New submission from email</a>
     {% endif %}
 
 {% endblock %}

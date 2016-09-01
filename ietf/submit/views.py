@@ -103,13 +103,13 @@ def upload_submission(request):
                 else:
                     abstract = form.parsed_draft.get_abstract()
 
-                # See if there is a Submission in state manual-awaiting-upload
+                # See if there is a Submission in state waiting-for-draft
                 # for this revision.
                 # If so - we're going to update it otherwise we create a new object 
 
                 submission = Submission.objects.filter(name=form.filename, 
                                                        rev=form.revision,
-                                                       state_id = "manual-awaiting-draft").distinct()
+                                                       state_id = "waiting-for-draft").distinct()
                 if (len(submission) == 0):
                     submission = None
                 elif (len(submission) == 1):
@@ -131,7 +131,7 @@ def upload_submission(request):
                     
                     submission.save()
                 else:
-                    raise Exception("Multiple submissions awaiting upload")
+                    raise Exception("Multiple submissions found waiting for upload")
 
                 if (submission == None):
                     try:
@@ -177,7 +177,7 @@ def upload_submission(request):
                 create_submission_event(request, submission, desc="Uploaded submission")
                 docevent_from_submission(request, submission, desc="Uploaded new revision")
 
-                return redirect("submit_submission_status_by_hash", submission_id=submission.pk, access_token=submission.access_token())
+                return redirect("ietf.submit.views.submission_status", submission_id=submission.pk, access_token=submission.access_token())
         except IOError as e:
             if "read error" in str(e): # The server got an IOError when trying to read POST data
                 form = SubmissionUploadForm(request=request)
@@ -238,7 +238,7 @@ def submission_status(request, submission_id, access_token=None):
     can_edit = can_edit_submission(request.user, submission, access_token) and submission.state_id == "uploaded"
     can_cancel = (key_matched or is_secretariat) and submission.state.next_states.filter(slug="cancel")
     can_group_approve = (is_secretariat or is_chair) and submission.state_id == "grp-appr"
-    can_force_post = is_secretariat and submission.state.next_states.filter(slug="posted") and submission.state_id != "manual-awaiting-draft"
+    can_force_post = is_secretariat and submission.state.next_states.filter(slug="posted") and submission.state_id != "waiting-for-draft"
     show_send_full_url = not key_matched and not is_secretariat and submission.state_id not in ("cancel", "posted")
 
     addrs = gather_address_lists('sub_confirmation_requested',submission=submission)
@@ -330,15 +330,15 @@ def submission_status(request, submission_id, access_token=None):
                     docevent_from_submission(request, submission, docDesc)
     
                 if access_token:
-                    return redirect("submit_submission_status_by_hash", submission_id=submission.pk, access_token=access_token)
+                    return redirect("ietf.submit.views.submission_status", submission_id=submission.pk, access_token=access_token)
                 else:
-                    return redirect("submit_submission_status", submission_id=submission.pk)
+                    return redirect("ietf.submit.views.submission_status", submission_id=submission.pk)
 
         elif action == "edit" and submission.state_id == "uploaded":
             if access_token:
-                return redirect("submit_edit_submission_by_hash", submission_id=submission.pk, access_token=access_token)
+                return redirect("ietf.submit.views.edit_submission", submission_id=submission.pk, access_token=access_token)
             else:
-                return redirect("submit_edit_submission", submission_id=submission.pk)
+                return redirect("ietf.submit.views.edit_submission", submission_id=submission.pk)
 
         elif action == "sendfullurl" and submission.state_id not in ("cancel", "posted"):
             sent_to = send_full_url(request, submission)
@@ -355,7 +355,7 @@ def submission_status(request, submission_id, access_token=None):
 
             create_submission_event(request, submission, "Cancelled submission")
 
-            return redirect("submit_submission_status", submission_id=submission_id)
+            return redirect("ietf.submit.views.submission_status", submission_id=submission_id)
 
 
         elif action == "approve" and submission.state_id == "grp-appr":
@@ -465,7 +465,7 @@ def edit_submission(request, submission_id, access_token=None):
 
             create_submission_event(request, submission, desc)
 
-            return redirect("submit_submission_status", submission_id=submission.pk)
+            return redirect("ietf.submit.views.submission_status", submission_id=submission.pk)
         else:
             form_errors = True
     else:
@@ -547,7 +547,7 @@ def add_preapproval(request):
             p.by = request.user.person
             p.save()
 
-            return HttpResponseRedirect(urlreverse("submit_approvals") + "#preapprovals")
+            return HttpResponseRedirect(urlreverse("ietf.submit.views.approvals") + "#preapprovals")
     else:
         form = PreapprovalForm()
 
@@ -566,7 +566,7 @@ def cancel_preapproval(request, preapproval_id):
     if request.method == "POST" and request.POST.get("action", "") == "cancel":
         preapproval.delete()
 
-        return HttpResponseRedirect(urlreverse("submit_approvals") + "#preapprovals")
+        return HttpResponseRedirect(urlreverse("ietf.submit.views.approvals") + "#preapprovals")
 
     return render(request, 'submit/cancel_preapproval.html',
                               {'selected': 'approvals',
@@ -584,15 +584,15 @@ def manualpost(request):
         s.passes_checks = all([ c.passed!=False for c in s.checks.all() ])
         s.errors = validate_submission(s)
 
-    awaiting_draft = Submission.objects.filter(state_id = "manual-awaiting-draft").distinct()
+    waiting_for_draft = Submission.objects.filter(state_id = "waiting-for-draft").distinct()
 
     return render(request, 'submit/manual_post.html',
                   {'manual': manual,
                    'selected': 'manual_posts',
-                   'awaiting_draft': awaiting_draft})
+                   'waiting_for_draft': waiting_for_draft})
 
 
-def cancel_awaiting_draft(request):
+def cancel_waiting_for_draft(request):
     if request.method == 'POST':
         can_cancel = has_role(request.user, "Secretariat")
         
@@ -612,7 +612,7 @@ def cancel_awaiting_draft(request):
                                      submission,
                                      "Cancelled submission for rev {}".format(submission.rev))
     
-    return redirect("submit_manualpost")
+    return redirect("ietf.submit.views.manualpost")
 
 
 @role_required('Secretariat',)
@@ -665,7 +665,7 @@ def add_manualpost_email(request, submission_id=None, access_token=None):
                     e.time = submission_email_event.time
                     e.save()
     
-                return redirect("submit_manualpost")
+                return redirect("ietf.submit.views.manualpost")
         except ValidationError as e:
             form = SubmissionEmailForm(request.POST)
             form._errors = {}
@@ -688,14 +688,14 @@ def add_manualpost_email(request, submission_id=None, access_token=None):
 
 
 @role_required('Secretariat',)
-def send_email(request, submission_id, message_id=None):
+def send_submission_email(request, submission_id, message_id=None):
     """Send an email related to a submission"""
     submission = get_submission_or_404(submission_id, access_token = None)
 
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
-            return redirect('submit_submission_status_by_hash',
+            return redirect('ietf.submit.views.submission_status',
                             submission_id=submission.id,
                             access_token=submission.access_token())
 
@@ -739,7 +739,7 @@ def send_email(request, submission_id, message_id=None):
             send_mail_message(None,msg)
 
             messages.success(request, 'Email sent.')
-            return redirect('submit_submission_status_by_hash', 
+            return redirect('ietf.submit.views.submission_status', 
                             submission_id=submission.id,
                             access_token=submission.access_token())
 
@@ -789,7 +789,7 @@ def send_email(request, submission_id, message_id=None):
         'form':form})
     
 
-def submission_email(request, submission_id, message_id, access_token=None):
+def show_submission_email_message(request, submission_id, message_id, access_token=None):
     submission = get_submission_or_404(submission_id, access_token)
 
     submitEmail = get_object_or_404(SubmissionEmail, pk=message_id)    
@@ -800,7 +800,7 @@ def submission_email(request, submission_id, message_id, access_token=None):
                    'message': submitEmail,
                    'attachments': attachments})
 
-def submission_email_attachment(request, submission_id, message_id, filename, access_token=None):
+def show_submission_email_attachment(request, submission_id, message_id, filename, access_token=None):
     get_submission_or_404(submission_id, access_token)
 
     message = get_object_or_404(SubmissionEmail, pk=message_id)

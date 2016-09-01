@@ -3,7 +3,6 @@ import email
 import datetime
 import base64
 import os
-
 import pyzmail
 
 from django.conf import settings
@@ -16,11 +15,10 @@ from ietf.utils.log import log
 from ietf.utils.mail import send_mail, send_mail_message
 from ietf.doc.models import Document
 from ietf.ipr.mail import utc_from_string
-from ietf.mailtrigger.utils import gather_address_lists, \
-    get_base_submission_message_address
 from ietf.person.models import Person
 from ietf.message.models import Message, MessageAttachment
 from ietf.utils.accesstoken import generate_access_token
+from ietf.mailtrigger.utils import gather_address_lists, get_base_submission_message_address
 from ietf.submit.models import SubmissionEmail, Submission
 
 def send_submission_confirmation(request, submission, chair_notice=False):
@@ -28,8 +26,8 @@ def send_submission_confirmation(request, submission, chair_notice=False):
     from_email = settings.IDSUBMIT_FROM_EMAIL
     (to_email, cc) = gather_address_lists('sub_confirmation_requested',submission=submission)
 
-    confirm_url = settings.IDTRACKER_BASE_URL + urlreverse('submit_confirm_submission', kwargs=dict(submission_id=submission.pk, auth_token=generate_access_token(submission.auth_key)))
-    status_url = settings.IDTRACKER_BASE_URL + urlreverse('submit_submission_status_by_hash', kwargs=dict(submission_id=submission.pk, access_token=submission.access_token()))
+    confirm_url = settings.IDTRACKER_BASE_URL + urlreverse('ietf.submit.views.confirm_submission', kwargs=dict(submission_id=submission.pk, auth_token=generate_access_token(submission.auth_key)))
+    status_url = settings.IDTRACKER_BASE_URL + urlreverse('ietf.submit.views.submission_status', kwargs=dict(submission_id=submission.pk, access_token=submission.access_token()))
         
     send_mail(request, to_email, from_email, subject, 'submit/confirm_submission.txt', 
               {
@@ -48,7 +46,7 @@ def send_full_url(request, submission):
     subject = 'Full URL for managing submission of draft %s' % submission.name
     from_email = settings.IDSUBMIT_FROM_EMAIL
     (to_email, cc) = gather_address_lists('sub_management_url_requested',submission=submission)
-    url = settings.IDTRACKER_BASE_URL + urlreverse('submit_submission_status_by_hash', kwargs=dict(submission_id=submission.pk, access_token=submission.access_token()))
+    url = settings.IDTRACKER_BASE_URL + urlreverse('ietf.submit.views.submission_status', kwargs=dict(submission_id=submission.pk, access_token=submission.access_token()))
 
     send_mail(request, to_email, from_email, subject, 'submit/full_url.txt', 
               {
@@ -84,7 +82,7 @@ def send_manual_post_request(request, submission, errors):
     (to_email,cc) = gather_address_lists('sub_manual_post_requested',submission=submission)
     send_mail(request, to_email, from_email, subject, 'submit/manual_post_request.txt', {
         'submission': submission,
-        'url': settings.IDTRACKER_BASE_URL + urlreverse('submit_submission_status', kwargs=dict(submission_id=submission.pk)),
+        'url': settings.IDTRACKER_BASE_URL + urlreverse('ietf.submit.views.submission_status', kwargs=dict(submission_id=submission.pk)),
         'errors': errors,
     }, cc=cc)
 
@@ -233,7 +231,7 @@ def add_submission_email(request, remote_ip, name, rev, submission_pk, message, 
         # create Submission using the name
         try:
             submission = Submission.objects.create(
-                    state_id="manual-awaiting-draft",
+                    state_id="waiting-for-draft",
                     remote_ip=remote_ip,
                     name=name,
                     rev=rev,

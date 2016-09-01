@@ -11,7 +11,7 @@ class SubmissionAdmin(admin.ModelAdmin):
     raw_id_fields = ['group', 'draft']
 
     def status_link(self, instance):
-        url = urlreverse('submit_submission_status_by_hash',
+        url = urlreverse('ietf.submit.views.submission_status',
                          kwargs=dict(submission_id=instance.pk,
                                      access_token=instance.access_token()))
         return '<a href="%s">%s</a>' % (url, instance.state)

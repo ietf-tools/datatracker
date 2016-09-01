@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
 from django.db import migrations
@@ -10,7 +10,7 @@ class Migration(migrations.Migration):
 
         cancelled = DraftSubmissionStateName.objects.get(slug="cancel")
         posted = DraftSubmissionStateName.objects.get(slug="posted")
-        mad = DraftSubmissionStateName.objects.get(slug="manual-awaiting-draft")
+        mad = DraftSubmissionStateName.objects.get(slug="waiting-for-draft")
         
         mad.next_states.add(cancelled)
         mad.next_states.add(posted)

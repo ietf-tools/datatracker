@@ -884,7 +884,7 @@
   "desc": ""
  },
  "model": "name.draftsubmissionstatename",
- "pk": "manual-awaiting-draft"
+ "pk": "waiting-for-draft"
 },
 {
  "fields": {
