@@ -84,7 +84,7 @@ def email_review_request_change(request, review_req, subject, msg, by, notify_se
                 to.append(e)
 
     if notify_secretary:
-        extract_email_addresses(Role.objects.filter(name__in=["secretary", "delegate"], group=review_req.team).distinct())
+        extract_email_addresses(Role.objects.filter(name__in=["secr", "delegate"], group=review_req.team).distinct())
     if notify_reviewer:
         extract_email_addresses([review_req.reviewer])
     if notify_requested_by:
