@@ -4,8 +4,8 @@ def skip_prefix(text, prefix):
     else:
         return text
 
-def skip_suffix(text, prefix):
-    if text.endswith(prefix):
-        return text[:-len(prefix)]
+def skip_suffix(text, suffix):
+    if text.endswith(suffix):
+        return text[:-len(suffix)]
     else:
         return text    

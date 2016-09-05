@@ -1827,7 +1827,7 @@
  "fields": {
   "order": 7,
   "used": true,
-  "name": "No Review of Version",
+  "name": "Team Will not Review Version",
   "desc": ""
  },
  "model": "name.reviewrequeststatename",
@@ -1837,7 +1837,7 @@
  "fields": {
   "order": 8,
   "used": true,
-  "name": "No Review of Document",
+  "name": "Team Will not Review Document",
   "desc": ""
  },
  "model": "name.reviewrequeststatename",

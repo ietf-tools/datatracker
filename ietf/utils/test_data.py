@@ -360,7 +360,7 @@ def make_test_data():
     return draft
 
 def make_review_data(doc):
-    team = Group.objects.create(state_id="active", acronym="reviewteam", name="Review Team", type_id="team", list_email="reviewteam@ietf.org")
+    team = Group.objects.create(state_id="active", acronym="reviewteam", name="Review Team", type_id="dir", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
     for r in ReviewResultName.objects.filter(slug__in=["issues", "ready-issues", "ready", "not-ready"]):
         ReviewTeamResult.objects.create(team=team, result=r)
 
@@ -383,7 +383,7 @@ def make_review_data(doc):
     Role.objects.create(name_id="reviewer", person=p, email=p.email_set.first(), group=team)
 
     p = Person.objects.get(user__username="secretary")
-    Role.objects.create(name_id="secretary", person=p, email=p.email_set.first(), group=team)
+    Role.objects.create(name_id="secr", person=p, email=p.email_set.first(), group=team)
     
     return review_req
 

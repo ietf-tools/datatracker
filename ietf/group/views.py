@@ -38,7 +38,6 @@ import re
 from tempfile import mkstemp
 import datetime
 from collections import OrderedDict
-import math
 
 import debug              # pyflakes:ignore
 
@@ -364,11 +363,11 @@ def construct_group_menu_context(request, group, selected, group_type, others):
     # actions
     actions = []
 
-    is_chair = group.has_role(request.user, "chair")
+    is_admin = group.has_role(request.user, group.features.admin_roles)
     can_manage = can_manage_group(request.user, group)
 
     if group.features.has_milestones:
-        if group.state_id != "proposed" and (is_chair or can_manage):
+        if group.state_id != "proposed" and (is_admin or can_manage):
             actions.append((u"Edit milestones", urlreverse("group_edit_milestones", kwargs=kwargs)))
 
     if group.features.has_documents:
@@ -384,10 +383,10 @@ def construct_group_menu_context(request, group, selected, group_type, others):
         import ietf.group.views_review
         actions.append((u"Manage review requests", urlreverse(ietf.group.views_review.manage_review_requests, kwargs=kwargs)))
 
-    if group.state_id != "conclude" and (is_chair or can_manage):
+    if group.state_id != "conclude" and (is_admin or can_manage):
         actions.append((u"Edit group", urlreverse("group_edit", kwargs=kwargs)))
 
-    if group.features.customize_workflow and (is_chair or can_manage):
+    if group.features.customize_workflow and (is_admin or can_manage):
         actions.append((u"Customize workflow", urlreverse("ietf.group.views_edit.customize_workflow", kwargs=kwargs)))
 
     if group.state_id in ("active", "dormant") and not group.type_id in ["sdo", "rfcedtyp", "isoc", ] and can_manage:

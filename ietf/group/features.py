@@ -11,6 +11,7 @@ class GroupFeatures(object):
     about_page = "group_about"
     default_tab = about_page
     material_types = ["slides"]
+    admin_roles = ["chair"]
 
     def __init__(self, group):
         if group.type_id in ("wg", "rg"):
@@ -31,3 +32,6 @@ class GroupFeatures(object):
             self.has_reviews = True
             import ietf.group.views
             self.default_tab = ietf.group.views.review_requests
+
+        if group.type_id == "dir":
+            self.admin_roles = ["chair", "secr"]
