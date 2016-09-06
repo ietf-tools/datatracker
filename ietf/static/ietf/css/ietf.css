@@ -550,3 +550,17 @@ ul.errorlist {
 .btn .fa-stack .fa-stack-1x { line-height: 80%; }
 
 /* ========================================================================== */
+
+.icon-link:visited,
+.icon-link:hover,
+.icon-link:active,
+.icon-link:focus  {
+   text-decoration: none;
+}
+
+
+.icon-link:hover,
+.icon-link:active  {	
+   background-color: #f5f5f5;
+}
+

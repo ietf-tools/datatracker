@@ -36,7 +36,7 @@ increment = 2
 # Number of times to indent output
 # A list is used to force access by reference
 _report_indent = [4]
-_mark = [ timeutils.clock() ]
+_mark = [ timeutils.time() ]
 
 def set_indent(i):
     _report_indent[0] = i
@@ -82,27 +82,29 @@ def trace(fn):                 # renamed from 'report' by henrik 16 Jun 2011
         return fn
 
 def mark():
-    _mark[0] = timeutils.clock()
+    _mark[0] = timeutils.time()
 
 def lap(s):
-    tau = timeutils.clock() - _mark[0]
-    say(">  %s: %.3fs since mark" % (s, tau))
+    clk = timeutils.time()
+    tau = clk - _mark[0]
+    ts = timeutils.strftime("%H:%M:%S", timeutils.localtime(clk))
+    say("%s: %.3fs since mark: %s" % (ts, tau, s))
 
 def clock(s):
     lap(s)
-    _mark[0] = timeutils.clock()
+    _mark[0] = timeutils.time()
 
 def time(fn):
     """Decorator to print timing information about a function call.
     """
     def wrap(fn, *params,**kwargs):
-        mark = timeutils.clock()
+        mark = timeutils.time()
 
         indent = ' ' * _report_indent[0]
         fc = "%s.%s()" % (fn.__module__, fn.__name__,)
 
         ret = fn(*params,**kwargs)
-        tau = timeutils.clock() - mark
+        tau = timeutils.time() - mark
         sys.stderr.write("%s| %s | %.3fs\n" % (indent, fc, tau))
 
         return ret
@@ -160,6 +162,7 @@ def say(s):
     if debug:
         indent = ' ' * (_report_indent[0])
         sys.stderr.write("%s%s\n" % (indent, s))
+        sys.stderr.flush()
 
 def profile(fn):
     def wrapper(*args, **kwargs):

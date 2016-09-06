@@ -15,6 +15,8 @@ import urlparse
 from django.core.urlresolvers import reverse as urlreverse
 from django.conf import settings
 
+from tastypie.test import ResourceTestCaseMixin
+
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import ( Document, DocAlias, DocRelationshipName, RelatedDocument, State,
@@ -1097,3 +1099,35 @@ class DocumentMeetingTests(TestCase):
         response = self.client.post(url,{'session':self.future.pk,'version':'current'})
         self.assertEqual(response.status_code,302)
         self.assertEqual(2,doc.docevent_set.count())
+
+
+class ChartTests(ResourceTestCaseMixin, TestCase):
+    def test_stats(self):
+        doc = DocumentFactory.create(states=[('draft','active')])
+
+        data_url = urlreverse("ietf.doc.views_stats.chart_data_newrevisiondocevent")
+
+        # No qurey arguments; expect an empty json object
+        r = self.client.get(data_url)
+        self.assertValidJSONResponse(r)
+        self.assertEqual(r.content, "{}")
+
+        # No match
+        r = self.client.get(data_url + "?activedrafts=on&name=thisisnotadocumentname")
+        self.assertValidJSONResponse(r)
+        d = json.loads(r.content)
+        self.assertEqual(d['series'][0]['data'], [])
+
+        r = self.client.get(data_url + "?activedrafts=on&name=%s"%doc.name[6:12])
+        self.assertValidJSONResponse(r)
+        d = json.loads(r.content)
+        self.assertEqual(len(d['series'][0]['data']), 1)
+
+        chart_url = urlreverse("ietf.doc.views_stats.chart_newrevisiondocevent")
+        r = self.client.get(chart_url)
+        self.assertEqual(r.status_code, 200)
+
+        r = self.client.get(chart_url + "?activedrafts=on&name=%s"%doc.name[6:12])
+        self.assertEqual(r.status_code, 200)
+        
+        

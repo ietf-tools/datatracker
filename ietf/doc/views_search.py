@@ -30,14 +30,15 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import datetime, re
+import re
+import datetime
 
 from django import forms
 from django.conf import settings
 from django.core.cache import cache
 from django.core.urlresolvers import reverse as urlreverse
 from django.db.models import Q
-from django.http import Http404, HttpResponseBadRequest, HttpResponse, HttpResponseRedirect
+from django.http import Http404, HttpResponseBadRequest, HttpResponse, HttpResponseRedirect, QueryDict
 from django.shortcuts import render
 from django.utils.cache import _generate_cache_key
 
@@ -46,6 +47,7 @@ import debug                            # pyflakes:ignore
 from ietf.doc.models import ( Document, DocHistory, DocAlias, State,
     LastCallDocEvent, IESG_SUBSTATE_TAGS )
 from ietf.doc.fields import select2_id_doc_name_json
+from ietf.doc.utils import get_search_cache_key
 from ietf.group.models import Group
 from ietf.idindex.index import active_drafts_index_by_group
 from ietf.name.models import DocTagName, DocTypeName, StreamName
@@ -164,7 +166,7 @@ def retrieve_search_results(form, all_types=False):
     # radio choices
     by = query["by"]
     if by == "author":
-        docs = docs.filter(authors__person__name__icontains=query["author"])
+        docs = docs.filter(authors__person__alias__name__icontains=query["author"])
     elif by == "group":
         docs = docs.filter(group__acronym=query["group"])
     elif by == "area":
@@ -197,16 +199,22 @@ def search(request):
         if not form.is_valid():
             return HttpResponseBadRequest("form not valid: %s" % form.errors)
 
-        results = retrieve_search_results(form)
+        key = get_search_cache_key(get_params)
+        results = cache.get(key)
+        if not results:
+            results = retrieve_search_results(form)
+            cache.set(key, results)
+
         results, meta = prepare_document_table(request, results, get_params)
         meta['searching'] = True
     else:
         form = SearchForm()
         results = []
         meta = { 'by': None, 'searching': False }
+        get_params = QueryDict('')
 
     return render(request, 'doc/search/search.html', {
-        'form':form, 'docs':results, 'meta':meta, },
+        'form':form, 'docs':results, 'meta':meta, 'queryargs':get_params.urlencode() },
     )
 
 def frontpage(request):

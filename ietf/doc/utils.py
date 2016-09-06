@@ -3,6 +3,8 @@ import re
 import urllib
 import math
 import datetime
+import hashlib
+import json
 
 from django.conf import settings
 from django.db.models.query import EmptyQuerySet
@@ -631,3 +633,12 @@ def crawl_history(doc):
             history[url]['pages'] = doc.history_set.filter(rev=e.newrevisiondocevent.rev).first().pages
     history = history.values()
     return sorted(history, key=lambda x: x['published'])
+
+
+def get_search_cache_key(params):
+    from ietf.doc.views_search import SearchForm
+    fields = set(SearchForm.base_fields) - set(['sort',])
+    kwargs = dict([ (k,v) for (k,v) in params.items() if k in fields ])
+    key = "doc:document:search:" + hashlib.sha512(json.dumps(kwargs, sort_keys=True)).hexdigest()
+    return key
+    
