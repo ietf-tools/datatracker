@@ -504,6 +504,10 @@ IDSUBMIT_MAX_DAILY_SAME_GROUP_SIZE = 450 # in MB
 IDSUBMIT_MAX_DAILY_SUBMISSIONS = 1000
 IDSUBMIT_MAX_DAILY_SUBMISSIONS_SIZE = 2000 # in MB
 
+YANG_RFC_MODEL_DIR = '/a/www/ietf-ftp/yang/rfcmod/'
+YANG_DRAFT_MODEL_DIR = '/a/www/ietf-ftp/yang/draftmod/'
+YANG_INVAL_MODEL_DIR = '/a/www/ietf-ftp/yang/invalmod/'
+
 XML_LIBRARY = "/www/tools.ietf.org/tools/xml2rfc/web/public/rfc/"
 
 MEETING_MATERIALS_SUBMISSION_START_DAYS = -90

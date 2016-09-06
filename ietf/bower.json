@@ -8,6 +8,7 @@
     "d3": "~3",
     "font-awesome": "~4",
     "html5shiv": "~3",
+    "highcharts": "~4.2", 
     "jquery": "~1",
     "jquery.cookie": "~1",
     "jquery.tablesorter": "~2",
@@ -31,6 +32,16 @@
     },
     "respond": {
       "main": "dest/respond.min.js"
+    },
+    "highcharts": {
+	"main": [
+	  "highcharts.js",
+	  "highcharts-more.js",
+	  "highstock.js",
+	  "highmaps.js",
+	  "modules/exporting.js",
+	  "modules/map.js"
+	]
     }
   }
 }

@@ -420,6 +420,8 @@ class Document(DocumentInfo):
         return e[0] if e else None
 
     def canonical_name(self):
+        if hasattr(self, '_canonical_name'):
+            return self._canonical_name
         name = self.name
         if self.type_id == "draft" and self.get_state_slug() == "rfc":
             a = self.docalias_set.filter(name__startswith="rfc")
@@ -441,6 +443,8 @@ class Document(DocumentInfo):
 
 
     def telechat_date(self, e=None):
+        if hasattr(self, '_telechat_date'):
+            return self._telechat_date
         if not e:
             e = self.latest_event(TelechatDocEvent, type="scheduled_for_telechat")
         return e.telechat_date if e and e.telechat_date and e.telechat_date >= datetime.date.today() else None
@@ -551,6 +555,8 @@ class DocHistory(DocumentInfo):
         return unicode(self.doc.name)
 
     def canonical_name(self):
+        if hasattr(self, '_canonical_name'):
+            return self._canonical_name
         return self.name
 
     def latest_event(self, *args, **kwargs):

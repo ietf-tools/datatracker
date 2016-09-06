@@ -448,3 +448,16 @@ form.navbar-form input.form-control.input-sm { width: 141px; }
     padding: inherit;
     outline: inherit;
 }
+
+.icon-link:visited,
+.icon-link:hover,
+.icon-link:active,
+.icon-link:focus  {
+   text-decoration: none;
+}
+
+
+.icon-link:hover,
+.icon-link:active  {	
+   background-color: #f5f5f5;
+}

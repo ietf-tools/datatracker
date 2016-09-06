@@ -395,11 +395,11 @@ def construct_group_menu_context(request, group, selected, group_type, others):
 
 def search_for_group_documents(group):
     form = SearchForm({ 'by':'group', 'group': group.acronym or "", 'rfcs':'on', 'activedrafts': 'on' })
-    docs, meta = retrieve_search_results(form)
+    docs, meta, _ = retrieve_search_results(form)
 
     # get the related docs
     form_related = SearchForm({ 'by':'group', 'name': u'-%s-' % group.acronym, 'activedrafts': 'on' })
-    raw_docs_related, meta_related = retrieve_search_results(form_related)
+    raw_docs_related, meta_related, _ = retrieve_search_results(form_related)
 
     docs_related = []
     for d in raw_docs_related:

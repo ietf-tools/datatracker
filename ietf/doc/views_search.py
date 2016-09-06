@@ -30,7 +30,8 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import datetime, re
+import re
+import datetime
 
 from django import forms
 from django.conf import settings
@@ -38,7 +39,7 @@ from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.urlresolvers import reverse as urlreverse
 from django.db.models import Q
-from django.http import Http404, HttpResponseBadRequest, HttpResponse, HttpResponseRedirect
+from django.http import Http404, HttpResponseBadRequest, HttpResponse, HttpResponseRedirect, QueryDict
 from django.shortcuts import render
 from django.utils.cache import _generate_cache_key
 
@@ -49,6 +50,7 @@ from ietf.doc.models import ( Document, DocHistory, DocAlias, State, RelatedDocu
     DocEvent, LastCallDocEvent, TelechatDocEvent, IESG_SUBSTATE_TAGS )
 from ietf.doc.expire import expirable_draft
 from ietf.doc.fields import select2_id_doc_name_json
+from ietf.doc.utils import get_search_cache_key
 from ietf.group.models import Group
 from ietf.idindex.index import active_drafts_index_by_group
 from ietf.name.models import DocTagName, DocTypeName, StreamName
@@ -123,9 +125,6 @@ class SearchForm(forms.Form):
             q['state'] = q['substate'] = None
         return q
 
-def wrap_value(v):
-    return lambda: v
-
 def fill_in_search_attributes(docs):
     # fill in some attributes for the search results to save some
     # hairy template code and avoid repeated SQL queries
@@ -153,13 +152,13 @@ def fill_in_search_attributes(docs):
     for e in TelechatDocEvent.objects.filter(doc__in=doc_ids, type="scheduled_for_telechat").order_by('-time'):
         if e.doc_id not in seen:
             d = docs_dict[e.doc_id]
-            d.telechat_date = wrap_value(d.telechat_date(e))
+            d._telechat_date = d.telechat_date(e)
             seen.add(e.doc_id)
 
     # misc
     for d in docs:
-        # emulate canonical name which is used by a lot of the utils
-        d.canonical_name = wrap_value(rfc_aliases[d.pk] if d.pk in rfc_aliases else d.name)
+        # set up information for canonical_name() which is used by a lot of the utils
+        d._canonical_name = rfc_aliases[d.pk] if d.pk in rfc_aliases else d.name
 
         if d.rfc_number() != None and d.latest_event_cache["published_rfc"]:
             d.latest_revision_date = d.latest_event_cache["published_rfc"].time
@@ -265,7 +264,7 @@ def retrieve_search_results(form, all_types=False):
     # radio choices
     by = query["by"]
     if by == "author":
-        docs = docs.filter(authors__person__name__icontains=query["author"])
+        docs = docs.filter(authors__person__alias__name__icontains=query["author"])
     elif by == "group":
         docs = docs.filter(group__acronym=query["group"])
     elif by == "area":
@@ -362,7 +361,7 @@ def retrieve_search_results(form, all_types=False):
                 d["sort"] = h["key"]
             h["sort_url"] = "?" + d.urlencode()
                 
-    return (results, meta)
+    return (results, meta, docs)
 
 
 def get_doc_is_tracked(request, results):
@@ -392,20 +391,27 @@ def search(request):
             get_params['substate'] = request.GET['subState']
 
         form = SearchForm(get_params)
-        if not form.is_valid():
-            return HttpResponseBadRequest("form not valid: %s" % form.errors)
+        key = get_search_cache_key(get_params)
+        info = cache.get(key)
+        if not info:
+            if not form.is_valid():
+                return HttpResponseBadRequest("form not valid: %s" % form.errors)
 
-        results, meta = retrieve_search_results(form)
+            info = retrieve_search_results(form)
+            cache.set(key, info)
+
+        results, meta, qs = info            
         meta['searching'] = True
     else:
         form = SearchForm()
         results = []
         meta = { 'by': None, 'advanced': False, 'searching': False }
+        get_params = QueryDict('')
 
     doc_is_tracked = get_doc_is_tracked(request, results)
 
     return render(request, 'doc/search/search.html', {
-        'form':form, 'docs':results, 'doc_is_tracked':doc_is_tracked, 'meta':meta, },
+        'form':form, 'docs':results, 'doc_is_tracked':doc_is_tracked, 'meta':meta, 'queryargs':get_params.urlencode() },
     )
 
 def frontpage(request):
@@ -580,7 +586,7 @@ def docs_for_ad(request, name):
     form = SearchForm({'by':'ad','ad': ad.id,
                        'rfcs':'on', 'activedrafts':'on', 'olddrafts':'on',
                        'sort': 'status'})
-    results, meta = retrieve_search_results(form, all_types=True)
+    results, meta, _ = retrieve_search_results(form, all_types=True)
     results.sort(key=ad_dashboard_sort_key)
     del meta["headers"][-1]
     #
@@ -594,7 +600,7 @@ def docs_for_ad(request, name):
 def drafts_in_last_call(request):
     lc_state = State.objects.get(type="draft-iesg", slug="lc").pk
     form = SearchForm({'by':'state','state': lc_state, 'rfcs':'on', 'activedrafts':'on'})
-    results, meta = retrieve_search_results(form)
+    results, meta, _ = retrieve_search_results(form)
 
     return render(request, 'doc/drafts_in_last_call.html', {
         'form':form, 'docs':results, 'meta':meta

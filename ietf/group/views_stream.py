@@ -29,7 +29,7 @@ def stream_documents(request, acronym):
     stream = StreamName.objects.get(slug=acronym)
     form = SearchForm({'by':'stream', 'stream':acronym,
                        'rfcs':'on', 'activedrafts':'on'})
-    docs, meta = retrieve_search_results(form)
+    docs, meta, _ = retrieve_search_results(form)
     return render_to_response('group/stream_documents.html', {'stream':stream, 'docs':docs, 'meta':meta, 'editable':editable }, context_instance=RequestContext(request))
 
 class StreamEditForm(forms.Form):

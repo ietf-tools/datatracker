@@ -33,9 +33,8 @@
 from django.conf.urls import patterns, url, include
 from django.views.generic import RedirectView
 
-from ietf.doc import views_search, views_draft, views_ballot
-from ietf.doc import views_status_change
-from ietf.doc import views_doc
+from ietf.doc import views_search, views_draft, views_ballot, views_status_change, views_doc
+from ietf.doc import views_stats
 
 session_patterns = [
     url(r'^add$', views_doc.add_sessionpresentation),
@@ -54,6 +53,8 @@ urlpatterns = patterns('',
     url(r'^start-rfc-status-change/(?P<name>[A-Za-z0-9._+-]*)$', views_status_change.start_rfc_status_change, name='start_rfc_status_change'), 
     url(r'^iesg/(?P<last_call_only>[A-Za-z0-9.-]+/)?$', views_search.drafts_in_iesg_process, name="drafts_in_iesg_process"),
     url(r'^email-aliases/$', views_doc.email_aliases),
+    url(r'^stats/newrevisiondocevent/?$', views_stats.doc_stats_newrevisiondocevent),
+    url(r'^stats/data/newrevisiondocevent/?$', views_stats.doc_stats_data_newrevisiondocevent),
 
     url(r'^all/$', views_search.index_all_drafts, name="index_all_drafts"),
     url(r'^active/$', views_search.index_active_drafts, name="index_active_drafts"),

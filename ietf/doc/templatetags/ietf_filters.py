@@ -590,3 +590,11 @@ def urlize_html(html, autoescape=False):
 def emailwrap(email):
     email = str(email)
     return mark_safe(email.replace('@', '<wbr>@'))
+
+@register.filter()
+def comma_separated_list(seq, end_word="and"):
+    if len(seq) < 2:
+        return u"".join(seq)
+    else:
+        return u", ".join(seq[:-1]) + u" %s %s"%(end_word, seq[-1])
+        
