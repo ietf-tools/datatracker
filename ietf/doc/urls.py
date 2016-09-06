@@ -55,6 +55,7 @@ urlpatterns = patterns('',
     url(r'^email-aliases/$', views_doc.email_aliases),
     url(r'^stats/newrevisiondocevent/?$', views_stats.chart_newrevisiondocevent),
     url(r'^stats/data/newrevisiondocevent/?$', views_stats.chart_data_newrevisiondocevent),
+    url(r'^stats/data/person/(?P<id>[0-9]+)/drafts/?$', views_stats.chart_data_person_drafts),
 
     url(r'^all/$', views_search.index_all_drafts, name="index_all_drafts"),
     url(r'^active/$', views_search.index_active_drafts, name="index_active_drafts"),

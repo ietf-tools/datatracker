@@ -1,3 +1,25 @@
+ietfdb (6.32.0) ietf; urgency=low
+
+  **Initial charting support**
+
+  This release brings in some basic charting support, and a set of initial
+  charts showing new-revision timelines for document search results.  There
+  are also a few bugfixes:
+
+  * Fixed a blowup which could happen if an rfc doesn't have its standard 
+    level set.
+
+  * Fixed a bug in the rfceditor index sync introduced by the event saving 
+    refactoring.
+
+  * Fixed document methods .get_file_path() and .href() for historic 
+    meeting documents, to make urls like /doc/minutes-96-detnet/1/ work.
+
+  * Fixed a bug in bin/mkrelease.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  06 Sep 2016 06:20:52 -0700
+
+
 ietfdb (6.31.1) ietf; urgency=low
 
   This release adds more proceedings generation functionality, adds

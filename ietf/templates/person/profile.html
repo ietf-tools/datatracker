@@ -2,8 +2,9 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
 {% load markup_tags %}
+{% load staticfiles %}
 
-{% block title %}Profile for {{ person }}{% endblock %}
+{% block title %}Profile for {{ persons.0 }}{% endblock %}
 
 {% block content %}
   {% origin %}
@@ -30,5 +31,62 @@
        {{ person.biography | apply_markup:"restructuredtext" }}
     </div>
   </div>
+
+  <div class="col-md-6">
+     <h2>RFCs</h2>
+     {% if person.rfcs.exists %}
+	<list>
+	   {% for doc in person.rfcs %}
+	     <li>      <a href="{{ doc.get_absolute_url }}">{{ doc.canonical_name }}</a></li>
+	   {% endfor %}
+	</list>
+     {% else %}
+       {{ person.first_name }} has no RFCs as of {{ today }}.
+     {% endif %}
+  </div>
+  <div class="col-md-6">
+     <h2>Active Drafts</h2>
+     {% if person.active_drafts.exists %}
+	<list>
+	   {% for doc in person.active_drafts %}
+	     <li>      <a href="{{ doc.get_absolute_url }}">{{ doc.canonical_name }}</a></li>
+	   {% endfor %}
+	</list>
+     {% else %}
+       {{ person.first_name }} has no active drafts as of {{ today }}.
+     {% endif %}
+  </div>
+  <div class="col-md-6">
+     <h2>Expired Drafts</h2>
+     {% if person.expired_drafts.exists %}
+	<list>
+	   {% for doc in person.expired_drafts %}
+	     <li>      <a href="{{ doc.get_absolute_url }}">{{ doc.canonical_name }}</a></li>
+	   {% endfor %}
+	</list>
+     {% else %}
+       {{ person.first_name }} has no expired drafts as of {{ today }}.
+     {% endif %}
+  </div>
+
+  {% if person.has_drafts %}
+  <div id="chart" style="width:100%; height:400px; margin-top:1em;" class="panel panel-default panel-body col-md-12"></div>
+  {% endif %}
+
   {% endfor %}
+{% endblock %}
+
+{% block js %}
+  {% if persons|length == 1 %}
+      <script src="{% static 'highcharts/highstock.js' %}"></script>
+      <script src="{% static 'highcharts/modules/exporting.js' %}"></script>
+      <script>
+	$(function () {
+	    $.getJSON('{% url "ietf.doc.views_stats.chart_data_person_drafts" id=persons.0.id %}', function (info) {
+		// Create the chart
+		$('#chart').highcharts('StockChart', info);
+	    });
+	});
+      </script>
+  {% endif %}
 {% endblock %}

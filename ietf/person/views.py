@@ -1,3 +1,4 @@
+import datetime
 
 from django.db.models import Q
 from django.http import HttpResponse, Http404
@@ -58,7 +59,7 @@ def profile(request, email_or_name):
         persons = [ get_object_or_404(Email, address=email_or_name).person, ]
     else:
         aliases = Alias.objects.filter(name=email_or_name)
-        persons = set([ a.person for a in aliases ])
+        persons = list(set([ a.person for a in aliases ]))
         if not persons:
             raise Http404
-    return render(request, 'person/profile.html', {'persons': persons})
+    return render(request, 'person/profile.html', {'persons': persons, 'today':datetime.date.today()})

@@ -42,25 +42,35 @@ def get_doctypes(queryargs, pluralize=False):
 
 def make_title(queryargs):
     title = 'New '
-    title += get_doctypes(queryargs)
-    title += ' Revisions'
+    title += get_doctypes(queryargs).lower()
+    title += ' revisions'
     # radio choices
     by = queryargs.get('by')
     if by == "author":
         title += ' with author "%s"' % queryargs['author'].title()
     elif by == "group":
-        title += ' for %s' % queryargs['group'].capitalize()
+        group = queryargs['group']
+        if group:
+            title += ' for %s' % group.capitalize()
     elif by == "area":
-        title += ' in %s Area' % queryargs['area'].upper()
+        area = queryargs['area']
+        if area:
+            title += ' in %s Area' % area.upper()
     elif by == "ad":
-        title += ' with AD %s' % Person.objects.get(id=queryargs['ad'])
+        ad_id = queryargs['ad']
+        if ad_id:
+            title += ' with AD %s' % Person.objects.get(id=ad_id)
     elif by == "state":
-        title += ' in state %s::%s' % (queryargs['state'], queryargs['substate'])
+        state = queryargs['state']
+        if state:
+            title += ' in state %s::%s' % (state, queryargs['substate'])
     elif by == "stream":
-        title += ' in stream %s' % queryargs['stream']
+        stream = queryargs['stream']
+        if stream:
+            title += ' in stream %s' % stream
     name = queryargs.get('name')
     if name:
-        title += ' matching "%s"' % name
+        title += ' with name matching "%s"' % name
     return title
 
 def chart_newrevisiondocevent(request):
@@ -76,12 +86,79 @@ def dt(s):
     ys, ms, ds = s.split('-')
     return datetime.date(int(ys), int(ms), int(ds))
 
+def model_to_timeline(model, **kwargs):
+    """Takes a Django model and a set of queryset filter arguments, and
+    returns a dictionary with highchart settings and data, suitable as
+    a JsonResponse() argument.  The model must have a time field."""
+    #debug.pprint('model._meta.fields')
+    assert 'time' in model._meta.get_all_field_names()
+
+    objects = ( model.objects.filter(**kwargs)
+                                .order_by('date')
+                                .extra(select={'date': 'date(doc_docevent.time)'})
+                                .values('date')
+                                .annotate(count=Count('id')))
+    if objects.exists():
+        # debug.lap('got event query')
+        obj_list = list(objects)
+        # debug.lap('got event list')
+        # This is needed for sqlite, when we're running tests:
+        if type(obj_list[0]['date']) != datetime.date:
+            # debug.say('converting string dates to datetime.date')
+            obj_list = [ {'date': dt(e['date']), 'count': e['count']} for e in obj_list ]
+        points = [ ((e['date'].toordinal()-epochday)*1000*60*60*24, e['count']) for e in obj_list ]
+        # debug.lap('got event points')
+        counts = dict(points)
+        # debug.lap('got points dictionary')
+        day_ms = 1000*60*60*24
+        days = range(points[0][0], points[-1][0]+day_ms, day_ms)
+        # debug.lap('got days array')
+        data = [ (d, counts[d] if d in counts else 0) for d in days ]
+        # debug.lap('merged points into days')
+    else:
+        data = []
+
+    info = {
+        "chart": {
+            "type": 'column'
+        },
+        "rangeSelector" : {
+            "selected": 4,
+            "allButtonsEnabled": True,
+        },
+        "title" : {
+            "text" : "%s items over time" % model._meta.model_name
+        },
+        "credits": {
+            "enabled": False,
+        },
+        "series" : [{
+            "name" : "Items",
+            "type" : "column",
+            "data" : data,
+            "dataGrouping": {
+                "units": [[
+                    'week',                                 # unit name
+                    [1,],                                   # allowed multiples
+                ], [
+                    'month',
+                    [1, 4,],
+                ]]
+            },
+            "turboThreshold": 1, # Only check format of first data point. All others are the same
+            "pointInterval": 24*60*60*1000,
+            "pointPadding": 0.05,
+        }]
+    }   
+    return info
+
+    
+
 @cache_page(60*15)
 def chart_data_newrevisiondocevent(request):
     # debug.mark()
     queryargs = request.GET
     if queryargs:
-
         # debug.lap('got queryargs')
         key = get_search_cache_key(queryargs)
         # debug.lap('got cache key')
@@ -98,73 +175,28 @@ def chart_data_newrevisiondocevent(request):
             if results.exists():
                 cache.set(key, results)
                 # debug.lap('cached search result')
-
         if results.exists():
-            events = ( DocEvent.objects.filter(doc__in=results, type='new_revision')
-                                        .order_by('date')
-                                        .extra(select={'date': 'date(doc_docevent.time)'})
-                                        .values('date')
-                                        .annotate(count=Count('id')))
-            if events.exists():
-                # debug.lap('got event query')
-                event_list = list(events)
-                # debug.lap('got event list')
-                # This is needed for sqlite, when we're running tests:
-                if type(event_list[0]['date']) != datetime.date:
-                    # debug.say('converting string dates to datetime.date')
-                    event_list = [ {'date': dt(e['date']), 'count': e['count']} for e in event_list ]
-                points = [ ((e['date'].toordinal()-epochday)*1000*60*60*24, e['count']) for e in event_list ]
-                # debug.lap('got event points')
-                counts = dict(points)
-                # debug.lap('got points dictionary')
-                day_ms = 1000*60*60*24
-                days = range(points[0][0], points[-1][0]+day_ms, day_ms)
-                # debug.lap('got days array')
-                data = [ (d, counts[d] if d in counts else 0) for d in days ]
-                # debug.lap('merged points into days')
-            else:
-                data = []
+            info = model_to_timeline(DocEvent, doc__in=results, type='new_revision')
+            info['title']['text'] = make_title(queryargs)
+            info['series'][0]['name'] = "Submitted %s" % get_doctypes(queryargs, pluralize=True).lower(),
         else:
-            data = []
-        info = {
-
-                    "chart": {
-                        "type": 'column'
-                    },
-
-                    "rangeSelector" : {
-                        "selected": 4,
-                        "allButtonsEnabled": True,
-                    },
-                    "title" : {
-                        "text" : make_title(queryargs)
-                    },
-                    "credits": {
-                        "enabled": False,
-                    },
-                    "series" : [{
-                        "name" : "Submitted %s"%get_doctypes(queryargs, pluralize=True),
-                        "type" : "column",
-                        "data" : data,
-                        "dataGrouping": {
-                            "units": [[
-                                'week',                                 # unit name
-                                [1,],                                   # allowed multiples
-                            ], [
-                                'month',
-                                [1, 4,],
-                            ]]
-                        },
-                        "turboThreshold": 1, # Only check format of first data point. All others are the same
-                        "pointInterval": 24*60*60*1000,
-                        "pointPadding": 0.05,
-
-                    }]
-
-                }   
+            info = {}
         # debug.clock('set up info dict')
     else:
         info = {}
     return JsonResponse(info)
 
+
+@cache_page(60*15)
+def chart_data_person_drafts(request, id):
+    # debug.mark()
+    person = Person.objects.filter(id=id).first()
+    if not person:
+        info = {}
+    else:
+        info = model_to_timeline(DocEvent, doc__authors__person=person, type='new_revision')
+        info['title']['text'] = "New draft revisions over time for %s" % person.name
+        info['series'][0]['name'] = "Submitted drafts" 
+    return JsonResponse(info)
+    
 

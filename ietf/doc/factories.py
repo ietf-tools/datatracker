@@ -1,6 +1,6 @@
 import factory
 
-from ietf.doc.models import Document, DocEvent, NewRevisionDocEvent, DocAlias, State
+from ietf.doc.models import Document, DocEvent, NewRevisionDocEvent, DocAlias, State, DocumentAuthor
 
 def draft_name_generator(type_id,group,n):
         return '%s-%s-%s-%s%d'%( 
@@ -42,6 +42,14 @@ class DocumentFactory(factory.DjangoModelFactory):
             for (state_type_id,state_slug) in extracted:
                 self.set_state(State.objects.get(type_id=state_type_id,slug=state_slug))
 
+    @factory.post_generation
+    def authors(self, create, extracted, **kwargs):
+        if create and extracted:
+            order = 0
+            for email in extracted:
+                DocumentAuthor.objects.create(document=self, author=email, order=order)
+                order += 1
+
     @classmethod
     def _after_postgeneration(cls, obj, create, results=None):
         """Save again the instance if creating and at least one hook ran."""
@@ -81,3 +89,4 @@ class NewRevisionDocEventFactory(DocEventFactory):
     @factory.lazy_attribute
     def desc(self):
          return 'New version available %s-%s'%(self.doc.name,self.rev)
+

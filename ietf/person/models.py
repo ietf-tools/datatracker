@@ -63,6 +63,8 @@ class PersonInfo(models.Model):
         return initials(self.ascii or self.name)
     def last_name(self):
         return name_parts(self.name)[3]
+    def first_name(self):
+        return name_parts(self.name)[1]
     def role_email(self, role_name, group=None):
         """Lookup email for role for person, optionally on group which
         may be an object or the group acronym."""
@@ -107,6 +109,19 @@ class PersonInfo(models.Model):
         hasher = Hashids(salt='Person photo name salt',min_length=5)
         _, first, _, last, _ = name_parts(self.ascii)
         return u'%s-%s%s' % ( slugify(u"%s %s" % (first, last)), hasher.encode(self.id), '-th' if thumb else '' )
+
+    def has_drafts(self):
+        from ietf.doc.models import Document
+        return Document.objects.filter(authors__person=self, type='draft').exists()
+    def rfcs(self):
+        from ietf.doc.models import Document
+        return Document.objects.filter(authors__person=self, type='draft', states__slug='rfc').order_by('-time')
+    def active_drafts(self):
+        from ietf.doc.models import Document
+        return Document.objects.filter(authors__person=self, type='draft', states__slug='active').order_by('-time')
+    def expired_drafts(self):
+        from ietf.doc.models import Document
+        return Document.objects.filter(authors__person=self, type='draft', states__slug__in=['repl', 'expired', 'auth-rm', 'ietf-rm']).order_by('-time')
 
     class Meta:
         abstract = True

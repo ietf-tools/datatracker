@@ -1102,7 +1102,7 @@ class DocumentMeetingTests(TestCase):
 
 
 class ChartTests(ResourceTestCaseMixin, TestCase):
-    def test_stats(self):
+    def test_search_charts(self):
         doc = DocumentFactory.create(states=[('draft','active')])
 
         data_url = urlreverse("ietf.doc.views_stats.chart_data_newrevisiondocevent")
@@ -1116,7 +1116,7 @@ class ChartTests(ResourceTestCaseMixin, TestCase):
         r = self.client.get(data_url + "?activedrafts=on&name=thisisnotadocumentname")
         self.assertValidJSONResponse(r)
         d = json.loads(r.content)
-        self.assertEqual(d['series'][0]['data'], [])
+        self.assertEqual(r.content, "{}")
 
         r = self.client.get(data_url + "?activedrafts=on&name=%s"%doc.name[6:12])
         self.assertValidJSONResponse(r)
@@ -1130,4 +1130,19 @@ class ChartTests(ResourceTestCaseMixin, TestCase):
         r = self.client.get(chart_url + "?activedrafts=on&name=%s"%doc.name[6:12])
         self.assertEqual(r.status_code, 200)
         
+    def test_personal_chart(self):
+        person = PersonFactory.create()
+        DocumentFactory.create(
+            states=[('draft','active')],
+            authors=[person.email(), ],
+        )
+
+        data_url = urlreverse("ietf.doc.views_stats.chart_data_person_drafts", kwargs=dict(id=person.id))
+
+        r = self.client.get(data_url)
+        self.assertValidJSONResponse(r)
+        d = json.loads(r.content)
+        self.assertEqual(len(d['series'][0]['data']), 1)
         
+        
+    
