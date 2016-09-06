@@ -94,3 +94,8 @@ Planned work in rough order
 * Change slugs which were limited by the former 8-character slug length limit to
   be more readable (needs both code changes and migrations).
 
+* For graphing and mapping various numbers relative to country population, 
+  integrate population data from the world bank,
+  http://databank.worldbank.org/data/reports.aspx?source=2&series=SP.POP.TOTL&country=
+  (or some other source, if a better is found).  WorldOmeters has running counters,
+  but ask for a lot of money for even one.
