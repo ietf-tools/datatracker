@@ -9,7 +9,6 @@ import sys
 path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if not path in sys.path:
     sys.path.insert(0, path)
-    print "!jojiojoisdjf", path
 
 if __name__ == "__main__":
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "settings")
