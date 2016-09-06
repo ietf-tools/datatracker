@@ -79,6 +79,8 @@ for _app in settings.INSTALLED_APPS:
         _root, _name = _app.split('.', 1)
         if _root == 'ietf':
             if not '.' in _name:
+                if _name in _module_dict:
+                    continue
 
                 _api = Api(api_name=_name)
                 _module_dict[_name] = _api

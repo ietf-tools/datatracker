@@ -470,6 +470,51 @@ label#list-feeds {
   margin-left: 3em;
 }
 
+/* === Review flow ========================================================== */
+
+.reviewer-assignment-not-accepted {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+form.complete-review .mail-archive-search .query-input {
+  width: 30em;
+}
+
+form.complete-review .mail-archive-search .results .list-group {
+  margin-left: 1em;
+  margin-right: 1em;
+  margin-bottom: 0.5em;
+}
+
+.closed-review-filter {
+  margin-bottom: 1em;
+}
+
+form.review-requests .reviewer-controls, form.review-requests .close-controls {
+  display: none;
+  padding-right: 1em;
+}
+
+form.review-requests .assign-action, form.review-requests .close-action {
+  display: inline-block;
+  min-width: 11em;
+}
+
+form.review-requests .deadline {
+  padding-top: 0.45em;
+}
+
+form.review-requests label {
+  font-weight: normal;
+  padding-right: 0.3em;
+}
+
+form.email-open-review-assignments [name=body] {
+  height: 50em;
+  font-family: monospace;
+}
+
 /* === Photo pages ========================================================== */
 
 .photo-name {

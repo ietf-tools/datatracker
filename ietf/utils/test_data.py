@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.models import Document, DocAlias, State, DocumentAuthor, BallotType, DocEvent, BallotDocEvent, RelatedDocument
+from ietf.doc.models import Document, DocAlias, State, DocumentAuthor, BallotType, DocEvent, BallotDocEvent, RelatedDocument, NewRevisionDocEvent
 from ietf.group.models import Group, GroupHistory, Role, RoleHistory
 from ietf.iesg.models import TelechatDate
 from ietf.ipr.models import HolderIprDisclosure, IprDocRel, IprDisclosureStateName, IprLicenseTypeName
@@ -14,6 +14,7 @@ from ietf.meeting.models import Meeting
 from ietf.name.models import StreamName, DocRelationshipName
 from ietf.person.models import Person, Email
 from ietf.group.utils import setup_default_community_list_for_group
+from ietf.review.models import ReviewRequest, ReviewerSettings, ReviewResultName, ReviewTeamResult
 
 def create_person(group, role_name, name=None, username=None, email_address=None, password=None):
     """Add person/user/email and role."""
@@ -285,11 +286,12 @@ def make_test_data():
         desc="Started IESG process",
         )
 
-    DocEvent.objects.create(
+    NewRevisionDocEvent.objects.create(
         type="new_revision",
         by=ad,
         doc=draft,
         desc="New revision available",
+        rev="01",
         )
 
     BallotDocEvent.objects.create(
@@ -389,3 +391,32 @@ def make_test_data():
     #other_doc_factory('recording','recording-42-mars-1-00')
 
     return draft
+
+def make_review_data(doc):
+    team = Group.objects.create(state_id="active", acronym="reviewteam", name="Review Team", type_id="dir", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
+    for r in ReviewResultName.objects.filter(slug__in=["issues", "ready-issues", "ready", "not-ready"]):
+        ReviewTeamResult.objects.create(team=team, result=r)
+
+    p = Person.objects.get(user__username="plain")
+    email = p.email_set.first()
+    Role.objects.create(name_id="reviewer", person=p, email=email, group=team)
+    ReviewerSettings.objects.create(team=team, person=p, frequency=14, skip_next=0)
+
+    review_req = ReviewRequest.objects.create(
+        doc=doc,
+        team=team,
+        type_id="early",
+        deadline=datetime.datetime.now() + datetime.timedelta(days=20),
+        state_id="accepted",
+        requested_by=p,
+        reviewer=email,
+    )
+
+    p = Person.objects.get(user__username="marschairman")
+    Role.objects.create(name_id="reviewer", person=p, email=p.email_set.first(), group=team)
+
+    p = Person.objects.get(user__username="secretary")
+    Role.objects.create(name_id="secr", person=p, email=p.email_set.first(), group=team)
+    
+    return review_req
+

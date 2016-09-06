@@ -69,6 +69,8 @@ from ietf.mailtrigger.utils import gather_relevant_expansions
 from ietf.ietfauth.utils import has_role
 from ietf.meeting.utils import group_sessions
 from ietf.meeting.helpers import get_meeting
+from ietf.review.models import ReviewRequest
+from ietf.review.utils import can_manage_review_requests_for_team, suggested_review_requests_for_team
 
 def roles(group, role_name):
     return Role.objects.filter(group=group, name=role_name).select_related("email", "person")
@@ -347,6 +349,8 @@ def construct_group_menu_context(request, group, selected, group_type, others):
         entries.append(("About", urlreverse("group_about", kwargs=kwargs)))
     if group.features.has_materials and get_group_materials(group).exists():
         entries.append(("Materials", urlreverse("ietf.group.views.materials", kwargs=kwargs)))
+    if group.features.has_reviews:
+        entries.append(("Review requests", urlreverse(review_requests, kwargs=kwargs)))
     if group.type_id in ('rg','wg','team'):
         entries.append(("Meetings", urlreverse("ietf.group.views.meetings", kwargs=kwargs)))
     entries.append(("History", urlreverse("ietf.group.views.history", kwargs=kwargs)))
@@ -363,11 +367,11 @@ def construct_group_menu_context(request, group, selected, group_type, others):
     # actions
     actions = []
 
-    is_chair = group.has_role(request.user, "chair")
+    is_admin = group.has_role(request.user, group.features.admin_roles)
     can_manage = can_manage_group(request.user, group)
 
     if group.features.has_milestones:
-        if group.state_id != "proposed" and (is_chair or can_manage):
+        if group.state_id != "proposed" and (is_admin or can_manage):
             actions.append((u"Edit milestones", urlreverse("group_edit_milestones", kwargs=kwargs)))
 
     if group.features.has_documents:
@@ -379,10 +383,14 @@ def construct_group_menu_context(request, group, selected, group_type, others):
     if group.features.has_materials and can_manage_materials(request.user, group):
         actions.append((u"Upload material", urlreverse("ietf.doc.views_material.choose_material_type", kwargs=kwargs)))
 
-    if group.state_id != "conclude" and (is_chair or can_manage):
+    if group.features.has_reviews:
+        import ietf.group.views_review
+        actions.append((u"Manage review requests", urlreverse(ietf.group.views_review.manage_review_requests, kwargs=kwargs)))
+
+    if group.state_id != "conclude" and (is_admin or can_manage):
         actions.append((u"Edit group", urlreverse("group_edit", kwargs=kwargs)))
 
-    if group.features.customize_workflow and (is_chair or can_manage):
+    if group.features.customize_workflow and (is_admin or can_manage):
         actions.append((u"Customize workflow", urlreverse("ietf.group.views_edit.customize_workflow", kwargs=kwargs)))
 
     if group.state_id in ("active", "dormant") and not group.type_id in ["sdo", "rfcedtyp", "isoc", ] and can_manage:
@@ -650,6 +658,60 @@ def history(request, acronym, group_type=None):
     return render(request, 'group/history.html',
                   construct_group_menu_context(request, group, "history", group_type, {
                       "events": events,
+                  }))
+
+def review_requests(request, acronym, group_type=None):
+    group = get_group_or_404(acronym, group_type)
+    if not group.features.has_reviews:
+        raise Http404
+
+    open_review_requests = list(ReviewRequest.objects.filter(
+        team=group, state__in=("requested", "accepted")
+    ).prefetch_related("reviewer", "type", "state").order_by("-time", "-id"))
+
+    open_review_requests += suggested_review_requests_for_team(group)
+
+    today = datetime.date.today()
+    for r in open_review_requests:
+        delta = today - r.deadline
+        r.due = max(0, delta.days)
+
+    closed_review_requests = ReviewRequest.objects.filter(
+        team=group,
+    ).exclude(
+        state__in=("requested", "accepted")
+    ).prefetch_related("reviewer", "type", "state", "doc").order_by("-time", "-id")
+
+    since_choices = [
+        (None, "1 month"),
+        ("3m", "3 months"),
+        ("6m", "6 months"),
+        ("1y", "1 year"),
+        ("2y", "2 years"),
+        ("all", "All"),
+    ]
+    since = request.GET.get("since", None)
+    if since not in [key for key, label in since_choices]:
+        since = None
+
+    if since != "all":
+        date_limit = {
+            None: datetime.timedelta(days=31),
+            "3m": datetime.timedelta(days=31 * 3),
+            "6m": datetime.timedelta(days=180),
+            "1y": datetime.timedelta(days=365),
+            "2y": datetime.timedelta(days=2 * 365),
+        }[since]
+
+        closed_review_requests = closed_review_requests.filter(time__gte=datetime.date.today() - date_limit)
+
+    return render(request, 'group/review_requests.html',
+                  construct_group_menu_context(request, group, "review requests", group_type, {
+                      "open_review_requests": open_review_requests,
+                      "closed_review_requests": closed_review_requests,
+                      "since_choices": since_choices,
+                      "since": since,
+                      "can_manage_review_requests": can_manage_review_requests_for_team(request.user, group)
                   }))
 
 def materials(request, acronym, group_type=None):

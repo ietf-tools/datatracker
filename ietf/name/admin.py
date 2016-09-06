@@ -3,7 +3,8 @@ from ietf.name.models import (GroupTypeName, GroupStateName, RoleName, StreamNam
     DocRelationshipName, DocTypeName, DocTagName, StdLevelName, IntendedStdLevelName,
     DocReminderTypeName, BallotPositionName, SessionStatusName, TimeSlotTypeName,
     ConstraintName, NomineePositionStateName, FeedbackTypeName, DBTemplateTypeName,
-    DraftSubmissionStateName, RoomResourceName)
+    DraftSubmissionStateName, RoomResourceName,
+    ReviewRequestStateName, ReviewTypeName, ReviewResultName)
 
 
 class NameAdmin(admin.ModelAdmin):
@@ -39,3 +40,6 @@ admin.site.register(FeedbackTypeName, NameAdmin)
 admin.site.register(DBTemplateTypeName, NameAdmin)
 admin.site.register(DraftSubmissionStateName, NameAdmin)
 admin.site.register(RoomResourceName, NameAdmin)
+admin.site.register(ReviewRequestStateName, NameAdmin)
+admin.site.register(ReviewTypeName, NameAdmin)
+admin.site.register(ReviewResultName, NameAdmin)

@@ -13,7 +13,8 @@ from ietf.name.models import (TimeSlotTypeName, GroupStateName, DocTagName, Inte
     IprEventTypeName, GroupMilestoneStateName, SessionStatusName, DocReminderTypeName,
     ConstraintName, MeetingTypeName, DocRelationshipName, RoomResourceName, IprLicenseTypeName,
     LiaisonStatementTagName, FeedbackTypeName, LiaisonStatementState, StreamName,
-    BallotPositionName, DBTemplateTypeName, NomineePositionStateName)
+    BallotPositionName, DBTemplateTypeName, NomineePositionStateName,
+    ReviewRequestStateName, ReviewTypeName, ReviewResultName)
 
 
 class TimeSlotTypeNameResource(ModelResource):
@@ -412,4 +413,46 @@ class NomineePositionStateNameResource(ModelResource):
             "order": ALL,
         }
 api.name.register(NomineePositionStateNameResource())
+
+class ReviewRequestStateNameResource(ModelResource):
+    class Meta:
+        cache = SimpleCache()
+        queryset = ReviewRequestStateName.objects.all()
+        #resource_name = 'reviewrequeststatename'
+        filtering = { 
+            "slug": ALL,
+            "name": ALL,
+            "desc": ALL,
+            "used": ALL,
+            "order": ALL,
+        }
+api.name.register(ReviewRequestStateNameResource())
+
+class ReviewTypeNameResource(ModelResource):
+    class Meta:
+        cache = SimpleCache()
+        queryset = ReviewTypeName.objects.all()
+        #resource_name = 'reviewtypename'
+        filtering = { 
+            "slug": ALL,
+            "name": ALL,
+            "desc": ALL,
+            "used": ALL,
+            "order": ALL,
+        }
+api.name.register(ReviewTypeNameResource())
+
+class ReviewResultNameResource(ModelResource):
+    class Meta:
+        cache = SimpleCache()
+        queryset = ReviewResultName.objects.all()
+        #resource_name = 'reviewresultname'
+        filtering = { 
+            "slug": ALL,
+            "name": ALL,
+            "desc": ALL,
+            "used": ALL,
+            "order": ALL,
+        }
+api.name.register(ReviewResultNameResource())
 
