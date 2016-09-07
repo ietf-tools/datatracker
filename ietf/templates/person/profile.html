@@ -82,11 +82,17 @@
       <script src="{% static 'highcharts/modules/exporting.js' %}"></script>
       <script>
 	$(function () {
-	    $.getJSON('{% url "ietf.doc.views_stats.chart_data_person_drafts" id=persons.0.id %}', function (info) {
+	    $.getJSON('{% url "ietf.doc.views_stats.chart_conf_person_drafts" id=persons.0.id %}', function (conf) {
 		// Create the chart
-		$('#chart').highcharts('StockChart', info);
+		chart = Highcharts.stockChart('chart', conf);
+		chart.showLoading();
+		$.getJSON('{% url "ietf.doc.views_stats.chart_data_person_drafts" id=persons.0.id %}', function (data) {
+		    chart.series[0].setData(data);
+		    chart.hideLoading();
+		});
 	    });
 	});
       </script>
+
   {% endif %}
 {% endblock %}

@@ -693,6 +693,45 @@ MAILMAN_LIB_DIR = '/usr/lib/mailman'
 LIST_ACCOUNT_DELAY = 60*60*25           # 25 hours
 ACCOUNT_REQUEST_EMAIL = 'account-request@ietf.org'
 
+CHART_TYPE_COLUMN_OPTIONS = {
+    "chart": {
+        "type": 'column',
+    },
+    "credits": {
+        "enabled": False,
+    },
+    "rangeSelector" : {
+        "selected": 5,
+        "allButtonsEnabled": True,
+    },
+    "series" : [{
+        "name" : "Items",
+        "type" : "column",
+        "data" : [],
+        "dataGrouping": {
+            "units": [[
+                'week',                                 # unit name
+                [1,],                                   # allowed multiples
+            ], [
+                'month',
+                [1, 4,],
+            ]]
+        },
+        "turboThreshold": 1, # Only check format of first data point. All others are the same
+        "pointIntervalUnit": 'day',
+        "pointPadding": 0.05,
+    }],
+    "title" : {
+        "text" : "Items over time"
+    },
+    "xAxis": {
+        "type": "datetime",
+        # This makes the axis use the given coordinates, rather than
+        # squashing them to equidistant columns
+        "ordinal": False,
+    },
+}   
+
 
 # Put the production SECRET_KEY in settings_local.py, and also any other
 # sensitive or site-specific changes.  DO NOT commit settings_local.py to svn.

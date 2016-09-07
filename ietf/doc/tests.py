@@ -1102,32 +1102,58 @@ class DocumentMeetingTests(TestCase):
 
 
 class ChartTests(ResourceTestCaseMixin, TestCase):
-    def test_search_charts(self):
+    def test_search_chart_conf(self):
         doc = DocumentFactory.create(states=[('draft','active')])
 
-        data_url = urlreverse("ietf.doc.views_stats.chart_data_newrevisiondocevent")
+        conf_url = urlreverse('ietf.doc.views_stats.chart_conf_newrevisiondocevent')
 
         # No qurey arguments; expect an empty json object
-        r = self.client.get(data_url)
+        r = self.client.get(conf_url)
         self.assertValidJSONResponse(r)
-        self.assertEqual(r.content, "{}")
+        self.assertEqual(r.content, '{}')
 
         # No match
-        r = self.client.get(data_url + "?activedrafts=on&name=thisisnotadocumentname")
+        r = self.client.get(conf_url + '?activedrafts=on&name=thisisnotadocumentname')
         self.assertValidJSONResponse(r)
         d = json.loads(r.content)
-        self.assertEqual(r.content, "{}")
+        self.assertEqual(d['chart']['type'], settings.CHART_TYPE_COLUMN_OPTIONS['chart']['type'])
 
-        r = self.client.get(data_url + "?activedrafts=on&name=%s"%doc.name[6:12])
+        r = self.client.get(conf_url + '?activedrafts=on&name=%s'%doc.name[6:12])
         self.assertValidJSONResponse(r)
         d = json.loads(r.content)
-        self.assertEqual(len(d['series'][0]['data']), 1)
+        self.assertEqual(d['chart']['type'], settings.CHART_TYPE_COLUMN_OPTIONS['chart']['type'])
+        self.assertEqual(len(d['series'][0]['data']), 0)
 
-        chart_url = urlreverse("ietf.doc.views_stats.chart_newrevisiondocevent")
+    def test_search_chart_data(self):
+        doc = DocumentFactory.create(states=[('draft','active')])
+
+        data_url = urlreverse('ietf.doc.views_stats.chart_data_newrevisiondocevent')
+
+        # No qurey arguments; expect an empty json list
+        r = self.client.get(data_url)
+        self.assertValidJSONResponse(r)
+        self.assertEqual(r.content, '[]')
+
+        # No match
+        r = self.client.get(data_url + '?activedrafts=on&name=thisisnotadocumentname')
+        self.assertValidJSONResponse(r)
+        d = json.loads(r.content)
+        self.assertEqual(r.content, '[]')
+
+        r = self.client.get(data_url + '?activedrafts=on&name=%s'%doc.name[6:12])
+        self.assertValidJSONResponse(r)
+        d = json.loads(r.content)
+        self.assertEqual(len(d), 1)
+        self.assertEqual(len(d[0]), 2)
+
+    def test_search_chart(self):
+        doc = DocumentFactory.create(states=[('draft','active')])
+
+        chart_url = urlreverse('ietf.doc.views_stats.chart_newrevisiondocevent')
         r = self.client.get(chart_url)
         self.assertEqual(r.status_code, 200)
 
-        r = self.client.get(chart_url + "?activedrafts=on&name=%s"%doc.name[6:12])
+        r = self.client.get(chart_url + '?activedrafts=on&name=%s'%doc.name[6:12])
         self.assertEqual(r.status_code, 200)
         
     def test_personal_chart(self):
@@ -1137,12 +1163,23 @@ class ChartTests(ResourceTestCaseMixin, TestCase):
             authors=[person.email(), ],
         )
 
-        data_url = urlreverse("ietf.doc.views_stats.chart_data_person_drafts", kwargs=dict(id=person.id))
+        conf_url = urlreverse('ietf.doc.views_stats.chart_conf_person_drafts', kwargs=dict(id=person.id))
+
+        r = self.client.get(conf_url)
+        self.assertValidJSONResponse(r)
+        d = json.loads(r.content)
+        self.assertEqual(d['chart']['type'], settings.CHART_TYPE_COLUMN_OPTIONS['chart']['type'])
+        self.assertEqual("New draft revisions over time for %s" % person.name, d['title']['text'])
+
+        data_url = urlreverse('ietf.doc.views_stats.chart_data_person_drafts', kwargs=dict(id=person.id))
 
         r = self.client.get(data_url)
         self.assertValidJSONResponse(r)
         d = json.loads(r.content)
-        self.assertEqual(len(d['series'][0]['data']), 1)
+        self.assertEqual(len(d), 1)
+        self.assertEqual(len(d[0]), 2)
+
+        page_url = urlreverse('ietf.person.views.profile', kwargs=dict(email_or_name=person.name))
+        r = self.client.get(page_url)
+        self.assertEqual(r.status_code, 200)
         
-        
-    

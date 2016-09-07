@@ -9,9 +9,14 @@
       <script src="{% static 'highcharts/modules/exporting.js' %}"></script>
       <script>
 	$(function () {
-	    $.getJSON('{{ dataurl }}?{{ queryargs }}', function (info) {
-		// Create the chart
-		$('#chart').highcharts('StockChart', info);
+	    var chart;
+	    $.getJSON('{{ confurl }}?{{ queryargs }}', function (conf) {
+		chart = Highcharts.stockChart('chart', conf);
+		chart.showLoading();
+		$.getJSON('{{ dataurl }}?{{ queryargs }}', function (data) {
+		    chart.series[0].setData(data);
+		    chart.hideLoading();
+		});
 	    });
 	});
       </script>
