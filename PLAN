@@ -7,16 +7,22 @@ Updated: $Date$
 Planned work in rough order
 ===========================
 
+* Merge in manual post work from Spherical Cow
+
 * Glue code for WG issue trackers and wiki:
   - create new trackers on group creation
   - update access lists on group chair/secretary changes
   - update components on new group documents
 
+* Review tracking project merge
+
+* Enhancements for meeting materials and proceedings.
+
 * Schema Changes: tags, external links for groups.
 
 * Add "Waiting for implementation" and "Held by WG" states, with comment field
 
-* Review tracking project merge
+* Upgrade to Django 1.8 / 1.9 / 1.10
 
 * Revisit Yang module checks:  Capture output also for passed tests.
   Add second checker.  Fix extraction problems.
@@ -32,15 +38,11 @@ Planned work in rough order
   change the default draft href to be the datatracker url now that we support
   revisions.
 
-* Upgrade to Django 1.8 / 1.9
-
 * Add support for internationalised email addresses according to RFC 6531
   when sending email (this is not supported by smtplib under Python 2.7,
   so will need support code in the application until we migrate to Python 3.5)
 
 * Add support for IAB Programs
-
-* Meeting materials enhancements
 
 * Transition to PostgreSQL
 
@@ -64,7 +66,6 @@ Planned work in rough order
   of extracting them from the text version.
 
 * Transition to running under Python 3.x (probably 3.5) instead of 2.7
-
 
 * Small nomcom refactoring: associate Feedback records with Person
   instead of User.
@@ -94,8 +95,11 @@ Planned work in rough order
 * Change slugs which were limited by the former 8-character slug length limit to
   be more readable (needs both code changes and migrations).
 
+* Additional charts, various statistics views.
+
 * For graphing and mapping various numbers relative to country population, 
   integrate population data from the world bank,
   http://databank.worldbank.org/data/reports.aspx?source=2&series=SP.POP.TOTL&country=
   (or some other source, if a better is found).  WorldOmeters has running counters,
   but ask for a lot of money for even one.
+
