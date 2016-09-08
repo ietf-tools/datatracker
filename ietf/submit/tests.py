@@ -1,8 +1,8 @@
-import email
-
 import datetime
 import os
 import shutil
+import email
+
 from StringIO import StringIO
 from pyquery import PyQuery
 
