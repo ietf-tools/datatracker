@@ -188,7 +188,7 @@ LOGGING['handlers']['mail_admins']['filters'] += [ 'skip_suspicious_operations' 
 from django.http import UnreadablePostError
 def skip_unreadable_post(record):
     if record.exc_info:
-        exc_type, exc_value = record.exc_info[:2]
+        exc_type, exc_value = record.exc_info[:2] # pylint: disable=unused-variable
         if isinstance(exc_value, UnreadablePostError):
             return False
     return True
@@ -381,7 +381,7 @@ TEST_BLUESHEET_DIR = "tmp-bluesheet-dir"
 
 # These are regexes
 TEST_URL_COVERAGE_EXCLUDE = [
-    "^\^admin/",
+    r"^\^admin/",
 ]
 
 # Tese are filename globs
@@ -730,12 +730,64 @@ CHART_TYPE_COLUMN_OPTIONS = {
         # squashing them to equidistant columns
         "ordinal": False,
     },
-}   
+}
+
+CHART_TYPE_ACTIVITY_OPTIONS = {
+    "chart": {
+        "type": 'column',
+    },
+    "credits": {
+        "enabled": False,
+    },
+    "navigation": {
+        "buttonOptions": {
+            "enabled": False,
+        }
+    },
+    "navigator": {
+        "enabled": False,
+    },
+    "rangeSelector" : {
+        "enabled": False,
+    },
+    "scrollbar": {
+        "enabled": False,
+    },
+    "series" : [{
+        "name" : None,
+        "animation": False,
+        "type" : "column",
+        "data" : [],
+        "dataGrouping": {
+            "units": [[
+                'year',                                 # unit name
+                [1,],                                   # allowed multiples
+            ]]
+        },
+        "turboThreshold": 1, # Only check format of first data point. All others are the same
+        "pointIntervalUnit": 'day',
+        "pointPadding": -0.2,
+    }],
+    "title" : {
+        "text" : None,
+    },
+    "xAxis": {
+        "type": "datetime",
+        # This makes the axis use the given coordinates, rather than
+        # squashing them to equidistant columns
+        "ordinal": False,
+    },
+    "yAxis": {
+        "labels": {
+            "enabled": False,
+        }
+    },
+}
 
 
 # Put the production SECRET_KEY in settings_local.py, and also any other
 # sensitive or site-specific changes.  DO NOT commit settings_local.py to svn.
-from settings_local import *            # pyflakes:ignore
+from settings_local import *            # pyflakes:ignore pylint: disable=wildcard-import
 
 # Add DEV_APPS to INSTALLED_APPS
 INSTALLED_APPS += DEV_APPS
