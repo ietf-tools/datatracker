@@ -84,7 +84,7 @@ class NomComFactory(factory.DjangoModelFactory):
     public_key = factory.django.FileField(data=cert)    
 
     @factory.post_generation
-    def populate_positions(self, create, extracted, **kwargs):
+    def populate_positions(obj, create, extracted, **kwargs): # pylint: disable=no-self-argument
         ''' 
         Create a set of nominees and positions unless NomcomFactory is called
         with populate_positions=False
@@ -92,8 +92,8 @@ class NomComFactory(factory.DjangoModelFactory):
         if extracted is None:
             extracted = True
         if create and extracted:
-            nominees = [NomineeFactory(nomcom=self) for i in range(4)]
-            positions = [PositionFactory(nomcom=self) for i in range(3)]
+            nominees = [NomineeFactory(nomcom=obj) for i in range(4)]
+            positions = [PositionFactory(nomcom=obj) for i in range(3)]
 
             def npc(position,nominee,state_id):
                 return NomineePosition.objects.create(position=position,
@@ -108,7 +108,7 @@ class NomComFactory(factory.DjangoModelFactory):
             npc(positions[0],nominees[3],'declined')
 
     @factory.post_generation
-    def populate_personnel(self, create, extracted, **kwargs):
+    def populate_personnel(obj, create, extracted, **kwargs): # pylint: disable=no-self-argument
         '''
         Create a default set of role holders, unless the factory is called
         with populate_personnel=False
@@ -120,7 +120,7 @@ class NomComFactory(factory.DjangoModelFactory):
             roles = ['chair', 'advisor', 'member']
             for role in roles:
                 p = PersonFactory()
-                self.group.role_set.create(name_id=role,person=p,email=p.email_set.first())
+                obj.group.role_set.create(name_id=role,person=p,email=p.email_set.first())
 
 class PositionFactory(factory.DjangoModelFactory):
     class Meta:

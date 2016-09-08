@@ -31,23 +31,23 @@ class DocumentFactory(factory.DjangoModelFactory):
     alias = factory.RelatedFactory('ietf.doc.factories.DocAliasFactory','document')
 
     @factory.post_generation
-    def other_aliases(self, create, extracted, **kwargs):
+    def other_aliases(obj, create, extracted, **kwargs): # pylint: disable=no-self-argument
         if create and extracted:
             for alias in extracted:
-                self.docalias_set.create(name=alias) 
+                obj.docalias_set.create(name=alias) 
 
     @factory.post_generation
-    def states(self, create, extracted, **kwargs):
+    def states(obj, create, extracted, **kwargs): # pylint: disable=no-self-argument
         if create and extracted:
             for (state_type_id,state_slug) in extracted:
-                self.set_state(State.objects.get(type_id=state_type_id,slug=state_slug))
+                obj.set_state(State.objects.get(type_id=state_type_id,slug=state_slug))
 
     @factory.post_generation
-    def authors(self, create, extracted, **kwargs):
+    def authors(obj, create, extracted, **kwargs): # pylint: disable=no-self-argument
         if create and extracted:
             order = 0
             for email in extracted:
-                DocumentAuthor.objects.create(document=self, author=email, order=order)
+                DocumentAuthor.objects.create(document=obj, author=email, order=order)
                 order += 1
 
     @classmethod

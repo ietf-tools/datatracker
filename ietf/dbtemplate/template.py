@@ -26,7 +26,7 @@ class Template(object):
         self.name = name
 
     def render(self, context):
-        raise NotImplemented
+        raise NotImplementedError
 
 
 class PlainTemplate(Template):

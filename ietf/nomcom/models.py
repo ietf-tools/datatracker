@@ -187,7 +187,7 @@ class Position(models.Model):
 
     def get_templates(self):
         if hasattr(self, '_templates'):
-            return self._templates
+            return self._templates      # pylint: disable=access-member-before-definition
         from ietf.dbtemplate.models import DBTemplate
         self._templates = DBTemplate.objects.filter(group=self.nomcom.group).filter(path__contains='/%s/position/' % self.id).order_by('title')
         return self._templates

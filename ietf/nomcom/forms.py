@@ -75,7 +75,7 @@ class PositionNomineeField(forms.ChoiceField):
 class MultiplePositionNomineeField(forms.MultipleChoiceField, PositionNomineeField):
 
     def clean(self, value):
-        nominees = super(PositionNomineeField, self).clean(value)
+        nominees = super(PositionNomineeField, self).clean(value) # pylint: disable=bad-super-call
         result = []
         for nominee in nominees:
             if not nominee:

@@ -25,7 +25,7 @@ class InterimMeeting(Meeting):
     def group(self):
         return self.session_set.all()[0].group
 
-    def agenda(self):
+    def agenda(self):                   # pylint: disable=method-hidden
         session = self.session_set.all()[0]
         agendas = session.materials.exclude(states__slug='deleted').filter(type='agenda')
         if agendas:

@@ -141,7 +141,7 @@ def agenda_create(request, num=None, owner=None, name=None):
 
     if schedule is None:
         # here we have to return some ajax to display an error.
-        messages.error("Error: No meeting information for meeting %s owner %s schedule %s available" % (num, owner, name))
+        messages.error("Error: No meeting information for meeting %s owner %s schedule %s available" % (num, owner, name)) # pylint: disable=no-value-for-parameter
         return redirect(edit_agenda, num=num, owner=owner, name=name)
 
     # authorization was enforced by the @group_require decorator above.

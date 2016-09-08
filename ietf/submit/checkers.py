@@ -80,7 +80,7 @@ class DraftIdnitsChecker(object):
             else:
                 passed  = False
 
-        item = None
+        item = ""
         for line in message.splitlines():
             if   line[:5] in (errstart + warnstart):
                 item = line.rstrip()
@@ -93,7 +93,7 @@ class DraftIdnitsChecker(object):
                     warnings += 1
                 else:
                     raise RuntimeError("Unexpected state in idnits checker: item: %s, line: %s" % (item, line))
-                item = None
+                item = ""
             elif item and line.strip() != "":
                 item += " " + line.strip()
             else:

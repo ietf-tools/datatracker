@@ -22,8 +22,8 @@ class UserFactory(factory.DjangoModelFactory):
     username = factory.LazyAttribute(lambda u: u.email)
 
     @factory.post_generation
-    def set_password(self, create, extracted, **kwargs):
-        self.set_password( '%s+password' % self.username )
+    def set_password(obj, create, extracted, **kwargs): # pylint: disable=no-self-argument
+        obj.set_password( '%s+password' % obj.username ) # pylint: disable=no-value-for-parameter
 
 class PersonFactory(factory.DjangoModelFactory):
     class Meta:
@@ -39,24 +39,24 @@ class PersonFactory(factory.DjangoModelFactory):
         )
 
     @factory.post_generation
-    def default_aliases(self, create, extracted, **kwargs):
+    def default_aliases(obj, create, extracted, **kwargs): # pylint: disable=no-self-argument
         make_alias = getattr(AliasFactory, 'create' if create else 'build')
-        make_alias(person=self,name=self.name)
-        make_alias(person=self,name=self.ascii)
+        make_alias(person=obj,name=obj.name)
+        make_alias(person=obj,name=obj.ascii)
 
     @factory.post_generation
-    def default_emails(self, create, extracted, **kwargs):
+    def default_emails(obj, create, extracted, **kwargs): # pylint: disable=no-self-argument
         make_email = getattr(EmailFactory, 'create' if create else 'build')
-        make_email(person=self,address=self.user.email)
+        make_email(person=obj,address=obj.user.email)
 
     @factory.post_generation
-    def default_photo(self, create, extracted, **kwargs):
+    def default_photo(obj, create, extracted, **kwargs): # pylint: disable=no-self-argument
         import atexit
-        if self.biography:
-            photo_name = self.photo_name()
+        if obj.biography:
+            photo_name = obj.photo_name()
             media_name = u"%s/%s.jpg" % (settings.PHOTOS_DIRNAME, photo_name)
-            self.photo = media_name
-            self.photo_thumb = media_name
+            obj.photo = media_name
+            obj.photo_thumb = media_name
             photosrc = os.path.join(settings.TEST_DATA_DIR, "profile-default.jpg")
             photodst = os.path.join(settings.PHOTOS_DIR,  photo_name + '.jpg')
             if not os.path.exists(photodst):

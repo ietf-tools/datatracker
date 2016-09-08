@@ -11,7 +11,7 @@ def import_htpasswd_file(filename, verbosity=1, overwrite=False):
         for line in file:
             if not ':' in line:
                 raise ValueError('Found a line without colon separator in the htpassword file %s:'+
-                    '   "%s"' % (file.name, line))
+                    '   "%s"' % (file.name, line)) # pylint: disable=too-many-format-args
             username, password = line.strip().split(':', 1)
             try:
                 user = User.objects.get(username=username)

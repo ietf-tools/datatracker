@@ -74,7 +74,7 @@ def get_person_form(*args, **kwargs):
             exclude = exclude_list
 
         def __init__(self, *args, **kwargs):
-            super(ModelForm, self).__init__(*args, **kwargs)
+            super(PersonForm, self).__init__(*args, **kwargs)
 
             # blank ascii if it's the same as name
             self.fields["ascii"].required = self.fields["ascii"].widget.is_required = False

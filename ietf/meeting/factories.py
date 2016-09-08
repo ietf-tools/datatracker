@@ -38,7 +38,7 @@ class MeetingFactory(factory.DjangoModelFactory):
             return 'interim-%d-%s-%02d'%(self.date.year,GroupFactory().acronym,n)
 
     @factory.post_generation
-    def populate_agenda(self, create, extracted, **kwargs):
+    def populate_agenda(obj, create, extracted, **kwargs): # pylint: disable=no-self-argument
         '''
         Create a default agenda, unless the factory is called
         with populate_agenda=False
@@ -47,9 +47,9 @@ class MeetingFactory(factory.DjangoModelFactory):
             extracted = True
         if create and extracted:
             for x in range(3):
-                TimeSlotFactory(meeting=self)
-            self.agenda = ScheduleFactory(meeting=self)
-            self.save()
+                TimeSlotFactory(meeting=obj)
+            obj.agenda = ScheduleFactory(meeting=obj)
+            obj.save()
 
 
 class SessionFactory(factory.DjangoModelFactory):
@@ -63,7 +63,7 @@ class SessionFactory(factory.DjangoModelFactory):
     status_id='sched'
 
     @factory.post_generation
-    def add_to_schedule(self, create, extracted, **kwargs):
+    def add_to_schedule(obj, create, extracted, **kwargs): # pylint: disable=no-self-argument
         '''
         Put this session in a timeslot unless the factory is called
         with add_to_schedule=False
@@ -71,8 +71,8 @@ class SessionFactory(factory.DjangoModelFactory):
         if extracted is None:
             extracted = True
         if create and extracted:
-            ts = self.meeting.timeslot_set.all()
-            self.timeslotassignments.create(timeslot=ts[random.randrange(len(ts))],schedule=self.meeting.agenda)
+            ts = obj.meeting.timeslot_set.all()
+            obj.timeslotassignments.create(timeslot=ts[random.randrange(len(ts))],schedule=obj.meeting.agenda)
 
 class ScheduleFactory(factory.DjangoModelFactory):
     class Meta:

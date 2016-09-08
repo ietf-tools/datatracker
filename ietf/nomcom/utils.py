@@ -5,7 +5,7 @@ import re
 import tempfile
 
 from email.header import decode_header
-from email.Iterators import typed_subpart_iterator
+from email.iterators import typed_subpart_iterator
 from email import message_from_string
 
 from django.conf import settings

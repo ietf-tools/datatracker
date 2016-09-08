@@ -73,7 +73,7 @@ def add_proceed(request):
     if request.session['post_data']:
         post_data = request.session['post_data']
     else:
-        messages.error('ERROR: unable to save session data (enable cookies)')
+        messages.error('ERROR: unable to save session data (enable cookies)') # pylint: disable=no-value-for-parameter
         return redirect('rolodex_add')
 
     name = post_data['name']

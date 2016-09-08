@@ -59,7 +59,7 @@ class TimedeltaField(models.Field):
 
     def value_to_string(self, obj):
         value = self._get_val_from_obj(obj)
-        return self.get_db_prep_value(value)
+        return self.get_db_prep_value(value) # pylint: disable=no-value-for-parameter
 
 
 class TimedeltaFormField(forms.Field):

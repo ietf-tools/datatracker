@@ -227,7 +227,7 @@ class HolderIprDisclosureForm(IprDisclosureFormBase):
         return cleaned_data
 
     def save(self, *args, **kwargs):
-        obj = super(IprDisclosureFormBase, self).save(*args,commit=False)
+        obj = super(HolderIprDisclosureForm, self).save(*args,commit=False)
         if self.cleaned_data.get('same_as_ii_above') == True:
             obj.submitter_name = obj.holder_contact_name
             obj.submitter_email = obj.holder_contact_email

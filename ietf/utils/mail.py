@@ -1,9 +1,9 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
-from email.Utils import make_msgid, formatdate, formataddr, parseaddr, getaddresses
-from email.MIMEText import MIMEText
-from email.MIMEMessage import MIMEMessage
-from email.MIMEMultipart import MIMEMultipart
+from email.utils import make_msgid, formatdate, formataddr, parseaddr, getaddresses
+from email.mime.text import MIMEText
+from email.mime.message import MIMEMessage
+from email.mime.multipart import MIMEMultipart
 from email.header import Header
 from email import message_from_string
 from email import charset as Charset

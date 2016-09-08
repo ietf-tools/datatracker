@@ -199,8 +199,8 @@ class CustomModelMultipleChoiceField(forms.ModelMultipleChoiceField):
         if (hasattr(value, '__iter__') and
                 not isinstance(value, six.text_type) and
                 not hasattr(value, '_meta')):
-            return [super(forms.ModelMultipleChoiceField, self).prepare_value(v) for v in value]
-        return super(forms.ModelMultipleChoiceField, self).prepare_value(value)
+            return [super(CustomModelMultipleChoiceField, self).prepare_value(v) for v in value]
+        return super(CustomModelMultipleChoiceField, self).prepare_value(value)
 
 
 class LiaisonModelForm(BetterModelForm):

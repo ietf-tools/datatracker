@@ -1215,7 +1215,7 @@ class Session(models.Model):
             
         return self._agenda_file
     def badness_test(self, num):
-        from settings import BADNESS_CALC_LOG
+        from settings import BADNESS_CALC_LOG # pylint: disable=import-error
         #sys.stdout.write("num: %u / BAD: %u\n" % (num, BADNESS_CALC_LOG))
         return BADNESS_CALC_LOG >= num
 
@@ -1245,7 +1245,7 @@ class Session(models.Model):
 
         if self.badness_test(2):
             self.badness_log(2, "badness for group: %s has %u constraints\n" % (self.group.acronym, len(conflicts)))
-        from settings import BADNESS_UNPLACED, BADNESS_TOOSMALL_50, BADNESS_TOOSMALL_100, BADNESS_TOOBIG, BADNESS_MUCHTOOBIG
+        from settings import BADNESS_UNPLACED, BADNESS_TOOSMALL_50, BADNESS_TOOSMALL_100, BADNESS_TOOBIG, BADNESS_MUCHTOOBIG # pylint: disable=import-error
         count = 0
         myss_list = assignments[self.group]
         # for each constraint of this sessions' group, by group
@@ -1364,7 +1364,7 @@ class Session(models.Model):
     #    not being scheduled is worth  10,000,000 points
     #
     def badness_fast(self, timeslot, scheduleslot, session_pk_list):
-        from settings import BADNESS_UNPLACED, BADNESS_TOOSMALL_50, BADNESS_TOOSMALL_100, BADNESS_TOOBIG, BADNESS_MUCHTOOBIG
+        from settings import BADNESS_UNPLACED, BADNESS_TOOSMALL_50, BADNESS_TOOSMALL_100, BADNESS_TOOBIG, BADNESS_MUCHTOOBIG # pylint: disable=import-error
 
         badness = 0
 
