@@ -2,11 +2,11 @@ ietfdb (6.32.0) ietf; urgency=low
 
   **Initial charting support**
 
-  This release brings in some basic charting support, and a set of initial
-  charts showing new-revision timelines for document search results.  There
-  are also a few bugfixes:
+  This release brings in basic charting support, and a set of initial charts
+  showing new-revision timelines for document search results and authors.
+  There are also a few bugfixes:
 
-  * Fixed a blowup which could happen if an rfc doesn't have its standard 
+  * Fixed a blowup which could happen if an rfc doesn't have the standards
     level set.
 
   * Fixed a bug in the rfceditor index sync introduced by the event saving 
@@ -17,7 +17,7 @@ ietfdb (6.32.0) ietf; urgency=low
 
   * Fixed a bug in bin/mkrelease.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  06 Sep 2016 06:20:52 -0700
+ -- Henrik Levkowetz <henrik@levkowetz.com>  08 Sep 2016 09:05:12 +0000
 
 
 ietfdb (6.31.1) ietf; urgency=low
