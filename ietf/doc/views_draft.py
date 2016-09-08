@@ -1466,9 +1466,11 @@ def change_stream_state(request, name, state_type):
                 e.save()
                 events.append(e)
 
-            doc.save_with_history(events)
-
-            return HttpResponseRedirect(doc.get_absolute_url())
+            if events:
+                doc.save_with_history(events)
+                return HttpResponseRedirect(doc.get_absolute_url())
+            else:
+                form.add_error(None, "No change in state or tags found, and no comment provided -- nothing to do.")
     else:
         form = ChangeStreamStateForm(initial=dict(new_state=prev_state.pk if prev_state else None, tags= doc.tags.all()),
                                      doc=doc, state_type=state_type, can_set_sub_pub = can_set_sub_pub,stream = doc.stream)
