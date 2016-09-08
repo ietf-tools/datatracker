@@ -3,8 +3,8 @@ import datetime
 
 from django.conf import settings
 
-from ietf.doc.models import Document, State, DocAlias, DocEvent, \
-    DocumentAuthor, AddedMessageEvent
+from ietf.doc.models import ( Document, State, DocAlias, DocEvent, 
+    DocumentAuthor, AddedMessageEvent )
 from ietf.doc.models import NewRevisionDocEvent
 from ietf.doc.models import RelatedDocument, DocRelationshipName
 from ietf.doc.utils import add_state_change_event, rebuild_reference_relations

@@ -5,12 +5,11 @@ from tastypie.constants import ALL, ALL_WITH_RELATIONS
 from tastypie.cache import SimpleCache
 
 from ietf import api
-
-from ietf.submit.models import Preapproval, \
-    SubmissionCheck, Submission, SubmissionEmailEvent, SubmissionEvent
-
-
+from ietf.submit.models import ( Preapproval, SubmissionCheck, Submission,
+    SubmissionEmailEvent, SubmissionEvent )
 from ietf.person.resources import PersonResource
+
+
 class PreapprovalResource(ModelResource):
     by               = ToOneField(PersonResource, 'by')
     class Meta:

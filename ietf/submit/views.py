@@ -8,8 +8,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.core.urlresolvers import reverse as urlreverse
 from django.core.validators import validate_email, ValidationError
-from django.http import HttpResponseRedirect, Http404, HttpResponseForbidden, \
-    HttpResponse
+from django.http import HttpResponseRedirect, Http404, HttpResponseForbidden, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.module_loading import import_string
 
@@ -21,14 +20,14 @@ from ietf.group.models import Group
 from ietf.ietfauth.utils import has_role, role_required
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.message.models import Message, MessageAttachment
-from ietf.submit.forms import SubmissionUploadForm, NameEmailForm, EditSubmissionForm, PreapprovalForm, ReplacesForm, \
-    SubmissionEmailForm, MessageModelForm
-from ietf.submit.mail import send_full_url, send_approval_request_to_group, \
-    send_submission_confirmation, send_manual_post_request, \
-    add_submission_email, get_reply_to
-from ietf.submit.models import Submission, SubmissionCheck, Preapproval, DraftSubmissionStateName, \
-    SubmissionEmailEvent
-from ietf.submit.utils import approvable_submissions_for_user, preapprovals_for_user, recently_approved_by_user
+from ietf.submit.forms import ( SubmissionUploadForm, NameEmailForm, EditSubmissionForm,
+    PreapprovalForm, ReplacesForm, SubmissionEmailForm, MessageModelForm )
+from ietf.submit.mail import ( send_full_url, send_approval_request_to_group,
+    send_submission_confirmation, send_manual_post_request, add_submission_email, get_reply_to )
+from ietf.submit.models import (Submission, SubmissionCheck, Preapproval,
+    DraftSubmissionStateName, SubmissionEmailEvent )
+from ietf.submit.utils import ( approvable_submissions_for_user, preapprovals_for_user,
+    recently_approved_by_user )
 from ietf.submit.utils import validate_submission, create_submission_event
 from ietf.submit.utils import docevent_from_submission
 from ietf.submit.utils import post_submission, cancel_submission, rename_submission_files
@@ -238,9 +237,14 @@ def submission_status(request, submission_id, access_token=None):
     can_edit = can_edit_submission(request.user, submission, access_token) and submission.state_id == "uploaded"
     can_cancel = (key_matched or is_secretariat) and submission.state.next_states.filter(slug="cancel")
     can_group_approve = (is_secretariat or is_chair) and submission.state_id == "grp-appr"
-    can_force_post = is_secretariat and submission.state.next_states.filter(slug="posted") and submission.state_id != "waiting-for-draft"
-    show_send_full_url = not key_matched and not is_secretariat and submission.state_id not in ("cancel", "posted")
-
+    can_force_post = (
+            is_secretariat
+        and submission.state.next_states.filter(slug="posted").exists()
+        and submission.state_id != "waiting-for-draft")
+    show_send_full_url = (
+            not key_matched
+        and not is_secretariat
+        and not submission.state_id in ("cancel", "posted") )
     addrs = gather_address_lists('sub_confirmation_requested',submission=submission)
     confirmation_list = addrs.to
     confirmation_list.extend(addrs.cc)
@@ -637,7 +641,7 @@ def add_manualpost_email(request, submission_id=None, access_token=None):
                 else:
                     msgtype = 'msgout'
     
-                submission, submission_email_event = \
+                submission, submission_email_event = (
                     add_submission_email(request=request,
                                          remote_ip=request.META.get('REMOTE_ADDR', None),
                                          name = form.draft_name,
@@ -645,7 +649,7 @@ def add_manualpost_email(request, submission_id=None, access_token=None):
                                          submission_pk = submission_pk,
                                          message = message,
                                          by = request.user.person,
-                                         msgtype = msgtype)
+                                         msgtype = msgtype) )
     
                 messages.success(request, 'Email added.')
     

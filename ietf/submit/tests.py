@@ -960,7 +960,7 @@ Please submit my draft at http://test.com/mydraft.txt
 Thank you
 """.format(datetime.datetime.now().ctime())
         message = email.message_from_string(message_string)
-        submission, submission_email_event =\
+        submission, submission_email_event = (
             add_submission_email(request=None,
                                  remote_ip ="192.168.0.1",
                                  name = "draft-my-new-draft",
@@ -968,7 +968,7 @@ Thank you
                                  submission_pk=None,
                                  message = message,
                                  by = Person.objects.get(name="(System)"),
-                                 msgtype = "msgin")
+                                 msgtype = "msgin") )
 
         url = urlreverse('ietf.submit.views.manualpost')
         # Secretariat has access
@@ -1005,7 +1005,7 @@ Thank you
         self.assertEqual(len(q('.waiting-for-draft a:contains("draft-my-new-draft")')), 0)
 
         # Should now be able to add it again
-        submission, submission_email_event = \
+        submission, submission_email_event = (
             add_submission_email(request=None,
                                  remote_ip ="192.168.0.1",
                                  name = "draft-my-new-draft",
@@ -1013,7 +1013,7 @@ Thank you
                                  submission_pk=None,
                                  message = message,
                                  by = Person.objects.get(name="(System)"),
-                                 msgtype = "msgin")
+                                 msgtype = "msgin") )
 
 
     def test_waiting_for_draft_with_attachment(self):
@@ -1041,8 +1041,9 @@ QW4gZXhhbXBsZSBhdHRhY2htZW50IHd0aG91dCB2ZXJ5IG11Y2ggaW4gaXQuCgpBIGNvdXBs
 ZSBvZiBsaW5lcyAtIGJ1dCBpdCBjb3VsZCBiZSBhIGRyYWZ0Cg==
 --------------090908050800030909090207--
 """.format(frm, datetime.datetime.now().ctime())
+
         message = email.message_from_string(message_string)
-        submission, submission_email_event = \
+        submission, submission_email_event = (
             add_submission_email(request=None,
                                  remote_ip ="192.168.0.1",
                                  name = "draft-my-new-draft",
@@ -1050,7 +1051,7 @@ ZSBvZiBsaW5lcyAtIGJ1dCBpdCBjb3VsZCBiZSBhIGRyYWZ0Cg==
                                  submission_pk=None,
                                  message = message,
                                  by = Person.objects.get(name="(System)"),
-                                 msgtype = "msgin")
+                                 msgtype = "msgin") )
 
         manualpost_page_url = urlreverse('ietf.submit.views.manualpost')
         # Secretariat has access
@@ -1135,8 +1136,7 @@ ZSBvZiBsaW5lcyAtIGJ1dCBpdCBjb3VsZCBiZSBhIGRyYWZ0Cg==
                               is_secretariat):
         # get the page listing manual posts
         r, q = self.request_and_parse(the_url)
-        selector = "#waiting-for-draft a#add-submission-email{}:contains('Add email')". \
-            format(submission.pk, submission_name_fragment)
+        selector = "#waiting-for-draft a#add-submission-email%s:contains('Add email')" % submission.pk
 
         if is_secretariat:
             # Can add an email to the submission
@@ -1152,8 +1152,7 @@ ZSBvZiBsaW5lcyAtIGJ1dCBpdCBjb3VsZCBiZSBhIGRyYWZ0Cg==
         # Follow the link to the status page for this submission
         r, q = self.request_and_parse(submission_url)
         
-        selector = "#history a#reply{}:contains('Reply')".\
-            format(submission.pk)
+        selector = "#history a#reply%s:contains('Reply')" % submission.pk
 
         if is_secretariat:
             # check that reply button is visible and get the form
@@ -1171,8 +1170,7 @@ ZSBvZiBsaW5lcyAtIGJ1dCBpdCBjb3VsZCBiZSBhIGRyYWZ0Cg==
         if is_secretariat:
             # Now try to send an email using the send email link
     
-            selector = "a#send{}:contains('Send Email')". \
-                format(submission.pk)
+            selector = "a#send%s:contains('Send Email')" % submission.pk
             send_url = self.get_href(q, selector)
 
             self.do_submission_email(the_url = send_url,
@@ -1194,8 +1192,7 @@ ZSBvZiBsaW5lcyAtIGJ1dCBpdCBjb3VsZCBiZSBhIGRyYWZ0Cg==
         if is_secretariat:
             # check that reply button is visible
 
-            reply_href = self.get_href(q, "#email-details a#reply{}:contains('Reply')". \
-                                       format(submission.pk))
+            reply_href = self.get_href(q, "#email-details a#reply%s:contains('Reply')" % submission.pk)
 
         else:
             # No reply button
@@ -1308,6 +1305,7 @@ From: {}
 Date: {}
 Subject: test
 """.format(reply_to, to, datetime.datetime.now().ctime())
+
         result = process_response_email(message_string)
         self.assertIsInstance(result, Message)
 
