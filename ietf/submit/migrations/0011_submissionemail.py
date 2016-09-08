@@ -13,7 +13,7 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='SubmissionEmail',
+            name='SubmissionEmailEvent',
             fields=[
                 ('submissionevent_ptr', models.OneToOneField(parent_link=True, auto_created=True, primary_key=True, serialize=False, to='submit.SubmissionEvent')),
                 ('msgtype', models.CharField(max_length=25)),

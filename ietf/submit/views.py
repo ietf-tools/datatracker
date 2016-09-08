@@ -27,7 +27,7 @@ from ietf.submit.mail import send_full_url, send_approval_request_to_group, \
     send_submission_confirmation, send_manual_post_request, \
     add_submission_email, get_reply_to
 from ietf.submit.models import Submission, SubmissionCheck, Preapproval, DraftSubmissionStateName, \
-    SubmissionEmail
+    SubmissionEmailEvent
 from ietf.submit.utils import approvable_submissions_for_user, preapprovals_for_user, recently_approved_by_user
 from ietf.submit.utils import validate_submission, create_submission_event
 from ietf.submit.utils import docevent_from_submission
@@ -657,9 +657,9 @@ def add_manualpost_email(request, submission_id=None, access_token=None):
         
                 if (draft != None):
                     e = AddedMessageEvent(type="added_message", doc=draft)
-                    e.message = submission_email_event.submissionemail.message
-                    e.msgtype = submission_email_event.submissionemail.msgtype
-                    e.in_reply_to = submission_email_event.submissionemail.in_reply_to
+                    e.message = submission_email_event.submissionemailevent.message
+                    e.msgtype = submission_email_event.submissionemailevent.msgtype
+                    e.in_reply_to = submission_email_event.submissionemailevent.in_reply_to
                     e.by = request.user.person
                     e.desc = submission_email_event.desc
                     e.time = submission_email_event.time
@@ -727,7 +727,7 @@ def send_submission_email(request, submission_id, message_id=None):
             desc = "Sent message {} - manual post - {}-{}".format(rp,
                                                                   submission.name, 
                                                                   submission.rev)
-            SubmissionEmail.objects.create(
+            SubmissionEmailEvent.objects.create(
                     submission = submission,
                     desc = desc,
                     msgtype = 'msgout',
@@ -754,7 +754,7 @@ def send_submission_email(request, submission_id, message_id=None):
             subject = 'Regarding {}'.format(submission.name)
         else:
             try:
-                submitEmail = SubmissionEmail.objects.get(id=message_id)
+                submitEmail = SubmissionEmailEvent.objects.get(id=message_id)
                 msg = submitEmail.message
                 
                 if msg:
@@ -792,7 +792,7 @@ def send_submission_email(request, submission_id, message_id=None):
 def show_submission_email_message(request, submission_id, message_id, access_token=None):
     submission = get_submission_or_404(submission_id, access_token)
 
-    submitEmail = get_object_or_404(SubmissionEmail, pk=message_id)    
+    submitEmail = get_object_or_404(SubmissionEmailEvent, pk=message_id)    
     attachments = submitEmail.message.messageattachment_set.all()
     
     return render(request, 'submit/submission_email.html',
@@ -803,7 +803,7 @@ def show_submission_email_message(request, submission_id, message_id, access_tok
 def show_submission_email_attachment(request, submission_id, message_id, filename, access_token=None):
     get_submission_or_404(submission_id, access_token)
 
-    message = get_object_or_404(SubmissionEmail, pk=message_id)
+    message = get_object_or_404(SubmissionEmailEvent, pk=message_id)
 
     attach = get_object_or_404(MessageAttachment, 
                                message=message.message, 

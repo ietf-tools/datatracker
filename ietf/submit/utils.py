@@ -153,9 +153,9 @@ def post_rev00_submission_events(draft, submission, submitter):
                     desc = "Request for posting approval emailed %s" % (subevent.desc[pos + 19:])
         elif desc.startswith("Received message") or desc.startswith("Sent message"):
             e = AddedMessageEvent(type="added_message", doc=draft)
-            e.message = subevent.submissionemail.message
-            e.msgtype = subevent.submissionemail.msgtype
-            e.in_reply_to = subevent.submissionemail.in_reply_to
+            e.message = subevent.submissionemailevent.message
+            e.msgtype = subevent.submissionemailevent.msgtype
+            e.in_reply_to = subevent.submissionemailevent.in_reply_to
         else:
             continue
 

@@ -19,7 +19,7 @@ from ietf.person.models import Person
 from ietf.message.models import Message, MessageAttachment
 from ietf.utils.accesstoken import generate_access_token
 from ietf.mailtrigger.utils import gather_address_lists, get_base_submission_message_address
-from ietf.submit.models import SubmissionEmail, Submission
+from ietf.submit.models import SubmissionEmailEvent, Submission
 
 def send_submission_confirmation(request, submission, chair_notice=False):
     subject = 'Confirm submission of I-D %s' % submission.name
@@ -190,7 +190,7 @@ def process_response_email(msg):
             submission.name,
             submission.rev)
     
-    submission_email_event = SubmissionEmail.objects.create(
+    submission_email_event = SubmissionEmailEvent.objects.create(
             submission = submission,
             desc = desc,
             msgtype = 'msgin',
@@ -258,7 +258,7 @@ def add_submission_email(request, remote_ip, name, rev, submission_pk, message, 
         rs = "Sent"
 
     desc = "{} message - manual post - {}-{}".format(rs, name, rev)
-    submission_email_event = SubmissionEmail.objects.create(
+    submission_email_event = SubmissionEmailEvent.objects.create(
             desc = desc,
             submission = submission,
             msgtype = msgtype,

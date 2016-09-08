@@ -2,7 +2,7 @@ from django.core.urlresolvers import reverse as urlreverse
 from django.contrib import admin
 
 
-from ietf.submit.models import Preapproval, Submission, SubmissionEvent, SubmissionCheck
+from ietf.submit.models import Preapproval, Submission, SubmissionEvent, SubmissionCheck, SubmissionEmailEvent
 
 class SubmissionAdmin(admin.ModelAdmin):
     list_display = ['id', 'rev', 'draft_link', 'status_link', 'submission_date',]
@@ -40,3 +40,6 @@ class PreapprovalAdmin(admin.ModelAdmin):
     pass
 admin.site.register(Preapproval, PreapprovalAdmin)
 
+class SubmissionEmailEventAdmin(admin.ModelAdmin):
+    list_display = ['id', 'submission', 'time', 'by', 'message', 'desc', ]
+admin.site.register(SubmissionEmailEvent, SubmissionEmailEventAdmin)    
