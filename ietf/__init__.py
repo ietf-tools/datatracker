@@ -2,13 +2,13 @@
 import checks                           # pyflakes:ignore
 
 # Don't add patch number here:
-__version__ = "6.31.2.dev0"
+__version__ = "6.32.0"
 
 # set this to ".p1", ".p2", etc. after patching
 __patch__   = ""
 
 __date__    = "$Date$"
 
-__rev__     = "$Rev$ (dev) Latest release: Rev. 11907 "
+__rev__     = "$Rev$"
 
 __id__      = "$Id$"
