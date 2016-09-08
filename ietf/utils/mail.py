@@ -345,6 +345,7 @@ def log_smtp_exception(e):
     if isinstance(e,SMTPSomeRefusedRecipients):
         log("     SomeRefused: %s"%(e.summary_refusals()))
     log("     Traceback: %s" % tb) 
+    return (extype, value, tb)
 
 def build_warning_message(request, e):
     (extype, value, tb) = exception_components(e)
