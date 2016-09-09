@@ -5,7 +5,6 @@
 # http://code.djangoproject.com/wiki/SplitSettings
 
 import os
-import importlib
 import sys
 import datetime
 
