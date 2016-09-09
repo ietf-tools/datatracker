@@ -18,18 +18,12 @@ except ImportError:
 import cProfile
 import traceback as tb
 
-try:
-    from django.conf import settings
-    debug = settings.DEBUG
-except ImportError:
-    debug = True
-
 # A debug decorator, written by Paul Butler, taken from
 # http://paulbutler.org/archives/python-debugging-with-decorators/
 # Additional functions and decorator functionality added by
 # Henrik Levkowetz
 
-__version__ = "0.15"
+__version__ = "0.16"
 
 increment = 2
 
