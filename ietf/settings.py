@@ -700,6 +700,9 @@ CHART_TYPE_COLUMN_OPTIONS = {
     "credits": {
         "enabled": False,
     },
+    "exporting": {
+        "fallbackToExportServer": False,
+    },
     "rangeSelector" : {
         "selected": 5,
         "allButtonsEnabled": True,
@@ -738,6 +741,9 @@ CHART_TYPE_ACTIVITY_OPTIONS = {
     },
     "credits": {
         "enabled": False,
+    },
+    "exporting": {
+        "fallbackToExportServer": False,
     },
     "navigation": {
         "buttonOptions": {

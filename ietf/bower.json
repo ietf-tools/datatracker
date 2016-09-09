@@ -41,6 +41,7 @@
 	  "highstock.js",
 	  "highmaps.js",
 	  "modules/exporting.js",
+	  "modules/offline-exporting.js",
 	  "modules/map.js"
 	]
     }
