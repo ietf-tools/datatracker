@@ -7,6 +7,7 @@ import jsonfield
 from ietf.doc.models import Document
 from ietf.person.models import Person
 from ietf.group.models import Group
+from ietf.message.models import Message
 from ietf.name.models import DraftSubmissionStateName
 from ietf.utils.accesstoken import generate_random_key, generate_access_token
 
@@ -106,3 +107,15 @@ class Preapproval(models.Model):
 
     def __unicode__(self):
         return self.name
+
+class SubmissionEmailEvent(SubmissionEvent):
+    message     = models.ForeignKey(Message, null=True, blank=True,related_name='manualevents')
+    msgtype     = models.CharField(max_length=25)
+    in_reply_to = models.ForeignKey(Message, null=True, blank=True,related_name='irtomanual')
+
+    def __unicode__(self):
+        return u"%s %s by %s at %s" % (self.submission.name, self.desc, self.by.plain_name() if self.by else "(unknown)", self.time)
+
+    class Meta:
+        ordering = ['-time', '-id']
+

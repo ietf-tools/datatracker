@@ -80,6 +80,9 @@ def gather_relevant_expansions(**kwargs):
             rule_list.append((mailtrigger.slug,mailtrigger.desc,addrs.to,addrs.cc))
     return sorted(rule_list)
 
+def get_base_submission_message_address():
+    return Recipient.objects.get(slug='submission_manualpost_handling').gather()[0]
+
 def get_base_ipr_request_address():
     return Recipient.objects.get(slug='ipr_requests').gather()[0]
 

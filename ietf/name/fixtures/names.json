@@ -188,7 +188,7 @@
   "order": 0,
   "revname": "Conflict reviewed by",
   "used": true,
-  "name": "Conflict reviews",
+  "name": "conflict reviews",
   "desc": ""
  },
  "model": "name.docrelationshipname",
@@ -871,6 +871,20 @@
  },
  "model": "name.draftsubmissionstatename",
  "pk": "posted"
+},
+{
+ "fields": {
+  "order": 8,
+  "next_states": [
+   "cancel",
+   "posted"
+  ],
+  "used": true,
+  "name": "Manual Post Waiting for Draft",
+  "desc": ""
+ },
+ "model": "name.draftsubmissionstatename",
+ "pk": "waiting-for-draft"
 },
 {
  "fields": {
@@ -4902,6 +4916,14 @@
  },
  "model": "mailtrigger.recipient",
  "pk": "logged_in_person"
+},
+{
+ "fields": {
+  "template": "<ietf-manualpost@ietf.org>",
+  "desc": "IETF manual post handling"
+ },
+ "model": "mailtrigger.recipient",
+ "pk": "submission_manualpost_handling"
 },
 {
  "fields": {

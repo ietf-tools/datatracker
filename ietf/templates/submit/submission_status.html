@@ -101,28 +101,33 @@
     </div>
   </div>
 
+  {% if submission.state_id == "waiting-for-draft" %}
+    <p class="alert alert-warning">
+      This submission is awaiting the first draft upload.
+    </p>
+  {% else %}
+    <h2>Meta-data from the submission</h2>
 
-  <h2>Meta-data from the submission</h2>
+    {% if errors %}
+      <div class="alert alert-danger">
+        <p><b>Meta-Data errors found!</b></p>
+      <p  >Please make sure that your Internet-Draft includes all of the required meta-data in the proper format.</p>
 
-  {% if errors %}
-    <div class="alert alert-danger">
-      <p><b>Meta-Data errors found!</b></p>
-      <p>Please make sure that your Internet-Draft includes all of the required meta-data in the proper format.</p>
+        <p>If your Internet-Draft <b>does</b> include all of the required meta-data in the proper format, and if
+          the error(s) identified below are due to the failure of the tool to extract the meta-data correctly,
+          then please use the "Adjust meta-data" button below, which will take you to the "Adjust screen" where
+          you can correct the improperly extracted meta-data. You will then be able to submit your Internet-Draft
+          to the Secretariat for manual posting.</p>
 
-      <p>If your Internet-Draft <b>does</b> include all of the required meta-data in the proper format, and if
-        the error(s) identified below are due to the failure of the tool to extract the meta-data correctly,
-        then please use the "Adjust meta-data" button below, which will take you to the "Adjust screen" where
-        you can correct the improperly extracted meta-data. You will then be able to submit your Internet-Draft
-        to the Secretariat for manual posting.</p>
+        <p>If your Internet-Draft <b>does not</b> include all of the required meta-data in the proper format, then
+          please cancel this submission, update your Internet-Draft, and resubmit it.</p>
 
-      <p>If your Internet-Draft <b>does not</b> include all of the required meta-data in the proper format, then
-        please cancel this submission, update your Internet-Draft, and resubmit it.</p>
-
-      <p><b>Note:</b> The secretariat will <b>not</b> add any
-        meta-data to your Internet-Draft or edit the meta-data. An
-        Internet-Draft that does not include all of the required meta-data in
-        the proper format <b>will</b> be returned to the submitter.</p>
-    </div>
+        <p><b>Note:</b> The secretariat will <b>not</b> add any
+          meta-data to your Internet-Draft or edit the meta-data. An
+          Internet-Draft that does not include all of the required meta-data in
+          the proper format <b>will</b> be returned to the submitter.</p>
+      </div>
+    {% endif %}
   {% endif %}
 
   <table class="table table-condensed table-striped">
@@ -305,6 +310,11 @@
     </form>
   {% endif %}
 
+  {% if user|has_role:"Secretariat" %}
+    <p></p>
+    <a id="send{{ submission.pk }}" class="btn btn-default" href="{% url "ietf.submit.views.send_submission_email" submission_id=submission.pk %}" title="Email submitter"><span class="glyphicon glyphicon-envelope" aria-hidden="true"></span>Send Email</a>
+  {% endif %}
+
   {% if show_send_full_url %}
     <div class="alert alert-danger">
       <p>You are not allowed to modify or cancel this submission. You can
@@ -329,7 +339,7 @@
 
   <h2>History</h2>
 
-  <table class="table table-condensed table-striped">
+  <table  id="history" class="table table-condensed table-striped">
     <thead>
       <tr><th>Date</th><th>By</th><th>Event</th></tr>
     </thead>
@@ -338,7 +348,21 @@
         <tr>
           <td class="text-nowrap">{{ e.time|date:"Y-m-d" }}</td>
           <td>{{ e.by|default:"" }}</td>
-          <td>{{ e.desc }}</td>
+          {%  if e.desc|startswith:"Received message" or e.desc|startswith:"Sent message" %}
+            {%  with m=e.submissionemailevent.message %}
+              {% if user.is_authenticated %}
+                <td> 
+                  {% if  e.desc|startswith:"Received message" and user|has_role:"Secretariat" %}
+                    <a id="reply{{ submission.pk }}" class="btn btn-default btn-xs" href="{% url "ietf.submit.views.send_submission_email" submission_id=submission.pk message_id=e.submissionemailevent.pk %}" title="Reply"><span class="glyphicon glyphicon-envelope" aria-hidden="true"></span> Reply</a>
+                  {% endif %}
+                  Email: <a id="aw{{ submission.pk }}-{{ m.pk }}" href="{% url "ietf.submit.views.show_submission_email_message" submission_id=submission.pk message_id=e.submissionemailevent.pk access_token=submission.access_token %}">{{ e.desc }}</a></td>
+              {% else %}
+                <td>Email: <a id="aw{{ submission.pk }}-{{ m.pk }}" href="{% url "ietf.submit.views.show_submission_email_message" submission_id=submission.pk message_id=e.submissionemailevent.pk %}">{{ e.desc }}</a></td>
+              {% endif %}
+            {% endwith %}
+          {%  else %}
+            <td>{{ e.desc }}</td>
+          {%  endif %}
         </tr>
       {% endfor %}
     </tbody>

@@ -278,6 +278,16 @@ def add_links_in_new_revision_events(doc, events, diff_revisions):
         prev = diff_url
 
 
+def add_events_message_info(events):
+    for e in events:
+        if not e.type == "added_message":
+            continue
+
+        e.message = e.addedmessageevent.message
+        e.msgtype = e.addedmessageevent.msgtype
+        e.in_reply_to = e.addedmessageevent.in_reply_to
+
+
 def get_document_content(key, filename, split=True, markup=True):
     try:
         with open(filename, 'rb') as f:

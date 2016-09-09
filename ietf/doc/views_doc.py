@@ -50,7 +50,8 @@ from ietf.doc.models import ( Document, DocAlias, DocHistory, DocEvent, BallotDo
 from ietf.doc.utils import ( add_links_in_new_revision_events, augment_events_with_revision,
     can_adopt_draft, get_chartering_type, get_document_content, get_tags_for_stream_id,
     needed_ballot_positions, nice_consensus, prettify_std_name, update_telechat, has_same_ballot,
-    get_initial_notify, make_notify_changed_event, crawl_history, default_consensus)
+    get_initial_notify, make_notify_changed_event, crawl_history, default_consensus,
+    add_events_message_info)
 from ietf.community.utils import augment_docs_with_tracking_info
 from ietf.group.models import Role
 from ietf.group.utils import can_manage_group, can_manage_materials
@@ -657,6 +658,7 @@ def document_history(request, name):
 
     augment_events_with_revision(doc, events)
     add_links_in_new_revision_events(doc, events, diff_revisions)
+    add_events_message_info(events)
 
     # figure out if the current user can add a comment to the history
     if doc.type_id == "draft" and doc.group != None:

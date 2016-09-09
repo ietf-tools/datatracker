@@ -7,12 +7,11 @@ from tastypie.cache import SimpleCache
 
 from ietf import api
 
-from ietf.message.models import Message, SendQueue
-
-
+from ietf.message.models import Message, SendQueue, MessageAttachment
 from ietf.person.resources import PersonResource
 from ietf.group.resources import GroupResource
 from ietf.doc.resources import DocumentResource
+
 class MessageResource(ModelResource):
     by               = ToOneField(PersonResource, 'by')
     related_groups   = ToManyField(GroupResource, 'related_groups', null=True)
@@ -58,4 +57,22 @@ class SendQueueResource(ModelResource):
             "message": ALL_WITH_RELATIONS,
         }
 api.message.register(SendQueueResource())
+
+
+
+class MessageAttachmentResource(ModelResource):
+    message          = ToOneField(MessageResource, 'message')
+    class Meta:
+        queryset = MessageAttachment.objects.all()
+        serializer = api.Serializer()
+        cache = SimpleCache()
+        #resource_name = 'messageattachment'
+        filtering = { 
+            "id": ALL,
+            "filename": ALL,
+            "removed": ALL,
+            "body": ALL,
+            "message": ALL_WITH_RELATIONS,
+        }
+api.message.register(MessageAttachmentResource())
 

@@ -2,7 +2,7 @@ from django.core.urlresolvers import reverse as urlreverse
 from django.contrib import admin
 
 
-from ietf.submit.models import Preapproval, Submission, SubmissionEvent, SubmissionCheck
+from ietf.submit.models import Preapproval, Submission, SubmissionEvent, SubmissionCheck, SubmissionEmailEvent
 
 class SubmissionAdmin(admin.ModelAdmin):
     list_display = ['id', 'rev', 'draft_link', 'status_link', 'submission_date',]
@@ -11,7 +11,7 @@ class SubmissionAdmin(admin.ModelAdmin):
     raw_id_fields = ['group', 'draft']
 
     def status_link(self, instance):
-        url = urlreverse('submit_submission_status_by_hash',
+        url = urlreverse('ietf.submit.views.submission_status',
                          kwargs=dict(submission_id=instance.pk,
                                      access_token=instance.access_token()))
         return '<a href="%s">%s</a>' % (url, instance.state)
@@ -40,3 +40,6 @@ class PreapprovalAdmin(admin.ModelAdmin):
     pass
 admin.site.register(Preapproval, PreapprovalAdmin)
 
+class SubmissionEmailEventAdmin(admin.ModelAdmin):
+    list_display = ['id', 'submission', 'time', 'by', 'message', 'desc', ]
+admin.site.register(SubmissionEmailEvent, SubmissionEmailEventAdmin)    

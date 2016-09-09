@@ -3,7 +3,8 @@ import datetime
 
 from django.conf import settings
 
-from ietf.doc.models import Document, State, DocAlias, DocEvent, DocumentAuthor
+from ietf.doc.models import ( Document, State, DocAlias, DocEvent, 
+    DocumentAuthor, AddedMessageEvent )
 from ietf.doc.models import NewRevisionDocEvent
 from ietf.doc.models import RelatedDocument, DocRelationshipName
 from ietf.doc.utils import add_state_change_event, rebuild_reference_relations
@@ -18,6 +19,7 @@ from ietf.submit.mail import announce_to_lists, announce_new_version, announce_t
 from ietf.submit.models import Submission, SubmissionEvent, Preapproval, DraftSubmissionStateName
 from ietf.utils import unaccent
 from ietf.utils.log import log
+
 
 def validate_submission(submission):
     errors = {}
@@ -108,8 +110,62 @@ def create_submission_event(request, submission, desc):
     SubmissionEvent.objects.create(submission=submission, by=by, desc=desc)
 
 
-def post_submission(request, submission):
-    # find out who did it
+def docevent_from_submission(request, submission, desc):
+    system = Person.objects.get(name="(System)")
+
+    try:
+        draft = Document.objects.get(name=submission.name)
+    except Document.DoesNotExist:
+        # Assume this is revision 00 - we'll do this later
+        return
+
+    submitter_parsed = submission.submitter_parsed()
+    if submitter_parsed["name"] and submitter_parsed["email"]:
+        submitter = ensure_person_email_info_exists(submitter_parsed["name"], submitter_parsed["email"]).person
+    else:
+        submitter = system
+
+    e = DocEvent(doc=draft)
+    e.by = submitter
+    e.type = "added_comment"
+    e.desc = desc
+    e.save()
+
+
+def post_rev00_submission_events(draft, submission, submitter):
+    # Add previous submission events as docevents
+    # For now we'll filter based on the description
+    for subevent in submission.submissionevent_set.all():
+        desc = subevent.desc
+        if desc.startswith("Uploaded submission"):
+            desc = "Uploaded new revision"
+            e = DocEvent(type="added_comment", doc=draft)
+        elif desc.startswith("Submission created"):
+            e = DocEvent(type="added_comment", doc=draft)
+        elif desc.startswith("Set submitter to"):
+            pos = subevent.desc.find("sent confirmation email")
+            e = DocEvent(type="added_comment", doc=draft)
+            if pos > 0:
+                desc = "Request for posting confirmation emailed %s" % (subevent.desc[pos + 23:])
+            else:
+                pos = subevent.desc.find("sent appproval email")
+                if pos > 0:
+                    desc = "Request for posting approval emailed %s" % (subevent.desc[pos + 19:])
+        elif desc.startswith("Received message") or desc.startswith("Sent message"):
+            e = AddedMessageEvent(type="added_message", doc=draft)
+            e.message = subevent.submissionemailevent.message
+            e.msgtype = subevent.submissionemailevent.msgtype
+            e.in_reply_to = subevent.submissionemailevent.in_reply_to
+        else:
+            continue
+
+        e.time = subevent.time #submission.submission_date
+        e.by = submitter
+        e.desc = desc
+        e.save()
+
+
+def post_submission(request, submission, approvedDesc):
     system = Person.objects.get(name="(System)")
     submitter_parsed = submission.submitter_parsed()
     if submitter_parsed["name"] and submitter_parsed["email"]:
@@ -175,8 +231,29 @@ def post_submission(request, submission):
     trouble = rebuild_reference_relations(draft, filename=os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.txt' % (submission.name, submission.rev)))
     if trouble:
         log('Rebuild_reference_relations trouble: %s'%trouble)
+    
+    if draft.rev == '00':
+        # Add all the previous submission events as docevents
+        post_rev00_submission_events(draft, submission, submitter)
 
-    # automatic state changes
+    # Add an approval docevent
+    e = DocEvent(type="added_comment", doc=draft)
+    e.time = draft.time #submission.submission_date
+    e.by = submitter
+    e.desc = approvedDesc
+    e.save()
+    
+    # new revision event
+    e = NewRevisionDocEvent(type="new_revision", doc=draft, rev=draft.rev)
+    e.time = draft.time #submission.submission_date
+    e.by = submitter
+    e.desc = "New version available: <b>%s-%s.txt</b>" % (draft.name, draft.rev)
+    e.save()
+
+    if draft.stream_id == "ietf" and draft.group.type_id == "wg" and draft.rev == "00":
+        # automatically set state "WG Document"
+        draft.set_state(State.objects.get(used=True, type="draft-stream-%s" % draft.stream_id, slug="wg-doc"))
+
     if draft.get_state_slug("draft-iana-review") in ("ok-act", "ok-noact", "not-ok"):
         prev_state = draft.get_state("draft-iana-review")
         next_state = State.objects.get(used=True, type="draft-iana-review", slug="changed")
@@ -435,4 +512,4 @@ def expire_submission(submission, by):
     submission.state_id = "cancel"
     submission.save()
 
-    SubmissionEvent.objects.create(submission=submission, by=by, desc="Canceled expired submission")
+    SubmissionEvent.objects.create(submission=submission, by=by, desc="Cancelled expired submission")

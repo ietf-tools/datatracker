@@ -28,7 +28,7 @@
         <tbody>
           {% for s in approvals %}
             <tr>
-              <td><a href="{% url "submit_submission_status_by_hash" submission_id=s.pk access_token=s.access_token %}">{{ s.name }}-{{ s.rev }}</a></td>
+              <td><a href="{% url "ietf.submit.views.submission_status" submission_id=s.pk access_token=s.access_token %}">{{ s.name }}-{{ s.rev }}</a></td>
               <td>{{ s.submission_date }}</td>
             </tr>
           {% endfor %}
@@ -39,7 +39,7 @@
     <h2 class="anchor-target" id="preapprovals">Pre-approved drafts not yet submitted</h2>
 
     {% if user|has_role:"Secretariat,WG Chair,RG Chair" %}
-      <p><a class="btn btn-default" href="{% url "submit_add_preapproval" %}">Add pre-approval</a></p>
+      <p><a class="btn btn-default" href="{% url "ietf.submit.views.add_preapproval" %}">Add pre-approval</a></p>
     {% endif %}
 
     {% if not preapprovals %}
@@ -60,7 +60,7 @@
               <td>{{ p.name }}</td>
               <td>{{ p.time|date:"Y-m-d" }}</td>
               <td>{{ p.by }}</td>
-              <td><a class="btn btn-danger btn-xs" href="{% url "submit_cancel_preapproval" preapproval_id=p.id %}">Cancel</a></td>
+              <td><a class="btn btn-danger btn-xs" href="{% url "ietf.submit.views.cancel_preapproval" preapproval_id=p.id %}">Cancel</a></td>
             </tr>
           {% endfor %}
         </tbody>

@@ -1,0 +1,60 @@
+{% extends "submit/submit_base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin staticfiles %}
+
+{% block pagehead %}
+<link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
+{% endblock %}
+
+{% block title %}Submission email{% endblock %}
+
+{% load ietf_filters %}
+
+{% block submit_content %}
+  {% origin %}
+    <h2 class="anchor-target" id="approvals">Email for {{ submission.name }}</h2>
+
+    <table id="email-details" class="emails table table-condensed table-striped tablesorter">
+      <tr>
+        <th>Uploaded</th>
+        <td>{{ message.time }}</td>
+      </tr>
+
+      <tr>
+        <th>Date</th>
+        <td>{{ message.message.time }}</td>
+      </tr>
+
+      <tr>
+        <th>From</th>
+        <td>{{ message.message.frm }}</td>
+      </tr>
+
+      <tr>
+        <th>Subject</th>
+        <td>{{ message.message.subject }}</td>
+      </tr>
+
+      <tr>
+          <th>Message</th>
+          <td>{{ message.message.body|linebreaksbr }}</td>
+      </tr>
+        
+      {% for a in attachments %}
+        <tr>
+          <th>Attachment</th>
+          <td><a id="attach{{ submission.pk }}" href="{% url "ietf.submit.views.show_submission_email_attachment" submission_id=submission.pk message_id=message.pk filename=a.filename %}">{{ a.filename }}</a></td>
+        </tr>
+      {% endfor %}
+
+      {% if user|has_role:"Secretariat" %}
+        <tr>
+          <td><a id="reply{{ submission.pk }}" class="btn btn-default" href="{% url "ietf.submit.views.send_submission_email" submission_id=submission.pk message_id=message.pk %}" title="Reply"><span class="glyphicon glyphicon-envelope" aria-hidden="true"></span> Reply</a></td>
+        </tr>
+      {% endif %}
+    </table>
+{% endblock %}
+
+{% block js %}
+<script src="{% static "jquery.tablesorter/js/jquery.tablesorter.combined.min.js" %}"></script>
+{% endblock %}

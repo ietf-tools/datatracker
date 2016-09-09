@@ -12,19 +12,22 @@
 
   <ul class="nav nav-tabs" role="tablist">
     <li {% if selected == "index" %}class="active"{% endif %}>
-      <a href="{% url "submit_upload_submission" %}">Upload</a>
+      <a href="{% url "ietf.submit.views.upload_submission" %}">Upload</a>
     </li>
     <li {% if selected == "status" %}class="active"{% endif %}>
-      <a href="{% url "submit_search_submission" %}">Status</a>
+      <a href="{% url "ietf.submit.views.search_submission" %}">Status</a>
     </li>
     <li {% if selected == "instructions" %}class="active"{% endif %}>
-      <a href="{% url "submit_tool_instructions" %}">Instructions</a>
+      <a href="{% url "ietf.submit.views.tool_instructions" %}">Instructions</a>
     </li>
     <li {% if selected == "notewell" %}class="active"{% endif %}>
-      <a href="{% url "submit_note_well" %}">Note Well</a>
+      <a href="{% url "ietf.submit.views.note_well" %}">Note Well</a>
     </li>
     <li {% if selected == "approvals" %}class="active"{% endif %}>
-      <a href="{% url "submit_approvals" %}">Approvals</a>
+      <a href="{% url "ietf.submit.views.approvals" %}">Approvals</a>
+    </li>
+    <li {% if selected == "manual_posts" %}class="active"{% endif %}>
+      <a href="{% url "ietf.submit.views.manualpost" %}">Manual Post Requests</a>
     </li>
   </ul>
 

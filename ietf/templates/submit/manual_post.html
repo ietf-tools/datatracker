@@ -1,0 +1,98 @@
+{% extends "submit/submit_base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin staticfiles %}
+
+{% block pagehead %}
+<link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
+{% endblock %}
+
+{% block title %}Draft submissions awaiting manual posting{% endblock %}
+
+{% load ietf_filters %}
+
+{% block submit_content %}
+  {% origin %}
+
+    <h2 class="anchor-target" id="approvals">Submissions needing manual posting</h2>
+
+    {% if not manual %}
+      <p id="no-manual">There are no submissions needing manual posting.</p>
+    {% else %}
+      <table id="manual" class="submissions table table-condensed table-striped tablesorter">
+        <thead>
+          <tr>
+            <th>Draft</th>
+            <th>Submitted</th>
+            <th>Passes Checks</th>
+            <th>Metadata</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in manual %}
+            <tr>
+              {% if user.is_authenticated %}
+                <td><a href="{% url "ietf.submit.views.submission_status" submission_id=s.pk access_token=s.access_token %}">{{ s.name }}-{{ s.rev }}</a></td>
+              {% else %}
+                <td><a href="{% url "ietf.submit.views.submission_status" submission_id=s.pk %}">{{ s.name }}-{{ s.rev }}</a></td>
+              {% endif %}
+              <td>{{ s.submission_date }}</td>
+              <td>{% if s.passes_checks %}Ok{% else %}Fails{% endif %}</td>
+              <td>{% if s.errors %}Errors{% else %}Ok{% endif %}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+
+    <h2 class="anchor-target" id="approvals">Submissions awaiting draft upload</h2>
+
+    {% if not waiting_for_draft %}
+      <p id="no-waiting-for-draft">There are no submissions awaiting draft upload.</p>
+    {% else %}
+      <table id="waiting-for-draft" class="waiting-for-draft table table-condensed table-striped tablesorter">
+        <thead>
+        <tr>
+          <th>Name</th>
+          <th>Rev</th>
+          <th>Submitted</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for s in waiting_for_draft %}
+          <tr>
+            {% if user.is_authenticated %}
+              <td><a id="aw{{ s.pk }}" href="{% url "ietf.submit.views.submission_status" submission_id=s.pk access_token=s.access_token %}">{{ s.name }}</a></td>
+            {% else %}
+              <td><a id="aw{{ s.pk }}" href="{% url "ietf.submit.views.submission_status" submission_id=s.pk %}">{{ s.name }}</a></td>
+            {% endif %}
+            <td>{{ s.rev }}</td>
+            <td>{{ s.submission_date }}</td>
+
+            {% if user|has_role:"Secretariat" %}
+              <td>
+                <form id="cancel-submission" action="/submit/awaitingdraft/cancel" method="post">
+                  {% csrf_token %}
+                  <input type="hidden" name="submission_id" value="{{ s.pk }}">
+                  <input type="hidden" name="access_token" value="{{ s.access_token }}">
+                  <button class="btn btn-danger btn-xs" type="submit" data-toggle="tooltip" title="Cancels the submission permanently.">Cancel submission</button>
+                </form>
+              </td>
+            {% endif %}
+            {% if user|has_role:"Secretariat" %}
+              <td><a id="add-submission-email{{ s.pk }}" class="btn btn-default btn-xs" href="{% url "ietf.submit.views.add_manualpost_email" submission_id=s.pk access_token=s.access_token %}">Add email</a></td>
+            {% endif %}
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+
+    {% if user|has_role:"Secretariat" %}
+      <a id="new-submission-email" class="btn btn-default btn-sm" href="{% url "ietf.submit.views.add_manualpost_email" %}">New submission from email</a>
+    {% endif %}
+
+{% endblock %}
+
+{% block js %}
+<script src="{% static "jquery.tablesorter/js/jquery.tablesorter.combined.min.js" %}"></script>
+{% endblock %}

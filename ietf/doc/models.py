@@ -631,6 +631,7 @@ EVENT_TYPES = [
     ("new_revision", "Added new revision"),
     ("changed_document", "Changed document metadata"),
     ("added_comment", "Added comment"),
+    ("added_message", "Added message"),
 
     ("deleted", "Deleted document"),
 
@@ -821,6 +822,13 @@ class TelechatDocEvent(DocEvent):
 # charter events
 class InitialReviewDocEvent(DocEvent):
     expires = models.DateTimeField(blank=True, null=True)
+
+
+class AddedMessageEvent(DocEvent):
+    import ietf.message.models
+    message     = models.ForeignKey(ietf.message.models.Message, null=True, blank=True,related_name='doc_manualevents')
+    msgtype     = models.CharField(max_length=25)
+    in_reply_to = models.ForeignKey(ietf.message.models.Message, null=True, blank=True,related_name='doc_irtomanual')
 
 
 # dumping store for removed events
