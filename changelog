@@ -1,3 +1,30 @@
+ietfdb (6.32.1) ietf; urgency=low
+
+  This is a minor bugfix release, in preparation for merging in the manual
+  draft posting management code.
+
+  * Updated the PLAN file.
+
+  * Changed the export options and resources for charts so as to not involve a
+    third-party server for image exports.
+
+  * Started refacturing of the by now very large monolithic settings file.
+
+  * Fixed a situation where the Change IETF WG State form gave an exception
+    when the form was submitted empty, instead of informing the user.
+
+  * Added a pylint rc-file, and fixed or silenced a number of issues found by
+    pylint using the settings .pylintrc (which enable only error checking).
+
+  * Added a missing return value used by
+    ietf.middleware.SMTPExceptionMiddleware.process_exception().
+
+  * Added a set of chart options for small activity indication graphs.  Fixed
+    a pylint nit.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  09 Sep 2016 12:23:13 +0000
+
+
 ietfdb (6.32.0) ietf; urgency=low
 
   **Initial charting support**
@@ -9,11 +36,11 @@ ietfdb (6.32.0) ietf; urgency=low
   * Fixed a blowup which could happen if an rfc doesn't have the standards
     level set.
 
-  * Fixed a bug in the rfceditor index sync introduced by the event saving 
+  * Fixed a bug in the rfceditor index sync introduced by the event saving
     refactoring.
 
-  * Fixed document methods .get_file_path() and .href() for historic 
-    meeting documents, to make urls like /doc/minutes-96-detnet/1/ work.
+  * Fixed document methods .get_file_path() and .href() for historic meeting
+    documents, to make urls like /doc/minutes-96-detnet/1/ work.
 
   * Fixed a bug in bin/mkrelease.
 
@@ -22,64 +49,58 @@ ietfdb (6.32.0) ietf; urgency=low
 
 ietfdb (6.31.1) ietf; urgency=low
 
-  This release adds more proceedings generation functionality, adds
-  slide ordering for session materials, adds caching for the json
-  export for the 'IETFers' iOS app, tweaks some fonts, and fixes a
-  number of bugs:
+  This release adds more proceedings generation functionality, adds slide
+  ordering for session materials, adds caching for the json export for the
+  'IETFers' iOS app, tweaks some fonts, and fixes a number of bugs:
 
-  * Fixed a number of places where events were given the document time, but 
-    the document had not been given a new time yet, after the eventsave 
+  * Fixed a number of places where events were given the document time, but
+    the document had not been given a new time yet, after the eventsave
     refactoring code changes of [11841].  Fixes issue #2004.
 
   * Updated the zone information files used by the datatracker when generating
     iCalendar content.
 
-  * Merged in [11891] from rjsparks@nostrum.com:
-    Modified agenda.json to properly handle meetings that do not have an 
-    agenda yet. Fixes #2003.  
+  * Merged in [11891] from rjsparks@nostrum.com: Modified agenda.json to
+    properly handle meetings that do not have an agenda yet. Fixes #2003.  
 
-  * Merged in [11890] from rcross@amsl.com:
-    Modified the monthly progress report script to deal with unicode
-    characters in document titles.  
+  * Merged in [11890] from rcross@amsl.com: Modified the monthly progress
+    report script to deal with unicode characters in document titles.  
 
-  * Merged in [11889] from rcross@amsl.com:
-    Strip .py extension of report scripts to match the rest.  Add 
-    svn:executable to scripts that were missing it.   
+  * Merged in [11889] from rcross@amsl.com: Strip .py extension of report
+    scripts to match the rest.  Add svn:executable to scripts that were
+    missing it.  
 
-  * Added page caching for json_agenda().  Changed localization of naive 
-    time from database in json_agenda to use settings.PRODUCTION_TIMEZONE.
+  * Added page caching for json_agenda().  Changed localization of naive time
+    from database in json_agenda to use settings.PRODUCTION_TIMEZONE.
 
-  * Merged in [11888] from rjsparks@nostrum.com:
-    Added an order field to sessionpresentation to allow ordering slides. 
-    Reworked the session details page to break slides and drafts into their own 
-    sections.  
+  * Merged in [11888] from rjsparks@nostrum.com: Added an order field to
+    sessionpresentation to allow ordering slides.  Reworked the session
+    details page to break slides and drafts into their own sections.  
 
-  * Added handling for an exception which could occur for charter documents 
+  * Added handling for an exception which could occur for charter documents
     which does not have a matching chartered group.
 
-  * Merged in [11877] from rjsparks@nostrum.com:
-    Copy group chairs on confirmation email when a new group document 
-    revision is submitted that changes the author set. Fixes #1998.  
+  * Merged in [11877] from rjsparks@nostrum.com: Copy group chairs on
+    confirmation email when a new group document revision is submitted that
+    changes the author set. Fixes #1998.  
 
   * Styled the textarea of the charter form to use a monospaced font.
     Corrected the monospace font selection for the dbtemplate textarea.
 
-  * Merged in [11859] from rjsparks@nostrum.com:
-    Put WG summary information on the rechartering page. Fixes #2000.  
+  * Merged in [11859] from rjsparks@nostrum.com: Put WG summary information on
+    the rechartering page. Fixes #2000.  
 
-  * Merged in [11856] from rcross@amslcom:
-    Added a missing meeting fixture.
+  * Merged in [11856] from rcross@amslcom: Added a missing meeting fixture.
 
-  * Merged in [11850] from rcross@amslcom:
-    Added support for the IETF Overview for the proceedings, including an
-    editable database-stored template; completed tests and migrations.
+  * Merged in [11850] from rcross@amslcom: Added support for the IETF Overview
+    for the proceedings, including an editable database-stored template;
+    completed tests and migrations.
 
-  * Merged in [11855] from rjsparks@nostrum.com:
-    Updated the instructions page for the submit tool to reflect what 
-    currently happens.  
+  * Merged in [11855] from rjsparks@nostrum.com: Updated the instructions page
+    for the submit tool to reflect what currently happens.  
 
-  * Merged in [11849] from rcross@amsl.com:
-    Fixed a bug with main secr/proceedings page and added a test.
+  * Merged in [11849] from rcross@amsl.com: Fixed a bug with main
+    secr/proceedings page and added a test.
 
  -- Henrik Levkowetz <henrik@levkowetz.com>  31 Aug 2016 14:20:19 +0000
 
