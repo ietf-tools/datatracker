@@ -10,8 +10,15 @@
     text-align: left;
 }
 .btn-group-vertical .btn .badge {
-        float:right;  margin-top: -1.3em;  
+    float:right;
+    margin-top: 0.15em;
 }
+@-moz-document url-prefix() {
+  .btn-group-vertical .btn .badge {
+     margin-top: -1.3em;  
+  }
+}
+
 {% endblock %}
 
 {% block subtitle %} - Feedback{% endblock %}
