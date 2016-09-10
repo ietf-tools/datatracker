@@ -30,10 +30,13 @@ class Migration(migrations.Migration):
         
             remove_submission_files(submission)
 
+    def reverse(apps, schema_editor):
+        pass
+
     dependencies = [
         ('submit', '0012_auto_20160414_1902'),
     ]
 
     operations = [
-        migrations.RunPython(remove_old_submissions),
+        migrations.RunPython(remove_old_submissions, reverse),
     ]

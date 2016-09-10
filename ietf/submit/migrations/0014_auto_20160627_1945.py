@@ -10,16 +10,25 @@ class Migration(migrations.Migration):
 
         cancelled = DraftSubmissionStateName.objects.get(slug="cancel")
         posted = DraftSubmissionStateName.objects.get(slug="posted")
-        mad = DraftSubmissionStateName.objects.get(slug="waiting-for-draft")
+        waiting = DraftSubmissionStateName.objects.get(slug="waiting-for-draft")
         
-        mad.next_states.add(cancelled)
-        mad.next_states.add(posted)
-        mad.save()
+        waiting.next_states.add(cancelled)
+        waiting.next_states.add(posted)
+
+    def reverse(apps, schema_editor):
+        DraftSubmissionStateName = apps.get_model("name", "DraftSubmissionStateName")
+
+        cancelled = DraftSubmissionStateName.objects.get(slug="cancel")
+        posted = DraftSubmissionStateName.objects.get(slug="posted")
+        waiting = DraftSubmissionStateName.objects.get(slug="waiting-for-draft")
+
+        waiting.next_states.remove(cancelled)
+        waiting.next_states.remove(posted)
 
     dependencies = [
         ('submit', '0013_auto_20160415_2120'),
     ]
 
     operations = [
-        migrations.RunPython(add_next_states),
+        migrations.RunPython(add_next_states, reverse),
     ]
