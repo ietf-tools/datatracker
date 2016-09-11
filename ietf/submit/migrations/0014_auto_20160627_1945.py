@@ -18,12 +18,20 @@ class Migration(migrations.Migration):
     def reverse(apps, schema_editor):
         DraftSubmissionStateName = apps.get_model("name", "DraftSubmissionStateName")
 
-        cancelled = DraftSubmissionStateName.objects.get(slug="cancel")
-        posted = DraftSubmissionStateName.objects.get(slug="posted")
-        waiting = DraftSubmissionStateName.objects.get(slug="waiting-for-draft")
-
-        waiting.next_states.remove(cancelled)
-        waiting.next_states.remove(posted)
+        try:
+            waiting = DraftSubmissionStateName.objects.get(slug="waiting-for-draft")
+            try:
+                cancelled = DraftSubmissionStateName.objects.get(slug="cancel")
+                waiting.next_states.remove(cancelled)
+            except DraftSubmissionStateName.DoesNotExist:
+                pass
+            try:
+                posted = DraftSubmissionStateName.objects.get(slug="posted")
+                waiting.next_states.remove(posted)
+            except DraftSubmissionStateName.DoesNotExist:
+                pass
+        except DraftSubmissionStateName.DoesNotExist:
+            pass
 
     dependencies = [
         ('submit', '0013_auto_20160415_2120'),
