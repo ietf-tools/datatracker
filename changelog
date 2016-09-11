@@ -1,3 +1,23 @@
+ietfdb (6.33.0) ietf; urgency=medium
+
+  This release provides secretariat support for managing draft submissions
+  outside of the automated datatracker draft submission tool.  In addition to
+  making the secreatiat handling of draft submissions that come in by email or
+  other paths easier, it also improves the datatracker submission and document
+  history for these documents.
+
+  From the commit log:
+
+  * Merged in ^/branch/scow/track-manual-id-posts-6.31.1.dev0, which 
+    provides secretariat support for managing draft submissions outside of the 
+    automated datatracker draft submission tool.
+
+  * Fixed an issue where button badges would be positioned differently on 
+    firefox and webkit-based browsers.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  09 Sep 2016 10:00:39 -0700
+
+
 ietfdb (6.32.1) ietf; urgency=low
 
   This is a minor bugfix release, in preparation for merging in the manual
