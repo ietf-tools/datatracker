@@ -15,7 +15,7 @@ ietfdb (6.33.0) ietf; urgency=medium
   * Fixed an issue where button badges would be positioned differently on 
     firefox and webkit-based browsers.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  11 Sep 2016 11:56:36 +0000
+ -- Henrik Levkowetz <henrik@levkowetz.com>  11 Sep 2016 12:39:41 +0000
 
 
 ietfdb (6.32.1) ietf; urgency=low
