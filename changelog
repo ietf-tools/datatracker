@@ -1,5 +1,7 @@
 ietfdb (6.33.0) ietf; urgency=medium
 
+  **Manual Draft Submission Management**
+
   This release provides secretariat support for managing draft submissions
   outside of the automated datatracker draft submission tool.  In addition to
   making the secreatiat handling of draft submissions that come in by email or
