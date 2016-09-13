@@ -905,6 +905,7 @@ def json_agenda(request, num=None ):
     for asgn in meeting.agenda.assignments.exclude(session__type__in=['lead','offagenda','break','reg']):
         sessdict = dict()
         sessdict['objtype'] = 'session'
+        sessdict['id'] = asgn.pk
         if asgn.session.group.type_id in ['wg','rg']:
             sessdict['group'] = asgn.session.group.acronym
             sessdict['parent'] = asgn.session.group.parent.acronym
@@ -935,6 +936,7 @@ def json_agenda(request, num=None ):
     rooms = []
     for room in meeting.room_set.filter(name__in=room_names):
         roomdict = dict()
+        roomdict['id'] = room.pk
         roomdict['objtype'] = 'location'
         roomdict['name'] = room.name
         if room.floorplan:
@@ -952,6 +954,7 @@ def json_agenda(request, num=None ):
     parents = []
     for parent in Group.objects.filter(acronym__in=parent_acronyms):
         parentdict = dict()
+        parentdict['id'] = parent.pk
         parentdict['objtype'] = 'parent'
         parentdict['name'] = parent.acronym
         parentdict['description'] = parent.name
