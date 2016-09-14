@@ -27,7 +27,9 @@ from django.forms.models import modelform_factory, inlineformset_factory
 from django.forms import ModelForm
 from django.template.loader import render_to_string
 from django.utils.functional import curry
+from django.utils.text import slugify
 from django.views.decorators.csrf import ensure_csrf_cookie
+from django.template.defaultfilters import filesizeformat
 
 from ietf.doc.fields import SearchableDocumentsField
 from ietf.doc.models import Document, State, DocEvent, NewRevisionDocEvent
@@ -51,7 +53,6 @@ from ietf.meeting.helpers import send_interim_cancellation_notice
 from ietf.meeting.helpers import send_interim_approval_request
 from ietf.meeting.helpers import send_interim_announcement_request
 from ietf.meeting.utils import finalize
-from ietf.person.models import Person
 from ietf.secr.proceedings.utils import handle_upload_file
 from ietf.utils.mail import send_mail_message
 from ietf.utils.pipe import pipe
@@ -1006,10 +1007,9 @@ def session_details(request, num, acronym ):
     if not sessions:
         raise Http404
 
-    type_counter = Counter()
-
     for session in sessions:
 
+        session.type_counter = Counter()
         ss = session.timeslotassignments.filter(schedule=meeting.agenda).order_by('timeslot__time')
         if ss:
             session.time = ', '.join(x.timeslot.time.strftime("%A %b-%d-%Y %H%M") for x in ss) 
@@ -1028,10 +1028,7 @@ def session_details(request, num, acronym ):
         # TODO FIXME Deleted materials shouldn't be in the sessionpresentation_set
         for qs in [session.filtered_artifacts,session.filtered_slides,session.filtered_drafts]:
             qs = [p for p in qs if p.document.get_state_slug(p.document.type_id)!='deleted']
-            type_counter.update([p.document.type.slug for p in qs])
-
-        #session.filtered_sessionpresentation_set = [p for p in session.sessionpresentation_set.all() if p.document.get_state_slug(p.document.type_id)!='deleted']
-        #type_counter.update([p.document.type.slug for p in session.filtered_sessionpresentation_set])
+            session.type_counter.update([p.document.type.slug for p in qs])
 
     can_manage = can_manage_materials(request.user, Group.objects.get(acronym=acronym))
 
@@ -1040,7 +1037,6 @@ def session_details(request, num, acronym ):
                     'meeting' :meeting ,
                     'acronym' :acronym,
                     'can_manage_materials' : can_manage,
-                    'type_counter': type_counter,
                   })
 
 class SessionDraftsForm(forms.Form):
@@ -1114,6 +1110,8 @@ def upload_session_bluesheets(request, session_id, num):
             if bluesheet_sp:
                 doc = bluesheet_sp.document
                 doc.rev = '%02d' % (int(doc.rev)+1)
+                bluesheet_sp.rev = doc.rev
+                bluesheet_sp.save()
             else:
                 sess_time = session.official_timeslotassignment().timeslot.time
                 if session.meeting.type_id=='ietf':
@@ -1138,7 +1136,7 @@ def upload_session_bluesheets(request, session_id, num):
                 session.sessionpresentation_set.create(document=doc,rev='00')
             filename = '%s-%s%s'% ( doc.name, doc.rev, ext)
             doc.external_url = filename
-            e = NewRevisionDocEvent.objects.create(doc=doc,time=doc.time,by=Person.objects.get(name='(System)'),type='new_revision',desc='New revision available: %s'%doc.rev,rev=doc.rev)
+            e = NewRevisionDocEvent.objects.create(doc=doc,time=doc.time,by=request.user.person,type='new_revision',desc='New revision available: %s'%doc.rev,rev=doc.rev)
             doc.save_with_history([e])
             handle_upload_file(file, filename, session.meeting, 'bluesheets')
             return redirect('ietf.meeting.views.session_details',num=num,acronym=session.group.acronym)
@@ -1149,6 +1147,301 @@ def upload_session_bluesheets(request, session_id, num):
                   {'session': session,
                    'session_number': session_number,
                    'bluesheet_sp' : bluesheet_sp,
+                   'form': form,
+                  })
+
+VALID_MINUTES_EXTENSIONS = ('.txt','.html','.htm','.pdf')
+# FIXME: This form validation code (based on the secretariat upload code) only looks at filename extensions
+#        It should look at the contents of the files instead. 
+class UploadMinutesForm(forms.Form):
+    file = forms.FileField(label='Minutes file to upload. Note that you can only upload minutes in txt, html, or pdf formats.')
+    apply_to_all = forms.BooleanField(label='Apply to all group sessions at this meeting',initial=True,required=False)
+
+    def __init__(self, num_sessions, *args, **kwargs):
+        super(UploadMinutesForm, self).__init__(*args, **kwargs)
+        if num_sessions<2:
+            self.fields.pop('apply_to_all')
+
+    def clean_file(self):
+        file = self.cleaned_data['file']
+        if file._size > settings.SECR_MAX_UPLOAD_SIZE:
+            raise forms.ValidationError('Please keep filesize under %s. Requested upload size is %s' % (filesizeformat(settings.SECR_MAX_UPLOAD_SIZE),filesizeformat(file._size)))
+        if os.path.splitext(file.name)[1].lower() not in VALID_MINUTES_EXTENSIONS:
+            raise forms.ValidationError('Only these file types supported for minutes: %s' % ','.join(VALID_MINUTES_EXTENSIONS))
+        return file
+
+def upload_session_minutes(request, session_id, num):
+    # num is redundant, but we're dragging it along an artifact of where we are in the current URL structure
+    session = get_object_or_404(Session,pk=session_id)
+
+    if not session.can_manage_materials(request.user):
+        return HttpResponseForbidden("You don't have permission to upload minutes for this session.")
+    if session.is_material_submission_cutoff() and not has_role(request.user, "Secretariat"):
+        return HttpResponseForbidden("The materials cutoff for this session has passed. Contact the secretariat for further action.")
+
+    session_number = None
+    sessions = get_sessions(session.meeting.number,session.group.acronym)
+    num_sessions = len(sessions)
+    if len(sessions) > 1:
+       session_number = 1 + sessions.index(session)
+
+    minutes_sp = session.sessionpresentation_set.filter(document__type='minutes').first()
+    
+    if request.method == 'POST':
+        form = UploadMinutesForm(num_sessions,request.POST,request.FILES)
+        if form.is_valid():
+            file = request.FILES['file']
+            _, ext = os.path.splitext(file.name)
+            apply_to_all = True
+            if num_sessions > 1:
+                apply_to_all = form.cleaned_data['apply_to_all']
+            if minutes_sp:
+                doc = minutes_sp.document
+                doc.rev = '%02d' % (int(doc.rev)+1)
+                minutes_sp.rev = doc.rev
+                minutes_sp.save()
+            else:
+                sess_time = session.official_timeslotassignment().timeslot.time
+                if session.meeting.type_id=='ietf':
+                    name = 'minutes-%s-%s' % (session.meeting.number, 
+                                                 session.group.acronym) 
+                    title = 'Minutes IETF%s: %s' % (session.meeting.number, 
+                                                         session.group.acronym) 
+                    if not apply_to_all:
+                        name += '-%s' % (sess_time.strftime("%Y%m%d%H%M"),)
+                        title += ': %s' % (sess_time.strftime("%a %H:%M"),)
+                else:
+                    name = 'minutes-%s-%s' % (session.meeting.number, sess_time.strftime("%Y%m%d%H%M"))
+                    title = 'Minutes %s: %s' % (session.meeting.number, sess_time.strftime("%a %H:%M"))
+                doc = Document.objects.create(
+                          name = name,
+                          type_id = 'minutes',
+                          title = title,
+                          group = session.group,
+                          rev = '00',
+                      )
+                doc.states.add(State.objects.get(type_id='minutes',slug='active'))
+                doc.docalias_set.create(name=doc.name)
+                session.sessionpresentation_set.create(document=doc,rev='00')
+            if apply_to_all:
+                for other_session in sessions:
+                    if other_session != session:
+                        other_session.sessionpresentation_set.filter(document__type='minutes').delete()
+                        other_session.sessionpresentation_set.create(document=doc,rev=doc.rev)
+            filename = '%s-%s%s'% ( doc.name, doc.rev, ext)
+            doc.external_url = filename
+            e = NewRevisionDocEvent.objects.create(doc=doc,time=doc.time,by=request.user.person,type='new_revision',desc='New revision available: %s'%doc.rev,rev=doc.rev)
+            doc.save_with_history([e])
+            # The way this function builds the filename it will never trigger the file delete in handle_file_upload.
+            handle_upload_file(file, filename, session.meeting, 'minutes')
+            return redirect('ietf.meeting.views.session_details',num=num,acronym=session.group.acronym)
+    else: 
+        form = UploadMinutesForm(num_sessions)
+
+    return render(request, "meeting/upload_session_minutes.html", 
+                  {'session': session,
+                   'session_number': session_number,
+                   'minutes_sp' : minutes_sp,
+                   'form': form,
+                  })
+
+VALID_AGENDA_EXTENSIONS = ('.txt','.html','.htm',)
+# FIXME: This form validation code (based on the secretariat upload code) only looks at filename extensions
+#        It should look at the contents of the files instead. 
+class UploadAgendaForm(forms.Form):
+    file = forms.FileField(label='Agenda file to upload. Note that you can only upload agendas in txt or html formats.')
+    apply_to_all = forms.BooleanField(label='Apply to all group sessions at this meeting',initial=True,required=False)
+
+    def __init__(self, num_sessions, *args, **kwargs):
+        super(UploadAgendaForm, self).__init__(*args, **kwargs)
+        if num_sessions<2:
+            self.fields.pop('apply_to_all')
+
+    def clean_file(self):
+        file = self.cleaned_data['file']
+        if file._size > settings.SECR_MAX_UPLOAD_SIZE:
+            raise forms.ValidationError('Please keep filesize under %s. Requested upload size is %s' % (filesizeformat(settings.SECR_MAX_UPLOAD_SIZE),filesizeformat(file._size)))
+        if os.path.splitext(file.name)[1].lower() not in VALID_AGENDA_EXTENSIONS:
+            raise forms.ValidationError('Only these file types supported for agendas: %s' % ','.join(VALID_AGENDA_EXTENSIONS))
+        return file
+
+def upload_session_agenda(request, session_id, num):
+    # num is redundant, but we're dragging it along an artifact of where we are in the current URL structure
+    session = get_object_or_404(Session,pk=session_id)
+
+    if not session.can_manage_materials(request.user):
+        return HttpResponseForbidden("You don't have permission to upload an agenda for this session.")
+    if session.is_material_submission_cutoff() and not has_role(request.user, "Secretariat"):
+        return HttpResponseForbidden("The materials cutoff for this session has passed. Contact the secretariat for further action.")
+
+    session_number = None
+    sessions = get_sessions(session.meeting.number,session.group.acronym)
+    num_sessions = len(sessions)
+    if len(sessions) > 1:
+       session_number = 1 + sessions.index(session)
+
+    agenda_sp = session.sessionpresentation_set.filter(document__type='agenda').first()
+    
+    if request.method == 'POST':
+        form = UploadAgendaForm(num_sessions,request.POST,request.FILES)
+        if form.is_valid():
+            file = request.FILES['file']
+            _, ext = os.path.splitext(file.name)
+            apply_to_all = True
+            if num_sessions > 1:
+                apply_to_all = form.cleaned_data['apply_to_all']
+            if agenda_sp:
+                doc = agenda_sp.document
+                doc.rev = '%02d' % (int(doc.rev)+1)
+                agenda_sp.rev = doc.rev
+                agenda_sp.save()
+            else:
+                sess_time = session.official_timeslotassignment().timeslot.time
+                if session.meeting.type_id=='ietf':
+                    name = 'agenda-%s-%s' % (session.meeting.number, 
+                                                 session.group.acronym) 
+                    title = 'Agenda IETF%s: %s' % (session.meeting.number, 
+                                                         session.group.acronym) 
+                    if not apply_to_all:
+                        name += '-%s' % (sess_time.strftime("%Y%m%d%H%M"),)
+                        title += ': %s' % (sess_time.strftime("%a %H:%M"),)
+                else:
+                    name = 'agenda-%s-%s' % (session.meeting.number, sess_time.strftime("%Y%m%d%H%M"))
+                    title = 'Agenda %s: %s' % (session.meeting.number, sess_time.strftime("%a %H:%M"))
+                doc = Document.objects.create(
+                          name = name,
+                          type_id = 'agenda',
+                          title = title,
+                          group = session.group,
+                          rev = '00',
+                      )
+                doc.states.add(State.objects.get(type_id='agenda',slug='active'))
+                doc.docalias_set.create(name=doc.name)
+                session.sessionpresentation_set.create(document=doc,rev='00')
+            if apply_to_all:
+                for other_session in sessions:
+                    if other_session != session:
+                        other_session.sessionpresentation_set.filter(document__type='agenda').delete()
+                        other_session.sessionpresentation_set.create(document=doc,rev=doc.rev)
+            filename = '%s-%s%s'% ( doc.name, doc.rev, ext)
+            doc.external_url = filename
+            e = NewRevisionDocEvent.objects.create(doc=doc,time=doc.time,by=request.user.person,type='new_revision',desc='New revision available: %s'%doc.rev,rev=doc.rev)
+            doc.save_with_history([e])
+            # The way this function builds the filename it will never trigger the file delete in handle_file_upload.
+            handle_upload_file(file, filename, session.meeting, 'agenda')
+            return redirect('ietf.meeting.views.session_details',num=num,acronym=session.group.acronym)
+    else: 
+        form = UploadAgendaForm(num_sessions)
+
+    return render(request, "meeting/upload_session_agenda.html", 
+                  {'session': session,
+                   'session_number': session_number,
+                   'agenda_sp' : agenda_sp,
+                   'form': form,
+                  })
+
+VALID_SLIDE_EXTENSIONS = ('.doc','.docx','.pdf','.ppt','.pptx','.txt') # Note the removal of .zip
+# FIXME: This form validation code (based on the secretariat upload code) only looks at filename extensions
+#        It should look at the contents of the files instead. 
+class UploadSlidesForm(forms.Form):
+    title = forms.CharField(max_length=255)
+    file = forms.FileField(label='Slides file to upload.')
+    apply_to_all = forms.BooleanField(label='Apply to all group sessions at this meeting',initial=True,required=False)
+
+    def __init__(self, num_sessions, *args, **kwargs):
+        super(UploadSlidesForm, self).__init__(*args, **kwargs)
+        if num_sessions<2:
+            self.fields.pop('apply_to_all')
+
+    def clean_file(self):
+        file = self.cleaned_data['file']
+        if file._size > settings.SECR_MAX_UPLOAD_SIZE:
+            raise forms.ValidationError('Please keep filesize under %s. Requested upload size is %s' % (filesizeformat(settings.SECR_MAX_UPLOAD_SIZE),filesizeformat(file._size)))
+        if os.path.splitext(file.name)[1].lower() not in VALID_SLIDE_EXTENSIONS:
+            raise forms.ValidationError('Only these file types supported for slides: %s' % ','.join(VALID_SLIDE_EXTENSIONS))
+        return file
+
+def upload_session_slides(request, session_id, num, name):
+    # num is redundant, but we're dragging it along an artifact of where we are in the current URL structure
+    session = get_object_or_404(Session,pk=session_id)
+    if not session.can_manage_materials(request.user):
+        return HttpResponseForbidden("You don't have permission to upload slides for this session.")
+    if session.is_material_submission_cutoff() and not has_role(request.user, "Secretariat"):
+        return HttpResponseForbidden("The materials cutoff for this session has passed. Contact the secretariat for further action.")
+
+    session_number = None
+    sessions = get_sessions(session.meeting.number,session.group.acronym)
+    num_sessions = len(sessions)
+    if len(sessions) > 1:
+       session_number = 1 + sessions.index(session)
+
+    slides = None
+    slides_sp = None
+    if name:
+        slides = Document.objects.filter(name=name).first()
+        if not (slides and slides.type_id=='slides'):
+            raise Http404
+        slides_sp = session.sessionpresentation_set.filter(document=slides).first()
+    
+    if request.method == 'POST':
+        form = UploadSlidesForm(num_sessions,request.POST,request.FILES)
+        if form.is_valid():
+            file = request.FILES['file']
+            _, ext = os.path.splitext(file.name)
+            apply_to_all = True
+            if num_sessions > 1:
+                apply_to_all = form.cleaned_data['apply_to_all']
+            if slides_sp:
+                doc = slides_sp.document
+                doc.rev = '%02d' % (int(doc.rev)+1)
+                doc.title = form.cleaned_data['title']
+                slides_sp.rev = doc.rev
+                slides_sp.save()
+            else:
+                title = form.cleaned_data['title']
+                sess_time = session.official_timeslotassignment().timeslot.time
+                if session.meeting.type_id=='ietf':
+                    name = 'slides-%s-%s' % (session.meeting.number, 
+                                             session.group.acronym) 
+                    if not apply_to_all:
+                        name += '-%s' % (sess_time.strftime("%Y%m%d%H%M"),)
+                else:
+                    name = 'slides-%s-%s' % (session.meeting.number, sess_time.strftime("%Y%m%d%H%M"))
+                name = name + '-' + slugify(title)
+                doc = Document.objects.create(
+                          name = name,
+                          type_id = 'slides',
+                          title = title,
+                          group = session.group,
+                          rev = '00',
+                      )
+                doc.states.add(State.objects.get(type_id='slides',slug='active'))
+                doc.states.add(State.objects.get(type_id='reuse_policy',slug='single'))
+                doc.docalias_set.create(name=doc.name)
+                max_order = session.sessionpresentation_set.filter(document__type='slides').aggregate(Max('order'))['order__max'] or 0
+                session.sessionpresentation_set.create(document=doc,rev=doc.rev,order=max_order+1)
+            if apply_to_all:
+                for other_session in sessions:
+                    if other_session != session:
+                        max_order = other_session.sessionpresentation_set.filter(document__type='slides').aggregate(Max('order'))['order__max'] or 0
+                        other_session.sessionpresentation_set.create(document=doc,rev=doc.rev,order=max_order+1)
+            filename = '%s-%s%s'% ( doc.name, doc.rev, ext)
+            doc.external_url = filename
+            e = NewRevisionDocEvent.objects.create(doc=doc,time=doc.time,by=request.user.person,type='new_revision',desc='New revision available: %s'%doc.rev,rev=doc.rev)
+            doc.save_with_history([e])
+            # The way this function builds the filename it will never trigger the file delete in handle_file_upload.
+            handle_upload_file(file, filename, session.meeting, 'slides')
+            return redirect('ietf.meeting.views.session_details',num=num,acronym=session.group.acronym)
+    else: 
+        initial = {}
+        if slides:
+            initial = {'title':slides.title}
+        form = UploadSlidesForm(num_sessions, initial=initial)
+
+    return render(request, "meeting/upload_session_slides.html", 
+                  {'session': session,
+                   'session_number': session_number,
+                   'slides_sp' : slides_sp,
                    'form': form,
                   })
 

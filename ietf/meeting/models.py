@@ -963,6 +963,7 @@ class SessionPresentation(models.Model):
 
     class Meta:
         db_table = 'meeting_session_materials'
+        ordering = ('order',)
 
     def __unicode__(self):
         return u"%s -> %s-%s" % (self.session, self.document.name, self.rev)
@@ -1005,7 +1006,7 @@ class Session(models.Model):
             for d in l:
                 d.meeting_related = lambda: True
         else:
-            l = self.materials.filter(type=material_type).exclude(states__type=material_type, states__slug='deleted').order_by("order")
+            l = self.materials.filter(type=material_type).exclude(states__type=material_type, states__slug='deleted').order_by('sessionpresentation__order')
 
         if only_one:
             if l:

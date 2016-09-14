@@ -2,13 +2,14 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin staticfiles bootstrap3 %}
 
-{% block title %}{% if bluesheet_sp %}Revise{% else %}Upload{% endif %} Bluesheets for {{ session.meeting }} : {{ session.group.acronym }}{% endblock %}
+{% block title %}{% if slides_sp %}Revise{% else %}Upload New{% endif %} Slides for {{ session.meeting }} : {{ session.group.acronym }}{% endblock %}
 
 {% block content %}
   {% origin %}
 
-  <h1>{% if bluesheet_sp %}Revise{% else %}Upload{% endif %} Bluesheets for {{ session.meeting }} : {{ session.group.acronym }}{% if session.name %} : {{session.name}}{% endif %}</h1>
+  <h1>{% if slides_sp %}Revise{% else %}Upload New{% endif %} Slides for {{ session.meeting }} : {{ session.group.acronym }}{% if session.name %} : {{session.name}}{% endif %}</h1>
 {% if session_number %}<h2> Session {{session_number}} : {{session.official_timeslotassignment.timeslot.time|date:"D M-d-Y Hi"}}</h2>{% endif %} 
+{% if slides_sp %}<h3>{{slides_sp.document.name}}</h3>{% endif %}
 
   <form enctype="multipart/form-data" method="post">
     {% csrf_token %}
