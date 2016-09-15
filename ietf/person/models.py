@@ -12,6 +12,7 @@ from django.contrib.auth.models import User
 from django.template.loader import render_to_string
 from django.utils.text import slugify
 
+import debug                            # pyflakes:ignore
 
 from ietf.person.name import name_parts, initials
 from ietf.utils.mail import send_mail_preformatted
@@ -55,10 +56,22 @@ class PersonInfo(models.Model):
                 # It's possibly overkill with unidecode() here, but needed until
                 # we're validating the content of the ascii field, and have
                 # verified that the field is ascii clean in the database:
-                self._cached_ascii_name = unidecode(self.ascii) 
+                if not all(ord(c) < 128 for c in self.ascii):
+                    self._cached_ascii_name = unidecode(self.ascii).strip()
+                else:
+                    self._cached_ascii_name = self.ascii
             else:
-                self._cached_ascii_name = unidecode(self.plain_name())
+                self._cached_ascii_name = unidecode(self.plain_name()).strip()
         return self._cached_ascii_name
+    def plain_ascii(self):
+        if not hasattr(self, '_cached_plain_ascii'):
+            if self.ascii:
+                ascii = unidecode(self.ascii).strip()
+            else:
+                ascii = unidecode(self.name).strip()
+            prefix, first, middle, last, suffix = name_parts(ascii)
+            self._cached_plain_ascii = u" ".join([first, last])
+        return self._cached_plain_ascii
     def initials(self):
         return initials(self.ascii or self.name)
     def last_name(self):

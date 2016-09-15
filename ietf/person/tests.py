@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import json
 from pyquery import PyQuery
 
@@ -47,4 +49,22 @@ class PersonTests(TestCase):
         photo_url = q("div.bio-text img.bio-photo").attr("src")
         r = self.client.get(photo_url)
         self.assertEqual(r.status_code, 200)
+
+    def test_name_methods(self):
+        person = PersonFactory(name=u"Dr. Jens F. Möller", )
+
+        self.assertEqual(person.name, u"Dr. Jens F. Möller" )
+        self.assertEqual(person.ascii_name(), u"Dr. Jens F. Moller" )
+        self.assertEqual(person.plain_name(), u"Jens Möller" )
+        self.assertEqual(person.plain_ascii(), u"Jens Moller" )
+        self.assertEqual(person.initials(), u"J. F.")
+        self.assertEqual(person.first_name(), u"Jens" )
+        self.assertEqual(person.last_name(), u"Möller" )
+
+        person = PersonFactory(name=u"吴建平")
+        # The following are probably incorrect because the given name should
+        # be Jianping and the surname should be Wu ...
+        # TODO: Figure out better handling for names with CJK characters.
+        # Maybe use ietf.person.cjk.*
+        self.assertEqual(person.ascii_name(), u"Wu Jian Ping")
 

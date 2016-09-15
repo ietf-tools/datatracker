@@ -31,7 +31,7 @@ class PersonFactory(factory.DjangoModelFactory):
 
     user = factory.SubFactory(UserFactory)
     name = factory.LazyAttribute(lambda p: '%s %s'%(p.user.first_name,p.user.last_name))
-    ascii = factory.LazyAttribute(lambda p: unidecode(p.name))
+    ascii = factory.LazyAttribute(lambda p: unicode(unidecode(p.name).strip()))
 
     class Params:
         with_bio = factory.Trait(

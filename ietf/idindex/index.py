@@ -239,7 +239,7 @@ def active_drafts_index_by_group(extra_values=()):
         if d:
             if "authors" not in d:
                 d["authors"] = []
-            d["authors"].append(a.author.person.plain_name())
+            d["authors"].append(a.author.person.plain_ascii()) # This should probably change to .plain_name() when non-ascii names are permitted
 
     # put docs into groups
     for d in docs_dict.itervalues():
