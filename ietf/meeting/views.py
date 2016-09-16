@@ -1450,6 +1450,32 @@ def upload_session_slides(request, session_id, num, name):
                    'form': form,
                   })
 
+def set_slide_order(request, session_id, num, name):
+    # num is redundant, but we're dragging it along an artifact of where we are in the current URL structure
+    session = get_object_or_404(Session,pk=session_id)
+    if not Document.objects.filter(type_id='slides',name=name).exists():
+        raise Http404
+    if not session.can_manage_materials(request.user):
+        return HttpResponseForbidden("You don't have permission to upload slides for this session.")
+    if session.is_material_submission_cutoff() and not has_role(request.user, "Secretariat"):
+        return HttpResponseForbidden("The materials cutoff for this session has passed. Contact the secretariat for further action.")
+
+    if request.method != 'POST' or not request.POST:
+        return HttpResponse(json.dumps({ 'success' : False, 'error' : 'No data submitted or not POST' }),content_type='application/json')
+    order_str = request.POST.get('order', None)
+    try:
+        order = int(order_str)
+    except ValueError:
+        return HttpResponse(json.dumps({ 'success' : False, 'error' : 'Supplied order is not valid' }),content_type='application/json')
+    if order <=0 or order > 32767 :
+        return HttpResponse(json.dumps({ 'success' : False, 'error' : 'Supplied order is not valid' }),content_type='application/json')
+    
+    sp = session.sessionpresentation_set.get(document__name = name)
+    sp.order = order
+    sp.save()
+
+    return HttpResponse(json.dumps({'success':True}),content_type='application/json')
+
 @role_required('Secretariat')
 def make_schedule_official(request, num, owner, name):
 
@@ -1962,3 +1988,4 @@ def proceedings_overview(request, num=None):
         'meeting': meeting,
         'template': template,
     })
+

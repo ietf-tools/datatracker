@@ -1,8 +1,14 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
-{% load origin ietf_filters %}
+{% load origin ietf_filters staticfiles %}
 
 {% block title %}{{ meeting }} : {{ acronym }}{% endblock %}
+
+{% block morecss %}
+  .ui-sortable tr {
+    cursor:pointer;
+  }    
+{% endblock %}
 
 {% block content %}
   {% origin %}
@@ -70,11 +76,12 @@
       </div>
     </div>
     <div class="panel panel-default">
-      <div class="panel-heading">Slides</div>
+      <div class="panel-heading" data-toggle="tooltip" title="Drag and drop to reorder slides">Slides</div>
       <div class="panel-body">
-        <table class="table table-condensed table-striped">
+        <table class="table table-condensed table-striped" id="slides">
+         <tbody>
           {% for pres in session.filtered_slides %}
-            <tr>
+            <tr data-order="{{pres.order}}" data-url="{% url 'ietf.meeting.views.set_slide_order' session_id=session.pk num=session.meeting.number name=pres.document.name %}">
               {% if pres.rev %}
                 {% url 'doc_view' name=pres.document.name rev=pres.rev as url %}
               {% else %}
@@ -90,6 +97,7 @@
               {% endif %}
             </tr>
           {% endfor %}
+         </tbody>
         </table>
         {% if can_manage_materials %}
           <a class="btn btn-default pull-right" href="{% url 'ietf.meeting.views.upload_session_slides' session_id=session.pk num=session.meeting.number %}">Upload New Slides</a>
@@ -123,4 +131,55 @@
     </div>
   {% endfor %}
 
+{% endblock %}
+
+{# TODO don't rely on secr/js version of jquery-ui #}
+{# Sorting based loosely on the original secr upload sorting and on http://www.avtex.com/blog/2015/01/27/drag-and-drop-sorting-of-table-rows-in-priority-order/ #}
+{% block js %}
+{% if can_manage_materials %}
+  <script type="text/javascript" src="{% static 'jquery/jquery.min.js' %}"></script>
+  <script type="text/javascript" src="{% static 'secr/js/jquery-ui-1.11.4.custom.min.js' %}"></script>
+  <script type="text/javascript" src="{% static 'jquery.cookie/jquery.cookie.js' %}"></script>
+
+  <script type="text/javascript">
+
+    $.ajaxSetup({
+      crossDomain: false, 
+      beforeSend: function(xhr, settings) {
+        if (!csrfSafeMethod(settings.type)) {
+            xhr.setRequestHeader("X-CSRFToken", $.cookie('csrftoken'));
+        }
+      }
+    });
+
+    $(document).ready(function() {
+      var rowWidthHelper = function (e, tr) {
+        var $originals = tr.children();
+        var $helper = tr.clone();
+        $helper.children().each(function(index)
+        {
+          $(this).width($originals.eq(index).width())
+        });
+        return $helper;
+      };
+
+      $("#slides tbody").sortable({
+        helper: rowWidthHelper,
+        stop: function(event,ui) {adjustDatabase("#slides")}
+      }).disableSelection();
+    });
+
+    function adjustDatabase(tableID) {
+      $(tableID + " tr").each(function() {
+        count = $(this).parent().children().index($(this)) + 1;
+        old_order = $(this).attr("data-order");
+        if ( count != old_order ) {
+          $(this).attr("data-order", count);
+          $.post($(this).attr("data-url"),{'order':count});
+        }
+      });
+    }
+  </script>
+
+{% endif %}
 {% endblock %}
