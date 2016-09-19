@@ -219,7 +219,7 @@ def make_test_data():
     mars_wg.save()
 
     create_person(ames_wg, "chair", name="Ames Chair Man", username="ameschairman")
-    create_person(ames_wg, "delegate", name="WG Dèlegate", username="amesdelegate")
+    create_person(ames_wg, "delegate", name="Ames Delegate", username="amesdelegate")
     create_person(ames_wg, "secr", name="Mr Secretary", username="amessecretary")
     ames_wg.role_set.get_or_create(name_id='ad',person=ad,email=ad.role_email('ad'))
     ames_wg.save()
