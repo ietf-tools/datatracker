@@ -6,8 +6,10 @@ from django.core.urlresolvers import reverse as urlreverse
 import debug                            # pyflakes:ignore
 
 from ietf.person.factories import EmailFactory,PersonFactory
+from ietf.person.models import Person
 from ietf.utils.test_utils import TestCase
 from ietf.utils.test_data import make_test_data
+from ietf.utils.mail import outbox, empty_outbox
 
 
 class PersonTests(TestCase):
@@ -48,3 +50,8 @@ class PersonTests(TestCase):
         r = self.client.get(photo_url)
         self.assertEqual(r.status_code, 200)
 
+    def test_duplicate_person_name(self):
+        empty_outbox()
+        Person.objects.create(name="Duplicate Test")
+        Person.objects.create(name="Duplicate Test")
+        self.assertTrue("possible duplicate" in outbox[0]["Subject"].lower())
