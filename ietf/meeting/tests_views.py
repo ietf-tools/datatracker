@@ -1451,3 +1451,26 @@ class MaterialsTests(TestCase):
         self.assertEqual(sp.rev,u'01')
         self.assertEqual(sp.document.rev,u'01')
  
+    def test_remove_sessionpresentation(self):
+        session = SessionFactory(meeting__type_id='ietf')
+        doc = DocumentFactory(type_id='slides')
+        session.sessionpresentation_set.create(document=doc)
+
+        url = urlreverse('ietf.meeting.views.remove_sessionpresentation',kwargs={'num':session.meeting.number,'session_id':session.id,'name':'no-such-doc'})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
+        url = urlreverse('ietf.meeting.views.remove_sessionpresentation',kwargs={'num':session.meeting.number,'session_id':0,'name':doc.name})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
+        url = urlreverse('ietf.meeting.views.remove_sessionpresentation',kwargs={'num':session.meeting.number,'session_id':session.id,'name':doc.name})
+        login_testing_unauthorized(self,"secretary",url)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+        self.assertEqual(1,session.sessionpresentation_set.count())
+        response = self.client.post(url,{'remove_session':''})
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(0,session.sessionpresentation_set.count())
+        self.assertEqual(2,doc.docevent_set.count())

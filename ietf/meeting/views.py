@@ -38,7 +38,7 @@ from ietf.doc.models import Document, State, DocEvent, NewRevisionDocEvent
 from ietf.group.models import Group
 from ietf.group.utils import can_manage_materials
 from ietf.ietfauth.utils import role_required, has_role
-from ietf.meeting.models import Meeting, Session, Schedule, Room, FloorPlan
+from ietf.meeting.models import Meeting, Session, Schedule, Room, FloorPlan, SessionPresentation
 from ietf.meeting.helpers import get_areas, get_person_by_email, get_schedule_by_name
 from ietf.meeting.helpers import build_all_agenda_slices, get_wg_name_list
 from ietf.meeting.helpers import get_all_assignments_from_schedule
@@ -1414,16 +1414,21 @@ def upload_session_slides(request, session_id, num, name):
                 else:
                     name = 'slides-%s-%s' % (session.meeting.number, sess_time.strftime("%Y%m%d%H%M"))
                 name = name + '-' + slugify(title)
-                doc = Document.objects.create(
-                          name = name,
-                          type_id = 'slides',
-                          title = title,
-                          group = session.group,
-                          rev = '00',
-                      )
+                if Document.objects.filter(name=name).exists():
+                   doc = Document.objects.get(name=name)
+                   doc.rev = '%02d' % (int(doc.rev)+1)
+                   doc.title = form.cleaned_data['title']
+                else:
+                    doc = Document.objects.create(
+                              name = name,
+                              type_id = 'slides',
+                              title = title,
+                              group = session.group,
+                              rev = '00',
+                          )
+                    doc.docalias_set.create(name=doc.name)
                 doc.states.add(State.objects.get(type_id='slides',slug='active'))
                 doc.states.add(State.objects.get(type_id='reuse_policy',slug='single'))
-                doc.docalias_set.create(name=doc.name)
                 max_order = session.sessionpresentation_set.filter(document__type='slides').aggregate(Max('order'))['order__max'] or 0
                 session.sessionpresentation_set.create(document=doc,rev=doc.rev,order=max_order+1)
             if apply_to_all:
@@ -1450,6 +1455,22 @@ def upload_session_slides(request, session_id, num, name):
                    'slides_sp' : slides_sp,
                    'form': form,
                   })
+
+def remove_sessionpresentation(request, session_id, num, name):
+    sp = get_object_or_404(SessionPresentation,session_id=session_id,document__name=name)
+    session = sp.session
+    if not session.can_manage_materials(request.user):
+        return HttpResponseForbidden("You don't have permission to manage materials for this session.")
+    if session.is_material_submission_cutoff() and not has_role(request.user, "Secretariat"):
+        return HttpResponseForbidden("The materials cutoff for this session has passed. Contact the secretariat for further action.")
+    if request.method == 'POST':
+        session.sessionpresentation_set.filter(pk=sp.pk).delete()
+        c = DocEvent(type="added_comment", doc=sp.document, by=request.user.person)
+        c.desc = "Removed from session: %s" % (session)
+        c.save()
+        return redirect('ietf.meeting.views.session_details', num=session.meeting.number, acronym=session.group.acronym)
+
+    return render(request,'meeting/remove_sessionpresentation.html', {'sp': sp })
 
 def set_slide_order(request, session_id, num, name):
     # num is redundant, but we're dragging it along an artifact of where we are in the current URL structure

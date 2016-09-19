@@ -15,6 +15,7 @@ safe_for_all_meeting_types = [
     url(r'^session/(?P<session_id>\d+)/agenda$', views.upload_session_agenda),
     url(r'^session/(?P<session_id>\d+)/slides(?:/%(name)s)?$' % settings.URL_REGEXPS, views.upload_session_slides),
     url(r'^session/(?P<session_id>\d+)/slides/%(name)s/order$' % settings.URL_REGEXPS, views.set_slide_order),
+    url(r'^session/(?P<session_id>\d+)/doc/%(name)s/remove$' % settings.URL_REGEXPS, views.remove_sessionpresentation),
 ]
 
 

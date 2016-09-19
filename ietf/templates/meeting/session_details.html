@@ -95,6 +95,7 @@
               {% if can_manage_materials %}
                 <td class="col-md-2">
                   <a class="btn btn-default btn-sm pull-right" href="{% url 'ietf.meeting.views.upload_session_slides' session_id=session.pk num=session.meeting.number name=pres.document.name %}">Upload Revision</a>
+                  <a class="btn btn-default btn-sm pull-right" href="{% url 'ietf.meeting.views.remove_sessionpresentation' session_id=session.pk num=session.meeting.number name=pres.document.name %}">Remove</a>
                 </td>
               {% endif %}
             </tr>
@@ -121,6 +122,11 @@
                 {% endif %}
                 <a href="{{url}}">{{pres.document.title}} ({{ pres.document.name }}{% if pres.rev %}-{{ pres.rev }}{% endif %})</a>
               </td>
+              {% if can_manage_materials %}
+                <td class="col-md-2">
+                  <a class="btn btn-default btn-sm pull-right" href="{% url 'ietf.meeting.views.remove_sessionpresentation' session_id=session.pk num=session.meeting.number name=pres.document.name %}">Remove</a>
+                </td>
+              {% endif %}
             </tr>
           {% endfor %}
         </table>
