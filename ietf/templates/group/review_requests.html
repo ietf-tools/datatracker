@@ -16,7 +16,7 @@
   <h2>Open review requests</h2>
 
   {% if open_review_requests %}
-    <table class="table table-condensed table-striped materials tablesorter">
+    <table class="table table-condensed table-striped tablesorter">
       <thead>
         <tr>
           <th>Request</th>
@@ -31,14 +31,16 @@
           <tr>
             <td><a {% if r.pk != None %}href="{% url "ietf.doc.views_review.review_request" name=r.doc.name request_id=r.pk %}"{% endif %}>{{ r.doc.name }}-{% if r.requested_rev %}{{ r.requested_rev }}{% else %}{{ r.doc.rev }}{% endif %}</a></td>
             <td>{{ r.type.name }}</td>
-            <td>{% if r.time %}{{ r.time|date:"Y-m-d" }}{% else %}<em>auto-suggested</em>{% endif %}</td>
+            <td>{% if r.pk %}{{ r.time|date:"Y-m-d" }}{% else %}<em>auto-suggested</em>{% endif %}</td>
             <td>
               {{ r.deadline|date:"Y-m-d" }}
               {% if r.due %}<span class="label label-warning">{{ r.due }} day{{ r.due|pluralize }}</span>{% endif %}
             </td>
             <td>
               {% if r.reviewer %}
-                {{ r.reviewer.person }} {% if r.state_id == "accepted" %}<span class="label label-default">Accepted</span>{% endif %}
+                {{ r.reviewer.person }}
+                {% if r.state_id == "accepted" %}<span class="label label-default">Accepted</span>{% endif %}
+                {% if r.reviewer_unavailable %}<span class="label label-danger">Unavailable</span>{% endif %}
               {% elif r.pk != None %}
                 <em>not yet assigned</em>
               {% endif %}

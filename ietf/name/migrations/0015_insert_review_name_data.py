@@ -55,7 +55,7 @@ def noop(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('name', '0011_reviewrequeststatename_reviewresultname_reviewtypename'),
+        ('name', '0014_reviewrequeststatename_reviewresultname_reviewtypename'),
         ('group', '0001_initial'),
         ('doc', '0001_initial'),
     ]

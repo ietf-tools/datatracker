@@ -13,28 +13,69 @@ class ReviewerSettings(models.Model):
     reviewer and team."""
     team        = models.ForeignKey(Group)
     person      = models.ForeignKey(Person)
-    FREQUENCIES = [
+    INTERVALS = [
         (7, "Once per week"),
         (14, "Once per fortnight"),
         (30, "Once per month"),
         (61, "Once per two months"),
         (91, "Once per quarter"),
     ]
-    frequency   = models.IntegerField(default=30, help_text="Can review every N days", choices=FREQUENCIES)
-    unavailable_until = models.DateTimeField(blank=True, null=True, help_text="When will this reviewer be available again")
-    filter_re   = models.CharField(max_length=255, blank=True)
-    skip_next   = models.IntegerField(default=0, help_text="Skip the next N review assignments")
+    min_interval = models.IntegerField(default=30, verbose_name="Can review at most", choices=INTERVALS)
+    filter_re   = models.CharField(max_length=255, verbose_name="Filter regexp", blank=True, help_text="Draft names matching regular expression should not be assigned")
+    skip_next   = models.IntegerField(default=0, verbose_name="Skip next assignments")
 
     def __unicode__(self):
         return u"{} in {}".format(self.person, self.team)
 
+class UnavailablePeriod(models.Model):
+    team         = models.ForeignKey(Group)
+    person       = models.ForeignKey(Person)
+    start_date   = models.DateField(default=datetime.date.today, help_text="Choose the start date so that you can still do a review if it's assigned just before the start date - this usually means you should mark yourself unavailable for assignment some time before you are actually away.")
+    end_date     = models.DateField(blank=True, null=True, help_text="Leaving the end date blank means that the period continues indefinitely. You can end it later.")
+    AVAILABILITY_CHOICES = [
+        ("canfinish", "Can do follow-ups"),
+        ("unavailable", "Completely unavailable"),
+    ]
+    LONG_AVAILABILITY_CHOICES = [
+        ("canfinish", "Can do follow-up reviews and finish outstanding reviews"),
+        ("unavailable", "Completely unavailable - reassign any outstanding reviews"),
+    ]
+    availability = models.CharField(max_length=30, choices=AVAILABILITY_CHOICES)
+
+    def state(self):
+        import datetime
+        today = datetime.date.today()
+        if self.start_date <= today:
+            if not self.end_date or today <= self.end_date:
+                return "active"
+            else:
+                return "past"
+        else:
+            return "future"
+
+    def __unicode__(self):
+        return u"{} is unavailable in {} {} - {}".format(self.person, self.team.acronym, self.start_date, self.end_date or "")
+
+class ReviewWish(models.Model):
+    """Reviewer wishes to review a document when it becomes available for review."""
+    time        = models.DateTimeField(default=datetime.datetime.now)
+    team        = models.ForeignKey(Group)
+    person      = models.ForeignKey(Person)
+    doc         = models.ForeignKey(Document)
+
+    def __unicode__(self):
+        return u"{} wishes to review {} in {}".format(self.person, self.doc.name, self.team.acronym)
+    
 class ReviewTeamResult(models.Model):
-     """Captures that a result name is valid for a given team for new
-     reviews. This also implicitly defines which teams are review
-     teams - if there are no possible review results valid for a given
-     team, it can't be a review team."""
-     team        = models.ForeignKey(Group)
-     result      = models.ForeignKey(ReviewResultName)
+    """Captures that a result name is valid for a given team for new
+    reviews. This also implicitly defines which teams are review
+    teams - if there are no possible review results valid for a given
+    team, it can't be a review team."""
+    team        = models.ForeignKey(Group)
+    result      = models.ForeignKey(ReviewResultName)
+
+    def __unicode__(self):
+        return u"{} in {}".format(self.result.name, self.group.acronym)
 
 class ReviewRequest(models.Model):
     """Represents a request for a review and the process it goes through.

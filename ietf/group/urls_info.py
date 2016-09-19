@@ -4,7 +4,7 @@ from django.conf.urls import patterns, include
 from django.views.generic import RedirectView
 from django.conf import settings
 
-from ietf.group import views, views_edit, views_review
+from ietf.group import views, views_edit
 
 urlpatterns = patterns('',
     (r'^$', views.active_groups), 
@@ -21,7 +21,5 @@ urlpatterns = patterns('',
     (r'^email-aliases/$', 'ietf.group.views.email_aliases'),
     (r'^bofs/create/$', views_edit.edit, {'action': "create", }, "bof_create"),
     (r'^photos/$', views.chair_photos),
-    (r'^reviews/$', views.review_requests),
-    (r'^reviews/manage/$', views_review.manage_review_requests),
     (r'^%(acronym)s/' % settings.URL_REGEXPS, include('ietf.group.urls_info_details')),
 )

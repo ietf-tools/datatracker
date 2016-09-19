@@ -51,7 +51,7 @@
 
                 <div>
                   <small>
-                    <a {% if r.pk != None %}href="{% url "ietf.doc.views_review.review_request" name=r.doc.name request_id=r.pk %}"{% endif %}>{% if r.time %}Req: {{ r.time|date:"Y-m-d" }}{% else %}<em>auto-suggested</em>{% endif %} - {{ r.type.name }}</a>
+                    <a {% if r.pk != None %}href="{% url "ietf.doc.views_review.review_request" name=r.doc.name request_id=r.pk %}"{% endif %}>{% if r.pk != None %}Req: {{ r.time|date:"Y-m-d" }}{% else %}<em>auto-suggested</em>{% endif %} - {{ r.type.name }}</a>
                   </small>
                 </div>
 
@@ -84,7 +84,11 @@
 
                 <span class="assign-action">
                   {% if r.reviewer %}
-                    <button type="button" class="btn btn-default btn-sm" title="Click to reassign reviewer">{{ r.reviewer.person }}{% if r.state_id == "accepted" %} <span class="label label-default">accp</span>{% endif %}</button>
+                    <button type="button" class="btn btn-default btn-sm" title="Click to reassign reviewer">
+                      {{ r.reviewer.person }}
+                      {% if r.state_id == "accepted" %} <span class="label label-default">accp</span>{% endif %}
+                      {% if r.reviewer_unavailable %}<span class="label label-danger">unavail</span>{% endif %}
+                    </button>
                   {% else %}
                     <button type="button" class="btn btn-default btn-sm" title="Click to assign reviewer"><em>not yet assigned</em></button>
                   {% endif %}

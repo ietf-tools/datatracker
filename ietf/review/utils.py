@@ -2,6 +2,7 @@ import datetime, re
 from collections import defaultdict
 
 from django.db import models
+from django.db.models import Q
 from django.core.urlresolvers import reverse as urlreverse
 
 from ietf.group.models import Group, Role
@@ -9,7 +10,8 @@ from ietf.doc.models import Document, DocEvent, State, LastCallDocEvent, Documen
 from ietf.iesg.models import TelechatDate
 from ietf.person.models import Person, Email
 from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream
-from ietf.review.models import ReviewRequest, ReviewRequestStateName, ReviewTypeName, ReviewerSettings
+from ietf.review.models import (ReviewRequest, ReviewRequestStateName, ReviewTypeName,
+                                ReviewerSettings, UnavailablePeriod, ReviewWish)
 from ietf.utils.mail import send_mail
 from ietf.doc.utils import extract_complete_replaces_ancestor_mapping_for_docs
 
@@ -34,12 +36,13 @@ def can_manage_review_requests_for_team(user, team, allow_non_team_personnel=Tru
             or (allow_non_team_personnel and has_role(user, "Secretariat")))
 
 def review_requests_to_list_for_doc(doc):
-    return extract_revision_ordered_review_requests_for_documents(
-        ReviewRequest.objects.filter(
-            state__in=["requested", "accepted", "part-completed", "completed"],
-        ).prefetch_related("result"),
-        [doc.name]
-    ).get(doc.pk, [])
+    request_qs = ReviewRequest.objects.filter(
+        state__in=["requested", "accepted", "part-completed", "completed"],
+    ).prefetch_related("result")
+
+    doc_names = [doc.name]
+
+    return extract_revision_ordered_review_requests_for_documents(request_qs, doc_names).get(doc.pk, [])
 
 def no_review_from_teams_on_doc(doc, rev):
     return Group.objects.filter(
@@ -47,6 +50,27 @@ def no_review_from_teams_on_doc(doc, rev):
         reviewrequest__reviewed_rev=rev,
         reviewrequest__state="no-review-version",
     ).distinct()
+
+def unavailability_periods_to_list(past_days=30):
+    return UnavailablePeriod.objects.filter(
+        Q(end_date=None) | Q(end_date__gte=datetime.date.today() - datetime.timedelta(days=past_days)),
+    ).order_by("start_date")
+
+def current_unavailable_periods_for_reviewers(team):
+    """Return dict with currently active unavailable periods for reviewers."""
+    today = datetime.date.today()
+
+    unavailable_period_qs = UnavailablePeriod.objects.filter(
+        Q(end_date__gte=today) | Q(end_date=None),
+        start_date__lte=today,
+        team=team,
+    ).order_by("end_date")
+
+    res = defaultdict(list)
+    for period in unavailable_period_qs:
+        res[period.person_id].append(period)
+
+    return res
 
 def make_new_review_request_from_existing(review_req):
     obj = ReviewRequest()
@@ -61,6 +85,47 @@ def make_new_review_request_from_existing(review_req):
     return obj
 
 def email_review_request_change(request, review_req, subject, msg, by, notify_secretary, notify_reviewer, notify_requested_by):
+    """Notify stakeholders about change, skipping a party if the change
+    was done by that party."""
+
+    system_email = Person.objects.get(name="(System)").formatted_email()
+
+    to = []
+
+    def extract_email_addresses(objs):
+        if any(o.person == by for o in objs if o):
+            l = []
+        else:
+            l = []
+            for o in objs:
+                if o:
+                    e = o.formatted_email()
+                    if e != system_email:
+                        l.append(e)
+
+        for e in l:
+            if e not in to:
+                to.append(e)
+
+    if notify_secretary:
+        extract_email_addresses(Role.objects.filter(name="secr", group=review_req.team).distinct())
+    if notify_reviewer:
+        extract_email_addresses([review_req.reviewer])
+    if notify_requested_by:
+        extract_email_addresses([review_req.requested_by.email()])
+        
+    if not to:
+        return
+
+    url = urlreverse("ietf.doc.views_review.review_request", kwargs={ "name": review_req.doc.name, "request_id": review_req.pk })
+    url = request.build_absolute_uri(url)
+    send_mail(request, to, None, subject, "review/review_request_changed.txt", {
+        "review_req_url": url,
+        "review_req": review_req,
+        "msg": msg,
+    })
+
+def email_reviewer_availability_change(request, team, reviewer_role, msg, by):
     """Notify possibly both secretary and reviewer about change, skipping
     a party if the change was done by that party."""
 
@@ -83,22 +148,23 @@ def email_review_request_change(request, review_req, subject, msg, by, notify_se
             if e not in to:
                 to.append(e)
 
-    if notify_secretary:
-        extract_email_addresses(Role.objects.filter(name__in=["secr", "delegate"], group=review_req.team).distinct())
-    if notify_reviewer:
-        extract_email_addresses([review_req.reviewer])
-    if notify_requested_by:
-        extract_email_addresses([review_req.requested_by.email()])
-        
+    extract_email_addresses(Role.objects.filter(name="secr", group=team).distinct())
+
+    extract_email_addresses([reviewer_role])
+
     if not to:
         return
 
-    url = urlreverse("ietf.doc.views_review.review_request", kwargs={ "name": review_req.doc.name, "request_id": review_req.pk })
+    subject = "Reviewer availability of {} changed in {}".format(reviewer_role.person, team.acronym)
+
+    url = urlreverse("ietf.group.views_review.reviewer_overview", kwargs={ "group_type": team.type_id, "acronym": team.acronym })
     url = request.build_absolute_uri(url)
-    send_mail(request, to, None, subject, "doc/mail/review_request_changed.txt", {
-        "review_req_url": url,
-        "review_req": review_req,
+    send_mail(request, to, None, subject, "review/reviewer_availability_changed.txt", {
+        "reviewer_overview_url": url,
+        "reviewer": reviewer_role.person,
+        "team": team,
         "msg": msg,
+        "by": by,
     })
 
 def assign_review_request_to_reviewer(request, review_req, reviewer):
@@ -181,7 +247,6 @@ def suggested_review_requests_for_team(team):
                 continue
 
             requests[doc.pk] = ReviewRequest(
-                time=None,
                 type=last_call_type,
                 doc=doc,
                 team=team,
@@ -211,7 +276,6 @@ def suggested_review_requests_for_team(team):
                 continue
 
             requests[doc.pk] = ReviewRequest(
-                time=None,
                 type=telechat_type,
                 doc=doc,
                 team=team,
@@ -306,10 +370,19 @@ def make_assignment_choices(email_queryset, review_req):
     team = review_req.team
 
     possible_emails = list(email_queryset)
+    possible_person_ids = [e.person_id for e in possible_emails]
 
     aliases = DocAlias.objects.filter(document=doc).values_list("name", flat=True)
 
-    reviewers = { r.person_id: r for r in ReviewerSettings.objects.filter(team=team, person__in=[e.person_id for e in possible_emails]) }
+    # settings
+    reviewer_settings = {
+        r.person_id: r
+        for r in ReviewerSettings.objects.filter(team=team, person__in=possible_person_ids)
+    }
+
+    for p in possible_person_ids:
+        if p not in reviewer_settings:
+            reviewer_settings[p] = ReviewerSettings()
 
     # time since past assignment
     latest_assignment_for_reviewer = dict(ReviewRequest.objects.filter(
@@ -328,8 +401,8 @@ def make_assignment_choices(email_queryset, review_req):
 
     has_reviewed_previous = set(has_reviewed_previous.values_list("reviewer", flat=True))
 
-    # review indications
-    would_like_to_review = set() # FIXME: fill in
+    # review wishes
+    wish_to_review = set(ReviewWish.objects.filter(team=team, person__in=possible_person_ids, doc=doc).values_list("person", flat=True))
 
     # connections
     connections = {}
@@ -343,23 +416,19 @@ def make_assignment_choices(email_queryset, review_req):
     for e in DocumentAuthor.objects.filter(document=doc, author__in=possible_emails).values_list("author", flat=True):
         connections[e] = "is author of document"
 
-    now = datetime.datetime.now()
+    # unavailable periods
+    unavailable_periods = current_unavailable_periods_for_reviewers(team)
 
-    def add_boolean_score(scores, direction, expr, explanation):
-        scores.append(int(bool(expr)) * direction)
-        if expr:
-            explanations.append(explanation)
+    now = datetime.datetime.now()
 
     ranking = []
     for e in possible_emails:
-        reviewer = reviewers.get(e.person_id)
-        if not reviewer:
-            reviewer = ReviewerSettings()
+        settings = reviewer_settings.get(e.person_id)
 
         days_past = None
         latest = latest_assignment_for_reviewer.get(e.pk)
         if latest is not None:
-            days_past = (now - latest).days - reviewer.frequency
+            days_past = (now - latest).days - settings.min_interval
 
         if days_past is None:
             ready_for = "first time"
@@ -369,7 +438,7 @@ def make_assignment_choices(email_queryset, review_req):
                 ready_for = "ready for {} {}".format(d, "day" if d == 1 else "days")
             else:
                 d = -d
-                ready_for = "frequency exceeded, ready in {} {}".format(d, "day" if d == 1 else "days")
+                ready_for = "max frequency exceeded, ready in {} {}".format(d, "day" if d == 1 else "days")
 
 
         # we sort the reviewers by separate axes, listing the most
@@ -377,13 +446,31 @@ def make_assignment_choices(email_queryset, review_req):
         scores = []
         explanations = []
 
+        def add_boolean_score(direction, expr, explanation=None):
+            scores.append(direction if expr else -direction)
+            if expr and explanation:
+                explanations.append(explanation)
+
         explanations.append(ready_for) # show ready for explanation first, but sort it after the other issues
 
-        add_boolean_score(scores, +1, e.pk in has_reviewed_previous, "reviewed document before")
-        add_boolean_score(scores, +1, e.pk in would_like_to_review, "wants to review document")
-        add_boolean_score(scores, -1, e.pk in connections, connections.get(e.pk)) # reviewer is somehow connected: bad
-        add_boolean_score(scores, -1, reviewer.filter_re and any(re.search(reviewer.filter_re, n) for n in aliases), "filter regexp matches")
-        add_boolean_score(scores, -1, reviewer.unavailable_until and reviewer.unavailable_until > now, "unavailable until {}".format((reviewer.unavailable_until or now).strftime("%Y-%m-%d %H:%M:%S")))
+        periods = unavailable_periods.get(e.person_id, [])
+        unavailable_at_the_moment = periods and not (e.pk in has_reviewed_previous and all(p.availability == "canfinish" for p in periods))
+        add_boolean_score(-1, unavailable_at_the_moment)
+
+        def format_period(p):
+            if p.end_date:
+                res = "unavailable until {}".format(p.end_date.isoformat())
+            else:
+                res = "unavailable indefinitely"
+            return "{} ({})".format(res, p.get_availability_display())
+
+        if periods:
+            explanations.append(", ".join(format_period(p) for p in periods))
+        
+        add_boolean_score(+1, e.pk in has_reviewed_previous, "reviewed document before")
+        add_boolean_score(+1, e.person_id in wish_to_review, "wishes to review document")
+        add_boolean_score(-1, e.pk in connections, connections.get(e.pk)) # reviewer is somehow connected: bad
+        add_boolean_score(-1, settings.filter_re and any(re.search(settings.filter_re, n) for n in aliases), "filter regexp matches")
 
         scores.append(100000 if days_past is None else days_past)
 

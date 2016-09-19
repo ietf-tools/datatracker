@@ -400,7 +400,7 @@ def make_review_data(doc):
     p = Person.objects.get(user__username="plain")
     email = p.email_set.first()
     Role.objects.create(name_id="reviewer", person=p, email=email, group=team)
-    ReviewerSettings.objects.create(team=team, person=p, frequency=14, skip_next=0)
+    ReviewerSettings.objects.create(team=team, person=p, min_interval=14, skip_next=0)
 
     review_req = ReviewRequest.objects.create(
         doc=doc,

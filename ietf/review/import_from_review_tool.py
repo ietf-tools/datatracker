@@ -16,8 +16,9 @@ django.setup()
 import datetime
 from collections import namedtuple
 from django.db import connections
-from ietf.review.models import ReviewRequest, ReviewerSettings, ReviewResultName
-from ietf.review.models import ReviewRequestStateName, ReviewTypeName, ReviewTeamResult
+from ietf.review.models import (ReviewRequest, ReviewerSettings, ReviewResultName,
+                                ReviewRequestStateName, ReviewTypeName, ReviewTeamResult,
+                                UnavailablePeriod)
 from ietf.group.models import Group, Role, RoleName
 from ietf.person.models import Person, Email, Alias
 import argparse
@@ -113,14 +114,30 @@ with db_con.cursor() as c:
                     print "created reviewer", reviewer.pk, unicode(reviewer).encode("utf-8")
 
                 if autopolicy_days.get(row.autopolicy):
-                    reviewer.frequency = autopolicy_days.get(row.autopolicy)
-                reviewer.unavailable_until = parse_timestamp(row.available)
+                    reviewer.min_interval = autopolicy_days.get(row.autopolicy)
+
                 reviewer.filter_re = row.donotassign
                 try:
                     reviewer.skip_next = int(row.autopolicy)
                 except ValueError:
                     pass
                 reviewer.save()
+
+                unavailable_until = parse_timestamp(row.available)
+                if unavailable_until:
+                    today = datetime.date.today()
+                    end_date = unavailable_until.date()
+                    if end_date >= today:
+                        UnavailablePeriod.objects.filter(person=email.person, team=team).delete()
+
+                        UnavailablePeriod.objects.create(
+                            team=team,
+                            person=email.person,
+                            start_date=today,
+                            end_date=end_date,
+                            availability="unavailable",
+                        )
+
 
 # review requests
 

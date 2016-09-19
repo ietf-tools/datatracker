@@ -70,7 +70,9 @@ from ietf.ietfauth.utils import has_role
 from ietf.meeting.utils import group_sessions
 from ietf.meeting.helpers import get_meeting
 from ietf.review.models import ReviewRequest
-from ietf.review.utils import can_manage_review_requests_for_team, suggested_review_requests_for_team
+from ietf.review.utils import (can_manage_review_requests_for_team,
+                               suggested_review_requests_for_team,
+                               current_unavailable_periods_for_reviewers)
 
 def roles(group, role_name):
     return Role.objects.filter(group=group, name=role_name).select_related("email", "person")
@@ -669,12 +671,17 @@ def review_requests(request, acronym, group_type=None):
         team=group, state__in=("requested", "accepted")
     ).prefetch_related("reviewer", "type", "state").order_by("-time", "-id"))
 
-    open_review_requests += suggested_review_requests_for_team(group)
+    unavailable_periods = current_unavailable_periods_for_reviewers(group)
+    for review_req in open_review_requests:
+        if review_req.reviewer:
+            review_req.reviewer_unavailable = any(p.availability == "unavailable"
+                                                  for p in unavailable_periods.get(review_req.reviewer.person_id, []))
+
+    open_review_requests = suggested_review_requests_for_team(group) + open_review_requests
 
     today = datetime.date.today()
     for r in open_review_requests:
-        delta = today - r.deadline
-        r.due = max(0, delta.days)
+        r.due = max(0, (today - r.deadline).days)
 
     closed_review_requests = ReviewRequest.objects.filter(
         team=group,

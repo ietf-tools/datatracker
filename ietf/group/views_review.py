@@ -1,19 +1,28 @@
-from django.shortcuts import render, redirect
-from django.http import Http404, HttpResponseForbidden
+import datetime
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.http import Http404, HttpResponseForbidden, HttpResponseRedirect
 from django.contrib.auth.decorators import login_required
+from django.core.urlresolvers import reverse as urlreverse
 from django import forms
 from django.template.loader import render_to_string
 
-from ietf.review.models import ReviewRequest
+from ietf.review.models import ReviewRequest, ReviewerSettings, UnavailablePeriod
 from ietf.review.utils import (can_manage_review_requests_for_team, close_review_request_states,
                                extract_revision_ordered_review_requests_for_documents,
                                assign_review_request_to_reviewer,
                                close_review_request,
                                setup_reviewer_field,
-                               suggested_review_requests_for_team)
+                               suggested_review_requests_for_team,
+                               unavailability_periods_to_list,
+                               current_unavailable_periods_for_reviewers,
+                               email_reviewer_availability_change)
+from ietf.group.models import Role
 from ietf.group.utils import get_group_or_404
 from ietf.person.fields import PersonEmailChoiceField
 from ietf.utils.mail import send_mail_text
+from ietf.utils.fields import DatepickerDateField
+from ietf.ietfauth.utils import user_is_person
 
 
 class ManageReviewRequestForm(forms.Form):
@@ -71,16 +80,24 @@ def manage_review_requests(request, acronym, group_type=None):
     if not can_manage_review_requests_for_team(request.user, group):
         return HttpResponseForbidden("You do not have permission to perform this action")
 
-    review_requests = list(ReviewRequest.objects.filter(
+    unavailable_periods = current_unavailable_periods_for_reviewers(group)
+
+    open_review_requests = list(ReviewRequest.objects.filter(
         team=group, state__in=("requested", "accepted")
     ).prefetch_related("reviewer", "type", "state").order_by("-time", "-id"))
 
-    review_requests += suggested_review_requests_for_team(group)
+    for review_req in open_review_requests:
+        if review_req.reviewer:
+            review_req.reviewer_unavailable = any(p.availability == "unavailable"
+                                                  for p in unavailable_periods.get(review_req.reviewer.person_id, []))
+
+    review_requests = suggested_review_requests_for_team(group) + open_review_requests
 
     document_requests = extract_revision_ordered_review_requests_for_documents(
         ReviewRequest.objects.filter(state__in=("part-completed", "completed"), team=group).prefetch_related("result"),
         set(r.doc_id for r in review_requests),
     )
+
 
     # we need a mutable query dict for resetting upon saving with
     # conflicts
@@ -204,6 +221,7 @@ def email_open_review_assignments(request, acronym, group_type=None):
     else:
         to = group.list_email
         subject = "Open review assignments in {}".format(group.acronym)
+        # FIXME: add rotation info
         body = render_to_string("group/email_open_review_assignments.txt", {
             "review_requests": review_requests,
         })
@@ -220,3 +238,195 @@ def email_open_review_assignments(request, acronym, group_type=None):
         'form': form,
     })
 
+
+@login_required
+def reviewer_overview(request, acronym, group_type=None):
+    group = get_group_or_404(acronym, group_type)
+    if not group.features.has_reviews:
+        raise Http404
+
+    reviewer_roles = Role.objects.filter(name="reviewer", group=group)
+
+    if not (any(user_is_person(request.user, r) for r in reviewer_roles)
+            or can_manage_review_requests_for_team(request.user, group)):
+        return HttpResponseForbidden("You do not have permission to perform this action")
+
+
+class ReviewerSettingsForm(forms.ModelForm):
+    class Meta:
+        model = ReviewerSettings
+        fields = ['min_interval', 'filter_re', 'skip_next']
+
+class AddUnavailablePeriodForm(forms.ModelForm):
+    class Meta:
+        model = UnavailablePeriod
+        fields = ['start_date', 'end_date', 'availability']
+
+    def __init__(self, *args, **kwargs):
+        super(AddUnavailablePeriodForm, self).__init__(*args, **kwargs)
+
+        self.fields["start_date"] = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1" }, label=self.fields["start_date"].label, help_text=self.fields["start_date"].help_text, required=self.fields["start_date"].required)
+        self.fields["end_date"] = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1" }, label=self.fields["end_date"].label, help_text=self.fields["end_date"].help_text, required=self.fields["end_date"].required)
+
+        self.fields['availability'].widget = forms.RadioSelect(choices=UnavailablePeriod.LONG_AVAILABILITY_CHOICES)
+
+    def clean(self):
+        start = self.cleaned_data.get("start_date")
+        end = self.cleaned_data.get("end_date")
+        if start and end and start > end:
+            self.add_error("start_date", "Start date must be before or equal to end date.")
+        return self.cleaned_data
+
+class EndUnavailablePeriodForm(forms.Form):
+    def __init__(self, start_date, *args, **kwargs):
+        super(EndUnavailablePeriodForm, self).__init__(*args, **kwargs)
+
+        self.fields["end_date"] = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1", "start-date": start_date.isoformat() })
+
+        self.start_date = start_date
+
+    def clean_end_date(self):
+        end = self.cleaned_data["end_date"]
+        if end < self.start_date:
+            raise forms.ValidationError("End date must be equal to or come after start date.")
+        return end
+
+
+@login_required
+def change_reviewer_settings(request, acronym, reviewer_email, group_type=None):
+    group = get_group_or_404(acronym, group_type)
+    if not group.features.has_reviews:
+        raise Http404
+
+    reviewer_role = get_object_or_404(Role, name="reviewer", group=group, email=reviewer_email)
+    reviewer = reviewer_role.person
+
+    if not (user_is_person(request.user, reviewer)
+            or can_manage_review_requests_for_team(request.user, group)):
+        return HttpResponseForbidden("You do not have permission to perform this action")
+
+    settings = (ReviewerSettings.objects.filter(person=reviewer, team=group).first()
+                or ReviewerSettings(person=reviewer, team=group))
+
+    back_url = request.GET.get("next")
+    if not back_url:
+        import ietf.group.views
+        back_url = urlreverse(ietf.group.views.review_requests, kwargs={ "group_type": group.type_id, "acronym": group.acronym})
+
+    # settings
+    if request.method == "POST" and request.POST.get("action") == "change_settings":
+        prev_min_interval = settings.get_min_interval_display()
+        prev_skip_next = settings.skip_next
+        settings_form = ReviewerSettingsForm(request.POST, instance=settings)
+        if settings_form.is_valid():
+            settings = settings_form.save()
+
+            changes = []
+            if settings.get_min_interval_display() != prev_min_interval:
+                changes.append("Frequency changed to \"{}\" from \"{}\".".format(settings.get_min_interval_display(), prev_min_interval))
+            if settings.skip_next != prev_skip_next:
+                changes.append("Skip next assignments changed to {} from {}.".format(settings.skip_next, prev_skip_next))
+
+            if changes:
+                email_reviewer_availability_change(request, group, reviewer_role, "\n\n".join(changes), request.user.person)
+
+            return HttpResponseRedirect(back_url)
+    else:
+        settings_form = ReviewerSettingsForm(instance=settings)
+
+    # periods
+    unavailable_periods = unavailability_periods_to_list().filter(person=reviewer, team=group)
+
+    if request.method == "POST" and request.POST.get("action") == "add_period":
+        period_form = AddUnavailablePeriodForm(request.POST)
+        if period_form.is_valid():
+            period = period_form.save(commit=False)
+            period.team = group
+            period.person = reviewer
+            period.save()
+
+            today = datetime.date.today()
+
+            in_the_past = period.end_date and period.end_date < today
+
+            if not in_the_past:
+                msg = "Unavailable for review: {} - {} ({})".format(
+                    period.start_date.isoformat(),
+                    period.end_date.isoformat() if period.end_date else "indefinite",
+                    period.get_availability_display(),
+                )
+
+                if period.availability == "unavailable":
+                    # the secretary might need to reassign
+                    # assignments, so mention the current ones
+
+                    review_reqs = ReviewRequest.objects.filter(state__in=["requested", "accepted"], reviewer=reviewer_role.email, team=group)
+                    msg += "\n\n"
+
+                    if review_reqs:
+                        msg += "{} is currently assigned to review:".format(reviewer_role.person)
+                        for r in review_reqs:
+                            msg += "\n\n"
+                            msg += "{} (deadline: {})".format(r.doc_id, r.deadline.isoformat())
+                    else:
+                        msg += "{} does not have any assignments currently.".format(reviewer_role.person)
+
+                email_reviewer_availability_change(request, group, reviewer_role, msg, request.user.person)
+
+            return HttpResponseRedirect(request.get_full_path())
+    else:
+        period_form = AddUnavailablePeriodForm()
+
+    if request.method == "POST" and request.POST.get("action") == "delete_period":
+        period_id = request.POST.get("period_id")
+        if period_id is not None:
+            for period in unavailable_periods:
+                if str(period.pk) == period_id:
+                    period.delete()
+
+                    today = datetime.date.today()
+
+                    in_the_past = period.end_date and period.end_date < today
+
+                    if not in_the_past:
+                        msg = "Removed unavailable period: {} - {} ({})".format(
+                            period.start_date.isoformat(),
+                            period.end_date.isoformat() if period.end_date else "indefinite",
+                            period.get_availability_display(),
+                        )
+
+                        email_reviewer_availability_change(request, group, reviewer_role, msg, request.user.person)
+
+            return HttpResponseRedirect(request.get_full_path())
+
+    for p in unavailable_periods:
+        if not p.end_date:
+            p.end_form = EndUnavailablePeriodForm(p.start_date, request.POST if request.method == "POST" and request.POST.get("action") == "end_period" else None)
+
+    if request.method == "POST" and request.POST.get("action") == "end_period":
+        period_id = request.POST.get("period_id")
+        for period in unavailable_periods:
+            if str(period.pk) == period_id:
+                if not period.end_date and period.end_form.is_valid():
+                    period.end_date = period.end_form.cleaned_data["end_date"]
+                    period.save()
+
+                    msg = "Set end date of unavailable period: {} - {} ({})".format(
+                        period.start_date.isoformat(),
+                        period.end_date.isoformat() if period.end_date else "indefinite",
+                        period.get_availability_display(),
+                    )
+
+                    email_reviewer_availability_change(request, group, reviewer_role, msg, request.user.person)
+
+                    return HttpResponseRedirect(request.get_full_path())
+
+
+    return render(request, 'group/change_reviewer_settings.html', {
+        'group': group,
+        'reviewer_email': reviewer_email,
+        'back_url': back_url,
+        'settings_form': settings_form,
+        'period_form': period_form,
+        'unavailable_periods': unavailable_periods,
+    })

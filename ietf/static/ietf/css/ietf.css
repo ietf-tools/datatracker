@@ -515,6 +515,18 @@ form.email-open-review-assignments [name=body] {
   font-family: monospace;
 }
 
+table.unavailable-periods td {
+  padding-right: 0.5em;
+}
+
+.unavailable-period-past {
+  color: #777;
+}
+
+.unavailable-period-active {
+  font-weight: bold;
+}
+
 /* === Photo pages ========================================================== */
 
 .photo-name {

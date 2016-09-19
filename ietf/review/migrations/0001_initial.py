@@ -19,10 +19,9 @@ class Migration(migrations.Migration):
             name='ReviewerSettings',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('frequency', models.IntegerField(default=30, help_text=b'Can review every N days', choices=[(7, b'Once per week'), (14, b'Once per fortnight'), (30, b'Once per month'), (61, b'Once per two months'), (91, b'Once per quarter')])),
-                ('unavailable_until', models.DateTimeField(help_text=b'When will this reviewer be available again', null=True, blank=True)),
-                ('filter_re', models.CharField(max_length=255, blank=True)),
-                ('skip_next', models.IntegerField(default=0, help_text=b'Skip the next N review assignments')),
+                ('min_interval', models.IntegerField(default=30, verbose_name=b'Can review at most', choices=[(7, b'Once per week'), (14, b'Once per fortnight'), (30, b'Once per month'), (61, b'Once per two months'), (91, b'Once per quarter')])),
+                ('filter_re', models.CharField(help_text=b'Draft names matching regular expression should not be assigned', max_length=255, verbose_name=b'Filter regexp', blank=True)),
+                ('skip_next', models.IntegerField(default=0, verbose_name=b'Skip next assignments')),
                 ('person', models.ForeignKey(to='person.Person')),
                 ('team', models.ForeignKey(to='group.Group')),
             ],
@@ -57,6 +56,33 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('result', models.ForeignKey(to='name.ReviewResultName')),
+                ('team', models.ForeignKey(to='group.Group')),
+            ],
+            options={
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='ReviewWish',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('time', models.DateTimeField(default=datetime.datetime.now)),
+                ('doc', models.ForeignKey(to='doc.Document')),
+                ('person', models.ForeignKey(to='person.Person')),
+                ('team', models.ForeignKey(to='group.Group')),
+            ],
+            options={
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='UnavailablePeriod',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('start_date', models.DateField(default=datetime.date.today, help_text=b"Choose the start date so that you can still do a review if it's assigned just before the start date - this usually means you should mark yourself unavailable for assignment some time before you are actually away.")),
+                ('end_date', models.DateField(help_text=b'Leaving the end date blank means that the period continues indefinitely. You can end it later.', null=True, blank=True)),
+                ('availability', models.CharField(max_length=30, choices=[(b'canfinish', b'Can do follow-ups'), (b'unavailable', b'Completely unavailable')])),
+                ('person', models.ForeignKey(to='person.Person')),
                 ('team', models.ForeignKey(to='group.Group')),
             ],
             options={

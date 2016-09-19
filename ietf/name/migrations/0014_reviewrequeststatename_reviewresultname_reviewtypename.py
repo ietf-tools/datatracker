@@ -8,7 +8,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('group', '0008_auto_20160505_0523'),
-        ('name', '0010_new_liaison_names'),
+        ('name', '0013_add_group_type_verbose_name_data'),
     ]
 
     operations = [

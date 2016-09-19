@@ -7,7 +7,8 @@ from tastypie.cache import SimpleCache
 from ietf import api
 from ietf.api import ToOneField                         # pyflakes:ignore
 
-from ietf.review.models import ReviewerSettings, ReviewRequest, ReviewTeamResult
+from ietf.review.models import (ReviewerSettings, ReviewRequest, ReviewTeamResult,
+                                UnavailablePeriod, ReviewWish)
 
 
 from ietf.person.resources import PersonResource
@@ -22,8 +23,7 @@ class ReviewerSettingsResource(ModelResource):
         #resource_name = 'reviewer'
         filtering = { 
             "id": ALL,
-            "frequency": ALL,
-            "unavailable_until": ALL,
+            "min_interval": ALL,
             "filter_re": ALL,
             "skip_next": ALL,
             "team": ALL_WITH_RELATIONS,
@@ -81,4 +81,47 @@ class ReviewTeamResultResource(ModelResource):
             "result": ALL_WITH_RELATIONS,
         }
 api.review.register(ReviewTeamResultResource())
+
+
+
+from ietf.person.resources import PersonResource
+from ietf.group.resources import GroupResource
+class UnavailablePeriodResource(ModelResource):
+    team             = ToOneField(GroupResource, 'team')
+    person           = ToOneField(PersonResource, 'person')
+    class Meta:
+        queryset = UnavailablePeriod.objects.all()
+        serializer = api.Serializer()
+        cache = SimpleCache()
+        #resource_name = 'unavailableperiod'
+        filtering = { 
+            "id": ALL,
+            "start_date": ALL,
+            "end_date": ALL,
+            "availability": ALL,
+            "team": ALL_WITH_RELATIONS,
+            "person": ALL_WITH_RELATIONS,
+        }
+api.review.register(UnavailablePeriodResource())
+
+from ietf.person.resources import PersonResource
+from ietf.group.resources import GroupResource
+from ietf.doc.resources import DocumentResource
+class ReviewWishResource(ModelResource):
+    team             = ToOneField(GroupResource, 'team')
+    person           = ToOneField(PersonResource, 'person')
+    doc              = ToOneField(DocumentResource, 'doc')
+    class Meta:
+        queryset = ReviewWish.objects.all()
+        serializer = api.Serializer()
+        cache = SimpleCache()
+        #resource_name = 'reviewwish'
+        filtering = { 
+            "id": ALL,
+            "time": ALL,
+            "team": ALL_WITH_RELATIONS,
+            "person": ALL_WITH_RELATIONS,
+            "doc": ALL_WITH_RELATIONS,
+        }
+api.review.register(ReviewWishResource())
 

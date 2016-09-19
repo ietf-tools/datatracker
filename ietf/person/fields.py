@@ -50,7 +50,7 @@ class SearchablePersonsField(forms.CharField):
                  model=Person, # or Email
                  hint_text="Type in name to search for person.",
                  *args, **kwargs):
-        kwargs["max_length"] = 1000
+        kwargs["max_length"] = 10000
         self.max_entries = max_entries
         self.only_users = only_users
         assert model in [ Email, Person ]

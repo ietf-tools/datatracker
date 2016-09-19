@@ -6,10 +6,10 @@ from django.core.urlresolvers import reverse as urlreverse
 
 from ietf.utils.test_data import make_test_data, make_review_data
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase, unicontent, reload_db_objects
-from ietf.review.models import ReviewRequest, ReviewRequestStateName
 from ietf.doc.models import TelechatDocEvent
 from ietf.iesg.models import TelechatDate
 from ietf.person.models import Email, Person
+from ietf.review.models import ReviewRequest, ReviewRequestStateName, ReviewerSettings, UnavailablePeriod
 from ietf.review.utils import suggested_review_requests_for_team
 import ietf.group.views_review
 from ietf.utils.mail import outbox, empty_outbox
@@ -190,3 +190,85 @@ class ReviewTests(TestCase):
         self.assertEqual(outbox[0]["subject"], "Test subject")
         self.assertTrue("Test body" in unicode(outbox[0]))
 
+    def test_change_reviewer_settings(self):
+        doc = make_test_data()
+
+        reviewer = Person.objects.get(name="Plain Man")
+
+        review_req = make_review_data(doc)
+        review_req.reviewer = reviewer.email_set.first()
+        review_req.save()
+        
+        url = urlreverse(ietf.group.views_review.change_reviewer_settings, kwargs={
+            "group_type": review_req.team.type_id,
+            "acronym": review_req.team.acronym,
+            "reviewer_email": review_req.reviewer_id,
+        })
+
+        login_testing_unauthorized(self, reviewer.user.username, url)
+
+        # get
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+
+        # set settings
+        empty_outbox()
+        r = self.client.post(url, {
+            "action": "change_settings",
+            "min_interval": "7",
+            "filter_re": "test-[regexp]",
+            "skip_next": "2",
+        })
+        self.assertEqual(r.status_code, 302)
+        settings = ReviewerSettings.objects.get(person=reviewer, team=review_req.team)
+        self.assertEqual(settings.min_interval, 7)
+        self.assertEqual(settings.filter_re, "test-[regexp]")
+        self.assertEqual(settings.skip_next, 2)
+        self.assertEqual(len(outbox), 1)
+        self.assertTrue("reviewer availability" in outbox[0]["subject"].lower())
+        self.assertTrue("frequency changed", unicode(outbox[0]).lower())
+        self.assertTrue("skip next", unicode(outbox[0]).lower())
+
+        # add unavailable period
+        start_date = datetime.date.today() + datetime.timedelta(days=10)
+        empty_outbox()
+        r = self.client.post(url, {
+            "action": "add_period",
+            'start_date': start_date.isoformat(),
+            'end_date': "",
+            'availability': "unavailable",
+        })
+        self.assertEqual(r.status_code, 302)
+        period = UnavailablePeriod.objects.get(person=reviewer, team=review_req.team, start_date=start_date)
+        self.assertEqual(period.end_date, None)
+        self.assertEqual(period.availability, "unavailable")
+        self.assertEqual(len(outbox), 1)
+        self.assertTrue(start_date.isoformat(), unicode(outbox[0]).lower())
+        self.assertTrue("indefinite", unicode(outbox[0]).lower())
+
+        # end unavailable period
+        empty_outbox()
+        end_date = start_date + datetime.timedelta(days=10)
+        r = self.client.post(url, {
+            "action": "end_period",
+            'period_id': period.pk,
+            'end_date': end_date.isoformat(),
+        })
+        self.assertEqual(r.status_code, 302)
+        period = reload_db_objects(period)
+        self.assertEqual(period.end_date, end_date)
+        self.assertEqual(len(outbox), 1)
+        self.assertTrue(start_date.isoformat(), unicode(outbox[0]).lower())
+        self.assertTrue("indefinite", unicode(outbox[0]).lower())
+
+        # delete unavailable period
+        empty_outbox()
+        r = self.client.post(url, {
+            "action": "delete_period",
+            'period_id': period.pk,
+        })
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(UnavailablePeriod.objects.filter(person=reviewer, team=review_req.team, start_date=start_date).count(), 0)
+        self.assertEqual(len(outbox), 1)
+        self.assertTrue(start_date.isoformat(), unicode(outbox[0]).lower())
+        self.assertTrue(end_date.isoformat(), unicode(outbox[0]).lower())

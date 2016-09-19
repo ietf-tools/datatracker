@@ -12,7 +12,7 @@ from pyquery import PyQuery
 
 import debug                            # pyflakes:ignore
 
-from ietf.review.models import ReviewRequest, ReviewTeamResult, ReviewerSettings
+from ietf.review.models import ReviewRequest, ReviewTeamResult, ReviewerSettings, ReviewWish, UnavailablePeriod
 import ietf.review.mailarch
 from ietf.person.models import Email, Person
 from ietf.name.models import ReviewResultName, ReviewRequestStateName, ReviewTypeName, DocRelationshipName
@@ -166,8 +166,16 @@ class ReviewTests(TestCase):
 
         reviewer_settings = ReviewerSettings.objects.get(person__email=plain_email)
         reviewer_settings.filter_re = doc.name
-        reviewer_settings.unavailable_until = datetime.datetime.now() + datetime.timedelta(days=10)
         reviewer_settings.save()
+
+        UnavailablePeriod.objects.create(
+            team=review_req.team,
+            person=plain_email.person,
+            start_date=datetime.date.today() - datetime.timedelta(days=10),
+            availability="unavailable",
+        )
+
+        ReviewWish.objects.create(person=plain_email.person, team=review_req.team, doc=doc)
 
         assign_url = urlreverse('ietf.doc.views_review.assign_reviewer', kwargs={ "name": doc.name, "request_id": review_req.pk })
 
@@ -188,9 +196,10 @@ class ReviewTests(TestCase):
         plain_label = q("option[value=\"{}\"]".format(plain_email.address)).text().lower()
         self.assertIn("ready for", plain_label)
         self.assertIn("reviewed document before", plain_label)
+        self.assertIn("wishes to review", plain_label)
         self.assertIn("is author", plain_label)
         self.assertIn("regexp matches", plain_label)
-        self.assertIn("unavailable until", plain_label)
+        self.assertIn("unavailable", plain_label)
 
         # assign
         empty_outbox()
@@ -421,6 +430,15 @@ class ReviewTests(TestCase):
         self.assertTrue("This is a review" in unicode(outbox[0]))
 
         self.assertTrue(settings.MAILING_LIST_ARCHIVE_URL in review_req.review.external_url)
+
+        # check the review document page
+        url = urlreverse('doc_view', kwargs={ "name": review_req.review.name })
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        content = unicontent(r)
+        self.assertTrue("{} Review".format(review_req.type.name) in content)
+        self.assertTrue("This is a review" in content)
+
 
     def test_complete_review_enter_content(self):
         review_req, url = self.setup_complete_review_test()
