@@ -15,7 +15,7 @@
   <h1>{{ meeting }} : {{ acronym }}</h1>
 
   {% for session in sessions %}
-    <h2>{% if sessions|length > 1 %}Session {{ forloop.counter }} : {% endif %}{{ session.time }}{% if session.name %} : {{ session.name }}{% endif %}</h2>
+    <h2 id="session_{{session.pk}}">{% if sessions|length > 1 %}Session {{ forloop.counter }} : {% endif %}{{ session.time }}{% if session.name %} : {{ session.name }}{% endif %}</h2>
     {% if session.agenda_note %}<h3>{{session.agenda_note}}</h3>{% endif %}
 
     {% if can_manage_materials %}
