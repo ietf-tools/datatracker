@@ -102,6 +102,10 @@ class SlideReorderTests(StaticLiveServerTestCase):
         self.driver = webdriver.PhantomJS(port=0, service_log_path=settings.TEST_GHOSTDRIVER_LOG_PATH)
         self.driver.set_window_size(1024,768)
 
+    def tearDown(self):
+        self.driver.close()
+        set_coverage_checking(True)
+
     def absreverse(self,*args,**kwargs):
         return '%s%s'%(self.live_server_url,urlreverse(*args,**kwargs))
 
