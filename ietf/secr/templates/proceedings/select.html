@@ -29,7 +29,7 @@
 
 {% block breadcrumbs %}{{ block.super }} 
   &raquo; <a href="{% url "proceedings" %}">Proceedings</a>
-  &raquo; {{ meeting.number }} - Select Group
+  &raquo; {{ meeting.number }}
 {% endblock %}
 
 {% block instructions %}
@@ -39,49 +39,7 @@
 {% block content %}
 
 <div class="module interim-container">
-    <h2>IETF {{ meeting.number }} - Upload Material</span></h2>
-         <div class="inline-related">
-           <h3><b>Select Group</b></h3>
-           <p>The list below includes those working groups and approved BOFs that are scheduled to
-           meet at IETF {{meeting.number }}. You must request a session slot in order for your group(s) to appear on
-           this list.</p>
-           <p>- To request a session slot for a working group, please use the
-           <a href="{% url "sessions" %}">IETF Meeting Session Request Tool</a>.
-           <br>
-           - To request a session slot for a BOF, please send a message to <a href="mailto:ietf-action@ietf.org">agenda@ietf.org</a>. 
-           Additional information is available at
-           <a href="https://www.ietf.org/instructions/MTG-SLOTS.html">"Requesting Meeting Slots at IETF Meetings."</a>
-           <br>
-           - To upload meeting materials for a scheduled session, please select the session name below.</p>
-           <form class="internal-form" action="" method="post">{% csrf_token %}
-             <label for="id_group">Working Groups</label>
-             {{ group_form.group }}
-             <input type="submit" name="submit" value="Select" />
-           </form>
-           {% if irtf_form %}
-             <form class="internal-form" action="" method="post">{% csrf_token %}
-               <label for="id_group">IRTF Groups</label>
-               {{ irtf_form.group }}
-               <input type="submit" name="submit" value="Select" />
-             </form>
-           {% endif %}
-           {% if training_form %}
-             <form class="internal-form" action="" method="post">{% csrf_token %}
-               <label for="id_group">Training / Other</label>
-               {{ training_form.group }}
-               <input type="submit" name="submit" value="Select" />
-             </form>
-           {% endif %}
-           {% if plenary_form %}
-             <form class="internal-form" action="" method="post">{% csrf_token %}
-               <label for="id_group">Plenaries</label>
-               {{ plenary_form.group }}
-               <input type="submit" name="submit" value="Select" />
-             </form>
-           {% endif %}     
-        </div> <!-- inline-related -->
         
-        {% if user|has_role:"Secretariat" %}
         <div class="inline-related">
           <h2>Secretariat Only Functions</h2>
           <div id="private-functions">
@@ -90,7 +48,6 @@
             
           </div> <!-- private-functions -->
         </div> <!-- inline-group -->
-        {% endif %}
         
 </div> <!-- module -->
 

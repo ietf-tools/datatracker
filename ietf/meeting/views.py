@@ -20,7 +20,7 @@ from django import forms
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden, Http404
 from django.contrib import messages
-from django.core.urlresolvers import reverse
+from django.core.urlresolvers import reverse,reverse_lazy
 from django.db.models import Min, Max
 from django.conf import settings
 from django.forms.models import modelform_factory, inlineformset_factory
@@ -30,6 +30,7 @@ from django.utils.functional import curry
 from django.views.decorators.cache import cache_page
 from django.utils.text import slugify
 from django.views.decorators.csrf import ensure_csrf_cookie
+from django.views.generic import RedirectView
 from django.template.defaultfilters import filesizeformat
 
 from ietf.doc.fields import SearchableDocumentsField
@@ -1989,3 +1990,6 @@ def proceedings_overview(request, num=None):
         'template': template,
     })
 
+class OldUploadRedirect(RedirectView):
+    def get_redirect_url(self, **kwargs):
+        return reverse_lazy('ietf.meeting.views.session_details',kwargs=self.kwargs)
