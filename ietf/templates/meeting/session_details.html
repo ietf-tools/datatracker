@@ -43,7 +43,8 @@
                 {% url 'doc_view' name=pres.document.name as url %}
               {% endif %}
               <td>
-                <a href="{{url}}">{{pres.document.title}} ({{ pres.document.name }}{% if pres.rev %}-{{ pres.rev }}{% endif %})</a>
+                <a href="{{pres.document.get_absolute_url}}">{{pres.document.title}}</a>
+                <a href="{{url}}">({{ pres.document.name }}{% if pres.rev %}-{{ pres.rev }}{% endif %})</a>
               </td>
               {% if user|has_role:"Secretariat" or can_manage_materials %}
                 <td class="col-md-2">
@@ -88,7 +89,8 @@
                 {% url 'doc_view' name=pres.document.name as url %}
               {% endif %}
               <td>
-                <a href="{{url}}">{{pres.document.title}} ({{ pres.document.name }}{% if pres.rev %}-{{ pres.rev }}{% endif %}) </a>
+                <a href="{{pres.document.get_absolute_url}}">{{pres.document.title}} </a>
+                <a href="{{url}}">({{ pres.document.name }}{% if pres.rev %}-{{ pres.rev }}{% endif %}) </a>
               </td>
               {% if can_manage_materials %}
                 <td class="col-md-2">
