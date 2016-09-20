@@ -927,6 +927,8 @@ def json_agenda(request, num=None ):
         room_names.add(asgn.room_name) 
         if asgn.session.agenda():
             sessdict['agenda'] = '/api/v1/doc/document/%s'%asgn.session.agenda().name
+        if asgn.session.minutes():
+            sessdict['minutes'] = '/api/v1/doc/document/%s'%asgn.session.minutes().name
         if asgn.session.slides():
             sessdict['slides'] = []
             for slides in asgn.session.slides():
@@ -980,7 +982,7 @@ def json_agenda(request, num=None ):
 
     data = {"%s"%num: meetinfo}
 
-    response = HttpResponse(json.dumps(data, indent=2), content_type='application/json;charset=%s'%settings.DEFAULT_CHARSET)
+    response = HttpResponse(json.dumps(data, indent=2, sort_keys=True), content_type='application/json;charset=%s'%settings.DEFAULT_CHARSET)
     if last_modified:
         last_modified = tz.localize(last_modified).astimezone(pytz.utc)
         response['Last-Modified'] = format_date_time(timegm(last_modified.timetuple()))
