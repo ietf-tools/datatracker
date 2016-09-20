@@ -906,9 +906,14 @@ def json_agenda(request, num=None ):
         sessdict = dict()
         sessdict['objtype'] = 'session'
         sessdict['id'] = asgn.pk
-        if asgn.session.group.type_id in ['wg','rg']:
-            sessdict['group'] = asgn.session.group.acronym
-            sessdict['parent'] = asgn.session.group.parent.acronym
+        if asgn.session.group:
+            sessdict['group'] = {
+                    "acronym": asgn.session.group.acronym,
+                    "name": asgn.session.group.name,
+                    "type": asgn.session.group.type_id,
+                }
+        if asgn.session.group.type_id in ['wg','rg', 'ag',] or asgn.session.group.acronym in ['iesg',]:
+            sessdict['group']['parent'] = asgn.session.group.parent.acronym
             parent_acronyms.add(asgn.session.group.parent.acronym)
         if asgn.session.name:
             sessdict['name'] = asgn.session.name
