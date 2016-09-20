@@ -934,9 +934,11 @@ def json_agenda(request, num=None ):
         sessdict['location'] = asgn.room_name
         room_names.add(asgn.room_name) 
         if asgn.session.agenda():
-            sessdict['agenda'] = '/api/v1/doc/document/%s'%asgn.session.agenda().name
+            sessdict['agenda'] = asgn.session.agenda().href()
+
+
         if asgn.session.minutes():
-            sessdict['minutes'] = '/api/v1/doc/document/%s'%asgn.session.minutes().name
+            sessdict['minutes'] = asgn.session.minutes().href()
         if asgn.session.slides():
             sessdict['slides'] = []
             for slides in asgn.session.slides():
