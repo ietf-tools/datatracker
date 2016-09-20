@@ -56,6 +56,9 @@ class GroupInfo(models.Model):
     def interim_approval_roles(self):
         return list(set([ role for role in self.parent.role_set.filter(name__in=['ad', 'chair']) ]))
 
+    def is_bof(self):
+        return (self.state.slug in ["bof", "bof-conc"])
+
     class Meta:
         abstract = True
 
@@ -90,9 +93,6 @@ class Group(GroupInfo):
                 return True
             p = p.parent
         return False
-
-    def is_bof(self):
-        return (self.state.slug in ["bof", "bof-conc"])
 
     def get_chair(self):
         chair = self.role_set.filter(name__slug='chair')[:1]

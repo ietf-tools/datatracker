@@ -902,25 +902,32 @@ def json_agenda(request, num=None ):
     sessions = []
     room_names = set()
     parent_acronyms = set()
-    for asgn in meeting.agenda.assignments.exclude(session__type__in=['lead','offagenda','break','reg']):
+    assignments = meeting.agenda.assignments.exclude(session__type__in=['lead','offagenda','break','reg'])
+    # Update the assignments with historic information, i.e., valid at the
+    # time of the meeting
+    assignments = preprocess_assignments_for_agenda(assignments, meeting)
+    for asgn in assignments:
         sessdict = dict()
         sessdict['objtype'] = 'session'
         sessdict['id'] = asgn.pk
-        if asgn.session.group:
+        if asgn.session.historic_group:
             sessdict['group'] = {
-                    "acronym": asgn.session.group.acronym,
-                    "name": asgn.session.group.name,
-                    "type": asgn.session.group.type_id,
+                    "acronym": asgn.session.historic_group.acronym,
+                    "name": asgn.session.historic_group.name,
+                    "type": asgn.session.historic_group.type_id,
+                    "state": asgn.session.historic_group.state_id,
                 }
-        if asgn.session.group.type_id in ['wg','rg', 'ag',] or asgn.session.group.acronym in ['iesg',]:
-            sessdict['group']['parent'] = asgn.session.group.parent.acronym
-            parent_acronyms.add(asgn.session.group.parent.acronym)
+            if asgn.session.historic_group.is_bof():
+                sessdict['is_bof'] = True
+        if asgn.session.historic_group.type_id in ['wg','rg', 'ag',] or asgn.session.historic_group.acronym in ['iesg',]:
+            sessdict['group']['parent'] = asgn.session.historic_group.historic_parent.acronym
+            parent_acronyms.add(asgn.session.historic_group.historic_parent.acronym)
         if asgn.session.name:
             sessdict['name'] = asgn.session.name
         elif asgn.session.short:
             sessdict['name'] = asgn.session.short
         else:
-            sessdict['name'] = asgn.session.group.name
+            sessdict['name'] = asgn.session.historic_group.name
         sessdict['start'] = asgn.timeslot.utc_start_time().strftime("%Y-%m-%dT%H:%M:%SZ")
         sessdict['duration'] = str(asgn.timeslot.duration)
         sessdict['location'] = asgn.room_name
