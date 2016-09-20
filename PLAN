@@ -7,8 +7,6 @@ Updated: $Date$
 Planned work in rough order
 ===========================
 
-* Merge in manual post work from Spherical Cow
-
 * Glue code for WG issue trackers and wiki:
   - create new trackers on group creation
   - update access lists on group chair/secretary changes
@@ -32,11 +30,6 @@ Planned work in rough order
 
 * Revisit floorplans: Add room coordinate input tool (javascript).
   Add NOC object annotation possibilities.
-
-* Refactor to one function instead of having both Document.get_absolute_url()
-  and Document.href(), which should do the same thing, but don't today.  Also
-  change the default draft href to be the datatracker url now that we support
-  revisions.
 
 * Add support for internationalised email addresses according to RFC 6531
   when sending email (this is not supported by smtplib under Python 2.7,

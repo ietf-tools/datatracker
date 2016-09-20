@@ -93,6 +93,10 @@ class DocumentInfo(models.Model):
             return settings.DOCUMENT_PATH_PATTERN.format(doc=self)
 
     def href(self):
+        """
+        Returns an url to the document text.  This differs from .get_absolute_url(),
+        which returns an url to the datatracker page for the document.   
+        """
         # If self.external_url truly is an url, use it.  This is a change from
         # the earlier resulution order, but there's at the moment one single
         # instance which matches this (with correct results), so we won't
@@ -379,6 +383,10 @@ class Document(DocumentInfo):
         return self.name
 
     def get_absolute_url(self):
+        """
+        Returns an url to the document view.  This differs from .href(),
+        which returns an url to the document content.
+        """
         name = self.name
         if self.type_id == "draft" and self.get_state_slug() == "rfc":
             name = self.canonical_name()
