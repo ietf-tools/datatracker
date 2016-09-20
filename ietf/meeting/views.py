@@ -910,6 +910,7 @@ def json_agenda(request, num=None ):
         sessdict = dict()
         sessdict['objtype'] = 'session'
         sessdict['id'] = asgn.pk
+        sessdict['is_bof'] = False
         if asgn.session.historic_group:
             sessdict['group'] = {
                     "acronym": asgn.session.historic_group.acronym,
