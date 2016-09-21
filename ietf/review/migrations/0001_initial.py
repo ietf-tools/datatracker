@@ -16,6 +16,17 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
+            name='NextReviewerInTeam',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('next_reviewer', models.ForeignKey(to='person.Person')),
+                ('team', models.ForeignKey(to='group.Group')),
+            ],
+            options={
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
             name='ReviewerSettings',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),

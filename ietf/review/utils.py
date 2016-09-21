@@ -1,8 +1,7 @@
 import datetime, re
 from collections import defaultdict
 
-from django.db import models
-from django.db.models import Q
+from django.db.models import Q, Max
 from django.core.urlresolvers import reverse as urlreverse
 
 from ietf.group.models import Group, Role
@@ -11,7 +10,7 @@ from ietf.iesg.models import TelechatDate
 from ietf.person.models import Person, Email
 from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream
 from ietf.review.models import (ReviewRequest, ReviewRequestStateName, ReviewTypeName,
-                                ReviewerSettings, UnavailablePeriod, ReviewWish)
+                                ReviewerSettings, UnavailablePeriod, ReviewWish, NextReviewerInTeam)
 from ietf.utils.mail import send_mail
 from ietf.doc.utils import extract_complete_replaces_ancestor_mapping_for_docs
 
@@ -69,6 +68,56 @@ def current_unavailable_periods_for_reviewers(team):
     res = defaultdict(list)
     for period in unavailable_period_qs:
         res[period.person_id].append(period)
+
+    return res
+
+def reviewer_rotation_list(team):
+    """Returns person id -> index in rotation (next reviewer has index 0)."""
+    reviewers = list(Person.objects.filter(role__name="reviewer", role__group=team))
+    reviewers.sort(key=lambda p: p.last_name())
+
+    next_reviewer_index = 0
+
+    # now to figure out where the rotation is currently at
+    saved_reviewer = NextReviewerInTeam.objects.filter(team=team).select_related("next_reviewer").first()
+    if saved_reviewer:
+        n = saved_reviewer.next_reviewer
+
+        if n not in reviewers:
+            # saved reviewer might not still be here, if not just
+            # insert and use that position (Python will wrap around,
+            # so no harm done by using the index on the original list
+            # afterwards)
+            reviewers_with_next = reviewers[:] + [n]
+            reviewers_with_next.sort(key=lambda p: p.last_name())
+            next_reviewer_index = reviewers_with_next.index(n)
+        else:
+            next_reviewer_index = reviewers.index(n)
+
+    return reviewers[next_reviewer_index:] + reviewers[:next_reviewer_index]
+
+def days_needed_to_fulfill_min_interval_for_reviewers(team):
+    """Returns person_id -> days needed until min_interval is fulfilled for
+    reviewer."""
+    latest_assignments = dict(ReviewRequest.objects.filter(
+        team=team,
+    ).values_list("reviewer__person").annotate(Max("time")))
+
+    min_intervals = dict(ReviewerSettings.objects.filter(team=team).values_list("person_id", "min_interval"))
+
+    default_min_interval = ReviewerSettings(team=team).min_interval
+
+    now = datetime.datetime.now()
+
+    res = {}
+    for person_id, latest_assignment_time in latest_assignments.iteritems():
+        if latest_assignment_time is not None:
+            min_interval = min_intervals.get(person_id, default_min_interval)
+
+            days_needed = max(0, min_interval - (now - latest_assignment_time).days)
+
+            if days_needed > 0:
+                res[person_id] = days_needed
 
     return res
 
@@ -184,6 +233,8 @@ def assign_review_request_to_reviewer(request, review_req, reviewer):
     review_req.reviewer = reviewer
     review_req.save()
 
+    possibly_advance_next_reviewer_for_team(review_req.team, review_req.reviewer.person_id)
+
     DocEvent.objects.create(
         type="changed_review_request",
         doc=review_req.doc,
@@ -200,6 +251,59 @@ def assign_review_request_to_reviewer(request, review_req, reviewer):
         "Assigned to review %s" % review_req.doc.name,
         "%s has assigned you to review the document." % request.user.person,
         by=request.user.person, notify_secretary=False, notify_reviewer=True, notify_requested_by=False)
+
+def possibly_advance_next_reviewer_for_team(team, assigned_review_to_person_id):
+    # prune reviewers not in the rotation (but not the assigned
+    # reviewer who must have been available for assignment anyway)
+    reviewers_to_skip = set()
+
+    unavailable_periods = current_unavailable_periods_for_reviewers(team)
+    for person_id, periods in unavailable_periods.iteritems():
+        if periods and person_id != assigned_review_to_person_id:
+            reviewers_to_skip.add(person_id)
+
+    days_needed_for_reviewers = days_needed_to_fulfill_min_interval_for_reviewers(team)
+    for person_id, days_needed in days_needed_for_reviewers.iteritems():
+        if days_needed > 0 and person_id != assigned_review_to_person_id:
+            reviewers_to_skip.add(person_id)
+
+    rotation_list = [p.pk for p in reviewer_rotation_list(team) if p.pk not in reviewers_to_skip]
+
+    if not rotation_list:
+        return
+
+    def reviewer_at_index(i):
+        return rotation_list[i % len(rotation_list)]
+
+    def reviewer_settings_for(person_id):
+        return (ReviewerSettings.objects.filter(team=team, person=person_id).first()
+                or ReviewerSettings(team=team, person_id=person_id))
+
+    current_i = 0
+
+    if reviewer_at_index(current_i) == assigned_review_to_person_id:
+        # move 1 ahead
+        current_i += 1
+    else:
+        settings = reviewer_settings_for(assigned_review_to_person_id)
+        settings.skip_next += 1
+        settings.save()
+
+    while True:
+        # as a clean-up step go through any with a skip next > 0
+        current_reviewer_person_id = reviewer_at_index(current_i)
+        settings = reviewer_settings_for(current_reviewer_person_id)
+        if settings.skip_next > 0:
+            settings.skip_next -= 1
+            settings.save()
+
+            current_i += 1
+        else:
+            nr = NextReviewerInTeam.objects.filter(team=team).first() or NextReviewerInTeam(team=team)
+            nr.next_reviewer_id = current_reviewer_person_id
+            nr.save()
+
+            break
 
 def close_review_request(request, review_req, close_state):
     suggested_req = review_req.pk is None
@@ -384,10 +488,11 @@ def make_assignment_choices(email_queryset, review_req):
         if p not in reviewer_settings:
             reviewer_settings[p] = ReviewerSettings()
 
-    # time since past assignment
-    latest_assignment_for_reviewer = dict(ReviewRequest.objects.filter(
-        reviewer__in=possible_emails,
-    ).values_list("reviewer").annotate(models.Max("time")))
+    # frequency
+    days_needed_for_reviewers = days_needed_to_fulfill_min_interval_for_reviewers(team)
+
+    # rotation
+    rotation_index = { p.pk: i for i, p in enumerate(reviewer_rotation_list(team)) }
 
     # previous review of document
     has_reviewed_previous = ReviewRequest.objects.filter(
@@ -419,27 +524,9 @@ def make_assignment_choices(email_queryset, review_req):
     # unavailable periods
     unavailable_periods = current_unavailable_periods_for_reviewers(team)
 
-    now = datetime.datetime.now()
-
     ranking = []
     for e in possible_emails:
         settings = reviewer_settings.get(e.person_id)
-
-        days_past = None
-        latest = latest_assignment_for_reviewer.get(e.pk)
-        if latest is not None:
-            days_past = (now - latest).days - settings.min_interval
-
-        if days_past is None:
-            ready_for = "first time"
-        else:
-            d = int(round(days_past))
-            if d > 0:
-                ready_for = "ready for {} {}".format(d, "day" if d == 1 else "days")
-            else:
-                d = -d
-                ready_for = "max frequency exceeded, ready in {} {}".format(d, "day" if d == 1 else "days")
-
 
         # we sort the reviewers by separate axes, listing the most
         # important things first
@@ -451,8 +538,7 @@ def make_assignment_choices(email_queryset, review_req):
             if expr and explanation:
                 explanations.append(explanation)
 
-        explanations.append(ready_for) # show ready for explanation first, but sort it after the other issues
-
+        # unavailable for review periods
         periods = unavailable_periods.get(e.person_id, [])
         unavailable_at_the_moment = periods and not (e.pk in has_reviewed_previous and all(p.availability == "canfinish" for p in periods))
         add_boolean_score(-1, unavailable_at_the_moment)
@@ -466,15 +552,31 @@ def make_assignment_choices(email_queryset, review_req):
 
         if periods:
             explanations.append(", ".join(format_period(p) for p in periods))
-        
+
+        # minimum interval between reviews
+        days_needed = days_needed_for_reviewers.get(e.person_id, 0)
+        scores.append(-days_needed)
+        if days_needed > 0:
+            explanations.append("max frequency exceeded, ready in {} {}".format(days_needed, "day" if days_needed == 1 else "days"))
+
+        # misc
         add_boolean_score(+1, e.pk in has_reviewed_previous, "reviewed document before")
         add_boolean_score(+1, e.person_id in wish_to_review, "wishes to review document")
         add_boolean_score(-1, e.pk in connections, connections.get(e.pk)) # reviewer is somehow connected: bad
         add_boolean_score(-1, settings.filter_re and any(re.search(settings.filter_re, n) for n in aliases), "filter regexp matches")
 
-        scores.append(100000 if days_past is None else days_past)
+        # skip next
+        scores.append(-settings.skip_next)
+        if settings.skip_next > 0:
+            explanations.append("skip next {}".format(settings.skip_next))
 
-        label = "{}: {}".format(e.person, "; ".join(explanations))
+        index = rotation_index.get(e.person_id, 0)
+        scores.append(-index)
+        explanations.append("#{}".format(index + 1))
+
+        label = unicode(e.person)
+        if explanations:
+            label = u"{}: {}".format(label, u"; ".join(explanations))
 
         ranking.append({
             "email": e,

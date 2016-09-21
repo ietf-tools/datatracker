@@ -77,6 +77,13 @@ class ReviewTeamResult(models.Model):
     def __unicode__(self):
         return u"{} in {}".format(self.result.name, self.group.acronym)
 
+class NextReviewerInTeam(models.Model):
+    team        = models.ForeignKey(Group)
+    next_reviewer = models.ForeignKey(Person)
+
+    def __unicode__(self):
+        return u"{} next in {}".format(self.next_reviewer, self.team)
+
 class ReviewRequest(models.Model):
     """Represents a request for a review and the process it goes through.
     There should be one ReviewRequest entered for each combination of

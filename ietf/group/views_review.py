@@ -16,7 +16,8 @@ from ietf.review.utils import (can_manage_review_requests_for_team, close_review
                                suggested_review_requests_for_team,
                                unavailability_periods_to_list,
                                current_unavailable_periods_for_reviewers,
-                               email_reviewer_availability_change)
+                               email_reviewer_availability_change,
+                               reviewer_rotation_list)
 from ietf.group.models import Role
 from ietf.group.utils import get_group_or_404
 from ietf.person.fields import PersonEmailChoiceField
@@ -221,9 +222,10 @@ def email_open_review_assignments(request, acronym, group_type=None):
     else:
         to = group.list_email
         subject = "Open review assignments in {}".format(group.acronym)
-        # FIXME: add rotation info
+
         body = render_to_string("group/email_open_review_assignments.txt", {
             "review_requests": review_requests,
+            "rotation_list": reviewer_rotation_list(group)[:10],
         })
 
         form = EmailOpenAssignmentsForm(initial={

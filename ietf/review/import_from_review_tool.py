@@ -18,7 +18,7 @@ from collections import namedtuple
 from django.db import connections
 from ietf.review.models import (ReviewRequest, ReviewerSettings, ReviewResultName,
                                 ReviewRequestStateName, ReviewTypeName, ReviewTeamResult,
-                                UnavailablePeriod)
+                                UnavailablePeriod, NextReviewerInTeam)
 from ietf.group.models import Group, Role, RoleName
 from ietf.person.models import Person, Email, Alias
 import argparse
@@ -138,9 +138,6 @@ with db_con.cursor() as c:
                             availability="unavailable",
                         )
 
-
-# review requests
-
 # check that we got the needed names
 results = { n.name.lower(): n for n in ReviewResultName.objects.all() }
 
@@ -150,8 +147,23 @@ with db_con.cursor() as c:
     missing_result_names = set(summaries) - set(results.keys())
     assert not missing_result_names, "missing result names: {} {}".format(missing_result_names, results.keys())
 
-    for s in summaries:
-        ReviewTeamResult.objects.get_or_create(team=team, result=results[s])
+
+# configuration options
+with db_con.cursor() as c:
+    c.execute("select * from config;")
+
+    for row in namedtuplefetchall(c):
+        if row.name == "next": # next reviewer
+            NextReviewerInTeam.objects.filter(team=team).delete()
+            NextReviewerInTeam.objects.create(team=team, next_reviewer=known_personnel[row.value].person)
+
+        if row.name == "summary-list": # review results used in team
+            summaries = [v.strip().lower() for v in row.value.split(";") if v.strip()]
+
+            for s in summaries:
+                ReviewTeamResult.objects.get_or_create(team=team, result=results[s])
+
+# review requests
 
 states = { n.slug: n for n in ReviewRequestStateName.objects.all() }
 # map some names

@@ -33,6 +33,7 @@ def create_person(group, role_name, name=None, username=None, email_address=None
     person = Person.objects.create(name=name, ascii=name, user=user)
     email = Email.objects.create(address=email_address, person=person)
     Role.objects.create(group=group, name_id=role_name, person=person, email=email)
+    return person
 
 def create_group(**kwargs):
     return Group.objects.create(state_id="active", **kwargs)
@@ -393,7 +394,7 @@ def make_test_data():
     return draft
 
 def make_review_data(doc):
-    team = Group.objects.create(state_id="active", acronym="reviewteam", name="Review Team", type_id="dir", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
+    team = create_group(acronym="reviewteam", name="Review Team", type_id="dir", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
     for r in ReviewResultName.objects.filter(slug__in=["issues", "ready-issues", "ready", "not-ready"]):
         ReviewTeamResult.objects.create(team=team, result=r)
 

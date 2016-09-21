@@ -1,6 +1,6 @@
 import datetime
 
-#from pyquery import PyQuery
+from pyquery import PyQuery
 
 from django.core.urlresolvers import reverse as urlreverse
 
@@ -175,7 +175,10 @@ class ReviewTests(TestCase):
 
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(review_req1.doc.name in unicontent(r))
+        q = PyQuery(r.content)
+        generated_text = q("[name=body]").text()
+        self.assertTrue(review_req1.doc.name in generated_text)
+        self.assertTrue(unicode(Person.objects.get(user__username="marschairman")) in generated_text)
 
         empty_outbox()
         r = self.client.post(url, {

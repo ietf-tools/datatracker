@@ -12,13 +12,16 @@ from pyquery import PyQuery
 
 import debug                            # pyflakes:ignore
 
-from ietf.review.models import ReviewRequest, ReviewTeamResult, ReviewerSettings, ReviewWish, UnavailablePeriod
+from ietf.review.models import (ReviewRequest, ReviewTeamResult, ReviewerSettings,
+                                ReviewWish, UnavailablePeriod, NextReviewerInTeam)
+from ietf.review.utils import reviewer_rotation_list, possibly_advance_next_reviewer_for_team
 import ietf.review.mailarch
 from ietf.person.models import Email, Person
 from ietf.name.models import ReviewResultName, ReviewRequestStateName, ReviewTypeName, DocRelationshipName
+from ietf.group.models import Group
 from ietf.doc.models import DocumentAuthor, Document, DocAlias, RelatedDocument, DocEvent
 from ietf.utils.test_utils import TestCase
-from ietf.utils.test_data import make_test_data, make_review_data
+from ietf.utils.test_data import make_test_data, make_review_data, create_person
 from ietf.utils.test_utils import login_testing_unauthorized, unicontent, reload_db_objects
 from ietf.utils.mail import outbox, empty_outbox
 
@@ -133,6 +136,94 @@ class ReviewTests(TestCase):
         self.assertEqual(len(outbox), 1)
         self.assertTrue("closed" in unicode(outbox[0]).lower())
 
+    def make_data_for_rotation_tests(self, doc):
+        team = Group.objects.create(state_id="active", acronym="rotationteam", name="Review Team", type_id="dir",
+                                    list_email="rotationteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
+
+        # make a bunch of reviewers
+        reviewers = [
+            create_person(team, "reviewer", name="Test Reviewer{}".format(i), username="testreviewer{}".format(i))
+            for i in range(5)
+        ]
+
+        self.assertEqual(reviewers, reviewer_rotation_list(team))
+
+        return team, reviewers
+
+    def test_possibly_advance_next_reviewer_for_team(self):
+        doc = make_test_data()
+
+        team, reviewers = self.make_data_for_rotation_tests(doc)
+
+        def get_skip_next(person):
+            settings = (ReviewerSettings.objects.filter(team=team, person=person).first()
+                        or ReviewerSettings(team=team))
+            return settings.skip_next
+
+        possibly_advance_next_reviewer_for_team(team, reviewers[0].pk)
+        self.assertEqual(NextReviewerInTeam.objects.get(team=team).next_reviewer, reviewers[1])
+        self.assertEqual(get_skip_next(reviewers[0]), 0)
+        self.assertEqual(get_skip_next(reviewers[1]), 0)
+
+        possibly_advance_next_reviewer_for_team(team, reviewers[1].pk)
+        self.assertEqual(NextReviewerInTeam.objects.get(team=team).next_reviewer, reviewers[2])
+
+        # skip reviewer 2
+        possibly_advance_next_reviewer_for_team(team, reviewers[3].pk)
+        self.assertEqual(NextReviewerInTeam.objects.get(team=team).next_reviewer, reviewers[2])
+        self.assertEqual(get_skip_next(reviewers[0]), 0)
+        self.assertEqual(get_skip_next(reviewers[1]), 0)
+        self.assertEqual(get_skip_next(reviewers[2]), 0)
+        self.assertEqual(get_skip_next(reviewers[3]), 1)
+
+        # pick reviewer 2, use up reviewer 3's skip_next
+        possibly_advance_next_reviewer_for_team(team, reviewers[2].pk)
+        self.assertEqual(NextReviewerInTeam.objects.get(team=team).next_reviewer, reviewers[4])
+        self.assertEqual(get_skip_next(reviewers[0]), 0)
+        self.assertEqual(get_skip_next(reviewers[1]), 0)
+        self.assertEqual(get_skip_next(reviewers[2]), 0)
+        self.assertEqual(get_skip_next(reviewers[3]), 0)
+        self.assertEqual(get_skip_next(reviewers[4]), 0)
+
+        # check wrap-around
+        possibly_advance_next_reviewer_for_team(team, reviewers[4].pk)
+        self.assertEqual(NextReviewerInTeam.objects.get(team=team).next_reviewer, reviewers[0])
+        self.assertEqual(get_skip_next(reviewers[0]), 0)
+        self.assertEqual(get_skip_next(reviewers[1]), 0)
+        self.assertEqual(get_skip_next(reviewers[2]), 0)
+        self.assertEqual(get_skip_next(reviewers[3]), 0)
+        self.assertEqual(get_skip_next(reviewers[4]), 0)
+
+        # unavailable
+        today = datetime.date.today()
+        UnavailablePeriod.objects.create(team=team, person=reviewers[1], start_date=today, end_date=today, availability="unavailable")
+        possibly_advance_next_reviewer_for_team(team, reviewers[0].pk)
+        self.assertEqual(NextReviewerInTeam.objects.get(team=team).next_reviewer, reviewers[2])
+        self.assertEqual(get_skip_next(reviewers[0]), 0)
+        self.assertEqual(get_skip_next(reviewers[1]), 0)
+        self.assertEqual(get_skip_next(reviewers[2]), 0)
+        self.assertEqual(get_skip_next(reviewers[3]), 0)
+        self.assertEqual(get_skip_next(reviewers[4]), 0)
+
+        # pick unavailable anyway
+        possibly_advance_next_reviewer_for_team(team, reviewers[1].pk)
+        self.assertEqual(NextReviewerInTeam.objects.get(team=team).next_reviewer, reviewers[2])
+        self.assertEqual(get_skip_next(reviewers[0]), 0)
+        self.assertEqual(get_skip_next(reviewers[1]), 1)
+        self.assertEqual(get_skip_next(reviewers[2]), 0)
+        self.assertEqual(get_skip_next(reviewers[3]), 0)
+        self.assertEqual(get_skip_next(reviewers[4]), 0)
+
+        # not through min_interval
+        ReviewRequest.objects.create(team=team, doc=doc, type_id="early", state_id="accepted", deadline=today, requested_by=reviewers[0], reviewer=reviewers[2].email_set.first())
+        possibly_advance_next_reviewer_for_team(team, reviewers[3].pk)
+        self.assertEqual(NextReviewerInTeam.objects.get(team=team).next_reviewer, reviewers[4])
+        self.assertEqual(get_skip_next(reviewers[0]), 0)
+        self.assertEqual(get_skip_next(reviewers[1]), 1)
+        self.assertEqual(get_skip_next(reviewers[2]), 0)
+        self.assertEqual(get_skip_next(reviewers[3]), 0)
+        self.assertEqual(get_skip_next(reviewers[4]), 0)
+
     def test_assign_reviewer(self):
         doc = make_test_data()
 
@@ -166,6 +257,7 @@ class ReviewTests(TestCase):
 
         reviewer_settings = ReviewerSettings.objects.get(person__email=plain_email)
         reviewer_settings.filter_re = doc.name
+        reviewer_settings.skip_next = 1
         reviewer_settings.save()
 
         UnavailablePeriod.objects.create(
@@ -176,6 +268,14 @@ class ReviewTests(TestCase):
         )
 
         ReviewWish.objects.create(person=plain_email.person, team=review_req.team, doc=doc)
+
+        # pick a non-existing reviewer as next to see that we can
+        # handle reviewers who have left
+        NextReviewerInTeam.objects.filter(team=review_req.team).delete()
+        NextReviewerInTeam.objects.create(
+            team=review_req.team,
+            next_reviewer=Person.objects.exclude(pk=plain_email.person_id).first(),
+        )
 
         assign_url = urlreverse('ietf.doc.views_review.assign_reviewer', kwargs={ "name": doc.name, "request_id": review_req.pk })
 
@@ -194,16 +294,18 @@ class ReviewTests(TestCase):
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         plain_label = q("option[value=\"{}\"]".format(plain_email.address)).text().lower()
-        self.assertIn("ready for", plain_label)
         self.assertIn("reviewed document before", plain_label)
         self.assertIn("wishes to review", plain_label)
         self.assertIn("is author", plain_label)
         self.assertIn("regexp matches", plain_label)
-        self.assertIn("unavailable", plain_label)
+        self.assertIn("unavailable indefinitely", plain_label)
+        self.assertIn("skip next 1", plain_label)
+        self.assertIn("#1", plain_label)
 
         # assign
         empty_outbox()
-        reviewer = Email.objects.filter(role__name="reviewer", role__group=review_req.team).first()
+        rotation_list = reviewer_rotation_list(review_req.team)
+        reviewer = Email.objects.filter(role__name="reviewer", role__group=review_req.team, person=rotation_list[0]).first()
         r = self.client.post(assign_url, { "action": "assign", "reviewer": reviewer.pk })
         self.assertEqual(r.status_code, 302)
 
@@ -212,12 +314,13 @@ class ReviewTests(TestCase):
         self.assertEqual(review_req.reviewer, reviewer)
         self.assertEqual(len(outbox), 1)
         self.assertTrue("assigned" in unicode(outbox[0]))
+        self.assertEqual(NextReviewerInTeam.objects.get(team=review_req.team).next_reviewer, rotation_list[1])
 
         # re-assign
         empty_outbox()
         review_req.state = ReviewRequestStateName.objects.get(slug="accepted")
         review_req.save()
-        reviewer = Email.objects.filter(role__name="reviewer", role__group=review_req.team).exclude(pk=reviewer.pk).first()
+        reviewer = Email.objects.filter(role__name="reviewer", role__group=review_req.team, person=rotation_list[1]).first()
         r = self.client.post(assign_url, { "action": "assign", "reviewer": reviewer.pk })
         self.assertEqual(r.status_code, 302)
 

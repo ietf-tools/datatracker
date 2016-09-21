@@ -8,7 +8,7 @@ from ietf import api
 from ietf.api import ToOneField                         # pyflakes:ignore
 
 from ietf.review.models import (ReviewerSettings, ReviewRequest, ReviewTeamResult,
-                                UnavailablePeriod, ReviewWish)
+                                UnavailablePeriod, ReviewWish, NextReviewerInTeam)
 
 
 from ietf.person.resources import PersonResource
@@ -124,4 +124,23 @@ class ReviewWishResource(ModelResource):
             "doc": ALL_WITH_RELATIONS,
         }
 api.review.register(ReviewWishResource())
+
+
+
+from ietf.person.resources import PersonResource
+from ietf.group.resources import GroupResource
+class NextReviewerInTeamResource(ModelResource):
+    team             = ToOneField(GroupResource, 'team')
+    next_reviewer    = ToOneField(PersonResource, 'next_reviewer')
+    class Meta:
+        queryset = NextReviewerInTeam.objects.all()
+        serializer = api.Serializer()
+        cache = SimpleCache()
+        #resource_name = 'nextreviewerinteam'
+        filtering = { 
+            "id": ALL,
+            "team": ALL_WITH_RELATIONS,
+            "next_reviewer": ALL_WITH_RELATIONS,
+        }
+api.review.register(NextReviewerInTeamResource())
 
