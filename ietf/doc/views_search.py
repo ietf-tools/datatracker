@@ -38,7 +38,6 @@ from django.conf import settings
 from django.core.cache import cache
 from django.core.urlresolvers import reverse as urlreverse
 from django.db.models import Q
-from django.db.models.query import EmptyQuerySet
 from django.http import Http404, HttpResponseBadRequest, HttpResponse, HttpResponseRedirect, QueryDict
 from django.shortcuts import render
 from django.utils.cache import _generate_cache_key
@@ -144,7 +143,7 @@ def retrieve_search_results(form, all_types=False):
         types.extend(query["doctypes"])
 
         if not types:
-            return EmptyQuerySet()
+            return Document.objects.none()
 
         docs = Document.objects.filter(type__in=types)
 

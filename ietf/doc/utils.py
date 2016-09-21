@@ -7,7 +7,6 @@ import hashlib
 import json
 
 from django.conf import settings
-from django.db.models.query import EmptyQuerySet
 from django.forms import ValidationError
 from django.utils.html import escape
 from django.core.urlresolvers import reverse as urlreverse
@@ -146,7 +145,7 @@ def needed_ballot_positions(doc, active_positions):
         elif isinstance(doc,DocHistory):
             related_set = doc.relateddochistory_set
         else:
-            related_set = EmptyQuerySet()
+            related_set = RelatedDocHistory.objects.none()
         for rel in related_set.filter(relationship__slug__in=['tops', 'tois', 'tohist', 'toinf', 'tobcp', 'toexp']):
             if (rel.target.document.std_level.slug in ['bcp','ps','ds','std']) or (rel.relationship.slug in ['tops','tois','tobcp']):
                 needed = two_thirds_rule(recused=len(recuse))
