@@ -182,7 +182,7 @@ class Recipient(models.Model):
 
     def gather_submission_group_chairs(self, **kwargs):
         addrs = []
-        if 'submission' in kwargs:
+        if 'submission' in kwargs: 
             submission = kwargs['submission']
             if submission.group: 
                 addrs.extend(Recipient.objects.get(slug='group_chairs').gather(**{'group':submission.group}))
@@ -203,7 +203,14 @@ class Recipient(models.Model):
                 new_authors = [u'"%s" <%s>' % (author["name"], author["email"]) for author in submission.authors_parsed() if author["email"]]
                 addrs.extend(old_authors)
                 if doc.group and set(old_authors)!=set(new_authors):
-                    addrs.extend(Recipient.objects.get(slug='group_chairs').gather(**{'group':doc.group}))
+                    if doc.group.type_id in ['wg','rg','ag']:
+                        addrs.extend(Recipient.objects.get(slug='group_chairs').gather(**{'group':doc.group}))
+                    elif doc.group.type_id in ['area']:
+                        addrs.extend(Recipient.objects.get(slug='group_responsible_directors').gather(**{'group':doc.group}))
+                    else:
+                        pass
+                    if doc.stream_id and doc.stream_id not in ['ietf']:
+                        addrs.extend(Recipient.objects.get(slug='stream_managers').gather(**{'streams':[doc.stream_id]}))
             else:
                 addrs.extend([u"%s <%s>" % (author["name"], author["email"]) for author in submission.authors_parsed() if author["email"]])
                 if submission.submitter_parsed()["email"]: 
