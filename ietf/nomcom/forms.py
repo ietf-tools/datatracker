@@ -11,7 +11,7 @@ from django.utils.html import mark_safe
 from ietf.dbtemplate.forms import DBTemplateForm
 from ietf.group.models import Group, Role
 from ietf.ietfauth.utils import role_required
-from ietf.name.models import RoleName, FeedbackTypeName
+from ietf.name.models import RoleName, FeedbackTypeName, NomineePositionStateName
 from ietf.nomcom.models import ( NomCom, Nomination, Nominee, NomineePosition,
                                  Position, Feedback, ReminderDates )
 from ietf.nomcom.utils import (NOMINATION_RECEIPT_TEMPLATE, FEEDBACK_RECEIPT_TEMPLATE,
@@ -19,7 +19,8 @@ from ietf.nomcom.utils import (NOMINATION_RECEIPT_TEMPLATE, FEEDBACK_RECEIPT_TEM
                                make_nomineeposition, make_nomineeposition_for_newperson,
                                create_feedback_email)
 from ietf.person.models import Email
-from ietf.person.fields import SearchableEmailField, SearchablePersonField, SearchablePersonsField
+from ietf.person.fields import (SearchableEmailField, SearchableEmailsField,
+                                SearchablePersonField, SearchablePersonsField )
 from ietf.utils.fields import MultiEmailField
 from ietf.utils.mail import send_mail
 from ietf.mailtrigger.utils import gather_address_lists
@@ -221,14 +222,95 @@ class EditNomcomForm(forms.ModelForm):
         raise forms.ValidationError('Invalid public key. Error was: %s' % error)
 
 
-class MergeForm(forms.Form):
+class MergeNomineeForm(forms.Form):
+
+    primary_email = SearchableEmailField(
+        help_text="Select the email of the Nominee record you want to use as the primary record.")
+    secondary_emails = SearchableEmailsField(
+        help_text="Select all the duplicates that should be consolidated with the primary "
+            "Nominee record.  Nominations already received with any of these email address "
+            "will be moved to show under the primary address." )
+
+    def __init__(self, *args, **kwargs):
+        self.nomcom = kwargs.pop('nomcom', None)
+        super(MergeNomineeForm, self).__init__(*args, **kwargs)
+
+    def clean_primary_email(self):
+        email = self.cleaned_data['primary_email']
+        nominees = Nominee.objects.get_by_nomcom(self.nomcom).not_duplicated().filter(email__address=email)
+        if not nominees:
+            msg = "No nominee with this email exists"
+            self._errors["primary_email"] = self.error_class([msg])
+
+        return email
+
+    def clean_secondary_emails(self):
+        emails = self.cleaned_data['secondary_emails']
+        for email in emails:
+            nominees = Nominee.objects.get_by_nomcom(self.nomcom).not_duplicated().filter(email__address=email)
+            if not nominees:
+                msg = "No nominee with email %s exists" % email
+                self._errors["primary_email"] = self.error_class([msg])
+            break
+
+        return emails
+
+    def clean(self):
+        primary_email = self.cleaned_data.get("primary_email")
+        secondary_emails = self.cleaned_data.get("secondary_emails")
+        if primary_email and secondary_emails:
+            if primary_email in secondary_emails:
+                msg = "Primary and secondary email address must be differents"
+                self._errors["primary_email"] = self.error_class([msg])
+        return self.cleaned_data
+
+    def save(self):
+        primary_email = self.cleaned_data.get("primary_email")
+        secondary_emails = self.cleaned_data.get("secondary_emails")
+
+        primary_nominee = Nominee.objects.get_by_nomcom(self.nomcom).get(email__address=primary_email)
+        while primary_nominee.duplicated:
+            primary_nominee = primary_nominee.duplicated
+        secondary_nominees = Nominee.objects.get_by_nomcom(self.nomcom).filter(email__address__in=secondary_emails)
+        for nominee in secondary_nominees:
+            # move nominations
+            nominee.nomination_set.all().update(nominee=primary_nominee)
+            # move feedback
+            for fb in nominee.feedback_set.all():
+                fb.nominees.remove(nominee)
+                fb.nominees.add(primary_nominee)
+            # move nomineepositions
+            for nominee_position in nominee.nomineeposition_set.all():
+                primary_nominee_positions = NomineePosition.objects.filter(position=nominee_position.position,
+                                                                           nominee=primary_nominee)
+                primary_nominee_position = primary_nominee_positions and primary_nominee_positions[0] or None
+
+                if primary_nominee_position:
+                    # if already a nomineeposition object for a position and nominee,
+                    # update the nomineepostion of primary nominee with the state
+                    if nominee_position.state.slug == 'accepted' or primary_nominee_position.state.slug == 'accepted':
+                        primary_nominee_position.state = NomineePositionStateName.objects.get(slug='accepted')
+                        primary_nominee_position.save()
+                    if nominee_position.state.slug == 'declined' and primary_nominee_position.state.slug == 'pending':
+                        primary_nominee_position.state = NomineePositionStateName.objects.get(slug='declined')
+                        primary_nominee_position.save()
+                else:
+                    # It is not allowed two or more nomineeposition objects with same position and nominee
+                    # move nominee_position object to primary nominee
+                    nominee_position.nominee = primary_nominee
+                    nominee_position.save()
+
+            nominee.duplicated = primary_nominee
+            nominee.save()
+
+class MergePersonForm(forms.Form):
 
     primary_person = SearchablePersonField(help_text="Select the person you want the datatracker to keep")
     duplicate_persons = SearchablePersonsField(help_text="Select all the duplicates that should be merged into the primary person record")
 
     def __init__(self, *args, **kwargs):
         self.nomcom = kwargs.pop('nomcom', None)
-        super(MergeForm, self).__init__(*args, **kwargs)
+        super(MergePersonForm, self).__init__(*args, **kwargs)
 
     def clean(self):
         primary_person = self.cleaned_data.get("primary_person")
@@ -766,6 +848,20 @@ class EditNomineeForm(forms.ModelForm):
         self.fields['nominee_email'].queryset = Email.objects.filter(person=self.instance.person,active=True)
         self.fields['nominee_email'].initial = self.instance.email
         self.fields['nominee_email'].help_text = "If the address you are looking for does not appear in this list, ask the nominee (or the secretariat) to add the address to their datatracker account and ensure it is marked as active."
+
+    def clean(self):
+        nominee_email = self.cleaned_data.get("nominee_email")
+        others = Nominee.objects.filter(email=nominee_email, nomcom=self.instance.nomcom)
+        if others.exists():
+            msg = ( "Changing email address for %s (#%s): There already exists a nominee "
+                    "with email address &lt;%s&gt;: %s -- please use the "
+                    "<a ref=\"{% url 'ietf.nomcom.views.private_merge_nominee' %}\">Merge Nominee</a> "
+                    "form instead." % (
+                        self.instance.name(),
+                        self.instance.pk, nominee_email,
+                        (", ".join( "%s (#%s)" %( n.name(), n.pk) for n in others))) )
+            raise forms.ValidationError(mark_safe(msg))
+        return self.cleaned_data
 
     def save(self, commit=True):
         nominee = super(EditNomineeForm, self).save(commit=False)

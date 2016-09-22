@@ -1,6 +1,7 @@
 from django.conf.urls import patterns, url
 
 from ietf.nomcom.forms import EditMembersForm, EditMembersFormPreview
+from ietf.nomcom import views
 
 urlpatterns = patterns('ietf.nomcom.views',
     url(r'^$', 'index'),
@@ -18,7 +19,8 @@ urlpatterns = patterns('ietf.nomcom.views',
     url(r'^(?P<year>\d{4})/private/view-feedback/pending/$', 'view_feedback_pending', name='nomcom_view_feedback_pending'),
     url(r'^(?P<year>\d{4})/private/view-feedback/nominee/(?P<nominee_id>\d+)$', 'view_feedback_nominee', name='nomcom_view_feedback_nominee'),
     url(r'^(?P<year>\d{4})/private/edit/nominee/(?P<nominee_id>\d+)$', 'edit_nominee', name='nomcom_edit_nominee'),
-    url(r'^(?P<year>\d{4})/private/merge/$', 'private_merge', name='nomcom_private_merge'),
+    url(r'^(?P<year>\d{4})/private/merge-nominee/?$', views.private_merge_nominee),
+    url(r'^(?P<year>\d{4})/private/merge-person/?$', views.private_merge_person),
 #    url(r'^(?P<year>\d{4})/private/send-reminder-mail/$', RedirectView.as_view(url=reverse_lazy('nomcom_send_reminder_mail',kwargs={'year':year,'type':'accept'}))),
     url(r'^(?P<year>\d{4})/private/send-reminder-mail/(?P<type>\w+)/$', 'send_reminder_mail', name='nomcom_send_reminder_mail'),
     url(r'^(?P<year>\d{4})/private/edit-members/$', EditMembersFormPreview(EditMembersForm), name='nomcom_edit_members'),

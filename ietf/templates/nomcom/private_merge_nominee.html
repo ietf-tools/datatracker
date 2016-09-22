@@ -10,28 +10,25 @@
   <link rel="stylesheet" href="{% static 'select2-bootstrap-css/select2-bootstrap.min.css' %}">
 {% endblock %}
 
-{% block subtitle %} - Request Nominee Merge {% endblock %}
+{% block subtitle %} - Merge Nominee Records {% endblock %}
 
 {% block nomcom_content %}
   {% origin %}
-  <h2>Request Nominee Merge</h2>
+  <h2>Merge Nominee Records</h2>
 
   <p>
     The nomination system encourages the community to nominate people by selecting
     their email address from the set of addresses the tracker already knows. In order
     to allow a person who does not yet have a datatracker account to be nominated, the
     system also provides a way for the community to nominate people with a new, 
-    previously unknown email address. When this option is chosen, a new Person record
-    is created and associated with the new address.
+    previously unknown email address.
   </p>
   <p>
-    Occasionally, this new address should have been associated with an existing person
-    instead. This will happen particularly if the community member uses a slightly incorrect
-    address (such as a typo), or knows the person they want to nominate by a very old or very
-    new address that is not yet in the tracker. When this happens, you can use this form to
-    ask the secretariat to merge the two Person records. The secretariat has a process
-    for verifying that the addresses both belong to the same person, and a tool that
-    can correct the relevant data.
+    Occasionally, this results in multiple Nominee records which are associated with
+    the same person, but using different email addresses.  In this case, the form to
+    <a href="{% url 'ietf.nomcom.views.private_merge_person' year=year %}">Request Merge of Person Records</a>
+    cannot be use, since it is the nominee records, not the person records which needs
+    to be merged.  When this happens, you can use this form to merge the Nominee records.
   </p>
 
   {% if form %}

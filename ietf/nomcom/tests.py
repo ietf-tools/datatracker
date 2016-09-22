@@ -3,6 +3,7 @@
 import datetime
 import os
 import shutil
+import urlparse
 from pyquery import PyQuery
 import StringIO
 
@@ -76,7 +77,8 @@ class NomcomViewsTest(TestCase):
 
         # private urls
         self.private_index_url = reverse('nomcom_private_index', kwargs={'year': self.year})
-        self.private_merge_url = reverse('nomcom_private_merge', kwargs={'year': self.year})
+        self.private_merge_person_url = reverse('ietf.nomcom.views.private_merge_person', kwargs={'year': self.year})
+        self.private_merge_nominee_url = reverse('ietf.nomcom.views.private_merge_nominee', kwargs={'year': self.year})
         self.edit_members_url = reverse('nomcom_edit_members', kwargs={'year': self.year})
         self.edit_nomcom_url = reverse('nomcom_edit_nomcom', kwargs={'year': self.year})
         self.private_nominate_url = reverse('nomcom_private_nominate', kwargs={'year': self.year})
@@ -174,6 +176,211 @@ class NomcomViewsTest(TestCase):
         self.assertEqual(NomineePosition.objects.filter(state='pending').count (), 1)
         self.client.logout()
 
+
+    def test_private_merge_view(self):
+        """Verify private nominee merge view"""
+
+        nominees = [u'nominee0@example.com',
+                    u'nominee1@example.com',
+                    u'nominee2@example.com',
+                    u'nominee3@example.com']
+
+        # do nominations
+        login_testing_unauthorized(self, COMMUNITY_USER, self.public_nominate_url)
+        self.nominate_view(public=True,
+                           nominee_email=nominees[0],
+                           position='IAOC')
+        self.nominate_view(public=True,
+                           nominee_email=nominees[0],
+                           position='IAOC')
+        self.nominate_view(public=True,
+                           nominee_email=nominees[0],
+                           position='IAB')
+        self.nominate_view(public=True,
+                           nominee_email=nominees[0],
+                           position='TSV')
+        self.nominate_view(public=True,
+                           nominee_email=nominees[1],
+                           position='IAOC')
+        self.nominate_view(public=True,
+                           nominee_email=nominees[1],
+                           position='IAOC')
+        self.nominate_view(public=True,
+                           nominee_email=nominees[2],
+                           position='IAB')
+        self.nominate_view(public=True,
+                           nominee_email=nominees[2],
+                           position='IAB')
+        self.nominate_view(public=True,
+                           nominee_email=nominees[3],
+                           position='TSV')
+        self.nominate_view(public=True,
+                           nominee_email=nominees[3],
+                           position='TSV')
+        # Check nominee positions
+        self.assertEqual(NomineePosition.objects.count(), 6)
+        self.assertEqual(Feedback.objects.nominations().count(), 10)
+
+        # Accept and declined nominations
+        nominee_position = NomineePosition.objects.get(position__name='IAOC',
+                                                       nominee__email__address=nominees[0])
+        nominee_position.state = NomineePositionStateName.objects.get(slug='accepted')
+        nominee_position.save()
+
+        nominee_position = NomineePosition.objects.get(position__name='IAOC',
+                                                       nominee__email__address=nominees[1])
+        nominee_position.state = NomineePositionStateName.objects.get(slug='declined')
+        nominee_position.save()
+
+        nominee_position = NomineePosition.objects.get(position__name='IAB',
+                                                       nominee__email__address=nominees[2])
+        nominee_position.state = NomineePositionStateName.objects.get(slug='declined')
+        nominee_position.save()
+
+        nominee_position = NomineePosition.objects.get(position__name='TSV',
+                                                       nominee__email__address=nominees[3])
+        nominee_position.state = NomineePositionStateName.objects.get(slug='accepted')
+        nominee_position.save()
+
+        self.client.logout()
+
+        # fill questionnaires (internally the function does new nominations)
+        self.access_chair_url(self.add_questionnaire_url)
+
+        self.add_questionnaire(public=False,
+                               nominee_email=nominees[0],
+                               position='IAOC')
+        self.add_questionnaire(public=False,
+                               nominee_email=nominees[1],
+                               position='IAOC')
+        self.add_questionnaire(public=False,
+                               nominee_email=nominees[2],
+                               position='IAB')
+        self.add_questionnaire(public=False,
+                               nominee_email=nominees[3],
+                               position='TSV')
+        self.assertEqual(Feedback.objects.questionnaires().count(), 4)
+
+        self.client.logout()
+
+        ## Add feedbacks (internally the function does new nominations)
+        self.access_member_url(self.private_feedback_url)
+        self.feedback_view(public=False,
+                           nominee_email=nominees[0],
+                           position='IAOC')
+        self.feedback_view(public=False,
+                           nominee_email=nominees[1],
+                           position='IAOC')
+        self.feedback_view(public=False,
+                           nominee_email=nominees[2],
+                           position='IAB')
+        self.feedback_view(public=False,
+                           nominee_email=nominees[3],
+                           position='TSV')
+
+        self.assertEqual(Feedback.objects.comments().count(), 4)
+        self.assertEqual(Feedback.objects.nominations().count(), 18)
+        self.assertEqual(Feedback.objects.nominations().filter(nominees__email__address=nominees[0]).count(), 6)
+        self.assertEqual(Feedback.objects.nominations().filter(nominees__email__address=nominees[1]).count(), 4)
+        self.assertEqual(Feedback.objects.nominations().filter(nominees__email__address=nominees[2]).count(), 4)
+        self.assertEqual(Feedback.objects.nominations().filter(nominees__email__address=nominees[3]).count(), 4)
+        for nominee in nominees:
+            self.assertEqual(Feedback.objects.comments().filter(nominees__email__address=nominee).count(),
+                         1)
+            self.assertEqual(Feedback.objects.questionnaires().filter(nominees__email__address=nominee).count(),
+                         1)
+
+        self.client.logout()
+
+        ## merge nominations
+        self.access_chair_url(self.private_merge_nominee_url)
+
+        test_data = {"secondary_emails": "%s, %s" % (nominees[0], nominees[1]),
+                     "primary_email": nominees[0]}
+        response = self.client.post(self.private_merge_nominee_url, test_data)
+        self.assertEqual(response.status_code, 200)
+        q = PyQuery(response.content)
+        self.assertTrue(q("form .has-error"))
+
+        test_data = {"primary_email": nominees[0],
+                     "secondary_emails": ""}
+        response = self.client.post(self.private_merge_nominee_url, test_data)
+        self.assertEqual(response.status_code, 200)
+        q = PyQuery(response.content)
+        self.assertTrue(q("form .has-error"))
+
+        test_data = {"primary_email": "",
+                     "secondary_emails": nominees[0]}
+        response = self.client.post(self.private_merge_nominee_url, test_data)
+        self.assertEqual(response.status_code, 200)
+        q = PyQuery(response.content)
+        self.assertTrue(q("form .has-error"))
+
+        test_data = {"primary_email": "unknown@example.com",
+                     "secondary_emails": nominees[0]}
+        response = self.client.post(self.private_merge_nominee_url, test_data)
+        self.assertEqual(response.status_code, 200)
+        q = PyQuery(response.content)
+        self.assertTrue(q("form .has-error"))
+
+        test_data = {"primary_email": nominees[0],
+                     "secondary_emails": "unknown@example.com"}
+        response = self.client.post(self.private_merge_nominee_url, test_data)
+        self.assertEqual(response.status_code, 200)
+        q = PyQuery(response.content)
+        self.assertTrue(q("form .has-error"))
+
+        test_data = {"secondary_emails": """%s,
+                                            %s,
+                                            %s""" % (nominees[1], nominees[2], nominees[3]),
+                     "primary_email": nominees[0]}
+
+        response = self.client.post(self.private_merge_nominee_url, test_data)
+        self.assertEqual(response.status_code, 302)
+        redirect_url = response["Location"]
+        redirect_path = urlparse.urlparse(redirect_url).path
+        self.assertEqual(redirect_path, reverse('ietf.nomcom.views.private_index', kwargs={"year": NOMCOM_YEAR}))
+
+        response = self.client.get(redirect_url)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "alert-success")
+
+        self.assertEqual(Nominee.objects.filter(email__address=nominees[1],
+                                                duplicated__isnull=False).count(), 1)
+        self.assertEqual(Nominee.objects.filter(email__address=nominees[2],
+                                                duplicated__isnull=False).count(), 1)
+        self.assertEqual(Nominee.objects.filter(email__address=nominees[3],
+                                                duplicated__isnull=False).count(), 1)
+
+        nominee = Nominee.objects.get(email__address=nominees[0])
+
+        self.assertEqual(Nomination.objects.filter(nominee=nominee).count(), 18)
+        self.assertEqual(Feedback.objects.nominations().filter(nominees__in=[nominee]).count(),
+                         18)
+        self.assertEqual(Feedback.objects.comments().filter(nominees__in=[nominee]).count(),
+                         4)
+        self.assertEqual(Feedback.objects.questionnaires().filter(nominees__in=[nominee]).count(),
+                         4)
+
+        for nominee_email in nominees[1:]:
+            self.assertEqual(Feedback.objects.nominations().filter(nominees__email__address=nominee_email).count(),
+                         0)
+            self.assertEqual(Feedback.objects.comments().filter(nominees__email__address=nominee_email).count(),
+                         0)
+            self.assertEqual(Feedback.objects.questionnaires().filter(nominees__email__address=nominee_email).count(),
+                         0)
+
+        self.assertEqual(NomineePosition.objects.filter(nominee=nominee).count(), 3)
+
+        # Check nominations state
+        self.assertEqual(NomineePosition.objects.get(position__name='TSV',
+                                                     nominee=nominee).state.slug, u'accepted')
+        self.assertEqual(NomineePosition.objects.get(position__name='IAOC',
+                                                     nominee=nominee).state.slug, u'accepted')
+        self.assertEqual(NomineePosition.objects.get(position__name='IAB',
+                                                     nominee=nominee).state.slug, u'declined')
+
+        self.client.logout()
 
     def change_members(self, members):
         members_emails = u','.join(['%s%s' % (member, EMAIL_DOMAIN) for member in members])
@@ -982,7 +1189,7 @@ class InactiveNomcomTests(TestCase):
         self._test_send_reminders_closed('questionnaire')
 
     def test_merge_closed(self):
-        url = reverse('nomcom_private_merge', kwargs={'year':self.nc.year()})
+        url = reverse('ietf.nomcom.views.private_merge_person', kwargs={'year':self.nc.year()})
         login_testing_unauthorized(self, self.chair.user.username, url)
         response = self.client.get(url)
         q = PyQuery(response.content)
@@ -1485,7 +1692,7 @@ Junk body for testing
 
     def test_request_merge(self):
         nominee1, nominee2 = self.nc.nominee_set.all()[:2]
-        url = reverse('nomcom_private_merge',kwargs={'year':self.nc.year()})
+        url = reverse('ietf.nomcom.views.private_merge_person',kwargs={'year':self.nc.year()})
         login_testing_unauthorized(self,self.chair.user.username,url)
         empty_outbox()
         response = self.client.get(url)

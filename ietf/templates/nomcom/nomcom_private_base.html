@@ -33,7 +33,8 @@
             <li {% if selected == "questionnaire" %}class="active"{% endif %}><a href="{% url "nomcom_private_questionnaire" year %}">Enter questionnaire response</a></li>
             <li {% if selected == "send_accept_reminder" %}class="active"{% endif %}><a href="{% url "nomcom_send_reminder_mail" year "accept" %}">Send accept reminder</a></li>
             <li {% if selected == "send_questionnaire_reminder" %}class="active"{% endif %}><a href="{% url "nomcom_send_reminder_mail" year "questionnaire" %}">Send questionnaire reminder</a></li>
-            <li {% if selected == "merge" %}class="active"{% endif %}><a href="{% url "nomcom_private_merge" year %}">Request Nominee Merge</a></li>
+            <li {% if selected == "merge_person" %}class="active"{% endif %}><a href="{% url "ietf.nomcom.views.private_merge_person" year %}">Request Person Record Merge</a></li>
+            <li {% if selected == "merge_nominee" %}class="active"{% endif %}><a href="{% url "ietf.nomcom.views.private_merge_nominee" year %}">Merge Nominee Records</a></li>
           {% endif %}
           <li role = "presentation" class = "dropdown-header">Nomcom Configuration</li>
             <li {% if selected == "edit_nomcom" %}class="active"{% endif %}><a href="{% url "nomcom_edit_nomcom" year %}">Edit Settings</a></li>

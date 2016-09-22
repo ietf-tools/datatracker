@@ -23,7 +23,7 @@ from ietf.message.models import Message
 
 from ietf.nomcom.decorators import nomcom_private_key_required
 from ietf.nomcom.forms import (NominateForm, NominateNewPersonForm, FeedbackForm, QuestionnaireForm,
-                               MergeForm, NomComTemplateForm, PositionForm,
+                               MergeNomineeForm, MergePersonForm, NomComTemplateForm, PositionForm,
                                PrivateKeyForm, EditNomcomForm, EditNomineeForm,
                                PendingFeedbackForm, ReminderDatesForm, FullFeedbackFormSet,
                                FeedbackEmailForm, NominationResponseCommentForm)
@@ -264,29 +264,53 @@ def send_reminder_mail(request, year, type):
 
 
 @role_required("Nomcom Chair", "Nomcom Advisor")
-def private_merge(request, year):
+def private_merge_person(request, year):
     nomcom = get_nomcom_by_year(year)
     if nomcom.group.state_id != 'active':
         messages.warning(request, "This Nomcom is not active.")
         form = None
     else:
         if request.method == 'POST':
-            form = MergeForm(request.POST, nomcom=nomcom )
+            form = MergePersonForm(request.POST, nomcom=nomcom )
             if form.is_valid():
                 form.save()
                 messages.success(request, 'A merge request has been sent to the secretariat.')
                 return redirect('nomcom_private_index',year=year)
         else:
-            form = MergeForm(nomcom=nomcom)
+            form = MergePersonForm(nomcom=nomcom)
 
-    return render_to_response('nomcom/private_merge.html',
+    return render_to_response('nomcom/private_merge_person.html',
                               {'nomcom': nomcom,
                                'year': year,
                                'form': form,
-                               'selected': 'merge',
+                               'selected': 'merge_person',
                                'is_chair_task' : True,
                               }, RequestContext(request))
 
+
+@role_required("Nomcom Chair", "Nomcom Advisor")
+def private_merge_nominee(request, year):
+    nomcom = get_nomcom_by_year(year)
+    if nomcom.group.state_id != 'active':
+        messages.warning(request, "This Nomcom is not active.")
+        form = None
+    else:
+        if request.method == 'POST':
+            form = MergeNomineeForm(request.POST, nomcom=nomcom )
+            if form.is_valid():
+                form.save()
+                messages.success(request, 'The Nominee records have been joined.')
+                return redirect('nomcom_private_index',year=year)
+        else:
+            form = MergeNomineeForm(nomcom=nomcom)
+
+    return render_to_response('nomcom/private_merge_nominee.html',
+                              {'nomcom': nomcom,
+                               'year': year,
+                               'form': form,
+                               'selected': 'merge_nominee',
+                               'is_chair_task' : True,
+                              }, RequestContext(request))
 
 def requirements(request, year):
     nomcom = get_nomcom_by_year(year)
