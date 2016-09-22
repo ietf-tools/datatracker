@@ -1942,7 +1942,6 @@ def floor_plan(request, num=None, floor=None, ):
             "floors": floors,
         })
 
-@role_required('Secretariat')
 def proceedings(request, num=None):
 
     meeting = get_meeting(num)

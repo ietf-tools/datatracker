@@ -260,7 +260,6 @@ class MeetingTests(TestCase):
         self.write_materials_files(meeting, session)
 
         url = urlreverse("ietf.meeting.views.proceedings", kwargs=dict(num=meeting.number))
-        login_testing_unauthorized(self,"secretary",url)
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 
