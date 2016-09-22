@@ -1352,7 +1352,7 @@ VALID_SLIDE_EXTENSIONS = ('.doc','.docx','.pdf','.ppt','.pptx','.txt') # Note th
 class UploadSlidesForm(forms.Form):
     title = forms.CharField(max_length=255)
     file = forms.FileField(label='Slides file to upload.')
-    apply_to_all = forms.BooleanField(label='Apply to all group sessions at this meeting',initial=True,required=False)
+    apply_to_all = forms.BooleanField(label='Apply to all group sessions at this meeting',initial=False,required=False)
 
     def __init__(self, num_sessions, *args, **kwargs):
         super(UploadSlidesForm, self).__init__(*args, **kwargs)

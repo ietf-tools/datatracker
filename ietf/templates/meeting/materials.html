@@ -27,7 +27,9 @@
       {% endif %}
 
       <p>
-        <a class="btn btn-default" href="{% url "proceedings" %}">Meeting materials manager</a>
+        {% if user|has_role:"Secretariat" %}
+          <a class="btn btn-default" href="{% url "proceedings" %}">Secretariat proceedings functions</a>
+        {% endif %}
         <a class="btn btn-default" href="/meeting/{{meeting_num}}/requests">Meeting requests/conflicts</a>
       </p>
 

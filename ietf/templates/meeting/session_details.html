@@ -15,7 +15,7 @@
   <h1>{{ meeting }} : {{ acronym }}</h1>
 
   {% for session in sessions %}
-    <h2 id="session_{{session.pk}}">{% if sessions|length > 1 %}Session {{ forloop.counter }} : {% endif %}{{ session.time }}{% if session.name %} : {{ session.name }}{% endif %}</h2>
+    <h2 class="anchor-target" id="session_{{session.pk}}">{% if sessions|length > 1 %}Session {{ forloop.counter }} : {% endif %}{{ session.time }}{% if session.name %} : {{ session.name }}{% endif %}</h2>
     {% if session.agenda_note %}<h3>{{session.agenda_note}}</h3>{% endif %}
 
     {% if can_manage_materials %}
@@ -32,7 +32,7 @@
     {% endif %}
 
     <div class="panel panel-default">
-      <div class="panel-heading">Artifacts</div>
+      <div class="panel-heading">Agenda, Minutes, and Bluesheets</div>
       <div class="panel-body">
         <table class="table table-condensed table-striped">
           {% for pres in session.filtered_artifacts %}
@@ -106,6 +106,9 @@
           <a class="btn btn-default pull-right" href="{% url 'ietf.meeting.views.upload_session_slides' session_id=session.pk num=session.meeting.number %}">Upload New Slides</a>
         {% endif %}
       </div>
+      {% if can_manage_materials %}
+        <div class="panel-footer small">Drag-and-drop to reorder slides</div>
+      {% endif %}
     </div>
     <div class="panel panel-default">
       <div class="panel-heading">Drafts

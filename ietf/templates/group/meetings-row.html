@@ -15,9 +15,7 @@
          <td>
 	   {% ifchanged s.meeting %}
 	     {% if s.meeting.type.slug == 'ietf' %}
-	       <a href="{% url 'ietf.meeting.views.agenda' num=s.meeting.number %}">
-	       IETF {{s.meeting.number}}
-	       </a>
+	       IETF {{s.meeting.number}} 
 	     {% else %}
 	       {{s.meeting.number}}
 	     {% endif %}

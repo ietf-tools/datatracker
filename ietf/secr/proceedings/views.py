@@ -391,11 +391,13 @@ def recording_edit(request, meeting_num, name):
     )
     
 # TODO - should probably rename this since it's not selecting groups anymore
-@role_required('Secretariat')
 def select(request, meeting_num):
     '''
         Provide the secretariat only functions related to meeting materials management
     '''
+
+    if not has_role(request.user,'Secretariat'):
+        return HttpResponseRedirect(reverse('ietf.meeting.views.materials', kwargs={'num':meeting_num}))
 
     meeting = get_object_or_404(Meeting, number=meeting_num)
     proceedings_url = get_proceedings_url(meeting)
