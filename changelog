@@ -1,6 +1,60 @@
+ietfdb (6.33.1) ietf; urgency=high
+
+  **Nomcom nominee merging, agenda.json enhancements**
+
+  This release brings back merging of duplicate nominee records in the nomcom
+  tool, to complement the merging of duplicate person records.  It brings a
+  number of enhancements to the agenda.json output provided for the IETFers
+  iOS app, and a number of bugfixes as mentioned in this changelog excerpt:
+
+  * Merged in [11988] from rcross@amsl.com: Fix issue with proceedings for
+    training sessions.  
+
+  * Brought back the nomcom nominee merge functionality which was
+    inadvertently removed in January.  There is now both a Merge Nominee and a
+    Merge Person form, with additional instructions which should make it
+    easier to choose the right one for the task.
+
+  * Don't use EmptyQuerySet directly; return Class.objects.none() instead.
+
+  * Clarified the differences between Document.href() and
+    Document.get_absolute_url().  Updated PLAN.
+
+  * On request, changed the agenda and minutes links in json_agenda to point
+    at the document text instead of the document API endpoint.
+
+  * Added an is_bof flag to json_agenda.  Also added group state information.
+    Changed the group information to use historic information instead of
+    current.
+
+  * Added a link to the minutes api to json_agenda().  Changed the output json
+    to use sorted keys.
+
+  * Made retrieve_search_results() always return a queryset, which lets us use
+    .exists() on the returned value as needed.
+
+  * Made 'group' a json object in the json_agenda, and added
+    session.group.type information.
+
+  * Fixed a merge error which replaced the group group state with a duplicate
+    group charter line on the group_about page.  Fixes issue #2009.
+
+  * Changed the 1id_index generation to use a new Person method
+    .plain_ascii().  Added tests for some Person name methods.
+
+  * Changed 1id_index back to using plain names, undoing an inadvertent change
+    to names with title.
+
+  * Added object IDs to /meeting/<num>/agenda.json.
+
+  * Datatracker buildbot (http://buildbot.tools.ietf.org:8010/waterfall)
+    enhancements, tracking additional Test-Crawler measurables.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  23 Sep 2016 06:22:56 +0000
+
 ietfdb (6.33.0) ietf; urgency=medium
 
-  **Manual Draft Submission Management**
+  **Manual draft submission management**
 
   This release provides secretariat support for managing draft submissions
   outside of the automated datatracker draft submission tool.  In addition to
