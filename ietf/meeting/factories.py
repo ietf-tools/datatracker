@@ -2,7 +2,6 @@ import factory
 import random
 import datetime
 
-from django.db.models import Max
 from django.core.files.base import ContentFile
 
 from ietf.meeting.models import Meeting, Session, Schedule, TimeSlot, SessionPresentation, FloorPlan
@@ -31,7 +30,8 @@ class MeetingFactory(factory.DjangoModelFactory):
     def number(self,n):
         if self.type_id == 'ietf':
             if Meeting.objects.filter(type='ietf').exists():
-                return '%02d'%(int(Meeting.objects.filter(type='ietf').aggregate(Max('number'))['number__max'])+1)
+                so_far = max([int(x.number) for x in Meeting.objects.filter(type='ietf')])
+                return '%02d'%(so_far+1)
             else:
                 return '%02d'%(n+80)
         else:

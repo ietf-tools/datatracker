@@ -7,10 +7,13 @@ from unittest import skipIf
 
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.core.urlresolvers import reverse as urlreverse
+#from django.test.utils import override_settings
 
 import debug                            # pyflakes:ignore
 
+from ietf.doc.factories import DocumentFactory
 from ietf.group import colors
+from ietf.meeting.factories import SessionFactory
 from ietf.meeting.test_data import make_meeting_test_data
 from ietf.meeting.models import SchedTimeSessAssignment
 from ietf.utils.test_runner import set_coverage_checking
@@ -43,15 +46,23 @@ def condition_data():
    
 @skipIf(skip_selenium, skip_message)
 class ScheduleEditTests(StaticLiveServerTestCase):
-    def setUp(self):
+    @classmethod
+    def setUpClass(cls):
         set_coverage_checking(False)
-        condition_data()
+        super(ScheduleEditTests, cls).setUpClass()        
+
+    @classmethod
+    def tearDownClass(cls):
+        super(ScheduleEditTests, cls).tearDownClass()
+        set_coverage_checking(True)
+
+    def setUp(self):
         self.driver = webdriver.PhantomJS(port=0, service_log_path=settings.TEST_GHOSTDRIVER_LOG_PATH)
         self.driver.set_window_size(1024,768)
+        condition_data()
 
     def tearDown(self):
         self.driver.close()
-        set_coverage_checking(True)        
 
     def debugSnapshot(self,filename='debug_this.png'):
         self.driver.execute_script("document.body.bgColor = 'white';")
@@ -87,6 +98,57 @@ class ScheduleEditTests(StaticLiveServerTestCase):
 
         time.sleep(0.1) # The API that modifies the database runs async
         self.assertEqual(SchedTimeSessAssignment.objects.filter(session__meeting__number=42,session__group__acronym='mars',schedule__name='test-agenda').count(),0)
+
+@skipIf(skip_selenium, skip_message)
+class SlideReorderTests(StaticLiveServerTestCase):
+    @classmethod
+    def setUpClass(cls):
+        set_coverage_checking(False)
+        super(SlideReorderTests, cls).setUpClass()        
+
+    @classmethod
+    def tearDownClass(cls):
+        super(SlideReorderTests, cls).tearDownClass()
+        set_coverage_checking(True)
+
+    def setUp(self):
+        self.driver = webdriver.PhantomJS(port=0, service_log_path=settings.TEST_GHOSTDRIVER_LOG_PATH)
+        self.driver.set_window_size(1024,768)
+        self.session = SessionFactory(meeting__type_id='ietf')
+        self.session.sessionpresentation_set.create(document=DocumentFactory(type_id='slides',name='one'),order=1)
+        self.session.sessionpresentation_set.create(document=DocumentFactory(type_id='slides',name='two'),order=2)
+        self.session.sessionpresentation_set.create(document=DocumentFactory(type_id='slides',name='three'),order=3)
+
+    def tearDown(self):
+        self.driver.close()
+
+    def absreverse(self,*args,**kwargs):
+        return '%s%s'%(self.live_server_url,urlreverse(*args,**kwargs))
+
+    def secr_login(self):
+        url = '%s%s'%(self.live_server_url, urlreverse('django.contrib.auth.views.login'))
+        self.driver.get(url)
+        self.driver.find_element_by_name('username').send_keys('secretary')
+        self.driver.find_element_by_name('password').send_keys('secretary+password')
+        self.driver.find_element_by_xpath('//button[@type="submit"]').click()
+
+    #@override_settings(DEBUG=True)
+    def testReorderSlides(self):
+        return
+        url = self.absreverse('ietf.meeting.views.session_details',
+                  kwargs=dict(
+                      num=self.session.meeting.number,
+                      acronym = self.session.group.acronym,))
+        self.secr_login()
+        self.driver.get(url)        
+        #debug.show('unicode(self.driver.page_source)')
+        second = self.driver.find_element_by_css_selector('#slides tr:nth-child(2)')
+        third = self.driver.find_element_by_css_selector('#slides tr:nth-child(3)')
+        ActionChains(self.driver).drag_and_drop(second,third).perform()
+
+        time.sleep(0.1) # The API that modifies the database runs async
+        names=self.session.sessionpresentation_set.values_list('document__name',flat=True) 
+        self.assertEqual(list(names),[u'one',u'three',u'two'])
 
 # The following are useful debugging tools
 

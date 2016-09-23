@@ -260,7 +260,6 @@ class MeetingTests(TestCase):
         self.write_materials_files(meeting, session)
 
         url = urlreverse("ietf.meeting.views.proceedings", kwargs=dict(num=meeting.number))
-        login_testing_unauthorized(self,"secretary",url)
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 
@@ -1271,7 +1270,7 @@ class FinalizeProceedingsTests(TestCase):
         self.assertEqual(meeting.proceedings_final,True)
         self.assertEqual(meeting.session_set.filter(group__acronym="mars").first().sessionpresentation_set.filter(document__type="draft").first().rev,'00')
  
-class BluesheetsTests(TestCase):
+class MaterialsTests(TestCase):
 
     def setUp(self):
         self.materials_dir = os.path.abspath(settings.TEST_MATERIALS_DIR)
@@ -1284,14 +1283,14 @@ class BluesheetsTests(TestCase):
         settings.AGENDA_PATH = self.saved_agenda_path
         shutil.rmtree(self.materials_dir)
 
-    def test_upload_blusheets(self):
+    def test_upload_bluesheets(self):
         session = SessionFactory(meeting__type_id='ietf')
         url = urlreverse('ietf.meeting.views.upload_session_bluesheets',kwargs={'num':session.meeting.number,'session_id':session.id})
         login_testing_unauthorized(self,"secretary",url)
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertFalse(q("div.alert"))
+        self.assertTrue('Upload' in unicode(q("title")))
         self.assertFalse(session.sessionpresentation_set.exists())
         test_file = StringIO('this is some text for a test')
         test_file.name = "not_really.pdf"
@@ -1302,7 +1301,7 @@ class BluesheetsTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertTrue(q("div.alert"))
+        self.assertTrue('Revise' in unicode(q("title")))
         test_file = StringIO('this is some different text for a test')
         test_file.name = "also_not_really.pdf"
         r = self.client.post(url,dict(file=test_file))
@@ -1317,7 +1316,7 @@ class BluesheetsTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertFalse(q("div.alert"))
+        self.assertTrue('Upload' in unicode(q("title")))
         self.assertFalse(session.sessionpresentation_set.exists())
         test_file = StringIO('this is some text for a test')
         test_file.name = "not_really.pdf"
@@ -1325,3 +1324,152 @@ class BluesheetsTests(TestCase):
         self.assertEqual(r.status_code, 302)
         bs_doc = session.sessionpresentation_set.filter(document__type_id='bluesheets').first().document
         self.assertEqual(bs_doc.rev,'00')
+
+    def test_upload_minutes_agenda(self):
+        for doctype in ('minutes','agenda'):
+            session = SessionFactory(meeting__type_id='ietf')
+            if doctype == 'minutes':
+                url = urlreverse('ietf.meeting.views.upload_session_minutes',kwargs={'num':session.meeting.number,'session_id':session.id})
+            else:
+                url = urlreverse('ietf.meeting.views.upload_session_agenda',kwargs={'num':session.meeting.number,'session_id':session.id})
+            self.client.logout()
+            login_testing_unauthorized(self,"secretary",url)
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            self.assertTrue('Upload' in unicode(q("Title")))
+            self.assertFalse(session.sessionpresentation_set.exists())
+            self.assertFalse(q('form input[type="checkbox"]'))
+    
+            session2 = SessionFactory(meeting=session.meeting,group=session.group)
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            self.assertTrue(q('form input[type="checkbox"]'))
+    
+            test_file = StringIO('this is some text for a test')
+            test_file.name = "not_really.json"
+            r = self.client.post(url,dict(file=test_file))
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            self.assertTrue(q('form .has-error'))
+    
+            test_file = StringIO('this is some text for a test'*1510000)
+            test_file.name = "not_really.pdf"
+            r = self.client.post(url,dict(file=test_file))
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            self.assertTrue(q('form .has-error'))
+    
+            test_file = StringIO('this is some text for a test')
+            test_file.name = "not_really.txt"
+            r = self.client.post(url,dict(file=test_file,apply_to_all=False))
+            self.assertEqual(r.status_code, 302)
+            doc = session.sessionpresentation_set.filter(document__type_id=doctype).first().document
+            self.assertEqual(doc.rev,'00')
+            self.assertFalse(session2.sessionpresentation_set.filter(document__type_id=doctype))
+    
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            self.assertTrue('Revise' in unicode(q("Title")))
+            test_file = StringIO('this is some different text for a test')
+            test_file.name = "also_not_really.txt"
+            r = self.client.post(url,dict(file=test_file,apply_to_all=True))
+            self.assertEqual(r.status_code, 302)
+            doc = Document.objects.get(pk=doc.pk)
+            self.assertEqual(doc.rev,'01')
+            self.assertTrue(session2.sessionpresentation_set.filter(document__type_id=doctype))
+
+    def test_upload_minutes_agenda_interim(self):
+        session=SessionFactory(meeting__type_id='interim')
+        for doctype in ('minutes','agenda'):
+            if doctype=='minutes':
+                url = urlreverse('ietf.meeting.views.upload_session_minutes',kwargs={'num':session.meeting.number,'session_id':session.id})
+            else:
+                url = urlreverse('ietf.meeting.views.upload_session_agenda',kwargs={'num':session.meeting.number,'session_id':session.id})
+            self.client.logout()
+            login_testing_unauthorized(self,"secretary",url)
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            self.assertTrue('Upload' in unicode(q("title")))
+            self.assertFalse(session.sessionpresentation_set.filter(document__type_id=doctype))
+            test_file = StringIO('this is some text for a test')
+            test_file.name = "not_really.txt"
+            r = self.client.post(url,dict(file=test_file))
+            self.assertEqual(r.status_code, 302)
+            doc = session.sessionpresentation_set.filter(document__type_id=doctype).first().document
+            self.assertEqual(doc.rev,'00')
+
+    def test_upload_slides(self):
+
+        session1 = SessionFactory(meeting__type_id='ietf')
+        session2 = SessionFactory(meeting=session1.meeting,group=session1.group)
+        url = urlreverse('ietf.meeting.views.upload_session_slides',kwargs={'num':session1.meeting.number,'session_id':session1.id})
+        login_testing_unauthorized(self,"secretary",url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertTrue('Upload' in unicode(q("title")))
+        self.assertFalse(session1.sessionpresentation_set.filter(document__type_id='slides'))
+        test_file = StringIO('this is not really a slide')
+        test_file.name = 'not_really.txt'
+        r = self.client.post(url,dict(file=test_file,title='a test slide file',apply_to_all=True))
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(session1.sessionpresentation_set.count(),1) 
+        self.assertEqual(session2.sessionpresentation_set.count(),1) 
+        sp = session2.sessionpresentation_set.first()
+        self.assertEqual(sp.document.name, 'slides-%s-%s-a-test-slide-file' % (session1.meeting.number,session1.group.acronym ) )
+        self.assertEqual(sp.order,1)
+
+        url = urlreverse('ietf.meeting.views.upload_session_slides',kwargs={'num':session2.meeting.number,'session_id':session2.id})
+        test_file = StringIO('some other thing still not slidelike')
+        test_file.name = 'also_not_really.txt'
+        r = self.client.post(url,dict(file=test_file,title='a different slide file',apply_to_all=False))
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(session1.sessionpresentation_set.count(),1)
+        self.assertEqual(session2.sessionpresentation_set.count(),2)
+        sp = session2.sessionpresentation_set.get(document__name__endswith='-a-different-slide-file')
+        self.assertEqual(sp.order,2)
+        self.assertEqual(sp.rev,u'00')
+        self.assertEqual(sp.document.rev,u'00')
+
+        url = urlreverse('ietf.meeting.views.upload_session_slides',kwargs={'num':session2.meeting.number,'session_id':session2.id,'name':session2.sessionpresentation_set.get(order=2).document.name})
+        r = self.client.get(url)
+        self.assertTrue(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertTrue('Revise' in unicode(q("title")))
+        test_file = StringIO('new content for the second slide deck')
+        test_file.name = 'doesnotmatter.txt'
+        r = self.client.post(url,dict(file=test_file,title='rename the presentation',apply_to_all=False))
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(session1.sessionpresentation_set.count(),1)
+        self.assertEqual(session2.sessionpresentation_set.count(),2)
+        sp = session2.sessionpresentation_set.get(order=2)
+        self.assertEqual(sp.rev,u'01')
+        self.assertEqual(sp.document.rev,u'01')
+ 
+    def test_remove_sessionpresentation(self):
+        session = SessionFactory(meeting__type_id='ietf')
+        doc = DocumentFactory(type_id='slides')
+        session.sessionpresentation_set.create(document=doc)
+
+        url = urlreverse('ietf.meeting.views.remove_sessionpresentation',kwargs={'num':session.meeting.number,'session_id':session.id,'name':'no-such-doc'})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
+        url = urlreverse('ietf.meeting.views.remove_sessionpresentation',kwargs={'num':session.meeting.number,'session_id':0,'name':doc.name})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
+        url = urlreverse('ietf.meeting.views.remove_sessionpresentation',kwargs={'num':session.meeting.number,'session_id':session.id,'name':doc.name})
+        login_testing_unauthorized(self,"secretary",url)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+        self.assertEqual(1,session.sessionpresentation_set.count())
+        response = self.client.post(url,{'remove_session':''})
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(0,session.sessionpresentation_set.count())
+        self.assertEqual(2,doc.docevent_set.count())

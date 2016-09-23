@@ -54,7 +54,7 @@
     
                   <tr class = "{% cycle 'row1' 'row2' %}">
                     <td>{{ meeting.group.acronym }}</td>
-                    <td><a href="{% url "proceedings_upload_unified" meeting_num=meeting.number acronym=meeting.group.acronym %}">{{ meeting.date }}</a></td>
+                    <td><a href="{% url "ietf.meeting.views.session_details" num=meeting.number acronym=meeting.group.acronym %}">{{ meeting.date }}</a></td>
                   </tr>
             {% endfor %}
           </tbody>

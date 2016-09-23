@@ -1,106 +1,196 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
-{% load origin ietf_filters %}
+{% load origin ietf_filters staticfiles %}
 
 {% block title %}{{ meeting }} : {{ acronym }}{% endblock %}
+
+{% block morecss %}
+  .ui-sortable tr {
+    cursor:pointer;
+  }    
+{% endblock %}
 
 {% block content %}
   {% origin %}
   <h1>{{ meeting }} : {{ acronym }}</h1>
 
   {% for session in sessions %}
-    <h2>{% if sessions|length > 1 %}Session {{ forloop.counter }} : {% endif %}{{ session.time }}{% if session.name %} : {{ session.name }}{% endif %}</h2>
+    <h2 class="anchor-target" id="session_{{session.pk}}">{% if sessions|length > 1 %}Session {{ forloop.counter }} : {% endif %}{{ session.time }}{% if session.name %} : {{ session.name }}{% endif %}</h2>
     {% if session.agenda_note %}<h3>{{session.agenda_note}}</h3>{% endif %}
 
-   {% if can_manage_materials %}
-   {% if session.status.slug == 'sched' or session.status.slug == 'schedw' %}
-   <div class="buttonlist">
-     {% if meeting.type.slug == 'interim' and user|has_role:"Secretariat" %}
-        <a class="btn btn-default" href="{% url 'ietf.meeting.views.interim_request_details' number=meeting.number %}">Meeting Details</a>
-     {% endif %}
-     <a class="btn btn-default" href="{% url 'ietf.secr.proceedings.views.upload_unified' meeting_num=session.meeting.number acronym=session.group.acronym %}">
-        Upload/Edit materials 
-     </a>
-     <a class="btn btn-default" href="{% url 'ietf.meeting.views.add_session_drafts' session_id=session.pk num=session.meeting.number %}">
-        Link additional drafts to session
-     </a>
-     {% if user|has_role:"Secretariat" %}
-       <a class="btn btn-default" href="{% url 'ietf.meeting.views.upload_session_bluesheets' session_id=session.pk num=session.meeting.number %}">Upload Bluesheets</a>
-     {% endif %}
-     {% if not type_counter.agenda %}
-       <span class="label label-warning">This session does not yet have an agenda</span>
-     {% endif %}
-   </div>
-   {% endif %}
-   {% endif %}
+    {% if can_manage_materials %}
+      {% if session.status.slug == 'sched' or session.status.slug == 'schedw' %}
+        <div class="buttonlist">
+          {% if meeting.type.slug == 'interim' and user|has_role:"Secretariat" %}
+            <a class="btn btn-default" href="{% url 'ietf.meeting.views.interim_request_details' number=meeting.number %}">Meeting Details</a>
+          {% endif %}
+        </div>
+        {% if not session.type_counter.agenda %}
+          <span class="label label-warning">This session does not yet have an agenda</span>
+        {% endif %}
+      {% endif %}
+    {% endif %}
 
-        {% if session.filtered_artifacts %}
-          <div class="panel panel-default">
-            <div class="panel-heading">Artifacts</div>
-            <div class="panel-body">
-              <table class="table table-condensed table-striped">
-                {% for pres in session.filtered_artifacts %}
-                    <tr>
-                        <td>
-                            {% if pres.rev %}
-                               {% url 'doc_view' name=pres.document.name rev=pres.rev as url %}
-                            {% else %}
-                               {% url 'doc_view' name=pres.document.name as url %}
-                            {% endif %}
-                            <a href="{{url}}">{{pres.document.title}} ({{ pres.document.name }}{% if pres.rev %}-{{ pres.rev }}{% endif %})
-                            </a>
-                        </td>
-                    </tr>
-                {% endfor %}
-              </table>
-            </div>
-          </div>
+    <div class="panel panel-default">
+      <div class="panel-heading">Agenda, Minutes, and Bluesheets</div>
+      <div class="panel-body">
+        <table class="table table-condensed table-striped">
+          {% for pres in session.filtered_artifacts %}
+            <tr>
+              {% if pres.rev %}
+                {% url 'doc_view' name=pres.document.name rev=pres.rev as url %}
+              {% else %}
+                {% url 'doc_view' name=pres.document.name as url %}
+              {% endif %}
+              <td>
+                <a href="{{pres.document.get_absolute_url}}">{{pres.document.title}}</a>
+                <a href="{{url}}">({{ pres.document.name }}{% if pres.rev %}-{{ pres.rev }}{% endif %})</a>
+              </td>
+              {% if user|has_role:"Secretariat" or can_manage_materials %}
+                <td class="col-md-2">
+                  {% if pres.document.type.slug == 'minutes' %}
+                      {% url 'ietf.meeting.views.upload_session_minutes' session_id=session.pk num=session.meeting.number as upload_url %}
+                  {% elif pres.document.type.slug == 'agenda' %}
+                      {% url 'ietf.meeting.views.upload_session_agenda' session_id=session.pk num=session.meeting.number as upload_url %}
+                  {% else %}
+                      {% url 'ietf.meeting.views.upload_session_bluesheets' session_id=session.pk num=session.meeting.number as upload_url %}
+                  {% endif %}
+                  {% if pres.document.type.slug != 'bluesheets' or user|has_role:"Secretariat" %}
+                    <a class="btn btn-default btn-sm pull-right" href="{{upload_url}}">Upload Revision</a>
+                  {% endif %}
+                </td> 
+              {% endif %}
+            </tr>
+          {% endfor %}
+        </table>
+        {% if can_manage_materials %}
+          {% if not session.type_counter.agenda %}
+            <a class="btn btn-default pull-right" href="{% url 'ietf.meeting.views.upload_session_agenda' session_id=session.pk num=session.meeting.number %}">Upload Agenda</a>
+          {% endif %}
+          {% if not session.type_counter.minutes %}
+            <a class="btn btn-default pull-right" href="{% url 'ietf.meeting.views.upload_session_minutes' session_id=session.pk num=session.meeting.number %}">Upload Minutes</a>
+          {% endif %}
         {% endif %}
-        {% if session.filtered_slides %}
-          <div class="panel panel-default">
-            <div class="panel-heading">Slides</div>
-            <div class="panel-body">
-              <table class="table table-condensed table-striped">
-                {% for pres in session.filtered_slides %}
-                    <tr>
-                        <td>
-                            {% if pres.rev %}
-                               {% url 'doc_view' name=pres.document.name rev=pres.rev as url %}
-                            {% else %}
-                               {% url 'doc_view' name=pres.document.name as url %}
-                            {% endif %}
-                            <a href="{{url}}">{{pres.document.title}} ({{ pres.document.name }}{% if pres.rev %}-{{ pres.rev }}{% endif %})
-                            </a>
-                        </td>
-                    </tr>
-                {% endfor %}
-              </table>
-            </div>
-          </div>
+        {% if user|has_role:"Secretariat" and not session.type_counter.bluesheets %}
+          <a class="btn btn-default pull-right" href="{% url 'ietf.meeting.views.upload_session_bluesheets' session_id=session.pk num=session.meeting.number %}">Upload Bluesheets</a>
         {% endif %}
-        {% if session.filtered_drafts %}
-          <div class="panel panel-default">
-            <div class="panel-heading">Drafts</div>
-            <div class="panel-body">
-              <table class="table table-condensed table-striped">
-                {% for pres in session.filtered_drafts %}
-                    <tr>
-                        <td>
-                            {% if pres.rev %}
-                               {% url 'doc_view' name=pres.document.name rev=pres.rev as url %}
-                            {% else %}
-                               {% url 'doc_view' name=pres.document.name as url %}
-                            {% endif %}
-                            <a href="{{url}}">{{pres.document.title}} ({{ pres.document.name }}{% if pres.rev %}-{{ pres.rev }}{% endif %})
-                            </a>
-                        </td>
-                    </tr>
-                {% endfor %}
-              </table>
-            </div>
-          </div>
+      </div>
+    </div>
+    <div class="panel panel-default">
+      <div class="panel-heading" data-toggle="tooltip" title="Drag and drop to reorder slides">Slides</div>
+      <div class="panel-body">
+        <table class="table table-condensed table-striped" id="slides">
+         <tbody>
+          {% for pres in session.filtered_slides %}
+            <tr data-order="{{pres.order}}" data-url="{% url 'ietf.meeting.views.set_slide_order' session_id=session.pk num=session.meeting.number name=pres.document.name %}">
+              {% if pres.rev %}
+                {% url 'doc_view' name=pres.document.name rev=pres.rev as url %}
+              {% else %}
+                {% url 'doc_view' name=pres.document.name as url %}
+              {% endif %}
+              <td>
+                <a href="{{pres.document.get_absolute_url}}">{{pres.document.title}} </a>
+                <a href="{{url}}">({{ pres.document.name }}{% if pres.rev %}-{{ pres.rev }}{% endif %}) </a>
+              </td>
+              {% if can_manage_materials %}
+                <td class="col-md-2">
+                  <a class="btn btn-default btn-sm pull-right" href="{% url 'ietf.meeting.views.upload_session_slides' session_id=session.pk num=session.meeting.number name=pres.document.name %}">Upload Revision</a>
+                  <a class="btn btn-default btn-sm pull-right" href="{% url 'ietf.meeting.views.remove_sessionpresentation' session_id=session.pk num=session.meeting.number name=pres.document.name %}">Remove</a>
+                </td>
+              {% endif %}
+            </tr>
+          {% endfor %}
+         </tbody>
+        </table>
+        {% if can_manage_materials %}
+          <a class="btn btn-default pull-right" href="{% url 'ietf.meeting.views.upload_session_slides' session_id=session.pk num=session.meeting.number %}">Upload New Slides</a>
         {% endif %}
-
+      </div>
+      {% if can_manage_materials %}
+        <div class="panel-footer small">Drag-and-drop to reorder slides</div>
+      {% endif %}
+    </div>
+    <div class="panel panel-default">
+      <div class="panel-heading">Drafts
+      </div>
+      <div class="panel-body">
+        <table class="table table-condensed table-striped">
+          {% for pres in session.filtered_drafts %}
+            <tr>
+              <td>
+                {% if pres.rev %}
+                  {% url 'doc_view' name=pres.document.name rev=pres.rev as url %}
+                {% else %}
+                  {% url 'doc_view' name=pres.document.name as url %}
+                {% endif %}
+                <a href="{{url}}">{{pres.document.title}} ({{ pres.document.name }}{% if pres.rev %}-{{ pres.rev }}{% endif %})</a>
+              </td>
+              {% if can_manage_materials %}
+                <td class="col-md-2">
+                  <a class="btn btn-default btn-sm pull-right" href="{% url 'ietf.meeting.views.remove_sessionpresentation' session_id=session.pk num=session.meeting.number name=pres.document.name %}">Remove</a>
+                </td>
+              {% endif %}
+            </tr>
+          {% endfor %}
+        </table>
+        {% if can_manage_materials %}
+          <a class="btn btn-default pull-right" href="{% url 'ietf.meeting.views.add_session_drafts' session_id=session.pk num=session.meeting.number %}">
+            Link additional drafts to session
+          </a>
+        {% endif %}
+      </div>
+    </div>
   {% endfor %}
 
+{% endblock %}
+
+{# TODO don't rely on secr/js version of jquery-ui #}
+{# Sorting based loosely on the original secr upload sorting and on http://www.avtex.com/blog/2015/01/27/drag-and-drop-sorting-of-table-rows-in-priority-order/ #}
+{% block js %}
+{% if can_manage_materials %}
+  <script type="text/javascript" src="{% static 'jquery/jquery.min.js' %}"></script>
+  <script type="text/javascript" src="{% static 'secr/js/jquery-ui-1.11.4.custom.min.js' %}"></script>
+  <script type="text/javascript" src="{% static 'jquery.cookie/jquery.cookie.js' %}"></script>
+
+  <script type="text/javascript">
+
+    $.ajaxSetup({
+      crossDomain: false, 
+      beforeSend: function(xhr, settings) {
+        if (!csrfSafeMethod(settings.type)) {
+            xhr.setRequestHeader("X-CSRFToken", $.cookie('csrftoken'));
+        }
+      }
+    });
+
+    $(document).ready(function() {
+      var rowWidthHelper = function (e, tr) {
+        var $originals = tr.children();
+        var $helper = tr.clone();
+        $helper.children().each(function(index)
+        {
+          $(this).width($originals.eq(index).width())
+        });
+        return $helper;
+      };
+
+      $("#slides tbody").sortable({
+        helper: rowWidthHelper,
+        stop: function(event,ui) {adjustDatabase("#slides")}
+      }).disableSelection();
+    });
+
+    function adjustDatabase(tableID) {
+      $(tableID + " tr").each(function() {
+        count = $(this).parent().children().index($(this)) + 1;
+        old_order = $(this).attr("data-order");
+        if ( count != old_order ) {
+          $(this).attr("data-order", count);
+          $.post($(this).attr("data-url"),{'order':count});
+        }
+      });
+    }
+  </script>
+
+{% endif %}
 {% endblock %}

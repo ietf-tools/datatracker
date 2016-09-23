@@ -1,4 +1,6 @@
 {% load ietf_filters session_filters %}
 {% if user|has_role:"Secretariat" or session|can_manage_materials:user and not session.is_material_submission_cutoff %}
-<a class="button btn-default btn-sm" href="{% url 'ietf.meeting.views.session_details' num=session.meeting.number acronym=session.group.acronym %}">Edit</a>
+{% with gt=session.group.type_id %}
+<a class="button btn-default btn-sm" href="{% url 'ietf.meeting.views.session_details' num=session.meeting.number acronym=session.group.acronym %}{% if gt == 'wg' or gt == 'rg' or gt == 'ag' %}{% else %}#session_{{session.pk}}{% endif %}">Edit</a>
+{% endwith %}
 {% endif %}

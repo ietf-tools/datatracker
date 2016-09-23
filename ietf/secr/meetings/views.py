@@ -25,7 +25,8 @@ from ietf.secr.meetings.blue_sheets import create_blue_sheets
 from ietf.secr.meetings.forms import ( BaseMeetingRoomFormSet, MeetingModelForm,
     MeetingRoomForm, NewSessionForm, NonSessionEditForm, NonSessionForm, TimeSlotForm,
     UploadBlueSheetForm, get_next_slot )
-from ietf.secr.proceedings.views import build_choices, handle_upload_file
+from ietf.secr.proceedings.views import build_choices
+from ietf.secr.proceedings.utils import handle_upload_file
 from ietf.secr.sreq.forms import GroupSelectForm
 from ietf.secr.sreq.views import get_initial_session
 from ietf.secr.utils.meeting import get_session, get_timeslot

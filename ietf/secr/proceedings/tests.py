@@ -2,20 +2,19 @@ import debug                            # pyflakes:ignore
 import os
 import shutil
 
-from StringIO import StringIO
-
-from django.core.urlresolvers import reverse
 from django.conf import settings
+from django.core.urlresolvers import reverse
 
-from ietf.doc.models import Document
 from ietf.group.models import Group
-from ietf.meeting.models import Meeting, Session
+from ietf.meeting.models import Session
 from ietf.meeting.test_data import make_meeting_test_data
 from ietf.utils.test_data import make_test_data
-from ietf.utils.test_utils import TestCase, unicontent
+from ietf.utils.test_utils import TestCase
 
 from ietf.name.models import SessionStatusName
-from ietf.secr.utils.meeting import get_proceedings_path
+from ietf.meeting.factories import SessionFactory
+
+from ietf.secr.proceedings.proc_utils import create_proceedings
 
 SECR_USER='secretary'
 
@@ -64,47 +63,23 @@ class RecordingTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         self.failUnless(external_url in response.content)
 
-
-class BluesheetTestCase(TestCase):
+class OldProceedingsTestCase(TestCase):
+    ''' Ensure coverage of fragments of old proceedings generation until those are removed ''' 
     def setUp(self):
+        self.session = SessionFactory(meeting__type_id='ietf')
         self.proceedings_dir = os.path.abspath("tmp-proceedings-dir")
-        if not os.path.exists(self.proceedings_dir):
-            os.mkdir(self.proceedings_dir)
+
+        # This unintuitive bit is a consequence of the surprising implementation of meeting.get_materials_path
         self.saved_agenda_path = settings.AGENDA_PATH
-        settings.AGENDA_PATH = self.proceedings_dir
-        
-        self.interim_listing_dir = os.path.abspath("tmp-interim-listing-dir")
-        if not os.path.exists(self.interim_listing_dir):
-            os.mkdir(self.interim_listing_dir)
-        self.saved_secr_interim_listing_dir = settings.SECR_INTERIM_LISTING_DIR
-        settings.SECR_INTERIM_LISTING_DIR = self.interim_listing_dir
-        
+        settings.AGENDA_PATH= self.proceedings_dir
+
+        target_path = self.session.meeting.get_materials_path()
+        if not os.path.exists(target_path):
+            os.makedirs(target_path)
+
     def tearDown(self):
-        settings.AGENDA_PATH = self.saved_agenda_path
         shutil.rmtree(self.proceedings_dir)
-        settings.SECR_INTERIM_LISTING_DIR = self.saved_secr_interim_listing_dir
-        shutil.rmtree(self.interim_listing_dir)
-        
-    def test_upload(self):
-        make_meeting_test_data()
-        meeting = Meeting.objects.filter(type='interim',session__status='sched').first()
-        #self.assertTrue(meeting)
-        group = Group.objects.get(acronym='mars')
-        #Session.objects.create(meeting=meeting,group=group,requested_by_id=1,status_id='sched',type_id='session')
-        url = reverse('proceedings_upload_unified', kwargs={'meeting_num':meeting.number,'acronym':'mars'})
-        upfile = StringIO('dummy file')
-        upfile.name = "scan1.pdf"
-        self.client.login(username="marschairman", password="marschairman+password")
-        r = self.client.post(url,
-            dict(acronym='mars',meeting_id=meeting.id,material_type='bluesheets',file=upfile),follow=True)
-        self.assertEqual(r.status_code, 200)
-        doc = Document.objects.get(type='bluesheets')
-        self.failUnless(doc.external_url in unicontent(r))
-        self.failUnless(os.path.exists(os.path.join(doc.get_file_path(),doc.external_url)))
-        # test that proceedings has bluesheets on it
-        path = get_proceedings_path(meeting,group)
-        self.failUnless(os.path.exists(path))
-        with open(path) as f:
-            data = f.read()
-        self.failUnless(doc.external_url.encode('utf-8') in data)
-        
+        settings.AGENDA_PATH = self.saved_agenda_path
+
+    def test_old_generate(self):
+        create_proceedings(self.session.meeting,self.session.group,is_final=True)
