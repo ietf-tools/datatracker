@@ -792,11 +792,15 @@ def resurrect(request, name):
     if doc.get_state_slug() != "expired":
         raise Http404
 
+    resurrect_requested_by = None
+    e = doc.latest_event(type__in=('requested_resurrect', "completed_resurrect"))
+    if e.type == 'requested_resurrect':
+        resurrect_requested_by = e.by
+
     if request.method == 'POST':
-        e = doc.latest_event(type__in=('requested_resurrect', "completed_resurrect"))
-        if e and e.type == 'requested_resurrect':
-            email_resurrection_completed(request, doc, requester=e.by)
-            
+        if resurrect_requested_by:
+            email_resurrection_completed(request, doc, requester=resurrect_requested_by)
+
         events = []
         e = DocEvent(doc=doc, by=request.user.person)
         e.type = "completed_resurrect"
@@ -812,6 +816,7 @@ def resurrect(request, name):
   
     return render_to_response('doc/draft/resurrect.html',
                               dict(doc=doc,
+                                   resurrect_requested_by=resurrect_requested_by,
                                    back_url=doc.get_absolute_url()),
                               context_instance=RequestContext(request))
 
