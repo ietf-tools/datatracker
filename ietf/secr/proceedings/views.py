@@ -190,7 +190,7 @@ def ajax_generate_proceedings(request, meeting_num):
     '''
     meeting = get_object_or_404(Meeting, number=meeting_num)
     areas = Group.objects.filter(type='area',state='active').order_by('name')
-    others = TimeSlot.objects.filter(meeting=meeting,type='other').order_by('time')
+    others = TimeSlot.objects.filter(sessionassignments__schedule=meeting.agenda,type='other').order_by('time')
     extras = get_extras(meeting)
     context = {'meeting':meeting,
                'areas':areas,
