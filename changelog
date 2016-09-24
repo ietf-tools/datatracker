@@ -1,3 +1,31 @@
+ietfdb (6.34.0) ietf; urgency=high
+
+  **New proceedings pages**
+
+  This release introduces the new proceedings pages, as an integral part of
+  the datatracker.  This is the work of rjsparks@nostrum.com, with
+  contributions from rcross@amsl.com.  The new proceedings pages use live data
+  from the datatracker database up to the point in time when they are
+  finalized; from that point on they are fixed.  They provide proceedings
+  pages using the same responsive design as the rest of the datatracker, and
+  since they pull agendas, slides, minutes, etc. from the database directly,
+  they will be available and should be useful also during a meeting.  Feel
+  welcome to inspect the IETF 96 version of the new proceedings pages at
+  https://datatracker.ietf.org/meeting/96/proceedings .
+
+  As part of this work, it is now possible to have separate session agendas
+  when a group has more than one session during a meeting.  This made it
+  necessary to change the upload pages for meeting materials.  They used to be
+  available under /secr/proceedings/, but are now under /meeting/NN/session,
+  for instance https://datatracker.ietf.org/meeting/97/session/avtext.  On the
+  'meetings' tab for each group (WG, RG, etc.) there is a link to the details
+  page for each session, with upload buttons available for logged-in chairs
+  and group secretaries. The session details can also be reached from the
+  meeting materials page.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  24 Sep 2016 09:31:06 +0000
+
+
 ietfdb (6.33.1) ietf; urgency=high
 
   **Nomcom nominee merging, agenda.json enhancements**
