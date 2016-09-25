@@ -1,6 +1,7 @@
 import re
 import six
 import datetime
+from urllib import urlencode
 
 from django.conf import settings
 from django.http import HttpResponse
@@ -20,6 +21,19 @@ from tastypie.fields import ApiField
 import debug                            # pyflakes:ignore
 
 _api_list = []
+
+class ModelResource(tastypie.resources.ModelResource):
+    def generate_cache_key(self, *args, **kwargs):
+        """
+        Creates a unique-enough cache key.
+
+        This is based off the current api_name/resource_name/args/kwargs.
+        """
+        #smooshed = ["%s=%s" % (key, value) for key, value in kwargs.items()]
+        smooshed = urlencode(kwargs)
+
+        # Use a list plus a ``.join()`` because it's faster than concatenation.
+        return "%s:%s:%s:%s" % (self._meta.api_name, self._meta.resource_name, ':'.join(args), ':'.join(sorted(smooshed)))
 
 class Serializer(BaseSerializer):
     def to_html(self, data, options=None):
