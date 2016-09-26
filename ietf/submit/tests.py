@@ -267,9 +267,15 @@ class SubmitTests(TestCase):
     def text_submit_new_wg_txt_xml(self):
         self.submit_new_wg(["txt", "xml"])
 
-    def submit_existing(self, formats, change_authors=True):
+    def submit_existing(self, formats, change_authors=True, group_type='wg', stream_type='ietf'):
         # submit new revision of existing -> supply submitter info -> prev authors confirm
         draft = make_test_data()
+        if not group_type=='wg':
+            draft.group.type_id=group_type
+            draft.group.save()
+        if not stream_type=='ietf':
+            draft.stream_id=stream_type
+            draft.save_with_history([DocEvent.objects.create(doc=draft, type="added_comment", by=Person.objects.get(user__username="secretary"), desc="Test")])
         if not change_authors:
             draft.documentauthor_set.all().delete()
             ensure_person_email_info_exists('Author Name','author@example.com')
@@ -333,7 +339,15 @@ class SubmitTests(TestCase):
         if change_authors:
             # Since authors changed, ensure chairs are copied (and that the message says why)
             self.assertTrue("chairs have been copied" in unicode(confirm_email))
-            self.assertTrue("mars-chairs@" in confirm_email["To"].lower())
+            if group_type in ['wg','rg','ag']:
+                self.assertTrue("mars-chairs@" in confirm_email["To"].lower())
+            elif group_type == 'area':
+                self.assertTrue("aread@" in confirm_email["To"].lower())
+            else:
+                pass
+            if stream_type not in 'ietf':
+                if stream_type=='ise':
+                   self.assertTrue("rfc-ise@" in confirm_email["To"].lower())
         else:
             self.assertTrue("chairs have been copied" not in unicode(confirm_email))
             self.assertTrue("mars-chairs@" not in confirm_email["To"].lower())
@@ -366,8 +380,9 @@ class SubmitTests(TestCase):
         self.assertTrue(not os.path.exists(os.path.join(self.staging_dir, u"%s-%s.txt" % (name, rev))))
         self.assertTrue(os.path.exists(os.path.join(self.repository_dir, u"%s-%s.txt" % (name, rev))))
         self.assertEqual(draft.type_id, "draft")
-        self.assertEqual(draft.stream_id, "ietf")
-        self.assertEqual(draft.get_state_slug("draft-stream-%s" % draft.stream_id), "wg-doc")
+        if stream_type == 'ietf':
+            self.assertEqual(draft.stream_id, "ietf")
+            self.assertEqual(draft.get_state_slug("draft-stream-%s" % draft.stream_id), "wg-doc")
         self.assertEqual(draft.get_state_slug("draft-iana-review"), "changed")
         self.assertEqual(draft.authors.count(), 1)
         self.assertEqual(draft.authors.all()[0].get_name(), "Author Name")
@@ -397,6 +412,18 @@ class SubmitTests(TestCase):
 
     def test_submit_existing_txt_preserve_authors(self):
         self.submit_existing(["txt"],change_authors=False)
+
+    def test_submit_existing_rg(self):
+        self.submit_existing(["txt"],group_type='rg')
+
+    def test_submit_existing_ag(self):
+        self.submit_existing(["txt"],group_type='ag')
+
+    def test_submit_existing_area(self):
+        self.submit_existing(["txt"],group_type='area')
+
+    def test_submit_existing_ise(self):
+        self.submit_existing(["txt"],stream_type='ise')
 
     def submit_new_individual(self, formats):
         # submit new -> supply submitter info -> confirm
