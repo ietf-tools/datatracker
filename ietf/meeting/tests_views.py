@@ -151,7 +151,7 @@ class MeetingTests(TestCase):
         self.assertTrue(slot.location.name in agenda_content)
 
     def test_agenda_current_audio(self):
-        date = datetime.date.today() - datetime.timedelta(days=2)
+        date = datetime.date.today()
         meeting = MeetingFactory(type_id='ietf', date=date )
         make_meeting_test_data(meeting=meeting)
         url = urlreverse("ietf.meeting.views.agenda", kwargs=dict(num=meeting.number))

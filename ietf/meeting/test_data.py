@@ -55,13 +55,14 @@ def make_meeting_test_data(meeting=None):
     breakfast_room.session_types.add("lead")
 
     # slots
+    session_date = meeting.date + datetime.timedelta(days=1)
     slot1 = TimeSlot.objects.create(meeting=meeting, type_id="session", duration=30 * 60, location=room,
-                                    time=datetime.datetime.combine(datetime.date.today(), datetime.time(9, 30)))
+                                    time=datetime.datetime.combine(session_date, datetime.time(9, 30)))
     slot2 = TimeSlot.objects.create(meeting=meeting, type_id="session", duration=30 * 60, location=room,
-                                    time=datetime.datetime.combine(datetime.date.today(), datetime.time(10, 30)))
+                                    time=datetime.datetime.combine(session_date, datetime.time(10, 30)))
     breakfast_slot = TimeSlot.objects.create(meeting=meeting, type_id="lead", duration=90 * 60,
                                    location=breakfast_room, 
-                                   time=datetime.datetime.combine(datetime.date.today(),datetime.time(7,0)))
+                                   time=datetime.datetime.combine(session_date, datetime.time(7,0)))
     # mars WG
     mars = Group.objects.get(acronym='mars')
     mars_session = Session.objects.create(meeting=meeting, group=mars,
