@@ -1322,18 +1322,22 @@ def upload_session_agenda(request, session_id, num):
                 agenda_sp.rev = doc.rev
                 agenda_sp.save()
             else:
-                sess_time = session.official_timeslotassignment().timeslot.time
+                
+                sess_time = session.official_timeslotassignment() and session.official_timeslotassignment().timeslot.time
                 if session.meeting.type_id=='ietf':
                     name = 'agenda-%s-%s' % (session.meeting.number, 
                                                  session.group.acronym) 
                     title = 'Agenda IETF%s: %s' % (session.meeting.number, 
                                                          session.group.acronym) 
                     if not apply_to_all:
-                        name += '-%s' % (sess_time.strftime("%Y%m%d%H%M"),)
-                        title += ': %s' % (sess_time.strftime("%a %H:%M"),)
+                        name += '-%s' % (session.docname_token(),)
+                        if sess_time:
+                            title += ': %s' % (sess_time.strftime("%a %H:%M"),)
                 else:
-                    name = 'agenda-%s-%s' % (session.meeting.number, sess_time.strftime("%Y%m%d%H%M"))
-                    title = 'Agenda %s: %s' % (session.meeting.number, sess_time.strftime("%a %H:%M"))
+                    name = 'agenda-%s-%s' % (session.meeting.number, session.docname_token())
+                    title = 'Agenda %s' % (session.meeting.number, )
+                    if sess_time:
+                        title += ': %s' % (sess_time.strftime("%a %H:%M"),)
                 doc = Document.objects.create(
                           name = name,
                           type_id = 'agenda',
@@ -1425,14 +1429,13 @@ def upload_session_slides(request, session_id, num, name):
                 slides_sp.save()
             else:
                 title = form.cleaned_data['title']
-                sess_time = session.official_timeslotassignment().timeslot.time
                 if session.meeting.type_id=='ietf':
                     name = 'slides-%s-%s' % (session.meeting.number, 
                                              session.group.acronym) 
                     if not apply_to_all:
-                        name += '-%s' % (sess_time.strftime("%Y%m%d%H%M"),)
+                        name += '-%s' % (session.docname_token(),)
                 else:
-                    name = 'slides-%s-%s' % (session.meeting.number, sess_time.strftime("%Y%m%d%H%M"))
+                    name = 'slides-%s-%s' % (session.meeting.number, session.docname_token())
                 name = name + '-' + slugify(title)
                 if Document.objects.filter(name=name).exists():
                    doc = Document.objects.get(name=name)
