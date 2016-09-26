@@ -368,7 +368,7 @@
 			<!-- Audio stream -->
 			{% if item.timeslot.location.audio_stream_url %}
 			  <a class="btn btn-default btn-xs"
-			    href="{{item.timeslot.location.audio_stream_url }}"
+			    href="{{item.timeslot.location.audio_stream_url|format:item.session }}"
 			    title="Audio stream"><span class="glyphicon glyphicon-headphones"></span>
 			  </a>
 			{% endif %}
