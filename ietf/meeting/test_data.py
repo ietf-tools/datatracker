@@ -2,7 +2,8 @@ import datetime
 
 from ietf.doc.models import Document, State
 from ietf.group.models import Group
-from ietf.meeting.models import Meeting, Room, TimeSlot, Session, Schedule, SchedTimeSessAssignment, ResourceAssociation, SessionPresentation
+from ietf.meeting.models import (Meeting, Room, TimeSlot, Session, Schedule, SchedTimeSessAssignment,
+    ResourceAssociation, SessionPresentation, UrlResource)
 from ietf.meeting.helpers import create_interim_meeting
 from ietf.name.models import RoomResourceName
 from ietf.person.models import Person
@@ -28,23 +29,30 @@ def make_interim_meeting(group,date,status='sched'):
         schedule=session.meeting.agenda)
     return meeting
 
-def make_meeting_test_data():
+def make_meeting_test_data(meeting=None):
     if not Group.objects.filter(acronym='mars'):
         make_test_data()
     system_person = Person.objects.get(name="(System)")
     plainman = Person.objects.get(user__username="plain")
     #secretary = Person.objects.get(user__username="secretary") ## not used
 
-    meeting = Meeting.objects.get(number="42", type="ietf")
+    if not meeting:
+        meeting = Meeting.objects.get(number="42", type="ietf")
     schedule = Schedule.objects.create(meeting=meeting, owner=plainman, name="test-agenda", visible=True, public=True)
     unofficial_schedule = Schedule.objects.create(meeting=meeting, owner=plainman, name="test-unofficial-agenda", visible=True, public=True)
+
+    # test room
     pname = RoomResourceName.objects.create(name='projector',slug='proj')
     projector = ResourceAssociation.objects.create(name=pname,icon="notfound.png",desc="Basic projector")
     room = Room.objects.create(meeting=meeting, name="Test Room", capacity=123, functional_name="Testing Ground")
-    breakfast_room = Room.objects.create(meeting=meeting, name="Breakfast Room", capacity=40)
     room.session_types.add("session")
+    room.resources.add(projector)
+    asname = RoomResourceName.objects.create(name='Audio Stream', slug='audiostream')
+    UrlResource.objects.create(name=asname, room=room, url='http://ietf{number}streaming.dnsalias.net/ietf/ietf{number}1.m3u'.format(number=meeting.number))
+
+    # another room
+    breakfast_room = Room.objects.create(meeting=meeting, name="Breakfast Room", capacity=40)
     breakfast_room.session_types.add("lead")
-    room.resources = [projector]
 
     # slots
     slot1 = TimeSlot.objects.create(meeting=meeting, type_id="session", duration=30 * 60, location=room,
@@ -60,7 +68,6 @@ def make_meeting_test_data():
                                           attendees=10, requested_by=system_person,
                                           requested_duration=20, status_id="schedw",
                                           scheduled=datetime.datetime.now(),type_id="session")
-    mars_session.resources = [projector]
     SchedTimeSessAssignment.objects.create(timeslot=slot1, session=mars_session, schedule=schedule)
     SchedTimeSessAssignment.objects.create(timeslot=slot2, session=mars_session, schedule=unofficial_schedule)
 
