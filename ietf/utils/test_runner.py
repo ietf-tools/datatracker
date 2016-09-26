@@ -45,6 +45,7 @@ import warnings
 import datetime
 import codecs
 import gzip
+import unittest
 
 from coverage.report import Reporter
 from coverage.results import Numbers
@@ -53,7 +54,6 @@ from optparse import make_option
 
 from django.conf import settings
 from django.template import TemplateDoesNotExist
-from django.test import TestCase
 from django.test.runner import DiscoverRunner
 from django.core.management import call_command
 from django.core.urlresolvers import RegexURLResolver
@@ -226,7 +226,7 @@ class CoverageReporter(Reporter):
         return result
 
 
-class CoverageTest(TestCase):
+class CoverageTest(unittest.TestCase):
 
     def __init__(self, test_runner=None, **kwargs):
         self.runner = test_runner
@@ -507,7 +507,7 @@ class IetfTestRunner(DiscoverRunner):
                 CoverageTest(test_runner=self, methodName='code_coverage_test'),
             ]
 
-            self.reorder_by += (CoverageTest, ) # see to it that the coverage tests come last
+            self.reorder_by += (unittest.TestCase, ) # see to it that the coverage tests come last
 
         failures = super(IetfTestRunner, self).run_tests(test_labels, extra_tests=extra_tests, **kwargs)
 
