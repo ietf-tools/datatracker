@@ -7,6 +7,7 @@ import copy
 import os
 import sys
 import re
+import string
 import timedelta
 from timedeltafield import TimedeltaField
 
@@ -1099,6 +1100,11 @@ class Session(models.Model):
         else:
             return ""
 
+    def docname_token(self):
+        sess_mtg = Session.objects.filter(meeting=self.meeting, group=self.group).order_by('pk')
+        index = list(sess_mtg).index(self)
+        return 'sess%s' % (string.ascii_lowercase[index])
+        
     def constraints(self):
         return Constraint.objects.filter(source=self.group, meeting=self.meeting).order_by('name__name')
 
