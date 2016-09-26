@@ -150,6 +150,14 @@ class MeetingTests(TestCase):
         self.assertTrue(session.group.acronym in agenda_content)
         self.assertTrue(slot.location.name in agenda_content)
 
+    def test_agenda_current_audio(self):
+        date = datetime.date.today() - datetime.timedelta(days=2)
+        meeting = MeetingFactory(type_id='ietf', date=date )
+        make_meeting_test_data(meeting=meeting)
+        url = urlreverse("ietf.meeting.views.agenda", kwargs=dict(num=meeting.number))
+        r = self.client.get(url)
+        self.assertTrue("Audio stream" in unicontent(r))
+
     def test_agenda_by_room(self):
         meeting = make_meeting_test_data()
         url = urlreverse("ietf.meeting.views.agenda_by_room",kwargs=dict(num=meeting.number))
