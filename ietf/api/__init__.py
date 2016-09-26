@@ -10,6 +10,7 @@ from django.core.urlresolvers import reverse
 from django.utils.encoding import force_text
 
 import tastypie
+import tastypie.resources
 from tastypie.api import Api
 from tastypie.bundle import Bundle
 from tastypie.serializers import Serializer as BaseSerializer
