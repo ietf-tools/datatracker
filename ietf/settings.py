@@ -716,11 +716,11 @@ if SERVER_MODE != 'production':
     # stomp out the cached template loader, it's annoying
     TEMPLATE_LOADERS = tuple(l for e in TEMPLATE_LOADERS for l in (e[1] if isinstance(e, tuple) and "cached.Loader" in e[0] else (e,)))
 
-#     CACHES = {
-#          'default': {
-#              'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
-#          }
-#     }
+    CACHES = {
+         'default': {
+             'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+         }
+    }
     SESSION_ENGINE = "django.contrib.sessions.backends.db"
 
     if 'SECRET_KEY' not in locals():
