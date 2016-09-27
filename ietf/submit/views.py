@@ -93,7 +93,26 @@ def upload_submission(request):
                                 email = ""
 
                         if email:
-                            line += u" <%s>" % email
+                            # Try various ways of handling name and email, in order to avoid
+                            # triggering a 500 error here.  If the document contains non-ascii
+                            # characters, it will be flagged later by the idnits check.
+                            try:
+                                line += u" <%s>" % email
+                            except UnicodeDecodeError:
+                                try:
+                                    line = line.decode('utf-8')
+                                    email = email.decode('utf-8')
+                                    line += u" <%s>" % email
+                                except UnicodeDecodeError:
+                                    try:
+                                        line = line.decode('latin-1')
+                                        email = email.decode('latin-1')
+                                        line += u" <%s>" % email
+                                    except UnicodeDecodeError:
+                                        try:
+                                            line += " <%s>" % email
+                                        except UnicodeDecodeError:
+                                            pass
 
                         authors.append(line)
 
