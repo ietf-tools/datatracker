@@ -1,3 +1,49 @@
+ietfdb (6.34.1) ietf; urgency=medium
+
+  This is a bugfix release, with the most interesting fixes being to allow
+  meeting materials upload before sessions have been scheduled, and to direct
+  new release notifications for area drafts to the ADs, instead of to all the
+  area WG chairs.  The release also contains some test suite improvements.
+  Details:
+
+  * Merged in [12038] from rjsparks@nostrum.com:
+    Changed how document names are generated for agendas and slides to allow
+    uploads before meetings are scheduled.  
+
+  * Merged in [12014] from rjsparks@nostrum.com:
+    Improved who to copy when sending submission confirmation mail when
+    authors change.  
+
+  * Tweaked test data to make test data sessions actually fall within their 
+    meeting, and to make sure that the test_agenda_current_audio sessions are 
+    in the near future.
+
+  * Added interpolation of values from the session object when rendering 
+    audio_stream_url.
+
+  * Added a test which specifies a meeting currently under way, in order to
+    make sure that code paths which are used only for current meetings are
+    excercises, this reduces coverage variation due to random meeting dates.
+    Also added a test for the presence of Audio stream, which isn't present on
+    agenda pages of past meetings.
+
+  * Made it possible to pass in a meeting instance to make_meeting_test_data,
+    and added an audio stream UrlResource for test purposes.
+
+  * Changed things so that the reorder_by setting has an effect on the test 
+    ordering.  It didn't before, as CoverageTest was a subclass of the earlier 
+    entries in the reorder_by setting.
+
+  * Make pyflakes happier sorting out tastypie.resources.ModelResource.
+
+  * Undid an unintended commit (code change for test purposes)
+
+  * Change the cache key construction to deal with query arguments 
+    containing spaces.  Fixes 500 errors which would otherwise occur.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  27 Sep 2016 07:17:01 +0000
+
+
 ietfdb (6.34.0) ietf; urgency=medium
 
   **New proceedings pages**
