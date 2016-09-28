@@ -97,6 +97,8 @@ class Rss201WithNamespacesFeed(Rss201rev2Feed):
 
         if 'doi' in item and item['doi'] is not None:
            handler.addQuickElement('dcterms:identifier',item['doi'],{'xsi:type':'dcterms:doi'})
+        if 'doiuri' in item and item['doiuri'] is not None:
+           handler.addQuickElement('dcterms:identifier',item['doiuri'],{'xsi:type':'dcterms:uri'})
 
         if 'media_content' in item and item['media_content'] is not None:
             handler.startElement('media:content',{'url':item['media_content']['url'],'type':'text/plain'})
@@ -138,7 +140,8 @@ class RfcFeed(Feed):
                                         'link_url': self.item_link(item) 
                                        }
                      })
-        extra.update({'doi':'http://dx.doi.org/10.17487/%s' % item.canonical_name().upper()})
+        extra.update({'doi':'10.17487/%s' % item.canonical_name().upper()})
+        extra.update({'doiuri':'http://dx.doi.org/10.17487/%s' % item.canonical_name().upper()})
 
         #TODO 
         # R104 Publisher (Mandatory - but we need a string from them first)
