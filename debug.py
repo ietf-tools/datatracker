@@ -54,18 +54,20 @@ def trace(fn):                 # renamed from 'report' by henrik 16 Jun 2011
         call = wrap.callcount = wrap.callcount + 1
 
         indent = ' ' * _report_indent[0]
+        fr = tb.format_stack()[-3].strip()[4:]
+        fi, co = [ l.strip() for l in fr.splitlines()[:2] ]
         fc = "%s.%s(%s)" % (fn.__module__, fn.__name__, ', '.join(
             [fix(repr(a)) for a in params] +
             ["%s = %s" % (a, fix(repr(b))) for a,b in kwargs.items()]
         ))
 
         if debug:
-            sys.stderr.write("%s* %s [#%s]\n" % (indent, fc, call))
+            sys.stderr.write("%s* From %s:\n%s  |  %s\n%s  => %s [#%s]\n" % (indent, fi, indent, co, indent, fc, call))
         _report_indent[0] += increment
         ret = fn(*params,**kwargs)
         _report_indent[0] -= increment
         if debug:
-            sys.stderr.write("%s  %s [#%s] ==> %s\n" % (indent, fc, call, fix(repr(ret))))
+            sys.stderr.write("%s     %s [#%s] ==> %s\n" % (indent, fc, call, fix(repr(ret))))
 
         return ret
     wrap.callcount = 0
