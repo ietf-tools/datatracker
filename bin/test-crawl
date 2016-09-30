@@ -133,7 +133,7 @@ def check_html_valid(url, response, args):
         key = re.sub("/draft-[a-z0-9-]+/",   "/draft-foo/", key)
         key = re.sub("/group/[a-z0-9-]+/",   "/group/foo/", key)
         key = re.sub("/ipr/search/.*",   "/ipr/search/", key)
-        key = re.sub("/meeting/[0-9]+/agenda/[0-9a-z]+/",   "/meeting/nn/agenda/foo/", key)
+        key = re.sub("/meeting/[-0-9a-z]+/agenda/[0-9a-z]+/",   "/meeting/nn/agenda/foo/", key)
         key = re.sub("/release/[0-9dev.]+/",   "/release/n.n.n/", key)
         key = re.sub("/rfc[0-9]+/",   "/rfcnnnn/", key)
         key = re.sub("/rg/[a-z0-9-]+/",   "/rg/foo/", key)
@@ -248,7 +248,9 @@ for url in initial_urls:
 
 parser = html5lib.HTMLParser(strict=True)
 
-validated_urls = {}
+# initialise validated_urls with some patterns we don't want to check,
+# because they aren't under our control, such as uploaded group agendas.
+validated_urls = {'/meeting/nn/agenda/foo/': True, }
 
 doc_types = [ t.slug for t in DocTypeName.objects.all() ]
 

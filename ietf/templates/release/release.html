@@ -56,14 +56,13 @@
   {% for item in releases %}
       {% ifchanged %}
       </tbody>
-      <thead>
+      <tbody>
+      <tr><td colspan="3"></td></tr>
       <tr class="year-row">
-        <th><h3>{{ item.date|slice:"7:11" }}</h3></tth>
+        <th class="h3">{{ item.date|slice:"7:11" }}</th>
         <th></th>
         <th></th>
       </tr>
-      </thead>
-      <tbody>
       {% endifchanged %}    
       <tr class="version-row">
         <td class="version"><a href="/release/{{item.version}}/">{{ item.version }}</a></td>
@@ -71,6 +70,7 @@
         <td class="release-title">{{ item.title }}</td>       
       </tr>
   {% endfor %}
+    </tbody>
   </table>
 </div>
 {% endblock %}
