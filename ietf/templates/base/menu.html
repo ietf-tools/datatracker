@@ -43,7 +43,7 @@
     </a>
     <ul class="dropdown-menu" role="menu">
   {% endif %}
-  <li><a href="{% url "ietf.submit.views.upload_submission" %}">Draft submissions</a></li>
+  <li><a href="{% url "ietf.submit.views.upload_submission" %}">Draft submission</a></li>
 
   {% if user|has_role:"WG Chair" %}
     {% if flavor == "top" %}<li class="divider hidden-xs"></li>{% endif %}
