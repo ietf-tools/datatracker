@@ -224,8 +224,8 @@ class Email(models.Model):
         return self.person.plain_name() if self.person else self.address
 
     def formatted_email(self):
-        if self.person and self.person.ascii:
-            return u'"%s" <%s>' % (self.person.ascii, self.address)
+        if self.person:
+            return u'"%s" <%s>' % (self.person.plain_ascii(), self.address)
         else:
             return self.address
 
