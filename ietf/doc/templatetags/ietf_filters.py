@@ -24,13 +24,6 @@ register = template.Library()
 def collapsebr(html):
     return re.sub('(<(br ?/|/p)>[ \n]*)(<(br) ?/?>[ \n]*)*(<(br|p) ?/?>[ \n]*)', '\\1\\5', html)
 
-@register.filter(name='expand_comma')
-def expand_comma(value):
-    """
-    Adds a space after each comma, to allow word-wrapping of
-    long comma-separated lists."""
-    return value.replace(",", ", ")
-
 @register.filter
 def indent(value, numspaces=2):
     replacement = "\n" + " " * int(numspaces)
@@ -118,15 +111,6 @@ def make_one_per_line(value):
         return re.sub(", ?", "\n", value)
     else:
         return value
-
-@register.filter(name='timesum')
-def timesum(value):
-    """
-    Sum the times in a list of dicts; used for sql query debugging info"""
-    sum = 0.0
-    for v in value:
-        sum += float(v['time'])
-    return sum
 
 @register.filter(name='keep_spacing')
 def keep_spacing(value):
@@ -632,21 +616,3 @@ def comma_separated_list(seq, end_word="and"):
 def role_names(roles):
     return list(set([ "%s %s" % (r.group.name, r.name.name) for r in roles ]))
 
-@register.filter()
-def annotate_sql_queries(queries):
-    counts  = {}
-    timeacc = {}
-    for q in queries:
-        sql = q['sql']
-        if not sql in counts:
-            counts[sql] = 0;
-        counts[sql] += 1
-        if not sql in timeacc:
-            timeacc[sql] = 0.0;
-        timeacc[sql] += float(q['time'])
-    for q in queries:
-        sql = q['sql']
-        q['count'] = str(counts[sql])
-        q['time_accum'] = "%4.3f" % timeacc[sql]
-    return queries
-    

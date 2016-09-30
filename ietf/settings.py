@@ -391,6 +391,7 @@ TEST_CODE_COVERAGE_EXCLUDE = [
     "ietf/settings*",
     "ietf/utils/test_runner.py",
     "ietf/checks.py",
+    "ietf/utils/templatetags/debug_filters.py",
 ]
 
 TEST_COVERAGE_MASTER_FILE = os.path.join(BASE_DIR, "../release-coverage.json.gz")
