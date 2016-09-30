@@ -1,0 +1,212 @@
+
+
+
+
+Network Working Group                                            %(initials)s %(surname)s
+Internet-Draft                                          Test Centre Inc.
+Intended status: Informational                                %(month)s %(year)s
+Expires: %(expiration)s
+
+
+                             Testing Tests
+                         %(name)s
+
+Abstract
+
+   This document describes how to test tests.
+
+Status of This Memo
+
+   This Internet-Draft is submitted in full conformance with the
+   provisions of BCP 78 and BCP 79.
+
+   Internet-Drafts are working documents of the Internet Engineering
+   Task Force (IETF).  Note that other groups may also distribute
+   working documents as Internet-Drafts.  The list of current Internet-
+   Drafts is at http://datatracker.ietf.org/drafts/current/.
+
+   Internet-Drafts are draft documents valid for a maximum of six months
+   and may be updated, replaced, or obsoleted by other documents at any
+   time.  It is inappropriate to use Internet-Drafts as reference
+   material or to cite them other than as "work in progress."
+
+   This Internet-Draft will expire on %(expiration)s.
+
+Copyright Notice
+
+   Copyright (c) %(year)s IETF Trust and the persons identified as the
+   document authors.  All rights reserved.
+
+   This document is subject to BCP 78 and the IETF Trust's Legal
+   Provisions Relating to IETF Documents
+   (http://trustee.ietf.org/license-info) in effect on the date of
+   publication of this document.  Please review these documents
+   carefully, as they describe your rights and restrictions with respect
+   to this document.  Code Components extracted from this document must
+   include Simplified BSD License text as described in Section 4.e of
+   the Trust Legal Provisions and are provided without warranty as
+   described in the Simplified BSD License.
+
+
+
+
+
+
+
+%(surname)s                    Expires %(expiration)s               [Page 1]
+
+Internet-Draft                Testing Tests                   %(month)s %(year)s
+
+
+Table of Contents
+
+   1.  Introduction  . . . . . . . . . . . . . . . . . . . . . . . .   2
+   2.  Security Considerations . . . . . . . . . . . . . . . . . . .   2
+   3.  IANA Considerations . . . . . . . . . . . . . . . . . . . . .   2
+   Author's Address  . . . . . . . . . . . . . . . . . . . . . . . .   2
+
+1. Introduction
+
+   This document describes a protocol for testing tests.
+
+2. Yang
+
+   <CODE BEGINS> file "ietf-mpls@2015-10-16.yang"
+
+   module ietf-mpls {
+
+     namespace "urn:ietf:params:xml:ns:yang:ietf-mpls";
+
+     prefix "mpls";
+
+     import ietf-routing {
+       prefix "rt";
+     }
+
+     import ietf-interfaces {
+       prefix "if";
+     }
+
+     organization "TBD";
+
+     contact "TBD";
+
+     description
+       "This YANG module defines the essential components for the
+        management of the MPLS subsystem.";
+
+     revision "2015-10-16" {
+       description
+         "Initial revision";
+       reference "RFC 3031: A YANG Data Model for base MPLS";
+     }
+
+     typedef mpls-label {
+       type uint32 {
+         range "0..1048575";
+       }
+       description
+         "The MPLS label range";
+     }
+
+     typedef percent {
+       type uint16 {
+         range "0 .. 100";
+       }
+       description "Percentage";
+     }
+
+     grouping interface-mpls {
+       description "MPLS interface properties grouping";
+       leaf enabled {
+         type boolean;
+         description
+           "'true' if mpls encapsulation is enabled on the
+            interface. 'false' if mpls encapsulation is enabled
+            on the interface.";
+       }
+     }
+
+     augment "/rt:routing/rt:routing-instance" {
+       description "MPLS augmentation.";
+       container mpls {
+         description
+           "MPLS container, to be used as an augmentation target node
+            other MPLS sub-features config, e.g. MPLS static LSP, MPLS
+            LDP LSPs, and Trafic Engineering MPLS LSP Tunnels, etc.";
+
+         list interface {
+           key "name";
+           description "List of MPLS interfaces";
+           leaf name {
+             type if:interface-ref;
+             description
+               "The name of a configured MPLS interface";
+           }
+           container config {
+             description "Holds intended configuration";
+             uses interface-mpls;
+           }
+           container state {
+             config false;
+             description "Holds inuse configuration";
+             uses interface-mpls;
+           }
+         }
+       }
+     }
+
+     augment "/rt:routing-state/rt:routing-instance" {
+       description "MPLS augmentation.";
+       container mpls {
+         config false;
+         description
+           "MPLS container, to be used as an augmentation target node
+            other MPLS sub-features state";
+       }
+     }
+   }
+
+   <CODE ENDS>
+
+3. Security Considerations
+
+   There are none.
+
+4.  IANA Considerations
+
+   No new registrations for IANA.
+
+Author's Address
+
+   %(author)s
+   Test Centre Inc.
+   42 Some Road
+   Some Where 12345
+   UK
+
+   Email: author@example.com
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+%(surname)s                    Expires %(expiration)s               [Page 2]

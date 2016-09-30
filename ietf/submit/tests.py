@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import datetime
 import os
 import shutil
@@ -18,6 +19,7 @@ from ietf.group.utils import setup_default_community_list_for_group
 from ietf.meeting.models import Meeting
 from ietf.message.models import Message
 from ietf.person.models import Person, Email
+from ietf.person.factories import UserFactory, PersonFactory
 from ietf.submit.models import Submission, Preapproval
 from ietf.submit.mail import add_submission_email, process_response_email
 from ietf.utils.mail import outbox, empty_outbox
@@ -25,11 +27,14 @@ from ietf.utils.test_data import make_test_data
 from ietf.utils.test_utils import login_testing_unauthorized, unicontent, TestCase
 
 
-def submission_file(name, rev, group, format, templatename):
+def submission_file(name, rev, group, format, templatename, author=None):
     # construct appropriate text draft
     f = open(os.path.join(settings.BASE_DIR, "submit", templatename))
     template = f.read()
     f.close()
+
+    if not author:
+        author = PersonFactory()
 
     submission_text = template % dict(
             date=datetime.date.today().strftime("%d %B %Y"),
@@ -38,9 +43,13 @@ def submission_file(name, rev, group, format, templatename):
             month=datetime.date.today().strftime("%B"),
             name="%s-%s" % (name, rev),
             group=group or "",
+            author=author.name,
+            initials=author.initials(),
+            surname=author.last_name(),
+            email=author.email().address.lower(),
     )
 
-    file = StringIO(str(submission_text))
+    file = StringIO(submission_text)
     file.name = "%s-%s.%s" % (name, rev, format)
     return file
 
@@ -618,7 +627,10 @@ class SubmitTests(TestCase):
             "authors-0-email": "person1@example.com",
             "authors-1-name": "Person 2",
             "authors-1-email": "person2@example.com",
-            "authors-prefix": ["authors-", "authors-0", "authors-1"],
+            "authors-2-name": "Person 3",
+            "authors-2-email": "",
+
+            "authors-prefix": ["authors-", "authors-0", "authors-1", "authors-2"],
         })
         self.assertEqual(r.status_code, 302)
 
@@ -633,11 +645,13 @@ class SubmitTests(TestCase):
         self.assertEqual(submission.state_id, "manual")
 
         authors = submission.authors_parsed()
-        self.assertEqual(len(authors), 2)
+        self.assertEqual(len(authors), 3)
         self.assertEqual(authors[0]["name"], "Person 1")
         self.assertEqual(authors[0]["email"], "person1@example.com")
         self.assertEqual(authors[1]["name"], "Person 2")
         self.assertEqual(authors[1]["email"], "person2@example.com")
+        self.assertEqual(authors[2]["name"], "Person 3")
+        self.assertEqual(authors[2]["email"], "unknown-email-Person-3")
 
         self.assertEqual(len(outbox), mailbox_before + 1)
         self.assertTrue("Manual Post Requested" in outbox[-1]["Subject"])
@@ -872,6 +886,36 @@ class SubmitTests(TestCase):
         self.assertIn('Invalid characters were found in the name', m)
         self.assertIn('Expected the PS file to have extension ".ps"', m)
         self.assertIn('Expected an PS file of type "application/postscript"', m)
+
+    def test_submit_nonascii_name(self):
+        make_test_data()
+
+        name = "draft-authorname-testing-nonascii"
+        rev = "00"
+        group = None
+
+        # get
+        url = urlreverse('ietf.submit.views.upload_submission')
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+
+        # submit
+        #author = PersonFactory(name=u"Jörgen Nilsson".encode('latin1'))
+        user = UserFactory(first_name=u"Jörgen", last_name=u"Nilsson")
+        author = PersonFactory(user=user)
+        files = {"txt": submission_file(name, rev, group, "txt", "test_submission.nonascii", author=author) }
+
+        r = self.client.post(url, files)
+
+        self.assertEqual(r.status_code, 302)
+        status_url = r["Location"]
+        r = self.client.get(status_url)
+        q = PyQuery(r.content)
+        m = q('p.alert-warning').text()
+
+        self.assertIn('The idnits check returned 1 error', m)
+
 
 class ApprovalsTestCase(TestCase):
     def test_approvals(self):

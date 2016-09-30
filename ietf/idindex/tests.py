@@ -101,7 +101,7 @@ class IndexTests(TestCase):
         author = draft.documentauthor_set.order_by("order").get()
         self.assertEqual(t[14], u"%s <%s>" % (author.author.person.name, author.author.address))
         self.assertEqual(t[15], u"%s <%s>" % (draft.shepherd.person.name, draft.shepherd.address))
-        self.assertEqual(t[16], u"%s <%s>" % (draft.ad, draft.ad.email_address()))
+        self.assertEqual(t[16], u"%s <%s>" % (draft.ad.plain_ascii(), draft.ad.email_address()))
 
 
         # test RFC

@@ -54,7 +54,7 @@ class Submission(models.Model):
         return u"%s-%s" % (self.name, self.rev)
 
     def authors_parsed(self):
-        if not hasattr(self._meta, '_cached_authors_parsed'):
+        if not hasattr(self, '_cached_authors_parsed'):
             from ietf.submit.utils import ensure_person_email_info_exists
             res = []
             for line in self.authors.replace("\r", "").split("\n"):
@@ -64,8 +64,8 @@ class Submission(models.Model):
                     if not parsed["email"]:
                         parsed["email"] = ensure_person_email_info_exists(**parsed).address
                     res.append(parsed)
-            self._meta._cached_authors_parsed = res
-        return self._meta._cached_authors_parsed
+            self._cached_authors_parsed = res
+        return self._cached_authors_parsed
 
     def submitter_parsed(self):
         return parse_email_line(self.submitter)

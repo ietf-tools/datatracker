@@ -464,6 +464,8 @@ def edit_submission(request, submission_id, access_token=None):
             replaces = replaces_form.cleaned_data.get("replaces", [])
             submission.replaces = ",".join(o.name for o in replaces)
             submission.authors = "\n".join(f.cleaned_line() for f in author_forms)
+            if hasattr(submission, '_cached_authors_parsed'):
+                del submission._cached_authors_parsed
             edit_form.save(commit=False) # transfer changes
 
             if submission.rev != prev_submission.rev:
