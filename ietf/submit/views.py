@@ -27,10 +27,9 @@ from ietf.submit.mail import ( send_full_url, send_approval_request_to_group,
 from ietf.submit.models import (Submission, SubmissionCheck, Preapproval,
     DraftSubmissionStateName, SubmissionEmailEvent )
 from ietf.submit.utils import ( approvable_submissions_for_user, preapprovals_for_user,
-    recently_approved_by_user )
-from ietf.submit.utils import validate_submission, create_submission_event
-from ietf.submit.utils import docevent_from_submission
-from ietf.submit.utils import post_submission, cancel_submission, rename_submission_files
+    recently_approved_by_user, validate_submission, create_submission_event,
+    docevent_from_submission, post_submission, cancel_submission, rename_submission_files,
+    get_person_from_name_email )
 from ietf.utils.accesstoken import generate_random_key, generate_access_token
 from ietf.utils.draft import Draft
 from ietf.utils.log import log
@@ -275,8 +274,8 @@ def submission_status(request, submission_id, access_token=None):
     group_authors_changed = False
     doc = submission.existing_document()
     if doc and doc.group:
-        old_authors = [i.author.formatted_email() for i in doc.documentauthor_set.all() if not i.author.invalid_address()]
-        new_authors = [u'"%s" <%s>' % (author["name"], author["email"]) for author in submission.authors_parsed() if author["email"]]
+        old_authors = [ i.author.person for i in doc.documentauthor_set.all() ]
+        new_authors = [ get_person_from_name_email(**p) for p in submission.authors_parsed() ]
         group_authors_changed = set(old_authors)!=set(new_authors)
 
     message = None

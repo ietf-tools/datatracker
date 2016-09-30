@@ -3,6 +3,8 @@ import datetime
 
 from django.conf import settings
 
+import debug                            # pyflakes:ignore
+
 from ietf.doc.models import ( Document, State, DocAlias, DocEvent, 
     DocumentAuthor, AddedMessageEvent )
 from ietf.doc.models import NewRevisionDocEvent
@@ -395,7 +397,7 @@ def ensure_person_email_info_exists(name, email):
     else:
         # we're in trouble, use a fake one
         active = False
-        addr = u"unknown-email-%s" % person.name.replace(" ", "-")
+        addr = u"unknown-email-%s" % person.plain_name().replace(" ", "-")
 
     try:
         email = person.email_set.get(address=addr)
@@ -421,10 +423,8 @@ def update_authors(draft, submission):
     for order, author in enumerate(submission.authors_parsed()):
         email = ensure_person_email_info_exists(author["name"], author["email"])
 
-        a = DocumentAuthor.objects.filter(document=draft, author=email)
-        if a:
-            a = a[0]
-        else:
+        a = DocumentAuthor.objects.filter(document=draft, author=email).first()
+        if not a:
             a = DocumentAuthor(document=draft, author=email)
 
         a.order = order

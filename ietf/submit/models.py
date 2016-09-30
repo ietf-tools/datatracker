@@ -4,6 +4,8 @@ import datetime
 from django.db import models
 import jsonfield
 
+import debug                            # pyflakes:ignore
+
 from ietf.doc.models import Document
 from ietf.person.models import Person
 from ietf.group.models import Group
@@ -52,12 +54,18 @@ class Submission(models.Model):
         return u"%s-%s" % (self.name, self.rev)
 
     def authors_parsed(self):
-        res = []
-        for line in self.authors.replace("\r", "").split("\n"):
-            line = line.strip()
-            if line:
-                res.append(parse_email_line(line))
-        return res
+        if not hasattr(self._meta, '_cached_authors_parsed'):
+            from ietf.submit.utils import ensure_person_email_info_exists
+            res = []
+            for line in self.authors.replace("\r", "").split("\n"):
+                line = line.strip()
+                if line:
+                    parsed = parse_email_line(line)
+                    if not parsed["email"]:
+                        parsed["email"] = ensure_person_email_info_exists(**parsed).address
+                    res.append(parsed)
+            self._meta._cached_authors_parsed = res
+        return self._meta._cached_authors_parsed
 
     def submitter_parsed(self):
         return parse_email_line(self.submitter)
