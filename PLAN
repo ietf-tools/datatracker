@@ -12,6 +12,9 @@ Planned work in rough order
   - update access lists on group chair/secretary changes
   - update components on new group documents
 
+* Clean up document author records containing 'none', and find and fix
+  the code which produces them.
+
 * Review tracking project merge
 
 * Enhancements for meeting materials and proceedings.
