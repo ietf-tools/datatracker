@@ -13,22 +13,28 @@
            onclick="$('#debug-query-table').toggleClass('hide');">Show</a>
       {% endif %}
     </p>
-    <table class="table table-condensed table-striped hide" id="debug-query-table">
+    <table class="table table-condensed table-striped tablesorter hide" id="debug-query-table">
       <thead>
         <tr>
-	  <th>#</th>
-	  <th>SQL</th>
-	  <th>Time</th>
+	  <th data-header="sequence">#</th>
+	  <th data-header="query">SQL</th>
+	  <th data-header="count">Count</th>
+	  <th data-header="time">Time</th>
+	  <th data-header="acc">Acc.</th>
         </tr>
       </thead>
       <tbody>
-        {% for query in sql_queries %}
-          <tr>
-	    <td>{{ forloop.counter }}</td>
-	    <td>{{ query.sql|expand_comma|escape }}</td>
-	    <td>{{ query.time }}</td>
-          </tr>
-        {% endfor %}
+	{% with sql_queries|annotate_sql_queries as sql_query_info %}
+	    {% for query in sql_query_info %}
+	      <tr>
+		<td>{{ forloop.counter }}</td>
+		<td>{{ query.sql|expand_comma|escape }}</td>
+		<td>{{ query.count }}</td>
+		<td>{{ query.time }}</td>
+		<td>{{ query.time_accum }}</td>
+	      </tr>
+	    {% endfor %}
+	{% endwith %}
       </tbody>
     </table>
   </div>

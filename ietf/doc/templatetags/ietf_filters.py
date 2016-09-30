@@ -631,3 +631,22 @@ def comma_separated_list(seq, end_word="and"):
 @register.filter()
 def role_names(roles):
     return list(set([ "%s %s" % (r.group.name, r.name.name) for r in roles ]))
+
+@register.filter()
+def annotate_sql_queries(queries):
+    counts  = {}
+    timeacc = {}
+    for q in queries:
+        sql = q['sql']
+        if not sql in counts:
+            counts[sql] = 0;
+        counts[sql] += 1
+        if not sql in timeacc:
+            timeacc[sql] = 0.0;
+        timeacc[sql] += float(q['time'])
+    for q in queries:
+        sql = q['sql']
+        q['count'] = str(counts[sql])
+        q['time_accum'] = "%4.3f" % timeacc[sql]
+    return queries
+    
