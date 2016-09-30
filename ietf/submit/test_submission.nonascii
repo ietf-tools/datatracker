@@ -185,7 +185,7 @@ Author's Address
    Some Where 12345
    UK
 
-   Email: author@example.com
+   Email: %(email)s
 
 
 
