@@ -26,8 +26,10 @@ class SubmissionAdmin(admin.ModelAdmin):
 admin.site.register(Submission, SubmissionAdmin)
 
 class SubmissionEventAdmin(admin.ModelAdmin):
-    list_display = ['id', 'submission', 'time', 'by', 'desc', ]
-    pass
+    list_display = ['id', 'submission', 'rev', 'time', 'by', 'desc', ]
+    search_fields = ['submission__name']
+    def rev(self, instance):
+        return instance.submission.rev
 admin.site.register(SubmissionEvent, SubmissionEventAdmin)
 
 class SubmissionCheckAdmin(admin.ModelAdmin):

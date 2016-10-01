@@ -137,8 +137,10 @@ admin.site.register(BallotType, BallotTypeAdmin)
 
 class DocEventAdmin(admin.ModelAdmin):
     def rev(self, obj):
-        return obj.doc.rev
-    list_display = ["doc", "type", "rev", "by", "time"]
+        return obj.get_dochistory().rev
+    def doc_time(self, obj):
+        return obj.get_dochistory().time
+    list_display = ["id", "doc", "type", "rev", "by", "time", "doc_time" ]
     search_fields = ["doc__name", "by__name"]
     raw_id_fields = ["doc", "by"]
 
