@@ -111,8 +111,7 @@ def create_submission_event(request, submission, desc):
 
     SubmissionEvent.objects.create(submission=submission, by=by, desc=desc)
 
-
-def docevent_from_submission(request, submission, desc):
+def docevent_from_submission(request, submission, desc, who=None):
     system = Person.objects.get(name="(System)")
 
     try:
@@ -121,18 +120,22 @@ def docevent_from_submission(request, submission, desc):
         # Assume this is revision 00 - we'll do this later
         return
 
-    submitter_parsed = submission.submitter_parsed()
-    if submitter_parsed["name"] and submitter_parsed["email"]:
-        submitter = ensure_person_email_info_exists(submitter_parsed["name"], submitter_parsed["email"]).person
+    if who:
+        by = Person.objects.get(name=who)
     else:
-        submitter = system
+        submitter_parsed = submission.submitter_parsed()
+        if submitter_parsed["name"] and submitter_parsed["email"]:
+            by = ensure_person_email_info_exists(submitter_parsed["name"], submitter_parsed["email"]).person
+        else:
+            by = system
 
-    e = DocEvent(doc=draft)
-    e.by = submitter
-    e.type = "added_comment"
-    e.desc = desc
-    e.save()
-
+    e = DocEvent.objects.create(
+            doc=draft,
+            by = by,
+            type = "added_comment",
+            desc = desc,
+        )
+    return e
 
 def post_rev00_submission_events(draft, submission, submitter):
     # Add previous submission events as docevents
@@ -213,6 +216,19 @@ def post_submission(request, submission, approvedDesc):
 
     events = []
 
+    if draft.rev == '00':
+        # Add all the previous submission events as docevents
+        post_rev00_submission_events(draft, submission, submitter)
+
+    # Add an approval docevent
+    e = DocEvent.objects.create(
+        type="added_comment",
+        doc=draft,
+        by=system,
+        desc=approvedDesc
+    )
+    events.append(e)
+
     # new revision event
     e = NewRevisionDocEvent.objects.create(
         type="new_revision",
@@ -234,33 +250,16 @@ def post_submission(request, submission, approvedDesc):
     if trouble:
         log('Rebuild_reference_relations trouble: %s'%trouble)
     
-    if draft.rev == '00':
-        # Add all the previous submission events as docevents
-        post_rev00_submission_events(draft, submission, submitter)
-
-    # Add an approval docevent
-    e = DocEvent(type="added_comment", doc=draft)
-    e.time = draft.time #submission.submission_date
-    e.by = submitter
-    e.desc = approvedDesc
-    e.save()
-    
-    # new revision event
-    e = NewRevisionDocEvent(type="new_revision", doc=draft, rev=draft.rev)
-    e.time = draft.time #submission.submission_date
-    e.by = submitter
-    e.desc = "New version available: <b>%s-%s.txt</b>" % (draft.name, draft.rev)
-    e.save()
-
     if draft.stream_id == "ietf" and draft.group.type_id == "wg" and draft.rev == "00":
         # automatically set state "WG Document"
         draft.set_state(State.objects.get(used=True, type="draft-stream-%s" % draft.stream_id, slug="wg-doc"))
 
+    # automatic state changes for IANA review
     if draft.get_state_slug("draft-iana-review") in ("ok-act", "ok-noact", "not-ok"):
         prev_state = draft.get_state("draft-iana-review")
         next_state = State.objects.get(used=True, type="draft-iana-review", slug="changed")
         draft.set_state(next_state)
-        e = add_state_change_event(draft, submitter, prev_state, next_state)
+        e = add_state_change_event(draft, system, prev_state, next_state)
         if e:
             events.append(e)
 

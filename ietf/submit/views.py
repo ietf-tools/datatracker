@@ -314,10 +314,14 @@ def submission_status(request, submission_id, access_token=None):
                         return HttpResponseForbidden('You do not have permission to perform this action')
 
                     # go directly to posting submission
+                    docevent_from_submission(request, submission, desc="Uploaded new revision")
+
                     desc = u"Secretariat manually posting. Approvals already received"
                     post_submission(request, submission, desc)
                     create_submission_event(request, submission, desc)
                 else:
+                    docevent_from_submission(request, submission, desc="Uploaded new revision")
+
                     if requires_group_approval:
                         submission.state = DraftSubmissionStateName.objects.get(slug="grp-appr")
                         submission.save()
@@ -349,7 +353,7 @@ def submission_status(request, submission_id, access_token=None):
                         ", ".join(prettify_std_name(r.name) for r in replaces) if replaces else "(none)",
                         desc)
                     create_submission_event(request, submission, msg)
-                    docevent_from_submission(request, submission, docDesc)
+                    docevent_from_submission(request, submission, docDesc, who="(System)")
     
                 if access_token:
                     return redirect("ietf.submit.views.submission_status", submission_id=submission.pk, access_token=access_token)

@@ -382,8 +382,35 @@ class SubmitTests(TestCase):
         draft = Document.objects.get(docalias__name=name)
         self.assertEqual(draft.rev, rev)
         self.assertEqual(draft.group.acronym, name.split("-")[2])
-        self.assertEqual(draft.docevent_set.all()[1].type, "new_revision")
-        self.assertEqual(draft.docevent_set.all()[1].by.name, "Submitter Name")
+        #
+        docevents = list(draft.docevent_set.all().order_by("-time", "-id"))
+        # Latest events are first (this is the default, but we make it explicit)
+        # Assert event content in chronological order:
+        self.assertEqual(docevents[4].type, "added_comment")
+        self.assertIn("Uploaded new revision", docevents[4].desc)
+        self.assertEqual(docevents[4].by.name, "Submitter Name")
+        self.assertGreater(docevents[4].id, docevents[5].id)
+        #
+        self.assertEqual(docevents[3].type, "added_comment")
+        self.assertIn("Request for posting confirmation", docevents[3].desc)
+        self.assertEqual(docevents[3].by.name, "(System)")
+        self.assertGreater(docevents[3].id, docevents[4].id)
+        #
+        self.assertEqual(docevents[2].type, "added_comment")
+        self.assertIn("New version approved", docevents[2].desc)
+        self.assertEqual(docevents[2].by.name, "(System)")
+        self.assertGreater(docevents[2].id, docevents[3].id)
+        #
+        self.assertEqual(docevents[1].type, "new_revision")
+        self.assertIn("New version available", docevents[1].desc)
+        self.assertEqual(docevents[1].by.name, "Submitter Name")
+        self.assertGreater(docevents[1].id, docevents[2].id)
+        #
+        self.assertEqual(docevents[0].type, "changed_state")
+        self.assertIn("IANA Review", docevents[0].desc)
+        self.assertEqual(docevents[0].by.name, "(System)")
+        self.assertGreater(docevents[0].id, docevents[1].id)
+        #
         self.assertTrue(not os.path.exists(os.path.join(self.repository_dir, "%s-%s.txt" % (name, old_rev))))
         self.assertTrue(os.path.exists(os.path.join(self.archive_dir, "%s-%s.txt" % (name, old_rev))))
         self.assertTrue(not os.path.exists(os.path.join(self.staging_dir, u"%s-%s.txt" % (name, rev))))
