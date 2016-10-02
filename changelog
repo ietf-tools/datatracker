@@ -1,3 +1,58 @@
+ietfdb (6.34.2) ietf; urgency=medium
+
+  **Draft submission and document DOI fixes**
+
+  This is a bugfix release which addresses several issues related to draft
+  submission: incorrect timestamps and duplicate history events, a corner case
+  where non-ascii draft content would cause an exception before the idnits
+  message about non-ascii content was shown, and better handling of draft
+  submissions where email address information is missing for some authors.
+  The DOI information in the RFC feed is now represented better, and some
+  pages which had invalid html has been corrected.
+
+  Details from the commit log:
+
+  * Added a data migration to fix up incorrect submission doc events.
+
+  * Removed the code which created duplicate new revision doc events.
+    Corrected the timestamp on approval docevents.  Changed where the
+    submission upload docevent is created, to avoid spurious events for
+    cancelled uploads.  Adjusted the person associated with some events from
+    submitter to (System).  Added tests for the sequence of events associated
+    with a submission.
+
+  * Tweaked the admin models for submission events to show more relevant info.
+
+  * Moved some code and tweaked the settings to ignore sql debugging functions
+    when calculating code coverage.
+
+  * Refined the sql debug info, making the table of queries sortable and
+    adding duplication counts and accumulated query time.
+
+  * Fixed some invalid html, and tweaked the html validation settings in the
+    test crawler.
+
+  * Merged in [12055] from rjsparks@nostrum.com:
+    Modified the rfc feed to better represent dois. Fixes issue #2014.
+
+  * Fixed 2 testing bugs.  Added tests for handling of submitters without 
+    email and drafts with non-ascii names in the author section.
+
+  * Code changes to handle draft submission authors without email addresses 
+    better.
+
+  * Changed to use plain_ascii() name for formatted_email() address.
+
+  * Tweaked the text of a main menu item.
+
+  * Added code to try various ways of handling non-ascii names/emails in draft
+    submissions, in order to get past the early processing to the point where
+    we run idnits and can flag non-ascii content, instead of failing with a
+    server 500 error.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  02 Oct 2016 16:37:58 +0000
+
+
 ietfdb (6.34.1) ietf; urgency=medium
 
   This is a bugfix release, with the most interesting fixes being to allow
