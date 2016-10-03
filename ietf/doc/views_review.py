@@ -9,7 +9,8 @@ from django.core.exceptions import ValidationError
 from django.template.loader import render_to_string
 from django.core.urlresolvers import reverse as urlreverse
 
-from ietf.doc.models import Document, NewRevisionDocEvent, DocEvent, State, DocAlias, LastCallDocEvent
+from ietf.doc.models import (Document, NewRevisionDocEvent, State, DocAlias,
+                             LastCallDocEvent, ReviewRequestDocEvent)
 from ietf.name.models import ReviewRequestStateName, ReviewResultName, DocTypeName
 from ietf.review.models import ReviewRequest
 from ietf.group.models import Group
@@ -103,12 +104,14 @@ def request_review(request, name):
                 review_req.team = team
                 review_req.save()
 
-                DocEvent.objects.create(
+                ReviewRequestDocEvent.objects.create(
                     type="requested_review",
                     doc=doc,
                     by=request.user.person,
                     desc="Requested {} review by {}".format(review_req.type.name, review_req.team.acronym.upper()),
                     time=review_req.time,
+                    review_request=review_req,
+                    state=None,
                 )
 
             return redirect('doc_view', name=doc.name)
@@ -272,8 +275,8 @@ def reject_reviewer_assignment(request, name, request_id):
             review_req.state = ReviewRequestStateName.objects.get(slug="rejected")
             review_req.save()
 
-            DocEvent.objects.create(
-                type="changed_review_request",
+            ReviewRequestDocEvent.objects.create(
+                type="closed_review_request",
                 doc=review_req.doc,
                 by=request.user.person,
                 desc="Assignment of request for {} review by {} to {} was rejected".format(
@@ -281,13 +284,15 @@ def reject_reviewer_assignment(request, name, request_id):
                     review_req.team.acronym.upper(),
                     review_req.reviewer.person,
                 ),
+                review_request=review_req,
+                state=review_req.state,
             )
 
             # make a new unassigned review request
             new_review_req = make_new_review_request_from_existing(review_req)
             new_review_req.save()
 
-            msg = render_to_string("doc/mail/reviewer_assignment_rejected.txt", {
+            msg = render_to_string("review/reviewer_assignment_rejected.txt", {
                 "by": request.user.person,
                 "message_to_secretary": form.cleaned_data.get("message_to_secretary")
             })
@@ -393,7 +398,7 @@ def complete_review(request, name, request_id):
                     strip_prefix(review_req.doc.name, "draft-"),
                     form.cleaned_data["reviewed_rev"],
                     review_req.team.acronym,
-                    review_req.type.slug if review_req.type.slug != "unknown" else "",
+                    review_req.type.slug,
                     review_req.reviewer.person.ascii_parts()[3],
                     datetime.date.today().isoformat(),
                 ]
@@ -403,7 +408,15 @@ def complete_review(request, name, request_id):
                 name = "-".join(c for c in name_components if c).lower()
                 if not Document.objects.filter(name=name).exists():
                     review = Document.objects.create(name=name)
+                    DocAlias.objects.create(document=review, name=review.name)
                     break
+
+            review.type = DocTypeName.objects.get(slug="review")
+            review.rev = "00"
+            review.title = "{} Review of {}-{}".format(review_req.type.name, review_req.doc.name, form.cleaned_data["reviewed_rev"])
+            review.group = review_req.team
+            if review_submission == "link":
+                review.external_url = form.cleaned_data['review_url']
 
             e = NewRevisionDocEvent.objects.create(
                 type="new_revision",
@@ -414,15 +427,9 @@ def complete_review(request, name, request_id):
                 time=review.time,
             )
 
-            review.type = DocTypeName.objects.get(slug="review")
-            review.rev = "00"
-            review.title = "{} Review of {}-{}".format(review_req.type.name, review_req.doc.name, form.cleaned_data["reviewed_rev"])
-            review.group = review_req.team
-            if review_submission == "link":
-                review.external_url = form.cleaned_data['review_url']
-            review.save_with_history([e])
             review.set_state(State.objects.get(type="review", slug="active"))
-            DocAlias.objects.create(document=review, name=review.name)
+
+            review.save_with_history([e])
 
             # save file on disk
             if review_submission == "upload":
@@ -441,17 +448,25 @@ def complete_review(request, name, request_id):
             review_req.review = review
             review_req.save()
 
-            DocEvent.objects.create(
-                type="changed_review_request",
+            need_to_email_review = review_submission != "link" and review_req.team.list_email
+
+            desc = "Request for {} review by {} {}: {}. Reviewer: {}.".format(
+                review_req.type.name,
+                review_req.team.acronym.upper(),
+                review_req.state.name,
+                review_req.result.name,
+                review_req.reviewer.person,
+            )
+            if need_to_email_review:
+                desc += " " + "Sent review to list."
+
+            close_event = ReviewRequestDocEvent.objects.create(
+                type="closed_review_request",
                 doc=review_req.doc,
                 by=request.user.person,
-                desc="Request for {} review by {} {}: {}. Reviewer: {}".format(
-                    review_req.type.name,
-                    review_req.team.acronym.upper(),
-                    review_req.state.name,
-                    review_req.result.name,
-                    review_req.reviewer,
-                ),
+                desc=desc,
+                review_request=review_req,
+                state=review_req.state,
             )
 
             if review_req.state_id == "part-completed":
@@ -463,7 +478,7 @@ def complete_review(request, name, request_id):
                 url = urlreverse("ietf.doc.views_review.review_request", kwargs={ "name": new_review_req.doc.name, "request_id": new_review_req.pk })
                 url = request.build_absolute_uri(url)
 
-                msg = render_to_string("doc/mail/partially_completed_review.txt", {
+                msg = render_to_string("review/partially_completed_review.txt", {
                     'new_review_req_url': url,
                     "by": request.user.person,
                     "new_review_req": new_review_req,
@@ -471,28 +486,21 @@ def complete_review(request, name, request_id):
 
                 email_review_request_change(request, review_req, subject, msg, request.user.person, notify_secretary=True, notify_reviewer=False, notify_requested_by=False)
 
-            if review_submission != "link" and review_req.team.list_email:
+            if need_to_email_review:
                 # email the review
                 subject = "{} of {}-{}".format("Partial review" if review_req.state_id == "part-completed" else "Review", review_req.doc.name, review_req.reviewed_rev)
                 msg = send_mail(request, [(review_req.team.name, review_req.team.list_email)], None,
                                 subject,
-                                "doc/mail/completed_review.txt", {
+                                "review/completed_review.txt", {
                                     "review_req": review_req,
                                     "content": encoded_content.decode("utf-8"),
                                 },
                                 cc=form.cleaned_data["cc"])
 
-                e = DocEvent.objects.create(
-                    type="changed_review_request",
-                    doc=review_req.doc,
-                    by=request.user.person,
-                    desc="Sent review to list.",
-                )
-
                 list_name = mailarch.list_name_from_email(review_req.team.list_email)
                 if list_name:
                     review.external_url = mailarch.construct_message_url(list_name, email.utils.unquote(msg["Message-ID"]))
-                    review.save_with_history([e])
+                    review.save_with_history([close_event])
 
             return redirect("doc_view", name=review_req.review.name)
     else:

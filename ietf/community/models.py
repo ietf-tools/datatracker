@@ -98,6 +98,9 @@ def notify_events(sender, instance, **kwargs):
     if instance.doc.type_id != 'draft':
         return
 
+    if getattr(instance, "skip_community_list_notification", False):
+        return
+
     from ietf.community.utils import notify_event_to_subscribers
     notify_event_to_subscribers(instance)
 

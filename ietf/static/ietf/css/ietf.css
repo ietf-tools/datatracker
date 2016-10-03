@@ -519,12 +519,20 @@ table.unavailable-periods td {
   padding-right: 0.5em;
 }
 
+table.unavailable-periods td:last-child {
+  padding-right: 0;
+}
+
 .unavailable-period-past {
   color: #777;
 }
 
 .unavailable-period-active {
   font-weight: bold;
+}
+
+.reviewer-overview .completely-unavailable {
+  opacity: 0.6;
 }
 
 /* === Photo pages ========================================================== */

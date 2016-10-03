@@ -44,7 +44,7 @@
       <tr>
         <th></th>
         <th>Team</th>
-        <td><a href="{% url "ietf.group.views.review_requests" group_type=review_req.team.type_id acronym=review_req.team.acronym %}">{{ review_req.team.acronym|upper }}</a></td>
+        <td><a href="{% url "ietf.group.views_review.review_requests" group_type=review_req.team.type_id acronym=review_req.team.acronym %}">{{ review_req.team.acronym|upper }}</a></td>
       </tr>
 
       <tr>

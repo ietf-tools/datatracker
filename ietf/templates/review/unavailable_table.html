@@ -1,0 +1,8 @@
+<table class="unavailable-periods">
+  {% for p in unavailable_periods %}
+    <tr class="unavailable-period-{{ p.state }}">
+      <td>{{ p.start_date }} - {{ p.end_date|default:"" }}</td>
+      <td>{{ p.get_availability_display }}</td>
+    </tr>
+  {% endfor %}
+</table>

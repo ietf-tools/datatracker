@@ -34,7 +34,7 @@
             <td>{% if r.pk %}{{ r.time|date:"Y-m-d" }}{% else %}<em>auto-suggested</em>{% endif %}</td>
             <td>
               {{ r.deadline|date:"Y-m-d" }}
-              {% if r.due %}<span class="label label-warning">{{ r.due }} day{{ r.due|pluralize }}</span>{% endif %}
+              {% if r.due %}<span class="label label-warning" title="{{ r.due }} day{{ r.due|pluralize }} past deadline">{{ r.due }} day{{ r.due|pluralize }}</span>{% endif %}
             </td>
             <td>
               {% if r.reviewer %}

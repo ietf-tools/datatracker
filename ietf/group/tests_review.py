@@ -15,6 +15,31 @@ import ietf.group.views_review
 from ietf.utils.mail import outbox, empty_outbox
 
 class ReviewTests(TestCase):
+    def test_review_requests(self):
+        doc = make_test_data()
+        review_req = make_review_data(doc)
+
+        group = review_req.team
+
+        for url in [ urlreverse(ietf.group.views_review.review_requests, kwargs={ 'acronym': group.acronym }),
+                     urlreverse(ietf.group.views_review.review_requests, kwargs={ 'acronym': group.acronym , 'group_type': group.type_id}),
+                   ]:
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            self.assertTrue(review_req.doc.name in unicontent(r))
+            self.assertTrue(unicode(review_req.reviewer.person) in unicontent(r))
+
+        url = urlreverse(ietf.group.views_review.review_requests, kwargs={ 'acronym': group.acronym })
+
+        # close request, listed under closed
+        review_req.state_id = "completed"
+        review_req.result_id = "ready"
+        review_req.save()
+
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(review_req.doc.name in unicontent(r))
+
     def test_suggested_review_requests(self):
         doc = make_test_data()
         review_req = make_review_data(doc)

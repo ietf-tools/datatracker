@@ -49,7 +49,7 @@ class Migration(migrations.Migration):
                 ('deadline', models.DateField()),
                 ('requested_rev', models.CharField(help_text=b'Fill in if a specific revision is to be reviewed, e.g. 02', max_length=16, verbose_name=b'requested revision', blank=True)),
                 ('reviewed_rev', models.CharField(max_length=16, verbose_name=b'reviewed revision', blank=True)),
-                ('doc', models.ForeignKey(related_name='review_request_set', to='doc.Document')),
+                ('doc', models.ForeignKey(related_name='reviewrequest_set', to='doc.Document')),
                 ('requested_by', models.ForeignKey(to='person.Person')),
                 ('result', models.ForeignKey(blank=True, to='name.ReviewResultName', null=True)),
                 ('review', models.OneToOneField(null=True, blank=True, to='doc.Document')),

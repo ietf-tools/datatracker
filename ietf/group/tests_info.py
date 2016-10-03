@@ -31,7 +31,6 @@ from ietf.person.models import Person, Email
 from ietf.utils.mail import outbox, empty_outbox
 from ietf.utils.test_data import make_test_data, create_person, make_review_data
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase, unicontent, reload_db_objects
-import ietf.group.views
 
 def group_urlreverse_list(group, viewname):
     return [
@@ -335,31 +334,6 @@ class GroupPagesTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertTrue(doc.title not in unicontent(r))
-
-    def test_review_requests(self):
-        doc = make_test_data()
-        review_req = make_review_data(doc)
-
-        group = review_req.team
-
-        for url in [ urlreverse(ietf.group.views.review_requests, kwargs={ 'acronym': group.acronym }),
-                     urlreverse(ietf.group.views.review_requests, kwargs={ 'acronym': group.acronym , 'group_type': group.type_id}),
-                   ]:
-            r = self.client.get(url)
-            self.assertEqual(r.status_code, 200)
-            self.assertTrue(review_req.doc.name in unicontent(r))
-            self.assertTrue(unicode(review_req.reviewer.person) in unicontent(r))
-
-        url = urlreverse(ietf.group.views.review_requests, kwargs={ 'acronym': group.acronym })
-
-        # close request, listed under closed
-        review_req.state_id = "completed"
-        review_req.result_id = "ready"
-        review_req.save()
-
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        self.assertTrue(review_req.doc.name in unicontent(r))
 
     def test_history(self):
         draft = make_test_data()

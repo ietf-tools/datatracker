@@ -1,4 +1,5 @@
 import datetime
+from collections import defaultdict
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import Http404, HttpResponseForbidden, HttpResponseRedirect
@@ -14,17 +15,125 @@ from ietf.review.utils import (can_manage_review_requests_for_team, close_review
                                close_review_request,
                                setup_reviewer_field,
                                suggested_review_requests_for_team,
-                               unavailability_periods_to_list,
+                               unavailable_periods_to_list,
                                current_unavailable_periods_for_reviewers,
                                email_reviewer_availability_change,
-                               reviewer_rotation_list)
+                               reviewer_rotation_list,
+                               extract_review_request_data)
 from ietf.group.models import Role
-from ietf.group.utils import get_group_or_404
+from ietf.group.utils import get_group_or_404, construct_group_menu_context
 from ietf.person.fields import PersonEmailChoiceField
+from ietf.name.models import ReviewRequestStateName
 from ietf.utils.mail import send_mail_text
 from ietf.utils.fields import DatepickerDateField
 from ietf.ietfauth.utils import user_is_person
 
+
+def review_requests(request, acronym, group_type=None):
+    group = get_group_or_404(acronym, group_type)
+    if not group.features.has_reviews:
+        raise Http404
+
+    open_review_requests = list(ReviewRequest.objects.filter(
+        team=group, state__in=("requested", "accepted")
+    ).prefetch_related("reviewer", "type", "state").order_by("-time", "-id"))
+
+    unavailable_periods = current_unavailable_periods_for_reviewers(group)
+    for review_req in open_review_requests:
+        if review_req.reviewer:
+            review_req.reviewer_unavailable = any(p.availability == "unavailable"
+                                                  for p in unavailable_periods.get(review_req.reviewer.person_id, []))
+
+    open_review_requests = suggested_review_requests_for_team(group) + open_review_requests
+
+    today = datetime.date.today()
+    for r in open_review_requests:
+        r.due = max(0, (today - r.deadline).days)
+
+    closed_review_requests = ReviewRequest.objects.filter(
+        team=group,
+    ).exclude(
+        state__in=("requested", "accepted")
+    ).prefetch_related("reviewer", "type", "state", "doc").order_by("-time", "-id")
+
+    since_choices = [
+        (None, "1 month"),
+        ("3m", "3 months"),
+        ("6m", "6 months"),
+        ("1y", "1 year"),
+        ("2y", "2 years"),
+        ("all", "All"),
+    ]
+    since = request.GET.get("since", None)
+    if since not in [key for key, label in since_choices]:
+        since = None
+
+    if since != "all":
+        date_limit = {
+            None: datetime.timedelta(days=31),
+            "3m": datetime.timedelta(days=31 * 3),
+            "6m": datetime.timedelta(days=180),
+            "1y": datetime.timedelta(days=365),
+            "2y": datetime.timedelta(days=2 * 365),
+        }[since]
+
+        closed_review_requests = closed_review_requests.filter(time__gte=datetime.date.today() - date_limit)
+
+    return render(request, 'group/review_requests.html',
+                  construct_group_menu_context(request, group, "review requests", group_type, {
+                      "open_review_requests": open_review_requests,
+                      "closed_review_requests": closed_review_requests,
+                      "since_choices": since_choices,
+                      "since": since,
+                      "can_manage_review_requests": can_manage_review_requests_for_team(request.user, group)
+                  }))
+
+def reviewer_overview(request, acronym, group_type=None):
+    group = get_group_or_404(acronym, group_type)
+    if not group.features.has_reviews:
+        raise Http404
+
+    can_manage = can_manage_review_requests_for_team(request.user, group)
+
+    reviewers = reviewer_rotation_list(group)
+
+    reviewer_settings = { s.person_id: s for s in ReviewerSettings.objects.filter(team=group) }
+    unavailable_periods = defaultdict(list)
+    for p in unavailable_periods_to_list().filter(team=group):
+        unavailable_periods[p.person_id].append(p)
+    reviewer_roles = { r.person_id: r for r in Role.objects.filter(group=group, name="reviewer").select_related("email") }
+
+    today = datetime.date.today()
+
+    all_req_data = extract_review_request_data(teams=[group], time_from=today - datetime.timedelta(days=365))
+    review_state_by_slug = { n.slug: n for n in ReviewRequestStateName.objects.all() }
+
+    for person in reviewers:
+        person.settings = reviewer_settings.get(person.pk) or ReviewerSettings(team=group, person=person)
+        person.settings_url = None
+        person.role = reviewer_roles.get(person.pk)
+        if person.role and (can_manage or user_is_person(request.user, person)):
+            person.settings_url = urlreverse("ietf.group.views_review.change_reviewer_settings", kwargs={ "group_type": group_type, "acronym": group.acronym, "reviewer_email": person.role.email.address })
+        person.unavailable_periods = unavailable_periods.get(person.pk, [])
+        person.completely_unavailable = any(p.availability == "unavailable"
+                                       and p.start_date <= today and (p.end_date is None or today <= p.end_date)
+                                       for p in person.unavailable_periods)
+
+        MAX_REQS = 5
+        req_data = all_req_data.get((group.pk, person.pk), [])
+        open_reqs = sum(1 for _, _, _, _, state, _, _, _, _, _ in req_data if state in ("requested", "accepted"))
+        latest_reqs = []
+        for req_pk, doc, req_time, state, deadline, result, late_days, request_to_assignment_days, assignment_to_closure_days, request_to_closure_days in req_data:
+            # any open requests pushes the others out
+            if ((state in ("requested", "accepted") and len(latest_reqs) < MAX_REQS) or (len(latest_reqs) + open_reqs < MAX_REQS)):
+                print review_state_by_slug.get(state), assignment_to_closure_days
+                latest_reqs.append((req_pk, doc, deadline, review_state_by_slug.get(state), assignment_to_closure_days))
+        person.latest_reqs = latest_reqs
+
+    return render(request, 'group/reviewer_overview.html',
+                  construct_group_menu_context(request, group, "reviewers", group_type, {
+                      "reviewers": reviewers,
+                  }))
 
 class ManageReviewRequestForm(forms.Form):
     ACTIONS = [
@@ -45,12 +154,12 @@ class ManageReviewRequestForm(forms.Form):
 
         super(ManageReviewRequestForm, self).__init__(*args, **kwargs)
 
+        if review_req.pk is None:
+            self.fields["close"].queryset = self.fields["close"].queryset.filter(slug__in=["no-review-version", "no-review-document"])
+
         close_initial = None
         if review_req.pk is None:
-            if review_req.latest_reqs:
-                close_initial = "no-review-version"
-            else:
-                close_initial = "no-review-document"
+            close_initial = "no-review-version"
         elif review_req.reviewer:
             close_initial = "no-response"
         else:
@@ -58,9 +167,6 @@ class ManageReviewRequestForm(forms.Form):
 
         if close_initial:
             self.fields["close"].initial = close_initial
-
-        if review_req.pk is None:
-            self.fields["close"].queryset = self.fields["close"].queryset.filter(slug__in=["noreviewversion", "noreviewdocument"])
 
         self.fields["close"].widget.attrs["class"] = "form-control input-sm"
 
@@ -176,8 +282,8 @@ def manage_review_requests(request, acronym, group_type=None):
             if form_action == "save-continue":
                 return redirect(manage_review_requests, **kwargs)
             else:
-                import ietf.group.views
-                return redirect(ietf.group.views.review_requests, **kwargs)
+                import ietf.group.views_review
+                return redirect(ietf.group.views_review.review_requests, **kwargs)
 
     return render(request, 'group/manage_review_requests.html', {
         'group': group,
@@ -241,19 +347,6 @@ def email_open_review_assignments(request, acronym, group_type=None):
     })
 
 
-@login_required
-def reviewer_overview(request, acronym, group_type=None):
-    group = get_group_or_404(acronym, group_type)
-    if not group.features.has_reviews:
-        raise Http404
-
-    reviewer_roles = Role.objects.filter(name="reviewer", group=group)
-
-    if not (any(user_is_person(request.user, r) for r in reviewer_roles)
-            or can_manage_review_requests_for_team(request.user, group)):
-        return HttpResponseForbidden("You do not have permission to perform this action")
-
-
 class ReviewerSettingsForm(forms.ModelForm):
     class Meta:
         model = ReviewerSettings
@@ -312,8 +405,8 @@ def change_reviewer_settings(request, acronym, reviewer_email, group_type=None):
 
     back_url = request.GET.get("next")
     if not back_url:
-        import ietf.group.views
-        back_url = urlreverse(ietf.group.views.review_requests, kwargs={ "group_type": group.type_id, "acronym": group.acronym})
+        import ietf.group.views_review
+        back_url = urlreverse(ietf.group.views_review.review_requests, kwargs={ "group_type": group.type_id, "acronym": group.acronym})
 
     # settings
     if request.method == "POST" and request.POST.get("action") == "change_settings":
@@ -337,7 +430,7 @@ def change_reviewer_settings(request, acronym, reviewer_email, group_type=None):
         settings_form = ReviewerSettingsForm(instance=settings)
 
     # periods
-    unavailable_periods = unavailability_periods_to_list().filter(person=reviewer, team=group)
+    unavailable_periods = unavailable_periods_to_list().filter(person=reviewer, team=group)
 
     if request.method == "POST" and request.POST.get("action") == "add_period":
         period_form = AddUnavailablePeriodForm(request.POST)

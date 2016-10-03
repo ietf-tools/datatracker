@@ -1,0 +1,49 @@
+{% extends "group/group_base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}{% origin %}
+
+{% load ietf_filters staticfiles bootstrap3 %}
+
+{% block group_subtitle %}Reviewers{% endblock %}
+
+{% block group_content %}
+  {% origin %}
+
+  <h2>Reviewers</h2>
+
+  {% if reviewers %}
+    <table class="table reviewer-overview">
+      <thead>
+        <tr>
+          <th>Reviewer</th>
+          <th>Latest assignments (deadline, state)</th>
+          <th>Settings</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for person in reviewers %}
+          <tr {% if person.completely_unavailable %}class="completely-unavailable"{% endif %}>
+            <td><a {% if person.settings_url %}href="{{ person.settings_url }}"{% endif %}>{{ person }}</a></td>
+            <td>
+              {% for req_pk, doc_name, deadline, state, assignment_to_closure_days in person.latest_reqs %}
+                <div><a href="{% url "ietf.doc.views_review.review_request" name=doc_name request_id=req_pk %}">{{ deadline|date }} {{ doc_name }}: {{ state.name }} {% if assignment_to_closure_days != None %}{% if state.slug == "completed" or state.slug == "part-completed" %}(in {{ assignment_to_closure_days|floatformat }} day{{ assignment_to_closure_days|pluralize }}){% endif %}{% endif %}</a></div>
+              {% endfor %}
+            </td>
+            <td>
+              {{ person.settings.get_min_interval_display }} {% if person.settings.skip_next %}(skip: {{ person.settings.skip_next }}){% endif %}<br>
+              {% if person.settings.filter_re %}Filter: <code title="{{ person.settings.filter_re }}">{{ person.settings.filter_re|truncatechars:15 }}</code><br>{% endif %}
+
+              {% if person.unavailable_periods %}
+                {% include "review/unavailable_table.html" with unavailable_periods=person.unavailable_periods %}
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    
+  {% else %}
+    <p>No reviewers found.</p>
+  {% endif %}
+
+{% endblock %}

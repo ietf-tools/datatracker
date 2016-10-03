@@ -16,7 +16,7 @@
   <h1>Manage open review requests for {{ group.acronym }}</h1>
 
   <p>Other options:
-    <a href="{% url "ietf.group.views.review_requests" group_type=group.type_id acronym=group.acronym %}#closed-review-requests">Closed review requests</a>
+    <a href="{% url "ietf.group.views_review.reviewer_overview" group_type=group.type_id acronym=group.acronym %}">Reviewers in team</a>
     - <a href="{% url "ietf.group.views_review.email_open_review_assignments" group_type=group.type_id acronym=group.acronym  %}">Email open assignments summary</a>
   </p>
 
@@ -59,7 +59,7 @@
                   {% for rlatest in r.latest_reqs %}
                     <div>
                       <small>- prev. review of {% if rlatest.doc_id != r.doc_id %}{{ rlatest.doc_id }}{% endif %}-{{ rlatest.reviewed_rev }}:
-                        <a href="{% url "ietf.doc.views_review.review_request" name=rlatest.doc_id request_id=rlatest.pk %}">{{ rlatest.result.name }}</a>
+                        <a href="{% url "ietf.doc.views_review.review_request" name=rlatest.doc_id request_id=rlatest.pk %}">{% if rlatest.result %}{{ rlatest.result.name }}{% else %}result unavail.{% endif %}</a>
                         (<a href="{{ rfcdiff_base_url }}?url1={{ rlatest.doc.name }}-{{ rlatest.reviewed_rev }}&url2={{ r.doc.name }}-{{ r.doc.rev }}">diff</a>){% if not forloop.last %},{% endif %}
                       </small>
                     </div>
@@ -129,7 +129,7 @@
       </table>
 
       {% buttons %}
-        <a href="{% url "ietf.group.views.review_requests" group_type=group.type_id acronym=group.acronym %}" class="btn btn-default pull-right">Cancel</a>
+      <a href="{% url "ietf.group.views_review.review_requests" group_type=group.type_id acronym=group.acronym %}" class="btn btn-default pull-right">Cancel</a>
         <button class="btn btn-primary" type="submit" name="action" value="save">Save changes</button>
         <button class="btn btn-primary" type="submit" name="action" value="save-continue">Save and continue editing</button>
         <button class="btn btn-default" type="submit" name="action" value="refresh">Refresh (keeping changes)</button>

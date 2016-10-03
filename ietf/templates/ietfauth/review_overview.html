@@ -140,14 +140,7 @@
         <th>Unavailable periods</th>
         <td>
           {% if t.unavailable_periods %}
-            <table class="unavailable-periods">
-              {% for o in t.unavailable_periods %}
-                <tr class="unavailable-period-{{ o.state }}">
-                  <td>{{ o.start_date }} - {{ o.end_date|default:"" }}</td>
-                  <td>{{ o.get_availability_display }}</td>
-                </tr>
-              {% endfor %}
-            </table>
+            {% include "review/unavailable_table.html" with unavailable_periods=t.unavailable_periods %}
           {% else %}
             (No periods)
           {% endif %}

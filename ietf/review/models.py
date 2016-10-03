@@ -96,7 +96,7 @@ class ReviewRequest(models.Model):
     # constitute the request part.
     time          = models.DateTimeField(default=datetime.datetime.now)
     type          = models.ForeignKey(ReviewTypeName)
-    doc           = models.ForeignKey(Document, related_name='review_request_set')
+    doc           = models.ForeignKey(Document, related_name='reviewrequest_set')
     team          = models.ForeignKey(Group, limit_choices_to=~models.Q(reviewteamresult=None))
     deadline      = models.DateField()
     requested_by  = models.ForeignKey(Person)

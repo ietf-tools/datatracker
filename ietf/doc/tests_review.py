@@ -131,7 +131,7 @@ class ReviewTests(TestCase):
         review_req = reload_db_objects(review_req)
         self.assertEqual(review_req.state_id, "withdrawn")
         e = doc.latest_event()
-        self.assertEqual(e.type, "changed_review_request")
+        self.assertEqual(e.type, "closed_review_request")
         self.assertTrue("closed" in e.desc.lower())
         self.assertEqual(len(outbox), 1)
         self.assertTrue("closed" in unicode(outbox[0]).lower())
@@ -255,7 +255,7 @@ class ReviewTests(TestCase):
             reviewer=plain_email,
         )
 
-        reviewer_settings = ReviewerSettings.objects.get(person__email=plain_email)
+        reviewer_settings = ReviewerSettings.objects.get(person__email=plain_email, team=review_req.team)
         reviewer_settings.filter_re = doc.name
         reviewer_settings.skip_next = 1
         reviewer_settings.save()
@@ -383,7 +383,7 @@ class ReviewTests(TestCase):
         review_req = reload_db_objects(review_req)
         self.assertEqual(review_req.state_id, "rejected")
         e = doc.latest_event()
-        self.assertEqual(e.type, "changed_review_request")
+        self.assertEqual(e.type, "closed_review_request")
         self.assertTrue("rejected" in e.desc)
         self.assertEqual(ReviewRequest.objects.filter(doc=review_req.doc, team=review_req.team, state="requested").count(), 1)
         self.assertEqual(len(outbox), 1)

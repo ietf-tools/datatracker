@@ -21,7 +21,6 @@ def insert_initial_review_data(apps, schema_editor):
     ReviewTypeName.objects.get_or_create(slug="early", name="Early", order=1)
     ReviewTypeName.objects.get_or_create(slug="lc", name="Last Call", order=2)
     ReviewTypeName.objects.get_or_create(slug="telechat", name="Telechat", order=3)
-    ReviewTypeName.objects.get_or_create(slug="unknown", name="Unknown", order=4, used=False)
 
     ReviewResultName = apps.get_model("name", "ReviewResultName")
     ReviewResultName.objects.get_or_create(slug="serious-issues", name="Serious Issues", order=1)

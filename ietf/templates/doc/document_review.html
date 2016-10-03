@@ -69,12 +69,14 @@
           <td>{{ review_req.reviewer.person }}</td>
         </tr>
 
+        {% if review_req.result %}
         <tr>
           <th></th>
           <th>Review result</th>
           <td class="edit"></td>
           <td>{{ review_req.result.name }}</td>
         </tr>
+        {% endif %}
       {% endif %}
 
       {% if doc.external_url %}
