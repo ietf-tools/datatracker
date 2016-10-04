@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-import os, shutil, time
+import os, shutil, time, datetime
 from urlparse import urlsplit
 from pyquery import PyQuery
 from unittest import skipIf
@@ -18,7 +18,7 @@ from ietf.person.models import Person, Email
 from ietf.group.models import Group, Role, RoleName
 from ietf.ietfauth.htpasswd import update_htpasswd_file
 from ietf.mailinglists.models import Subscribed
-from ietf.review.models import ReviewWish
+from ietf.review.models import ReviewWish, UnavailablePeriod
 from ietf.utils.decorators import skip_coverage
 
 import ietf.ietfauth.views
@@ -348,6 +348,13 @@ class IetfAuthTests(TestCase):
         review_req.reviewer = reviewer.email_set.first()
         review_req.save()
         
+        UnavailablePeriod.objects.create(
+            team=review_req.team,
+            person=reviewer,
+            start_date=datetime.date.today() - datetime.timedelta(days=10),
+            availability="unavailable",
+        )
+
         url = urlreverse(ietf.ietfauth.views.review_overview)
 
         login_testing_unauthorized(self, reviewer.user.username, url)

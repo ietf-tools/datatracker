@@ -9,8 +9,9 @@ from ietf.utils.test_utils import login_testing_unauthorized, TestCase, uniconte
 from ietf.doc.models import TelechatDocEvent
 from ietf.iesg.models import TelechatDate
 from ietf.person.models import Email, Person
-from ietf.review.models import ReviewRequest, ReviewRequestStateName, ReviewerSettings, UnavailablePeriod
+from ietf.review.models import ReviewRequest, ReviewerSettings, UnavailablePeriod
 from ietf.review.utils import suggested_review_requests_for_team
+from ietf.name.models import ReviewTypeName, ReviewResultName, ReviewRequestStateName
 import ietf.group.views_review
 from ietf.utils.mail import outbox, empty_outbox
 
@@ -32,8 +33,8 @@ class ReviewTests(TestCase):
         url = urlreverse(ietf.group.views_review.review_requests, kwargs={ 'acronym': group.acronym })
 
         # close request, listed under closed
-        review_req.state_id = "completed"
-        review_req.result_id = "ready"
+        review_req.state = ReviewRequestStateName.objects.get(slug="completed")
+        review_req.result = ReviewResultName.objects.get(slug="ready")
         review_req.save()
 
         r = self.client.get(url)
@@ -97,8 +98,50 @@ class ReviewTests(TestCase):
         review_req.save()
 
         self.assertEqual(len(suggested_review_requests_for_team(team)), 1)
-        
 
+    def test_reviewer_overview(self):
+        doc = make_test_data()
+        review_req1 = make_review_data(doc)
+        review_req1.state = ReviewRequestStateName.objects.get(slug="completed")
+        review_req1.save()
+
+        reviewer = review_req1.reviewer.person
+
+        ReviewRequest.objects.create(
+            doc=review_req1.doc,
+            team=review_req1.team,
+            type_id="early",
+            deadline=datetime.date.today() + datetime.timedelta(days=30),
+            state_id="accepted",
+            reviewer=review_req1.reviewer,
+            requested_by=Person.objects.get(user__username="plain"),
+        )
+
+        UnavailablePeriod.objects.create(
+            team=review_req1.team,
+            person=reviewer,
+            start_date=datetime.date.today() - datetime.timedelta(days=10),
+            availability="unavailable",
+        )
+
+        settings = ReviewerSettings.objects.get(person=reviewer)
+        settings.skip_next = 1
+        settings.save()
+
+        group = review_req1.team
+
+        url = urlreverse(ietf.group.views_review.reviewer_overview, kwargs={ 'acronym': group.acronym, 'group_type': group.type_id })
+
+        # get
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(unicode(reviewer) in unicontent(r))
+        self.assertTrue(review_req1.doc.name in unicontent(r))
+
+        self.client.login(username="secretary", password="secretary+password")
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        
     def test_manage_review_requests(self):
         doc = make_test_data()
         review_req1 = make_review_data(doc)
@@ -128,6 +171,33 @@ class ReviewTests(TestCase):
             requested_by=Person.objects.get(user__username="plain"),
         )
 
+        # previous reviews
+        ReviewRequest.objects.create(
+            time=datetime.datetime.now() - datetime.timedelta(days=100),
+            requested_by=Person.objects.get(name="(System)"),
+            doc=doc,
+            type=ReviewTypeName.objects.get(slug="early"),
+            team=review_req1.team,
+            state=ReviewRequestStateName.objects.get(slug="completed"),
+            result=ReviewResultName.objects.get(slug="ready-nits"),
+            reviewed_rev="01",
+            deadline=datetime.date.today() - datetime.timedelta(days=80),
+            reviewer=review_req1.reviewer,
+        )
+
+        ReviewRequest.objects.create(
+            time=datetime.datetime.now() - datetime.timedelta(days=100),
+            requested_by=Person.objects.get(name="(System)"),
+            doc=doc,
+            type=ReviewTypeName.objects.get(slug="early"),
+            team=review_req1.team,
+            state=ReviewRequestStateName.objects.get(slug="completed"),
+            result=ReviewResultName.objects.get(slug="ready"),
+            reviewed_rev="01",
+            deadline=datetime.date.today() - datetime.timedelta(days=80),
+            reviewer=review_req1.reviewer,
+        )
+        
         # get
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)

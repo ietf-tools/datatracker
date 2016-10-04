@@ -466,18 +466,21 @@ with db_con.cursor() as c:
                 if "assigned" in event_collection:
                     continue # skip requested unless there's no assigned event
 
-                e = ReviewRequestDocEvent.objects.filter(type="requested_review", doc=review_req.doc).first() or ReviewRequestDocEvent(type="requested_review", doc=review_req.doc)
+                e = ReviewRequestDocEvent.objects.filter(type="requested_review", doc=review_req.doc, review_request=review_req).first()
+                if not e:
+                    e = ReviewRequestDocEvent(type="requested_review", doc=review_req.doc, review_request=review_req)
                 e.time = time
                 e.by = by
                 e.desc = "Requested {} review by {}".format(review_req.type.name, review_req.team.acronym.upper())
-                e.review_request = review_req
                 e.state = None
                 e.skip_community_list_notification = True
                 e.save()
                 print "imported event requested_review", e.desc, e.doc_id
 
             elif key == "assigned":
-                e = ReviewRequestDocEvent.objects.filter(type="assigned_review_request", doc=review_req.doc).first() or ReviewRequestDocEvent(type="assigned_review_request", doc=review_req.doc)
+                e = ReviewRequestDocEvent.objects.filter(type="assigned_review_request", doc=review_req.doc, review_request=review_req).first()
+                if not e:
+                    e = ReviewRequestDocEvent(type="assigned_review_request", doc=review_req.doc, review_request=review_req)
                 e.time = parse_timestamp(timestamp)
                 e.by = by
                 e.desc = "Request for {} review by {} is assigned to {}".format(
@@ -485,14 +488,15 @@ with db_con.cursor() as c:
                     review_req.team.acronym.upper(),
                     review_req.reviewer.person if review_req.reviewer else "(None)",
                 )
-                e.review_request = review_req
                 e.state = None
                 e.skip_community_list_notification = True
                 e.save()
                 print "imported event assigned_review_request", e.pk, e.desc, e.doc_id
 
             elif key == "closed" and review_req.state_id not in ("requested", "accepted"):
-                e = ReviewRequestDocEvent.objects.filter(type="closed_review_request", doc=review_req.doc).first() or ReviewRequestDocEvent(type="closed_review_request", doc=review_req.doc)
+                e = ReviewRequestDocEvent.objects.filter(type="closed_review_request", doc=review_req.doc, review_request=review_req).first()
+                if not e:
+                    e = ReviewRequestDocEvent(type="closed_review_request", doc=review_req.doc, review_request=review_req)
                 e.time = parse_timestamp(timestamp)
                 e.by = by
                 e.state = states.get(state) if state else None
@@ -512,7 +516,6 @@ with db_con.cursor() as c:
                     )
                 else:
                     e.desc = "Closed request for {} review by {} with state '{}'".format(review_req.type.name, review_req.team.acronym.upper(), e.state.name)
-                e.review_request = review_req
                 e.skip_community_list_notification = True
                 e.save()
                 completion_event = e
@@ -579,5 +582,19 @@ with db_con.cursor() as c:
         if review_req.state_id in ("requested", "accepted") and review_req.doc.get_state_slug("draft-iesg") in ["approved", "ann", "rfcqueue", "pub"]:
             review_req.state = states["overtaken"]
             review_req.save()
+
+            if "closed" not in event_collection and "assigned" in event_collection:
+                e = ReviewRequestDocEvent.objects.filter(type="closed_review_request", doc=review_req.doc, review_request=review_req).first()
+                if not e:
+                    e = ReviewRequestDocEvent(type="closed_review_request", doc=review_req.doc, review_request=review_req)
+                e.time = datetime.datetime.now()
+                e.by = by
+                e.state = review_req.state
+                e.desc = "Closed request for {} review by {} with state '{}'".format(review_req.type.name, review_req.team.acronym.upper(), e.state.name)
+                e.skip_community_list_notification = True
+                e.save()
+                completion_event = e
+                print "imported event closed_review_request (generated upon closing)", e.desc, e.doc_id
+            
 
         print "imported review request", row.reviewid, "as", review_req.pk, review_req.time, review_req.deadline, review_req.type, review_req.doc_id, review_req.state, review_req.doc.get_state_slug("draft-iesg")

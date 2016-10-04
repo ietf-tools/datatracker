@@ -1,4 +1,4 @@
-import datetime
+import datetime, math
 from collections import defaultdict
 
 from django.shortcuts import render, redirect, get_object_or_404
@@ -126,7 +126,8 @@ def reviewer_overview(request, acronym, group_type=None):
         for req_pk, doc, req_time, state, deadline, result, late_days, request_to_assignment_days, assignment_to_closure_days, request_to_closure_days in req_data:
             # any open requests pushes the others out
             if ((state in ("requested", "accepted") and len(latest_reqs) < MAX_REQS) or (len(latest_reqs) + open_reqs < MAX_REQS)):
-                print review_state_by_slug.get(state), assignment_to_closure_days
+                if assignment_to_closure_days is not None:
+                    assignment_to_closure_days = int(math.ceil(assignment_to_closure_days))
                 latest_reqs.append((req_pk, doc, deadline, review_state_by_slug.get(state), assignment_to_closure_days))
         person.latest_reqs = latest_reqs
 
@@ -205,14 +206,13 @@ def manage_review_requests(request, acronym, group_type=None):
         set(r.doc_id for r in review_requests),
     )
 
-
     # we need a mutable query dict for resetting upon saving with
     # conflicts
     query_dict = request.POST.copy() if request.method == "POST" else None
     for req in review_requests:
         l = []
         # take all on the latest reviewed rev
-        for r in document_requests[req.doc_id]:
+        for r in document_requests.get(req.doc_id, []):
             if l and l[0].reviewed_rev:
                 if r.doc_id == l[0].doc_id and r.reviewed_rev:
                     if int(r.reviewed_rev) > int(l[0].reviewed_rev):

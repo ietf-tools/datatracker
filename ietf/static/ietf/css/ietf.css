@@ -515,11 +515,11 @@ form.email-open-review-assignments [name=body] {
   font-family: monospace;
 }
 
-table.unavailable-periods td {
+table.simple-table td {
   padding-right: 0.5em;
 }
 
-table.unavailable-periods td:last-child {
+table.simple-table td:last-child {
   padding-right: 0;
 }
 

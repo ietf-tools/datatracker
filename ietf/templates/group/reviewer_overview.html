@@ -16,7 +16,7 @@
       <thead>
         <tr>
           <th>Reviewer</th>
-          <th>Latest assignments (deadline, state)</th>
+          <th>Deadline/state/time between assignment and closure for latest assignments</th>
           <th>Settings</th>
         </tr>
       </thead>
@@ -25,9 +25,20 @@
           <tr {% if person.completely_unavailable %}class="completely-unavailable"{% endif %}>
             <td><a {% if person.settings_url %}href="{{ person.settings_url }}"{% endif %}>{{ person }}</a></td>
             <td>
-              {% for req_pk, doc_name, deadline, state, assignment_to_closure_days in person.latest_reqs %}
-                <div><a href="{% url "ietf.doc.views_review.review_request" name=doc_name request_id=req_pk %}">{{ deadline|date }} {{ doc_name }}: {{ state.name }} {% if assignment_to_closure_days != None %}{% if state.slug == "completed" or state.slug == "part-completed" %}(in {{ assignment_to_closure_days|floatformat }} day{{ assignment_to_closure_days|pluralize }}){% endif %}{% endif %}</a></div>
+              <table class="simple-table">
+                {% for req_pk, doc_name, deadline, state, assignment_to_closure_days in person.latest_reqs %}
+                  <tr>
+                    <td><a href="{% url "ietf.doc.views_review.review_request" name=doc_name request_id=req_pk %}">{{ deadline|date }}</a></td>
+                    <td>
+                      <span class="label label-{% if state.slug == "completed" or state.slug == "part-completed" %}success{% elif state.slug == "no-response" %}danger{% elif state.slug == "overtaken" %}warning{% elif state.slug == "requested" or state.slug == "accepted" %}primary{% else %}default{% endif %}">{{ state.name }}</span>
+                    </td>
+                    <td>
+                      {% if assignment_to_closure_days != None %}{{ assignment_to_closure_days }}&nbsp;day{{ assignment_to_closure_days|pluralize }}{% endif %}
+                    </td>
+                    <td>{{ doc_name }}</td>
+                </div>
               {% endfor %}
+              </table>
             </td>
             <td>
               {{ person.settings.get_min_interval_display }} {% if person.settings.skip_next %}(skip: {{ person.settings.skip_next }}){% endif %}<br>

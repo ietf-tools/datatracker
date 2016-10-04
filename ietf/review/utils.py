@@ -161,10 +161,10 @@ def extract_review_request_data(teams=None, reviewers=None, time_from=None, time
     res = defaultdict(list)
 
     # we may be dealing with a big bunch of data, so treat it carefully
-    event_qs = ReviewRequest.objects.filter(filters).order_by("-time", "-id")
+    event_qs = ReviewRequest.objects.filter(filters)
 
     # left outer join with RequestRequestDocEvent for request/assign/close time
-    event_qs = event_qs.values_list("pk", "doc", "time", "state", "deadline", "result", "team", "reviewer__person", "reviewrequestdocevent__time", "reviewrequestdocevent__type")
+    event_qs = event_qs.values_list("pk", "doc", "time", "state", "deadline", "result", "team", "reviewer__person", "reviewrequestdocevent__time", "reviewrequestdocevent__type").order_by("-time", "-pk", "-reviewrequestdocevent__time")
 
     def positive_days(time_from, time_to):
         if time_from is None or time_to is None:
