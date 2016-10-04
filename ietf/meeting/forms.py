@@ -5,6 +5,7 @@ import codecs
 
 from django import forms
 from django.core.validators import ValidationError
+from django.db.models import Q
 from django.forms.fields import Field
 from django.utils.encoding import force_text
 from django.utils import six
@@ -190,14 +191,17 @@ class InterimMeetingModelForm(forms.ModelForm):
         '''Set group options based on user accessing the form'''
         if has_role(self.user, "Secretariat"):
             return  # don't reduce group options
+        q_objects = Q()
         if has_role(self.user, "Area Director"):
-            queryset = Group.objects.filter(type="wg", state__in=("active", "proposed", "bof")).order_by('acronym')
-        elif has_role(self.user, "IRTF Chair"):
-            queryset = Group.objects.filter(type="rg", state__in=("active", "proposed")).order_by('acronym')
-        elif has_role(self.user, "WG Chair"):
-            queryset = Group.objects.filter(type="wg", state__in=("active", "proposed", "bof"), role__person=self.person, role__name="chair").distinct().order_by('acronym')
-        elif has_role(self.user, "RG Chair"):
-            queryset = Group.objects.filter(type="rg", state__in=("active", "proposed"), role__person=self.person, role__name="chair").distinct().order_by('acronym')
+            q_objects.add(Q(type="wg", state__in=("active", "proposed", "bof")), Q.OR)
+        if has_role(self.user, "IRTF Chair"):
+            q_objects.add(Q(type="rg", state__in=("active", "proposed")), Q.OR)
+        if has_role(self.user, "WG Chair"):
+            q_objects.add(Q(type="wg", state__in=("active", "proposed", "bof"), role__person=self.person, role__name="chair"), Q.OR)
+        if has_role(self.user, "RG Chair"):
+            q_objects.add(Q(type="rg", state__in=("active", "proposed"), role__person=self.person, role__name="chair"), Q.OR)
+        
+        queryset = Group.objects.filter(q_objects).distinct().order_by('acronym')
         self.fields['group'].queryset = queryset
 
         # if there's only one possibility make it the default
