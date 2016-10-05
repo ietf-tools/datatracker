@@ -413,7 +413,7 @@ def suggested_review_requests_for_team(team):
 
     requests = {}
 
-    today = datetime.date.today()
+    now = datetime.datetime.now()
 
     requested_state = ReviewRequestStateName.objects.get(slug="requested", used=True)
 
@@ -421,14 +421,17 @@ def suggested_review_requests_for_team(team):
         # in Last Call
         last_call_type = ReviewTypeName.objects.get(slug="lc")
         last_call_docs = Document.objects.filter(states=State.objects.get(type="draft-iesg", slug="lc", used=True))
-        last_call_expires = { e.doc_id: e.expires for e in LastCallDocEvent.objects.order_by("time", "id") }
+        last_call_expiry_events = { e.doc_id: e for e in LastCallDocEvent.objects.order_by("time", "id") }
         for doc in last_call_docs:
-            deadline = last_call_expires[doc.pk].date() if doc.pk in last_call_expires else today
+            e = last_call_expiry_events[doc.pk] if doc.pk in last_call_expiry_events else LastCallDocEvent(expires=now.date(), time=now)
 
-            if deadline > seen_deadlines.get(doc.pk, datetime.date.max) or deadline < today:
+            deadline = e.expires.date()
+
+            if deadline > seen_deadlines.get(doc.pk, datetime.date.max) or deadline < now.date():
                 continue
 
             requests[doc.pk] = ReviewRequest(
+                time=e.time,
                 type=last_call_type,
                 doc=doc,
                 team=team,
@@ -446,27 +449,33 @@ def suggested_review_requests_for_team(team):
 
         telechat_type = ReviewTypeName.objects.get(slug="telechat")
         telechat_deadline_delta = datetime.timedelta(days=2)
-        telechat_docs = Document.objects.filter(docevent__telechatdocevent__telechat_date__in=telechat_dates)
-        for doc in telechat_docs:
-            d = doc.telechat_date()
-            if d not in telechat_dates:
+
+        telechat_docs = Document.objects.filter(
+            docevent__telechatdocevent__telechat_date__in=telechat_dates
+        ).values_list(
+            "pk", "docevent__telechatdocevent__time", "docevent__telechatdocevent__telechat_date"
+        ).order_by("pk", "docevent__telechatdocevent__telechat_date")
+        for doc_pk, events in itertools.groupby(telechat_docs, lambda t: t[0]):
+            event_time = deadline = None
+            for _, event_time, event_telechat_date in events:
+                if event_telechat_date in telechat_dates:
+                    deadline = event_telechat_date - telechat_deadline_delta
+                    break
+
+            if not deadline or deadline > seen_deadlines.get(doc_pk, datetime.date.max):
                 continue
 
-            deadline = d - telechat_deadline_delta
-
-            if deadline > seen_deadlines.get(doc.pk, datetime.date.max):
-                continue
-
-            requests[doc.pk] = ReviewRequest(
+            requests[doc_pk] = ReviewRequest(
+                time=event_time,
                 type=telechat_type,
-                doc=doc,
+                doc_id=doc_pk,
                 team=team,
                 deadline=deadline,
                 requested_by=system_person,
                 state=requested_state,
             )
 
-            seen_deadlines[doc.pk] = deadline
+            seen_deadlines[doc_pk] = deadline
 
     # filter those with existing requests
     existing_requests = defaultdict(list)
