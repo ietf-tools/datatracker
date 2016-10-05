@@ -143,7 +143,6 @@ class DocEventAdmin(admin.ModelAdmin):
     list_display = ["id", "doc", "type", "rev", "by", "time", "doc_time" ]
     search_fields = ["doc__name", "by__name"]
     raw_id_fields = ["doc", "by"]
-
 admin.site.register(DocEvent, DocEventAdmin)
 
 admin.site.register(NewRevisionDocEvent, DocEventAdmin)
@@ -156,6 +155,10 @@ admin.site.register(TelechatDocEvent, DocEventAdmin)
 
 class BallotPositionDocEventAdmin(DocEventAdmin):
     raw_id_fields = ["doc", "by", "ad", "ballot"]
-
 admin.site.register(BallotPositionDocEvent, BallotPositionDocEventAdmin)
+    
+class DocumentAuthorAdmin(admin.ModelAdmin):
+    list_display = ['id', 'document', 'author', 'order']
+    search_fields = [ 'document__name', 'author__address', ]
+admin.site.register(DocumentAuthor, DocumentAuthorAdmin)
     
