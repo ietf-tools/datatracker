@@ -23,7 +23,7 @@
       <tbody>
         {% for person in reviewers %}
           <tr {% if person.completely_unavailable %}class="completely-unavailable"{% endif %}>
-            <td><a {% if person.settings_url %}href="{{ person.settings_url }}"{% endif %}>{{ person }}</a></td>
+            <td>{% if person.settings_url %}<a href="{{ person.settings_url }}">{% endif %}{{ person }}{% if person.settings_url %}</a>{% endif %}</td>
             <td>
               <table class="simple-table">
                 {% for req_pk, doc_name, deadline, state, assignment_to_closure_days in person.latest_reqs %}
