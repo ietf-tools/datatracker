@@ -25,6 +25,10 @@
   <li><a href="{% url "ietf.ietfauth.views.create_account" %}">{% if request.user.is_authenticated %}Manage account{% else %}New account{% endif %}</a></li>
   <li><a href="{%url "ietf.cookies.views.preferences" %}" rel="nofollow">Preferences</a></li>
 
+  {% if user|has_role:"Reviewer" %}
+    <li><a href="{% url "ietf.ietfauth.views.review_overview" %}">My reviews</a></li>
+  {% endif %}
+
   {% if user|has_role:"Area Director" %}
     {% if flavor == "top" %}<li class="divider hidden-xs"></li>{% endif %}
     <li {%if flavor == "top" %}class="dropdown-header hidden-xs"{% else %}class="nav-header"{% endif %}>AD dashboard</li>

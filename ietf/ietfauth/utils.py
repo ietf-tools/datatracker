@@ -69,13 +69,14 @@ def has_role(user, role_names, *args, **kwargs):
             "Nomcom": Q(person=person, group__type="nomcom", group__acronym__icontains=kwargs.get('year', '0000')),
             "Liaison Manager": Q(person=person,name="liaiman",group__type="sdo",group__state="active", ),
             "Authorized Individual": Q(person=person,name="auth",group__type="sdo",group__state="active", ),
+            "Reviewer": Q(person=person, name="reviewer", group__state="active"),
             }
 
         filter_expr = Q()
         for r in role_names:
             filter_expr |= role_qs[r]
 
-        user.roles_check_cache[key] = bool(Role.objects.filter(filter_expr)[:1])
+        user.roles_check_cache[key] = bool(Role.objects.filter(filter_expr).exists())
 
     return user.roles_check_cache[key]
 
