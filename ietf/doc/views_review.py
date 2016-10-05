@@ -470,18 +470,22 @@ def complete_review(request, name, request_id):
             )
 
             if review_req.state_id == "part-completed":
-                new_review_req = make_new_review_request_from_existing(review_req)
-                new_review_req.save()
+                existing_open_reqs = ReviewRequest.objects.filter(doc=review_req.doc, team=review_req.team, state__in=("requested", "accepted"))
+
+                new_review_req_url = new_review_req = None
+                if not existing_open_reqs:
+                    new_review_req = make_new_review_request_from_existing(review_req)
+                    new_review_req.save()
+
+                    new_review_req_url = urlreverse("ietf.doc.views_review.review_request", kwargs={ "name": new_review_req.doc.name, "request_id": new_review_req.pk })
+                    new_review_req_url = request.build_absolute_uri(new_review_req_url)
 
                 subject = "Review of {}-{} completed partially".format(review_req.doc.name, review_req.reviewed_rev)
 
-                url = urlreverse("ietf.doc.views_review.review_request", kwargs={ "name": new_review_req.doc.name, "request_id": new_review_req.pk })
-                url = request.build_absolute_uri(url)
-
                 msg = render_to_string("review/partially_completed_review.txt", {
-                    'new_review_req_url': url,
+                    "new_review_req_url": new_review_req_url,
+                    "existing_open_reqs": existing_open_reqs,
                     "by": request.user.person,
-                    "new_review_req": new_review_req,
                 })
 
                 email_review_request_change(request, review_req, subject, msg, request.user.person, notify_secretary=True, notify_reviewer=False, notify_requested_by=False)
