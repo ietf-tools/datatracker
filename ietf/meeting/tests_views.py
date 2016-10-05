@@ -15,7 +15,7 @@ from pyquery import PyQuery
 from StringIO import StringIO
 
 from ietf.doc.models import Document
-from ietf.group.models import Group
+from ietf.group.models import Group, Role
 from ietf.meeting.helpers import can_approve_interim_request, can_view_interim_request
 from ietf.meeting.helpers import send_interim_approval_request
 from ietf.meeting.helpers import send_interim_cancellation_notice
@@ -716,7 +716,26 @@ class InterimTests(TestCase):
         q = PyQuery(r.content)
         self.assertEqual(Group.objects.filter(type__in=('wg', 'rg'), state__in=('active', 'proposed')).count(),
             len(q("#id_group option")) - 1)  # -1 for options placeholder
+        self.client.logout()
 
+        # wg chair
+        self.client.login(username="marschairman", password="marschairman+password")
+        r = self.client.get("/meeting/interim/request/")
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        user = User.objects.get(username='marschairman')
+        person = user.person
+        count = person.role_set.filter(name='chair',group__type__in=('wg', 'rg'), group__state__in=('active', 'proposed')).count()
+        self.assertEqual(count, len(q("#id_group option")) - 1)  # -1 for options placeholder
+        
+        # wg AND rg chair
+        group = Group.objects.get(acronym='irg')
+        Role.objects.create(name_id='chair',group=group,person=person,email=person.email())
+        r = self.client.get("/meeting/interim/request/")
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        count = person.role_set.filter(name='chair',group__type__in=('wg', 'rg'), group__state__in=('active', 'proposed')).count()
+        self.assertEqual(count, len(q("#id_group option")) - 1)  # -1 for options placeholder
 
     def test_interim_request_single_virtual(self):
         make_meeting_test_data()
