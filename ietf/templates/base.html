@@ -22,6 +22,9 @@
     <link rel="stylesheet" href="{% static 'ietf/bootstrap/css/bootstrap.min.css' %}">
     <link rel="stylesheet" href="{% static 'ietf/bootstrap/css/bootstrap-theme.min.css' %}">
     <link rel="stylesheet" href="{% static 'ietf/css/ietf.css' %}">
+    {% if debug %}
+       <link rel="stylesheet" href="{% static 'jquery.tablesorter/css/theme.bootstrap.min.css' %}">
+    {% endif %}
     <style>
      {% block morecss %}{% endblock %}
     </style>
@@ -158,6 +161,9 @@
       <script src="{% static 'ietf/bootstrap/js/bootstrap.min.js' %}"></script>
       <script src="{% static 'ietf/js/ietf.js' %}"></script>
       {% block js %}{% endblock %}
+      {% if debug %}
+	 <script src="{% static 'jquery.tablesorter/js/jquery.tablesorter.combined.min.js' %}"></script>
+      {% endif %}
   </body>
 </html>
 
