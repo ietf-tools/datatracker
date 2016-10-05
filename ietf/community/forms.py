@@ -105,6 +105,9 @@ class SubscriptionForm(forms.ModelForm):
         if self.fields["email"].queryset:
             self.fields["email"].initial = self.fields["email"].queryset[0]
 
+    def clean_email(self):
+        return self.cleaned_data["email"].strip().lower()
+
     def clean(self):
         if EmailSubscription.objects.filter(community_list=self.clist, email=self.cleaned_data["email"], notify_on=self.cleaned_data["notify_on"]).exists():
             raise forms.ValidationError("You already have a subscription like this.")
