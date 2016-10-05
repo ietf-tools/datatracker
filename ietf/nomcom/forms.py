@@ -855,11 +855,14 @@ class EditNomineeForm(forms.ModelForm):
         if others.exists():
             msg = ( "Changing email address for %s (#%s): There already exists a nominee "
                     "with email address &lt;%s&gt;: %s -- please use the "
-                    "<a ref=\"{% url 'ietf.nomcom.views.private_merge_nominee' %}\">Merge Nominee</a> "
+                    "<a href=\"%s\">Merge Nominee</a> "
                     "form instead." % (
                         self.instance.name(),
-                        self.instance.pk, nominee_email,
-                        (", ".join( "%s (#%s)" %( n.name(), n.pk) for n in others))) )
+                        self.instance.pk,
+                        nominee_email,
+                        (", ".join( "%s (#%s)" %( n.name(), n.pk) for n in others)),
+                        reverse('ietf.nomcom.views.private_merge_nominee', kwargs={'year':self.instance.nomcom.year()}),
+                    ) )
             raise forms.ValidationError(mark_safe(msg))
         return self.cleaned_data
 
