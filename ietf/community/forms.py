@@ -106,7 +106,8 @@ class SubscriptionForm(forms.ModelForm):
             self.fields["email"].initial = self.fields["email"].queryset[0]
 
     def clean_email(self):
-        return self.cleaned_data["email"].strip().lower()
+        self.cleaned_data["email"].address = self.cleaned_data["email"].address.strip().lower()
+        return self.cleaned_data["email"]
 
     def clean(self):
         if EmailSubscription.objects.filter(community_list=self.clist, email=self.cleaned_data["email"], notify_on=self.cleaned_data["notify_on"]).exists():
