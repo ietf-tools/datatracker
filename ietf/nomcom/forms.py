@@ -225,11 +225,15 @@ class EditNomcomForm(forms.ModelForm):
 class MergeNomineeForm(forms.Form):
 
     primary_email = SearchableEmailField(
-        help_text="Select the email of the Nominee record you want to use as the primary record.")
+        help_text="Select the email of the Nominee record you want to use as the primary record.",
+        all_emails = True,
+    )
     secondary_emails = SearchableEmailsField(
         help_text="Select all the duplicates that should be consolidated with the primary "
             "Nominee record.  Nominations already received with any of these email address "
-            "will be moved to show under the primary address." )
+            "will be moved to show under the primary address.",
+        all_emails = True,
+        )
 
     def __init__(self, *args, **kwargs):
         self.nomcom = kwargs.pop('nomcom', None)

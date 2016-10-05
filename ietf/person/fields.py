@@ -1,6 +1,7 @@
 import json
 
 from collections import Counter
+from urllib import urlencode
 
 from django.utils.html import escape
 from django import forms
@@ -47,12 +48,14 @@ class SearchablePersonsField(forms.CharField):
     def __init__(self,
                  max_entries=None, # max number of selected objs
                  only_users=False, # only select persons who also have a user
+                 all_emails=False, # select only active email addresses
                  model=Person, # or Email
                  hint_text="Type in name to search for person.",
                  *args, **kwargs):
         kwargs["max_length"] = 1000
         self.max_entries = max_entries
         self.only_users = only_users
+        self.all_emails = all_emails
         assert model in [ Email, Person ]
         self.model = model
 
@@ -83,8 +86,13 @@ class SearchablePersonsField(forms.CharField):
         # doing this in the constructor is difficult because the URL
         # patterns may not have been fully constructed there yet
         self.widget.attrs["data-ajax-url"] = urlreverse("ajax_select2_search_person_email", kwargs={ "model_name": self.model.__name__.lower() })
+        query_args = {}
         if self.only_users:
-            self.widget.attrs["data-ajax-url"] += "?user=1" # require a Datatracker account
+            query_args["user"] = "1"
+        if self.all_emails:
+            query_args["a"] = "1"
+        if query_args:    
+            self.widget.attrs["data-ajax-url"] += "?%s" % urlencode(query_args)
 
         return u",".join(str(p.pk) for p in value)
 

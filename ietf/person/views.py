@@ -34,9 +34,12 @@ def ajax_select2_search(request, model_name):
 
     # require an account at the Datatracker
     only_users = request.GET.get("user") == "1"
+    all_emails = request.GET.get("a", "0") == "1"
 
     if model == Email:
-        objs = objs.filter(active=True).order_by('person__name').exclude(person=None)
+        objs = objs.exclude(person=None).order_by('person__name')        
+        if not all_emails:
+            objs = objs.filter(active=True)
         if only_users:
             objs = objs.exclude(person__user=None)
     elif model == Person:
