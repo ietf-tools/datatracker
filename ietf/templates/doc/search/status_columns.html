@@ -43,8 +43,8 @@
     {% endif %}
 
     {% for m in doc.milestones %}
-      {% if forloop.first %}<br>{% else %}, {% endif %}
-      <span title="Part of {{ m.group.acronym }} milestone: {{ m.desc }}" class="milestone">{{ m.due|date:"M Y" }}</span>
+      {% if forloop.first %}<br>{% endif %}
+      <span title="Part of {{ m.group.acronym }} milestone: {{ m.desc }}" class="milestone">{{ m.due|date:"M Y" }}</span>{% if not forloop.last %}, {% endif %}
     {% endfor %}
 
   {% else %}{# RFC #}
