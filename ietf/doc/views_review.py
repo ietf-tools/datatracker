@@ -12,7 +12,7 @@ from django.core.urlresolvers import reverse as urlreverse
 from ietf.doc.models import (Document, NewRevisionDocEvent, State, DocAlias,
                              LastCallDocEvent, ReviewRequestDocEvent)
 from ietf.name.models import ReviewRequestStateName, ReviewResultName, DocTypeName
-from ietf.review.models import ReviewRequest
+from ietf.review.models import ReviewRequest, TypeUsedInReviewTeam
 from ietf.group.models import Group
 from ietf.person.fields import PersonEmailChoiceField, SearchablePersonField
 from ietf.ietfauth.utils import is_authorized_in_doc_stream, user_is_person, has_role
@@ -49,15 +49,12 @@ class RequestReviewForm(forms.ModelForm):
 
         self.doc = doc
 
-        self.fields['type'].queryset = self.fields['type'].queryset.filter(used=True)
-        self.fields['type'].widget = forms.RadioSelect(choices=[t for t in self.fields['type'].choices if t[0]])
-
         f = self.fields["team"]
         f.queryset = active_review_teams()
-        if not is_authorized_in_doc_stream(user, doc): # user is a reviewer
-            f.queryset = f.queryset.filter(role__name="reviewer", role__person__user=user)
-
         f.initial = [group.pk for group in f.queryset if can_manage_review_requests_for_team(user, group, allow_non_team_personnel=False)]
+
+        self.fields['type'].queryset = self.fields['type'].queryset.filter(used=True, typeusedinreviewteam__team__in=self.fields["team"].queryset).distinct()
+        self.fields['type'].widget = forms.RadioSelect(choices=[t for t in self.fields['type'].choices if t[0]])
 
         self.fields["requested_rev"].label = "Document revision"
 
@@ -75,6 +72,17 @@ class RequestReviewForm(forms.ModelForm):
 
     def clean_requested_rev(self):
         return clean_doc_revision(self.doc, self.cleaned_data.get("requested_rev"))
+
+    def clean(self):
+        chosen_type = self.cleaned_data.get("type")
+        chosen_teams = self.cleaned_data.get("team")
+
+        if chosen_type and chosen_teams:
+            for t in chosen_teams:
+                if not TypeUsedInReviewTeam.objects.filter(type=chosen_type, team=t).exists():
+                    self.add_error("type", "{} does not use the review type {}.".format(t.name, chosen_type.name))
+
+        return self.cleaned_data
 
 @login_required
 def request_review(request, name):
@@ -343,7 +351,7 @@ class CompleteReviewForm(forms.Form):
             " ".join("<a class=\"rev label label-default\">{}</a>".format(r)
                      for r in known_revisions))
 
-        self.fields["result"].queryset = self.fields["result"].queryset.filter(reviewteamresult__team=review_req.team)
+        self.fields["result"].queryset = self.fields["result"].queryset.filter(resultusedinreviewteam__team=review_req.team)
         self.fields["review_submission"].choices = [
             (k, label.format(mailing_list=review_req.team.list_email or "[error: team has no mailing list set]"))
             for k, label in self.fields["review_submission"].choices

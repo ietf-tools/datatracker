@@ -47,6 +47,15 @@
     <dt>Consensus</dt><dd>{{ doc.consensus }}</dd>
   {% endif %}
 
+  {% if doc.review_requests %}
+    <dt>Reviews</dt>
+    <dd>
+      {% for review_request in doc.review_requests %}
+        {% include "doc/review_request_summary.html" with current_doc_name=doc.name current_rev=doc.rev %}
+      {% endfor %}
+    </dd>
+  {% endif %}
+
   {% if doc.lastcall_expires %}
     <dt>Last call expires</dt><dd>{{ doc.lastcall_expires|date:"Y-m-d" }}</dd>
   {% endif %}

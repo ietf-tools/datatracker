@@ -10,14 +10,14 @@ from ietf.doc.models import (Document, ReviewRequestDocEvent, State,
 from ietf.iesg.models import TelechatDate
 from ietf.person.models import Person, Email
 from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream
-from ietf.review.models import (ReviewRequest, ReviewRequestStateName, ReviewTypeName,
+from ietf.review.models import (ReviewRequest, ReviewRequestStateName, ReviewTypeName, TypeUsedInReviewTeam,
                                 ReviewerSettings, UnavailablePeriod, ReviewWish, NextReviewerInTeam)
 from ietf.utils.mail import send_mail
 from ietf.doc.utils import extract_complete_replaces_ancestor_mapping_for_docs
 
 def active_review_teams():
-    # if there's a ReviewTeamResult defined, it's a review team
-    return Group.objects.filter(state="active").exclude(reviewteamresult=None)
+    # if there's a ResultUsedInReviewTeam defined, it's a review team
+    return Group.objects.filter(state="active").exclude(resultusedinreviewteam=None)
 
 def close_review_request_states():
     return ReviewRequestStateName.objects.filter(used=True).exclude(slug__in=["requested", "accepted", "rejected", "part-completed", "completed"])
@@ -35,14 +35,14 @@ def can_manage_review_requests_for_team(user, team, allow_non_team_personnel=Tru
     return (Role.objects.filter(name__in=["secr", "delegate"], person__user=user, group=team).exists()
             or (allow_non_team_personnel and has_role(user, "Secretariat")))
 
-def review_requests_to_list_for_doc(doc):
+def review_requests_to_list_for_docs(docs):
     request_qs = ReviewRequest.objects.filter(
         state__in=["requested", "accepted", "part-completed", "completed"],
     ).prefetch_related("result")
 
-    doc_names = [doc.name]
+    doc_names = [d.name for d in docs]
 
-    return extract_revision_ordered_review_requests_for_documents(request_qs, doc_names).get(doc.pk, [])
+    return extract_revision_ordered_review_requests_for_documents_and_replaced(request_qs, doc_names)
 
 def no_review_from_teams_on_doc(doc, rev):
     return Group.objects.filter(
@@ -417,9 +417,9 @@ def suggested_review_requests_for_team(team):
 
     requested_state = ReviewRequestStateName.objects.get(slug="requested", used=True)
 
-    if True: # FIXME
+    last_call_type = ReviewTypeName.objects.get(slug="lc")
+    if TypeUsedInReviewTeam.objects.filter(team=team, type=last_call_type).exists():
         # in Last Call
-        last_call_type = ReviewTypeName.objects.get(slug="lc")
         last_call_docs = Document.objects.filter(states=State.objects.get(type="draft-iesg", slug="lc", used=True))
         last_call_expiry_events = { e.doc_id: e for e in LastCallDocEvent.objects.order_by("time", "id") }
         for doc in last_call_docs:
@@ -443,11 +443,11 @@ def suggested_review_requests_for_team(team):
             seen_deadlines[doc.pk] = deadline
 
 
-    if True: # FIXME
+    telechat_type = ReviewTypeName.objects.get(slug="telechat")
+    if TypeUsedInReviewTeam.objects.filter(team=team, type=telechat_type).exists():
         # on Telechat Agenda
         telechat_dates = list(TelechatDate.objects.active().order_by('date').values_list("date", flat=True)[:4])
 
-        telechat_type = ReviewTypeName.objects.get(slug="telechat")
         telechat_deadline_delta = datetime.timedelta(days=2)
 
         telechat_docs = Document.objects.filter(
@@ -499,8 +499,8 @@ def suggested_review_requests_for_team(team):
     res.sort(key=lambda r: (r.deadline, r.doc_id), reverse=True)
     return res
 
-def extract_revision_ordered_review_requests_for_documents(review_request_queryset, names):
-    """Extracts all review requests for document names (including replaced ancestors)."""
+def extract_revision_ordered_review_requests_for_documents_and_replaced(review_request_queryset, names):
+    """Extracts all review requests for document names (including replaced ancestors), return them neatly sorted."""
 
     names = set(names)
 

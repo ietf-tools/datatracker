@@ -66,7 +66,7 @@ class ReviewWish(models.Model):
     def __unicode__(self):
         return u"{} wishes to review {} in {}".format(self.person, self.doc.name, self.team.acronym)
     
-class ReviewTeamResult(models.Model):
+class ResultUsedInReviewTeam(models.Model):
     """Captures that a result name is valid for a given team for new
     reviews. This also implicitly defines which teams are review
     teams - if there are no possible review results valid for a given
@@ -75,7 +75,16 @@ class ReviewTeamResult(models.Model):
     result      = models.ForeignKey(ReviewResultName)
 
     def __unicode__(self):
-        return u"{} in {}".format(self.result.name, self.group.acronym)
+        return u"{} in {}".format(self.result.name, self.team.acronym)
+
+class TypeUsedInReviewTeam(models.Model):
+    """Captures that a type name is valid for a given team for new
+    reviews. """
+    team        = models.ForeignKey(Group)
+    type        = models.ForeignKey(ReviewTypeName)
+
+    def __unicode__(self):
+        return u"{} in {}".format(self.type.name, self.team.acronym)
 
 class NextReviewerInTeam(models.Model):
     team        = models.ForeignKey(Group)
@@ -97,7 +106,7 @@ class ReviewRequest(models.Model):
     time          = models.DateTimeField(default=datetime.datetime.now)
     type          = models.ForeignKey(ReviewTypeName)
     doc           = models.ForeignKey(Document, related_name='reviewrequest_set')
-    team          = models.ForeignKey(Group, limit_choices_to=~models.Q(reviewteamresult=None))
+    team          = models.ForeignKey(Group, limit_choices_to=~models.Q(resultusedinreviewteam=None))
     deadline      = models.DateField()
     requested_by  = models.ForeignKey(Person)
     requested_rev = models.CharField(verbose_name="requested revision", max_length=16, blank=True, help_text="Fill in if a specific revision is to be reviewed, e.g. 02")

@@ -63,11 +63,22 @@ class Migration(migrations.Migration):
             bases=(models.Model,),
         ),
         migrations.CreateModel(
-            name='ReviewTeamResult',
+            name='ResultUsedInReviewTeam',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('result', models.ForeignKey(to='name.ReviewResultName')),
                 ('team', models.ForeignKey(to='group.Group')),
+            ],
+            options={
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name='TypeUsedInReviewTeam',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('team', models.ForeignKey(to='group.Group')),
+                ('type', models.ForeignKey(to='name.ReviewTypeName')),
             ],
             options={
             },

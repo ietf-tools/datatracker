@@ -64,7 +64,7 @@ from ietf.mailtrigger.utils import gather_relevant_expansions
 from ietf.meeting.models import Session
 from ietf.meeting.utils import group_sessions, get_upcoming_manageable_sessions, sort_sessions
 from ietf.review.models import ReviewRequest
-from ietf.review.utils import can_request_review_of_doc, review_requests_to_list_for_doc
+from ietf.review.utils import can_request_review_of_doc, review_requests_to_list_for_docs
 from ietf.review.utils import no_review_from_teams_on_doc
 
 def render_document_top(request, doc, tab, name):
@@ -360,7 +360,7 @@ def document_main(request, name, rev=None):
         published = doc.latest_event(type="published_rfc")
         started_iesg_process = doc.latest_event(type="started_iesg_process")
 
-        review_requests = review_requests_to_list_for_doc(doc)
+        review_requests = review_requests_to_list_for_docs([doc]).get(doc.pk, [])
         no_review_from_teams = no_review_from_teams_on_doc(doc, rev or doc.rev)
 
         return render_to_response("doc/document_draft.html",
@@ -586,7 +586,7 @@ def document_main(request, name, rev=None):
 
         other_reviews = []
         if review_req:
-            other_reviews = [r for r in review_requests_to_list_for_doc(review_req.doc) if r != review_req]
+            other_reviews = [r for r in review_requests_to_list_for_docs([review_req.doc]).get(doc.pk, []) if r != review_req]
 
         return render(request, "doc/document_review.html",
                       dict(doc=doc,

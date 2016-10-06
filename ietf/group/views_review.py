@@ -10,7 +10,7 @@ from django.template.loader import render_to_string
 
 from ietf.review.models import ReviewRequest, ReviewerSettings, UnavailablePeriod
 from ietf.review.utils import (can_manage_review_requests_for_team, close_review_request_states,
-                               extract_revision_ordered_review_requests_for_documents,
+                               extract_revision_ordered_review_requests_for_documents_and_replaced,
                                assign_review_request_to_reviewer,
                                close_review_request,
                                setup_reviewer_field,
@@ -201,7 +201,7 @@ def manage_review_requests(request, acronym, group_type=None):
 
     review_requests = suggested_review_requests_for_team(group) + open_review_requests
 
-    document_requests = extract_revision_ordered_review_requests_for_documents(
+    document_requests = extract_revision_ordered_review_requests_for_documents_and_replaced(
         ReviewRequest.objects.filter(state__in=("part-completed", "completed"), team=group).prefetch_related("result"),
         set(r.doc_id for r in review_requests),
     )

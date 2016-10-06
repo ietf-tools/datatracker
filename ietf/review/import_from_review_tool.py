@@ -16,8 +16,8 @@ django.setup()
 import datetime, re, itertools
 from collections import namedtuple
 from django.db import connections
-from ietf.review.models import (ReviewRequest, ReviewerSettings, ReviewResultName,
-                                ReviewRequestStateName, ReviewTypeName, ReviewTeamResult,
+from ietf.review.models import (ReviewRequest, ReviewerSettings, ReviewResultName, ResultUsedInReviewTeam,
+                                ReviewRequestStateName, ReviewTypeName, TypeUsedInReviewTeam,
                                 UnavailablePeriod, NextReviewerInTeam)
 from ietf.group.models import Group, Role, RoleName
 from ietf.person.models import Person, Email, Alias
@@ -129,6 +129,10 @@ with db_con.cursor() as c:
                     today = datetime.date.today()
                     end_date = unavailable_until.date()
                     if end_date >= today:
+                        if end_date >= datetime.date(2020, 1, 1):
+                            # convert hacked end dates to indefinite
+                            end_date = None
+
                         UnavailablePeriod.objects.filter(person=email.person, team=team).delete()
 
                         UnavailablePeriod.objects.create(
@@ -162,7 +166,10 @@ with db_con.cursor() as c:
             summaries = [v.strip().lower() for v in row.value.split(";") if v.strip()]
 
             for s in summaries:
-                ReviewTeamResult.objects.get_or_create(team=team, result=results[s])
+                ResultUsedInReviewTeam.objects.get_or_create(team=team, result=results[s])
+
+for t in ReviewTypeName.objects.filter(slug__in=["early", "lc", "telechat"]):
+    TypeUsedInReviewTeam.objects.get_or_create(team=team, type=t)
 
 # review requests
 
@@ -186,8 +193,8 @@ document_history = {}
 
 requested_re = re.compile("(?:ADDED docname =>|Created: remote=|AUTO UPDATED status TO new|CHANGED status FROM [^ ]+ => new|CHANGE status done => working)")
 
-add_docstatus_re = re.compile('([a-zA-Z-_]+) ADD docstatus => (\w+)')
-update_docstatus_re = re.compile('([a-zA-Z-_]+) (?:UPDATE|CHANGE) docstatus \w+ => (\w+)')
+add_docstatus_re = re.compile('([a-zA-Z-_@.]+) ADD docstatus => (\w+)')
+update_docstatus_re = re.compile('([a-zA-Z-_@.]+) (?:UPDATE|CHANGE) docstatus \w+ => (\w+)')
 iesgstatus_re = re.compile('(?:ADD|ADDED|CHANGED) iesgstatus (?:FROM )?(?:[^ ]+ )?=> ([a-zA-Z-_]+)?')
 
 deadline_re = re.compile('(?:ADD|ADDED|CHANGED) deadline (?:FROM )?(?:[^ ]+ )?=> ([1-9][0-9]+)')
@@ -195,6 +202,8 @@ telechat_re = re.compile('(?:ADD|ADDED|CHANGED) telechat (?:FROM )?(?:[^ ]+ )?=>
 lcend_re = re.compile('(?:ADD|ADDED|CHANGED) lcend (?:FROM )?(?:[^ ]+ )?=> ([1-9][0-9]+)')
 
 close_states = ["done", "rejected", "withdrawn", "noresponse"]
+
+document_blacklist = set([(u"tsvdir", u"draft-arkko-ipv6-transition-guidelines-09 ")])
 
 with db_con.cursor() as c:
     c.execute("""select docname, time, who, text from doclog where
@@ -214,6 +223,9 @@ with db_con.cursor() as c:
                      or text like '%CHANGED iesgstatus % => %'
                    order by docname, time asc;""")
     for docname, rows in itertools.groupby(namedtuplefetchall(c), lambda row: row.docname):
+        if (team.acronym, docname) in document_blacklist:
+            continue # ignore
+
         branches = {}
 
         latest_requested = None
@@ -233,12 +245,12 @@ with db_con.cursor() as c:
             else:
                 if "ADD docstatus" in row.text:
                     m = add_docstatus_re.match(row.text)
-                    assert m, 'row.text "{}" does not match add regexp'.format(row.text)
+                    assert m, 'row.text "{}" does not match add regexp {}'.format(row.text, docname)
                     membername, state = m.groups()
                     used = True
                 elif "UPDATE docstatus" in row.text or "CHANGE docstatus" in row.text:
                     m = update_docstatus_re.match(row.text)
-                    assert m, 'row.text "{}" does not match update regexp'.format(row.text)
+                    assert m, 'row.text "{}" does not match update regexp {}'.format(row.text, docname)
                     membername, state = m.groups()
                     used = True
 
@@ -332,6 +344,9 @@ with db_con.cursor() as c:
     c.execute("select * from reviews order by reviewid;")
 
     for row in namedtuplefetchall(c):
+        if (team.acronym, row.docname) in document_blacklist:
+            continue # ignore
+
         meta = doc_metadata.get((row.docname, row.version))
         if not meta:
             meta = doc_metadata.get(row.docname)
@@ -345,7 +360,7 @@ with db_con.cursor() as c:
         if row.summary == "noresponse":
             reviewed_rev = ""
 
-        event_collection = None
+        event_collection = {}
         branches = document_history.get(row.docname)
         if not branches:
             print "WARNING: no history for", row.docname

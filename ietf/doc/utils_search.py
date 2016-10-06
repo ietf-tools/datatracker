@@ -60,8 +60,9 @@ def fill_in_document_table_attributes(docs):
         d.expirable = expirable_draft(d)
 
         if d.get_state_slug() != "rfc":
-            d.milestones = d.groupmilestone_set.filter(state="active").order_by("time").select_related("group")
+            d.milestones = sorted((m for m in d.groupmilestone_set.all() if m.state_id == "active"), key=lambda m: m.time)
 
+            d.reviewed_by_teams = sorted(set(r.team for r in d.reviewrequest_set.all()), key=lambda g: g.acronym)
 
 
     # RFCs
@@ -101,7 +102,7 @@ def prepare_document_table(request, docs, query=None, max_results=500):
         # evaluate and fill in attribute results immediately to decrease
         # the number of queries
         docs = docs.select_related("ad", "ad__person", "std_level", "intended_std_level", "group", "stream")
-        docs = docs.prefetch_related("states__type", "tags")
+        docs = docs.prefetch_related("states__type", "tags", "groupmilestone_set__group", "reviewrequest_set__team")
 
     docs = list(docs[:max_results])
 
