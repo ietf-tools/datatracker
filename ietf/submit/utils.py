@@ -140,7 +140,8 @@ def docevent_from_submission(request, submission, desc, who=None):
 def post_rev00_submission_events(draft, submission, submitter):
     # Add previous submission events as docevents
     # For now we'll filter based on the description
-    for subevent in submission.submissionevent_set.all():
+    events = []
+    for subevent in submission.submissionevent_set.all().order_by('id'):
         desc = subevent.desc
         if desc.startswith("Uploaded submission"):
             desc = "Uploaded new revision"
@@ -168,6 +169,8 @@ def post_rev00_submission_events(draft, submission, submitter):
         e.by = submitter
         e.desc = desc
         e.save()
+        events.append(e)
+    return events
 
 
 def post_submission(request, submission, approvedDesc):
@@ -218,7 +221,7 @@ def post_submission(request, submission, approvedDesc):
 
     if draft.rev == '00':
         # Add all the previous submission events as docevents
-        post_rev00_submission_events(draft, submission, submitter)
+        events += post_rev00_submission_events(draft, submission, submitter)
 
     # Add an approval docevent
     e = DocEvent.objects.create(

@@ -192,7 +192,7 @@ def upload_submission(request):
                             break
 
                 create_submission_event(request, submission, desc="Uploaded submission")
-                docevent_from_submission(request, submission, desc="Uploaded new revision")
+                # Don't add an "Uploaded new revision doevent yet, in case of cancellation
 
                 return redirect("ietf.submit.views.submission_status", submission_id=submission.pk, access_token=submission.access_token())
         except IOError as e:
