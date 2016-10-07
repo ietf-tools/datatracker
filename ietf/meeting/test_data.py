@@ -47,7 +47,7 @@ def make_meeting_test_data(meeting=None):
     room = Room.objects.create(meeting=meeting, name="Test Room", capacity=123, functional_name="Testing Ground")
     room.session_types.add("session")
     room.resources.add(projector)
-    asname = RoomResourceName.objects.create(name='Audio Stream', slug='audiostream')
+    asname = RoomResourceName.objects.get(slug='audiostream')
     UrlResource.objects.create(name=asname, room=room, url='http://ietf{number}streaming.dnsalias.net/ietf/ietf{number}1.m3u'.format(number=meeting.number))
 
     # another room
