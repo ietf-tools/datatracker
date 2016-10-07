@@ -23,6 +23,7 @@ class ReviewerSettings(models.Model):
     min_interval = models.IntegerField(default=30, verbose_name="Can review at most", choices=INTERVALS)
     filter_re   = models.CharField(max_length=255, verbose_name="Filter regexp", blank=True, help_text="Draft names matching regular expression should not be assigned")
     skip_next   = models.IntegerField(default=0, verbose_name="Skip next assignments")
+    remind_days_before_deadline = models.IntegerField(null=True, blank=True, help_text="To get an email reminder in case you forget to do an assigned review, enter the number of days before a review deadline you want to receive it. Clear the field if you don't want a reminder.")
 
     def __unicode__(self):
         return u"{} in {}".format(self.person, self.team)

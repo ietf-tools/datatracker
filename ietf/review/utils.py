@@ -1,8 +1,9 @@
 import datetime, re, itertools
 from collections import defaultdict
 
-from django.db.models import Q, Max
+from django.db.models import Q, Max, F
 from django.core.urlresolvers import reverse as urlreverse
+from django.contrib.sites.models import Site
 
 from ietf.group.models import Group, Role
 from ietf.doc.models import (Document, ReviewRequestDocEvent, State,
@@ -674,3 +675,42 @@ def make_assignment_choices(email_queryset, review_req):
     ranking.sort(key=lambda r: r["scores"], reverse=True)
 
     return [(r["email"].pk, r["label"]) for r in ranking]
+
+def review_requests_needing_reviewer_reminder(remind_date):
+    reqs_qs = ReviewRequest.objects.filter(
+        state__in=("requested", "accepted"),
+        reviewer__person__reviewersettings__remind_days_before_deadline__isnull=False,
+        reviewer__person__reviewersettings__team=F("team"),
+    ).exclude(
+        reviewer=None
+    ).values_list("pk", "deadline", "reviewer__person__reviewersettings__remind_days_before_deadline").distinct()
+
+    req_pks = []
+    for r_pk, deadline, remind_days in reqs_qs:
+        if (deadline - remind_date).days == remind_days:
+            req_pks.append(r_pk)
+
+    return ReviewRequest.objects.filter(pk__in=req_pks).select_related("reviewer", "reviewer__person", "state", "team")
+
+def email_reviewer_reminder(review_request):
+    team = review_request.team
+
+    deadline_days = (review_request.deadline - datetime.date.today()).days
+
+    subject = "Reminder: deadline for review of {} in {} is {}".format(review_request.doc_id, team.acronym, review_request.deadline.isoformat())
+
+    overview_url = urlreverse("ietf.ietfauth.views.review_overview")
+    request_url = urlreverse("ietf.doc.views_review.review_request", kwargs={ "name": review_request.doc_id, "request_id": review_request.pk })
+
+    domain = Site.objects.get_current().domain
+
+    settings = ReviewerSettings.objects.filter(person=review_request.reviewer.person, team=team).first()
+    remind_days = settings.remind_days_before_deadline if settings else 0
+
+    send_mail(None, [review_request.reviewer.formatted_email()], None, subject, "review/reviewer_reminder.txt", {
+        "reviewer_overview_url": "https://{}{}".format(domain, overview_url),
+        "review_request_url": "https://{}{}".format(domain, request_url),
+        "review_request": review_request,
+        "deadline_days": deadline_days,
+        "remind_days": remind_days,
+    })

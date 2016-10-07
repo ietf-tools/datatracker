@@ -27,12 +27,24 @@ class Migration(migrations.Migration):
             bases=(models.Model,),
         ),
         migrations.CreateModel(
+            name='ResultUsedInReviewTeam',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('result', models.ForeignKey(to='name.ReviewResultName')),
+                ('team', models.ForeignKey(to='group.Group')),
+            ],
+            options={
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
             name='ReviewerSettings',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('min_interval', models.IntegerField(default=30, verbose_name=b'Can review at most', choices=[(7, b'Once per week'), (14, b'Once per fortnight'), (30, b'Once per month'), (61, b'Once per two months'), (91, b'Once per quarter')])),
                 ('filter_re', models.CharField(help_text=b'Draft names matching regular expression should not be assigned', max_length=255, verbose_name=b'Filter regexp', blank=True)),
                 ('skip_next', models.IntegerField(default=0, verbose_name=b'Skip next assignments')),
+                ('remind_days_before_deadline', models.IntegerField(null=True, blank=True)),
                 ('person', models.ForeignKey(to='person.Person')),
                 ('team', models.ForeignKey(to='group.Group')),
             ],
@@ -63,10 +75,12 @@ class Migration(migrations.Migration):
             bases=(models.Model,),
         ),
         migrations.CreateModel(
-            name='ResultUsedInReviewTeam',
+            name='ReviewWish',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('result', models.ForeignKey(to='name.ReviewResultName')),
+                ('time', models.DateTimeField(default=datetime.datetime.now)),
+                ('doc', models.ForeignKey(to='doc.Document')),
+                ('person', models.ForeignKey(to='person.Person')),
                 ('team', models.ForeignKey(to='group.Group')),
             ],
             options={
@@ -79,19 +93,6 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('team', models.ForeignKey(to='group.Group')),
                 ('type', models.ForeignKey(to='name.ReviewTypeName')),
-            ],
-            options={
-            },
-            bases=(models.Model,),
-        ),
-        migrations.CreateModel(
-            name='ReviewWish',
-            fields=[
-                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('time', models.DateTimeField(default=datetime.datetime.now)),
-                ('doc', models.ForeignKey(to='doc.Document')),
-                ('person', models.ForeignKey(to='person.Person')),
-                ('team', models.ForeignKey(to='group.Group')),
             ],
             options={
             },

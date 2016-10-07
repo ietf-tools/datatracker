@@ -350,7 +350,7 @@ def email_open_review_assignments(request, acronym, group_type=None):
 class ReviewerSettingsForm(forms.ModelForm):
     class Meta:
         model = ReviewerSettings
-        fields = ['min_interval', 'filter_re', 'skip_next']
+        fields = ['min_interval', 'filter_re', 'skip_next', 'remind_days_before_deadline']
 
 class AddUnavailablePeriodForm(forms.ModelForm):
     class Meta:
@@ -406,7 +406,7 @@ def change_reviewer_settings(request, acronym, reviewer_email, group_type=None):
     back_url = request.GET.get("next")
     if not back_url:
         import ietf.group.views_review
-        back_url = urlreverse(ietf.group.views_review.review_requests, kwargs={ "group_type": group.type_id, "acronym": group.acronym})
+        back_url = urlreverse(ietf.group.views_review.reviewer_overview, kwargs={ "group_type": group.type_id, "acronym": group.acronym})
 
     # settings
     if request.method == "POST" and request.POST.get("action") == "change_settings":

@@ -11,6 +11,7 @@ from ietf.iesg.models import TelechatDate
 from ietf.person.models import Email, Person
 from ietf.review.models import ReviewRequest, ReviewerSettings, UnavailablePeriod
 from ietf.review.utils import suggested_review_requests_for_team
+from ietf.review.utils import review_requests_needing_reviewer_reminder, email_reviewer_reminder
 from ietf.name.models import ReviewTypeName, ReviewResultName, ReviewRequestStateName
 import ietf.group.views_review
 from ietf.utils.mail import outbox, empty_outbox
@@ -316,12 +317,14 @@ class ReviewTests(TestCase):
             "min_interval": "7",
             "filter_re": "test-[regexp]",
             "skip_next": "2",
+            "remind_days_before_deadline": "6"
         })
         self.assertEqual(r.status_code, 302)
         settings = ReviewerSettings.objects.get(person=reviewer, team=review_req.team)
         self.assertEqual(settings.min_interval, 7)
         self.assertEqual(settings.filter_re, "test-[regexp]")
         self.assertEqual(settings.skip_next, 2)
+        self.assertEqual(settings.remind_days_before_deadline, 6)
         self.assertEqual(len(outbox), 1)
         self.assertTrue("reviewer availability" in outbox[0]["subject"].lower())
         self.assertTrue("frequency changed", unicode(outbox[0]).lower())
@@ -370,3 +373,35 @@ class ReviewTests(TestCase):
         self.assertEqual(len(outbox), 1)
         self.assertTrue(start_date.isoformat(), unicode(outbox[0]).lower())
         self.assertTrue(end_date.isoformat(), unicode(outbox[0]).lower())
+
+    def test_reviewer_reminders(self):
+        doc = make_test_data()
+
+        reviewer = Person.objects.get(name="Plain Man")
+
+        review_req = make_review_data(doc)
+
+        settings = ReviewerSettings.objects.get(team=review_req.team, person=reviewer)
+        settings.remind_days_before_deadline = 6
+        settings.save()
+
+        today = datetime.date.today()
+
+        review_req.reviewer = reviewer.email_set.first()
+        review_req.deadline = today + datetime.timedelta(days=settings.remind_days_before_deadline)
+        review_req.save()
+
+        needing_reminders = review_requests_needing_reviewer_reminder(today - datetime.timedelta(days=1))
+        self.assertEqual(list(needing_reminders), [])
+
+        needing_reminders = review_requests_needing_reviewer_reminder(today)
+        self.assertEqual(list(needing_reminders), [review_req])
+
+        needing_reminders = review_requests_needing_reviewer_reminder(today + datetime.timedelta(days=1))
+        self.assertEqual(list(needing_reminders), [])
+
+        empty_outbox()
+        email_reviewer_reminder(review_req)
+        self.assertEqual(len(outbox), 1)
+        print outbox[0]
+        self.assertTrue(review_req.doc_id in unicode(outbox[0]))

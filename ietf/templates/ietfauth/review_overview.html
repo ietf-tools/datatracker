@@ -134,7 +134,11 @@
       </tr>
       <tr>
         <th>Filter regexp</th>
-        <td><code>{{ t.reviewer_settings.filter_re|default:"(None)" }}</code></td>
+        <td>{% if t.reviewer_settings.filter_re %}<code>{{ t.reviewer_settings.filter_re }}</code>{% else %}(None){% endif %}</td>
+      </tr>
+      <tr>
+        <th>Remind days before deadline</th>
+        <td>{{ t.reviewer_settings.remind_days_before_deadline|default:"(Do not remind)" }}</td>
       </tr>
       <tr>
         <th>Unavailable periods</th>
