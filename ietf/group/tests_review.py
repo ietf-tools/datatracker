@@ -403,5 +403,4 @@ class ReviewTests(TestCase):
         empty_outbox()
         email_reviewer_reminder(review_req)
         self.assertEqual(len(outbox), 1)
-        print outbox[0]
         self.assertTrue(review_req.doc_id in unicode(outbox[0]))
