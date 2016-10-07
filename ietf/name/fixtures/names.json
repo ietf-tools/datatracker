@@ -197,9 +197,9 @@
 {
  "fields": {
   "order": 0,
-  "revname": "Normatively Referenced by",
+  "revname": "is normatively referenced by",
   "used": true,
-  "name": "Normative Reference",
+  "name": "normatively references",
   "desc": "Normative Reference"
  },
  "model": "name.docrelationshipname",
@@ -219,9 +219,9 @@
 {
  "fields": {
   "order": 0,
-  "revname": "Informatively Referenced by",
+  "revname": "is informatively referenced by",
   "used": true,
-  "name": "Informative Reference",
+  "name": "informatively references",
   "desc": "Informative Reference"
  },
  "model": "name.docrelationshipname",
@@ -816,7 +816,7 @@
    "posted"
   ],
   "used": true,
-  "name": "Awaiting Approval from Previous Version Authors'",
+  "name": "Awaiting Approval from Previous Version Authors",
   "desc": ""
  },
  "model": "name.draftsubmissionstatename",
@@ -1060,6 +1060,7 @@
  "fields": {
   "order": 0,
   "used": true,
+  "verbose_name": "Internet Engineering Task Force",
   "name": "IETF",
   "desc": ""
  },
@@ -1070,6 +1071,7 @@
  "fields": {
   "order": 0,
   "used": true,
+  "verbose_name": "Area",
   "name": "Area",
   "desc": ""
  },
@@ -1080,6 +1082,7 @@
  "fields": {
   "order": 0,
   "used": true,
+  "verbose_name": "Area Group",
   "name": "AG",
   "desc": "Area group"
  },
@@ -1090,6 +1093,7 @@
  "fields": {
   "order": 0,
   "used": true,
+  "verbose_name": "Working Group",
   "name": "WG",
   "desc": "Working group"
  },
@@ -1100,6 +1104,7 @@
  "fields": {
   "order": 0,
   "used": true,
+  "verbose_name": "Research Group",
   "name": "RG",
   "desc": "Research group"
  },
@@ -1110,6 +1115,7 @@
  "fields": {
   "order": 0,
   "used": true,
+  "verbose_name": "Team",
   "name": "Team",
   "desc": ""
  },
@@ -1120,6 +1126,7 @@
  "fields": {
   "order": 0,
   "used": true,
+  "verbose_name": "An Individual",
   "name": "Individual",
   "desc": ""
  },
@@ -1130,6 +1137,7 @@
  "fields": {
   "order": 0,
   "used": true,
+  "verbose_name": "Standards Organization",
   "name": "SDO",
   "desc": "Standards organization"
  },
@@ -1140,6 +1148,7 @@
  "fields": {
   "order": 0,
   "used": true,
+  "verbose_name": "Internet Research Task Force",
   "name": "IRTF",
   "desc": ""
  },
@@ -1150,6 +1159,7 @@
  "fields": {
   "order": 0,
   "used": true,
+  "verbose_name": "The RFC Editor",
   "name": "RFC Editor",
   "desc": ""
  },
@@ -1160,6 +1170,7 @@
  "fields": {
   "order": 0,
   "used": true,
+  "verbose_name": "IETF/IAB Nominating Committee",
   "name": "Nomcom",
   "desc": "An IETF/IAB Nominating Committee.  Use 'SDO' for external nominating committees."
  },
@@ -1170,6 +1181,7 @@
  "fields": {
   "order": 0,
   "used": true,
+  "verbose_name": "Internet Architecture Board",
   "name": "IAB",
   "desc": ""
  },
@@ -1180,6 +1192,7 @@
  "fields": {
   "order": 0,
   "used": true,
+  "verbose_name": "The Internet Society",
   "name": "ISOC",
   "desc": ""
  },
@@ -1190,6 +1203,7 @@
  "fields": {
   "order": 0,
   "used": true,
+  "verbose_name": "Area Directorate",
   "name": "Directorate",
   "desc": "In many areas, the Area Directors have formed an advisory group or directorate.  These comprise experienced members of the IETF and the technical community represented by the area.  The specific name and the details of the role for each group differ from area to area, but  the primary intent is that these groups assist the Area Director(s), e.g., with the review of specifications produced in the area."
  },
@@ -1980,7 +1994,7 @@
  "fields": {
   "order": 0,
   "used": true,
-  "name": "Meetecho Remote Partition Support",
+  "name": "Meetecho Support",
   "desc": "The room will have a meetecho wrangler"
  },
  "model": "name.roomresourcename",
@@ -1995,6 +2009,16 @@
  },
  "model": "name.roomresourcename",
  "pk": "boardroom"
+},
+{
+ "fields": {
+  "order": 0,
+  "used": true,
+  "name": "Audio Stream",
+  "desc": "Audio streaming support"
+ },
+ "model": "name.roomresourcename",
+ "pk": "audiostream"
 },
 {
  "fields": {
@@ -2040,31 +2064,11 @@
  "fields": {
   "order": 0,
   "used": true,
-  "name": "Scheduled - Announcement to be sent",
-  "desc": ""
- },
- "model": "name.sessionstatusname",
- "pk": "scheda"
-},
-{
- "fields": {
-  "order": 0,
-  "used": true,
   "name": "Cancelled",
   "desc": ""
  },
  "model": "name.sessionstatusname",
  "pk": "canceled"
-},
-{
- "fields": {
-  "order": 0,
-  "used": true,
-  "name": "Cancelled - Pre Announcement",
-  "desc": ""
- },
- "model": "name.sessionstatusname",
- "pk": "canceledpa"
 },
 {
  "fields": {
@@ -2095,6 +2099,26 @@
  },
  "model": "name.sessionstatusname",
  "pk": "deleted"
+},
+{
+ "fields": {
+  "order": 0,
+  "used": true,
+  "name": "Scheduled - Announcement to be sent",
+  "desc": ""
+ },
+ "model": "name.sessionstatusname",
+ "pk": "scheda"
+},
+{
+ "fields": {
+  "order": 0,
+  "used": true,
+  "name": "Cancelled - Pre Announcement",
+  "desc": ""
+ },
+ "model": "name.sessionstatusname",
+ "pk": "canceledpa"
 },
 {
  "fields": {
@@ -4695,14 +4719,6 @@
 },
 {
  "fields": {
-  "template": null,
-  "desc": "The group's secretaries"
- },
- "model": "mailtrigger.recipient",
- "pk": "group_secretaries"
-},
-{
- "fields": {
   "template": "{{ changed_personnel | join:\", \" }}",
   "desc": "Any personnel who were added or deleted when a group's personnel changes"
  },
@@ -4728,10 +4744,26 @@
 {
  "fields": {
   "template": null,
+  "desc": "The group's secretaries"
+ },
+ "model": "mailtrigger.recipient",
+ "pk": "group_secretaries"
+},
+{
+ "fields": {
+  "template": null,
   "desc": "The group's steering group (IESG or IRSG)"
  },
  "model": "mailtrigger.recipient",
  "pk": "group_steering_group"
+},
+{
+ "fields": {
+  "template": "{% if group.stream_id == 'ietf' %}IETF-Announce <ietf-announce@ietf.org>{% elif group.stream_id == 'irtf' %}IRTF-Announce <irtf-announce@irtf.org>{% endif %}",
+  "desc": "The group's stream's announce list"
+ },
+ "model": "mailtrigger.recipient",
+ "pk": "group_stream_announce"
 },
 {
  "fields": {
@@ -4919,14 +4951,6 @@
 },
 {
  "fields": {
-  "template": "<ietf-manualpost@ietf.org>",
-  "desc": "IETF manual post handling"
- },
- "model": "mailtrigger.recipient",
- "pk": "submission_manualpost_handling"
-},
-{
- "fields": {
   "template": "<new-work@ietf.org>",
   "desc": "The IETF New Work list"
  },
@@ -5028,6 +5052,14 @@
  },
  "model": "mailtrigger.recipient",
  "pk": "submission_group_mail_list"
+},
+{
+ "fields": {
+  "template": "<ietf-manualpost@ietf.org>",
+  "desc": "IETF manual post handling"
+ },
+ "model": "mailtrigger.recipient",
+ "pk": "submission_manualpost_handling"
 },
 {
  "fields": {
@@ -5530,6 +5562,45 @@
 },
 {
  "fields": {
+  "cc": [
+   "group_mail_list"
+  ],
+  "to": [
+   "ietf_announce"
+  ],
+  "desc": "Recipients when an interim meeting is announced"
+ },
+ "model": "mailtrigger.mailtrigger",
+ "pk": "interim_announced"
+},
+{
+ "fields": {
+  "cc": [],
+  "to": [
+   "iesg_secretary"
+  ],
+  "desc": "Recipients when an interim meeting is approved and an announcement needs to be sent"
+ },
+ "model": "mailtrigger.mailtrigger",
+ "pk": "interim_approved"
+},
+{
+ "fields": {
+  "cc": [
+   "group_chairs",
+   "group_mail_list",
+   "logged_in_person"
+  ],
+  "to": [
+   "ietf_announce"
+  ],
+  "desc": "Recipients when an interim meeting is cancelled"
+ },
+ "model": "mailtrigger.mailtrigger",
+ "pk": "interim_cancelled"
+},
+{
+ "fields": {
   "cc": [],
   "to": [
    "ipr_submitter"
@@ -5857,6 +5928,20 @@
 {
  "fields": {
   "cc": [
+   "group_responsible_directors"
+  ],
+  "to": [
+   "group_chairs",
+   "group_secretaries"
+  ],
+  "desc": "Recipients when a group is sent a reminder to submit minutes for a session"
+ },
+ "model": "mailtrigger.mailtrigger",
+ "pk": "session_minutes_reminder"
+},
+{
+ "fields": {
+  "cc": [
    "group_chairs",
    "group_mail_list",
    "group_responsible_directors",
@@ -5931,20 +6016,6 @@
  },
  "model": "mailtrigger.mailtrigger",
  "pk": "session_scheduled"
-},
-{
- "fields": {
-  "cc": [
-   "group_responsible_directors"
-  ],
-  "to": [
-   "group_chairs",
-   "group_secretaries"
-  ],
-  "desc": "Recipients when a group is sent a reminder to submit minutes for a session"
- },
- "model": "mailtrigger.mailtrigger",
- "pk": "session_minutes_reminder"
 },
 {
  "fields": {
@@ -6033,16 +6104,5 @@
  },
  "model": "mailtrigger.mailtrigger",
  "pk": "sub_new_version"
-},
-{
- "fields": {
-  "cc": [],
-  "to": [
-   "iesg_secretary"
-  ],
-  "desc": "Recipients when an interim meeting is approved and an announcement needs to be sent"
- },
- "model": "mailtrigger.mailtrigger",
- "pk": "interim_approved"
 }
 ]

@@ -1,3 +1,29 @@
+ietfdb (6.34.3) ietf; urgency=medium
+
+  * Merged in [12082] from rcross@amsl.com:
+    Fixed an issue where interim meeting request form didn't list research
+    groups when the logged-in user was both a working group chair and a
+    research group chair.  
+
+  * Made it possible to merge nominations with inactive email addresses.
+    By default the SearchableEmail form field only displays active email
+    addresses, but this use case needs all known email addresses.
+
+  * Fixed inclusion of tablesorter css and js for use when displaying the
+    SQL query list in development mode.
+
+  * Added admin support for the DocumentAuthor model.
+
+  * Fixed a place where email addresses which were not all lowercase could
+    slip in, which messed up some reverse table relationships.  (This was
+    found by running our check_referential_integrity management command.)
+
+  * Fixed a problem with the error message text for the nominee email edit 
+    form.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  05 Oct 2016 11:56:01 -0700
+
+
 ietfdb (6.34.2) ietf; urgency=medium
 
   **Draft submission and document DOI fixes**

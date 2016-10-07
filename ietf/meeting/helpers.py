@@ -409,8 +409,7 @@ def get_announcement_initial(meeting, is_change=False):
     group = meeting.session_set.first().group
     in_person = bool(meeting.city)
     initial = {}
-    initial['to'] = settings.INTERIM_ANNOUNCE_TO_EMAIL
-    initial['cc'] = group.list_email
+    (initial['to'],initial['cc']) = gather_address_lists('interim_announced',group=group)
     initial['frm'] = settings.INTERIM_ANNOUNCE_FROM_EMAIL
     if in_person:
         desc = 'Interim'
@@ -585,8 +584,7 @@ def send_interim_cancellation_notice(meeting):
     """Sends an email that a scheduled interim meeting has been cancelled."""
     session = meeting.session_set.first()
     group = session.group
-    to_email = settings.INTERIM_ANNOUNCE_TO_EMAIL
-    (_, cc_list) = gather_address_lists('session_request_cancelled',group=group)
+    (to_email, cc_list) = gather_address_lists('interim_cancelled',group=group)
     from_email = settings.INTERIM_ANNOUNCE_FROM_EMAIL
     subject = '{group} ({acronym}) {type} Interim Meeting Cancelled (was {date})'.format(
         group=group.name,
