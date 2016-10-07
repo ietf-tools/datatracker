@@ -1,5 +1,16 @@
 ietfdb (6.34.3) ietf; urgency=medium
 
+  * Merged in [12099] from rjsparks@nostrum.com:
+    Changes interim announcements and interim cancellation announcements to
+    use mailtriggers. Adds irtf-announce to announcements for IRTF groups.
+    Fixes #2018.  
+
+  * Added a migration to remove most duplicate 'Upload' doc events.
+
+  * When converting submission events to doc events, post them in 
+    chronological order.  Don't add upload doc events until we're past the 
+    possibility of submission cancellation.
+
   * Merged in [12082] from rcross@amsl.com:
     Fixed an issue where interim meeting request form didn't list research
     groups when the logged-in user was both a working group chair and a

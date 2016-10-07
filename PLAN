@@ -7,6 +7,9 @@ Updated: $Date$
 Planned work in rough order
 ===========================
 
+* Enhancements for meeting materials and proceedings.
+  (Already merged to a large extent)
+
 * Glue code for WG issue trackers and wiki:
   - create new trackers on group creation
   - update access lists on group chair/secretary changes
@@ -16,8 +19,6 @@ Planned work in rough order
   the code which produces them.
 
 * Review tracking project merge
-
-* Enhancements for meeting materials and proceedings.
 
 * Schema Changes: tags, external links for groups.
 
