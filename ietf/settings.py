@@ -583,7 +583,7 @@ RSYNC_BINARY = '/usr/bin/rsync'
 
 # Account settings
 DAYS_TO_EXPIRE_REGISTRATION_LINK = 3
-HTPASSWD_COMMAND = "/usr/bin/htpasswd2"
+HTPASSWD_COMMAND = "/usr/bin/htpasswd"
 HTPASSWD_FILE = "/www/htpasswd"
 
 # Generation of bibxml files for xml2rfc
