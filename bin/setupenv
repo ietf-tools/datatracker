@@ -1,0 +1,39 @@
+#!/usr/bin/env python
+from __future__ import print_function
+
+import os
+import subprocess
+import requests
+import sys
+import stat
+
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+
+from ietf.settings_sqlitetest import *             # we don't import from django.conf here, on purpose
+
+for dir in [ AGENDA_PATH, IDSUBMIT_REPOSITORY_PATH, IDSUBMIT_STAGING_PATH,
+    INTERNET_DRAFT_ARCHIVE_DIR, os.path.dirname(DRAFT_ALIASES_PATH), PHOTOS_DIR, ]:
+    if not os.path.exists(dir):
+        print("Creating %s" % dir)
+        os.makedirs(dir)
+
+for path in [ DRAFT_ALIASES_PATH, DRAFT_VIRTUAL_PATH, GROUP_ALIASES_PATH, GROUP_VIRTUAL_PATH, ]:
+    if not os.path.exists(path):
+        print("Setting up %s" % path)
+        dir, fn = os.path.split(path)
+        url = "https://zinfandel.tools.ietf.org/src/db/tmp/%s" % fn
+        r = requests.get(url)
+        if r.status_code == 200:
+            with open(path, "w") as of:
+                of.write(r.text)
+        else:
+            print("Error %s fetching '%s'" % (r.status_code, url))
+
+path = IDSUBMIT_IDNITS_BINARY
+if not os.path.exists(path):
+    print("Setting up %s" % path)    
+    r = requests.get('https://tools.ietf.org/tools/idnits/idnits')
+    with open(path, 'w') as idnits:
+        idnits.write(r.text)
+        os.chmod(path, 0755)
+        
