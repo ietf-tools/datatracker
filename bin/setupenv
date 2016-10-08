@@ -17,7 +17,8 @@ shutil.copyfile(os.path.join(basedir, 'docker/settings_local.py'), os.path.join(
 from ietf.settings_sqlitetest import *             # we don't import from django.conf here, on purpose
 
 for dir in [ AGENDA_PATH, IDSUBMIT_REPOSITORY_PATH, IDSUBMIT_STAGING_PATH,
-    INTERNET_DRAFT_ARCHIVE_DIR, os.path.dirname(DRAFT_ALIASES_PATH), PHOTOS_DIR, ]:
+    INTERNET_DRAFT_ARCHIVE_DIR, os.path.dirname(DRAFT_ALIASES_PATH), PHOTOS_DIR,
+    TEST_GHOSTDRIVER_LOG_PATH, ]:
     if not os.path.exists(dir):
         print("Creating %s" % dir)
         os.makedirs(dir)
