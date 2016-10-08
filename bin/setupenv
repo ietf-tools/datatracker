@@ -12,7 +12,7 @@ basedir = os.path.dirname(os.path.dirname(__file__))
 
 sys.path.append(basedir)
 
-shutil.copyfile(os.path.join(basedir, 'docker/settings_local.py'), os.path.join(basdir, 'settings_local.py'))
+shutil.copyfile(os.path.join(basedir, 'docker/settings_local.py'), os.path.join(basedir, 'settings_local.py'))
 
 from ietf.settings_sqlitetest import *             # we don't import from django.conf here, on purpose
 
