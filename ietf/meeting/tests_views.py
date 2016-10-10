@@ -12,7 +12,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.http import HttpRequest
 
-from mock import patch, MagicMock
+from mock import patch
 from pyquery import PyQuery
 from StringIO import StringIO
 
@@ -363,7 +363,6 @@ class MeetingTests(TestCase):
         response = self.client.post(url, post_data)
         self.assertRedirects(response,urlreverse('ietf.secr.meetings.views.main'))
         self.assertTrue(Meeting.objects.filter(number=96).exists())
-        meeting = Meeting.objects.get(number=96)
 
         # check progress report
         url = urlreverse('ietf.meeting.views.proceedings_progress_report',kwargs={'num':96})

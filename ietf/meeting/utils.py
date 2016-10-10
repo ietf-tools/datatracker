@@ -103,7 +103,7 @@ def finalize(request, meeting):
         attendees = sorted(attendees, key = lambda a: a['LastName'])
         content = render_to_string('meeting/proceedings_attendees_table.html', {
             'attendees':attendees})
-        template = DBTemplate.objects.create(
+        DBTemplate.objects.create(
             path='/meeting/proceedings/%s/attendees.html' % meeting.number,
             title='IETF %s Attendee List' % meeting.number,
             type_id='django',
