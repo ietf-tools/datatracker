@@ -10,7 +10,9 @@ import debug           # pyflakes:ignore
 from django.core.urlresolvers import reverse as urlreverse
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.http import HttpRequest
 
+from mock import patch, MagicMock
 from pyquery import PyQuery
 from StringIO import StringIO
 
@@ -22,6 +24,7 @@ from ietf.meeting.helpers import send_interim_cancellation_notice
 from ietf.meeting.helpers import send_interim_minutes_reminder
 from ietf.meeting.models import Session, TimeSlot, Meeting
 from ietf.meeting.test_data import make_meeting_test_data, make_interim_meeting
+from ietf.meeting.utils import finalize
 from ietf.name.models import SessionStatusName
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized, unicontent
 from ietf.utils.mail import outbox
@@ -32,6 +35,7 @@ from ietf.group.factories import GroupFactory, GroupEventFactory
 from ietf.meeting.factories import ( SessionFactory, SessionPresentationFactory, ScheduleFactory,
     MeetingFactory, FloorPlanFactory )
 from ietf.doc.factories import DocumentFactory
+
 
 class MeetingTests(TestCase):
     def setUp(self):
@@ -270,6 +274,44 @@ class MeetingTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 
+    @patch('urllib2.urlopen')
+    def test_proceedings_attendees(self, mock_urlopen):
+        mock_urlopen.return_value = StringIO('[{"LastName":"Smith","FirstName":"John","Company":"ABC","Country":"US"}]')
+        make_meeting_test_data()
+        
+        # add recent meeting
+        date = datetime.date(2016,4,3)
+        Meeting.objects.create(type_id='ietf',date=date,number=95)
+        url = urlreverse('ietf.secr.meetings.views.add')
+        post_data = dict(number='96',city='Berlin',date='2016-07-14',country='DE',
+                         time_zone='Europe/Berlin',venue_name='Intercontinental Berlin',
+                         venue_addr='',
+                         idsubmit_cutoff_day_offset_00=13,
+                         idsubmit_cutoff_day_offset_01=20,
+                         idsubmit_cutoff_time_utc     =datetime.timedelta(hours=23, minutes=59, seconds=59),
+                         idsubmit_cutoff_warning_days =datetime.timedelta(days=21),
+                         submission_start_day_offset=90,
+                         submission_cutoff_day_offset=26,
+                         submission_correction_day_offset=50,
+                     )
+        self.client.login(username='secretary', password='secretary+password')
+        response = self.client.post(url, post_data)
+        self.assertRedirects(response,urlreverse('ietf.secr.meetings.views.main'))
+        self.assertTrue(Meeting.objects.filter(number=96).exists())
+        meeting = Meeting.objects.get(number=96)
+        
+        # finalize the meeting proceedings
+        finalize(HttpRequest(),meeting)
+
+        # check attendees
+        url = urlreverse('ietf.meeting.views.proceedings_attendees',kwargs={'num':96})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue('Attendee List' in response.content)
+        q = PyQuery(response.content)
+        self.assertEqual(1,len(q("#id_attendees tbody tr")))
+
+
     def test_proceedings_overview(self):
         '''Test proceedings IETF Overview page.
         Note: old meetings aren't supported so need to add a new meeting then test.
@@ -298,6 +340,36 @@ class MeetingTests(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         self.assertTrue('The Internet Engineering Task Force' in response.content)
+
+    def test_proceedings_progress_report(self):
+        make_meeting_test_data()
+        
+        # add recent meeting
+        date = datetime.date(2016,4,3)
+        Meeting.objects.create(type_id='ietf',date=date,number=95)
+        url = urlreverse('ietf.secr.meetings.views.add')
+        post_data = dict(number='96',city='Berlin',date='2016-07-14',country='DE',
+                         time_zone='Europe/Berlin',venue_name='Intercontinental Berlin',
+                         venue_addr='',
+                         idsubmit_cutoff_day_offset_00=13,
+                         idsubmit_cutoff_day_offset_01=20,
+                         idsubmit_cutoff_time_utc     =datetime.timedelta(hours=23, minutes=59, seconds=59),
+                         idsubmit_cutoff_warning_days =datetime.timedelta(days=21),
+                         submission_start_day_offset=90,
+                         submission_cutoff_day_offset=26,
+                         submission_correction_day_offset=50,
+                     )
+        self.client.login(username='secretary', password='secretary+password')
+        response = self.client.post(url, post_data)
+        self.assertRedirects(response,urlreverse('ietf.secr.meetings.views.main'))
+        self.assertTrue(Meeting.objects.filter(number=96).exists())
+        meeting = Meeting.objects.get(number=96)
+
+        # check progress report
+        url = urlreverse('ietf.meeting.views.proceedings_progress_report',kwargs={'num':96})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue('Progress Report' in response.content)
 
     def test_feed(self):
         meeting = make_meeting_test_data()
@@ -1252,7 +1324,9 @@ class IphoneAppJsonTests(TestCase):
         self.assertEqual(r.status_code,200)
 
 class FinalizeProceedingsTests(TestCase):
-    def test_finalize_proceedings(self):
+    @patch('urllib2.urlopen')
+    def test_finalize_proceedings(self, mock_urlopen):
+        mock_urlopen.return_value = StringIO('[{"LastName":"Smith","FirstName":"John","Company":"ABC","Country":"US"}]')
         make_meeting_test_data()
         meeting = Meeting.objects.filter(type_id='ietf').order_by('id').last()
         meeting.session_set.filter(group__acronym='mars').first().sessionpresentation_set.create(document=Document.objects.filter(type='draft').first(),rev=None)

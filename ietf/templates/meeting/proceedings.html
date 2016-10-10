@@ -33,13 +33,15 @@
       {% load cache %}
       {% cache 900 ietf_meeting_proceedings meeting.number cache_version %}
 
+      {% if meeting.proceedings_final %}
       <h2 class="anchor-target" id="introduction">Introduction</h2>
       <div>
         <a href="{% url 'ietf.meeting.views.proceedings_acknowledgements' num=meeting.number %}">Acknowledgements</a><br>
         <a href="{% url 'ietf.meeting.views.proceedings_overview' num=meeting.number %}">IETF Overview</a><br>
-        <a href="#">Progress Report</a><br>
-        <a href="#">Attendees</a><br>
-      </div> 
+        <a href="{% url 'ietf.meeting.views.proceedings_progress_report' num=meeting.number %}">Progress Report</a><br>
+        <a href="{% url 'ietf.meeting.views.proceedings_attendees' num=meeting.number %}">Attendees</a><br>
+      </div>
+      {% endif %}
 
         {% with "True" as show_agenda %}
           <!-- Plenaries -->

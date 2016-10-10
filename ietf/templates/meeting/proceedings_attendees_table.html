@@ -1,0 +1,18 @@
+<table id="id_attendees" class="table">
+    <thead>
+        <tr>
+            <th>Last Name</th>
+            <th>First Name</th>
+            <th>Organization</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for attendee in attendees %}
+            <tr>
+                <td>{{ attendee.LastName }}</td>
+                <td>{{ attendee.FirstName }}</td>
+                <td>{{ attendee.Company }}</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>

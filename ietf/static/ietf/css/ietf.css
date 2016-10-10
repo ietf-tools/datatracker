@@ -544,6 +544,12 @@ ul.errorlist {
     color: #555;
 }
 
+/* === Proceedings ===================================================== */
+ul.progress-section {
+    list-style-type: none;
+    margin-bottom: 2em;
+}
+
 /* === Font-Awesome ========================================================= */
 
 .btn .fa-stack { width: 1em; height: 1em; }

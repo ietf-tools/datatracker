@@ -106,97 +106,67 @@ def mycomp(timeslot):
 
 def get_progress_stats(sdate,edate):
     '''
-    This function takes a date range and produces a dictionary of statistics / objects for use
-    in a progress report.  Generally the end date will be the date of the last meeting
+    This function takes a date range and produces a dictionary of statistics / objects for
+    use in a progress report.  Generally the end date will be the date of the last meeting
     and the start date will be the date of the meeting before that.
     '''
     data = {}
     data['sdate'] = sdate
     data['edate'] = edate
 
-    # Activty Report Section
-    new_docs = Document.objects.filter(type='draft').filter(docevent__type='new_revision',
-                                                            docevent__newrevisiondocevent__rev='00',
-                                                            docevent__time__gte=sdate,
-                                                            docevent__time__lt=edate)
-    data['new'] = new_docs.count()
-    data['updated'] = 0
-    data['updated_more'] = 0
-    for d in new_docs:
-        updates = d.docevent_set.filter(type='new_revision',time__gte=sdate,time__lt=edate).count()
-        if updates > 1:
-            data['updated'] += 1
-        if updates > 2:
-            data['updated_more'] +=1
-
-    # calculate total documents updated, not counting new, rev=00
-    result = set()
     events = DocEvent.objects.filter(doc__type='draft',time__gte=sdate,time__lt=edate)
-    for e in events.filter(type='new_revision').exclude(newrevisiondocevent__rev='00'):
-        result.add(e.doc)
-    data['total_updated'] = len(result)
+    
+    data['actions_count'] = events.filter(type='iesg_approved').count()
+    data['last_calls_count'] = events.filter(type='sent_last_call').count()
+    new_draft_events = events.filter(newrevisiondocevent__rev='00')
+    new_drafts = list(set([ e.doc_id for e in new_draft_events ]))
+    data['new_drafts_count'] = len(new_drafts)
+    data['new_drafts_updated_count'] = events.filter(doc__in=new_drafts,newrevisiondocevent__rev='01').count()
+    data['new_drafts_updated_more_count'] = events.filter(doc__in=new_drafts,newrevisiondocevent__rev='02').count()
+    
+    update_events = events.filter(type='new_revision').exclude(doc__in=new_drafts)
+    data['updated_drafts_count'] = len(set([ e.doc_id for e in update_events ]))
+    
+    # Calculate Final Four Weeks stats (ffw)
+    ffwdate = edate - datetime.timedelta(days=28)
+    ffw_new_count = events.filter(time__gte=ffwdate,newrevisiondocevent__rev='00').count()
+    try:
+        ffw_new_percent = format(ffw_new_count / float(data['new_drafts_count']),'.0%')
+    except ZeroDivisionError:
+        ffw_new_percent = 0
+        
+    data['ffw_new_count'] = ffw_new_count
+    data['ffw_new_percent'] = ffw_new_percent
+    
+    ffw_update_events = events.filter(time__gte=ffwdate,type='new_revision').exclude(doc__in=new_drafts)
+    ffw_update_count = len(set([ e.doc_id for e in ffw_update_events ]))
+    try:
+        ffw_update_percent = format(ffw_update_count / float(data['updated_drafts_count']),'.0%')
+    except ZeroDivisionError:
+        ffw_update_percent = 0
+    
+    data['ffw_update_count'] = ffw_update_count
+    data['ffw_update_percent'] = ffw_update_percent
 
-    # calculate sent last call
-    data['last_call'] = events.filter(type='sent_last_call').count()
+    rfcs = events.filter(type='published_rfc')
+    data['rfcs'] = rfcs.select_related('doc').select_related('doc__group').select_related('doc__intended_std_level')
 
-    # calculate approved
-    data['approved'] = events.filter(type='iesg_approved').count()
+    data['counts'] = {'std':rfcs.filter(doc__intended_std_level__in=('ps','ds','std')).count(),
+                      'bcp':rfcs.filter(doc__intended_std_level='bcp').count(),
+                      'exp':rfcs.filter(doc__intended_std_level='exp').count(),
+                      'inf':rfcs.filter(doc__intended_std_level='inf').count()}
 
-    # get 4 weeks
-    ff1_date = edate - datetime.timedelta(days=28)
-    ff_docs = Document.objects.filter(type='draft').filter(docevent__type='new_revision',
-                                                           docevent__newrevisiondocevent__rev='00',
-                                                           docevent__time__gte=ff1_date,
-                                                           docevent__time__lt=edate)
-    ff_new_count = ff_docs.count()
-    ff_new_percent = format(ff_new_count / float(data['new']),'.0%')
-
-    # calculate total documents updated in final four weeks, not counting new, rev=00
-    result = set()
-    events = DocEvent.objects.filter(doc__type='draft',time__gte=ff1_date,time__lt=edate)
-    for e in events.filter(type='new_revision').exclude(newrevisiondocevent__rev='00'):
-        result.add(e.doc)
-    ff_update_count = len(result)
-    ff_update_percent = format(ff_update_count / float(data['total_updated']),'.0%')
-
-    data['ff_new_count'] = ff_new_count
-    data['ff_new_percent'] = ff_new_percent
-    data['ff_update_count'] = ff_update_count
-    data['ff_update_percent'] = ff_update_percent
-
-    # Progress Report Section
-    data['docevents'] = DocEvent.objects.filter(doc__type='draft',time__gte=sdate,time__lt=edate)
-    data['action_events'] = data['docevents'].filter(type='iesg_approved')
-    data['lc_events'] = data['docevents'].filter(type='sent_last_call')
-
-    data['new_groups'] = Group.objects.filter(type='wg',
-                                              groupevent__changestategroupevent__state='active',
-                                              groupevent__time__gte=sdate,
-                                              groupevent__time__lt=edate)
-
-    data['concluded_groups'] = Group.objects.filter(type='wg',
-                                                    groupevent__changestategroupevent__state='conclude',
-                                                    groupevent__time__gte=sdate,
-                                                    groupevent__time__lt=edate)
-
-    data['new_docs'] = Document.objects.filter(type='draft').filter(docevent__type='new_revision',
-                                                                    docevent__time__gte=sdate,
-                                                                    docevent__time__lt=edate).distinct()
-
-    data['rfcs'] = DocEvent.objects.filter(type='published_rfc',
-                                           doc__type='draft',
-                                           time__gte=sdate,
-                                           time__lt=edate)
-
-    # attach the ftp URL for use in the template
-    for event in data['rfcs']:
-        num = get_rfc_num(event.doc)
-        event.ftp_url = 'ftp://ftp.ietf.org/rfc/rfc%s.txt' % num
-
-    data['counts'] = {'std':data['rfcs'].filter(doc__intended_std_level__in=('ps','ds','std')).count(),
-                      'bcp':data['rfcs'].filter(doc__intended_std_level='bcp').count(),
-                      'exp':data['rfcs'].filter(doc__intended_std_level='exp').count(),
-                      'inf':data['rfcs'].filter(doc__intended_std_level='inf').count()}
+    data['new_groups'] = Group.objects.filter(
+        type='wg',
+        groupevent__changestategroupevent__state='active',
+        groupevent__time__gte=sdate,
+        groupevent__time__lt=edate)
+        
+    data['concluded_groups'] = Group.objects.filter(
+        type='wg',
+        groupevent__changestategroupevent__state='conclude',
+        groupevent__time__gte=sdate,
+        groupevent__time__lt=edate)
 
     return data
 

@@ -1,5 +1,13 @@
 import datetime
+import json
+import urllib2
+import urlparse
 
+from django.conf import settings
+from django.contrib import messages
+from django.template.loader import render_to_string
+
+from ietf.dbtemplate.models import DBTemplate
 from ietf.meeting.models import Session
 from ietf.group.utils import can_manage_materials
 
@@ -72,7 +80,7 @@ def sort_sessions(sessions):
 
     return meeting_sorted
 
-def finalize(meeting):
+def finalize(request, meeting):
     end_date = meeting.end_date()
     end_time = datetime.datetime.combine(end_date, datetime.datetime.min.time())+datetime.timedelta(days=1)
     for session in meeting.session_set.all():
@@ -83,6 +91,24 @@ def finalize(meeting):
             else:
                 sp.rev = '00' 
             sp.save()
+    # get attendees
+    url = urlparse.urljoin(settings.REGISTRATION_ATTENDEES_BASE_URL,meeting.number)
+    try:
+        attendees = json.load(urllib2.urlopen(url))
+    except (ValueError, urllib2.HTTPError):
+        messages.warning(request,'Could not retrieve attendee list from registration system (%s)' % url, fail_silently=True)
+        attendees = []
+
+    if attendees:
+        attendees = sorted(attendees, key = lambda a: a['LastName'])
+        content = render_to_string('meeting/proceedings_attendees_table.html', {
+            'attendees':attendees})
+        template = DBTemplate.objects.create(
+            path='/meeting/proceedings/%s/attendees.html' % meeting.number,
+            title='IETF %s Attendee List' % meeting.number,
+            type_id='django',
+            content=content)
+
     meeting.proceedings_final = True
     meeting.save()
     return

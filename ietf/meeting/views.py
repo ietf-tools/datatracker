@@ -56,6 +56,7 @@ from ietf.meeting.helpers import send_interim_approval_request
 from ietf.meeting.helpers import send_interim_announcement_request
 from ietf.meeting.utils import finalize
 from ietf.secr.proceedings.utils import handle_upload_file
+from ietf.secr.proceedings.proc_utils import get_progress_stats
 from ietf.utils.mail import send_mail_message
 from ietf.utils.pipe import pipe
 from ietf.utils.pdf import pdf_pages
@@ -1984,7 +1985,7 @@ def finalize_proceedings(request, num=None):
         raise Http404
 
     if request.method=='POST':
-        finalize(meeting)
+        finalize(request, meeting)
         return HttpResponseRedirect(reverse('ietf.meeting.views.proceedings',kwargs={'num':meeting.number}))
     
     return render(request, "meeting/finalize.html", {'meeting':meeting,})
@@ -1998,6 +1999,22 @@ def proceedings_acknowledgements(request, num=None):
     return render(request, "meeting/proceedings_acknowledgements.html", {
         'meeting': meeting,
     })
+
+
+@role_required('Secretariat')
+def proceedings_attendees(request, num=None):
+
+    meeting = get_meeting(num)
+    if meeting.number < 95:
+        return HttpResponseRedirect( 'https://www.ietf.org/proceedings/%s/attendees.html' % num )
+    overview_template = '/meeting/proceedings/%s/attendees.html' % meeting.number
+    template = render_to_string(overview_template, {})
+
+    return render(request, "meeting/proceedings_attendees.html", {
+        'meeting': meeting,
+        'template': template,
+    })
+
 
 @role_required('Secretariat')
 def proceedings_overview(request, num=None):
@@ -2013,6 +2030,17 @@ def proceedings_overview(request, num=None):
         'template': template,
     })
 
+@role_required('Secretariat')
+def proceedings_progress_report(request, num=None):
+    meeting = get_meeting(num)
+    if meeting.number < 95:
+        return HttpResponseRedirect( 'https://www.ietf.org/proceedings/%s/progress-report.html' % num )
+    sdate = meeting.previous_meeting().date
+    edate = meeting.date
+    context = get_progress_stats(sdate,edate)
+    context['meeting'] = meeting
+    return render(request, "meeting/proceedings_progress_report.html", context)
+    
 class OldUploadRedirect(RedirectView):
     def get_redirect_url(self, **kwargs):
         return reverse_lazy('ietf.meeting.views.session_details',kwargs=self.kwargs)
