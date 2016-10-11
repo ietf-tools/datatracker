@@ -24,7 +24,7 @@ def pipe(cmd, str=None):
             err = pipe.childerr.read()
             break
         if len(out) >= MAX:
-            err = "Output exceeds %s bytes and has been truncated"
+            err = "Output exceeds %s bytes and has been truncated" % MAX
             break
 
     return (code, out, err)
