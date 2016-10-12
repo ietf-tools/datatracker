@@ -334,12 +334,13 @@ def document_main(request, name, rev=None):
 
         if (doc.get_state_slug() not in ["rfc", "expired"] and doc.stream_id in ("iab", "ise", "irtf")
             and can_edit_stream_info and not snapshot):
-            label = "Request Publication"
-            if not doc.intended_std_level:
-                label += " (note that intended status is not set)"
-            if iesg_state and iesg_state.slug != 'dead':
-                label += " (Warning: the IESG state indicates ongoing IESG processing)"
-            actions.append((label, urlreverse('doc_request_publication', kwargs=dict(name=doc.name))))
+            if doc.get_state_slug('draft-stream-%s' % doc.stream_id) not in ('rfc-edit', 'pub', 'dead'):
+                label = "Request Publication"
+                if not doc.intended_std_level:
+                    label += " (note that intended status is not set)"
+                if iesg_state and iesg_state.slug != 'dead':
+                    label += " (Warning: the IESG state indicates ongoing IESG processing)"
+                actions.append((label, urlreverse('doc_request_publication', kwargs=dict(name=doc.name))))
 
         if doc.get_state_slug() not in ["rfc", "expired"] and doc.stream_id in ("ietf",) and not snapshot:
             if not iesg_state and can_edit:

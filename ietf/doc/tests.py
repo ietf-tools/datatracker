@@ -804,6 +804,11 @@ class DocTestCase(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertTrue("Request publication" in unicontent(r))
 
+        doc.states.add(State.objects.get(type_id='draft-stream-iab',slug='rfc-edit'))
+        r = self.client.get(urlreverse("doc_view", kwargs=dict(name=doc.name)))
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue("Request publication" not in unicontent(r))
+
 
 class AddCommentTestCase(TestCase):
     def test_add_comment(self):
