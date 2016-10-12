@@ -91,9 +91,9 @@
   </td>
 
   {% if ad_name == None or ad_name != doc.ad.plain_name %}
-    <td class="ad">
+    <td class="area-director">
       {% if doc.ad %}
-        <a title="AD" href="mailto:{{ doc.ad.email_address|urlencode }}">{{ doc.ad }}</a><br>
+        <a title="Area Director" href="mailto:{{ doc.ad.email_address|urlencode }}">{{ doc.ad }}</a><br>
       {% endif %}
       {% if doc.shepherd %}<a title="Shepherd" href="mailto:{{doc.shepherd}}"><small class="text-muted">{{doc.shepherd.person.name}}</small></a>{% endif %}
     </td>
