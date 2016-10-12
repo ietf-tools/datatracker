@@ -775,7 +775,7 @@ class SchedTimeSessAssignment(models.Model):
 
     @property
     def room_name(self):
-        return self.timeslot.location.name
+        return self.timeslot.location.name if self.timeslot and self.timeslot.location else None
 
     @property
     def acronym(self):
