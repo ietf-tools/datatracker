@@ -944,7 +944,7 @@ def json_agenda(request, num=None ):
         if asgn.session.slides():
             sessdict['slides'] = []
             for slides in asgn.session.slides():
-                sessdict['slides'].append('/api/v1/doc/document/%s'%slides.name)
+                sessdict['slides'].append('/api/v1/doc/document/%s/'%slides.name)
         modified = asgn.session.modified
         for doc in asgn.session.materials.all():
             rev_docevent = doc.latest_event(NewRevisionDocEvent,'new_revision')
