@@ -5,7 +5,7 @@
     {% for n, positions in position_groups %}
       <h4><span class="label label-{{ n|pos_to_label }}"> {{ n.name }}</span></h4>
       {% for p in positions|dictsort:"ad.last_name" %}
-        <div class="adname">
+        <div class="areadirector-name">
           {% if p.old_ad %}<span class="text-muted">({% endif %}{% if p.comment or p.discuss %}<a href="#{{ p.ad.plain_name|slugify }}">{% endif %}{{ p.ad.plain_name }}{% if p.comment or p.discuss %}</a>{% endif %}{% if p.old_ad %})</span>{% endif %}
         </div>
       {% empty %}
