@@ -163,7 +163,7 @@ def agenda_create(request, num=None, owner=None, name=None):
     try:
         sched = meeting.schedule_set.get(name=savedname, owner=request.user.person)
         if sched:
-            return redirect(edit_agenda, meeting.number, sched.name)
+            return redirect(edit_agenda, num=meeting.number, owner=sched.owner_email(), name=sched.name)
         else:
             messages.info(request, "Agenda creation failed. Please try again.")
             return redirect(edit_agenda, num=num, owner=owner, name=name)
