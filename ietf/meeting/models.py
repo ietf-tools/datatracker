@@ -632,11 +632,13 @@ class Schedule(models.Model):
 #         return self.url_edit("")
 
     def owner_email(self):
-        emails = self.owner.email_set.all()
-        if len(emails)>0:
-            return emails[0].address
-        else:
-            return "noemail"
+        if not hasattr(self, '_cached_owner_email'):
+            email = self.owner.email_set.all().order_by('primary').first()
+            if email:
+                self._cached_owner_email = email.address
+            else:
+                self._cached_owner_email = "noemail"
+        return self._cached_owner_email
 
     @property
     def visible_token(self):
@@ -822,33 +824,38 @@ class SchedTimeSessAssignment(models.Model):
             return ""
 
     def json_url(self):
-        return "/meeting/%s/agenda/%s/%s/session/%u.json" % (self.schedule.meeting.number,
-                                                             self.schedule.owner_email(),
-                                                             self.schedule.name, self.id)
+        if not hasattr(self, '_cached_json_url'):
+            self._cached_json_url =  "/meeting/%s/agenda/%s/%s/session/%u.json" % (
+                                        self.schedule.meeting.number,
+                                        self.schedule.owner_email(),
+                                        self.schedule.name, self.id )
+        return self._cached_json_url
 
     def json_dict(self, host_scheme):
-        ss = dict()
-        ss['assignment_id'] = self.id
-        ss['href']          = urljoin(host_scheme, self.json_url())
-        ss['timeslot_id'] = self.timeslot.id
+        if not hasattr(self, '_cached_json_dict'):
+            ss = dict()
+            ss['assignment_id'] = self.id
+            ss['href']          = urljoin(host_scheme, self.json_url())
+            ss['timeslot_id'] = self.timeslot.id
 
-        efset = self.session.timeslotassignments.filter(schedule=self.schedule).order_by("timeslot__time")
-        if efset.count() > 1:
-            # now we know that there is some work to do finding the extendedfrom_id.
-            # loop through the list of items
-            previous = None
-            for efss in efset:
-                if efss.pk == self.pk:
-                    extendedfrom = previous
-                    break
-                previous = efss
-            if extendedfrom is not None:
-                ss['extendedfrom_id']  = extendedfrom.id
+            efset = self.session.timeslotassignments.filter(schedule=self.schedule).order_by("timeslot__time")
+            if efset.count() > 1:
+                # now we know that there is some work to do finding the extendedfrom_id.
+                # loop through the list of items
+                previous = None
+                for efss in efset:
+                    if efss.pk == self.pk:
+                        extendedfrom = previous
+                        break
+                    previous = efss
+                if extendedfrom is not None:
+                    ss['extendedfrom_id']  = extendedfrom.id
 
-        if self.session:
-            ss['session_id']  = self.session.id
-        ss["pinned"]   = self.pinned
-        return ss
+            if self.session:
+                ss['session_id']  = self.session.id
+            ss["pinned"]   = self.pinned
+            self._cached_json_dict = ss
+        return self._cached_json_dict
 
     def slug(self):
         """Return sensible id string for session, e.g. suitable for use as HTML anchor."""
