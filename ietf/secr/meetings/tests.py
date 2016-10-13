@@ -85,8 +85,6 @@ class SecrMeetingTestCase(TestCase):
         response = self.client.post(url, post_data, follow=True)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(Meeting.objects.count(),count + 1)
-        meeting = Meeting.objects.order_by('id').last()
-        self.assertEqual(meeting.overview.path,'/meeting/proceedings/%s/overview.rst' % meeting.number)
 
     def test_edit_meeting(self):
         "Edit Meeting"

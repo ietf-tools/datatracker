@@ -10,7 +10,6 @@ import debug           # pyflakes:ignore
 from django.core.urlresolvers import reverse as urlreverse
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.http import HttpRequest
 
 from mock import patch
 from pyquery import PyQuery
@@ -268,42 +267,21 @@ class MeetingTests(TestCase):
         self.assertEqual(r.status_code, 200)
 
     def test_proceedings_acknowledgements(self):
-        meeting = make_meeting_test_data()
+        make_meeting_test_data()
+        meeting = MeetingFactory(type_id='ietf', date=datetime.date(2016,7,14), number="96")
+        meeting.acknowledgements = 'test acknowledgements'
+        meeting.save()
         url = urlreverse('ietf.meeting.views.proceedings_acknowledgements',kwargs={'num':meeting.number})
-        login_testing_unauthorized(self,"secretary",url)
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue('test acknowledgements' in response.content)
 
     @patch('urllib2.urlopen')
     def test_proceedings_attendees(self, mock_urlopen):
         mock_urlopen.return_value = StringIO('[{"LastName":"Smith","FirstName":"John","Company":"ABC","Country":"US"}]')
         make_meeting_test_data()
-        
-        # add recent meeting
-        date = datetime.date(2016,4,3)
-        Meeting.objects.create(type_id='ietf',date=date,number=95)
-        url = urlreverse('ietf.secr.meetings.views.add')
-        post_data = dict(number='96',city='Berlin',date='2016-07-14',country='DE',
-                         time_zone='Europe/Berlin',venue_name='Intercontinental Berlin',
-                         venue_addr='',
-                         idsubmit_cutoff_day_offset_00=13,
-                         idsubmit_cutoff_day_offset_01=20,
-                         idsubmit_cutoff_time_utc     =datetime.timedelta(hours=23, minutes=59, seconds=59),
-                         idsubmit_cutoff_warning_days =datetime.timedelta(days=21),
-                         submission_start_day_offset=90,
-                         submission_cutoff_day_offset=26,
-                         submission_correction_day_offset=50,
-                     )
-        self.client.login(username='secretary', password='secretary+password')
-        response = self.client.post(url, post_data)
-        self.assertRedirects(response,urlreverse('ietf.secr.meetings.views.main'))
-        self.assertTrue(Meeting.objects.filter(number=96).exists())
-        meeting = Meeting.objects.get(number=96)
-        
-        # finalize the meeting proceedings
-        finalize(HttpRequest(),meeting)
-
-        # check attendees
+        meeting = MeetingFactory(type_id='ietf', date=datetime.date(2016,7,14), number="96")
+        finalize(meeting)
         url = urlreverse('ietf.meeting.views.proceedings_attendees',kwargs={'num':96})
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
@@ -311,60 +289,23 @@ class MeetingTests(TestCase):
         q = PyQuery(response.content)
         self.assertEqual(1,len(q("#id_attendees tbody tr")))
 
-
     def test_proceedings_overview(self):
         '''Test proceedings IETF Overview page.
         Note: old meetings aren't supported so need to add a new meeting then test.
         '''
         make_meeting_test_data()
-        # add meeting requires a previous meeting to work
-        date = datetime.date(2016,7,14)
-        Meeting.objects.create(type_id='ietf',date=date,number=96)
-        url = urlreverse('ietf.secr.meetings.views.add')
-        post_data = dict(number='97',city='Seoul',date='2016-11-13',country='KR',
-                         time_zone='Asia/Seoul',venue_name='Conrad Seoul',
-                         venue_addr='10 Gukjegeumyung-ro',
-                         idsubmit_cutoff_day_offset_00=13,
-                         idsubmit_cutoff_day_offset_01=20,
-                         idsubmit_cutoff_time_utc     =datetime.timedelta(hours=23, minutes=59, seconds=59),
-                         idsubmit_cutoff_warning_days =datetime.timedelta(days=21),
-                         submission_start_day_offset=90,
-                         submission_cutoff_day_offset=26,
-                         submission_correction_day_offset=50,
-                     )
-        self.client.login(username='secretary', password='secretary+password')
-        
-        response = self.client.post(url, post_data)
-        self.assertRedirects(response,urlreverse('ietf.secr.meetings.views.main'))
-        url = urlreverse('ietf.meeting.views.proceedings_overview',kwargs={'num':97})
+        meeting = MeetingFactory(type_id='ietf', date=datetime.date(2016,7,14), number="96")
+        finalize(meeting)
+        url = urlreverse('ietf.meeting.views.proceedings_overview',kwargs={'num':96})
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         self.assertTrue('The Internet Engineering Task Force' in response.content)
 
     def test_proceedings_progress_report(self):
         make_meeting_test_data()
-        
-        # add recent meeting
-        date = datetime.date(2016,4,3)
-        Meeting.objects.create(type_id='ietf',date=date,number=95)
-        url = urlreverse('ietf.secr.meetings.views.add')
-        post_data = dict(number='96',city='Berlin',date='2016-07-14',country='DE',
-                         time_zone='Europe/Berlin',venue_name='Intercontinental Berlin',
-                         venue_addr='',
-                         idsubmit_cutoff_day_offset_00=13,
-                         idsubmit_cutoff_day_offset_01=20,
-                         idsubmit_cutoff_time_utc     =datetime.timedelta(hours=23, minutes=59, seconds=59),
-                         idsubmit_cutoff_warning_days =datetime.timedelta(days=21),
-                         submission_start_day_offset=90,
-                         submission_cutoff_day_offset=26,
-                         submission_correction_day_offset=50,
-                     )
-        self.client.login(username='secretary', password='secretary+password')
-        response = self.client.post(url, post_data)
-        self.assertRedirects(response,urlreverse('ietf.secr.meetings.views.main'))
-        self.assertTrue(Meeting.objects.filter(number=96).exists())
+        MeetingFactory(type_id='ietf', date=datetime.date(2016,4,3), number="95")
+        MeetingFactory(type_id='ietf', date=datetime.date(2016,7,14), number="96")
 
-        # check progress report
         url = urlreverse('ietf.meeting.views.proceedings_progress_report',kwargs={'num':96})
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
