@@ -118,7 +118,10 @@ def reviewer_overview(request, acronym, group_type=None):
         person.settings_url = None
         person.role = reviewer_roles.get(person.pk)
         if person.role and (can_manage or user_is_person(request.user, person)):
-            person.settings_url = urlreverse("ietf.group.views_review.change_reviewer_settings", kwargs={ "group_type": group_type, "acronym": group.acronym, "reviewer_email": person.role.email.address })
+            kwargs = { "acronym": group.acronym, "reviewer_email": person.role.email.address }
+            if group_type:
+                kwargs["group_type"] = group_type
+            person.settings_url = urlreverse("ietf.group.views_review.change_reviewer_settings", kwargs=kwargs)
         person.unavailable_periods = unavailable_periods.get(person.pk, [])
         person.completely_unavailable = any(p.availability == "unavailable"
                                        and p.start_date <= today and (p.end_date is None or today <= p.end_date)
@@ -411,7 +414,10 @@ def change_reviewer_settings(request, acronym, reviewer_email, group_type=None):
     back_url = request.GET.get("next")
     if not back_url:
         import ietf.group.views_review
-        back_url = urlreverse(ietf.group.views_review.reviewer_overview, kwargs={ "group_type": group.type_id, "acronym": group.acronym})
+        kwargs = { "acronym": group.acronym}
+        if group_type:
+            kwargs["group_type"] = group_type
+        back_url = urlreverse(ietf.group.views_review.reviewer_overview, kwargs=kwargs)
 
     # settings
     if request.method == "POST" and request.POST.get("action") == "change_settings":
