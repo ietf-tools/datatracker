@@ -85,8 +85,8 @@ class ResultUsedInReviewTeam(models.Model):
         return u"{} in {}".format(self.result.name, self.team.acronym)
 
     class Meta:
-        verbose_name = "review result used in review team setting"
-        verbose_name_plural = "review result used in review team settings"
+        verbose_name = "review result used in team setting"
+        verbose_name_plural = "review result used in team settings"
     
 class TypeUsedInReviewTeam(models.Model):
     """Captures that a type name is valid for a given team for new
@@ -98,8 +98,8 @@ class TypeUsedInReviewTeam(models.Model):
         return u"{} in {}".format(self.type.name, self.team.acronym)
 
     class Meta:
-        verbose_name = "review type used in review team setting"
-        verbose_name_plural = "review type used in review team settings"
+        verbose_name = "review type used in team setting"
+        verbose_name_plural = "review type used in team settings"
 
 class NextReviewerInTeam(models.Model):
     team        = models.ForeignKey(Group, limit_choices_to=~models.Q(resultusedinreviewteam=None))
