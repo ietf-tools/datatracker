@@ -11,7 +11,7 @@ class ReviewerSettings(models.Model):
     """Keeps track of admin data associated with the reviewer in the
     particular team. There will be one record for each combination of
     reviewer and team."""
-    team        = models.ForeignKey(Group)
+    team        = models.ForeignKey(Group, limit_choices_to=~models.Q(resultusedinreviewteam=None))
     person      = models.ForeignKey(Person)
     INTERVALS = [
         (7, "Once per week"),
@@ -28,8 +28,11 @@ class ReviewerSettings(models.Model):
     def __unicode__(self):
         return u"{} in {}".format(self.person, self.team)
 
+    class Meta:
+        verbose_name_plural = "reviewer settings"
+
 class UnavailablePeriod(models.Model):
-    team         = models.ForeignKey(Group)
+    team         = models.ForeignKey(Group, limit_choices_to=~models.Q(resultusedinreviewteam=None))
     person       = models.ForeignKey(Person)
     start_date   = models.DateField(default=datetime.date.today, help_text="Choose the start date so that you can still do a review if it's assigned just before the start date - this usually means you should mark yourself unavailable for assignment some time before you are actually away.")
     end_date     = models.DateField(blank=True, null=True, help_text="Leaving the end date blank means that the period continues indefinitely. You can end it later.")
@@ -60,39 +63,54 @@ class UnavailablePeriod(models.Model):
 class ReviewWish(models.Model):
     """Reviewer wishes to review a document when it becomes available for review."""
     time        = models.DateTimeField(default=datetime.datetime.now)
-    team        = models.ForeignKey(Group)
+    team        = models.ForeignKey(Group, limit_choices_to=~models.Q(resultusedinreviewteam=None))
     person      = models.ForeignKey(Person)
     doc         = models.ForeignKey(Document)
 
     def __unicode__(self):
         return u"{} wishes to review {} in {}".format(self.person, self.doc.name, self.team.acronym)
+
+    class Meta:
+        verbose_name_plural = "review wishes"
     
 class ResultUsedInReviewTeam(models.Model):
     """Captures that a result name is valid for a given team for new
     reviews. This also implicitly defines which teams are review
     teams - if there are no possible review results valid for a given
     team, it can't be a review team."""
-    team        = models.ForeignKey(Group)
+    team        = models.ForeignKey(Group, limit_choices_to=~models.Q(resultusedinreviewteam=None))
     result      = models.ForeignKey(ReviewResultName)
 
     def __unicode__(self):
         return u"{} in {}".format(self.result.name, self.team.acronym)
 
+    class Meta:
+        verbose_name = "review result used in review team setting"
+        verbose_name_plural = "review result used in review team settings"
+    
 class TypeUsedInReviewTeam(models.Model):
     """Captures that a type name is valid for a given team for new
     reviews. """
-    team        = models.ForeignKey(Group)
+    team        = models.ForeignKey(Group, limit_choices_to=~models.Q(resultusedinreviewteam=None))
     type        = models.ForeignKey(ReviewTypeName)
 
     def __unicode__(self):
         return u"{} in {}".format(self.type.name, self.team.acronym)
 
+    class Meta:
+        verbose_name = "review type used in review team setting"
+        verbose_name_plural = "review type used in review team settings"
+
 class NextReviewerInTeam(models.Model):
-    team        = models.ForeignKey(Group)
+    team        = models.ForeignKey(Group, limit_choices_to=~models.Q(resultusedinreviewteam=None))
     next_reviewer = models.ForeignKey(Person)
 
     def __unicode__(self):
         return u"{} next in {}".format(self.next_reviewer, self.team)
+
+    class Meta:
+        verbose_name = "next reviewer in team setting"
+        verbose_name_plural = "next reviewer in team settings"
 
 class ReviewRequest(models.Model):
     """Represents a request for a review and the process it goes through.
