@@ -23,6 +23,8 @@ class Migration(migrations.Migration):
                 ('team', models.ForeignKey(to='group.Group')),
             ],
             options={
+                'verbose_name': 'next reviewer in team setting',
+                'verbose_name_plural': 'next reviewer in team settings',
             },
             bases=(models.Model,),
         ),
@@ -34,6 +36,8 @@ class Migration(migrations.Migration):
                 ('team', models.ForeignKey(to='group.Group')),
             ],
             options={
+                'verbose_name': 'review result used in team setting',
+                'verbose_name_plural': 'review result used in team settings',
             },
             bases=(models.Model,),
         ),
@@ -44,11 +48,12 @@ class Migration(migrations.Migration):
                 ('min_interval', models.IntegerField(default=30, verbose_name=b'Can review at most', choices=[(7, b'Once per week'), (14, b'Once per fortnight'), (30, b'Once per month'), (61, b'Once per two months'), (91, b'Once per quarter')])),
                 ('filter_re', models.CharField(help_text=b'Draft names matching regular expression should not be assigned', max_length=255, verbose_name=b'Filter regexp', blank=True)),
                 ('skip_next', models.IntegerField(default=0, verbose_name=b'Skip next assignments')),
-                ('remind_days_before_deadline', models.IntegerField(null=True, blank=True)),
+                ('remind_days_before_deadline', models.IntegerField(help_text=b"To get an email reminder in case you forget to do an assigned review, enter the number of days before a review deadline you want to receive it. Clear the field if you don't want a reminder.", null=True, blank=True)),
                 ('person', models.ForeignKey(to='person.Person')),
                 ('team', models.ForeignKey(to='group.Group')),
             ],
             options={
+                'verbose_name_plural': 'reviewer settings',
             },
             bases=(models.Model,),
         ),
@@ -84,6 +89,7 @@ class Migration(migrations.Migration):
                 ('team', models.ForeignKey(to='group.Group')),
             ],
             options={
+                'verbose_name_plural': 'review wishes',
             },
             bases=(models.Model,),
         ),
@@ -95,6 +101,8 @@ class Migration(migrations.Migration):
                 ('type', models.ForeignKey(to='name.ReviewTypeName')),
             ],
             options={
+                'verbose_name': 'review type used in team setting',
+                'verbose_name_plural': 'review type used in team settings',
             },
             bases=(models.Model,),
         ),
