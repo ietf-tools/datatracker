@@ -93,6 +93,13 @@ with db_con.cursor() as c:
             if created:
                 print "created email", email
 
+        if "@" in email.person.name and row.name:
+            old_name = email.person.name
+            email.person.name = row.name
+            email.person.ascii = row.name
+            email.person.save()
+            print "fixed name of", email, old_name, "->", row.name
+
         known_personnel[row.login] = email
 
         if "secretary" in row.permissions:
