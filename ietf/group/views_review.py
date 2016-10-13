@@ -1,4 +1,4 @@
-import datetime, math
+import datetime, math, itertools
 from collections import defaultdict
 
 from django.shortcuts import render, redirect, get_object_or_404
@@ -105,7 +105,12 @@ def reviewer_overview(request, acronym, group_type=None):
 
     today = datetime.date.today()
 
-    all_req_data = extract_review_request_data(teams=[group], time_from=today - datetime.timedelta(days=365))
+    extracted_data = extract_review_request_data(teams=[group], time_from=today - datetime.timedelta(days=365), ordering=["reviewer"])
+    req_data_for_reviewer = {}
+    for reviewer, req_data_items in itertools.groupby(extracted_data, key=lambda data: data.reviewer):
+        l = list(req_data_items)
+        l.reverse()
+        req_data_for_reviewer[reviewer] = l
     review_state_by_slug = { n.slug: n for n in ReviewRequestStateName.objects.all() }
 
     for person in reviewers:
@@ -120,15 +125,15 @@ def reviewer_overview(request, acronym, group_type=None):
                                        for p in person.unavailable_periods)
 
         MAX_REQS = 5
-        req_data = all_req_data.get((group.pk, person.pk), [])
-        open_reqs = sum(1 for _, _, _, _, state, _, _, _, _, _ in req_data if state in ("requested", "accepted"))
+        req_data = req_data_for_reviewer.get(person.pk, [])
+        open_reqs = sum(1 for d in req_data if d.state in ("requested", "accepted"))
         latest_reqs = []
-        for req_pk, doc, req_time, state, deadline, result, late_days, request_to_assignment_days, assignment_to_closure_days, request_to_closure_days in req_data:
+        for d in req_data:
             # any open requests pushes the others out
-            if ((state in ("requested", "accepted") and len(latest_reqs) < MAX_REQS) or (len(latest_reqs) + open_reqs < MAX_REQS)):
-                if assignment_to_closure_days is not None:
-                    assignment_to_closure_days = int(math.ceil(assignment_to_closure_days))
-                latest_reqs.append((req_pk, doc, deadline, review_state_by_slug.get(state), assignment_to_closure_days))
+            if ((d.state in ("requested", "accepted") and len(latest_reqs) < MAX_REQS) or (len(latest_reqs) + open_reqs < MAX_REQS)):
+                latest_reqs.append((d.req_pk, d.doc, d.deadline,
+                                    review_state_by_slug.get(d.state),
+                                    int(math.ceil(d.assignment_to_closure_days)) if d.assignment_to_closure_days is not None else None))
         person.latest_reqs = latest_reqs
 
     return render(request, 'group/reviewer_overview.html',

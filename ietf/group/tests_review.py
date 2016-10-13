@@ -23,9 +23,8 @@ class ReviewTests(TestCase):
 
         group = review_req.team
 
-        for url in [ urlreverse(ietf.group.views_review.review_requests, kwargs={ 'acronym': group.acronym }),
-                     urlreverse(ietf.group.views_review.review_requests, kwargs={ 'acronym': group.acronym , 'group_type': group.type_id}),
-                   ]:
+        for url in [urlreverse(ietf.group.views_review.review_requests, kwargs={ 'acronym': group.acronym }),
+                    urlreverse(ietf.group.views_review.review_requests, kwargs={ 'acronym': group.acronym , 'group_type': group.type_id})]:
             r = self.client.get(url)
             self.assertEqual(r.status_code, 200)
             self.assertTrue(review_req.doc.name in unicontent(r))
@@ -131,13 +130,13 @@ class ReviewTests(TestCase):
 
         group = review_req1.team
 
-        url = urlreverse(ietf.group.views_review.reviewer_overview, kwargs={ 'acronym': group.acronym, 'group_type': group.type_id })
-
         # get
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        self.assertTrue(unicode(reviewer) in unicontent(r))
-        self.assertTrue(review_req1.doc.name in unicontent(r))
+        for url in [urlreverse(ietf.group.views_review.reviewer_overview, kwargs={ 'acronym': group.acronym }),
+                    urlreverse(ietf.group.views_review.reviewer_overview, kwargs={ 'acronym': group.acronym, 'group_type': group.type_id })]:
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            self.assertTrue(unicode(reviewer) in unicontent(r))
+            self.assertTrue(review_req1.doc.name in unicontent(r))
 
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(url)
@@ -149,9 +148,11 @@ class ReviewTests(TestCase):
 
         group = review_req1.team
 
-        url = urlreverse(ietf.group.views_review.manage_review_requests, kwargs={ 'acronym': group.acronym, 'group_type': group.type_id })
+        url = urlreverse(ietf.group.views_review.manage_review_requests, kwargs={ 'acronym': group.acronym })
 
         login_testing_unauthorized(self, "secretary", url)
+
+        url = urlreverse(ietf.group.views_review.manage_review_requests, kwargs={ 'acronym': group.acronym, 'group_type': group.type_id })
 
         review_req2 = ReviewRequest.objects.create(
             doc=review_req1.doc,
@@ -265,9 +266,11 @@ class ReviewTests(TestCase):
 
         group = review_req1.team
 
-        url = urlreverse(ietf.group.views_review.email_open_review_assignments, kwargs={ 'acronym': group.acronym, 'group_type': group.type_id })
-        
+        url = urlreverse(ietf.group.views_review.email_open_review_assignments, kwargs={ 'acronym': group.acronym })
+
         login_testing_unauthorized(self, "secretary", url)
+
+        url = urlreverse(ietf.group.views_review.email_open_review_assignments, kwargs={ 'acronym': group.acronym, 'group_type': group.type_id })
 
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
@@ -299,12 +302,17 @@ class ReviewTests(TestCase):
         review_req.save()
         
         url = urlreverse(ietf.group.views_review.change_reviewer_settings, kwargs={
-            "group_type": review_req.team.type_id,
             "acronym": review_req.team.acronym,
             "reviewer_email": review_req.reviewer_id,
         })
 
         login_testing_unauthorized(self, reviewer.user.username, url)
+
+        url = urlreverse(ietf.group.views_review.change_reviewer_settings, kwargs={
+            "group_type": review_req.team.type_id,
+            "acronym": review_req.team.acronym,
+            "reviewer_email": review_req.reviewer_id,
+        })
 
         # get
         r = self.client.get(url)

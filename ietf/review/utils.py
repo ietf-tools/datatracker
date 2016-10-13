@@ -1,5 +1,5 @@
 import datetime, re, itertools
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 
 from django.db.models import Q, Max, F
 from django.core.urlresolvers import reverse as urlreverse
@@ -142,8 +142,15 @@ def days_needed_to_fulfill_min_interval_for_reviewers(team):
 
     return res
 
-def extract_review_request_data(teams=None, reviewers=None, time_from=None, time_to=None):
-    """Returns a dict keyed on (team.pk, reviewer_person.pk) which lists data on each review request."""
+ReviewRequestData = namedtuple("ReviewRequestData", [
+    "req_pk", "doc", "doc_pages", "req_time", "state", "deadline", "result", "team", "reviewer",
+    "late_days",
+    "request_to_assignment_days", "assignment_to_closure_days", "request_to_closure_days"])
+
+
+def extract_review_request_data(teams=None, reviewers=None, time_from=None, time_to=None, ordering=[]):
+    """Yield data on each review request, sorted by (*ordering, time)
+    for easy use with itertools.groupby. Valid entries in *ordering are "team" and "reviewer"."""
 
     filters = Q()
 
@@ -159,13 +166,16 @@ def extract_review_request_data(teams=None, reviewers=None, time_from=None, time
     if time_to:
         filters &= Q(time__lte=time_to)
 
-    res = defaultdict(list)
-
     # we may be dealing with a big bunch of data, so treat it carefully
     event_qs = ReviewRequest.objects.filter(filters)
 
     # left outer join with RequestRequestDocEvent for request/assign/close time
-    event_qs = event_qs.values_list("pk", "doc", "time", "state", "deadline", "result", "team", "reviewer__person", "reviewrequestdocevent__time", "reviewrequestdocevent__type").order_by("-time", "-pk", "-reviewrequestdocevent__time")
+    event_qs = event_qs.values_list(
+        "pk", "doc", "doc__pages", "time", "state", "deadline", "result", "team",
+        "reviewer__person", "reviewrequestdocevent__time", "reviewrequestdocevent__type"
+    )
+
+    event_qs = event_qs.order_by(*[o.replace("reviewer", "reviewer__person") for o in ordering] + ["time", "pk", "-reviewrequestdocevent__time"])
 
     def positive_days(time_from, time_to):
         if time_from is None or time_to is None:
@@ -182,7 +192,7 @@ def extract_review_request_data(teams=None, reviewers=None, time_from=None, time
         requested_time = assigned_time = closed_time = None
 
         for e in events:
-            req_pk, doc, req_time, state, deadline, result, team, reviewer, event_time, event_type = e
+            req_pk, doc, doc_pages, req_time, state, deadline, result, team, reviewer, event_time, event_type = e
 
             if event_type == "requested_review" and requested_time is None:
                 requested_time = event_time
@@ -196,11 +206,57 @@ def extract_review_request_data(teams=None, reviewers=None, time_from=None, time
         assignment_to_closure_days = positive_days(assigned_time, closed_time)
         request_to_closure_days = positive_days(requested_time, closed_time)
 
-        res[(team, reviewer)].append((req_pk, doc, req_time, state, deadline, result,
-                                      late_days, request_to_assignment_days, assignment_to_closure_days,
-                                      request_to_closure_days))
+        d = ReviewRequestData(req_pk, doc, doc_pages, req_time, state, deadline, result, team, reviewer,
+                              late_days, request_to_assignment_days, assignment_to_closure_days,
+                              request_to_closure_days)
+
+        yield d
+
+def aggregate_review_request_stats(review_request_data, count=None):
+    """Take a sequence of review request data from
+    extract_review_request_data and compute aggregated statistics."""
+
+    state_dict = defaultdict(int)
+    late_state_dict = defaultdict(int)
+    result_dict = defaultdict(int)
+    assignment_to_closure_days_list = []
+    assignment_to_closure_days_count = 0
+
+    for (req_pk, doc, doc_pages, req_time, state, deadline, result, team, reviewer,
+         late_days, request_to_assignment_days, assignment_to_closure_days, request_to_closure_days) in review_request_data:
+        if count == "pages":
+            c = doc_pages
+        else:
+            c = 1
+
+        state_dict[state] += c
+
+        if late_days is not None and late_days > 0:
+            late_state_dict[state] += c
+
+        if state in ("completed", "part-completed"):
+            result_dict[result] += c
+            if assignment_to_closure_days is not None:
+                assignment_to_closure_days_list.append(assignment_to_closure_days)
+                assignment_to_closure_days_count += c
+
+    res = {}
+    res["state"] = state_dict
+    res["result"] = result_dict
+
+    res["open"] = sum(state_dict.get(s, 0) for s in ("requested", "accepted"))
+    res["completed"] = sum(state_dict.get(s, 0) for s in ("completed", "part-completed"))
+    res["not_completed"] = sum(state_dict.get(s, 0) for s in state_dict if s in ("rejected", "withdrawn", "overtaken", "no-response"))
+
+    res["open_late"] = sum(late_state_dict.get(s, 0) for s in ("requested", "accepted"))
+    res["open_in_time"] = res["open"] - res["open_late"]
+    res["completed_late"] = sum(late_state_dict.get(s, 0) for s in ("completed", "part-completed"))
+    res["completed_in_time"] = res["completed"] - res["completed_late"]
+
+    res["average_assignment_to_closure_days"] = float(sum(assignment_to_closure_days_list)) / (assignment_to_closure_days_count or 1) if assignment_to_closure_days_list else None
 
     return res
+
 
 def make_new_review_request_from_existing(review_req):
     obj = ReviewRequest()
@@ -215,6 +271,7 @@ def make_new_review_request_from_existing(review_req):
     return obj
 
 def email_review_request_change(request, review_req, subject, msg, by, notify_secretary, notify_reviewer, notify_requested_by):
+
     """Notify stakeholders about change, skipping a party if the change
     was done by that party."""
 

@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% load origin %}{% origin %}
+
+{% load ietf_filters staticfiles bootstrap3 %}
+
+{% block content %}
+  {% origin %}
+
+  <h1>{% block title %}Statistics{% endblock %}</h1>
+
+  <p>Currently, there are statistics for:</p>
+
+  <ul>
+    <li><a rel="nofollow" href="{% url "ietf.stats.views.review_stats" %}">Reviews in review teams</a> (requires login)</li>
+  </ul>
+
+{% endblock %}

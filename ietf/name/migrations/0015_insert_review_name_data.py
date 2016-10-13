@@ -10,7 +10,7 @@ def insert_initial_review_data(apps, schema_editor):
     ReviewRequestStateName.objects.get_or_create(slug="accepted", name="Accepted", order=2)
     ReviewRequestStateName.objects.get_or_create(slug="rejected", name="Rejected", order=3)
     ReviewRequestStateName.objects.get_or_create(slug="withdrawn", name="Withdrawn", order=4)
-    ReviewRequestStateName.objects.get_or_create(slug="overtaken", name="Overtaken By Events", order=5)
+    ReviewRequestStateName.objects.get_or_create(slug="overtaken", name="Overtaken by Events", order=5)
     ReviewRequestStateName.objects.get_or_create(slug="no-response", name="No Response", order=6)
     ReviewRequestStateName.objects.get_or_create(slug="no-review-version", name="Team Will not Review Version", order=7)
     ReviewRequestStateName.objects.get_or_create(slug="no-review-document", name="Team Will not Review Document", order=8)
