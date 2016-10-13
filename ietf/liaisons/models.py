@@ -28,7 +28,7 @@ class LiaisonStatement(models.Model):
     from_groups = models.ManyToManyField(Group, blank=True, related_name='liaisonstatement_from_set')
     from_contact = models.ForeignKey(Email, blank=True, null=True)
     to_groups = models.ManyToManyField(Group, blank=True, related_name='liaisonstatement_to_set')
-    to_contacts = models.CharField(max_length=255, help_text="Contacts at recipient group")
+    to_contacts = models.CharField(max_length=2000, help_text="Contacts at recipient group")
 
     response_contacts = models.CharField(blank=True, max_length=255, help_text="Where to send a response") # RFC4053
     technical_contacts = models.CharField(blank=True, max_length=255, help_text="Who to contact for clarification") # RFC4053
