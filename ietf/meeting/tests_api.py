@@ -4,6 +4,8 @@ from urlparse import urlsplit
 
 from django.core.urlresolvers import reverse as urlreverse
 
+import debug                            # pyflakes:ignore
+
 from ietf.group.models import Group
 from ietf.meeting.models import Schedule, TimeSlot, Session, SchedTimeSessAssignment, Meeting, Constraint
 from ietf.meeting.test_data import make_meeting_test_data

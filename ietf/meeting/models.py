@@ -632,13 +632,11 @@ class Schedule(models.Model):
 #         return self.url_edit("")
 
     def owner_email(self):
-        if not hasattr(self, '_cached_owner_email'):
-            email = self.owner.email_set.all().order_by('primary').first()
-            if email:
-                self._cached_owner_email = email.address
-            else:
-                self._cached_owner_email = "noemail"
-        return self._cached_owner_email
+        email = self.owner.email_set.all().order_by('primary').first()
+        if email:
+            return email.address
+        else:
+            return "noemail"
 
     @property
     def visible_token(self):

@@ -470,7 +470,8 @@ def assignments_post(request, meeting, schedule):
 def assignments_get(request, num, schedule):
     assignments = schedule.assignments.all()
 
-    sess1_dict = [ x.json_dict(request.build_absolute_uri('/')) for x in assignments ]
+    absolute_url = request.build_absolute_uri('/')
+    sess1_dict = [ x.json_dict(absolute_url) for x in assignments ]
     return HttpResponse(json.dumps(sess1_dict, sort_keys=True, indent=2),
                         content_type="application/json")
 
