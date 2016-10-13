@@ -367,6 +367,9 @@ class CompleteReviewForm(forms.Form):
         return get_cleaned_text_file_content(self.cleaned_data["review_file"])
 
     def clean(self):
+        if "@" in self.review_req.reviewer.person.ascii:
+            raise forms.ValidationError("Reviewer name must be filled in (the ASCII version is currently \"{}\" - since it contains an @ sign the name is probably still the original email address).".format(self.review_req.reviewer.person.ascii))
+
         def require_field(f):
             if not self.cleaned_data.get(f):
                 self.add_error(f, ValidationError("You must fill in this field."))
