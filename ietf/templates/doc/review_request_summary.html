@@ -1,0 +1,12 @@
+<div class="review-request-summary">
+  {% if review_request.state_id == "completed" or review_request.state_id == "part-completed" %}
+    <a href="{% if review_request.review %}{% url "doc_view" review_request.review.name %}{% else %}{% url "ietf.doc.views_review.review_request" review_request.doc_id review_request.pk %}{% endif %}">
+      {{ review_request.team.acronym|upper }} {{ review_request.type.name }} Review{% if review_request.reviewed_rev and review_request.reviewed_rev != current_rev or review_request.doc_id != current_doc_name %} (of {% if review_request.doc_id != current_doc_name %}{{ review_request.doc_id }}{% endif %}-{{ review_request.reviewed_rev }}){% endif %}{% if review_request.result %}:
+      {{ review_request.result.name }}{% endif %} {% if review_request.state_id == "part-completed" %}(partially completed){% endif %}
+    </a>
+  {% else %}
+    <i>
+    <a href="{% url "ietf.doc.views_review.review_request" review_request.doc_id review_request.pk %}">{{ review_request.team.acronym|upper }} {{ review_request.type.name }} Review
+      - due: {{ review_request.deadline|date:"Y-m-d" }}</a></i>
+  {% endif %}
+</div>

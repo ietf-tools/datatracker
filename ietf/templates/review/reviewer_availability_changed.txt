@@ -1,0 +1,8 @@
+{% autoescape off %}{% filter wordwrap:72 %}
+Reviewer availability of {{ reviewer }} in {{ team.acronym }} changed by {{ by }}.
+
+{{ msg }}
+
+{{ reviewer_overview_url }}
+
+{% endfilter %}{% endautoescape %}

@@ -5,5 +5,7 @@
 {% endif %}    Token: {{ doc.ad }}{% if doc.iana_review_state %}
     IANA Review: {{ doc.iana_review_state }}{% endif %}{% if doc.consensus %}
     Consensus: {{ doc.consensus }}{% endif %}{% if doc.lastcall_expires %}
-    Last call expires: {{ doc.lastcall_expires|date:"Y-m-d" }}{% endif %}
+    Last call expires: {{ doc.lastcall_expires|date:"Y-m-d" }}{% endif %}{% if doc.review_requests %}
+    Reviews: {% for review_request in doc.review_requests %}{% with current_doc_name=doc.name current_rev=doc.rev %}{% if not forloop.first %}             {% endif %}{{ review_request.team.acronym|upper }} {{ review_request.type.name }} Review{% if review_request.state_id == "completed" or review_request.state_id == "part-completed" %}{% if review_request.reviewed_rev and review_request.reviewed_rev != current_rev or review_request.doc_id != current_doc_name %} (of {% if review_request.doc_id != current_doc_name %}{{ review_request.doc_id }}{% endif %}-{{ review_request.reviewed_rev }}){% endif %}{% if review_request.result %}: {{ review_request.result.name }}{% endif %} {% if review_request.state_id == "part-completed" %}(partially completed){% endif %}{% else %} - due: {{ review_request.deadline|date:"Y-m-d" }}{% endif %}{% endwith %}
+{% endfor %}{% endif %}
 {% with doc.active_defer_event as defer %}{% if defer %}    Was deferred by {{defer.by}} on {{defer.time|date:"Y-m-d"}}{% endif %}{% endwith %}

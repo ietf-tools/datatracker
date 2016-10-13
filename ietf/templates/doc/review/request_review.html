@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2016, All Rights Reserved #}
+{% load origin bootstrap3 static %}
+
+{% block pagehead %}
+  <link rel="stylesheet" href="{% static 'select2/select2.css' %}">
+  <link rel="stylesheet" href="{% static 'select2-bootstrap-css/select2-bootstrap.min.css' %}">
+  <link rel="stylesheet" href="{% static 'bootstrap-datepicker/css/bootstrap-datepicker3.min.css' %}">
+{% endblock %}
+
+{% block title %}Request review of {{ doc.name }} {% endblock %}
+
+{% block content %}
+  {% origin %}
+  <h1>Request review<br><small>{{ doc.name }}</small></h1>
+
+  <p>Submit a request to have the document reviewed.</p>
+
+  <p>
+    <div>Current revision of the document: <strong>{{ doc.rev }}</strong>.</div>
+
+    {% if lc_ends %}
+      <div>Last Call ends: <strong>{{ lc_ends|date:"Y-m-d" }}</strong> (in {{ lc_ends_days }} day{{ lc_ends_days|pluralize }}).</div>
+    {% endif %}
+
+    {% if scheduled_for_telechat %}
+      <div>Scheduled for telechat: <strong>{{ scheduled_for_telechat|date:"Y-m-d" }}</strong> (in {{ scheduled_for_telechat_days }} day{{ scheduled_for_telechat_days|pluralize }}).</div>
+    {% endif %}
+  </p>
+
+  <form class="form-horizontal" method="post">
+    {% csrf_token %}
+    {% bootstrap_field form.requested_by layout="horizontal" %}
+    {% bootstrap_field form.type layout="horizontal" %}
+    {% bootstrap_field form.team layout="horizontal" %}
+    {% bootstrap_field form.deadline layout="horizontal" %}
+    {% bootstrap_field form.requested_rev layout="horizontal" %}
+
+    {% buttons %}
+      <button type="submit" class="btn btn-primary">Request review</button>
+      <a class="btn btn-default pull-right" href="{% url "doc_view" name=doc.canonical_name %}">Back</a>
+    {% endbuttons %}
+  </form>
+{% endblock %}
+
+{% block js %}
+  <script src="{% static 'bootstrap-datepicker/js/bootstrap-datepicker.min.js' %}"></script>
+  <script src="{% static 'select2/select2.min.js' %}"></script>
+  <script src="{% static 'ietf/js/select2-field.js' %}"></script>
+{% endblock %}

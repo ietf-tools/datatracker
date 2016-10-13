@@ -14,7 +14,7 @@
   <p>Resurrect {{ doc }}?</p>
 
   <p>
-    This will change the status to Active {% if doc.idinternal.resurrect_requested_by %} and email a notice to {{ doc.idinternal.resurrect_requested_by }}{% endif %}.
+    This will change the status to Active{% if resurrect_requested_by %} and email a notice to {{ resurrect_requested_by }}{% endif %}.
   </p>
 
   <form method="post">

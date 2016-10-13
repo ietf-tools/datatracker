@@ -49,18 +49,19 @@ from django.conf import settings
 from django.core.urlresolvers import reverse as urlreverse
 from django.views.decorators.cache import cache_page
 from django.db.models import Q
-from django.utils.safestring import mark_safe
 
-from ietf.doc.models import Document, State, DocAlias, RelatedDocument
+from ietf.doc.models import State, DocAlias, RelatedDocument
 from ietf.doc.utils import get_chartering_type
 from ietf.doc.templatetags.ietf_filters import clean_whitespace
 from ietf.doc.utils_search import prepare_document_table
 from ietf.doc.utils_charter import charter_name_for_group
 from ietf.group.models import Group, Role, ChangeStateGroupEvent
 from ietf.name.models import GroupTypeName
-from ietf.group.utils import get_charter_text, can_manage_group_type, can_manage_group, milestone_reviewer_for_group_type, can_provide_status_update
-from ietf.group.utils import can_manage_materials, get_group_or_404
-from ietf.community.utils import docs_tracked_by_community_list, can_manage_community_list
+from ietf.group.utils import (get_charter_text, can_manage_group_type, can_manage_group,
+                              milestone_reviewer_for_group_type, can_provide_status_update,
+                              can_manage_materials, get_group_or_404,
+                              construct_group_menu_context, get_group_materials)
+from ietf.community.utils import docs_tracked_by_community_list
 from ietf.community.models import CommunityList, EmailSubscription
 from ietf.utils.pipe import pipe
 from ietf.utils.textupload import get_cleaned_text_file_content
@@ -69,6 +70,7 @@ from ietf.mailtrigger.utils import gather_relevant_expansions
 from ietf.ietfauth.utils import has_role
 from ietf.meeting.utils import group_sessions
 from ietf.meeting.helpers import get_meeting
+
 
 def roles(group, role_name):
     return Role.objects.filter(group=group, name=role_name).select_related("email", "person")
@@ -326,79 +328,6 @@ def concluded_groups(request):
 
     return render(request, 'group/concluded_groups.html',
                   dict(sections=sections))
-
-def get_group_materials(group):
-#   return Document.objects.filter(group=group, type__in=group.features.material_types, session=None).exclude(states__slug="deleted")
-    return Document.objects.filter(group=group, type__in=group.features.material_types).exclude(states__slug__in=['deleted','archived'])
-
-def construct_group_menu_context(request, group, selected, group_type, others):
-    """Return context with info for the group menu filled in."""
-    kwargs = dict(acronym=group.acronym)
-    if group_type:
-        kwargs["group_type"] = group_type
-
-    # menu entries
-    entries = []
-    if group.features.has_documents:
-        entries.append(("Documents", urlreverse("ietf.group.views.group_documents", kwargs=kwargs)))
-    if group.features.has_chartering_process:
-        entries.append(("Charter", urlreverse("group_charter", kwargs=kwargs)))
-    else:
-        entries.append(("About", urlreverse("group_about", kwargs=kwargs)))
-    if group.features.has_materials and get_group_materials(group).exists():
-        entries.append(("Materials", urlreverse("ietf.group.views.materials", kwargs=kwargs)))
-    if group.type_id in ('rg','wg','team'):
-        entries.append(("Meetings", urlreverse("ietf.group.views.meetings", kwargs=kwargs)))
-    entries.append(("History", urlreverse("ietf.group.views.history", kwargs=kwargs)))
-    entries.append(("Photos", urlreverse("ietf.group.views.group_photos", kwargs=kwargs)))
-    entries.append(("Email expansions", urlreverse("ietf.group.views.email", kwargs=kwargs)))
-    if group.list_archive.startswith("http:") or group.list_archive.startswith("https:") or group.list_archive.startswith("ftp:"):
-        if 'mailarchive.ietf.org' in group.list_archive:
-            entries.append(("List archive", urlreverse("ietf.group.views.derived_archives", kwargs=kwargs)))
-        else:
-            entries.append((mark_safe("List archive &raquo;"), group.list_archive))
-    if group.has_tools_page():
-        entries.append((mark_safe("Tools &raquo;"), "https://tools.ietf.org/%s/%s/" % (group.type_id, group.acronym)))
-
-    # actions
-    actions = []
-
-    is_chair = group.has_role(request.user, "chair")
-    can_manage = can_manage_group(request.user, group)
-
-    if group.features.has_milestones:
-        if group.state_id != "proposed" and (is_chair or can_manage):
-            actions.append((u"Edit milestones", urlreverse("group_edit_milestones", kwargs=kwargs)))
-
-    if group.features.has_documents:
-        clist = CommunityList.objects.filter(group=group).first()
-        if clist and can_manage_community_list(request.user, clist):
-            import ietf.community.views
-            actions.append((u'Manage document list', urlreverse(ietf.community.views.manage_list, kwargs=kwargs)))
-
-    if group.features.has_materials and can_manage_materials(request.user, group):
-        actions.append((u"Upload material", urlreverse("ietf.doc.views_material.choose_material_type", kwargs=kwargs)))
-
-    if group.state_id != "conclude" and (is_chair or can_manage):
-        actions.append((u"Edit group", urlreverse("group_edit", kwargs=kwargs)))
-
-    if group.features.customize_workflow and (is_chair or can_manage):
-        actions.append((u"Customize workflow", urlreverse("ietf.group.views_edit.customize_workflow", kwargs=kwargs)))
-
-    if group.state_id in ("active", "dormant") and not group.type_id in ["sdo", "rfcedtyp", "isoc", ] and can_manage:
-        actions.append((u"Request closing group", urlreverse("ietf.group.views_edit.conclude", kwargs=kwargs)))
-
-    d = {
-        "group": group,
-        "selected_menu_entry": selected,
-        "menu_entries": entries,
-        "menu_actions": actions,
-        "group_type": group_type,
-        }
-
-    d.update(others)
-
-    return d
 
 def prepare_group_documents(request, group, clist):
     found_docs, meta = prepare_document_table(request, docs_tracked_by_community_list(clist), request.GET)
