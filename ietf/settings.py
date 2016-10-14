@@ -389,6 +389,7 @@ TEST_CODE_COVERAGE_EXCLUDE = [
     "*/admin.py",
     "*/migrations/*",
     "*/management/commands/*",
+    "review/import_from_review_tool.py",
     "ietf/settings*",
     "ietf/utils/test_runner.py",
     "ietf/checks.py",
