@@ -1244,7 +1244,7 @@ ZSBvZiBsaW5lcyAtIGJ1dCBpdCBjb3VsZCBiZSBhIGRyYWZ0Cg==
             self.assertEqual(len(q(selector)), 0)
 
         # Find the link for our submission in those awaiting drafts
-        submission_url = self.get_href(q, "#waiting-for-draft a#aw{}:contains({})".
+        submission_url = self.get_href(q, "#waiting-for-draft a#aw{}:contains('{}')".
                                        format(submission.pk, submission_name_fragment))
 
         # Follow the link to the status page for this submission
