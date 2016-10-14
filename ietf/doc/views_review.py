@@ -23,7 +23,7 @@ from ietf.review.utils import (active_review_teams, assign_review_request_to_rev
                                setup_reviewer_field)
 from ietf.review import mailarch
 from ietf.utils.fields import DatepickerDateField
-from ietf.utils.text import strip_prefix
+from ietf.utils.text import strip_prefix, xslugify
 from ietf.utils.textupload import get_cleaned_text_file_content
 from ietf.utils.mail import send_mail
 
@@ -410,7 +410,7 @@ def complete_review(request, name, request_id):
                     form.cleaned_data["reviewed_rev"],
                     review_req.team.acronym,
                     review_req.type.slug,
-                    review_req.reviewer.person.ascii_parts()[3],
+                    xslugify(review_req.reviewer.person.ascii_parts()[3]),
                     datetime.date.today().isoformat(),
                 ]
                 if i > 1:

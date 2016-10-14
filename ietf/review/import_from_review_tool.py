@@ -22,7 +22,7 @@ from ietf.review.models import (ReviewRequest, ReviewerSettings, ReviewResultNam
 from ietf.group.models import Group, Role, RoleName
 from ietf.person.models import Person, Email, Alias
 from ietf.doc.models import Document, DocAlias, ReviewRequestDocEvent, NewRevisionDocEvent, DocTypeName, State
-from ietf.utils.text import strip_prefix
+from ietf.utils.text import strip_prefix, xslugify
 import argparse
 from unidecode import unidecode
 
@@ -565,7 +565,7 @@ with db_con.cursor() as c:
                         review_req.reviewed_rev,
                         review_req.team.acronym,
                         review_req.type_id,
-                        review_req.reviewer.person.ascii_parts()[3],
+                        xslugify(unicode(review_req.reviewer.person.ascii_parts()[3])),
                         completion_time.date().isoformat(),
                     ]
                     if i > 1:
