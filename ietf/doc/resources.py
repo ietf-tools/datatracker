@@ -546,7 +546,7 @@ class ReviewRequestDocEventResource(ModelResource):
     by               = ToOneField(PersonResource, 'by')
     doc              = ToOneField(DocumentResource, 'doc')
     docevent_ptr     = ToOneField(DocEventResource, 'docevent_ptr')
-    review_request   = ToOneField('review.ReviewRequestResource', 'review_request')
+    review_request   = ToOneField('ietf.review.resources.ReviewRequestResource', 'review_request')
     state            = ToOneField(ReviewRequestStateNameResource, 'state', null=True)
     class Meta:
         queryset = ReviewRequestDocEvent.objects.all()
