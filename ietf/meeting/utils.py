@@ -1,5 +1,12 @@
 import datetime
+import json
+import urllib2
+import urlparse
 
+from django.conf import settings
+from django.template.loader import render_to_string
+
+from ietf.dbtemplate.models import DBTemplate
 from ietf.meeting.models import Session
 from ietf.group.utils import can_manage_materials
 
@@ -72,6 +79,35 @@ def sort_sessions(sessions):
 
     return meeting_sorted
 
+def create_proceedings_templates(meeting):
+    '''Create DBTemplates for meeting proceedings'''
+    # Get meeting attendees from registration system
+    url = urlparse.urljoin(settings.REGISTRATION_ATTENDEES_BASE_URL,meeting.number)
+    try:
+        attendees = json.load(urllib2.urlopen(url))
+    except (ValueError, urllib2.HTTPError):
+        attendees = []
+
+    if attendees:
+        attendees = sorted(attendees, key = lambda a: a['LastName'])
+        content = render_to_string('meeting/proceedings_attendees_table.html', {
+            'attendees':attendees})
+        DBTemplate.objects.create(
+            path='/meeting/proceedings/%s/attendees.html' % meeting.number,
+            title='IETF %s Attendee List' % meeting.number,
+            type_id='django',
+            content=content)
+    
+    # Make copy of default IETF Overview template
+    if not meeting.overview:
+        template = DBTemplate.objects.get(path='/meeting/proceedings/defaults/overview.rst')
+        template.id = None
+        template.path = '/meeting/proceedings/%s/overview.rst' % (meeting.number)
+        template.title = 'IETF %s Proceedings Overview' % (meeting.number)
+        template.save()
+        meeting.overview = template
+        meeting.save()
+
 def finalize(meeting):
     end_date = meeting.end_date()
     end_time = datetime.datetime.combine(end_date, datetime.datetime.min.time())+datetime.timedelta(days=1)
@@ -81,8 +117,10 @@ def finalize(meeting):
             if rev_before_end:
                 sp.rev = rev_before_end[-1].newrevisiondocevent.rev
             else:
-                sp.rev = '00' 
+                sp.rev = '00'
             sp.save()
+    
+    create_proceedings_templates(meeting)
     meeting.proceedings_final = True
     meeting.save()
     return

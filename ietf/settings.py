@@ -599,7 +599,8 @@ SECR_INTERIM_LISTING_DIR = '/a/www/www6/meeting/interim'
 SECR_MAX_UPLOAD_SIZE = 40960000
 SECR_PROCEEDINGS_DIR = '/a/www/www6s/proceedings/'
 SECR_PPT2PDF_COMMAND = ['/usr/bin/soffice','--headless','--convert-to','pdf','--outdir']
-
+REGISTRATION_ATTENDEES_BASE_URL = 'https://ietf.org/registration/attendees/'
+NEW_PROCEEDINGS_START = 95
 USE_ETAGS=True
 
 PRODUCTION_TIMEZONE = "America/Los_Angeles"

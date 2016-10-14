@@ -25,6 +25,7 @@ from django.db.models import Min, Max
 from django.conf import settings
 from django.forms.models import modelform_factory, inlineformset_factory
 from django.forms import ModelForm
+from django.template import TemplateDoesNotExist
 from django.template.loader import render_to_string
 from django.utils.functional import curry
 from django.views.decorators.cache import cache_page
@@ -56,6 +57,7 @@ from ietf.meeting.helpers import send_interim_approval_request
 from ietf.meeting.helpers import send_interim_announcement_request
 from ietf.meeting.utils import finalize
 from ietf.secr.proceedings.utils import handle_upload_file
+from ietf.secr.proceedings.proc_utils import get_progress_stats
 from ietf.utils.mail import send_mail_message
 from ietf.utils.pipe import pipe
 from ietf.utils.pdf import pdf_pages
@@ -2009,30 +2011,65 @@ def finalize_proceedings(request, num=None):
     
     return render(request, "meeting/finalize.html", {'meeting':meeting,})
 
-@role_required('Secretariat')
 def proceedings_acknowledgements(request, num=None):
-
+    '''Display Acknowledgements for meeting'''
     meeting = get_meeting(num)
-    if meeting.number < 95:
+    if not num.isdigit():
+        raise Http404
+    if int(meeting.number) < settings.NEW_PROCEEDINGS_START:
         return HttpResponseRedirect( 'https://www.ietf.org/proceedings/%s/acknowledgement.html' % num )
     return render(request, "meeting/proceedings_acknowledgements.html", {
         'meeting': meeting,
     })
 
-@role_required('Secretariat')
+def proceedings_attendees(request, num=None):
+    '''Display list of meeting attendees'''
+    meeting = get_meeting(num)
+    if not num.isdigit():
+        raise Http404
+    if int(meeting.number) < settings.NEW_PROCEEDINGS_START:
+        return HttpResponseRedirect( 'https://www.ietf.org/proceedings/%s/attendees.html' % num )
+    overview_template = '/meeting/proceedings/%s/attendees.html' % meeting.number
+    try:
+        template = render_to_string(overview_template, {})
+    except TemplateDoesNotExist:
+        raise Http404
+    return render(request, "meeting/proceedings_attendees.html", {
+        'meeting': meeting,
+        'template': template,
+    })
+
 def proceedings_overview(request, num=None):
     '''Display Overview for given meeting'''
     meeting = get_meeting(num)
-    if meeting.number < 95:
+    if not num.isdigit():
+        raise Http404
+    if int(meeting.number) < settings.NEW_PROCEEDINGS_START:
         return HttpResponseRedirect( 'https://www.ietf.org/proceedings/%s/overview.html' % num )
     overview_template = '/meeting/proceedings/%s/overview.rst' % meeting.number
-    template = render_to_string(overview_template, {})
-
+    try:
+        template = render_to_string(overview_template, {})
+    except TemplateDoesNotExist:
+        raise Http404
     return render(request, "meeting/proceedings_overview.html", {
         'meeting': meeting,
         'template': template,
     })
 
+@cache_page( 60 * 60 )
+def proceedings_progress_report(request, num=None):
+    '''Display Progress Report (stats since last meeting)'''
+    meeting = get_meeting(num)
+    if not num.isdigit():
+        raise Http404
+    if int(meeting.number) < settings.NEW_PROCEEDINGS_START:
+        return HttpResponseRedirect( 'https://www.ietf.org/proceedings/%s/progress-report.html' % num )
+    sdate = meeting.previous_meeting().date
+    edate = meeting.date
+    context = get_progress_stats(sdate,edate)
+    context['meeting'] = meeting
+    return render(request, "meeting/proceedings_progress_report.html", context)
+    
 class OldUploadRedirect(RedirectView):
     def get_redirect_url(self, **kwargs):
         return reverse_lazy('ietf.meeting.views.session_details',kwargs=self.kwargs)
