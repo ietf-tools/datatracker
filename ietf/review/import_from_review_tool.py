@@ -145,7 +145,7 @@ with db_con.cursor() as c:
                         UnavailablePeriod.objects.create(
                             team=team,
                             person=email.person,
-                            start_date=today,
+                            start_date=None,
                             end_date=end_date,
                             availability="unavailable",
                         )

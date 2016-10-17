@@ -34,7 +34,7 @@ class ReviewerSettings(models.Model):
 class UnavailablePeriod(models.Model):
     team         = models.ForeignKey(Group, limit_choices_to=~models.Q(resultusedinreviewteam=None))
     person       = models.ForeignKey(Person)
-    start_date   = models.DateField(default=datetime.date.today, help_text="Choose the start date so that you can still do a review if it's assigned just before the start date - this usually means you should mark yourself unavailable for assignment some time before you are actually away.")
+    start_date   = models.DateField(default=datetime.date.today, null=True, help_text="Choose the start date so that you can still do a review if it's assigned just before the start date - this usually means you should mark yourself unavailable for assignment some time before you are actually away.")
     end_date     = models.DateField(blank=True, null=True, help_text="Leaving the end date blank means that the period continues indefinitely. You can end it later.")
     AVAILABILITY_CHOICES = [
         ("canfinish", "Can do follow-ups"),
@@ -49,7 +49,7 @@ class UnavailablePeriod(models.Model):
     def state(self):
         import datetime
         today = datetime.date.today()
-        if self.start_date <= today:
+        if self.start_date is None or self.start_date <= today:
             if not self.end_date or today <= self.end_date:
                 return "active"
             else:
@@ -58,7 +58,7 @@ class UnavailablePeriod(models.Model):
             return "future"
 
     def __unicode__(self):
-        return u"{} is unavailable in {} {} - {}".format(self.person, self.team.acronym, self.start_date, self.end_date or "")
+        return u"{} is unavailable in {} {} - {}".format(self.person, self.team.acronym, self.start_date or "", self.end_date or "")
 
 class ReviewWish(models.Model):
     """Reviewer wishes to review a document when it becomes available for review."""

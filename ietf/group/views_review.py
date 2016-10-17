@@ -124,7 +124,7 @@ def reviewer_overview(request, acronym, group_type=None):
             person.settings_url = urlreverse("ietf.group.views_review.change_reviewer_settings", kwargs=kwargs)
         person.unavailable_periods = unavailable_periods.get(person.pk, [])
         person.completely_unavailable = any(p.availability == "unavailable"
-                                       and p.start_date <= today and (p.end_date is None or today <= p.end_date)
+                                       and (p.start_date is None or p.start_date <= today) and (p.end_date is None or today <= p.end_date)
                                        for p in person.unavailable_periods)
 
         MAX_REQS = 5
@@ -384,13 +384,13 @@ class EndUnavailablePeriodForm(forms.Form):
     def __init__(self, start_date, *args, **kwargs):
         super(EndUnavailablePeriodForm, self).__init__(*args, **kwargs)
 
-        self.fields["end_date"] = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1", "start-date": start_date.isoformat() })
+        self.fields["end_date"] = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1", "start-date": start_date.isoformat() if start_date else "" })
 
         self.start_date = start_date
 
     def clean_end_date(self):
         end = self.cleaned_data["end_date"]
-        if end < self.start_date:
+        if self.start_date and end < self.start_date:
             raise forms.ValidationError("End date must be equal to or come after start date.")
         return end
 
@@ -457,7 +457,7 @@ def change_reviewer_settings(request, acronym, reviewer_email, group_type=None):
 
             if not in_the_past:
                 msg = "Unavailable for review: {} - {} ({})".format(
-                    period.start_date.isoformat(),
+                    period.start_date.isoformat() if period.start_date else "indefinite",
                     period.end_date.isoformat() if period.end_date else "indefinite",
                     period.get_availability_display(),
                 )
@@ -496,7 +496,7 @@ def change_reviewer_settings(request, acronym, reviewer_email, group_type=None):
 
                     if not in_the_past:
                         msg = "Removed unavailable period: {} - {} ({})".format(
-                            period.start_date.isoformat(),
+                            period.start_date.isoformat() if period.start_date else "indefinite",
                             period.end_date.isoformat() if period.end_date else "indefinite",
                             period.get_availability_display(),
                         )
@@ -518,7 +518,7 @@ def change_reviewer_settings(request, acronym, reviewer_email, group_type=None):
                     period.save()
 
                     msg = "Set end date of unavailable period: {} - {} ({})".format(
-                        period.start_date.isoformat(),
+                        period.start_date.isoformat() if period.start_date else "indefinite",
                         period.end_date.isoformat() if period.end_date else "indefinite",
                         period.get_availability_display(),
                     )

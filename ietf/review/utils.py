@@ -63,7 +63,7 @@ def current_unavailable_periods_for_reviewers(team):
 
     unavailable_period_qs = UnavailablePeriod.objects.filter(
         Q(end_date__gte=today) | Q(end_date=None),
-        start_date__lte=today,
+        Q(start_date__lte=today) | Q(start_date=None),
         team=team,
     ).order_by("end_date")
 
