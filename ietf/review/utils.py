@@ -702,17 +702,17 @@ def make_assignment_choices(email_queryset, review_req):
         if periods:
             explanations.append(", ".join(format_period(p) for p in periods))
 
-        # minimum interval between reviews
-        days_needed = days_needed_for_reviewers.get(e.person_id, 0)
-        scores.append(-days_needed)
-        if days_needed > 0:
-            explanations.append("max frequency exceeded, ready in {} {}".format(days_needed, "day" if days_needed == 1 else "days"))
-
         # misc
         add_boolean_score(+1, e.pk in has_reviewed_previous, "reviewed document before")
         add_boolean_score(+1, e.person_id in wish_to_review, "wishes to review document")
         add_boolean_score(-1, e.pk in connections, connections.get(e.pk)) # reviewer is somehow connected: bad
         add_boolean_score(-1, settings.filter_re and any(re.search(settings.filter_re, n) for n in aliases), "filter regexp matches")
+
+        # minimum interval between reviews
+        days_needed = days_needed_for_reviewers.get(e.person_id, 0)
+        scores.append(-days_needed)
+        if days_needed > 0:
+            explanations.append("max frequency exceeded, ready in {} {}".format(days_needed, "day" if days_needed == 1 else "days"))
 
         # skip next
         scores.append(-settings.skip_next)
