@@ -1934,9 +1934,11 @@ def upcoming_ical(request):
     # apply filters
     if filters:
         assignments = [a for a in assignments if
-                       a.session.group.acronym in filters or
-                       a.session.group.parent.acronym in filters]
-
+                       a.session.group and (
+                           a.session.group.acronym in filters or (
+                               a.session.group.parent and a.session.group.parent.acronym in filters
+                           )
+                       ) ]
     # gather vtimezones
     vtimezones = set()
     for meeting in meetings:
