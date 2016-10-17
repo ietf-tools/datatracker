@@ -1,11 +1,62 @@
-ietfdb (6.34.3) ietf; urgency=medium
+ietfdb (6.35.0) ietf; urgency=medium
+
+  This release brings incremental improvements to the new proceedings pages;
+  in particular it adds proceeding introductionary pages: Progress Report and
+  Attendees.  It also fixes a large number of bugs and issues, and adds some
+  performance improvements for the secretariat's schedule layout view, and for
+  the IETFers app support view.
+
+  Details from the commit log:
+
+  * Modified a test in upcoming_ical() to not break if a group does not 
+    have a parent.  Fixes a server 500 error.
+
+  * Merged in ^/branch/proceedings/6.33.1.dev0@12141 from rcross@amsl.com:
+    Added meeting proceedings introduction pages: Progress Report and 
+    Attendees.  Added a data migration to provide proceedings introduction 
+    information for IETF 95 and 96.
+
+  * Merged in [12132] from rcross@amsl.com:
+    Extended Liaison to_contacts field to 2000 characters.  Fixes #2024.   
+
+  * Reverted one instance of caching, as it seems schedules can change 
+    owners.
+
+  * Fixed a schedule save-as redirect which could not match any URL, 
+    leading to a 500 error.
+
+  * Added some caching to methods which are called very often when showing 
+    the meeting schedule edit view.
+
+  * Merged in [12104] from rjsparks@nostrum.com:
+    Don't show the request publication button for ise,irtf, and iab drafts 
+    after publication has already been requested. Fixes #2019.  
+
+  * The db api prefers resource URIs ending in slash -- make it so in 
+    json_agenda().
+
+  * Changed another class name that might trigger adblock.  Related to 
+    issues #2016 and #2027.
+
+  * Changed an unfortunate html class name 'adname' (Area Director name) 
+    which triggered adblock.  Fixes issues #2016 and #2027.
+
+  * Fixed room_name() to not fail when a timeslot has no location.  Fixes a 
+    server 500 for agenda.json
+
+  * Updated the requirements to exclude PyQuery 1.2.14.  PyQuery 1.2.14 fails
+    on some selectors we use (in particular, line 1370 (action = ...) in
+    submit.tests.do_submission_email() fails).  
+
+  * Added the first stab at a helper script for setting up a minimal test
+    environment on a new host.
 
   * Merged in [12099] from rjsparks@nostrum.com:
-    Changes interim announcements and interim cancellation announcements to
-    use mailtriggers. Adds irtf-announce to announcements for IRTF groups.
+    Changed interim announcements and interim cancellation announcements to
+    use mailtriggers. Added irtf-announce to announcements for IRTF groups.
     Fixes #2018.  
 
-  * Added a migration to remove most duplicate 'Upload' doc events.
+  * Added a migration to remove most of the duplicate 'Upload' doc events.
 
   * When converting submission events to doc events, post them in 
     chronological order.  Don't add upload doc events until we're past the 
@@ -32,7 +83,7 @@ ietfdb (6.34.3) ietf; urgency=medium
   * Fixed a problem with the error message text for the nominee email edit 
     form.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  05 Oct 2016 11:56:01 -0700
+ -- Henrik Levkowetz <henrik@levkowetz.com>  17 Oct 2016 18:17:47 +0000
 
 
 ietfdb (6.34.2) ietf; urgency=medium
