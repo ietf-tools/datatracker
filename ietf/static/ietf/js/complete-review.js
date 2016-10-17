@@ -98,7 +98,7 @@ $(document).ready(function () {
             row = row.closest(".mail-archive-search-result");
 
         form.find("[name=review_url]").val(row.data("url"));
-        form.find("[name=review_content]").val(row.data("content"));
+        form.find("[name=review_content]").val(row.data("content")).prop("scrollTop", 0);
     });
 
 
