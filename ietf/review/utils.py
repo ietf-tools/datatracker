@@ -478,7 +478,10 @@ def suggested_review_requests_for_team(team):
     last_call_type = ReviewTypeName.objects.get(slug="lc")
     if TypeUsedInReviewTeam.objects.filter(team=team, type=last_call_type).exists():
         # in Last Call
-        last_call_docs = Document.objects.filter(states=State.objects.get(type="draft-iesg", slug="lc", used=True))
+        last_call_docs = Document.objects.filter(
+            type="draft",
+            states=State.objects.get(type="draft-iesg", slug="lc", used=True),
+        )
         last_call_expiry_events = { e.doc_id: e for e in LastCallDocEvent.objects.order_by("time", "id") }
         for doc in last_call_docs:
             e = last_call_expiry_events[doc.pk] if doc.pk in last_call_expiry_events else LastCallDocEvent(expires=now.date(), time=now)
@@ -509,6 +512,7 @@ def suggested_review_requests_for_team(team):
         telechat_deadline_delta = datetime.timedelta(days=2)
 
         telechat_docs = Document.objects.filter(
+            type="draft",
             docevent__telechatdocevent__telechat_date__in=telechat_dates
         ).values_list(
             "pk", "docevent__telechatdocevent__time", "docevent__telechatdocevent__telechat_date"
