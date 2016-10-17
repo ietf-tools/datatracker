@@ -13,6 +13,7 @@ from ietf.ietfauth.utils import has_role
 from ietf.community.models import CommunityList, SearchRule
 from ietf.community.utils import reset_name_contains_index_for_rule, can_manage_community_list
 from ietf.doc.models import Document, State
+from ietf.review.utils import can_manage_review_requests_for_team
 
 
 def save_group_in_history(group):
@@ -210,7 +211,7 @@ def construct_group_menu_context(request, group, selected, group_type, others):
     if group.features.has_materials and can_manage_materials(request.user, group):
         actions.append((u"Upload material", urlreverse("ietf.doc.views_material.choose_material_type", kwargs=kwargs)))
 
-    if group.features.has_reviews:
+    if group.features.has_reviews and can_manage_review_requests_for_team(request.user, group):
         import ietf.group.views_review
         actions.append((u"Manage review requests", urlreverse(ietf.group.views_review.manage_review_requests, kwargs=kwargs)))
 
