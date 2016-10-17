@@ -66,13 +66,21 @@ def retrieve_messages_from_mbox(mbox_fileobj):
                     charset = part.get_content_charset() or "utf-8"
                     content += part.get_payload(decode=True).decode(charset, "ignore")
 
+            # parse a couple of things for the front end
+            utcdate = None
+            d = email.utils.parsedate_tz(msg["Date"])
+            if d:
+                utcdate = datetime.datetime.fromtimestamp(email.utils.mktime_tz(d))
+
             res.append({
                 "from": msg["From"],
+                "splitfrom": email.utils.parseaddr(msg["From"]),
                 "subject": msg["Subject"],
                 "content": content.replace("\r\n", "\n").replace("\r", "\n").strip("\n"),
                 "message_id": email.utils.unquote(msg["Message-ID"]),
                 "url": email.utils.unquote(msg["Archived-At"]),
                 "date": msg["Date"],
+                "utcdate": (utcdate.date().isoformat(), utcdate.time().isoformat()) if utcdate else ("", ""),
             })
 
     return res

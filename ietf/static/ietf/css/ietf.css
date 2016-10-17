@@ -487,6 +487,16 @@ form.complete-review .mail-archive-search .results .list-group {
   margin-bottom: 0.5em;
 }
 
+form.complete-review .mail-archive-search-result .from {
+  width: 9em;
+  padding-left: 0.4em;
+}
+
+form.complete-review .mail-archive-search-result .date {
+  width: 6em;
+  padding-left: 0.4em;
+}
+
 .closed-review-filter {
   margin-bottom: 1em;
 }

@@ -61,12 +61,15 @@
       {% endif %}
     </div>
 
+    {% spaceless %}
     <div class="template" style="display:none">
       <button type="button" class="mail-archive-search-result list-group-item">
-        <span class="date badge"></span>
+        <small class="date pull-right"></small>
+        <small class="from pull-right"></small>
         <span class="subject"></span>
       </button>
     </div>
+    {% endspaceless %}
 
   </form>
 

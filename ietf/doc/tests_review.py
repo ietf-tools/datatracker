@@ -397,7 +397,7 @@ class ReviewTests(TestCase):
 
                 # plain text
                 msg = email.mime.text.MIMEText("Hello,\n\nI have reviewed the document and did not find any problems.\n\nJohn Doe")
-                msg["From"] = "johndoe@example.com"
+                msg["From"] = "John Doe <johndoe@example.com>"
                 msg["To"] = review_req.team.list_email
                 msg["Subject"] = "Review of {}-01".format(review_req.doc.name)
                 msg["Message-ID"] = email.utils.make_msgid()
@@ -408,7 +408,7 @@ class ReviewTests(TestCase):
 
                 # plain text + HTML
                 msg = email.mime.multipart.MIMEMultipart('alternative')
-                msg["From"] = "johndoe2@example.com"
+                msg["From"] = "John Doe II <johndoe2@example.com>"
                 msg["To"] = review_req.team.list_email
                 msg["Subject"] = "Review of {}".format(review_req.doc.name)
                 msg["Message-ID"] = email.utils.make_msgid()
@@ -453,14 +453,20 @@ class ReviewTests(TestCase):
             messages = json.loads(r.content)["messages"]
             self.assertEqual(len(messages), 2)
 
+            today = datetime.date.today()
+
             self.assertEqual(messages[0]["url"], "https://www.example.com/testmessage")
             self.assertTrue("John Doe" in messages[0]["content"])
             self.assertEqual(messages[0]["subject"], "Review of {}-01".format(review_req.doc.name))
+            self.assertEqual(messages[0]["splitfrom"], ["John Doe", "johndoe@example.com"])
+            self.assertEqual(messages[0]["utcdate"][0], today.isoformat())
 
             self.assertEqual(messages[1]["url"], "https://www.example.com/testmessage2")
             self.assertTrue("Looks OK" in messages[1]["content"])
             self.assertTrue("<html>" not in messages[1]["content"])
             self.assertEqual(messages[1]["subject"], "Review of {}".format(review_req.doc.name))
+            self.assertEqual(messages[1]["splitfrom"], ["John Doe II", "johndoe2@example.com"])
+            self.assertEqual(messages[1]["utcdate"][0], "")
         finally:
             ietf.review.mailarch.construct_query_urls = real_fn
 

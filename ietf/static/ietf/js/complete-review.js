@@ -68,7 +68,8 @@ $(document).ready(function () {
                     var msg = data.messages[i];
                     var row = $(mailArchiveSearchResultTemplate).attr("title", "Click to fill in link and content from this message");
                     row.find(".subject").text(msg.subject);
-                    row.find(".date").text(msg.date);
+                    row.find(".date").text(msg.utcdate[0]);
+                    row.find(".from").text(msg.splitfrom[0]);
                     row.data("url", msg.url);
                     row.data("content", msg.content);
                     results.append(row);
