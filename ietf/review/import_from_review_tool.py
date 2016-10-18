@@ -66,6 +66,8 @@ autopolicy_days = {
     'quarterly': 91,
 }
 
+reviewer_blacklist = set([("genart", "alice")])
+
 known_personnel = {}
 with db_con.cursor() as c:
     c.execute("select * from members;")
@@ -75,6 +77,9 @@ with db_con.cursor() as c:
     for row in namedtuplefetchall(c):
         if row.login not in needed_personnel:
             continue
+
+        if (team.acronym, row.login) in reviewer_blacklist:
+            continue # ignore
 
         email = Email.objects.filter(address=row.email).select_related("person").first()
         if not email:
@@ -241,6 +246,9 @@ with db_con.cursor() as c:
         latest_iesg_status = None
 
         for row in rows:
+            if (team.acronym, row.who) in reviewer_blacklist:
+                continue # ignore
+        
             state = None
             used = False
 
@@ -353,6 +361,9 @@ with db_con.cursor() as c:
 
     for row in namedtuplefetchall(c):
         if (team.acronym, row.docname) in document_blacklist:
+            continue # ignore
+
+        if (team.acronym, row.reviewer) in reviewer_blacklist:
             continue # ignore
 
         meta = doc_metadata.get((row.docname, row.version))
