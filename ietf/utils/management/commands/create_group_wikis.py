@@ -122,6 +122,7 @@ class Command(BaseCommand):
             _, name = os.path.split(templ)
             text = render_to_string(templ, {"group": group})
             self.note("  Adding page %s" % name)
+            self.add_wiki_page(env, name, text)
 
     def sync_default_repository(self, group, env):
         repository = env.get_repository('')
@@ -143,7 +144,6 @@ class Command(BaseCommand):
         # Try to creat ethe environment, remove unwanted defaults, and add
         # custom pages and settings.
         try:
-            debug.show('options')
             env = Environment(group.trac_dir, create=True, options=options)
             self.remove_demo_components(group, env)
             self.remove_demo_milestones(group, env)
@@ -153,8 +153,8 @@ class Command(BaseCommand):
             self.symlink_to_master_assets(group, env)
             if group.type_id == 'wg':
                 self.add_wg_draft_states(group, env)
-            self.add_default_wiki_pages(group, env)
             self.add_custom_wiki_pages(group, env)
+            self.add_default_wiki_pages(group, env)
             self.sync_default_repository(group, env)
             # Components (i.e., drafts) will be handled during components
             # update later
@@ -248,7 +248,7 @@ class Command(BaseCommand):
         groups = Group.objects.filter(
                         type__slug__in=['wg','rg','area'],
                         state__slug='active'
-                    )
+                    ).order_by('acronym')
 
         for group in groups:
             try:
