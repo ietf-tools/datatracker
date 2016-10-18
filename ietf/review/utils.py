@@ -110,7 +110,7 @@ def reviewer_rotation_list(team, skip_unavailable=False, dont_skip=[]):
 
         days_needed_for_reviewers = days_needed_to_fulfill_min_interval_for_reviewers(team)
         for person_id, days_needed in days_needed_for_reviewers.iteritems():
-            if days_needed > 0 and person_id not in dont_skip:
+            if person_id not in dont_skip:
                 reviewers_to_skip.add(person_id)
 
         rotation_list = [p.pk for p in rotation_list if p.pk not in reviewers_to_skip]
@@ -118,25 +118,25 @@ def reviewer_rotation_list(team, skip_unavailable=False, dont_skip=[]):
     return rotation_list
 
 def days_needed_to_fulfill_min_interval_for_reviewers(team):
-    """Returns person_id -> days needed until min_interval is fulfilled for
-    reviewer."""
+    """Returns person_id -> days needed until min_interval is fulfilled
+    for reviewer (in case it is necessary to wait, otherwise reviewer
+    is absent in result)."""
     latest_assignments = dict(ReviewRequest.objects.filter(
         team=team,
     ).values_list("reviewer__person").annotate(Max("time")))
 
     min_intervals = dict(ReviewerSettings.objects.filter(team=team).values_list("person_id", "min_interval"))
 
-    default_min_interval = ReviewerSettings(team=team).min_interval
-
     now = datetime.datetime.now()
 
     res = {}
     for person_id, latest_assignment_time in latest_assignments.iteritems():
         if latest_assignment_time is not None:
-            min_interval = min_intervals.get(person_id, default_min_interval)
+            min_interval = min_intervals.get(person_id)
+            if min_interval is None:
+                continue
 
             days_needed = max(0, min_interval - (now - latest_assignment_time).days)
-
             if days_needed > 0:
                 res[person_id] = days_needed
 

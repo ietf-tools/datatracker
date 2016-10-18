@@ -429,7 +429,7 @@ def change_reviewer_settings(request, acronym, reviewer_email, group_type=None):
 
             changes = []
             if settings.get_min_interval_display() != prev_min_interval:
-                changes.append("Frequency changed to \"{}\" from \"{}\".".format(settings.get_min_interval_display(), prev_min_interval))
+                changes.append("Frequency changed to \"{}\" from \"{}\".".format(settings.get_min_interval_display() or "Not specified", prev_min_interval or "Not specified"))
             if settings.skip_next != prev_skip_next:
                 changes.append("Skip next assignments changed to {} from {}.".format(settings.skip_next, prev_skip_next))
 

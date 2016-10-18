@@ -126,7 +126,7 @@
     <table class="table">
       <tr>
         <th>Can review</th>
-        <td>{{ t.reviewer_settings.get_min_interval_display }}</td>
+        <td>{{ t.reviewer_settings.get_min_interval_display|default:"No max frequency set" }}</td>
       </tr>
       <tr>
         <th>Skip next assignments</th>

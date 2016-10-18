@@ -41,8 +41,17 @@
               </table>
             </td>
             <td>
-              {{ person.settings.get_min_interval_display }} {% if person.settings.skip_next %}(skip: {{ person.settings.skip_next }}){% endif %}<br>
-              {% if person.settings.filter_re %}Filter: <code title="{{ person.settings.filter_re }}">{{ person.settings.filter_re|truncatechars:15 }}</code><br>{% endif %}
+              {% if person.settings.min_interval %}
+                {{ person.settings.get_min_interval_display }}<br>
+              {% endif %}
+
+              {% if person.settings.skip_next %}
+                Skip: {{ person.settings.skip_next }}<br>
+              {% endif %}
+
+              {% if person.settings.filter_re %}
+                Filter: <code title="{{ person.settings.filter_re }}">{{ person.settings.filter_re|truncatechars:15 }}</code><br>
+              {% endif %}
 
               {% if person.unavailable_periods %}
                 {% include "review/unavailable_table.html" with unavailable_periods=person.unavailable_periods %}

@@ -136,7 +136,9 @@ class ReviewTests(TestCase):
         self.assertEqual(len(outbox), 1)
         self.assertTrue("closed" in unicode(outbox[0]).lower())
 
-    def make_data_for_rotation_tests(self, doc):
+    def test_possibly_advance_next_reviewer_for_team(self):
+        doc = make_test_data()
+
         team = Group.objects.create(state_id="active", acronym="rotationteam", name="Review Team", type_id="dir",
                                     list_email="rotationteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
 
@@ -148,28 +150,21 @@ class ReviewTests(TestCase):
 
         self.assertEqual(reviewers, reviewer_rotation_list(team))
 
-        return team, reviewers
-
-    def test_possibly_advance_next_reviewer_for_team(self):
-        doc = make_test_data()
-
-        team, reviewers = self.make_data_for_rotation_tests(doc)
-
         def get_skip_next(person):
             settings = (ReviewerSettings.objects.filter(team=team, person=person).first()
                         or ReviewerSettings(team=team))
             return settings.skip_next
 
-        possibly_advance_next_reviewer_for_team(team, reviewers[0].pk)
+        possibly_advance_next_reviewer_for_team(team, assigned_review_to_person_id=reviewers[0].pk)
         self.assertEqual(NextReviewerInTeam.objects.get(team=team).next_reviewer, reviewers[1])
         self.assertEqual(get_skip_next(reviewers[0]), 0)
         self.assertEqual(get_skip_next(reviewers[1]), 0)
 
-        possibly_advance_next_reviewer_for_team(team, reviewers[1].pk)
+        possibly_advance_next_reviewer_for_team(team, assigned_review_to_person_id=reviewers[1].pk)
         self.assertEqual(NextReviewerInTeam.objects.get(team=team).next_reviewer, reviewers[2])
 
         # skip reviewer 2
-        possibly_advance_next_reviewer_for_team(team, reviewers[3].pk)
+        possibly_advance_next_reviewer_for_team(team, assigned_review_to_person_id=reviewers[3].pk)
         self.assertEqual(NextReviewerInTeam.objects.get(team=team).next_reviewer, reviewers[2])
         self.assertEqual(get_skip_next(reviewers[0]), 0)
         self.assertEqual(get_skip_next(reviewers[1]), 0)
@@ -177,7 +172,7 @@ class ReviewTests(TestCase):
         self.assertEqual(get_skip_next(reviewers[3]), 1)
 
         # pick reviewer 2, use up reviewer 3's skip_next
-        possibly_advance_next_reviewer_for_team(team, reviewers[2].pk)
+        possibly_advance_next_reviewer_for_team(team, assigned_review_to_person_id=reviewers[2].pk)
         self.assertEqual(NextReviewerInTeam.objects.get(team=team).next_reviewer, reviewers[4])
         self.assertEqual(get_skip_next(reviewers[0]), 0)
         self.assertEqual(get_skip_next(reviewers[1]), 0)
@@ -186,7 +181,7 @@ class ReviewTests(TestCase):
         self.assertEqual(get_skip_next(reviewers[4]), 0)
 
         # check wrap-around
-        possibly_advance_next_reviewer_for_team(team, reviewers[4].pk)
+        possibly_advance_next_reviewer_for_team(team, assigned_review_to_person_id=reviewers[4].pk)
         self.assertEqual(NextReviewerInTeam.objects.get(team=team).next_reviewer, reviewers[0])
         self.assertEqual(get_skip_next(reviewers[0]), 0)
         self.assertEqual(get_skip_next(reviewers[1]), 0)
@@ -197,7 +192,7 @@ class ReviewTests(TestCase):
         # unavailable
         today = datetime.date.today()
         UnavailablePeriod.objects.create(team=team, person=reviewers[1], start_date=today, end_date=today, availability="unavailable")
-        possibly_advance_next_reviewer_for_team(team, reviewers[0].pk)
+        possibly_advance_next_reviewer_for_team(team, assigned_review_to_person_id=reviewers[0].pk)
         self.assertEqual(NextReviewerInTeam.objects.get(team=team).next_reviewer, reviewers[2])
         self.assertEqual(get_skip_next(reviewers[0]), 0)
         self.assertEqual(get_skip_next(reviewers[1]), 0)
@@ -206,7 +201,7 @@ class ReviewTests(TestCase):
         self.assertEqual(get_skip_next(reviewers[4]), 0)
 
         # pick unavailable anyway
-        possibly_advance_next_reviewer_for_team(team, reviewers[1].pk)
+        possibly_advance_next_reviewer_for_team(team, assigned_review_to_person_id=reviewers[1].pk)
         self.assertEqual(NextReviewerInTeam.objects.get(team=team).next_reviewer, reviewers[2])
         self.assertEqual(get_skip_next(reviewers[0]), 0)
         self.assertEqual(get_skip_next(reviewers[1]), 1)
@@ -214,9 +209,12 @@ class ReviewTests(TestCase):
         self.assertEqual(get_skip_next(reviewers[3]), 0)
         self.assertEqual(get_skip_next(reviewers[4]), 0)
 
-        # not through min_interval
+        # not through min_interval so advance past reviewer[2]
+        settings, _ = ReviewerSettings.objects.get_or_create(team=team, person=reviewers[2])
+        settings.min_interval = 30
+        settings.save()
         ReviewRequest.objects.create(team=team, doc=doc, type_id="early", state_id="accepted", deadline=today, requested_by=reviewers[0], reviewer=reviewers[2].email_set.first())
-        possibly_advance_next_reviewer_for_team(team, reviewers[3].pk)
+        possibly_advance_next_reviewer_for_team(team, assigned_review_to_person_id=reviewers[3].pk)
         self.assertEqual(NextReviewerInTeam.objects.get(team=team).next_reviewer, reviewers[4])
         self.assertEqual(get_skip_next(reviewers[0]), 0)
         self.assertEqual(get_skip_next(reviewers[1]), 1)

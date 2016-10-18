@@ -114,22 +114,23 @@ with db_con.cursor() as c:
                 if created:
                     print "created role", unicode(role).encode("utf-8")
 
-                reviewer, created = ReviewerSettings.objects.get_or_create(
+                reviewer_settings, created = ReviewerSettings.objects.get_or_create(
                     team=team,
                     person=email.person,
                 )
                 if created:
-                    print "created reviewer", reviewer.pk, unicode(reviewer).encode("utf-8")
+                    print "created reviewer settings", reviewer_settings.pk, unicode(reviewer_settings).encode("utf-8")
 
+                reviewer_settings.min_interval = None
                 if autopolicy_days.get(row.autopolicy):
-                    reviewer.min_interval = autopolicy_days.get(row.autopolicy)
+                    reviewer_settings.min_interval = autopolicy_days.get(row.autopolicy)
 
-                reviewer.filter_re = row.donotassign
+                reviewer_settings.filter_re = row.donotassign
                 try:
-                    reviewer.skip_next = int(row.autopolicy)
+                    reviewer_settings.skip_next = int(row.autopolicy)
                 except ValueError:
                     pass
-                reviewer.save()
+                reviewer_settings.save()
 
                 unavailable_until = parse_timestamp(row.available)
                 if unavailable_until:
