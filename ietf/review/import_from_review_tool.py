@@ -356,6 +356,8 @@ with db_con.cursor() as c:
 
 system_person = Person.objects.get(name="(System)")
 
+seen_review_requests = {}
+
 with db_con.cursor() as c:
     c.execute("select * from reviews order by reviewid;")
 
@@ -464,17 +466,19 @@ with db_con.cursor() as c:
                 docname = "draft-fenner-obsolete-1264"
             return docname
 
-        review_req, _ = ReviewRequest.objects.get_or_create(
-            doc_id=fix_docname(row.docname),
+        fixed_docname = fix_docname(row.docname)
+
+        review_req = ReviewRequest.objects.filter(
+            doc_id=fixed_docname,
             team=team,
             old_id=row.reviewid,
-            defaults={
-                "state": states["requested"],
-                "type": type_name,
-                "deadline": deadline.date(),
-                "requested_by": system_person,
-            }
-        )
+        ).first()
+        if not review_req:
+            review_req = ReviewRequest(
+                doc_id=fixed_docname,
+                team=team,
+                old_id=row.reviewid,
+            )
 
         review_req.reviewer = known_personnel[row.reviewer] if row.reviewer else None
         review_req.result = results.get(row.summary.lower()) if row.summary else None
@@ -483,7 +487,60 @@ with db_con.cursor() as c:
         review_req.time = time
         review_req.reviewed_rev = reviewed_rev if review_req.state_id not in ("requested", "accepted") else ""
         review_req.deadline = deadline.date()
+        review_req.requested_by = system_person
+
+        k = (review_req.doc_id, review_req.result_id, review_req.state_id, review_req.reviewer_id, review_req.reviewed_rev, row.reviewurl)
+        if k in seen_review_requests:
+            print "SKIPPING SEEN", k
+
+            # there's one special thing we're going to do here, and
+            # that's checking whether we have a real completion event
+            # for this skipped entry where the previous match didn't
+            if "closed" in event_collection and review_req.state_id not in ("requested", "accepted"):
+                review_req = seen_review_requests[k]
+                if ReviewRequestDocEvent.objects.filter(type="closed_review_request", doc=review_req.doc, review_request=review_req).exists():
+                    continue
+
+                data = event_collection['closed']
+                timestamp, who_did_it, reviewer, state, latest_iesg_status = data
+
+                if who_did_it in known_personnel:
+                    by = known_personnel[who_did_it].person
+                else:
+                    by = system_person
+
+                e = ReviewRequestDocEvent.objects.filter(type="closed_review_request", doc=review_req.doc, review_request=review_req).first()
+                if not e:
+                    e = ReviewRequestDocEvent(type="closed_review_request", doc=review_req.doc, review_request=review_req)
+                e.time = parse_timestamp(timestamp)
+                e.by = by
+                e.state = states.get(state) if state else None
+                if e.state_id == "rejected":
+                    e.desc = "Assignment of request for {} review by {} to {} was rejected".format(
+                        review_req.type.name,
+                        review_req.team.acronym.upper(),
+                        review_req.reviewer.person,
+                    )
+                elif e.state_id == "completed":
+                    e.desc = "Request for {} review by {} {}{}. Reviewer: {}.".format(
+                        review_req.type.name,
+                        review_req.team.acronym.upper(),
+                        review_req.state.name,
+                        ": {}".format(review_req.result.name) if review_req.result else "",
+                        review_req.reviewer.person,
+                    )
+                else:
+                    e.desc = "Closed request for {} review by {} with state '{}'".format(review_req.type.name, review_req.team.acronym.upper(), e.state.name)
+                e.skip_community_list_notification = True
+                e.save()
+                completion_event = e
+                print "imported event closed_review_request", e.desc, e.doc_id
+
+            continue
+
         review_req.save()
+
+        seen_review_requests[k] = review_req
 
         completion_event = None
 
