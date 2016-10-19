@@ -204,10 +204,10 @@ class TestWikiGlueManagementCommand(TestCase):
 
     def setUp(self):
         self.wiki_dir_pattern = os.path.abspath('tmp-wiki-dir-root/%s')
-        if not os.path.exists(self.wiki_dir_pattern):
+        if not os.path.exists(os.path.dirname(self.wiki_dir_pattern)):
             os.mkdir(os.path.dirname(self.wiki_dir_pattern))
         self.svn_dir_pattern = os.path.abspath('tmp-svn-dir-root/%s')
-        if not os.path.exists(self.svn_dir_pattern):
+        if not os.path.exists(os.path.dirname(self.svn_dir_pattern)):
             os.mkdir(os.path.dirname(self.svn_dir_pattern))
 
     def tearDown(self):
