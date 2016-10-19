@@ -34,6 +34,7 @@ pyzmail>=1.0.3
 selenium>=2.42
 six>=1.8.0
 tqdm>=3.7.0
+Trac>=1.0.10
 Unidecode>=0.4.18
 #wsgiref>=0.1.2
 xml2rfc>=2.5.

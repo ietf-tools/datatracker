@@ -1,5 +1,6 @@
 import os
 import time
+from textwrap import dedent
 
 from django.conf import settings
 from django.core import checks
@@ -209,3 +210,32 @@ def check_cache(app_configs, **kwargs):
             errors.append(cache_error("Cache didn't accept session cookie age", "E0016"))
     return errors
     
+@checks.register('cache')
+def check_svn_import(app_configs, **kwargs):
+    errors = []
+    if settings.SERVER_MODE == 'production':
+        try:
+            import svn                  # pyflakes:ignore
+        except ImportError as e:
+            errors.append(checks.Critical(
+                "Could not import the python svn module:\n   %s\n" % e,
+                hint = dedent("""
+                    You are running in production mode, and the subversion bindings for python
+                    are necessary in order to run the Trac wiki glue scripts.
+
+                    However, the subversion bindings seem to be unavailable.  The subversion
+                    bindings are not available for install using pip, but must be supplied by
+                    the system package manager.  In order to be available within a python
+                    virtualenv, the virtualenv must have been created with the
+                    --system-site-packages flag, so that the packages installed by the system
+                    package manager are visible.
+
+                    Please install 'python-subversion' (Debian), 'subversion-python' (RedHat,
+                    CentOS, Fedora), 'subversion-python27bindings' (BSD); and set up a
+                    virtualenv using the --system-site-packages flag.  Further tips are
+                    available at https://trac.edgewall.org/wiki/TracSubversion.
+
+                    """).replace('\n', '\n   ').rstrip(),
+                id = "datatracker.E0014",
+            ))
+    return errors

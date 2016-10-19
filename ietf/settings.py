@@ -382,7 +382,7 @@ TEST_URL_COVERAGE_EXCLUDE = [
     r"^\^admin/",
 ]
 
-# Tese are filename globs
+# These are filename globs.  They are fed directly to the coverage code checker.
 TEST_CODE_COVERAGE_EXCLUDE = [
     "*/tests*",
     "*/admin.py",
@@ -660,13 +660,42 @@ USER_PREFERENCE_DEFAULTS = {
     "left_menu"     : "on",
 }
 
-TRAC_ADMIN_CMD = "/usr/bin/trac-admin"
-TRAC_WIKI_DIR_ROOT = "/a/www/www6s/trac/"
-TRAC_WIKI_DIR_PATTERN = os.path.join(TRAC_WIKI_DIR_ROOT, "%s")
+TRAC_MASTER_DIR = "/a/www/trac-setup/"
+TRAC_WIKI_DIR_PATTERN = "/a/www/www6s/trac/%s"
 TRAC_WIKI_URL_PATTERN = "https://trac.ietf.org/trac/%s/wiki"
 TRAC_ISSUE_URL_PATTERN = "https://trac.ietf.org/trac/%s/report/1"
 TRAC_SVN_DIR_PATTERN = "/a/svn/group/%s"
 TRAC_SVN_URL_PATTERN = "https://svn.ietf.org/svn/group/%s/"
+
+TRAC_ENV_OPTIONS = [
+    ('project', 'name', "{name} Wiki"),
+    ('trac', 'database', 'sqlite:db/trac.db' ),
+    ('trac', 'repository_type', 'svn'),
+    ('trac', 'repository_dir', "{svn_dir}"),
+    ('inherit', 'file', "/a/www/trac-setup/conf/trac.ini"),
+]
+
+TRAC_WIKI_PAGES_TEMPLATES = [
+    "utils/wiki/IetfSpecificFeatures",
+    "utils/wiki/InterMapTxt",
+    "utils/wiki/SvnTracHooks",
+    "utils/wiki/ThisTracInstallation",
+    "utils/wiki/TrainingMaterials",
+    "utils/wiki/WikiStart",
+]
+
+TRAC_ISSUE_SEVERITY_ADD = [
+    "-",
+    "Candidate WG Document",
+    "Active WG Document",
+    "Waiting for Expert Review",
+    "In WG Last Call",
+    "Waiting for Shepherd Writeup",
+    "Submitted WG Document",
+    "Dead WG Document",
+]
+
+SVN_ADMIN_COMMAND = "/usr/bin/svnadmin"
 
 # Email addresses people attempt to set for their account will be checked
 # against the following list of regex expressions with re.search(pat, addr):

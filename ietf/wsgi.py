@@ -44,7 +44,7 @@ import sys
 path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Virtualenv support
-virtualenv_activation = os.path.join(path, "bin", "activate_this.py")
+virtualenv_activation = os.path.join(path, "env", "bin", "activate_this.py")
 if os.path.exists(virtualenv_activation):
     execfile(virtualenv_activation, dict(__file__=virtualenv_activation))
 

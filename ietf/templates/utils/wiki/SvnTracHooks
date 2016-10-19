@@ -1,0 +1,77 @@
+= SVN Trac Hooks =
+
+If the Trac Hooks for SVN has been installed for the svn repository
+coupled to this Trac instance, the Key Phrases documented below may
+be used in SVN commit messages to cause automatic updates and annotations
+of Trac issues.
+
+== The trac-post-commit-hook ==
+
+This script looks at the commit message associated with an SVN commit,
+and based on the presence of a number of key phrases will add annotations
+to tickets and also possibly change ticket status, for instance closing
+it.
+
+=== Key Phrases ===
+
+The key phrases available are:
+{{{
+  Fix <ticket_spec>
+  Fixes <ticket_spec>
+  Fix for <ticket_spec>
+  Close <ticket_spec>
+  Closes <ticket_spec>
+  
+  Addresses <ticket_spec>
+  References <ticket_spec>
+  Relates to <ticket_spec>
+  Related to <ticket_spec>
+  See <ticket_spec>
+}}}
+
+=== Ticket specification ===
+
+The specification of the ticket to act on may specify one or more
+tickets, using any of the following forms:
+{{{
+  <ticket>
+  <ticket>, <ticket>{, <ticket>}
+  <ticket>, <ticket> and <ticket>
+}}}
+and variations thereof.
+
+=== Ticket identification ===
+
+The individual ticket specification
+can take any of the following forms:
+{{{
+  #<number>
+  ticket <number>
+  ticket:<number>
+  issue <number>
+  issue:<number>
+  bug <number>
+  bug:<number>
+}}}
+
+=== Examples ===
+
+{{{
+  Clarify header normalization vs matching request headers (see #147)
+
+  Resolve #27: fix definition of idempotent
+
+  Note change for issue 157 (related to #157)
+
+  Define http and https URI schemes: addresses #58, #128, #159
+
+  Define http and https URI schemes: addresses #58, #128, #159;
+  fixes #157: removed reference to RFC1900 use of IP addresses in URI.
+
+  Resolve #140: rephrase note so that it becomes clear that the described ...
+}}}
+
+=== Script ===
+
+The default script installed as trac-post-commit-hook is:
+http://tools.ietf.org/tools/wg-pages/svn-hook-files/trac-post-commit-hook

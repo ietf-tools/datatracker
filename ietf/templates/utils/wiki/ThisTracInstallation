@@ -1,0 +1,94 @@
+{{{
+#!rst
+
+Trac Installation on tools.ietf.org
+===================================
+
+Background
+----------
+
+The Track installation used on the tools.ietf.org site is different from the
+installation examples provided with Trac and on http://trac.edgewall.com.  The
+reason is mainly that the multi-project examples all assume that Trac
+constitutes the whole of the deployed environment, rather than being part of a
+greater set.  This means that the examples assume that accessing the
+individual projects through URLs of the form "/$some_path/trac/$projname"
+makes sense, while in our case, we would like the URLs to look like
+"/$some_path/$projname/trac".  In the multi-project configuration, this would
+make Trac always believe that the project name is 'trac' - the last path
+component.
+
+Explored Alternatives
+---------------------
+
+Make Apache set ``TRAC_ENV`` dynamically
+........................................
+
+Tell Apache to dynamically set Trac's environment variable ``TRAC_ENV`` to the
+particular value for the accessed project:
+
+``/etc/apache2/sites-available/tools.ietf.org``:
+
+::
+
+    ScriptAliasMatch "^/wg/[^/]+/trac(/.*)?" /usr/share/trac/cgi-bin/trac.cgi$1
+    <LocationMatch "^/wg/([^/]+)/trac">
+       SetEnv TRAC_ENV "/www/tools.ietf.org/tools/trac/wg/$1"
+    </LocationMatch>
+
+This doesn't work because Apache doesn't support $n replacements based on
+earlier LocationMatch matches.
+
+Use .htaccess with default ScriptAlias
+......................................
+
+Maybe we could use individual .htaccess files in each WG directory to set the
+``TRAC_ENV`` variable to the required value?
+
+``/etc/apache2/sites-available/tools.ietf.org``:
+
+::
+
+    ScriptAliasMatch "^/wg/[^/]+/trac(/.*)?" /usr/share/trac/cgi-bin/trac.cgi$1
+
+
+``/www/tools.ietf.org/wg/examplewg/.htaccess``:
+
+::
+
+    SetEnv TRAC_ENV "/www/tools.ietf.org/wg/examplewg/trac"
+
+This doesn't work because this .htaccess isn't read when ScriptAlias points to
+another directory.
+
+
+Use .htaccess with a local CGI script
+.....................................
+
+Suppose we let ScriptAlias point to a script which is placed so that the
+.htaccess file actually gets read?
+
+``/etc/apache2/sites-available/tools.ietf.org``:
+
+::
+
+    ScriptAliasMatch "^/wg/([^/]+)/trac(/.*)?" /www/tools.ietf.org/wg/$1/trac/index.cgi$2
+
+
+``/www/tools.ietf.org/wg/examplewg/.htaccess``:
+
+::
+
+    SetEnv TRAC_ENV "/www/tools.ietf.org/wg/examplewg/trac"
+
+This *does* work, but it is not easily adapted to a Fast-CGI solution.  It is
+the set-up which is currently in use, but an alternative which will permit
+fast-cgi usage would be preferred - the current solution is anything but
+snappy...
+
+
+
+
+
+
+}}}
