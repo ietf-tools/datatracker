@@ -21,11 +21,19 @@ class StatisticsTests(TestCase):
 
         login_testing_unauthorized(self, "secretary", url)
 
+        completion_url = urlreverse(ietf.stats.views.review_stats, kwargs={ "stats_type": "completion" })
+
         r = self.client.get(url)
         self.assertEqual(r.status_code, 302)
-        self.assertTrue(urlreverse(ietf.stats.views.review_stats, kwargs={ "stats_type": "completion" }) in r["Location"])
+        self.assertTrue(completion_url in r["Location"])
+
+        self.client.logout()
+        self.client.login(username="plain", password="plain+password")
+        r = self.client.get(completion_url)
+        self.assertEqual(r.status_code, 403)
 
         # check tabular
+        self.client.login(username="secretary", password="secretary+password")
         for stats_type in ["completion", "results", "states"]:
             url = urlreverse(ietf.stats.views.review_stats, kwargs={ "stats_type": stats_type })
             r = self.client.get(url)

@@ -62,7 +62,7 @@ class ReviewTests(TestCase):
             "team": review_team.pk,
             "deadline": deadline.isoformat(),
             "requested_rev": "01",
-            "requested_by": Person.objects.get(user__username="plain").pk,
+            "requested_by": Person.objects.get(user__username="reviewsecretary").pk,
         })
         self.assertEqual(r.status_code, 302)
 
@@ -112,14 +112,14 @@ class ReviewTests(TestCase):
 
         # follow link
         req_url = urlreverse('ietf.doc.views_review.review_request', kwargs={ "name": doc.name, "request_id": review_req.pk })
-        self.client.login(username="secretary", password="secretary+password")
+        self.client.login(username="reviewsecretary", password="reviewsecretary+password")
         r = self.client.get(req_url)
         self.assertEqual(r.status_code, 200)
         self.assertTrue(close_url in unicontent(r))
         self.client.logout()
 
         # get close page
-        login_testing_unauthorized(self, "secretary", close_url)
+        login_testing_unauthorized(self, "reviewsecretary", close_url)
         r = self.client.get(close_url)
         self.assertEqual(r.status_code, 200)
 
@@ -134,7 +134,7 @@ class ReviewTests(TestCase):
         self.assertEqual(e.type, "closed_review_request")
         self.assertTrue("closed" in e.desc.lower())
         self.assertEqual(len(outbox), 1)
-        self.assertTrue("closed" in unicode(outbox[0]).lower())
+        self.assertTrue("closed" in outbox[0].get_payload(decode=True).decode("utf-8").lower())
 
     def test_possibly_advance_next_reviewer_for_team(self):
         doc = make_test_data()
@@ -225,20 +225,20 @@ class ReviewTests(TestCase):
     def test_assign_reviewer(self):
         doc = make_test_data()
 
-        # set up some reviewer-suitability factors
-        plain_email = Email.objects.filter(person__user__username="plain").first()
-        DocumentAuthor.objects.create(
-            author=plain_email,
-            document=doc,
-        )
-        doc.rev = "10"
-        doc.save_with_history([DocEvent.objects.create(doc=doc, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
-
         # review to assign to
         review_req = make_review_data(doc)
         review_req.state = ReviewRequestStateName.objects.get(slug="requested")
         review_req.reviewer = None
         review_req.save()
+
+        # set up some reviewer-suitability factors
+        reviewer_email = Email.objects.get(person__user__username="reviewer")
+        DocumentAuthor.objects.create(
+            author=reviewer_email,
+            document=doc,
+        )
+        doc.rev = "10"
+        doc.save_with_history([DocEvent.objects.create(doc=doc, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
 
         # previous review
         ReviewRequest.objects.create(
@@ -250,29 +250,29 @@ class ReviewTests(TestCase):
             state=ReviewRequestStateName.objects.get(slug="completed"),
             reviewed_rev="01",
             deadline=datetime.date.today() - datetime.timedelta(days=80),
-            reviewer=plain_email,
+            reviewer=reviewer_email,
         )
 
-        reviewer_settings = ReviewerSettings.objects.get(person__email=plain_email, team=review_req.team)
+        reviewer_settings = ReviewerSettings.objects.get(person__email=reviewer_email, team=review_req.team)
         reviewer_settings.filter_re = doc.name
         reviewer_settings.skip_next = 1
         reviewer_settings.save()
 
         UnavailablePeriod.objects.create(
             team=review_req.team,
-            person=plain_email.person,
+            person=reviewer_email.person,
             start_date=datetime.date.today() - datetime.timedelta(days=10),
             availability="unavailable",
         )
 
-        ReviewWish.objects.create(person=plain_email.person, team=review_req.team, doc=doc)
+        ReviewWish.objects.create(person=reviewer_email.person, team=review_req.team, doc=doc)
 
         # pick a non-existing reviewer as next to see that we can
         # handle reviewers who have left
         NextReviewerInTeam.objects.filter(team=review_req.team).delete()
         NextReviewerInTeam.objects.create(
             team=review_req.team,
-            next_reviewer=Person.objects.exclude(pk=plain_email.person_id).first(),
+            next_reviewer=Person.objects.exclude(pk=reviewer_email.person_id).first(),
         )
 
         assign_url = urlreverse('ietf.doc.views_review.assign_reviewer', kwargs={ "name": doc.name, "request_id": review_req.pk })
@@ -280,25 +280,25 @@ class ReviewTests(TestCase):
 
         # follow link
         req_url = urlreverse('ietf.doc.views_review.review_request', kwargs={ "name": doc.name, "request_id": review_req.pk })
-        self.client.login(username="secretary", password="secretary+password")
+        self.client.login(username="reviewsecretary", password="reviewsecretary+password")
         r = self.client.get(req_url)
         self.assertEqual(r.status_code, 200)
         self.assertTrue(assign_url in unicontent(r))
         self.client.logout()
 
         # get assign page
-        login_testing_unauthorized(self, "secretary", assign_url)
+        login_testing_unauthorized(self, "reviewsecretary", assign_url)
         r = self.client.get(assign_url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        plain_label = q("option[value=\"{}\"]".format(plain_email.address)).text().lower()
-        self.assertIn("reviewed document before", plain_label)
-        self.assertIn("wishes to review", plain_label)
-        self.assertIn("is author", plain_label)
-        self.assertIn("regexp matches", plain_label)
-        self.assertIn("unavailable indefinitely", plain_label)
-        self.assertIn("skip next 1", plain_label)
-        self.assertIn("#1", plain_label)
+        reviewer_label = q("option[value=\"{}\"]".format(reviewer_email.address)).text().lower()
+        self.assertIn("reviewed document before", reviewer_label)
+        self.assertIn("wishes to review", reviewer_label)
+        self.assertIn("is author", reviewer_label)
+        self.assertIn("regexp matches", reviewer_label)
+        self.assertIn("unavailable indefinitely", reviewer_label)
+        self.assertIn("skip next 1", reviewer_label)
+        self.assertIn("#1", reviewer_label)
 
         # assign
         empty_outbox()
@@ -311,7 +311,7 @@ class ReviewTests(TestCase):
         self.assertEqual(review_req.state_id, "requested")
         self.assertEqual(review_req.reviewer, reviewer)
         self.assertEqual(len(outbox), 1)
-        self.assertTrue("assigned" in unicode(outbox[0]))
+        self.assertTrue("assigned" in outbox[0].get_payload(decode=True).decode("utf-8"))
         self.assertEqual(NextReviewerInTeam.objects.get(team=review_req.team).next_reviewer, rotation_list[1])
 
         # re-assign
@@ -326,8 +326,8 @@ class ReviewTests(TestCase):
         self.assertEqual(review_req.state_id, "requested") # check that state is reset
         self.assertEqual(review_req.reviewer, reviewer)
         self.assertEqual(len(outbox), 2)
-        self.assertTrue("cancelled your assignment" in unicode(outbox[0]))
-        self.assertTrue("assigned" in unicode(outbox[1]))
+        self.assertTrue("cancelled your assignment" in outbox[0].get_payload(decode=True).decode("utf-8"))
+        self.assertTrue("assigned" in outbox[1].get_payload(decode=True).decode("utf-8"))
 
     def test_accept_reviewer_assignment(self):
         doc = make_test_data()
@@ -361,14 +361,14 @@ class ReviewTests(TestCase):
 
         # follow link
         req_url = urlreverse('ietf.doc.views_review.review_request', kwargs={ "name": doc.name, "request_id": review_req.pk })
-        self.client.login(username="secretary", password="secretary+password")
+        self.client.login(username="reviewsecretary", password="reviewsecretary+password")
         r = self.client.get(req_url)
         self.assertEqual(r.status_code, 200)
         self.assertTrue(reject_url in unicontent(r))
         self.client.logout()
 
         # get reject page
-        login_testing_unauthorized(self, "secretary", reject_url)
+        login_testing_unauthorized(self, "reviewsecretary", reject_url)
         r = self.client.get(reject_url)
         self.assertEqual(r.status_code, 200)
         self.assertTrue(unicode(review_req.reviewer.person) in unicontent(r))
@@ -385,7 +385,7 @@ class ReviewTests(TestCase):
         self.assertTrue("rejected" in e.desc)
         self.assertEqual(ReviewRequest.objects.filter(doc=review_req.doc, team=review_req.team, state="requested").count(), 1)
         self.assertEqual(len(outbox), 1)
-        self.assertTrue("Test message" in unicode(outbox[0]))
+        self.assertTrue("Test message" in outbox[0].get_payload(decode=True).decode("utf-8"))
 
     def make_test_mbox_tarball(self, review_req):
         mbox_path = os.path.join(self.review_dir, "testmbox.tar.gz")
@@ -444,7 +444,7 @@ class ReviewTests(TestCase):
             ietf.review.mailarch.construct_query_urls = lambda review_req, query=None: { "query_data_url": "file://" + os.path.abspath(mbox_path) }
 
             url = urlreverse('ietf.doc.views_review.search_mail_archive', kwargs={ "name": doc.name, "request_id": review_req.pk })
-            login_testing_unauthorized(self, "secretary", url)
+            login_testing_unauthorized(self, "reviewsecretary", url)
 
             r = self.client.get(url)
             self.assertEqual(r.status_code, 200)
@@ -534,7 +534,7 @@ class ReviewTests(TestCase):
 
         self.assertEqual(len(outbox), 1)
         self.assertTrue(review_req.team.list_email in outbox[0]["To"])
-        self.assertTrue("This is a review" in unicode(outbox[0]))
+        self.assertTrue("This is a review" in outbox[0].get_payload(decode=True).decode("utf-8"))
 
         self.assertTrue(settings.MAILING_LIST_ARCHIVE_URL in review_req.review.external_url)
 
@@ -574,7 +574,7 @@ class ReviewTests(TestCase):
 
         self.assertEqual(len(outbox), 1)
         self.assertTrue(review_req.team.list_email in outbox[0]["To"])
-        self.assertTrue("This is a review" in unicode(outbox[0]))
+        self.assertTrue("This is a review" in outbox[0].get_payload(decode=True).decode("utf-8"))
 
         self.assertTrue(settings.MAILING_LIST_ARCHIVE_URL in review_req.review.external_url)
 
@@ -628,13 +628,13 @@ class ReviewTests(TestCase):
         self.assertTrue(review_req.doc.rev in review_req.review.name)
 
         self.assertEqual(len(outbox), 2)
-        self.assertTrue("secretary" in outbox[0]["To"])
+        self.assertTrue("reviewsecretary@example.com" in outbox[0]["To"])
         self.assertTrue("partially" in outbox[0]["Subject"].lower())
-        self.assertTrue("new review request" in unicode(outbox[0]))
+        self.assertTrue("new review request" in outbox[0].get_payload(decode=True).decode("utf-8"))
 
         self.assertTrue(review_req.team.list_email in outbox[1]["To"])
         self.assertTrue("partial review" in outbox[1]["Subject"].lower())
-        self.assertTrue("This is a review" in unicode(outbox[1]))
+        self.assertTrue("This is a review" in outbox[1].get_payload(decode=True).decode("utf-8"))
 
         first_review = review_req.review
         first_reviewer = review_req.reviewer

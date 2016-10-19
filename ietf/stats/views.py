@@ -3,7 +3,7 @@ import datetime, itertools, json, calendar
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.core.urlresolvers import reverse as urlreverse
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, HttpResponseForbidden
 
 import dateutil.relativedelta
 
@@ -133,6 +133,9 @@ def review_stats(request, stats_type=None, acronym=None):
             elif r.name_id == "reviewer":
                 if not r.group_id in secr_access:
                     reviewer_only_access.add(r.group_id)
+
+        if not secr_access and not reviewer_only_access:
+            return HttpResponseForbidden("You do not have the necessary permissions to view this page")
 
         teams = [t for t in teams if t.pk in secr_access or t.pk in reviewer_only_access]
 

@@ -114,7 +114,7 @@ class ReviewTests(TestCase):
             deadline=datetime.date.today() + datetime.timedelta(days=30),
             state_id="accepted",
             reviewer=review_req1.reviewer,
-            requested_by=Person.objects.get(user__username="plain"),
+            requested_by=Person.objects.get(user__username="reviewer"),
         )
 
         UnavailablePeriod.objects.create(
@@ -161,7 +161,7 @@ class ReviewTests(TestCase):
             deadline=datetime.date.today() + datetime.timedelta(days=30),
             state_id="accepted",
             reviewer=review_req1.reviewer,
-            requested_by=Person.objects.get(user__username="plain"),
+            requested_by=Person.objects.get(user__username="reviewer"),
         )
 
         review_req3 = ReviewRequest.objects.create(
@@ -170,7 +170,7 @@ class ReviewTests(TestCase):
             type_id="early",
             deadline=datetime.date.today() + datetime.timedelta(days=30),
             state_id="requested",
-            requested_by=Person.objects.get(user__username="plain"),
+            requested_by=Person.objects.get(user__username="reviewer"),
         )
 
         # previous reviews
@@ -290,17 +290,17 @@ class ReviewTests(TestCase):
         self.assertEqual(len(outbox), 1)
         self.assertTrue(group.list_email in outbox[0]["To"])
         self.assertEqual(outbox[0]["subject"], "Test subject")
-        self.assertTrue("Test body" in unicode(outbox[0]))
+        self.assertTrue("Test body" in outbox[0].get_payload(decode=True).decode("utf-8"))
 
     def test_change_reviewer_settings(self):
         doc = make_test_data()
 
-        reviewer = Person.objects.get(name="Plain Man")
-
         review_req = make_review_data(doc)
-        review_req.reviewer = reviewer.email_set.first()
+        review_req.reviewer = Email.objects.get(person__user__username="reviewer")
         review_req.save()
-        
+
+        reviewer = review_req.reviewer.person
+
         url = urlreverse(ietf.group.views_review.change_reviewer_settings, kwargs={
             "acronym": review_req.team.acronym,
             "reviewer_email": review_req.reviewer_id,
@@ -335,8 +335,9 @@ class ReviewTests(TestCase):
         self.assertEqual(settings.remind_days_before_deadline, 6)
         self.assertEqual(len(outbox), 1)
         self.assertTrue("reviewer availability" in outbox[0]["subject"].lower())
-        self.assertTrue("frequency changed", unicode(outbox[0]).lower())
-        self.assertTrue("skip next", unicode(outbox[0]).lower())
+        msg_content = outbox[0].get_payload(decode=True).decode("utf-8").lower()
+        self.assertTrue("frequency changed", msg_content)
+        self.assertTrue("skip next", msg_content)
 
         # add unavailable period
         start_date = datetime.date.today() + datetime.timedelta(days=10)
@@ -352,8 +353,9 @@ class ReviewTests(TestCase):
         self.assertEqual(period.end_date, None)
         self.assertEqual(period.availability, "unavailable")
         self.assertEqual(len(outbox), 1)
-        self.assertTrue(start_date.isoformat(), unicode(outbox[0]).lower())
-        self.assertTrue("indefinite", unicode(outbox[0]).lower())
+        msg_content = outbox[0].get_payload(decode=True).decode("utf-8").lower()
+        self.assertTrue(start_date.isoformat(), msg_content)
+        self.assertTrue("indefinite", msg_content)
 
         # end unavailable period
         empty_outbox()
@@ -367,8 +369,9 @@ class ReviewTests(TestCase):
         period = reload_db_objects(period)
         self.assertEqual(period.end_date, end_date)
         self.assertEqual(len(outbox), 1)
-        self.assertTrue(start_date.isoformat(), unicode(outbox[0]).lower())
-        self.assertTrue("indefinite", unicode(outbox[0]).lower())
+        msg_content = outbox[0].get_payload(decode=True).decode("utf-8").lower()
+        self.assertTrue(start_date.isoformat(), msg_content)
+        self.assertTrue("indefinite", msg_content)
 
         # delete unavailable period
         empty_outbox()
@@ -379,15 +382,16 @@ class ReviewTests(TestCase):
         self.assertEqual(r.status_code, 302)
         self.assertEqual(UnavailablePeriod.objects.filter(person=reviewer, team=review_req.team, start_date=start_date).count(), 0)
         self.assertEqual(len(outbox), 1)
-        self.assertTrue(start_date.isoformat(), unicode(outbox[0]).lower())
-        self.assertTrue(end_date.isoformat(), unicode(outbox[0]).lower())
+        msg_content = outbox[0].get_payload(decode=True).decode("utf-8").lower()
+        self.assertTrue(start_date.isoformat(), msg_content)
+        self.assertTrue(end_date.isoformat(), msg_content)
 
     def test_reviewer_reminders(self):
         doc = make_test_data()
 
-        reviewer = Person.objects.get(name="Plain Man")
-
         review_req = make_review_data(doc)
+
+        reviewer = Person.objects.get(user__username="reviewer")
 
         settings = ReviewerSettings.objects.get(team=review_req.team, person=reviewer)
         settings.remind_days_before_deadline = 6
@@ -411,4 +415,4 @@ class ReviewTests(TestCase):
         empty_outbox()
         email_reviewer_reminder(review_req)
         self.assertEqual(len(outbox), 1)
-        self.assertTrue(review_req.doc_id in unicode(outbox[0]))
+        self.assertTrue(review_req.doc_id in outbox[0].get_payload(decode=True).decode("utf-8"))

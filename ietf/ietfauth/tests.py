@@ -342,12 +342,12 @@ class IetfAuthTests(TestCase):
     def test_review_overview(self):
         doc = make_test_data()
 
-        reviewer = Person.objects.get(name="Plain Man")
-
         review_req = make_review_data(doc)
-        review_req.reviewer = reviewer.email_set.first()
+        review_req.reviewer = Email.objects.get(person__user__username="reviewer")
         review_req.save()
-        
+
+        reviewer = review_req.reviewer.person
+
         UnavailablePeriod.objects.create(
             team=review_req.team,
             person=reviewer,
