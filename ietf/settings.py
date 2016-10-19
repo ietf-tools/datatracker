@@ -382,7 +382,7 @@ TEST_URL_COVERAGE_EXCLUDE = [
     r"^\^admin/",
 ]
 
-# These are filename globs.  They are fed directly to the coverage code checker.
+# Tese are filename globs
 TEST_CODE_COVERAGE_EXCLUDE = [
     "*/tests*",
     "*/admin.py",
@@ -660,7 +660,8 @@ USER_PREFERENCE_DEFAULTS = {
 }
 
 TRAC_MASTER_DIR = "/a/www/trac-setup/"
-TRAC_WIKI_DIR_PATTERN = "/a/www/www6s/trac/%s"
+TRAC_WIKI_DIR_ROOT = "/a/www/www6s/trac/"
+TRAC_WIKI_DIR_PATTERN = os.path.join(TRAC_WIKI_DIR_ROOT, "%s")
 TRAC_WIKI_URL_PATTERN = "https://trac.ietf.org/trac/%s/wiki"
 TRAC_ISSUE_URL_PATTERN = "https://trac.ietf.org/trac/%s/report/1"
 TRAC_SVN_DIR_PATTERN = "/a/svn/group/%s"
