@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 import os.path
 import types
-#import json
-#from pathlib import Path
+import shutil
+from StringIO import StringIO
+from pipe import pipe
 
 from textwrap import dedent
 from email.mime.text import MIMEText
@@ -10,6 +11,7 @@ from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
 
 from django.conf import settings
+from django.core.management import call_command
 from django.template import Context
 from django.template.defaulttags import URLNode
 from django.templatetags.static import StaticNode
@@ -21,7 +23,9 @@ import debug                            # pyflakes:ignore
 import ietf.urls
 from ietf.utils.management.commands import pyflakes
 from ietf.utils.mail import send_mail_text, send_mail_mime, outbox 
+from ietf.utils.test_data import make_test_data
 from ietf.utils.test_runner import get_template_paths
+from ietf.group.models import Group
 
 class PyFlakesTestCase(TestCase):
 
@@ -185,6 +189,46 @@ class TemplateChecksTestCase(TestCase):
         self.apply_template_test(check_that_static_tags_resolve, StaticNode, 'In %s: Could not find static file for "%s"', checked)
         settings.DEBUG = saved_debug
 
+
+class TestWikiGlueManagementCommand(TestCase):
+
+    def setUp(self):
+        self.wiki_dir_pattern = os.path.abspath('tmp-wiki-dir-root/%s')
+        if not os.path.exists(self.wiki_dir_pattern):
+            os.mkdir(os.path.dirname(self.wiki_dir_pattern))
+
+    def tearDown(self):
+        shutil.rmtree(os.path.dirname(self.wiki_dir_pattern))
+
+    def test_wiki_create_output(self):
+        make_test_data()
+        groups = Group.objects.filter(
+                        type__slug__in=['wg','rg','area'],
+                        state__slug='active'
+                    ).order_by('acronym')
+        out = StringIO()
+        call_command('create_group_wikis', stdout=out, verbosity=2, wiki_dir_pattern=self.wiki_dir_pattern)
+        command_output = out.getvalue()
+        for group in groups:
+            self.assertIn("Processing group %s" % group.acronym, command_output)
+            # Do a bit of verification using trac-admin, too
+            admin_code, admin_output, admin_error = pipe('trac-admin %s permission list' % (self.wiki_dir_pattern % group.acronym))
+            self.assertEqual(admin_code, 0)
+            roles = group.role_set.filter(name_id__in=['chair', 'secr', 'ad'])
+            for role in roles:
+                user = role.email.address.lower()
+                self.assertIn("Granting admin permission for %s" % user, command_output)
+                self.assertIn(user, admin_output)
+            docs = group.document_set.filter(states__slug='active', type_id='draft')
+            for doc in docs:
+                name = doc.name
+                name = name.replace('draft-','')
+                name = name.replace(doc.stream_id+'-', '')
+                name = name.replace(group.acronym+'-', '')
+                self.assertIn("Adding component %s"%name, command_output)
+        for page in settings.TRAC_WIKI_PAGES_TEMPLATES:
+            self.assertIn("Adding page %s" % os.path.basename(page), command_output)
+        self.assertIn("Indexing default repository", command_output)
 
 ## One might think that the code below would work, but it doesn't ...
 
