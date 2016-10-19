@@ -4,16 +4,14 @@ import os
 import copy
 import syslog
 import pkg_resources
+from optparse import make_option
 #from optparse import make_option
 
-from trac.admin.api import AdminCommandManager
 from trac.core import TracError
 from trac.env import Environment
 from trac.perm import PermissionSystem
 from trac.ticket.model import Component, Milestone, Severity
 from trac.util.text import unicode_unquote
-from trac.versioncontrol.api import RepositoryManager
-from trac.wiki.admin import WikiAdmin
 from trac.wiki.model import WikiPage
 
 from django.conf import settings
@@ -33,8 +31,8 @@ class Command(BaseCommand):
     help = "Create group wikis for WGs, RGs and Areas which don't have one."
 
     option_list = BaseCommand.option_list + (
+        make_option('--wiki-dir-pattern', dest='wiki_dir_pattern', help='File containing email (default: stdin)'),
     )    
-    #verbosity = 1
     
     def note(self, msg):
         if self.verbosity > 1:
@@ -238,12 +236,13 @@ class Command(BaseCommand):
     def handle(self, *filenames, **options):
         self.verbosity = options['verbosity']
         self.errors = 0
+        self.wiki_dir_pattern = options.get('wiki_dir_pattern', settings.TRAC_WIKI_DIR_PATTERN)
 
-        if self.verbosity.isdigit():
+        if isinstance(self.verbosity, (type(""), type(u""))) and self.verbosity.isdigit():
             self.verbosity = int(self.verbosity)
 
-        if not os.path.exists(settings.TRAC_WIKI_DIR_ROOT):
-            raise CommandError('The Wiki base direcory specified in settings.TRAC_WIKI_DIR_ROOT (%s) does not exist.' % settings.TRAC_WIKI_DIR_ROOT)
+        if not os.path.exists(os.path.dirname(self.wiki_dir_pattern)):
+            raise CommandError('The Wiki base direcory specified for the wiki directories (%s) does not exist.' % os.path.dirname(self.wiki_dir_pattern))
 
         groups = Group.objects.filter(
                         type__slug__in=['wg','rg','area'],
@@ -253,7 +252,7 @@ class Command(BaseCommand):
         for group in groups:
             try:
                 self.note("Processing group %s" % group.acronym)
-                group.trac_dir = settings.TRAC_WIKI_DIR_PATTERN % group.acronym
+                group.trac_dir = self.wiki_dir_pattern % group.acronym
                 group.svn_dir = settings.TRAC_SVN_DIR_PATTERN % group.acronym
 
                 if not os.path.exists(group.svn_dir):
