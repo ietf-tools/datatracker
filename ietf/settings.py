@@ -673,6 +673,7 @@ TRAC_ENV_OPTIONS = [
     ('trac', 'repository_type', 'svn'),
     ('trac', 'repository_dir', "{svn_dir}"),
     ('inherit', 'file', "/a/www/trac-setup/conf/trac.ini"),
+    ('components', 'tracopt.versioncontrol.svn.*', 'enabled'),
 ]
 
 TRAC_WIKI_PAGES_TEMPLATES = [
