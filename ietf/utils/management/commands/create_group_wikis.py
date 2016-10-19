@@ -31,7 +31,8 @@ class Command(BaseCommand):
     help = "Create group wikis for WGs, RGs and Areas which don't have one."
 
     option_list = BaseCommand.option_list + (
-        make_option('--wiki-dir-pattern', dest='wiki_dir_pattern', help='File containing email (default: stdin)'),
+        make_option('--wiki-dir-pattern', dest='wiki_dir_pattern', help='A pattern with %s placeholder for group wiki path'),
+        make_option('--svn-dir-pattern', dest='svn_dir_pattern', help='A pattern with %s placeholder for group svn path'),
     )    
     
     def note(self, msg):
@@ -237,6 +238,7 @@ class Command(BaseCommand):
         self.verbosity = options['verbosity']
         self.errors = 0
         self.wiki_dir_pattern = options.get('wiki_dir_pattern', settings.TRAC_WIKI_DIR_PATTERN)
+        self.svn_dir_pattern = options.get('svn_dir_pattern', settings.TRAC_SVN_DIR_PATTERN)
 
         if isinstance(self.verbosity, (type(""), type(u""))) and self.verbosity.isdigit():
             self.verbosity = int(self.verbosity)
@@ -253,7 +255,7 @@ class Command(BaseCommand):
             try:
                 self.note("Processing group %s" % group.acronym)
                 group.trac_dir = self.wiki_dir_pattern % group.acronym
-                group.svn_dir = settings.TRAC_SVN_DIR_PATTERN % group.acronym
+                group.svn_dir = self.svn_dir_pattern % group.acronym
 
                 if not os.path.exists(group.svn_dir):
                     err = self.create_svn(group.svn_dir)

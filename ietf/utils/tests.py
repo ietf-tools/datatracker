@@ -4,6 +4,7 @@ import types
 import shutil
 from StringIO import StringIO
 from pipe import pipe
+from unittest import skipIf
 
 from textwrap import dedent
 from email.mime.text import MIMEText
@@ -26,6 +27,14 @@ from ietf.utils.mail import send_mail_text, send_mail_mime, outbox
 from ietf.utils.test_data import make_test_data
 from ietf.utils.test_runner import get_template_paths
 from ietf.group.models import Group
+
+skip_wiki_glue_testing = False
+skip_wiki_glue_message = ""
+try:
+    import svn                          # pyflakes:ignore
+except ImportError as e:
+    skip_wiki_glue_testing = True
+    skip_wiki_glue_message = "     Skipping trac tests: %s" % e
 
 class PyFlakesTestCase(TestCase):
 
@@ -190,15 +199,20 @@ class TemplateChecksTestCase(TestCase):
         settings.DEBUG = saved_debug
 
 
+@skipIf(skip_wiki_glue_testing, skip_wiki_glue_message)
 class TestWikiGlueManagementCommand(TestCase):
 
     def setUp(self):
         self.wiki_dir_pattern = os.path.abspath('tmp-wiki-dir-root/%s')
         if not os.path.exists(self.wiki_dir_pattern):
             os.mkdir(os.path.dirname(self.wiki_dir_pattern))
+        self.svn_dir_pattern = os.path.abspath('tmp-svn-dir-root/%s')
+        if not os.path.exists(self.svn_dir_pattern):
+            os.mkdir(os.path.dirname(self.svn_dir_pattern))
 
     def tearDown(self):
         shutil.rmtree(os.path.dirname(self.wiki_dir_pattern))
+        shutil.rmtree(os.path.dirname(self.svn_dir_pattern))
 
     def test_wiki_create_output(self):
         make_test_data()
@@ -207,12 +221,16 @@ class TestWikiGlueManagementCommand(TestCase):
                         state__slug='active'
                     ).order_by('acronym')
         out = StringIO()
-        call_command('create_group_wikis', stdout=out, verbosity=2, wiki_dir_pattern=self.wiki_dir_pattern)
+        call_command('create_group_wikis', stdout=out, verbosity=2,
+            wiki_dir_pattern=self.wiki_dir_pattern,
+            svn_dir_pattern=self.svn_dir_pattern,
+        )
         command_output = out.getvalue()
         for group in groups:
             self.assertIn("Processing group %s" % group.acronym, command_output)
             # Do a bit of verification using trac-admin, too
-            admin_code, admin_output, admin_error = pipe('trac-admin %s permission list' % (self.wiki_dir_pattern % group.acronym))
+            admin_code, admin_output, admin_error = pipe(
+                'trac-admin %s permission list' % (self.wiki_dir_pattern % group.acronym))
             self.assertEqual(admin_code, 0)
             roles = group.role_set.filter(name_id__in=['chair', 'secr', 'ad'])
             for role in roles:
