@@ -927,8 +927,9 @@ class Draft():
         if match:
             title = match.group(1)
             title = title.strip()
-            title = re.sub('\s*\n\s*', ' ', title)
-            title = re.sub(' +', ' ', title)
+            title = re.sub(r'(?s)\n\s*\<?draft-.*$','', title)
+            title = re.sub(r'\s*\n\s*', ' ', title)
+            title = re.sub(r' +', ' ', title)
             self._title = title
             return self._title
         self.errors["title"] = "Could not find the title on the first page."
