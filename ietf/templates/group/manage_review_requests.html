@@ -51,7 +51,7 @@
 
                 <div>
                   <small>
-                    <a {% if r.pk != None %}href="{% url "ietf.doc.views_review.review_request" name=r.doc.name request_id=r.pk %}"{% endif %}>{% if r.pk != None %}Req: {{ r.time|date:"Y-m-d" }}{% else %}<em>auto-suggested</em>{% endif %} - {{ r.type.name }}</a>
+                    {% if r.pk != None %}<a href="{% url "ietf.doc.views_review.review_request" name=r.doc.name request_id=r.pk %}">Req: {{ r.time|date:"Y-m-d" }}{% else %}<em>auto-suggested</em>{% endif %} - {{ r.type.name }}{% if r.pk != None %}</a>{% endif %}
                   </small>
                 </div>
 
