@@ -81,8 +81,8 @@ class GroupForm(forms.Form):
             self.fields['parent'].queryset = self.fields['parent'].queryset.filter(type="area")
             self.fields['parent'].label = "IETF Area"
 
-        role_fields_to_remove = (set(roles_for_group_type(self.group_type))
-                                 - set(strip_suffix(attr, "_roles") for attr in self.fields if attr.endswith("_roles")))
+        role_fields_to_remove = (set(strip_suffix(attr, "_roles") for attr in self.fields if attr.endswith("_roles"))
+                                 - set(roles_for_group_type(self.group_type)))
         for r in role_fields_to_remove:
             del self.fields[r + "_roles"]
 
