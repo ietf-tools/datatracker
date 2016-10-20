@@ -48,7 +48,7 @@ class ReviewTests(TestCase):
         review_team = review_req.team
 
         url = urlreverse('ietf.doc.views_review.request_review', kwargs={ "name": doc.name })
-        login_testing_unauthorized(self, "secretary", url)
+        login_testing_unauthorized(self, "reviewsecretary", url)
 
         # get
         r = self.client.get(url)

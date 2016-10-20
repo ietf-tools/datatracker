@@ -27,13 +27,14 @@ def can_request_review_of_doc(user, doc):
     if not user.is_authenticated():
         return False
 
-    return is_authorized_in_doc_stream(user, doc)
+    return (is_authorized_in_doc_stream(user, doc)
+            or Role.objects.filter(person__user=user, name="secr", group__in=active_review_teams).exists())
 
 def can_manage_review_requests_for_team(user, team, allow_non_team_personnel=True):
     if not user.is_authenticated():
         return False
 
-    return (Role.objects.filter(name__in=["secr", "delegate"], person__user=user, group=team).exists()
+    return (Role.objects.filter(name="secr", person__user=user, group=team).exists()
             or (allow_non_team_personnel and has_role(user, "Secretariat")))
 
 def review_requests_to_list_for_docs(docs):
