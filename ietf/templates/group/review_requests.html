@@ -29,7 +29,7 @@
       <tbody>
         {% for r in open_review_requests %}
           <tr>
-            <td><a {% if r.pk != None %}href="{% url "ietf.doc.views_review.review_request" name=r.doc.name request_id=r.pk %}"{% endif %}>{{ r.doc.name }}-{% if r.requested_rev %}{{ r.requested_rev }}{% else %}{{ r.doc.rev }}{% endif %}</a></td>
+            <td>{% if r.pk != None %}<a href="{% url "ietf.doc.views_review.review_request" name=r.doc.name request_id=r.pk %}">{% endif %}{{ r.doc.name }}-{% if r.requested_rev %}{{ r.requested_rev }}{% else %}{{ r.doc.rev }}{% endif %}{% if r.pk != None %}</a>{% endif %}</td>
             <td>{{ r.type.name }}</td>
             <td>{% if r.pk %}{{ r.time|date:"Y-m-d" }}{% else %}<em>auto-suggested</em>{% endif %}</td>
             <td>
