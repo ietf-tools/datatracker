@@ -102,11 +102,11 @@ hr.slim {
 	var left = 0, top = 0, right = 0, bottom = 0, floor="", width=0;
 
 	if (0) { }
-	{% for room in meeting.room_set.all %}
-	else if (nm == '{{room.name|xslugify}}') { left = {{room.left}}; top = {{room.top}}; right = {{room.right}}; bottom = {{room.bottom}}; floor='{{room.floorplan.name|xslugify}}'; width={{room.floorplan.image.width}}; }{% endfor %}
+	{% for room in meeting.room_set.all %}{% if room.floorplan %}
+	else if (nm == '{{room.name|xslugify}}') { left = {{room.left}}; top = {{room.top}}; right = {{room.right}}; bottom = {{room.bottom}}; floor='{{room.floorplan.name|xslugify}}'; width={{room.floorplan.image.width}}; }{% endif %}{% endfor %}
 
-	{% for room in meeting.room_set.all %}{% if room.functional_display_name %}
-	else if (nm == '{{room.functional_name|xslugify}}') { left = {{room.left}}; top = {{room.top}}; right = {{room.right}}; bottom = {{room.bottom}}; floor='{{room.floorplan.name|xslugify}}'; width={{room.floorplan.image.width}}; }{% endif %}{% endfor %}
+	{% for room in meeting.room_set.all %}{% if room.functional_display_name %}{% if room.floorplan %}
+	else if (nm == '{{room.functional_name|xslugify}}') { left = {{room.left}}; top = {{room.top}}; right = {{room.right}}; bottom = {{room.bottom}}; floor='{{room.floorplan.name|xslugify}}'; width={{room.floorplan.image.width}}; }{% endif %}{% endif %}{% endfor %}
 
 	else return null;
 
