@@ -9,6 +9,8 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.core.urlresolvers import reverse
 from django.utils.encoding import force_text
 
+import debug                            # pyflakes:ignore
+
 import tastypie
 import tastypie.resources
 from tastypie.api import Api
@@ -34,7 +36,7 @@ class ModelResource(tastypie.resources.ModelResource):
         smooshed = urlencode(kwargs)
 
         # Use a list plus a ``.join()`` because it's faster than concatenation.
-        return "%s:%s:%s:%s" % (self._meta.api_name, self._meta.resource_name, ':'.join(args), ':'.join(sorted(smooshed)))
+        return "%s:%s:%s:%s" % (self._meta.api_name, self._meta.resource_name, ':'.join(args), smooshed)
 
 class Serializer(BaseSerializer):
     def to_html(self, data, options=None):
