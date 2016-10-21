@@ -33,7 +33,9 @@ Planned work in rough order
   photos to wg pages and group overview pages.
 
 * Revisit floorplans: Add room coordinate input tool (javascript).
-  Add NOC object annotation possibilities.
+  Add NOC object annotation possibilities.  Add support for break areas
+  on multiple floors (probably means modelling break areas the same way
+  as other sessions, and removing the break_area char_field on Meeting.
 
 * Add support for internationalised email addresses according to RFC 6531
   when sending email (this is not supported by smtplib under Python 2.7,
