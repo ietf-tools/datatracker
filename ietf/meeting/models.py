@@ -100,14 +100,6 @@ class Meeting(models.Model):
         else:
             return self.number
 
-    def time_zone_offset(self):
-        # Look at the time of 8 o'clock sunday, rather than 0h sunday, to get
-        # the right time after a possible summer/winter time change.
-        if self.time_zone:
-            return pytz.timezone(self.time_zone).localize(datetime.datetime.combine(self.date, datetime.time(8, 0))).strftime("%z")
-        else:
-            return ""
-
     def get_meeting_date (self,offset):
         return self.date + datetime.timedelta(days=offset)
 
