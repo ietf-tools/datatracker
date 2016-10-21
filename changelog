@@ -1,4 +1,55 @@
+ietfdb (6.36.0) ietf; urgency=medium
+
+  **Trac wiki and issue tracker support**
+
+  This release introduces a management command which will create new instances
+  of Trac pages when new WGs, RGs, and Area groups are created, and also keep
+  the admin permissions and issue tracker component updated with the group
+  chair/secretaries and the groups documents.  Once existing wikis have been
+  moved from tools.ietf.org, the management will be added to cron to be run
+  regularly.
+
+  The installation procedure changes slightly with this release, because we
+  need to be able to use the system-installed subversion bindings for python.
+  When running under virtualenv, it now has to be created like this::
+
+	6.36.0 $ virtualenv --system-site-packages env
+
+  There are also some bugfixes.  From the commit log:
+
+  * Fixed a bug in the API cache key construction which could make the key 
+    longer than necessary.
+
+  * Added a test for meeting agenda in UTC
+
+  * Removed some dead code.
+
+  * Fixed the javascript code in the floor-plan template that adds room 
+    links.  It didn't handle rooms without assinged floor-plans well.
+
+  * Merged in a management command which provides glue code for creation 
+    and maintenance of Trac issue tracker and wiki installations per group.  
+    New groups of type wg, rg, and area will autmatically receive a Trac 
+    instance.
+
+  * Fixed a bug in testing for directory existence in the test setup.
+
+  * Make sure that the svn component is enabled in the Trac config file, even
+    if we can't find the Trac inherit-from settings file.
+
+  * Made the wiki glue test skippable, in case the python subversion bindings
+    are unavailable.  Added creation of temporary directories also for the svn
+    repositores created for wikis during testing.
+
+  * Make sure to not include draft name in the title extracted from draft 
+    text.  Fixes a problem with bad info in 1id-abstracts.txt
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  21 Oct 2016 15:14:53 +0000
+
+
 ietfdb (6.35.0) ietf; urgency=medium
+
+  **New proceedings page improvements**
 
   This release brings incremental improvements to the new proceedings pages;
   in particular it adds proceeding introductionary pages: Progress Report and
