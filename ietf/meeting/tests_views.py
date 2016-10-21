@@ -79,9 +79,22 @@ class MeetingTests(TestCase):
 
         self.write_materials_files(meeting, session)
 
-        time_interval = "%s-%s" % (slot.time.strftime("%H:%M").lstrip("0"), (slot.time + slot.duration).strftime("%H:%M").lstrip("0"))
+        # utc
+        time_interval = "%s-%s" % (slot.utc_start_time().strftime("%H:%M").lstrip("0"), (slot.utc_start_time() + slot.duration).strftime("%H:%M").lstrip("0"))
+
+        r = self.client.get(urlreverse("ietf.meeting.views.agenda", kwargs=dict(num=meeting.number,utc='-utc')))
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        agenda_content = q("#content").html()
+        self.assertTrue(session.group.acronym in agenda_content)
+        self.assertTrue(session.group.name in agenda_content)
+        self.assertTrue(session.group.parent.acronym.upper() in agenda_content)
+        self.assertTrue(slot.location.name in agenda_content)
+        self.assertTrue(time_interval in agenda_content)
 
         # plain
+        time_interval = "%s-%s" % (slot.time.strftime("%H:%M").lstrip("0"), (slot.time + slot.duration).strftime("%H:%M").lstrip("0"))
+
         r = self.client.get(urlreverse("ietf.meeting.views.agenda", kwargs=dict(num=meeting.number)))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
