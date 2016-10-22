@@ -28,8 +28,8 @@ General Instructions for Deployment of a New Release
 
     Optionally set up a Python virtual environment::
 
-      virtualenv .		# optional
-      source bin/activate	# optional
+      virtualenv --system-site-packages env	# optional
+      source env/bin/activate			# optional
 
  4. Install requirements (make sure your pip is reasonably fresh first).
     The following will install required python modules locally if you
