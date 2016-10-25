@@ -386,10 +386,40 @@
 			{% endif %}
 			<!-- Video recording -->
 		        {% if schedule.meeting.number|add:"0" >= 80 %}
-		        <a class="btn btn-default btn-xs"
-			  href="http://www.meetecho.com/ietf{{schedule.meeting.number}}/recordings#{{item.session.historic_group.acronym.upper}}"
-			  title="Meetecho video recording"><span class="fa fa-file-video-o"></span>
-			</a>
+			  {% with item.session.recordings as recordings %}
+			    {% if recordings %}
+			      <!-- There's no guaranteed order, so this is a bit messy: -->
+			      <!-- First, the audio recordings, if any -->
+			      {% for r in recordings %}
+				{% if r.href and 'audio' in r.href %}
+				  <a class="btn btn-default btn-xs" href="{{ r.href }}" title="{{ r.title}}">
+				     <span class="fa fa-file-audio-o">
+				  </a>
+				{% endif %}
+			      {% endfor %}
+			      <!-- Then the youtube recordings -->
+			      {% for r in recordings %}
+				{% if r.href and 'youtu' in r.href %}
+				  <a class="btn btn-default btn-xs" href="{{ r.href }}" title="{{ r.title }}">
+				     <span class="fa fa-file-video-o"></span>
+				  </a>
+				{% endif %}
+			      {% endfor %}
+			      <!-- Finally, any other recordings -->
+			      {% for r in recordings %}
+			        {% if r.href and not 'audio' in r.href and not 'youtu' in r.href %}
+				  <a class="btn btn-default btn-xs" href="{{ r.href }}" title="{{ r.title }}">
+				    <span class="fa fa-file-o"></span>
+				  </a>
+				{% endif %}
+			      {% endfor %}
+			    {% else %}
+			      <a class="btn btn-default btn-xs"
+				  href="http://www.meetecho.com/ietf{{schedule.meeting.number}}/recordings#{{item.session.historic_group.acronym.upper}}"
+				 title="Meetecho video recording"><span class="fa fa-file-video-o"></span>
+			      </a>
+			    {% endif %}
+			  {% endwith %}
 			{% endif %}
 			<!-- Audio recording -->
 			{# <a class="btn btn-default btn-xs" href="" title="Audio recording"><span class="fa fa-file-audio-o"></span></a>#}
