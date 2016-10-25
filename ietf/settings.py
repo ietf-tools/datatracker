@@ -666,6 +666,10 @@ TRAC_WIKI_URL_PATTERN = "https://trac.ietf.org/trac/%s/wiki"
 TRAC_ISSUE_URL_PATTERN = "https://trac.ietf.org/trac/%s/report/1"
 TRAC_SVN_DIR_PATTERN = "/a/svn/group/%s"
 TRAC_SVN_URL_PATTERN = "https://svn.ietf.org/svn/group/%s/"
+SVN_PACKAGES = [
+    "/usr/lib/python2.7/dist-packages/svn",
+    "/usr/lib/python2.7/dist-packages/libsvn",
+]
 
 TRAC_ENV_OPTIONS = [
     ('project', 'name', "{name} Wiki"),

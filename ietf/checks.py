@@ -1,6 +1,9 @@
 import os
+import sys
 import time
 from textwrap import dedent
+
+import debug                            # pyflakes:ignore
 
 from django.conf import settings
 from django.core import checks
@@ -213,6 +216,19 @@ def check_cache(app_configs, **kwargs):
 @checks.register('cache')
 def check_svn_import(app_configs, **kwargs):
     errors = []
+    # 
+    site_packages_dir = None
+    for p in sys.path:
+        if ('/env/' in p or '/venv/' in p) and '/site-packages' in p:
+            site_packages_dir = p
+            break
+    if site_packages_dir:
+        for path in settings.SVN_PACKAGES:
+            dir, name = os.path.split(path)
+            package_link = os.path.join(site_packages_dir, name)
+            if not os.path.exists(package_link):
+                os.symlink(path, package_link)
+    #
     if settings.SERVER_MODE == 'production':
         try:
             import svn                  # pyflakes:ignore
@@ -225,14 +241,15 @@ def check_svn_import(app_configs, **kwargs):
 
                     However, the subversion bindings seem to be unavailable.  The subversion
                     bindings are not available for install using pip, but must be supplied by
-                    the system package manager.  In order to be available within a python
-                    virtualenv, the virtualenv must have been created with the
-                    --system-site-packages flag, so that the packages installed by the system
-                    package manager are visible.
+                    the system package manager.  In order to be available within the python
+                    virtualenv, ietf.checks.check_svn_import() tries to create a symlink from
+                    the configured location of the system-provided svn package to the
+                    site-packages directory of the virtualenv. If you get this message, that has
+                    failed to provide the svn package.
 
                     Please install 'python-subversion' (Debian), 'subversion-python' (RedHat,
-                    CentOS, Fedora), 'subversion-python27bindings' (BSD); and set up a
-                    virtualenv using the --system-site-packages flag.  Further tips are
+                    CentOS, Fedora), 'subversion-python27bindings' (BSD); and provide the
+                    correct path to the svn package in settings.SVN_PACKAGE.  Further tips are
                     available at https://trac.edgewall.org/wiki/TracSubversion.
 
                     """).replace('\n', '\n   ').rstrip(),
