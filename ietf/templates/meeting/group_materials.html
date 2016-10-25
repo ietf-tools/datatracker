@@ -22,7 +22,7 @@
   {% else %}
     <td>
       {% if session.agenda %}
-        <a href="https://www.ietf.org/proceedings/{{meeting_num}}/agenda/{{ session.agenda }}">Agenda</a>
+        <a href="{{ session.agenda.href }}">Agenda</a>
       {% else %}
         {% if show_agenda == "True" %}
           <span class="label label-warning">No agenda</span>
