@@ -558,6 +558,16 @@ class Document(DocumentInfo):
         s = s.first()
         return s
 
+    def pub_date(self):
+        """This is the rfc publication date (datetime) for RFCs, 
+        and the new-revision datetime for other documents."""
+        if self.get_state_slug() == "rfc":
+            event = self.latest_event(type='published_rfc')
+        else:
+            event = self.latest_event(type='new_revision')
+        return event.time
+        
+
 class RelatedDocHistory(models.Model):
     source = models.ForeignKey('DocHistory')
     target = models.ForeignKey('DocAlias', related_name="reversely_related_document_history_set")

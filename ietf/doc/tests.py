@@ -3,6 +3,8 @@ import shutil
 import datetime
 import json
 import sys
+import urlparse
+import bibtexparser
 if sys.version_info[0] == 2 and sys.version_info[1] < 7:
     import unittest2 as unittest
 else:
@@ -10,7 +12,6 @@ else:
 from pyquery import PyQuery
 from tempfile import NamedTemporaryFile
 from Cookie import SimpleCookie
-import urlparse
 
 from django.core.urlresolvers import reverse as urlreverse
 from django.conf import settings
@@ -21,7 +22,7 @@ import debug                            # pyflakes:ignore
 
 from ietf.doc.models import ( Document, DocAlias, DocRelationshipName, RelatedDocument, State,
     DocEvent, BallotPositionDocEvent, LastCallDocEvent, WriteupDocEvent, NewRevisionDocEvent )
-from ietf.doc.factories import DocumentFactory
+from ietf.doc.factories import DocumentFactory, DocEventFactory
 from ietf.group.models import Group
 from ietf.group.factories import GroupFactory
 from ietf.meeting.models import Meeting, Session, SessionPresentation
@@ -809,6 +810,60 @@ class DocTestCase(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertTrue("Request publication" not in unicontent(r))
 
+
+    def test_document_bibtex(self):
+
+        rfc = DocumentFactory.create(
+                  other_aliases = ['rfc6020',],
+                  states = [('draft','rfc'),('draft-iesg','pub')],
+                  std_level_id = 'ps',
+                  time = '2010-10-10',
+              )
+        DocEventFactory.create(doc=rfc, type='published_rfc', time = '2010-10-10')
+        #
+        url = urlreverse('ietf.doc.views_doc.document_bibtex', kwargs=dict(name=rfc.name))
+        r = self.client.get(url)
+        entry = bibtexparser.loads(r.content).get_entry_dict()["rfc6020"]
+        self.assertEqual(entry['series'],   u'Request for Comments')
+        self.assertEqual(entry['number'],   u'6020')
+        self.assertEqual(entry['doi'],      u'10.17487/rfc6020')
+        self.assertEqual(entry['year'],     u'2010')
+        self.assertEqual(entry['month'],    u'oct')
+        #
+        self.assertNotIn('day', entry)
+
+        april1 = DocumentFactory.create(
+                  other_aliases =   ['rfc1149',],
+                  stream_id =       'rse',
+                  states =          [('draft','rfc'),('draft-iesg','pub')],
+                  std_level_id =    'ind',
+                  time =            '1990-04-01',
+              )
+        DocEventFactory.create(doc=april1, type='published_rfc', time = '1990-04-01')
+        #
+        url = urlreverse('ietf.doc.views_doc.document_bibtex', kwargs=dict(name=april1.name))
+        r = self.client.get(url)
+        entry = bibtexparser.loads(r.content).get_entry_dict()['rfc1149']
+        self.assertEqual(entry['series'],   u'Request for Comments')
+        self.assertEqual(entry['number'],   u'1149')
+        self.assertEqual(entry['doi'],      u'10.17487/rfc1149')
+        self.assertEqual(entry['year'],     u'1990')
+        self.assertEqual(entry['month'],    u'apr')
+        self.assertEqual(entry['day'],      u'1')
+
+        draft = DocumentFactory.create()
+        docname = u'%s-%s' % (draft.name, draft.rev)
+        bibname = docname[6:]           # drop the 'draft-' prefix
+        url = urlreverse('ietf.doc.views_doc.document_bibtex', kwargs=dict(name=draft.name))
+        r = self.client.get(url)
+        entry = bibtexparser.loads(r.content).get_entry_dict()[bibname]
+        self.assertEqual(entry['note'],     u'Work in Progress')
+        self.assertEqual(entry['number'],   docname)
+        self.assertEqual(entry['year'],     str(draft.pub_date().year))
+        self.assertEqual(entry['month'],    draft.pub_date().strftime('%b').lower())
+        self.assertEqual(entry['day'],      str(draft.pub_date().day))
+        #
+        self.assertNotIn('doi', entry)
 
 class AddCommentTestCase(TestCase):
     def test_add_comment(self):
