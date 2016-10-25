@@ -103,32 +103,34 @@ class DocumentInfo(models.Model):
         # break things all over the place.
         # XXX TODO: move all non-URL 'external_url' values into a field which is
         # better named, or regularize the filename based on self.name
-        validator = URLValidator()
-        try:
-            validator(self.external_url)
-            return self.external_url
-        except ValidationError:
-            pass
-
-        meeting_related = self.meeting_related()
-
-        settings_var = settings.DOC_HREFS
-        if meeting_related:
-            settings_var = settings.MEETING_DOC_HREFS
-
-        try:
-            format = settings_var[self.type_id]
-        except KeyError:
-            if len(self.external_url):
+        if not hasattr(self, '_cached_href'):
+            validator = URLValidator()
+            try:
+                validator(self.external_url)
                 return self.external_url
-            return None
+            except ValidationError:
+                pass
 
-        meeting = None
-        if meeting_related:
-            doc = self.doc if isinstance(self, DocHistory) else self
-            meeting = doc.session_set.first().meeting
+            meeting_related = self.meeting_related()
 
-        return format.format(doc=self,meeting=meeting)
+            settings_var = settings.DOC_HREFS
+            if meeting_related:
+                settings_var = settings.MEETING_DOC_HREFS
+
+            try:
+                format = settings_var[self.type_id]
+            except KeyError:
+                if len(self.external_url):
+                    return self.external_url
+                return None
+
+            meeting = None
+            if meeting_related:
+                doc = self.doc if isinstance(self, DocHistory) else self
+                meeting = doc.session_set.first().meeting
+
+            self._cached_href = format.format(doc=self,meeting=meeting)
+        return self._cached_href
 
     def set_state(self, state):
         """Switch state type implicit in state to state. This just
