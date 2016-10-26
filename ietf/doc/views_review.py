@@ -51,7 +51,7 @@ class RequestReviewForm(forms.ModelForm):
 
         f = self.fields["team"]
         f.queryset = active_review_teams()
-        f.initial = [group.pk for group in f.queryset if can_manage_review_requests_for_team(user, group, allow_non_team_personnel=False)]
+        f.initial = [group.pk for group in f.queryset if can_manage_review_requests_for_team(user, group, allow_personnel_outside_team=False)]
 
         self.fields['type'].queryset = self.fields['type'].queryset.filter(used=True, typeusedinreviewteam__team__in=self.fields["team"].queryset).distinct()
         self.fields['type'].widget = forms.RadioSelect(choices=[t for t in self.fields['type'].choices if t[0]])

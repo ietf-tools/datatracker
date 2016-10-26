@@ -9,7 +9,9 @@ from django import forms
 from django.template.loader import render_to_string
 
 from ietf.review.models import ReviewRequest, ReviewerSettings, UnavailablePeriod
-from ietf.review.utils import (can_manage_review_requests_for_team, close_review_request_states,
+from ietf.review.utils import (can_manage_review_requests_for_team,
+                               can_access_review_stats_for_team,
+                               close_review_request_states,
                                extract_revision_ordered_review_requests_for_documents_and_replaced,
                                assign_review_request_to_reviewer,
                                close_review_request,
@@ -85,7 +87,8 @@ def review_requests(request, acronym, group_type=None):
                       "closed_review_requests": closed_review_requests,
                       "since_choices": since_choices,
                       "since": since,
-                      "can_manage_review_requests": can_manage_review_requests_for_team(request.user, group)
+                      "can_manage_review_requests": can_manage_review_requests_for_team(request.user, group),
+                      "can_access_stats": can_access_review_stats_for_team(request.user, group),
                   }))
 
 def reviewer_overview(request, acronym, group_type=None):
@@ -142,6 +145,7 @@ def reviewer_overview(request, acronym, group_type=None):
     return render(request, 'group/reviewer_overview.html',
                   construct_group_menu_context(request, group, "reviewers", group_type, {
                       "reviewers": reviewers,
+                      "can_access_stats": can_access_review_stats_for_team(request.user, group)
                   }))
 
 class ManageReviewRequestForm(forms.Form):
@@ -247,10 +251,10 @@ def manage_review_requests(request, acronym, group_type=None):
         current_reqs = set(review_requests_dict.iterkeys())
 
         closed_reqs = posted_reqs - current_reqs
-        newly_closed += len(closed_reqs)
+        newly_closed = len(closed_reqs)
 
         opened_reqs = current_reqs - posted_reqs
-        newly_opened += len(opened_reqs)
+        newly_opened = len(opened_reqs)
         for r in opened_reqs:
             review_requests_dict[r].form.add_error(None, "New request.")
 

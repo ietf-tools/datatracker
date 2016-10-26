@@ -13,6 +13,10 @@
 {% block group_content %}
   {% origin %}
 
+  {% if can_access_stats %}
+    <h1 class="pull-right"><a href="{% url "ietf.stats.views.review_stats" %}" class="icon-link">&nbsp;<span class="small fa fa-bar-chart">&nbsp;</span></a></h1>
+  {% endif %}
+
   <h2>Open review requests</h2>
 
   {% if open_review_requests %}
