@@ -105,23 +105,30 @@ def materials(request, num=None):
             'cor_cut_off_date': cor_cut_off_date
         })
 
+    past_cutoff_date = datetime.date.today() > meeting.get_submission_correction_date()
+
     #sessions  = Session.objects.filter(meeting__number=meeting.number, timeslot__isnull=False)
     schedule = get_schedule(meeting, None)
-    sessions  = Session.objects.filter(meeting__number=meeting.number, timeslotassignments__schedule=schedule).select_related()
+    sessions  = Session.objects.filter(meeting__number=meeting.number,
+        timeslotassignments__schedule=schedule).select_related('meeting__agenda','status','group__state','group__parent')
+    for session in sessions:
+        session.past_cutoff_date = past_cutoff_date
     plenaries = sessions.filter(name__icontains='plenary')
     ietf      = sessions.filter(group__parent__type__slug = 'area').exclude(group__acronym='edu')
     irtf      = sessions.filter(group__parent__acronym = 'irtf')
     training  = sessions.filter(group__acronym__in=['edu','iaoc'], type_id__in=['session', 'other', ])
     iab       = sessions.filter(group__parent__acronym = 'iab')
 
-    cache_version = Document.objects.filter(session__meeting__number=meeting.number).aggregate(Max('time'))["time__max"]
     return render(request, "meeting/materials.html", {
         'meeting_num': meeting.number,
-        'plenaries': plenaries, 'ietf': ietf, 'training': training, 'irtf': irtf, 'iab': iab,
+        'plenaries': plenaries,
+        'ietf': ietf,
+        'training': training,
+        'irtf': irtf,
+        'iab': iab,
         'cut_off_date': cut_off_date,
         'cor_cut_off_date': cor_cut_off_date,
         'submission_started': now > begin_date,
-        'cache_version': cache_version,
     })
 
 def current_materials(request):
