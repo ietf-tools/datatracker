@@ -1004,8 +1004,9 @@ class Session(models.Model):
             for d in l:
                 d.meeting_related = lambda: True
         else:
-            l = self.materials.filter(type=material_type).exclude(states__type=material_type, states__slug='deleted').order_by('sessionpresentation__order')
-
+            if not hasattr(self, '_cached_materials'):
+                self._cached_materials = self.materials.exclude(states__slug='deleted').order_by('sessionpresentation__order')
+            l = self._cached_materials.filter(type=material_type).exclude(states__type=material_type)
         if only_one:
             if l:
                 return l[0]
@@ -1020,13 +1021,19 @@ class Session(models.Model):
         return self._agenda_cache
 
     def minutes(self):
-        return self.get_material("minutes", only_one=True)
+        if not hasattr(self, "_minutes_cache"):
+            self._minutes_cache = self.get_material("minutes", only_one=True)
+        return self._minutes_cache
 
     def recordings(self):
-        return list(self.get_material("recording", only_one=False))
+        if not hasattr(self, "_recordings_cache"):
+            self._recordings_cache = list(self.get_material("recording", only_one=False))
+        return self._recordings_cache
 
     def bluesheets(self):
-        return list(self.get_material("bluesheets", only_one=False))
+        if not hasattr(self, "_bluesheets_cache"):
+            self._bluesheets_cache =  list(self.get_material("bluesheets", only_one=False))
+        return self._bluesheets_cache
 
     def slides(self):
         if not hasattr(self, "_slides_cache"):
@@ -1034,7 +1041,9 @@ class Session(models.Model):
         return self._slides_cache
 
     def drafts(self):
-        return list(self.materials.filter(type='draft'))
+        if not hasattr(self, "_drafts_cache"):
+            self._drafts_cache = list(self.materials.filter(type='draft'))
+        return self._drafts_cache
 
     def all_meeting_sessions_for_group(self):
         #sessions = [s for s in self.meeting.session_set.filter(group=self.group,type=self.type) if s.official_timeslotassignment()]
