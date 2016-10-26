@@ -33,6 +33,8 @@ def annotate_sql_queries(queries):
             timeacc[sql] = 0.0;
         timeacc[sql] += float(q['time'])
     for q in queries:
+        if q.get('where', None) == None:
+            q['where'] = 'T'            # template
         sql = q['sql']
         q['count'] = str(counts[sql])
         q['time_accum'] = "%4.3f" % timeacc[sql]

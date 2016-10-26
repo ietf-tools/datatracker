@@ -253,6 +253,7 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     'django.core.context_processors.media',
     'django.contrib.messages.context_processors.messages',
     'ietf.context_processors.server_mode',
+    'ietf.context_processors.debug_mark_queries_from_view',
     'ietf.context_processors.revision_info',
     'ietf.secr.context_processors.secr_revision_info',
     'ietf.context_processors.rfcdiff_base_url',
