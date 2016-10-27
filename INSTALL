@@ -26,9 +26,10 @@ General Instructions for Deployment of a New Release
 
       cd $releasenumber
 
-    Optionally set up a Python virtual environment::
+    It is recommended set up a Python virtual environment 
+    under $releasenumber/env/::
 
-      virtualenv --system-site-packages env	# optional
+      virtualenv env	# optional
       source env/bin/activate			# optional
 
  4. Install requirements (make sure your pip is reasonably fresh first).
