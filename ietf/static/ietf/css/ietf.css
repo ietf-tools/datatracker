@@ -572,6 +572,10 @@ table.simple-table td:last-child {
   text-align: center;
 }
 
+.review-stats tr.totals {
+  font-weight: bold;
+}
+
 .review-stats-teams {
   -moz-column-width: 18em;
   -webkit-column-width: 18em;

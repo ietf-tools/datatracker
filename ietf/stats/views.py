@@ -7,7 +7,11 @@ from django.http import HttpResponseRedirect, HttpResponseForbidden
 
 import dateutil.relativedelta
 
-from ietf.review.utils import extract_review_request_data, aggregate_review_request_stats, ReviewRequestData
+from ietf.review.utils import (extract_review_request_data,
+                               aggregate_raw_review_request_stats,
+                               ReviewRequestData,
+                               compute_review_request_stats,
+                               sum_raw_review_request_aggregations)
 from ietf.group.models import Role, Group
 from ietf.person.models import Person
 from ietf.name.models import ReviewRequestStateName, ReviewResultName
@@ -59,12 +63,17 @@ def review_stats(request, stats_type=None, acronym=None):
             
         return base_url + query_part
 
-    def get_from_selection(get_parameter, possible_choices):
-        val = request.GET.get(get_parameter)
-        for slug, label, url in possible_choices:
-            if slug == val:
-                return slug
-        return None
+    def get_choice(get_parameter, possible_choices, multiple=False):
+        values = request.GET.getlist(get_parameter)
+        found = [t[0] for t in possible_choices if t[0] in values]
+
+        if multiple:
+            return found
+        else:
+            if found:
+                return found[0]
+            else:
+                return None
 
     # which overview - team or reviewer
     if acronym:
@@ -96,7 +105,7 @@ def review_stats(request, stats_type=None, acronym=None):
 
     possible_count_choices = [ (slug, label, build_review_stats_url(get_overrides={ "count": slug })) for slug, label in possible_count_choices ]
 
-    count = get_from_selection("count", possible_count_choices) or ""
+    count = get_choice("count", possible_count_choices) or ""
 
     # time range
     def parse_date(s):
@@ -175,31 +184,41 @@ def review_stats(request, stats_type=None, acronym=None):
         group_by_objs = { r.pk: r for r in query_reviewers }
         group_by_index = ReviewRequestData._fields.index("reviewer")
 
-    # now aggregate the data
+    # now filter and aggregate the data
     possible_teams = possible_completion_types = possible_results = possible_states = None
-    selected_team = selected_completion_type = selected_result = selected_state = None
+    selected_teams = selected_completion_type = selected_result = selected_state = None
 
     if stats_type == "time":
-        possible_teams = [(t.acronym, t.acronym, build_review_stats_url(get_overrides={ "team": t.acronym })) for t in teams]
-        selected_team = get_from_selection("team", possible_teams)
-        query_teams = [t for t in query_teams if t.acronym == selected_team]
+        possible_teams = [(t.acronym, t.acronym) for t in teams]
+        selected_teams = get_choice("team", possible_teams, multiple=True)
 
-    extracted_data = extract_review_request_data(query_teams, query_reviewers, from_time, to_time, ordering=[level])
+        def add_if_exists_else_subtract(element, l):
+            if element in l:
+                return [x for x in l if x != element]
+            else:
+                return l + [element]
 
-    if stats_type == "time":
+        possible_teams = [(slug, label, build_review_stats_url(get_overrides={
+            "team": add_if_exists_else_subtract(slug, selected_teams)
+        })) for slug, label in possible_teams]
+        query_teams = [t for t in query_teams if t.acronym in selected_teams]
+
+        extracted_data = extract_review_request_data(query_teams, query_reviewers, from_time, to_time)
+
         req_time_index = ReviewRequestData._fields.index("req_time")
 
         def time_key_fn(t):
             d = t[req_time_index].date()
-            #d -= datetime.timedelta(days=d.weekday())
-            d -= datetime.timedelta(days=d.day)
-            return (t[group_by_index], d)
+            #d -= datetime.timedelta(days=d.weekday()) # weekly
+            d -= datetime.timedelta(days=d.day) # monthly
+            return d
 
         found_results = set()
         found_states = set()
         aggrs = []
-        for (group_pk, d), request_data_items in itertools.groupby(extracted_data, key=time_key_fn):
-            aggr = aggregate_review_request_stats(request_data_items, count=count)
+        for d, request_data_items in itertools.groupby(extracted_data, key=time_key_fn):
+            raw_aggr = aggregate_raw_review_request_stats(request_data_items, count=count)
+            aggr = compute_review_request_stats(raw_aggr)
 
             aggrs.append((d, aggr))
 
@@ -225,21 +244,21 @@ def review_stats(request, stats_type=None, acronym=None):
             for slug, label in possible_completion_types
         ]
 
-        selected_completion_type = get_from_selection("completion", possible_completion_types)
+        selected_completion_type = get_choice("completion", possible_completion_types)
 
         possible_results = [
             (r.slug, r.name, build_review_stats_url(get_overrides={ "completion": None, "result": r.slug, "state": None }))
             for r in results
         ]
 
-        selected_result = get_from_selection("result", possible_results)
+        selected_result = get_choice("result", possible_results)
         
         possible_states = [
             (s.slug, s.name, build_review_stats_url(get_overrides={ "completion": None, "result": None, "state": s.slug }))
             for s in states
         ]
 
-        selected_state = get_from_selection("state", possible_states)
+        selected_state = get_choice("state", possible_states)
 
         if not selected_completion_type and not selected_result and not selected_state:
             selected_completion_type = "completed_in_time"
@@ -261,13 +280,18 @@ def review_stats(request, stats_type=None, acronym=None):
         }])
 
     else: # tabular data
+        extracted_data = extract_review_request_data(query_teams, query_reviewers, from_time, to_time, ordering=[level])
 
         data = []
 
         found_results = set()
         found_states = set()
+        raw_aggrs = []
         for group_pk, request_data_items in itertools.groupby(extracted_data, key=lambda t: t[group_by_index]):
-            aggr = aggregate_review_request_stats(request_data_items, count=count)
+            raw_aggr = aggregate_raw_review_request_stats(request_data_items, count=count)
+            raw_aggrs.append(raw_aggr)
+
+            aggr = compute_review_request_stats(raw_aggr)
 
             # skip zero-valued rows
             if aggr["open"] == 0 and aggr["completed"] == 0 and aggr["not_completed"] == 0:
@@ -281,6 +305,12 @@ def review_stats(request, stats_type=None, acronym=None):
                 found_states.add(slug)
             
             data.append(aggr)
+
+        # add totals row
+        if len(raw_aggrs) > 1:
+            totals = compute_review_request_stats(sum_raw_review_request_aggregations(raw_aggrs))
+            totals["obj"] = "Totals"
+            data.append(totals)
 
         results = ReviewResultName.objects.filter(slug__in=found_results)
         states = ReviewRequestStateName.objects.filter(slug__in=found_states)
@@ -313,7 +343,7 @@ def review_stats(request, stats_type=None, acronym=None):
 
         # time options
         "possible_teams": possible_teams,
-        "selected_team": selected_team,
+        "selected_teams": selected_teams,
         "possible_completion_types": possible_completion_types,
         "selected_completion_type": selected_completion_type,
         "possible_results": possible_results,

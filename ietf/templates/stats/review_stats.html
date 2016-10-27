@@ -67,12 +67,12 @@
         Team:
         <div class="btn-group">
           {% for slug, label, url in possible_teams %}
-            <a class="btn btn-default {% if slug == selected_team %}active{% endif %}" href="{{ url }}">{{ label }}</a>
+            <a class="btn btn-default {% if slug in selected_teams %}active{% endif %}" href="{{ url }}">{{ label }}</a>
           {% endfor %}
         </div>
       </div>
 
-      {% if selected_team %}
+      {% if selected_teams %}
         <div>
           Completion:
           <div class="btn-group">
@@ -127,7 +127,7 @@
       </thead>
       <tbody>
         {% for row in data %}
-          <tr>
+          <tr {% if row.obj == "Totals" %}class="totals"{% endif %}>
             <td>{{ row.obj }}</td>
             <td>{{ row.open_in_time }}</td>
             <td>{{ row.open_late }}</td>
@@ -163,7 +163,7 @@
       </thead>
       <tbody>
         {% for row in data %}
-          <tr>
+          <tr {% if row.obj == "Totals" %}class="totals"{% endif %}>
             <td>{{ row.obj }}</td>
             {% for c in row.result_list %}
               <td>{{ c }}</td>
@@ -192,7 +192,7 @@
       </thead>
       <tbody>
         {% for row in data %}
-          <tr>
+          <tr {% if row.obj == "Totals" %}class="totals"{% endif %}>
             <td>{{ row.obj }}</td>
             {% for c in row.state_list %}
               <td>{{ c }}</td>
@@ -202,7 +202,7 @@
       </tbody>
     </table>
 
-  {% elif stats_type == "time" and selected_team %}
+  {% elif stats_type == "time" and selected_teams %}
 
     <h3>Counts per month</h3>
 

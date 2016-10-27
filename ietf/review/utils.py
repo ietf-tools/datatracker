@@ -220,9 +220,9 @@ def extract_review_request_data(teams=None, reviewers=None, time_from=None, time
 
         yield d
 
-def aggregate_review_request_stats(review_request_data, count=None):
+def aggregate_raw_review_request_stats(review_request_data, count=None):
     """Take a sequence of review request data from
-    extract_review_request_data and compute aggregated statistics."""
+    extract_review_request_data and aggregate them."""
 
     state_dict = defaultdict(int)
     late_state_dict = defaultdict(int)
@@ -248,6 +248,12 @@ def aggregate_review_request_stats(review_request_data, count=None):
                 assignment_to_closure_days_list.append(assignment_to_closure_days)
                 assignment_to_closure_days_count += c
 
+    return state_dict, late_state_dict, result_dict, assignment_to_closure_days_list, assignment_to_closure_days_count
+
+def compute_review_request_stats(raw_aggregation):
+    """Compute statistics from aggregated review request data."""
+    state_dict, late_state_dict, result_dict, assignment_to_closure_days_list, assignment_to_closure_days_count = raw_aggregation
+
     res = {}
     res["state"] = state_dict
     res["result"] = result_dict
@@ -265,6 +271,27 @@ def aggregate_review_request_stats(review_request_data, count=None):
 
     return res
 
+def sum_raw_review_request_aggregations(raw_aggregations):
+    """Collapse a sequence of aggregations into one aggregation."""
+    state_dict = defaultdict(int)
+    late_state_dict = defaultdict(int)
+    result_dict = defaultdict(int)
+    assignment_to_closure_days_list = []
+    assignment_to_closure_days_count = 0
+
+    for raw_aggr in raw_aggregations:
+        i_state_dict, i_late_state_dict, i_result_dict, i_assignment_to_closure_days_list, i_assignment_to_closure_days_count = raw_aggr
+        for s, v in i_state_dict.iteritems():
+            state_dict[s] += v
+        for s, v in i_late_state_dict.iteritems():
+            late_state_dict[s] += v
+        for r, v in i_result_dict.iteritems():
+            result_dict[r] += v
+
+        assignment_to_closure_days_list.extend(i_assignment_to_closure_days_list)
+        assignment_to_closure_days_count += i_assignment_to_closure_days_count
+
+    return state_dict, late_state_dict, result_dict, assignment_to_closure_days_list, assignment_to_closure_days_count
 
 def make_new_review_request_from_existing(review_req):
     obj = ReviewRequest()
