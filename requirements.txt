@@ -34,6 +34,7 @@ pytz>=2014.7
 pyzmail>=1.0.3
 selenium>=2.42
 six>=1.8.0
+sqlparse>=0.2.2
 tqdm>=3.7.0
 Trac>=1.0.10
 Unidecode>=0.4.18
