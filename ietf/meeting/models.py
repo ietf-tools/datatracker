@@ -1020,9 +1020,12 @@ class Session(models.Model):
         return self._agenda_cache
 
     def minutes(self):
-        return self.get_material("minutes", only_one=True)
+        if not hasattr(self, '_cached_minutes'):
+            self._cached_minutes = self.get_material("minutes", only_one=True)
+        return self._cached_minutes
 
     def recordings(self):
+        
         return list(self.get_material("recording", only_one=False))
 
     def bluesheets(self):

@@ -92,7 +92,7 @@ class DocumentInfo(models.Model):
         else:
             return settings.DOCUMENT_PATH_PATTERN.format(doc=self)
 
-    def href(self):
+    def href(self, meeting=None):
         """
         Returns an url to the document text.  This differs from .get_absolute_url(),
         which returns an url to the datatracker page for the document.   
@@ -105,31 +105,44 @@ class DocumentInfo(models.Model):
         # better named, or regularize the filename based on self.name
         if not hasattr(self, '_cached_href'):
             validator = URLValidator()
-            try:
-                validator(self.external_url)
-                return self.external_url
-            except ValidationError:
-                pass
+            if self.external_url and self.external_url.split(':')[0] in validator.schemes:
+                try:
+                    validator(self.external_url)
+                    return self.external_url
+                except ValidationError:
+                    pass
 
-            meeting_related = self.meeting_related()
 
-            settings_var = settings.DOC_HREFS
-            if meeting_related:
-                settings_var = settings.MEETING_DOC_HREFS
-
-            try:
-                format = settings_var[self.type_id]
-            except KeyError:
+            if self.type_id in settings.DOC_HREFS and self.type_id in settings.MEETING_DOC_HREFS:
+                if self.meeting_related():
+                    self.is_meeting_related = True
+                    format = settings.MEETING_DOC_HREFS[self.type_id]
+                else:
+                    self.is_meeting_related = False
+                    format = settings.DOC_HREFS[self.type_id]
+            elif self.type_id in settings.DOC_HREFS:
+                self.is_meeting_related = False
+                format = settings.DOC_HREFS[self.type_id]
+            elif self.type_id in settings.MEETING_DOC_HREFS:
+                self.is_meeting_related = True
+                format = settings.MEETING_DOC_HREFS[self.type_id]
+            else:
                 if len(self.external_url):
                     return self.external_url
-                return None
+                else:
+                    return None
 
-            meeting = None
-            if meeting_related:
-                doc = self.doc if isinstance(self, DocHistory) else self
-                meeting = doc.session_set.first().meeting
+            if self.is_meeting_related:
+                if not meeting:
+                    # we need to do this because DocHistory items don't have
+                    # any session_set entry:
+                    doc = self.doc if isinstance(self, DocHistory) else self
+                    meeting = doc.session_set.first().meeting
+                info = dict(doc=self, meeting=meeting)
+            else:
+                info = dict(doc=self)
 
-            self._cached_href = format.format(doc=self,meeting=meeting)
+            self._cached_href = format.format(**info)
         return self._cached_href
 
     def set_state(self, state):
@@ -424,20 +437,21 @@ class Document(DocumentInfo):
         return e[0] if e else None
 
     def canonical_name(self):
-        from ietf.doc.utils_charter import charter_name_for_group # Imported locally to avoid circular imports
-        if hasattr(self, '_canonical_name'):
-            return self._canonical_name
-        name = self.name
-        if self.type_id == "draft" and self.get_state_slug() == "rfc":
-            a = self.docalias_set.filter(name__startswith="rfc")
-            if a:
-                name = a[0].name
-        elif self.type_id == "charter":
-            try:
-                name = charter_name_for_group(self.chartered_group)
-            except Group.DoesNotExist:
-                pass
-        return name
+        if not hasattr(self, '_canonical_name'):
+            name = self.name
+            if self.type_id == "draft" and self.get_state_slug() == "rfc":
+                a = self.docalias_set.filter(name__startswith="rfc")
+                if a:
+                    name = a[0].name
+            elif self.type_id == "charter":
+                from ietf.doc.utils_charter import charter_name_for_group # Imported locally to avoid circular imports
+                try:
+                    name = charter_name_for_group(self.chartered_group)
+                except Group.DoesNotExist:
+                    pass
+            self._canonical_name = name
+        return self._canonical_name
+
 
     def canonical_docalias(self):
         return self.docalias_set.get(name=self.name)

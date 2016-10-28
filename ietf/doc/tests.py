@@ -27,6 +27,7 @@ from ietf.group.models import Group
 from ietf.group.factories import GroupFactory
 from ietf.meeting.models import Meeting, Session, SessionPresentation
 from ietf.meeting.factories import SessionFactory
+from ietf.meeting.test_data import make_meeting_test_data
 from ietf.name.models import SessionStatusName
 from ietf.person.models import Person
 from ietf.person.factories import PersonFactory
@@ -117,6 +118,7 @@ class SearchTests(TestCase):
 
     def test_search_for_name(self):
         draft = make_test_data()
+        make_meeting_test_data()
         draft.save_with_history([DocEvent.objects.create(doc=draft, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
 
         prev_rev = draft.rev
@@ -559,6 +561,7 @@ Man                    Expires September 22, 2015               [Page 3]
 
     def test_document_primary_and_history_views(self):
         make_test_data()
+        make_meeting_test_data()
 
         # Ensure primary views of both current and historic versions of documents works
         for docname in ["draft-imaginary-independent-submission",
@@ -567,7 +570,7 @@ Man                    Expires September 22, 2015               [Page 3]
                         "charter-ietf-mars",
                         "agenda-42-mars",
                         "minutes-42-mars",
-                        "slides-42-mars-1",
+                        "slides-42-mars-1-active",
                         # TODO: add
                         #"bluesheets-42-mars-1",
                         #"recording-42-mars-1-00",

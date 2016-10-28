@@ -109,8 +109,10 @@ def materials(request, num=None):
 
     #sessions  = Session.objects.filter(meeting__number=meeting.number, timeslot__isnull=False)
     schedule = get_schedule(meeting, None)
-    sessions  = Session.objects.filter(meeting__number=meeting.number,
-        timeslotassignments__schedule=schedule).select_related('meeting__agenda','status','group__state','group__parent')
+    sessions  = ( Session.objects
+        .filter(meeting__number=meeting.number, timeslotassignments__schedule=schedule)
+        .select_related('meeting__agenda','status','group__state','group__parent', )
+    )
     for session in sessions:
         session.past_cutoff_date = past_cutoff_date
     plenaries = sessions.filter(name__icontains='plenary')

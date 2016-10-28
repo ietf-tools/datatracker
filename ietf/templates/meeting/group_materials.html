@@ -22,7 +22,7 @@
   {% else %}
     <td>
       {% if session.agenda %}
-        <a href="{{ session.agenda.href }}">Agenda</a>
+        <a href="https://www.ietf.org/proceedings/{{ meeting_num }}/agenda/{{ session.agenda.external_url }}">Agenda</a>
       {% else %}
         {% if show_agenda == "True" %}
           <span class="label label-warning">No agenda</span>
@@ -31,7 +31,7 @@
     </td>
     <td>
       {% if session.minutes %}
-        <a href="https://www.ietf.org/proceedings/{{ meeting_num }}/minutes/{{ session.minutes }}">Minutes</a>
+        <a href="https://www.ietf.org/proceedings/{{ meeting_num }}/minutes/{{ session.minutes.external_url }}">Minutes</a>
       {% else %}
         {% if show_agenda == "True" %}
           <span class="label label-warning">No minutes</span>
@@ -41,7 +41,7 @@
     <td>
       {% with session.slides as slides %}
         {% for slide in slides %}
-          <a href="https://www.ietf.org/proceedings/{{meeting_num}}/slides/{{ slide.external_url }}">{{ slide.title|clean_whitespace }}</a>
+          <a href="https://www.ietf.org/proceedings/{{ meeting_num }}/slides/{{ slide.external_url }}">{{ slide.title|clean_whitespace }}</a>
           <br>
         {% empty %}
           <span class="label label-warning">No slides</span>
@@ -51,7 +51,7 @@
     <td>
      {% with session.all_meeting_drafts as drafts %}
        {% for draft in drafts %}
-         <a href="{% url "doc_view" name=draft.canonical_name %}">{{ draft.canonical_name }}</a><br>
+         <a href="{{ draft.href }}">{{ draft.name }}</a><br>
        {% empty %} 
          <span class="label label-warning">No drafts</span>
        {% endfor %}

@@ -636,6 +636,7 @@ SELENIUM_TESTS_ONLY = False
 # Set debug apps in DEV_APPS settings_local
 DEV_APPS = ()
 DEV_MIDDLEWARE_CLASSES = ()
+DEV_TEMPLATE_CONTEXT_PROCESSORS = ()
 
 # Domain which hosts draft and wg alias lists
 DRAFT_ALIAS_DOMAIN = IETF_DOMAIN
@@ -742,6 +743,7 @@ for app in INSTALLED_APPS:
 # Add DEV_APPS to INSTALLED_APPS
 INSTALLED_APPS += DEV_APPS
 MIDDLEWARE_CLASSES += DEV_MIDDLEWARE_CLASSES
+TEMPLATE_CONTEXT_PROCESSORS += DEV_TEMPLATE_CONTEXT_PROCESSORS
 
 
 # We provide a secret key only for test and development modes.  It's

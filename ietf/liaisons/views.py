@@ -9,6 +9,8 @@ from django.db.models import Q, Prefetch
 from django.http import HttpResponse, HttpResponseForbidden
 from django.shortcuts import render, get_object_or_404, redirect
 
+import debug                            # pyflakes:ignore
+
 from ietf.doc.models import Document
 from ietf.ietfauth.utils import role_required, has_role
 from ietf.group.models import Group, Role

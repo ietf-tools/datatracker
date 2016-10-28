@@ -375,17 +375,7 @@ def make_test_data():
 
     # Instances of the remaining document types 
     # (Except liaison, liai-att, and recording  which the code in ietf.doc does not use...)
-    def other_doc_factory(type_id,name):
-        doc = Document.objects.create(type_id=type_id,name=name,rev='00',group=mars_wg)
-        DocAlias.objects.create(name=name,document=doc)
-        doc.set_state(State.objects.get(type__slug=doc.type.slug,slug='active'))
-        if type_id=='slides':
-            doc.set_state(State.objects.get(type='reuse_policy',slug='single'))
-    other_doc_factory('agenda','agenda-42-mars')
-    other_doc_factory('minutes','minutes-42-mars')
-    other_doc_factory('slides','slides-42-mars-1')
-    # TODO: add
-    #other_doc_factory('bluesheets','bluesheets-42-mars-1')
-    #other_doc_factory('recording','recording-42-mars-1-00')
+    # Meeting-related documents are created in make_meeting_test_data, and
+    # associated with a session
 
     return draft
