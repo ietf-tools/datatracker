@@ -1,43 +1,49 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}{% origin %}
 {% if debug %}
-  {% load debug_filters %}
-  {% load future %}
+  {% if sql_debug %}
+    {% load debug_filters %}
+    {% load future %}
 
-  <div id="debug">
-  <hr>
-    <p>
-      {{ sql_queries|length }} queries ({{ sql_queries|timesum }}s)
-      {% if sql_queries|length != 0 %}
-        <a class="btn btn-default btn-xs"
-           onclick="$('#debug-query-table').toggleClass('hide');">Show</a>
-      {% endif %}
-    </p>
-    <table class="table table-condensed table-striped tablesorter hide" id="debug-query-table">
-      <thead>
-        <tr>
-	  <th data-header="sequence">#</th>
-	  <th data-header="query">SQL</th>
-	  <th data-header="count">Count</th>
-	  <th data-header="where">View/ Templ.</th>
-	  <th data-header="time">Time</th>
-	  <th data-header="acc">Acc.</th>
-        </tr>
-      </thead>
-      <tbody>
-	{% with sql_queries|annotate_sql_queries as sql_query_info %}
-	    {% for query in sql_query_info %}
-	      <tr>
-		<td>{{ forloop.counter }}</td>
-		<td>{{ query.sql|expand_comma|escape }}</td>
-		<td>{{ query.count }}</td>
-		<td>{{ query.where }}</td>
-		<td>{{ query.time }}</td>
-		<td>{{ query.time_accum }}</td>
-	      </tr>
-	    {% endfor %}
-	{% endwith %}
-      </tbody>
-    </table>
-  </div>
+    <div id="debug">
+    <hr>
+      <p>
+	{{ sql_queries|length }} queries ({{ sql_queries|timesum }}s)
+	{% if sql_queries|length != 0 %}
+	  <a class="btn btn-default btn-xs"
+	     onclick="$('#debug-query-table').toggleClass('hide');">Show</a>
+	{% endif %}
+      </p>
+      <table class="table table-condensed table-striped tablesorter hide" id="debug-query-table">
+	<thead>
+	  <tr>
+	    <th data-header="sequence">#</th>
+	    <th data-header="query">SQL</th>
+	    <th data-header="count">Count</th>
+	    <th data-header="where">WHERE</th>
+	    <th data-header="loc">View/ Templ.</th>
+	    <th data-header="time">Time</th>
+	    <th data-header="acc">Acc.</th>
+	  </tr>
+	</thead>
+	<tbody>
+	  {% with sql_queries|annotate_sql_queries as sql_query_info %}
+	      {% for query in sql_query_info %}
+		<tr>
+		  <td>{{ forloop.counter }}</td>
+		  <td>{{ query.sql|expand_comma|escape }}</td>
+		  <td>{{ query.count }}</td>
+		  <td>{{ query.where }}</td>
+		  <td>{{ query.loc }}</td>
+		  <td>{{ query.time }}</td>
+		  <td>{{ query.time_accum }}</td>
+		</tr>
+	      {% endfor %}
+	  {% endwith %}
+	</tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class='text-center text-muted small'>Add 'ietf.context_processors.sql_debug' to settings.TEMPLATE_CONTECT_PROCESSORS to turn on the SQL statement table</div>
+  {% endif %}
 {% endif %}

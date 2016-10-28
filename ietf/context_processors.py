@@ -18,6 +18,12 @@ def debug_mark_queries_from_view(request):
     if settings.DEBUG and request.META.get('REMOTE_ADDR') in settings.INTERNAL_IPS:
         from django.db import connection
         for query in connection.queries:
-            query['where'] = 'V'           # V is for 'view'
+            query['loc'] = 'V'           # V is for 'view'
     return context_extras
+
+def sql_debug(request):
+    if settings.DEBUG and request.META.get('REMOTE_ADDR') in settings.INTERNAL_IPS:
+        return {'sql_debug': True }
+    else:
+        return {'sql_debug': False }
     
