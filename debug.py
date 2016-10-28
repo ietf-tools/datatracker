@@ -66,10 +66,12 @@ def trace(fn):                 # renamed from 'report' by henrik 16 Jun 2011
             sys.stderr.write("\n%s  From %s:\n%s  |  %s\n%s  %s\n%s* %s [#%s]\n" %
                 (indent, fi, indent, co, indent, fu, indent, fc, call))
         _report_indent[0] += increment
+        mark = timeutils.time()
         ret = fn(*params,**kwargs)
+        tau = timeutils.time() - mark
         _report_indent[0] -= increment
         if debug:
-            sys.stderr.write("%s  %s [#%s] ==> %s\n" % (indent, fc, call, fix(repr(ret))))
+            sys.stderr.write("%s  %s | %.3fs [#%s] ==> %s\n" % (indent, fc, tau, call, fix(repr(ret))))
 
         return ret
     wrap.callcount = 0
@@ -96,11 +98,11 @@ def time(fn):
     """Decorator to print timing information about a function call.
     """
     def wrap(fn, *params,**kwargs):
-        mark = timeutils.time()
 
         indent = ' ' * _report_indent[0]
         fc = "%s.%s()" % (fn.__module__, fn.__name__,)
 
+        mark = timeutils.time()
         ret = fn(*params,**kwargs)
         tau = timeutils.time() - mark
         sys.stderr.write("%s| %s | %.3fs\n" % (indent, fc, tau))
