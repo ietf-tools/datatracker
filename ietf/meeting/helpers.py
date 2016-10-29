@@ -409,7 +409,9 @@ def get_announcement_initial(meeting, is_change=False):
     group = meeting.session_set.first().group
     in_person = bool(meeting.city)
     initial = {}
-    (initial['to'],initial['cc']) = gather_address_lists('interim_announced',group=group)
+    addrs = gather_address_lists('interim_announced',group=group).as_strings()
+    initial['to'] = addrs.to
+    initial['cc'] = addrs.cc
     initial['frm'] = settings.INTERIM_ANNOUNCE_FROM_EMAIL
     if in_person:
         desc = 'Interim'
