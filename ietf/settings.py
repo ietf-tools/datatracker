@@ -349,11 +349,8 @@ BOOTSTRAP3 = {
     
 }
 
+# Override this in your settings_local with the IP addresses relevant for you:
 INTERNAL_IPS = (
-# AMS servers
-	'64.170.98.32',
-	'64.170.98.86',
-
 # local
         '127.0.0.1',
         '::1',
@@ -633,9 +630,20 @@ BADNESS_MUCHTOOBIG = 500
 SELENIUM_TESTS = False
 SELENIUM_TESTS_ONLY = False
 
-# Set debug apps in DEV_APPS settings_local
+# Set debug apps in settings_local.DEV_APPS
+
 DEV_APPS = ()
 DEV_MIDDLEWARE_CLASSES = ()
+
+# django-debug-toolbar and the debug listing of sql queries at the bottom of
+# each page when in dev mode can overlap in functionality, and can slow down
+# page loading.  If you wish to use the sql_queries debug listing, put this in
+# your settings_local and make sure your client IP address is in INTERNAL_IPS:
+#
+#    DEV_TEMPLATE_CONTEXT_PROCESSORS = (
+#        'ietf.context_processors.sql_debug',
+#    )
+#
 DEV_TEMPLATE_CONTEXT_PROCESSORS = ()
 
 # Domain which hosts draft and wg alias lists
