@@ -1,3 +1,79 @@
+ietfdb (6.37.0) ietf; urgency=medium
+
+  **YouTube links, Fixed bibtex and tweaked meeting materials pages**
+
+  This release brings some new small features, and a bunch of bugfixes.  The
+  IETF meeting agenda now provides links to the YouTube videos generated from
+  the Meetecho video stream as soon as they have been uploaded and the URL has
+  been added to the datatracker.  It improves both content and rendering time
+  for the new meeting materials page, and it fixes a problem with the bibxml
+  entries provided by the datatracker.  It also contains enhancements to the
+  development view of sql queries executed as part of generating the current
+  page, the addition of function call duration to the @debug.trace decorator,
+  and code refacturing which should speed up meeting-related pages in general.
+
+  Details from the commit log:
+
+  * Merged in [12213] from rcross@amsl.com: Fixed a bug where interim
+    announcement form was initialized with lists instead of strings.  
+
+  * Rewrote Document.href() to not do database queries when possible, as that
+    has a big performance impact.  Fixed a number of tests which relied on
+    href() not doing the right thing for simplified test data.  Added caching
+    of canonical_name(), which can be quite heavy.  Additional refactoring in
+    a number of places, to use better test data and avoid test failures for
+    good code.
+
+  * Updated the installation instructions file.
+
+  * Added caching to avoid calling the meat of each of the Session minutes(),
+    recordings(), bluesheets(), slides(), drafts() methods more than once per
+    session instance.  This removes another 3*#sessions sql queries from the
+    meeting materials page when the materials are all in place (less when the
+    first invocation reurns nothing).
+
+  * Removed caching of the materials page from the template (edit buttons are
+    different for different users), and used select_related() and code
+    re-write to reduce the sql query count from ~1900 to ~600, query time from
+    ~2s to ~0.5s.  More can be done, but the page response time is more
+    acceptable now.
+
+  * Refined the sql debug view at the bottom of each page.  Added a column
+    showing the WHERE clause, as that is quite helpful in working out where a
+    given query is coming from.  Also added a column that indicates whether a
+    query originated in view code or template rendering.  Added an sql_debug
+    template variable to make it easier to switch between the sql debug view
+    and using the django-debug-toolbar.
+
+  * Added call duration information to the @debug.trace decorator.
+
+  * Fixed a bad link to uploaded session agendas.
+
+  * Added a Document.pub_date() method which returns the RFC publication
+    datetime or other documents' new-revision datetime.  Changed the generated
+    bibtex entries to use pub_date().  Added tests for the bibtex entries, and
+    added 'bibtexparser' to requirements.txt, for use in testing.  Fixes issue
+    #2032.
+
+  * Added caching of Document.href() values.
+
+  * Changed the agenda template to provide links to video recordings on
+    youtube if available, instead of pointing at meetecho's archive.
+
+  * To minimize what seems to be an increased risk of segfaults when using
+    virtualenv with system packages, this commit introduces an alternative,
+    which does away with the general system package availability, but adds
+    symlinks to two svn related system packages when running checks.
+
+  * Updated the INSTALL file with the changes from 6.36.0.
+
+  * Added a note on better handling of the meeting break areas to the PLAN
+    file.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  29 Oct 2016 03:56:51 -0700
+
+
+
 ietfdb (6.36.0) ietf; urgency=medium
 
   **Trac wiki and issue tracker support**
