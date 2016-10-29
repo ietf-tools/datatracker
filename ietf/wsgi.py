@@ -40,13 +40,19 @@ WSGIPythonEggs /var/www/.python-eggs/
 
 import os
 import sys
+import syslog
 
 path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+syslog.openlog("datatracker", syslog.LOG_PID, syslog.LOG_USER)
 
 # Virtualenv support
 virtualenv_activation = os.path.join(path, "env", "bin", "activate_this.py")
 if os.path.exists(virtualenv_activation):
+    syslog.syslog("Starting datatracker wsgi with virtualenv %s" % os.path.dirname(os.path.dirname(virtualenv_activation)))
     execfile(virtualenv_activation, dict(__file__=virtualenv_activation))
+else:
+    syslog.syslog("Starting datatracker wsgi without virtualenv")
 
 if not path in sys.path:
     sys.path.insert(0, path)
