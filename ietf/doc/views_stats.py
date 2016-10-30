@@ -86,23 +86,23 @@ def make_title(queryargs):
     if by == "author":
         title += ' with author %s' % queryargs['author'].title()
     elif by == "group":
-        group = queryargs['group']
+        group = queryargs.get('group')
         if group:
             title += ' for %s' % group.capitalize()
     elif by == "area":
-        area = queryargs['area']
+        area = queryargs.get('area')
         if area:
             title += ' in %s Area' % area.upper()
     elif by == "ad":
-        ad_id = queryargs['ad']
+        ad_id = queryargs.get('ad')
         if ad_id:
             title += ' with AD %s' % Person.objects.get(id=ad_id)
     elif by == "state":
-        state = queryargs['state']
+        state = queryargs.get('state')
         if state:
             title += ' in state %s::%s' % (state, queryargs['substate'])
     elif by == "stream":
-        stream = queryargs['stream']
+        stream = queryargs.get('stream')
         if stream:
             title += ' in stream %s' % stream
     name = queryargs.get('name')
