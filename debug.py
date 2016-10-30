@@ -27,6 +27,8 @@ __version__ = "0.16"
 
 increment = 2
 
+debug = False
+
 # Number of times to indent output
 # A list is used to force access by reference
 _report_indent = [4]
@@ -43,7 +45,7 @@ def trace(fn):                 # renamed from 'report' by henrik 16 Jun 2011
     again along with the return value when the function
     returns.
     """
-    def fix(s,n=36):
+    def fix(s,n=64):
         import re
         s = re.sub(r'\\t', ' ', s)
         s = re.sub(r'\s+', ' ', s)
