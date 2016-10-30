@@ -4,10 +4,23 @@ import time
 from textwrap import dedent
 
 import debug                            # pyflakes:ignore
+debug.debug = True
 
 from django.conf import settings
 from django.core import checks
 from django.utils.module_loading import import_string
+
+checks_run = []
+
+def already_ran():
+    import inspect
+    outerframe = inspect.currentframe().f_back
+    name = outerframe.f_code.co_name
+    if name in checks_run:
+        return True
+    else:
+        check_run.append(name)
+        return False
 
 @checks.register('directories')
 def check_cdn_directory_exists(app_configs, **kwargs):
@@ -17,6 +30,9 @@ def check_cdn_directory_exists(app_configs, **kwargs):
        set to a different part of the file system which is served via CDN, and the
        path will contain the datatracker release version.
     """
+    if already_ran():
+        return []
+    #
     errors = []
     if settings.SERVER_MODE == 'production' and not os.path.exists(settings.STATIC_ROOT):
         errors.append(checks.Error(
@@ -30,6 +46,10 @@ def check_cdn_directory_exists(app_configs, **kwargs):
 @checks.register('files')
 def check_group_email_aliases_exists(app_configs, **kwargs):
     from ietf.group.views import check_group_email_aliases
+    #
+    if already_ran():
+        return []
+    #
     errors = []
     try:
         ok = check_group_email_aliases()
@@ -53,6 +73,10 @@ def check_group_email_aliases_exists(app_configs, **kwargs):
 @checks.register('files')
 def check_doc_email_aliases_exists(app_configs, **kwargs):
     from ietf.doc.views_doc import check_doc_email_aliases
+    #
+    if already_ran():
+        return []
+    #
     errors = []
     try:
         ok = check_doc_email_aliases()
@@ -75,6 +99,10 @@ def check_doc_email_aliases_exists(app_configs, **kwargs):
     
 @checks.register('directories')
 def check_id_submission_directories(app_configs, **kwargs):
+    #
+    if already_ran():
+        return []
+    #
     errors = []
     for s in ("IDSUBMIT_STAGING_PATH", "IDSUBMIT_REPOSITORY_PATH", "INTERNET_DRAFT_ARCHIVE_DIR", ):
         p = getattr(settings, s)
@@ -91,6 +119,10 @@ def check_id_submission_directories(app_configs, **kwargs):
 
 @checks.register('files')
 def check_id_submission_files(app_configs, **kwargs):
+    #
+    if already_ran():
+        return []
+    #
     errors = []
     for s in ("IDSUBMIT_IDNITS_BINARY", ):
         p = getattr(settings, s)
@@ -107,6 +139,10 @@ def check_id_submission_files(app_configs, **kwargs):
 
 @checks.register('submission-checkers')
 def check_id_submission_checkers(app_configs, **kwargs):
+    #
+    if already_ran():
+        return []
+    #
     errors = []
     for checker_path in settings.IDSUBMIT_CHECKER_CLASSES:
         try:
@@ -150,6 +186,10 @@ def check_id_submission_checkers(app_configs, **kwargs):
 
 @checks.register('directories')
 def check_media_directories(app_configs, **kwargs):
+    #
+    if already_ran():
+        return []
+    #
     errors = []
     for s in ("PHOTOS_DIR", ):
         p = getattr(settings, s)
@@ -167,6 +207,10 @@ def check_media_directories(app_configs, **kwargs):
     
 @checks.register('directories')
 def check_proceedings_directories(app_configs, **kwargs):
+    #
+    if already_ran():
+        return []
+    #
     errors = []
     for s in ("AGENDA_PATH", ):
         p = getattr(settings, s)
@@ -183,6 +227,10 @@ def check_proceedings_directories(app_configs, **kwargs):
 
 @checks.register('cache')
 def check_cache(app_configs, **kwargs):
+    #
+    if already_ran():
+        return []
+    #
     errors = []
     if settings.SERVER_MODE == 'production':
         from django.core.cache import cache
@@ -215,6 +263,10 @@ def check_cache(app_configs, **kwargs):
     
 @checks.register('cache')
 def check_svn_import(app_configs, **kwargs):
+    #
+    if already_ran():
+        return []
+    #
     errors = []
     # 
     site_packages_dir = None
