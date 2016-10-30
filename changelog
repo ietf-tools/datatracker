@@ -70,7 +70,7 @@ ietfdb (6.37.0) ietf; urgency=medium
   * Added a note on better handling of the meeting break areas to the PLAN
     file.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  29 Oct 2016 03:56:51 -0700
+ -- Henrik Levkowetz <henrik@levkowetz.com>  30 Oct 2016 12:15:26 +0000
 
 
 
