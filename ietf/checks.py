@@ -19,7 +19,7 @@ def already_ran():
     if name in checks_run:
         return True
     else:
-        check_run.append(name)
+        checks_run.append(name)
         return False
 
 @checks.register('directories')
