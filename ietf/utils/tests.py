@@ -227,7 +227,7 @@ class TestWikiGlueManagementCommand(TestCase):
         )
         command_output = out.getvalue()
         for group in groups:
-            self.assertIn("Processing group %s" % group.acronym, command_output)
+            self.assertIn("Processing group '%s'" % group.acronym, command_output)
             # Do a bit of verification using trac-admin, too
             admin_code, admin_output, admin_error = pipe(
                 'trac-admin %s permission list' % (self.wiki_dir_pattern % group.acronym))

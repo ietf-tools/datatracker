@@ -25,15 +25,21 @@ from ietf.utils.pipe import pipe
 
 logtag = __name__.split('.')[-1]
 logname = "user.log"
-syslog.openlog(logname, syslog.LOG_PID, syslog.LOG_USER)
+syslog.openlog(logtag, syslog.LOG_PID, syslog.LOG_USER)
 
 class Command(BaseCommand):
     help = "Create group wikis for WGs, RGs and Areas which don't have one."
 
     option_list = BaseCommand.option_list + (
-        make_option('--wiki-dir-pattern', dest='wiki_dir_pattern', help='A pattern with %s placeholder for group wiki path'),
-        make_option('--svn-dir-pattern', dest='svn_dir_pattern', help='A pattern with %s placeholder for group svn path'),
-    )    
+        make_option('--wiki-dir-pattern', dest='wiki_dir_pattern',
+            default=settings.TRAC_WIKI_DIR_PATTERN,
+            help='A pattern with %s placeholder for group wiki path'),
+        make_option('--svn-dir-pattern', dest='svn_dir_pattern',
+            default=settings.TRAC_SVN_DIR_PATTERN,
+            help='A pattern with %s placeholder for group svn path'),
+        make_option('--group-list', '-g', dest='group_list', help='Limit processing to groups with the given acronyms (a comma-separated list)'),
+        make_option('--dummy-run', '-n', default=False, action='store_true', dest='dummy_run', help='Make no changes, just show what would be done'),
+    )
     
     def note(self, msg):
         if self.verbosity > 1:
@@ -47,14 +53,17 @@ class Command(BaseCommand):
 
     def do_cmd(self, cmd, *args):
         quoted_args = [ '"%s"'%a if ' ' in a else a for a in args ]
-        self.note("Running %s %s ..." % (os.path.basename(cmd), " ".join(quoted_args)))
-        command = [ cmd, ] + list(args)
-        code, out, err = pipe(command)
-        msg = None
-        if code != 0:
-            msg = "Error %s: %s when executing '%s'" % (code, err, " ".join(command))
-            self.log(msg)
-        return msg, out
+        if self.dummy_run:
+            self.note("Would run %s %s ..." % (os.path.basename(cmd), " ".join(quoted_args)))
+        else:
+            self.note("Running %s %s ..." % (os.path.basename(cmd), " ".join(quoted_args)))
+            command = [ cmd, ] + list(args)
+            code, out, err = pipe(command)
+            msg = None
+            if code != 0:
+                msg = "Error %s: %s when executing '%s'" % (code, err, " ".join(command))
+                self.log(msg)
+            return msg, out
 
     def svn_admin_cmd(self, *args):
         return self.do_cmd(settings.SVN_ADMIN_COMMAND, *args)
@@ -142,81 +151,94 @@ class Command(BaseCommand):
             options[i] = sect, key, val
         # Try to creat ethe environment, remove unwanted defaults, and add
         # custom pages and settings.
-        try:
-            env = Environment(group.trac_dir, create=True, options=options)
-            self.remove_demo_components(group, env)
-            self.remove_demo_milestones(group, env)
-            self.maybe_add_group_url(group, 'Wiki', settings.TRAC_WIKI_URL_PATTERN % group.acronym)
-            self.maybe_add_group_url(group, 'Issue tracker', settings.TRAC_ISSUE_URL_PATTERN % group.acronym)
-            # Use custom assets (if any) from the master setup
-            self.symlink_to_master_assets(group, env)
-            if group.type_id == 'wg':
-                self.add_wg_draft_states(group, env)
-            self.add_custom_wiki_pages(group, env)
-            self.add_default_wiki_pages(group, env)
-            self.sync_default_repository(group, env)
-            # Components (i.e., drafts) will be handled during components
-            # update later
-            # Permissions will be handled during permission update later.
-            return env
-        except TracError as e:
-            self.log("While creating trac instance for %s: %s" % (group, e))
-            raise
-            return None
+        if self.dummy_run:
+            self.note("Would create Trac for group '%s' at %s" % (group.acronym, group.trac_dir))
+            return True
+        else:
+            try:
+                self.note("Creating Trac for group '%s' at %s" % (group.acronym, group.trac_dir))
+                env = Environment(group.trac_dir, create=True, options=options)
+                self.remove_demo_components(group, env)
+                self.remove_demo_milestones(group, env)
+                self.maybe_add_group_url(group, 'Wiki', settings.TRAC_WIKI_URL_PATTERN % group.acronym)
+                self.maybe_add_group_url(group, 'Issue tracker', settings.TRAC_ISSUE_URL_PATTERN % group.acronym)
+                # Use custom assets (if any) from the master setup
+                self.symlink_to_master_assets(group, env)
+                if group.type_id == 'wg':
+                    self.add_wg_draft_states(group, env)
+                self.add_custom_wiki_pages(group, env)
+                self.add_default_wiki_pages(group, env)
+                self.sync_default_repository(group, env)
+                # Components (i.e., drafts) will be handled during components
+                # update later
+                # Permissions will be handled during permission update later.
+                return env
+            except TracError as e:
+                self.log("While creating Trac instance for %s: %s" % (group, e))
+                raise
+                return None
 
     def update_trac_permissions(self, group, env):
-        mgr = PermissionSystem(env)
-        permission_list = mgr.get_all_permissions()
-        permission_list = [ (u,a) for (u,a) in permission_list if not u in ['anonymous', 'authenticated']]
-        permissions = {}
-        for user, action in permission_list:
-            if not user in permissions:
-                permissions[user] = []
-            permissions[user].append(action)
-        roles = group.role_set.filter(name_id__in=['chair', 'secr', 'ad'])
-        users = []
-        for role in roles:
-            user = role.email.address.lower()
-            users.append(user)
-            if not user in permissions:
-                try:
-                    mgr.grant_permission(user, 'TRAC_ADMIN')
-                    self.note("  Granting admin permission for %s" % user)
-                except TracError as e:
-                    self.log("While adding admin permission for %s: %s" (user, e))
-        for user in permissions:
-            if not user in users:
-                if 'TRAC_ADMIN' in permissions[user]:
+        if self.dummy_run:
+            self.note("Would update Trac permissions for group '%s'" % group.acronym)
+        else:
+            self.note("Updating Trac permissions for group '%s'" % group.acronym)
+            mgr = PermissionSystem(env)
+            permission_list = mgr.get_all_permissions()
+            permission_list = [ (u,a) for (u,a) in permission_list if not u in ['anonymous', 'authenticated']]
+            permissions = {}
+            for user, action in permission_list:
+                if not user in permissions:
+                    permissions[user] = []
+                permissions[user].append(action)
+            roles = group.role_set.filter(name_id__in=['chair', 'secr', 'ad'])
+            users = []
+            for role in roles:
+                user = role.email.address.lower()
+                users.append(user)
+                if not user in permissions:
                     try:
-                        self.note("  Revoking admin permission for %s" % user)
-                        mgr.revoke_permission(user, 'TRAC_ADMIN')
+                        mgr.grant_permission(user, 'TRAC_ADMIN')
+                        self.note("  Granting admin permission for %s" % user)
                     except TracError as e:
-                        self.log("While revoking admin permission for %s: %s" (user, e))
+                        self.log("While adding admin permission for %s: %s" (user, e))
+            for user in permissions:
+                if not user in users:
+                    if 'TRAC_ADMIN' in permissions[user]:
+                        try:
+                            self.note("  Revoking admin permission for %s" % user)
+                            mgr.revoke_permission(user, 'TRAC_ADMIN')
+                        except TracError as e:
+                            self.log("While revoking admin permission for %s: %s" (user, e))
 
     def update_trac_components(self, group, env):
-        components = Component.select(env)
-        comp_names = [ c.name for c in components ]
-        group_docs = group.document_set.filter(states__slug='active', type_id='draft').distinct()
-        group_comp = []
-        for doc in group_docs:
-            if not doc.name.startswith('draft-'):
-                self.log("While adding components: unexpectd %s group doc name: %s" % (group.acronym, doc.name))
-                continue
-            name = doc.name[len('draft-'):]
-            if   name.startswith('ietf-'):
-                name = name[len('ietf-'):]
-            elif name.startswith('irtf-'):
-                name = name[len('ietf-'):]
-            if name.startswith(group.acronym+'-'):
-                name = name[len(group.acronym+'-'):]
-            group_comp.append(name)
-            if not name in comp_names and not doc.name in comp_names:
-                self.note("  Group draft: %s" % doc.name)
-                self.note("  Adding component %s" % name)
-                comp = Component(env)
-                comp.name = name
-                comp.owner = "%s@ietf.org" % doc.name
-                comp.insert()
+        if self.dummy_run:
+            self.note("Would update Trac components for group '%s'" % group.acronym)
+        else:
+            self.note("Updating Trac componets for group '%s'" % group.acronym)
+            components = Component.select(env)
+            comp_names = [ c.name for c in components ]
+            group_docs = group.document_set.filter(states__slug='active', type_id='draft').distinct()
+            group_comp = []
+            for doc in group_docs:
+                if not doc.name.startswith('draft-'):
+                    self.log("While adding components: unexpectd %s group doc name: %s" % (group.acronym, doc.name))
+                    continue
+                name = doc.name[len('draft-'):]
+                if   name.startswith('ietf-'):
+                    name = name[len('ietf-'):]
+                elif name.startswith('irtf-'):
+                    name = name[len('ietf-'):]
+                if name.startswith(group.acronym+'-'):
+                    name = name[len(group.acronym+'-'):]
+                group_comp.append(name)
+                if not name in comp_names and not doc.name in comp_names:
+                    self.note("  Group draft: %s" % doc.name)
+                    self.note("  Adding component %s" % name)
+                    comp = Component(env)
+                    comp.name = name
+                    comp.owner = "%s@ietf.org" % doc.name
+                    comp.insert()
 
     def maybe_add_group_url(self, group, name, url):
         urls = [ u for u in group.groupurl_set.all() if name.lower() in u.name.lower() ]
@@ -239,21 +261,34 @@ class Command(BaseCommand):
         self.errors = 0
         self.wiki_dir_pattern = options.get('wiki_dir_pattern', settings.TRAC_WIKI_DIR_PATTERN)
         self.svn_dir_pattern = options.get('svn_dir_pattern', settings.TRAC_SVN_DIR_PATTERN)
+        self.group_list = options.get('group_list', None)
+        self.dummy_run = options.get('dummy_run', False)
+
+        if not self.group_list is None:
+            self.group_list = self.group_list.split('.')
 
         if isinstance(self.verbosity, (type(""), type(u""))) and self.verbosity.isdigit():
             self.verbosity = int(self.verbosity)
 
+        if self.dummy_run and self.verbosity < 2:
+            self.verbosity = 2
+
         if not os.path.exists(os.path.dirname(self.wiki_dir_pattern)):
             raise CommandError('The Wiki base direcory specified for the wiki directories (%s) does not exist.' % os.path.dirname(self.wiki_dir_pattern))
 
+        if not os.path.exists(os.path.dirname(self.svn_dir_pattern)):
+            raise CommandError('The SVN base direcory specified for the SVN directories (%s) does not exist.' % os.path.dirname(self.svn_dir_pattern))
+
         groups = Group.objects.filter(
                         type__slug__in=['wg','rg','area'],
-                        state__slug='active'
+                        state__slug='active',
                     ).order_by('acronym')
+        if self.group_list:
+            groups = groups.filter(acronym__in=self.group_list)
 
         for group in groups:
             try:
-                self.note("Processing group %s" % group.acronym)
+                self.note("Processing group '%s'" % group.acronym)
                 group.trac_dir = self.wiki_dir_pattern % group.acronym
                 group.svn_dir = self.svn_dir_pattern % group.acronym
 
@@ -265,9 +300,10 @@ class Command(BaseCommand):
                     trac_env = self.create_trac(group)
                     self.errors += 1 if not trac_env else 0
                 else:
-                    trac_env = Environment(group.trac_dir)
+                    if not self.dummy_run:
+                        trac_env = Environment(group.trac_dir)
 
-                if not trac_env:
+                if not trac_env and not self.dummy_run:
                     continue
 
                 self.update_trac_permissions(group, trac_env)
