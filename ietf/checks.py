@@ -276,10 +276,19 @@ def check_svn_import(app_configs, **kwargs):
             break
     if site_packages_dir:
         for path in settings.SVN_PACKAGES:
-            dir, name = os.path.split(path)
-            package_link = os.path.join(site_packages_dir, name)
-            if not os.path.exists(package_link):
-                os.symlink(path, package_link)
+            if os.path.exists(path):
+                dir, name = os.path.split(path)
+                package_link = os.path.join(site_packages_dir, name)
+                if not os.path.lexists(package_link):
+                    os.symlink(path, package_link)
+            else:
+                errors.append(checks.Critical(
+                    "The setting SVN_PACKAGES specify a library path which\n"
+                    "does not exist:\n"
+                    "   %s\n" % path,
+                    hint = "Please provide the correct python system site-package paths for\n"
+                    "svn and libsvn in SVN_PACKAGES.",
+                    id = "datatracker.E0015",))
     #
     if settings.SERVER_MODE == 'production':
         try:
