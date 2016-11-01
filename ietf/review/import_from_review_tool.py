@@ -113,7 +113,10 @@ with db_con.cursor() as c:
                 print "created role", unicode(role).encode("utf-8")
 
         if row.login in known_reviewers:
-            if row.comment != "Inactive" and row.available != 2145916800: # corresponds to 2038-01-01
+            if (row.comment != "Inactive"
+                and row.available != 2145916800 # corresponds to 2038-01-01
+                and (not parse_timestamp(row.available) or parse_timestamp(row.available).date() < datetime.date(2020, 1, 1))):
+
                 role, created  = Role.objects.get_or_create(name=RoleName.objects.get(slug="reviewer"), person=email.person, email=email, group=team)
 
                 if created:
