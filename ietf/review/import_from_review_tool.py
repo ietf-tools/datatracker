@@ -372,13 +372,16 @@ with db_con.cursor() as c:
             continue # ignore
 
         meta = doc_metadata.get((row.docname, row.version))
-        if not meta:
-            meta = doc_metadata.get(row.docname)
-
         deadline, telechat, lcend, status = meta or (None, None, None, None)
-
         if not deadline:
             deadline = parse_timestamp(row.timeout)
+
+        if not meta:
+            meta = doc_metadata.get(row.docname)
+            telechat, lcend, status = (meta or (None, None, None, None))[1:]
+
+            if not deadline and meta:
+                deadline = meta[1]
 
         reviewed_rev = row.version if row.version and row.version != "99" else ""
         if row.summary == "noresponse":
