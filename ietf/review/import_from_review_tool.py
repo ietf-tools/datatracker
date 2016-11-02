@@ -189,6 +189,8 @@ for t in ReviewTypeName.objects.filter(slug__in=["early", "lc", "telechat"]):
 
 # review requests
 
+ReviewRequestStateName.objects.get_or_create(slug="unknown", name="Unknown", order=20, used=False)
+
 states = { n.slug: n for n in ReviewRequestStateName.objects.all() }
 # map some names
 states["assigned"] = states["requested"]
@@ -676,8 +678,8 @@ with db_con.cursor() as c:
 
             print "imported review document", review_req.doc, review.name
 
-        if review_req.state_id in ("requested", "accepted") and review_req.doc.get_state_slug("draft-iesg") in ["approved", "ann", "rfcqueue", "pub"]:
-            review_req.state = states["overtaken"]
+        if review_req.state_id in ("requested", "accepted") and status == "done":
+            review_req.state = states["unknown"]
             review_req.save()
 
             if "closed" not in event_collection and "assigned" in event_collection:
@@ -692,6 +694,6 @@ with db_con.cursor() as c:
                 e.save()
                 completion_event = e
                 print "imported event closed_review_request (generated upon closing)", e.desc, e.doc_id
-            
+
 
         print "imported review request", row.reviewid, "as", review_req.pk, review_req.time, review_req.deadline, review_req.type, review_req.doc_id, review_req.state, review_req.doc.get_state_slug("draft-iesg")
