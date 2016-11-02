@@ -151,7 +151,7 @@ def days_needed_to_fulfill_min_interval_for_reviewers(team):
     return res
 
 ReviewRequestData = namedtuple("ReviewRequestData", [
-    "req_pk", "doc", "doc_pages", "req_time", "state", "deadline", "result", "team", "reviewer",
+    "req_pk", "doc", "doc_pages", "req_time", "state", "deadline", "reviewed_rev", "result", "team", "reviewer",
     "late_days",
     "request_to_assignment_days", "assignment_to_closure_days", "request_to_closure_days"])
 
@@ -179,7 +179,7 @@ def extract_review_request_data(teams=None, reviewers=None, time_from=None, time
 
     # left outer join with RequestRequestDocEvent for request/assign/close time
     event_qs = event_qs.values_list(
-        "pk", "doc", "doc__pages", "time", "state", "deadline", "result", "team",
+        "pk", "doc", "doc__pages", "time", "state", "deadline", "reviewed_rev", "result", "team",
         "reviewer__person", "reviewrequestdocevent__time", "reviewrequestdocevent__type"
     )
 
@@ -200,7 +200,7 @@ def extract_review_request_data(teams=None, reviewers=None, time_from=None, time
         requested_time = assigned_time = closed_time = None
 
         for e in events:
-            req_pk, doc, doc_pages, req_time, state, deadline, result, team, reviewer, event_time, event_type = e
+            req_pk, doc, doc_pages, req_time, state, deadline, reviewed_rev, result, team, reviewer, event_time, event_type = e
 
             if event_type == "requested_review" and requested_time is None:
                 requested_time = event_time
@@ -214,7 +214,7 @@ def extract_review_request_data(teams=None, reviewers=None, time_from=None, time
         assignment_to_closure_days = positive_days(assigned_time, closed_time)
         request_to_closure_days = positive_days(requested_time, closed_time)
 
-        d = ReviewRequestData(req_pk, doc, doc_pages, req_time, state, deadline, result, team, reviewer,
+        d = ReviewRequestData(req_pk, doc, doc_pages, req_time, state, deadline, reviewed_rev, result, team, reviewer,
                               late_days, request_to_assignment_days, assignment_to_closure_days,
                               request_to_closure_days)
 
@@ -230,7 +230,7 @@ def aggregate_raw_review_request_stats(review_request_data, count=None):
     assignment_to_closure_days_list = []
     assignment_to_closure_days_count = 0
 
-    for (req_pk, doc, doc_pages, req_time, state, deadline, result, team, reviewer,
+    for (req_pk, doc, doc_pages, req_time, state, deadline, reviewed_rev, result, team, reviewer,
          late_days, request_to_assignment_days, assignment_to_closure_days, request_to_closure_days) in review_request_data:
         if count == "pages":
             c = doc_pages

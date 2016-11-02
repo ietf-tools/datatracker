@@ -33,7 +33,7 @@
             <td>{% if person.settings_url %}<a href="{{ person.settings_url }}">{% endif %}{{ person }}{% if person.settings_url %}</a>{% endif %}</td>
             <td>
               <table class="simple-table">
-                {% for req_pk, doc_name, deadline, state, assignment_to_closure_days in person.latest_reqs %}
+                {% for req_pk, doc_name, reviewed_rev, deadline, state, assignment_to_closure_days in person.latest_reqs %}
                   <tr>
                     <td><a href="{% url "ietf.doc.views_review.review_request" name=doc_name request_id=req_pk %}">{{ deadline|date }}</a></td>
                     <td>
@@ -42,7 +42,7 @@
                     <td>
                       {% if assignment_to_closure_days != None %}{{ assignment_to_closure_days }}&nbsp;day{{ assignment_to_closure_days|pluralize }}{% endif %}
                     </td>
-                    <td>{{ doc_name }}</td>
+                    <td>{{ doc_name }}{% if reviewed_rev %}-{{ reviewed_rev }}{% endif %}</td>
                 </div>
               {% endfor %}
               </table>

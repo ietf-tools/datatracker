@@ -137,7 +137,7 @@ def reviewer_overview(request, acronym, group_type=None):
         for d in req_data:
             # any open requests pushes the others out
             if ((d.state in ("requested", "accepted") and len(latest_reqs) < MAX_REQS) or (len(latest_reqs) + open_reqs < MAX_REQS)):
-                latest_reqs.append((d.req_pk, d.doc, d.deadline,
+                latest_reqs.append((d.req_pk, d.doc, d.reviewed_rev, d.deadline,
                                     review_state_by_slug.get(d.state),
                                     int(math.ceil(d.assignment_to_closure_days)) if d.assignment_to_closure_days is not None else None))
         person.latest_reqs = latest_reqs
