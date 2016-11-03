@@ -681,14 +681,14 @@ def make_assignment_choices(email_queryset, review_req):
     # previous review of document
     has_reviewed_previous = ReviewRequest.objects.filter(
         doc=doc,
-        reviewer__in=possible_emails,
+        reviewer__person__in=possible_person_ids,
         state="completed",
     )
 
     if review_req.pk is not None:
         has_reviewed_previous = has_reviewed_previous.exclude(pk=review_req.pk)
 
-    has_reviewed_previous = set(has_reviewed_previous.values_list("reviewer", flat=True))
+    has_reviewed_previous = set(has_reviewed_previous.values_list("reviewer__person", flat=True))
 
     # review wishes
     wish_to_review = set(ReviewWish.objects.filter(team=team, person__in=possible_person_ids, doc=doc).values_list("person", flat=True))
@@ -696,14 +696,13 @@ def make_assignment_choices(email_queryset, review_req):
     # connections
     connections = {}
     # examine the closest connections last to let them override
-    for e in Email.objects.filter(pk__in=possible_emails, person=doc.ad_id):
-        connections[e] = "is associated Area Director"
-    for r in Role.objects.filter(group=doc.group_id, email__in=possible_emails).select_related("name"):
-        connections[r.email_id] = "is group {}".format(r.name)
-    if doc.shepherd_id:
-        connections[doc.shepherd_id] = "is shepherd of document"
-    for e in DocumentAuthor.objects.filter(document=doc, author__in=possible_emails).values_list("author", flat=True):
-        connections[e] = "is author of document"
+    connections[doc.ad_id] = "is associated Area Director"
+    for r in Role.objects.filter(group=doc.group_id, person__in=possible_person_ids).select_related("name"):
+        connections[r.person_id] = "is group {}".format(r.name)
+    if doc.shepherd:
+        connections[doc.shepherd.person_id] = "is shepherd of document"
+    for author in DocumentAuthor.objects.filter(document=doc, author__person__in=possible_person_ids).values_list("author__person", flat=True):
+        connections[author] = "is author of document"
 
     # unavailable periods
     unavailable_periods = current_unavailable_periods_for_reviewers(team)
@@ -724,7 +723,7 @@ def make_assignment_choices(email_queryset, review_req):
 
         # unavailable for review periods
         periods = unavailable_periods.get(e.person_id, [])
-        unavailable_at_the_moment = periods and not (e.pk in has_reviewed_previous and all(p.availability == "canfinish" for p in periods))
+        unavailable_at_the_moment = periods and not (e.person_id in has_reviewed_previous and all(p.availability == "canfinish" for p in periods))
         add_boolean_score(-1, unavailable_at_the_moment)
 
         def format_period(p):
@@ -738,9 +737,9 @@ def make_assignment_choices(email_queryset, review_req):
             explanations.append(", ".join(format_period(p) for p in periods))
 
         # misc
-        add_boolean_score(+1, e.pk in has_reviewed_previous, "reviewed document before")
+        add_boolean_score(+1, e.person_id in has_reviewed_previous, "reviewed document before")
         add_boolean_score(+1, e.person_id in wish_to_review, "wishes to review document")
-        add_boolean_score(-1, e.pk in connections, connections.get(e.pk)) # reviewer is somehow connected: bad
+        add_boolean_score(-1, e.person_id in connections, connections.get(e.person_id)) # reviewer is somehow connected: bad
         add_boolean_score(-1, settings.filter_re and any(re.search(settings.filter_re, n) for n in aliases), "filter regexp matches")
 
         # minimum interval between reviews
