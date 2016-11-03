@@ -34,7 +34,8 @@ def create_person(group, role_name, name=None, username=None, email_address=None
     Role.objects.create(group=group, name_id=role_name, person=person, email=email)
 
 def create_group(**kwargs):
-    return Group.objects.create(state_id="active", **kwargs)
+    group, created = Group.objects.get_or_create(state_id="active", **kwargs)
+    return group
 
 def make_immutable_base_data():
     """Some base data (groups, etc.) that doesn't need to be modified by
