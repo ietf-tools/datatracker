@@ -326,19 +326,18 @@ class CoverageTest(unittest.TestCase):
             self.skipTest("Coverage switched off with --skip-coverage")
 
 class IetfTestRunner(DiscoverRunner):
-    option_list = (
-        make_option('--skip-coverage',
-            action='store_true', dest='skip_coverage', default=False,
-            help='Skip test coverage measurements for code, templates, and URLs. '
-        ),
-        make_option('--save-version-coverage',
-            action='store', dest='save_version_coverage', default=False,
-            help='Save test coverage data under the given version label'),
 
-        make_option('--save-testresult',
+    @classmethod
+    def add_arguments(cls, parser):
+        parser.add_argument('--skip-coverage',
+            action='store_true', dest='skip_coverage', default=False,
+            help='Skip test coverage measurements for code, templates, and URLs. ' )
+        parser.add_argument('--save-version-coverage',
+            action='store', dest='save_version_coverage', default=False,
+            help='Save test coverage data under the given version label')
+        parser.add_argument('--save-testresult',
             action='store_true', dest='save_testresult', default=False,
             help='Save short test result data in %s/testresult' % os.path.dirname(os.path.dirname(settings.BASE_DIR))),
-    )
 
     def __init__(self, skip_coverage=False, save_version_coverage=None, **kwargs):
         #
