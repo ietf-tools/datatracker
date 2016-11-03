@@ -7,9 +7,10 @@ from django.contrib.sites.models import Site
 
 from ietf.group.models import Group, Role
 from ietf.doc.models import (Document, ReviewRequestDocEvent, State,
-                             LastCallDocEvent, DocumentAuthor, DocAlias)
+                             LastCallDocEvent, TelechatDocEvent,
+                             DocumentAuthor, DocAlias)
 from ietf.iesg.models import TelechatDate
-from ietf.person.models import Person, Email
+from ietf.person.models import Person
 from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream
 from ietf.review.models import (ReviewRequest, ReviewRequestStateName, ReviewTypeName, TypeUsedInReviewTeam,
                                 ReviewerSettings, UnavailablePeriod, ReviewWish, NextReviewerInTeam)
@@ -508,14 +509,15 @@ def suggested_review_requests_for_team(team):
 
     now = datetime.datetime.now()
 
+    reviewable_docs_qs = Document.objects.filter(type="draft").exclude(stream="ise")
+
     requested_state = ReviewRequestStateName.objects.get(slug="requested", used=True)
 
     last_call_type = ReviewTypeName.objects.get(slug="lc")
     if TypeUsedInReviewTeam.objects.filter(team=team, type=last_call_type).exists():
         # in Last Call
-        last_call_docs = Document.objects.filter(
-            type="draft",
-            states=State.objects.get(type="draft-iesg", slug="lc", used=True),
+        last_call_docs = reviewable_docs_qs.filter(
+            states=State.objects.get(type="draft-iesg", slug="lc", used=True)
         )
         last_call_expiry_events = { e.doc_id: e for e in LastCallDocEvent.objects.order_by("time", "id") }
         for doc in last_call_docs:
@@ -546,18 +548,25 @@ def suggested_review_requests_for_team(team):
 
         telechat_deadline_delta = datetime.timedelta(days=2)
 
-        telechat_docs = Document.objects.filter(
-            type="draft",
+        telechat_docs = reviewable_docs_qs.filter(
             docevent__telechatdocevent__telechat_date__in=telechat_dates
+        ).values_list("pk", flat=True)
+
+        # we need to check the latest telechat event for each document
+        # scheduled for the telechat, as the appearance might have been
+        # cancelled/moved
+        telechat_events = TelechatDocEvent.objects.filter(
+            doc__in=list(telechat_docs), # explicitly turn into list so we don't get a complex and slow join sent down to the DB
         ).values_list(
-            "pk", "docevent__telechatdocevent__time", "docevent__telechatdocevent__telechat_date"
-        ).order_by("pk", "docevent__telechatdocevent__telechat_date")
-        for doc_pk, events in itertools.groupby(telechat_docs, lambda t: t[0]):
-            event_time = deadline = None
-            for _, event_time, event_telechat_date in events:
-                if event_telechat_date in telechat_dates:
-                    deadline = event_telechat_date - telechat_deadline_delta
-                    break
+            "doc", "pk", "time", "telechat_date"
+        ).order_by("doc", "-time", "-id").distinct()
+
+        for doc_pk, events in itertools.groupby(telechat_events, lambda t: t[0]):
+            _, _, event_time, event_telechat_date = list(events)[0]
+
+            deadline = None
+            if event_telechat_date in telechat_dates:
+                deadline = event_telechat_date - telechat_deadline_delta
 
             if not deadline or deadline > seen_deadlines.get(doc_pk, datetime.date.max):
                 continue
