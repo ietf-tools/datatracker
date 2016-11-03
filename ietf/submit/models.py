@@ -77,7 +77,7 @@ class Submission(models.Model):
         return Document.objects.filter(name=self.name).first()
 
 class SubmissionCheck(models.Model):
-    time = models.DateTimeField(auto_now=True, default=None) # The default is to make makemigrations happy
+    time = models.DateTimeField(auto_now=True)
     submission = models.ForeignKey(Submission, related_name='checks')
     checker = models.CharField(max_length=256, blank=True)
     passed = models.NullBooleanField(default=False)
