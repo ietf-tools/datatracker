@@ -576,7 +576,7 @@ def suggested_review_requests_for_team(team):
 
     # filter those with existing requests
     existing_requests = defaultdict(list)
-    for r in ReviewRequest.objects.filter(doc__in=requests.iterkeys()):
+    for r in ReviewRequest.objects.filter(doc__in=requests.iterkeys(), team=team):
         existing_requests[r.doc_id].append(r)
 
     def blocks(existing, request):
