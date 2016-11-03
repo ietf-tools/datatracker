@@ -23,6 +23,7 @@ from ietf.group.models import Group, Role, RoleName
 from ietf.person.models import Person, Email, Alias
 from ietf.doc.models import Document, DocAlias, ReviewRequestDocEvent, NewRevisionDocEvent, DocTypeName, State
 from ietf.utils.text import strip_prefix, xslugify
+from ietf.review.utils import possibly_advance_next_reviewer_for_team
 import argparse
 from unidecode import unidecode
 
@@ -182,6 +183,7 @@ with db_con.cursor() as c:
         if row.name == "next": # next reviewer
             NextReviewerInTeam.objects.filter(team=team).delete()
             NextReviewerInTeam.objects.create(team=team, next_reviewer=known_personnel[row.value].person)
+            possibly_advance_next_reviewer_for_team(team, assigned_review_to_person_id=known_personnel[row.value].person.pk)
 
         if row.name == "summary-list": # review results used in team
             summaries = [v.strip().lower() for v in row.value.split(";") if v.strip()]
