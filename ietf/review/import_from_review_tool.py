@@ -29,6 +29,7 @@ from unidecode import unidecode
 parser = argparse.ArgumentParser()
 parser.add_argument("database", help="database must be included in settings")
 parser.add_argument("team", help="team acronym, must exist")
+parser.add_argument("--genartdata", help="genart data file")
 args = parser.parse_args()
 
 db_con = connections[args.database]
@@ -68,6 +69,8 @@ autopolicy_days = {
 
 reviewer_blacklist = set([("genart", "alice")])
 
+name_to_login = {}
+
 known_personnel = {}
 with db_con.cursor() as c:
     c.execute("select * from members;")
@@ -80,6 +83,8 @@ with db_con.cursor() as c:
 
         if (team.acronym, row.login) in reviewer_blacklist:
             continue # ignore
+
+        name_to_login[row.name] = row.login
 
         email = Email.objects.filter(address=row.email).select_related("person").first()
         if not email:
@@ -359,6 +364,29 @@ with db_con.cursor() as c:
         doc_metadata[(row.docname, row.version)] = doc_metadata[row.docname] = (parse_timestamp(row.deadline), parse_timestamp(row.telechat), parse_timestamp(row.lcend), row.status)
 
 
+genart_data = {}
+if team.acronym == "genart":
+    with open(args.genartdata) as f:
+        for line in f:
+            t = line.strip().split("\t")
+
+            document, reviewer, version_number, result_url, d, review_type, results_time, result_name = t
+
+            d = datetime.datetime.strptime(d, "%Y-%m-%d")
+
+            if results_time:
+                results_time = datetime.datetime.strptime(results_time, "%Y-%m-%dT%H:%M:%S")
+            else:
+                results_time = None
+
+            reviewer_login = name_to_login.get(reviewer)
+            if not reviewer_login:
+                print "WARNING: unknown genart reviewer", reviewer
+                continue
+
+            genart_data[(document, reviewer_login)] = genart_data[(document, reviewer_login, version_number)] = (result_url, d, review_type, results_time, result_name)
+
+
 system_person = Person.objects.get(name="(System)")
 
 seen_review_requests = {}
@@ -373,7 +401,9 @@ with db_con.cursor() as c:
         if (team.acronym, row.reviewer) in reviewer_blacklist:
             continue # ignore
 
-        meta = doc_metadata.get((row.docname, row.version))
+        reviewed_rev = row.version if row.version and row.version != "99" else ""
+
+        meta = doc_metadata.get((row.docname, reviewed_rev))
         deadline, telechat, lcend, status = meta or (None, None, None, None)
         if not deadline:
             deadline = parse_timestamp(row.timeout)
@@ -385,9 +415,36 @@ with db_con.cursor() as c:
             if not deadline and meta:
                 deadline = meta[1]
 
-        reviewed_rev = row.version if row.version and row.version != "99" else ""
-        if row.summary == "noresponse":
-            reviewed_rev = ""
+        reviewurl = row.reviewurl
+        reviewstatus = row.docstatus
+        reviewsummary = row.summary
+        donetime = None
+
+        if team.acronym == "genart":
+            extra_data = genart_data.get((row.docname, row.reviewer, reviewed_rev))
+            #if not extra_data:
+            #    extra_data = genart_data.get(row.docname)
+            if extra_data:
+                extra_result_url, extra_d, extra_review_type, extra_results_time, extra_result_name = extra_data
+                extra_data = []
+                if not reviewurl and extra_result_url:
+                    reviewurl = extra_result_url
+                    extra_data.append(reviewurl)
+
+                if not reviewsummary and extra_result_name:
+                    reviewsummary = extra_result_name
+                    extra_data.append(reviewsummary)
+
+                if reviewstatus != "done" and (reviewurl or reviewsummary):
+                    reviewstatus = "done"
+                    extra_data.append("done")
+
+                if extra_results_time:
+                    donetime = extra_results_time
+                    extra_data.append(donetime)
+
+                if extra_data:
+                    print "EXTRA DATA", row.docname, extra_data
 
         event_collection = {}
         branches = document_history.get(row.docname)
@@ -405,7 +462,7 @@ with db_con.cursor() as c:
                 if "assigned" not in event_collection:
                     print "WARNING: no assigned log entry for", row.docname, [event_collection] + history
 
-                if "closed" not in event_collection and row.docstatus in close_states:
+                if "closed" not in event_collection and reviewstatus in close_states:
                     print "WARNING: no {} log entry for".format("/".join(close_states)), row.docname, [event_collection] + history
 
                 def day_delta(time_from, time_to):
@@ -437,6 +494,8 @@ with db_con.cursor() as c:
                 time = parse_timestamp(event_collection["assigned"][0])
             elif "closed" in event_collection:
                 time = parse_timestamp(event_collection["closed"][0])
+            elif donetime:
+                time = donetime
             else:
                 time = deadline
 
@@ -488,16 +547,17 @@ with db_con.cursor() as c:
                 old_id=row.reviewid,
             )
 
+
         review_req.reviewer = known_personnel[row.reviewer] if row.reviewer else None
-        review_req.result = results.get(row.summary.lower()) if row.summary else None
-        review_req.state = states.get(row.docstatus) if row.docstatus else None
+        review_req.result = results.get(reviewsummary.lower()) if reviewsummary else None
+        review_req.state = states.get(reviewstatus) if reviewstatus else None
         review_req.type = type_name
         review_req.time = time
         review_req.reviewed_rev = reviewed_rev if review_req.state_id not in ("requested", "accepted") else ""
         review_req.deadline = deadline.date()
         review_req.requested_by = system_person
 
-        k = (review_req.doc_id, review_req.result_id, review_req.state_id, review_req.reviewer_id, review_req.reviewed_rev, row.reviewurl)
+        k = (review_req.doc_id, review_req.result_id, review_req.state_id, review_req.reviewer_id, review_req.reviewed_rev, reviewurl)
         if k in seen_review_requests:
             print "SKIPPING SEEN", k
 
@@ -621,14 +681,14 @@ with db_con.cursor() as c:
                 print "imported event closed_review_request", e.desc, e.doc_id
 
         if review_req.state_id == "completed":
-            if not row.reviewurl: # don't have anything to store, so skip
+            if not reviewurl: # don't have anything to store, so skip
                 continue
 
             if completion_event:
                 completion_time = completion_event.time
                 completion_by = completion_event.by
             else:
-                completion_time = deadline
+                completion_time = donetime or deadline
                 completion_by = system_person
 
             # create the review document
@@ -661,7 +721,7 @@ with db_con.cursor() as c:
             review.rev = "00"
             review.title = "{} Review of {}-{}".format(review_req.type.name, review_req.doc.name, review_req.reviewed_rev)
             review.group = review_req.team
-            review.external_url = row.reviewurl
+            review.external_url = reviewurl
 
             existing = NewRevisionDocEvent.objects.filter(doc=review).first() or NewRevisionDocEvent(doc=review)
             e.type = "new_revision"
@@ -686,7 +746,7 @@ with db_con.cursor() as c:
                 e = ReviewRequestDocEvent.objects.filter(type="closed_review_request", doc=review_req.doc, review_request=review_req).first()
                 if not e:
                     e = ReviewRequestDocEvent(type="closed_review_request", doc=review_req.doc, review_request=review_req)
-                e.time = datetime.datetime.now()
+                e.time = donetime or datetime.datetime.now()
                 e.by = by
                 e.state = review_req.state
                 e.desc = "Closed request for {} review by {} with state '{}'".format(review_req.type.name, review_req.team.acronym.upper(), e.state.name)
