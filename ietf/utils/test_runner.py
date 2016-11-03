@@ -54,6 +54,7 @@ from optparse import make_option
 
 from django.conf import settings
 from django.template import TemplateDoesNotExist
+from django.template.loaders.base import Loader as BaseLoader
 from django.test.runner import DiscoverRunner
 from django.core.management import call_command
 from django.core.urlresolvers import RegexURLResolver
@@ -106,11 +107,14 @@ def safe_destroy_0_1(*args, **kwargs):
         settings.DATABASES["default"]["NAME"] = test_database_name
     return old_destroy(*args, **kwargs)
 
-def template_coverage_loader(template_name, dirs):
-    if template_coverage_collection == True:
-        loaded_templates.add(str(template_name))
-    raise TemplateDoesNotExist
-template_coverage_loader.is_usable = True
+class TemplateCoverageLoader(BaseLoader):
+    is_usable = True
+
+    def load_template_source(self, template_name, dirs):
+        if template_coverage_collection == True:
+            loaded_templates.add(str(template_name))
+        raise TemplateDoesNotExist
+    load_template_source.is_usable = True
 
 class RecordUrlsMiddleware(object):
     def process_request(self, request):
@@ -385,7 +389,7 @@ class IetfTestRunner(DiscoverRunner):
                 },
             }
 
-            settings.TEMPLATE_LOADERS = ('ietf.utils.test_runner.template_coverage_loader',) + settings.TEMPLATE_LOADERS
+            settings.TEMPLATE_LOADERS = ('ietf.utils.test_runner.TemplateCoverageLoader',) + settings.TEMPLATE_LOADERS
             template_coverage_collection = True
 
             settings.MIDDLEWARE_CLASSES = ('ietf.utils.test_runner.RecordUrlsMiddleware',) + settings.MIDDLEWARE_CLASSES
