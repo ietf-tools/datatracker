@@ -213,7 +213,8 @@ def construct_group_menu_context(request, group, selected, group_type, others):
 
     if group.features.has_reviews and can_manage_review_requests_for_team(request.user, group):
         import ietf.group.views_review
-        actions.append((u"Manage review requests", urlreverse(ietf.group.views_review.manage_review_requests, kwargs=kwargs)))
+        actions.append((u"Manage unassigned reviews", urlreverse(ietf.group.views_review.manage_review_requests, kwargs=dict(assignment_status="unassigned", **kwargs))))
+        actions.append((u"Manage assigned reviews", urlreverse(ietf.group.views_review.manage_review_requests, kwargs=dict(assignment_status="assigned", **kwargs))))
 
     if group.state_id != "conclude" and (is_admin or can_manage):
         actions.append((u"Edit group", urlreverse("group_edit", kwargs=kwargs)))

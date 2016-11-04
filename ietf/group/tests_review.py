@@ -148,11 +148,12 @@ class ReviewTests(TestCase):
 
         group = review_req1.team
 
-        url = urlreverse(ietf.group.views_review.manage_review_requests, kwargs={ 'acronym': group.acronym })
+        url = urlreverse(ietf.group.views_review.manage_review_requests, kwargs={ 'acronym': group.acronym, "assignment_status": "assigned" })
 
         login_testing_unauthorized(self, "secretary", url)
 
-        url = urlreverse(ietf.group.views_review.manage_review_requests, kwargs={ 'acronym': group.acronym, 'group_type': group.type_id })
+        assigned_url = urlreverse(ietf.group.views_review.manage_review_requests, kwargs={ 'acronym': group.acronym, 'group_type': group.type_id, "assignment_status": "assigned" })
+        unassigned_url = urlreverse(ietf.group.views_review.manage_review_requests, kwargs={ 'acronym': group.acronym, 'group_type': group.type_id, "assignment_status": "unassigned" })
 
         review_req2 = ReviewRequest.objects.create(
             doc=review_req1.doc,
@@ -201,14 +202,14 @@ class ReviewTests(TestCase):
         )
         
         # get
-        r = self.client.get(url)
+        r = self.client.get(assigned_url)
         self.assertEqual(r.status_code, 200)
         self.assertTrue(review_req1.doc.name in unicontent(r))
 
-        # can't save: conflict
+        # can't save assigned: conflict
         new_reviewer = Email.objects.get(role__name="reviewer", role__group=group, person__user__username="marschairman")
         # provoke conflict by posting bogus data
-        r = self.client.post(url, {
+        r = self.client.post(assigned_url, {
             "reviewrequest": [str(review_req1.pk), str(review_req2.pk), str(123456)],
 
             # close
@@ -226,13 +227,21 @@ class ReviewTests(TestCase):
         self.assertEqual(r.status_code, 200)
         content = unicontent(r).lower()
         self.assertTrue("1 request closed" in content)
-        self.assertTrue("1 request opened" in content)
         self.assertTrue("2 requests changed assignment" in content)
 
-        # close and assign
+        # can't save unassigned: conflict
+        r = self.client.post(unassigned_url, {
+            "reviewrequest": [str(123456)],
+            "action": "save-continue",
+        })
+        self.assertEqual(r.status_code, 200)
+        content = unicontent(r).lower()
+        self.assertTrue("1 request opened" in content)
+
+        # close and reassign assigned
         new_reviewer = Email.objects.get(role__name="reviewer", role__group=group, person__user__username="marschairman")
-        r = self.client.post(url, {
-            "reviewrequest": [str(review_req1.pk), str(review_req2.pk), str(review_req3.pk)],
+        r = self.client.post(assigned_url, {
+            "reviewrequest": [str(review_req1.pk), str(review_req2.pk)],
 
             # close
             "r{}-existing_reviewer".format(review_req1.pk): review_req1.reviewer_id or "",
@@ -244,12 +253,20 @@ class ReviewTests(TestCase):
             "r{}-action".format(review_req2.pk): "assign",
             "r{}-reviewer".format(review_req2.pk): new_reviewer.pk,
 
+            "action": "save",
+        })
+        self.assertEqual(r.status_code, 302)
+
+        # no change on unassigned
+        r = self.client.post(unassigned_url, {
+            "reviewrequest": [str(review_req3.pk)],
+
             # no change
             "r{}-existing_reviewer".format(review_req3.pk): review_req3.reviewer_id or "",
             "r{}-action".format(review_req3.pk): "",
             "r{}-close".format(review_req3.pk): "no-response",
             "r{}-reviewer".format(review_req3.pk): "",
-
+            
             "action": "save",
         })
         self.assertEqual(r.status_code, 302)

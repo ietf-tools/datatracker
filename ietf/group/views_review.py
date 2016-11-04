@@ -30,33 +30,55 @@ from ietf.utils.mail import send_mail_text
 from ietf.utils.fields import DatepickerDateField
 from ietf.ietfauth.utils import user_is_person
 
+def get_open_review_requests_for_team(team, assignment_status=None):
+    open_review_requests = ReviewRequest.objects.filter(
+        team=team,
+        state__in=("requested", "accepted")
+    ).prefetch_related(
+        "reviewer__person", "type", "state"
+    ).order_by("-time", "-id")
+
+    if assignment_status == "unassigned":
+        open_review_requests = suggested_review_requests_for_team(team) + list(open_review_requests.filter(reviewer=None))
+    elif assignment_status == "assigned":
+        open_review_requests = list(open_review_requests.exclude(reviewer=None))
+    else:
+        open_review_requests = suggested_review_requests_for_team(team) + list(open_review_requests)
+
+    today = datetime.date.today()
+    unavailable_periods = current_unavailable_periods_for_reviewers(team)
+    for r in open_review_requests:
+        if r.reviewer:
+            r.reviewer_unavailable = any(p.availability == "unavailable"
+                                         for p in unavailable_periods.get(r.reviewer.person_id, []))
+        r.due = max(0, (today - r.deadline).days)
+
+    return open_review_requests
 
 def review_requests(request, acronym, group_type=None):
     group = get_group_or_404(acronym, group_type)
     if not group.features.has_reviews:
         raise Http404
 
-    open_review_requests = list(ReviewRequest.objects.filter(
-        team=group, state__in=("requested", "accepted")
-    ).prefetch_related("reviewer", "type", "state").order_by("-time", "-id"))
+    assigned_review_requests = []
+    unassigned_review_requests = []
 
-    unavailable_periods = current_unavailable_periods_for_reviewers(group)
-    for review_req in open_review_requests:
-        if review_req.reviewer:
-            review_req.reviewer_unavailable = any(p.availability == "unavailable"
-                                                  for p in unavailable_periods.get(review_req.reviewer.person_id, []))
+    for r in get_open_review_requests_for_team(group):
+        if r.reviewer:
+            assigned_review_requests.append(r)
+        else:
+            unassigned_review_requests.append(r)
 
-    open_review_requests = suggested_review_requests_for_team(group) + open_review_requests
-
-    today = datetime.date.today()
-    for r in open_review_requests:
-        r.due = max(0, (today - r.deadline).days)
+    open_review_requests = [
+        ("Unassigned", unassigned_review_requests),
+        ("Assigned", assigned_review_requests),
+    ]
 
     closed_review_requests = ReviewRequest.objects.filter(
         team=group,
     ).exclude(
         state__in=("requested", "accepted")
-    ).prefetch_related("reviewer", "type", "state", "doc").order_by("-time", "-id")
+    ).prefetch_related("reviewer__person", "type", "state", "doc", "result").order_by("-time", "-id")
 
     since_choices = [
         (None, "1 month"),
@@ -192,7 +214,7 @@ class ManageReviewRequestForm(forms.Form):
 
 
 @login_required
-def manage_review_requests(request, acronym, group_type=None):
+def manage_review_requests(request, acronym, group_type=None, assignment_status=None):
     group = get_group_or_404(acronym, group_type)
     if not group.features.has_reviews:
         raise Http404
@@ -200,18 +222,7 @@ def manage_review_requests(request, acronym, group_type=None):
     if not can_manage_review_requests_for_team(request.user, group):
         return HttpResponseForbidden("You do not have permission to perform this action")
 
-    unavailable_periods = current_unavailable_periods_for_reviewers(group)
-
-    open_review_requests = list(ReviewRequest.objects.filter(
-        team=group, state__in=("requested", "accepted")
-    ).prefetch_related("reviewer", "type", "state").order_by("-time", "-id"))
-
-    for review_req in open_review_requests:
-        if review_req.reviewer:
-            review_req.reviewer_unavailable = any(p.availability == "unavailable"
-                                                  for p in unavailable_periods.get(review_req.reviewer.person_id, []))
-
-    review_requests = suggested_review_requests_for_team(group) + open_review_requests
+    review_requests = get_open_review_requests_for_team(group, assignment_status=assignment_status)
 
     document_requests = extract_revision_ordered_review_requests_for_documents_and_replaced(
         ReviewRequest.objects.filter(state__in=("part-completed", "completed"), team=group).prefetch_related("result"),
@@ -221,10 +232,12 @@ def manage_review_requests(request, acronym, group_type=None):
     # we need a mutable query dict for resetting upon saving with
     # conflicts
     query_dict = request.POST.copy() if request.method == "POST" else None
+
     for req in review_requests:
+        # add previous requests
         l = []
-        # take all on the latest reviewed rev
         for r in document_requests.get(req.doc_id, []):
+            # take all on the latest reviewed rev
             if l and l[0].reviewed_rev:
                 if r.doc_id == l[0].doc_id and r.reviewed_rev:
                     if int(r.reviewed_rev) > int(l[0].reviewed_rev):
@@ -292,10 +305,18 @@ def manage_review_requests(request, acronym, group_type=None):
                 kwargs["group_type"] = group_type
 
             if form_action == "save-continue":
+                if assignment_status:
+                    kwargs["assignment_status"] = assignment_status
+                
                 return redirect(manage_review_requests, **kwargs)
             else:
                 import ietf.group.views_review
                 return redirect(ietf.group.views_review.review_requests, **kwargs)
+
+    other_assignment_status = {
+        "unassigned": "assigned",
+        "assigned": "unassigned",
+    }.get(assignment_status)
 
     return render(request, 'group/manage_review_requests.html', {
         'group': group,
@@ -304,6 +325,8 @@ def manage_review_requests(request, acronym, group_type=None):
         'newly_opened': newly_opened,
         'newly_assigned': newly_assigned,
         'saving': saving,
+        'assignment_status': assignment_status,
+        'other_assignment_status': other_assignment_status,
     })
 
 class EmailOpenAssignmentsForm(forms.Form):
@@ -327,16 +350,21 @@ def email_open_review_assignments(request, acronym, group_type=None):
         reviewer=None,
     ).prefetch_related("reviewer", "type", "state", "doc").distinct().order_by("deadline", "reviewer"))
 
+    back_url = request.GET.get("next")
+    if not back_url:
+        kwargs = { "acronym": group.acronym }
+        if group_type:
+            kwargs["group_type"] = group_type
+
+        import ietf.group.views_review
+        back_url = urlreverse(ietf.group.views_review.review_requests, kwargs=kwargs)
+
     if request.method == "POST" and request.POST.get("action") == "email":
         form = EmailOpenAssignmentsForm(request.POST)
         if form.is_valid():
             send_mail_text(request, form.cleaned_data["to"], None, form.cleaned_data["subject"], form.cleaned_data["body"])
 
-            kwargs = { "acronym": group.acronym }
-            if group_type:
-                kwargs["group_type"] = group_type
-
-            return redirect(manage_review_requests, **kwargs)
+            return HttpResponseRedirect(back_url)
     else:
         to = group.list_email
         subject = "Open review assignments in {}".format(group.acronym)
@@ -356,6 +384,7 @@ def email_open_review_assignments(request, acronym, group_type=None):
         'group': group,
         'review_requests': review_requests,
         'form': form,
+        'back_url': back_url,
     })
 
 

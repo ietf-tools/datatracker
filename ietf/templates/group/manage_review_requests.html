@@ -13,11 +13,14 @@
 {% block content %}
   {% origin %}
 
-  <h1>Manage open review requests for {{ group.acronym }}</h1>
+  <h1>Manage {{ assignment_status }} open review requests for {{ group.acronym }}</h1>
 
   <p>Other options:
     <a href="{% url "ietf.group.views_review.reviewer_overview" group_type=group.type_id acronym=group.acronym %}">Reviewers in team</a>
-    - <a href="{% url "ietf.group.views_review.email_open_review_assignments" group_type=group.type_id acronym=group.acronym  %}">Email open assignments summary</a>
+    - <a href="{% url "ietf.group.views_review.email_open_review_assignments" group_type=group.type_id acronym=group.acronym  %}?next={{ request.get_full_path|urlencode }}">Email open assignments summary</a>
+    {% if other_assignment_status %}
+      - <a href="{% url "ietf.group.views_review.manage_review_requests" group_type=group.type_id acronym=group.acronym assignment_status=other_assignment_status %}">Manage {{ other_assignment_status }} reviews</a>
+    {% endif %}
   </p>
 
   {% if newly_closed > 0 or newly_opened > 0 or newly_assigned > 0 %}
@@ -136,7 +139,7 @@
       {% endbuttons %}
     </form>
   {% else %}
-    <p>There are currently no open requests.</p>
+    <p>There are currently no {{ assignment_status }} open requests.</p>
   {% endif %}
 {% endblock %}
 
