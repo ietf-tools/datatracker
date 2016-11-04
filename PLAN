@@ -7,24 +7,16 @@ Updated: $Date$
 Planned work in rough order
 ===========================
 
-* Enhancements for meeting materials and proceedings.
-  (Already merged to a large extent)
+* Review tracking project merge
 
-* Glue code for WG issue trackers and wiki:
-  - create new trackers on group creation
-  - update access lists on group chair/secretary changes
-  - update components on new group documents
+* Upgrade to Django 1.8 / 1.9 / 1.10
 
 * Clean up document author records containing 'none', and find and fix
   the code which produces them.
 
-* Review tracking project merge
-
 * Schema Changes: tags, external links for groups.
 
 * Add "Waiting for implementation" and "Held by WG" states, with comment field
-
-* Upgrade to Django 1.8 / 1.9 / 1.10
 
 * Revisit Yang module checks:  Capture output also for passed tests.
   Add second checker.  Fix extraction problems.
@@ -45,7 +37,7 @@ Planned work in rough order
 
 * Performance analysis of database table and index setup
 
-* Break out the htmlization code used on tools in a library, and use that
+* Break out the htmlzation code used on tools in a library, and use that
   in the datatracker rendering, replacing the simpler code currently in use.
 
 * Glue code to trigger generation of htmlized documents on www.ietf.org ??
