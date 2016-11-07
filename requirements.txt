@@ -23,7 +23,7 @@ mock>=2.0.0
 MySQL-python>=1.2.5
 pathlib>=1.0
 Pillow>=3.0
-pip>=6.1.1
+pip>=6.1.1,<9.0
 pyang>=1.6
 pyflakes>=0.8.1
 pyquery>=1.2.13,!=1.2.14	# Pyqyery 1.2.14 fails on some selectors or stacked selectors
