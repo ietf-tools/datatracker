@@ -176,7 +176,7 @@ def save_test_results(failures, test_labels):
     # results and avoid re-running tests if we've alread run them with OK
     # result after the latest code changes:
     topdir = os.path.dirname(os.path.dirname(settings.BASE_DIR))
-    tfile = codecs.open(os.path.join(topdir,"testresult"), "a", encoding='utf-8')
+    tfile = codecs.open(os.path.join(topdir,".testresult"), "a", encoding='utf-8')
     timestr = time.strftime("%Y-%m-%d %H:%M:%S")
     if failures:
         tfile.write("%s FAILED (failures=%s)\n" % (timestr, failures))
@@ -337,7 +337,7 @@ class IetfTestRunner(DiscoverRunner):
 
         make_option('--save-testresult',
             action='store_true', dest='save_testresult', default=False,
-            help='Save short test result data in %s/testresult' % os.path.dirname(os.path.dirname(settings.BASE_DIR))),
+            help='Save short test result data in %s/.testresult' % os.path.dirname(os.path.dirname(settings.BASE_DIR))),
     )
 
     def __init__(self, skip_coverage=False, save_version_coverage=None, **kwargs):
