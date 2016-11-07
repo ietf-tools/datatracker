@@ -137,10 +137,14 @@ admin.site.register(BallotType, BallotTypeAdmin)
 
 class DocEventAdmin(admin.ModelAdmin):
     def rev(self, obj):
-        return obj.get_dochistory().rev
+        h = obj.get_dochistory()
+        return h.rev if h else ""
     def doc_time(self, obj):
-        return obj.get_dochistory().time
-    list_display = ["id", "doc", "type", "rev", "by", "time", "doc_time" ]
+        h = obj.get_dochistory()
+        return h.time if h else ""
+    def short_desc(self, obj):
+        return obj.desc[:32]
+    list_display = ["id", "doc", "type", "rev", "by", "time", "doc_time", "short_desc" ]
     search_fields = ["doc__name", "by__name"]
     raw_id_fields = ["doc", "by"]
 admin.site.register(DocEvent, DocEventAdmin)
