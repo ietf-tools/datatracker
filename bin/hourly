@@ -10,7 +10,7 @@ DTDIR=/a/www/ietf-datatracker/web
 cd $DTDIR/
 
 # Set up the virtual environment
-source $DTDIR/bin/activate
+source $DTDIR/env/bin/activate
 
 logger -p user.info -t cron "Running $DTDIR/bin/hourly"
 
@@ -65,5 +65,8 @@ mv $TMPFILE4 $DOWNLOAD/id-all.txt
 mv $TMPFILE5 $DOWNLOAD/id-index.txt
 mv $TMPFILE6 $DOWNLOAD/id-abstract.txt
 mv $TMPFILE7 $ID/all_id2.txt
+
+# Create and update group wikis
+$DTDIR/ietf/manage.py create_group_wikis
 
 # exit 0

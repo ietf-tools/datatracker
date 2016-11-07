@@ -16,7 +16,7 @@ cd $DTDIR/
 logger -p user.info -t cron "Running $DTDIR/bin/daily"
 
 # Set up the virtual environment
-source $DTDIR/bin/activate
+source $DTDIR/env/bin/activate
 
 # Populate the yang repositories
 $DTDIR/ietf/manage.py populate_yang_model_dirs
