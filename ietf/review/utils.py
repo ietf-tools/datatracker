@@ -294,6 +294,23 @@ def sum_raw_review_request_aggregations(raw_aggregations):
 
     return state_dict, late_state_dict, result_dict, assignment_to_closure_days_list, assignment_to_closure_days_count
 
+def latest_review_requests_for_reviewers(team, days_back=365):
+    """Collect and return stats for reviewers on latest requests, in
+    extract_review_request_data format."""
+
+    extracted_data = extract_review_request_data(
+        teams=[team],
+        time_from=datetime.date.today() - datetime.timedelta(days=days_back),
+        ordering=["reviewer"],
+    )
+
+    req_data_for_reviewers = {
+        reviewer: list(reversed(list(req_data_items)))
+        for reviewer, req_data_items in itertools.groupby(extracted_data, key=lambda data: data.reviewer)
+    }
+
+    return req_data_for_reviewers
+
 def make_new_review_request_from_existing(review_req):
     obj = ReviewRequest()
     obj.time = review_req.time
@@ -717,6 +734,9 @@ def make_assignment_choices(email_queryset, review_req):
     # unavailable periods
     unavailable_periods = current_unavailable_periods_for_reviewers(team)
 
+    # reviewers statistics
+    req_data_for_reviewers = latest_review_requests_for_reviewers(team)
+
     ranking = []
     for e in possible_emails:
         settings = reviewer_settings.get(e.person_id)
@@ -763,9 +783,25 @@ def make_assignment_choices(email_queryset, review_req):
         if settings.skip_next > 0:
             explanations.append("skip next {}".format(settings.skip_next))
 
+        # index
         index = rotation_index.get(e.person_id, 0)
         scores.append(-index)
         explanations.append("#{}".format(index + 1))
+
+        # stats
+        stats = []
+        req_data = req_data_for_reviewers.get(e.person_id, [])
+
+        currently_open = sum(1 for d in req_data if d.state in ["requested", "accepted"])
+        if currently_open > 0:
+            stats.append("currently {} open".format(currently_open))
+        could_have_completed = [d for d in req_data if d.state in ["part-completed", "completed", "no-response"]]
+        if could_have_completed:
+            no_response = sum(1 for d in could_have_completed if d.state == "no-response")
+            stats.append("no response {}/{}".format(no_response, len(could_have_completed)))
+
+        if stats:
+            explanations.append(", ".join(stats))
 
         label = unicode(e.person)
         if explanations:

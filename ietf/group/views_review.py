@@ -1,4 +1,4 @@
-import datetime, math, itertools
+import datetime, math
 from collections import defaultdict
 
 from django.shortcuts import render, redirect, get_object_or_404
@@ -21,7 +21,7 @@ from ietf.review.utils import (can_manage_review_requests_for_team,
                                current_unavailable_periods_for_reviewers,
                                email_reviewer_availability_change,
                                reviewer_rotation_list,
-                               extract_review_request_data)
+                               latest_review_requests_for_reviewers)
 from ietf.group.models import Role
 from ietf.group.utils import get_group_or_404, construct_group_menu_context
 from ietf.person.fields import PersonEmailChoiceField
@@ -130,12 +130,7 @@ def reviewer_overview(request, acronym, group_type=None):
 
     today = datetime.date.today()
 
-    extracted_data = extract_review_request_data(teams=[group], time_from=today - datetime.timedelta(days=365), ordering=["reviewer"])
-    req_data_for_reviewer = {}
-    for reviewer, req_data_items in itertools.groupby(extracted_data, key=lambda data: data.reviewer):
-        l = list(req_data_items)
-        l.reverse()
-        req_data_for_reviewer[reviewer] = l
+    req_data_for_reviewers = latest_review_requests_for_reviewers(group)
     review_state_by_slug = { n.slug: n for n in ReviewRequestStateName.objects.all() }
 
     for person in reviewers:
@@ -152,13 +147,12 @@ def reviewer_overview(request, acronym, group_type=None):
                                        and (p.start_date is None or p.start_date <= today) and (p.end_date is None or today <= p.end_date)
                                        for p in person.unavailable_periods)
 
-        MAX_REQS = 5
-        req_data = req_data_for_reviewer.get(person.pk, [])
-        open_reqs = sum(1 for d in req_data if d.state in ("requested", "accepted"))
+        MAX_CLOSED_REQS = 10
+        req_data = req_data_for_reviewers.get(person.pk, [])
+        open_reqs = sum(1 for d in req_data if d.state in ["requested", "accepted"])
         latest_reqs = []
         for d in req_data:
-            # any open requests pushes the others out
-            if ((d.state in ("requested", "accepted") and len(latest_reqs) < MAX_REQS) or (len(latest_reqs) + open_reqs < MAX_REQS)):
+            if d.state in ["requested", "accepted"] or len(latest_reqs) < MAX_CLOSED_REQS + open_reqs:
                 latest_reqs.append((d.req_pk, d.doc, d.reviewed_rev, d.deadline,
                                     review_state_by_slug.get(d.state),
                                     int(math.ceil(d.assignment_to_closure_days)) if d.assignment_to_closure_days is not None else None))
