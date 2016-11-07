@@ -27,7 +27,7 @@ $(document).ready(function () {
     }
 
     form.find(".assign-action button").on("click", function () {
-        var row = $(this).closest("tr");
+        var row = $(this).closest(".review-request");
 
         var select = row.find(".reviewer-controls [name$=\"-reviewer\"]");
         if (!select.val()) {
@@ -39,7 +39,7 @@ $(document).ready(function () {
             });
 
             form.find("[name$=\"-action\"][value=\"assign\"]").each(function () {
-                var v = $(this).closest("tr").find("[name$=\"-reviewer\"]").val();
+                var v = $(this).closest(".review-request").find("[name$=\"-reviewer\"]").val();
                 if (v)
                     reviewerAssigned[v] += 1;
             });
@@ -70,20 +70,20 @@ $(document).ready(function () {
     });
 
     form.find(".reviewer-controls .undo").on("click", function () {
-        var row = $(this).closest("tr");
+        var row = $(this).closest(".review-request");
         row.find("[name$=\"-action\"]").val("");
         row.find("[name$=\"-reviewer\"]").val($(this).data("initial"));
         setControlDisplay(row);
     });
 
     form.find(".close-action button").on("click", function () {
-        var row = $(this).closest("tr");
+        var row = $(this).closest(".review-request");
         row.find("[name$=\"-action\"]").val("close");
         setControlDisplay(row);
     });
 
     form.find(".close-controls .undo").on("click", function () {
-        var row = $(this).closest("tr");
+        var row = $(this).closest(".review-request");
         row.find("[name$=\"-action\"]").val("");
         setControlDisplay(row);
     });
@@ -93,7 +93,7 @@ $(document).ready(function () {
         if (!v)
             return;
 
-        var row = $(this).closest("tr");
+        var row = $(this).closest(".review-request");
         setControlDisplay(row);
     });
 

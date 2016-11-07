@@ -550,13 +550,14 @@ def suggested_review_requests_for_team(team):
 
         telechat_docs = reviewable_docs_qs.filter(
             docevent__telechatdocevent__telechat_date__in=telechat_dates
-        ).values_list("pk", flat=True)
+        )
 
         # we need to check the latest telechat event for each document
         # scheduled for the telechat, as the appearance might have been
         # cancelled/moved
         telechat_events = TelechatDocEvent.objects.filter(
-            doc__in=list(telechat_docs), # explicitly turn into list so we don't get a complex and slow join sent down to the DB
+            # turn into list so we don't get a complex and slow join sent down to the DB
+            doc__in=list(telechat_docs.values_list("pk", flat=True)),
         ).values_list(
             "doc", "pk", "time", "telechat_date"
         ).order_by("doc", "-time", "-id").distinct()

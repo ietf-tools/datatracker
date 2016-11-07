@@ -35,7 +35,7 @@ def get_open_review_requests_for_team(team, assignment_status=None):
         team=team,
         state__in=("requested", "accepted")
     ).prefetch_related(
-        "reviewer__person", "type", "state"
+        "reviewer__person", "type", "state", "doc", "doc__states",
     ).order_by("-time", "-id")
 
     if assignment_status == "unassigned":
@@ -234,6 +234,8 @@ def manage_review_requests(request, acronym, group_type=None, assignment_status=
     query_dict = request.POST.copy() if request.method == "POST" else None
 
     for req in review_requests:
+        req.form = ManageReviewRequestForm(req, query_dict)
+
         # add previous requests
         l = []
         for r in document_requests.get(req.doc_id, []):
@@ -248,8 +250,6 @@ def manage_review_requests(request, acronym, group_type=None, assignment_status=
                 l = [r]
 
         req.latest_reqs = l
-
-        req.form = ManageReviewRequestForm(req, query_dict)
 
     saving = False
     newly_closed = newly_opened = newly_assigned = 0

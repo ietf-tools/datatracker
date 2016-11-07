@@ -38,104 +38,115 @@
 
   {% if review_requests %}
     <form class="review-requests" method="post">{% csrf_token %}
-      <table class="table table-condensed table-striped materials">
-        <thead>
-          <tr>
-            <th>Document</th>
-            <th>Deadline</th>
-            <th style="min-width:65%">Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for r in review_requests %}
-            <tr>
-              <td>
-                <a href="{% if r.requested_rev %}{% url "doc_view" name=r.doc.name rev=r.requested_rev %}{% else %}{% url "doc_view" name=r.doc.name %}{% endif %}">{{ r.doc.name }}-{% if r.requested_rev %}{{ r.requested_rev }}{% else %}{{ r.doc.rev }}{% endif %}</a>
 
-                <div>
-                  <small>
-                    {% if r.pk != None %}<a href="{% url "ietf.doc.views_review.review_request" name=r.doc.name request_id=r.pk %}">Req: {{ r.time|date:"Y-m-d" }}{% else %}<em>auto-suggested</em>{% endif %} - {{ r.type.name }}{% if r.pk != None %}</a>{% endif %}
-                  </small>
+      {% for r in review_requests %}
+        <div class="panel panel-default review-request">
+          <div class="panel-heading">
+
+            <h3 class="panel-title">
+              <span class="pull-right">
+                {{ r.type.name }}
+                - deadline: {{ r.deadline|date:"Y-m-d" }}
+                {% if r.due %}<span class="label label-warning">{{ r.due }} day{{ r.due|pluralize }}</span>{% endif %}
+              </span>
+
+              <a href="{% if r.requested_rev %}{% url "doc_view" name=r.doc.name rev=r.requested_rev %}{% else %}{% url "doc_view" name=r.doc.name %}{% endif %}?include_text=1">{{ r.doc.name }}-{% if r.requested_rev %}{{ r.requested_rev }}{% else %}{{ r.doc.rev }}{% endif %}</a>
+            </h3>
+          </div>
+
+          <div class="panel-body">
+            <div class="row">
+              <div class="col-sm-6">
+                <div class="request-metadata">
+                  {% if r.pk != None %}Requested: <a href="{% url "ietf.doc.views_review.review_request" name=r.doc.name request_id=r.pk %}">{{ r.time|date:"Y-m-d" }}</a>{% else %}Auto-suggested{% endif %}
+
+                  {% if r.latest_reqs %}
+                    {% for rlatest in r.latest_reqs %}
+                      - previous review of <a href="{% url "doc_view" name=rlatest.doc_id rev=rlatest.reviewed_rev %}?include_text=1">{% if rlatest.doc_id != r.doc_id %}{{ rlatest.doc_id }}{% endif %}-{{ rlatest.reviewed_rev }}</a>:
+                      <a href="{% url "ietf.doc.views_review.review_request" name=rlatest.doc_id request_id=rlatest.pk %}">{% if rlatest.result %}{{ rlatest.result.name }}{% else %}result unavail.{% endif %}</a>
+                      (<a href="{{ rfcdiff_base_url }}?url1={{ rlatest.doc.name }}-{{ rlatest.reviewed_rev }}&url2={{ r.doc.name }}-{{ r.doc.rev }}">diff</a>){% if not forloop.last %},{% endif %}
+                    {% endfor %}
+                  {% endif %}
                 </div>
 
-                {% if r.latest_reqs %}
-                  {% for rlatest in r.latest_reqs %}
-                    <div>
-                      <small>- prev. review of {% if rlatest.doc_id != r.doc_id %}{{ rlatest.doc_id }}{% endif %}-{{ rlatest.reviewed_rev }}:
-                        <a href="{% url "ietf.doc.views_review.review_request" name=rlatest.doc_id request_id=rlatest.pk %}">{% if rlatest.result %}{{ rlatest.result.name }}{% else %}result unavail.{% endif %}</a>
-                        (<a href="{{ rfcdiff_base_url }}?url1={{ rlatest.doc.name }}-{{ rlatest.reviewed_rev }}&url2={{ r.doc.name }}-{{ r.doc.rev }}">diff</a>){% if not forloop.last %},{% endif %}
-                      </small>
-                    </div>
+                <div><strong>{{ r.doc.title }}</strong></div>
+
+                <div>
+                  {{ r.doc.pages }} page{{ r.doc.pages|pluralize }}
+                  - {{ r.doc.friendly_state }}
+                  {% if r.doc.group.type_id != "individ" %}
+                    - <a href="{% url "ietf.group.views.group_home" acronym=r.doc.group.acronym group_type=r.doc.group.type_id %}">{{ r.doc.group.acronym }} {{ r.doc.group.type.name }}</a>
+                  {% endif %}
+                </div>
+              </div>
+
+              <div class="col-sm-6 abstract">
+                {{ r.doc.abstract|linebreaks }}
+              </div>
+            </div>
+          </div>
+          
+          <div class="panel-footer">
+            {% if r.form.non_field_errors %}
+              <div class="alert alert-danger">
+                {% for e in r.form.non_field_errors %}
+                  {{ e }}
+                {% endfor %}
+              </div>
+            {% endif %}
+
+            <input type="hidden" name="reviewrequest" value="{{ r.pk }}">
+            <input type="hidden" name="{{ r.form.prefix }}-existing_reviewer" value="{{ r.reviewer_id|default:"" }}">
+
+            <span class="assign-action">
+              {% if r.reviewer %}
+                <button type="button" class="btn btn-default" title="Click to reassign reviewer">
+                  {{ r.reviewer.person }}
+                  {% if r.state_id == "accepted" %} <span class="label label-default">accp</span>{% endif %}
+                  {% if r.reviewer_unavailable %}<span class="label label-danger">unavail</span>{% endif %}
+                </button>
+              {% else %}
+                <button type="button" class="btn btn-default" title="Click to assign reviewer"><em>Not yet assigned</em></button>
+              {% endif %}
+            </span>
+
+            {{ r.form.action }}
+
+            <span class="reviewer-controls form-inline">
+              <label for="{{ r.form.reviewer.id_for_label }}">Assign:</label>
+              {{ r.form.reviewer }}
+              <button type="button" class="btn btn-default undo" title="Cancel assignment" data-initial="{{ r.form.fields.reviewer.initial|default:"" }}">Cancel</button>
+              {% if r.form.reviewer.errors %}
+                <div class="alert alert-danger">
+                  {% for e in r.form.reviewer.errors %}
+                    {{ e }}
                   {% endfor %}
-                {% endif %}
+                </div>
+              {% endif %}
+            </span>
 
-                {% if r.form.non_field_errors %}
-                  <div class="alert alert-danger">
-                    {% for e in r.form.non_field_errors %}
-                      {{ e }}
-                    {% endfor %}
-                  </div>
-                {% endif %}
-              </td>
-              <td class="deadline">
-                {{ r.deadline|date:"Y-m-d" }}
-                {% if r.due %}<span class="label label-warning">{{ r.due }} day{{ r.due|pluralize }}</span>{% endif %}
-              </td>
-              <td>
-                <input type="hidden" name="reviewrequest" value="{{ r.pk }}">
-                <input type="hidden" name="{{ r.form.prefix }}-existing_reviewer" value="{{ r.reviewer_id|default:"" }}">
+            <span class="close-action">
+              <button type="button" class="btn btn-default">Close...</button>
+            </span>
 
-                <span class="assign-action">
-                  {% if r.reviewer %}
-                    <button type="button" class="btn btn-default btn-sm" title="Click to reassign reviewer">
-                      {{ r.reviewer.person }}
-                      {% if r.state_id == "accepted" %} <span class="label label-default">accp</span>{% endif %}
-                      {% if r.reviewer_unavailable %}<span class="label label-danger">unavail</span>{% endif %}
-                    </button>
-                  {% else %}
-                    <button type="button" class="btn btn-default btn-sm" title="Click to assign reviewer"><em>not yet assigned</em></button>
-                  {% endif %}
-                </span>
-
-                {{ r.form.action }}
-
-                <span class="reviewer-controls form-inline">
-                  <label for="{{ r.form.reviewer.id_for_label }}">Assign:</label>
-                  {{ r.form.reviewer }}
-                  <button type="button" class="btn btn-default btn-sm undo" title="Cancel assignment" data-initial="{{ r.form.fields.reviewer.initial|default:"" }}">Cancel</button>
-                  {% if r.form.reviewer.errors %}
-                    <div class="alert alert-danger">
-                      {% for e in r.form.reviewer.errors %}
-                        {{ e }}
-                      {% endfor %}
-                    </div>
-                  {% endif %}
-                </span>
-
-                <span class="close-action">
-                  <button type="button" class="btn btn-default btn-sm">Close...</button>
-                </span>
-
-                <span class="close-controls form-inline">
-                  <label for="{{ r.form.reviewer.id_for_label }}">Close:</label>
-                  {{ r.form.close }}
-                  <button type="button" class="btn btn-default btn-sm undo" title="Cancel closing">Cancel</button>
-                  {% if r.form.close.errors %}
-                    <br>
-                    {{ r.form.close.errors }}
-                  {% endif %}
-                </span>
-              </td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+            <span class="close-controls form-inline">
+              <label for="{{ r.form.reviewer.id_for_label }}">Close:</label>
+              {{ r.form.close }}
+              <button type="button" class="btn btn-default undo" title="Cancel closing">Cancel</button>
+              {% if r.form.close.errors %}
+                <br>
+                {{ r.form.close.errors }}
+              {% endif %}
+            </span>
+          </div>
+        </div>
+      {% endfor %}
 
       {% buttons %}
       <a href="{% url "ietf.group.views_review.review_requests" group_type=group.type_id acronym=group.acronym %}" class="btn btn-default pull-right">Cancel</a>
-        <button class="btn btn-primary" type="submit" name="action" value="save">Save changes</button>
-        <button class="btn btn-primary" type="submit" name="action" value="save-continue">Save and continue editing</button>
-        <button class="btn btn-default" type="submit" name="action" value="refresh">Refresh (keeping changes)</button>
+      <button class="btn btn-primary" type="submit" name="action" value="save">Save changes</button>
+      <button class="btn btn-primary" type="submit" name="action" value="save-continue">Save and continue editing</button>
+      <button class="btn btn-default" type="submit" name="action" value="refresh">Refresh (keeping changes)</button>
       {% endbuttons %}
     </form>
   {% else %}
