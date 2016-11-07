@@ -5,7 +5,7 @@ from django.conf import settings
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.models import ( Document, State, DocAlias, DocEvent, 
+from ietf.doc.models import ( Document, State, DocAlias, DocEvent, SubmissionDocEvent,
     DocumentAuthor, AddedMessageEvent )
 from ietf.doc.models import NewRevisionDocEvent
 from ietf.doc.models import RelatedDocument, DocRelationshipName
@@ -129,11 +129,13 @@ def docevent_from_submission(request, submission, desc, who=None):
         else:
             by = system
 
-    e = DocEvent.objects.create(
+    e = SubmissionDocEvent.objects.create(
             doc=draft,
             by = by,
-            type = "added_comment",
+            type = "new_submission",
             desc = desc,
+            submission = submission,
+            rev = submission.rev,
         )
     return e
 
@@ -145,12 +147,12 @@ def post_rev00_submission_events(draft, submission, submitter):
         desc = subevent.desc
         if desc.startswith("Uploaded submission"):
             desc = "Uploaded new revision"
-            e = DocEvent(type="added_comment", doc=draft)
+            e = SubmissionDocEvent(type="new_submission", doc=draft, submission=submission, rev=submission.rev )
         elif desc.startswith("Submission created"):
-            e = DocEvent(type="added_comment", doc=draft)
+            e = SubmissionDocEvent(type="new_submission", doc=draft, submission=submission, rev=submission.rev)
         elif desc.startswith("Set submitter to"):
             pos = subevent.desc.find("sent confirmation email")
-            e = DocEvent(type="added_comment", doc=draft)
+            e = SubmissionDocEvent(type="new_submission", doc=draft, submission=submission, rev=submission.rev)
             if pos > 0:
                 desc = "Request for posting confirmation emailed %s" % (subevent.desc[pos + 23:])
             else:
@@ -224,11 +226,13 @@ def post_submission(request, submission, approvedDesc):
         events += post_rev00_submission_events(draft, submission, submitter)
 
     # Add an approval docevent
-    e = DocEvent.objects.create(
-        type="added_comment",
+    e = SubmissionDocEvent.objects.create(
+        type="new_submission",
         doc=draft,
         by=system,
-        desc=approvedDesc
+        desc=approvedDesc,
+        submission=submission,
+        rev=submission.rev,
     )
     events.append(e)
 

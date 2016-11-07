@@ -663,6 +663,7 @@ class DocReminder(models.Model):
 EVENT_TYPES = [
     # core events
     ("new_revision", "Added new revision"),
+    ("new_submission", "Uploaded new revision"),
     ("changed_document", "Changed document metadata"),
     ("added_comment", "Added comment"),
     ("added_message", "Added message"),
@@ -864,6 +865,11 @@ class AddedMessageEvent(DocEvent):
     msgtype     = models.CharField(max_length=25)
     in_reply_to = models.ForeignKey(ietf.message.models.Message, null=True, blank=True,related_name='doc_irtomanual')
 
+
+class SubmissionDocEvent(DocEvent):
+    import ietf.submit.models
+    rev = models.CharField(max_length=16)
+    submission = models.ForeignKey(ietf.submit.models.Submission)
 
 # dumping store for removed events
 class DeletedEvent(models.Model):

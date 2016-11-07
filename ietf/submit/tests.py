@@ -374,7 +374,7 @@ class SubmitTests(TestCase):
         self.assertEqual(r.status_code, 302)
 
         # check we have document events 
-        doc_events = draft.docevent_set.filter(type="added_comment")
+        doc_events = draft.docevent_set.filter(type__in=["new_submission", "added_comment"])
         edescs = '::'.join([x.desc for x in doc_events])
         self.assertTrue('New version approved' in edescs)
         self.assertTrue('Uploaded new revision' in edescs)
@@ -386,17 +386,17 @@ class SubmitTests(TestCase):
         docevents = list(draft.docevent_set.all().order_by("-time", "-id"))
         # Latest events are first (this is the default, but we make it explicit)
         # Assert event content in chronological order:
-        self.assertEqual(docevents[4].type, "added_comment")
+        self.assertEqual(docevents[4].type, "new_submission")
         self.assertIn("Uploaded new revision", docevents[4].desc)
         self.assertEqual(docevents[4].by.name, "Submitter Name")
         self.assertGreater(docevents[4].id, docevents[5].id)
         #
-        self.assertEqual(docevents[3].type, "added_comment")
+        self.assertEqual(docevents[3].type, "new_submission")
         self.assertIn("Request for posting confirmation", docevents[3].desc)
         self.assertEqual(docevents[3].by.name, "(System)")
         self.assertGreater(docevents[3].id, docevents[4].id)
         #
-        self.assertEqual(docevents[2].type, "added_comment")
+        self.assertEqual(docevents[2].type, "new_submission")
         self.assertIn("New version approved", docevents[2].desc)
         self.assertEqual(docevents[2].by.name, "(System)")
         self.assertGreater(docevents[2].id, docevents[3].id)

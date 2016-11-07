@@ -11,7 +11,7 @@ from ietf.doc.models import (BallotType, DeletedEvent, StateType, State, Documen
     DocumentAuthor, DocEvent, StateDocEvent, DocHistory, ConsensusDocEvent, DocAlias,
     TelechatDocEvent, DocReminder, LastCallDocEvent, NewRevisionDocEvent, WriteupDocEvent,
     InitialReviewDocEvent, DocHistoryAuthor, BallotDocEvent, RelatedDocument,
-    RelatedDocHistory, BallotPositionDocEvent, AddedMessageEvent)
+    RelatedDocHistory, BallotPositionDocEvent, AddedMessageEvent, SubmissionDocEvent)
 
 
 from ietf.name.resources import BallotPositionNameResource, DocTypeNameResource
@@ -541,4 +541,31 @@ class AddedMessageEventResource(ModelResource):
             "in_reply_to": ALL_WITH_RELATIONS,
         }
 api.doc.register(AddedMessageEventResource())
+
+
+
+from ietf.person.resources import PersonResource
+from ietf.submit.resources import SubmissionResource
+class SubmissionDocEventResource(ModelResource):
+    by               = ToOneField(PersonResource, 'by')
+    doc              = ToOneField(DocumentResource, 'doc')
+    docevent_ptr     = ToOneField(DocEventResource, 'docevent_ptr')
+    submission       = ToOneField(SubmissionResource, 'submission')
+    class Meta:
+        queryset = SubmissionDocEvent.objects.all()
+        serializer = api.Serializer()
+        cache = SimpleCache()
+        #resource_name = 'submissiondocevent'
+        filtering = { 
+            "id": ALL,
+            "time": ALL,
+            "type": ALL,
+            "desc": ALL,
+            "rev": ALL,
+            "by": ALL_WITH_RELATIONS,
+            "doc": ALL_WITH_RELATIONS,
+            "docevent_ptr": ALL_WITH_RELATIONS,
+            "submission": ALL_WITH_RELATIONS,
+        }
+api.doc.register(SubmissionDocEventResource())
 

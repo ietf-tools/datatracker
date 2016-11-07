@@ -238,12 +238,12 @@ def augment_events_with_revision(doc, events):
         while event_revisions and (e.time, e.id) < (event_revisions[-1]["time"], event_revisions[-1]["id"]):
             event_revisions.pop()
 
-        if event_revisions:
-            cur_rev = event_revisions[-1]["rev"]
-        else:
-            cur_rev = "00"
-
-        e.rev = cur_rev
+        if not hasattr(e, 'rev'):
+            if event_revisions:
+                cur_rev = event_revisions[-1]["rev"]
+            else:
+                cur_rev = "00"
+            e.rev = cur_rev
 
 def add_links_in_new_revision_events(doc, events, diff_revisions):
     """Add direct .txt links and diff links to new_revision events."""
