@@ -1327,11 +1327,10 @@ def upload_session_agenda(request, session_id, num):
             apply_to_all = True
             if num_sessions > 1:
                 apply_to_all = form.cleaned_data['apply_to_all']
+            created = None
             if agenda_sp:
                 doc = agenda_sp.document
-                doc.rev = '%02d' % (int(doc.rev)+1)
-                agenda_sp.rev = doc.rev
-                agenda_sp.save()
+                created = False
             else:
                 
                 sess_time = session.official_timeslotassignment() and session.official_timeslotassignment().timeslot.time
@@ -1349,7 +1348,7 @@ def upload_session_agenda(request, session_id, num):
                     title = 'Agenda %s' % (session.meeting.number, )
                     if sess_time:
                         title += ': %s' % (sess_time.strftime("%a %H:%M"),)
-                doc = Document.objects.create(
+                doc, created = Document.objects.get_or_create(
                           name = name,
                           type_id = 'agenda',
                           title = title,
@@ -1359,6 +1358,10 @@ def upload_session_agenda(request, session_id, num):
                 doc.states.add(State.objects.get(type_id='agenda',slug='active'))
                 doc.docalias_set.create(name=doc.name)
                 session.sessionpresentation_set.create(document=doc,rev='00')
+            if not created:
+                doc.rev = '%02d' % (int(doc.rev)+1)
+                agenda_sp.rev = doc.rev
+                agenda_sp.save()
             if apply_to_all:
                 for other_session in sessions:
                     if other_session != session:
