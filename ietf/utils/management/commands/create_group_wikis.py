@@ -47,6 +47,7 @@ class Command(BaseCommand):
 
     def log(self, msg):
         syslog.syslog(msg)
+        self.stdout.write(msg)
         self.stderr.write(msg)
 
     # --- svn ---
@@ -75,7 +76,11 @@ class Command(BaseCommand):
             self.log(msg)
             return msg
         err, out= self.svn_admin_cmd("create", svn )
-        return err
+        if err:
+            msg = "Error %s creating svn repository %s:\n   %s" % (err, svn, out)
+            self.log(msg)
+            return msg
+        return None
 
     # --- trac ---
 
@@ -137,12 +142,14 @@ class Command(BaseCommand):
         if repository:
             self.note("  Indexing default repository")
             repository.sync()
+        else:
+            self.log("Trac environment '%s' does not have any repository" % env)
 
     def create_trac(self, group):
         if not os.path.exists(os.path.dirname(group.trac_dir)):
             msg = "Intended to create '%s', but parent directory is missing" % group.trac_dir
             self.log(msg)
-            return None
+            return None, msg
         options = copy.deepcopy(settings.TRAC_ENV_OPTIONS)
         # Interpolate group field names to values in the option settings:
         for i in range(len(options)):
@@ -153,7 +160,7 @@ class Command(BaseCommand):
         # custom pages and settings.
         if self.dummy_run:
             self.note("Would create Trac for group '%s' at %s" % (group.acronym, group.trac_dir))
-            return True
+            return None, None
         else:
             try:
                 self.note("Creating Trac for group '%s' at %s" % (group.acronym, group.trac_dir))
@@ -172,11 +179,11 @@ class Command(BaseCommand):
                 # Components (i.e., drafts) will be handled during components
                 # update later
                 # Permissions will be handled during permission update later.
-                return env
+                return env, None
             except TracError as e:
-                self.log("While creating Trac instance for %s: %s" % (group, e))
-                raise
-                return None
+                msg = "While creating Trac instance for %s: %s" % (group, e)
+                self.log(msg)
+                return None, msg
 
     def update_trac_permissions(self, group, env):
         if self.dummy_run:
@@ -258,7 +265,7 @@ class Command(BaseCommand):
 
     def handle(self, *filenames, **options):
         self.verbosity = options['verbosity']
-        self.errors = 0
+        self.errors = []
         self.wiki_dir_pattern = options.get('wiki_dir_pattern', settings.TRAC_WIKI_DIR_PATTERN)
         self.svn_dir_pattern = options.get('svn_dir_pattern', settings.TRAC_SVN_DIR_PATTERN)
         self.group_list = options.get('group_list', None)
@@ -294,11 +301,13 @@ class Command(BaseCommand):
 
                 if not os.path.exists(group.svn_dir):
                     err = self.create_svn(group.svn_dir)
-                    self.errors += 1 if err else 0
+                    if err:
+                        self.errors.append(err)
 
                 if not os.path.exists(group.trac_dir):
-                    trac_env = self.create_trac(group)
-                    self.errors += 1 if not trac_env else 0
+                    trac_env, msg = self.create_trac(group)
+                    if not trac_env: 
+                        self.errors.append(msg)
                 else:
                     if not self.dummy_run:
                         trac_env = Environment(group.trac_dir)
@@ -310,9 +319,9 @@ class Command(BaseCommand):
                 self.update_trac_components(group, trac_env)
 
             except Exception as e:
-                self.errors += 1
+                self.errors.append(e)
                 self.log("While processing %s: %s" % (group.acronym, e))
                 raise
 
         if self.errors:
-            raise CommandError("There were %s failures in WG Trac creation, see syslog %s for details." % (self.errors, logname))
+            raise CommandError("There were %s failures in WG Trac creation:\n   %s" % (len(self.errors), "\n   ".join(self.errors)))

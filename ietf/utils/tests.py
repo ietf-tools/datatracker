@@ -203,6 +203,10 @@ class TemplateChecksTestCase(TestCase):
 class TestWikiGlueManagementCommand(TestCase):
 
     def setUp(self):
+        # We create temporary wiki and svn directories, and provide them to the management
+        # command through command line switches.  We have to do it this way because the
+        # management command reads in its own copy of settings.py in its own python
+        # environment, so we can't modify it here.
         self.wiki_dir_pattern = os.path.abspath('tmp-wiki-dir-root/%s')
         if not os.path.exists(os.path.dirname(self.wiki_dir_pattern)):
             os.mkdir(os.path.dirname(self.wiki_dir_pattern))
@@ -221,11 +225,14 @@ class TestWikiGlueManagementCommand(TestCase):
                         state__slug='active'
                     ).order_by('acronym')
         out = StringIO()
-        call_command('create_group_wikis', stdout=out, verbosity=2,
+        err = StringIO()
+        call_command('create_group_wikis', stdout=out, stderr=err, verbosity=2,
             wiki_dir_pattern=self.wiki_dir_pattern,
             svn_dir_pattern=self.svn_dir_pattern,
         )
         command_output = out.getvalue()
+        command_errors = err.getvalue()
+        self.assertEqual("", command_errors)
         for group in groups:
             self.assertIn("Processing group '%s'" % group.acronym, command_output)
             # Do a bit of verification using trac-admin, too
