@@ -1,0 +1,128 @@
+#!/bin/bash
+
+version=0.10
+program=${0##*/}
+progdir=${0%/*}
+if [ "$progdir" = "$program" ]; then progdir="."; fi
+if [ "$progdir" = "." ]; then progdir="$PWD"; fi
+parent=$(dirname $progdir)
+if [ "$parent" = "." ]; then parent="$PWD"; fi
+
+export LANG=C
+
+# ----------------------------------------------------------------------
+function usage() {
+    cat <<EOF
+NAME
+	$program - Build a docker datatracker image.
+
+SYNOPSIS
+	$program [OPTIONS] ARGS
+
+DESCRIPTION
+
+	This script builds a debian-based docker image which has been
+	set up with the dependencies needed to easily run the IETF
+	datatracker in development mode.  It uses docker/Dockerfile;
+	i.e., the Dockerfile in the same directory as this script.
+	It assumes that the user has upload rights for the docker
+	ietf/datatracker-environment repository, in order to push the
+	image.
+
+EOF
+    echo -e "OPTIONS"
+    if   [ "$(uname)" = "Linux" ]; then
+        egrep "^[	]+[-][A-Za-z| -]+\*?\)[	]+[A-Za-z].+#" $0 | tr -s "\t|" "\t," | sed -r -e 's/\)[ \t]+([A-Z]+)=\$2[^#]*#/=\1\t/' -e 's/\)[^#]*#/\t/'
+    else
+        egrep "^[	]+[-][A-Za-z| -]+\*?\)[	]+[A-Za-z].+#" $0 | sed 's/\|.*\$2[^#]*#/	/'| sed -E 's/\|.*\)[^#]*#/	/'
+    fi
+    cat <<EOF
+
+FILES
+
+AUTHOR
+	Written by Henrik Levkowetz, <henrik@levkowetz.com>
+
+COPYRIGHT
+
+	Copyright (c) 2016 IETF Trust and the persons identified as authors of
+	the code. All rights reserved.  License 'Simplified BSD', as specified
+	in http://opensource.org/licenses/BSD-3-Clause.
+	
+EOF
+
+}
+
+# ----------------------------------------------------------------------
+function die() {
+    echo -e "\n$program: error: $*" >&2
+    exit 1
+}
+
+function note() { 
+	if [ -n "$VERBOSE" ]; then echo -e "$*"; fi
+}
+
+# ----------------------------------------------------------------------
+function version() {
+	echo -e "$program $version"
+}
+
+# ----------------------------------------------------------------------
+trap 'echo "$program($LINENO): Command failed with error code $? ([$$] $0 $*)"; exit 1' ERR
+
+
+# ----------------------------------------------------------------------
+# Option parsing
+
+# Options
+shortopts=ht:vV
+longopts=help,tag=,verbose,version
+
+# Default values
+BRANCH=$(svn log -v ^/tags -l 2 | grep 'A /tags/[1-9]' | awk '{print $2}')
+TAG=${BRANCH##*/}
+
+if   [ "$(uname)" = "Linux" ]; then
+    args=$(getopt -o "$shortopts" --long "$longopts" -n '$program' -- $SV "$@")
+    if [ $? != 0 ] ; then die "Terminating..." >&2 ; exit 1 ; fi
+    eval set -- "$args"
+    sed="sed -r"
+else
+    # Darwin, BSDs
+    args=$(getopt -o$shortopts $SV $*)
+    if [ $? != 0 ] ; then die "Terminating..." >&2 ; exit 1 ; fi
+    set -- $args
+    sed="sed -E"
+fi
+
+while true ; do
+    case "$1" in
+	-h| --help)	usage; exit;;		# Show this help, then exit
+	-t| --tag)	TAG=$2; shift;;		# Use this docker image tag, instead of the latest svn tags name
+	-v| --verbose)	VERBOSE=1;;		# Be more talkative
+	-V| --version)	version; exit;;		# Show program version, then exit
+	--)		shift; break;;
+	*) die "Internal error, inconsistent option specification: '$1'";;
+    esac
+    shift
+done
+
+# ----------------------------------------------------------------------
+# The program itself
+
+if [ "$(uname)" != "Linux" ]; then
+    if [ -n "$(type -p docker-machine)" ]; then
+	machine=$(type -p docker-machine)
+    else
+	die "Could not find boot2docker or docker-machine -- you need to set one of those before running this script."
+    fi
+else
+    die "Didn't expect to run this script on Linux -- are you inside docker?"
+fi
+
+docker rmi -f ietf/datatracker-environment:trunk
+docker build -t ietf/datatracker-environment:$TAG docker/
+docker tag $(docker images -q | head -n 1) ietf/datatracker-environment:latest
+docker push ietf/datatracker-environment:latest
+docker push ietf/datatracker-environment:$TAG
