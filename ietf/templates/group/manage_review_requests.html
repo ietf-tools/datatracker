@@ -100,13 +100,13 @@
 
             <span class="assign-action">
               {% if r.reviewer %}
-                <button type="button" class="btn btn-default" title="Click to reassign reviewer">
+                <button type="button" class="btn btn-default btn-success" title="Click to reassign reviewer">
                   {{ r.reviewer.person }}
-                  {% if r.state_id == "accepted" %} <span class="label label-default">accp</span>{% endif %}
-                  {% if r.reviewer_unavailable %}<span class="label label-danger">unavail</span>{% endif %}
+                  {% if r.state_id == "accepted" %} <span class="label label-default">accepted</span>{% endif %}
+                  {% if r.reviewer_unavailable %}<span class="label label-danger">unavailable</span>{% endif %}
                 </button>
               {% else %}
-                <button type="button" class="btn btn-default" title="Click to assign reviewer"><em>Not yet assigned</em></button>
+                <button type="button" class="btn btn-default btn-success" title="Click to assign reviewer"><em>Not yet assigned</em></button>
               {% endif %}
             </span>
 
@@ -126,7 +126,7 @@
             </span>
 
             <span class="close-action">
-              <button type="button" class="btn btn-default">Close...</button>
+              <button type="button" class="btn btn-default btn-danger">Close...</button>
             </span>
 
             <span class="close-controls form-inline">
