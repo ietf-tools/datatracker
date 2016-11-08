@@ -76,8 +76,14 @@ if [ ! -f $VIRTDIR/bin/activate ]; then
     chown $USER /opt/home/$USER
     mkdir $VIRTDIR
     virtualenv --system-site-packages $VIRTDIR
+    echo -e "
+# This is from $VIRTDIR/bin/activate, to activate the
+# datatracker virtual python environment on docker container entry:
+" >> /etc/bash.bashrc
     cat $VIRTDIR/bin/activate >> /etc/bash.bashrc
     cat /usr/local/share/datatracker/setprompt >> /etc/bash.bashrc 
+else
+    echo "Using virtual environment at $VIRTDIR"
 fi
 
 echo "Activating the virtual python environment ..."

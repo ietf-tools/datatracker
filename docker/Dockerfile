@@ -32,6 +32,11 @@ RUN echo "deb http://http.debian.net/debian wheezy-backports main contrib non-fr
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Install needed packages
+#
+# We're not including graphviz and ghostscript, needed for the 3 document
+# dependency graph tests; they would increase the size of the image by about
+# 15%, about 100MB.
+#
 RUN apt-get update && apt-get install -qy \
 	bzip2 \
 	ca-certificates \
@@ -39,6 +44,8 @@ RUN apt-get update && apt-get install -qy \
 	gawk \
 	ipython \
 	less \
+	libfreetype6 \
+	libfontconfig \
 	libjpeg8-dev \
 	libmysqlclient-dev \
 	libsvn1/wheezy-backports \
@@ -52,6 +59,8 @@ RUN apt-get update && apt-get install -qy \
 	python \
 	python-dev \
 	python-m2crypto \
+	python-subversion \
+	realpath \
 	rsync \
 	subversion/wheezy-backports \
 	sudo \
@@ -76,6 +85,13 @@ WORKDIR /usr/src
 RUN wget -q https://bootstrap.pypa.io/get-pip.py && python get-pip.py && rm get-pip.py
 RUN pip install certifi
 RUN pip install virtualenv
+
+# Phantomjs
+WORKDIR /usr/local
+RUN wget -q https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-1.9.7-linux-x86_64.tar.bz2 \
+	&& tar xjf phantomjs-1.9.7-linux-x86_64.tar.bz2 
+WORKDIR /usr/local/bin
+RUN ln -s /usr/local/phantomjs-1.9.7-linux-x86_64/bin/phantomjs .
 
 # idnits and dependencies
 RUN wget -q -P /usr/local/bin/ https://tools.ietf.org/tools/idnits/idnits && chmod +x /usr/local/bin/idnits
