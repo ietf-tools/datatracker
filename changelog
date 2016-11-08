@@ -1,3 +1,42 @@
+ietfdb (6.37.1) ietf; urgency=medium
+
+  This is a bugfix release without any particular focus.  From the
+  commit log:
+
+  * Tweaked and enhanced the django admin for DocEvents.
+
+  * Replaced the use of plain DocEvent for submission doc events with a 
+    SubmissionDocEvent that carries rev and a FK to submission.
+
+  * Restricted the permitted revisions for Trac -- the most recent revision of
+    Trac (1.2.x) has a different API than 1.0.x.
+
+  * Pip 9.0.1 does not obey requirements which lead to downgrading an 
+    installed package.  Useless for our purpose.  Requiring pip<9.0 in 
+    requirements.txt .
+
+  * If a session agenda for a meeting exists, but is not bound to the 
+    session, the Document.objects.create() in upload_session_agenda() will 
+    fail.  Using get_or_create() instead.
+
+  * Made the svn and libsvn symlinking code more robust against bad 
+    settings.
+
+  * Made doc.views_stat.make_title() more robust against inconsistent query 
+    arguments.
+
+  * Updated the create_group_wikis management command with additional 
+    switches to make it easier to do test deployment of individual wikis.
+
+  * Don't run ietf.checks.* more than once per invocation (under Django 
+    1.7, these can be run more times than there are apps with migrations, 
+    posibly as many times as twice that number).
+
+  * Tweaked debug.py
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  08 Nov 2016 18:01:35 +0000
+
+
 ietfdb (6.37.0) ietf; urgency=medium
 
   **YouTube links, Fixed bibtex and tweaked meeting materials pages**
