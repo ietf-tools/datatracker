@@ -8,7 +8,7 @@ from django.core.urlresolvers import reverse as urlreverse
 from django import forms
 from django.template.loader import render_to_string
 
-from ietf.review.models import ReviewRequest, ReviewerSettings, UnavailablePeriod
+from ietf.review.models import ReviewRequest, ReviewerSettings, UnavailablePeriod, ReviewSecretarySettings
 from ietf.review.utils import (can_manage_review_requests_for_team,
                                can_access_review_stats_for_team,
                                close_review_request_states,
@@ -562,4 +562,42 @@ def change_reviewer_settings(request, acronym, reviewer_email, group_type=None):
         'settings_form': settings_form,
         'period_form': period_form,
         'unavailable_periods': unavailable_periods,
+    })
+
+
+class ReviewSecretarySettingsForm(forms.ModelForm):
+    class Meta:
+        model = ReviewSecretarySettings
+        fields = ['remind_days_before_deadline']
+
+
+@login_required
+def change_secretary_settings(request, acronym, group_type=None):
+    group = get_group_or_404(acronym, group_type)
+    if not group.features.has_reviews:
+        raise Http404
+    if not Role.objects.filter(name="secr", group=group, person__user=request.user).exists():
+        raise Http404
+
+    person = request.user.person
+
+    settings = (ReviewSecretarySettings.objects.filter(person=person, team=group).first()
+                or ReviewSecretarySettings(person=person, team=group))
+
+    import ietf.group.views_review
+    back_url = urlreverse(ietf.group.views_review.review_requests, kwargs={ "acronym": acronym, "group_type": group.type_id })
+
+    # settings
+    if request.method == "POST":
+        settings_form = ReviewSecretarySettingsForm(request.POST, instance=settings)
+        if settings_form.is_valid():
+            settings_form.save()
+            return HttpResponseRedirect(back_url)
+    else:
+        settings_form = ReviewSecretarySettingsForm(instance=settings)
+
+    return render(request, 'group/change_review_secretary_settings.html', {
+        'group': group,
+        'back_url': back_url,
+        'settings_form': settings_form,
     })

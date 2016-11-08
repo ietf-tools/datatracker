@@ -16,7 +16,8 @@
   <h1>Manage {{ assignment_status }} open review requests for {{ group.acronym }}</h1>
 
   <p>Other options:
-    <a href="{% url "ietf.group.views_review.reviewer_overview" group_type=group.type_id acronym=group.acronym %}">Reviewers in team</a>
+    <a href="{% url "ietf.group.views_review.review_requests" group_type=group.type_id acronym=group.acronym %}">All review requests</a>
+    - <a href="{% url "ietf.group.views_review.reviewer_overview" group_type=group.type_id acronym=group.acronym %}">Reviewers</a>
     - <a href="{% url "ietf.group.views_review.email_open_review_assignments" group_type=group.type_id acronym=group.acronym  %}?next={{ request.get_full_path|urlencode }}">Email open assignments summary</a>
     {% if other_assignment_status %}
       - <a href="{% url "ietf.group.views_review.manage_review_requests" group_type=group.type_id acronym=group.acronym assignment_status=other_assignment_status %}">Manage {{ other_assignment_status }} reviews</a>
@@ -46,7 +47,7 @@
             <h3 class="panel-title">
               <span class="pull-right">
                 {{ r.type.name }}
-                - deadline: {{ r.deadline|date:"Y-m-d" }}
+                - deadline {{ r.deadline|date:"Y-m-d" }}
                 {% if r.due %}<span class="label label-warning">{{ r.due }} day{{ r.due|pluralize }}</span>{% endif %}
               </span>
 

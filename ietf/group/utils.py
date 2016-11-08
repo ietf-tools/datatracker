@@ -6,7 +6,7 @@ from django.core.urlresolvers import reverse as urlreverse
 
 import debug                            # pyflakes:ignore
 
-from ietf.group.models import Group, RoleHistory
+from ietf.group.models import Group, RoleHistory, Role
 from ietf.person.models import Email
 from ietf.utils.history import get_history_object_for, copy_many_to_many_for_history
 from ietf.ietfauth.utils import has_role
@@ -215,6 +215,10 @@ def construct_group_menu_context(request, group, selected, group_type, others):
         import ietf.group.views_review
         actions.append((u"Manage unassigned reviews", urlreverse(ietf.group.views_review.manage_review_requests, kwargs=dict(assignment_status="unassigned", **kwargs))))
         actions.append((u"Manage assigned reviews", urlreverse(ietf.group.views_review.manage_review_requests, kwargs=dict(assignment_status="assigned", **kwargs))))
+
+        if Role.objects.filter(name="secr", group=group, person__user=request.user).exists():
+            actions.append((u"Secretary settings", urlreverse(ietf.group.views_review.change_secretary_settings, kwargs=kwargs)))
+
 
     if group.state_id != "conclude" and (is_admin or can_manage):
         actions.append((u"Edit group", urlreverse("group_edit", kwargs=kwargs)))

@@ -7,11 +7,15 @@ from django.core.urlresolvers import reverse as urlreverse
 from ietf.utils.test_data import make_test_data, make_review_data
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase, unicontent, reload_db_objects
 from ietf.doc.models import TelechatDocEvent
+from ietf.group.models import Role
 from ietf.iesg.models import TelechatDate
 from ietf.person.models import Email, Person
-from ietf.review.models import ReviewRequest, ReviewerSettings, UnavailablePeriod
-from ietf.review.utils import suggested_review_requests_for_team
-from ietf.review.utils import review_requests_needing_reviewer_reminder, email_reviewer_reminder
+from ietf.review.models import ReviewRequest, ReviewerSettings, UnavailablePeriod, ReviewSecretarySettings
+from ietf.review.utils import (
+    suggested_review_requests_for_team,
+    review_requests_needing_reviewer_reminder, email_reviewer_reminder,
+    review_requests_needing_secretary_reminder, email_secretary_reminder,
+)
 from ietf.name.models import ReviewTypeName, ReviewResultName, ReviewRequestStateName
 import ietf.group.views_review
 from ietf.utils.mail import outbox, empty_outbox
@@ -403,23 +407,33 @@ class ReviewTests(TestCase):
         self.assertTrue(start_date.isoformat(), msg_content)
         self.assertTrue(end_date.isoformat(), msg_content)
 
-    def test_reviewer_reminders(self):
+    def test_review_reminders(self):
         doc = make_test_data()
 
         review_req = make_review_data(doc)
 
+        remind_days = 6
+
         reviewer = Person.objects.get(user__username="reviewer")
 
-        settings = ReviewerSettings.objects.get(team=review_req.team, person=reviewer)
-        settings.remind_days_before_deadline = 6
-        settings.save()
+        reviewer_settings = ReviewerSettings.objects.get(team=review_req.team, person=reviewer)
+        reviewer_settings.remind_days_before_deadline = remind_days
+        reviewer_settings.save()
+
+        secretary = Person.objects.get(user__username="reviewsecretary")
+        secretary_role = Role.objects.get(group=review_req.team, name="secr", person=secretary)
+
+        secretary_settings = ReviewSecretarySettings(team=review_req.team, person=secretary)
+        secretary_settings.remind_days_before_deadline = remind_days
+        secretary_settings.save()
 
         today = datetime.date.today()
 
         review_req.reviewer = reviewer.email_set.first()
-        review_req.deadline = today + datetime.timedelta(days=settings.remind_days_before_deadline)
+        review_req.deadline = today + datetime.timedelta(days=remind_days)
         review_req.save()
 
+        # reviewer
         needing_reminders = review_requests_needing_reviewer_reminder(today - datetime.timedelta(days=1))
         self.assertEqual(list(needing_reminders), [])
 
@@ -429,7 +443,25 @@ class ReviewTests(TestCase):
         needing_reminders = review_requests_needing_reviewer_reminder(today + datetime.timedelta(days=1))
         self.assertEqual(list(needing_reminders), [])
 
+        # secretary
+        needing_reminders = review_requests_needing_secretary_reminder(today - datetime.timedelta(days=1))
+        self.assertEqual(list(needing_reminders), [])
+
+        needing_reminders = review_requests_needing_secretary_reminder(today)
+        self.assertEqual(list(needing_reminders), [(review_req, secretary_role)])
+
+        needing_reminders = review_requests_needing_secretary_reminder(today + datetime.timedelta(days=1))
+        self.assertEqual(list(needing_reminders), [])
+
+        # email reviewer
         empty_outbox()
         email_reviewer_reminder(review_req)
         self.assertEqual(len(outbox), 1)
         self.assertTrue(review_req.doc_id in outbox[0].get_payload(decode=True).decode("utf-8"))
+
+        # email secretary
+        empty_outbox()
+        email_secretary_reminder(review_req, secretary_role)
+        self.assertEqual(len(outbox), 1)
+        self.assertTrue(review_req.doc_id in outbox[0].get_payload(decode=True).decode("utf-8"))
+

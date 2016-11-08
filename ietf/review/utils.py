@@ -13,7 +13,8 @@ from ietf.iesg.models import TelechatDate
 from ietf.person.models import Person
 from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream
 from ietf.review.models import (ReviewRequest, ReviewRequestStateName, ReviewTypeName, TypeUsedInReviewTeam,
-                                ReviewerSettings, UnavailablePeriod, ReviewWish, NextReviewerInTeam)
+                                ReviewerSettings, UnavailablePeriod, ReviewWish, NextReviewerInTeam,
+                                ReviewSecretarySettings)
 from ietf.utils.mail import send_mail
 from ietf.doc.utils import extract_complete_replaces_ancestor_mapping_for_docs
 
@@ -840,8 +841,10 @@ def email_reviewer_reminder(review_request):
 
     subject = "Reminder: deadline for review of {} in {} is {}".format(review_request.doc_id, team.acronym, review_request.deadline.isoformat())
 
-    overview_url = urlreverse("ietf.ietfauth.views.review_overview")
-    request_url = urlreverse("ietf.doc.views_review.review_request", kwargs={ "name": review_request.doc_id, "request_id": review_request.pk })
+    import ietf.ietfauth.views
+    overview_url = urlreverse(ietf.ietfauth.views.review_overview)
+    import ietf.doc.views_review
+    request_url = urlreverse(ietf.doc.views_review.review_request, kwargs={ "name": review_request.doc_id, "request_id": review_request.pk })
 
     domain = Site.objects.get_current().domain
 
@@ -855,3 +858,48 @@ def email_reviewer_reminder(review_request):
         "deadline_days": deadline_days,
         "remind_days": remind_days,
     })
+
+def review_requests_needing_secretary_reminder(remind_date):
+    reqs_qs = ReviewRequest.objects.filter(
+        state__in=("requested", "accepted"),
+        team__role__person__reviewsecretarysettings__remind_days_before_deadline__isnull=False,
+        team__role__person__reviewsecretarysettings__team=F("team"),
+    ).exclude(
+        reviewer=None
+    ).values_list("pk", "deadline", "team__role", "team__role__person__reviewsecretarysettings__remind_days_before_deadline").distinct()
+
+    req_pks = {}
+    for r_pk, deadline, secretary_role_pk, remind_days in reqs_qs:
+        if (deadline - remind_date).days == remind_days:
+            req_pks[r_pk] = secretary_role_pk
+
+    review_reqs = { r.pk: r for r in ReviewRequest.objects.filter(pk__in=req_pks.keys()).select_related("reviewer", "reviewer__person", "state", "team") }
+    secretary_roles = { r.pk: r for r in Role.objects.filter(pk__in=req_pks.values()).select_related("email", "person") }
+
+    return [ (review_reqs[req_pk], secretary_roles[secretary_role_pk]) for req_pk, secretary_role_pk in req_pks.iteritems() ]
+
+def email_secretary_reminder(review_request, secretary_role):
+    team = review_request.team
+
+    deadline_days = (review_request.deadline - datetime.date.today()).days
+
+    subject = "Reminder: deadline for review of {} in {} is {}".format(review_request.doc_id, team.acronym, review_request.deadline.isoformat())
+
+    import ietf.group.views_review
+    settings_url = urlreverse(ietf.group.views_review.change_secretary_settings, kwargs={ "acronym": team.acronym, "group_type": team.type_id })
+    import ietf.doc.views_review
+    request_url = urlreverse(ietf.doc.views_review.review_request, kwargs={ "name": review_request.doc_id, "request_id": review_request.pk })
+
+    domain = Site.objects.get_current().domain
+
+    settings = ReviewSecretarySettings.objects.filter(person=secretary_role.person_id, team=team).first()
+    remind_days = settings.remind_days_before_deadline if settings else 0
+
+    send_mail(None, [review_request.reviewer.formatted_email()], None, subject, "review/secretary_reminder.txt", {
+        "review_request_url": "https://{}{}".format(domain, request_url),
+        "settings_url": "https://{}{}".format(domain, settings_url),
+        "review_request": review_request,
+        "deadline_days": deadline_days,
+        "remind_days": remind_days,
+    })
+    

@@ -8,9 +8,7 @@ from ietf.person.models import Person, Email
 from ietf.name.models import ReviewTypeName, ReviewRequestStateName, ReviewResultName
 
 class ReviewerSettings(models.Model):
-    """Keeps track of admin data associated with the reviewer in the
-    particular team. There will be one record for each combination of
-    reviewer and team."""
+    """Keeps track of admin data associated with a reviewer in a team."""
     team        = models.ForeignKey(Group, limit_choices_to=~models.Q(resultusedinreviewteam=None))
     person      = models.ForeignKey(Person)
     INTERVALS = [
@@ -23,13 +21,25 @@ class ReviewerSettings(models.Model):
     min_interval = models.IntegerField(verbose_name="Can review at most", choices=INTERVALS, blank=True, null=True)
     filter_re   = models.CharField(max_length=255, verbose_name="Filter regexp", blank=True, help_text="Draft names matching regular expression should not be assigned")
     skip_next   = models.IntegerField(default=0, verbose_name="Skip next assignments")
-    remind_days_before_deadline = models.IntegerField(null=True, blank=True, help_text="To get an email reminder in case you forget to do an assigned review, enter the number of days before a review deadline you want to receive it. Clear the field if you don't want a reminder.")
+    remind_days_before_deadline = models.IntegerField(null=True, blank=True, help_text="To get an email reminder in case you forget to do an assigned review, enter the number of days before review deadline you want to receive it. Clear the field if you don't want a reminder.")
 
     def __unicode__(self):
         return u"{} in {}".format(self.person, self.team)
 
     class Meta:
         verbose_name_plural = "reviewer settings"
+
+class ReviewSecretarySettings(models.Model):
+    """Keeps track of admin data associated with a secretary in a team."""
+    team        = models.ForeignKey(Group, limit_choices_to=~models.Q(resultusedinreviewteam=None))
+    person      = models.ForeignKey(Person)
+    remind_days_before_deadline = models.IntegerField(null=True, blank=True, help_text="To get an email reminder in case a reviewer forgets to do an assigned review, enter the number of days before review deadline you want to receive it. Clear the field if you don't want a reminder.")
+
+    def __unicode__(self):
+        return u"{} in {}".format(self.person, self.team)
+
+    class Meta:
+        verbose_name_plural = "review secretary settings"
 
 class UnavailablePeriod(models.Model):
     team         = models.ForeignKey(Group, limit_choices_to=~models.Q(resultusedinreviewteam=None))
