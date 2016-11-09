@@ -2,18 +2,26 @@
 {# Copyright The IETF Trust 2016, All Rights Reserved #}
 {% load origin bootstrap3 static %}
 
-{% block title %}Complete review of {{ review_req.doc.name }}{% endblock %}
+{% block title %}{% if revising_review %}Revise{% else %}Complete{% endif %} review of {{ review_req.doc.name }}{% endblock %}
+
+{% block pagehead %}
+  <link rel="stylesheet" href="{% static 'bootstrap-datepicker/css/bootstrap-datepicker3.min.css' %}">
+{% endblock %}
 
 {% block content %}
   {% origin %}
-  <h1>Complete review<br><small>{{ review_req.doc.name }}</small></h1>
+  <h1>{% if revising_review %}Revise{% else %}Complete{% endif %} review<br><small>{{ review_req.doc.name }}</small></h1>
 
-  <p>The review findings should be made available here and the review
-    posted to the mailing list. If you enter the findings below, the
-    system will post the review for you. If you already have posted
-    the review, you can try to let the system find the link to the
-    archive and retrieve the email body.</p>
-
+  {% if not revising_review %}
+    <p>The review findings should be made available here and the review
+      posted to the mailing list. If you enter the findings below, the
+      system will post the review for you. If you already have posted
+      the review, you can try to let the system find the link to the
+      archive and retrieve the email body.</p>
+  {% else %}
+    <p>You can revise this review by entering the results below.</p>
+  {% endif %}
+    
   <form class="complete-review form-horizontal" method="post" enctype="multipart/form-data">
     {% csrf_token %}
 
@@ -21,7 +29,7 @@
 
     {% buttons %}
     <a class="btn btn-default" href="{% url "ietf.doc.views_review.review_request" name=doc.canonical_name request_id=review_req.pk %}">Cancel</a>
-    <button type="submit" class="btn btn-primary">Complete review</button>
+    <button type="submit" class="btn btn-primary">{% if revising_review %}Revise{% else %}Complete{% endif %} review</button>
     {% endbuttons %}
 
     <div class="template" style="display:none">
@@ -76,6 +84,7 @@
 {% endblock %}
 
 {% block js %}
+  <script src="{% static 'bootstrap-datepicker/js/bootstrap-datepicker.min.js' %}"></script>
   <script>
    var searchMailArchiveUrl = "{% url "ietf.doc.views_review.search_mail_archive" name=review_req.doc.name request_id=review_req.pk %}";
   </script>

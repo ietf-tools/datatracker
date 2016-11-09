@@ -72,6 +72,8 @@ $(document).ready(function () {
                     row.find(".from").text(msg.splitfrom[0]);
                     row.data("url", msg.url);
                     row.data("content", msg.content);
+                    row.data("date", msg.utcdate[0]);
+                    row.data("time", msg.utcdate[1]);
                     results.append(row);
                 }
             }
@@ -99,6 +101,8 @@ $(document).ready(function () {
 
         form.find("[name=review_url]").val(row.data("url"));
         form.find("[name=review_content]").val(row.data("content")).prop("scrollTop", 0);
+        form.find("[name=completion_date]").val(row.data("date"));
+        form.find("[name=completion_time]").val(row.data("time"));
     });
 
 

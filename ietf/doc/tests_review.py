@@ -19,7 +19,7 @@ import ietf.review.mailarch
 from ietf.person.models import Email, Person
 from ietf.name.models import ReviewResultName, ReviewRequestStateName, ReviewTypeName, DocRelationshipName
 from ietf.group.models import Group
-from ietf.doc.models import DocumentAuthor, Document, DocAlias, RelatedDocument, DocEvent
+from ietf.doc.models import DocumentAuthor, Document, DocAlias, RelatedDocument, DocEvent, ReviewRequestDocEvent
 from ietf.utils.test_utils import TestCase
 from ietf.utils.test_data import make_test_data, make_review_data, create_person
 from ietf.utils.test_utils import login_testing_unauthorized, unicontent, reload_db_objects
@@ -553,7 +553,6 @@ class ReviewTests(TestCase):
 
         login_testing_unauthorized(self, review_req.reviewer.person.user.username, url)
 
-        # complete by uploading file
         empty_outbox()
 
         r = self.client.post(url, data={
@@ -584,7 +583,6 @@ class ReviewTests(TestCase):
 
         login_testing_unauthorized(self, review_req.reviewer.person.user.username, url)
 
-        # complete by uploading file
         empty_outbox()
 
         r = self.client.post(url, data={
@@ -664,3 +662,58 @@ class ReviewTests(TestCase):
         second_review = review_req.review
         self.assertTrue(first_review.name != second_review.name)
         self.assertTrue(second_review.name.endswith("-2")) # uniquified
+
+    def test_revise_review_enter_content(self):
+        review_req, url = self.setup_complete_review_test()
+        review_req.state = ReviewRequestStateName.objects.get(slug="no-response")
+        review_req.save()
+
+        login_testing_unauthorized(self, review_req.reviewer.person.user.username, url)
+
+        empty_outbox()
+
+        r = self.client.post(url, data={
+            "result": ReviewResultName.objects.get(resultusedinreviewteam__team=review_req.team, slug="ready").pk,
+            "state": ReviewRequestStateName.objects.get(slug="completed").pk,
+            "reviewed_rev": review_req.doc.rev,
+            "review_submission": "enter",
+            "review_content": "This is a review\nwith two lines",
+            "review_url": "",
+            "review_file": "",
+            "completion_date": "2012-12-24",
+            "completion_time": "12:13:14",
+        })
+        self.assertEqual(r.status_code, 302)
+
+        review_req = reload_db_objects(review_req)
+        self.assertEqual(review_req.state_id, "completed")
+        event = ReviewRequestDocEvent.objects.get(type="closed_review_request", review_request=review_req)
+        self.assertEqual(event.time, datetime.datetime(2012, 12, 24, 12, 13, 14))
+
+        with open(os.path.join(self.review_subdir, review_req.review.name + ".txt")) as f:
+            self.assertEqual(f.read(), "This is a review\nwith two lines")
+
+        self.assertEqual(len(outbox), 0)
+
+        # revise again
+        empty_outbox()
+        r = self.client.post(url, data={
+            "result": ReviewResultName.objects.get(resultusedinreviewteam__team=review_req.team, slug="ready").pk,
+            "state": ReviewRequestStateName.objects.get(slug="part-completed").pk,
+            "reviewed_rev": review_req.doc.rev,
+            "review_submission": "enter",
+            "review_content": "This is a revised review",
+            "review_url": "",
+            "review_file": "",
+            "completion_date": "2013-12-24",
+            "completion_time": "11:11:11",
+        })
+        self.assertEqual(r.status_code, 302)
+
+        review_req = reload_db_objects(review_req)
+        self.assertEqual(review_req.review.rev, "01")
+        event = ReviewRequestDocEvent.objects.get(type="closed_review_request", review_request=review_req)
+        self.assertEqual(event.time, datetime.datetime(2013, 12, 24, 11, 11, 11))
+
+        self.assertEqual(len(outbox), 0)
+        
