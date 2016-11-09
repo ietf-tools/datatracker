@@ -407,6 +407,36 @@ class ReviewTests(TestCase):
         self.assertTrue(start_date.isoformat(), msg_content)
         self.assertTrue(end_date.isoformat(), msg_content)
 
+    def test_change_review_secretary_settings(self):
+        doc = make_test_data()
+
+        review_req = make_review_data(doc)
+
+        secretary = Person.objects.get(user__username="reviewsecretary")
+
+        url = urlreverse(ietf.group.views_review.change_review_secretary_settings, kwargs={
+            "acronym": review_req.team.acronym,
+        })
+
+        login_testing_unauthorized(self, secretary.user.username, url)
+
+        url = urlreverse(ietf.group.views_review.change_review_secretary_settings, kwargs={
+            "group_type": review_req.team.type_id,
+            "acronym": review_req.team.acronym,
+        })
+
+        # get
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+
+        # set settings
+        r = self.client.post(url, {
+            "remind_days_before_deadline": "6"
+        })
+        self.assertEqual(r.status_code, 302)
+        settings = ReviewSecretarySettings.objects.get(person=secretary, team=review_req.team)
+        self.assertEqual(settings.remind_days_before_deadline, 6)
+
     def test_review_reminders(self):
         doc = make_test_data()
 

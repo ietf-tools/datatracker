@@ -9,7 +9,8 @@ from ietf.api import ToOneField                         # pyflakes:ignore
 
 from ietf.review.models import (ReviewerSettings, ReviewRequest,
                                 ResultUsedInReviewTeam, TypeUsedInReviewTeam,
-                                UnavailablePeriod, ReviewWish, NextReviewerInTeam)
+                                UnavailablePeriod, ReviewWish, NextReviewerInTeam,
+                                ReviewSecretarySettings)
 
 
 from ietf.person.resources import PersonResource
@@ -163,4 +164,24 @@ class TypeUsedInReviewTeamResource(ModelResource):
             "type": ALL_WITH_RELATIONS,
         }
 api.review.register(TypeUsedInReviewTeamResource())
+
+
+
+from ietf.person.resources import PersonResource
+from ietf.group.resources import GroupResource
+class ReviewSecretarySettingsResource(ModelResource):
+    team             = ToOneField(GroupResource, 'team')
+    person           = ToOneField(PersonResource, 'person')
+    class Meta:
+        queryset = ReviewSecretarySettings.objects.all()
+        serializer = api.Serializer()
+        cache = SimpleCache()
+        #resource_name = 'reviewsecretarysettings'
+        filtering = { 
+            "id": ALL,
+            "remind_days_before_deadline": ALL,
+            "team": ALL_WITH_RELATIONS,
+            "person": ALL_WITH_RELATIONS,
+        }
+api.review.register(ReviewSecretarySettingsResource())
 

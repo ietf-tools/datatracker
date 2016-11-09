@@ -886,7 +886,7 @@ def email_secretary_reminder(review_request, secretary_role):
     subject = "Reminder: deadline for review of {} in {} is {}".format(review_request.doc_id, team.acronym, review_request.deadline.isoformat())
 
     import ietf.group.views_review
-    settings_url = urlreverse(ietf.group.views_review.change_secretary_settings, kwargs={ "acronym": team.acronym, "group_type": team.type_id })
+    settings_url = urlreverse(ietf.group.views_review.change_review_secretary_settings, kwargs={ "acronym": team.acronym, "group_type": team.type_id })
     import ietf.doc.views_review
     request_url = urlreverse(ietf.doc.views_review.review_request, kwargs={ "name": review_request.doc_id, "request_id": review_request.pk })
 

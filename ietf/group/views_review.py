@@ -572,7 +572,7 @@ class ReviewSecretarySettingsForm(forms.ModelForm):
 
 
 @login_required
-def change_secretary_settings(request, acronym, group_type=None):
+def change_review_secretary_settings(request, acronym, group_type=None):
     group = get_group_or_404(acronym, group_type)
     if not group.features.has_reviews:
         raise Http404
