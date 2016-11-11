@@ -95,6 +95,7 @@ urlpatterns = [
     url(r'^interim/request/(?P<number>[A-Za-z0-9._+-]+)/cancel/?$', views.interim_request_cancel),
     url(r'^interim/pending/?$', views.interim_pending),
     url(r'^requests.html$', RedirectView.as_view(url='/meeting/requests', permanent=True)),
+    url(r'^past/?$', views.past),
     url(r'^upcoming/?$', views.upcoming),
     url(r'^upcoming.ics/?$', views.upcoming_ical),
     # Then patterns from more specific to less
