@@ -1,4 +1,6 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
+# -*- coding: utf-8 -*-
+
 import checks                           # pyflakes:ignore
 
 # Don't add patch number here:
