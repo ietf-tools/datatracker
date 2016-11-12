@@ -57,6 +57,9 @@
     {% for g in user|managed_groups %}
       <li><a href="{% url "group_docs" g.acronym %}">{{ g.acronym }} {{ g.type.slug }} docs</a></li>
     {% endfor %}
+    {% for g in user|managed_groups %}
+      <li><a href="{% url "ietf.group.views.meetings" g.acronym %}">{{ g.acronym }} {{ g.type.slug }} meetings</a></li>
+    {% endfor %}
   {% else %}
     <li><a rel="nofollow" href="/accounts/login/?next={{ request.get_full_path|urlencode }}">Sign in to track docs</a></li>
   {% endif %}
