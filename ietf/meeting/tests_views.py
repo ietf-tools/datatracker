@@ -672,6 +672,19 @@ class InterimTests(TestCase):
         for session in meeting.session_set.all():
             self.assertEqual(session.status.slug, 'scheda')
 
+    def test_past(self):
+        today = datetime.date.today()
+        last_week = today - datetime.timedelta(days=7)
+        ietf = SessionFactory(meeting__type_id='ietf',meeting__date=last_week,group__state_id='active',group__parent=GroupFactory(state_id='active'))
+        interim = SessionFactory(meeting__type_id='interim',meeting__date=last_week,status_id='canceled',group__state_id='active',group__parent=GroupFactory(state_id='active'))
+        url = urlreverse('ietf.meeting.views.past')
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue('IETF - %02d'%int(ietf.meeting.number) in unicontent(r))
+        q = PyQuery(r.content)
+        id="-%s" % interim.group.acronym
+        self.assertTrue('CANCELLED' in q('[id*="'+id+'"]').text())
+
     def test_upcoming(self):
         make_meeting_test_data()
         url = urlreverse("ietf.meeting.views.upcoming")

@@ -10,16 +10,15 @@
 
 {% block bodyAttrs %}data-spy="scroll" data-target="#affix"{% endblock %}
 
-{% block title %}Upcoming Meetings{% endblock %}
+{% block title %}Past Meetings{% endblock %}
 
 {% block content %}
   {% origin %}
   <div class="row">
     <div class="col-md-10">
 
-      <h1>Upcoming Meetings</h1>
+      <h1>Past Meetings</h1>
 
-      <p>For more on regular IETF meetings see <a href="https://www.ietf.org/meeting/upcoming.html">here</a></p>
       <div class="panel-group" id="accordion">
         <div class="panel panel-default">
           <div class="panel-heading">
@@ -74,7 +73,7 @@
                   </tbody>
                 </table>
               {% else %}
-                <blockquote><i>No meetings have been scheduled yet.</i></blockquote>
+                <blockquote><i>No past meetings are available.</i></blockquote>
               {% endif %}
             
             </div> <!-- panel-body -->
@@ -82,24 +81,6 @@
         </div> <!-- panel -->
       </div> <!-- panel-group -->
 
-      {% if menu_entries %}
-      <ul class="nav nav-tabs" role="tablist">
-        {% for name, url in menu_entries %}
-          <li {% if selected_menu_entry == name.lower %}class="active"{% endif %}>
-            <a href="{{ url }}">{{ name }}</a>
-          </li>
-        {% endfor %}
-      </ul>
-      {% endif %}
-
-      {% if menu_actions %}
-        <div class="buttonlist">
-          {% for name, url in menu_actions %}
-            <a class="btn btn-default" href="{{ url }}">{{ name }}</a>
-          {% endfor %}
-        </div>
-      {% endif %}
-  
         {% if meetings %}
           <h3></h3>
           <table class="table table-condensed table-striped tablesorter">
@@ -135,7 +116,7 @@
             </tbody>
           </table>
         {% else %}
-          <h3>No upcoming meetings</h3>
+          <h3>No past meetings</h3>
         {% endif %}
 
     </div>

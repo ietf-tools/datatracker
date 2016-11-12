@@ -1883,6 +1883,36 @@ def interim_request_edit(request, number):
         "form": form,
         "formset": formset})
 
+@cache_page(60*60)
+def past(request):
+    '''List of past meetings'''
+    today = datetime.datetime.today()
+    meetings = Meeting.objects.filter(date__lte=today).exclude(
+        session__status__in=('apprw', 'scheda', 'canceledpa')).order_by('-date')
+
+    # extract groups hierarchy for display filter
+    seen = set()
+    groups = [m.session_set.first().group for m
+              in meetings.filter(type='interim')]
+    group_parents = []
+    for g in groups:
+        if g.parent.acronym not in seen:
+            group_parents.append(g.parent)
+            seen.add(g.parent.acronym)
+
+    seen = set()
+    for p in group_parents:
+        p.group_list = []
+        for g in groups:
+            if g.acronym not in seen and g.parent == p:
+                p.group_list.append(g)
+                seen.add(g.acronym)
+
+        p.group_list.sort(key=lambda g: g.acronym)
+
+    return render(request, 'meeting/past.html', {
+                  'meetings': meetings,
+                  'group_parents': group_parents})
 
 def upcoming(request):
     '''List of upcoming meetings'''
