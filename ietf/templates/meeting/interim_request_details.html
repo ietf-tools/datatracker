@@ -53,6 +53,9 @@
   {% if user|has_role:"Secretariat" and sessions.0.status.slug == 'scheda' %}
         <a class="btn btn-default" href="{% url 'ietf.meeting.views.interim_send_announcement' number=meeting.number %}">Announce</a>
   {% endif %}
+  {% if user|has_role:"Secretariat" and sessions.0.status.slug == 'scheda' and sessions.0.group.type.slug == 'rg' %}
+        <a class="btn btn-default" href="{% url 'ietf.meeting.views.interim_skip_announcement' number=meeting.number %}">Skip Announcement</a>
+  {% endif %}
   {% if can_edit %}
     {% if sessions.0.status.slug == 'apprw' or sessions.0.status.slug == 'scheda' or sessions.0.status.slug == 'sched' %}
         <a class="btn btn-default" href="{% url 'ietf.meeting.views.interim_request_cancel' number=meeting.number %}">Cancel Meeting</a>
