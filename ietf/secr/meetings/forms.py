@@ -152,7 +152,8 @@ class NonSessionEditForm(forms.Form):
     name = forms.CharField(help_text='Name that appears on the agenda')
     short = forms.CharField(max_length=32,label='Short Name',help_text='Enter an abbreviated session name (used for material file names)')
     location = forms.ModelChoiceField(queryset=Room.objects)
-    group = forms.ModelChoiceField(queryset=Group.objects.filter(acronym__in=('edu','ietf','iepg','tools','iesg','iab','iaoc')),
+    group = forms.ModelChoiceField(
+        queryset=Group.objects.filter(type__in=['ietf','team'],state='active'),
         help_text='''Select a group to associate with this session.  For example:<br>
                      Tutorials = Education,<br>
                      Code Sprint = Tools Team,<br>
