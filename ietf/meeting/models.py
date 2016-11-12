@@ -996,6 +996,9 @@ class Session(models.Model):
 
     unique_constraints_dict = None
 
+    def not_meeting(self):
+        return self.status_id == 'notmeet'
+ 
     # Should work on how materials are captured so that deleted things are no longer associated with the session
     # (We can keep the information about something being added to and removed from a session in the document's history)
     def get_material(self, material_type, only_one):
