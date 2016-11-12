@@ -1,12 +1,14 @@
 from django.contrib import admin
-from ietf.name.models import (GroupTypeName, GroupStateName, RoleName, StreamName,
-    DocRelationshipName, DocTypeName, DocTagName, StdLevelName, IntendedStdLevelName,
-    DocReminderTypeName, BallotPositionName, SessionStatusName, TimeSlotTypeName,
-    ConstraintName, NomineePositionStateName, FeedbackTypeName, DBTemplateTypeName,
-    DraftSubmissionStateName, RoomResourceName, GroupMilestoneStateName, MeetingTypeName,
-    LiaisonStatementPurposeName, IprDisclosureStateName, IprLicenseTypeName,
-    IprEventTypeName , IprDisclosureStateName, IprLicenseTypeName, IprEventTypeName,
-    LiaisonStatementState, LiaisonStatementEventTypeName, LiaisonStatementTagName, )
+from ietf.name.models import (
+    BallotPositionName, ConstraintName, DBTemplateTypeName,
+    DocRelationshipName, DocReminderTypeName, DocTagName, DocTypeName,
+    DraftSubmissionStateName, FeedbackTypeName, GroupMilestoneStateName,
+    GroupStateName, GroupTypeName, IntendedStdLevelName,
+    IprDisclosureStateName, IprEventTypeName, IprLicenseTypeName,
+    LiaisonStatementEventTypeName, LiaisonStatementPurposeName,
+    LiaisonStatementState, LiaisonStatementTagName, MeetingTypeName,
+    NomineePositionStateName, RoleName, RoomResourceName, SessionStatusName,
+    StdLevelName, StreamName, TimeSlotTypeName, )
 
 class NameAdmin(admin.ModelAdmin):
     list_display = ["slug", "name", "desc", "used"]
@@ -39,6 +41,7 @@ admin.site.register(IprLicenseTypeName, NameAdmin)
 admin.site.register(IprEventTypeName, NameAdmin)
 admin.site.register(LiaisonStatementState, NameAdmin)
 admin.site.register(LiaisonStatementEventTypeName, NameAdmin)
+admin.site.register(LiaisonStatementPurposeName, NameAdmin)
 admin.site.register(LiaisonStatementTagName, NameAdmin)
 admin.site.register(MeetingTypeName, NameAdmin)
 admin.site.register(NomineePositionStateName, NameAdmin)
