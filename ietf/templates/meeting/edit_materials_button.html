@@ -1,6 +1,9 @@
 {% load ietf_filters session_filters %}
 {% if session|can_manage_materials:user and not session.past_cutoff_date %}
 {% with gt=session.group.type_id %}
+{%comment%}
         <a class="button btn-default btn-sm" href="{% url 'ietf.meeting.views.session_details' num=session.meeting.number acronym=session.group.acronym %}{% if gt == 'wg' or gt == 'rg' or gt == 'ag' %}{% else %}#session_{{session.pk}}{% endif %}">Edit</a>
+{%endcomment%}
+        <a class="" href="{% url 'ietf.meeting.views.session_details' num=session.meeting.number acronym=session.group.acronym %}{% if gt == 'wg' or gt == 'rg' or gt == 'ag' %}{% else %}#session_{{session.pk}}{% endif %}">Edit materials</a>
 {% endwith %}
 {% endif %}

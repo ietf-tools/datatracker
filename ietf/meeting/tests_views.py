@@ -271,6 +271,17 @@ class MeetingTests(TestCase):
         self.assertTrue(row.find('a:contains("Slideshow")'))
         self.assertFalse(row.find("a:contains(\"Bad Slideshow\")"))
 
+        # test with a loggged-in wg chair
+        self.client.login(username="marschairman", password="marschairman+password")
+        r = self.client.get(urlreverse("ietf.meeting.views.materials", kwargs=dict(num=meeting.number)))
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        row = q('#content td div:contains("%s")' % str(session.group.acronym)).closest("tr")
+        self.assertTrue(row.find('a:contains("Agenda")'))
+        self.assertTrue(row.find('a:contains("Minutes")'))
+        self.assertTrue(row.find('a:contains("Slideshow")'))
+        self.assertFalse(row.find("a:contains(\"Bad Slideshow\")"))
+        self.assertTrue(row.find('a:contains("Edit materials")'))
         # FIXME: missing tests of .pdf/.tar generation (some code can
         # probably be lifted from similar tests in iesg/tests.py)
 
