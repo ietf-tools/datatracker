@@ -52,6 +52,7 @@ RUN apt-get update && apt-get install -qy \
 	libxml2-dev \
 	libxslt-dev \
 	locales \
+	man \
 	mysql-server \
 	openssh-client \
 	procps \
