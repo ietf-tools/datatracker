@@ -397,7 +397,7 @@ def select(request, meeting_num):
     '''
 
     if not has_role(request.user,'Secretariat'):
-        return HttpResponseRedirect(reverse('ietf.meeting.views.materials', kwargs={'num':meeting_num}))
+        return HttpResponseRedirect(reverse('ietf.meeting.views.materials_editable_groups', kwargs={'num':meeting_num}))
 
     meeting = get_object_or_404(Meeting, number=meeting_num)
     proceedings_url = get_proceedings_url(meeting)
