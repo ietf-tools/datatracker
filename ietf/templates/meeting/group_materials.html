@@ -1,5 +1,5 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}{% load origin %}{% origin %}
-{% load ietf_filters proceedings_filters %}
+{% load ietf_filters proceedings_filters managed_groups %}
 <tr>
   <td>
     {% comment %}
@@ -8,9 +8,9 @@
     <a name="session.group-{{ session.group.acronym }}"></a>
     {% endcomment %}
     {% if session.name %}
-      <div class="anchor-target" id="{{ session.name|slugify }}">{{ session.name }}{% include "meeting/edit_materials_button.html" %}</div>
+      <div class="anchor-target" id="{{ session.name|slugify }}">{{ session.name }}</div>
     {% else %}
-      <div class="anchor-target" id="{{session.group.acronym}}"><a href="{% url 'ietf.group.views.group_home' acronym=session.group.acronym %}">{{session.group.acronym}}</a>{% include "meeting/edit_materials_button.html" %}</div>
+      <div class="anchor-target" id="{{session.group.acronym}}"><a href="{% url 'ietf.group.views.group_home' acronym=session.group.acronym %}">{{session.group.acronym}}</a></div>
       {% if session.group.state.slug == "bof" %}
         <span class="label label-success">{{ session.group.state.slug|upper }}</span>
       {% endif %}
@@ -18,7 +18,11 @@
   </td>
 
   {% if session.status_id == 'canceled' %}
-    <td colspan="3"><span class="label label-danger">Session cancelled</span></td>
+    {% if user and user.is_authenticated and user|managed_groups %}
+      <td colspan="4"><span class="label label-danger">Session cancelled</span></td>
+    {% else %}
+      <td colspan="3"><span class="label label-danger">Session cancelled</span></td>
+    {% endif %}
   {% else %}
     <td>
       {% if session.agenda %}
@@ -57,6 +61,11 @@
        {% endfor %}
      {% endwith %}
     </td>
+    {% if user and user.is_authenticated and user|managed_groups %}
+      <td> 
+        <div>{% include "meeting/edit_materials_button.html" %}</div>
+      </td>
+    {% endif %}
   {% endif %}
 </tr>
 

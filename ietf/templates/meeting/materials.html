@@ -2,7 +2,7 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
 
-{% load ietf_filters staticfiles %}
+{% load ietf_filters staticfiles managed_groups %}
 
 {% block pagehead %}
 <link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
@@ -40,11 +40,20 @@
 	  <table class="table table-condensed table-striped tablesorter">
 	    <thead>
 	      <tr>
-		<th class="col-md-1">Group</th>
-		<th class="col-md-1">Agenda</th>
-		<th class="col-md-1">Minutes</th>
-		<th class="col-md-6">Slides</th>
-		<th class="col-md-3">Drafts</th>
+                {% if user and user.is_authenticated and user|managed_groups %}
+                  <th class="col-md-1">Group</th>
+                  <th class="col-md-1">Agenda</th>
+                  <th class="col-md-1">Minutes</th>
+                  <th class="col-md-5">Slides</th>
+                  <th class="col-md-2">Drafts</th>
+                  <th class="col-md-2">&nbsp;</th>
+                {% else %}
+                  <th class="col-md-1">Group</th>
+                  <th class="col-md-1">Agenda</th>
+                  <th class="col-md-1">Minutes</th>
+                  <th class="col-md-6">Slides</th>
+                  <th class="col-md-3">Drafts</th>
+                {% endif %}
 	      </tr>
 	    </thead>
 
@@ -63,11 +72,20 @@
 	  <table class="table table-condensed table-striped tablesorter">
 	    <thead>
 	      <tr>
-		<th class="col-md-1">Group</th>
-		<th class="col-md-1">Agenda</th>
-		<th class="col-md-1">Minutes</th>
-		<th class="col-md-6">Slides</th>
-		<th class="col-md-3">Drafts</th>
+                {% if user and user.is_authenticated and user|managed_groups %}
+                  <th class="col-md-1">Group</th>
+                  <th class="col-md-1">Agenda</th>
+                  <th class="col-md-1">Minutes</th>
+                  <th class="col-md-5">Slides</th>
+                  <th class="col-md-2">Drafts</th>
+                  <th class="col-md-2">&nbsp;</th>
+                {% else %}
+                  <th class="col-md-1">Group</th>
+                  <th class="col-md-1">Agenda</th>
+                  <th class="col-md-1">Minutes</th>
+                  <th class="col-md-6">Slides</th>
+                  <th class="col-md-3">Drafts</th>
+                {% endif %}
 	      </tr>
 	    </thead>
 
@@ -88,11 +106,20 @@
 	    <table class="table table-condensed table-striped tablesorter">
 	      <thead>
 		<tr>
-		<th class="col-md-1">Group</th>
-		<th class="col-md-1">Agenda</th>
-		<th class="col-md-1">Minutes</th>
-		<th class="col-md-6">Slides</th>
-		<th class="col-md-3">Drafts</th>
+                {% if user and user.is_authenticated and user|managed_groups %}
+                  <th class="col-md-1">Group</th>
+                  <th class="col-md-1">Agenda</th>
+                  <th class="col-md-1">Minutes</th>
+                  <th class="col-md-5">Slides</th>
+                  <th class="col-md-2">Drafts</th>
+                  <th class="col-md-2">&nbsp;</th>
+                {% else %}
+                  <th class="col-md-1">Group</th>
+                  <th class="col-md-1">Agenda</th>
+                  <th class="col-md-1">Minutes</th>
+                  <th class="col-md-6">Slides</th>
+                  <th class="col-md-3">Drafts</th>
+                {% endif %}
 		</tr>
 	      </thead>
 
@@ -113,11 +140,20 @@
 	  <table class="table table-condensed table-striped tablesorter">
 	    <thead>
 	      <tr>
-		<th class="col-md-1">Group</th>
-		<th class="col-md-1">Agenda</th>
-		<th class="col-md-1">Minutes</th>
-		<th class="col-md-6">Slides</th>
-		<th class="col-md-3">Drafts</th>
+                {% if user and user.is_authenticated and user|managed_groups %}
+                  <th class="col-md-1">Group</th>
+                  <th class="col-md-1">Agenda</th>
+                  <th class="col-md-1">Minutes</th>
+                  <th class="col-md-5">Slides</th>
+                  <th class="col-md-2">Drafts</th>
+                  <th class="col-md-2">&nbsp;</th>
+                {% else %}
+                  <th class="col-md-1">Group</th>
+                  <th class="col-md-1">Agenda</th>
+                  <th class="col-md-1">Minutes</th>
+                  <th class="col-md-6">Slides</th>
+                  <th class="col-md-3">Drafts</th>
+                {% endif %}
 	      </tr>
 	    </thead>
 
@@ -137,11 +173,20 @@
 	  <table class="table table-condensed table-striped tablesorter">
 	    <thead>
 	      <tr>
-		<th class="col-md-1">Group</th>
-		<th class="col-md-1">Agenda</th>
-		<th class="col-md-1">Minutes</th>
-		<th class="col-md-6">Slides</th>
-		<th class="col-md-3">Drafts</th>
+                {% if user and user.is_authenticated and user|managed_groups %}
+                  <th class="col-md-1">Group</th>
+                  <th class="col-md-1">Agenda</th>
+                  <th class="col-md-1">Minutes</th>
+                  <th class="col-md-5">Slides</th>
+                  <th class="col-md-2">Drafts</th>
+                  <th class="col-md-2">&nbsp;</th>
+                {% else %}
+                  <th class="col-md-1">Group</th>
+                  <th class="col-md-1">Agenda</th>
+                  <th class="col-md-1">Minutes</th>
+                  <th class="col-md-6">Slides</th>
+                  <th class="col-md-3">Drafts</th>
+                {% endif %}
 	      </tr>
 	    </thead>
 
