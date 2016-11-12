@@ -1603,7 +1603,7 @@ def ajax_get_utc(request):
     time = request.GET.get('time')
     timezone = request.GET.get('timezone')
     date = request.GET.get('date')
-    time_re = re.compile(r'^\d{2}:\d{2}')
+    time_re = re.compile(r'^\d{2}:\d{2}$')
     # validate input
     if not time_re.match(time) or not date:
         return HttpResponse(json.dumps({'error': True}),
@@ -1676,7 +1676,6 @@ def interim_skip_announcement(request, number):
     first announcing.  Only applicable to IRTF groups.
     '''
     meeting = get_object_or_404(Meeting, number=number)
-    group = meeting.session_set.first().group
 
     if request.method == 'POST':
         meeting.session_set.update(status_id='sched')
