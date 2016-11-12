@@ -69,8 +69,10 @@ trap 'echo "$program($LINENO): Command failed with error code $? ([$$] $0 $*)"; 
 # Option parsing
 
 # Options
-shortopts=hvV
-longopts=help,verbose,version
+shortopts=DhvV
+longopts=no-download,help,verbose,version
+
+DOWNLOAD=1
 
 if   [ "$(uname)" = "Linux" ]; then
     args=$(getopt -o "$shortopts" --long "$longopts" -n '$program' -- $SV "$@")
@@ -87,6 +89,7 @@ fi
 
 while true ; do
     case "$1" in
+	-D| --no-download) DOWNLOAD="";;	# Don't download, use existing file
 	-h| --help)	usage; exit;;		# Show this help, then exit
 	-v| --verbose)	VERBOSE=1;;		# Be more talkative
 	-V| --version)	version; exit;;		# Show program version, then exit
@@ -119,9 +122,10 @@ DATADIR=$parent/data
 # 	mysql -u root ietf_utf8 <<< "GRANT ALL PRIVILEGES ON ietf_utf8.* TO django@localhost IDENTIFIED BY 'RkTkDPFnKpko'; FLUSH PRIVILEGES;"
 # fi
 
-echo "Fetching database dump ..."
-wget -S -N -P $DATADIR http://www.ietf.org/lib/dt/sprint/ietf_utf8.sql.gz || die "No new data, quitting."
-#rsync -u --progress zin.tools.ietf.org::tools/tools/ietf_utf8.sql.gz $DATADIR/ || die "No new data, quitting."
+if [ "$DOWNLOAD" ]; then
+    echo "Fetching database dump ..."
+    wget -S -N -P $DATADIR http://www.ietf.org/lib/dt/sprint/ietf_utf8.sql.gz || die "No new data, quitting."
+fi
 
 echo "Loading database ..."
 gunzip < $DATADIR/ietf_utf8.sql.gz \
