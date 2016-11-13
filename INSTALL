@@ -56,9 +56,9 @@ General Instructions for Deployment of a New Release
       rm ./web
       ln -s $releasenumber web
 
- 9. Restart apache::
+ 9. Reload apache::
 
-      sudo /etc/init.d/apache2 restart
+      sudo service apache2 reload
 
  10. It's now also a good idea to go to the datatracker front page::
 
