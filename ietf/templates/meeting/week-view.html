@@ -3,604 +3,510 @@
 {% load staticfiles %}
 <html> <head>
   <script type="text/javascript">
-   // first some helpers from what used to be agenda2.js
-   // Based on agenda.js written by Tony Hansen.
-
-   // Portion Copyright (C) 2010 Nokia Corporation and/or its subsidiary(-ies).
-   // All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
-   //
-   // Redistribution and use in source and binary forms, with or without
-   // modification, are permitted provided that the following conditions
-   // are met:
-   //
-   //  * Redistributions of source code must retain the above copyright
-   //    notice, this list of conditions and the following disclaimer.
-   //
-   //  * Redistributions in binary form must reproduce the above
-   //    copyright notice, this list of conditions and the following
-   //    disclaimer in the documentation and/or other materials provided
-   //    with the distribution.
-   //
-   //  * Neither the name of the Nokia Corporation and/or its
-   //    subsidiary(-ies) nor the names of its contributors may be used
-   //    to endorse or promote products derived from this software
-   //    without specific prior written permission.
-   //
-   // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-   // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-   // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-   // A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-   // OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-   // SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-   // LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-   // DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-   // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-   // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-   // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-   var IETF=[];
-
-   function setAgendaColor(color) {
-       IETF.agendaPalette.hide();  
-       document.getElementById(IETF.agendaRow).className="bg"+color;  
-       if (color == 'none') {
-	   YAHOO.util.Cookie.removeSub("ietf-agenda-colors", IETF.agendaRow);
-       } else {
-	   var twoMonths = new Date(new Date().getTime() + 60*24*60*60*1000);
-	   YAHOO.util.Cookie.setSub("ietf-agenda-colors", IETF.agendaRow, color, { expires:twoMonths });
-       }
-   }
-   function createPalette() {
-       IETF.agendaPalette = new YAHOO.widget.Overlay("ietf-agenda-palette", { constraintoviewport:true, visible:false } ); 
-       var body = '<table class="ietf-agenda-palette"><tr><td colspan="4">Select a color for this line</td></tr>';
-       var c = ['aqua', 'blue', 'fuchsia', 'gray', 'green', 'lime',
-                'maroon', 'navy', 'olive', 'purple', 'red', 'silver',
-                'teal', 'white', 'yellow', 'black'];
-       for (var i = 0; i < c.length; i++) {
-	   if ((i%4) == 0) { body += "<tr>" }
-	   body += '<td class="bg'+c[i]+'"><a href=\'javascript:setAgendaColor("'+c[i]+'");\'>'+c[i]+'</a></td>';
-	   if ((i%4) == 3) { body += "</tr>" }
-       }
-       body += '<tr><td class="bgnone" colspan="4"><a href="javascript:setAgendaColor(\'none\');">none</a></td></tr></table>';
-       IETF.agendaPalette.setBody(body);
-       IETF.agendaPalette.render(document.body); 
-   }
-   function pickAgendaColor(row, place) {
-       if (!IETF.agendaPalette) {
-	   createPalette();
-       }
-       IETF.agendaRow = row;
-       IETF.agendaPalette.cfg.setProperty("context", [place, "tl", "tl"]);
-       IETF.agendaPalette.show();
-   }
-   function updateAgendaColors() {
-       var colors = YAHOO.util.Cookie.getSubs("ietf-agenda-colors");
-       for (var k in colors) {  
-	   document.getElementById(k).className="bg"+colors[k];
-       }
-   }
-
-   // then actual script
-   var items = {{ items|safe }};
-
-   /* Saturday events need to be moved to the day -1 */
-   for (var i = 0; i < items.length; i++)
-   {
-       if (items[i].day == 6) { items[i].day = -1; }
-   }
-
-   var fg = {
-       'app': "#008",
-       'art': "#808",
-       'gen': "#080",
-       'int': "#088",
-       'ops': "#800",
-       'rai': "#808",
-       'rtg': "#880",
-       'sec': "#488",
-       'tsv': "#484",
-       'irtf': "#448",
-       'break': "#000"
-   };
-
-   var bg = {
-       'app': "#eef",
-       'art': "#fef",
-       'gen': "#efe",
-       'int': "#eff",
-       'ops': "#fee",
-       'rai': "#fef",
-       'rtg': "#ffe",
-       'sec': "#dff",
-       'tsv': "#dfd",
-       'irtf': "#ddf",
-       'break': "#fff"
-   };
-
-   var day = [
-       'Saturday',
-       'Sunday',
-       'Monday',
-       'Tuesday',
-       'Wednesday',
-       'Thursday',
-       'Friday'
-   ];
-
-   var divlist = [];
-
-   var lastfrag;
-   var lastheight;
-   var lastwidth;
-
-   var padding = 2;
-   var border = 1;
-
-   var include = Array();
-
-   setInterval(animate,50);
-
-   function is_visible(item)
-   {
-       //   "-wgname" will remove a working group from the output.
-       //   "~Type" will add that type to the output. 
-       //   "-~Type" will remove that type from the output
-       //   "@bof" will include all BOFs
-       // Current types are:
-       //   Session, Other, Break, Plenary
-
-       if ("group" in item)
-       {
-           if (include[(item.group).toLowerCase()]) { return true; }
-           if (include["-"+(item.group).toLowerCase()]) { return false; }
-       }
-       if ("state" in item)
-       {
-	   if (include["@"+(item.state).toLowerCase()]) { return true; }
-       }
-       if (include["~"+(item.type).toLowerCase()]) { return true; }
-       if (include["-~"+(item.type).toLowerCase()]) { return false; }
-       if ("area" in item)
-       {
-	   if (include[(item.area).toLowerCase()]) { return true; }
-       }
-       if (item.type === "Plenary") { return true; }
-       if (item.type === "Other") { return true; }
-       
-       return false;
-   }
-
-   function draw_calendar()
-   {
-       window.setTimeout(draw_calendar,1000);
-
-       var width = document.body.clientWidth;
-       var height = document.body.clientHeight;
-
-       if (lastheight == height && 
-	   lastwidth == width &&
-	   lastfrag == window.location.hash)
-       {
-	   return;
-       }
-
-       var i;
-       var text="";
-       var start_day = items[0].day;
-       var end_day = start_day;
-       var sessions = Array();
-       var used = Array();
-
-       var day_start = 0;
-       var day_end = 0;
-       include = [];
-
-       var frag = window.location.hash.replace("#",'').split(',');
-       for (i = 0; i < frag.length; i++)
-       {
-	   include[(frag[i]+"").toLowerCase()] = true;
-       }
-
-       /* Find our boundaries */
-       for (i = 0; i < items.length; i++)
-       {
-	   if (is_visible(items[i]))
-	       /*
-                 if (!("group" in items[i]) || (include[(items[i].group).toLowerCase()]
-		  || include[(items[i].area).toLowerCase()]))
-		*/
-	   {
-	       var start_time = parseInt(items[i].time.substr(0,2),10) * 60 +
-				parseInt(items[i].time.substr(2,2),10);
-	       var end_time = start_time + (items[i].duration / 60)
-
-		   if (!day_start || start_time < day_start) { day_start = start_time; }
-	       if (end_time > day_end) { day_end = end_time; }
-
-	       if (items[i].day < start_day) { start_day = items[i].day; }
-	       if (items[i].day > end_day) { end_day = items[i].day; }
-	       if (sessions[items[i].time_id])
-	       {
-		   sessions[items[i].time_id]++;
-	       }
-	       else
-	       {
-		   sessions[items[i].time_id] = 1;
-		   used[items[i].time_id] = 0;
-	       }
-	   }
-       }
-
-       var header_height = height * 0.05 ;
-
-       var num_days = end_day - start_day + 1;
-       var num_minutes = day_end - day_start;
-       var day_width = width / num_days;
-       var minute_height = (height - header_height)/num_minutes;
-       var body = document.body;
-       while (body.childNodes.length) { body.removeChild(body.childNodes[0]); }
-
-       var j = start_day;
-       for (i = 0; i < num_days; i++)
-       {
-	   //-----------------------------------------------------------------
-	   // Draw weekday name
-	   //-----------------------------------------------------------------
-	   var e = document.createElement("div");
-
-	   e.style.border="solid";
-	   e.style.borderWidth=border;
-
-	   e.style.background="#2647a0";
-	   e.style.color="#fff";
-	   e.style.borderColor="#000 #fff";
-	   e.style.borderColor="#2647a0 #2647a0 #000 #2647a0";
-
-	   e.style.display="block";
-	   e.style.overflow="hidden";
-	   e.style.position="absolute";
-
-	   e.style.top=0;
-	   e.style.left = i*day_width;
-	   e.style.width=day_width - 2 * (padding + border);
-	   e.style.height=header_height;
-
-	   e.style.margin=0;
-	   e.style.padding=padding;
-	   e.style.fontFamily="sans-serif";
-	   e.style.fontSize=header_height * 0.6;
-
-	   e.style.textAlign="center";
-
-	   var div = document.createElement("div");
-	   div.appendChild(document.createTextNode(day[j+1]));
-	   j++;
-	   e.appendChild(div);
-	   body.appendChild(e);
-
-	   //-----------------------------------------------------------------
-	   // Draw weekday column border
-	   //-----------------------------------------------------------------
-	   e = document.createElement("div");
-
-	   e.style.border="solid";
-	   e.style.borderWidth=border;
-
-	   e.style.background="#fff";
-	   e.style.color="#000";
-	   e.style.borderColor="#fff #000";
-
-	   e.style.display="block";
-	   e.style.overflow="hidden";
-	   e.style.position="absolute";
-
-	   e.style.top=header_height;
-	   e.style.left=i*day_width;
-	   e.style.width=day_width - 2 * (padding + border);
-	   e.style.height=height - 
-	   2 * (padding + border) - header_height;
-
-	   e.style.margin=0;
-	   e.style.padding=padding;
-
-	   body.appendChild(e);
-       }
-
-       //-----------------------------------------------------------------
-       // Draw a block for each meeting
-       //-----------------------------------------------------------------
-       var resize_func = function(div,t,l,w,h,to_fit)
-       { return function(){resize(div,t,l,w,h,to_fit);} }
-       var maximize_func = function (e) { return function(){maximize(e);}}
-
-       for (i = 0; i < items.length; i++)
-       {
-	   if (is_visible(items[i]))
-	       /*
-                 if (!("group" in items[i]) || (include[(items[i].group).toLowerCase()]
-		  || include[(items[i].area).toLowerCase()]))
-		*/
-	   {
-	       var start_time = parseInt(items[i].time.substr(0,2),10) * 60 +
-				parseInt(items[i].time.substr(2,2),10);
-	       var end_time = start_time + (items[i].duration / 60)
-
-		   var sess_width = day_width / sessions[items[i].time_id];
-	       var sess_height = ((end_time - start_time) * minute_height) 
-		   - 2 * (padding + border);
-	       var day_left = ((items[i].day - start_day) * day_width);
-	       var sess_left = day_left + sess_width * used[items[i].time_id];
-	       var sess_top = ((start_time - day_start) * minute_height) + header_height;
-
-	       sess_width = sess_width - 2 * (padding + border);
-
-	       used[items[i].time_id]++;
-
-	       var e = document.createElement("div");
-	       e.style.border="solid";
-	       e.style.borderWidth=border;
-
-	       if (fg[items[i].area])
-	       {
-		   e.style.background=bg[items[i].area];
-		   e.style.color=fg[items[i].area];
-		   e.style.borderColor=fg[items[i].area];
-	       }
-	       else
-	       {
-		   e.style.background="#e0e0e0";
-		   e.style.color="#000000";
-		   e.style.borderColor="#000000";
-	       }
-
-	       e.style.display="block";
-	       e.style.overflow="hidden";
-	       e.style.position="absolute";
-	       e.style.top=sess_top;
-	       e.style.left=sess_left;
-	       e.style.width=sess_width;
-	       e.style.height=sess_height;
-	       e.style.margin=0;
-	       e.style.padding=padding;
-	       e.style.fontFamily="sans-serif";
-	       e.style.fontSize="8pt";
-	       e.id=i;
-
-	       e.onmouseover=resize_func(e,sess_top,day_left,
-					 day_width-2*(padding+border),
-					 sess_height, true);
-
-	       e.onmouseout=resize_func(e,sess_top,sess_left,sess_width,sess_height,false);
-
-	       if (items[i].agenda)
-	       {
-		   e.onclick=maximize_func(e);
-		   e.style.cursor="pointer";
-	       }
-
-	       var div = document.createElement("div");
-	       div.appendChild(document.createTextNode(items[i].time));
-	       div.appendChild(document.createElement("br"));
-
-	       var label = items[i].name;
-	       if (label.length === 0) { label = "Free Slot"; }
-	       if (items[i].group && fg[items[i].area])
-	       {
-		   label = label + " (" + items[i].group + ")";
-	       }
-	       var bold = document.createElement("span");
-	       bold.appendChild(document.createTextNode(label));
-	       bold.style.fontWeight="bold";
-	       div.appendChild(bold);
-
-	       if (items[i].room)
-	       {
-		   div.appendChild(document.createElement("br"));
-		   var italics = document.createElement("span");
-		   italics.appendChild(document.createTextNode(items[i].room));
-		   italics.style.fontStyle="oblique";
-		   div.appendChild(italics);
-	       }
-
-	       e.appendChild(div);
-
-	       body.appendChild(e);
-	   }
-       }
-
-       lastheight = height;
-       lastwidth = width;
-       lastfrag = window.location.hash;
-   }
-
-   function resize(div,t2,l2,w2,h2,to_fit)
-   {
-       // Move the element to the front
-       document.body.removeChild(div);
-       document.body.appendChild(div);
-
-       div.t2 = t2;
-       div.l2 = l2;
-       div.w2 = w2;
-       div.h2 = h2;
-       div.to_fit = to_fit;
-       div.percent = 0;
-       divlist.push(div);
-   }
-
-   function animate()
-   {
-       var i;
-       for (i = divlist.length - 1; i >= 0; i--)
-       {
-	   var div = divlist[i];
-	   if (div.percent < 100)
-	   {
-	       div.percent += 5;
-	       var t1 = parseFloat(div.style.top.replace("px",""));
-	       var l1 = parseFloat(div.style.left.replace("px",""));
-	       var w1 = parseFloat(div.style.width.replace("px",""));
-	       var h1 = parseFloat(div.style.height.replace("px",""));
-
-	       div.style.top = wavg(t1,div.t2,div.percent);
-	       div.style.left = wavg(l1,div.l2,div.percent);
-	       div.style.width = wavg(w1,div.w2,div.percent);
-	       div.style.height = wavg(h1,div.h2,div.percent);
-
-	       if (t1 == div.t2 && l1 == div.l2 &&
-		   w1 == div.w2 && h1 == div.h2) { div.percent = 100; }
-
-	   }
-	   else
-	   {
-	       if (div.to_fit)
-	       {
-		   var tmp = div.style.height;
-		   div.style.removeProperty("height");
-		   if (div.h2 < div.clientHeight)
-		   {
-		       div.h2 = div.clientHeight;
-		       div.percent = 0;
-		   }
-		   else
-		   {
-		       divlist.remove(i);
-		       if (div.callback)
-		       {
-			   var tmp = div.callback;
-			   div.callback = undefined;
-			   tmp();
-		       }
-		   }
-		   div.style.height = tmp;
-	       }
-	       else
-	       {
-		   divlist.remove(i);
-		   if (div.callback)
-		   {
-		       var tmp = div.callback;
-		       div.callback = undefined;
-		       tmp();
-		   }
-	       }
-	   }
-       }
-
-   }
-
-   function finish_maximize(e)
-   {
-       if (!items[e.id].agenda)
-       {
-	   return;
-       }
-
-       e.insertBefore(document.createElement("br"),e.firstChild);
-
-       var minimize_func = function (e) { return function(){minimize(e);} }
-       var img = document.createElement("img");
-       img.src = "{% static 'ietf/images/agenda-weekview/close.png' %}";
-       img.style.cssFloat="right";
-       img.onclick = minimize_func(e);
-       img.style.cursor="pointer";
-       e.insertBefore(img,e.firstChild);
-       console.log("hello", img, e.firstChild)
-
-	   var h = document.createElement("span");
-       h.appendChild(document.createTextNode(items[e.id].dayname));
-       h.style.fontWeight="bold";
-       e.insertBefore(h,e.firstChild);
-       e.style.fontSize="10pt";
-
-       var tmp = e.style.height;
-       e.style.removeProperty("height");
-       var used_height = e.clientHeight;
-       e.style.height = tmp;
-
-       var frame = document.createElement("iframe");
-       frame.setAttribute("src",items[e.id].agenda);
-
-       frame.style.position = "absolute";
-       frame.style.left = 8;
-       frame.style.width = e.clientWidth - 16 - 2 * (padding + border);
-       frame.style.top = used_height + 8;
-       frame.style.height = e.clientHeight - used_height - 16 - 2*(padding+border);
-
-       frame.style.background = "#fff";
-       frame.style.overflow="auto";
-       frame.id="agenda";
-
-       frame.style.border = e.style.border;
-       frame.style.borderWidth = border;
-       frame.style.padding = padding;
-       frame.style.borderColor = e.style.borderColor;
-
-       e.appendChild(frame);
-   }
-
-   function finish_minimize(e)
-   {
-       e.onmouseover = e.oldmouseover;
-       e.onmouseout = e.oldmouseout;
-       e.oldmouseover = undefined;
-       e.oldmouseout = undefined;
-       e.style.cursor="pointer";
-   }
-
-   function maximize(e)
-   {
-       if (e.onmouseover)
-       {
-	   e.oldmouseover = e.onmouseover;
-	   e.oldmouseout = e.onmouseout;
-	   e.onmouseover = undefined;
-	   e.onmouseout = undefined;
-	   e.style.cursor="auto";
-
-	   var callback_func = function (e) { return function(){finish_maximize(e);}}
-	   e.callback = callback_func(e);
-
-	   resize(e,0,0,
-		  document.body.clientWidth-2*(padding + border),
-		  document.body.clientHeight-2*(padding + border));
-       }
-   }
-
-   function minimize(e)
-   {
-       var agenda = document.getElementById("agenda");
-       if (agenda)
-       {
-	   e.removeChild(agenda);
-       }
-
-       var callback_func = function (e) { return function(){finish_minimize(e);}}
-       e.callback = callback_func(e);
-       e.oldmouseout();
-
-       e.removeChild(e.firstChild);
-       e.removeChild(e.firstChild);
-       e.removeChild(e.firstChild);
-       e.style.fontSize="8pt";
-   }
-
-   function wavg(x1,x2,percent)
-   {
-       if (percent == 100) { return x2; }
-       var res = x2 * (percent / 100) + x1 * ((100 - percent) / 100);
-       return res;
-   }
-
-   // Array Remove - By John Resig (MIT Licensed)
-   Array.prototype.remove = function(from, to) {
-       var rest = this.slice((to || from) + 1 || this.length);
-       this.length = from < 0 ? this.length + from : from;
-       return this.push.apply(this, rest);
-   };
+
+    var all_items = {{ items|safe }};
+
+    /* Saturday events need to be moved to the day -1 */
+    /* Also, process clock times to "minutes past midnight" */
+    all_items.forEach(function(item) {
+      if (item.day == 6) { item.day = -1; }
+      item.start_time = parseInt(item.time.substr(0,2),10) * 60 +
+                                     parseInt(item.time.substr(2,2),10);
+      item.end_time = item.start_time + (item.duration / 60)
+    });
+
+    var color = {
+      'app':   { fg: "#008", bg: "#eef"},
+      'art':   { fg: "#808", bg: "#fef"},
+      'gen':   { fg: "#080", bg: "#efe"},
+      'int':   { fg: "#088", bg: "#eff"},
+      'ops':   { fg: "#800", bg: "#fee"},
+      'rai':   { fg: "#808", bg: "#fef"},
+      'rtg':   { fg: "#880", bg: "#ffe"},
+      'sec':   { fg: "#488", bg: "#dff"},
+      'tsv':   { fg: "#484", bg: "#dfd"},
+      'irtf':  { fg: "#448", bg: "#ddf"},
+      'break': { fg: "#000", bg: "#fff"},
+    }
+
+    var day = [
+      'Saturday',
+      'Sunday',
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday'
+    ];
+
+    var padding = 2;
+    var border = 1;
+
+    //===========================================================================
+    function compute_swimlanes(items) {
+      var start_map = items.map(function(el, i) {
+        return { day: parseInt(el.day,10), start_time: el.start_time, index: i };
+      });
+
+      start_map.sort(function(a,b) {
+        if (a.day != b.day) { return(a.day - b.day); }
+        return (a.start_time - b.start_time);
+      });
+
+      var end_map = items.map(function(el, i) {
+        return { day: parseInt(el.day,10), end_time: el.end_time, index: i };
+      });
+
+      end_map.sort(function(a,b) {
+        if (a.day != b.day) { return(a.day - b.day); }
+        return (a.end_time - b.end_time);
+      });
+
+      var si = 0; // start index
+      var ei = 0; // end index
+      var overlap = 0;
+      var max_lanes = 0;
+      var next_lane = [];
+
+      var start_overlap = si;
+      while (si < items.length) {
+        var start_day_change = false;
+        while ( !start_day_change
+                && si < items.length
+                && start_map[si].start_time < end_map[ei].end_time ) {
+          overlap++;
+          if (next_lane.length > 0) {
+            items[start_map[si].index].lane = next_lane.shift();
+          } else {
+            items[start_map[si].index].lane = max_lanes;
+            max_lanes++;
+          }
+          start_day_change = ( si+1 == items.length
+                               || start_map[si].day != start_map[si+1].day );
+          si++;
+        }
+        var end_day_change = false;
+        while ( ei < items.length
+                && !end_day_change
+                && ( start_day_change
+                     || si == items.length
+                     || start_map[si].start_time >= end_map[ei].end_time ) ) {
+          next_lane.push(items[end_map[ei].index].lane);
+          overlap--;
+          end_day_change = ( ei+1 == items.length
+                             || end_map[ei].day != end_map[ei+1].day );
+          ei++;
+        }
+        if (overlap == 0)
+        {
+          for (var i=start_overlap; i<si; i++) {
+            items[start_map[i].index].lanes = max_lanes;
+          }
+          max_lanes = 0;
+          next_lane=[];
+          start_overlap = si;
+        }
+      }
+    }
+
+    //===========================================================================
+
+    function is_visible(include) {
+      return function (item) {
+        //   "-wgname" will remove a working group from the output.
+        //   "~Type" will add that type to the output.
+        //   "-~Type" will remove that type from the output
+        //   "@bof" will include all BOFs
+        // Current types are:
+        //   Session, Other, Break, Plenary
+
+        if ("group" in item) {
+          if (include[(item.group).toLowerCase()]) { return true; }
+          if (include["-"+(item.group).toLowerCase()]) { return false; }
+        }
+        if ("state" in item) {
+          if (include["@"+(item.state).toLowerCase()]) { return true; }
+        }
+        if (include["~"+(item.type).toLowerCase()]) { return true; }
+        if (include["-~"+(item.type).toLowerCase()]) { return false; }
+        if ("area" in item) {
+          if (include[(item.area).toLowerCase()]) { return true; }
+        }
+        if (item.type === "Plenary") { return true; }
+        if (item.type === "Other") { return true; }
+
+        return false;
+      }
+    }
+
+    //===========================================================================
+
+    function draw_calendar() {
+      var width = document.body.clientWidth;
+      var height = document.body.clientHeight;
+
+      var include = {};
+      window.location.hash.replace("#",'').split(',').forEach(function(key){
+        include[(key + "").toLowerCase()] = true;
+      });
+
+      var visible_items = all_items.filter(is_visible(include));
+
+      var start_day = visible_items[0].day;
+      var end_day = start_day;
+      var day_start = visible_items[0].start_time;
+      var day_end = 0;
+
+      compute_swimlanes(visible_items);
+
+      /* Find our boundaries */
+      visible_items.forEach(function(item){
+        day_start = Math.min(day_start, item.start_time);
+        day_end = Math.max(day_end, item.end_time);
+        start_day = Math.min(start_day, item.day)
+        end_day = Math.max(start_day, item.day)
+      });
+
+      var header_height = height * 0.05 ;
+
+      var num_days = end_day - start_day + 1;
+      var num_minutes = day_end - day_start;
+      var day_width = width / num_days;
+      var minute_height = (height - header_height)/num_minutes;
+
+      while (document.body.firstChild) {
+        document.body.removeChild(document.body.firstChild);
+      }
+
+      var j = start_day;
+      for (var i = 0; i < num_days; i++) {
+        //-----------------------------------------------------------------
+        // Draw weekday name
+        //-----------------------------------------------------------------
+        var e = document.createElement("div");
+
+        e.style.border="solid";
+        e.style.borderWidth=border;
+
+        e.style.background="#2647a0";
+        e.style.color="#fff";
+        e.style.borderColor="#000 #fff";
+        e.style.borderColor="#2647a0 #2647a0 #000 #2647a0";
+
+        e.style.display="block";
+        e.style.overflow="hidden";
+        e.style.position="absolute";
+
+        e.style.top=0;
+        e.style.left = i*day_width;
+        e.style.width=day_width - 2 * (padding + border);
+        e.style.height=header_height;
+
+        e.style.margin=0;
+        e.style.padding=padding;
+        e.style.fontFamily="sans-serif";
+        e.style.fontSize=header_height * 0.6;
+
+        e.style.textAlign="center";
+
+        var div = document.createElement("div");
+        div.appendChild(document.createTextNode(day[j+1]));
+        j++;
+        e.appendChild(div);
+        document.body.appendChild(e);
+
+        //-----------------------------------------------------------------
+        // Draw weekday column border
+        //-----------------------------------------------------------------
+        e = document.createElement("div");
+
+        e.style.border="solid";
+        e.style.borderWidth=border;
+
+        e.style.background="#fff";
+        e.style.color="#000";
+        e.style.borderColor="#fff #000";
+
+        e.style.display="block";
+        e.style.overflow="hidden";
+        e.style.position="absolute";
+
+        e.style.top=header_height;
+        e.style.left=i*day_width;
+        e.style.width=day_width - 2 * (padding + border);
+        e.style.height=height -
+        2 * (padding + border) - header_height;
+
+        e.style.margin=0;
+        e.style.padding=padding;
+
+        document.body.appendChild(e);
+      }
+
+      //-----------------------------------------------------------------
+      // Draw a block for each meeting
+      //-----------------------------------------------------------------
+      visible_items.forEach(function(item) {
+        var sess_width = day_width / item.lanes;
+        var sess_height = ((item.end_time - item.start_time) * minute_height)
+            - 2 * (padding + border);
+        var day_left = ((item.day - start_day) * day_width);
+        var sess_left = day_left + sess_width * item.lane;
+        var sess_top = ((item.start_time - day_start) * minute_height) + header_height;
+
+        sess_width = sess_width - 2 * (padding + border);
+
+        var e = document.createElement("div");
+        e.style.border = "solid";
+        e.style.borderWidth = border;
+
+        if (item.area && color[item.area]) {
+          e.style.background=color[item.area].bg;
+          e.style.color=color[item.area].fg;
+          e.style.borderColor=color[item.area].fg;
+        } else {
+          if (item.area) {
+            console.log("No color for " + item.area + ": using default");
+          }
+          e.style.background="#e0e0e0";
+          e.style.color="#000000";
+          e.style.borderColor="#000000";
+        }
+
+        e.style.display="block";
+        e.style.overflow="hidden";
+        e.style.position="absolute";
+        e.style.top=sess_top;
+        e.style.left=sess_left;
+        e.style.width=sess_width;
+        e.style.height=sess_height;
+        e.style.margin=0;
+        e.style.padding=padding;
+        e.style.fontFamily="sans-serif";
+        e.style.fontSize="8pt";
+        e.item=item;
+
+        e.onmouseenter = function(){resize(e,sess_top,day_left,
+                                     day_width-2*(padding+border),
+                                     sess_height, true)};
+
+        e.onmouseleave = function(){resize(e,sess_top,sess_left,sess_width,sess_height,false)};
+
+        if (item.agenda) {
+          e.onclick=function(){maximize(e)};
+          e.style.cursor="pointer";
+        }
+
+        var div = document.createElement("div");
+        div.appendChild(document.createTextNode(item.time));
+        div.appendChild(document.createElement("br"));
+
+        var label = item.name;
+        if (label.length === 0) {
+          label = "Free Slot";
+        }
+        if (item.group && color[item.area]) {
+            label = label + " (" + item.group + ")";
+        }
+
+        var bold = document.createElement("span");
+        bold.appendChild(document.createTextNode(label));
+        bold.style.fontWeight="bold";
+        div.appendChild(bold);
+
+        if (item.room) {
+          div.appendChild(document.createElement("br"));
+          var italics = document.createElement("span");
+          italics.appendChild(document.createTextNode(item.room));
+          italics.style.fontStyle="oblique";
+          div.appendChild(italics);
+        }
+
+        e.appendChild(div);
+
+        document.body.appendChild(e);
+      });
+    }
+
+    //===========================================================================
+    // Note: if "to_fit" is true and the text won't fit in the dimensions
+    // provided, then the height parameter is ignored, and the item is resized to
+    // be tall enough to contain the entire contents
+
+    var animation_counter = 0;
+    function resize(div, top, left, width, height, to_fit) {
+      var from_top = (div.style.top.replace("px",""));
+      var from_left = (div.style.left.replace("px",""));
+      var from_width = (div.style.width.replace("px",""));
+      var from_height = (div.style.height.replace("px",""));
+
+      // If we're fitting the height to the content, and there is overflow,
+      // calculate the new (larger) height
+      if (to_fit) {
+        div.style.removeProperty("height");
+        div.style.width = width;
+        var clientHeight = div.clientHeight;
+        div.style.height = from_height;
+        div.style.width = from_width;
+        if (clientHeight > height) {
+          height = clientHeight;
+        }
+      }
+
+      var animationId = "animation-" + (animation_counter++);
+
+      // Move the element to the front
+      div.style.zIndex = animation_counter;
+
+      var style = document.createElement('style');
+      style.textContent = "@keyframes " + animationId + " {" +
+                          "  from {" +
+                          "    top: " + from_top + ";" +
+                          "    left: " + from_left + ";" +
+                          "    width: " + from_width + ";" +
+                          "    height: " + from_height + ";" +
+                          "  }" +
+                          "  to {" +
+                          "    top: " + top + ";" +
+                          "    left: " + left + ";" +
+                          "    width: " + width + ";" +
+                          "    height: " + height + ";" +
+                          "  }" +
+                          "}";
+      document.head.appendChild(style);
+
+      var callback = function() {
+        div.removeEventListener('animationend',callback);
+        document.head.removeChild(style);
+
+        div.style.top = top;
+        div.style.left = left;
+        div.style.width = width;
+        div.style.height = height;
+
+        if (div.callback) {
+          div.callback();
+          div.callback = undefined;
+        }
+      };
+
+      div.addEventListener('animationend', callback, false);
+
+      div.style.animationName = animationId;
+      div.style.animationDuration = "0.25s";
+      div.style.animationIterationCount = "1";
+      div.style.animationFillMode="forwards";
+    }
+
+    //===========================================================================
+
+    function finish_maximize(e) {
+      if (!e.item.agenda) {
+        console.log("Element has no agenda: " + JSON.stringify(e.item));
+        return;
+      }
+
+      e.insertBefore(document.createElement("br"),e.firstChild);
+
+      var img = document.createElement("img");
+      img.src = "{% static 'ietf/images/agenda-weekview/close.png' %}";
+      img.style.cssFloat="right";
+      img.onclick = function() {minimize(e);};
+      img.style.cursor="pointer";
+      e.insertBefore(img,e.firstChild);
+
+      var h = document.createElement("span");
+      h.appendChild(document.createTextNode(e.item.dayname));
+      h.style.fontWeight="bold";
+      e.insertBefore(h,e.firstChild);
+      e.style.fontSize="10pt";
+
+      var tmp = e.style.height;
+      e.style.removeProperty("height");
+      var used_height = e.clientHeight;
+      e.style.height = tmp;
+
+      var frame = document.createElement("iframe");
+      frame.setAttribute("src",e.item.agenda);
+
+      frame.style.position = "absolute";
+      frame.style.left = 8;
+      frame.style.width = e.clientWidth - 16 - 2 * (padding + border);
+      frame.style.top = used_height + 8;
+      frame.style.height = e.clientHeight - used_height - 16 - 2*(padding+border);
+
+      frame.style.background = "#fff";
+      frame.style.overflow="auto";
+      frame.id="agenda";
+
+      frame.style.border = e.style.border;
+      frame.style.borderWidth = border;
+      frame.style.padding = padding;
+      frame.style.borderColor = e.style.borderColor;
+
+      e.appendChild(frame);
+
+      e.keyHandler = function(event) {
+        console.log(event.code);
+        if(event.code === "Escape") {
+          minimize(e);
+        }
+      };
+
+      document.addEventListener('keydown', e.keyHandler, false);
+    }
+
+    //===========================================================================
+
+    function finish_minimize(e) {
+      e.onmouseenter = e.oldmouseenter;
+      e.onmouseleave = e.oldmouseleave;
+      e.oldmouseenter = undefined;
+      e.oldmouseleave = undefined;
+      e.style.cursor="pointer";
+    }
+
+    //===========================================================================
+
+    function maximize(e) {
+      if (e.onmouseenter)
+      {
+        e.oldmouseenter = e.onmouseenter;
+        e.oldmouseleave = e.onmouseleave;
+        e.onmouseenter = undefined;
+        e.onmouseleave = undefined;
+        e.style.cursor="auto";
+        e.callback = function(){finish_maximize(e);}
+        resize(e,0,0,
+               document.body.clientWidth-2*(padding + border),
+               document.body.clientHeight-2*(padding + border), false);
+      }
+    }
+
+    //===========================================================================
+
+    function minimize(e) {
+      var agenda = document.getElementById("agenda");
+      if (agenda) {
+        e.removeChild(agenda);
+      }
+      document.removeEventListener('keydown', e.keyHandler, false);
+      e.callback = function(){finish_minimize(e);};
+      e.oldmouseleave();
+      e.removeChild(e.firstChild);
+      e.removeChild(e.firstChild);
+      e.removeChild(e.firstChild);
+      e.style.fontSize="8pt";
+    }
+
+    //===========================================================================
+    // Set up events for drawing the calendar
+    window.addEventListener("resize", draw_calendar, false);
+    window.addEventListener("load", draw_calendar, false);
+    window.addEventListener("hashchange", draw_calendar, false);
 
   </script>
 </head>
-<body onload="draw_calendar()" onresize="draw_calendar()" id="body">
+<body>
   <div id="cal"><span>Error loading calendar</span></div>
 </body></html>
