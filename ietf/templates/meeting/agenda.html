@@ -208,7 +208,7 @@
 		    <span class="hidden-xs">
 		      {% if item.timeslot.type.slug == 'other' %}
 			{% for slide in item.session.slides %}
-			  <a href="https://www.ietf.org/proceedings/{{meeting_num}}/slides/{{ slide.external_url }}">{{ slide.title|clean_whitespace }}</a>
+			  <a href="{{slide.get_absolute_url}}">{{ slide.title|clean_whitespace }}</a>
 			  <br>
 			{% endfor %}
 		      {% endif %}
