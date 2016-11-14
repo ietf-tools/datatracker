@@ -69,26 +69,60 @@
           <!-- Working groups -->
           {% regroup ietf|dictsort:"group.parent.acronym" by group.parent.name as areas %}
           {% for sessions in areas %}
-            <h2 class="anchor-target" id="{{sessions.list.0.group.parent.acronym}}">{{sessions.list.0.group.parent.acronym|upper}} <small>{{ sessions.grouper }}</small></h2>
-            <table class="table table-condensed table-striped tablesorter">
-              <thead>
-	        <tr>
-	          <th class="col-md-1">Group</th>
-	          <th class="col-md-1">Artifacts</th>
-	          <th class="col-md-2">Recordings</th>
-	          <th class="col-md-4">Slides</th>
-	          <th class="col-md-3">Drafts</th>
-	        </tr>
-              </thead>
-
-              <tbody>
-	        {% for session in sessions.list|dictsort:"group.acronym" %}
-	          {% ifchanged session.group.acronym %}
-	            {% include "meeting/group_proceedings.html" %}
-	          {% endifchanged %}
-	        {% endfor %}
-              </tbody>
-            </table>
+            {% for sessions in areas %}
+              <h2 class="anchor-target" id="{{sessions.list.0.group.parent.acronym}}">{{sessions.list.0.group.parent.acronym|upper}} <small>{{ sessions.grouper }}</small></h2>
+              {% regroup sessions.list by not_meeting as meet_or_not %}
+              {% for batch in meet_or_not %}
+                {% if not batch.grouper %}
+                  <table class="table table-condensed table-striped tablesorter">
+                    <thead>
+                      <tr>
+                        <th class="col-md-1">Group</th>
+                        <th class="col-md-1">Artifacts</th>
+                        <th class="col-md-2">Recordings</th>
+                        <th class="col-md-4">Slides</th>
+                        <th class="col-md-3">Drafts</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for session in batch.list|dictsort:"group.acronym" %}
+                        {% ifchanged session.group.acronym %}
+                          {% include "meeting/group_proceedings.html" %}
+                        {% endifchanged %}
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                {% else %}
+                  <p><small>{{sessions.grouper }} groups not meeting: </small>
+                  {% for session in batch.list|dictsort:"group.acronym" %}
+                    {% ifchanged session.group.acronym %}
+                      <a href="{% url 'ietf.group.views.group_home' acronym=session.group.acronym %}">{{session.group.acronym}}</a>{% if not forloop.last %},{% endif %} 
+                    {% endifchanged %}
+                  {% endfor %}
+                  </p>
+                  <table class="table table-condensed table-striped">
+                    <thead>
+                      <tr>
+                        <th class="col-md-1">&nbsp;</th>
+                        <th class="col-md-1">&nbsp;</th>
+                        <th class="col-md-2">&nbsp;</th>
+                        <th class="col-md-4">&nbsp;</th>
+                        <th class="col-md-3">&nbsp;</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for session in batch.list|dictsort:"group.acronym" %}
+                        {% ifchanged session.group.acronym %}
+                          {% if session.sessionpresentation_set.exists %}
+                            {% include "meeting/group_proceedings.html" %}
+                          {% endif %}
+                        {% endifchanged %}
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                {% endif %}
+              {% endfor %}
+            {% endfor %}
           {% endfor %}
 
           <!-- Training Sessions -->

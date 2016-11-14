@@ -140,9 +140,6 @@ $(document).ready(function () {
         }
     });
 
-    $("form.idsubmit #cancel-submission").submit(function () {
-        return confirm("Cancel this submission?");
-    });
 
     $("form.idsubmit #add-author").click(function (e) {
         // clone the last author block and make it empty

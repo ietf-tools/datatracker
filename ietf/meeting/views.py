@@ -21,7 +21,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden, Http404
 from django.contrib import messages
 from django.core.urlresolvers import reverse,reverse_lazy
-from django.db.models import Min, Max
+from django.db.models import Min, Max, Q
 from django.conf import settings
 from django.forms.models import modelform_factory, inlineformset_factory
 from django.forms import ModelForm
@@ -2026,12 +2026,12 @@ def proceedings(request, num=None):
     now = datetime.date.today()
 
     schedule = get_schedule(meeting, None)
-    sessions  = Session.objects.filter(meeting__number=meeting.number, timeslotassignments__schedule=schedule).select_related()
-    plenaries = sessions.filter(name__icontains='plenary')
+    sessions  = Session.objects.filter(meeting__number=meeting.number).filter(Q(timeslotassignments__schedule=schedule)|Q(status='notmeet')).select_related().order_by('-status_id')
+    plenaries = sessions.filter(name__icontains='plenary').exclude(status='notmeet')
     ietf      = sessions.filter(group__parent__type__slug = 'area').exclude(group__acronym='edu')
     irtf      = sessions.filter(group__parent__acronym = 'irtf')
-    training  = sessions.filter(group__acronym__in=['edu','iaoc'], type_id__in=['session', 'other', ])
-    iab       = sessions.filter(group__parent__acronym = 'iab')
+    training  = sessions.filter(group__acronym__in=['edu','iaoc'], type_id__in=['session', 'other', ]).exclude(status='notmeet')
+    iab       = sessions.filter(group__parent__acronym = 'iab').exclude(status='notmeet')
 
     cache_version = Document.objects.filter(session__meeting__number=meeting.number).aggregate(Max('time'))["time__max"]
     return render(request, "meeting/proceedings.html", {
