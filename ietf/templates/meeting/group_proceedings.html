@@ -23,14 +23,14 @@
   {% else %}
     <td>
       {% if session.agenda %}
-        <a href="https://www.ietf.org/proceedings/{{meeting_num}}/agenda/{{ session.agenda }}">Agenda</a><br>
+        <a href="{{ session.agenda.href }}">Agenda</a><br>
       {% else %}
         {% if show_agenda == "True" and not meeting.proceedings_final %}
           <span class="label label-warning">No agenda</span><br>
         {% endif %}
       {% endif %}
       {% if session.minutes %}
-        <a href="https://www.ietf.org/proceedings/{{ meeting_num }}/minutes/{{ session.minutes }}">Minutes</a><br>
+        <a href="{{ session.minutes.href }}">Minutes</a><br>
       {% else %}
         {% if show_agenda == "True" and not meeting.proceedings_final %}
           <span class="label label-warning">No minutes</span><br>
@@ -38,10 +38,10 @@
       {% endif %}
       {% if session.all_meeting_bluesheets %}
          {% if session.all_meeting_bluesheets|length == 1 %}
-              <a href="{{session.all_meeting_bluesheets.0.get_absolute_url}}">Bluesheets</a><br>
+              <a href="{{session.all_meeting_bluesheets.0.href}}">Bluesheets</a><br>
          {% else %}
            {% for bs in session.all_meeting_bluesheets %}
-              <a href="{{bs.get_absolute_url}}">Bluesheets {{bs.sessionpresentation_set.first.session.official_timeslotassignment.timeslot.time|date:"D G:i"}}</a></br>
+              <a href="{{bs.href}}">Bluesheets {{bs.sessionpresentation_set.first.session.official_timeslotassignment.timeslot.time|date:"D G:i"}}</a></br>
            {% endfor %}
         {% endif %}
       {% endif %}
@@ -55,18 +55,18 @@
     <td>
       {% if session.all_meeting_sessions_for_group|length == 1 %}
         {% for rec in session.all_meeting_recordings %}
-          <a href="{{rec.get_absolute_url}}">{{rec|hack_recording_title:False}}</a><br>
+          <a href="{{rec.href}}">{{rec|hack_recording_title:False}}</a><br>
         {% endfor %}
       {% else %}
         {% for rec in session.all_meeting_recordings %}
-          <a href="{{rec.get_absolute_url}}">{{rec|hack_recording_title:True}}</a><br>
+          <a href="{{rec.href}}">{{rec|hack_recording_title:True}}</a><br>
         {% endfor %}
       {% endif %}
     </td>
     <td>
       {% with session.slides as slides %}
         {% for slide in slides %}
-          <a href="https://www.ietf.org/proceedings/{{meeting_num}}/slides/{{ slide.external_url }}">{{ slide.title|clean_whitespace }}</a>
+          <a href="{{ slide.href }}">{{ slide.title|clean_whitespace }}</a>
           <br>
         {% empty %}
           {% if not meeting.proceedings_final %}
