@@ -1616,7 +1616,7 @@ def ajax_get_utc(request):
     time = request.GET.get('time')
     timezone = request.GET.get('timezone')
     date = request.GET.get('date')
-    time_re = re.compile(r'^\d{2}:\d{2}')
+    time_re = re.compile(r'^\d{2}:\d{2}$')
     # validate input
     if not time_re.match(time) or not date:
         return HttpResponse(json.dumps({'error': True}),

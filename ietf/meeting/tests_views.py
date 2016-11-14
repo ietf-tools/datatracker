@@ -1314,6 +1314,11 @@ class AjaxTests(TestCase):
         self.assertEqual(r.status_code, 200)
         data = json.loads(r.content)
         self.assertEqual(data["error"], True)
+        url = urlreverse('ietf.meeting.views.ajax_get_utc') + "?date=2016-1-1&time=10:00am&timezone=UTC"
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        data = json.loads(r.content)
+        self.assertEqual(data["error"], True)
         # test good query
         url = urlreverse('ietf.meeting.views.ajax_get_utc') + "?date=2016-1-1&time=12:00&timezone=US/Pacific"
         r = self.client.get(url)
