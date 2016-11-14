@@ -12,8 +12,8 @@
       <div class="anchor-target" id="{{ session.name|slugify }}">{{ session.name }}</div>
     {% else %}
       <div class="anchor-target" id="{{session.group.acronym}}"><a href="{% url 'ietf.group.views.group_home' acronym=session.group.acronym %}">{{session.group.acronym}}</a></div>
-      {% if session.group.state.slug == "bof" %}
-        <span class="label label-success">{{ session.group.state.slug|upper }}</span>
+      {% if session.group.state_id == "bof" %}
+        <span class="label label-success">BOF</span>
       {% endif %}
     {% endif %}
   </td>
