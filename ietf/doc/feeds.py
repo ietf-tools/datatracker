@@ -120,10 +120,10 @@ class RfcFeed(Feed):
         return [doc for doc,time in results]
     
     def item_title(self, item):
-        return item.canonical_name()
+        return "%s : %s" % (item.canonical_name(),item.title)
 
     def item_description(self, item):
-        return item.title
+        return item.abstract
 
     def item_link(self, item):
         return "https://rfc-editor.org/info/%s"%item.canonical_name()
@@ -133,7 +133,6 @@ class RfcFeed(Feed):
 
     def item_extra_kwargs(self, item):
         extra = super(RfcFeed, self).item_extra_kwargs(item)
-        extra.update({'dcterms_abstract': item.abstract})
         extra.update({'dcterms_accessRights': 'gratis'})
         extra.update({'dcterms_format': 'text/html'})
         extra.update({'media_content': {'url': 'https://rfc-editor.org/rfc/%s.txt' % item.canonical_name(),
