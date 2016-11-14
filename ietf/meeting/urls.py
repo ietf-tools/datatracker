@@ -89,6 +89,7 @@ urlpatterns = [
     url(r'^ajax/get-utc/?$', views.ajax_get_utc),
     url(r'^interim/announce/?$', views.interim_announce),
     url(r'^interim/announce/(?P<number>[A-Za-z0-9._+-]+)/?$', views.interim_send_announcement),
+    url(r'^interim/skip_announce/(?P<number>[A-Za-z0-9._+-]+)/?$', views.interim_skip_announcement),
     url(r'^interim/request/?$', views.interim_request),
     url(r'^interim/request/(?P<number>[A-Za-z0-9._+-]+)/?$', views.interim_request_details),
     url(r'^interim/request/(?P<number>[A-Za-z0-9._+-]+)/edit/?$', views.interim_request_edit),

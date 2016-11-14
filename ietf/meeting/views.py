@@ -1683,6 +1683,22 @@ def interim_send_announcement(request, number):
         'form': form})
 
 
+@role_required('Secretariat',)
+def interim_skip_announcement(request, number):
+    '''View to change status of interim meeting to Scheduled without
+    first announcing.  Only applicable to IRTF groups.
+    '''
+    meeting = get_object_or_404(Meeting, number=number)
+
+    if request.method == 'POST':
+        meeting.session_set.update(status_id='sched')
+        messages.success(request, 'Interim meeting scheduled.  No announcement sent.')
+        return redirect(interim_announce)
+
+    return render(request, "meeting/interim_skip_announce.html", {
+        'meeting': meeting})
+
+
 @role_required('Area Director', 'Secretariat', 'IRTF Chair', 'WG Chair',
                'RG Chair')
 def interim_pending(request):

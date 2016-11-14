@@ -645,6 +645,23 @@ class InterimTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertTrue(meeting.number in r.content)
 
+    def test_interim_skip_announcement(self):
+        make_meeting_test_data()
+        group = Group.objects.get(acronym='irg')
+        date = datetime.date.today() + datetime.timedelta(days=30)
+        meeting = make_interim_meeting(group=group, date=date, status='scheda')
+        url = urlreverse("ietf.meeting.views.interim_skip_announcement", kwargs={'number': meeting.number})
+        login_testing_unauthorized(self, "secretary", url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        
+        # check post
+        len_before = len(outbox)
+        r = self.client.post(url)
+        self.assertRedirects(r, urlreverse('ietf.meeting.views.interim_announce'))
+        self.assertEqual(meeting.session_set.first().status.slug,'sched')
+        self.assertEqual(len(outbox), len_before)
+        
     def test_interim_send_announcement(self):
         make_meeting_test_data()
         meeting = Meeting.objects.filter(type='interim', session__status='apprw', session__group__acronym='mars').first()
@@ -1094,6 +1111,29 @@ class InterimTests(TestCase):
         login_testing_unauthorized(self,"secretary",url)
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
+
+    def test_interim_request_details_skip_announcement(self):
+        make_meeting_test_data()
+        date = datetime.date.today() + datetime.timedelta(days=30)
+        self.client.login(username="secretary", password="secretary+password")
+
+        # ensure skip announcement option exists for Research Group
+        group = Group.objects.get(acronym='irg')
+        meeting = make_interim_meeting(group=group, date=date, status='scheda')
+        url = urlreverse('ietf.meeting.views.interim_request_details',kwargs={'number':meeting.number})
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q("a.btn:contains('Skip Announcement')")),1)
+
+        # ensure skip announcement option does not exist for IETF Working Group
+        group = Group.objects.get(acronym='mars')
+        meeting = make_interim_meeting(group=group, date=date, status='scheda')
+        url = urlreverse('ietf.meeting.views.interim_request_details',kwargs={'number':meeting.number})
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q("a.btn:contains('Skip Announcement')")),0)
 
     def test_interim_request_disapprove(self):
         make_meeting_test_data()
