@@ -43,9 +43,10 @@ def namedtuplefetchall(cursor):
     return (nt_result(*row) for row in cursor.fetchall())
 
 def parse_timestamp(t):
+    import time
     if not t:
         return None
-    return datetime.datetime.fromtimestamp(t)
+    return datetime.datetime(*time.gmtime(t)[:6])
 
 # personnel
 with db_con.cursor() as c:
