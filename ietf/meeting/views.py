@@ -1329,10 +1329,11 @@ def upload_session_agenda(request, session_id, num):
             apply_to_all = True
             if num_sessions > 1:
                 apply_to_all = form.cleaned_data['apply_to_all']
-            created = None
             if agenda_sp:
                 doc = agenda_sp.document
-                created = False
+                doc.rev = '%02d' % (int(doc.rev)+1)
+                agenda_sp.rev = doc.rev
+                agenda_sp.save()
             else:
                 ota = session.official_timeslotassignment()
                 sess_time = ota and ota.timeslot.time
@@ -1350,20 +1351,25 @@ def upload_session_agenda(request, session_id, num):
                     title = 'Agenda %s' % (session.meeting.number, )
                     if sess_time:
                         title += ': %s' % (sess_time.strftime("%a %H:%M"),)
-                doc, created = Document.objects.get_or_create(
-                          name = name,
-                          type_id = 'agenda',
-                          title = title,
-                          group = session.group,
-                          rev = '00',
-                      )
+                if Document.objects.filter(name=name).exists():
+                    doc = Document.objects.get(name=name)
+                    doc.rev = '%02d' % (int(doc.rev)+1)
+                else:
+                    doc = Document.objects.create(
+                              name = name,
+                              type_id = 'agenda',
+                              title = title,
+                              group = session.group,
+                              rev = '00',
+                          )
+                    doc.docalias_set.create(name=doc.name)
                 doc.states.add(State.objects.get(type_id='agenda',slug='active'))
-                doc.docalias_set.create(name=doc.name)
-                session.sessionpresentation_set.create(document=doc,rev='00')
-            if not created:
-                doc.rev = '%02d' % (int(doc.rev)+1)
-                agenda_sp.rev = doc.rev
-                agenda_sp.save()
+            if session.sessionpresentation_set.filter(document=doc).exists():
+                sp = session.sessionpresentation_set.get(document=doc)
+                sp.rev = doc.rev
+                sp.save()
+            else:
+                session.sessionpresentation_set.create(document=doc,rev=doc.rev)
             if apply_to_all:
                 for other_session in sessions:
                     if other_session != session:
@@ -1468,6 +1474,11 @@ def upload_session_slides(request, session_id, num, name):
                     doc.docalias_set.create(name=doc.name)
                 doc.states.add(State.objects.get(type_id='slides',slug='active'))
                 doc.states.add(State.objects.get(type_id='reuse_policy',slug='single'))
+            if session.sessionpresentation_set.filter(document=doc).exists():
+                sp = session.sessionpresentation_set.get(document=doc)
+                sp.rev = doc.rev
+                sp.save()
+            else:
                 max_order = session.sessionpresentation_set.filter(document__type='slides').aggregate(Max('order'))['order__max'] or 0
                 session.sessionpresentation_set.create(document=doc,rev=doc.rev,order=max_order+1)
             if apply_to_all:
