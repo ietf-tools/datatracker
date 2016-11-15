@@ -18,3 +18,7 @@ def hack_recording_title(recording,add_timestamp=False):
 @register.filter
 def status_for_meeting(group,meeting):
     return group.status_for_meeting(meeting)
+
+@register.filter
+def meeting_href(doc,meeting):
+    return doc.href(meeting)
