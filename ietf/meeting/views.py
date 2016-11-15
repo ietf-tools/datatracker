@@ -590,7 +590,7 @@ def agenda_by_type(request, num=None, type=None, name=None, owner=None):
     else:
         person   = get_person_by_email(owner)
         schedule = get_schedule_by_name(meeting, person, name)
-    assignments = schedule.assignments.order_by('session__type__slug','timeslot__time')
+    assignments = schedule.assignments.order_by('session__type__slug','timeslot__time','session__group__acronym')
     if type:
         assignments = assignments.filter(session__type__slug=type)
     return render(request,"meeting/agenda_by_type.html",{"meeting":meeting,"schedule":schedule,"assignments":assignments})
