@@ -1483,7 +1483,7 @@ def upload_session_slides(request, session_id, num, name):
                 session.sessionpresentation_set.create(document=doc,rev=doc.rev,order=max_order+1)
             if apply_to_all:
                 for other_session in sessions:
-                    if other_session != session:
+                    if other_session != session and not other_session.sessionpresentation_set.filter(document=doc).exists():
                         max_order = other_session.sessionpresentation_set.filter(document__type='slides').aggregate(Max('order'))['order__max'] or 0
                         other_session.sessionpresentation_set.create(document=doc,rev=doc.rev,order=max_order+1)
             filename = '%s-%s%s'% ( doc.name, doc.rev, ext)
