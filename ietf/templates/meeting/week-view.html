@@ -11,7 +11,7 @@
     all_items.forEach(function(item) {
       if (item.day == 6) { item.day = -1; }
       item.start_time = parseInt(item.time.substr(0,2),10) * 60 +
-                                     parseInt(item.time.substr(2,2),10);
+                                 parseInt(item.time.substr(2,2),10);
       item.end_time = item.start_time + (item.duration / 60)
     });
 
