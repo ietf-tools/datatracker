@@ -44,7 +44,8 @@ li.daylistentry { margin-left:2em; font-weight: 400; }
           <tr>
             <td>{{ss.timeslot.time|date:"H:i"}}-{{ss.timeslot.end_time|date:"H:i"}}</td>
             <td>{{ss.timeslot.get_hidden_location}}</td>
-            <td class="type-{{ss.session.type.slug}}">{{ss.session.short_name}}</td>
+            <td class="type-{{ss.session.type.slug}}">{{ss.session.short_name}} </td>
+            <td>{% if ss.session.type_id == 'session' or ss.session.type_id == 'plenary' or ss.session.type_id == 'other' %} <a href="{% url 'ietf.meeting.views.session_details' num=ss.session.meeting.number acronym=ss.session.group.acronym %}">Materials</a>{% else %}&nbsp;{% endif %}</td>
           </tr>
         {% endfor %} 
         </table>
