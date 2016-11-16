@@ -46,6 +46,7 @@ import datetime
 import codecs
 import gzip
 import unittest
+from fnmatch import fnmatch
 
 from coverage.report import Reporter
 from coverage.results import Numbers
@@ -161,7 +162,12 @@ def get_template_paths(apps=None):
                     dirs.remove(".svn")
                 relative_path = dirpath[len(templatepath)+1:]
                 for file in files:
-                    if file.endswith("~") or file.startswith("#"):
+                    ignore = False
+                    for pattern in settings.TEST_TEMPLATE_IGNORE:
+                        if fnmatch(file, pattern):
+                            ignore = True
+                            break
+                    if ignore:
                         continue
                     if relative_path != "":
                         file = os.path.join(relative_path, file)

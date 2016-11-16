@@ -5,6 +5,7 @@ import shutil
 from StringIO import StringIO
 from pipe import pipe
 from unittest import skipIf
+from fnmatch import fnmatch
 
 from textwrap import dedent
 from email.mime.text import MIMEText
@@ -103,6 +104,7 @@ def get_callbacks(urllist):
 
     return list(callbacks)
 
+debug.debug = True
 class TemplateChecksTestCase(TestCase):
 
     paths = []
@@ -124,7 +126,11 @@ class TemplateChecksTestCase(TestCase):
     def test_parse_templates(self):
         errors = []
         for path in self.paths:
+            for pattern in settings.TEST_TEMPLATE_IGNORE:
+                if fnmatch(path, pattern):
+                    continue
             if not path in self.templates:
+
                 try:
                     self.loader.load_template(path)
                 except Exception as e:
