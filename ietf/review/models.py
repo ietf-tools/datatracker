@@ -88,7 +88,7 @@ class ResultUsedInReviewTeam(models.Model):
     reviews. This also implicitly defines which teams are review
     teams - if there are no possible review results valid for a given
     team, it can't be a review team."""
-    team        = models.ForeignKey(Group, limit_choices_to=~models.Q(resultusedinreviewteam=None))
+    team        = models.ForeignKey(Group)
     result      = models.ForeignKey(ReviewResultName)
 
     def __unicode__(self):
