@@ -232,7 +232,7 @@ class MeetingTests(TestCase):
         url = urlreverse("ietf.meeting.views.week_view",kwargs=dict(num=meeting.number)) + "#farfut"
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
-        self.assertTrue(all([x in unicontent(r) for x in ['var IETF', 'setAgendaColor', 'draw_calendar', ]]))
+        self.assertTrue(all([x in unicontent(r) for x in ['var all_items', 'maximize', 'draw_calendar', ]]))
 
     def test_materials(self):
         meeting = make_meeting_test_data()
