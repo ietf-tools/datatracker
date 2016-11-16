@@ -104,7 +104,7 @@ class Meeting(models.Model):
         return self.date + datetime.timedelta(days=offset)
 
     def end_date(self):
-        if self.type.slug == 'ietf':
+        if self.type_id == 'ietf':
             return self.get_meeting_date(5)
         else:
             # TODO: Once interims have timeslots assigned, 
@@ -279,7 +279,9 @@ class Meeting(models.Model):
         return ts
 
     def previous_meeting(self):
-        return Meeting.objects.filter(type=self.type,date__lt=self.date).order_by('-date').first()
+        if not hasattr(self, "_previous_meeting_cache"):
+            self._previous_meeting_cache = Meeting.objects.filter(type_id=self.type_id,date__lt=self.date).order_by('-date').first()
+        return self._previous_meeting_cache
 
     class Meta:
         ordering = ["-date", "id"]
@@ -1043,11 +1045,10 @@ class Session(models.Model):
         return list(self.materials.filter(type='draft'))
 
     def all_meeting_sessions_for_group(self):
-        #sessions = [s for s in self.meeting.session_set.filter(group=self.group,type=self.type) if s.official_timeslotassignment()]
-        #sessions = sorted(sessions, key = lambda x: x.official_timeslotassignment().timeslot.time)
-        assignments = self.timeslotassignments.filter(schedule=self.meeting.agenda).order_by('timeslot__time')
-        sessions = [ a.session for a in assignments ]
-        return sessions
+        if not hasattr(self, "_all_meeting_sessions_for_group_cache"):
+            assignments = self.timeslotassignments.filter(schedule_id=self.meeting.agenda_id).order_by('timeslot__time')
+            self._all_meeting_sessions_for_group_cache = [ a.session for a in assignments ]
+        return self._all_meeting_sessions_for_group_cache
 
     def all_meeting_recordings(self):
         recordings = []
