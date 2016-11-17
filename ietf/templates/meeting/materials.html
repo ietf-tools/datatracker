@@ -40,7 +40,7 @@
 	  <table class="table table-condensed table-striped tablesorter">
 	    <thead>
 	      <tr>
-                {% if user and user.is_authenticated and user|managed_groups %}
+                {% if user|has_role:"Secretariat" or user|managed_groups %}
                   <th class="col-md-1">Group</th>
                   <th class="col-md-1">Agenda</th>
                   <th class="col-md-1">Minutes</th>
@@ -72,7 +72,7 @@
 	  <table class="table table-condensed table-striped tablesorter">
 	    <thead>
 	      <tr>
-                {% if user and user.is_authenticated and user|managed_groups %}
+                {% if user|has_role:"Secretariat" or user|managed_groups %}
                   <th class="col-md-1">Group</th>
                   <th class="col-md-1">Agenda</th>
                   <th class="col-md-1">Minutes</th>
@@ -106,7 +106,7 @@
 	    <table class="table table-condensed table-striped tablesorter">
 	      <thead>
 		<tr>
-                {% if user and user.is_authenticated and user|managed_groups %}
+                {% if user|has_role:"Secretariat" or user|managed_groups %}
                   <th class="col-md-1">Group</th>
                   <th class="col-md-1">Agenda</th>
                   <th class="col-md-1">Minutes</th>
@@ -140,7 +140,7 @@
 	  <table class="table table-condensed table-striped tablesorter">
 	    <thead>
 	      <tr>
-                {% if user and user.is_authenticated and user|managed_groups %}
+                {% if user|has_role:"Secretariat" or user|managed_groups %}
                   <th class="col-md-1">Group</th>
                   <th class="col-md-1">Agenda</th>
                   <th class="col-md-1">Minutes</th>
@@ -173,7 +173,7 @@
 	  <table class="table table-condensed table-striped tablesorter">
 	    <thead>
 	      <tr>
-                {% if user and user.is_authenticated and user|managed_groups %}
+                {% if user|has_role:"Secretariat" or user|managed_groups %}
                   <th class="col-md-1">Group</th>
                   <th class="col-md-1">Agenda</th>
                   <th class="col-md-1">Minutes</th>
