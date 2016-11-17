@@ -20,6 +20,7 @@ from django import forms
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden, Http404
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.core.urlresolvers import reverse,reverse_lazy
 from django.db.models import Min, Max, Q
 from django.conf import settings
@@ -139,6 +140,12 @@ def current_materials(request):
         return redirect(materials, meetings[0].number)
     else:
         raise Http404
+
+@login_required
+def materials_editable_groups(request, num=None):
+    meeting = get_meeting(num)
+    return render(request, "meeting/materials_editable_groups.html", {
+        'meeting_num': meeting.number})
 
 def ascii_alphanumeric(string):
     return re.match(r'^[a-zA-Z0-9]*$', string)

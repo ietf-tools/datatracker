@@ -285,6 +285,21 @@ class MeetingTests(TestCase):
         # FIXME: missing tests of .pdf/.tar generation (some code can
         # probably be lifted from similar tests in iesg/tests.py)
 
+    def test_materials_editable_groups(self):
+        meeting = make_meeting_test_data()
+        
+        self.client.login(username="marschairman", password="marschairman+password")
+        r = self.client.get(urlreverse("ietf.meeting.views.materials_editable_groups", kwargs={'num':meeting.number}))
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(meeting.number in unicontent(r))
+        self.assertTrue("mars" in unicontent(r))
+
+        self.client.login(username="plain",password="plain+password")
+        r = self.client.get(urlreverse("ietf.meeting.views.materials_editable_groups", kwargs={'num':meeting.number}))
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(meeting.number in unicontent(r))
+        self.assertTrue("You cannot manage the meeting materials for any groups" in unicontent(r))
+
     def test_proceedings(self):
         meeting = make_meeting_test_data()
         session = Session.objects.filter(meeting=meeting, group__acronym="mars").first()

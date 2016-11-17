@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2016, All Rights Reserved #}
+{% load origin %}
+
+{% load ietf_filters managed_groups %}
+
+{% block content %}
+   <h1>IETF {{ meeting_num }} meeting materials that you can edit</h1>
+
+   {% if user and user.is_authenticated and user|managed_groups %}
+      {% for g in user|managed_groups %}
+         <p><a href="{% url 'ietf.meeting.views.session_details' num=meeting_num acronym=g.acronym %}">{{ g.acronym }}</a></p>
+      {% endfor %}
+   {% else %}
+      <p>You cannot manage the meeting materials for any groups.</p>
+   {% endif %}
+{% endblock %}
