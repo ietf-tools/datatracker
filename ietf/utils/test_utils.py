@@ -39,6 +39,7 @@ import html5lib
 from datetime import datetime
 import urllib2 as urllib
 from difflib import unified_diff
+from unittest.util import strclass
 
 import django.test
 from django.db import connection
@@ -295,3 +296,5 @@ class TestCase(django.test.TestCase):
         self.assertTrue(resp['Content-Type'].startswith('text/html'))
         self.assertValidHTML(resp.content)
 
+    def __str__(self):
+        return "%s (%s.%s)" % (self._testMethodName, strclass(self.__class__),self._testMethodName)
