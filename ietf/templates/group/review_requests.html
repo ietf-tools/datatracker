@@ -32,6 +32,8 @@
             {% if review_requests.0.reviewer %}
               <th>Reviewer</th>
             {% endif %}
+            <th>Document state</th>
+            <th>IESG Telechat</th>
           </tr>
         </thead>
         <tbody>
@@ -51,6 +53,14 @@
                   {% if r.reviewer_unavailable %}<span class="label label-danger">Unavailable</span>{% endif %}
                 </td>
               {% endif %}
+              <td>
+                {{ r.doc.friendly_state }}
+              </td>
+              <td>
+                {% if r.doc.telechat_date %}
+                  {{ r.doc.telechat_date }}
+                {% endif %}
+              </td>
             </tr>
           {% endfor %}
         </tbody>
