@@ -257,6 +257,7 @@ with db_con.cursor() as c:
         latest_requested = None
         non_specific_close = None
         latest_iesg_status = None
+        latest_deadline = None
 
         for row in rows:
             if (team.acronym, row.who) in reviewer_blacklist:
@@ -295,6 +296,10 @@ with db_con.cursor() as c:
                 latest_iesg_status = "lc"
                 used = True
 
+            if deadline_re.search(row.text):
+                m = deadline_re.search(row.text)
+                latest_deadline = parse_timestamp(int(m.groups()[0]))
+
             if iesgstatus_re.search(row.text):
                 m = iesgstatus_re.search(row.text)
                 if m.groups():
@@ -306,7 +311,7 @@ with db_con.cursor() as c:
                 used = True
 
             if "CHANGE status working => done" in row.text:
-                non_specific_close = (row, latest_iesg_status)
+                non_specific_close = (row, latest_iesg_status, latest_deadline)
                 used = True
 
             if not used:
@@ -319,7 +324,7 @@ with db_con.cursor() as c:
                 state = "assigned"
 
             if state == "requested":
-                latest_requested = (row.time, row.who, membername, state, latest_iesg_status)
+                latest_requested = (row.time, row.who, membername, state, latest_iesg_status, latest_deadline)
             else:
                 if membername not in branches:
                     branches[membername] = []
@@ -336,9 +341,9 @@ with db_con.cursor() as c:
                         latest_requested = None
 
                 if state in ("assigned", 'accepted'):
-                    latest[state] = (row.time, row.who, membername, state, latest_iesg_status)
+                    latest[state] = (row.time, row.who, membername, state, latest_iesg_status, latest_deadline)
                 else:
-                    latest["closed"] = (row.time, row.who, membername, state, latest_iesg_status)
+                    latest["closed"] = (row.time, row.who, membername, state, latest_iesg_status, latest_deadline)
 
 
         if branches:
@@ -348,8 +353,8 @@ with db_con.cursor() as c:
                     latest = hs[-1]
                     if "assigned" in latest and "closed" not in latest:
                         #print "closing with non specific", docname
-                        close_row, iesg_status = non_specific_close
-                        latest["closed"] = (close_row.time, close_row.who, m, "done", iesg_status)
+                        close_row, iesg_status, deadline = non_specific_close
+                        latest["closed"] = (close_row.time, close_row.who, m, "done", iesg_status, deadline)
             
             document_history[docname] = branches
 
@@ -406,17 +411,7 @@ with db_con.cursor() as c:
 
         reviewed_rev = row.version if row.version and row.version != "99" else ""
 
-        meta = doc_metadata.get((row.docname, reviewed_rev))
-        deadline, telechat, lcend, status = meta or (None, None, None, None)
-        if not deadline:
-            deadline = parse_timestamp(row.timeout)
-
-        if not meta:
-            meta = doc_metadata.get(row.docname)
-            telechat, lcend, status = (meta or (None, None, None, None))[1:]
-
-            if not deadline and meta:
-                deadline = meta[1]
+        doc_deadline, telechat, lcend, status = doc_metadata.get(row.docname) or (None, None, None, None)
 
         reviewurl = row.reviewurl
         reviewstatus = row.docstatus
@@ -489,26 +484,48 @@ with db_con.cursor() as c:
                     if assigned_closed_days is not None and assigned_closed_days > at_most_days and event_collection.get("closed")[3] not in ("noresponse", "withdrawn"):
                         print "WARNING: more than {} days between assignment and completion".format(at_most_days), round(assigned_closed_days), event_collection, row.docname
 
+        deadline = None
+        request_time = None
         if event_collection:
-            time = None
+            if "closed" in event_collection and not deadline:
+                deadline = event_collection["closed"][5]
+            if "assigned" in event_collection and not deadline:
+                deadline = event_collection["assigned"][5]
+            if "requested" in event_collection and not deadline:
+                deadline = event_collection["requested"][5]
+
             if "requested" in event_collection:
-                time = parse_timestamp(event_collection["requested"][0])
+                request_time = parse_timestamp(event_collection["requested"][0])
             elif "assigned" in event_collection:
-                time = parse_timestamp(event_collection["assigned"][0])
+                request_time = parse_timestamp(event_collection["assigned"][0])
             elif "closed" in event_collection:
-                time = parse_timestamp(event_collection["closed"][0])
-            elif donetime:
-                time = donetime
-            else:
-                time = deadline
+                request_time = parse_timestamp(event_collection["closed"][0])
+
+        if not deadline:
+            deadline = doc_deadline
+
+        if not deadline:
+            deadline = parse_timestamp(row.timeout)
 
         if not deadline and "closed" in event_collection:
             deadline = parse_timestamp(event_collection["closed"][0])
-
+            
+        if not deadline and "assigned" in event_collection:
+            deadline = parse_timestamp(event_collection["assigned"][0])
+            if deadline:
+                deadline += datetime.timedelta(days=30)
+            
         if not deadline:
-            print "SKIPPING WITH NO DEADLINE", row.reviewid, row.docname, meta, event_collection
+            print "SKIPPING WITH NO DEADLINE", row.reviewid, row.docname, event_collection
             continue
 
+        if not request_time and donetime:
+            request_time = donetime
+
+        if not request_time:
+            request_time = deadline
+
+        
         type_slug = None
         if "assigned" in event_collection:
             type_slug = event_collection["assigned"][4]
@@ -555,7 +572,7 @@ with db_con.cursor() as c:
         review_req.result = results.get(reviewsummary.lower()) if reviewsummary else None
         review_req.state = states.get(reviewstatus) if reviewstatus else None
         review_req.type = type_name
-        review_req.time = time
+        review_req.time = request_time
         review_req.reviewed_rev = reviewed_rev if review_req.state_id not in ("requested", "accepted") else ""
         review_req.deadline = deadline.date()
         review_req.requested_by = system_person
@@ -573,7 +590,7 @@ with db_con.cursor() as c:
                     continue
 
                 data = event_collection['closed']
-                timestamp, who_did_it, reviewer, state, latest_iesg_status = data
+                timestamp, who_did_it, reviewer, state, latest_iesg_status, latest_deadline = data
 
                 if who_did_it in known_personnel:
                     by = known_personnel[who_did_it].person
@@ -617,7 +634,7 @@ with db_con.cursor() as c:
 
         # review request events
         for key, data in event_collection.iteritems():
-            timestamp, who_did_it, reviewer, state, latest_iesg_status = data
+            timestamp, who_did_it, reviewer, state, latest_iesg_status, latest_deadline = data
 
             if who_did_it in known_personnel:
                 by = known_personnel[who_did_it].person
@@ -631,7 +648,7 @@ with db_con.cursor() as c:
                 e = ReviewRequestDocEvent.objects.filter(type="requested_review", doc=review_req.doc, review_request=review_req).first()
                 if not e:
                     e = ReviewRequestDocEvent(type="requested_review", doc=review_req.doc, review_request=review_req)
-                e.time = time
+                e.time = request_time
                 e.by = by
                 e.desc = "Requested {} review by {}".format(review_req.type.name, review_req.team.acronym.upper())
                 e.state = None
