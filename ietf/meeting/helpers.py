@@ -164,7 +164,7 @@ def preprocess_assignments_for_agenda(assignments_queryset, meeting):
         "session__group", "session__group__charter", "session__group__charter__group",
     ).prefetch_related(
         Prefetch("session__materials",
-                 queryset=Document.objects.exclude(states__type=F("type"),states__slug='deleted').select_related("group").order_by("order"),
+                 queryset=Document.objects.exclude(states__type=F("type"),states__slug='deleted').select_related("group").order_by("sessionpresentation__order"),
                  to_attr="prefetched_active_materials",
              ),
         "timeslot__meeting",
