@@ -94,7 +94,7 @@ ietfdb (6.38.0) ietf; urgency=medium
     alias for email addresses where localpart should not be used to derive the 
     svn branch name.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  15 Nov 2016 22:54:31 -0800
+ -- Henrik Levkowetz <henrik@levkowetz.com>  16 Nov 2016 23:59:35 +0000
 
 
 ietfdb (6.37.1) ietf; urgency=medium
