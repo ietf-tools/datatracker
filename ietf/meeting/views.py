@@ -58,7 +58,7 @@ from ietf.meeting.helpers import send_interim_approval_request
 from ietf.meeting.helpers import send_interim_announcement_request
 from ietf.meeting.utils import finalize
 from ietf.secr.proceedings.utils import handle_upload_file
-from ietf.secr.proceedings.proc_utils import get_progress_stats
+from ietf.secr.proceedings.proc_utils import get_progress_stats, post_process
 from ietf.utils.mail import send_mail_message
 from ietf.utils.pipe import pipe
 from ietf.utils.pdf import pdf_pages
@@ -1499,6 +1499,7 @@ def upload_session_slides(request, session_id, num, name):
             doc.save_with_history([e])
             # The way this function builds the filename it will never trigger the file delete in handle_file_upload.
             handle_upload_file(file, filename, session.meeting, 'slides')
+            post_process(doc)
             return redirect('ietf.meeting.views.session_details',num=num,acronym=session.group.acronym)
     else: 
         initial = {}

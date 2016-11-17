@@ -8,6 +8,7 @@ import datetime
 import glob
 import os
 import shutil
+import subprocess
 
 import debug        # pyflakes:ignore
 
@@ -27,7 +28,7 @@ from ietf.secr.proceedings.models import Registration
 from ietf.secr.utils.document import get_rfc_num
 from ietf.secr.utils.group import groups_by_session
 from ietf.secr.utils.meeting import get_proceedings_path, get_materials, get_session
-
+from ietf.utils.log import log
 
 # -------------------------------------------------
 # Helper Functions
@@ -574,3 +575,34 @@ def gen_training(context):
         path = os.path.join(settings.SECR_PROCEEDINGS_DIR,meeting.number,'train-%s.html' % counter )
         write_html(path,html.content)
 
+def is_powerpoint(doc):
+    '''
+    Returns true if document is a Powerpoint presentation
+    '''
+    return doc.file_extension() in ('ppt','pptx')
+
+def post_process(doc):
+    '''
+    Does post processing on uploaded file.
+    - Convert PPT to PDF
+    '''
+    if is_powerpoint(doc) and hasattr(settings,'SECR_PPT2PDF_COMMAND'):
+        try:
+            cmd = settings.SECR_PPT2PDF_COMMAND
+            cmd.append(doc.get_file_path())                                 # outdir
+            cmd.append(os.path.join(doc.get_file_path(),doc.external_url))  # filename
+            subprocess.check_call(cmd)
+        except (subprocess.CalledProcessError, OSError) as error:
+            log("Error converting PPT: %s" % (error))
+            return
+        # change extension
+        base,ext = os.path.splitext(doc.external_url)
+        doc.external_url = base + '.pdf'
+
+        e = DocEvent.objects.create(
+            type='changed_document',
+            by=Person.objects.get(name="(System)"),
+            doc=doc,
+            desc='Converted document to PDF',
+        )
+        doc.save_with_history([e])
