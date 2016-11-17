@@ -75,6 +75,9 @@
                 <div>
                   {{ r.doc.pages }} page{{ r.doc.pages|pluralize }}
                   - {{ r.doc.friendly_state }}
+                  {% if r.doc.telechat_date %}
+                    - IESG telechat: {{ r.doc.telechat_date }}
+                  {% endif %}
                   {% if r.doc.group.type_id != "individ" %}
                     - <a href="{% url "ietf.group.views.group_home" acronym=r.doc.group.acronym group_type=r.doc.group.type_id %}">{{ r.doc.group.acronym }} {{ r.doc.group.type.name }}</a>
                   {% endif %}
