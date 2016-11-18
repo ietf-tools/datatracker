@@ -149,6 +149,11 @@ label.required:after { content: "\2217"; color: #a94442; font-weight: bold; }
 .ballot-icon table .my { border: 2px solid #000;}
 .ballot-icon table { margin: 0 0 10px 10px; }
 
+.is-blocking {  box-shadow: 0 0 8px 8px #dc0d12;
+                padding: 3px 0px 3px 3px;
+                margin: 5px 1px 3px 0px;
+                border: 1px solid #dc0d12;
+             }
 
 /* Style the right-hand page navigation affix used on some pages. */
 
