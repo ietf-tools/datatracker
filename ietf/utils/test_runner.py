@@ -64,6 +64,7 @@ import debug                            # pyflakes:ignore
 import ietf
 import ietf.utils.mail
 from ietf.utils.test_smtpserver import SMTPTestServerDriver
+from ietf.utils.test_utils import TestCase
 
 loaded_templates = set()
 visited_urls = set()
@@ -232,7 +233,7 @@ class CoverageReporter(Reporter):
         return result
 
 
-class CoverageTest(unittest.TestCase):
+class CoverageTest(TestCase):
 
     def __init__(self, test_runner=None, **kwargs):
         self.runner = test_runner
