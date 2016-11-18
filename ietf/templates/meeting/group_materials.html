@@ -18,7 +18,7 @@
   </td>
 
   {% if session.status_id == 'canceled' %}
-    {% if user and user.is_authenticated and user|managed_groups %}
+    {% if user|has_role:"Secretariat" or user|managed_groups %}
       <td colspan="4"><span class="label label-danger">Session cancelled</span></td>
     {% else %}
       <td colspan="3"><span class="label label-danger">Session cancelled</span></td>
@@ -61,7 +61,7 @@
        {% endfor %}
      {% endwith %}
     </td>
-    {% if user and user.is_authenticated and user|managed_groups %}
+    {% if user|has_role:"Secretariat" or user|managed_groups %}
       <td> 
         <div>{% include "meeting/edit_materials_button.html" %}</div>
       </td>
