@@ -83,7 +83,7 @@ FILEDIR=$parent/../data/
 PORT=8000
 REPO="ietf/datatracker-environment"
 TAG=$(basename $(svn info $parent | grep ^URL | awk '{print $2}'))
-URL=https://www.ietf.org/lib/dt/sprint/ietf_utf8.bin.tar.bz2
+DBURL=https://www.ietf.org/lib/dt/sprint/ietf_utf8.bin.tar.bz2
 WHO=$(whoami)
 
 if   [ "$(uname)" = "Linux" ]; then
@@ -104,7 +104,7 @@ while true ; do
 	-d| --download-data) DOWNLOAD=1;;	# Download and set up the database files
 	-h| --help)	usage; exit;;		# Show this help, then exit
 	-f| --filedir)	FILEDIR=$2; shift;;	# Set the desired location of drafts, charters etc.
-	-i| --ietfdb-url)	URL=$2; shift;;	# Use an alternative database tarball URL
+	-i| --ietfdb-url)	DBURL=$2; shift;;	# Use an alternative database tarball URL
 	-m| --mysqldir)	MYSQLDIR=$2; shift;;	# Set the desired location of MySQL's database files
 	-p| --port)	PORT=$2; shift;;	# Bind the container's port 8000 to external port PORT
 	-r| --docker-repo)	REPO=$2; shift;;	# Use the given docker repository, instead of the default
@@ -122,6 +122,12 @@ done
 # The program itself
 
 if [ "$(uname)" != "Linux" ]; then
+    if [ "$(uname)" = "Darwin" ]; then
+	APP="/Applications/Docker.app"
+	CMD="open -a"
+    else
+	die "This script does not have support for your architecture ($(uname)); sorry :-("
+    fi
     if [ -n "$(type -p docker-machine)" ]; then
 	machine=$(type -p docker-machine)
     else
@@ -132,28 +138,50 @@ else
 fi
 
 
-if [ $($machine status default | tr "A-Z" "a-z" ) != "running" ]; then
-    echo "The docker VM doesn't seem to be running; will attempt to start it by doing '\$ $machine start':"
-    $machine start || die "Failed taking up the Docker VM"
-fi
+if [ -e "$APP" ]; then
+    info=$(docker info 2>&1 || true)
+    if ! docker info 1> /dev/null 2>&1; then
+	echo -e "The docker VM doesn't seem to be running; docker info gave:\n  $info"
+	echo "Will attempt to start docker by doing '\$ $CMD $APP':"
+	$CMD $APP
+	declare -i count
+	printf "Waiting for docker engine .."
+	while true; do
+	    printf "."
+	    sleep 2
+	    if docker info >/dev/null 2>&1; then break; fi
+	    count=$(( $count + 1))
+	    if [ $count -gt 10 ]; then
+		die "No contact with docker engine; bailing out."
+	    fi
+	done
+    fi
+    URL="http://localhost:$PORT/"
+else
+    if [ $($machine status default | tr "A-Z" "a-z" ) != "running" ]; then
+	echo "The docker VM doesn't seem to be running; will attempt to start it by doing '\$ $machine start':"
+	$machine start || die "Failed taking up the Docker VM"
+    fi
 
-if [ -f "$machine" ]; then
-    if [ $($machine status default | tr "A-Z" "a-z") = "running" ]; then
-	tmpfile=$(mktemp docker.run.XXXXXXXX)
-	if $machine env 2>/dev/null | grep  DOCKER_ > $tmpfile; then
-	    mv $tmpfile ~/.docker-info
-	elif printenv | grep  DOCKER_ > $tmpfile; then
-	    mv $tmpfile ~/.docker-info
+    if [ -f "$machine" ]; then
+	if [ $($machine status default | tr "A-Z" "a-z") = "running" ]; then
+	    tmpfile=$(mktemp docker.run.XXXXXXXX)
+	    if $machine env 2>/dev/null | grep  DOCKER_ > $tmpfile; then
+		mv $tmpfile ~/.docker-info
+	    elif printenv | grep  DOCKER_ > $tmpfile; then
+		mv $tmpfile ~/.docker-info
+	    else
+		rm $tmpfile
+		die "Failed setting the appropriate DOCKER_* environment variables."
+	    fi
+	    . ~/.docker-info
 	else
-	    rm $tmpfile
-	    die "Failed setting the appropriate DOCKER_* environment variables."
+	    rm -f ~/.docker-info
 	fi
-	. ~/.docker-info
-    else
-	rm -f ~/.docker-info
+	ip=$($machine ip)
+	URL="http://$ip:$PORT/"
     fi
 fi
-
 
 echo ""
 echo "Starting a docker container for '$TAG'."
@@ -169,7 +197,7 @@ to bail out here.  Quitting."
 if [ -n "$DOWNLOAD" ]; then
     (
 	cd $(dirname $MYSQLDIR)
-	wget -N $URL && tar xjf ietf_utf8.bin.tar.bz2 && chmod -R go+rwX mysql
+	wget -N $DBURL && tar xjf ietf_utf8.bin.tar.bz2 && chmod -R go+rwX mysql
     )
     [ -d "$MYSQLDIR" ] || die "The download seems to have failed; still no $MYSQLDIR.  Giving up."
 else
@@ -186,6 +214,7 @@ if ! docker images $REPO | grep -q $TAG; then
     fi
 fi
 
+echo -e "\nThe web interface for 'runserver' should appear on $URL\n"
 if [ -z "$MYSQLDIR" ]; then
     docker run -ti -p $PORT:8000 -v $HOME:/home/$WHO                            \
 	-e USER=$WHO -e DATADIR=${parent#$HOME/}/data -e CWD=${PWD#$HOME/}	\
