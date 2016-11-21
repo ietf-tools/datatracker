@@ -32,6 +32,7 @@ python-magic>=0.4.6
 python-memcached>=1.48		# for django.core.cache.backends.memcached
 pytz>=2014.7
 pyzmail>=1.0.3
+requests!=2.12.*
 selenium>=2.42
 six>=1.8.0
 sqlparse>=0.2.2
