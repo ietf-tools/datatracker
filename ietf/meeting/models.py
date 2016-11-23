@@ -1045,31 +1045,59 @@ class Session(models.Model):
         return list(self.materials.filter(type='draft'))
 
     def all_meeting_sessions_for_group(self):
-        if not hasattr(self, "_all_meeting_sessions_for_group_cache"):
-            assignments = self.timeslotassignments.filter(schedule_id=self.meeting.agenda_id).order_by('timeslot__time')
-            self._all_meeting_sessions_for_group_cache = [ a.session for a in assignments ]
-        return self._all_meeting_sessions_for_group_cache
+        if self.group.type_id in ['wg','rg']:
+            if not hasattr(self, "_all_meeting_sessions_for_group_cache"):
+                sessions = [s for s in self.meeting.session_set.filter(group=self.group,type=self.type) if s.official_timeslotassignment()]
+                self._all_meeting_sessions_for_group_cache = sorted(sessions, key = lambda x: x.official_timeslotassignment().timeslot.time)
+            return self._all_meeting_sessions_for_group_cache
+        else:
+            return [self]
 
     def all_meeting_recordings(self):
-        recordings = []
+        recordings = [] # These are not sets because we need to preserve relative ordering or redo the ordering work later
         sessions = self.all_meeting_sessions_for_group()
         for session in sessions:
-            recordings.extend(session.recordings())
+            recordings.extend([r for r in session.recordings() if r not in recordings])
         return recordings
             
     def all_meeting_bluesheets(self):
         bluesheets = []
         sessions = self.all_meeting_sessions_for_group()
         for session in sessions:
-            bluesheets.extend(session.bluesheets())
+            bluesheets.extend([b for b in session.bluesheets() if b not in bluesheets])
         return bluesheets
             
     def all_meeting_drafts(self):
         drafts = []
         sessions = self.all_meeting_sessions_for_group()
         for session in sessions:
-            drafts.extend(session.drafts())
+            drafts.extend([d for d in session.drafts() if d not in drafts])
         return drafts
+
+    def all_meeting_agendas(self):
+        agendas = []
+        sessions = self.all_meeting_sessions_for_group()
+        for session in sessions:
+            agenda = session.agenda()
+            if agenda and agenda not in agendas:
+                agendas.append(agenda)
+        return agendas
+        
+    def all_meeting_slides(self):
+        slides = []
+        sessions = self.all_meeting_sessions_for_group()
+        for session in sessions:
+            slides.extend([s for s in session.slides() if s not in slides])
+        return slides
+
+    def all_meeting_minutes(self):
+        minutes = []
+        sessions = self.all_meeting_sessions_for_group()
+        for session in sessions:
+            minutes_doc = session.minutes()
+            if minutes_doc and minutes_doc not in minutes:
+                minutes.append(minutes_doc)
+        return minutes
 
     def can_manage_materials(self, user):
         return can_manage_materials(user,self.group)

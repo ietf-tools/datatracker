@@ -22,15 +22,27 @@
     <td colspan="3"><span class="label label-danger">Session cancelled</span></td>
   {% else %}
     <td>
-      {% if session.agenda %}
-        <a href="{{ session.agenda|meeting_href:meeting }}">Agenda</a><br>
+      {% if session.all_meeting_agendas %}
+        {% if session.all_meeting_agendas|length == 1 %}
+          <a href="{{ session.all_meeting_agendas.0|meeting_href:meeting }}">Agenda</a><br>
+        {% else %}
+          {% for agenda in session.all_meeting_agendas %}
+            <a href="{{agenda|meeting_href:meeting}}">Agenda {{agenda.sessionpresentation_set.first.session.official_timeslotassignment.timeslot.time|date:"D G:i"}}</a></br>
+          {% endfor %}
+        {% endif %}
       {% else %}
         {% if show_agenda == "True" and not meeting.proceedings_final %}
           <span class="label label-warning">No agenda</span><br>
         {% endif %}
       {% endif %}
-      {% if session.minutes %}
-        <a href="{{ session.minutes|meeting_href:meeting }}">Minutes</a><br>
+      {% if session.all_meeting_minutes %}
+        {% if session.all_meeting_minutes|length == 1 %}
+          <a href="{{ session.all_meeting_minutes.0|meeting_href:meeting }}">Minutes</a><br>
+        {% else %}
+          {% for minutes in session.all_meeting_minutes %}
+            <a href="{{ minutes|meeting_href:meeting}}">Minutes {{minutes.sessionpresentation_set.first.session.official_timeslotassignment.timeslot.time|date:"D G:i"}}</a></br>
+          {% endfor %}
+        {% endif %}
       {% else %}
         {% if show_agenda == "True" and not meeting.proceedings_final %}
           <span class="label label-warning">No minutes</span><br>
@@ -64,7 +76,7 @@
       {% endif %}
     </td>
     <td>
-      {% with session.slides as slides %}
+      {% with session.all_meeting_slides as slides %}
         {% for slide in slides %}
           <a href="{{ slide|meeting_href:meeting }}">{{ slide.title|clean_whitespace }}</a>
           <br>
