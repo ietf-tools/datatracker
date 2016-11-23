@@ -1,3 +1,38 @@
+ietfdb (6.38.2) ietf; urgency=medium
+
+  * Merged in [12393] from rjsparks@nostrum.com:
+    Fixed bug where slides from multiple sessions for a group were not 
+    all showing. Improved handling of multiple minutes and agendas for groups. 
+    Fixes #2058.  Commit should be patched into production. 
+
+  * Merged in [12392] from rcross@amsl.com:
+    Add autoconversion (Powerpoint to PDF) or meeting materials files on 
+    upload to new materials pages.   
+
+  * Excluded requests 2.12.* as it has an incompatibility issue with 
+    urllib3.
+
+  * Added support for Docker for Mac, which uses hypervisor virtualisation. 
+    The older VirtualBox based docker-machine should still work.
+
+  * Merged in [12385] from rjsparks@nostrum.com:
+    Added an extra highlight to the ballot_icon box when the viewer holds a 
+    blocking position in that ballot. Fixes #2046.  
+
+  * Merged in [12384] from rjsparks@nostrum.com:
+    Adjust when materials links on the materials page show for the 
+    secretariat.  
+
+  * Merged in [12378] from rjsparks@nostrum.com:
+    Change the lines saying that a test has failed to make it easier to 
+    cut-paste to run the failed test again.  
+
+  * Order materials on the agenda session materials popup according to the 
+    sessionpresentation order.  Fixes issue #2049
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  23 Nov 2016 10:39:54 -0800
+
+
 ietfdb (6.38.1) ietf; urgency=medium
 
   **IETF 97 Code Sprint Release 2**
