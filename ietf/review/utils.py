@@ -55,6 +55,11 @@ def review_requests_to_list_for_docs(docs):
 
     return extract_revision_ordered_review_requests_for_documents_and_replaced(request_qs, doc_names)
 
+def augment_review_requests_with_events(review_reqs):
+    req_dict = { r.pk: r for r in review_reqs }
+    for e in ReviewRequestDocEvent.objects.filter(review_request__in=review_reqs, type__in=["assigned_review_request", "closed_review_request"]).order_by("time"):
+        setattr(req_dict[e.review_request_id], e.type + "_event", e)
+
 def no_review_from_teams_on_doc(doc, rev):
     return Group.objects.filter(
         reviewrequest__doc=doc,

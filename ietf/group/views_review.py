@@ -21,7 +21,8 @@ from ietf.review.utils import (can_manage_review_requests_for_team,
                                current_unavailable_periods_for_reviewers,
                                email_reviewer_availability_change,
                                reviewer_rotation_list,
-                               latest_review_requests_for_reviewers)
+                               latest_review_requests_for_reviewers,
+                               augment_review_requests_with_events)
 from ietf.group.models import Role
 from ietf.group.utils import get_group_or_404, construct_group_menu_context
 from ietf.person.fields import PersonEmailChoiceField
@@ -242,6 +243,8 @@ def manage_review_requests(request, acronym, group_type=None, assignment_status=
                         l.append(r)
             else:
                 l = [r]
+
+        augment_review_requests_with_events(l)
 
         req.latest_reqs = l
 
