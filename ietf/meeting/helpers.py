@@ -200,17 +200,21 @@ def preprocess_assignments_for_agenda(assignments_queryset, meeting):
 
     return assignments
 
-def read_agenda_file(num, doc):
+def read_session_file(type, num, doc):
     # XXXX FIXME: the path fragment in the code below should be moved to
     # settings.py.  The *_PATH settings should be generalized to format()
     # style python format, something like this:
     #  DOC_PATH_FORMAT = { "agenda": "/foo/bar/agenda-{meeting.number}/agenda-{meeting-number}-{doc.group}*", }
-    path = os.path.join(settings.AGENDA_PATH, "%s/agenda/%s" % (num, doc.external_url))
+    #
+    path = os.path.join(settings.AGENDA_PATH, "%s/%s/%s" % (num, type, doc.external_url))
     if os.path.exists(path):
         with open(path) as f:
             return f.read(), path
     else:
         return None, path
+
+def read_agenda_file(num, doc):
+    return read_session_file('agenda', num, doc)
 
 def convert_draft_to_pdf(doc_name):
     inpath = os.path.join(settings.IDSUBMIT_REPOSITORY_PATH, doc_name + ".txt")

@@ -251,6 +251,12 @@ class MeetingTests(TestCase):
         self.assertEqual(r.status_code, 302)
         self.assertTrue(meeting.number in r["Location"])
 
+        # session minutes
+        r = self.client.get(urlreverse("ietf.meeting.views.session_minutes",
+                                       kwargs=dict(num=meeting.number, session=session.group.acronym)))
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue("1. More work items underway" in unicontent(r))
+
         # test with explicit meeting number in url
         r = self.client.get(urlreverse("ietf.meeting.views.materials", kwargs=dict(num=meeting.number)))
         self.assertEqual(r.status_code, 200)
