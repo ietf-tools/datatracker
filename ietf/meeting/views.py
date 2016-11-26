@@ -660,10 +660,10 @@ def session_minutes(request, num, session):
 
 def session_draft_list(num, session):
     try:
-        agendas = Document.objects.filter(type=type,
+        agendas = Document.objects.filter(type="agenda",
                                          session__meeting__number=num,
                                          session__group__acronym=session,
-                                         states=State.objects.get(type=type, slug="active")).distinct()
+                                         states=State.objects.get(type="agenda", slug="active")).distinct()
     except Document.DoesNotExist:
         raise Http404
 
