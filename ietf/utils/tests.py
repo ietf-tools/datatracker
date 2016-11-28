@@ -13,10 +13,10 @@ from email.mime.multipart import MIMEMultipart
 
 from django.conf import settings
 from django.core.management import call_command
-from django.template import Context
+from django.template import Context, engines
 from django.template.defaulttags import URLNode
+from django.template.loader import get_template
 from django.templatetags.static import StaticNode
-from django.template.loaders.filesystem import Loader
 from django.test import TestCase
 
 import debug                            # pyflakes:ignore
@@ -109,12 +109,12 @@ class TemplateChecksTestCase(TestCase):
     templates = {}
 
     def setUp(self):
-        self.loader = Loader()
         self.paths = list(get_template_paths())
         self.paths.sort()
+        self.engine = engines['django']
         for path in self.paths:
             try:
-                self.templates[path], _ = self.loader.load_template(path)
+                self.templates[path] = get_template(path).template
             except Exception:
                 pass
 
@@ -126,7 +126,7 @@ class TemplateChecksTestCase(TestCase):
         for path in self.paths:
             if not path in self.templates:
                 try:
-                    self.loader.load_template(path)
+                    get_template(path)
                 except Exception as e:
                     errors.append((path, e))
         if errors:
