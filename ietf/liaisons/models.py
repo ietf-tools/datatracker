@@ -212,7 +212,7 @@ class RelatedLiaisonStatement(models.Model):
 
 
 class LiaisonStatementGroupContacts(models.Model):
-    group = models.OneToOneField(Group)
+    group = models.ForeignKey(Group, unique=True, null=True)
     contacts = models.CharField(max_length=255,blank=True)
     cc_contacts = models.CharField(max_length=255,blank=True)
 
