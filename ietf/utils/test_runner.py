@@ -50,7 +50,6 @@ import unittest
 from coverage.report import Reporter
 from coverage.results import Numbers
 from coverage.misc import NotPython
-from optparse import make_option
 
 from django.conf import settings
 from django.template import TemplateDoesNotExist
