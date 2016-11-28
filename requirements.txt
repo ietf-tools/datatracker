@@ -14,6 +14,7 @@ django-widget-tweaks>=1.3
 docutils>=0.12                  
 factory-boy>=2.7.0
 # fake-factory==0.5.3		# from factory-boy
+Faker>=0.5.3			# Explicit install
 hashids>=1.1.0
 html5lib>=0.90,<0.99999999	# ietf.utils.html needs a rewrite for html5lib 1.x -- major code changes in sanitizer
 jsonfield>=1.0.3		# for SubmissionCheck.  This is https://github.com/bradjasper/django-jsonfield/.
