@@ -13,7 +13,7 @@ from email.mime.multipart import MIMEMultipart
 
 from django.conf import settings
 from django.core.management import call_command
-from django.template import Context, engines
+from django.template import Context
 from django.template.defaulttags import URLNode
 from django.template.loader import get_template
 from django.templatetags.static import StaticNode
@@ -111,7 +111,6 @@ class TemplateChecksTestCase(TestCase):
     def setUp(self):
         self.paths = list(get_template_paths())
         self.paths.sort()
-        self.engine = engines['django']
         for path in self.paths:
             try:
                 self.templates[path] = get_template(path).template
