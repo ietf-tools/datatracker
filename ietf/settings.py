@@ -737,6 +737,10 @@ LIST_ACCOUNT_DELAY = 60*60*25           # 25 hours
 ACCOUNT_REQUEST_EMAIL = 'account-request@ietf.org'
 
 
+SILENCED_SYSTEM_CHECKS = [
+    "fields.W342",  # Setting unique=True on a ForeignKey has the same effect as using a OneToOneField.
+]
+
 
 # Put the production SECRET_KEY in settings_local.py, and also any other
 # sensitive or site-specific changes.  DO NOT commit settings_local.py to svn.
