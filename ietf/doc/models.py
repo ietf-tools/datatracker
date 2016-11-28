@@ -277,7 +277,7 @@ class DocumentInfo(models.Model):
         if isinstance(self, Document):
             return RelatedDocument.objects.filter(target__document=self, relationship__in=relationship).select_related('source')
         elif isinstance(self, DocHistory):
-            return RelatedDocHistory.objects.filter(target__document=self, relationship__in=relationship).select_related('source')
+            return RelatedDocHistory.objects.filter(target__document=self.doc, relationship__in=relationship).select_related('source')
         else:
             return RelatedDocument.objects.none()
 
