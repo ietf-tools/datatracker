@@ -1,7 +1,7 @@
 ﻿# -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from django.db import models, migrations
+from django.db import migrations
 from django.db.utils import IntegrityError
 
 def forward(apps, schema_editor):
@@ -16,7 +16,7 @@ def forward(apps, schema_editor):
         name = p.document_id.replace('-dmm', '-mext')
         try:
             doc = p.document
-            new = Document.objects.create(
+            Document.objects.create(
                 time=doc.time,
                 type=doc.type,
                 title=doc.title.replace('DMM', 'MEXT'),
@@ -47,7 +47,7 @@ def backward(apps, schema_editor):
         name = p.document_id.replace('-mext', '-dmm')
         try:
             doc = p.document
-            old = Document.objects.create(
+            Document.objects.create(
                 time=doc.time,
                 type=doc.type,
                 title=doc.title.replace('MEXT', 'DMM'),
