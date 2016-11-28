@@ -189,13 +189,17 @@ def check_html_valid(url, response, args):
                                 (pos, code))
                 warnings += 1
 
+@debug.trace
 def skip_url(url):
+    debug.show('url')
     for pattern in (
             "^/community/[0-9]+/remove_document/",
             "^/community/personal/",
             # Skip most of the slow pdf composite generation urls and svg urls
             "^/meeting/[0-9]+/agenda/[0-9b-z].*-drafts\\.pdf",
             "^/wg/[a-z0-9-]+/deps/svg/",
+            # This bad url occurs in an uploaded html agenda:
+            r"/site/ietfdhcwg/_/rsrc/1311005436000/system/app/css/overlay.css\?cb=simple100%250150goog-ws-left",
         ):
         if re.search(pattern, url):
             return True
