@@ -189,9 +189,7 @@ def check_html_valid(url, response, args):
                                 (pos, code))
                 warnings += 1
 
-@debug.trace
 def skip_url(url):
-    debug.show('url')
     for pattern in (
             "^/community/[0-9]+/remove_document/",
             "^/community/personal/",
