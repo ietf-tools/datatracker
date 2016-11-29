@@ -1,5 +1,16 @@
 ietfdb (6.38.2) ietf; urgency=medium
 
+  * Added new clarifying text to 3 IPR-related pages, based on direction 
+    from the IESG.
+
+  * Added a migration to fix the mext meeting materials names and external 
+    links, which incorrectly pointed at dmm-named objects and files.
+
+  * Made session minutes available with the same kind of url as session
+    minutes: /meeting/$num/minutes/$acronym.  (Both of these need to be
+    refined to handle multiple agendas and minutes, for groups having multiple
+    sessions in a meeting.)
+
   * Merged in [12393] from rjsparks@nostrum.com:
     Fixed bug where slides from multiple sessions for a group were not 
     all showing. Improved handling of multiple minutes and agendas for groups. 
@@ -30,7 +41,7 @@ ietfdb (6.38.2) ietf; urgency=medium
   * Order materials on the agenda session materials popup according to the 
     sessionpresentation order.  Fixes issue #2049
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  23 Nov 2016 10:39:54 -0800
+ -- Henrik Levkowetz <henrik@levkowetz.com>  29 Nov 2016 13:07:38 +0000
 
 
 ietfdb (6.38.1) ietf; urgency=medium
