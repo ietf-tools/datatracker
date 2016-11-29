@@ -42,9 +42,16 @@
       {{ doc.intended_std_level }}
     {% endif %}
 
+    {% if doc.reviewed_by_teams %}
+      <br>Reviews:
+      {% for g in doc.reviewed_by_teams %}
+        {{ g.acronym }}{% if not forloop.last %}, {% endif %}
+      {% endfor %}
+    {% endif %}
+
     {% for m in doc.milestones %}
-      {% if forloop.first %}<br>{% else %}, {% endif %}
-      <span title="Part of {{ m.group.acronym }} milestone: {{ m.desc }}" class="milestone">{{ m.due|date:"M Y" }}</span>
+      {% if forloop.first %}<br>{% endif %}
+      <span title="Part of {{ m.group.acronym }} milestone: {{ m.desc }}" class="milestone">{{ m.due|date:"M Y" }}</span>{% if not forloop.last %}, {% endif %}
     {% endfor %}
 
   {% else %}{# RFC #}

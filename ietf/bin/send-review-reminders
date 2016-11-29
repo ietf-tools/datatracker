@@ -1,0 +1,35 @@
+#!/usr/bin/env python
+
+import os, sys
+import syslog
+
+# boilerplate
+basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+sys.path = [ basedir ] + sys.path
+os.environ["DJANGO_SETTINGS_MODULE"] = "ietf.settings"
+
+virtualenv_activation = os.path.join(basedir, "bin", "activate_this.py")
+if os.path.exists(virtualenv_activation):
+    execfile(virtualenv_activation, dict(__file__=virtualenv_activation))
+
+syslog.openlog(os.path.basename(__file__), syslog.LOG_PID, syslog.LOG_USER)
+
+import django
+django.setup()
+
+import datetime
+from ietf.review.utils import (
+    review_requests_needing_reviewer_reminder, email_reviewer_reminder,
+    review_requests_needing_secretary_reminder, email_secretary_reminder,
+)
+
+today = datetime.date.today()
+
+for review_req in review_requests_needing_reviewer_reminder(today):
+    email_reviewer_reminder(review_req)
+    print("Emailed reminder to {} for review of {} in {} (req. id {})".format(review_req.reviewer.address, review_req.doc_id, review_req.team.acronym, review_req.pk))
+
+for review_req, secretary_role in review_requests_needing_secretary_reminder(today):
+    email_secretary_reminder(review_req, secretary_role)
+    print("Emailed reminder to {} for review of {} in {} (req. id {})".format(review_req.secretary_role.email.address, review_req.doc_id, review_req.team.acronym, review_req.pk))
+    

@@ -1,6 +1,6 @@
 from django.conf.urls import patterns, url
 from django.views.generic import RedirectView
-import views
+from ietf.group import views, views_review
 
 urlpatterns = patterns('',
     (r'^$', 'ietf.group.views.group_home', None, "group_home"),
@@ -30,5 +30,11 @@ urlpatterns = patterns('',
     (r'^materials/new/(?P<doc_type>[\w-]+)/$', 'ietf.doc.views_material.edit_material', { 'action': "new" }, "group_new_material"),
     (r'^archives/$', 'ietf.group.views.derived_archives'),
     (r'^photos/$', views.group_photos),
+    (r'^reviews/$', views_review.review_requests),
+    (r'^reviews/manage/(?P<assignment_status>assigned|unassigned)/$', views_review.manage_review_requests),
+    (r'^reviews/email-assignments/$', views_review.email_open_review_assignments),
+    (r'^reviewers/$', views_review.reviewer_overview),
+    (r'^reviewers/(?P<reviewer_email>[\w%+-.@]+)/settings/$', views_review.change_reviewer_settings),
+    (r'^secretarysettings/$', views_review.change_review_secretary_settings),
     url(r'^email-aliases/$', RedirectView.as_view(pattern_name='ietf.group.views.email',permanent=False),name='old_group_email_aliases'),
 )

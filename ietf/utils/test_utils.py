@@ -256,7 +256,7 @@ def canonicalize_sitemap(s):
         
 def login_testing_unauthorized(test_case, username, url, password=None):
     r = test_case.client.get(url)
-    test_case.assertTrue(r.status_code in (302, 403))
+    test_case.assertIn(r.status_code, (302, 403))
     if r.status_code == 302:
         test_case.assertTrue("/accounts/login" in r['Location'])
     if not password:
@@ -272,6 +272,17 @@ def unicontent(r):
     else:
         encoding = 'utf-8'
     return r.content.decode(encoding)
+
+def reload_db_objects(*objects):
+    """Rerequest the given arguments from the database so they're refreshed, to be used like
+
+    foo, bar = reload_objects(foo, bar)"""
+
+    t = tuple(o.__class__.objects.get(pk=o.pk) for o in objects)
+    if len(objects) == 1:
+        return t[0]
+    else:
+        return t
 
 class ReverseLazyTest(django.test.TestCase):
     def test_redirect_with_lazy_reverse(self):

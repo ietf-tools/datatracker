@@ -344,14 +344,6 @@ class UploadForm(forms.Form):
     def clean_txt(self):
         return get_cleaned_text_file_content(self.cleaned_data["txt"])
 
-    def save(self, group, rev):
-        filename = os.path.join(settings.CHARTER_PATH, '%s-%s.txt' % (group.charter.canonical_name(), rev))
-        with open(filename, 'wb') as destination:
-            if self.cleaned_data['txt']:
-                destination.write(self.cleaned_data['txt'])
-            else:
-                destination.write(self.cleaned_data['content'].encode("utf-8"))
-
 @login_required
 def submit(request, name, option=None):
     if not name.startswith('charter-'):
@@ -417,7 +409,12 @@ def submit(request, name, option=None):
             events.append(e)
 
             # Save file on disk
-            form.save(group, charter.rev)
+            filename = os.path.join(settings.CHARTER_PATH, '%s-%s.txt' % (charter.canonical_name(), charter.rev))
+            with open(filename, 'wb') as destination:
+                if form.cleaned_data['txt']:
+                    destination.write(form.cleaned_data['txt'])
+                else:
+                    destination.write(form.cleaned_data['content'].encode("utf-8"))
 
             if option in ['initcharter','recharter'] and charter.ad == None:
                 charter.ad = getattr(group.ad_role(),'person',None)

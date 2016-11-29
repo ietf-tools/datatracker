@@ -77,6 +77,7 @@ urlpatterns = patterns('',
     url(r'^%(name)s/ballot/(?P<ballot_id>[0-9]+)/emailposition/$' % settings.URL_REGEXPS, views_ballot.send_ballot_comment, name='doc_send_ballot_comment'),
     (r'^%(name)s/(?:%(rev)s/)?doc.json$' % settings.URL_REGEXPS, views_doc.document_json),
     (r'^%(name)s/ballotpopup/(?P<ballot_id>[0-9]+)/$' % settings.URL_REGEXPS, views_doc.ballot_popup),
+    url(r'^(?P<name>[A-Za-z0-9._+-]+)/reviewrequest/', include("ietf.doc.urls_review")),
 
     url(r'^%(name)s/email-aliases/$' % settings.URL_REGEXPS, RedirectView.as_view(pattern_name='doc_email', permanent=False),name='doc_specific_email_aliases'),
 

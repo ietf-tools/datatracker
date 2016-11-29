@@ -29,8 +29,8 @@ from ietf.meeting.factories import SessionFactory
 from ietf.name.models import DocTagName, GroupStateName, GroupTypeName
 from ietf.person.models import Person, Email
 from ietf.utils.mail import outbox, empty_outbox
-from ietf.utils.test_data import make_test_data, create_person
-from ietf.utils.test_utils import login_testing_unauthorized, TestCase, unicontent
+from ietf.utils.test_data import make_test_data, create_person, make_review_data
+from ietf.utils.test_utils import login_testing_unauthorized, TestCase, unicontent, reload_db_objects
 
 def group_urlreverse_list(group, viewname):
     return [
@@ -575,10 +575,10 @@ class GroupEditTests(TestCase):
                                   parent=area.pk,
                                   ad=ad.pk,
                                   state=state.pk,
-                                  chairs="aread@ietf.org, ad1@ietf.org",
-                                  secretaries="aread@ietf.org, ad1@ietf.org, ad2@ietf.org",
-                                  techadv="aread@ietf.org",
-                                  delegates="ad2@ietf.org",
+                                  chair_roles="aread@ietf.org, ad1@ietf.org",
+                                  secr_roles="aread@ietf.org, ad1@ietf.org, ad2@ietf.org",
+                                  techadv_roles="aread@ietf.org",
+                                  delegate_roles="ad2@ietf.org",
                                   list_email="mars@mail",
                                   list_subscribe="subscribe.mars",
                                   list_archive="archive.mars",
@@ -603,6 +603,40 @@ class GroupEditTests(TestCase):
         self.assertTrue('Personnel change' in outbox[0]['Subject'])
         for prefix in ['ad1','ad2','aread','marschairman','marsdelegate']:
             self.assertTrue(prefix+'@' in outbox[0]['To'])
+
+    def test_edit_reviewers(self):
+        doc = make_test_data()
+        review_req = make_review_data(doc)
+        group = review_req.team
+
+        url = urlreverse('group_edit', kwargs=dict(group_type=group.type_id, acronym=group.acronym))
+        login_testing_unauthorized(self, "secretary", url)
+
+        # normal get
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('form input[name=reviewer_roles]')), 1)
+
+        # set reviewers
+        empty_outbox()
+        r = self.client.post(url,
+                             dict(name=group.name,
+                                  acronym=group.acronym,
+                                  parent=group.parent_id,
+                                  ad=Person.objects.get(name="Areað Irector").pk,
+                                  state=group.state_id,
+                                  reviewer_roles="ad2@ietf.org",
+                                  list_email=group.list_email,
+                                  list_subscribe=group.list_subscribe,
+                                  list_archive=group.list_archive,
+                                  urls=""
+                                  ))
+        self.assertEqual(r.status_code, 302)
+
+        group = reload_db_objects(group)
+        self.assertEqual(list(group.role_set.filter(name="reviewer").values_list("email", flat=True)), ["ad2@ietf.org"])
+        self.assertTrue('Personnel change' in outbox[0]['Subject'])
 
     def test_conclude(self):
         make_test_data()

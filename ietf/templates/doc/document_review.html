@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2016, All Rights Reserved #}
+{% load origin %}
+{% load staticfiles %}
+{% load ietf_filters %}
+
+{% block title %}{{ doc.title }}{% endblock %}
+
+{% block content %}
+  {% origin %}
+  {{ top|safe }}
+
+  {% include "doc/revisions_list.html" %}
+
+  <table class="table table-condensed">
+    <thead id="message-row">
+       <tr>
+	  {% if doc.rev != latest_rev %}
+          <th colspan="4" class="alert-warning">The information below is for an old version of the document</th>
+	  {% else %}
+          <th colspan="4"></th>
+	  {% endif %}  
+       </tr>
+    </thead>
+
+    <tbody class="meta">
+      <tr>
+        <th></th>
+        <th>Team</th>
+        <td class="edit"></td>
+        <td>
+          {{ doc.group.name }}
+          <a href="{{ doc.group.about_url }}">({{ doc.group.acronym }})</a>
+
+          {% if snapshot %}
+            <span class="label label-warning">Snapshot</span>
+          {% endif %}
+        </td>
+      </tr>
+
+      <tr>
+        <th></th>
+        <th>Title</th>
+        <td class="edit"></td>
+        <td>{{ doc.title }}</td>
+      </tr>
+
+      {% if doc.get_state_slug != "active" %}
+      <tr>
+        <th></th>
+        <th>State</th>
+        <td class="edit"></td>
+        <td>{{ doc.get_state.name }}</td>
+      </tr>
+      {% endif %}
+
+      {% if review_req %}
+        <tr>
+          <th></th>
+          <th>Request</th>
+          <td class="edit"></td>
+          <td>{{ review_req.type.name }} - <a href="{% url "ietf.doc.views_review.review_request" review_req.doc.name review_req.pk %}">requested {{ review_req.time|date:"Y-m-d" }}</a></td>
+        </tr>
+
+        <tr>
+          <th></th>
+          <th>Reviewer</th>
+          <td class="edit"></td>
+          <td>{{ review_req.reviewer.person }}</td>
+        </tr>
+
+        {% if review_req.result %}
+        <tr>
+          <th></th>
+          <th>Review result</th>
+          <td class="edit"></td>
+          <td>{{ review_req.result.name }}</td>
+        </tr>
+        {% endif %}
+      {% endif %}
+
+      {% if doc.external_url %}
+        <tr>
+          <th></th>
+          <th>Posted at</th>
+          <td class="edit"></td>
+          <td><a href="{{ doc.external_url }}">{{ doc.external_url }}</a></td>
+        </tr>
+      {% endif %}
+
+      <tr>
+        <th></th>
+        <th>Last updated</th>
+        <td class="edit"></td>
+        <td>{{ doc.time|date:"Y-m-d" }}</td>
+      </tr>
+
+      {% if other_reviews %}
+      <tr>
+        <th></th>
+        <th>Other reviews</th>
+        <td class="edit"></td>
+        <td>
+          {% for review_request in other_reviews %}
+            {% include "doc/review_request_summary.html" with current_doc_name=review_req.doc_id current_rev=review_req.reviewed_rev %}
+          {% endfor %}
+        </td>
+      </tr>
+      {% endif %}
+    </tbody>
+  </table>
+
+  <h2>{{ doc.type.name }}<br><small>{{ doc.name }}</small></h2>
+
+  {% if doc.rev and content != None %}
+    {{ content|fill:"80"|safe|linebreaksbr|keep_spacing|sanitize_html|safe }}
+  {% endif %}
+{% endblock %}

@@ -1,0 +1,8 @@
+{% autoescape off %}{% filter wordwrap:70 %}This is just a friendly reminder that the deadline for the review of {{ review_request.doc_id }} is in {{ deadline_days }} day{{ deadline_days|pluralize }}:
+
+{{ review_request_url }}
+
+You are receiving this reminder because you have configured the Datatracker to remind you {{ remind_days }} day{{ remind_days|pluralize }} before deadlines in {{ review_request.team.name }}. You can see your reviews and change your settings here:
+
+{{ reviewer_overview_url }}
+{% endfilter %}{% endautoescape %}

@@ -14,7 +14,7 @@ import debug                            # pyflakes:ignore
 
 from ietf.group.models import Group
 from ietf.name.models import ( DocTypeName, DocTagName, StreamName, IntendedStdLevelName, StdLevelName,
-    DocRelationshipName, DocReminderTypeName, BallotPositionName )
+    DocRelationshipName, DocReminderTypeName, BallotPositionName, ReviewRequestStateName )
 from ietf.person.models import Email, Person
 from ietf.utils.admin import admin_link
 
@@ -724,6 +724,11 @@ EVENT_TYPES = [
     ("rfc_editor_received_announcement", "Announcement was received by RFC Editor"),
     ("requested_publication", "Publication at RFC Editor requested"),
     ("sync_from_rfc_editor", "Received updated information from RFC Editor"),
+
+    # review
+    ("requested_review", "Requested review"),
+    ("assigned_review_request", "Assigned review request"),
+    ("closed_review_request", "Closed review request"),
     ]
 
 class DocEvent(models.Model):
@@ -854,10 +859,13 @@ class TelechatDocEvent(DocEvent):
     telechat_date = models.DateField(blank=True, null=True)
     returning_item = models.BooleanField(default=False)
 
+class ReviewRequestDocEvent(DocEvent):
+    review_request = models.ForeignKey('review.ReviewRequest')
+    state = models.ForeignKey(ReviewRequestStateName, blank=True, null=True)
+
 # charter events
 class InitialReviewDocEvent(DocEvent):
     expires = models.DateTimeField(blank=True, null=True)
-
 
 class AddedMessageEvent(DocEvent):
     import ietf.message.models

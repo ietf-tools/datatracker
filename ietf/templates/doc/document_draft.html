@@ -192,6 +192,33 @@
 	</td>
       </tr>
 
+      {% if review_requests or can_request_review %}
+      <tr>
+        <th></th>
+        <th>Reviews</th>
+	<td class="edit"></td>
+        <td>
+          {% for review_request in review_requests %}
+            {% include "doc/review_request_summary.html" with current_doc_name=doc.name current_rev=doc.rev %}
+          {% endfor %}
+
+          {% if no_review_from_teams %}
+            {% for team in no_review_from_teams %}
+              {{ team.acronym.upper }}{% if not forloop.last %},{% endif %}
+            {% endfor %}
+            will not review this version
+          {% endif %}
+
+          {% if can_request_review %}
+            <div>
+              <a class="btn btn-default btn-xs" href="{% url "ietf.doc.views_review.request_review" doc.name %}"><span class="fa fa-check-circle-o"></span> Request review</a>
+            </div>
+          {% endif %}
+        </td>
+      </tr>
+      {% endif %}
+
+      
       {% if conflict_reviews %}
 	<tr>
           <th></th>

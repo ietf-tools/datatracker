@@ -23,19 +23,31 @@ from ietf.person.fields import SearchableEmailsField
 from ietf.person.models import Person, Email
 from ietf.group.mails import ( email_admin_re_charter, email_personnel_change)
 from ietf.utils.ordereddict import insert_after_in_ordered_dict
+from ietf.utils.text import strip_suffix
+
 
 MAX_GROUP_DELEGATES = 3
+
+def roles_for_group_type(group_type):
+    roles = ["chair", "secr", "techadv", "delegate"]
+    if group_type == "dir":
+        roles.append("reviewer")
+    return roles
 
 class GroupForm(forms.Form):
     name = forms.CharField(max_length=255, label="Name", required=True)
     acronym = forms.CharField(max_length=10, label="Acronym", required=True)
     state = forms.ModelChoiceField(GroupStateName.objects.all(), label="State", required=True)
-    chairs = SearchableEmailsField(label="Chairs", required=False, only_users=True)
-    secretaries = SearchableEmailsField(label="Secretaries", required=False, only_users=True)
-    techadv = SearchableEmailsField(label="Technical Advisors", required=False, only_users=True)
-    delegates = SearchableEmailsField(label="Delegates", required=False, only_users=True, max_entries=MAX_GROUP_DELEGATES,
+
+    # roles
+    chair_roles = SearchableEmailsField(label="Chairs", required=False, only_users=True)
+    secr_roles = SearchableEmailsField(label="Secretaries", required=False, only_users=True)
+    techadv_roles = SearchableEmailsField(label="Technical Advisors", required=False, only_users=True)
+    delegate_roles = SearchableEmailsField(label="Delegates", required=False, only_users=True, max_entries=MAX_GROUP_DELEGATES,
                                       help_text=mark_safe("Chairs can delegate the authority to update the state of group documents - at most %s persons at a given time." % MAX_GROUP_DELEGATES))
+    reviewer_roles = SearchableEmailsField(label="Reviewers", required=False, only_users=True)
     ad = forms.ModelChoiceField(Person.objects.filter(role__name="ad", role__group__state="active", role__group__type='area').order_by('name'), label="Shepherding AD", empty_label="(None)", required=False)
+
     parent = forms.ModelChoiceField(Group.objects.filter(state="active").order_by('name'), empty_label="(None)", required=False)
     list_email = forms.CharField(max_length=64, required=False)
     list_subscribe = forms.CharField(max_length=255, required=False)
@@ -68,6 +80,11 @@ class GroupForm(forms.Form):
         else:
             self.fields['parent'].queryset = self.fields['parent'].queryset.filter(type="area")
             self.fields['parent'].label = "IETF Area"
+
+        role_fields_to_remove = (set(strip_suffix(attr, "_roles") for attr in self.fields if attr.endswith("_roles"))
+                                 - set(roles_for_group_type(self.group_type)))
+        for r in role_fields_to_remove:
+            del self.fields[r + "_roles"]
 
     def clean_acronym(self):
         # Changing the acronym of an already existing group will cause 404s all
@@ -219,7 +236,8 @@ def edit(request, group_type=None, acronym=None, action="edit"):
         group = get_group_or_404(acronym, group_type)
         if not group_type and group:
             group_type = group.type_id
-        if not (can_manage_group(request.user, group) or group.has_role(request.user, "chair")):
+        if not (can_manage_group(request.user, group)
+                or group.has_role(request.user, group.features.admin_roles)):
             return HttpResponseForbidden("You don't have permission to access this view")
 
     if request.method == 'POST':
@@ -283,10 +301,18 @@ def edit(request, group_type=None, acronym=None, action="edit"):
             personnel_change_text=""
             changed_personnel = set()
             # update roles
-            for attr, slug, title in [('ad','ad','Shepherding AD'), ('chairs', 'chair', "Chairs"), ('secretaries', 'secr', "Secretaries"), ('techadv', 'techadv', "Tech Advisors"), ('delegates', 'delegate', "Delegates")]:
+            for attr, f in form.fields.iteritems():
+                if not (attr.endswith("_roles") or attr == "ad"):
+                    continue
+
+                slug = attr
+                slug = strip_suffix(slug, "_roles")
+
+                title = f.label
+
                 new = clean[attr]
                 if attr == 'ad':
-                    new = [ new.role_email('ad'),] if new else []
+                    new = [ new.role_email('ad') ] if new else []
                 old = Email.objects.filter(role__group=group, role__name=slug).select_related("person")
                 if set(new) != set(old):
                     changes.append((attr, new, desc(title,
@@ -345,10 +371,6 @@ def edit(request, group_type=None, acronym=None, action="edit"):
             init = dict(name=group.name,
                         acronym=group.acronym,
                         state=group.state,
-                        chairs=Email.objects.filter(role__group=group, role__name="chair"),
-                        secretaries=Email.objects.filter(role__group=group, role__name="secr"),
-                        techadv=Email.objects.filter(role__group=group, role__name="techadv"),
-                        delegates=Email.objects.filter(role__group=group, role__name="delegate"),
                         ad=ad_role and ad_role.person and ad_role.person.id,
                         parent=group.parent.id if group.parent else None,
                         list_email=group.list_email if group.list_email else None,
@@ -356,6 +378,9 @@ def edit(request, group_type=None, acronym=None, action="edit"):
                         list_archive=group.list_archive if group.list_archive else None,
                         urls=format_urls(group.groupurl_set.all()),
                         )
+
+            for slug in roles_for_group_type(group_type):
+                init[slug + "_roles"] = Email.objects.filter(role__group=group, role__name=slug)
         else:
             init = dict(ad=request.user.person.id if group_type == "wg" and has_role(request.user, "Area Director") else None,
                         )
@@ -409,8 +434,8 @@ def customize_workflow(request, group_type=None, acronym=None):
     if not group.features.customize_workflow:
         raise Http404
 
-    if (not has_role(request.user, "Secretariat") and
-        not group.role_set.filter(name="chair", person__user=request.user)):
+    if not (can_manage_group(request.user, group)
+            or group.has_role(request.user, group.features.admin_roles)):
         return HttpResponseForbidden("You don't have permission to access this view")
 
     if group_type == "rg":

@@ -1,0 +1,9 @@
+{% autoescape off %}
+{{ review_req.type.name }} review of: {{ review_req.doc.name }} ({% if review_req.requested_rev %}rev. {{ review_req.requested_rev }}{% else %}no specific version{% endif %})
+Deadline: {{ review_req.deadline|date:"Y-m-d" }}
+
+{{ review_req_url }}
+
+{{ msg|wordwrap:72 }}
+
+{% endautoescape %}

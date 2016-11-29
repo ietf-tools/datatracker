@@ -1,0 +1,129 @@
+{% extends "group/group_base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}{% origin %}
+
+{% load ietf_filters staticfiles bootstrap3 %}
+
+{% block group_subtitle %}Review requests{% endblock %}
+
+{% block pagehead %}
+  <link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
+{% endblock %}
+
+{% block group_content %}
+  {% origin %}
+
+  {% if can_access_stats %}
+    <h1 class="pull-right"><a href="{% url "ietf.stats.views.review_stats" %}" class="icon-link">&nbsp;<span class="small fa fa-bar-chart">&nbsp;</span></a></h1>
+  {% endif %}
+
+  {% for label, review_requests in open_review_requests %}
+    {% if review_requests %}
+
+      <h2>{{ label }} open review requests</h2>
+
+      <table class="table table-condensed table-striped tablesorter">
+        <thead>
+          <tr>
+            <th>Request</th>
+            <th>Type</th>
+            <th>Requested</th>
+            <th>Deadline</th>
+            {% if review_requests.0.reviewer %}
+              <th>Reviewer</th>
+            {% endif %}
+            <th>Document state</th>
+            <th>IESG Telechat</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in review_requests %}
+            <tr>
+              <td>{% if r.pk != None %}<a href="{% url "ietf.doc.views_review.review_request" name=r.doc.name request_id=r.pk %}">{% endif %}{{ r.doc.name }}-{% if r.requested_rev %}{{ r.requested_rev }}{% else %}{{ r.doc.rev }}{% endif %}{% if r.pk != None %}</a>{% endif %}</td>
+              <td>{{ r.type.name }}</td>
+              <td>{% if r.pk %}{{ r.time|date:"Y-m-d" }}{% else %}<em>auto-suggested</em>{% endif %}</td>
+              <td>
+                {{ r.deadline|date:"Y-m-d" }}
+                {% if r.due %}<span class="label label-warning" title="{{ r.due }} day{{ r.due|pluralize }} past deadline">{{ r.due }} day{{ r.due|pluralize }}</span>{% endif %}
+              </td>
+              {% if r.reviewer %}
+                <td>
+                  {{ r.reviewer.person }}
+                  {% if r.state_id == "accepted" %}<span class="label label-default">Accepted</span>{% endif %}
+                  {% if r.reviewer_unavailable %}<span class="label label-danger">Unavailable</span>{% endif %}
+                </td>
+              {% endif %}
+              <td>
+                {{ r.doc.friendly_state }}
+              </td>
+              <td>
+                {% if r.doc.telechat_date %}
+                  {{ r.doc.telechat_date }}
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+    {% endif %}
+  {% endfor %}
+
+  <h2 id="closed-review-requests">Closed review requests</h2>
+
+  <form class="closed-review-filter" action="#closed-review-requests">
+    Past:
+    <div class="btn-group" role="group">
+      {% for key, label in since_choices %}
+        <button class="btn btn-default {% if since == key %}active{% endif %}" {% if key %}name="since" value="{{ key }}"{% endif %} type="submit">{{ label }}</button>
+      {% endfor %}
+    </div>
+  </form>
+
+  {% if closed_review_requests %}
+    <table class="table table-condensed table-striped materials tablesorter">
+      <thead>
+        <tr>
+          <th>Request</th>
+          <th>Type</th>
+          <th>Requested</th>
+          <th>Deadline</th>
+          <th>Reviewer</th>
+          <th>State</th>
+          <th>Result</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in closed_review_requests %}
+          <tr>
+            <td><a href="{% url "ietf.doc.views_review.review_request" name=r.doc.name request_id=r.pk %}">{{ r.doc.name }}{% if r.requested_rev %}-{{ r.requested_rev }}{% endif %}</a></td>
+            <td>{{ r.type }}</td>
+            <td>{{ r.time|date:"Y-m-d" }}</td>
+            <td>{{ r.deadline|date:"Y-m-d" }}</td>
+            <td>
+              {% if r.reviewer %}
+                {{ r.reviewer.person }}
+              {% else %}
+                <em>not yet assigned</em>
+              {% endif %}
+            </td>
+            <td>{{ r.state.name }}</td>
+            <td>
+              {% if r.result %}
+                {{ r.result.name }}
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    
+  {% else %}
+    <p>No closed requests found.</p>
+  {% endif %}
+
+{% endblock %}
+
+{% block js %}
+  <script src="{% static "jquery.tablesorter/js/jquery.tablesorter.combined.min.js" %}"></script>
+{% endblock %}

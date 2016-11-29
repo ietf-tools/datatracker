@@ -475,6 +475,125 @@ label#list-feeds {
   margin-left: 3em;
 }
 
+/* === Review flow ========================================================== */
+
+.reviewer-assignment-not-accepted {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+form.complete-review .mail-archive-search .query-input {
+  width: 30em;
+}
+
+form.complete-review .mail-archive-search .results .list-group {
+  margin-left: 1em;
+  margin-right: 1em;
+  margin-bottom: 0.5em;
+}
+
+form.complete-review .mail-archive-search-result .from {
+  width: 9em;
+  padding-left: 0.4em;
+}
+
+form.complete-review .mail-archive-search-result .date {
+  width: 6em;
+  padding-left: 0.4em;
+}
+
+.closed-review-filter {
+  margin-bottom: 1em;
+}
+
+form.review-requests .reviewer-controls, form.review-requests .close-controls {
+  display: none;
+}
+
+form.review-requests .assign-action, form.review-requests .close-action {
+  display: inline-block;
+  margin-left: 0.5em;
+}
+
+form.review-requests .request-metadata {
+  margin-bottom: 0.5em;
+}
+
+form.review-requests .abstract {
+  font-size: 95%;
+}
+
+form.review-requests label {
+  font-weight: normal;
+  padding-right: 0.3em;
+}
+
+form.email-open-review-assignments [name=body] {
+  height: 50em;
+  font-family: monospace;
+}
+
+table.simple-table td {
+  padding-right: 0.5em;
+}
+
+table.simple-table td:last-child {
+  padding-right: 0;
+}
+
+.unavailable-period-past {
+  color: #777;
+}
+
+.unavailable-period-active {
+  font-weight: bold;
+}
+
+.reviewer-overview .completely-unavailable {
+  opacity: 0.6;
+}
+
+/* === Statistics =========================================================== */
+
+.stats-options > * {
+  margin-bottom: 1em;
+}
+
+.stats-options > *:last-child {
+  margin-bottom: 0;
+}
+
+.stats-options .date-range input.form-control {
+  display: inline-block;
+  width: 7em;
+}
+
+.stats-time-graph {
+  height: 15em;
+}
+
+.review-stats th:first-child, .review-stats td:first-child {
+ text-align: left;
+}
+
+.review-stats th, .review-stats td {
+  text-align: center;
+}
+
+.review-stats tr.totals {
+  font-weight: bold;
+}
+
+.review-stats-teams {
+  -moz-column-width: 18em;
+  -webkit-column-width: 18em;
+  column-width: 18em;
+}
+
+.review-stats-teams a {
+  display: block;
+}
+
 /* === Photo pages ========================================================== */
 
 .photo-name {

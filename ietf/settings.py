@@ -305,6 +305,7 @@ INSTALLED_APPS = (
     'ietf.person',
     'ietf.redirects',
     'ietf.release',
+    'ietf.review',
     'ietf.submit',
     'ietf.sync',
     'ietf.utils',
@@ -386,10 +387,17 @@ TEST_CODE_COVERAGE_EXCLUDE = [
     "*/admin.py",
     "*/migrations/*",
     "*/management/commands/*",
+    "idindex/generate_all_id2_txt.py",
+    "idindex/generate_all_id_txt.py",
+    "idindex/generate_id_abstracts_txt.py",
+    "idindex/generate_id_index_txt.py",
+    "name/generate_fixtures.py",
+    "review/import_from_review_tool.py",
     "ietf/settings*",
     "ietf/utils/test_runner.py",
     "ietf/checks.py",
     "ietf/utils/templatetags/debug_filters.py",
+    "ietf/review/import_from_review_tool.py",
 ]
 
 # These are filename globs.  They are used by test_parse_templates() and
@@ -453,6 +461,7 @@ MEETING_RECORDINGS_DIR = '/a/www/audio'
 
 # Mailing list info URL for lists hosted on the IETF servers
 MAILING_LIST_INFO_URL = "https://www.ietf.org/mailman/listinfo/%(list_addr)s"
+MAILING_LIST_ARCHIVE_URL = "https://mailarchive.ietf.org"
 
 # Liaison Statement Tool settings (one is used in DOC_HREFS below)
 LIAISON_UNIVERSAL_FROM = 'Liaison Statement Management Tool <lsmt@' + IETF_DOMAIN + '>'

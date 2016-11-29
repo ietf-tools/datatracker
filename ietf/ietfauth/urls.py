@@ -21,4 +21,5 @@ urlpatterns = patterns('ietf.ietfauth.views',
         url(r'^reset/confirm/(?P<auth>[^/]+)/$', 'confirm_password_reset'),
         url(r'^confirmnewemail/(?P<auth>[^/]+)/$', 'confirm_new_email'),
         (r'whitelist/add/?$', add_account_whitelist),
+        url(r'^review/$', 'review_overview'),
 )

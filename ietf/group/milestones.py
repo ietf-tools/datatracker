@@ -94,7 +94,7 @@ def edit_milestones(request, acronym, group_type=None, milestone_set="current"):
 
     needs_review = False
     if not can_manage_group(request.user, group):
-        if group.has_role(request.user, "chair"):
+        if group.has_role(request.user, group.features.admin_roles):
             if milestone_set == "current":
                 needs_review = True
         else:

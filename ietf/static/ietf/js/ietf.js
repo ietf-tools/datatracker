@@ -191,7 +191,7 @@ $(".snippet .show-all").click(function () {
 // });
 
 // Use the Bootstrap3 tooltip plugin for all elements with a title attribute
-$('[title][title!=""]').tooltip();
+$('[title][title!=""]').not("th").tooltip();
 
 $(document).ready(function () {
     // add a required class on labels on forms that should have

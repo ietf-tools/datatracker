@@ -1,0 +1,7 @@
+{% autoescape off %}{% filter wordwrap:70 %}{% if review_req.state_id == "part-completed" %}Review is partially done. Another review request has been registered for completing it.
+
+{% endif %}Reviewer: {{ review_req.reviewer.person }}
+Review result: {{ review_req.result.name }}
+
+{{ content }}
+{% endfilter %}{% endautoescape %}

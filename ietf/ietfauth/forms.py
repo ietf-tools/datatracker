@@ -3,7 +3,6 @@ import re
 from django import forms
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.forms import ModelForm
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils.html import mark_safe
@@ -68,7 +67,7 @@ def get_person_form(*args, **kwargs):
     if not roles:
         exclude_list += ['biography', 'photo', ]
 
-    class PersonForm(ModelForm):
+    class PersonForm(forms.ModelForm):
         class Meta:
             model = Person
             exclude = exclude_list
@@ -161,7 +160,7 @@ class ResetPasswordForm(forms.Form):
 class TestEmailForm(forms.Form):
     email = forms.EmailField(required=False)
 
-class WhitelistForm(ModelForm):
+class WhitelistForm(forms.ModelForm):
     class Meta:
         model = Whitelisted
         exclude = ['by', 'time' ]

@@ -9,7 +9,7 @@ from django.http import Http404
 
 from ietf.doc.models import Document, TelechatDocEvent, LastCallDocEvent, ConsensusDocEvent
 from ietf.iesg.models import TelechatDate, TelechatAgendaItem
-
+from ietf.review.utils import review_requests_to_list_for_docs
 
 def get_agenda_date(date=None):
     if not date:
@@ -152,6 +152,8 @@ def fill_in_agenda_docs(date, sections, matches=None):
         matches = Document.objects.filter(docevent__telechatdocevent__telechat_date=date)
         matches = matches.select_related("stream", "group").distinct()
 
+    review_requests_for_docs = review_requests_to_list_for_docs(matches)
+
     for doc in matches:
         if doc.latest_event(TelechatDocEvent, type="scheduled_for_telechat").telechat_date != date:
             continue
@@ -174,6 +176,8 @@ def fill_in_agenda_docs(date, sections, matches=None):
                 e = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
                 if e and (e.consensus != None):
                     doc.consensus = "Yes" if e.consensus else "No"
+
+            doc.review_requests = review_requests_for_docs.get(doc.pk, [])
         elif doc.type_id == "conflrev":
             doc.conflictdoc = doc.relateddocument_set.get(relationship__slug='conflrev').target.document
         elif doc.type_id == "charter":

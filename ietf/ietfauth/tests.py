@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-import os, shutil, time
+import os, shutil, time, datetime
 from urlparse import urlsplit
 from pyquery import PyQuery
 from unittest import skipIf
@@ -12,12 +12,13 @@ from django.contrib.auth.models import User
 from django.conf import settings
 
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized, unicontent
-from ietf.utils.test_data import make_test_data
+from ietf.utils.test_data import make_test_data, make_review_data
 from ietf.utils.mail import outbox, empty_outbox
 from ietf.person.models import Person, Email
 from ietf.group.models import Group, Role, RoleName
 from ietf.ietfauth.htpasswd import update_htpasswd_file
 from ietf.mailinglists.models import Subscribed
+from ietf.review.models import ReviewWish, UnavailablePeriod
 from ietf.utils.decorators import skip_coverage
 
 import ietf.ietfauth.views
@@ -337,6 +338,48 @@ class IetfAuthTests(TestCase):
         q = PyQuery(r.content)
         self.assertEqual(len(q("form .has-error")), 0)
         self.assertTrue(self.username_in_htpasswd_file(user.username))
+
+    def test_review_overview(self):
+        doc = make_test_data()
+
+        review_req = make_review_data(doc)
+        review_req.reviewer = Email.objects.get(person__user__username="reviewer")
+        review_req.save()
+
+        reviewer = review_req.reviewer.person
+
+        UnavailablePeriod.objects.create(
+            team=review_req.team,
+            person=reviewer,
+            start_date=datetime.date.today() - datetime.timedelta(days=10),
+            availability="unavailable",
+        )
+
+        url = urlreverse(ietf.ietfauth.views.review_overview)
+
+        login_testing_unauthorized(self, reviewer.user.username, url)
+
+        # get
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(review_req.doc.name in unicontent(r))
+
+        # wish to review
+        r = self.client.post(url, {
+            "action": "add_wish",
+            'doc': doc.pk,
+            "team": review_req.team_id,
+        })
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(ReviewWish.objects.filter(doc=doc, team=review_req.team).count(), 1)
+
+        # delete wish
+        r = self.client.post(url, {
+            "action": "delete_wish",
+            'wish_id': ReviewWish.objects.get(doc=doc, team=review_req.team).pk,
+        })
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(ReviewWish.objects.filter(doc=doc, team=review_req.team).count(), 0)
 
     def test_htpasswd_file_with_python(self):
         # make sure we test both Python and call-out to binary

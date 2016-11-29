@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2016, All Rights Reserved #}
+{% load origin bootstrap3 static %}
+
+{% block title %}{% if revising_review %}Revise{% else %}Complete{% endif %} review of {{ review_req.doc.name }}{% endblock %}
+
+{% block pagehead %}
+  <link rel="stylesheet" href="{% static 'bootstrap-datepicker/css/bootstrap-datepicker3.min.css' %}">
+{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <h1>{% if revising_review %}Revise{% else %}Complete{% endif %} review<br><small>{{ review_req.doc.name }}</small></h1>
+
+  {% if not revising_review %}
+    <p>The review findings should be made available here and the review
+      posted to the mailing list. If you enter the findings below, the
+      system will post the review for you. If you already have posted
+      the review, you can try to let the system find the link to the
+      archive and retrieve the email body.</p>
+  {% else %}
+    <p>You can revise this review by entering the results below.</p>
+  {% endif %}
+    
+  <form class="complete-review form-horizontal" method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    {% bootstrap_form form layout="horizontal" %}
+
+    {% buttons %}
+    <a class="btn btn-default" href="{% url "ietf.doc.views_review.review_request" name=doc.canonical_name request_id=review_req.pk %}">Cancel</a>
+    <button type="submit" class="btn btn-primary">{% if revising_review %}Revise{% else %}Complete{% endif %} review</button>
+    {% endbuttons %}
+
+    <div class="template" style="display:none">
+      {% if mail_archive_query_urls %}
+        <div class="mail-archive-search form-group">
+          <div class="col-md-offset-2 col-md-10">
+            <p class="form-inline">
+              Search mail archive subjects for:
+              <input class="query-input form-control input-sm" value="{{ mail_archive_query_urls.query }}">
+              <button type="button" class="search btn btn-default btn-sm">Search</button>
+            </p>
+
+            <div class="retrieving hidden">
+              <span class="fa fa-spin fa-circle-o-notch"></span>
+              Searching...
+            </div>
+
+            <div class="results hidden">
+              <p>Select one of the following messages to automatically pre-fill link and content:</p>
+              <div class="list-group">
+              </div>
+            </div>
+
+            <div class="error alert alert-warning hidden">
+              <p>
+                <span class="content"></span>
+                <span class="hidden try-yourself">(searched for <a class="query-url" href="">"<span class="query"></span>"</a>, corresponding <a class="query-data-url" href="">export</a>).</span>
+                You have to fill in link and content yourself.
+              </p>
+            </div>
+          </div>
+        </div>
+      {% else %}
+        <div class="mail-archive-search">
+          <small class="text-muted">Mailing list does not have a recognized ietf.org archive. Auto-searching disabled.</small>
+        </div>
+      {% endif %}
+    </div>
+
+    {% spaceless %}
+    <div class="template" style="display:none">
+      <button type="button" class="mail-archive-search-result list-group-item">
+        <small class="date pull-right"></small>
+        <small class="from pull-right"></small>
+        <span class="subject"></span>
+      </button>
+    </div>
+    {% endspaceless %}
+
+  </form>
+
+{% endblock %}
+
+{% block js %}
+  <script src="{% static 'bootstrap-datepicker/js/bootstrap-datepicker.min.js' %}"></script>
+  <script>
+   var searchMailArchiveUrl = "{% url "ietf.doc.views_review.search_mail_archive" name=review_req.doc.name request_id=review_req.pk %}";
+  </script>
+  <script src="{% static 'ietf/js/complete-review.js' %}"></script>
+{% endblock %}

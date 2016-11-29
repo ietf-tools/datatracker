@@ -60,10 +60,13 @@ from ietf.name.models import StreamName, BallotPositionName
 from ietf.person.models import Email
 from ietf.utils.history import find_history_active_at
 from ietf.doc.forms import TelechatForm, NotifyForm
-from ietf.doc.mails import email_comment 
+from ietf.doc.mails import email_comment
 from ietf.mailtrigger.utils import gather_relevant_expansions
 from ietf.meeting.models import Session
 from ietf.meeting.utils import group_sessions, get_upcoming_manageable_sessions, sort_sessions
+from ietf.review.models import ReviewRequest
+from ietf.review.utils import can_request_review_of_doc, review_requests_to_list_for_docs
+from ietf.review.utils import no_review_from_teams_on_doc
 
 def render_document_top(request, doc, tab, name):
     tabs = []
@@ -282,8 +285,8 @@ def document_main(request, name, rev=None):
         can_edit_stream_info = is_authorized_in_doc_stream(request.user, doc)
         can_edit_shepherd_writeup = can_edit_stream_info or user_is_person(request.user, doc.shepherd and doc.shepherd.person) or has_role(request.user, ["Area Director"])
         can_edit_notify = can_edit_shepherd_writeup
-        can_edit_consensus = False
 
+        can_edit_consensus = False
         consensus = nice_consensus(default_consensus(doc))
         if doc.stream_id == "ietf" and iesg_state:
             show_in_states = set(IESG_BALLOT_ACTIVE_STATES)
@@ -296,6 +299,8 @@ def document_main(request, name, rev=None):
             can_edit_consensus = can_edit or can_edit_stream_info
             e = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
             consensus = nice_consensus(e and e.consensus)
+
+        can_request_review = can_request_review_of_doc(request.user, doc)
 
         # mailing list search archive
         search_archive = "www.ietf.org/mail-archive/web/"
@@ -357,6 +362,9 @@ def document_main(request, name, rev=None):
         published = doc.latest_event(type="published_rfc")
         started_iesg_process = doc.latest_event(type="started_iesg_process")
 
+        review_requests = review_requests_to_list_for_docs([doc]).get(doc.pk, [])
+        no_review_from_teams = no_review_from_teams_on_doc(doc, rev or doc.rev)
+
         return render_to_response("doc/document_draft.html",
                                   dict(doc=doc,
                                        group=group,
@@ -378,6 +386,7 @@ def document_main(request, name, rev=None):
                                        can_edit_consensus=can_edit_consensus,
                                        can_edit_replaces=can_edit_replaces,
                                        can_view_possibly_replaces=can_view_possibly_replaces,
+                                       can_request_review=can_request_review,
 
                                        rfc_number=rfc_number,
                                        draft_name=draft_name,
@@ -416,6 +425,8 @@ def document_main(request, name, rev=None):
                                        search_archive=search_archive,
                                        actions=actions,
                                        presentations=presentations,
+                                       review_requests=review_requests,
+                                       no_review_from_teams=no_review_from_teams,
                                        ),
                                   context_instance=RequestContext(request))
 
@@ -566,6 +577,29 @@ def document_main(request, name, rev=None):
                                        presentations=presentations,
                                        ),
                                   context_instance=RequestContext(request))
+
+
+    if doc.type_id == "review":
+        basename = "{}.txt".format(doc.name, doc.rev)
+        pathname = os.path.join(doc.get_file_path(), basename)
+        content = get_document_content(basename, pathname, split=False)
+
+        review_req = ReviewRequest.objects.filter(review=doc.name).first()
+
+        other_reviews = []
+        if review_req:
+            other_reviews = [r for r in review_requests_to_list_for_docs([review_req.doc]).get(doc.pk, []) if r != review_req]
+
+        return render(request, "doc/document_review.html",
+                      dict(doc=doc,
+                           top=top,
+                           content=content,
+                           revisions=revisions,
+                           latest_rev=latest_rev,
+                           snapshot=snapshot,
+                           review_req=review_req,
+                           other_reviews=other_reviews,
+                      ))
 
     raise Http404
 

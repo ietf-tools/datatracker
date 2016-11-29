@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.models import Document, DocAlias, State, DocumentAuthor, BallotType, DocEvent, BallotDocEvent, RelatedDocument
+from ietf.doc.models import Document, DocAlias, State, DocumentAuthor, BallotType, DocEvent, BallotDocEvent, RelatedDocument, NewRevisionDocEvent
 from ietf.group.models import Group, GroupHistory, Role, RoleHistory
 from ietf.iesg.models import TelechatDate
 from ietf.ipr.models import HolderIprDisclosure, IprDocRel, IprDisclosureStateName, IprLicenseTypeName
@@ -14,6 +14,8 @@ from ietf.meeting.models import Meeting
 from ietf.name.models import StreamName, DocRelationshipName
 from ietf.person.models import Person, Email
 from ietf.group.utils import setup_default_community_list_for_group
+from ietf.review.models import (ReviewRequest, ReviewerSettings, ReviewResultName, ResultUsedInReviewTeam,
+                                ReviewTypeName, TypeUsedInReviewTeam)
 
 def create_person(group, role_name, name=None, username=None, email_address=None, password=None):
     """Add person/user/email and role."""
@@ -32,6 +34,7 @@ def create_person(group, role_name, name=None, username=None, email_address=None
     person = Person.objects.create(name=name, ascii=name, user=user)
     email = Email.objects.create(address=email_address, person=person)
     Role.objects.create(group=group, name_id=role_name, person=person, email=email)
+    return person
 
 def create_group(**kwargs):
     return Group.objects.create(state_id="active", **kwargs)
@@ -218,7 +221,7 @@ def make_test_data():
     mars_wg.save()
 
     create_person(ames_wg, "chair", name="Ames Chair Man", username="ameschairman")
-    create_person(ames_wg, "delegate", name="WG Dèlegate", username="amesdelegate")
+    create_person(ames_wg, "delegate", name="Ames Delegate", username="amesdelegate")
     create_person(ames_wg, "secr", name="Mr Secretary", username="amessecretary")
     ames_wg.role_set.get_or_create(name_id='ad',person=ad,email=ad.role_email('ad'))
     ames_wg.save()
@@ -285,11 +288,12 @@ def make_test_data():
         desc="Started IESG process",
         )
 
-    DocEvent.objects.create(
+    NewRevisionDocEvent.objects.create(
         type="new_revision",
         by=ad,
         doc=draft,
         desc="New revision available",
+        rev="01",
         )
 
     BallotDocEvent.objects.create(
@@ -379,3 +383,42 @@ def make_test_data():
     # associated with a session
 
     return draft
+
+def make_review_data(doc):
+    team = create_group(acronym="reviewteam", name="Review Team", type_id="dir", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
+    for r in ReviewResultName.objects.filter(slug__in=["issues", "ready-issues", "ready", "not-ready"]):
+        ResultUsedInReviewTeam.objects.create(team=team, result=r)
+    for t in ReviewTypeName.objects.filter(slug__in=["early", "lc", "telechat"]):
+        TypeUsedInReviewTeam.objects.create(team=team, type=t)
+
+    u = User.objects.create(username="reviewer")
+    u.set_password("reviewer+password")
+    u.save()
+    reviewer = Person.objects.create(name=u"Some Réviewer", ascii="Some Reviewer", user=u)
+    email = Email.objects.create(address="reviewer@example.com", person=reviewer)
+
+    Role.objects.create(name_id="reviewer", person=reviewer, email=email, group=team)
+    ReviewerSettings.objects.create(team=team, person=reviewer, min_interval=14, skip_next=0)
+
+    review_req = ReviewRequest.objects.create(
+        doc=doc,
+        team=team,
+        type_id="early",
+        deadline=datetime.datetime.now() + datetime.timedelta(days=20),
+        state_id="accepted",
+        requested_by=reviewer,
+        reviewer=email,
+    )
+
+    p = Person.objects.get(user__username="marschairman")
+    Role.objects.create(name_id="reviewer", person=p, email=p.email_set.first(), group=team)
+
+    u = User.objects.create(username="reviewsecretary")
+    u.set_password("reviewsecretary+password")
+    u.save()
+    reviewsecretary = Person.objects.create(name=u"Réview Secretary", ascii="Review Secretary", user=u)
+    reviewsecretary_email = Email.objects.create(address="reviewsecretary@example.com", person=reviewsecretary)
+    Role.objects.create(name_id="secr", person=reviewsecretary, email=reviewsecretary_email, group=team)
+    
+    return review_req
+

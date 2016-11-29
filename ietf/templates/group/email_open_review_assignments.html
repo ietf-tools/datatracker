@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}{% origin %}
+
+{% load ietf_filters staticfiles bootstrap3 %}
+
+{% block title %}Email summary of assigned review requests for {{ group.acronym }}{% endblock %}
+
+{% block content %}
+  {% origin %}
+
+  <h1>Email summary of assigned review requests for {{ group.acronym }}</h1>
+
+  {% if review_requests %}
+    <form class="email-open-review-assignments" method="post">{% csrf_token %}
+      {% bootstrap_form form %}
+
+      {% buttons %}
+        <a href="{{ back_url }}" class="btn btn-default pull-right">Cancel</a>
+        <button class="btn btn-primary" type="submit" name="action" value="email">Send to team mailing list</button>
+      {% endbuttons %}
+    </form>
+  {% else %}
+    <p>There are currently no open requests.</p>
+  {% endif %}
+{% endblock %}

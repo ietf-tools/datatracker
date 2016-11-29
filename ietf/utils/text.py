@@ -18,3 +18,15 @@ def xslugify(value):
     value = re.sub('[^\w\s/-]', '', value).strip().lower()
     return mark_safe(re.sub('[-\s/]+', '-', value))
 xslugify = allow_lazy(xslugify, six.text_type)
+
+def strip_prefix(text, prefix):
+    if text.startswith(prefix):
+        return text[len(prefix):]
+    else:
+        return text
+
+def strip_suffix(text, suffix):
+    if text.endswith(suffix):
+        return text[:-len(suffix)]
+    else:
+        return text    

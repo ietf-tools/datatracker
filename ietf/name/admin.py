@@ -1,14 +1,14 @@
 from django.contrib import admin
+
 from ietf.name.models import (
-    BallotPositionName, ConstraintName, DBTemplateTypeName,
-    DocRelationshipName, DocReminderTypeName, DocTagName, DocTypeName,
-    DraftSubmissionStateName, FeedbackTypeName, GroupMilestoneStateName,
-    GroupStateName, GroupTypeName, IntendedStdLevelName,
-    IprDisclosureStateName, IprEventTypeName, IprLicenseTypeName,
-    LiaisonStatementEventTypeName, LiaisonStatementPurposeName,
-    LiaisonStatementState, LiaisonStatementTagName, MeetingTypeName,
-    NomineePositionStateName, RoleName, RoomResourceName, SessionStatusName,
-    StdLevelName, StreamName, TimeSlotTypeName, )
+    BallotPositionName, ConstraintName, DBTemplateTypeName, DocRelationshipName,
+    DocReminderTypeName, DocTagName, DocTypeName, DraftSubmissionStateName,
+    FeedbackTypeName, GroupMilestoneStateName, GroupStateName, GroupTypeName,
+    IntendedStdLevelName, IprDisclosureStateName, IprEventTypeName, IprLicenseTypeName,
+    LiaisonStatementEventTypeName, LiaisonStatementPurposeName, LiaisonStatementState,
+    LiaisonStatementTagName, MeetingTypeName, NomineePositionStateName,
+    ReviewRequestStateName, ReviewResultName, ReviewTypeName, RoleName, RoomResourceName,
+    SessionStatusName, StdLevelName, StreamName, TimeSlotTypeName, )
 
 class NameAdmin(admin.ModelAdmin):
     list_display = ["slug", "name", "desc", "used"]
@@ -37,17 +37,21 @@ admin.site.register(GroupMilestoneStateName, NameAdmin)
 admin.site.register(GroupStateName, NameAdmin)
 admin.site.register(IntendedStdLevelName, NameAdmin)
 admin.site.register(IprDisclosureStateName, NameAdmin)
-admin.site.register(IprLicenseTypeName, NameAdmin)
 admin.site.register(IprEventTypeName, NameAdmin)
-admin.site.register(LiaisonStatementState, NameAdmin)
+admin.site.register(IprLicenseTypeName, NameAdmin)
 admin.site.register(LiaisonStatementEventTypeName, NameAdmin)
 admin.site.register(LiaisonStatementPurposeName, NameAdmin)
+admin.site.register(LiaisonStatementState, NameAdmin)
 admin.site.register(LiaisonStatementTagName, NameAdmin)
 admin.site.register(MeetingTypeName, NameAdmin)
 admin.site.register(NomineePositionStateName, NameAdmin)
+admin.site.register(ReviewRequestStateName, NameAdmin)
+admin.site.register(ReviewResultName, NameAdmin)
+admin.site.register(ReviewTypeName, NameAdmin)
 admin.site.register(RoleName, NameAdmin)
 admin.site.register(RoomResourceName, NameAdmin)
 admin.site.register(SessionStatusName, NameAdmin)
 admin.site.register(StdLevelName, NameAdmin)
 admin.site.register(StreamName, NameAdmin)
 admin.site.register(TimeSlotTypeName, NameAdmin)
+

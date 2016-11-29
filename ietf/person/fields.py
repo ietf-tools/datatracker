@@ -52,7 +52,7 @@ class SearchablePersonsField(forms.CharField):
                  model=Person, # or Email
                  hint_text="Type in name to search for person.",
                  *args, **kwargs):
-        kwargs["max_length"] = 1000
+        kwargs["max_length"] = 10000
         self.max_entries = max_entries
         self.only_users = only_users
         self.all_emails = all_emails
@@ -146,4 +146,24 @@ class SearchableEmailField(SearchableEmailsField):
     def clean(self, value):
         return super(SearchableEmailField, self).clean(value).first()
 
+
+class PersonEmailChoiceField(forms.ModelChoiceField):
+    """ModelChoiceField targeting Email and displaying choices with the
+    person name as well as the email address. Needs further
+    restrictions, e.g. on role, to useful."""
+    def __init__(self, *args, **kwargs):
+        if not "queryset" in kwargs:
+            kwargs["queryset"] = Email.objects.select_related("person")
+
+        self.label_with = kwargs.pop("label_with", None)
+
+        super(PersonEmailChoiceField, self).__init__(*args, **kwargs)
+
+    def label_from_instance(self, email):
+        if self.label_with == "person":
+            return unicode(email.person)
+        elif self.label_with == "email":
+            return email.address
+        else:
+            return u"{} <{}>".format(email.person, email.address)
 

@@ -25,23 +25,23 @@
  "fields": {
   "order": 3,
   "used": true,
-  "name": "Discuss",
-  "blocking": true,
-  "desc": ""
- },
- "model": "name.ballotpositionname",
- "pk": "discuss"
-},
-{
- "fields": {
-  "order": 3,
-  "used": true,
   "name": "Block",
   "blocking": true,
   "desc": ""
  },
  "model": "name.ballotpositionname",
  "pk": "block"
+},
+{
+ "fields": {
+  "order": 3,
+  "used": true,
+  "name": "Discuss",
+  "blocking": true,
+  "desc": ""
+ },
+ "model": "name.ballotpositionname",
+ "pk": "discuss"
 },
 {
  "fields": {
@@ -124,11 +124,11 @@
  "fields": {
   "order": 0,
   "used": true,
-  "name": "reStructuredText",
+  "name": "Django",
   "desc": ""
  },
  "model": "name.dbtemplatetypename",
- "pk": "rst"
+ "pk": "django"
 },
 {
  "fields": {
@@ -144,44 +144,11 @@
  "fields": {
   "order": 0,
   "used": true,
-  "name": "Django",
+  "name": "reStructuredText",
   "desc": ""
  },
  "model": "name.dbtemplatetypename",
- "pk": "django"
-},
-{
- "fields": {
-  "order": 0,
-  "revname": "Obsoleted by",
-  "used": true,
-  "name": "Obsoletes",
-  "desc": ""
- },
- "model": "name.docrelationshipname",
- "pk": "obs"
-},
-{
- "fields": {
-  "order": 0,
-  "revname": "Updated by",
-  "used": true,
-  "name": "Updates",
-  "desc": ""
- },
- "model": "name.docrelationshipname",
- "pk": "updates"
-},
-{
- "fields": {
-  "order": 0,
-  "revname": "Replaced by",
-  "used": true,
-  "name": "Replaces",
-  "desc": ""
- },
- "model": "name.docrelationshipname",
- "pk": "replaces"
+ "pk": "rst"
 },
 {
  "fields": {
@@ -197,28 +164,6 @@
 {
  "fields": {
   "order": 0,
-  "revname": "is normatively referenced by",
-  "used": true,
-  "name": "normatively references",
-  "desc": "Normative Reference"
- },
- "model": "name.docrelationshipname",
- "pk": "refnorm"
-},
-{
- "fields": {
-  "order": 0,
-  "revname": "Referenced by",
-  "used": true,
-  "name": "Reference",
-  "desc": "A reference found in a document which does not have split normative/informative reference sections."
- },
- "model": "name.docrelationshipname",
- "pk": "refold"
-},
-{
- "fields": {
-  "order": 0,
   "revname": "is informatively referenced by",
   "used": true,
   "name": "informatively references",
@@ -226,50 +171,6 @@
  },
  "model": "name.docrelationshipname",
  "pk": "refinfo"
-},
-{
- "fields": {
-  "order": 0,
-  "revname": "Moved to Proposed Standard by",
-  "used": true,
-  "name": "Moves to Proposed Standard",
-  "desc": ""
- },
- "model": "name.docrelationshipname",
- "pk": "tops"
-},
-{
- "fields": {
-  "order": 0,
-  "revname": "Moved to Internet Standard by",
-  "used": true,
-  "name": "Moves to Internet Standard",
-  "desc": ""
- },
- "model": "name.docrelationshipname",
- "pk": "tois"
-},
-{
- "fields": {
-  "order": 0,
-  "revname": "Moved to Historic by",
-  "used": true,
-  "name": "Moves to Historic",
-  "desc": ""
- },
- "model": "name.docrelationshipname",
- "pk": "tohist"
-},
-{
- "fields": {
-  "order": 0,
-  "revname": "Moved to Informational by",
-  "used": true,
-  "name": "Moves to Informational",
-  "desc": ""
- },
- "model": "name.docrelationshipname",
- "pk": "toinf"
 },
 {
  "fields": {
@@ -296,6 +197,72 @@
 {
  "fields": {
   "order": 0,
+  "revname": "Moved to Historic by",
+  "used": true,
+  "name": "Moves to Historic",
+  "desc": ""
+ },
+ "model": "name.docrelationshipname",
+ "pk": "tohist"
+},
+{
+ "fields": {
+  "order": 0,
+  "revname": "Moved to Informational by",
+  "used": true,
+  "name": "Moves to Informational",
+  "desc": ""
+ },
+ "model": "name.docrelationshipname",
+ "pk": "toinf"
+},
+{
+ "fields": {
+  "order": 0,
+  "revname": "Moved to Internet Standard by",
+  "used": true,
+  "name": "Moves to Internet Standard",
+  "desc": ""
+ },
+ "model": "name.docrelationshipname",
+ "pk": "tois"
+},
+{
+ "fields": {
+  "order": 0,
+  "revname": "Moved to Proposed Standard by",
+  "used": true,
+  "name": "Moves to Proposed Standard",
+  "desc": ""
+ },
+ "model": "name.docrelationshipname",
+ "pk": "tops"
+},
+{
+ "fields": {
+  "order": 0,
+  "revname": "is normatively referenced by",
+  "used": true,
+  "name": "normatively references",
+  "desc": "Normative Reference"
+ },
+ "model": "name.docrelationshipname",
+ "pk": "refnorm"
+},
+{
+ "fields": {
+  "order": 0,
+  "revname": "Obsoleted by",
+  "used": true,
+  "name": "Obsoletes",
+  "desc": ""
+ },
+ "model": "name.docrelationshipname",
+ "pk": "obs"
+},
+{
+ "fields": {
+  "order": 0,
   "revname": "Possibly Replaced By",
   "used": true,
   "name": "Possibly Replaces",
@@ -303,6 +270,39 @@
  },
  "model": "name.docrelationshipname",
  "pk": "possibly-replaces"
+},
+{
+ "fields": {
+  "order": 0,
+  "revname": "Referenced by",
+  "used": true,
+  "name": "Reference",
+  "desc": "A reference found in a document which does not have split normative/informative reference sections."
+ },
+ "model": "name.docrelationshipname",
+ "pk": "refold"
+},
+{
+ "fields": {
+  "order": 0,
+  "revname": "Replaced by",
+  "used": true,
+  "name": "Replaces",
+  "desc": ""
+ },
+ "model": "name.docrelationshipname",
+ "pk": "replaces"
+},
+{
+ "fields": {
+  "order": 0,
+  "revname": "Updated by",
+  "used": true,
+  "name": "Updates",
+  "desc": ""
+ },
+ "model": "name.docrelationshipname",
+ "pk": "updates"
 },
 {
  "fields": {
@@ -329,31 +329,11 @@
  "fields": {
   "order": 0,
   "used": true,
-  "name": "IANA coordination",
-  "desc": "RFC-Editor/IANA Registration Coordination"
+  "name": "Approved in minutes",
+  "desc": ""
  },
  "model": "name.doctagname",
- "pk": "iana-crd"
-},
-{
- "fields": {
-  "order": 0,
-  "used": true,
-  "name": "Holding for references",
-  "desc": "Holding for normative reference"
- },
- "model": "name.doctagname",
- "pk": "ref"
-},
-{
- "fields": {
-  "order": 0,
-  "used": true,
-  "name": "Missing references",
-  "desc": "Awaiting missing normative reference"
- },
- "model": "name.doctagname",
- "pk": "missref"
+ "pk": "app-min"
 },
 {
  "fields": {
@@ -369,61 +349,11 @@
  "fields": {
   "order": 0,
   "used": true,
-  "name": "Review by RFC Editor",
-  "desc": ""
+  "name": "Holding for references",
+  "desc": "Holding for normative reference"
  },
  "model": "name.doctagname",
- "pk": "rfc-rev"
-},
-{
- "fields": {
-  "order": 0,
-  "used": true,
-  "name": "Via RFC Editor",
-  "desc": ""
- },
- "model": "name.doctagname",
- "pk": "via-rfc"
-},
-{
- "fields": {
-  "order": 0,
-  "used": true,
-  "name": "Approved in minutes",
-  "desc": ""
- },
- "model": "name.doctagname",
- "pk": "app-min"
-},
-{
- "fields": {
-  "order": 0,
-  "used": true,
-  "name": "Shepherd Needed",
-  "desc": ""
- },
- "model": "name.doctagname",
- "pk": "need-sh"
-},
-{
- "fields": {
-  "order": 0,
-  "used": true,
-  "name": "Waiting for Dependency on Other Document",
-  "desc": ""
- },
- "model": "name.doctagname",
- "pk": "w-dep"
-},
-{
- "fields": {
-  "order": 0,
-  "used": true,
-  "name": "IESG Review Completed",
-  "desc": ""
- },
- "model": "name.doctagname",
- "pk": "iesg-com"
+ "pk": "ref"
 },
 {
  "fields": {
@@ -439,11 +369,31 @@
  "fields": {
   "order": 0,
   "used": true,
-  "name": "Revised I-D Needed - Issue raised by WG",
+  "name": "IANA coordination",
+  "desc": "RFC-Editor/IANA Registration Coordination"
+ },
+ "model": "name.doctagname",
+ "pk": "iana-crd"
+},
+{
+ "fields": {
+  "order": 0,
+  "used": true,
+  "name": "IESG Review Completed",
   "desc": ""
  },
  "model": "name.doctagname",
- "pk": "rev-wg"
+ "pk": "iesg-com"
+},
+{
+ "fields": {
+  "order": 0,
+  "used": true,
+  "name": "Missing references",
+  "desc": "Awaiting missing normative reference"
+ },
+ "model": "name.doctagname",
+ "pk": "missref"
 },
 {
  "fields": {
@@ -457,13 +407,53 @@
 },
 {
  "fields": {
-  "order": 1,
+  "order": 0,
   "used": true,
-  "name": "Point Raised - writeup needed",
-  "desc": "IESG discussions on the document have raised some issues that need to be brought to the attention of the authors/WG, but those issues have not been written down yet. (It is common for discussions during a telechat to result in such situations. An AD may raise a possible issue during a telechat and only decide as a result of that discussion whether the issue is worth formally writing up and bringing to the attention of the authors/WG). A document stays in the \"Point Raised - Writeup Needed\" state until *ALL* IESG comments that have been raised have been documented."
+  "name": "Review by RFC Editor",
+  "desc": ""
  },
  "model": "name.doctagname",
- "pk": "point"
+ "pk": "rfc-rev"
+},
+{
+ "fields": {
+  "order": 0,
+  "used": true,
+  "name": "Revised I-D Needed - Issue raised by WG",
+  "desc": ""
+ },
+ "model": "name.doctagname",
+ "pk": "rev-wg"
+},
+{
+ "fields": {
+  "order": 0,
+  "used": true,
+  "name": "Shepherd Needed",
+  "desc": ""
+ },
+ "model": "name.doctagname",
+ "pk": "need-sh"
+},
+{
+ "fields": {
+  "order": 0,
+  "used": true,
+  "name": "Via RFC Editor",
+  "desc": ""
+ },
+ "model": "name.doctagname",
+ "pk": "via-rfc"
+},
+{
+ "fields": {
+  "order": 0,
+  "used": true,
+  "name": "Waiting for Dependency on Other Document",
+  "desc": ""
+ },
+ "model": "name.doctagname",
+ "pk": "w-dep"
 },
 {
  "fields": {
@@ -484,6 +474,16 @@
  },
  "model": "name.doctagname",
  "pk": "need-ed"
+},
+{
+ "fields": {
+  "order": 1,
+  "used": true,
+  "name": "Point Raised - writeup needed",
+  "desc": "IESG discussions on the document have raised some issues that need to be brought to the attention of the authors/WG, but those issues have not been written down yet. (It is common for discussions during a telechat to result in such situations. An AD may raise a possible issue during a telechat and only decide as a result of that discussion whether the issue is worth formally writing up and bringing to the attention of the authors/WG). A document stays in the \"Point Raised - Writeup Needed\" state until *ALL* IESG comments that have been raised have been documented."
+ },
+ "model": "name.doctagname",
+ "pk": "point"
 },
 {
  "fields": {
@@ -519,16 +519,6 @@
  "fields": {
   "order": 3,
   "used": true,
-  "name": "External Party",
-  "desc": "The document is awaiting review or input from an external party (i.e, someone other than the shepherding AD, the authors, or the WG). See the \"note\" field for more details on who has the action."
- },
- "model": "name.doctagname",
- "pk": "extpty"
-},
-{
- "fields": {
-  "order": 3,
-  "used": true,
   "name": "Awaiting Merge with Other Document",
   "desc": ""
  },
@@ -544,6 +534,16 @@
  },
  "model": "name.doctagname",
  "pk": "w-review"
+},
+{
+ "fields": {
+  "order": 3,
+  "used": true,
+  "name": "External Party",
+  "desc": "The document is awaiting review or input from an external party (i.e, someone other than the shepherding AD, the authors, or the WG). See the \"note\" field for more details on who has the action."
+ },
+ "model": "name.doctagname",
+ "pk": "extpty"
 },
 {
  "fields": {
@@ -648,17 +648,6 @@
 {
  "fields": {
   "order": 0,
-  "prefix": "charter",
-  "used": true,
-  "name": "Charter",
-  "desc": ""
- },
- "model": "name.doctypename",
- "pk": "charter"
-},
-{
- "fields": {
-  "order": 0,
   "prefix": "agenda",
   "used": true,
   "name": "Agenda",
@@ -670,46 +659,24 @@
 {
  "fields": {
   "order": 0,
-  "prefix": "minutes",
+  "prefix": "bluesheets",
   "used": true,
-  "name": "Minutes",
+  "name": "Bluesheets",
   "desc": ""
  },
  "model": "name.doctypename",
- "pk": "minutes"
+ "pk": "bluesheets"
 },
 {
  "fields": {
   "order": 0,
-  "prefix": "slides",
+  "prefix": "charter",
   "used": true,
-  "name": "Slides",
+  "name": "Charter",
   "desc": ""
  },
  "model": "name.doctypename",
- "pk": "slides"
-},
-{
- "fields": {
-  "order": 0,
-  "prefix": "draft",
-  "used": true,
-  "name": "Draft",
-  "desc": ""
- },
- "model": "name.doctypename",
- "pk": "draft"
-},
-{
- "fields": {
-  "order": 0,
-  "prefix": "liai-att",
-  "used": true,
-  "name": "Liaison Attachment",
-  "desc": ""
- },
- "model": "name.doctypename",
- "pk": "liai-att"
+ "pk": "charter"
 },
 {
  "fields": {
@@ -725,24 +692,13 @@
 {
  "fields": {
   "order": 0,
-  "prefix": "status-change",
+  "prefix": "draft",
   "used": true,
-  "name": "Status Change",
+  "name": "Draft",
   "desc": ""
  },
  "model": "name.doctypename",
- "pk": "statchg"
-},
-{
- "fields": {
-  "order": 0,
-  "prefix": "",
-  "used": false,
-  "name": "Shepherd's writeup",
-  "desc": ""
- },
- "model": "name.doctypename",
- "pk": "shepwrit"
+ "pk": "draft"
 },
 {
  "fields": {
@@ -758,6 +714,28 @@
 {
  "fields": {
   "order": 0,
+  "prefix": "liai-att",
+  "used": true,
+  "name": "Liaison Attachment",
+  "desc": ""
+ },
+ "model": "name.doctypename",
+ "pk": "liai-att"
+},
+{
+ "fields": {
+  "order": 0,
+  "prefix": "minutes",
+  "used": true,
+  "name": "Minutes",
+  "desc": ""
+ },
+ "model": "name.doctypename",
+ "pk": "minutes"
+},
+{
+ "fields": {
+  "order": 0,
   "prefix": "recording",
   "used": true,
   "name": "Recording",
@@ -769,13 +747,46 @@
 {
  "fields": {
   "order": 0,
-  "prefix": "bluesheets",
+  "prefix": "",
   "used": true,
-  "name": "Bluesheets",
+  "name": "Review",
   "desc": ""
  },
  "model": "name.doctypename",
- "pk": "bluesheets"
+ "pk": "review"
+},
+{
+ "fields": {
+  "order": 0,
+  "prefix": "",
+  "used": false,
+  "name": "Shepherd's writeup",
+  "desc": ""
+ },
+ "model": "name.doctypename",
+ "pk": "shepwrit"
+},
+{
+ "fields": {
+  "order": 0,
+  "prefix": "slides",
+  "used": true,
+  "name": "Slides",
+  "desc": ""
+ },
+ "model": "name.doctypename",
+ "pk": "slides"
+},
+{
+ "fields": {
+  "order": 0,
+  "prefix": "status-change",
+  "used": true,
+  "name": "Status Change",
+  "desc": ""
+ },
+ "model": "name.doctypename",
+ "pk": "statchg"
 },
 {
  "fields": {
@@ -900,11 +911,11 @@
  "fields": {
   "order": 0,
   "used": true,
-  "name": "Questionnaire response",
+  "name": "Junk",
   "desc": ""
  },
  "model": "name.feedbacktypename",
- "pk": "questio"
+ "pk": "junk"
 },
 {
  "fields": {
@@ -920,11 +931,11 @@
  "fields": {
   "order": 0,
   "used": true,
-  "name": "Junk",
+  "name": "Questionnaire response",
   "desc": ""
  },
  "model": "name.feedbacktypename",
- "pk": "junk"
+ "pk": "questio"
 },
 {
  "fields": {
@@ -970,21 +981,11 @@
  "fields": {
   "order": 0,
   "used": true,
-  "name": "BOF",
-  "desc": ""
+  "name": "Abandonded",
+  "desc": "Formation of the group (most likely a BoF or Proposed WG) was abandoned"
  },
  "model": "name.groupstatename",
- "pk": "bof"
-},
-{
- "fields": {
-  "order": 0,
-  "used": true,
-  "name": "Proposed",
-  "desc": ""
- },
- "model": "name.groupstatename",
- "pk": "proposed"
+ "pk": "abandon"
 },
 {
  "fields": {
@@ -1000,41 +1001,11 @@
  "fields": {
   "order": 0,
   "used": true,
-  "name": "Dormant",
+  "name": "BOF",
   "desc": ""
  },
  "model": "name.groupstatename",
- "pk": "dormant"
-},
-{
- "fields": {
-  "order": 0,
-  "used": true,
-  "name": "Concluded",
-  "desc": ""
- },
- "model": "name.groupstatename",
- "pk": "conclude"
-},
-{
- "fields": {
-  "order": 0,
-  "used": true,
-  "name": "Unknown",
-  "desc": ""
- },
- "model": "name.groupstatename",
- "pk": "unknown"
-},
-{
- "fields": {
-  "order": 0,
-  "used": true,
-  "name": "Abandonded",
-  "desc": "Formation of the group (most likely a BoF or Proposed WG) was abandoned"
- },
- "model": "name.groupstatename",
- "pk": "abandon"
+ "pk": "bof"
 },
 {
  "fields": {
@@ -1050,6 +1021,36 @@
  "fields": {
   "order": 0,
   "used": true,
+  "name": "Concluded",
+  "desc": ""
+ },
+ "model": "name.groupstatename",
+ "pk": "conclude"
+},
+{
+ "fields": {
+  "order": 0,
+  "used": true,
+  "name": "Dormant",
+  "desc": ""
+ },
+ "model": "name.groupstatename",
+ "pk": "dormant"
+},
+{
+ "fields": {
+  "order": 0,
+  "used": true,
+  "name": "Proposed",
+  "desc": ""
+ },
+ "model": "name.groupstatename",
+ "pk": "proposed"
+},
+{
+ "fields": {
+  "order": 0,
+  "used": true,
   "name": "Replaced",
   "desc": "Replaced by dnssd"
  },
@@ -1060,23 +1061,11 @@
  "fields": {
   "order": 0,
   "used": true,
-  "verbose_name": "Internet Engineering Task Force",
-  "name": "IETF",
+  "name": "Unknown",
   "desc": ""
  },
- "model": "name.grouptypename",
- "pk": "ietf"
-},
-{
- "fields": {
-  "order": 0,
-  "used": true,
-  "verbose_name": "Area",
-  "name": "Area",
-  "desc": ""
- },
- "model": "name.grouptypename",
- "pk": "area"
+ "model": "name.groupstatename",
+ "pk": "unknown"
 },
 {
  "fields": {
@@ -1093,89 +1082,23 @@
  "fields": {
   "order": 0,
   "used": true,
-  "verbose_name": "Working Group",
-  "name": "WG",
-  "desc": "Working group"
- },
- "model": "name.grouptypename",
- "pk": "wg"
-},
-{
- "fields": {
-  "order": 0,
-  "used": true,
-  "verbose_name": "Research Group",
-  "name": "RG",
-  "desc": "Research group"
- },
- "model": "name.grouptypename",
- "pk": "rg"
-},
-{
- "fields": {
-  "order": 0,
-  "used": true,
-  "verbose_name": "Team",
-  "name": "Team",
+  "verbose_name": "Area",
+  "name": "Area",
   "desc": ""
  },
  "model": "name.grouptypename",
- "pk": "team"
+ "pk": "area"
 },
 {
  "fields": {
   "order": 0,
   "used": true,
-  "verbose_name": "An Individual",
-  "name": "Individual",
-  "desc": ""
+  "verbose_name": "Area Directorate",
+  "name": "Directorate",
+  "desc": "In many areas, the Area Directors have formed an advisory group or directorate.  These comprise experienced members of the IETF and the technical community represented by the area.  The specific name and the details of the role for each group differ from area to area, but  the primary intent is that these groups assist the Area Director(s), e.g., with the review of specifications produced in the area."
  },
  "model": "name.grouptypename",
- "pk": "individ"
-},
-{
- "fields": {
-  "order": 0,
-  "used": true,
-  "verbose_name": "Standards Organization",
-  "name": "SDO",
-  "desc": "Standards organization"
- },
- "model": "name.grouptypename",
- "pk": "sdo"
-},
-{
- "fields": {
-  "order": 0,
-  "used": true,
-  "verbose_name": "Internet Research Task Force",
-  "name": "IRTF",
-  "desc": ""
- },
- "model": "name.grouptypename",
- "pk": "irtf"
-},
-{
- "fields": {
-  "order": 0,
-  "used": true,
-  "verbose_name": "The RFC Editor",
-  "name": "RFC Editor",
-  "desc": ""
- },
- "model": "name.grouptypename",
- "pk": "rfcedtyp"
-},
-{
- "fields": {
-  "order": 0,
-  "used": true,
-  "verbose_name": "IETF/IAB Nominating Committee",
-  "name": "Nomcom",
-  "desc": "An IETF/IAB Nominating Committee.  Use 'SDO' for external nominating committees."
- },
- "model": "name.grouptypename",
- "pk": "nomcom"
+ "pk": "dir"
 },
 {
  "fields": {
@@ -1192,6 +1115,39 @@
  "fields": {
   "order": 0,
   "used": true,
+  "verbose_name": "Internet Engineering Task Force",
+  "name": "IETF",
+  "desc": ""
+ },
+ "model": "name.grouptypename",
+ "pk": "ietf"
+},
+{
+ "fields": {
+  "order": 0,
+  "used": true,
+  "verbose_name": "An Individual",
+  "name": "Individual",
+  "desc": ""
+ },
+ "model": "name.grouptypename",
+ "pk": "individ"
+},
+{
+ "fields": {
+  "order": 0,
+  "used": true,
+  "verbose_name": "Internet Research Task Force",
+  "name": "IRTF",
+  "desc": ""
+ },
+ "model": "name.grouptypename",
+ "pk": "irtf"
+},
+{
+ "fields": {
+  "order": 0,
+  "used": true,
   "verbose_name": "The Internet Society",
   "name": "ISOC",
   "desc": ""
@@ -1203,12 +1159,67 @@
  "fields": {
   "order": 0,
   "used": true,
-  "verbose_name": "Area Directorate",
-  "name": "Directorate",
-  "desc": "In many areas, the Area Directors have formed an advisory group or directorate.  These comprise experienced members of the IETF and the technical community represented by the area.  The specific name and the details of the role for each group differ from area to area, but  the primary intent is that these groups assist the Area Director(s), e.g., with the review of specifications produced in the area."
+  "verbose_name": "IETF/IAB Nominating Committee",
+  "name": "Nomcom",
+  "desc": "An IETF/IAB Nominating Committee.  Use 'SDO' for external nominating committees."
  },
  "model": "name.grouptypename",
- "pk": "dir"
+ "pk": "nomcom"
+},
+{
+ "fields": {
+  "order": 0,
+  "used": true,
+  "verbose_name": "The RFC Editor",
+  "name": "RFC Editor",
+  "desc": ""
+ },
+ "model": "name.grouptypename",
+ "pk": "rfcedtyp"
+},
+{
+ "fields": {
+  "order": 0,
+  "used": true,
+  "verbose_name": "Research Group",
+  "name": "RG",
+  "desc": "Research group"
+ },
+ "model": "name.grouptypename",
+ "pk": "rg"
+},
+{
+ "fields": {
+  "order": 0,
+  "used": true,
+  "verbose_name": "Standards Organization",
+  "name": "SDO",
+  "desc": "Standards organization"
+ },
+ "model": "name.grouptypename",
+ "pk": "sdo"
+},
+{
+ "fields": {
+  "order": 0,
+  "used": true,
+  "verbose_name": "Team",
+  "name": "Team",
+  "desc": ""
+ },
+ "model": "name.grouptypename",
+ "pk": "team"
+},
+{
+ "fields": {
+  "order": 0,
+  "used": true,
+  "verbose_name": "Working Group",
+  "name": "WG",
+  "desc": "Working group"
+ },
+ "model": "name.grouptypename",
+ "pk": "wg"
 },
 {
  "fields": {
@@ -1334,61 +1345,31 @@
  "fields": {
   "order": 0,
   "used": true,
-  "name": "Submitted",
+  "name": "Changed disclosure metadata",
   "desc": ""
  },
  "model": "name.ipreventtypename",
- "pk": "submitted"
+ "pk": "changed_disclosure"
 },
 {
  "fields": {
   "order": 0,
   "used": true,
-  "name": "Posted",
+  "name": "Comment",
   "desc": ""
  },
  "model": "name.ipreventtypename",
- "pk": "posted"
+ "pk": "comment"
 },
 {
  "fields": {
   "order": 0,
   "used": true,
-  "name": "Removed",
+  "name": "Legacy",
   "desc": ""
  },
  "model": "name.ipreventtypename",
- "pk": "removed"
-},
-{
- "fields": {
-  "order": 0,
-  "used": true,
-  "name": "Rejected",
-  "desc": ""
- },
- "model": "name.ipreventtypename",
- "pk": "rejected"
-},
-{
- "fields": {
-  "order": 0,
-  "used": true,
-  "name": "Pending",
-  "desc": ""
- },
- "model": "name.ipreventtypename",
- "pk": "pending"
-},
-{
- "fields": {
-  "order": 0,
-  "used": true,
-  "name": "Parked",
-  "desc": ""
- },
- "model": "name.ipreventtypename",
- "pk": "parked"
+ "pk": "legacy"
 },
 {
  "fields": {
@@ -1414,11 +1395,31 @@
  "fields": {
   "order": 0,
   "used": true,
-  "name": "Comment",
+  "name": "Parked",
   "desc": ""
  },
  "model": "name.ipreventtypename",
- "pk": "comment"
+ "pk": "parked"
+},
+{
+ "fields": {
+  "order": 0,
+  "used": true,
+  "name": "Pending",
+  "desc": ""
+ },
+ "model": "name.ipreventtypename",
+ "pk": "pending"
+},
+{
+ "fields": {
+  "order": 0,
+  "used": true,
+  "name": "Posted",
+  "desc": ""
+ },
+ "model": "name.ipreventtypename",
+ "pk": "posted"
 },
 {
  "fields": {
@@ -1434,11 +1435,31 @@
  "fields": {
   "order": 0,
   "used": true,
-  "name": "Legacy",
+  "name": "Rejected",
   "desc": ""
  },
  "model": "name.ipreventtypename",
- "pk": "legacy"
+ "pk": "rejected"
+},
+{
+ "fields": {
+  "order": 0,
+  "used": true,
+  "name": "Removed",
+  "desc": ""
+ },
+ "model": "name.ipreventtypename",
+ "pk": "removed"
+},
+{
+ "fields": {
+  "order": 0,
+  "used": true,
+  "name": "Submitted",
+  "desc": ""
+ },
+ "model": "name.ipreventtypename",
+ "pk": "submitted"
 },
 {
  "fields": {
@@ -1449,16 +1470,6 @@
  },
  "model": "name.ipreventtypename",
  "pk": "update_notify"
-},
-{
- "fields": {
-  "order": 0,
-  "used": true,
-  "name": "Changed disclosure metadata",
-  "desc": ""
- },
- "model": "name.ipreventtypename",
- "pk": "changed_disclosure"
 },
 {
  "fields": {
@@ -1754,16 +1765,6 @@
  "fields": {
   "order": 0,
   "used": true,
-  "name": "Nominated, pending response",
-  "desc": ""
- },
- "model": "name.nomineepositionstatename",
- "pk": "pending"
-},
-{
- "fields": {
-  "order": 0,
-  "used": true,
   "name": "Accepted",
   "desc": ""
  },
@@ -1779,6 +1780,236 @@
  },
  "model": "name.nomineepositionstatename",
  "pk": "declined"
+},
+{
+ "fields": {
+  "order": 0,
+  "used": true,
+  "name": "Nominated, pending response",
+  "desc": ""
+ },
+ "model": "name.nomineepositionstatename",
+ "pk": "pending"
+},
+{
+ "fields": {
+  "order": 1,
+  "used": true,
+  "name": "Requested",
+  "desc": ""
+ },
+ "model": "name.reviewrequeststatename",
+ "pk": "requested"
+},
+{
+ "fields": {
+  "order": 2,
+  "used": true,
+  "name": "Accepted",
+  "desc": ""
+ },
+ "model": "name.reviewrequeststatename",
+ "pk": "accepted"
+},
+{
+ "fields": {
+  "order": 3,
+  "used": true,
+  "name": "Rejected",
+  "desc": ""
+ },
+ "model": "name.reviewrequeststatename",
+ "pk": "rejected"
+},
+{
+ "fields": {
+  "order": 4,
+  "used": true,
+  "name": "Withdrawn",
+  "desc": ""
+ },
+ "model": "name.reviewrequeststatename",
+ "pk": "withdrawn"
+},
+{
+ "fields": {
+  "order": 5,
+  "used": true,
+  "name": "Overtaken by Events",
+  "desc": ""
+ },
+ "model": "name.reviewrequeststatename",
+ "pk": "overtaken"
+},
+{
+ "fields": {
+  "order": 6,
+  "used": true,
+  "name": "No Response",
+  "desc": ""
+ },
+ "model": "name.reviewrequeststatename",
+ "pk": "no-response"
+},
+{
+ "fields": {
+  "order": 7,
+  "used": true,
+  "name": "Team Will not Review Version",
+  "desc": ""
+ },
+ "model": "name.reviewrequeststatename",
+ "pk": "no-review-version"
+},
+{
+ "fields": {
+  "order": 8,
+  "used": true,
+  "name": "Team Will not Review Document",
+  "desc": ""
+ },
+ "model": "name.reviewrequeststatename",
+ "pk": "no-review-document"
+},
+{
+ "fields": {
+  "order": 9,
+  "used": true,
+  "name": "Partially Completed",
+  "desc": ""
+ },
+ "model": "name.reviewrequeststatename",
+ "pk": "part-completed"
+},
+{
+ "fields": {
+  "order": 10,
+  "used": true,
+  "name": "Completed",
+  "desc": ""
+ },
+ "model": "name.reviewrequeststatename",
+ "pk": "completed"
+},
+{
+ "fields": {
+  "order": 1,
+  "used": true,
+  "name": "Serious Issues",
+  "desc": ""
+ },
+ "model": "name.reviewresultname",
+ "pk": "serious-issues"
+},
+{
+ "fields": {
+  "order": 2,
+  "used": true,
+  "name": "Has Issues",
+  "desc": ""
+ },
+ "model": "name.reviewresultname",
+ "pk": "issues"
+},
+{
+ "fields": {
+  "order": 3,
+  "used": true,
+  "name": "Has Nits",
+  "desc": ""
+ },
+ "model": "name.reviewresultname",
+ "pk": "nits"
+},
+{
+ "fields": {
+  "order": 4,
+  "used": true,
+  "name": "Not Ready",
+  "desc": ""
+ },
+ "model": "name.reviewresultname",
+ "pk": "not-ready"
+},
+{
+ "fields": {
+  "order": 5,
+  "used": true,
+  "name": "On the Right Track",
+  "desc": ""
+ },
+ "model": "name.reviewresultname",
+ "pk": "right-track"
+},
+{
+ "fields": {
+  "order": 6,
+  "used": true,
+  "name": "Almost Ready",
+  "desc": ""
+ },
+ "model": "name.reviewresultname",
+ "pk": "almost-ready"
+},
+{
+ "fields": {
+  "order": 7,
+  "used": true,
+  "name": "Ready with Issues",
+  "desc": ""
+ },
+ "model": "name.reviewresultname",
+ "pk": "ready-issues"
+},
+{
+ "fields": {
+  "order": 8,
+  "used": true,
+  "name": "Ready with Nits",
+  "desc": ""
+ },
+ "model": "name.reviewresultname",
+ "pk": "ready-nits"
+},
+{
+ "fields": {
+  "order": 9,
+  "used": true,
+  "name": "Ready",
+  "desc": ""
+ },
+ "model": "name.reviewresultname",
+ "pk": "ready"
+},
+{
+ "fields": {
+  "order": 1,
+  "used": true,
+  "name": "Early",
+  "desc": ""
+ },
+ "model": "name.reviewtypename",
+ "pk": "early"
+},
+{
+ "fields": {
+  "order": 2,
+  "used": true,
+  "name": "Last Call",
+  "desc": ""
+ },
+ "model": "name.reviewtypename",
+ "pk": "lc"
+},
+{
+ "fields": {
+  "order": 3,
+  "used": true,
+  "name": "Telechat",
+  "desc": ""
+ },
+ "model": "name.reviewtypename",
+ "pk": "telechat"
 },
 {
  "fields": {
@@ -1834,16 +2065,6 @@
  "fields": {
   "order": 3,
   "used": true,
-  "name": "Incoming Area Director",
-  "desc": ""
- },
- "model": "name.rolename",
- "pk": "pre-ad"
-},
-{
- "fields": {
-  "order": 3,
-  "used": true,
   "name": "Administrative Director",
   "desc": ""
  },
@@ -1852,13 +2073,23 @@
 },
 {
  "fields": {
-  "order": 4,
+  "order": 3,
   "used": true,
-  "name": "Tech Advisor",
+  "name": "Incoming Area Director",
   "desc": ""
  },
  "model": "name.rolename",
- "pk": "techadv"
+ "pk": "pre-ad"
+},
+{
+ "fields": {
+  "order": 4,
+  "used": true,
+  "name": "Advisor",
+  "desc": "Advisor in a group that has explicit membership, such as the NomCom"
+ },
+ "model": "name.rolename",
+ "pk": "advisor"
 },
 {
  "fields": {
@@ -1874,21 +2105,11 @@
  "fields": {
   "order": 4,
   "used": true,
-  "name": "Advisor",
-  "desc": "Advisor in a group that has explicit membership, such as the NomCom"
- },
- "model": "name.rolename",
- "pk": "advisor"
-},
-{
- "fields": {
-  "order": 5,
-  "used": true,
-  "name": "Editor",
+  "name": "Tech Advisor",
   "desc": ""
  },
  "model": "name.rolename",
- "pk": "editor"
+ "pk": "techadv"
 },
 {
  "fields": {
@@ -1902,13 +2123,13 @@
 },
 {
  "fields": {
-  "order": 6,
+  "order": 5,
   "used": true,
-  "name": "Secretary",
+  "name": "Editor",
   "desc": ""
  },
  "model": "name.rolename",
- "pk": "secr"
+ "pk": "editor"
 },
 {
  "fields": {
@@ -1919,6 +2140,16 @@
  },
  "model": "name.rolename",
  "pk": "delegate"
+},
+{
+ "fields": {
+  "order": 6,
+  "used": true,
+  "name": "Secretary",
+  "desc": ""
+ },
+ "model": "name.rolename",
+ "pk": "secr"
 },
 {
  "fields": {
@@ -1972,43 +2203,13 @@
 },
 {
  "fields": {
-  "order": 0,
+  "order": 14,
   "used": true,
-  "name": "LCD projector",
-  "desc": "The room will have a computer projector"
+  "name": "Reviewer",
+  "desc": ""
  },
- "model": "name.roomresourcename",
- "pk": "project"
-},
-{
- "fields": {
-  "order": 0,
-  "used": true,
-  "name": "second LCD projector",
-  "desc": "The room will have a second computer projector"
- },
- "model": "name.roomresourcename",
- "pk": "proj2"
-},
-{
- "fields": {
-  "order": 0,
-  "used": true,
-  "name": "Meetecho Support",
-  "desc": "The room will have a meetecho wrangler"
- },
- "model": "name.roomresourcename",
- "pk": "meetecho"
-},
-{
- "fields": {
-  "order": 0,
-  "used": true,
-  "name": "Boardroom Layout",
-  "desc": "Experimental room setup (boardroom and classroom) subject to availability"
- },
- "model": "name.roomresourcename",
- "pk": "boardroom"
+ "model": "name.rolename",
+ "pk": "reviewer"
 },
 {
  "fields": {
@@ -2024,21 +2225,41 @@
  "fields": {
   "order": 0,
   "used": true,
-  "name": "Waiting for Scheduling",
-  "desc": ""
+  "name": "Boardroom Layout",
+  "desc": "Experimental room setup (boardroom and classroom) subject to availability"
  },
- "model": "name.sessionstatusname",
- "pk": "schedw"
+ "model": "name.roomresourcename",
+ "pk": "boardroom"
 },
 {
  "fields": {
   "order": 0,
   "used": true,
-  "name": "Waiting for Approval",
-  "desc": ""
+  "name": "LCD projector",
+  "desc": "The room will have a computer projector"
  },
- "model": "name.sessionstatusname",
- "pk": "apprw"
+ "model": "name.roomresourcename",
+ "pk": "project"
+},
+{
+ "fields": {
+  "order": 0,
+  "used": true,
+  "name": "Meetecho Support",
+  "desc": "The room will have a meetecho wrangler"
+ },
+ "model": "name.roomresourcename",
+ "pk": "meetecho"
+},
+{
+ "fields": {
+  "order": 0,
+  "used": true,
+  "name": "second LCD projector",
+  "desc": "The room will have a second computer projector"
+ },
+ "model": "name.roomresourcename",
+ "pk": "proj2"
 },
 {
  "fields": {
@@ -2054,21 +2275,31 @@
  "fields": {
   "order": 0,
   "used": true,
-  "name": "Scheduled",
-  "desc": ""
- },
- "model": "name.sessionstatusname",
- "pk": "sched"
-},
-{
- "fields": {
-  "order": 0,
-  "used": true,
   "name": "Cancelled",
   "desc": ""
  },
  "model": "name.sessionstatusname",
  "pk": "canceled"
+},
+{
+ "fields": {
+  "order": 0,
+  "used": true,
+  "name": "Cancelled - Pre Announcement",
+  "desc": ""
+ },
+ "model": "name.sessionstatusname",
+ "pk": "canceledpa"
+},
+{
+ "fields": {
+  "order": 0,
+  "used": true,
+  "name": "Deleted",
+  "desc": ""
+ },
+ "model": "name.sessionstatusname",
+ "pk": "deleted"
 },
 {
  "fields": {
@@ -2094,11 +2325,11 @@
  "fields": {
   "order": 0,
   "used": true,
-  "name": "Deleted",
+  "name": "Scheduled",
   "desc": ""
  },
  "model": "name.sessionstatusname",
- "pk": "deleted"
+ "pk": "sched"
 },
 {
  "fields": {
@@ -2114,21 +2345,31 @@
  "fields": {
   "order": 0,
   "used": true,
-  "name": "Cancelled - Pre Announcement",
+  "name": "Waiting for Approval",
   "desc": ""
  },
  "model": "name.sessionstatusname",
- "pk": "canceledpa"
+ "pk": "apprw"
 },
 {
  "fields": {
   "order": 0,
   "used": true,
-  "name": "Internet Standard",
+  "name": "Waiting for Scheduling",
+  "desc": ""
+ },
+ "model": "name.sessionstatusname",
+ "pk": "schedw"
+},
+{
+ "fields": {
+  "order": 0,
+  "used": true,
+  "name": "Best Current Practice",
   "desc": ""
  },
  "model": "name.stdlevelname",
- "pk": "std"
+ "pk": "bcp"
 },
 {
  "fields": {
@@ -2144,11 +2385,21 @@
  "fields": {
   "order": 0,
   "used": true,
-  "name": "Proposed Standard",
+  "name": "Experimental",
   "desc": ""
  },
  "model": "name.stdlevelname",
- "pk": "ps"
+ "pk": "exp"
+},
+{
+ "fields": {
+  "order": 0,
+  "used": true,
+  "name": "Historic",
+  "desc": ""
+ },
+ "model": "name.stdlevelname",
+ "pk": "hist"
 },
 {
  "fields": {
@@ -2164,31 +2415,21 @@
  "fields": {
   "order": 0,
   "used": true,
-  "name": "Experimental",
+  "name": "Internet Standard",
   "desc": ""
  },
  "model": "name.stdlevelname",
- "pk": "exp"
+ "pk": "std"
 },
 {
  "fields": {
   "order": 0,
   "used": true,
-  "name": "Best Current Practice",
+  "name": "Proposed Standard",
   "desc": ""
  },
  "model": "name.stdlevelname",
- "pk": "bcp"
-},
-{
- "fields": {
-  "order": 0,
-  "used": true,
-  "name": "Historic",
-  "desc": ""
- },
- "model": "name.stdlevelname",
- "pk": "hist"
+ "pk": "ps"
 },
 {
  "fields": {
@@ -2254,71 +2495,11 @@
  "fields": {
   "order": 0,
   "used": true,
-  "name": "Other",
-  "desc": ""
- },
- "model": "name.timeslottypename",
- "pk": "other"
-},
-{
- "fields": {
-  "order": 0,
-  "used": true,
-  "name": "Session",
-  "desc": ""
- },
- "model": "name.timeslottypename",
- "pk": "session"
-},
-{
- "fields": {
-  "order": 0,
-  "used": true,
   "name": "Break",
   "desc": ""
  },
  "model": "name.timeslottypename",
  "pk": "break"
-},
-{
- "fields": {
-  "order": 0,
-  "used": true,
-  "name": "Registration",
-  "desc": ""
- },
- "model": "name.timeslottypename",
- "pk": "reg"
-},
-{
- "fields": {
-  "order": 0,
-  "used": true,
-  "name": "Plenary",
-  "desc": ""
- },
- "model": "name.timeslottypename",
- "pk": "plenary"
-},
-{
- "fields": {
-  "order": 0,
-  "used": true,
-  "name": "Room Unavailable",
-  "desc": "A room was not booked for the timeslot indicated"
- },
- "model": "name.timeslottypename",
- "pk": "unavail"
-},
-{
- "fields": {
-  "order": 0,
-  "used": true,
-  "name": "Room Reserved",
-  "desc": "A room has been reserved for use by another body the timeslot indicated"
- },
- "model": "name.timeslottypename",
- "pk": "reserved"
 },
 {
  "fields": {
@@ -2339,6 +2520,66 @@
  },
  "model": "name.timeslottypename",
  "pk": "offagenda"
+},
+{
+ "fields": {
+  "order": 0,
+  "used": true,
+  "name": "Other",
+  "desc": ""
+ },
+ "model": "name.timeslottypename",
+ "pk": "other"
+},
+{
+ "fields": {
+  "order": 0,
+  "used": true,
+  "name": "Plenary",
+  "desc": ""
+ },
+ "model": "name.timeslottypename",
+ "pk": "plenary"
+},
+{
+ "fields": {
+  "order": 0,
+  "used": true,
+  "name": "Registration",
+  "desc": ""
+ },
+ "model": "name.timeslottypename",
+ "pk": "reg"
+},
+{
+ "fields": {
+  "order": 0,
+  "used": true,
+  "name": "Room Reserved",
+  "desc": "A room has been reserved for use by another body the timeslot indicated"
+ },
+ "model": "name.timeslottypename",
+ "pk": "reserved"
+},
+{
+ "fields": {
+  "order": 0,
+  "used": true,
+  "name": "Room Unavailable",
+  "desc": "A room was not booked for the timeslot indicated"
+ },
+ "model": "name.timeslottypename",
+ "pk": "unavail"
+},
+{
+ "fields": {
+  "order": 0,
+  "used": true,
+  "name": "Session",
+  "desc": ""
+ },
+ "model": "name.timeslottypename",
+ "pk": "session"
 },
 {
  "fields": {
@@ -2479,6 +2720,13 @@
  },
  "model": "doc.statetype",
  "pk": "reuse_policy"
+},
+{
+ "fields": {
+  "label": "Review"
+ },
+ "model": "doc.statetype",
+ "pk": "review"
 },
 {
  "fields": {
@@ -4233,6 +4481,32 @@
   "name": "Active",
   "next_states": [],
   "slug": "active",
+  "type": "review",
+  "order": 1,
+  "desc": ""
+ },
+ "model": "doc.state",
+ "pk": 143
+},
+{
+ "fields": {
+  "used": true,
+  "name": "Deleted",
+  "next_states": [],
+  "slug": "deleted",
+  "type": "review",
+  "order": 2,
+  "desc": ""
+ },
+ "model": "doc.state",
+ "pk": 144
+},
+{
+ "fields": {
+  "used": true,
+  "name": "Active",
+  "next_states": [],
+  "slug": "active",
   "type": "slides",
   "order": 1,
   "desc": ""
@@ -4759,7 +5033,7 @@
 },
 {
  "fields": {
-  "template": "{% if group.stream_id == 'ietf' %}IETF-Announce <ietf-announce@ietf.org>{% elif group.stream_id == 'irtf' %}IRTF-Announce <irtf-announce@irtf.org>{% endif %}",
+  "template": "{% if group.type_id == 'wg' %}IETF-Announce <ietf-announce@ietf.org>{% elif group.type_id == 'rg' %}IRTF-Announce <irtf-announce@irtf.org>{% endif %}",
   "desc": "The group's stream's announce list"
  },
  "model": "mailtrigger.recipient",

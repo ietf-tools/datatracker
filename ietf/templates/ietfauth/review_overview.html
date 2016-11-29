@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+
+{% load bootstrap3 static %}
+
+{% block pagehead %}
+  <link rel="stylesheet" href="{% static 'select2/select2.css' %}">
+  <link rel="stylesheet" href="{% static 'select2-bootstrap-css/select2-bootstrap.min.css' %}">
+{% endblock %}
+
+{% block title %}Review overview for {{ request.user }}{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <h1>Review overview for {{ request.user }}</h1>
+
+  <h2>Assigned reviews</h2>
+
+  {% if open_review_requests %}
+    <table class="table table-condensed table-striped">
+      <thead>
+        <tr>
+          <th>Request</th>
+          <th>Team</th>
+          <th>Type</th>
+          <th>Deadline</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in open_review_requests %}
+          <tr>
+            <td><a {% if r.pk != None %}href="{% url "ietf.doc.views_review.review_request" name=r.doc.name request_id=r.pk %}"{% endif %}>{{ r.doc.name }}-{% if r.requested_rev %}{{ r.requested_rev }}{% else %}{{ r.doc.rev }}{% endif %}</a></td>
+            <td>{{ r.team.acronym }}</td>
+            <td>{{ r.type.name }}</td>
+            <td>
+              {{ r.deadline|date:"Y-m-d" }}
+              {% if r.due %}<span class="label label-warning">{{ r.due }} day{{ r.due|pluralize }}</span>{% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>You do not have any open review requests assigned.</p>
+  {% endif %}
+
+
+  <h2>Latest closed review requests</h2>
+
+  {% if closed_review_requests %}
+    <table class="table table-condensed table-striped">
+      <thead>
+        <tr>
+          <th>Request</th>
+          <th>Team</th>
+          <th>Type</th>
+          <th>Deadline</th>
+          <th>State</th>
+          <th>Result</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in closed_review_requests %}
+          <tr>
+            <td><a {% if r.pk != None %}href="{% url "ietf.doc.views_review.review_request" name=r.doc.name request_id=r.pk %}"{% endif %}>{{ r.doc.name }}-{% if r.requested_rev %}{{ r.requested_rev }}{% else %}{{ r.doc.rev }}{% endif %}</a></td>
+            <td>{{ r.team.acronym }}</td>
+            <td>{{ r.type.name }}</td>
+            <td>
+              {{ r.deadline|date:"Y-m-d" }}
+              {% if r.due %}<span class="label label-warning">{{ r.due }} day{{ r.due|pluralize }}</span>{% endif %}
+            </td>
+            <td><span class="{% if r.state_id == "completed" or r.state_id == "part-completed" %}bg-success{% endif %}">{{ r.state.name }}</span></td>
+            <td>{% if r.result %}{{ r.result.name }}{% endif %}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>Did not find any closed review requests assigned to you.</p>
+  {% endif %}
+
+
+  <h2>Review wishes</h2>
+
+  {% if review_wishes %}
+    <p>You have indicated that you would like to review:</p>
+
+    <table class="table">
+      {% for w in review_wishes %}
+        <tr>
+          <td><a href="{% url "doc_view" w.doc_id %}">{{ w.doc_id }}</a></td>
+          <td>{{ w.team.acronym }}</td>
+          <td>
+            <form method="post">
+              {% csrf_token %}
+
+              <input name="wish_id" value="{{ w.pk }}" type="hidden">
+              <button class="btn btn-sm btn-danger" type="submit" name="action" value="delete_wish">Delete</button>
+            </form>
+          </td>
+        </tr>
+      {% endfor %}
+    </table>
+  {% else %}
+    <p>You do not have any review wishes.</p>
+  {% endif %}
+
+  {% if teams %}
+    <p>Add a draft that you would like to review when it becomes available for review:</p>
+
+    <form role="form" method="post" class="form-inline">
+      {% csrf_token %}
+      {% bootstrap_form review_wish_form layout="inline" %}
+
+      {% buttons %}
+        <button class="btn btn-default" type="submit" name="action" value="add_wish">Add draft</button>
+      {% endbuttons %}
+    </form>
+  {% endif %}
+
+
+  {% for t in teams %}
+    <h2>Settings for {{ t }}</h2>
+
+    <table class="table">
+      <tr>
+        <th>Can review</th>
+        <td>{{ t.reviewer_settings.get_min_interval_display|default:"No max frequency set" }}</td>
+      </tr>
+      <tr>
+        <th>Skip next assignments</th>
+        <td>{{ t.reviewer_settings.skip_next }}</td>
+      </tr>
+      <tr>
+        <th>Filter regexp</th>
+        <td>{% if t.reviewer_settings.filter_re %}<code>{{ t.reviewer_settings.filter_re }}</code>{% else %}(None){% endif %}</td>
+      </tr>
+      <tr>
+        <th>Remind days before deadline</th>
+        <td>{{ t.reviewer_settings.remind_days_before_deadline|default:"(Do not remind)" }}</td>
+      </tr>
+      <tr>
+        <th>Unavailable periods</th>
+        <td>
+          {% if t.unavailable_periods %}
+            {% include "review/unavailable_table.html" with unavailable_periods=t.unavailable_periods %}
+          {% else %}
+            (No periods)
+          {% endif %}
+        </td>
+    </table>
+
+    <div>
+      <a class="btn btn-default" href="{% url "ietf.group.views_review.change_reviewer_settings" group_type=t.type_id acronym=t.acronym reviewer_email=t.role.email.address %}?next={{ request.get_full_path|urlencode }}">Change settings</a>
+    </div>
+
+
+  {% empty %}
+    <h2>Settings</h2>
+
+    <p>It looks like you are not a reviewer in any active review team.</p>
+  {% endfor %}
+
+{% endblock %}
+
+{% block js %}
+  <script src="{% static 'select2/select2.min.js' %}"></script>
+  <script src="{% static 'ietf/js/select2-field.js' %}"></script>
+{% endblock %}

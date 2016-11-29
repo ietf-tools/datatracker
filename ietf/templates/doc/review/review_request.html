@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2016, All Rights Reserved #}
+{% load origin bootstrap3 static %}
+
+{% block title %}Review request for {{ review_req.doc.name }}{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <h1>Review request<br><small>{{ review_req.doc.name }}</small></h1>
+
+  <table class="table table-condensed">
+    <tbody class="meta">
+      <tr>
+        <th>Request</th>
+        <th>Review of</th>
+        <td>
+          {% if review_req.requested_rev %}
+            <a href="{% url "doc_view" name=review_req.doc.name rev=review_req.requested_rev %}">{{ review_req.doc.name }}-{{ review_req.requested_rev }}</a>
+          {% else %}
+            <a href="{% url "doc_view" name=review_req.doc.name %}">{{ review_req.doc.name }}</a>
+          {% endif %}
+        </td>
+      </tr>
+
+      <tr>
+        <th></th>
+        <th>Requested rev.</th>
+        <td>
+          {% if review_req.requested_rev %}
+            {{ review_req.requested_rev }}
+          {% else %}
+            no specific revision
+          {% endif %}
+          {% if review_req.reviewed_rev != review_req.doc.rev %}(document currently at {{ review_req.doc.rev }}){% endif %}
+        </td>
+      </tr>
+
+      <tr>
+        <th></th>
+        <th>Type</th>
+        <td>{{ review_req.type.name }} Review</td>
+      </tr>
+
+      <tr>
+        <th></th>
+        <th>Team</th>
+        <td><a href="{% url "ietf.group.views_review.review_requests" group_type=review_req.team.type_id acronym=review_req.team.acronym %}">{{ review_req.team.acronym|upper }}</a></td>
+      </tr>
+
+      <tr>
+        <th></th>
+        <th>Deadline</th>
+        <td>{{ review_req.deadline|date:"Y-m-d" }}</td>
+      </tr>
+
+      <tr>
+        <th></th>
+        <th>Requested</th>
+        <td>{{ review_req.time|date:"Y-m-d" }}</td>
+      </tr>
+
+      {% if review_req.requested_by.name != "(System)" %}
+        <tr>
+          <th></th>
+          <th>Requested by</th>
+          <td>{{ review_req.requested_by }}</td>
+        </tr>
+      {% endif %}
+    </tbody>
+
+    <tbody class="meta">
+      <tr>
+        <th>Review</th>
+        <th>State</th>
+        <td>{{ review_req.state.name }}</td>
+      </tr>
+
+      <tr>
+        <th></th>
+        <th>Reviewer</th>
+        <td>
+          {% if review_req.reviewer %}
+            {{ review_req.reviewer.person }}
+          {% else %}
+            None assigned yet
+          {% endif %}
+
+          {% if can_assign_reviewer %}
+            <a class="btn btn-default btn-xs" href="{% url "ietf.doc.views_review.assign_reviewer" name=doc.name request_id=review_req.pk %}"><span class="fa fa-user"></span> {% if review_req.reviewer %}Reassign{% else %}Assign{% endif %} reviewer</a>
+          {% endif %}
+
+          {% if review_req.reviewer %}
+            {% if can_reject_reviewer_assignment or can_accept_reviewer_assignment %}
+              <div class="reviewer-assignment-not-accepted">
+                {% if review_req.state_id == "requested"%}
+                  <em>Assignment not accepted yet:</em>
+                {% else %}
+                  <em>Assignment accepted:</em>
+                {% endif %}
+
+                {% if can_reject_reviewer_assignment %}
+                  <a class="btn btn-danger btn-xs" href="{% url "ietf.doc.views_review.reject_reviewer_assignment" name=doc.name request_id=review_req.pk %}"><span class="fa fa-ban"></span> Reject</a>
+                {% endif %}
+                
+                {% if can_accept_reviewer_assignment %}
+                  <form style="display:inline" method="post" action="{% url "ietf.doc.views_review.review_request" name=doc.name request_id=review_req.pk %}">{% csrf_token %}<button class="btn btn-success btn-xs" type="submit" name="action" value="accept"><span class="fa fa-check"></span> Accept</button></form>
+                {% endif %}
+              </div>
+            {% endif %}
+          {% endif %}
+        </td>
+      </tr>
+
+      <tr>
+        <th></th>
+        <th>Review</th>
+        <td>
+          {% if review_req.review %}
+            <a href="{{ review_req.review.get_absolute_url }}">{{ review_req.review.name }}</a>
+          {% elif review_req.state_id == "requested" or review_req.state_id == "accepted" %}
+            Not completed yet
+          {% else %}
+            Not available
+          {% endif %}
+
+          {% if can_complete_review %}
+            <a class="btn btn-primary btn-xs" href="{% url "ietf.doc.views_review.complete_review" name=doc.name request_id=review_req.pk %}"><span class="fa fa-pencil-square-o"></span> {% if review_req.state_id == "requested" or review_req.state_id == "accepted" %}Complete review{% else %}Correct review{% endif %}</a>
+          {% endif %}
+        </td>
+      </tr>
+
+      {% if review_req.review and review_req.review.external_url %}
+        <tr>
+          <th></th>
+          <th>Posted at</th>
+          <td>
+            <a href="{{ review_req.review.external_url }}">{{ review_req.review.external_url }}</a>
+          </td>
+        </tr>
+      {% endif %}
+
+      {% if review_req.reviewed_rev %}
+        <tr>
+          <th></th>
+          <th>Reviewed rev.</th>
+          <td><a href="{% url "doc_view" name=review_req.doc.name rev=review_req.reviewed_rev %}">{{ review_req.reviewed_rev }}</a> {% if review_req.reviewed_rev != review_req.doc.rev %}(document currently at {{ review_req.doc.rev }}){% endif %}</td>
+        </tr>
+      {% endif %}
+
+      {% if review_req.result %}
+        <tr>
+          <th></th>
+          <th>Review result</th>
+          <td>{{ review_req.result.name }}</td>
+        </tr>
+      {% endif %}
+    </tbody>
+  </table>
+
+  <div>
+    {% if can_close_request %}
+      <a class="btn btn-danger btn-xs" href="{% url "ietf.doc.views_review.close_request" name=doc.name request_id=review_req.pk %}"><span class="fa fa-ban"></span> Close request</a>
+    {% endif %}
+  </div>
+
+  
+{% endblock %}

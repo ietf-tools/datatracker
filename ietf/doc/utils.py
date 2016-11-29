@@ -5,6 +5,7 @@ import math
 import datetime
 import hashlib
 import json
+from collections import defaultdict
 
 from django.conf import settings
 from django.forms import ValidationError
@@ -109,7 +110,6 @@ def can_adopt_draft(user, doc):
                                     group__type__in=("wg", "rg"),
                                     group__state="active",
                                     person__user=user).exists())
-
 
 def two_thirds_rule( recused=0 ):
     # For standards-track, need positions from 2/3 of the non-recused current IESG.
@@ -597,6 +597,39 @@ def uppercase_std_abbreviated_name(name):
         return name.upper()
     else:
         return name
+
+def extract_complete_replaces_ancestor_mapping_for_docs(names):
+    """Return dict mapping all replaced by relationships of the
+    replacement ancestors to docs. So if x is directly replaced by y
+    and y is in names or replaced by something in names, x in
+    replaces[y]."""
+
+    replaces = defaultdict(set)
+
+    checked = set()
+    front = names
+    while True:
+        if not front:
+            break
+
+        relations = RelatedDocument.objects.filter(
+            source__in=front, relationship="replaces"
+        ).select_related("target").values_list("source", "target__document")
+
+        if not relations:
+            break
+
+        checked.update(front)
+
+        front = []
+        for source_doc, target_doc in relations:
+            replaces[source_doc].add(target_doc)
+
+            if target_doc not in checked:
+                front.append(target_doc)
+
+    return replaces
+
 
 def crawl_history(doc):
     # return document history data for inclusion in doc.json (used by timeline)

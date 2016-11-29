@@ -14,7 +14,7 @@ class NameModel(models.Model):
 
     class Meta:
         abstract = True
-        ordering = ['order']
+        ordering = ['order', 'name']
 
 class GroupStateName(NameModel):
     """BOF, Proposed, Active, Dormant, Concluded, Abandoned"""
@@ -88,3 +88,13 @@ class LiaisonStatementEventTypeName(NameModel):
     "Submitted, Modified, Approved, Posted, Killed, Resurrected, MsgIn, MsgOut, Comment"
 class LiaisonStatementTagName(NameModel):
     "Action Required, Action Taken"
+class ReviewRequestStateName(NameModel):
+    """Requested, Accepted, Rejected, Withdrawn, Overtaken By Events,
+    No Response, No Review of Version, No Review of Document, Partially Completed, Completed"""
+class ReviewTypeName(NameModel):
+    """Early Review, Last Call, Telechat"""
+class ReviewResultName(NameModel):
+    """Almost ready, Has issues, Has nits, Not Ready,
+    On the right track, Ready, Ready with issues,
+    Ready with nits, Serious Issues"""
+

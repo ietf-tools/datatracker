@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}{% origin %}
+
+{% load ietf_filters staticfiles bootstrap3 %}
+
+{% block pagehead %}
+  <link rel="stylesheet" href="{% static 'bootstrap-datepicker/css/bootstrap-datepicker3.min.css' %}">
+{% endblock %}
+
+{% block title %}Change reviewer settings for {{ group.acronym }} for {{ reviewer_email }}{% endblock %}
+
+{% block content %}
+  {% origin %}
+
+  <h1>Change reviewer settings for {{ group.acronym }} for {{ reviewer_email }}</h1>
+
+  <h3>Settings</h3>
+
+  <form class="change-reviewer-settings" method="post">{% csrf_token %}
+    {% bootstrap_form settings_form %}
+    
+    {% buttons %}
+      <a href="{{ back_url }}" class="btn btn-default pull-right">Cancel</a>
+      <button class="btn btn-primary" type="submit" name="action" value="change_settings">Save</button>
+    {% endbuttons %}
+  </form>
+
+  <h3>Unavailable periods</h3>
+
+  <p>You can register periods where reviews should not be assigned.</p>
+
+  {% if unavailable_periods %}
+    <table class="table">
+      {% for o in unavailable_periods %}
+        <tr class="unavailable-period-{{ o.state }}">
+          <td>
+            {{ o.start_date|default:"indefinite" }} - {{ o.end_date|default:"indefinite" }}
+          </td>
+          <td>{{ o.get_availability_display }}</td>
+          <td>
+            {% if not o.end_date %}
+              <form method="post" class="form-inline" style="display:inline-block">
+                {% csrf_token %}
+                <input type="hidden" name="period_id" value="{{ o.pk }}">
+                {% bootstrap_form o.end_form layout="inline" %}
+                <button type="submit" class="btn btn-default btn-sm" name="action" value="end_period">End period</button>
+              </form>
+            {% endif %}
+          </td>
+          <td>
+            <form method="post">
+              {% csrf_token %}
+              <input type="hidden" name="period_id" value="{{ o.pk }}">
+              <button type="submit" class="btn btn-danger btn-sm" name="action" value="delete_period">Delete</button>
+            </form>
+          </td>
+        </tr>
+      {% endfor %}
+    </table>
+  {% else %}
+    <p>No periods found.</p>
+  {% endif %}
+
+  <div><a class="btn btn-default" data-toggle="collapse" data-target="#add-new-period">Add a new period</a></div>
+
+  <div id="add-new-period" {% if not period_form.errors %}class="collapse"{% endif %}>
+    <h4>Add a new period</h4>
+
+    <form method="post">
+      {% csrf_token %}
+      {% bootstrap_form period_form %}
+
+      {% buttons %}
+        <button type="submit" class="btn btn-primary" name="action" value="add_period">Add period</button>
+      {% endbuttons %}
+    </form>
+  </div>
+
+  <p style="padding-top: 2em;">
+    <a href="{{ back_url }}" class="btn btn-default">Back</a>
+  </p>
+{% endblock %}
+
+{% block js %}
+  <script src="{% static 'bootstrap-datepicker/js/bootstrap-datepicker.min.js' %}"></script>
+{% endblock %}

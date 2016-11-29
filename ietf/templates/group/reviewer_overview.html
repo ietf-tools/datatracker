@@ -1,0 +1,76 @@
+{% extends "group/group_base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}{% origin %}
+
+{% load ietf_filters staticfiles bootstrap3 %}
+
+{% block group_subtitle %}Reviewers{% endblock %}
+
+{% block group_content %}
+  {% origin %}
+
+  {% if can_access_stats %}
+    <h1 class="pull-right"><a href="{% url "ietf.stats.views.review_stats" stats_type="completion" acronym=group.acronym %}" class="icon-link">&nbsp;<span class="small fa fa-bar-chart">&nbsp;</span></a></h1>
+  {% endif %}
+
+  <h2>Reviewers</h2>
+
+  <p>Status of the reviewers in {{ group.acronym }}, ordered by their
+    rotation with the next reviewer in the rotation at the top.</p>
+
+  {% if reviewers %}
+    <table class="table reviewer-overview">
+      <thead>
+        <tr>
+          <th>Reviewer</th>
+          <th>Deadline/state/time between assignment and closure for latest assignments</th>
+          <th>Settings</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for person in reviewers %}
+          <tr {% if person.completely_unavailable %}class="completely-unavailable"{% endif %}>
+            <td>{% if person.settings_url %}<a href="{{ person.settings_url }}">{% endif %}{{ person }}{% if person.settings_url %}</a>{% endif %}</td>
+            <td>
+              <table class="simple-table">
+                {% for req_pk, doc_name, reviewed_rev, deadline, state, assignment_to_closure_days in person.latest_reqs %}
+                  <tr>
+                    <td><a href="{% url "ietf.doc.views_review.review_request" name=doc_name request_id=req_pk %}">{{ deadline|date }}</a></td>
+                    <td>
+                      <span class="label label-{% if state.slug == "completed" or state.slug == "part-completed" %}success{% elif state.slug == "no-response" %}danger{% elif state.slug == "overtaken" %}warning{% elif state.slug == "requested" or state.slug == "accepted" %}primary{% else %}default{% endif %}">{{ state.name }}</span>
+                    </td>
+                    <td>
+                      {% if assignment_to_closure_days != None %}{{ assignment_to_closure_days }}&nbsp;day{{ assignment_to_closure_days|pluralize }}{% endif %}
+                    </td>
+                    <td>{{ doc_name }}{% if reviewed_rev %}-{{ reviewed_rev }}{% endif %}</td>
+                </div>
+              {% endfor %}
+              </table>
+            </td>
+            <td>
+              {% if person.settings.min_interval %}
+                {{ person.settings.get_min_interval_display }}<br>
+              {% endif %}
+
+              {% if person.settings.skip_next %}
+                Skip: {{ person.settings.skip_next }}<br>
+              {% endif %}
+
+              {% if person.settings.filter_re %}
+                Filter: <code title="{{ person.settings.filter_re }}">{{ person.settings.filter_re|truncatechars:15 }}</code><br>
+              {% endif %}
+
+              {% if person.unavailable_periods %}
+                {% include "review/unavailable_table.html" with unavailable_periods=person.unavailable_periods %}
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    
+  {% else %}
+    <p>No reviewers found.</p>
+  {% endif %}
+
+{% endblock %}

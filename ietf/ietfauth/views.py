@@ -32,7 +32,8 @@
 
 # Copyright The IETF Trust 2007, All Rights Reserved
 
-from datetime import datetime as DateTime, timedelta as TimeDelta
+from datetime import datetime as DateTime, timedelta as TimeDelta, date as Date
+from collections import defaultdict
 
 from django.conf import settings
 from django.http import Http404  #, HttpResponse, HttpResponseRedirect
@@ -43,17 +44,21 @@ from django.contrib.auth.decorators import login_required
 import django.core.signing
 from django.contrib.sites.models import Site
 from django.contrib.auth.models import User
+from django import forms
 
 import debug                            # pyflakes:ignore
 
-from ietf.group.models import Role
+from ietf.group.models import Role, Group
 from ietf.ietfauth.forms import RegistrationForm, PasswordForm, ResetPasswordForm, TestEmailForm, WhitelistForm
 from ietf.ietfauth.forms import get_person_form, RoleEmailForm, NewEmailForm
 from ietf.ietfauth.htpasswd import update_htpasswd_file
 from ietf.ietfauth.utils import role_required
 from ietf.mailinglists.models import Subscribed, Whitelisted
 from ietf.person.models import Person, Email, Alias
+from ietf.review.models import ReviewRequest, ReviewerSettings, ReviewWish
+from ietf.review.utils import unavailable_periods_to_list
 from ietf.utils.mail import send_mail
+from ietf.doc.fields import SearchableDocumentField
 
 def index(request):
     return render(request, 'registration/index.html')
@@ -389,3 +394,74 @@ def add_account_whitelist(request):
         'success': success,
     })
 
+class AddReviewWishForm(forms.Form):
+    doc = SearchableDocumentField(label="Document", doc_type="draft")
+    team = forms.ModelChoiceField(queryset=Group.objects.all(), empty_label="(Choose review team)")
+
+    def __init__(self, teams, *args, **kwargs):
+        super(AddReviewWishForm, self).__init__(*args, **kwargs)
+
+        f = self.fields["team"]
+        f.queryset = teams
+        if len(f.queryset) == 1:
+            f.initial = f.queryset[0].pk
+            f.widget = forms.HiddenInput()
+
+@login_required
+def review_overview(request):
+    open_review_requests = ReviewRequest.objects.filter(
+        reviewer__person__user=request.user,
+        state__in=["requested", "accepted"],
+    )
+    today = Date.today()
+    for r in open_review_requests:
+        r.due = max(0, (today - r.deadline).days)
+
+    closed_review_requests = ReviewRequest.objects.filter(
+        reviewer__person__user=request.user,
+        state__in=["no-response", "part-completed", "completed"],
+    ).order_by("-time")[:20]
+
+    teams = Group.objects.filter(role__name="reviewer", role__person__user=request.user, state="active")
+
+    settings = { o.team_id: o for o in ReviewerSettings.objects.filter(person__user=request.user, team__in=teams) }
+
+    unavailable_periods = defaultdict(list)
+    for o in unavailable_periods_to_list().filter(person__user=request.user, team__in=teams):
+        unavailable_periods[o.team_id].append(o)
+
+    roles = { o.group_id: o for o in Role.objects.filter(name="reviewer", person__user=request.user, group__in=teams) }
+
+    for t in teams:
+        t.reviewer_settings = settings.get(t.pk) or ReviewerSettings(team=t)
+        t.unavailable_periods = unavailable_periods.get(t.pk, [])
+        t.role = roles.get(t.pk)
+
+    if request.method == "POST" and request.POST.get("action") == "add_wish":
+        review_wish_form = AddReviewWishForm(teams, request.POST)
+        if review_wish_form.is_valid():
+            ReviewWish.objects.get_or_create(
+                person=request.user.person,
+                doc=review_wish_form.cleaned_data["doc"],
+                team=review_wish_form.cleaned_data["team"],
+            )
+
+            return redirect(review_overview)
+    else:
+        review_wish_form = AddReviewWishForm(teams)
+
+    if request.method == "POST" and request.POST.get("action") == "delete_wish":
+        wish_id = request.POST.get("wish_id")
+        if wish_id is not None:
+            ReviewWish.objects.filter(pk=wish_id, person=request.user.person).delete()
+        return redirect(review_overview)
+
+    review_wishes = ReviewWish.objects.filter(person__user=request.user).prefetch_related("team")
+
+    return render(request, 'ietfauth/review_overview.html', {
+        'open_review_requests': open_review_requests,
+        'closed_review_requests': closed_review_requests,
+        'teams': teams,
+        'review_wishes': review_wishes,
+        'review_wish_form': review_wish_form,
+    })
