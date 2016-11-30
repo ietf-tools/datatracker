@@ -796,7 +796,7 @@ class SubmitTests(TestCase):
         self.assertTrue(name in open(os.path.join(self.staging_dir, u"%s-%s.txt" % (name, rev))).read())
         self.assertTrue(os.path.exists(os.path.join(self.staging_dir, u"%s-%s.xml" % (name, rev))))
         self.assertTrue(name in open(os.path.join(self.staging_dir, u"%s-%s.xml" % (name, rev))).read())
-        self.assertTrue('<?xml version="1.0" encoding="US-ASCII"?>' in open(os.path.join(self.staging_dir, u"%s-%s.xml" % (name, rev))).read())
+        self.assertTrue('<?xml version="1.0" encoding="UTF-8"?>' in open(os.path.join(self.staging_dir, u"%s-%s.xml" % (name, rev))).read())
         self.assertTrue(os.path.exists(os.path.join(self.staging_dir, u"%s-%s.pdf" % (name, rev))))
         self.assertTrue('This is PDF' in open(os.path.join(self.staging_dir, u"%s-%s.pdf" % (name, rev))).read())
         self.assertTrue(os.path.exists(os.path.join(self.staging_dir, u"%s-%s.ps" % (name, rev))))

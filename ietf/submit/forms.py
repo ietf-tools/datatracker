@@ -5,6 +5,7 @@ import email
 import pytz
 import xml2rfc
 import tempfile
+from unidecode import unidecode
 
 from django import forms
 from django.conf import settings
@@ -170,8 +171,12 @@ class SubmissionUploadForm(forms.Form):
                 else:
                     self.revision = None
                     self.filename = draftname
-                self.title = self.xmlroot.findtext('front/title')
-                self.abstract = self.xmlroot.findtext('front/abstract')
+                self.title = self.xmlroot.findtext('front/title').strip()
+                if type(self.title) is unicode:
+                    self.title = unidecode(self.title)
+                self.abstract = self.xmlroot.findtext('front/abstract').strip()
+                if type(self.abstract) is unicode:
+                    self.abstract = unidecode(self.abstract)
                 self.author_list = []
                 author_info = self.xmlroot.findall('front/author')
                 for author in author_info:
