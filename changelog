@@ -28,7 +28,7 @@ ietfdb (6.39.0) ietf; urgency=medium
   * Merged in ^/branch/iola/review-tracker-r12128@12397, bringing in the 
     review tool functionality described in RFC7735.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  29 Nov 2016 13:07:38 +0000
+ -- Henrik Levkowetz <henrik@levkowetz.com>  30 Nov 2016 14:44:48 +0000
 
 ietfdb (6.38.2) ietf; urgency=medium
 
