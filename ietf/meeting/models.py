@@ -1030,7 +1030,6 @@ class Session(models.Model):
         return self._cached_minutes
 
     def recordings(self):
-        
         return list(self.get_material("recording", only_one=False))
 
     def bluesheets(self):

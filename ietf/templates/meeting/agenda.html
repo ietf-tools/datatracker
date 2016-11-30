@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
-
+{% load staticfiles %}
 {% load ietf_filters %}
 {% load textfilters %}
 
@@ -413,12 +413,11 @@
 				  </a>
 				{% endif %}
 			      {% endfor %}
-			    {% else %}
-			      <a class="btn btn-default btn-xs"
-				  href="http://www.meetecho.com/ietf{{schedule.meeting.number}}/recordings#{{item.session.historic_group.acronym.upper}}"
-				 title="Meetecho video recording"><span class="fa fa-file-video-o"></span>
-			      </a>
 			    {% endif %}
+			    <a class="btn btn-default btn-xs"
+			       href="http://www.meetecho.com/ietf{{schedule.meeting.number}}/recordings#{{item.session.historic_group.acronym.upper}}"
+			       title="Meetecho session recording"><img src="{% static 'ietf/images/meetecho-icon.svg' %}" alt="Meetecho Stream" width="12px">
+			    </a>
 			  {% endwith %}
 			{% endif %}
 			<!-- Audio recording -->
