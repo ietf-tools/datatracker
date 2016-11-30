@@ -1,4 +1,39 @@
+ietfdb (6.39.0) ietf; urgency=medium
+
+  **Review tracking**
+
+  This release adds review tracking to the datatracker.
+
+  The functionality added satisfies the requirements captured in RFC7735 
+  and is an evolution of the widely-used standalone review tracking tool 
+  developed and maintained by Tero Kivinen. This release includes 
+  importing the existing review data from each review team.
+
+  Highlights of the new functionality include:
+
+  - review team members can easily see and manage their review 
+    assignments, and can complete their reviews on- or off-line, with direct 
+    integration into the mailarchive tool.
+
+  - all reviews for a document are captured in the datatracker and linked 
+    from the document's main page.
+
+  - integrated review queue management for review team secretaries, 
+    automatically suggesting IETF last-call and telechat reviews.
+
+  - ADs and working group chairs can explicitly request reviews.
+
+  From the commit log:
+
+  * Merged in ^/branch/iola/review-tracker-r12128@12397, bringing in the 
+    review tool functionality described in RFC7735.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  29 Nov 2016 13:07:38 +0000
+
 ietfdb (6.38.2) ietf; urgency=medium
+
+  This is a bugfix release which also cleans the slate for the coming merge
+  in of review tool functionality.
 
   * Added new clarifying text to 3 IPR-related pages, based on direction 
     from the IESG.
