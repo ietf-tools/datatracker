@@ -62,7 +62,7 @@ def fill_in_document_table_attributes(docs):
         if d.get_state_slug() != "rfc":
             d.milestones = sorted((m for m in d.groupmilestone_set.all() if m.state_id == "active"), key=lambda m: m.time)
 
-            d.reviewed_by_teams = sorted(set(r.team for r in d.reviewrequest_set.all()), key=lambda g: g.acronym)
+            d.reviewed_by_teams = sorted(set(r.team for r in d.reviewrequest_set.filter(state__in=["requested","accepted","part-completed","completed"])), key=lambda g: g.acronym)
 
 
     # RFCs
