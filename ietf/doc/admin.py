@@ -80,6 +80,9 @@ class StatesField(forms.ModelMultipleChoiceField):
     
 class DocumentForm(forms.ModelForm):
     states = StatesField(queryset=State.objects.all(), required=False)
+    comment_about_changes = forms.CharField(
+        widget=forms.Textarea(attrs={'rows':10,'cols':40,'class':'vLargeTextField'}),
+        help_text="This comment about the changes made will be saved in the document history.")
     
     def __init__(self, *args, **kwargs):
         super(DocumentForm, self).__init__(*args, **kwargs)
@@ -99,6 +102,15 @@ class DocumentAdmin(admin.ModelAdmin):
     raw_id_fields = ['authors', 'group', 'shepherd', 'ad']
     inlines = [DocAliasInline, DocAuthorInline, RelatedDocumentInline, ]
     form = DocumentForm
+
+    def save_model(self, request, obj, form, change):
+        e = DocEvent.objects.create(
+                doc=obj,
+                by=request.user.person,
+                type='changed_document',
+                desc=form.cleaned_data.get('comment_about_changes'),
+            )
+        obj.save_with_history([e])
 
     def state(self, instance):
         return self.get_state()
