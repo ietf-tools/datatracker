@@ -6,6 +6,7 @@ from ietf.doc.models import Document
 from ietf.group.models import Group
 from ietf.person.models import Person, Email
 from ietf.name.models import ReviewTypeName, ReviewRequestStateName, ReviewResultName
+from ietf.utils.validators import validate_regular_expression_string
 
 class ReviewerSettings(models.Model):
     """Keeps track of admin data associated with a reviewer in a team."""
@@ -19,7 +20,9 @@ class ReviewerSettings(models.Model):
         (91, "Once per quarter"),
     ]
     min_interval = models.IntegerField(verbose_name="Can review at most", choices=INTERVALS, blank=True, null=True)
-    filter_re   = models.CharField(max_length=255, verbose_name="Filter regexp", blank=True, help_text="Draft names matching regular expression should not be assigned")
+    filter_re   = models.CharField(max_length=255, verbose_name="Filter regexp", blank=True,
+        validators=[validate_regular_expression_string, ],
+        help_text="Draft names matching this regular expression should not be assigned")
     skip_next   = models.IntegerField(default=0, verbose_name="Skip next assignments")
     remind_days_before_deadline = models.IntegerField(null=True, blank=True, help_text="To get an email reminder in case you forget to do an assigned review, enter the number of days before review deadline you want to receive it. Clear the field if you don't want a reminder.")
 
