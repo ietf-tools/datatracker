@@ -1050,7 +1050,7 @@ class InterimTests(TestCase):
         meeting = meetings[0]
         self.assertEqual(meeting.type_id,'interim')
         self.assertEqual(meeting.date,date2)
-        self.assertEqual(meeting.number,'interim-%s-%s-%s' % (date.year,group.acronym,'02'))
+        self.assertEqual(meeting.number,'interim-%s-%s-%s' % (date2.year,group.acronym,'02'))
         self.assertEqual(meeting.city,city)
         self.assertEqual(meeting.country,country)
         self.assertEqual(meeting.time_zone,time_zone)
