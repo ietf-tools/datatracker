@@ -69,7 +69,7 @@
                   {% if r.latest_reqs %}
                     {% for rlatest in r.latest_reqs %}
                       <div>
-                        Revious review of <a href="{% url "doc_view" name=rlatest.doc_id rev=rlatest.reviewed_rev %}?include_text=1">{% if rlatest.doc_id != r.doc_id %}{{ rlatest.doc_id }}{% endif %}-{{ rlatest.reviewed_rev }}</a>
+                        Previous review of <a href="{% url "doc_view" name=rlatest.doc_id rev=rlatest.reviewed_rev %}?include_text=1">{% if rlatest.doc_id != r.doc_id %}{{ rlatest.doc_id }}{% endif %}-{{ rlatest.reviewed_rev }}</a>
                         (<a href="{{ rfcdiff_base_url }}?url1={{ rlatest.doc.name }}-{{ rlatest.reviewed_rev }}&url2={{ r.doc.name }}-{{ r.doc.rev }}">diff</a>):
                         <a href="{% url "ietf.doc.views_review.review_request" name=rlatest.doc_id request_id=rlatest.pk %}">{% if rlatest.result %}{{ rlatest.result.name }}{% else %}result unavail.{% endif %}</a>
                         by {{ rlatest.reviewer.person }}{% if rlatest.closed_review_request_event %} {{ rlatest.closed_review_request_event.time.date|date }}{% endif %}
