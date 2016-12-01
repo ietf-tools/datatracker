@@ -749,6 +749,18 @@ class DocEvent(models.Model):
     def __unicode__(self):
         return u"%s %s by %s at %s" % (self.doc.name, self.get_type_display().lower(), self.by.plain_name(), self.time)
 
+    def get_rev(self):
+        e = self
+        # check subtypes which has a rev attribute
+        for sub in ['newrevisiondocevent', 'submissiondocevent', ]:
+            if hasattr(e, sub):
+                e = getattr(e, sub)
+                break
+        if hasattr(e, 'rev'):
+            return e.rev
+        else:
+            return None
+
     class Meta:
         ordering = ['-time', '-id']
         

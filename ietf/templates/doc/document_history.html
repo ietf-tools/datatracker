@@ -103,7 +103,7 @@
       {% for e in events %}
         <tr class="anchor-target" id="history-{{ e.pk }}">
           <td class="text-nowrap">{{ e.time|date:"Y-m-d" }}</td>
-          <td class="text-center">{{ e.rev }}</td>
+          <td class="text-center">{{ e.get_rev }}</td>
           <td>{{ e.by|escape }}</td>
           <td>{{ e.desc|format_history_text|safe }}</td>
         </tr>

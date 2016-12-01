@@ -35,7 +35,7 @@ class DocumentChangesFeed(Feed):
 	return events
 
     def item_title(self, item):
-        return u"[%s] %s [rev. %s]" % (item.by, truncatewords(strip_tags(item.desc), 15), item.rev)
+        return u"[%s] %s [rev. %s]" % (item.by, truncatewords(strip_tags(item.desc), 15), item.get_rev())
 
     def item_description(self, item):
         return truncatewords_html(format_textarea(item.desc), 20)

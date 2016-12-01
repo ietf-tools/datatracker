@@ -237,7 +237,12 @@ def augment_events_with_revision(doc, events):
     for e in sorted(events, key=lambda e: (e.time, e.id), reverse=True):
         while event_revisions and (e.time, e.id) < (event_revisions[-1]["time"], event_revisions[-1]["id"]):
             event_revisions.pop()
-
+            
+        # Check for all subtypes which have 'rev' fields:
+        for sub in ['newrevisiondocevent', 'submissiondocevent', ]:
+            if hasattr(e, sub):
+                e = getattr(e, sub)
+                break
         if not hasattr(e, 'rev'):
             if event_revisions:
                 cur_rev = event_revisions[-1]["rev"]
@@ -254,6 +259,11 @@ def add_links_in_new_revision_events(doc, events, diff_revisions):
     for e in sorted(events, key=lambda e: (e.time, e.id)):
         if not e.type == "new_revision":
             continue
+
+        for sub in ['newrevisiondocevent', 'submissiondocevent', ]:
+            if hasattr(e, sub):
+                e = getattr(e, sub)
+                break
 
         if not (e.doc.name, e.rev) in diff_urls:
             continue
