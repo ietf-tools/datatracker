@@ -835,6 +835,8 @@ class InterimTests(TestCase):
         agenda = 'Intro. Slides. Discuss.'
         agenda_note = 'On second level'
         length_before = len(outbox)
+        meeting_count = Meeting.objects.filter(number__contains='-%s-'%group.acronym, date__year=date.year).count()
+        next_num = "%02d" % (meeting_count+1)
         self.client.login(username="marschairman", password="marschairman+password")
         data = {'group':group.pk,
                 'meeting_type':'single',
@@ -857,7 +859,7 @@ class InterimTests(TestCase):
         meeting = Meeting.objects.order_by('id').last()
         self.assertEqual(meeting.type_id,'interim')
         self.assertEqual(meeting.date,date)
-        self.assertEqual(meeting.number,'interim-%s-%s-%s' % (date.year,group.acronym,'01'))
+        self.assertEqual(meeting.number,'interim-%s-%s-%s' % (date.year, group.acronym, next_num))
         self.assertEqual(meeting.city,'')
         self.assertEqual(meeting.country,'')
         self.assertEqual(meeting.time_zone,'UTC')
@@ -891,6 +893,8 @@ class InterimTests(TestCase):
         remote_instructions = 'Use webex'
         agenda = 'Intro. Slides. Discuss.'
         agenda_note = 'On second level'
+        meeting_count = Meeting.objects.filter(number__contains='-%s-'%group.acronym, date__year=date.year).count()
+        next_num = "%02d" % (meeting_count+1)
         self.client.login(username="secretary", password="secretary+password")
         data = {'group':group.pk,
                 'meeting_type':'single',
@@ -912,7 +916,7 @@ class InterimTests(TestCase):
         meeting = Meeting.objects.order_by('id').last()
         self.assertEqual(meeting.type_id,'interim')
         self.assertEqual(meeting.date,date)
-        self.assertEqual(meeting.number,'interim-%s-%s-%s' % (date.year,group.acronym,'01'))
+        self.assertEqual(meeting.number,'interim-%s-%s-%s' % (date.year, group.acronym, next_num))
         self.assertEqual(meeting.city,city)
         self.assertEqual(meeting.country,country)
         self.assertEqual(meeting.time_zone,time_zone)
@@ -938,6 +942,8 @@ class InterimTests(TestCase):
         remote_instructions = 'Use webex'
         agenda = 'Intro. Slides. Discuss.'
         agenda_note = 'On second level'
+        meeting_count = Meeting.objects.filter(number__contains='-%s-'%group.acronym, date__year=date.year).count()
+        next_num = "%02d" % (meeting_count+1)
         self.client.login(username="secretary", password="secretary+password")
         data = {'group':group.pk,
                 'meeting_type':'multi-day',
@@ -965,7 +971,7 @@ class InterimTests(TestCase):
         meeting = Meeting.objects.order_by('id').last()
         self.assertEqual(meeting.type_id,'interim')
         self.assertEqual(meeting.date,date)
-        self.assertEqual(meeting.number,'interim-%s-%s-%s' % (date.year,group.acronym,'01'))
+        self.assertEqual(meeting.number,'interim-%s-%s-%s' % (date.year, group.acronym, next_num))
         self.assertEqual(meeting.city,city)
         self.assertEqual(meeting.country,country)
         self.assertEqual(meeting.time_zone,time_zone)
@@ -1001,6 +1007,9 @@ class InterimTests(TestCase):
         remote_instructions = 'Use webex'
         agenda = 'Intro. Slides. Discuss.'
         agenda_note = 'On second level'
+        meeting_count = Meeting.objects.filter(number__contains='-%s-'%group.acronym, date__year=date.year).count()
+        next_num = "%02d" % (meeting_count+1)
+        next_num2 = "%02d" % (meeting_count+2)
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(urlreverse("ietf.meeting.views.interim_request"))
         self.assertEqual(r.status_code, 200)
@@ -1035,7 +1044,7 @@ class InterimTests(TestCase):
         meeting = meetings[1]
         self.assertEqual(meeting.type_id,'interim')
         self.assertEqual(meeting.date,date)
-        self.assertEqual(meeting.number,'interim-%s-%s-%s' % (date.year,group.acronym,'01'))
+        self.assertEqual(meeting.number,'interim-%s-%s-%s' % (date.year, group.acronym, next_num))
         self.assertEqual(meeting.city,city)
         self.assertEqual(meeting.country,country)
         self.assertEqual(meeting.time_zone,time_zone)
@@ -1050,7 +1059,7 @@ class InterimTests(TestCase):
         meeting = meetings[0]
         self.assertEqual(meeting.type_id,'interim')
         self.assertEqual(meeting.date,date2)
-        self.assertEqual(meeting.number,'interim-%s-%s-%s' % (date2.year,group.acronym,'02'))
+        self.assertEqual(meeting.number,'interim-%s-%s-%s' % (date2.year, group.acronym, next_num2))
         self.assertEqual(meeting.city,city)
         self.assertEqual(meeting.country,country)
         self.assertEqual(meeting.time_zone,time_zone)
