@@ -5,6 +5,9 @@ from ietf.review.models import (ReviewerSettings, UnavailablePeriod, ReviewWish,
                                 ReviewRequest)
 
 class ReviewerSettingsAdmin(admin.ModelAdmin):
+    def acronym(self, obj):
+        return obj.team.acronym
+    list_display = ['id', 'person', 'acronym', 'min_interval', 'filter_re', 'remind_days_before_deadline', ]
     list_filter = ["team"]
     search_fields = ["person__name"]
     ordering = ["-id"]
