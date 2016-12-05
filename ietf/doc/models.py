@@ -53,7 +53,7 @@ class DocumentInfo(models.Model):
     title = models.CharField(max_length=255)
 
     states = models.ManyToManyField(State, blank=True) # plain state (Active/Expired/...), IESG state, stream state
-    tags = models.ManyToManyField(DocTagName, blank=True, null=True) # Revised ID Needed, ExternalParty, AD Followup, ...
+    tags = models.ManyToManyField(DocTagName, blank=True) # Revised ID Needed, ExternalParty, AD Followup, ...
     stream = models.ForeignKey(StreamName, blank=True, null=True) # IETF, IAB, IRTF, Independent Submission
     group = models.ForeignKey(Group, blank=True, null=True) # WG, RG, IAB, IESG, Edu, Tools
 
@@ -277,7 +277,7 @@ class DocumentInfo(models.Model):
         if isinstance(self, Document):
             return RelatedDocument.objects.filter(target__document=self, relationship__in=relationship).select_related('source')
         elif isinstance(self, DocHistory):
-            return RelatedDocHistory.objects.filter(target__document=self, relationship__in=relationship).select_related('source')
+            return RelatedDocHistory.objects.filter(target__document=self.doc, relationship__in=relationship).select_related('source')
         else:
             return RelatedDocument.objects.none()
 

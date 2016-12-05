@@ -38,7 +38,7 @@ class UploadMaterialForm(forms.Form):
     def __init__(self, doc_type, action, group, doc, *args, **kwargs):
         super(UploadMaterialForm, self).__init__(*args, **kwargs)
 
-        self.fields["state"].queryset = self.fields["state"].queryset.filter(type=doc_type)
+        self.fields["state"].queryset = self.fields["state"].queryset.filter(type__slug=doc_type.slug)
 
         self.doc_type = doc_type
         self.action = action

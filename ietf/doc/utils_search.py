@@ -12,7 +12,7 @@ def fill_in_document_table_attributes(docs):
     docs_dict = dict((d.pk, d) for d in docs)
     doc_ids = docs_dict.keys()
 
-    rfc_aliases = dict(DocAlias.objects.filter(name__startswith="rfc", document__in=doc_ids).values_list("document_id", "name"))
+    rfc_aliases = dict(DocAlias.objects.filter(name__startswith="rfc", document__in=doc_ids).values_list("document", "name"))
 
     # latest event cache
     event_types = ("published_rfc",
@@ -79,9 +79,9 @@ def fill_in_document_table_attributes(docs):
         d.updated_by_list = []
 
     xed_by = RelatedDocument.objects.filter(target__name__in=rfc_aliases.values(),
-                                            relationship__in=("obs", "updates")).select_related('target__document_id')
+                                            relationship__in=("obs", "updates")).select_related('target__document')
     rel_rfc_aliases = dict(DocAlias.objects.filter(name__startswith="rfc",
-                                                   document__in=[rel.source_id for rel in xed_by]).values_list('document_id', 'name'))
+                                                   document__in=[rel.source_id for rel in xed_by]).values_list('document', 'name'))
     for rel in xed_by:
         d = docs_dict[rel.target.document_id]
         if rel.relationship_id == "obs":
@@ -101,7 +101,7 @@ def prepare_document_table(request, docs, query=None, max_results=500):
     if not isinstance(docs, list):
         # evaluate and fill in attribute results immediately to decrease
         # the number of queries
-        docs = docs.select_related("ad", "ad__person", "std_level", "intended_std_level", "group", "stream")
+        docs = docs.select_related("ad", "std_level", "intended_std_level", "group", "stream")
         docs = docs.prefetch_related("states__type", "tags", "groupmilestone_set__group", "reviewrequest_set__team")
 
     docs = list(docs[:max_results])
