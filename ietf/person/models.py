@@ -128,7 +128,9 @@ class PersonInfo(models.Model):
         return Document.objects.filter(authors__person=self, type='draft').exists()
     def rfcs(self):
         from ietf.doc.models import Document
-        return Document.objects.filter(authors__person=self, type='draft', states__slug='rfc').order_by('-time')
+        rfcs = list(Document.objects.filter(authors__person=self, type='draft', states__slug='rfc'))
+        rfcs.sort(key=lambda d: d.canonical_name() )
+        return rfcs
     def active_drafts(self):
         from ietf.doc.models import Document
         return Document.objects.filter(authors__person=self, type='draft', states__slug='active').order_by('-time')

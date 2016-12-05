@@ -329,6 +329,9 @@ class DocumentInfo(models.Model):
     def all_related_that_doc(self, relationship, related=None):
         return list(set([x.target for x in self.all_relations_that_doc(relationship)]))
 
+    def replaced_by(self):
+        return [ r.document for r in self.related_that("replaces") ]
+
     class Meta:
         abstract = True
 

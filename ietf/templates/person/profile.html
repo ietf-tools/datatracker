@@ -3,6 +3,7 @@
 {% load origin %}
 {% load markup_tags %}
 {% load staticfiles %}
+{% load ietf_filters %}
 
 {% block title %}Profile for {{ persons.0 }}{% endblock %}
 
@@ -34,12 +35,16 @@
 
   <div class="col-md-6">
      <h2>RFCs</h2>
-     {% if person.rfcs.exists %}
-	<list>
-	   {% for doc in person.rfcs %}
-	     <li>      <a href="{{ doc.get_absolute_url }}">{{ doc.canonical_name }}</a></li>
-	   {% endfor %}
-	</list>
+     {% if person.rfcs %}
+	<table class="table">
+	  {% for doc in person.rfcs  %}
+	    <tr> 
+	      <td><a href="{{ doc.href }}">{{ doc.canonical_name }}</a></td>
+	      <td>{{ doc.pub_date|date:"b Y"|title|nbsp }}</td>
+	      <td>{{ doc.title }}</td>
+	    </tr>
+	  {% endfor %}
+	</table>
      {% else %}
        {{ person.first_name }} has no RFCs as of {{ today }}.
      {% endif %}
@@ -49,7 +54,9 @@
      {% if person.active_drafts.exists %}
 	<list>
 	   {% for doc in person.active_drafts %}
-	     <li>      <a href="{{ doc.get_absolute_url }}">{{ doc.canonical_name }}</a></li>
+	     <li>
+	       <a href="{{ doc.href }}">{{ doc.canonical_name }}</a>
+	     </li>
 	   {% endfor %}
 	</list>
      {% else %}
@@ -57,11 +64,13 @@
      {% endif %}
   </div>
   <div class="col-md-6">
-     <h2>Expired Drafts</h2>
+     <h2>Expired Drafts <small>exluding replaced drafts</small></h2>
      {% if person.expired_drafts.exists %}
 	<list>
 	   {% for doc in person.expired_drafts %}
-	     <li>      <a href="{{ doc.get_absolute_url }}">{{ doc.canonical_name }}</a></li>
+	       {% if not doc.replaced_by %}
+	         <li><a href="{{ doc.href }}">{{ doc.canonical_name }}</a></li>
+	       {% endif %}
 	   {% endfor %}
 	</list>
      {% else %}
