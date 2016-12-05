@@ -4,7 +4,7 @@ from docutils.core import publish_string
 from docutils.utils import SystemMessage
 import debug                            # pyflakes:ignore
 
-from django.template import Template as DjangoTemplate, TemplateDoesNotExist, TemplateEncodingError
+from django.template.base import Template as DjangoTemplate, TemplateDoesNotExist, TemplateEncodingError
 from django.template.loader import BaseLoader
 from django.utils.encoding import smart_unicode
 

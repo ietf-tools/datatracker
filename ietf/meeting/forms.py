@@ -301,7 +301,7 @@ class InterimSessionModelForm(forms.ModelForm):
                 name=filename,
                 rev='00',
                 external_url='{}-00.txt'.format(filename))
-            doc.set_state(State.objects.get(type=doc.type, slug='active'))
+            doc.set_state(State.objects.get(type__slug=doc.type.slug, slug='active'))
             DocAlias.objects.create(name=doc.name, document=doc)
             self.instance.sessionpresentation_set.create(document=doc, rev=doc.rev)
             NewRevisionDocEvent.objects.create(

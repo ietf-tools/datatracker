@@ -40,7 +40,7 @@ class LiaisonStatement(models.Model):
     other_identifiers = models.TextField(blank=True, null=True) # Identifiers from other bodies
     body = models.TextField(blank=True)
 
-    tags = models.ManyToManyField(LiaisonStatementTagName, blank=True, null=True)
+    tags = models.ManyToManyField(LiaisonStatementTagName, blank=True)
     attachments = models.ManyToManyField(Document, through='LiaisonStatementAttachment', blank=True)
     state = models.ForeignKey(LiaisonStatementState, default='pending')
 
@@ -212,7 +212,7 @@ class RelatedLiaisonStatement(models.Model):
 
 
 class LiaisonStatementGroupContacts(models.Model):
-    group = models.ForeignKey(Group, unique=True)
+    group = models.ForeignKey(Group, unique=True, null=True)
     contacts = models.CharField(max_length=255,blank=True)
     cc_contacts = models.CharField(max_length=255,blank=True)
 
