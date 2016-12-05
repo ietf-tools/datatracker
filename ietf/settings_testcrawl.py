@@ -7,7 +7,7 @@
 
 from settings import *                  # pyflakes:ignore
 
-TEMPLATE_LOADERS = (
+TEMPLAT[0]['OPTIONS']['loaders'] = (
     ('django.template.loaders.cached.Loader', (
         'django.template.loaders.filesystem.Loader',
         'django.template.loaders.app_directories.Loader',

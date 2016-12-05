@@ -112,6 +112,7 @@ class TemplateCoverageLoader(BaseLoader):
     is_usable = True
 
     def load_template_source(self, template_name, dirs):
+        global template_coverage_collection, loaded_templates
         if template_coverage_collection == True:
             loaded_templates.add(str(template_name))
         raise TemplateDoesNotExist
@@ -159,7 +160,7 @@ def get_template_paths(apps=None):
         # TODO: Add app templates to the full list, if we are using
         # django.template.loaders.app_directories.Loader
         templates = set()
-        templatepaths = settings.TEMPLATE_DIRS
+        templatepaths = settings.TEMPLATES[0]['DIRS']
         for templatepath in templatepaths:
             for dirpath, dirs, files in os.walk(templatepath):
                 if ".svn" in dirs:
@@ -395,7 +396,7 @@ class IetfTestRunner(DiscoverRunner):
                 },
             }
 
-            settings.TEMPLATE_LOADERS = ('ietf.utils.test_runner.TemplateCoverageLoader',) + settings.TEMPLATE_LOADERS
+            settings.TEMPLATES[0]['OPTIONS']['loaders'] = ('ietf.utils.test_runner.TemplateCoverageLoader',) + settings.TEMPLATES[0]['OPTIONS']['loaders']
             template_coverage_collection = True
 
             settings.MIDDLEWARE_CLASSES = ('ietf.utils.test_runner.RecordUrlsMiddleware',) + settings.MIDDLEWARE_CLASSES
@@ -412,9 +413,9 @@ class IetfTestRunner(DiscoverRunner):
             print "     Changing SITE_ID to '1' during testing."
             settings.SITE_ID = 1
 
-        if settings.TEMPLATE_STRING_IF_INVALID != '':
-            print "     Changing TEMPLATE_STRING_IF_INVALID to '' during testing."
-            settings.TEMPLATE_STRING_IF_INVALID = ''
+        if settings.TEMPLATES[0]['OPTIONS']['string_if_invalid'] != '':
+            print("     Changing settings.TEMPLATES[0]['OPTIONS']['string_if_invalid'] to '' during testing")
+            settings.TEMPLATES[0]['OPTIONS']['string_if_invalid'] = ''
 
         assert not settings.IDTRACKER_BASE_URL.endswith('/')
 
