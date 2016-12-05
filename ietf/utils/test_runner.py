@@ -84,7 +84,7 @@ def safe_create_1(self, verbosity, *args, **kwargs):
     if settings.GLOBAL_TEST_FIXTURES:
         print "     Loading global test fixtures: %s" % ", ".join(settings.GLOBAL_TEST_FIXTURES)
         loadable = [f for f in settings.GLOBAL_TEST_FIXTURES if "." not in f]
-        call_command('loaddata', *loadable, verbosity=0, commit=False, database="default")
+        call_command('loaddata', *loadable, verbosity=verbosity, commit=False, database="default")
 
         for f in settings.GLOBAL_TEST_FIXTURES:
             if f not in loadable:
