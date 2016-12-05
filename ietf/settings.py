@@ -248,6 +248,10 @@ TEMPLATES = [
     },
 ]
 
+if DEBUG:
+    TEMPLATES[0]['OPTIONS']['string_if_invalid'] = "** No value found for '%s' **"
+
+
 MIDDLEWARE_CLASSES = (
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.middleware.common.CommonMiddleware',
