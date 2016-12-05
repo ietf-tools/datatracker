@@ -297,6 +297,20 @@ def add_events_message_info(events):
         e.in_reply_to = e.addedmessageevent.in_reply_to
 
 
+def get_unicode_document_content(key, filename, split=True, markup=True, codec='utf-8', errors='ignore'):
+    try:
+        with open(filename, 'rb') as f:
+            raw_content = f.read().decode(codec,errors)
+    except IOError:
+        error = "Error; cannot read ("+key+")"
+        return error
+
+    if markup:
+        return markup_txt.markup_unicode(raw_content, split)
+    else:
+        return raw_content
+
+
 def get_document_content(key, filename, split=True, markup=True):
     try:
         with open(filename, 'rb') as f:

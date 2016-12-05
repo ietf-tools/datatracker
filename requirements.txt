@@ -1,6 +1,7 @@
 # -*- conf-mode -*-
 setuptools>=18.5			# Require this first, to prevent later errors
 #
+beautifulsoup4>=4.5.1
 bibtexparser>=0.6.2
 coverage>=4.0.1,!=4.0.2
 #cssselect>=0.6.1               # for PyQuery

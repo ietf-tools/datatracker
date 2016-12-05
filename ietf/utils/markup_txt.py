@@ -71,3 +71,23 @@ def markup(content, split=True):
         #return (content1, content2)
     else:
         return "<pre>" + content + "</pre>\n"
+
+def markup_unicode(content, split=True):
+    # normalize line endings to LF only
+    content = content.replace("\r\n", "\n")
+    content = content.replace("\r", "\n")
+
+    # remove leading white space
+    content = content.lstrip()
+    # remove runs of blank lines
+    content = re.sub("\n\n\n+", "\n\n", content)
+
+    # expand tabs + escape 
+    content = escape(content.expandtabs())
+
+    if split:
+        n = content.find("\n", 5000)
+        content1 = "<pre>"+content[:n+1]+"</pre>\n"
+        return content1
+    else:
+        return "<pre>" + content + "</pre>\n"

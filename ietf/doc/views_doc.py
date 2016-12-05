@@ -51,7 +51,7 @@ from ietf.doc.utils import ( add_links_in_new_revision_events, augment_events_wi
     can_adopt_draft, get_chartering_type, get_document_content, get_tags_for_stream_id,
     needed_ballot_positions, nice_consensus, prettify_std_name, update_telechat, has_same_ballot,
     get_initial_notify, make_notify_changed_event, crawl_history, default_consensus,
-    add_events_message_info)
+    add_events_message_info, get_unicode_document_content)
 from ietf.community.utils import augment_docs_with_tracking_info
 from ietf.group.models import Role
 from ietf.group.utils import can_manage_group, can_manage_materials
@@ -582,7 +582,7 @@ def document_main(request, name, rev=None):
     if doc.type_id == "review":
         basename = "{}.txt".format(doc.name, doc.rev)
         pathname = os.path.join(doc.get_file_path(), basename)
-        content = get_document_content(basename, pathname, split=False)
+        content = get_unicode_document_content(basename, pathname, split=False)
 
         review_req = ReviewRequest.objects.filter(review=doc.name).first()
 
