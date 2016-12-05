@@ -1,3 +1,45 @@
+ietfdb (6.39.1) ietf; urgency=medium
+
+  **Enhanced Person Profile Page**
+
+  This is a mixed bugfix and feature release.  From the commitlog:
+
+  * Added more document information to the personal profile pages at 
+    /person/<full name>, after a suggestion from Benoit Claise.  Fixes issue 
+    #2066.
+
+  * Added new display columns to the reviewer settings admin page.
+
+  * Merged in [12438] from rjsparks@nostrum.com:
+    Don't show teams with only 'No response' reviews in the search result 
+    rows, using the same logic as used for the document main page. Fixes #2070. 
+
+  * Fixed a typo.  Fixes issue #2073.
+
+  * Added a validator for the reviewer settings' Filter Regexp field, to 
+    make sure that we don't later hit exceptions when trying to compile and use 
+    the regexp entered.
+
+  * Tweaked the admin for doc.models.Document to capture a comment about 
+    changes made, and save those in the document history, using 
+    .save_with_history().  This makes the admin useful again for doing document 
+    changes.  See issue #2067.
+
+  * Changed the handling of DocEvent 'rev' fields in document history.  We 
+    should give DocEvent a 'rev' field which is always filled in; the current 
+    handling is error prone and much to complicated.
+
+  * Fixed errors in the test_interim_request_series() test.
+
+  * Added a link to the meetecho session recording (not the youtube 
+    conversion) on the IETF agenda page.
+
+  * Added guards against picking up non-ascii characters in draft title and
+    abstract from drafts submitted in xml form.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  05 Dec 2016 10:25:12 -0800
+
+
 ietfdb (6.39.0) ietf; urgency=medium
 
   **Review tracking**
