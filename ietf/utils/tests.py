@@ -26,7 +26,7 @@ import ietf.urls
 from ietf.utils.management.commands import pyflakes
 from ietf.utils.mail import send_mail_text, send_mail_mime, outbox 
 from ietf.utils.test_data import make_test_data
-from ietf.utils.test_runner import get_template_paths
+from ietf.utils.test_runner import get_template_paths, set_coverage_checking
 from ietf.group.models import Group
 
 skip_wiki_glue_testing = False
@@ -111,6 +111,7 @@ class TemplateChecksTestCase(TestCase):
     templates = {}
 
     def setUp(self):
+        set_coverage_checking(False)
         self.loader = Loader()
         self.paths = list(get_template_paths())
         self.paths.sort()
@@ -121,6 +122,7 @@ class TemplateChecksTestCase(TestCase):
                 pass
 
     def tearDown(self):
+        set_coverage_checking(True)
         pass
 
     def test_parse_templates(self):
