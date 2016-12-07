@@ -22,6 +22,9 @@ Planned work in rough order
 * Revisit Yang module checks:  Capture output also for passed tests.
   Add second checker.  Fix extraction problems.
 
+* Introduce the use of email.header.Header() in order to be able to handle
+  non-ascii names in email From:, To: and Cc: fields.
+
 * Revisit photo uploads: Add photo upload for people with roles.  Add
   photos to wg pages and group overview pages.
 
