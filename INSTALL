@@ -42,7 +42,11 @@ General Instructions for Deployment of a New Release
 
       ietf/manage.py collectstatic
 
- 6. Run migrations::
+ 6. Run migrations.  Some migration create files which need to be writeable
+    by the web servers, so make sure that you're running as wwwrun when
+    doing this::
+
+      sudo su - wwwrun -s /bin/bash
 
       ietf/manage.py migrate
 
