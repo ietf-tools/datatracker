@@ -1,11 +1,24 @@
 ietfdb (6.39.1) ietf; urgency=medium
 
-  **Enhanced Person Profile Page**
+  **Historical review data. Enhanced person profile page**
 
   This is a mixed bugfix and feature release.  From the commitlog:
 
-  * Added more document information to the personal profile pages at 
-    /person/<full name>, after a suggestion from Benoit Claise.  Fixes issue 
+  * Changed to using TestCase from ietf.utils in some places, for consistent
+    test-suite failure messages.
+
+  * Updated installation instructions.  Run migrations as the web server user;
+    migrations may create files which the datatracker should be able to write.
+
+  * Don't count the template loading done in TemplateChecksTestCase towards
+    template coverage numbers.  Updated coverage numbers to match.
+
+  * Merged in [12461] from rjsparks@nostrum.com:
+    Added a migration to fetch text from reviews in the mail archives and
+    populate the review documents. Fixes #2064.  Will patch into production. 
+
+  * Added more document information to the personal profile pages at
+    /person/<full name>, after a suggestion from Benoit Claise.  Fixes issue
     #2066.
 
   * Added new display columns to the reviewer settings admin page.
