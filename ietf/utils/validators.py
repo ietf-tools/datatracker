@@ -5,11 +5,12 @@ from __future__ import unicode_literals
 import re
 
 from django.core.exceptions import ValidationError
+from django.utils.deconstruct import deconstructible
 
-
+@deconstructible
 class RegexStringValidator(object):
 
-    def __init__(self,):
+    def __init__(self):
         pass
 
     def __call__(self, value):
@@ -28,5 +29,10 @@ class RegexStringValidator(object):
                                     'Maybe you meant to write "-.*"?  If you actually meant "-*", '
                                     'you can use "[-]*" instead to get past this error.')
 
+    def __eq__(self, other):
+        return isinstance(other, RegexStringValidator)
+
+    def __ne__(self, other):
+        return not (self == other)
 
 validate_regular_expression_string = RegexStringValidator()
