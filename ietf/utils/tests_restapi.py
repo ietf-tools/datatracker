@@ -4,11 +4,11 @@ import debug
 debug.debug = True
 
 from django.core.urlresolvers import reverse
-from django.test import TestCase
 
 from tastypie.test import ResourceTestCaseMixin
 
 from ietf.utils.test_data import make_test_data
+from ietf.utils.test_utils import TestCase
 
 class RestApi(ResourceTestCaseMixin, TestCase):
     def list_recursively(self, resource, format):

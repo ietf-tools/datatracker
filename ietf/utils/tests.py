@@ -18,7 +18,6 @@ from django.template import Context
 from django.template.defaulttags import URLNode
 from django.templatetags.static import StaticNode
 from django.template.loaders.filesystem import Loader
-from django.test import TestCase
 
 import debug                            # pyflakes:ignore
 
@@ -27,6 +26,7 @@ from ietf.utils.management.commands import pyflakes
 from ietf.utils.mail import send_mail_text, send_mail_mime, outbox 
 from ietf.utils.test_data import make_test_data
 from ietf.utils.test_runner import get_template_paths, set_coverage_checking
+from ietf.utils.test_utils import TestCase
 from ietf.group.models import Group
 
 skip_wiki_glue_testing = False

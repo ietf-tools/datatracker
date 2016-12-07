@@ -2,7 +2,7 @@ import os
 import sys
 import json
 
-from django.test import Client, TestCase
+from django.test import Client
 from django.conf import settings
 from django.utils.importlib import import_module
 from django.db import models
@@ -11,6 +11,8 @@ from tastypie.exceptions import BadRequest
 from tastypie.test import ResourceTestCaseMixin
 
 import debug                            # pyflakes:ignore
+
+from ietf.utils.test_utils import TestCase
 
 OMITTED_APPS = (
     'ietf.secr.meetings',
