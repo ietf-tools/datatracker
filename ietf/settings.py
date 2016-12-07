@@ -64,12 +64,6 @@ DATABASES = {
         #'PASSWORD': 'ietf',
         #'OPTIONS': {},
     },
-#    'legacy': {
-#        'NAME': 'ietf',
-#        'ENGINE': 'django.db.backends.mysql',
-#        'USER': 'ietf',
-#        #'PASSWORD': 'ietf',
-#    },
 }
 
 DATABASE_TEST_OPTIONS = {
@@ -156,8 +150,6 @@ STATICFILES_FINDERS = (
 WSGI_APPLICATION = "ietf.wsgi.application"
 
 AUTHENTICATION_BACKENDS = ( 'django.contrib.auth.backends.ModelBackend', )
-
-#DATABASE_ROUTERS = ["ietf.legacy_router.LegacyRouter"]
 
 # ------------------------------------------------------------------------
 # Django/Python Logging Framework Modifications
