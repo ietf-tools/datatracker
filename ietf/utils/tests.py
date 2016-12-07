@@ -18,7 +18,6 @@ from django.template import Context
 from django.template.defaulttags import URLNode
 from django.template.loader import get_template
 from django.templatetags.static import StaticNode
-from django.test import TestCase
 
 import debug                            # pyflakes:ignore
 
@@ -26,7 +25,8 @@ import ietf.urls
 from ietf.utils.management.commands import pyflakes
 from ietf.utils.mail import send_mail_text, send_mail_mime, outbox 
 from ietf.utils.test_data import make_test_data
-from ietf.utils.test_runner import get_template_paths
+from ietf.utils.test_runner import get_template_paths, set_coverage_checking
+from ietf.utils.test_utils import TestCase
 from ietf.group.models import Group
 
 skip_wiki_glue_testing = False
@@ -104,13 +104,13 @@ def get_callbacks(urllist):
 
     return list(callbacks)
 
-debug.debug = True
 class TemplateChecksTestCase(TestCase):
 
     paths = []
     templates = {}
 
     def setUp(self):
+        set_coverage_checking(False)
         self.paths = list(get_template_paths())
         self.paths.sort()
         for path in self.paths:
@@ -120,6 +120,7 @@ class TemplateChecksTestCase(TestCase):
                 pass
 
     def tearDown(self):
+        set_coverage_checking(True)
         pass
 
     def test_parse_templates(self):
