@@ -60,6 +60,7 @@ from django.core.management import call_command
 from django.core.urlresolvers import RegexURLResolver
 
 import debug                            # pyflakes:ignore
+debug.debug = True
 
 import ietf
 import ietf.utils.mail
@@ -397,7 +398,6 @@ class IetfTestRunner(DiscoverRunner):
             }
 
             settings.TEMPLATES[0]['OPTIONS']['loaders'] = ('ietf.utils.test_runner.TemplateCoverageLoader',) + settings.TEMPLATES[0]['OPTIONS']['loaders']
-            template_coverage_collection = True
 
             settings.MIDDLEWARE_CLASSES = ('ietf.utils.test_runner.RecordUrlsMiddleware',) + settings.MIDDLEWARE_CLASSES
             url_coverage_collection = True
@@ -414,7 +414,7 @@ class IetfTestRunner(DiscoverRunner):
             settings.SITE_ID = 1
 
         if settings.TEMPLATES[0]['OPTIONS']['string_if_invalid'] != '':
-            print("     Changing settings.TEMPLATES[0]['OPTIONS']['string_if_invalid'] to '' during testing")
+            print("     Changing TEMPLATES[0]['OPTIONS']['string_if_invalid'] to '' during testing")
             settings.TEMPLATES[0]['OPTIONS']['string_if_invalid'] = ''
 
         assert not settings.IDTRACKER_BASE_URL.endswith('/')
@@ -490,14 +490,15 @@ class IetfTestRunner(DiscoverRunner):
         return test_apps, test_paths
 
     def run_tests(self, test_labels, extra_tests=[], **kwargs):
+        global old_destroy, old_create, test_database_name, template_coverage_collection
+        from django.db import connection
+
         # Tests that involve switching back and forth between the real
         # database and the test database are way too dangerous to run
         # against the production database
         if socket.gethostname().split('.')[0] in ['core3', 'ietfa', 'ietfb', 'ietfc', ]:
             raise EnvironmentError("Refusing to run tests on production server")
 
-        global old_destroy, old_create, test_database_name
-        from django.db import connection
         old_create = connection.creation.__class__.create_test_db
         connection.creation.__class__.create_test_db = safe_create_1
         old_destroy = connection.creation.__class__.destroy_test_db
@@ -511,6 +512,7 @@ class IetfTestRunner(DiscoverRunner):
         self.test_apps, self.test_paths = self.get_test_paths(test_labels)
 
         if self.check_coverage:
+            template_coverage_collection = True
             extra_tests += [
                 CoverageTest(test_runner=self, methodName='url_coverage_test'),
                 CoverageTest(test_runner=self, methodName='template_coverage_test'),
