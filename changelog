@@ -4,6 +4,13 @@ ietfdb (6.39.1) ietf; urgency=medium
 
   This is a mixed bugfix and feature release.  From the commitlog:
 
+  * Moved optional text wrapping before html escaping in markup_unicode(),
+    used by get_unicode_document_content().  Fixes a problem with some
+    document lines being wrapped when they should not be.
+
+  * Fixed the manage assigned reviews template to handle the case when 
+    reviewed rev is blank.  Fixes issue #2086.
+
   * Changed to using TestCase from ietf.utils in some places, for consistent
     test-suite failure messages.
 

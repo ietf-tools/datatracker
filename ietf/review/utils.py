@@ -716,6 +716,7 @@ def make_assignment_choices(email_queryset, review_req):
         doc=doc,
         reviewer__person__in=possible_person_ids,
         state="completed",
+        team=team,
     )
 
     if review_req.pk is not None:
