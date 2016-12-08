@@ -582,7 +582,7 @@ def document_main(request, name, rev=None):
     if doc.type_id == "review":
         basename = "{}.txt".format(doc.name, doc.rev)
         pathname = os.path.join(doc.get_file_path(), basename)
-        content = get_unicode_document_content(basename, pathname, split=False)
+        content = get_unicode_document_content(basename, pathname, split=False, width=80)
 
         review_req = ReviewRequest.objects.filter(review=doc.name).first()
 

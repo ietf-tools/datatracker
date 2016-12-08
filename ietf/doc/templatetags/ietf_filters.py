@@ -1,6 +1,5 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
-import textwrap
 import re
 import datetime
 import os
@@ -11,6 +10,7 @@ import debug                            # pyflakes:ignore
 
 from ietf.doc.models import ConsensusDocEvent
 from ietf.doc.utils import get_document_content
+from ietf.utils.text import fill
 from django import template
 from django.conf import settings
 from django.utils.html import escape, fix_ampersands
@@ -164,23 +164,7 @@ def bracketpos(pos,posslug):
     else:
         return "[   ]"
 
-@register.filter(name='fill')
-def fill(text, width):
-    """Wraps each paragraph in text (a string) so every line
-    is at most width characters long, and returns a single string
-    containing the wrapped paragraph.
-    """
-    width = int(width)
-    paras = text.replace("\r\n","\n").replace("\r","\n").split("\n\n")
-    wrapped = []
-    for para in paras:
-        if para:
-            lines = para.split("\n")
-            maxlen = max([len(line) for line in lines])
-            if maxlen > width:
-                para = textwrap.fill(para, width, replace_whitespace=False)
-            wrapped.append(para)
-    return "\n\n".join(wrapped)
+register.filter('fill', fill)
 
 @register.filter(name='rfcspace')
 def rfcspace(string):

@@ -297,7 +297,7 @@ def add_events_message_info(events):
         e.in_reply_to = e.addedmessageevent.in_reply_to
 
 
-def get_unicode_document_content(key, filename, split=True, markup=True, codec='utf-8', errors='ignore'):
+def get_unicode_document_content(key, filename, split=True, markup=True, codec='utf-8', errors='ignore', width=None):
     try:
         with open(filename, 'rb') as f:
             raw_content = f.read().decode(codec,errors)
@@ -306,7 +306,7 @@ def get_unicode_document_content(key, filename, split=True, markup=True, codec='
         return error
 
     if markup:
-        return markup_txt.markup_unicode(raw_content, split)
+        return markup_txt.markup_unicode(raw_content, split, width)
     else:
         return raw_content
 

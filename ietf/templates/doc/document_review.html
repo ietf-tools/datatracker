@@ -113,6 +113,6 @@
   <h2>{{ doc.type.name }}<br><small>{{ doc.name }}</small></h2>
 
   {% if doc.rev and content != None %}
-    {{ content|fill:"80"|safe|linebreaksbr|keep_spacing|sanitize_html|safe }}
+    {{ content|safe|keep_spacing|sanitize_html|safe }}
   {% endif %}
 {% endblock %}
