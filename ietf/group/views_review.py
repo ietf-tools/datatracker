@@ -1,10 +1,13 @@
 import datetime, math
 from collections import defaultdict
 
+import debug    # pyflakes:ignore
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import Http404, HttpResponseForbidden, HttpResponseRedirect
 from django.contrib.auth.decorators import login_required
 from django.core.urlresolvers import reverse as urlreverse
+from django.db.models import Max
 from django import forms
 from django.template.loader import render_to_string
 
@@ -23,13 +26,17 @@ from ietf.review.utils import (can_manage_review_requests_for_team,
                                reviewer_rotation_list,
                                latest_review_requests_for_reviewers,
                                augment_review_requests_with_events)
+from ietf.doc.models import LastCallDocEvent
 from ietf.group.models import Role
 from ietf.group.utils import get_group_or_404, construct_group_menu_context
 from ietf.person.fields import PersonEmailChoiceField
 from ietf.name.models import ReviewRequestStateName
-from ietf.utils.mail import send_mail_text
-from ietf.utils.fields import DatepickerDateField
+from ietf.utils.mail import send_mail_text, parse_preformatted
+from ietf.utils.fields import DatepickerDateField, MultiEmailField
 from ietf.ietfauth.utils import user_is_person
+from ietf.dbtemplate.models import DBTemplate
+from ietf.mailtrigger.utils import gather_address_lists
+from ietf.mailtrigger.models import Recipient
 
 def get_open_review_requests_for_team(team, assignment_status=None):
     open_review_requests = ReviewRequest.objects.filter(
@@ -327,7 +334,10 @@ def manage_review_requests(request, acronym, group_type=None, assignment_status=
     })
 
 class EmailOpenAssignmentsForm(forms.Form):
-    to = forms.EmailField(widget=forms.EmailInput(attrs={ "readonly": True }))
+    frm = forms.CharField(label="From", widget=forms.EmailInput(attrs={"readonly":True}))
+    to = MultiEmailField()
+    cc = MultiEmailField(required=False)
+    reply_to = MultiEmailField(required=False)
     subject = forms.CharField()
     body = forms.CharField(widget=forms.Textarea)
 
@@ -345,7 +355,32 @@ def email_open_review_assignments(request, acronym, group_type=None):
         state__in=("requested", "accepted"),
     ).exclude(
         reviewer=None,
-    ).prefetch_related("reviewer", "type", "state", "doc").distinct().order_by("deadline", "reviewer"))
+    ).prefetch_related("reviewer", "type", "state", "doc").distinct().order_by("reviewer","-deadline"))
+
+    review_requests.sort(key=lambda r:r.reviewer.person.last_name()+r.reviewer.person.first_name())
+
+    for r in review_requests:
+        if r.doc.telechat_date():
+            r.section = 'For telechat %s' % r.doc.telechat_date().isoformat()
+            r.section_order='0'+r.section
+        elif r.type_id == 'early':
+            r.section = 'Early review requests:'
+            r.section_order='2'
+        else:
+            r.section = 'Last calls:'
+            r.section_order='1'
+        e = r.doc.latest_event(LastCallDocEvent, type="sent_last_call")
+        r.lastcall_ends = e and e.expires.date().isoformat()
+        r.earlier_review = ReviewRequest.objects.filter(doc=r.doc,reviewer__in=r.reviewer.person.email_set.all(),state="completed")
+        if r.earlier_review:
+            req_rev = r.requested_rev or r.doc.rev
+            earlier_review_rev = r.earlier_review.aggregate(Max('reviewed_rev'))['reviewed_rev__max']
+            if req_rev == earlier_review_rev:
+                r.earlier_review_mark = '**'
+            else:
+                r.earlier_review_mark = '*'
+
+    review_requests.sort(key=lambda r: r.section_order)
 
     back_url = request.GET.get("next")
     if not back_url:
@@ -359,20 +394,35 @@ def email_open_review_assignments(request, acronym, group_type=None):
     if request.method == "POST" and request.POST.get("action") == "email":
         form = EmailOpenAssignmentsForm(request.POST)
         if form.is_valid():
-            send_mail_text(request, form.cleaned_data["to"], None, form.cleaned_data["subject"], form.cleaned_data["body"])
-
+            send_mail_text(request, form.cleaned_data["to"], form.cleaned_data["frm"], form.cleaned_data["subject"], form.cleaned_data["body"],cc=form.cleaned_data["cc"],extra={"Reply-to":", ".join(form.cleaned_data["reply_to"])})
             return HttpResponseRedirect(back_url)
     else:
-        to = group.list_email
-        subject = "Open review assignments in {}".format(group.acronym)
+        (to,cc) = gather_address_lists('review_assignments_summarized',group=group)
+        reply_to = Recipient.objects.get(slug='group_secretaries').gather(group=group)
+        frm = request.user.person.formatted_email()
 
-        body = render_to_string("group/email_open_review_assignments.txt", {
+        templateqs = DBTemplate.objects.filter(path="/group/%s/email/open_assignments.txt" % group.acronym)
+        if templateqs.exists():
+            template = templateqs.first()
+        else:
+            template = DBTemplate.objects.get(path="/group/defaults/email/open_assignments.txt")
+
+        partial_msg = render_to_string(template.path, {
             "review_requests": review_requests,
             "rotation_list": reviewer_rotation_list(group)[:10],
+            "group" : group,
         })
+        
+        (msg,_,_) = parse_preformatted(partial_msg)
+
+        body = msg.get_payload()
+        subject = msg['Subject']
 
         form = EmailOpenAssignmentsForm(initial={
-            "to": to,
+            "to": ", ".join(to),
+            "cc": ", ".join(cc),
+            "reply_to": ", ".join(reply_to),
+            "frm": frm,
             "subject": subject,
             "body": body,
         })

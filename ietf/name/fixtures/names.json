@@ -1643,6 +1643,16 @@
 },
 {
  "fields": {
+  "order": 11,
+  "used": true,
+  "name": "Re-sent",
+  "desc": ""
+ },
+ "model": "name.liaisonstatementeventtypename",
+ "pk": "resent"
+},
+{
+ "fields": {
   "order": 1,
   "used": true,
   "name": "For action",
@@ -1890,6 +1900,16 @@
  },
  "model": "name.reviewrequeststatename",
  "pk": "completed"
+},
+{
+ "fields": {
+  "order": 20,
+  "used": false,
+  "name": "Unknown",
+  "desc": ""
+ },
+ "model": "name.reviewrequeststatename",
+ "pk": "unknown"
 },
 {
  "fields": {
@@ -2466,7 +2486,7 @@
   "order": 3,
   "used": true,
   "name": "IRTF",
-  "desc": "Independent Submission Editor stream"
+  "desc": "IRTF Stream"
  },
  "model": "name.streamname",
  "pk": "irtf"
@@ -6198,6 +6218,17 @@
  },
  "model": "mailtrigger.mailtrigger",
  "pk": "resurrection_requested"
+},
+{
+ "fields": {
+  "cc": [],
+  "to": [
+   "group_mail_list"
+  ],
+  "desc": "Recipients when an review team secretary send a summary of open review assignments"
+ },
+ "model": "mailtrigger.mailtrigger",
+ "pk": "review_assignments_summarized"
 },
 {
  "fields": {

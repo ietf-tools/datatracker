@@ -1,8 +1,0 @@
-{% autoescape off %}
-Reviewer               Deadline   Draft
-{% for r in review_requests %}{{ r.reviewer.person.plain_name|ljust:"22" }} {{ r.deadline|date:"Y-m-d" }} {{ r.doc_id }}-{% if r.requested_rev %}{{ r.requested_rev }}{% else %}{{ r.doc.rev }}{% endif %}
-{% endfor %}
-{% if rotation_list %}Next in the reviewer rotation:
-
-{% for p in rotation_list %}  {{ p }}
-{% endfor %}{% endif %}{% endautoescape %}

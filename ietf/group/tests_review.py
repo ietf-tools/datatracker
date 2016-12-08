@@ -19,6 +19,7 @@ from ietf.review.utils import (
 from ietf.name.models import ReviewTypeName, ReviewResultName, ReviewRequestStateName
 import ietf.group.views_review
 from ietf.utils.mail import outbox, empty_outbox
+from ietf.dbtemplate.factories import DBTemplateFactory
 
 class ReviewTests(TestCase):
     def test_review_requests(self):
@@ -284,6 +285,19 @@ class ReviewTests(TestCase):
     def test_email_open_review_assignments(self):
         doc = make_test_data()
         review_req1 = make_review_data(doc)
+        DBTemplateFactory.create(path='/group/defaults/email/open_assignments.txt',
+                                 type_id='django',
+                                 content = """
+                                     {% autoescape off %}
+                                     Reviewer               Deadline   Draft
+                                     {% for r in review_requests %}{{ r.reviewer.person.plain_name|ljust:"22" }} {{ r.deadline|date:"Y-m-d" }} {{ r.doc_id }}-{% if r.requested_rev %}{{ r.requested_rev }}{% else %}{{ r.doc.rev }}{% endif %}
+                                     {% endfor %}
+                                     {% if rotation_list %}Next in the reviewer rotation:
+
+                                     {% for p in rotation_list %}  {{ p }}
+                                     {% endfor %}{% endif %}
+                                     {% endautoescape %}
+                                 """)
 
         group = review_req1.team
 
@@ -302,14 +316,20 @@ class ReviewTests(TestCase):
 
         empty_outbox()
         r = self.client.post(url, {
-            "to": group.list_email,
+            "to": 'toaddr@bogus.test',
+            "cc": 'ccaddr@bogus.test',
+            "reply_to": 'replytoaddr@bogus.test',
+            "frm" : 'fromaddr@bogus.test',
             "subject": "Test subject",
             "body": "Test body",
             "action": "email",
         })
         self.assertEqual(r.status_code, 302)
         self.assertEqual(len(outbox), 1)
-        self.assertTrue(group.list_email in outbox[0]["To"])
+        self.assertTrue('toaddr' in outbox[0]["To"])
+        self.assertTrue('ccaddr' in outbox[0]["Cc"])
+        self.assertTrue('replytoaddr' in outbox[0]["Reply-To"])
+        self.assertTrue('fromaddr' in outbox[0]["From"])
         self.assertEqual(outbox[0]["subject"], "Test subject")
         self.assertTrue("Test body" in outbox[0].get_payload(decode=True).decode("utf-8"))
 
