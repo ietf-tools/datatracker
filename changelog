@@ -4,6 +4,16 @@ ietfdb (6.39.1) ietf; urgency=medium
 
   This is a mixed bugfix and feature release.  From the commitlog:
 
+  * Check event type only when an event is available.
+
+  * Merged in [12482] from rjsparks@nostrum.com:
+    Improves control of email headers for review summary messages. Provides 
+    team-specific templates for review summary messages. Fixes #2092 and #2082. 
+
+  * Merged in [12479] from olau@iola.dk:
+    Add missing team constraint in the check for previous reviews by a
+    reviewer.  
+
   * Moved optional text wrapping before html escaping in markup_unicode(),
     used by get_unicode_document_content().  Fixes a problem with some
     document lines being wrapped when they should not be.
