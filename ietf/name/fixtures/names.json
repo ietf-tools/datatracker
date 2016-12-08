@@ -5133,6 +5133,14 @@
 },
 {
  "fields": {
+  "template": "ietf@ietf.org",
+  "desc": "The IETF general discussion list"
+ },
+ "model": "mailtrigger.recipient",
+ "pk": "ietf_general"
+},
+{
+ "fields": {
   "template": "<ietf-secretariat-reply@ietf.org>",
   "desc": "The Secretariat"
  },
@@ -5274,6 +5282,30 @@
  },
  "model": "mailtrigger.recipient",
  "pk": "nominee"
+},
+{
+ "fields": {
+  "template": "{% if review_req.doc.type_id == 'draft' %}<{{review_req.doc.name}}.all@ietf.org>{% endif %}",
+  "desc": "The .all alias for the document being reviewed"
+ },
+ "model": "mailtrigger.recipient",
+ "pk": "review_doc_all_parties"
+},
+{
+ "fields": {
+  "template": "{{review_req.doc.group.list_email}}",
+  "desc": "The working group list for the document being reviewed"
+ },
+ "model": "mailtrigger.recipient",
+ "pk": "review_doc_group_mail_list"
+},
+{
+ "fields": {
+  "template": "{{review_req.team.list_email}}",
+  "desc": "The review team's email list"
+ },
+ "model": "mailtrigger.recipient",
+ "pk": "review_team_mail_list"
 },
 {
  "fields": {
@@ -6229,6 +6261,21 @@
  },
  "model": "mailtrigger.mailtrigger",
  "pk": "review_assignments_summarized"
+},
+{
+ "fields": {
+  "cc": [
+   "ietf_general",
+   "review_doc_all_parties",
+   "review_doc_group_mail_list"
+  ],
+  "to": [
+   "review_team_mail_list"
+  ],
+  "desc": "Recipients when an review is completed"
+ },
+ "model": "mailtrigger.mailtrigger",
+ "pk": "review_completed"
 },
 {
  "fields": {

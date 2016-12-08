@@ -1,5 +1,7 @@
 import datetime, os, email.utils
 
+import debug    # pyflakes:ignore
+
 from django.http import HttpResponseForbidden, JsonResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django import forms
@@ -26,6 +28,8 @@ from ietf.utils.fields import DatepickerDateField
 from ietf.utils.text import strip_prefix, xslugify
 from ietf.utils.textupload import get_cleaned_text_file_content
 from ietf.utils.mail import send_mail
+from ietf.mailtrigger.utils import gather_address_lists
+from ietf.utils.fields import MultiEmailField
 
 def clean_doc_revision(doc, rev):
     if rev:
@@ -333,7 +337,7 @@ class CompleteReviewForm(forms.Form):
     review_content = forms.CharField(widget=forms.Textarea, required=False)
     completion_date = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={ "autoclose": "1" }, initial=datetime.date.today, help_text="Date of announcement of the results of this review")
     completion_time = forms.TimeField(widget=forms.HiddenInput, initial=datetime.time.min)
-    cc = forms.CharField(required=False, help_text="Email addresses to send to in addition to the review team list")
+    cc = MultiEmailField(required=False, help_text="Email addresses to send to in addition to the review team list")
 
     def __init__(self, review_req, *args, **kwargs):
         self.review_req = review_req
@@ -413,6 +417,8 @@ def complete_review(request, name, request_id):
 
     if not (is_reviewer or can_manage_request):
         return HttpResponseForbidden("You do not have permission to perform this action")
+
+    (to, cc) = gather_address_lists('review_completed',review_req = review_req)
 
     if request.method == "POST":
         form = CompleteReviewForm(review_req, request.POST, request.FILES)
@@ -531,7 +537,8 @@ def complete_review(request, name, request_id):
             if need_to_email_review:
                 # email the review
                 subject = "{} of {}-{}".format("Partial review" if review_req.state_id == "part-completed" else "Review", review_req.doc.name, review_req.reviewed_rev)
-                msg = send_mail(request, [(review_req.team.name, review_req.team.list_email)], None,
+                msg = send_mail(request, to, 
+                                (request.user.person.plain_name(),request.user.person.email_address()),
                                 subject,
                                 "review/completed_review.txt", {
                                     "review_req": review_req,
@@ -548,7 +555,8 @@ def complete_review(request, name, request_id):
     else:
         form = CompleteReviewForm(review_req, initial={
             "reviewed_rev": review_req.reviewed_rev,
-            "result": review_req.result_id
+            "result": review_req.result_id,
+            "cc": ", ".join(cc),
         })
 
     mail_archive_query_urls = mailarch.construct_query_urls(review_req)
