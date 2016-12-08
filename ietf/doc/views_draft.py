@@ -794,7 +794,7 @@ def resurrect(request, name):
 
     resurrect_requested_by = None
     e = doc.latest_event(type__in=('requested_resurrect', "completed_resurrect"))
-    if e.type == 'requested_resurrect':
+    if e and e.type == 'requested_resurrect':
         resurrect_requested_by = e.by
 
     if request.method == 'POST':
