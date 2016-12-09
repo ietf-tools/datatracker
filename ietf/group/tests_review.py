@@ -129,7 +129,7 @@ class ReviewTests(TestCase):
             availability="unavailable",
         )
 
-        settings = ReviewerSettings.objects.get(person=reviewer)
+        settings = ReviewerSettings.objects.get(person=reviewer,team=review_req1.team)
         settings.skip_next = 1
         settings.save()
 

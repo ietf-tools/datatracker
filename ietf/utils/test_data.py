@@ -385,11 +385,14 @@ def make_test_data():
     return draft
 
 def make_review_data(doc):
-    team = create_group(acronym="reviewteam", name="Review Team", type_id="dir", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
-    for r in ReviewResultName.objects.filter(slug__in=["issues", "ready-issues", "ready", "not-ready"]):
-        ResultUsedInReviewTeam.objects.create(team=team, result=r)
-    for t in ReviewTypeName.objects.filter(slug__in=["early", "lc", "telechat"]):
-        TypeUsedInReviewTeam.objects.create(team=team, type=t)
+    team1 = create_group(acronym="reviewteam", name="Review Team", type_id="dir", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
+    team2 = create_group(acronym="reviewteam2", name="Review Team 2", type_id="dir", list_email="reviewteam2@ietf.org", parent=Group.objects.get(acronym="farfut"))
+    team3 = create_group(acronym="reviewteam3", name="Review Team 3", type_id="dir", list_email="reviewteam2@ietf.org", parent=Group.objects.get(acronym="farfut"))
+    for team in (team1, team2, team3):
+        for r in ReviewResultName.objects.filter(slug__in=["issues", "ready-issues", "ready", "not-ready"]):
+            ResultUsedInReviewTeam.objects.create(team=team, result=r)
+        for t in ReviewTypeName.objects.filter(slug__in=["early", "lc", "telechat"]):
+            TypeUsedInReviewTeam.objects.create(team=team, type=t)
 
     u = User.objects.create(username="reviewer")
     u.set_password("reviewer+password")
@@ -397,12 +400,13 @@ def make_review_data(doc):
     reviewer = Person.objects.create(name=u"Some Réviewer", ascii="Some Reviewer", user=u)
     email = Email.objects.create(address="reviewer@example.com", person=reviewer)
 
-    Role.objects.create(name_id="reviewer", person=reviewer, email=email, group=team)
-    ReviewerSettings.objects.create(team=team, person=reviewer, min_interval=14, skip_next=0)
+    for team in (team1, team2, team3):
+        Role.objects.create(name_id="reviewer", person=reviewer, email=email, group=team)
+        ReviewerSettings.objects.create(team=team, person=reviewer, min_interval=14, skip_next=0)
 
     review_req = ReviewRequest.objects.create(
         doc=doc,
-        team=team,
+        team=team1,
         type_id="early",
         deadline=datetime.datetime.now() + datetime.timedelta(days=20),
         state_id="accepted",
@@ -411,14 +415,14 @@ def make_review_data(doc):
     )
 
     p = Person.objects.get(user__username="marschairman")
-    Role.objects.create(name_id="reviewer", person=p, email=p.email_set.first(), group=team)
+    Role.objects.create(name_id="reviewer", person=p, email=p.email_set.first(), group=team1)
 
     u = User.objects.create(username="reviewsecretary")
     u.set_password("reviewsecretary+password")
     u.save()
     reviewsecretary = Person.objects.create(name=u"Réview Secretary", ascii="Review Secretary", user=u)
     reviewsecretary_email = Email.objects.create(address="reviewsecretary@example.com", person=reviewsecretary)
-    Role.objects.create(name_id="secr", person=reviewsecretary, email=reviewsecretary_email, group=team)
+    Role.objects.create(name_id="secr", person=reviewsecretary, email=reviewsecretary_email, group=team1)
     
     return review_req
 

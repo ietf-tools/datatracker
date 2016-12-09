@@ -46,6 +46,7 @@ class ReviewTests(TestCase):
         doc = make_test_data()
         review_req = make_review_data(doc)
         review_team = review_req.team
+        review_team3 = Group.objects.get(acronym='reviewteam3')
 
         url = urlreverse('ietf.doc.views_review.request_review', kwargs={ "name": doc.name })
         login_testing_unauthorized(self, "reviewsecretary", url)
@@ -59,18 +60,21 @@ class ReviewTests(TestCase):
         # post request
         r = self.client.post(url, {
             "type": "early",
-            "team": review_team.pk,
+            "team": [review_team.pk,review_team3.pk],
             "deadline": deadline.isoformat(),
             "requested_rev": "01",
             "requested_by": Person.objects.get(user__username="reviewsecretary").pk,
         })
         self.assertEqual(r.status_code, 302)
 
-        req = ReviewRequest.objects.get(doc=doc, state="requested")
-        self.assertEqual(req.deadline, deadline)
-        self.assertEqual(req.team, review_team)
-        self.assertEqual(req.requested_rev, "01")
-        self.assertEqual(doc.latest_event().type, "requested_review")
+        qs = ReviewRequest.objects.filter(doc=doc, state="requested")
+        self.assertEqual(qs.count(),2)
+        self.assertEqual(set(qs.values_list('team__acronym',flat=True)),set(['reviewteam','reviewteam3']))
+        for req in qs:
+            self.assertEqual(req.deadline, deadline)
+            self.assertEqual(req.requested_rev, "01")
+            self.assertEqual(doc.latest_event().type, "requested_review")
+
 
     def test_doc_page(self):
         doc = make_test_data()

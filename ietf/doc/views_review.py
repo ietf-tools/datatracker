@@ -111,6 +111,7 @@ def request_review(request, name):
             teams = form.cleaned_data["team"]
             for team in teams:
                 review_req = form.save(commit=False)
+                review_req.id = None
                 review_req.doc = doc
                 review_req.state = ReviewRequestStateName.objects.get(slug="requested", used=True)
                 review_req.team = team
