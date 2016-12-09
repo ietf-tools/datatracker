@@ -7,7 +7,7 @@ Updated: $Date$
 Planned work in rough order
 ===========================
 
-* Upgrade to Django 1.8 / 1.9 / 1.10
+* Upgrade to Django 1.9 / 1.10
 
 * Clean up document author records containing 'none', and find and fix
   the code which produces them.
@@ -19,11 +19,27 @@ Planned work in rough order
 
 * Add "Waiting for implementation" and "Held by WG" states, with comment field
 
+* Break out the htmlzation code used on tools in a library, and use that
+  in the datatracker rendering, replacing the simpler code currently in use.
+  This is also going to require some fancy caching, to avoid re-building the
+  html if not needed, as it takes quite some time.
+
+* Glue code to trigger generation of htmlized documents on www.ietf.org ??
+
 * Revisit Yang module checks:  Capture output also for passed tests.
   Add second checker.  Fix extraction problems.
 
+* Move the downref registry into the datatracker (IESG request)
+
+* Add a bullet for the IESG request for a "recent ballots" page (IESG request)
+
+* Introduce and API for Meetecho to use to associate recordings with sessions
+  (and perhaps automate making copies of those videos)
+
 * Introduce the use of email.header.Header() in order to be able to handle
   non-ascii names in email From:, To: and Cc: fields.
+
+* Add support for IAB Programs
 
 * Revisit photo uploads: Add photo upload for people with roles.  Add
   photos to wg pages and group overview pages.
@@ -37,14 +53,7 @@ Planned work in rough order
   when sending email (this is not supported by smtplib under Python 2.7,
   so will need support code in the application until we migrate to Python 3.5)
 
-* Add support for IAB Programs
-
 * Performance analysis of database table and index setup
-
-* Break out the htmlzation code used on tools in a library, and use that
-  in the datatracker rendering, replacing the simpler code currently in use.
-
-* Glue code to trigger generation of htmlized documents on www.ietf.org ??
 
 * Review and change the draft submission and handling code to deal with UTF-8
   instead of ascii before upload of utf-8 drafts should be permitted.  In
@@ -62,10 +71,14 @@ Planned work in rough order
 
 * Transition to PostgreSQL?
 
+
+Notes
+===========================
+
 * Small nomcom refactoring: associate Feedback records with Person
   instead of User.
 
-* Consistency fix:  in settings.py, name directory settings consistently with
+* Consistency fix: in settings.py, name directory settings consistently with
   ..._DIR; reserving ..._PATH for settings with PATH semantics (':'-separated lists
   of directories)
 
@@ -87,8 +100,8 @@ Planned work in rough order
 * Make it possible to let time run backwards in the database (creation timestamps,
   universal changelog)
 
-* Change slugs which were limited by the former 8-character slug length limit to
-  be more readable (needs both code changes and migrations).
+* Change slugs which were limited by the former 8-character slug length limit
+  to be more readable (needs both code changes and migrations).
 
 * Additional charts, various statistics views.
 
