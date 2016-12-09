@@ -1,8 +1,16 @@
 ietfdb (6.39.1) ietf; urgency=medium
 
-  **Historical review data. Enhanced person profile page**
+  **Historical review data. Enhanced person profile page.  Review page enhancements.**
 
   This is a mixed bugfix and feature release.  From the commitlog:
+
+  * Merged in [12489] from rjsparks@nostrum.com:
+    Save a new reviewrequest for each team requested in the request form.
+    Fixes #2094.  
+
+  * Merged in [12487] from rjsparks@nostrum.com:
+    Make it clearer what version was requested and what version was 
+    reviewed on a reveiwers overview page. Fixes #2101.  
 
   * Check event type only when an event is available.
 
@@ -67,7 +75,7 @@ ietfdb (6.39.1) ietf; urgency=medium
   * Added guards against picking up non-ascii characters in draft title and
     abstract from drafts submitted in xml form.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  05 Dec 2016 10:25:12 -0800
+ -- Henrik Levkowetz <henrik@levkowetz.com>  09 Dec 2016 12:56:16 +0000
 
 
 ietfdb (6.39.0) ietf; urgency=medium
