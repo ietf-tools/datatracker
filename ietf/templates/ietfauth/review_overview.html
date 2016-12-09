@@ -21,7 +21,9 @@
     <table class="table table-condensed table-striped">
       <thead>
         <tr>
-          <th>Request</th>
+          <th>Document</th>
+          <th>Version Requested</th>
+          <th>Current Version</th>
           <th>Team</th>
           <th>Type</th>
           <th>Deadline</th>
@@ -30,7 +32,9 @@
       <tbody>
         {% for r in open_review_requests %}
           <tr>
-            <td><a {% if r.pk != None %}href="{% url "ietf.doc.views_review.review_request" name=r.doc.name request_id=r.pk %}"{% endif %}>{{ r.doc.name }}-{% if r.requested_rev %}{{ r.requested_rev }}{% else %}{{ r.doc.rev }}{% endif %}</a></td>
+            <td><a {% if r.pk != None %}href="{% url "ietf.doc.views_review.review_request" name=r.doc.name request_id=r.pk %}"{% endif %}>{{ r.doc.name }}</a></td>
+            <td>{% if r.requested_rev %}{{ r.requested_rev }}{% else %}Current{% endif %}</td>
+            <td>{{r.doc.rev}}</td>
             <td>{{ r.team.acronym }}</td>
             <td>{{ r.type.name }}</td>
             <td>
@@ -52,7 +56,8 @@
     <table class="table table-condensed table-striped">
       <thead>
         <tr>
-          <th>Request</th>
+          <th>Document</th>
+          <th>Version Reviewed</th>
           <th>Team</th>
           <th>Type</th>
           <th>Deadline</th>
@@ -63,7 +68,8 @@
       <tbody>
         {% for r in closed_review_requests %}
           <tr>
-            <td><a {% if r.pk != None %}href="{% url "ietf.doc.views_review.review_request" name=r.doc.name request_id=r.pk %}"{% endif %}>{{ r.doc.name }}-{% if r.requested_rev %}{{ r.requested_rev }}{% else %}{{ r.doc.rev }}{% endif %}</a></td>
+            <td><a {% if r.pk != None %}href="{% url "ietf.doc.views_review.review_request" name=r.doc.name request_id=r.pk %}"{% endif %}>{{ r.doc.name }}</a></td>
+            <td>{{r.reviewed_rev|default:"See review"}}{% if r.requested_rev %}{% if r.requested_rev != r.reviewed_rev %}({{ r.requested_rev }} requested){% endif %}{% endif %}</td>
             <td>{{ r.team.acronym }}</td>
             <td>{{ r.type.name }}</td>
             <td>
