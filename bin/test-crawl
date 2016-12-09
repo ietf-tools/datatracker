@@ -198,6 +198,7 @@ def skip_url(url):
             "^/wg/[a-z0-9-]+/deps/svg/",
             # This bad url occurs in an uploaded html agenda:
             r"/site/ietfdhcwg/_/rsrc/1311005436000/system/app/css/overlay.css\?cb=simple100%250150goog-ws-left",
+            r"/dir/tsvdir/reviews/",
         ):
         if re.search(pattern, url):
             return True
