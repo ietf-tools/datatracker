@@ -101,7 +101,7 @@ def all_id2_txt():
     # this returns a lot of data so try to be efficient
 
     drafts = Document.objects.filter(type="draft").exclude(name__startswith="rfc").order_by('name')
-    drafts = drafts.select_related('group', 'group__parent', 'ad', 'ad__email', 'intended_std_level', 'shepherd', 'shepherd__email')
+    drafts = drafts.select_related('group', 'group__parent', 'ad', 'intended_std_level', 'shepherd', )
     drafts = drafts.prefetch_related("states")
 
     rfc_aliases = dict(DocAlias.objects.filter(name__startswith="rfc",

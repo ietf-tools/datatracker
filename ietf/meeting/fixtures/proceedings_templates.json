@@ -1,0 +1,65 @@
+[
+  {
+    "fields": {
+      "group": 1,
+      "title": "IETF 97 Proceedings Overview",
+      "variables": null,
+      "content": "The Internet Engineering Task Force (IETF) provides a forum for working groups to coordinate technical development of new protocols. Its most important function is the development and selection of standards within the Internet protocol suite.\n\nThe IETF began in January 1986 as a forum for technical coordination by contractors for the then US Defense Advanced Research Projects Agency (DARPA), working on the ARPANET, US Defense Data Network (DDN), and the Internet core gateway system. Since that time, the IETF has grown into a large open international community of network designers, operators, vendors, and researchers concerned with the evolution of the Internet architecture and the smooth operation of the Internet.\n\nThe IETF mission includes:\n\n* Identifying and proposing solutions to pressing operational and technical problems in the Internet\n* Specifying the development or usage of protocols and the near-term architecture, to solve technical problems for the Internet\n* Facilitating technology transfer from the Internet Research Task Force (IRTF) to the wider Internet community;and\n* Providing a forum for the exchange of relevant information within the Internet community between vendors, users, researchers, agency contractors, and network managers.\n\nTechnical activities in the IETF are addressed within working groups. All working groups are organized roughly by function into seven areas. Each area is led by one or more Area Directors who have primary responsibility for that one area of IETF activity. Together with the Chair of the IETF/IESG, these Area Directors comprise the Internet Engineering Steering Group (IESG).\n\n===================  ===================================  ========================\nName                 Area                                 Email\n===================  ===================================  ========================\nJari Arkko           IETF Chair                           chair@ietf.org\nJari Arkko           General Area                         jari.arkko@piuha.net\nAlia Atlas           Routing Area                         akatlas@gmail.com\nDeborah Brungard     Routing Areas                        db3546@att.com\nBen Campbell         Applications and Real-Time Area      ben@nostrum.com\nBenoit Claise        Operations and Management Area       bclaise@cisco.com\nAlissa Cooper        Applications and Real-Time Area      alissa@cooperw.in\nSpencer Dawkins      Transport Area                       spencerdawkins.ietf@gmail.com\nStephen Farrell      Security Area                        stephen.farrell@cs.tcd.ie\nJoel Jaeggli         Operations and Management Area       joelja@bogus.com\nSuresh Krishnan      Internet Area                        suresh.krishnan@ericsson.com\nMirja Kühlewind      Transport Area                       ietf@kuehlewind.net\nTerry Manderson      Internet Area                        terry.manderson@icann.org\nAlexey Melnikov      Applications and Real-Time Area      aamelnikov@fastmail.fm\nKathleen Moriarty    Security Area                        Kathleen.Moriarty.ietf@gmail.com\nAlvaro Retana        Routing Area                         aretana@cisco.com\n===================  ===================================  ========================\n\n\nLiaison and ex-officio members include:\n\n===================  ===================================  ========================\nOlaf Kolkman         IAB Chair                            iab-chair@iab.org\nDanny McPherson      IAB Liaison                          danny@tcb.net\nMichelle Cotton      IANA Liaison                         iana@iana.org\nSandy Ginoza         RFC Editor Liaison                   rfc-editor@rfc-editor.org\nAlexa Morris         IETF Secretariat Liaison             exec-director@ietf.org\n===================  ===================================  ========================\n\n\nThe IETF has a Secretariat, which is managed by Association Management Solutions, LLC (AMS) in Fremont, California.The IETF Executive Director is Alexa Morris (exec-director@ietf.org).\n\n\nOther personnel that provide full-time support to the Secretariat include:\n\n=========================  ===================================\nSenior Meeting Planner     Marcia Beaulieu\nProject Manager            Stephanie McCammon\nMeeting Regsitrar          Maddy Conner\nProject Manager            Cindy Morgan\nProject Manager            Amy Vezza\n=========================  ===================================\n\nTo contact the Secretariat, please refer to the addresses and URLs provided on the IETF Secretariat Web page.\n\nThe IETF also has a general Administrative Support Activity headed by the IETF Administrative Director, Ray Pelletier iad@ietf.org\n\nThe working groups conduct their business during the tri-annual IETF meetings, at interim working group meetings, and via electronic mail on mailing lists established for each group. The tri-annual IETF meetings are 4.5 days in duration, and consist of working group sessions, training sessions, and plenary sessions. The plenary sessions include technical presentations, status reports, and an open IESG meeting.\n\nFollowing each meeting, the IETF Secretariat publishes meeting proceedings, which contain reports from all of the groups that met, as well as presentation slides, where available. The proceedings also include a summary of the standards-related activities that took place since the previous IETF meeting.\n\nMeeting minutes, working group charters (including information about the working group mailing lists), and general information on current IETF activities are available on the IETF Web site at https://www.ietf.org.\n",
+      "path": "/meeting/proceedings/defaults/overview.rst",
+      "type": "rst"
+    },
+    "model": "dbtemplate.dbtemplate",
+    "pk": 179
+  },
+  {
+    "fields": {
+      "order": 0,
+      "used": true,
+      "name": "reStructuredText",
+      "desc": ""
+    },
+    "model": "name.dbtemplatetypename",
+    "pk": "rst"
+  },
+  {
+    "fields": {
+      "charter": null,
+      "unused_states": [],
+      "description": "",
+      "parent": null,
+      "list_email": "",
+      "acronym": "ietf",
+      "comments": "",
+      "list_subscribe": "",
+      "state": "active",
+      "time": "2012-02-26T00:21:36",
+      "unused_tags": [],
+      "list_archive": "",
+      "type": "ietf",
+      "name": "IETF"
+    },
+    "model": "group.group",
+    "pk": 1
+  },
+  {
+    "fields": {
+      "order": 0,
+      "used": true,
+      "name": "Active",
+      "desc": ""
+    },
+    "model": "name.groupstatename",
+    "pk": "active"
+  },
+  {
+    "fields": {
+      "order": 0,
+      "used": true,
+      "verbose_name": "Internet Engineering Task Force",
+      "name": "IETF",
+      "desc": ""
+    },
+    "model": "name.grouptypename",
+    "pk": "ietf"
+  }
+]

@@ -3,6 +3,7 @@
 import datetime, os
 
 from django.db import models
+from django.core import checks
 from django.core.exceptions import ValidationError
 from django.core.urlresolvers import reverse as urlreverse
 from django.core.validators import URLValidator
@@ -25,6 +26,20 @@ class StateType(models.Model):
 
     def __unicode__(self):
         return self.slug
+
+@checks.register('db-consistency')
+def check_statetype_slugs(app_configs, **kwargs):
+    errors = []
+    state_type_slugs = [ t.slug for t in StateType.objects.all() ]
+    for type in DocTypeName.objects.all():
+        if not type.slug in state_type_slugs:
+            errors.append(checks.Error(
+                "The document type '%s (%s)' does not have a corresponding entry in the doc.StateType table" % (type.name, type.slug),
+                hint="You should add a doc.StateType entry with a slug '%s' to match the DocTypeName slug."%(type.slug),
+                obj=type,
+                id='datatracker.doc.E0015',
+            ))
+    return errors
 
 class State(models.Model):
     type = models.ForeignKey(StateType)
@@ -53,7 +68,7 @@ class DocumentInfo(models.Model):
     title = models.CharField(max_length=255)
 
     states = models.ManyToManyField(State, blank=True) # plain state (Active/Expired/...), IESG state, stream state
-    tags = models.ManyToManyField(DocTagName, blank=True, null=True) # Revised ID Needed, ExternalParty, AD Followup, ...
+    tags = models.ManyToManyField(DocTagName, blank=True) # Revised ID Needed, ExternalParty, AD Followup, ...
     stream = models.ForeignKey(StreamName, blank=True, null=True) # IETF, IAB, IRTF, Independent Submission
     group = models.ForeignKey(Group, blank=True, null=True) # WG, RG, IAB, IESG, Edu, Tools
 
@@ -277,7 +292,7 @@ class DocumentInfo(models.Model):
         if isinstance(self, Document):
             return RelatedDocument.objects.filter(target__document=self, relationship__in=relationship).select_related('source')
         elif isinstance(self, DocHistory):
-            return RelatedDocHistory.objects.filter(target__document=self, relationship__in=relationship).select_related('source')
+            return RelatedDocHistory.objects.filter(target__document=self.doc, relationship__in=relationship).select_related('source')
         else:
             return RelatedDocument.objects.none()
 

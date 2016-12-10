@@ -205,8 +205,8 @@ class Position(models.Model):
 class Feedback(models.Model):
     nomcom = models.ForeignKey('NomCom')
     author = models.EmailField(verbose_name='Author', blank=True)
-    positions = models.ManyToManyField('Position', blank=True, null=True)
-    nominees = models.ManyToManyField('Nominee', blank=True, null=True)
+    positions = models.ManyToManyField('Position', blank=True)
+    nominees = models.ManyToManyField('Nominee', blank=True)
     subject = models.TextField(verbose_name='Subject', blank=True)
     comments = EncryptedTextField(verbose_name='Comments')
     type = models.ForeignKey(FeedbackTypeName, blank=True, null=True)

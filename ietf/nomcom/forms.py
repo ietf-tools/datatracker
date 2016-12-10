@@ -1,6 +1,6 @@
 from django.conf import settings
 from django import forms
-from django.contrib.formtools.preview import FormPreview, AUTO_ID
+from formtools.preview import FormPreview, AUTO_ID
 from django.shortcuts import get_object_or_404, redirect
 from django.utils.decorators import method_decorator
 from django.shortcuts import render_to_response
