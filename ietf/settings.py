@@ -20,13 +20,13 @@ sys.path.append(os.path.abspath(BASE_DIR + "/.."))
 from ietf import __version__
 import debug
 
-DEBUG = False
+DEBUG = True
 debug.debug = DEBUG
 
 # Valid values:
 # 'production', 'test', 'development'
 # Override this in settings_local.py if it's not the desired setting:
-SERVER_MODE = 'production'
+SERVER_MODE = 'development'
 
 # Domain name of the IETF
 IETF_DOMAIN = 'ietf.org'
