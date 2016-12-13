@@ -7,6 +7,8 @@
 
 import os 
 from settings import *                                          # pyflakes:ignore
+import debug                            # pyflakes:ignore
+debug.debug = True
 
 # Workaround to avoid spending minutes stepping through the migrations in
 # every test run.  The result of this is to use the 'syncdb' way of creating
@@ -15,6 +17,7 @@ from settings import *                                          # pyflakes:ignor
 
 ## To be removed after upgrade to Django 1.8 ##
 
+from django.db.migrations.loader import MIGRATIONS_MODULE_NAME
 class DisableMigrations(object):
  
     def __contains__(self, item):
@@ -24,9 +27,9 @@ class DisableMigrations(object):
         # The string below is significant.  It has to include the value of
         # django.db.migrations.loader.MIGRATIONS_MODULE_NAME.  Used by django
         # 1.7 code in django.db.migrations.loader.MigrationLoader to
-        # determine whether or not to run migrations for a given module
-        from django.db.migrations.loader import MIGRATIONS_MODULE_NAME
-        return "no " + MIGRATIONS_MODULE_NAME
+        # determine whether or not to run migrations for a given module.
+        # By returning a non-existent path, we ignore migrations.
+        return "no_" + MIGRATIONS_MODULE_NAME
 
 MIGRATION_MODULES = DisableMigrations()
 

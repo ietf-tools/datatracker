@@ -36,7 +36,7 @@ def model_to_timeline_data(model, field='time', **kwargs):
     a JsonResponse() argument.  The model must have a DateTimeField field.
     If the time field is named something else than 'time', the name must
     be supplied."""
-    assert field in model._meta.get_all_field_names()
+    assert field in [ f.name for f in model._meta.get_fields() ]
 
     objects = ( model.objects.filter(**kwargs)
                                 .order_by('date')

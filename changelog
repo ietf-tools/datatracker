@@ -43,7 +43,7 @@ ietfdb (6.39.1) ietf; urgency=medium
     populate the review documents. Fixes #2064.  Will patch into production. 
 
   * Added more document information to the personal profile pages at
-    /person/<full name>, after a suggestion from Benoit Claise.  Fixes issue
+    /person/$FULL_NAME, after a suggestion from Benoit Claise.  Fixes issue
     #2066.
 
   * Added new display columns to the reviewer settings admin page.

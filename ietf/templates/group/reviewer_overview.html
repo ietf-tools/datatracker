@@ -43,8 +43,8 @@
                       {% if assignment_to_closure_days != None %}{{ assignment_to_closure_days }}&nbsp;day{{ assignment_to_closure_days|pluralize }}{% endif %}
                     </td>
                     <td>{{ doc_name }}{% if reviewed_rev %}-{{ reviewed_rev }}{% endif %}</td>
-                </div>
-              {% endfor %}
+                  </tr>
+                {% endfor %}
               </table>
             </td>
             <td>

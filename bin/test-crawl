@@ -43,18 +43,20 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", args.settings or "ietf.settings_
 import django
 import django.test
 import django.core.checks
+from django.conf import settings
 
 django.setup()
+
 
 # This needs to come after we set up sys path to include the local django
 import debug    # pyflakes:ignore
 
 # prevent memory from leaking when settings.DEBUG=True
-from django.db import connection
-class DontSaveQueries(object):
-    def append(self, x):
-        pass
-connection.queries = DontSaveQueries()
+# from django.db import connection
+# class DontSaveQueries(list):
+#     def append(self, x):
+#         pass
+# connection.queries = DontSaveQueries()
 
 from ietf.name.models import DocTypeName
 
@@ -284,6 +286,13 @@ if __name__ == "__main__":
 
     # Run django system checks and checks from ietf.checks:
     error_list = django.core.checks.run_checks()
+    silenced = []
+    for i in range(len(error_list)):
+        if error_list[i].id in settings.SILENCED_SYSTEM_CHECKS:
+            silenced.append(i)
+        silenced.sort(reverse=True)
+        for i in silenced:
+            del error_list[i]
     if error_list:
         print("")
         for entry in error_list:

@@ -74,9 +74,9 @@ def merge_persons(source,target,stream):
     user = User.objects.filter(is_superuser=True).first()
     admin_site = admin.site
     using = 'default'
-    
-    deletable_objects, perms_needed, protected = admin.utils.get_deleted_objects(
-        objs, opts, user, admin_site, using)
+
+    deletable_objects, model_count, perms_needed, protected = (
+        admin.utils.get_deleted_objects(objs, opts, user, admin_site, using) )
         
     if len(deletable_objects) > 1:
         print >>stream, "Not Deleting Person: {}({})".format(source.ascii,source.pk)

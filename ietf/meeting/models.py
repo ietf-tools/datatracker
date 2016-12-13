@@ -418,7 +418,7 @@ class TimeSlot(models.Model):
     duration = TimedeltaField()
     location = models.ForeignKey(Room, blank=True, null=True)
     show_location = models.BooleanField(default=True, help_text="Show location in agenda.")
-    sessions = models.ManyToManyField('Session', related_name='slots', through='SchedTimeSessAssignment', null=True, blank=True, help_text=u"Scheduled session, if any.")
+    sessions = models.ManyToManyField('Session', related_name='slots', through='SchedTimeSessAssignment', blank=True, help_text=u"Scheduled session, if any.")
     modified = models.DateTimeField(auto_now=True)
     #
 

@@ -13,7 +13,7 @@ from ietf.doc.utils import get_document_content
 from ietf.utils.text import fill
 from django import template
 from django.conf import settings
-from django.utils.html import escape, fix_ampersands
+from django.utils.html import escape
 from django.template.defaultfilters import truncatewords_html, linebreaksbr, stringfilter, striptags, urlize
 from django.template import resolve_variable
 from django.utils.safestring import mark_safe, SafeData
@@ -69,7 +69,7 @@ def parse_email_list(value):
             (name, email) = parseaddr(addr)
             if not(name):
                 name = email
-            ret.append('<a href="mailto:%s">%s</a>' % ( fix_ampersands(email), escape(name) ))
+            ret.append('<a href="mailto:%s">%s</a>' % ( email.replace('&', '&amp;'), escape(name) ))
         return mark_safe(", ".join(ret))
     else:
         return value

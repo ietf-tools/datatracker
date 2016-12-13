@@ -1,14 +1,9 @@
-import datetime
 import os
-import re
 import codecs
 
 from django import forms
-from django.core.validators import ValidationError
 from django.db.models import Q
-from django.forms.fields import Field
-from django.utils.encoding import force_text
-from django.utils import six
+from django.forms.fields import DurationField
 
 from ietf.doc.models import Document, DocAlias, State, NewRevisionDocEvent
 from ietf.doc.utils import get_document_content
@@ -25,100 +20,6 @@ from ietf.utils.fields import DatepickerDateField
 # countries.insert(0, ('', '-'*9 ))
 countries.insert(0, ('', ''))
 timezones.insert(0, ('', '-' * 9))
-
-# -------------------------------------------------
-# DurationField from Django 1.8
-# -------------------------------------------------
-
-
-def duration_string(duration):
-    days = duration.days
-    seconds = duration.seconds
-    microseconds = duration.microseconds
-
-    minutes = seconds // 60
-    seconds = seconds % 60
-
-    hours = minutes // 60
-    minutes = minutes % 60
-
-    # string = '{:02d}:{:02d}:{:02d}'.format(hours, minutes, seconds)
-    string = '{:02d}:{:02d}'.format(hours, minutes)
-    if days:
-        string = '{} '.format(days) + string
-    if microseconds:
-        string += '.{:06d}'.format(microseconds)
-
-    return string
-
-custom_duration_re = re.compile(
-    r'^(?P<hours>\d+):(?P<minutes>\d+)$'
-)
-
-standard_duration_re = re.compile(
-    r'^'
-    r'(?:(?P<days>-?\d+) (days?, )?)?'
-    r'((?:(?P<hours>\d+):)(?=\d+:\d+))?'
-    r'(?:(?P<minutes>\d+):)?'
-    r'(?P<seconds>\d+)'
-    r'(?:\.(?P<microseconds>\d{1,6})\d{0,6})?'
-    r'$'
-)
-
-# Support the sections of ISO 8601 date representation that are accepted by
-# timedelta
-iso8601_duration_re = re.compile(
-    r'^P'
-    r'(?:(?P<days>\d+(.\d+)?)D)?'
-    r'(?:T'
-    r'(?:(?P<hours>\d+(.\d+)?)H)?'
-    r'(?:(?P<minutes>\d+(.\d+)?)M)?'
-    r'(?:(?P<seconds>\d+(.\d+)?)S)?'
-    r')?'
-    r'$'
-)
-
-
-def parse_duration(value):
-    """Parses a duration string and returns a datetime.timedelta.
-
-    The preferred format for durations in Django is '%d %H:%M:%S.%f'.
-
-    Also supports ISO 8601 representation.
-    """
-    match = custom_duration_re.match(value)
-    if not match:
-        match = standard_duration_re.match(value)
-    if not match:
-        match = iso8601_duration_re.match(value)
-    if match:
-        kw = match.groupdict()
-        if kw.get('microseconds'):
-            kw['microseconds'] = kw['microseconds'].ljust(6, '0')
-        kw = {k: float(v) for k, v in six.iteritems(kw) if v is not None}
-        return datetime.timedelta(**kw)
-
-
-class DurationField(Field):
-    default_error_messages = {
-        'invalid': 'Enter a valid duration.',
-    }
-
-    def prepare_value(self, value):
-        if isinstance(value, datetime.timedelta):
-            return duration_string(value)
-        return value
-
-    def to_python(self, value):
-        if value in self.empty_values:
-            return None
-        if isinstance(value, datetime.timedelta):
-            return value
-        value = parse_duration(force_text(value))
-        if value is None:
-            raise ValidationError(self.error_messages['invalid'], code='invalid')
-        return value
-
 
 # -------------------------------------------------
 # Helpers
@@ -301,7 +202,7 @@ class InterimSessionModelForm(forms.ModelForm):
                 name=filename,
                 rev='00',
                 external_url='{}-00.txt'.format(filename))
-            doc.set_state(State.objects.get(type=doc.type, slug='active'))
+            doc.set_state(State.objects.get(type__slug=doc.type.slug, slug='active'))
             DocAlias.objects.create(name=doc.name, document=doc)
             self.instance.sessionpresentation_set.create(document=doc, rev=doc.rev)
             NewRevisionDocEvent.objects.create(

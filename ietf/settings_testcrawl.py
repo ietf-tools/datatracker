@@ -6,8 +6,9 @@
 #
 
 from settings import *                  # pyflakes:ignore
+from settings import TEMPLATES
 
-TEMPLATE_LOADERS = (
+TEMPLATES[0]['OPTIONS']['loaders'] = (
     ('django.template.loaders.cached.Loader', (
         'django.template.loaders.filesystem.Loader',
         'django.template.loaders.app_directories.Loader',
@@ -23,3 +24,7 @@ CACHES = {
 
 PASSWORD_HASHERS = ( 'django.contrib.auth.hashers.MD5PasswordHasher', )
 SERVER_MODE = 'test'
+
+SILENCED_SYSTEM_CHECKS = [
+    "fields.W342",  # Setting unique=True on a ForeignKey has the same effect as using a OneToOneField.
+]

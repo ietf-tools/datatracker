@@ -16,8 +16,8 @@ from django.conf import settings
 from django.core.management import call_command
 from django.template import Context
 from django.template.defaulttags import URLNode
+from django.template.loader import get_template
 from django.templatetags.static import StaticNode
-from django.template.loaders.filesystem import Loader
 
 import debug                            # pyflakes:ignore
 
@@ -104,7 +104,6 @@ def get_callbacks(urllist):
 
     return list(callbacks)
 
-debug.debug = True
 class TemplateChecksTestCase(TestCase):
 
     paths = []
@@ -112,12 +111,11 @@ class TemplateChecksTestCase(TestCase):
 
     def setUp(self):
         set_coverage_checking(False)
-        self.loader = Loader()
         self.paths = list(get_template_paths())
         self.paths.sort()
         for path in self.paths:
             try:
-                self.templates[path], _ = self.loader.load_template(path)
+                self.templates[path] = get_template(path).template
             except Exception:
                 pass
 
@@ -134,7 +132,7 @@ class TemplateChecksTestCase(TestCase):
             if not path in self.templates:
 
                 try:
-                    self.loader.load_template(path)
+                    get_template(path)
                 except Exception as e:
                     errors.append((path, e))
         if errors:

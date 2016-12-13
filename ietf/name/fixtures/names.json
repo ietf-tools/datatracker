@@ -2750,6 +2750,20 @@
 },
 {
  "fields": {
+  "label": "Shepherd's writeup state"
+ },
+ "model": "doc.statetype",
+ "pk": "shepwrit"
+},
+{
+ "fields": {
+  "label": "Liaison state"
+ },
+ "model": "doc.statetype",
+ "pk": "liaison"
+},
+{
+ "fields": {
   "used": true,
   "name": "Active",
   "next_states": [],

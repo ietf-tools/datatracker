@@ -5,6 +5,8 @@ from django.db.models import Q, Max, F
 from django.core.urlresolvers import reverse as urlreverse
 from django.contrib.sites.models import Site
 
+import debug                            # pyflakes:ignore
+
 from ietf.group.models import Group, Role
 from ietf.doc.models import (Document, ReviewRequestDocEvent, State,
                              LastCallDocEvent, TelechatDocEvent,
@@ -62,9 +64,9 @@ def augment_review_requests_with_events(review_reqs):
 
 def no_review_from_teams_on_doc(doc, rev):
     return Group.objects.filter(
-        reviewrequest__doc=doc,
+        reviewrequest__doc__name=doc.name,
         reviewrequest__reviewed_rev=rev,
-        reviewrequest__state="no-review-version",
+        reviewrequest__state__slug="no-review-version",
     ).distinct()
 
 def unavailable_periods_to_list(past_days=14):

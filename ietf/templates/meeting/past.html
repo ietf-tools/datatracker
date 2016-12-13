@@ -106,7 +106,7 @@
                   {% endif %}
                   <td>
                   {% if meeting.type.slug == "interim" %}
-                    <a href="{% url 'ietf.meeting.views.session_details' num=meeting.number acronym=meeting.session_set.all.0.group.acronym %}">{{ meeting.number }}{% if meeting.session_set.all.0.status.slug == "canceled" %}&nbsp&nbsp<span class="label label-warning">CANCELLED</span>{% endif %}</a>
+                    <a href="{% url 'ietf.meeting.views.session_details' num=meeting.number acronym=meeting.session_set.all.0.group.acronym %}">{{ meeting.number }}{% if meeting.session_set.all.0.status.slug == "canceled" %}&nbsp;&nbsp<span class="label label-warning">CANCELLED</span>{% endif %}</a>
                   {% else %}
                     <a href="{% url 'ietf.meeting.views.agenda' num=meeting.number %}">IETF - {{ meeting.number }}</a>
                   {% endif %}

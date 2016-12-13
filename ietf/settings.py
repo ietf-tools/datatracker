@@ -21,7 +21,6 @@ from ietf import __version__
 import debug
 
 DEBUG = True
-TEMPLATE_DEBUG = DEBUG
 debug.debug = DEBUG
 
 # Valid values:
@@ -65,12 +64,6 @@ DATABASES = {
         #'PASSWORD': 'ietf',
         #'OPTIONS': {},
     },
-#    'legacy': {
-#        'NAME': 'ietf',
-#        'ENGINE': 'django.db.backends.mysql',
-#        'USER': 'ietf',
-#        #'PASSWORD': 'ietf',
-#    },
 }
 
 DATABASE_TEST_OPTIONS = {
@@ -158,8 +151,6 @@ WSGI_APPLICATION = "ietf.wsgi.application"
 
 AUTHENTICATION_BACKENDS = ( 'django.contrib.auth.backends.ModelBackend', )
 
-#DATABASE_ROUTERS = ["ietf.legacy_router.LegacyRouter"]
-
 # ------------------------------------------------------------------------
 # Django/Python Logging Framework Modifications
 
@@ -216,13 +207,42 @@ SESSION_SAVE_EVERY_REQUEST = True
 
 PREFERENCES_COOKIE_AGE = 60 * 60 * 24 * 365 * 50 # Age of cookie, in seconds: 50 years
 
-TEMPLATE_LOADERS = (
-    ('django.template.loaders.cached.Loader', (
-        'django.template.loaders.filesystem.Loader',
-        'django.template.loaders.app_directories.Loader',
-    )),
-    'ietf.dbtemplate.template.Loader',
-)
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [
+            BASE_DIR + "/templates",
+            BASE_DIR + "/secr/templates",
+        ],
+        'OPTIONS': {
+            'context_processors': [
+                'django.contrib.auth.context_processors.auth',
+                'django.template.context_processors.debug',
+                'django.template.context_processors.i18n',
+                'django.template.context_processors.request',
+                'django.template.context_processors.media',
+                #'django.template.context_processors.tz',
+                'django.contrib.messages.context_processors.messages',
+                'ietf.context_processors.server_mode',
+                'ietf.context_processors.debug_mark_queries_from_view',
+                'ietf.context_processors.revision_info',
+                'ietf.secr.context_processors.secr_revision_info',
+                'ietf.context_processors.rfcdiff_base_url',
+            ],
+            'loaders': [
+                ('django.template.loaders.cached.Loader', (
+                    'django.template.loaders.filesystem.Loader',
+                    'django.template.loaders.app_directories.Loader',
+                )),
+                'ietf.dbtemplate.template.Loader',
+            ]
+        },
+    },
+]
+
+if DEBUG:
+    TEMPLATES[0]['OPTIONS']['string_if_invalid'] = "** No value found for '%s' **"
+
 
 MIDDLEWARE_CLASSES = (
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -239,25 +259,6 @@ MIDDLEWARE_CLASSES = (
 )
 
 ROOT_URLCONF = 'ietf.urls'
-
-TEMPLATE_DIRS = (
-    BASE_DIR + "/templates",
-    BASE_DIR + "/secr/templates",
-)
-
-TEMPLATE_CONTEXT_PROCESSORS = (
-    'django.contrib.auth.context_processors.auth',
-    'django.core.context_processors.debug',
-    'django.core.context_processors.i18n',
-    'django.core.context_processors.request',
-    'django.core.context_processors.media',
-    'django.contrib.messages.context_processors.messages',
-    'ietf.context_processors.server_mode',
-    'ietf.context_processors.debug_mark_queries_from_view',
-    'ietf.context_processors.revision_info',
-    'ietf.secr.context_processors.secr_revision_info',
-    'ietf.context_processors.rfcdiff_base_url',
-)
 
 # Additional locations of static files (in addition to each app's static/ dir)
 STATICFILES_DIRS = (
@@ -754,6 +755,10 @@ LIST_ACCOUNT_DELAY = 60*60*25           # 25 hours
 ACCOUNT_REQUEST_EMAIL = 'account-request@ietf.org'
 
 
+SILENCED_SYSTEM_CHECKS = [
+    "fields.W342",  # Setting unique=True on a ForeignKey has the same effect as using a OneToOneField.
+]
+
 
 # Put the production SECRET_KEY in settings_local.py, and also any other
 # sensitive or site-specific changes.  DO NOT commit settings_local.py to svn.
@@ -768,7 +773,7 @@ for app in INSTALLED_APPS:
 # Add DEV_APPS to INSTALLED_APPS
 INSTALLED_APPS += DEV_APPS
 MIDDLEWARE_CLASSES += DEV_MIDDLEWARE_CLASSES
-TEMPLATE_CONTEXT_PROCESSORS += DEV_TEMPLATE_CONTEXT_PROCESSORS
+TEMPLATES[0]['OPTIONS']['context_processors'] += DEV_TEMPLATE_CONTEXT_PROCESSORS
 
 
 # We provide a secret key only for test and development modes.  It's
@@ -777,7 +782,9 @@ TEMPLATE_CONTEXT_PROCESSORS += DEV_TEMPLATE_CONTEXT_PROCESSORS
 # publicly available, for instance from the source repository.
 if SERVER_MODE != 'production':
     # stomp out the cached template loader, it's annoying
-    TEMPLATE_LOADERS = tuple(l for e in TEMPLATE_LOADERS for l in (e[1] if isinstance(e, tuple) and "cached.Loader" in e[0] else (e,)))
+    loaders = TEMPLATES[0]['OPTIONS']['loaders']
+    loaders = tuple(l for e in loaders for l in (e[1] if isinstance(e, tuple) and "cached.Loader" in e[0] else (e,)))
+    TEMPLATES[0]['OPTIONS']['loaders'] = loaders
 
     CACHES = {
          'default': {
