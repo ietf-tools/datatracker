@@ -1,3 +1,19 @@
+ietfdb (6.40.0) ietf; urgency=medium
+
+  **Django 1.8**
+
+  This release upgrades the datatracker to use version 1.8 of the Django
+  framework.  Django 1.8 introduces security enhancements, type checking of
+  foreign-key and many-to-many-key arguments when doing database queries, and
+  a number of other features [a].  The type checking in particular brought to
+  light a number of places where we provided the wrong argument types (or
+  multiple inconsistent argument types) to queries.  These have all been
+  fixed.  The full set of changes are shown in changeset [12507].
+
+  [a] https://docs.djangoproject.com/en/1.8/releases/1.8/
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  13 Dec 2016 06:00:44 +0000
+
 ietfdb (6.39.1) ietf; urgency=medium
 
   **Historical review data. Enhanced person profile page.  Review page enhancements.**
