@@ -12,7 +12,7 @@ from pyquery import PyQuery
 
 import debug                            # pyflakes:ignore
 
-from ietf.review.models import (ReviewRequest, ResultUsedInReviewTeam, ReviewerSettings,
+from ietf.review.models import (ReviewRequest, ReviewerSettings,
                                 ReviewWish, UnavailablePeriod, NextReviewerInTeam)
 from ietf.review.utils import reviewer_rotation_list, possibly_advance_next_reviewer_for_team
 import ietf.review.mailarch
@@ -479,8 +479,7 @@ class ReviewTests(TestCase):
         review_req.state = ReviewRequestStateName.objects.get(slug="accepted")
         review_req.save()
         for r in ReviewResultName.objects.filter(slug__in=("issues", "ready")):
-            ResultUsedInReviewTeam.objects.get_or_create(team=review_req.team, result=r)
-        review_req.team.save()
+            review_req.team.reviewteamsettings.review_results.add(r)
 
         url = urlreverse('ietf.doc.views_review.complete_review', kwargs={ "name": doc.name, "request_id": review_req.pk })
 
@@ -517,7 +516,7 @@ class ReviewTests(TestCase):
         test_file.name = "unnamed"
 
         r = self.client.post(url, data={
-            "result": ReviewResultName.objects.get(resultusedinreviewteam__team=review_req.team, slug="ready").pk,
+            "result": ReviewResultName.objects.get(reviewteamsettings__group=review_req.team, slug="ready").pk,
             "state": ReviewRequestStateName.objects.get(slug="completed").pk,
             "reviewed_rev": review_req.doc.rev,
             "review_submission": "upload",
@@ -560,7 +559,7 @@ class ReviewTests(TestCase):
         empty_outbox()
 
         r = self.client.post(url, data={
-            "result": ReviewResultName.objects.get(resultusedinreviewteam__team=review_req.team, slug="ready").pk,
+            "result": ReviewResultName.objects.get(reviewteamsettings__group=review_req.team, slug="ready").pk,
             "state": ReviewRequestStateName.objects.get(slug="completed").pk,
             "reviewed_rev": review_req.doc.rev,
             "review_submission": "enter",
@@ -590,7 +589,7 @@ class ReviewTests(TestCase):
         empty_outbox()
 
         r = self.client.post(url, data={
-            "result": ReviewResultName.objects.get(resultusedinreviewteam__team=review_req.team, slug="ready").pk,
+            "result": ReviewResultName.objects.get(reviewteamsettings__group=review_req.team, slug="ready").pk,
             "state": ReviewRequestStateName.objects.get(slug="completed").pk,
             "reviewed_rev": review_req.doc.rev,
             "review_submission": "link",
@@ -618,7 +617,7 @@ class ReviewTests(TestCase):
         empty_outbox()
 
         r = self.client.post(url, data={
-            "result": ReviewResultName.objects.get(resultusedinreviewteam__team=review_req.team, slug="ready").pk,
+            "result": ReviewResultName.objects.get(reviewteamsettings__group=review_req.team, slug="ready").pk,
             "state": ReviewRequestStateName.objects.get(slug="part-completed").pk,
             "reviewed_rev": review_req.doc.rev,
             "review_submission": "enter",
@@ -652,7 +651,7 @@ class ReviewTests(TestCase):
         url = urlreverse('ietf.doc.views_review.complete_review', kwargs={ "name": review_req.doc.name, "request_id": review_req.pk })
 
         r = self.client.post(url, data={
-            "result": ReviewResultName.objects.get(resultusedinreviewteam__team=review_req.team, slug="ready").pk,
+            "result": ReviewResultName.objects.get(reviewteamsettings__group=review_req.team, slug="ready").pk,
             "state": ReviewRequestStateName.objects.get(slug="completed").pk,
             "reviewed_rev": review_req.doc.rev,
             "review_submission": "enter",
@@ -677,7 +676,7 @@ class ReviewTests(TestCase):
         empty_outbox()
 
         r = self.client.post(url, data={
-            "result": ReviewResultName.objects.get(resultusedinreviewteam__team=review_req.team, slug="ready").pk,
+            "result": ReviewResultName.objects.get(reviewteamsettings__group=review_req.team, slug="ready").pk,
             "state": ReviewRequestStateName.objects.get(slug="completed").pk,
             "reviewed_rev": review_req.doc.rev,
             "review_submission": "enter",
@@ -702,7 +701,7 @@ class ReviewTests(TestCase):
         # revise again
         empty_outbox()
         r = self.client.post(url, data={
-            "result": ReviewResultName.objects.get(resultusedinreviewteam__team=review_req.team, slug="ready").pk,
+            "result": ReviewResultName.objects.get(reviewteamsettings__group=review_req.team, slug="ready").pk,
             "state": ReviewRequestStateName.objects.get(slug="part-completed").pk,
             "reviewed_rev": review_req.doc.rev,
             "review_submission": "enter",

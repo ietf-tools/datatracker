@@ -10,7 +10,7 @@ from ietf.utils.validators import validate_regular_expression_string
 
 class ReviewerSettings(models.Model):
     """Keeps track of admin data associated with a reviewer in a team."""
-    team        = models.ForeignKey(Group, limit_choices_to=~models.Q(resultusedinreviewteam=None))
+    team        = models.ForeignKey(Group, limit_choices_to=~models.Q(reviewteamsettings=None))
     person      = models.ForeignKey(Person)
     INTERVALS = [
         (7, "Once per week"),
@@ -34,7 +34,7 @@ class ReviewerSettings(models.Model):
 
 class ReviewSecretarySettings(models.Model):
     """Keeps track of admin data associated with a secretary in a team."""
-    team        = models.ForeignKey(Group, limit_choices_to=~models.Q(resultusedinreviewteam=None))
+    team        = models.ForeignKey(Group, limit_choices_to=~models.Q(reviewteamsettings=None))
     person      = models.ForeignKey(Person)
     remind_days_before_deadline = models.IntegerField(null=True, blank=True, help_text="To get an email reminder in case a reviewer forgets to do an assigned review, enter the number of days before review deadline you want to receive it. Clear the field if you don't want a reminder.")
 
@@ -45,7 +45,7 @@ class ReviewSecretarySettings(models.Model):
         verbose_name_plural = "review secretary settings"
 
 class UnavailablePeriod(models.Model):
-    team         = models.ForeignKey(Group, limit_choices_to=~models.Q(resultusedinreviewteam=None))
+    team         = models.ForeignKey(Group, limit_choices_to=~models.Q(reviewteamsettings=None))
     person       = models.ForeignKey(Person)
     start_date   = models.DateField(default=datetime.date.today, null=True, help_text="Choose the start date so that you can still do a review if it's assigned just before the start date - this usually means you should mark yourself unavailable for assignment some time before you are actually away.")
     end_date     = models.DateField(blank=True, null=True, help_text="Leaving the end date blank means that the period continues indefinitely. You can end it later.")
@@ -76,7 +76,7 @@ class UnavailablePeriod(models.Model):
 class ReviewWish(models.Model):
     """Reviewer wishes to review a document when it becomes available for review."""
     time        = models.DateTimeField(default=datetime.datetime.now)
-    team        = models.ForeignKey(Group, limit_choices_to=~models.Q(resultusedinreviewteam=None))
+    team        = models.ForeignKey(Group, limit_choices_to=~models.Q(reviewteamsettings=None))
     person      = models.ForeignKey(Person)
     doc         = models.ForeignKey(Document)
 
@@ -104,7 +104,7 @@ class ResultUsedInReviewTeam(models.Model):
 class TypeUsedInReviewTeam(models.Model):
     """Captures that a type name is valid for a given team for new
     reviews. """
-    team        = models.ForeignKey(Group, limit_choices_to=~models.Q(resultusedinreviewteam=None))
+    team        = models.ForeignKey(Group, limit_choices_to=~models.Q(reviewteamsettings=None))
     type        = models.ForeignKey(ReviewTypeName)
 
     def __unicode__(self):
@@ -115,7 +115,7 @@ class TypeUsedInReviewTeam(models.Model):
         verbose_name_plural = "review type used in team settings"
 
 class NextReviewerInTeam(models.Model):
-    team        = models.ForeignKey(Group, limit_choices_to=~models.Q(resultusedinreviewteam=None))
+    team        = models.ForeignKey(Group, limit_choices_to=~models.Q(reviewteamsettings=None))
     next_reviewer = models.ForeignKey(Person)
 
     def __unicode__(self):
@@ -138,7 +138,7 @@ class ReviewRequest(models.Model):
     time          = models.DateTimeField(default=datetime.datetime.now)
     type          = models.ForeignKey(ReviewTypeName)
     doc           = models.ForeignKey(Document, related_name='reviewrequest_set')
-    team          = models.ForeignKey(Group, limit_choices_to=~models.Q(resultusedinreviewteam=None))
+    team          = models.ForeignKey(Group, limit_choices_to=~models.Q(reviewteamsettings=None))
     deadline      = models.DateField()
     requested_by  = models.ForeignKey(Person)
     requested_rev = models.CharField(verbose_name="requested revision", max_length=16, blank=True, help_text="Fill in if a specific revision is to be reviewed, e.g. 02")
@@ -156,3 +156,23 @@ class ReviewRequest(models.Model):
 
     def __unicode__(self):
         return u"%s review on %s by %s %s" % (self.type, self.doc, self.team, self.state)
+
+def get_default_review_types():
+    return ReviewTypeName.objects.filter(slug__in=['early','lc','telechat'])
+
+def get_default_review_results():
+    return ReviewResultName.objects.filter(slug__in=['not-ready', 'right-track', 'almost-ready', 'ready-issues', 'ready-nits', 'ready'])
+
+class ReviewTeamSettings(models.Model):
+    """Holds configuration specific to groups that are review teams"""
+    group = models.OneToOneField(Group)
+    autosuggest = models.BooleanField(default=True, verbose_name="Automatically suggest possible review requests")
+    review_types = models.ManyToManyField(ReviewTypeName, default=get_default_review_types)
+    review_results = models.ManyToManyField(ReviewResultName, default=get_default_review_results)
+
+    def __unicode__(self):
+        return u"%s" % (self.group.acronym,)
+
+    class Meta:
+        verbose_name = "Review team settings"
+        verbose_name_plural = "Review team settings"
