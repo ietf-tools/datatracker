@@ -694,6 +694,15 @@ def setup_reviewer_field(field, review_req):
 
     field.choices = choices
 
+def get_default_filter_re(person):
+    if type(person) != Person:
+        person = Person.objects.get(id=person)
+    groups_to_avoid =  [r.group for r in person.role_set.filter(name='chair',group__type__in=['wg','rg'])]
+    if not groups_to_avoid:
+        return '^draft-%s-.*$' % ( person.last_name().lower(), )
+    else:
+        return '^draft-(%s|%s)-.*$' % ( person.last_name().lower(), '|'.join(['ietf-%s' % g.acronym for g in groups_to_avoid]))
+
 def make_assignment_choices(email_queryset, review_req):
     doc = review_req.doc
     team = review_req.team
@@ -711,7 +720,7 @@ def make_assignment_choices(email_queryset, review_req):
 
     for p in possible_person_ids:
         if p not in reviewer_settings:
-            reviewer_settings[p] = ReviewerSettings(team=team)
+            reviewer_settings[p] = ReviewerSettings(team=team, filter_re = get_default_filter_re(p))
 
     # frequency
     days_needed_for_reviewers = days_needed_to_fulfill_min_interval_for_reviewers(team)

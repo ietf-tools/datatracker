@@ -25,7 +25,8 @@ from ietf.review.utils import (can_manage_review_requests_for_team,
                                email_reviewer_availability_change,
                                reviewer_rotation_list,
                                latest_review_requests_for_reviewers,
-                               augment_review_requests_with_events)
+                               augment_review_requests_with_events,
+                               get_default_filter_re,)
 from ietf.doc.models import LastCallDocEvent
 from ietf.group.models import Role
 from ietf.group.utils import get_group_or_404, construct_group_menu_context
@@ -488,8 +489,10 @@ def change_reviewer_settings(request, acronym, reviewer_email, group_type=None):
             or can_manage_review_requests_for_team(request.user, group)):
         return HttpResponseForbidden("You do not have permission to perform this action")
 
-    settings = (ReviewerSettings.objects.filter(person=reviewer, team=group).first()
-                or ReviewerSettings(person=reviewer, team=group))
+    settings = ReviewerSettings.objects.filter(person=reviewer, team=group).first()
+    if not settings:
+        settings = ReviewerSettings(person=reviewer, team=group)
+        settings.filter_re = get_default_filter_re(reviewer)
 
     back_url = request.GET.get("next")
     if not back_url:
