@@ -71,7 +71,11 @@
         <tr>
           <th></th>
           <th>Comments</th>
-          <td><pre class="pasted">{{review_req.comment}}</pre></td>
+          <td><pre class="pasted">{{review_req.comment}}</pre>
+            {% if can_edit_comment %}
+              <a class="btn btn-default btn-xs" href="{% url "ietf.doc.views_review.edit_comment" name=doc.name request_id=review_req.pk %}"><span class="fa fa-edit"></span> Edit comment</a>
+            {% endif %}
+          </td>
         </tr>
       {% endif %}
     </tbody>

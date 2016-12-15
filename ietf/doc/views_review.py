@@ -183,6 +183,8 @@ def review_request(request, name, request_id):
                            and review_req.reviewer
                            and (is_reviewer or can_manage_request))
 
+    can_edit_comment = can_request_review_of_doc(request.user, doc)
+
     if request.method == "POST" and request.POST.get("action") == "accept" and can_accept_reviewer_assignment:
         review_req.state = ReviewRequestStateName.objects.get(slug="accepted")
         review_req.save()
@@ -197,6 +199,7 @@ def review_request(request, name, request_id):
         'can_assign_reviewer': can_assign_reviewer,
         'can_accept_reviewer_assignment': can_accept_reviewer_assignment,
         'can_complete_review': can_complete_review,
+        'can_edit_comment': can_edit_comment,
     })
 
 
@@ -603,3 +606,26 @@ def search_mail_archive(request, name, request_id):
 
     return JsonResponse(res)
 
+class EditReviewRequestCommentForm(forms.ModelForm):
+    comment = forms.CharField(widget=forms.Textarea)
+    class Meta:
+        fields = ['comment',]
+        model = ReviewRequest
+
+def edit_comment(request, name, request_id):
+    review_req = get_object_or_404(ReviewRequest, pk=request_id)
+    if not can_request_review_of_doc(request.user, review_req.doc):
+        return HttpResponseForbidden("You do not have permission to perform this action")
+
+    if request.method == "POST":
+        form = EditReviewRequestCommentForm(request.POST, instance=review_req)
+        if form.is_valid():
+            form.save()
+            return redirect(review_request, name=review_req.doc.name, request_id=review_req.pk)
+    else: 
+        form = EditReviewRequestCommentForm(instance=review_req) 
+
+    return render(request, 'doc/review/edit_request_comment.html', {
+        'review_req': review_req,
+        'form' : form,
+    })
