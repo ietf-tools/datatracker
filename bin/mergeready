@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # -*- python -*-
 """
 NAME
@@ -38,7 +38,17 @@ COPYRIGHT
 """
 from __future__ import print_function
 
-import sys, os.path, getopt, re, tzparse, pytz
+import sys
+import os
+
+path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if not path in sys.path:
+    sys.path.insert(0, path)
+
+import getopt
+import re
+import pytz
+import tzparse
 import debug
 
 version = "0.20"
@@ -168,6 +178,8 @@ merged_revs = {}
 write_cache = False
 note("Getting svn:mergeinfo for current branch")
 for line in pipe('svn propget svn:mergeinfo .').splitlines():
+    if opt_verbose:
+        sys.stderr.write('.')
     if line in mergeinfo:
         merged = mergeinfo[line]
     else:
