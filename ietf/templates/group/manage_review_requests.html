@@ -60,7 +60,7 @@
               <div class="col-sm-6">
                 <div class="request-metadata">
                   <p>
-                    {% if r.pk != None %}Requested: <a href="{% url "ietf.doc.views_review.review_request" name=r.doc.name request_id=r.pk %}">{{ r.time|date:"Y-m-d" }}</a>
+                    {% if r.pk != None %}Requested: <a href="{% url "ietf.doc.views_review.review_request" name=r.doc.name request_id=r.pk %}">{{ r.time|date:"Y-m-d" }}{% if r.requested_by %} by {{r.requested_by.plain_name}}{% endif %}</a>
                     {% else %}
                       Auto-suggested
                     {% endif %}
@@ -96,6 +96,9 @@
                     - <a href="{% url "ietf.group.views.group_home" acronym=r.doc.group.acronym group_type=r.doc.group.type_id %}">{{ r.doc.group.acronym }} {{ r.doc.group.type.name }}</a>
                   {% endif %}
                 </div>
+                {% if r.comment %}
+                  <div><pre class="pasted">{{ r.comment }}</pre></div>
+                {% endif %}
               </div>
 
               <div class="col-sm-6 abstract">

@@ -46,7 +46,7 @@ class RequestReviewForm(forms.ModelForm):
 
     class Meta:
         model = ReviewRequest
-        fields = ('requested_by', 'type', 'deadline', 'requested_rev')
+        fields = ('requested_by', 'type', 'deadline', 'requested_rev', 'comment') 
 
     def __init__(self, user, doc, *args, **kwargs):
         super(RequestReviewForm, self).__init__(*args, **kwargs)
@@ -61,6 +61,8 @@ class RequestReviewForm(forms.ModelForm):
         self.fields['type'].widget = forms.RadioSelect(choices=[t for t in self.fields['type'].choices if t[0]])
 
         self.fields["requested_rev"].label = "Document revision"
+
+        self.fields["comment"].widget = forms.Textarea()
 
         if has_role(user, "Secretariat"):
             self.fields["requested_by"] = SearchablePersonField()

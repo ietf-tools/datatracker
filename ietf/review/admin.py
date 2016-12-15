@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django import forms
 
 from ietf.review.models import (ReviewerSettings, UnavailablePeriod, ReviewWish, NextReviewerInTeam,
                                 ReviewRequest, ReviewTeamSettings )
@@ -43,7 +44,14 @@ class NextReviewerInTeamAdmin(admin.ModelAdmin):
 
 admin.site.register(NextReviewerInTeam, NextReviewerInTeamAdmin)
 
+class ReviewRequestAdminForm( forms.ModelForm ):
+    comment = forms.CharField(widget=forms.Textarea)
+    class Meta:
+        exclude = []
+        model = ReviewRequest
+
 class ReviewRequestAdmin(admin.ModelAdmin):
+    form = ReviewRequestAdminForm 
     list_display = ["doc", "time", "type", "team", "deadline"]
     list_display_links = ["doc"]
     list_filter = ["team", "type", "state", "result"]

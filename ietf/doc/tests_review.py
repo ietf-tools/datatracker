@@ -64,6 +64,7 @@ class ReviewTests(TestCase):
             "deadline": deadline.isoformat(),
             "requested_rev": "01",
             "requested_by": Person.objects.get(user__username="reviewsecretary").pk,
+            "comment": "gZT2iiYqYLKiQHvsgWCcVLdH"
         })
         self.assertEqual(r.status_code, 302)
 
@@ -74,6 +75,7 @@ class ReviewTests(TestCase):
             self.assertEqual(req.deadline, deadline)
             self.assertEqual(req.requested_rev, "01")
             self.assertEqual(doc.latest_event().type, "requested_review")
+            self.assertEqual(req.comment, "gZT2iiYqYLKiQHvsgWCcVLdH")
 
 
     def test_doc_page(self):
