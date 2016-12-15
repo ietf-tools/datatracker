@@ -41,7 +41,6 @@ import json
 import pytz
 import importlib
 import socket
-import warnings
 import datetime
 import codecs
 import gzip
@@ -87,7 +86,7 @@ def safe_create_1(self, verbosity, *args, **kwargs):
     if settings.GLOBAL_TEST_FIXTURES:
         print "     Loading global test fixtures: %s" % ", ".join(settings.GLOBAL_TEST_FIXTURES)
         loadable = [f for f in settings.GLOBAL_TEST_FIXTURES if "." not in f]
-        call_command('loaddata', *loadable, verbosity=verbosity, commit=False, database="default")
+        call_command('loaddata', *loadable, verbosity=int(verbosity)-1, commit=False, database="default")
 
         for f in settings.GLOBAL_TEST_FIXTURES:
             if f not in loadable:
@@ -96,8 +95,6 @@ def safe_create_1(self, verbosity, *args, **kwargs):
                 module = importlib.import_module(".".join(components[:-1]))
                 fn = getattr(module, components[-1])
                 fn()
-    if verbosity < 2:
-        warnings.simplefilter("ignore", DeprecationWarning)
 
     return test_database_name
 

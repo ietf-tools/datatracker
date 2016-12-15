@@ -7,6 +7,12 @@
 import os
 import sys
 import datetime
+import warnings
+
+warnings.simplefilter("always", DeprecationWarning)
+warnings.filterwarnings("ignore", message="Report.file_reporters will no longer be available in Coverage.py 4.2", module="coverage.report")
+warnings.filterwarnings("ignore", message="initial_data fixtures are deprecated. Use data migrations instead.", module="django.core.management.commands.loaddata")
+warnings.filterwarnings("ignore", message="The popen2 module is deprecated.  Use the subprocess module.", module="ietf.utils.pipe")
 
 try:
     import syslog
