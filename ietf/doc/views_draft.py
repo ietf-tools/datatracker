@@ -1152,7 +1152,7 @@ def request_publication(request, name):
         if form.is_valid():
             events = []
 
-            if not request.REQUEST.get("skiprfceditorpost"):
+            if not request.POST.get("skiprfceditorpost"):
                 # start by notifying the RFC Editor
                 import ietf.sync.rfceditor
                 response, error = ietf.sync.rfceditor.post_approved_draft(settings.RFC_EDITOR_SYNC_NOTIFICATION_URL, doc.name)
