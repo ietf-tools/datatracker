@@ -44,7 +44,7 @@ def all_id_txt():
 
     inactive_states = ["pub", "watching", "dead"]
 
-    in_iesg_process = all_ids.exclude(states=State.objects.get(type="draft", slug="rfc")).filter(states__in=list(State.objects.filter(type="draft-iesg").exclude(slug__in=inactive_states))).only("name", "rev")
+    in_iesg_process = all_ids.exclude(states=State.objects.filter(type="draft", slug__in=["rfc","repl"])).filter(states__in=list(State.objects.filter(type="draft-iesg").exclude(slug__in=inactive_states))).only("name", "rev")
 
     # handle those actively in the IESG process
     for d in in_iesg_process:
