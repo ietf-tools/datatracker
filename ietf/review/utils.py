@@ -32,7 +32,7 @@ def can_request_review_of_doc(user, doc):
         return False
 
     return (is_authorized_in_doc_stream(user, doc)
-            or Role.objects.filter(person__user=user, name="secr", group__in=active_review_teams).exists())
+            or Role.objects.filter(person__user=user, name="secr", group__in=active_review_teams()).exists())
 
 def can_manage_review_requests_for_team(user, team, allow_personnel_outside_team=True):
     if not user.is_authenticated():
