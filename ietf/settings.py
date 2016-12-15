@@ -492,6 +492,7 @@ MEETING_DOC_HREFS = {
     "minutes": "https://www.ietf.org/proceedings/{meeting.number}/minutes/{doc.external_url}",
     "slides": "https://www.ietf.org/proceedings/{meeting.number}/slides/{doc.external_url}",
     "recording": "{doc.external_url}",
+    "bluesheets": "https://www.ietf.org/proceedings/{meeting.number}/bluesheets/{doc.external_url}",
 }
 
 # Override this in settings_local.py if needed
