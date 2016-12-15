@@ -37,9 +37,9 @@ from django.views.generic import RedirectView
 from django.conf import settings
 
 urlpatterns = patterns('',
-    (r'^telechat/.*$', RedirectView.as_view(url='https://www.ietf.org/iesg/minutes.html')),
-    (r'^ann/(?:ind|new|prev)/$', RedirectView.as_view(url="/iesg/decisions/", permanent=True )),
-    (r'^telechatdates/$', RedirectView.as_view(url='/admin/iesg/telechatdate/')),
+    (r'^telechat/.*$', RedirectView.as_view(url='https://www.ietf.org/iesg/minutes.html', permanent=True)),
+    (r'^ann/(?:ind|new|prev)/$', RedirectView.as_view(url="/iesg/decisions/", permanent=True)),
+    (r'^telechatdates/$', RedirectView.as_view(url='/admin/iesg/telechatdate/', permanent=True)),
 
     (r'^decisions/(?:(?P<year>[0-9]{4})/)?$', "ietf.iesg.views.review_decisions"),
     (r'^agenda/(?:%(date)s/)?$' % settings.URL_REGEXPS, "ietf.iesg.views.agenda"),
