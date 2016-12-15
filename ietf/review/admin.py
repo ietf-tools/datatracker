@@ -1,7 +1,6 @@
 from django.contrib import admin
 
-from ietf.review.models import (ReviewerSettings, UnavailablePeriod, ReviewWish,
-                                ResultUsedInReviewTeam, TypeUsedInReviewTeam, NextReviewerInTeam,
+from ietf.review.models import (ReviewerSettings, UnavailablePeriod, ReviewWish, NextReviewerInTeam,
                                 ReviewRequest, ReviewTeamSettings )
 
 class ReviewerSettingsAdmin(admin.ModelAdmin):
@@ -35,24 +34,6 @@ class ReviewWishAdmin(admin.ModelAdmin):
     raw_id_fields = ["team", "person", "doc"]
 
 admin.site.register(ReviewWish, ReviewWishAdmin)
-
-class ResultUsedInReviewTeamAdmin(admin.ModelAdmin):
-    list_display = ["team", "result"]
-    list_display_links = ["team"]
-    list_filter = ["team"]
-    ordering = ["team", "result__order"]
-    raw_id_fields = ["team"]
-
-admin.site.register(ResultUsedInReviewTeam, ResultUsedInReviewTeamAdmin)
-
-class TypeUsedInReviewTeamAdmin(admin.ModelAdmin):
-    list_display = ["team", "type"]
-    list_display_links = ["team"]
-    list_filter = ["team"]
-    ordering = ["team", "type__order"]
-    raw_id_fields = ["team"]
-
-admin.site.register(TypeUsedInReviewTeam, TypeUsedInReviewTeamAdmin)
 
 class NextReviewerInTeamAdmin(admin.ModelAdmin):
     list_display = ["team", "next_reviewer"]

@@ -86,33 +86,6 @@ class ReviewWish(models.Model):
     class Meta:
         verbose_name_plural = "review wishes"
     
-class ResultUsedInReviewTeam(models.Model):
-    """Captures that a result name is valid for a given team for new
-    reviews. This also implicitly defines which teams are review
-    teams - if there are no possible review results valid for a given
-    team, it can't be a review team."""
-    team        = models.ForeignKey(Group)
-    result      = models.ForeignKey(ReviewResultName)
-
-    def __unicode__(self):
-        return u"{} in {}".format(self.result.name, self.team.acronym)
-
-    class Meta:
-        verbose_name = "review result used in team setting"
-        verbose_name_plural = "review result used in team settings"
-    
-class TypeUsedInReviewTeam(models.Model):
-    """Captures that a type name is valid for a given team for new
-    reviews. """
-    team        = models.ForeignKey(Group, limit_choices_to=~models.Q(reviewteamsettings=None))
-    type        = models.ForeignKey(ReviewTypeName)
-
-    def __unicode__(self):
-        return u"{} in {}".format(self.type.name, self.team.acronym)
-
-    class Meta:
-        verbose_name = "review type used in team setting"
-        verbose_name_plural = "review type used in team settings"
 
 class NextReviewerInTeam(models.Model):
     team        = models.ForeignKey(Group, limit_choices_to=~models.Q(reviewteamsettings=None))
