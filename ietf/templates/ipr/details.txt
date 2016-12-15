@@ -1,4 +1,4 @@
-{% autoescape off %}{% load ietf_filters %}{% load ipr_filters %}{% load future %}IPR Title: {{ ipr.title|safe }}
+{% autoescape off %}{% load ietf_filters %}{% load ipr_filters %}IPR Title: {{ ipr.title|safe }}
 
 Section {% cycle 'I','II','III','IV','V','VI','VII','VIII' as section %}. {% if ipr|to_class_name == "ThirdPartyIprDisclosure" %}Possible {% endif %}Patent Holder/Applicant ("Patent Holder")
     Legal Name: {{ ipr.holder_legal_name|safe }}
