@@ -46,7 +46,7 @@ class RequestReviewForm(forms.ModelForm):
 
     class Meta:
         model = ReviewRequest
-        fields = ('requested_by', 'type', 'deadline', 'requested_rev')
+        fields = ('requested_by', 'type', 'deadline', 'requested_rev', 'comment') 
 
     def __init__(self, user, doc, *args, **kwargs):
         super(RequestReviewForm, self).__init__(*args, **kwargs)

@@ -142,6 +142,7 @@ class ReviewRequest(models.Model):
     deadline      = models.DateField()
     requested_by  = models.ForeignKey(Person)
     requested_rev = models.CharField(verbose_name="requested revision", max_length=16, blank=True, help_text="Fill in if a specific revision is to be reviewed, e.g. 02")
+    comment       = models.TextField(verbose_name="Requester's comments and instructions", max_length=2048, blank=True, help_text="Provide any additional information to show to the review team secretary and reviewer", default='')
 
     # Fields filled in as reviewer is assigned and as the review is
     # uploaded. Once these are filled in and we progress beyond being

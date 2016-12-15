@@ -66,6 +66,14 @@
           <td>{{ review_req.requested_by }}</td>
         </tr>
       {% endif %}
+
+      {% if review_req.comment %}
+        <tr>
+          <th></th>
+          <th>Comments</th>
+          <td><pre class="pasted">{{review_req.comment}}</pre></td>
+        </tr>
+      {% endif %}
     </tbody>
 
     <tbody class="meta">

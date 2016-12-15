@@ -33,15 +33,19 @@ class ReviewerSettingsResource(ModelResource):
         }
 api.review.register(ReviewerSettingsResource())
 
+
+
 from ietf.doc.resources import DocumentResource
-from ietf.group.resources import RoleResource, GroupResource
+from ietf.group.resources import GroupResource
 from ietf.name.resources import ReviewRequestStateNameResource, ReviewResultNameResource, ReviewTypeNameResource
+from ietf.person.resources import PersonResource, EmailResource
 class ReviewRequestResource(ModelResource):
     state            = ToOneField(ReviewRequestStateNameResource, 'state')
     type             = ToOneField(ReviewTypeNameResource, 'type')
     doc              = ToOneField(DocumentResource, 'doc')
     team             = ToOneField(GroupResource, 'team')
-    reviewer         = ToOneField(RoleResource, 'reviewer', null=True)
+    requested_by     = ToOneField(PersonResource, 'requested_by')
+    reviewer         = ToOneField(EmailResource, 'reviewer', null=True)
     review           = ToOneField(DocumentResource, 'review', null=True)
     result           = ToOneField(ReviewResultNameResource, 'result', null=True)
     class Meta:
@@ -51,14 +55,17 @@ class ReviewRequestResource(ModelResource):
         #resource_name = 'reviewrequest'
         filtering = { 
             "id": ALL,
+            "old_id": ALL,
             "time": ALL,
             "deadline": ALL,
             "requested_rev": ALL,
+            "comment": ALL,
             "reviewed_rev": ALL,
             "state": ALL_WITH_RELATIONS,
             "type": ALL_WITH_RELATIONS,
             "doc": ALL_WITH_RELATIONS,
             "team": ALL_WITH_RELATIONS,
+            "requested_by": ALL_WITH_RELATIONS,
             "reviewer": ALL_WITH_RELATIONS,
             "review": ALL_WITH_RELATIONS,
             "result": ALL_WITH_RELATIONS,
