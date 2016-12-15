@@ -733,3 +733,20 @@ class ReviewTests(TestCase):
 
         self.assertEqual(len(outbox), 0)
         
+    def test_edit_comment(self):
+        doc = make_test_data()
+        review_req = make_review_data(doc)
+
+        url = urlreverse('ietf.doc.views_review.edit_comment', kwargs={ "name": doc.name, "request_id": review_req.pk })
+
+        login_testing_unauthorized(self, "ad", url)
+
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+
+        r = self.client.post(url, data={
+            "comment": "iHsnReEHXEmNPXcixsvAF9Aa",
+        })
+        self.assertEqual(r.status_code, 302)
+        review_req = reload_db_objects(review_req)
+        self.assertEqual(review_req.comment,'iHsnReEHXEmNPXcixsvAF9Aa')
