@@ -56,7 +56,7 @@ from ietf.ietfauth.utils import role_required
 from ietf.mailinglists.models import Subscribed, Whitelisted
 from ietf.person.models import Person, Email, Alias
 from ietf.review.models import ReviewRequest, ReviewerSettings, ReviewWish
-from ietf.review.utils import unavailable_periods_to_list
+from ietf.review.utils import unavailable_periods_to_list, get_default_filter_re
 from ietf.utils.mail import send_mail
 from ietf.doc.fields import SearchableDocumentField
 
@@ -433,7 +433,7 @@ def review_overview(request):
     roles = { o.group_id: o for o in Role.objects.filter(name="reviewer", person__user=request.user, group__in=teams) }
 
     for t in teams:
-        t.reviewer_settings = settings.get(t.pk) or ReviewerSettings(team=t)
+        t.reviewer_settings = settings.get(t.pk) or ReviewerSettings(team=t,filter_re = get_default_filter_re(request.user.person))
         t.unavailable_periods = unavailable_periods.get(t.pk, [])
         t.role = roles.get(t.pk)
 
