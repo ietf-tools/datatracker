@@ -16,8 +16,8 @@ django.setup()
 import datetime, re, itertools
 from collections import namedtuple
 from django.db import connections
-from ietf.review.models import (ReviewRequest, ReviewerSettings, ReviewResultName, ResultUsedInReviewTeam,
-                                ReviewRequestStateName, ReviewTypeName, TypeUsedInReviewTeam,
+from ietf.review.models import (ReviewRequest, ReviewerSettings, ReviewResultName, 
+                                ReviewRequestStateName, ReviewTypeName, 
                                 UnavailablePeriod, NextReviewerInTeam)
 from ietf.group.models import Group, Role, RoleName
 from ietf.person.models import Person, Email, Alias
@@ -190,10 +190,10 @@ with db_con.cursor() as c:
             summaries = [v.strip().lower() for v in row.value.split(";") if v.strip()]
 
             for s in summaries:
-                ResultUsedInReviewTeam.objects.get_or_create(team=team, result=results[s])
+                team.reviewteamsettings.review_results.add(results[s])
 
 for t in ReviewTypeName.objects.filter(slug__in=["early", "lc", "telechat"]):
-    TypeUsedInReviewTeam.objects.get_or_create(team=team, type=t)
+    team.reviewteamsettings.review_types.add(t)
 
 # review requests
 

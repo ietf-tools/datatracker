@@ -14,7 +14,7 @@ from django.core.urlresolvers import reverse as urlreverse
 from ietf.doc.models import (Document, NewRevisionDocEvent, State, DocAlias,
                              LastCallDocEvent, ReviewRequestDocEvent)
 from ietf.name.models import ReviewRequestStateName, ReviewResultName, DocTypeName
-from ietf.review.models import ReviewRequest, TypeUsedInReviewTeam
+from ietf.review.models import ReviewRequest
 from ietf.group.models import Group
 from ietf.person.fields import PersonEmailChoiceField, SearchablePersonField
 from ietf.ietfauth.utils import is_authorized_in_doc_stream, user_is_person, has_role
@@ -57,7 +57,7 @@ class RequestReviewForm(forms.ModelForm):
         f.queryset = active_review_teams()
         f.initial = [group.pk for group in f.queryset if can_manage_review_requests_for_team(user, group, allow_personnel_outside_team=False)]
 
-        self.fields['type'].queryset = self.fields['type'].queryset.filter(used=True, typeusedinreviewteam__team__in=self.fields["team"].queryset).distinct()
+        self.fields['type'].queryset = self.fields['type'].queryset.filter(used=True, reviewteamsettings__group__in=self.fields["team"].queryset).distinct()
         self.fields['type'].widget = forms.RadioSelect(choices=[t for t in self.fields['type'].choices if t[0]])
 
         self.fields["requested_rev"].label = "Document revision"
@@ -83,7 +83,7 @@ class RequestReviewForm(forms.ModelForm):
 
         if chosen_type and chosen_teams:
             for t in chosen_teams:
-                if not TypeUsedInReviewTeam.objects.filter(type=chosen_type, team=t).exists():
+                if chosen_type not in t.reviewteamsettings.review_types.all():
                     self.add_error("type", "{} does not use the review type {}.".format(t.name, chosen_type.name))
 
         return self.cleaned_data
@@ -361,7 +361,7 @@ class CompleteReviewForm(forms.Form):
             " ".join("<a class=\"rev label label-default\">{}</a>".format(r)
                      for r in known_revisions))
 
-        self.fields["result"].queryset = self.fields["result"].queryset.filter(resultusedinreviewteam__team=review_req.team)
+        self.fields["result"].queryset = self.fields["result"].queryset.filter(reviewteamsettings__group=review_req.team)
 
         def format_submission_choice(label):
             if revising_review:

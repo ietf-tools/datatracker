@@ -14,15 +14,14 @@ from ietf.doc.models import (Document, ReviewRequestDocEvent, State,
 from ietf.iesg.models import TelechatDate
 from ietf.person.models import Person
 from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream
-from ietf.review.models import (ReviewRequest, ReviewRequestStateName, ReviewTypeName, TypeUsedInReviewTeam,
+from ietf.review.models import (ReviewRequest, ReviewRequestStateName, ReviewTypeName, 
                                 ReviewerSettings, UnavailablePeriod, ReviewWish, NextReviewerInTeam,
                                 ReviewSecretarySettings)
 from ietf.utils.mail import send_mail
 from ietf.doc.utils import extract_complete_replaces_ancestor_mapping_for_docs
 
 def active_review_teams():
-    # if there's a ResultUsedInReviewTeam defined, it's a review team
-    return Group.objects.filter(state="active").exclude(resultusedinreviewteam=None)
+    return Group.objects.filter(reviewteamsettings__isnull=False,state="active")
 
 def close_review_request_states():
     return ReviewRequestStateName.objects.filter(used=True).exclude(slug__in=["requested", "accepted", "rejected", "part-completed", "completed"])
@@ -529,6 +528,10 @@ def close_review_request(request, review_req, close_state):
                 by=request.user.person, notify_secretary=False, notify_reviewer=True, notify_requested_by=True)
 
 def suggested_review_requests_for_team(team):
+
+    if not team.reviewteamsettings.autosuggest:
+        return []
+
     system_person = Person.objects.get(name="(System)")
 
     seen_deadlines = {}
@@ -542,7 +545,7 @@ def suggested_review_requests_for_team(team):
     requested_state = ReviewRequestStateName.objects.get(slug="requested", used=True)
 
     last_call_type = ReviewTypeName.objects.get(slug="lc")
-    if TypeUsedInReviewTeam.objects.filter(team=team, type=last_call_type).exists():
+    if last_call_type in team.reviewteamsettings.review_types.all():
         # in Last Call
         last_call_docs = reviewable_docs_qs.filter(
             states=State.objects.get(type="draft-iesg", slug="lc", used=True)
@@ -570,7 +573,7 @@ def suggested_review_requests_for_team(team):
 
 
     telechat_type = ReviewTypeName.objects.get(slug="telechat")
-    if TypeUsedInReviewTeam.objects.filter(team=team, type=telechat_type).exists():
+    if telechat_type in team.reviewteamsettings.review_types.all():
         # on Telechat Agenda
         telechat_dates = list(TelechatDate.objects.active().order_by('date').values_list("date", flat=True)[:4])
 
@@ -913,4 +916,3 @@ def email_secretary_reminder(review_request, secretary_role):
         "deadline_days": deadline_days,
         "remind_days": remind_days,
     })
-    

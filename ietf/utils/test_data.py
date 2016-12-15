@@ -14,8 +14,7 @@ from ietf.meeting.models import Meeting
 from ietf.name.models import StreamName, DocRelationshipName
 from ietf.person.models import Person, Email
 from ietf.group.utils import setup_default_community_list_for_group
-from ietf.review.models import (ReviewRequest, ReviewerSettings, ReviewResultName, ResultUsedInReviewTeam,
-                                ReviewTypeName, TypeUsedInReviewTeam)
+from ietf.review.models import (ReviewRequest, ReviewerSettings, ReviewResultName, ReviewTypeName, ReviewTeamSettings )
 
 def create_person(group, role_name, name=None, username=None, email_address=None, password=None):
     """Add person/user/email and role."""
@@ -390,10 +389,11 @@ def make_review_data(doc):
     team2 = create_group(acronym="reviewteam2", name="Review Team 2", type_id="dir", list_email="reviewteam2@ietf.org", parent=Group.objects.get(acronym="farfut"))
     team3 = create_group(acronym="reviewteam3", name="Review Team 3", type_id="dir", list_email="reviewteam2@ietf.org", parent=Group.objects.get(acronym="farfut"))
     for team in (team1, team2, team3):
+        ReviewTeamSettings.objects.create(group=team)
         for r in ReviewResultName.objects.filter(slug__in=["issues", "ready-issues", "ready", "not-ready"]):
-            ResultUsedInReviewTeam.objects.create(team=team, result=r)
+            team.reviewteamsettings.review_results.add(r)
         for t in ReviewTypeName.objects.filter(slug__in=["early", "lc", "telechat"]):
-            TypeUsedInReviewTeam.objects.create(team=team, type=t)
+            team.reviewteamsettings.review_types.add(t)
 
     u = User.objects.create(username="reviewer")
     u.set_password("reviewer+password")

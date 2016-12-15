@@ -10,7 +10,7 @@ from ietf.api import ToOneField                         # pyflakes:ignore
 from ietf.review.models import (ReviewerSettings, ReviewRequest,
                                 ResultUsedInReviewTeam, TypeUsedInReviewTeam,
                                 UnavailablePeriod, ReviewWish, NextReviewerInTeam,
-                                ReviewSecretarySettings)
+                                ReviewSecretarySettings, ReviewTeamSettings )
 
 
 from ietf.person.resources import PersonResource
@@ -184,4 +184,25 @@ class ReviewSecretarySettingsResource(ModelResource):
             "person": ALL_WITH_RELATIONS,
         }
 api.review.register(ReviewSecretarySettingsResource())
+
+
+from ietf.group.resources import GroupResource
+from ietf.name.resources import ReviewResultNameResource, ReviewTypeNameResource
+class ReviewTeamSettingsResource(ModelResource):
+    group            = ToOneField(GroupResource, 'group')
+    review_types     = ToManyField(ReviewTypeNameResource, 'review_types', null=True)
+    review_results   = ToManyField(ReviewResultNameResource, 'review_results', null=True)
+    class Meta:
+        queryset = ReviewTeamSettings.objects.all()
+        serializer = api.Serializer()
+        cache = SimpleCache()
+        #resource_name = 'reviewteamsettings'
+        filtering = { 
+            "id": ALL,
+            "autosuggest": ALL,
+            "group": ALL_WITH_RELATIONS,
+            "review_types": ALL_WITH_RELATIONS,
+            "review_results": ALL_WITH_RELATIONS,
+        }
+api.review.register(ReviewTeamSettingsResource())
 

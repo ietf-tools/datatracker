@@ -2,7 +2,7 @@ from django.contrib import admin
 
 from ietf.review.models import (ReviewerSettings, UnavailablePeriod, ReviewWish,
                                 ResultUsedInReviewTeam, TypeUsedInReviewTeam, NextReviewerInTeam,
-                                ReviewRequest)
+                                ReviewRequest, ReviewTeamSettings )
 
 class ReviewerSettingsAdmin(admin.ModelAdmin):
     def acronym(self, obj):
@@ -72,3 +72,11 @@ class ReviewRequestAdmin(admin.ModelAdmin):
     search_fields = ["doc__name", "reviewer__person__name"]
 
 admin.site.register(ReviewRequest, ReviewRequestAdmin)
+
+class ReviewTeamSettingsAdmin(admin.ModelAdmin):
+    list_display = ["group", ] 
+    search_fields = ["group__acronym", ]
+    raw_id_fields = ["group", ]
+    filter_horizontal = ["review_types", "review_results", ]
+
+admin.site.register(ReviewTeamSettings, ReviewTeamSettingsAdmin)
