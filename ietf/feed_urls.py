@@ -11,7 +11,7 @@ from ietf.meeting.feeds import LatestMeetingMaterialFeed
 
 urlpatterns = patterns(
     '',
-    (r'^comments/(?P<remainder>.*)/$', RedirectView.as_view(url='/feed/document-changes/%(remainder)s/', permanent=True)),
+    (r'^comments/(?P<remainder>.*)/$', RedirectView.as_view(url='/feed/document-changes/%(remainder)s/')),
     (r'^document-changes/%(name)s/$' % settings.URL_REGEXPS, DocumentChangesFeed()),
     (r'^last-call/$', InLastCallFeed()),
     (r'^group-changes/%(acronym)s/$' % settings.URL_REGEXPS, GroupChangesFeed()),

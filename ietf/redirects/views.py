@@ -17,18 +17,14 @@ def redirect(request, path="", script=""):
     #
     # First look for flag items, stored in the database
     # as a command with a leading "^".
-    if request.method == 'POST':
-        rparam = request.POST
-    else:
-        rparam = request.GET    
     for flag in redir.commands.all().filter(command__startswith='^'):
 	fc = flag.command[1:].split("^")
 	if len(fc) > 1:
-	    if rparam.get('command') != fc[1]:
+	    if request.REQUEST.get('command') != fc[1]:
 		continue
-	if rparam.has_key(fc[0]):
+	if request.REQUEST.has_key(fc[0]):
 	    remove_args.append(fc[0])
-	    num = re.match('(\d+)', rparam[fc[0]])
+	    num = re.match('(\d+)', request.REQUEST[fc[0]])
 	    if (num and int(num.group(1))) or (num is None):
 		cmd = flag
 	    break
@@ -37,7 +33,7 @@ def redirect(request, path="", script=""):
     # for an exact match for the command= parameter.
     if cmd is None:
 	try:
-	    cmd = redir.commands.all().get(command=rparam['command'])
+	    cmd = redir.commands.all().get(command=request.REQUEST['command'])
 	except Command.DoesNotExist:
 	    pass	# it's ok, there's no more-specific request.
 	except KeyError:
@@ -62,7 +58,7 @@ def redirect(request, path="", script=""):
         # contains non-ASCII characters. The old scripts didn't support 
         # non-ASCII characters anyway, so there's no need to handle 
         # them fully correctly in these redirects.
-	url += str(rest % rparam)
+	url += str(rest % request.REQUEST)
 	url += "/"
     except:
 	# rest had something in it that request didn't have, so just

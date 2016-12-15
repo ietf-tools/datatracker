@@ -8,7 +8,7 @@ urlpatterns = patterns('',
     url(r'^help/fields/$', TemplateView.as_view(template_name='liaisons/field_help.html'), name='liaisons_field_help'),
     (r'^help/from_ietf/$', TemplateView.as_view(template_name='liaisons/guide_from_ietf.html')),
     (r'^help/to_ietf/$', TemplateView.as_view(template_name='liaisons/guide_to_ietf.html')),
-    (r'^managers/$', RedirectView.as_view(url='https://www.ietf.org/liaison/managers.html', permanent=True)),
+    (r'^managers/$', RedirectView.as_view(url='https://www.ietf.org/liaison/managers.html')),
 )
 
 # AJAX views

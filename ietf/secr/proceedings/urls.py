@@ -12,5 +12,5 @@ urlpatterns = patterns('ietf.secr.proceedings.views',
     url(r'^(?P<meeting_num>\d{1,3})/recording/$', 'recording', name='proceedings_recording'),
     url(r'^(?P<meeting_num>\d{1,3})/recording/edit/(?P<name>[A-Za-z0-9_\-\+]+)$', 'recording_edit', name='proceedings_recording_edit'),
     url(r'^(?P<num>\d{1,3}|interim-\d{4}-[A-Za-z0-9_\-\+]+)/%(acronym)s/$' % settings.URL_REGEXPS,
-         OldUploadRedirect.as_view(permanent=True)),
+         OldUploadRedirect.as_view()),
 )

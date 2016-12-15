@@ -96,12 +96,8 @@ def safe_create_1(self, verbosity, *args, **kwargs):
                 module = importlib.import_module(".".join(components[:-1]))
                 fn = getattr(module, components[-1])
                 fn()
-
-    warnings.simplefilter("always", DeprecationWarning)
-    warnings.filterwarnings("ignore", message="Passing callable arguments to queryset is deprecated.", module="django.db.models.sql.query", lineno=1156)
-    warnings.filterwarnings("ignore", message="`MergeDict` is deprecated, use `dict.update()` instead.", module="django.core.handlers.wsgi", lineno=126)
-    warnings.filterwarnings("ignore", message="The app_mod argument of get_models is deprecated.", module="django.utils.lru_cache", lineno=101)
-    warnings.filterwarnings("ignore", message="Report.file_reporters will no longer be available in Coverage.py 4.2", module="coverage.report", lineno=43)
+    if verbosity < 2:
+        warnings.simplefilter("ignore", DeprecationWarning)
 
     return test_database_name
 
