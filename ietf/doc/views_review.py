@@ -132,12 +132,19 @@ def request_review(request, name):
     else:
         if lc_ends:
             review_type = "lc"
+            deadline = lc_ends.date().isoformat()
         elif scheduled_for_telechat:
             review_type = "telechat"
+            deadline = doc.telechat_date()-datetime.timedelta(days=2)
         else:
             review_type = "early"
+            deadline = None
 
-        form = RequestReviewForm(request.user, doc, initial={ "type": review_type })
+        form = RequestReviewForm(request.user, doc, 
+                                 initial={ "type": review_type,
+                                           "requested_by": request.user.person,
+                                           "deadline": deadline,
+                                         })
 
     return render(request, 'doc/review/request_review.html', {
         'doc': doc,
