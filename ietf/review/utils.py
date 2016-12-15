@@ -31,6 +31,9 @@ def can_request_review_of_doc(user, doc):
     if not user.is_authenticated():
         return False
 
+    if doc.type_id == 'draft' and doc.get_state_slug() != 'active':
+        return False
+
     return (is_authorized_in_doc_stream(user, doc)
             or Role.objects.filter(person__user=user, name="secr", group__in=active_review_teams()).exists())
 

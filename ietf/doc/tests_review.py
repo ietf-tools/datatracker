@@ -75,6 +75,17 @@ class ReviewTests(TestCase):
             self.assertEqual(req.requested_rev, "01")
             self.assertEqual(doc.latest_event().type, "requested_review")
 
+    def test_request_review_of_rfc(self):
+        make_test_data()
+        doc = Document.objects.filter(states__type_id='draft',states__slug='rfc').first()
+        make_review_data(doc)
+
+        url = urlreverse('ietf.doc.views_review.request_review', kwargs={ "name": doc.name })
+        login_testing_unauthorized(self, "ad", url)
+
+        # get should fail
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 403)
 
     def test_doc_page(self):
         doc = make_test_data()
