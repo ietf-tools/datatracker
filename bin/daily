@@ -23,14 +23,14 @@ $DTDIR/ietf/manage.py populate_yang_model_dirs
 
 # Expire internet drafts
 # Enable when removed from /a/www/ietf-datatracker/scripts/Cron-runner:
-#$DTDIR/ietf/bin/expire-ids
+$DTDIR/ietf/bin/expire-ids
 
 # Expire last calls
 # Enable when removed from /a/www/ietf-datatracker/scripts/Cron-runner:
-#$DTDIR/ietf/bin/expire-last-calls
+$DTDIR/ietf/bin/expire-last-calls
 
 # Run an extended version of the rfc editor update, to catch changes
 # with backdated timestamps
 # Enable when removed from /a/www/ietf-datatracker/scripts/Cron-runner:
-#$DTDIR/ietf/bin/rfc-editor-index-updates -d 1969-01-01
+$DTDIR/ietf/bin/rfc-editor-index-updates -d 1969-01-01
 
