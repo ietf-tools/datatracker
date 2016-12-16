@@ -14,6 +14,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='reviewrequest',
             name='comment',
-            field=models.CharField(default=b'', help_text=b'Provide any additional information to show to the review team secretary and reviewer', max_length=2048, verbose_name=b"Requester's comments and instructions", blank=True),
+            field=models.TextField(default=b'', help_text=b'Provide any additional information to show to the review team secretary and reviewer', max_length=2048, verbose_name=b"Requester's comments and instructions", blank=True),
         ),
     ]
