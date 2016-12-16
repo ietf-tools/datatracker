@@ -1,3 +1,72 @@
+ietfdb (6.40.1) ietf; urgency=medium
+
+  This is a mixed bugfix and enhancements release with a lot of attention on
+  the new document review support.  A number of deprecated functionality from
+  earlier Django version has also be fixed up to use newer idioms.
+
+  From the commit log:
+
+  * Fixed a html nit (nbsp without semicolon).
+
+  * Merged in [12545] and [12549] from rjsparks@nostrum.com:
+    Allow ads and secretaries to edit the review request comment.  Allow a
+    review request to include a comment to show to the review team secretary
+    at assignment time and the reviewer at review time. Fixes #2096.  
+
+  * Merged in [12543] from rjsparks@nostrum.com:
+    Provide defaults on the Request review form. Fixes #2108.  
+
+  * Merged in [12541] from rjsparks@nostrum.com:
+    Provide default filters for reviewer settings. Fixes #2093.  
+
+  * Merged in [12520] from rjsparks@nostrum.com:
+    Slight refactor of the review models to capture review team settings. 
+    Allows configuring review teams to get automatic suggestions for reviews or 
+    not. Provides a better admin for creating/managing review teams. Fixes 
+    #2048 and #2072.  
+
+  * Merged in [12518] from rjsparks@nostrum.com:
+    Fixes href() for bluesheets. Fixes #2107.
+
+  * Merged in [12506] from rjsparks@nostrum.com:
+    Show the review requester on review team summary pages. Fixes #2095.  
+
+  * Merged in [12505] from rjsparks@nostrum.com:
+    Disallow requesting directorate reviews of RFCs (such things would better
+    be done with reviews of status change documents). Fixes #2065.  
+
+  * Tweaked mergeready to use modules in working dir, and be slightly more 
+    verbose when building the mergeinfo cache.
+
+  * Moved warnings settings from manage.py and test_runner.py to one single
+    place, settings.py.  Decreased the verbosity level when invoking
+    'loaddata' from the test runner.
+
+  * Deprecation fix: Pass the result of active_review_teams() to a
+    Role.objects query, instead of passing the function.
+
+  * Deprecation fixes: Use request.GET or request.POST as appropriate, instead
+    of request.REQUEST.
+
+  * Deprecation fixes: Explicitly say that redirects are permanent.
+
+  * Deprecation fix: Changed method of retrieving an app's models.  Also now
+    importing import_module from importlib instead of from django.
+
+  * Deprecation fixes: Removed instances of 'load future' from templates that
+    don't need it any more.
+
+  * Changed the state shown in all_id.txt for drafts which have entered IESG
+    processing, but then been replaced, to show as 'Replaced' instead of 'In
+    IESG Processing'.  This is consistent with how they are shown in
+    all_id2.txt.
+
+  * Added a script to list role holder emails, for use in building
+  * postconfirmd's whitelist.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  16 Dec 2016 12:59:15 +0000
+
+
 ietfdb (6.40.0) ietf; urgency=medium
 
   **Django 1.8**
