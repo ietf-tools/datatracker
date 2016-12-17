@@ -121,7 +121,7 @@ else
     die "Didn't expect to run this script on Linux -- are you inside docker?"
 fi
 
-docker rmi -f ietf/datatracker-environment:trunk
+docker rmi -f ietf/datatracker-environment:trunk || true
 docker build -t ietf/datatracker-environment:$TAG docker/
 docker tag $(docker images -q | head -n 1) ietf/datatracker-environment:latest
 docker push ietf/datatracker-environment:latest
