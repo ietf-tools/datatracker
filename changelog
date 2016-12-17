@@ -1,8 +1,50 @@
+ietfdb (6.40.2) ietf; urgency=medium
+
+  **Docker image based on Debian:jessie and MySQL 5.6**
+
+  This release doesn't provide any new datatracker functionality, but upgrades
+  the Dockerfile used to build the datatracker-environment docker image to use
+  the Debian Jessie release as a base, and MySQL 5.6 as the database engine.
+  (Image at https://hub.docker.com/r/ietf/datatracker-environment/).  There
+  are also some other fixes.
+
+  From the commit log:
+
+  * Upgraded the Dockerfile to use debian:jessie as a base, and use
+    mysql-server 5.6.
+
+  * Made the docker/build script behave better when trying to remove
+    non-existent previous builds of the datatracker-environment docker image.
+
+  * Made docker/updatedb less verbose when downloading a new database dump.
+
+  * Added a tiny script to be run from within docker, to install the extra
+    packages needed to run the dependency-graph and htpasswd tests.
+
+  * Added a script which creates a tarball of binary mysql database files, and
+    uploads the tarball to the developer area at www.ietf.org, for use with the
+    datatracker environment docker image.
+
+  * Simplified the release-coverage script.
+
+  * Enabled invocation of 3 additional scripts from bin/daily (instead of 
+    ../scripts/Night-runner)
+
+  * Updated scripts in ietf/bin/ to look in env/bin/ for the virtualenv
+    activation script.
+
+  * Changed the handling of skip tests and messages in order to show which 
+    tests will be skipped, and why, at the start of a test run.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  17 Dec 2016 21:51:07 +0000
+
+
 ietfdb (6.40.1) ietf; urgency=medium
 
   This is a mixed bugfix and enhancements release with a lot of attention on
-  the new document review support.  A number of deprecated functionality from
-  earlier Django version has also be fixed up to use newer idioms.
+  the new document review support.  A number of cases of deprecated
+  functionality from earlier Django version has also be fixed up to use newer
+  idioms.
 
   From the commit log:
 
