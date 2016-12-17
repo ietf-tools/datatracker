@@ -27,9 +27,11 @@ if os.path.exists(settings.HTPASSWD_COMMAND):
     skip_htpasswd_command = False
     skip_message = ""
 else:
+    import sys
     skip_htpasswd_command = True
-    skip_message = ("The binary for htpasswd wasn't found "
-                    "in the locations indicated in settings.py.")
+    skip_message = ("Skipping htpasswd test: The binary for htpasswd wasn't found in the\n       "
+                    "location indicated in settings.py.")
+    sys.stderr.write("     "+skip_message+'\n')
 
 class IetfAuthTests(TestCase):
     def setUp(self):

@@ -30,13 +30,13 @@ else:
         from selenium.webdriver.common.action_chains import ActionChains
     except ImportError as e:
         skip_selenium = True
-        skip_message = "     Skipping selenium tests: %s" % e
+        skip_message = "Skipping selenium tests: %s" % e
     code, out, err = pipe('phantomjs -v')
     if not code == 0:
         skip_selenium = True
-        skip_message = "     Skipping selenium tests: 'phantomjs' executable not found."
+        skip_message = "Skipping selenium tests: 'phantomjs' executable not found."
     if skip_selenium:
-        sys.stderr.write(skip_message+'\n')
+        sys.stderr.write("     "+skip_message+'\n')
 
 def condition_data():
         make_meeting_test_data()

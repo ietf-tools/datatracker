@@ -30,12 +30,14 @@ from ietf.utils.test_utils import TestCase
 from ietf.group.models import Group
 
 skip_wiki_glue_testing = False
-skip_wiki_glue_message = ""
+skip_message = ""
 try:
     import svn                          # pyflakes:ignore
 except ImportError as e:
+    import sys
     skip_wiki_glue_testing = True
-    skip_wiki_glue_message = "     Skipping trac tests: %s" % e
+    skip_message = "Skipping trac tests: %s" % e
+    sys.stderr.write("     "+skip_message+'\n')
 
 class PyFlakesTestCase(TestCase):
 
@@ -205,7 +207,7 @@ class TemplateChecksTestCase(TestCase):
         settings.DEBUG = saved_debug
 
 
-@skipIf(skip_wiki_glue_testing, skip_wiki_glue_message)
+@skipIf(skip_wiki_glue_testing, skip_message)
 class TestWikiGlueManagementCommand(TestCase):
 
     def setUp(self):
