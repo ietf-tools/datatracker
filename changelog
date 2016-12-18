@@ -36,7 +36,7 @@ ietfdb (6.40.2) ietf; urgency=medium
   * Changed the handling of skip tests and messages in order to show which 
     tests will be skipped, and why, at the start of a test run.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  17 Dec 2016 21:51:07 +0000
+ -- Henrik Levkowetz <henrik@levkowetz.com>  18 Dec 2016 15:00:54 +0000
 
 
 ietfdb (6.40.1) ietf; urgency=medium
