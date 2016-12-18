@@ -171,6 +171,7 @@ if os.path.exists(cachefn):
 else:
     sys.stderr.write("No merge info cache file found -- will have to extract all information from SVN.\n"+
         "This may take some time.\n\n")
+    opt_verbose = True
     cache = {}
 mergeinfo = cache[repo] if repo in cache else {}
 
