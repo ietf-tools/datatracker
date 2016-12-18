@@ -104,7 +104,7 @@ ietfdb (6.40.1) ietf; urgency=medium
     all_id2.txt.
 
   * Added a script to list role holder emails, for use in building
-  * postconfirmd's whitelist.
+    postconfirmd's whitelist.
 
  -- Henrik Levkowetz <henrik@levkowetz.com>  16 Dec 2016 12:59:15 +0000
 
