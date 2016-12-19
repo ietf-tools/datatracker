@@ -8,7 +8,6 @@ from ietf import api
 from ietf.api import ToOneField                         # pyflakes:ignore
 
 from ietf.review.models import (ReviewerSettings, ReviewRequest,
-                                ResultUsedInReviewTeam, TypeUsedInReviewTeam,
                                 UnavailablePeriod, ReviewWish, NextReviewerInTeam,
                                 ReviewSecretarySettings, ReviewTeamSettings )
 
@@ -72,27 +71,6 @@ class ReviewRequestResource(ModelResource):
         }
 api.review.register(ReviewRequestResource())
 
-
-
-from ietf.group.resources import GroupResource
-from ietf.name.resources import ReviewResultNameResource
-class ResultUsedInReviewTeamResource(ModelResource):
-    team             = ToOneField(GroupResource, 'team')
-    result           = ToOneField(ReviewResultNameResource, 'result')
-    class Meta:
-        queryset = ResultUsedInReviewTeam.objects.all()
-        serializer = api.Serializer()
-        cache = SimpleCache()
-        #resource_name = 'resultusedinreviewteam'
-        filtering = { 
-            "id": ALL,
-            "team": ALL_WITH_RELATIONS,
-            "result": ALL_WITH_RELATIONS,
-        }
-api.review.register(ResultUsedInReviewTeamResource())
-
-
-
 from ietf.person.resources import PersonResource
 from ietf.group.resources import GroupResource
 class UnavailablePeriodResource(ModelResource):
@@ -152,27 +130,6 @@ class NextReviewerInTeamResource(ModelResource):
             "next_reviewer": ALL_WITH_RELATIONS,
         }
 api.review.register(NextReviewerInTeamResource())
-
-
-
-from ietf.group.resources import GroupResource
-from ietf.name.resources import ReviewTypeNameResource
-class TypeUsedInReviewTeamResource(ModelResource):
-    team             = ToOneField(GroupResource, 'team')
-    type             = ToOneField(ReviewTypeNameResource, 'type')
-    class Meta:
-        queryset = TypeUsedInReviewTeam.objects.all()
-        serializer = api.Serializer()
-        cache = SimpleCache()
-        #resource_name = 'typeusedinreviewteam'
-        filtering = { 
-            "id": ALL,
-            "team": ALL_WITH_RELATIONS,
-            "type": ALL_WITH_RELATIONS,
-        }
-api.review.register(TypeUsedInReviewTeamResource())
-
-
 
 from ietf.person.resources import PersonResource
 from ietf.group.resources import GroupResource
