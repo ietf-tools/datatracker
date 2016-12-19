@@ -10,7 +10,15 @@
 
 {% block content %}
   {% origin %}
-  <h1>{% if revising_review %}Revise{% else %}Complete{% endif %} review<br><small>{{ review_req.doc.name }}</small></h1>
+  <h1>{% if revising_review %}Revise{% else %}Complete{% endif %} review<br>
+      <small>{{ review_req.doc.name }}</small>
+  </h1>
+
+  <p>
+    <div><strong>Review type:</strong> {{ review_req.team.acronym }} - {{ review_req.type }} review </div>
+    <div><strong>Requested version for review:</strong> {{ review_req.requested_rev|default:"Current" }} </div>
+    <div><strong>Reviewer:</strong> {{ review_req.reviewer.person.name }}</div>
+  </p>
 
   {% if not revising_review %}
     <p>The review findings should be made available here and the review
