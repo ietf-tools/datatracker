@@ -78,7 +78,7 @@ def markup(content, split=True, width=None):
     else:
         return "<pre>" + content + "</pre>\n"
 
-def markup_unicode(content, split=True, width=None):
+def markup_unicode(content, split=True, width=None, container_classes=None):
     # normalize line endings to LF only
     content = content.replace("\r\n", "\n")
     content = content.replace("\r", "\n")
@@ -93,11 +93,12 @@ def markup_unicode(content, split=True, width=None):
         content = fill(content, width)
 
     # expand tabs + escape 
-    content = escape(content.expandtabs())
+    content_to_show = escape(content.expandtabs())
 
     if split:
         n = content.find("\n", 5000)
-        content1 = "<pre>"+content[:n+1]+"</pre>\n"
-        return content1
-    else:
-        return "<pre>" + content + "</pre>\n"
+        content_to_show = content_to_show[:n+1]
+    
+    pre = '<pre class="%s" >' % container_classes if container_classes else '<pre>'
+
+    return pre+content_to_show+'</pre>\n'
