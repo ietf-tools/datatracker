@@ -127,6 +127,15 @@ def request_review(request, name):
                     state=None,
                 )
 
+                subject = "%s %s Review requested" % (review_req.team.acronym, review_req.type.name)
+
+                msg = subject
+
+                if review_req.comment:
+                    msg += "\n\n"+review_req.comment
+
+                email_review_request_change(request, review_req, subject, msg, by=request.user.person, notify_secretary=True, notify_reviewer=False, notify_requested_by=True)
+
             return redirect('doc_view', name=doc.name)
 
     else:

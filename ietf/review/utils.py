@@ -369,7 +369,7 @@ def email_review_request_change(request, review_req, subject, msg, by, notify_se
 
     url = urlreverse("ietf.doc.views_review.review_request", kwargs={ "name": review_req.doc.name, "request_id": review_req.pk })
     url = request.build_absolute_uri(url)
-    send_mail(request, to, None, subject, "review/review_request_changed.txt", {
+    send_mail(request, to, request.user.person.formatted_email(), subject, "review/review_request_changed.txt", {
         "review_req_url": url,
         "review_req": review_req,
         "msg": msg,
@@ -452,8 +452,8 @@ def assign_review_request_to_reviewer(request, review_req, reviewer):
 
     email_review_request_change(
         request, review_req,
-        "Assigned to review %s" % review_req.doc.name,
-        "%s has assigned you to review the document." % request.user.person,
+        "%s %s assignment: %s" % (review_req.team.acronym.capitalize(), review_req.type.name,review_req.doc.name),
+        "%s has assigned you as a reviewer for this document." % request.user.person,
         by=request.user.person, notify_secretary=False, notify_reviewer=True, notify_requested_by=False)
 
 def possibly_advance_next_reviewer_for_team(team, assigned_review_to_person_id):
