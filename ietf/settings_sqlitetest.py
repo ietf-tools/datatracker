@@ -17,13 +17,13 @@ debug.debug = True
 
 ## To be removed after upgrade to Django 1.8 ##
 
-from django.db.migrations.loader import MIGRATIONS_MODULE_NAME
 class DisableMigrations(object):
  
     def __contains__(self, item):
         return True
  
     def __getitem__(self, item):
+        from django.db.migrations.loader import MIGRATIONS_MODULE_NAME
         # The string below is significant.  It has to include the value of
         # django.db.migrations.loader.MIGRATIONS_MODULE_NAME.  Used by django
         # 1.7 code in django.db.migrations.loader.MigrationLoader to
