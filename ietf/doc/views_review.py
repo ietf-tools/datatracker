@@ -580,7 +580,7 @@ def complete_review(request, name, request_id):
         }
 
         try:
-            initial['review_content'] = render_to_string('/group/%s/review/content_templates/%s.txt' % (review_req.team.acronym, review_req.type.slug), {})
+            initial['review_content'] = render_to_string('/group/%s/review/content_templates/%s.txt' % (review_req.team.acronym, review_req.type.slug), {'review_req':review_req,'today':datetime.date.today()})
         except TemplateDoesNotExist:
             pass
 
