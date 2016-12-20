@@ -8,8 +8,6 @@ import os
 import sys
 import re
 import string
-import timedelta
-from timedeltafield import TimedeltaField
 
 import debug                            # pyflakes:ignore
 
@@ -68,10 +66,10 @@ class Meeting(models.Model):
     idsubmit_cutoff_day_offset_01 = models.IntegerField(blank=True,
         default=settings.IDSUBMIT_DEFAULT_CUTOFF_DAY_OFFSET_01,
         help_text = "The number of days before the meeting start date when the submission of -01 drafts etc. will be closed.")        
-    idsubmit_cutoff_time_utc  = timedelta.fields.TimedeltaField(blank=True,
+    idsubmit_cutoff_time_utc  = models.DurationField(blank=True,
         default=settings.IDSUBMIT_DEFAULT_CUTOFF_TIME_UTC,
         help_text = "The time of day (UTC) after which submission will be closed.  Use for example 23 hours, 59 minutes, 59 seconds.")
-    idsubmit_cutoff_warning_days  = timedelta.fields.TimedeltaField(blank=True,
+    idsubmit_cutoff_warning_days  = models.DurationField(blank=True,
         default=settings.IDSUBMIT_DEFAULT_CUTOFF_WARNING_DAYS,
         help_text = "How long before the 00 cutoff to start showing cutoff warnings.  Use for example 21 days or 3 weeks.")
     submission_start_day_offset = models.IntegerField(blank=True,
@@ -415,7 +413,7 @@ class TimeSlot(models.Model):
     type = models.ForeignKey(TimeSlotTypeName)
     name = models.CharField(max_length=255)
     time = models.DateTimeField()
-    duration = TimedeltaField()
+    duration = models.DurationField(default=datetime.timedelta(0))
     location = models.ForeignKey(Room, blank=True, null=True)
     show_location = models.BooleanField(default=True, help_text="Show location in agenda.")
     sessions = models.ManyToManyField('Session', related_name='slots', through='SchedTimeSessAssignment', blank=True, help_text=u"Scheduled session, if any.")
@@ -986,7 +984,7 @@ class Session(models.Model):
     agenda_note = models.CharField(blank=True, max_length=255)
     requested = models.DateTimeField(default=datetime.datetime.now)
     requested_by = models.ForeignKey(Person)
-    requested_duration = TimedeltaField(default=0)
+    requested_duration = models.DurationField(default=datetime.timedelta(0))
     comments = models.TextField(blank=True)
     status = models.ForeignKey(SessionStatusName)
     scheduled = models.DateTimeField(null=True, blank=True)

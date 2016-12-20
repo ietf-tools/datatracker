@@ -20,7 +20,7 @@ class MeetingFactory(factory.DjangoModelFactory):
     idsubmit_cutoff_day_offset_00 = 13
     idsubmit_cutoff_day_offset_01 = 13
     idsubmit_cutoff_time_utc = datetime.timedelta(0, 86399)
-    idsubmit_cutoff_warning_days = 21 
+    idsubmit_cutoff_warning_days = datetime.timedelta(days=21)
     venue_name = factory.Faker('sentence')
     venue_addr = factory.Faker('address')
     break_area = factory.Faker('sentence')

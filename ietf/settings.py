@@ -398,13 +398,14 @@ TEST_CODE_COVERAGE_EXCLUDE = [
     "idindex/generate_all_id_txt.py",
     "idindex/generate_id_abstracts_txt.py",
     "idindex/generate_id_index_txt.py",
+    "ietf/checks.py",
+    "ietf/meeting/timedeltafield.py",   # Dead code, kept for a migration include
+    "ietf/review/import_from_review_tool.py",
+    "ietf/settings*",
+    "ietf/utils/templatetags/debug_filters.py",
+    "ietf/utils/test_runner.py",
     "name/generate_fixtures.py",
     "review/import_from_review_tool.py",
-    "ietf/settings*",
-    "ietf/utils/test_runner.py",
-    "ietf/checks.py",
-    "ietf/utils/templatetags/debug_filters.py",
-    "ietf/review/import_from_review_tool.py",
 ]
 
 # These are filename globs.  They are used by test_parse_templates() and

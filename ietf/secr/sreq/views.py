@@ -616,7 +616,7 @@ def no_session(request, acronym):
                       meeting=meeting,
                       requested=datetime.datetime.now(),
                       requested_by=login,
-                      requested_duration=0,
+                      requested_duration=datetime.timedelta(0),
                       status=SessionStatusName.objects.get(slug='notmeet'),
                       type_id='session',
                       )

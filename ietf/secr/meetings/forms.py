@@ -5,7 +5,6 @@ from django import forms
 
 from ietf.group.models import Group
 from ietf.meeting.models import Meeting, Room, TimeSlot, Session, SchedTimeSessAssignment
-from ietf.meeting.timedeltafield import TimedeltaFormField, TimedeltaWidget
 from ietf.name.models import TimeSlotTypeName
 
 
@@ -175,7 +174,7 @@ class NonSessionEditForm(forms.Form):
 class TimeSlotForm(forms.Form):
     day = forms.ChoiceField(choices=DAYS_CHOICES)
     time = forms.TimeField()
-    duration = TimedeltaFormField(widget=TimedeltaWidget(attrs={'inputs':['hours','minutes']}))
+    duration = forms.DurationField(help_text="Enter duration as 'DD HH:MM:SS', or parts thereof. '3:42' means 3 minutes, 42 seconds, not 3 hours 42 minutes.")
     name = forms.CharField(help_text='Name that appears on the agenda')
     
 class NonSessionForm(TimeSlotForm):

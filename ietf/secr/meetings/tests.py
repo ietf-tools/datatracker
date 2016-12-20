@@ -229,7 +229,7 @@ class SecrMeetingTestCase(TestCase):
     def test_meetings_times_edit(self):
         meeting = make_meeting_test_data()
         timeslot = TimeSlot.objects.filter(meeting=meeting,type='session').first()
-        url = reverse('meetings_times_edit',kwargs={
+        url = reverse('ietf.secr.meetings.views.times_edit',kwargs={
             'meeting_id':42,
             'schedule_name':'test-agenda',
             'time':timeslot.time.strftime("%Y:%m:%d:%H:%M")
@@ -238,8 +238,7 @@ class SecrMeetingTestCase(TestCase):
         response = self.client.post(url, {
             'day':'1',
             'time':'08:00',
-            'duration_hours':'1',
-            'duration_minutes':'0',
+            'duration':'1 0:0:0',
             'name':'Testing'
         })
         self.assertEqual(response.status_code, 302)
