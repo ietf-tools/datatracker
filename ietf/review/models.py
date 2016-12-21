@@ -131,6 +131,12 @@ class ReviewRequest(models.Model):
     def __unicode__(self):
         return u"%s review on %s by %s %s" % (self.type, self.doc, self.team, self.state)
 
+    def other_requests(self):
+        return self.doc.reviewrequest_set.exclude(id=self.id)
+
+    def other_completed_requests(self):
+        return self.other_requests().filter(state_id__in=['completed','part-completed'])
+
 def get_default_review_types():
     return ReviewTypeName.objects.filter(slug__in=['early','lc','telechat'])
 
