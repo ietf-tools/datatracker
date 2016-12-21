@@ -10,7 +10,7 @@ def forward(apps, schema_editor):
     DBTemplate.objects.create(
         path='/group/genart/review/content_templates/lc.txt',
         title='Template for genart last call reviews',
-        type_id='plain',
+        type_id='django',
         group=Group.objects.get(acronym='genart'),
         content="""I am the assigned Gen-ART reviewer for this draft. The General Area
 Review Team (Gen-ART) reviews all IETF documents being processed
@@ -21,11 +21,11 @@ For more information, please see the FAQ at
 
 <https://trac.ietf.org/trac/gen/wiki/GenArtfaq>.
 
-Document:
-Reviewer:
-Review Date:
-IETF LC End Date:
-IESG Telechat date: (if known)
+Document: {{ review_req.doc.name }}-??
+Reviewer: {{ review_req.reviewer.person.plain_name }}
+Review Date: {{ today }}
+IETF LC End Date: {% if review_req.doc.most_recent_ietflc %}{{ review_req.doc.most_recent_ietflc.expires|date:"Y-m-d" }}{% else %}None{% endif %}
+IESG Telechat date: {{ review_req.doc.telechat_date|default:'Not scheduled for a telechat }}
 
 Summary:
 
@@ -39,7 +39,7 @@ Nits/editorial comments:
     DBTemplate.objects.create(
         path='/group/genart/review/content_templates/telechat.txt',
         title='Template for genart telechat reviews',
-        type_id='plain',
+        type_id='django',
         group=Group.objects.get(acronym='genart'),
         content="""I am the assigned Gen-ART reviewer for this draft. The General Area
 Review Team (Gen-ART) reviews all IETF documents being processed
@@ -50,11 +50,11 @@ For more information, please see the FAQ at
 
 <https://trac.ietf.org/trac/gen/wiki/GenArtfaq>.
 
-Document:
-Reviewer:
-Review Date:
-IETF LC End Date:
-IESG Telechat date: (if known)
+Document: {{ review_req.doc.name }}-??
+Reviewer: {{ review_req.reviewer.person.plain_name }}
+Review Date: {{ today }}
+IETF LC End Date: {% if review_req.doc.most_recent_ietflc %}{{ review_req.doc.most_recent_ietflc.expires|date:"Y-m-d" }}{% else %}None{% endif %}
+IESG Telechat date: {{ review_req.doc.telechat_date|default:'Not scheduled for a telechat' }}
 
 Summary:
 
