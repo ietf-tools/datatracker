@@ -6,7 +6,7 @@ from django import forms
 from ietf.group.models import Group
 from ietf.meeting.models import Meeting, Room, TimeSlot, Session, SchedTimeSessAssignment
 from ietf.name.models import TimeSlotTypeName
-
+import ietf.utils.fields
 
 DAYS_CHOICES = ((-1,'Saturday'),
                 (0,'Sunday'),
@@ -87,10 +87,18 @@ class TimeChoiceField(forms.ChoiceField):
 # Forms
 #----------------------------------------------------------
 class MeetingModelForm(forms.ModelForm):
+    idsubmit_cutoff_time_utc     = ietf.utils.fields.DurationField()
+    idsubmit_cutoff_warning_days = ietf.utils.fields.DurationField()
     class Meta:
         model = Meeting
         exclude = ('type', 'agenda', 'session_request_lock_message')
         
+
+    def __init__(self,*args,**kwargs):
+        super(MeetingModelForm, self).__init__(*args,**kwargs)
+        for f in [ 'idsubmit_cutoff_warning_days', 'idsubmit_cutoff_time_utc', ]:
+            self.fields[f].help_text = kwargs['instance']._meta.get_field(f).help_text
+
     def clean_number(self):
         number = self.cleaned_data['number']
         if not number.isdigit():
@@ -174,7 +182,7 @@ class NonSessionEditForm(forms.Form):
 class TimeSlotForm(forms.Form):
     day = forms.ChoiceField(choices=DAYS_CHOICES)
     time = forms.TimeField()
-    duration = forms.DurationField(help_text="Enter duration as 'DD HH:MM:SS', or parts thereof. '3:42' means 3 minutes, 42 seconds, not 3 hours 42 minutes.")
+    duration = ietf.utils.fields.DurationField()
     name = forms.CharField(help_text='Name that appears on the agenda')
     
 class NonSessionForm(TimeSlotForm):

@@ -68,10 +68,10 @@ class Meeting(models.Model):
         help_text = "The number of days before the meeting start date when the submission of -01 drafts etc. will be closed.")        
     idsubmit_cutoff_time_utc  = models.DurationField(blank=True,
         default=settings.IDSUBMIT_DEFAULT_CUTOFF_TIME_UTC,
-        help_text = "The time of day (UTC) after which submission will be closed.  Use for example 23 hours, 59 minutes, 59 seconds.")
+        help_text = "The time of day (UTC) after which submission will be closed.  Use for example 23:59:59.")
     idsubmit_cutoff_warning_days  = models.DurationField(blank=True,
         default=settings.IDSUBMIT_DEFAULT_CUTOFF_WARNING_DAYS,
-        help_text = "How long before the 00 cutoff to start showing cutoff warnings.  Use for example 21 days or 3 weeks.")
+        help_text = "How long before the 00 cutoff to start showing cutoff warnings.  Use for example '21' or '21 days'.")
     submission_start_day_offset = models.IntegerField(blank=True,
         default=settings.MEETING_MATERIALS_DEFAULT_SUBMISSION_START_DAYS,
         help_text = "The number of days before the meeting start date after which meeting materials will be accepted.")

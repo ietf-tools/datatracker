@@ -15,12 +15,12 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='meeting',
             name='xidsubmit_cutoff_time_utc',
-            field=models.DurationField(default=datetime.timedelta(0, 86399), help_text=b'The time of day (UTC) after which submission will be closed.  Use for example 23 hours, 59 minutes, 59 seconds.', blank=True),
+            field=models.DurationField(default=datetime.timedelta(0, 86399), help_text=b"The time of day (UTC) after which submission will be closed.  Use for example 23:59:59.", blank=True),
         ),
         migrations.AddField(
             model_name='meeting',
             name='xidsubmit_cutoff_warning_days',
-            field=models.DurationField(default=datetime.timedelta(21), help_text=b'How long before the 00 cutoff to start showing cutoff warnings.  Use for example 21 days or 3 weeks.', blank=True),
+            field=models.DurationField(default=datetime.timedelta(21), help_text=b"How long before the 00 cutoff to start showing cutoff warnings.  Use for example '21' or '21 days'.", blank=True),
         ),
         migrations.AddField(
             model_name='session',
