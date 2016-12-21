@@ -49,7 +49,7 @@ class ReviewTests(TestCase):
         review_team3 = Group.objects.get(acronym='reviewteam3')
 
         url = urlreverse('ietf.doc.views_review.request_review', kwargs={ "name": doc.name })
-        login_testing_unauthorized(self, "reviewsecretary", url)
+        login_testing_unauthorized(self, "ad", url)
 
         # get
         r = self.client.get(url)
@@ -57,13 +57,15 @@ class ReviewTests(TestCase):
 
         deadline = datetime.date.today() + datetime.timedelta(days=10)
 
+        empty_outbox()
+
         # post request
         r = self.client.post(url, {
             "type": "early",
             "team": [review_team.pk,review_team3.pk],
             "deadline": deadline.isoformat(),
             "requested_rev": "01",
-            "requested_by": Person.objects.get(user__username="reviewsecretary").pk,
+            "requested_by": Person.objects.get(user__username="ad").pk,
             "comment": "gZT2iiYqYLKiQHvsgWCcVLdH"
         })
         self.assertEqual(r.status_code, 302)
@@ -76,6 +78,12 @@ class ReviewTests(TestCase):
             self.assertEqual(req.requested_rev, "01")
             self.assertEqual(doc.latest_event().type, "requested_review")
             self.assertEqual(req.comment, "gZT2iiYqYLKiQHvsgWCcVLdH")
+
+        self.assertEqual(len(outbox),2)
+        self.assertTrue('reviewteam Early' in outbox[0]['Subject'])
+        self.assertTrue('reviewsecretary@' in outbox[0]['To'])
+        self.assertTrue('reviewteam3 Early' in outbox[1]['Subject'])
+        self.assertTrue('reviewsecretary3@' in outbox[1]['To'])
 
     def test_request_review_of_rfc(self):
         make_test_data()

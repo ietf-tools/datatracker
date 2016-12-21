@@ -424,6 +424,13 @@ def make_review_data(doc):
     reviewsecretary = Person.objects.create(name=u"Réview Secretary", ascii="Review Secretary", user=u)
     reviewsecretary_email = Email.objects.create(address="reviewsecretary@example.com", person=reviewsecretary)
     Role.objects.create(name_id="secr", person=reviewsecretary, email=reviewsecretary_email, group=team1)
+
+    u = User.objects.create(username="reviewsecretary3")
+    u.set_password("reviewsecretary3+password")
+    u.save()
+    reviewsecretary3 = Person.objects.create(name=u"Réview Secretary3", ascii="Review Secretary3", user=u)
+    reviewsecretary3_email = Email.objects.create(address="reviewsecretary3@example.com", person=reviewsecretary)
+    Role.objects.create(name_id="secr", person=reviewsecretary3, email=reviewsecretary3_email, group=team3)
     
     return review_req
 
