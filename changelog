@@ -1,3 +1,58 @@
+ietfdb (6.40.3) ietf; urgency=medium
+
+  **Review tool enhancements and Django 1.8 adaptations**
+
+  This is a bugfix/enhancement release focused on addressing feedback on the
+  recently introduced review management functionality and doing further
+  adaptations to the Django 1.8 framework.
+
+  From the commit log:
+
+  * Merged in [12606] from rjsparks@nostrum.com:
+    Tweaked the docevent description for the event noting that a chartering
+    effort has been abandoned. Fixes #2099.
+
+  * Merged in [12596] from rjsparks@nostrum.com:
+    Show other completed reviews of a document on page showing the status of a
+    review request. Fixes #2083.  
+
+  * Merged in [12595] from rjsparks@nostrum.com:
+    Improved the team review content templates. Related to #2075.  
+
+  * Merged in [12594] from rjsparks@nostrum.com:
+    Provided templates for directly entered review contents for those
+    teams/review-types that have them. Fixes #2075.  
+
+  * Merged in [12593] from rjsparks@nostrum.com:
+    Send mail to team secretaries when a review is explicitly requested.
+    Changed the From and Subject for assignment emails to reviewers to make it
+    clearer what the review is for and who assigned it. Fixes #2053 and #2114.
+
+  * Merged in [12589] from rjsparks@nostrum.com:
+    Show additional details about a review request when completing it. 
+    Fixes #2112.  
+
+  * Merged in [12588] from rjsparks@nostrum.com:
+    Changed how we display review text to follow the tecnique used with other
+    large blocks of pasted or imported text (shepherds writeups for instance).
+    Fixes #2104.  
+
+  * Fixed some pyflakes and form initialization issues with the upgrade to
+    DurationField.
+
+  * Extended the form fields used for duration to accept additional formats,
+    including formats the secretariat are currently using, in order to avoid
+    UI trouble with the TimedeltaField --> DurationField transition.
+
+  * Upgraded custom TimedeltaFields to use the builtin DurationField from
+    Django 1.8, and adjusted forms and initialization values accordingly.
+
+  * Merged in [12521] and [12540] from rjsparks@nostrum.com:
+    Removed classes obviated in r12520.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  21 Dec 2016 13:04:48 -0800
+
+
 ietfdb (6.40.2) ietf; urgency=medium
 
   **Docker image based on Debian:jessie and MySQL 5.6**
