@@ -8,7 +8,7 @@ from django import forms
 from django.contrib.auth.decorators import login_required
 from django.utils.html import mark_safe
 from django.core.exceptions import ValidationError
-from django.template.loader import render_to_string
+from django.template.loader import render_to_string, TemplateDoesNotExist
 from django.core.urlresolvers import reverse as urlreverse
 
 from ietf.doc.models import (Document, NewRevisionDocEvent, State, DocAlias,
@@ -573,11 +573,18 @@ def complete_review(request, name, request_id):
 
             return redirect("doc_view", name=review_req.review.name)
     else:
-        form = CompleteReviewForm(review_req, initial={
+        initial={
             "reviewed_rev": review_req.reviewed_rev,
             "result": review_req.result_id,
             "cc": ", ".join(cc),
-        })
+        }
+
+        try:
+            initial['review_content'] = render_to_string('/group/%s/review/content_templates/%s.txt' % (review_req.team.acronym, review_req.type.slug), {})
+        except TemplateDoesNotExist:
+            pass
+
+        form = CompleteReviewForm(review_req, initial=initial)
 
     mail_archive_query_urls = mailarch.construct_query_urls(review_req)
 
