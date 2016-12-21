@@ -96,8 +96,9 @@ class MeetingModelForm(forms.ModelForm):
 
     def __init__(self,*args,**kwargs):
         super(MeetingModelForm, self).__init__(*args,**kwargs)
-        for f in [ 'idsubmit_cutoff_warning_days', 'idsubmit_cutoff_time_utc', ]:
-            self.fields[f].help_text = kwargs['instance']._meta.get_field(f).help_text
+        if 'instance' in kwargs:
+            for f in [ 'idsubmit_cutoff_warning_days', 'idsubmit_cutoff_time_utc', ]:
+                self.fields[f].help_text = kwargs['instance']._meta.get_field(f).help_text
 
     def clean_number(self):
         number = self.cleaned_data['number']

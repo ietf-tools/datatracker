@@ -4,7 +4,7 @@ import re
 import six
 import datetime
 
-import debug
+import debug                            # pyflakes:ignore
 
 from django import forms
 from django.core.validators import validate_email

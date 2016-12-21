@@ -66,7 +66,6 @@ class Serializer(BaseSerializer):
         elif isinstance(data, Bundle):
             return render("api/dictitem.html", {"data":dict((key, self.to_simple_html(val, options)) for (key, val) in data.data.items())})
         elif hasattr(data, 'dehydrated_type'):
-            debug.show('data')
             if getattr(data, 'dehydrated_type', None) == 'related' and data.is_m2m == False:
                 return render("api/relitem.html", {"fk": data.fk_resource, "val": self.to_simple_html(data.value, options)})
             elif getattr(data, 'dehydrated_type', None) == 'related' and data.is_m2m == True:

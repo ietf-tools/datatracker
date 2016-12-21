@@ -3,7 +3,6 @@ import codecs
 
 from django import forms
 from django.db.models import Q
-from django.forms.fields import DurationField
 
 from ietf.doc.models import Document, DocAlias, State, NewRevisionDocEvent
 from ietf.doc.utils import get_document_content
@@ -14,7 +13,7 @@ from ietf.meeting.helpers import get_next_interim_number, make_materials_directo
 from ietf.meeting.helpers import is_meeting_approved, get_next_agenda_name
 from ietf.message.models import Message
 from ietf.person.models import Person
-from ietf.utils.fields import DatepickerDateField
+from ietf.utils.fields import DatepickerDateField, DurationField
 
 # need to insert empty option for use in ChoiceField
 # countries.insert(0, ('', '-'*9 ))
