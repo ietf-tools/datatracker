@@ -113,6 +113,6 @@
   <h2>{{ doc.type.name }}<br><small>{{ doc.name }}</small></h2>
 
   {% if doc.rev and content != None %}
-    {{ content|safe|keep_spacing|sanitize_html|safe }}
+    <pre class="pasted">{{ content|urlize|safe|sanitize_html|safe }}</pre>
   {% endif %}
 {% endblock %}
