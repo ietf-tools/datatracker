@@ -1,11 +1,10 @@
-from django.conf.urls import patterns
+from django.conf.urls import url
 from django.views.generic import TemplateView
 
-urlpatterns = patterns('',
-    (r'^$',  'ietf.release.views.release'),
-    (r'^(?P<version>[0-9.]+.*)/$',  'ietf.release.views.release'),
-    (r'^about/?$',  TemplateView.as_view(template_name='release/about.html')),
-    (r'^todo/?$',  TemplateView.as_view(template_name='release/todo.html')),
-
-)
+urlpatterns = [
+    url(r'^$',  'ietf.release.views.release'),
+    url(r'^(?P<version>[0-9.]+.*)/$',  'ietf.release.views.release'),
+    url(r'^about/?$',  TemplateView.as_view(template_name='release/about.html')),
+    url(r'^todo/?$',  TemplateView.as_view(template_name='release/todo.html')),
+]
 

@@ -1,6 +1,6 @@
-from django.conf.urls import patterns, url
+from django.conf.urls import url
 
-urlpatterns = patterns('ietf.secr.announcement.views',
-    url(r'^$', 'main', name='announcement'),
-    url(r'^confirm/$', 'confirm', name='announcement_confirm'),
-)
+urlpatterns = [
+    url(r'^$', 'ietf.secr.announcement.views.main', name='announcement'),
+    url(r'^confirm/$', 'ietf.secr.announcement.views.confirm', name='announcement_confirm'),
+]

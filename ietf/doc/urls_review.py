@@ -1,7 +1,7 @@
-from django.conf.urls import patterns, url
+from django.conf.urls import url
 from ietf.doc import views_review
 
-urlpatterns = patterns('',
+urlpatterns = [
     url(r'^$', views_review.request_review),
     url(r'^(?P<request_id>[0-9]+)/$', views_review.review_request),
     url(r'^(?P<request_id>[0-9]+)/close/$', views_review.close_request),
@@ -10,5 +10,4 @@ urlpatterns = patterns('',
     url(r'^(?P<request_id>[0-9]+)/complete/$', views_review.complete_review),
     url(r'^(?P<request_id>[0-9]+)/searchmailarchive/$', views_review.search_mail_archive),
     url(r'^(?P<request_id>[0-9]+)/editcomment/$', views_review.edit_comment),
-)
-
+]
