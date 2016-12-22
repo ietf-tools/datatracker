@@ -42,7 +42,7 @@ class GroupAdmin(admin.ModelAdmin):
 
     # SDO reminder
     def get_urls(self):
-        from django.conf.urls import patterns, url
+        from django.conf.urls import url
 
         def wrap(view):
             def wrapper(*args, **kwargs):
@@ -51,10 +51,10 @@ class GroupAdmin(admin.ModelAdmin):
 
         info = self.model._meta.app_label, self.model._meta.model_name
 
-        urls = patterns('',
+        urls = [
             url(r'^reminder/$', wrap(self.send_reminder), name='%s_%s_reminder' % info),
             url(r'^(.+)/reminder/$', wrap(self.send_one_reminder), name='%s_%s_one_reminder' % info),
-            )
+        ]
         urls += super(GroupAdmin, self).get_urls()
         return urls
 
