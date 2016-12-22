@@ -2,17 +2,22 @@
 
 import six
 import debug                            # pyflakes:ignore
+from inspect import isclass
 
 from django.conf.urls import url as django_url
 
-#@debug.trace
 def url(regex, view, kwargs=None, name=None, prefix=''):
     if isinstance(view, (list, tuple)):
         pass                            # use the name passed in
     elif isinstance(view, six.string_types):
         name = view
-    elif callable(view):
-        name = "%s.%s" % (view.__module__, view.__name__)
+    elif isclass(view) or hasattr(view, '__class__'):
+        pass
+    elif callable(view) and hasattr(view, '__name__'):
+        if str(view.__module__).startswith('django.views.generic'):
+            pass
+        else:
+            name = "%s.%s" % (view.__module__, view.__name__)
     else:
         raise NotImplementedError("Auto-named url from view of type %s: %s" % (type(view), view))
     if name:
