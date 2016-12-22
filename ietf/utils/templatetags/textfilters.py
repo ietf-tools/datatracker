@@ -1,6 +1,6 @@
 from __future__ import unicode_literals
 
-from django.template.base import Library
+from django.template.library import Library
 from django.template.defaultfilters import stringfilter
 
 from ietf.utils.text import xslugify as _xslugify
