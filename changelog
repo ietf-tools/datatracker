@@ -50,7 +50,7 @@ ietfdb (6.40.3) ietf; urgency=medium
   * Merged in [12521] and [12540] from rjsparks@nostrum.com:
     Removed classes obviated in r12520.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  21 Dec 2016 13:04:48 -0800
+ -- Henrik Levkowetz <henrik@levkowetz.com>  22 Dec 2016 10:08:29 +0000
 
 
 ietfdb (6.40.2) ietf; urgency=medium
