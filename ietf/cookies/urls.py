@@ -1,16 +1,16 @@
 # Copyright The IETF Trust 2010, All Rights Reserved
 
-from django.conf.urls import patterns
+from django.conf.urls import url
 from ietf.cookies import views
 
-urlpatterns = patterns('',
-     (r'^$', views.preferences),
-     (r'^new_enough/(?P<days>.+)$', views.new_enough),
-     (r'^new_enough/', views.new_enough),
-     (r'^expires_soon/(?P<days>.+)$', views.expires_soon),
-     (r'^expires_soon/', views.expires_soon),
-     (r'^full_draft/(?P<enabled>.+)$', views.full_draft),
-     (r'^full_draft/', views.full_draft),
-     (r'^left_menu/(?P<enabled>.+)$', views.left_menu),
-     (r'^left_menu/', views.left_menu),
-)
+urlpatterns = [
+    url(r'^$', views.preferences),
+    url(r'^new_enough/(?P<days>.+)$', views.new_enough),
+    url(r'^new_enough/', views.new_enough),
+    url(r'^expires_soon/(?P<days>.+)$', views.expires_soon),
+    url(r'^expires_soon/', views.expires_soon),
+    url(r'^full_draft/(?P<enabled>.+)$', views.full_draft),
+    url(r'^full_draft/', views.full_draft),
+    url(r'^left_menu/(?P<enabled>.+)$', views.left_menu),
+    url(r'^left_menu/', views.left_menu),
+]

@@ -113,7 +113,7 @@ class TemplateCoverageLoader(BaseLoader):
         global template_coverage_collection, loaded_templates
         if template_coverage_collection == True:
             loaded_templates.add(str(template_name))
-        raise TemplateDoesNotExist
+        raise TemplateDoesNotExist(template_name)
     load_template_source.is_usable = True
 
 class RecordUrlsMiddleware(object):

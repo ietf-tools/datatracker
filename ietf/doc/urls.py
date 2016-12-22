@@ -30,7 +30,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from django.conf.urls import patterns, url, include
+from django.conf.urls import url, include
 from django.views.generic import RedirectView
 from django.conf import settings
 
@@ -42,13 +42,13 @@ session_patterns = [
     url(r'^(?P<session_id>\d+)/remove$', views_doc.remove_sessionpresentation),
 ]
 
-urlpatterns = patterns('',
-    (r'^/?$', views_search.search),
+urlpatterns = [ 
+    url(r'^/?$', views_search.search),
     url(r'^(?P<name>[A-Za-z0-9\._\+\-]+)$', views_search.search_for_name, name="doc_search_for_name"),
     url(r'^search/$', views_search.search, name="doc_search"),
     url(r'^in-last-call/$', views_search.drafts_in_last_call, name="drafts_in_last_call"),
     url(r'^ad/(?P<name>[\w.-]+)/$(?u)', views_search.docs_for_ad, name="docs_for_ad"),
-    (r'^ad2/(?P<name>[\w.-]+)/$(?u)', RedirectView.as_view(url='/doc/ad/%(name)s/', permanent=True)),
+    url(r'^ad2/(?P<name>[\w.-]+)/$(?u)', RedirectView.as_view(url='/doc/ad/%(name)s/', permanent=True)),
     url(r'^rfc-status-changes/$', views_status_change.rfc_status_changes, name='rfc_status_changes'),
     url(r'^start-rfc-status-change/(?:%(name)s/)?$' % settings.URL_REGEXPS, views_status_change.start_rfc_status_change, name='start_rfc_status_change'),
     url(r'^iesg/(?P<last_call_only>[A-Za-z0-9.-]+/)?$', views_search.drafts_in_iesg_process, name="drafts_in_iesg_process"),
@@ -75,8 +75,8 @@ urlpatterns = patterns('',
     url(r'^%(name)s/ballot/(?P<ballot_id>[0-9]+)/$' % settings.URL_REGEXPS, views_doc.document_ballot, name="doc_ballot"),
     url(r'^%(name)s/ballot/(?P<ballot_id>[0-9]+)/position/$' % settings.URL_REGEXPS, views_ballot.edit_position),
     url(r'^%(name)s/ballot/(?P<ballot_id>[0-9]+)/emailposition/$' % settings.URL_REGEXPS, views_ballot.send_ballot_comment, name='doc_send_ballot_comment'),
-    (r'^%(name)s/(?:%(rev)s/)?doc.json$' % settings.URL_REGEXPS, views_doc.document_json),
-    (r'^%(name)s/ballotpopup/(?P<ballot_id>[0-9]+)/$' % settings.URL_REGEXPS, views_doc.ballot_popup),
+    url(r'^%(name)s/(?:%(rev)s/)?doc.json$' % settings.URL_REGEXPS, views_doc.document_json),
+    url(r'^%(name)s/ballotpopup/(?P<ballot_id>[0-9]+)/$' % settings.URL_REGEXPS, views_doc.ballot_popup),
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/reviewrequest/', include("ietf.doc.urls_review")),
 
     url(r'^%(name)s/email-aliases/$' % settings.URL_REGEXPS, RedirectView.as_view(pattern_name='doc_email', permanent=False),name='doc_specific_email_aliases'),
@@ -120,12 +120,12 @@ urlpatterns = patterns('',
     url(r'^help/relationships/$', 'ietf.doc.views_help.relationship_help', name="relationship_help"),
     url(r'^help/relationships/(?P<subset>\w+)/$', 'ietf.doc.views_help.relationship_help', name="relationship_subset_help"),
 
-    (r'^%(name)s/meetings/?$' % settings.URL_REGEXPS, views_doc.all_presentations),
+    url(r'^%(name)s/meetings/?$' % settings.URL_REGEXPS, views_doc.all_presentations),
 
-    (r'^%(charter)s/' % settings.URL_REGEXPS, include('ietf.doc.urls_charter')),
-    (r'^%(name)s/conflict-review/' % settings.URL_REGEXPS, include('ietf.doc.urls_conflict_review')),
-    (r'^%(name)s/status-change/' % settings.URL_REGEXPS, include('ietf.doc.urls_status_change')),
-    (r'^%(name)s/material/' % settings.URL_REGEXPS, include('ietf.doc.urls_material')),
-    (r'^%(name)s/session/' % settings.URL_REGEXPS, include('ietf.doc.urls_material')),
-    (r'^(?P<name>[A-Za-z0-9._+-]+)/session/', include(session_patterns)),
-)
+    url(r'^%(charter)s/' % settings.URL_REGEXPS, include('ietf.doc.urls_charter')),
+    url(r'^%(name)s/conflict-review/' % settings.URL_REGEXPS, include('ietf.doc.urls_conflict_review')),
+    url(r'^%(name)s/status-change/' % settings.URL_REGEXPS, include('ietf.doc.urls_status_change')),
+    url(r'^%(name)s/material/' % settings.URL_REGEXPS, include('ietf.doc.urls_material')),
+    url(r'^%(name)s/session/' % settings.URL_REGEXPS, include('ietf.doc.urls_material')),
+    url(r'^(?P<name>[A-Za-z0-9._+-]+)/session/', include(session_patterns)),
+]
