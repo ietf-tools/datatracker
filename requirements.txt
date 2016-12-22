@@ -7,7 +7,7 @@ coverage>=4.0.1,!=4.0.2
 #cssselect>=0.6.1               # for PyQuery
 decorator>=3.4.0
 defusedxml>=0.4.1		# for TastyPie when ussing xml; not a declared dependency
-Django>=1.8.16,<1.9
+Django>=1.9,<1.10
 django-bootstrap3>=5.1.1,<7.0.0 # django-bootstrap 7.0 requires django 1.8
 django-formtools>=1.0		# instead of django.contrib.formtools in 1.8
 django-markup>=1.1
@@ -25,7 +25,6 @@ mock>=2.0.0
 MySQL-python>=1.2.5
 pathlib>=1.0
 Pillow>=3.0
-pip>=6.1.1,<9.0
 pyang>=1.6
 pyflakes>=0.8.1
 pyquery>=1.2.13,!=1.2.14	# Pyqyery 1.2.14 fails on some selectors or stacked selectors
