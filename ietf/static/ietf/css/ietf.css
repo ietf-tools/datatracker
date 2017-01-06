@@ -568,6 +568,11 @@ table.simple-table td:last-child {
   width: 7em;
 }
 
+.popover .docname {
+  padding-left: 1em;
+  text-indent: -1em;
+}
+
 .stats-time-graph {
   height: 15em;
 }

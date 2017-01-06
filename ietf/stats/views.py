@@ -1,9 +1,12 @@
 import datetime, itertools, json, calendar
+from collections import defaultdict
 
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.core.urlresolvers import reverse as urlreverse
 from django.http import HttpResponseRedirect, HttpResponseForbidden
+from django.db.models import Count
+from django.utils.safestring import mark_safe
 
 import dateutil.relativedelta
 
@@ -15,10 +18,115 @@ from ietf.review.utils import (extract_review_request_data,
 from ietf.group.models import Role, Group
 from ietf.person.models import Person
 from ietf.name.models import ReviewRequestStateName, ReviewResultName
+from ietf.doc.models import Document
 from ietf.ietfauth.utils import has_role
 
 def stats_index(request):
     return render(request, "stats/index.html")
+
+def generate_query_string(query_dict, overrides):
+    query_part = u""
+
+    if query_dict or overrides:
+        d = query_dict.copy()
+        for k, v in overrides.iteritems():
+            if type(v) in (list, tuple):
+                if not v:
+                    if k in d:
+                        del d[k]
+                else:
+                    d.setlist(k, v)
+            else:
+                if v is None or v == u"":
+                    if k in d:
+                        del d[k]
+                else:
+                    d[k] = v
+
+        if d:
+            query_part = u"?" + d.urlencode()
+
+    return query_part
+
+
+def document_stats(request, stats_type=None, document_state=None):
+    def build_document_stats_url(stats_type_override=Ellipsis, document_state_override=Ellipsis, get_overrides={}):
+        kwargs = {
+            "stats_type": stats_type if stats_type_override is Ellipsis else stats_type_override,
+            "document_state": document_state if document_state_override is Ellipsis else document_state_override,
+        }
+
+        return urlreverse(document_stats, kwargs={ k: v for k, v in kwargs.iteritems() if v is not None }) + generate_query_string(request.GET, get_overrides)
+
+    # statistics type - one of the tables or the chart
+    possible_stats_types = [
+        ("authors", "Number of authors"),
+#        ("pages", "Pages"),
+#        ("format", "Format"),
+#        ("spectech", "Specification techniques"),
+    ]
+
+    possible_stats_types = [ (slug, label, build_document_stats_url(stats_type_override=slug))
+                             for slug, label in possible_stats_types ]
+
+    if not stats_type:
+        return HttpResponseRedirect(build_document_stats_url(stats_type_override=possible_stats_types[0][0]))
+
+    possible_document_states = [
+        ("all", "All"),
+        ("rfc", "RFCs"),
+        ("draft", "Drafts (not published as RFC)"),
+    ]
+
+    possible_document_states = [ (slug, label, build_document_stats_url(document_state_override=slug))
+                                for slug, label in possible_document_states ]
+
+    if not document_state:
+        return HttpResponseRedirect(build_document_stats_url(document_state_override=possible_document_states[0][0]))
+    
+
+    # filter documents
+    doc_qs = Document.objects.filter(type="draft")
+
+    if document_state == "rfc":
+        doc_qs = doc_qs.filter(states__type="draft", states__slug="rfc")
+    elif document_state == "draft":
+        doc_qs = doc_qs.exclude(states__type="draft", states__slug="rfc")
+
+    chart_data = []
+    table_data = []
+    stats_title = ""
+
+    if stats_type == "authors":
+        stats_title = "Number of authors for each document"
+
+        groups = defaultdict(list)
+
+        for name, author_count in doc_qs.values_list("name").annotate(Count("authors")).iterator():
+            groups[author_count].append(name)
+
+        total_docs = sum(len(names) for author_count, names in groups.iteritems())
+
+        series_data = []
+        for author_count, names in sorted(groups.iteritems(), key=lambda t: t[0]):
+            series_data.append((author_count, len(names) * 100.0 / total_docs))
+            table_data.append((author_count, names))
+
+        chart_data.append({
+            "data": series_data,
+            "name": "Percentage of documents",
+        })
+
+
+    return render(request, "stats/document_stats.html", {
+        "chart_data": mark_safe(json.dumps(chart_data)),
+        "table_data": table_data,
+        "stats_title": stats_title,
+        "possible_stats_types": possible_stats_types,
+        "stats_type": stats_type,
+        "possible_document_states": possible_document_states,
+        "document_state": document_state,
+    })
 
 @login_required
 def review_stats(request, stats_type=None, acronym=None):
@@ -39,29 +147,7 @@ def review_stats(request, stats_type=None, acronym=None):
         if acr:
             kwargs["acronym"] = acr
 
-        base_url = urlreverse(review_stats, kwargs=kwargs)
-        query_part = u""
-
-        if request.GET or get_overrides:
-            d = request.GET.copy()
-            for k, v in get_overrides.iteritems():
-                if type(v) in (list, tuple):
-                    if not v:
-                        if k in d:
-                            del d[k]
-                    else:
-                        d.setlist(k, v)
-                else:
-                    if v is None or v == u"":
-                        if k in d:
-                            del d[k]
-                    else:
-                        d[k] = v
-
-            if d:
-                query_part = u"?" + d.urlencode()
-            
-        return base_url + query_part
+        return urlreverse(review_stats, kwargs=kwargs) + generate_query_string(request.GET, get_overrides)
 
     def get_choice(get_parameter, possible_choices, multiple=False):
         values = request.GET.getlist(get_parameter)

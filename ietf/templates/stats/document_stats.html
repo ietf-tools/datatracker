@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% load origin %}
+
+{% load ietf_filters staticfiles bootstrap3 %}
+
+{% block title %}{{ stats_title }}{% endblock %}
+
+{% block pagehead %}
+  <link rel="stylesheet" href="{% static 'bootstrap-datepicker/css/bootstrap-datepicker3.min.css' %}">
+{% endblock %}
+
+{% block content %}
+  {% origin %}
+
+  <h1>Document statistics</h1>
+
+  <div class="stats-options well">
+    <div>
+      Show:
+      <div class="btn-group">
+        {% for slug, label, url in possible_stats_types %}
+          <a class="btn btn-default {% if slug == stats_type %}active{% endif %}" href="{{ url }}">{{ label }}</a>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div>
+      Document types:
+      <div class="btn-group">
+        {% for slug, label, url in possible_document_states %}
+          <a class="btn btn-default {% if slug == document_state %}active{% endif %}" href="{{ url }}">{{ label }}</a>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  {% if stats_type == "authors" %}
+    {% include "stats/document_stats_authors.html" %}
+  {% endif %}
+{% endblock %}
+
+{% block js %}
+  <script src="{% static 'highcharts/highcharts.js' %}"></script>
+  <script src="{% static 'highcharts/modules/exporting.js' %}"></script>
+  <script src="{% static 'highcharts/modules/offline-exporting.js' %}"></script>
+  <script src="{% static 'ietf/js/document-stats.js' %}"></script>
+{% endblock %}

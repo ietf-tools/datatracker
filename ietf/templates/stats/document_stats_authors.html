@@ -1,0 +1,71 @@
+<h3>{{ stats_title }}</h3>
+
+<div id="chart"></div>
+
+<script>
+ var chartConf = {
+     chart: {
+         type: 'column'
+     },
+     title: {
+         text: '{{ stats_title|escapejs }}'
+     },
+     xAxis: {
+         tickInterval: 1,
+         title: {
+             text: 'Number of authors'
+         }
+     },
+     yAxis: {
+         title: {
+             text: 'Percentage of documents'
+         },
+         labels: {
+             formatter: function () {
+                 return this.value + '%';
+             }
+         }
+     },
+     legend: {
+         enabled: false,
+     },
+     tooltip: {
+         formatter: function () {
+             var s = '<b>' + this.x + ' ' + (this.x == 1 ? "author" : 'authors') + '</b>';
+             console.log(this.points)
+
+             $.each(this.points, function () {
+                 s += '<br/>' + this.series.name + ': ' +
+                      this.y.toFixed(1) + '%';
+             });
+
+             return s;
+         },
+         shared: true
+     },
+     series: {{ chart_data }}
+ };
+</script>
+
+<h3>Data</h3>
+
+<table class="table table-condensed">
+  <thead>
+    <tr>
+      <th>Authors</th>
+      <th>Documents</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for author_count, names in table_data %}
+      <tr>
+        <td>{{ author_count }}</td>
+        <td><a class="popover-docnames"
+               href=""
+               data-docnames="{% for n in names|slice:":20" %}{{ n }}{% if not forloop.last %} {% endif %}{% endfor %}"
+               data-sliced="{% if names|length > 20 %}1{% endif %}"
+            >{{ names|length }}</a></td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
