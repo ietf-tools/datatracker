@@ -49,11 +49,11 @@ def generate_query_string(query_dict, overrides):
     return query_part
 
 
-def document_stats(request, stats_type=None, document_state=None):
-    def build_document_stats_url(stats_type_override=Ellipsis, document_state_override=Ellipsis, get_overrides={}):
+def document_stats(request, stats_type=None, document_type=None):
+    def build_document_stats_url(stats_type_override=Ellipsis, document_type_override=Ellipsis, get_overrides={}):
         kwargs = {
             "stats_type": stats_type if stats_type_override is Ellipsis else stats_type_override,
-            "document_state": document_state if document_state_override is Ellipsis else document_state_override,
+            "document_type": document_type if document_type_override is Ellipsis else document_type_override,
         }
 
         return urlreverse(document_stats, kwargs={ k: v for k, v in kwargs.iteritems() if v is not None }) + generate_query_string(request.GET, get_overrides)
@@ -72,33 +72,42 @@ def document_stats(request, stats_type=None, document_state=None):
     if not stats_type:
         return HttpResponseRedirect(build_document_stats_url(stats_type_override=possible_stats_types[0][0]))
 
-    possible_document_states = [
+    possible_document_types = [
         ("all", "All"),
         ("rfc", "RFCs"),
-        ("draft", "Drafts (not published as RFC)"),
+        ("draft", "Drafts"),
     ]
 
-    possible_document_states = [ (slug, label, build_document_stats_url(document_state_override=slug))
-                                for slug, label in possible_document_states ]
+    possible_document_types = [ (slug, label, build_document_stats_url(document_type_override=slug))
+                                for slug, label in possible_document_types ]
 
-    if not document_state:
-        return HttpResponseRedirect(build_document_stats_url(document_state_override=possible_document_states[0][0]))
+    if not document_type:
+        return HttpResponseRedirect(build_document_stats_url(document_type_override=possible_document_types[0][0]))
     
 
     # filter documents
     doc_qs = Document.objects.filter(type="draft")
 
-    if document_state == "rfc":
+    if document_type == "rfc":
         doc_qs = doc_qs.filter(states__type="draft", states__slug="rfc")
-    elif document_state == "draft":
+    elif document_type == "draft":
         doc_qs = doc_qs.exclude(states__type="draft", states__slug="rfc")
 
     chart_data = []
     table_data = []
+
+    if document_type == "all":
+        doc_label = "document"
+    elif document_type == "rfc":
+        doc_label = "RFC"
+    elif document_type == "draft":
+        doc_label = "draft"
+
     stats_title = ""
 
     if stats_type == "authors":
-        stats_title = "Number of authors for each document"
+
+        stats_title = "Number of authors for each {}".format(doc_label)
 
         groups = defaultdict(list)
 
@@ -114,7 +123,8 @@ def document_stats(request, stats_type=None, document_state=None):
 
         chart_data.append({
             "data": series_data,
-            "name": "Percentage of documents",
+            "name": "Percentage of {}s".format(doc_label),
+            "animation": False,
         })
 
 
@@ -124,8 +134,9 @@ def document_stats(request, stats_type=None, document_state=None):
         "stats_title": stats_title,
         "possible_stats_types": possible_stats_types,
         "stats_type": stats_type,
-        "possible_document_states": possible_document_states,
-        "document_state": document_state,
+        "possible_document_types": possible_document_types,
+        "document_type": document_type,
+        "doc_label": doc_label,
     })
 
 @login_required

@@ -26,10 +26,10 @@
     </div>
 
     <div>
-      Document types:
+      Document type:
       <div class="btn-group">
-        {% for slug, label, url in possible_document_states %}
-          <a class="btn btn-default {% if slug == document_state %}active{% endif %}" href="{{ url }}">{{ label }}</a>
+        {% for slug, label, url in possible_document_types %}
+          <a class="btn btn-default {% if slug == document_type %}active{% endif %}" href="{{ url }}">{{ label }}</a>
         {% endfor %}
       </div>
     </div>

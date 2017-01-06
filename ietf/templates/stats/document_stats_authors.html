@@ -7,6 +7,12 @@
      chart: {
          type: 'column'
      },
+     credits: {
+         enabled: false,
+     },
+     exporting: {
+         fallbackToExportServer: false,
+     },
      title: {
          text: '{{ stats_title|escapejs }}'
      },
@@ -18,7 +24,7 @@
      },
      yAxis: {
          title: {
-             text: 'Percentage of documents'
+             text: 'Percentage of {{ doc_label }}s'
          },
          labels: {
              formatter: function () {
@@ -32,7 +38,6 @@
      tooltip: {
          formatter: function () {
              var s = '<b>' + this.x + ' ' + (this.x == 1 ? "author" : 'authors') + '</b>';
-             console.log(this.points)
 
              $.each(this.points, function () {
                  s += '<br/>' + this.series.name + ': ' +
