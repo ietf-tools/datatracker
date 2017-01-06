@@ -12,6 +12,34 @@ class StatisticsTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 
+    def test_document_stats(self):
+        make_test_data()
+
+        # check redirect
+        url = urlreverse(ietf.stats.views.document_stats)
+
+        authors_url = urlreverse(ietf.stats.views.document_stats, kwargs={ "stats_type": "authors" })
+
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 302)
+        self.assertTrue(authors_url in r["Location"])
+
+        authors_all_url = urlreverse(ietf.stats.views.document_stats, kwargs={ "stats_type": "authors", "document_type": "all" })
+
+        r = self.client.get(authors_url)
+        self.assertEqual(r.status_code, 302)
+        self.assertTrue(authors_all_url in r["Location"])
+
+        # check various stats types
+        for stats_type in ["authors"]:
+            for document_type in ["all", "rfc", "draft"]:
+                url = urlreverse(ietf.stats.views.document_stats, kwargs={ "stats_type": stats_type, "document_type": document_type })
+                r = self.client.get(url)
+                self.assertEqual(r.status_code, 200)
+                q = PyQuery(r.content)
+                self.assertTrue(q('#chart'))
+                self.assertTrue(q('table.stats-data'))
+
     def test_review_stats(self):
         doc = make_test_data()
         review_req = make_review_data(doc)
