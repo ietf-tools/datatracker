@@ -15,6 +15,9 @@ warnings.filterwarnings("ignore", message="initial_data fixtures are deprecated.
 warnings.filterwarnings("ignore", message="The popen2 module is deprecated.  Use the subprocess module.", module="ietf.utils.pipe")
 warnings.filterwarnings("ignore", message="Reversing by dotted path is deprecated")
 warnings.filterwarnings("ignore", message=r"Support for string view arguments to url\(\) is deprecated and will be removed in Django 1.10")
+# This is triggered by the TimedeltaField, which we retain only for the sake
+# of old migrations:
+warnings.filterwarnings("ignore", message=r"SubfieldBase has been deprecated. Use Field.from_db_value instead.")
 
 try:
     import syslog
@@ -257,6 +260,7 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.http.ConditionalGetMiddleware',
     'ietf.middleware.SQLLogMiddleware',
