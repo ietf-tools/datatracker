@@ -8,7 +8,7 @@ from django.contrib.auth.models import AnonymousUser
 from django.contrib import messages
 from django.core.urlresolvers import reverse
 from django.http import Http404, HttpResponseRedirect, HttpResponseForbidden
-from django.shortcuts import render_to_response, get_object_or_404, render, redirect
+from django.shortcuts import render, get_object_or_404, redirect
 from django.template import RequestContext
 from django.template.loader import render_to_string
 from django.db.models import Count
@@ -53,7 +53,7 @@ def index(request):
             nomcom.ann_url = "/nomcom/ann/#%4d" % year
         else:
             nomcom.ann_url = None
-    return render_to_response('nomcom/index.html',
+    return render(request, 'nomcom/index.html',
                               {'nomcom_list': nomcom_list,}, RequestContext(request))
 
 
@@ -61,7 +61,7 @@ def year_index(request, year):
     nomcom = get_nomcom_by_year(year)
     home_template = '/nomcom/%s/%s' % (nomcom.group.acronym, HOME_TEMPLATE)
     template = render_to_string(home_template, {})
-    return render_to_response('nomcom/year_index.html',
+    return render(request, 'nomcom/year_index.html',
                               {'nomcom': nomcom,
                                'year': year,
                                'selected': 'index',
@@ -98,10 +98,12 @@ def announcements(request):
 
     regimes.sort(key=lambda x: x["group"].start_year, reverse=True)
 
-    return render_to_response("nomcom/announcements.html",
-                              { 'curr_chair' : regimes[0]["chair"] if regimes else None,
-                                'regimes' : regimes },
-                              context_instance=RequestContext(request))
+    return render(request, "nomcom/announcements.html",
+                           {
+                               'curr_chair' : regimes[0]["chair"] if regimes else None,
+                               'regimes' : regimes,
+                           },
+                       )
 
 @role_required("Nomcom")
 def private_key(request, year):
@@ -120,7 +122,7 @@ def private_key(request, year):
             return HttpResponseRedirect(back_url)
     else:
         form = PrivateKeyForm()
-    return render_to_response('nomcom/private_key.html',
+    return render(request, 'nomcom/private_key.html',
                               {'nomcom': nomcom,
                                'year': year,
                                'back_url': back_url,
@@ -182,7 +184,7 @@ def private_index(request, year):
                 s[state['slug']] = all_nominee_positions.filter(position__name=s['position__name'],
                                                                 state=state['slug']).count()
 
-    return render_to_response('nomcom/private_index.html',
+    return render(request, 'nomcom/private_index.html',
                               {'nomcom': nomcom,
                                'year': year,
                                'nominee_positions': nominee_positions,
@@ -251,7 +253,7 @@ def send_reminder_mail(request, year, type):
         else:
             messages.warning(request, "Please, select at least one nominee")
 
-    return render_to_response('nomcom/send_reminder_mail.html',
+    return render(request, 'nomcom/send_reminder_mail.html',
                               {'nomcom': nomcom,
                                'year': year,
                                'nominees': annotated_nominees,
@@ -279,7 +281,7 @@ def private_merge_person(request, year):
         else:
             form = MergePersonForm(nomcom=nomcom)
 
-    return render_to_response('nomcom/private_merge_person.html',
+    return render(request, 'nomcom/private_merge_person.html',
                               {'nomcom': nomcom,
                                'year': year,
                                'form': form,
@@ -304,7 +306,7 @@ def private_merge_nominee(request, year):
         else:
             form = MergeNomineeForm(nomcom=nomcom)
 
-    return render_to_response('nomcom/private_merge_nominee.html',
+    return render(request, 'nomcom/private_merge_nominee.html',
                               {'nomcom': nomcom,
                                'year': year,
                                'form': form,
@@ -315,7 +317,7 @@ def private_merge_nominee(request, year):
 def requirements(request, year):
     nomcom = get_nomcom_by_year(year)
     positions = nomcom.position_set.all()
-    return render_to_response('nomcom/requirements.html',
+    return render(request, 'nomcom/requirements.html',
                               {'nomcom': nomcom,
                                'positions': positions,
                                'year': year,
@@ -325,7 +327,7 @@ def requirements(request, year):
 def questionnaires(request, year):
     nomcom = get_nomcom_by_year(year)
     positions = nomcom.position_set.all()
-    return render_to_response('nomcom/questionnaires.html',
+    return render(request, 'nomcom/questionnaires.html',
                               {'nomcom': nomcom,
                                'positions': positions,
                                'year': year,
@@ -361,14 +363,14 @@ def nominate(request, year, public, newperson):
 
     if not has_publickey:
         messages.warning(request, "This Nomcom is not yet accepting nominations")
-        return render_to_response(template,
+        return render(request, template,
                               {'nomcom': nomcom,
                                'year': year,
                                'selected': 'nominate'}, RequestContext(request))
 
     if nomcom.group.state_id == 'conclude':
         messages.warning(request, "Nominations to this Nomcom are closed.")
-        return render_to_response(template,
+        return render(request, template,
                               {'nomcom': nomcom,
                                'year': year,
                                'selected': 'nominate'}, RequestContext(request))
@@ -391,7 +393,7 @@ def nominate(request, year, public, newperson):
         else:
             form = NominateForm(nomcom=nomcom, user=request.user, public=public)
 
-    return render_to_response(template,
+    return render(request, template,
                               {'form': form,
                                'nomcom': nomcom,
                                'year': year,
@@ -485,7 +487,7 @@ def private_feedback_email(request, year):
         nomcom_ready = True
         
     if not nomcom_ready:
-        return render_to_response(template,
+        return render(request, template,
                           {'nomcom': nomcom,
                            'year': year,
                            'selected': 'feedback_email',
@@ -502,7 +504,7 @@ def private_feedback_email(request, year):
             form = FeedbackEmailForm(nomcom=nomcom)
             messages.success(request, 'The feedback email has been registered.')
 
-    return render_to_response(template,
+    return render(request, template,
                               {'form': form,
                                'nomcom': nomcom,
                                'year': year,
@@ -525,7 +527,7 @@ def private_questionnaire(request, year):
         nomcom_ready = True
         
     if not nomcom_ready:
-        return render_to_response(template,
+        return render(request, template,
                           {'nomcom': nomcom,
                            'year': year,
                            'selected': 'questionnaire',
@@ -543,7 +545,7 @@ def private_questionnaire(request, year):
     else:
         form = QuestionnaireForm(nomcom=nomcom, user=request.user)
 
-    return render_to_response(template,
+    return render(request, template,
                               {'form': form,
                                'questionnaire_response': questionnaire_response,
                                'nomcom': nomcom,
@@ -596,7 +598,7 @@ def process_nomination_status(request, year, nominee_position_id, state, date, h
             messages.success(request,  'Your nomination on %s has been set as %s' % (nominee_position.position.name, state.name))
     else:
         form = NominationResponseCommentForm()
-    return render_to_response('nomcom/process_nomination_status.html',
+    return render(request, 'nomcom/process_nomination_status.html',
                               {'nomcom': nomcom,
                                'year': year,
                                'nominee_position': nominee_position,
@@ -650,7 +652,7 @@ def view_feedback(request, year):
         nominees_feedback.append( {'nominee':nominee, 'feedback':nominee_feedback} )
     independent_feedback = [ft.feedback_set.get_by_nomcom(nomcom).count() for ft in independent_feedback_types]
 
-    return render_to_response('nomcom/view_feedback.html',
+    return render(request, 'nomcom/view_feedback.html',
                               {'year': year,
                                'selected': 'view_feedback',
                                'nominees': nominees,
@@ -747,7 +749,7 @@ def view_feedback_pending(request, year):
             slug = rest[0]
             rest = rest[1]
         type_dict[slug] = t
-    return render_to_response('nomcom/view_feedback_pending.html',
+    return render(request, 'nomcom/view_feedback_pending.html',
                               {'year': year,
                                'selected': 'feedback_pending',
                                'formset': formset,
@@ -769,7 +771,7 @@ def view_feedback_unrelated(request, year):
         feedback_types.append({'ft': ft,
                                'feedback': ft.feedback_set.get_by_nomcom(nomcom)})
 
-    return render_to_response('nomcom/view_feedback_unrelated.html',
+    return render(request, 'nomcom/view_feedback_unrelated.html',
                               {'year': year,
                                'selected': 'view_feedback',
                                'feedback_types': feedback_types,
@@ -790,7 +792,7 @@ def view_feedback_nominee(request, year, nominee_id):
     else:
         FeedbackLastSeen.objects.create(reviewer=request.user.person,nominee=nominee)
 
-    return render_to_response('nomcom/view_feedback_nominee.html',
+    return render(request, 'nomcom/view_feedback_nominee.html',
                               {'year': year,
                                'selected': 'view_feedback',
                                'nominee': nominee,
@@ -814,7 +816,7 @@ def edit_nominee(request, year, nominee_id):
     else:
         form = EditNomineeForm(instance=nominee)
 
-    return render_to_response('nomcom/edit_nominee.html',
+    return render(request, 'nomcom/edit_nominee.html',
                               {'year': year,
                                'selected': 'index',
                                'nominee': nominee,
@@ -854,7 +856,7 @@ def edit_nomcom(request, year):
         formset = ReminderDateInlineFormSet(instance=nomcom)
         form = EditNomcomForm(instance=nomcom)
 
-    return render_to_response('nomcom/edit_nomcom.html',
+    return render(request, 'nomcom/edit_nomcom.html',
                               {'form': form,
                                'formset': formset,
                                'nomcom': nomcom,
@@ -871,7 +873,7 @@ def list_templates(request, year):
     positions = nomcom.position_set.all()
     template_list = DBTemplate.objects.filter(group=nomcom.group).exclude(path__contains='/position/')
 
-    return render_to_response('nomcom/list_templates.html',
+    return render(request, 'nomcom/list_templates.html',
                               {'template_list': template_list,
                                'positions': positions,
                                'year': year,
@@ -910,7 +912,7 @@ def list_positions(request, year):
     nomcom = get_nomcom_by_year(year)
     positions = nomcom.position_set.order_by('-is_open')
 
-    return render_to_response('nomcom/list_positions.html',
+    return render(request, 'nomcom/list_positions.html',
                               {'positions': positions,
                                'year': year,
                                'selected': 'edit_positions',
@@ -932,7 +934,7 @@ def remove_position(request, year, position_id):
     if request.POST.get('remove', None):
         position.delete()
         return redirect('nomcom_list_positions', year=year)
-    return render_to_response('nomcom/remove_position.html',
+    return render(request, 'nomcom/remove_position.html',
                               {'year': year,
                                'position': position,
                                'nomcom': nomcom,
@@ -963,7 +965,7 @@ def edit_position(request, year, position_id=None):
     else:
         form = PositionForm(instance=position, nomcom=nomcom)
 
-    return render_to_response('nomcom/edit_position.html',
+    return render(request, 'nomcom/edit_position.html',
                               {'form': form,
                                'position': position,
                                'year': year,

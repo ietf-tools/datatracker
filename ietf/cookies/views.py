@@ -1,7 +1,6 @@
 # Copyright The IETF Trust 2010, All Rights Reserved
 
-from django.shortcuts import render_to_response as render
-from django.template import RequestContext
+from django.shortcuts import render
 from django.conf import settings
 
 import debug                            # pyflakes:ignore
@@ -32,7 +31,7 @@ def preferences(request, **kwargs):
             preferences[key] = settings.USER_PREFERENCE_DEFAULTS[key]
             del_cookies += [key]
     request.COOKIES.update(preferences)
-    response = render("cookies/settings.html", preferences, context_instance=RequestContext(request))
+    response = render(request, "cookies/settings.html", preferences )
     for key in new_cookies:
         response.set_cookie(key, new_cookies[key], settings.PREFERENCES_COOKIE_AGE)
     for key in del_cookies:

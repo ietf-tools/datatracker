@@ -47,8 +47,7 @@ from django import forms
 from django.conf import settings
 from django.db import models
 from django.http import HttpResponse
-from django.shortcuts import render_to_response, render, redirect
-from django.template import RequestContext
+from django.shortcuts import render, redirect
 from django.contrib.sites.models import Site
 
 
@@ -82,12 +81,12 @@ def review_decisions(request, year=None):
 
     timeframe = u"%s" % year if year else u"the past 6 months"
 
-    return render_to_response('iesg/review_decisions.html',
+    return render(request, 'iesg/review_decisions.html',
                               dict(events=events,
                                    years=years,
                                    year=year,
                                    timeframe=timeframe),
-                              context_instance=RequestContext(request))
+                              )
 
 def agenda_json(request, date=None):
     data = agenda_data(date)
@@ -188,19 +187,19 @@ def agenda(request, date=None):
         data["sections"]["1.3"]["title"] = data["sections"]["1.3"]["title"].replace("minutes", '<a href="https://www.ietf.org/iesg/internal/minutes.txt">Minutes</a>')
 
     request.session['ballot_edit_return_point'] = request.path_info
-    return render_to_response("iesg/agenda.html", {
+    return render(request, "iesg/agenda.html", {
             "date": data["date"],
             "sections": sorted(data["sections"].iteritems()),
             "settings": settings,
-            }, context_instance=RequestContext(request))
+            } )
 
 def agenda_txt(request, date=None):
     data = agenda_data(date)
-    return render_to_response("iesg/agenda.txt", {
+    return render(request, "iesg/agenda.txt", {
             "date": data["date"],
             "sections": sorted(data["sections"].iteritems()),
             "domain": Site.objects.get_current().domain,
-            }, context_instance=RequestContext(request), content_type="text/plain; charset=%s"%settings.DEFAULT_CHARSET)
+            }, content_type="text/plain; charset=%s"%settings.DEFAULT_CHARSET)
 
 def agenda_scribe_template(request, date=None):
     data = agenda_data(date)
@@ -210,12 +209,12 @@ def agenda_scribe_template(request, date=None):
         if "docs" in section:
             # why are we here including documents that have no discuss/comment?
             appendix_docs.extend(section["docs"])
-    return render_to_response("iesg/scribe_template.html", {
+    return render(request, "iesg/scribe_template.html", {
             "date": data["date"],
             "sections": sections,
             "appendix_docs": appendix_docs,
             "domain": Site.objects.get_current().domain,
-            }, context_instance=RequestContext(request) )
+            } )
 
 @role_required('Area Director', 'Secretariat')
 def agenda_moderator_package(request, date=None):
@@ -261,21 +260,21 @@ def agenda_moderator_package(request, date=None):
     data["sections"]["7"]["ads"] = sorted(Person.objects.filter(role__name="ad", role__group__state="active", role__group__type="area"),
                                           key=lambda p: p.name_parts()[3])
 
-    return render_to_response("iesg/moderator_package.html", {
+    return render(request, "iesg/moderator_package.html", {
             "date": data["date"],
             "sections": flattened_sections,
-            }, context_instance=RequestContext(request))
+            } )
 
 @role_required('Area Director', 'Secretariat')
 def agenda_package(request, date=None):
     data = agenda_data(date)
-    return render_to_response("iesg/agenda_package.txt", {
+    return render(request, "iesg/agenda_package.txt", {
             "date": data["date"],
             "sections": sorted(data["sections"].iteritems()),
             "roll_call": data["sections"]["1.1"]["text"],
             "minutes": data["sections"]["1.3"]["text"],
             "management_items": [(num, section) for num, section in data["sections"].iteritems() if "6" < num < "7"],
-            }, context_instance=RequestContext(request), content_type='text/plain')
+            }, content_type='text/plain')
 
 
 def agenda_documents_txt(request):
@@ -469,10 +468,8 @@ def milestones_needing_review(request):
         for g, milestones in groups.iteritems():
             g.milestones_needing_review = sorted(milestones, key=lambda m: m.due)
 
-    return render_to_response('iesg/milestones_needing_review.html',
-                              dict(ads=sorted(ad_list, key=lambda ad: ad.plain_name()),
-                                   ),
-                              context_instance=RequestContext(request))
+    return render(request, 'iesg/milestones_needing_review.html',
+                  dict(ads=sorted(ad_list, key=lambda ad: ad.plain_name()),))
 
 def photos(request):
     roles = sorted(Role.objects.filter(group__type='area', group__state='active', name_id='ad'),key=lambda x: "" if x.group.acronym=="gen" else x.group.acronym)

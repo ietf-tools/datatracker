@@ -1,12 +1,11 @@
 from functools import update_wrapper
 
-from django import template
 from django.contrib import admin
 from django.contrib.admin.utils import unquote
 from django.core.exceptions import PermissionDenied
 from django.core.management import load_command_class
 from django.http import Http404
-from django.shortcuts import render_to_response
+from django.shortcuts import render
 from django.utils.encoding import force_unicode
 from django.utils.html import escape
 from django.utils.translation import ugettext as _
@@ -76,10 +75,8 @@ class GroupAdmin(admin.ModelAdmin):
             'output': output,
             'sdo': sdo,
             }
-        return render_to_response('admin/group/group/send_sdo_reminder.html',
-                                  context,
-                                  context_instance = template.RequestContext(request, current_app=self.admin_site.name),
-                                 )
+        return render(request, 'admin/group/group/send_sdo_reminder.html', context )
+
 
     def send_one_reminder(self, request, object_id):
         model = self.model

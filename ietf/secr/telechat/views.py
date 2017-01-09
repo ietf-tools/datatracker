@@ -3,8 +3,7 @@ import datetime
 
 from django.contrib import messages
 from django.forms.formsets import formset_factory
-from django.shortcuts import render_to_response, get_object_or_404, redirect
-from django.template import RequestContext
+from django.shortcuts import render, get_object_or_404, redirect
 
 from ietf.doc.models import DocEvent, Document, BallotDocEvent, BallotPositionDocEvent, WriteupDocEvent
 from ietf.doc.utils import get_document_content, add_state_change_event
@@ -132,10 +131,9 @@ def bash(request, date):
 
     agenda = agenda_data(date=date)
 
-    return render_to_response('telechat/bash.html', {
+    return render(request, 'telechat/bash.html', {
         'agenda': agenda,
         'date': date},
-        RequestContext(request, {}),
     )
 
 @role_required('Secretariat')
@@ -150,11 +148,10 @@ def doc(request, date):
     if doc:
         return redirect('telechat_doc_detail', date=date, name=doc.name)
     else:
-        return render_to_response('telechat/doc.html', {
+        return render(request, 'telechat/doc.html', {
         'agenda': agenda,
         'date': date,
         'document': None},
-        RequestContext(request, {}),
     )
 
 @role_required('Secretariat')
@@ -283,7 +280,7 @@ def doc_detail(request, date, name):
         else:
             conflictdoc = None
 
-    return render_to_response('telechat/doc.html', {
+    return render(request, 'telechat/doc.html', {
         'date': date,
         'document': doc,
         'conflictdoc': conflictdoc,
@@ -295,7 +292,6 @@ def doc_detail(request, date, name):
         'writeup': writeup,
         'nav_start': nav_start,
         'nav_end': nav_end},
-        RequestContext(request, {}),
     )
 
 @role_required('Secretariat')
@@ -335,9 +331,8 @@ def main(request):
     next_telechat = get_next_telechat_date().strftime('%Y-%m-%d')
     form = DateSelectForm(choices=choices,initial={'date':next_telechat})
 
-    return render_to_response('telechat/main.html', {
+    return render(request, 'telechat/main.html', {
         'form': form},
-        RequestContext(request, {}),
     )
 
 @role_required('Secretariat')
@@ -349,11 +344,10 @@ def management(request, date):
     agenda = agenda_data(date=date)
     issues = TelechatAgendaItem.objects.filter(type=3).order_by('id')
 
-    return render_to_response('telechat/management.html', {
+    return render(request, 'telechat/management.html', {
         'agenda': agenda,
         'date': date,
         'issues': issues},
-        RequestContext(request, {}),
     )
 
 @role_required('Secretariat')
@@ -375,13 +369,12 @@ def minutes(request, date):
 
     # FIXME: this doesn't show other documents
 
-    return render_to_response('telechat/minutes.html', {
+    return render(request, 'telechat/minutes.html', {
         'agenda': agenda,
         'date': date,
         'last_date': previous,
         'pa_docs': pa_docs,
         'da_docs': da_docs},
-        RequestContext(request, {}),
     )
 
 @role_required('Secretariat')
@@ -403,10 +396,9 @@ def roll_call(request, date):
     ads = Person.objects.filter(role__name='ad', role__group__state="active",role__group__type="area")
     sorted_ads = sorted(ads, key = lambda a: a.name_parts()[3])
 
-    return render_to_response('telechat/roll_call.html', {
+    return render(request, 'telechat/roll_call.html', {
         'agenda': agenda,
         'date': date,
         'people':sorted_ads},
-        RequestContext(request, {}),
     )
     

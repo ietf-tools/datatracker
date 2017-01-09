@@ -1,8 +1,7 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
 from django.db import connection
-from django.shortcuts import render_to_response
-from django.template import RequestContext
+from django.shortcuts import render
 from django.http import HttpResponsePermanentRedirect
 from ietf.utils.log import log
 from ietf.utils.mail import log_smtp_exception
@@ -21,8 +20,8 @@ class SMTPExceptionMiddleware(object):
     def process_exception(self, request, exception):
 	if isinstance(exception, smtplib.SMTPException):
             (extype, value, tb) = log_smtp_exception(exception)
-	    return render_to_response('email_failed.html', {'exception': extype, 'args': value, 'traceback': "".join(tb)},
-		context_instance=RequestContext(request))
+	    return render(request, 'email_failed.html',
+                          {'exception': extype, 'args': value, 'traceback': "".join(tb)} )
 	return None
 
 class RedirectTrailingPeriod(object):

@@ -2,8 +2,7 @@
 
 import os
 
-from django.template import RequestContext
-from django.shortcuts import get_object_or_404, render_to_response
+from django.shortcuts import get_object_or_404, render
 
 import debug                            # pyflakes:ignore
 
@@ -20,8 +19,7 @@ def state_index(request):
             groups = StateType.objects.filter(slug__startswith=type.slug)
             type.stategroups =  [ g.slug[len(type.slug)+1:] for g in groups if not g == type ] or ""
                 
-    return render_to_response('help/state_index.html', {"types": types},
-        context_instance=RequestContext(request))
+    return render(request, 'help/state_index.html', {"types": types})
 
 def state(request, doc, type=None):
     if type:
@@ -31,8 +29,7 @@ def state(request, doc, type=None):
     slug = "%s-%s" % (doc,type) if type else doc
     statetype = get_object_or_404(StateType, slug=slug)
     states = State.objects.filter(used=True, type=statetype).order_by('order')
-    return render_to_response('help/states.html', {"doc": doc, "type": statetype, "states":states},
-        context_instance=RequestContext(request))
+    return render(request, 'help/states.html', {"doc": doc, "type": statetype, "states":states} )
 
 def environment(request):
     if request.is_secure():
@@ -40,5 +37,4 @@ def environment(request):
     else:
         os.environ['SCHEME'] = "http"
     os.environ["URL"] = request.build_absolute_uri(".")
-    return render_to_response('help/environment.html', {"env": os.environ},
-        context_instance=RequestContext(request))
+    return render(request, 'help/environment.html', {"env": os.environ} )

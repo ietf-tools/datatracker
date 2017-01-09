@@ -1,7 +1,6 @@
 # Copyright The IETF Trust 2008, All Rights Reserved
 
-from django.shortcuts import render_to_response, get_object_or_404, redirect
-from django.template import RequestContext
+from django.shortcuts import render, get_object_or_404, redirect
 from django.http import Http404, HttpResponseForbidden
 from django import forms
 
@@ -19,7 +18,7 @@ import debug                            # pyflakes:ignore
 def streams(request):
     streams = [ s.slug for s in StreamName.objects.all().exclude(slug__in=['ietf', 'legacy']) ]
     streams = Group.objects.filter(acronym__in=streams)
-    return render_to_response('group/index.html', {'streams':streams}, context_instance=RequestContext(request))
+    return render(request, 'group/index.html', {'streams':streams})
 
 def stream_documents(request, acronym):
     streams = [ s.slug for s in StreamName.objects.all().exclude(slug__in=['ietf', 'legacy']) ]
@@ -31,7 +30,7 @@ def stream_documents(request, acronym):
 
     qs = Document.objects.filter(states__type="draft", states__slug__in=["active", "rfc"], stream=acronym)
     docs, meta = prepare_document_table(request, qs)
-    return render_to_response('group/stream_documents.html', {'stream':stream, 'docs':docs, 'meta':meta, 'editable':editable }, context_instance=RequestContext(request))
+    return render(request, 'group/stream_documents.html', {'stream':stream, 'docs':docs, 'meta':meta, 'editable':editable } )
 
 class StreamEditForm(forms.Form):
     delegates = SearchableEmailsField(required=False, only_users=True)
@@ -69,10 +68,11 @@ def stream_edit(request, acronym):
     else:
         form = StreamEditForm(initial=dict(delegates=Email.objects.filter(role__group=group, role__name="delegate")))
 
-    return render_to_response('group/stream_edit.html',
-                              {'group': group,
-                               'chairs': chairs,
-                               'form': form,
-                               },
-                              context_instance=RequestContext(request))
+    return render(request, 'group/stream_edit.html',
+                    {
+                        'group': group,
+                        'chairs': chairs,
+                        'form': form,
+                    },
+                )
 

@@ -4,7 +4,7 @@ from django.conf import settings
 from django.contrib.auth import REDIRECT_FIELD_NAME
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpResponseRedirect, HttpResponseForbidden
-from django.shortcuts import render_to_response, get_object_or_404
+from django.shortcuts import render, get_object_or_404
 from django.utils.http import urlquote
 
 from ietf.ietfauth.utils import has_role
@@ -99,8 +99,6 @@ def sec_only(func):
         if has_role(request.user, "Secretariat"):
             return func(request, *args, **kwargs)
 
-        return render_to_response('unauthorized.html',{
-            'user_name':request.user.person}
-        )
+        return render(request, 'unauthorized.html',{ 'user_name':request.user.person } )
 
     return wraps(func)(wrapper)

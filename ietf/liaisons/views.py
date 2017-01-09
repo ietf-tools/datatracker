@@ -314,7 +314,7 @@ def add_comment(request, object_id):
     else:
         form = AddCommentForm()
   
-    return render(request, 'liaisons/add_comment.html',dict(liaison=statement,form=form))
+    return render(request, 'liaisons/add_comment.html', dict(liaison=statement,form=form) )
 
 @can_submit_liaison_required
 def liaison_add(request, type=None, **kwargs):

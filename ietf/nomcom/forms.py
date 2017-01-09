@@ -3,8 +3,7 @@ from django import forms
 from formtools.preview import FormPreview, AUTO_ID
 from django.shortcuts import get_object_or_404, redirect
 from django.utils.decorators import method_decorator
-from django.shortcuts import render_to_response
-from django.template.context import RequestContext
+from django.shortcuts import render
 from django.core.urlresolvers import reverse
 from django.utils.html import mark_safe
 
@@ -118,14 +117,16 @@ class EditMembersFormPreview(FormPreview):
     def preview_get(self, request):
         "Displays the form"
         f = self.form(auto_id=self.get_auto_id(), initial=self.get_initial(request))
-        return render_to_response(self.form_template,
-                                  {'form': f,
-                                  'stage_field': self.unused_name('stage'),
-                                  'state': self.state,
-                                  'year': self.year,
-                                  'nomcom': self.nomcom,
-                                  'selected': 'edit_members'},
-                                  context_instance=RequestContext(request))
+        return render(request, self.form_template,
+                                  {
+                                      'form': f,
+                                      'stage_field': self.unused_name('stage'),
+                                      'state': self.state,
+                                      'year': self.year,
+                                      'nomcom': self.nomcom,
+                                      'selected': 'edit_members',
+                                  }
+                              )
 
     def get_initial(self, request):
         members = self.group.role_set.filter(name__slug='member')
@@ -163,9 +164,9 @@ class EditMembersFormPreview(FormPreview):
             self.process_preview(request, f, context)
             context['hash_field'] = self.unused_name('hash')
             context['hash_value'] = self.security_hash(request, f)
-            return render_to_response(self.preview_template, context, context_instance=RequestContext(request))
+            return render(request, self.preview_template, context )
         else:
-            return render_to_response(self.form_template, context, context_instance=RequestContext(request))
+            return render(request, self.form_template, context )
 
     def post_post(self, request):
         "Validates the POST data. If valid, calls done(). Else, redisplays form."
@@ -178,7 +179,7 @@ class EditMembersFormPreview(FormPreview):
             self.process_preview(request, f, context)
             return self.done(request, f.cleaned_data)
         else:
-            return render_to_response(self.form_template, context, context_instance=RequestContext(request))
+            return render(request, self.form_template, context )
 
     def done(self, request, cleaned_data):
         members_info = self.state['members_info']

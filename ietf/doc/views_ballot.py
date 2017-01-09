@@ -4,10 +4,9 @@
 import datetime, json
 
 from django.http import HttpResponseForbidden, HttpResponseRedirect, Http404
-from django.shortcuts import render, render_to_response, get_object_or_404, redirect
+from django.shortcuts import render, get_object_or_404, redirect
 from django.core.urlresolvers import reverse as urlreverse
 from django.template.loader import render_to_string
-from django.template import RequestContext
 from django import forms
 from django.conf import settings
 
@@ -222,7 +221,7 @@ def edit_position(request, name, ballot_id):
 
     ballot_deferred = doc.active_defer_event()
 
-    return render_to_response('doc/ballot/edit_position.html',
+    return render(request, 'doc/ballot/edit_position.html',
                               dict(doc=doc,
                                    form=form,
                                    ad=ad,
@@ -232,8 +231,7 @@ def edit_position(request, name, ballot_id):
                                    ballot = ballot,
                                    show_discuss_text=old_pos and old_pos.pos.blocking,
                                    blocking_positions=json.dumps(blocking_positions),
-                                   ),
-                              context_instance=RequestContext(request))
+                                   ))
 
 
 @role_required('Area Director','Secretariat')
@@ -311,18 +309,17 @@ def send_ballot_comment(request, name, ballot_id):
 
         cc_select_form = CcSelectForm(mailtrigger_slug='ballot_saved',mailtrigger_context={'doc':doc})
   
-    return render_to_response('doc/ballot/send_ballot_comment.html',
-                              dict(doc=doc,
-                                   subject=subject,
-                                   body=body,
-                                   frm=frm,
-                                   to=addrs.as_strings().to,
-                                   ad=ad,
-                                   can_send=d or c,
-                                   back_url=back_url,
-                                   cc_select_form = cc_select_form,
-                                  ),
-                              context_instance=RequestContext(request))
+        return render(request, 'doc/ballot/send_ballot_comment.html',
+                      dict(doc=doc,
+                          subject=subject,
+                          body=body,
+                          frm=frm,
+                          to=addrs.as_strings().to,
+                          ad=ad,
+                          can_send=d or c,
+                          back_url=back_url,
+                          cc_select_form = cc_select_form,
+                      ))
 
 @role_required('Secretariat')
 def clear_ballot(request, name):
@@ -337,10 +334,9 @@ def clear_ballot(request, name):
             do_undefer_ballot(request,doc)
         return redirect("doc_view", name=doc.name)
 
-    return render_to_response('doc/ballot/clear_ballot.html',
+    return render(request, 'doc/ballot/clear_ballot.html',
                               dict(doc=doc,
-                                   back_url=doc.get_absolute_url()),
-                              context_instance=RequestContext(request))
+                                   back_url=doc.get_absolute_url()))
 
 @role_required('Area Director','Secretariat')
 def defer_ballot(request, name):
@@ -388,11 +384,10 @@ def defer_ballot(request, name):
 
         return HttpResponseRedirect(doc.get_absolute_url())
   
-    return render_to_response('doc/ballot/defer_ballot.html',
+    return render(request, 'doc/ballot/defer_ballot.html',
                               dict(doc=doc,
                                    telechat_date=telechat_date,
-                                   back_url=doc.get_absolute_url()),
-                              context_instance=RequestContext(request))
+                                   back_url=doc.get_absolute_url()))
 
 @role_required('Area Director','Secretariat')
 def undefer_ballot(request, name):
@@ -413,11 +408,10 @@ def undefer_ballot(request, name):
         do_undefer_ballot(request,doc)
         return HttpResponseRedirect(doc.get_absolute_url())
   
-    return render_to_response('doc/ballot/undefer_ballot.html',
+    return render(request, 'doc/ballot/undefer_ballot.html',
                               dict(doc=doc,
                                    telechat_date=telechat_date,
-                                   back_url=doc.get_absolute_url()),
-                              context_instance=RequestContext(request))
+                                   back_url=doc.get_absolute_url()))
 
 class LastCallTextForm(forms.Form):
     last_call_text = forms.CharField(widget=forms.Textarea, required=True)
@@ -477,9 +471,8 @@ def lastcalltext(request, name):
 
                     request_last_call(request, doc)
                     
-                    return render_to_response('doc/draft/last_call_requested.html',
-                                              dict(doc=doc),
-                                              context_instance=RequestContext(request))
+                    return render(request, 'doc/draft/last_call_requested.html',
+                                              dict(doc=doc))
         
         if "regenerate_last_call_text" in request.POST:
             e = generate_last_call_announcement(request, doc)
@@ -497,15 +490,14 @@ def lastcalltext(request, name):
     if not doc.intended_std_level:
         need_intended_status = doc.file_tag()
 
-    return render_to_response('doc/ballot/lastcalltext.html',
+    return render(request, 'doc/ballot/lastcalltext.html',
                               dict(doc=doc,
                                    back_url=doc.get_absolute_url(),
                                    last_call_form=form,
                                    can_request_last_call=can_request_last_call,
                                    can_make_last_call=can_make_last_call,
                                    need_intended_status=need_intended_status,
-                                   ),
-                              context_instance=RequestContext(request))
+                                   ))
 
 class BallotWriteupForm(forms.Form):
     ballot_writeup = forms.CharField(widget=forms.Textarea, required=True)
@@ -582,24 +574,22 @@ def ballot_writeupnotes(request, name):
                 e.desc = "Ballot has been issued"
                 e.save()
 
-                return render_to_response('doc/ballot/ballot_issued.html',
+                return render(request, 'doc/ballot/ballot_issued.html',
                                           dict(doc=doc,
-                                               back_url=doc.get_absolute_url()),
-                                          context_instance=RequestContext(request))
+                                               back_url=doc.get_absolute_url()))
                         
 
     need_intended_status = ""
     if not doc.intended_std_level:
         need_intended_status = doc.file_tag()
 
-    return render_to_response('doc/ballot/writeupnotes.html',
+    return render(request, 'doc/ballot/writeupnotes.html',
                               dict(doc=doc,
                                    back_url=doc.get_absolute_url(),
                                    ballot_issued=bool(doc.latest_event(type="sent_ballot_announcement")),
                                    ballot_writeup_form=form,
                                    need_intended_status=need_intended_status,
-                                   ),
-                              context_instance=RequestContext(request))
+                                   ))
 
 class BallotRfcEditorNoteForm(forms.Form):
     rfc_editor_note = forms.CharField(widget=forms.Textarea, label="RFC Editor Note", required=True)
@@ -646,12 +636,11 @@ def ballot_rfceditornote(request, name):
         # make sure form shows a blank RFC Editor Note
         form = BallotRfcEditorNoteForm(initial=dict(rfc_editor_note=" "))
 
-    return render_to_response('doc/ballot/rfceditornote.html',
+    return render(request, 'doc/ballot/rfceditornote.html',
                               dict(doc=doc,
                                    back_url=doc.get_absolute_url(),
                                    ballot_rfceditornote_form=form,
-                                   ),
-                              context_instance=RequestContext(request))
+                                   ))
 
 class ApprovalTextForm(forms.Form):
     approval_text = forms.CharField(widget=forms.Textarea, required=True)
@@ -701,14 +690,13 @@ def ballot_approvaltext(request, name):
     if not doc.intended_std_level:
         need_intended_status = doc.file_tag()
 
-    return render_to_response('doc/ballot/approvaltext.html',
+    return render(request, 'doc/ballot/approvaltext.html',
                               dict(doc=doc,
                                    back_url=doc.get_absolute_url(),
                                    approval_text_form=form,
                                    can_announce=can_announce,
                                    need_intended_status=need_intended_status,
-                                   ),
-                              context_instance=RequestContext(request))
+                                   ))
 
 @role_required('Secretariat')
 def approve_ballot(request, name):
@@ -737,9 +725,7 @@ def approve_ballot(request, name):
         ballot_writeup += "\n\n" + e.text
 
     if error_duplicate_rfc_editor_note:
-        return render_to_response('doc/draft/rfceditor_note_duplicate_error.html',
-                                  dict(doc=doc),
-                                  context_instance=RequestContext(request))
+        return render(request, 'doc/draft/rfceditor_note_duplicate_error.html', {'doc': doc})
 
     if "NOT be published" in approval_text:
         action = "do_not_publish"
@@ -817,11 +803,10 @@ def approve_ballot(request, name):
 
         return HttpResponseRedirect(doc.get_absolute_url())
 
-    return render_to_response('doc/ballot/approve_ballot.html',
+    return render(request, 'doc/ballot/approve_ballot.html',
                               dict(doc=doc,
                                    action=action,
-                                   announcement=announcement),
-                              context_instance=RequestContext(request))
+                                   announcement=announcement))
 
 
 class MakeLastCallForm(forms.Form):
@@ -921,9 +906,8 @@ def make_last_call(request, name):
         
         form = MakeLastCallForm(initial=initial)
   
-    return render_to_response(templ,
+    return render(request, templ,
                               dict(doc=doc,
                                    form=form,
                                    announcement=announcement,
-                                  ),
-                              context_instance=RequestContext(request))
+                                  ))
