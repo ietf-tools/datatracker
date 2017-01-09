@@ -18,6 +18,9 @@ warnings.filterwarnings("ignore", message=r"Support for string view arguments to
 # This is triggered by the TimedeltaField, which we retain only for the sake
 # of old migrations:
 warnings.filterwarnings("ignore", message=r"SubfieldBase has been deprecated. Use Field.from_db_value instead.")
+# Bootstrap3 library code:
+warnings.filterwarnings("ignore", message=r"render\(\) must be called with a dict, not a Context", module="bootstrap3.utils")
+
 
 try:
     import syslog
