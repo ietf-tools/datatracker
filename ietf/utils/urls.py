@@ -14,13 +14,14 @@ def url(regex, view, kwargs=None, name=None, prefix=''):
     elif isclass(view) or hasattr(view, '__class__'):
         pass
     elif callable(view) and hasattr(view, '__name__'):
-        if str(view.__module__).startswith('django.views.generic'):
+        if str(view.__module__).startswith('django.'):
             pass
         else:
             name = "%s.%s" % (view.__module__, view.__name__)
     else:
         raise NotImplementedError("Auto-named url from view of type %s: %s" % (type(view), view))
     if name:
-        debug.show('name')
+        #debug.show('name')
+        pass
     return django_url(regex, view, kwargs=kwargs, name=name, prefix=prefix)
     
