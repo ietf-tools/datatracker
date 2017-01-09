@@ -43,7 +43,7 @@ session_patterns = [
 ]
 
 urlpatterns = [ 
-    url(r'^/?$', views_search.search),
+    url(r'^$', views_search.search),
     url(r'^(?P<name>[A-Za-z0-9\._\+\-]+)$', views_search.search_for_name, name="doc_search_for_name"),
     url(r'^search/$', views_search.search, name="doc_search"),
     url(r'^in-last-call/$', views_search.drafts_in_last_call, name="drafts_in_last_call"),
