@@ -15,7 +15,16 @@
     {% bootstrap_form form %}
 
     {% buttons %}
-      <button type="submit" class="btn btn-primary">Sign in</button>
+      <table class="col-md-12">
+	 <tr>
+	    <td >
+	       <button type="submit" class="btn btn-primary">Sign in</button>
+	    </td>
+	    <td >
+	       Forgot your password?  <a href="{% url 'ietf.ietfauth.views.password_reset' %}">Request a reset</a>.
+	    </td>
+	 </tr>
+      </table>
     {% endbuttons %}
   </form>
 

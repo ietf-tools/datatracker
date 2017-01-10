@@ -19,6 +19,7 @@
       <li><a rel="nofollow" href="/accounts/profile/">Edit profile</a></li>
     {% else %}
       <li><a rel="nofollow" href="/accounts/login/?next={{request.get_full_path|urlencode}}">Sign in</a></li>
+      <li><a rel="nofollow" href="/accounts/reset/">Password reset</a></li>
     {% endif %}
   {% endif %}
 
