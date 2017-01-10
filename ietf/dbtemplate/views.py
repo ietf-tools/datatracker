@@ -1,6 +1,8 @@
 from django.http import HttpResponseForbidden, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 
+import debug                            # pyflakes:ignore
+
 from ietf.dbtemplate.models import DBTemplate
 from ietf.dbtemplate.forms import DBTemplateForm
 from ietf.group.models import Group
@@ -25,7 +27,7 @@ def template_edit(request, acronym, template_id, base_template='dbtemplate/templ
     chairs = group.role_set.filter(name__slug='chair')
     extra_context = extra_context or {}
 
-    if not has_role(request.user, "Secretariat") and not chairs.filter(person__user=request.user).count():
+    if not has_role(request.user, "Secretariat") and not (request.user.id and chairs.filter(person__user=request.user).count()):
         return HttpResponseForbidden("You are not authorized to access this view")
 
     template = get_object_or_404(DBTemplate, id=template_id, group=group)
