@@ -1,5 +1,17 @@
 $(document).ready(function () {
     if (window.chartConf) {
+        window.chartConf.credits = {
+            enabled: false
+        };
+        window.chartConf.exporting = {
+            fallbackToExportServer: false
+        };
+
+        if (!window.chartConf.legend)
+            window.chartConf.legend = {
+                enabled: false
+            };
+        
         var chart = Highcharts.chart('chart', window.chartConf);
     }
 

@@ -5,33 +5,27 @@
 <script>
  var chartConf = {
      chart: {
-         type: 'column'
+         type: 'line'
      },
      title: {
          text: '{{ stats_title|escapejs }}'
      },
      xAxis: {
-         tickInterval: 1,
          title: {
-             text: 'Number of authors'
+             text: 'Number of pages'
          }
      },
      yAxis: {
          title: {
-             text: 'Percentage of {{ doc_label }}s'
-         },
-         labels: {
-             formatter: function () {
-                 return this.value + '%';
-             }
+             text: 'Number of {{ doc_label }}s'
          }
      },
      tooltip: {
          formatter: function () {
-             var s = '<b>' + this.x + ' ' + (this.x == 1 ? "author" : 'authors') + '</b>';
+             var s = '<b>' + this.x + ' ' + (this.x == 1 ? "page" : 'pages') + '</b>';
 
              $.each(this.points, function () {
-                 s += '<br/>' + chartConf.yAxis.title.text + ': ' + this.y.toFixed(1) + '%';
+                 s += '<br/>' + chartConf.yAxis.title.text + ': ' + this.y;
              });
 
              return s;
@@ -53,9 +47,9 @@
     </tr>
   </thead>
   <tbody>
-    {% for author_count, percentage, names in table_data %}
+    {% for pages, percentage, names in table_data %}
       <tr>
-        <td>{{ author_count }}</td>
+        <td>{{ pages }}</td>
         <td>{{ percentage|floatformat:2 }}%</td>
         <td>{% include "stats/includes/docnames_cell.html" %}</td>
       </tr>

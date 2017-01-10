@@ -37,6 +37,8 @@
 
   {% if stats_type == "authors" %}
     {% include "stats/document_stats_authors.html" %}
+  {% elif stats_type == "pages" %}
+    {% include "stats/document_stats_pages.html" %}
   {% endif %}
 {% endblock %}
 

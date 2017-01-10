@@ -31,7 +31,7 @@ class StatisticsTests(TestCase):
         self.assertTrue(authors_all_url in r["Location"])
 
         # check various stats types
-        for stats_type in ["authors"]:
+        for stats_type in ["authors", "pages"]:
             for document_type in ["all", "rfc", "draft"]:
                 url = urlreverse(ietf.stats.views.document_stats, kwargs={ "stats_type": stats_type, "document_type": document_type })
                 r = self.client.get(url)

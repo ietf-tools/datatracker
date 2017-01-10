@@ -61,7 +61,7 @@ def document_stats(request, stats_type=None, document_type=None):
     # statistics type - one of the tables or the chart
     possible_stats_types = [
         ("authors", "Number of authors"),
-#        ("pages", "Pages"),
+        ("pages", "Pages"),
 #        ("format", "Format"),
 #        ("spectech", "Specification techniques"),
     ]
@@ -106,7 +106,6 @@ def document_stats(request, stats_type=None, document_type=None):
     stats_title = ""
 
     if stats_type == "authors":
-
         stats_title = "Number of authors for each {}".format(doc_label)
 
         groups = defaultdict(list)
@@ -118,14 +117,37 @@ def document_stats(request, stats_type=None, document_type=None):
 
         series_data = []
         for author_count, names in sorted(groups.iteritems(), key=lambda t: t[0]):
-            series_data.append((author_count, len(names) * 100.0 / total_docs))
-            table_data.append((author_count, names))
+            percentage = len(names) * 100.0 / total_docs
+            series_data.append((author_count, percentage))
+            table_data.append((author_count, percentage, names))
 
         chart_data.append({
             "data": series_data,
-            "name": "Percentage of {}s".format(doc_label),
             "animation": False,
         })
+
+    elif stats_type == "pages":
+        stats_title = "Number of pages for each {}".format(doc_label)
+
+        groups = defaultdict(list)
+
+        for name, pages in doc_qs.values_list("name", "pages"):
+            groups[pages].append(name)
+
+        total_docs = sum(len(names) for pages, names in groups.iteritems())
+
+        series_data = []
+        for pages, names in sorted(groups.iteritems(), key=lambda t: t[0]):
+            percentage = len(names) * 100.0 / total_docs
+            if pages is not None:
+                series_data.append((pages, len(names)))
+            table_data.append((pages, percentage, names))
+
+        chart_data.append({
+            "data": series_data,
+            "animation": False,
+        })
+
 
 
     return render(request, "stats/document_stats.html", {
