@@ -400,6 +400,8 @@ TEST_CODE_COVERAGE_EXCLUDE = [
     "idindex/generate_id_abstracts_txt.py",
     "idindex/generate_id_index_txt.py",
     "ietf/checks.py",
+    "ietf/manage.py",
+    "ietf/virtualenv-manage.py",
     "ietf/meeting/timedeltafield.py",   # Dead code, kept for a migration include
     "ietf/review/import_from_review_tool.py",
     "ietf/settings*",
