@@ -2,7 +2,6 @@ import os
 import sys
 import time
 
-from optparse import make_option
 from pathlib import Path
 from StringIO import StringIO
 from textwrap import dedent
@@ -24,11 +23,11 @@ class Command(BaseCommand):
 
     help = dedent(__doc__).strip()
             
-    option_list = BaseCommand.option_list + (
-        make_option('--clean',
+    def add_arguments(self, parser):
+        parser.add_argument('--clean',
             action='store_true', dest='clean', default=False,
-            help='Remove the current directory content before writing new models.'),
-        )
+            help='Remove the current directory content before writing new models.')
+
 
     def handle(self, *filenames, **options):
         """

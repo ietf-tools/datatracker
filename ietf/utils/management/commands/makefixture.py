@@ -38,14 +38,13 @@ python manage.py makefixture --format=xml --indent=4 YourModel[3] AnotherModel a
 #known issues:
 #no support for generic relations
 #no support for one-to-one relations
-from optparse import make_option
 from django.core import serializers
 from django.core.management.base import BaseCommand
 from django.core.management.base import CommandError
 from django.core.management.base import LabelCommand
 from django.db.models.fields.related import ForeignKey
 from django.db.models.fields.related import ManyToManyField
-from django.db.models.loading import get_models
+from django.apps import apps
 
 DEBUG = True
 
@@ -56,16 +55,17 @@ def model_name(m):
 class Command(LabelCommand):
     help = 'Output the contents of the database as a fixture of the given format.'
     args = 'modelname[pk] or modelname[id1:id2] repeated one or more times'
-    option_list = BaseCommand.option_list + (
-        make_option('--skip-related', default=True, action='store_false', dest='propagate',
-            help='Specifies if we shall not add related objects.'),
-        make_option('--reverse', default=[], action='append', dest='reverse',
-            help="Reverse relations to follow (e.g. 'Job.task_set')."),
-        make_option('--format', default='json', dest='format',
-            help='Specifies the output serialization format for fixtures.'),
-        make_option('--indent', default=None, dest='indent', type='int',
-            help='Specifies the indent level to use when pretty-printing output'),
-    )
+
+    def add_arguments(self, parser):
+        parser.add_argument('--skip-related', default=True, action='store_false', dest='propagate',
+            help='Specifies if we shall not add related objects.')
+        parser.add_argument('--reverse', default=[], action='append', dest='reverse',
+            help="Reverse relations to follow (e.g. 'Job.task_set').")
+        parser.add_argument('--format', default='json', dest='format',
+            help='Specifies the output serialization format for fixtures.')
+        parser.add_argument('--indent', default=None, dest='indent', type=int,
+            help='Specifies the indent level to use when pretty-printing output')
+
     def handle_reverse(self, **options):
         follow_reverse = options.get('reverse', [])
         to_reverse = {}
@@ -157,7 +157,7 @@ class Command(LabelCommand):
             raise CommandError("Unable to serialize database: %s" % e)
 
     def get_models(self):
-        return [(m, model_name(m)) for m in get_models()]
+        return [(m, model_name(m)) for m in apps.get_models()]
 
     def get_model_from_name(self, search):
         """Given a name of a model, return the model object associated with it

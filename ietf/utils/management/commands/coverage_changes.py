@@ -4,7 +4,6 @@ import os
 import json
 import codecs
 import gzip
-from optparse import make_option
 
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
@@ -30,18 +29,25 @@ class Command(BaseCommand):
             "\n"
             "    List URLs which are not covered:\n"
             "        $ manage.py {name} --absolute --sections=url | grep False\n"
-            "\n"
-        ).format(**locals())
+            "\n".format(**locals())
+        )
     args = "[[master_json] latest_json]"
-    option_list = BaseCommand.option_list + (
-        make_option('--sections', default='template,url,code', dest='sections',
-            help='Specify which kinds of coverage changes to show. Default: %default'),
-        make_option('--release', dest='release',
+
+    def create_parser(self, prog_name, subcommand):
+        import argparse
+        parser = super(Command, self).create_parser(prog_name, subcommand)
+        parser.formatter_class = argparse.RawDescriptionHelpFormatter
+        return parser
+
+    def add_arguments(self, parser):
+        parser.add_argument('--sections', default='template,url,code', dest='sections',
+            help='Specify which kinds of coverage changes to show. Default: %(default)s\n')
+        parser.add_argument('--release', dest='release',
             help='Which release to use as baseline.  Default is the latest release in '
-                 'the release coverage file.'),
-        make_option('--absolute', dest='absolute', action='store_true', default=False,
-            help='Show absolute figures instead of changes from last release.'),
-    )    
+                 'the release coverage file.')
+        parser.add_argument('--absolute', dest='absolute', action='store_true', default=False,
+            help='Show absolute figures instead of changes from last release.')
+
 
     diff_line_format = "%-58s  %8s  %8s\n"
     list_line_format = "%-68s  %8s\n"
