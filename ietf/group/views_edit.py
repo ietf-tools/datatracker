@@ -35,8 +35,8 @@ def roles_for_group_type(group_type):
     return roles
 
 class GroupForm(forms.Form):
-    name = forms.CharField(max_length=255, label="Name", required=True)
-    acronym = forms.CharField(max_length=10, label="Acronym", required=True)
+    name = forms.CharField(max_length=80, label="Name", required=True)
+    acronym = forms.CharField(max_length=40, label="Acronym", required=True)
     state = forms.ModelChoiceField(GroupStateName.objects.all(), label="State", required=True)
 
     # roles
