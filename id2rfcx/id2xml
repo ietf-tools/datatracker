@@ -46,8 +46,11 @@ if len(sys.argv) <= 1:
     print(__doc__ % locals())
     sys.exit(1)
 
+short_opt = "23hvV"
+long_opt  = ["help", "schema-v2", "schema-v3", "version","verbose",]
+
 try:
-    opts, files = getopt.gnu_getopt(sys.argv[1:], "hvV", ["help", "version","verbose",])
+    opts, files = getopt.gnu_getopt(sys.argv[1:], short_opt, long_opt)
 except Exception as e:
     print("%s: %s" % (program, e))
     sys.exit(1)
@@ -57,12 +60,17 @@ except Exception as e:
 
 # set default values, if any
 opt_verbose = False
+opt_schema  = "v2"
 
 # handle individual options
 for opt, value in opts:
     if   opt in ["-h", "--help"]: # Output this help, then exit
         print(__doc__ % locals())
         sys.exit(1)
+    elif opt in ["-2", "--schema-v2"]: # Use v2 schema
+        opt_schema="v2"
+    elif opt in ["-3", "--schema-v3"]: # Use v2 schema
+        opt_schema="v3"
     elif opt in ["-v", "--version"]: # Output version information, then exit
         print(program, version)
         sys.exit(0)
@@ -95,7 +103,7 @@ for file in files:
         name = re.sub('-[0-9][0-9]', '', inf.stem)
         outf = inf.with_suffix('.xml')
         txt = inf.open().read()
-        p = id2xml.DraftParser()
+        p = id2xml.DraftParser(schema=opt_schema)
         xml = p.parse_to_xml(txt, name)
         outf.open('w').write(xml)
     except Exception as e:

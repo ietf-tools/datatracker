@@ -1,19 +1,24 @@
 import lxml
+#import debug
 from lxml.etree import Element, SubElement, ElementTree
 
 ns={
     'x':'http://relaxng.org/ns/structure/1.0',
     'a':'http://relaxng.org/ns/compatibility/annotations/1.0',
 }
-schema = ElementTree(file="v3.rng")     # TODO: use a path relative to this file or something
-rfc_attributes = schema.xpath("/x:grammar/x:define/x:element[@name='rfc']//x:attribute", namespaces=ns)
-rfc_attr_defaults = dict( (a.get('name'), a.get("{%s}defaultValue"%ns['a'], None)) for a in rfc_attributes )
 
 class DraftParser():
 
     text = None
     root = None
     name = None
+
+    schema = None
+
+    def __init__(self, schema="v3"):
+        self.schema = ElementTree(file=schema+".rng")
+        self.rfc_attr = self.schema.xpath("/x:grammar/x:define/x:element[@name='rfc']//x:attribute", namespaces=ns)
+        self.rfc_attr_defaults = dict( (a.get('name'), a.get("{%s}defaultValue"%ns['a'], None)) for a in self.rfc_attr )
 
     def parse_to_xml(self, text, name, **kwargs):
         self.text = text
@@ -23,12 +28,13 @@ class DraftParser():
 #             print(item.tag)
 
         self.root = Element('rfc')
-        for attr in rfc_attr_defaults:
-            val = rfc_attr_defaults[attr]
-            if val:
-                self.root.set(attr, val)
+        for attr in self.rfc_attr_defaults:
+            if not ':' in attr:
+                val = self.rfc_attr_defaults[attr]
+                if val:
+                    self.root.set(attr, val)
         for attr in kwargs:
-            if attr in rfc_attr_defaults:
+            if attr in self.rfc_attr_defaults:
                 val = kwargs[attr]
                 self.root.set(attr, val)
         self.root.set('docName', self.name)
