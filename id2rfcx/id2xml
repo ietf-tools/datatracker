@@ -1,0 +1,103 @@
+#!/usr/bin/env python
+# -*- python -*-
+
+
+"""
+NAME
+	%(program)s - <short description>
+
+SYNOPSIS
+	%(program)s [OPTIONS] ARGS
+
+DESCRIPTION
+	<long description>
+
+%(options)s
+
+AUTHOR
+	Written by Henrik Levkowetz, <henrik@levkowetz.com>
+
+COPYRIGHT
+        Copyright (c) 2008, The IETF Trust
+        All rights reserved.
+
+        Licenced under the 3-clause BSD license; see the file LICENSE
+        for details.
+"""
+
+import sys, os.path, getopt, re
+
+version = "0.10"
+program = os.path.basename(sys.argv[0])
+progdir = os.path.dirname(sys.argv[0])
+
+# ----------------------------------------------------------------------
+# Parse options
+
+options = ""
+for line in re.findall("\n +(if|elif) +opt in \[(.+)\]:\s+#(.+)\n", open(sys.argv[0]).read()):
+    if not options:
+        options += "OPTIONS\n"
+    options += "        %-16s %s\n" % (line[1].replace('"', ''), line[2])
+options = options.strip()
+
+# with ' < 1:' on the next line, this is a no-op:
+if len(sys.argv) <= 1:
+    print(__doc__ % locals())
+    sys.exit(1)
+
+try:
+    opts, files = getopt.gnu_getopt(sys.argv[1:], "hvV", ["help", "version","verbose",])
+except Exception as e:
+    print("%s: %s" % (program, e))
+    sys.exit(1)
+
+# ----------------------------------------------------------------------
+# Handle options
+
+# set default values, if any
+opt_verbose = False
+
+# handle individual options
+for opt, value in opts:
+    if   opt in ["-h", "--help"]: # Output this help, then exit
+        print(__doc__ % locals())
+        sys.exit(1)
+    elif opt in ["-v", "--version"]: # Output version information, then exit
+        print(program, version)
+        sys.exit(0)
+    elif opt in ["-V", "--verbose"]: # Output version information, then exit
+        opt_verbose = True
+
+# ----------------------------------------------------------------------
+def say(s):
+    sys.stderr.write("%s\n" % (s))
+
+# ----------------------------------------------------------------------
+def note(s):
+    if opt_verbose:
+        sys.stderr.write("%s\n" % (s))
+
+# ----------------------------------------------------------------------
+def die(s, error=1):
+    sys.stderr.write("\n%s: Error: %s\n\n" % (program, s))
+    sys.exit(error)
+
+# ----------------------------------------------------------------------
+# The program itself    
+
+import id2xml
+from pathlib import Path
+
+for file in files:
+    try:
+        inf = Path(file)
+        name = re.sub('-[0-9][0-9]', '', inf.stem)
+        outf = inf.with_suffix('.xml')
+        txt = inf.open().read()
+        p = id2xml.DraftParser()
+        xml = p.parse_to_xml(txt, name)
+        outf.open('w').write(xml)
+    except Exception as e:
+        sys.stderr.write("Failure converting %s to xml: %s\n" % (inf.name, e))
+        raise
