@@ -190,6 +190,7 @@ class SubmitTests(TestCase):
             abstract="Blahblahblah.",
             rev="01",
             pages=2,
+            words=100,
             intended_std_level_id="ps",
             ad=draft.ad,
             expires=datetime.datetime.now() + datetime.timedelta(days=settings.INTERNET_DRAFT_DAYS_TO_EXPIRE),

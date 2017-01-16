@@ -20,6 +20,7 @@ from ietf.group.models import Group
 from ietf.ietfauth.utils import has_role, role_required
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.message.models import Message, MessageAttachment
+from ietf.name.models import FormalLanguageName
 from ietf.submit.forms import ( SubmissionUploadForm, NameEmailForm, EditSubmissionForm,
     PreapprovalForm, ReplacesForm, SubmissionEmailForm, MessageModelForm )
 from ietf.submit.mail import ( send_full_url, send_approval_request_to_group,
@@ -124,55 +125,39 @@ def upload_submission(request):
                 # for this revision.
                 # If so - we're going to update it otherwise we create a new object 
 
-                submission = Submission.objects.filter(name=form.filename, 
-                                                       rev=form.revision,
-                                                       state_id = "waiting-for-draft").distinct()
-                if (len(submission) == 0):
-                    submission = None
-                elif (len(submission) == 1):
-                    submission = submission[0]
-                    
-                    submission.state = DraftSubmissionStateName.objects.get(slug="uploaded")
-                    submission.remote_ip=form.remote_ip
-                    submission.title=form.title
-                    submission.abstract=abstract
-                    submission.rev=form.revision
-                    submission.pages=form.parsed_draft.get_pagecount()
-                    submission.authors="\n".join(authors)
-                    submission.first_two_pages=''.join(form.parsed_draft.pages[:2])
-                    submission.file_size=file_size
-                    submission.file_types=','.join(form.file_types)
-                    submission.submission_date=datetime.date.today()
-                    submission.document_date=form.parsed_draft.get_creation_date()
-                    submission.replaces=""
-                    
-                    submission.save()
+                submissions = Submission.objects.filter(name=form.filename,
+                                                        rev=form.revision,
+                                                        state_id = "waiting-for-draft").distinct()
+
+                if not submissions:
+                    submission = Submission(name=form.filename, rev=form.revision, group=form.group)
+                elif len(submissions) == 1:
+                    submission = submissions[0]
                 else:
                     raise Exception("Multiple submissions found waiting for upload")
 
-                if (submission == None):
-                    try:
-                        submission = Submission.objects.create(
-                                state=DraftSubmissionStateName.objects.get(slug="uploaded"),
-                                remote_ip=form.remote_ip,
-                                name=form.filename,
-                                group=form.group,
-                                title=form.title,
-                                abstract=abstract,
-                                rev=form.revision,
-                                pages=form.parsed_draft.get_pagecount(),
-                                authors="\n".join(authors),
-                                note="",
-                                first_two_pages=''.join(form.parsed_draft.pages[:2]),
-                                file_size=file_size,
-                                file_types=','.join(form.file_types),
-                                submission_date=datetime.date.today(),
-                                document_date=form.parsed_draft.get_creation_date(),
-                                replaces="",
-                        )
-                    except Exception as e:
-                        log("Exception: %s\n" % e)
-                        raise
+                try:
+                    submission.state = DraftSubmissionStateName.objects.get(slug="uploaded")
+                    submission.remote_ip = form.remote_ip
+                    submission.title = form.title
+                    submission.abstract = abstract
+                    submission.pages = form.parsed_draft.get_pagecount()
+                    submission.words = form.parsed_draft.get_wordcount()
+                    submission.authors = "\n".join(authors)
+                    submission.first_two_pages = ''.join(form.parsed_draft.pages[:2])
+                    submission.file_size = file_size
+                    submission.file_types = ','.join(form.file_types)
+                    submission.submission_date = datetime.date.today()
+                    submission.document_date = form.parsed_draft.get_creation_date()
+                    submission.replaces = ""
+
+                    submission.save()
+
+                    submission.formal_languages = FormalLanguageName.objects.filter(slug__in=form.parsed_draft.get_formal_languages())
+
+                except Exception as e:
+                    log("Exception: %s\n" % e)
+                    raise
 
                 # run submission checkers
                 def apply_check(submission, checker, method, fn):
