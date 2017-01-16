@@ -3,7 +3,7 @@ from django.contrib import admin
 from ietf.name.models import (
     BallotPositionName, ConstraintName, DBTemplateTypeName, DocRelationshipName,
     DocReminderTypeName, DocTagName, DocTypeName, DraftSubmissionStateName,
-    FeedbackTypeName, GroupMilestoneStateName, GroupStateName, GroupTypeName,
+    FeedbackTypeName, FormalLanguageName, GroupMilestoneStateName, GroupStateName, GroupTypeName,
     IntendedStdLevelName, IprDisclosureStateName, IprEventTypeName, IprLicenseTypeName,
     LiaisonStatementEventTypeName, LiaisonStatementPurposeName, LiaisonStatementState,
     LiaisonStatementTagName, MeetingTypeName, NomineePositionStateName,
@@ -32,6 +32,7 @@ admin.site.register(DBTemplateTypeName, NameAdmin)
 admin.site.register(DocReminderTypeName, NameAdmin)
 admin.site.register(DocTagName, NameAdmin)
 admin.site.register(DraftSubmissionStateName, NameAdmin)
+admin.site.register(FormalLanguageName, NameAdmin)
 admin.site.register(FeedbackTypeName, NameAdmin)
 admin.site.register(GroupMilestoneStateName, NameAdmin)
 admin.site.register(GroupStateName, NameAdmin)

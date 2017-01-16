@@ -15,7 +15,7 @@ import debug                            # pyflakes:ignore
 
 from ietf.group.models import Group
 from ietf.name.models import ( DocTypeName, DocTagName, StreamName, IntendedStdLevelName, StdLevelName,
-    DocRelationshipName, DocReminderTypeName, BallotPositionName, ReviewRequestStateName )
+    DocRelationshipName, DocReminderTypeName, BallotPositionName, ReviewRequestStateName, FormalLanguageName )
 from ietf.person.models import Email, Person
 from ietf.utils.admin import admin_link
 
@@ -76,6 +76,7 @@ class DocumentInfo(models.Model):
     rev = models.CharField(verbose_name="revision", max_length=16, blank=True)
     pages = models.IntegerField(blank=True, null=True)
     words = models.IntegerField(blank=True, null=True)
+    formal_languages = models.ManyToManyField(FormalLanguageName, blank=True, help_text="Formal languages used in document")
     order = models.IntegerField(default=1, blank=True) # This is probably obviated by SessionPresentaion.order
     intended_std_level = models.ForeignKey(IntendedStdLevelName, verbose_name="Intended standardization level", blank=True, null=True)
     std_level = models.ForeignKey(StdLevelName, verbose_name="Standardization level", blank=True, null=True)

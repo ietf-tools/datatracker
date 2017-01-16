@@ -134,6 +134,8 @@ def document_stats(request, stats_type=None, document_type=None):
     stats_title = ""
     bin_size = 1
 
+    total_docs = docalias_qs.count()
+
     if stats_type == "authors":
         stats_title = "Number of authors for each {}".format(doc_label)
 
@@ -141,8 +143,6 @@ def document_stats(request, stats_type=None, document_type=None):
 
         for name, author_count in generate_canonical_names(docalias_qs.values_list("name").annotate(Count("document__authors"))):
             bins[author_count].append(name)
-
-        total_docs = sum(len(names) for author_count, names in bins.iteritems())
 
         series_data = []
         for author_count, names in sorted(bins.iteritems(), key=lambda t: t[0]):
@@ -162,8 +162,6 @@ def document_stats(request, stats_type=None, document_type=None):
 
         for name, pages in generate_canonical_names(docalias_qs.values_list("name", "document__pages")):
             bins[pages].append(name)
-
-        total_docs = sum(len(names) for pages, names in bins.iteritems())
 
         series_data = []
         for pages, names in sorted(bins.iteritems(), key=lambda t: t[0]):
@@ -187,8 +185,6 @@ def document_stats(request, stats_type=None, document_type=None):
         for name, words in generate_canonical_names(docalias_qs.values_list("name", "document__words")):
             bins[put_into_bin(words, bin_size)].append(name)
 
-        total_docs = sum(len(names) for words, names in bins.iteritems())
-
         series_data = []
         for (value, words), names in sorted(bins.iteritems(), key=lambda t: t[0][0]):
             percentage = len(names) * 100.0 / total_docs
@@ -203,7 +199,7 @@ def document_stats(request, stats_type=None, document_type=None):
         })
 
     elif stats_type == "format":
-        stats_title = "Formats for each {}".format(doc_label)
+        stats_title = "Submission formats for each {}".format(doc_label)
 
         bins = defaultdict(list)
 
@@ -244,8 +240,6 @@ def document_stats(request, stats_type=None, document_type=None):
             if canonical_name:
                 bins[ext.upper()].append(canonical_name)
 
-        total_docs = sum(len(names) for fmt, names in bins.iteritems())
-
         series_data = []
         for fmt, names in sorted(bins.iteritems(), key=lambda t: t[0]):
             percentage = len(names) * 100.0 / total_docs
@@ -258,6 +252,27 @@ def document_stats(request, stats_type=None, document_type=None):
             "animation": False,
         })
 
+    elif stats_type == "formlang":
+        stats_title = "Formal languages used for each {}".format(doc_label)
+
+        bins = defaultdict(list)
+
+        for name, formal_language_name in generate_canonical_names(docalias_qs.values_list("name", "document__formal_languages__name")):
+            bins[formal_language_name].append(name)
+
+        series_data = []
+        for formal_language, names in sorted(bins.iteritems(), key=lambda t: t[0]):
+            percentage = len(names) * 100.0 / total_docs
+            if formal_language is not None:
+                series_data.append((formal_language, len(names)))
+                table_data.append((formal_language, percentage, names))
+
+        chart_data.append({
+            "data": series_data,
+            "animation": False,
+        })
+
+        
     return render(request, "stats/document_stats.html", {
         "chart_data": mark_safe(json.dumps(chart_data)),
         "table_data": table_data,

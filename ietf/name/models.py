@@ -46,6 +46,8 @@ class StdLevelName(NameModel):
 class IntendedStdLevelName(NameModel):
     """Proposed Standard, (Draft Standard), Internet Standard, Experimental,
     Informational, Best Current Practice, Historic, ..."""
+class FormalLanguageName(NameModel):
+    """ABNF, ASN.1, C code, CBOR, JSON, XML, ..."""
 class DocReminderTypeName(NameModel):
     "Stream state"
 class BallotPositionName(NameModel):
