@@ -12,7 +12,7 @@
      },
      xAxis: {
          title: {
-             text: 'Number of pages'
+             text: 'Number of words'
          }
      },
      yAxis: {
@@ -22,7 +22,7 @@
      },
      tooltip: {
          formatter: function () {
-             var s = '<b>' + this.x + ' ' + (this.x == 1 ? "page" : 'pages') + '</b>';
+             var s = '<b>' + this.x + ' - ' + (this.x + {{ bin_size }} - 1) + ' ' + (this.x == 1 ? "word" : 'words') + '</b>';
 
              $.each(this.points, function () {
                  s += '<br/>' + chartConf.yAxis.title.text + ': ' + this.y;
@@ -41,7 +41,7 @@
 <table class="table table-condensed stats-data">
   <thead>
     <tr>
-      <th>Pages</th>
+      <th>Words</th>
       <th>Percentage of {{ doc_label }}s</th>
       <th>{{ doc_label|capfirst }}s</th>
     </tr>

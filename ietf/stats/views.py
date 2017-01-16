@@ -1,4 +1,9 @@
-import datetime, itertools, json, calendar
+import datetime
+import itertools
+import json
+import calendar
+import os
+import re
 from collections import defaultdict
 
 from django.shortcuts import render
@@ -7,6 +12,7 @@ from django.core.urlresolvers import reverse as urlreverse
 from django.http import HttpResponseRedirect, HttpResponseForbidden
 from django.db.models import Count
 from django.utils.safestring import mark_safe
+from django.conf import settings
 
 import dateutil.relativedelta
 
@@ -15,10 +21,11 @@ from ietf.review.utils import (extract_review_request_data,
                                ReviewRequestData,
                                compute_review_request_stats,
                                sum_raw_review_request_aggregations)
+from ietf.submit.models import Submission
 from ietf.group.models import Role, Group
 from ietf.person.models import Person
 from ietf.name.models import ReviewRequestStateName, ReviewResultName
-from ietf.doc.models import Document
+from ietf.doc.models import DocAlias
 from ietf.ietfauth.utils import has_role
 
 def stats_index(request):
@@ -48,7 +55,6 @@ def generate_query_string(query_dict, overrides):
 
     return query_part
 
-
 def document_stats(request, stats_type=None, document_type=None):
     def build_document_stats_url(stats_type_override=Ellipsis, document_type_override=Ellipsis, get_overrides={}):
         kwargs = {
@@ -60,10 +66,11 @@ def document_stats(request, stats_type=None, document_type=None):
 
     # statistics type - one of the tables or the chart
     possible_stats_types = [
-        ("authors", "Number of authors"),
+        ("authors", "Authors"),
         ("pages", "Pages"),
-#        ("format", "Format"),
-#        ("spectech", "Specification techniques"),
+        ("words", "Words"),
+        ("format", "Format"),
+        ("formlang", "Formal languages"),
     ]
 
     possible_stats_types = [ (slug, label, build_document_stats_url(stats_type_override=slug))
@@ -85,13 +92,34 @@ def document_stats(request, stats_type=None, document_type=None):
         return HttpResponseRedirect(build_document_stats_url(document_type_override=possible_document_types[0][0]))
     
 
+    def put_into_bin(value, bin_size):
+        if value is None:
+            return (value, value)
+
+        v = (value // bin_size) * bin_size
+        return (v, "{} - {}".format(v, v + bin_size - 1))
+
+    def generate_canonical_names(docalias_qs):
+        for doc_id, ts in itertools.groupby(docalias_qs.order_by("document"), lambda t: t[0]):
+            chosen = None
+            for t in ts:
+                if chosen is None:
+                    chosen = t
+                else:
+                    if t[0].startswith("rfc"):
+                        chosen = t
+                    elif t[0].startswith("draft") and not chosen[0].startswith("rfc"):
+                        chosen = t
+
+            yield chosen
+
     # filter documents
-    doc_qs = Document.objects.filter(type="draft")
+    docalias_qs = DocAlias.objects.filter(document__type="draft")
 
     if document_type == "rfc":
-        doc_qs = doc_qs.filter(states__type="draft", states__slug="rfc")
+        docalias_qs = docalias_qs.filter(document__states__type="draft", document__states__slug="rfc")
     elif document_type == "draft":
-        doc_qs = doc_qs.exclude(states__type="draft", states__slug="rfc")
+        docalias_qs = docalias_qs.exclude(document__states__type="draft", document__states__slug="rfc")
 
     chart_data = []
     table_data = []
@@ -104,19 +132,20 @@ def document_stats(request, stats_type=None, document_type=None):
         doc_label = "draft"
 
     stats_title = ""
+    bin_size = 1
 
     if stats_type == "authors":
         stats_title = "Number of authors for each {}".format(doc_label)
 
-        groups = defaultdict(list)
+        bins = defaultdict(list)
 
-        for name, author_count in doc_qs.values_list("name").annotate(Count("authors")).iterator():
-            groups[author_count].append(name)
+        for name, author_count in generate_canonical_names(docalias_qs.values_list("name").annotate(Count("document__authors"))):
+            bins[author_count].append(name)
 
-        total_docs = sum(len(names) for author_count, names in groups.iteritems())
+        total_docs = sum(len(names) for author_count, names in bins.iteritems())
 
         series_data = []
-        for author_count, names in sorted(groups.iteritems(), key=lambda t: t[0]):
+        for author_count, names in sorted(bins.iteritems(), key=lambda t: t[0]):
             percentage = len(names) * 100.0 / total_docs
             series_data.append((author_count, percentage))
             table_data.append((author_count, percentage, names))
@@ -129,15 +158,15 @@ def document_stats(request, stats_type=None, document_type=None):
     elif stats_type == "pages":
         stats_title = "Number of pages for each {}".format(doc_label)
 
-        groups = defaultdict(list)
+        bins = defaultdict(list)
 
-        for name, pages in doc_qs.values_list("name", "pages"):
-            groups[pages].append(name)
+        for name, pages in generate_canonical_names(docalias_qs.values_list("name", "document__pages")):
+            bins[pages].append(name)
 
-        total_docs = sum(len(names) for pages, names in groups.iteritems())
+        total_docs = sum(len(names) for pages, names in bins.iteritems())
 
         series_data = []
-        for pages, names in sorted(groups.iteritems(), key=lambda t: t[0]):
+        for pages, names in sorted(bins.iteritems(), key=lambda t: t[0]):
             percentage = len(names) * 100.0 / total_docs
             if pages is not None:
                 series_data.append((pages, len(names)))
@@ -148,7 +177,86 @@ def document_stats(request, stats_type=None, document_type=None):
             "animation": False,
         })
 
+    elif stats_type == "words":
+        stats_title = "Number of words for each {}".format(doc_label)
 
+        bin_size = 500
+
+        bins = defaultdict(list)
+
+        for name, words in generate_canonical_names(docalias_qs.values_list("name", "document__words")):
+            bins[put_into_bin(words, bin_size)].append(name)
+
+        total_docs = sum(len(names) for words, names in bins.iteritems())
+
+        series_data = []
+        for (value, words), names in sorted(bins.iteritems(), key=lambda t: t[0][0]):
+            percentage = len(names) * 100.0 / total_docs
+            if words is not None:
+                series_data.append((value, len(names)))
+
+            table_data.append((words, percentage, names))
+
+        chart_data.append({
+            "data": series_data,
+            "animation": False,
+        })
+
+    elif stats_type == "format":
+        stats_title = "Formats for each {}".format(doc_label)
+
+        bins = defaultdict(list)
+
+        # on new documents, we should have a Submission row with the file types
+        submission_types = {}
+
+        for doc_name, file_types in Submission.objects.values_list("draft", "file_types").order_by("submission_date", "id"):
+            submission_types[doc_name] = file_types
+
+        doc_names_with_missing_types = {}
+        for canonical_name, rev, doc_name in generate_canonical_names(docalias_qs.values_list("name", "document__rev", "document__name")):
+            types = submission_types.get(doc_name)
+            if types:
+                for dot_ext in types.split(","):
+                    bins[dot_ext.lstrip(".").upper()].append(canonical_name)
+
+            else:
+
+                if canonical_name.startswith("rfc"):
+                    filename = canonical_name
+                else:
+                    filename = canonical_name + "-" + rev
+
+                doc_names_with_missing_types[filename] = canonical_name
+
+        # look up the remaining documents on disk
+        for filename in itertools.chain(os.listdir(settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR), os.listdir(settings.RFC_PATH)):
+            t = filename.split(".", 1)
+            if len(t) != 2:
+                continue
+
+            basename, ext = t
+            if any(ext.lower().endswith(blacklisted_ext.lower()) for blacklisted_ext in settings.DOCUMENT_FORMAT_BLACKLIST):
+                continue
+
+            canonical_name = doc_names_with_missing_types.get(basename)
+
+            if canonical_name:
+                bins[ext.upper()].append(canonical_name)
+
+        total_docs = sum(len(names) for fmt, names in bins.iteritems())
+
+        series_data = []
+        for fmt, names in sorted(bins.iteritems(), key=lambda t: t[0]):
+            percentage = len(names) * 100.0 / total_docs
+            series_data.append((fmt, len(names)))
+
+            table_data.append((fmt, percentage, names))
+
+        chart_data.append({
+            "data": series_data,
+            "animation": False,
+        })
 
     return render(request, "stats/document_stats.html", {
         "chart_data": mark_safe(json.dumps(chart_data)),
@@ -159,6 +267,8 @@ def document_stats(request, stats_type=None, document_type=None):
         "possible_document_types": possible_document_types,
         "document_type": document_type,
         "doc_label": doc_label,
+        "bin_size": bin_size,
+        "content_template": "stats/document_stats_{}.html".format(stats_type),
     })
 
 @login_required

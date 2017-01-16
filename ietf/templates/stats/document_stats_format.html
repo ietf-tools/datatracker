@@ -5,14 +5,15 @@
 <script>
  var chartConf = {
      chart: {
-         type: 'line'
+         type: 'column'
      },
      title: {
          text: '{{ stats_title|escapejs }}'
      },
      xAxis: {
+         type: "category",
          title: {
-             text: 'Number of pages'
+             text: 'Format'
          }
      },
      yAxis: {
@@ -22,7 +23,8 @@
      },
      tooltip: {
          formatter: function () {
-             var s = '<b>' + this.x + ' ' + (this.x == 1 ? "page" : 'pages') + '</b>';
+             console.log(this);
+             var s = '<b>' + this.points[0].key + '</b>';
 
              $.each(this.points, function () {
                  s += '<br/>' + chartConf.yAxis.title.text + ': ' + this.y;
@@ -41,7 +43,7 @@
 <table class="table table-condensed stats-data">
   <thead>
     <tr>
-      <th>Pages</th>
+      <th>Format</th>
       <th>Percentage of {{ doc_label }}s</th>
       <th>{{ doc_label|capfirst }}s</th>
     </tr>
