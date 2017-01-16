@@ -292,6 +292,15 @@ class Draft():
                 self._pagecount = count_pages
         return self._pagecount
 
+    # ------------------------------------------------------------------
+    def get_wordcount(self):
+        count = 0
+        # match any sequence of non-white-space characters like the Unix command "wc"
+        word_re = re.compile(r'\S+', re.UNICODE)
+        for l in self.lines:
+            count += sum(1 for _ in word_re.finditer(l))
+        return count
+
     # ----------------------------------------------------------------------
     def get_status(self):
         if self._status == None:
