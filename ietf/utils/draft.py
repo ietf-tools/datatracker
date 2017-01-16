@@ -301,6 +301,28 @@ class Draft():
             count += sum(1 for _ in word_re.finditer(l))
         return count
 
+    # ------------------------------------------------------------------
+    def get_formal_languages(self):
+        language_regexps = [
+            ("abnf", [re.compile(r"\bABNF"), re.compile(r" +[a-zA-Z][a-zA-Z0-9_-]* +=[/ ]")]),
+            ("asn1", [re.compile(r'DEFINITIONS +::= +BEGIN')]),
+            ("cbor", [re.compile(r'\b(?:CBOR|CDDL)\b'), re.compile(r" +[a-zA-Z][a-zA-Z0-9_-]* += +[\{\[\(]")]),
+            ("ccode", [re.compile(r"(?:\+\+\))|(?:for \(i)|(?: [!=]= 0\) \{)|(?: struct [a-zA-Z_0-9]+ \{)")]),
+            ("json", [re.compile(r'\bJSON\b'), re.compile(r" \"[^\"]+\" ?: [a-zA-Z0-9\.\"\{\[]")]),
+            ("xml", [re.compile(r"<\?xml")]),
+        ]
+        already_matched = set()
+        for l in self.lines:
+            for lang_name, patterns in language_regexps:
+                for p in patterns:
+                    if p not in already_matched and p.search(l):
+                        already_matched.add(p)
+        return [
+            lang_name
+            for lang_name, patterns in language_regexps
+            if all(p in already_matched for p in patterns)
+        ]
+
     # ----------------------------------------------------------------------
     def get_status(self):
         if self._status == None:
