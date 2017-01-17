@@ -29,6 +29,8 @@ Mailing list:
 {% else %}
 Mailing list:
   TBD
+{% endif %}{% if group_url %}
+Group page: {{ group_url }}
 {% endif %}
 Charter: {{ charter_url }}
 

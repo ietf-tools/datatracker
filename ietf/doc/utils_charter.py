@@ -1,7 +1,8 @@
 import re, datetime, os, shutil
 
-from django.template.loader import render_to_string
 from django.conf import settings
+from django.core.urlresolvers import reverse as urlreverse
+from django.template.loader import render_to_string
 from django.utils.encoding import smart_text
 
 from ietf.doc.models import NewRevisionDocEvent, WriteupDocEvent 
@@ -154,6 +155,7 @@ def default_action_text(group, charter, by):
     e.desc = "%s action text was changed" % group.type.name
     e.text = render_to_string("doc/charter/action_text.txt",
                               dict(group=group,
+                                   group_url=settings.IDTRACKER_BASE_URL + urlreverse('ietf.group.views.group_home', kwargs=dict(acronym=group.acronym)),
                                    charter_url=settings.IDTRACKER_BASE_URL + charter.get_absolute_url(),
                                    charter_text=read_charter_text(charter),
                                    chairs=group.role_set.filter(name="chair"),
@@ -191,6 +193,7 @@ def default_review_text(group, charter, by):
     e1.desc = "%s review text was changed" % group.type.name
     e1.text = render_to_string("doc/charter/review_text.txt",
                               dict(group=group,
+                                    group_url=settings.IDTRACKER_BASE_URL + urlreverse('ietf.group.views.group_home', kwargs=dict(acronym=group.acronym)),
                                     charter_url=settings.IDTRACKER_BASE_URL + charter.get_absolute_url(),
                                     charter_text=read_charter_text(charter),
                                     chairs=group.role_set.filter(name="chair"),
