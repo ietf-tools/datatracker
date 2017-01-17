@@ -48,9 +48,7 @@
     {% if check.errors %}
        <p class="alert alert-warning">
 	  The {{check.checker}} returned {{ check.errors }} error{{ check.errors|pluralize }}
-	  and {{ check.warnings }} warning
-
-	  {{ check.warnings|pluralize }} ; click the button
+          and {{ check.warnings }} warning{{ check.warnings|pluralize }}; click the button
 	  below to see details.  Please fix those, and resubmit.
        </p>
     {% elif check.warnings %}
