@@ -21,6 +21,7 @@ from ietf.doc.fields import SearchableDocAliasesField
 from ietf.ipr.mail import utc_from_string
 from ietf.meeting.models import Meeting
 from ietf.message.models import Message
+from ietf.name.models import FormalLanguageName
 from ietf.submit.models import Submission, Preapproval
 from ietf.submit.utils import validate_submission_rev, validate_submission_document_date
 from ietf.submit.parsers.pdf_parser import PDFParser
@@ -376,13 +377,14 @@ class EditSubmissionForm(forms.ModelForm):
     rev = forms.CharField(label=u'Revision', max_length=2, required=True)
     document_date = forms.DateField(required=True)
     pages = forms.IntegerField(required=True)
+    formal_languages = forms.ModelMultipleChoiceField(queryset=FormalLanguageName.objects.filter(used=True), widget=forms.CheckboxSelectMultiple, required=False)
     abstract = forms.CharField(widget=forms.Textarea, required=True)
 
     note = forms.CharField(label=mark_safe(u'Comment to the Secretariat'), widget=forms.Textarea, required=False)
 
     class Meta:
         model = Submission
-        fields = ['title', 'rev', 'document_date', 'pages', 'abstract', 'note']
+        fields = ['title', 'rev', 'document_date', 'pages', 'formal_languages', 'abstract', 'note']
 
     def clean_rev(self):
         rev = self.cleaned_data["rev"]

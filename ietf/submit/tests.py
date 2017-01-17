@@ -18,6 +18,7 @@ from ietf.group.models import Group
 from ietf.group.utils import setup_default_community_list_for_group
 from ietf.meeting.models import Meeting
 from ietf.message.models import Message
+from ietf.name.models import FormalLanguageName
 from ietf.person.models import Person, Email
 from ietf.person.factories import UserFactory, PersonFactory
 from ietf.submit.models import Submission, Preapproval
@@ -251,6 +252,7 @@ class SubmitTests(TestCase):
         self.assertEqual(draft.authors.count(), 1)
         self.assertEqual(draft.authors.all()[0].get_name(), "Author Name")
         self.assertEqual(draft.authors.all()[0].address, "author@example.com")
+        self.assertEqual(set(draft.formal_languages.all()), set(FormalLanguageName.objects.filter(slug="json")))
         self.assertEqual(draft.relations_that_doc("replaces").count(), 1)
         self.assertTrue(draft.relations_that_doc("replaces").first().target, replaced_alias)
         self.assertEqual(draft.relations_that_doc("possibly-replaces").count(), 1)

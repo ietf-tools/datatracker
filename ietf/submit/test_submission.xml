@@ -137,6 +137,15 @@ module ietf-mpls {
        </figure>
     </section>
 
+    <section anchor="JSON" title="JSON example">
+      <t>
+   The JSON object should look like this:
+
+   {
+       "test": 1234
+   }
+      </t>
+    </section>
     <section anchor="Security" title="Security Considerations">
       <t>
          There are none.

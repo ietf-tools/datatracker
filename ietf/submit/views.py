@@ -449,6 +449,8 @@ def edit_submission(request, submission_id, access_token=None):
         # trigger validation of all forms
         validations = [edit_form.is_valid(), submitter_form.is_valid(), replaces_form.is_valid()] + [ f.is_valid() for f in author_forms ]
         if all(validations):
+            changed_fields = []
+
             submission.submitter = submitter_form.cleaned_line()
             replaces = replaces_form.cleaned_data.get("replaces", [])
             submission.replaces = ",".join(o.name for o in replaces)
@@ -463,12 +465,18 @@ def edit_submission(request, submission_id, access_token=None):
             submission.state = DraftSubmissionStateName.objects.get(slug="manual")
             submission.save()
 
+            formal_languages_changed = False
+            if set(submission.formal_languages.all()) != set(edit_form.cleaned_data["formal_languages"]):
+                submission.formal_languages = edit_form.cleaned_data["formal_languages"]
+                formal_languages_changed = True
+
             send_manual_post_request(request, submission, errors)
 
-            changed_fields = [
+            changed_fields += [
                 submission._meta.get_field(f).verbose_name
                 for f in list(edit_form.fields.keys()) + ["submitter", "authors"]
-                if getattr(submission, f) != getattr(prev_submission, f)
+                if (f == "formal_languages" and formal_languages_changed)
+                or getattr(submission, f) != getattr(prev_submission, f)
             ]
 
             if changed_fields:

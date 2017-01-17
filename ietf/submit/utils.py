@@ -253,6 +253,8 @@ def post_submission(request, submission, approvedDesc):
 
     update_authors(draft, submission)
 
+    draft.formal_languages = submission.formal_languages.all()
+
     trouble = rebuild_reference_relations(draft, filename=os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.txt' % (submission.name, submission.rev)))
     if trouble:
         log('Rebuild_reference_relations trouble: %s'%trouble)

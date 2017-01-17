@@ -229,6 +229,14 @@
       <th>File size</th>
       <td>{{ submission.file_size|filesizeformat }}</td>
     </tr>
+
+    <tr>
+      <th>Formal languages used</th>
+      <td>
+        {% for l in submission.formal_languages.all %}{{ l.name }}{% if not forloop.last %}, {% endif %}{% empty %}None{% endfor %}
+        {% if errors.formal_languages %}<p class="text-danger"><b>{{ errors.formal_languages }}</b></p>{% endif %}
+      </td>
+    </tr>
   </table>
 
   {% if can_edit %}
