@@ -26,7 +26,9 @@ from ietf.review.utils import (can_manage_review_requests_for_team,
                                reviewer_rotation_list,
                                latest_review_requests_for_reviewers,
                                augment_review_requests_with_events,
-                               get_default_filter_re,)
+                               get_default_filter_re,
+                               days_needed_to_fulfill_min_interval_for_reviewers,
+                              )
 from ietf.doc.models import LastCallDocEvent
 from ietf.group.models import Role
 from ietf.group.utils import get_group_or_404, construct_group_menu_context
@@ -142,6 +144,8 @@ def reviewer_overview(request, acronym, group_type=None):
     req_data_for_reviewers = latest_review_requests_for_reviewers(group)
     review_state_by_slug = { n.slug: n for n in ReviewRequestStateName.objects.all() }
 
+    days_needed = days_needed_to_fulfill_min_interval_for_reviewers(group)
+
     for person in reviewers:
         person.settings = reviewer_settings.get(person.pk) or ReviewerSettings(team=group, person=person)
         person.settings_url = None
@@ -155,6 +159,8 @@ def reviewer_overview(request, acronym, group_type=None):
         person.completely_unavailable = any(p.availability == "unavailable"
                                        and (p.start_date is None or p.start_date <= today) and (p.end_date is None or today <= p.end_date)
                                        for p in person.unavailable_periods)
+        person.busy = person.id in days_needed 
+        
 
         MAX_CLOSED_REQS = 10
         req_data = req_data_for_reviewers.get(person.pk, [])

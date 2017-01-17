@@ -16,7 +16,13 @@
   <h2>Reviewers</h2>
 
   <p>Status of the reviewers in {{ group.acronym }}, ordered by their
-    rotation with the next reviewer in the rotation at the top.</p>
+    rotation with the next reviewer in the rotation at the top. Rows with darker backgrounds have the following meaning:
+  </p>
+  <div class="reviewer-overview">
+    <p class="busy">Has already been assigned a document within the given interval.</p>
+    <p class="skip-next">Will be skipped the next time at the top of rotation.</p>
+    <p class="completely-unavailable">Is not available to do reviews at this time.</p>
+  </div>
 
   {% if reviewers %}
     <table class="table reviewer-overview">
@@ -29,7 +35,10 @@
       </thead>
       <tbody>
         {% for person in reviewers %}
-          <tr {% if person.completely_unavailable %}class="completely-unavailable"{% endif %}>
+          <tr {% if person.completely_unavailable %}class="completely-unavailable"
+              {% elif person.busy %}class="busy"
+              {% elif person.settings.skip_next %}class="skip-next"
+              {% endif %}>
             <td>{% if person.settings_url %}<a href="{{ person.settings_url }}">{% endif %}{{ person }}{% if person.settings_url %}</a>{% endif %}</td>
             <td>
               <table class="simple-table">
