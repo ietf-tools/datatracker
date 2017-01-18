@@ -24,7 +24,7 @@
          <td class="text-right">
            {% if s.name %}{{ s.name }}<br>{% endif %}
            {% if s.status.slug == "sched" %}
-	     {{s.time|date:"D M d, Y"}}
+	   {{s.time|date:"D"}} &nbsp; {{s.time|date:"Y-m-d"}}
           {% else %}
             {{s.status}}
           {% endif %}
