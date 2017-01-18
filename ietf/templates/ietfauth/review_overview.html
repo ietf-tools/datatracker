@@ -35,7 +35,7 @@
             <td><a {% if r.pk != None %}href="{% url "ietf.doc.views_review.review_request" name=r.doc.name request_id=r.pk %}"{% endif %}>{{ r.doc.name }}</a></td>
             <td>{% if r.requested_rev %}{{ r.requested_rev }}{% else %}Current{% endif %}</td>
             <td>{{r.doc.rev}}</td>
-            <td>{{ r.team.acronym }}</td>
+            <td><a href="{% url 'ietf.group.views_review.review_requests' acronym=r.team.acronym %}">{{ r.team.acronym }}</a></td>
             <td>{{ r.type.name }}</td>
             <td>
               {{ r.deadline|date:"Y-m-d" }}
@@ -70,7 +70,7 @@
           <tr>
             <td><a {% if r.pk != None %}href="{% url "ietf.doc.views_review.review_request" name=r.doc.name request_id=r.pk %}"{% endif %}>{{ r.doc.name }}</a></td>
             <td>{{r.reviewed_rev|default:"See review"}}{% if r.requested_rev %}{% if r.requested_rev != r.reviewed_rev %}({{ r.requested_rev }} requested){% endif %}{% endif %}</td>
-            <td>{{ r.team.acronym }}</td>
+            <td><a href="{% url 'ietf.group.views_review.review_requests' acronym=r.team.acronym %}">{{ r.team.acronym }}</a></td>
             <td>{{ r.type.name }}</td>
             <td>
               {{ r.deadline|date:"Y-m-d" }}

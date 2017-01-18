@@ -24,3 +24,18 @@ def managed_groups(user):
 
     return groups
 
+@register.filter
+def managed_review_groups(user):
+    if not (user and hasattr(user, "is_authenticated") and user.is_authenticated()):
+        return []
+
+    groups = []
+
+    groups.extend(Group.objects.filter(
+        role__name__slug='secr',
+        role__person__user=user,
+        reviewteamsettings__isnull=False,
+        state__slug='active').select_related("type"))
+
+    return groups
+

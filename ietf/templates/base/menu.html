@@ -45,14 +45,16 @@
   {% endif %}
   <li><a href="{% url "ietf.submit.views.upload_submission" %}">Draft submission</a></li>
 
-  {% if user|has_role:"WG Chair" %}
+  {% if user and user.is_authenticated %}
+    <li><a href="{% url "ietf.community.views.view_list" user.username %}">My tracked docs</a></li>
+  {% else %}
+    <li><a rel="nofollow" href="/accounts/login/?next={{ request.get_full_path|urlencode }}">Sign in to track docs</a></li>
+  {% endif %}
+
+  {% if user|has_role:"WG Chair,RG Chair" %}
     {% if flavor == "top" %}<li class="divider hidden-xs"></li>{% endif %}
     <li {%if flavor == "top" %}class="dropdown-header hidden-xs"{% else %}class="nav-header"{% endif %}>WG chair</li>
     <li><a href="{% url "ietf.submit.views.approvals" %}">Approve a draft</a></li>
-  {% endif %}
-
-  {% if user and user.is_authenticated %}
-    <li><a href="{% url "ietf.community.views.view_list" user.username %}">My tracked docs</a></li>
 
     {% for g in user|managed_groups %}
       <li><a href="{% url "group_docs" g.acronym %}">{{ g.acronym }} {{ g.type.slug }} docs</a></li>
@@ -60,8 +62,14 @@
     {% for g in user|managed_groups %}
       <li><a href="{% url "ietf.group.views.meetings" g.acronym %}">{{ g.acronym }} {{ g.type.slug }} meetings</a></li>
     {% endfor %}
-  {% else %}
-    <li><a rel="nofollow" href="/accounts/login/?next={{ request.get_full_path|urlencode }}">Sign in to track docs</a></li>
+  {% endif %}
+
+  {% if user|has_role:"Review Team Secretary" %}
+    {% if flavor == "top" %}<li class="divider hidden-xs"></li>{% endif %}
+    <li {%if flavor == "top" %}class="dropdown-header hidden-xs"{% else %}class="nav-header"{% endif %}>Review Teams</li>
+    {% for g in user|managed_review_groups %}
+      <li><a href="{% url "ietf.group.views_review.review_requests" g.acronym %}">{{ g.acronym }} reviews</a></li>
+    {% endfor %}
   {% endif %}
 
   {% if user|has_role:"Area Director,Secretariat" %}

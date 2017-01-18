@@ -70,6 +70,8 @@ def has_role(user, role_names, *args, **kwargs):
             "Liaison Manager": Q(person=person,name="liaiman",group__type="sdo",group__state="active", ),
             "Authorized Individual": Q(person=person,name="auth",group__type="sdo",group__state="active", ),
             "Reviewer": Q(person=person, name="reviewer", group__state="active"),
+            "Review Team Secretary": Q(person=person, name="secr", group__reviewteamsettings__isnull=False,group__state="active", ),
+
             }
 
         filter_expr = Q()
