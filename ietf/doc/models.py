@@ -509,6 +509,10 @@ class Document(DocumentInfo):
             e = self.latest_event(TelechatDocEvent, type="scheduled_for_telechat")
         return e.telechat_date if e and e.telechat_date and e.telechat_date >= datetime.date.today() else None
 
+    def past_telechat_date(self):
+        e = self.latest_event(TelechatDocEvent, type="scheduled_for_telechat")
+        return e.telechat_date if e and e.telechat_date and e.telechat_date < datetime.date.today() else None
+
     def area_acronym(self):
         g = self.group
         if g:

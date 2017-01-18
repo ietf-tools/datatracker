@@ -148,6 +148,7 @@
 
             <span class="close-action">
               <button type="button" class="btn btn-default btn-danger">Close...</button>
+              {% if r.doc.past_telechat_date %} (was on {{r.doc.past_telechat_date}} telechat) {% endif %}
             </span>
 
             <span class="close-controls form-inline">

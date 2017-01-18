@@ -550,7 +550,15 @@ table.simple-table td:last-child {
 }
 
 .reviewer-overview .completely-unavailable {
-  opacity: 0.6;
+  background-color: #D8D8D8;
+}
+
+.reviewer-overview .skip-next {
+  background-color: #E4E4E4;
+}
+
+.reviewer-overview .busy {
+  background-color: #F0F0F0;
 }
 
 /* === Statistics =========================================================== */
