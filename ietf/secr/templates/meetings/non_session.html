@@ -22,7 +22,7 @@
       </thead>
       <tbody>
         {% for item in slots %}
-          <tr class="{% cycle row1,row2 %}{% ifchanged item.type %} break{% endifchanged %}">
+          <tr class="{% cycle row1 row2 %}{% ifchanged item.type %} break{% endifchanged %}">
             <td>{{ item.time|date:"D" }}</td>
             <td>{{ item.time|date:"H:i" }}-{{ item.end_time|date:"H:i" }}</td>
             <td>{{ item.name }}</td>

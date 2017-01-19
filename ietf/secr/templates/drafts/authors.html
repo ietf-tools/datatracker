@@ -30,7 +30,7 @@
       </thead>
       <tbody>
         {% for author in draft.documentauthor_set.all %}
-          <tr class="{% cycle row1,row2 %}">
+          <tr class="{% cycle 'row1' 'row2' %}">
             <td>{{ author.author.person }}</td>
             <td>{{ author.author }}</td>
             <td>{{ author.order }}</td>

@@ -94,7 +94,7 @@
       <input type="hidden" id="id_compliant" name="compliant" value="checked" />
     {% endif %}
 
-    <h2>{% cycle 'I','II','III','IV','V','VI','VII','VIII' as section %}.
+    <h2>{% cycle 'I' 'II' 'III' 'IV' 'V' 'VI' 'VII' 'VIII' as section %}.
       {% if form.instance|to_class_name == "ThirdPartyIprDisclosure" %}Possible{% endif %} Patent holder/applicant ("patent holder")</h2>
 
       {% bootstrap_field form.holder_legal_name layout='horizontal' %}

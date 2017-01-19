@@ -30,7 +30,7 @@
       </thead>
       <tbody>
         {% for role in group.role_set.all %}
-          <tr class="{% cycle row1,row2 %}">
+          <tr class="{% cycle 'row1' 'row2' %}">
             <td>{{ role.name }}</td>
             <td>{{ role.person }}</td>
             <td>{{ role.email }}</td>
