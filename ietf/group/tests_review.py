@@ -20,6 +20,7 @@ from ietf.name.models import ReviewTypeName, ReviewResultName, ReviewRequestStat
 import ietf.group.views_review
 from ietf.utils.mail import outbox, empty_outbox
 from ietf.dbtemplate.factories import DBTemplateFactory
+from ietf.person.factories import PersonFactory
 
 class ReviewTests(TestCase):
     def test_review_requests(self):
@@ -205,6 +206,10 @@ class ReviewTests(TestCase):
             deadline=datetime.date.today() - datetime.timedelta(days=80),
             reviewer=review_req1.reviewer,
         )
+
+        # Need one more person in review team one so we can test incrementing skip_count without immediately decrementing it
+        another_reviewer = PersonFactory.create()
+        another_reviewer.role_set.create(name_id='reviewer', email=another_reviewer.email(), group=review_req1.team)
         
         # get
         r = self.client.get(assigned_url)
@@ -257,6 +262,7 @@ class ReviewTests(TestCase):
             "r{}-existing_reviewer".format(review_req2.pk): review_req2.reviewer_id or "",
             "r{}-action".format(review_req2.pk): "assign",
             "r{}-reviewer".format(review_req2.pk): new_reviewer.pk,
+            "r{}-add_skip".format(review_req2.pk) : 1,
 
             "action": "save",
         })
@@ -280,6 +286,8 @@ class ReviewTests(TestCase):
         self.assertEqual(review_req1.state_id, "no-response")
         self.assertEqual(review_req2.state_id, "requested")
         self.assertEqual(review_req2.reviewer, new_reviewer)
+        settings = ReviewerSettings.objects.filter(team=review_req2.team, person=new_reviewer.person).first()
+        self.assertEqual(settings.skip_next,1)
         self.assertEqual(review_req3.state_id, "requested")
 
     def test_email_open_review_assignments(self):
