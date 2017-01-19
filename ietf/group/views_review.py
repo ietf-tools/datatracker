@@ -188,6 +188,7 @@ class ManageReviewRequestForm(forms.Form):
     action = forms.ChoiceField(choices=ACTIONS, widget=forms.HiddenInput, required=False)
     close = forms.ModelChoiceField(queryset=close_review_request_states(), required=False)
     reviewer = PersonEmailChoiceField(empty_label="(None)", required=False, label_with="person")
+    add_skip = forms.BooleanField(required=False)
 
     def __init__(self, review_req, *args, **kwargs):
         if not "prefix" in kwargs:
@@ -307,7 +308,7 @@ def manage_review_requests(request, acronym, group_type=None, assignment_status=
             for review_req in review_requests:
                 action = review_req.form.cleaned_data.get("action")
                 if action == "assign":
-                    assign_review_request_to_reviewer(request, review_req, review_req.form.cleaned_data["reviewer"])
+                    assign_review_request_to_reviewer(request, review_req, review_req.form.cleaned_data["reviewer"],review_req.form.cleaned_data["add_skip"])
                 elif action == "close":
                     close_review_request(request, review_req, review_req.form.cleaned_data["close"])
 

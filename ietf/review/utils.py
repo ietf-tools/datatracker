@@ -417,7 +417,7 @@ def email_reviewer_availability_change(request, team, reviewer_role, msg, by):
         "by": by,
     })
 
-def assign_review_request_to_reviewer(request, review_req, reviewer):
+def assign_review_request_to_reviewer(request, review_req, reviewer, add_skip=False):
     assert review_req.state_id in ("requested", "accepted")
 
     if reviewer == review_req.reviewer:
@@ -435,7 +435,7 @@ def assign_review_request_to_reviewer(request, review_req, reviewer):
     review_req.save()
 
     if review_req.reviewer:
-        possibly_advance_next_reviewer_for_team(review_req.team, review_req.reviewer.person_id)
+        possibly_advance_next_reviewer_for_team(review_req.team, review_req.reviewer.person_id, add_skip)
 
     ReviewRequestDocEvent.objects.create(
         type="assigned_review_request",
@@ -456,7 +456,7 @@ def assign_review_request_to_reviewer(request, review_req, reviewer):
         "%s has assigned you as a reviewer for this document." % request.user.person,
         by=request.user.person, notify_secretary=False, notify_reviewer=True, notify_requested_by=False)
 
-def possibly_advance_next_reviewer_for_team(team, assigned_review_to_person_id):
+def possibly_advance_next_reviewer_for_team(team, assigned_review_to_person_id, add_skip=False):
     assert assigned_review_to_person_id is not None
 
     rotation_list = reviewer_rotation_list(team, skip_unavailable=True, dont_skip=[assigned_review_to_person_id])
@@ -476,7 +476,8 @@ def possibly_advance_next_reviewer_for_team(team, assigned_review_to_person_id):
     if assigned_review_to_person_id == reviewer_at_index(current_i):
         # move 1 ahead
         current_i += 1
-    else:
+
+    if add_skip:
         settings = reviewer_settings_for(assigned_review_to_person_id)
         settings.skip_next += 1
         settings.save()
@@ -491,7 +492,6 @@ def possibly_advance_next_reviewer_for_team(team, assigned_review_to_person_id):
         if settings.skip_next > 0:
             settings.skip_next -= 1
             settings.save()
-
             current_i += 1
         else:
             nr = NextReviewerInTeam.objects.filter(team=team).first() or NextReviewerInTeam(team=team)

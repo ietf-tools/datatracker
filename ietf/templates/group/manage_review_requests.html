@@ -135,11 +135,15 @@
 
             <span class="reviewer-controls form-inline">
               <label for="{{ r.form.reviewer.id_for_label }}">Assign:</label>
-              {{ r.form.reviewer }}
+              {{ r.form.reviewer }} 
+              {{ r.form.add_skip }} <label for="{{ r.form.add_skip.id_for_label }}">Skip next time</label>
               <button type="button" class="btn btn-default undo" title="Cancel assignment" data-initial="{{ r.form.fields.reviewer.initial|default:"" }}">Cancel</button>
-              {% if r.form.reviewer.errors %}
+              {% if r.form.reviewer.errors or r.form.add_skip.errors %}
                 <div class="alert alert-danger">
                   {% for e in r.form.reviewer.errors %}
+                    {{ e }}
+                  {% endfor %}
+                  {% for e in r.form.add_skip.errors %}
                     {{ e }}
                   {% endfor %}
                 </div>

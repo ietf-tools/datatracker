@@ -253,6 +253,7 @@ def close_request(request, name, request_id):
 
 class AssignReviewerForm(forms.Form):
     reviewer = PersonEmailChoiceField(empty_label="(None)", required=False)
+    add_skip = forms.BooleanField(label='Skip next time', required=False)
 
     def __init__(self, review_req, *args, **kwargs):
         super(AssignReviewerForm, self).__init__(*args, **kwargs)
@@ -271,7 +272,8 @@ def assign_reviewer(request, name, request_id):
         form = AssignReviewerForm(review_req, request.POST)
         if form.is_valid():
             reviewer = form.cleaned_data["reviewer"]
-            assign_review_request_to_reviewer(request, review_req, reviewer)
+            add_skip = form.cleaned_data["add_skip"]
+            assign_review_request_to_reviewer(request, review_req, reviewer, add_skip)
 
             return redirect(review_request, name=review_req.doc.name, request_id=review_req.pk)
     else:

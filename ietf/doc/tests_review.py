@@ -24,6 +24,7 @@ from ietf.utils.test_utils import TestCase
 from ietf.utils.test_data import make_test_data, make_review_data, create_person
 from ietf.utils.test_utils import login_testing_unauthorized, unicontent, reload_db_objects
 from ietf.utils.mail import outbox, empty_outbox
+from ietf.person.factories import PersonFactory
 
 class ReviewTests(TestCase):
     def setUp(self):
@@ -180,27 +181,29 @@ class ReviewTests(TestCase):
                         or ReviewerSettings(team=team))
             return settings.skip_next
 
-        possibly_advance_next_reviewer_for_team(team, assigned_review_to_person_id=reviewers[0].pk)
+        possibly_advance_next_reviewer_for_team(team, assigned_review_to_person_id=reviewers[0].pk, add_skip=False)
         self.assertEqual(NextReviewerInTeam.objects.get(team=team).next_reviewer, reviewers[1])
         self.assertEqual(get_skip_next(reviewers[0]), 0)
         self.assertEqual(get_skip_next(reviewers[1]), 0)
 
-        possibly_advance_next_reviewer_for_team(team, assigned_review_to_person_id=reviewers[1].pk)
+        possibly_advance_next_reviewer_for_team(team, assigned_review_to_person_id=reviewers[1].pk, add_skip=True)
         self.assertEqual(NextReviewerInTeam.objects.get(team=team).next_reviewer, reviewers[2])
+        self.assertEqual(get_skip_next(reviewers[1]), 1)
+        self.assertEqual(get_skip_next(reviewers[2]), 0)
 
         # skip reviewer 2
-        possibly_advance_next_reviewer_for_team(team, assigned_review_to_person_id=reviewers[3].pk)
+        possibly_advance_next_reviewer_for_team(team, assigned_review_to_person_id=reviewers[3].pk, add_skip=True)
         self.assertEqual(NextReviewerInTeam.objects.get(team=team).next_reviewer, reviewers[2])
         self.assertEqual(get_skip_next(reviewers[0]), 0)
-        self.assertEqual(get_skip_next(reviewers[1]), 0)
+        self.assertEqual(get_skip_next(reviewers[1]), 1)
         self.assertEqual(get_skip_next(reviewers[2]), 0)
         self.assertEqual(get_skip_next(reviewers[3]), 1)
 
         # pick reviewer 2, use up reviewer 3's skip_next
-        possibly_advance_next_reviewer_for_team(team, assigned_review_to_person_id=reviewers[2].pk)
+        possibly_advance_next_reviewer_for_team(team, assigned_review_to_person_id=reviewers[2].pk, add_skip=False)
         self.assertEqual(NextReviewerInTeam.objects.get(team=team).next_reviewer, reviewers[4])
         self.assertEqual(get_skip_next(reviewers[0]), 0)
-        self.assertEqual(get_skip_next(reviewers[1]), 0)
+        self.assertEqual(get_skip_next(reviewers[1]), 1)
         self.assertEqual(get_skip_next(reviewers[2]), 0)
         self.assertEqual(get_skip_next(reviewers[3]), 0)
         self.assertEqual(get_skip_next(reviewers[4]), 0)
@@ -209,7 +212,7 @@ class ReviewTests(TestCase):
         possibly_advance_next_reviewer_for_team(team, assigned_review_to_person_id=reviewers[4].pk)
         self.assertEqual(NextReviewerInTeam.objects.get(team=team).next_reviewer, reviewers[0])
         self.assertEqual(get_skip_next(reviewers[0]), 0)
-        self.assertEqual(get_skip_next(reviewers[1]), 0)
+        self.assertEqual(get_skip_next(reviewers[1]), 1)
         self.assertEqual(get_skip_next(reviewers[2]), 0)
         self.assertEqual(get_skip_next(reviewers[3]), 0)
         self.assertEqual(get_skip_next(reviewers[4]), 0)
@@ -220,13 +223,13 @@ class ReviewTests(TestCase):
         possibly_advance_next_reviewer_for_team(team, assigned_review_to_person_id=reviewers[0].pk)
         self.assertEqual(NextReviewerInTeam.objects.get(team=team).next_reviewer, reviewers[2])
         self.assertEqual(get_skip_next(reviewers[0]), 0)
-        self.assertEqual(get_skip_next(reviewers[1]), 0)
+        self.assertEqual(get_skip_next(reviewers[1]), 1) # don't consume that skip while the reviewer is unavailable
         self.assertEqual(get_skip_next(reviewers[2]), 0)
         self.assertEqual(get_skip_next(reviewers[3]), 0)
         self.assertEqual(get_skip_next(reviewers[4]), 0)
 
         # pick unavailable anyway
-        possibly_advance_next_reviewer_for_team(team, assigned_review_to_person_id=reviewers[1].pk)
+        possibly_advance_next_reviewer_for_team(team, assigned_review_to_person_id=reviewers[1].pk, add_skip=False)
         self.assertEqual(NextReviewerInTeam.objects.get(team=team).next_reviewer, reviewers[2])
         self.assertEqual(get_skip_next(reviewers[0]), 0)
         self.assertEqual(get_skip_next(reviewers[1]), 1)
@@ -282,6 +285,10 @@ class ReviewTests(TestCase):
         reviewer_settings.filter_re = doc.name
         reviewer_settings.skip_next = 1
         reviewer_settings.save()
+
+        # Need one more person in review team one so we can test incrementing skip_count without immediately decrementing it
+        another_reviewer = PersonFactory.create()
+        another_reviewer.role_set.create(name_id='reviewer', email=another_reviewer.email(), group=review_req.team)
 
         UnavailablePeriod.objects.create(
             team=review_req.team,
@@ -345,7 +352,7 @@ class ReviewTests(TestCase):
         review_req.state = ReviewRequestStateName.objects.get(slug="accepted")
         review_req.save()
         reviewer = Email.objects.filter(role__name="reviewer", role__group=review_req.team, person=rotation_list[1]).first()
-        r = self.client.post(assign_url, { "action": "assign", "reviewer": reviewer.pk })
+        r = self.client.post(assign_url, { "action": "assign", "reviewer": reviewer.pk, "add_skip": 1 })
         self.assertEqual(r.status_code, 302)
 
         review_req = reload_db_objects(review_req)
@@ -354,6 +361,7 @@ class ReviewTests(TestCase):
         self.assertEqual(len(outbox), 2)
         self.assertTrue("cancelled your assignment" in outbox[0].get_payload(decode=True).decode("utf-8"))
         self.assertTrue("assigned" in outbox[1].get_payload(decode=True).decode("utf-8"))
+        self.assertEqual(ReviewerSettings.objects.get(person=reviewer.person).skip_next, 1)
 
     def test_accept_reviewer_assignment(self):
         doc = make_test_data()
