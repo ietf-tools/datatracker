@@ -149,7 +149,7 @@
       {% endif %}
     {% endif %}
 
-    {% if request.user|has_role:"Secretariat" and doc.get_state_slug = 'appr-pend' %}
+    {% if request.user|has_role:"Secretariat" and doc.get_state_slug == 'appr-pend' %}
       <a class="btn btn-warning" href="{% url "status_change_approve" name=doc.name %}">Approve RFC status change</a>
     {% endif %}
   </p>
