@@ -1,3 +1,50 @@
+ietfdb (6.40.4) ietf; urgency=medium
+
+  This is a bugfix release, with some enhancements, mostly related to the
+  review tool.  From the commit log:
+
+  * Merged in [12670]  and [12675] from rjsparks@nostrum.com:
+    Make changing skip_next on a review assignment an explicit decision of the
+    assigner. Commit ready for merge. Fixes #2148.
+
+  * Enabled correct time sorting and reporting for interim meetings on 
+    /group/{{acronym}}/meetings/, and tweaked the date format.  Fixes issue 
+    #2145.
+
+  * Merged in [12665] from rjsparks@nostrum.com:
+    Make it easier to see who's really next in reviewer rotation.  
+
+  * Merged in [12627] from rjsparks@nostrum.com:
+    Added some convenience navigation for review team secretaries to the menu.
+    Restructured the menu lightly around Documents and Role-related links.
+    Added navigation from a reviewers \'My Reviews\' page back to the review
+    team pages. Fixes #2079.  
+
+  * Added a link to the group datatracker page to the new group 
+    announcement (and review) emails.  Fixes issue #2140.
+
+  * Aligned some Group edit form field limits with those of the Group 
+    model.  Fixes issue #2137.
+
+  * Excluded some non-testable files from code coverage measurements.
+
+  * Removed an inadvertently duplicated template for-loop.  Fixes issue 
+    #2136.
+
+  * Added guards against instances of queryset filtering using an object 
+    without primary key.
+
+  * Added password reset links in 2 places; on the login form and in the User
+    menu -- it's not been really easy to find the password reset page.
+
+  * Added a variation on the manage.py script which will pick up our local 
+    python virtualenv under env/.  This is for use when invoking django 
+    management commands externally, for instance in email pipelines from 
+    /etc/aliases.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  19 Jan 2017 17:40:57 +0000
+
+
 ietfdb (6.40.3) ietf; urgency=medium
 
   **Review tool enhancements and Django 1.8 adaptations**
