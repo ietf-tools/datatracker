@@ -246,7 +246,7 @@ def edit_ad(request, name):
                                'doc': review,
                                'titletext': titletext
                               },
-                              context_instance = RequestContext(request))
+                          )
 
 def default_approval_text(review):
 
@@ -454,7 +454,7 @@ def start_review_as_secretariat(request, name):
                               {'form':   form,
                                'doc_to_review': doc_to_review,
                               },
-                              context_instance = RequestContext(request))
+                          )
 
 def start_review_as_stream_owner(request, name):
     """Start the conflict review process using defaults for everything but notify and let the secretariat know"""
@@ -488,4 +488,4 @@ def start_review_as_stream_owner(request, name):
                               {'form':   form,
                                'doc_to_review': doc_to_review,
                               },
-                              context_instance = RequestContext(request))
+                          )

@@ -229,7 +229,7 @@ def edit_title(request, name):
                                'doc': status_change,
                                'titletext' : titletext,
                               },
-                              context_instance = RequestContext(request))
+                          )
 
 @role_required("Area Director", "Secretariat")
 def edit_ad(request, name):
@@ -260,7 +260,7 @@ def edit_ad(request, name):
                                'doc': status_change,
                                'titletext' : titletext,
                               },
-                              context_instance = RequestContext(request))
+                          )
 
 def newstatus(relateddoc):
 
@@ -493,7 +493,7 @@ def rfc_status_changes(request):
     return render(request, 'doc/status_change/status_changes.html',
                               {'docs' : doclist,
                               },
-                              context_instance = RequestContext(request))
+                          )
 
 @role_required("Area Director","Secretariat")
 def start_rfc_status_change(request,name):
@@ -552,7 +552,7 @@ def start_rfc_status_change(request,name):
                               {'form':   form,
                                'relation_slugs': relation_slugs,
                               },
-                              context_instance = RequestContext(request))
+                          )
 
 @role_required("Area Director", "Secretariat")
 def edit_relations(request, name):
@@ -602,7 +602,7 @@ def edit_relations(request, name):
                                'form':           form,
                                'relation_slugs': relation_slugs,
                               },
-                              context_instance = RequestContext(request))
+                          )
 
 def generate_last_call_text(request, doc):
 
@@ -695,5 +695,5 @@ def last_call(request, name):
                                     last_call_event = last_call_event,
                                     last_call_form  = form,
                                    ),
-                               context_instance = RequestContext(request))
+                           )
                

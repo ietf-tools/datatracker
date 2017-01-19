@@ -1068,10 +1068,10 @@ def edit_ad(request, name):
         form = AdForm(initial=init)
 
     return render(request, 'doc/draft/change_ad.html',
-                              {'form':   form,
-                               'doc': doc,
-                              },
-                              context_instance = RequestContext(request))
+                    {'form':   form,
+                     'doc': doc,
+                    },
+                 )
 
 class ConsensusForm(forms.Form):
     consensus = forms.ChoiceField(choices=(("Unknown", "Unknown"), ("Yes", "Yes"), ("No", "No")),
@@ -1112,7 +1112,7 @@ def edit_consensus(request, name):
                               {'form': form,
                                'doc': doc,
                               },
-                              context_instance = RequestContext(request))
+                          )
 
 class PublicationForm(forms.Form):
     subject = forms.CharField(max_length=200, required=True)
@@ -1205,7 +1205,7 @@ def request_publication(request, name):
                                        True if (doc.stream_id and doc.stream_id=='ietf')
                                        else (consensus_event != None and consensus_event.consensus != None)),
                                ),
-                              context_instance = RequestContext(request))
+                          )
 
 class AdoptDraftForm(forms.Form):
     group = forms.ModelChoiceField(queryset=Group.objects.filter(type__in=["wg", "rg"], state="active").order_by("-type", "acronym"), required=True, empty_label=None)

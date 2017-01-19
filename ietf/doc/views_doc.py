@@ -70,7 +70,7 @@ from ietf.review.utils import no_review_from_teams_on_doc
 
 def render_document_top(request, doc, tab, name):
     tabs = []
-    tabs.append(("Document", "document", urlreverse("doc_view", kwargs=dict(name=name)), True))
+    tabs.append(("Document", "document", urlreverse("doc_view", kwargs=dict(name=name)), True, None))
 
     ballot = doc.latest_event(BallotDocEvent, type="created_ballot")
     if doc.type_id in ("draft","conflrev", "statchg"):
@@ -79,10 +79,10 @@ def render_document_top(request, doc, tab, name):
         tabs.append(("IESG Review", "ballot", urlreverse("doc_ballot", kwargs=dict(name=name)), ballot, None if ballot else "IESG Review Ballot has not been created yet"))
 
     if doc.type_id == "draft" or (doc.type_id == "charter" and doc.group.type_id == "wg"):
-        tabs.append(("IESG Writeups", "writeup", urlreverse("doc_writeup", kwargs=dict(name=name)), True))
+        tabs.append(("IESG Writeups", "writeup", urlreverse("doc_writeup", kwargs=dict(name=name)), True, None))
 
-    tabs.append(("Email expansions","email",urlreverse("doc_email", kwargs=dict(name=name)), True))
-    tabs.append(("History", "history", urlreverse("doc_history", kwargs=dict(name=name)), True))
+    tabs.append(("Email expansions","email",urlreverse("doc_email", kwargs=dict(name=name)), True, None))
+    tabs.append(("History", "history", urlreverse("doc_history", kwargs=dict(name=name)), True, None))
 
     if name.startswith("rfc"):
         name = "RFC %s" % name[3:]
@@ -1103,7 +1103,7 @@ def edit_notify(request, name):
                                'doc': doc,
                                'titletext': titletext,
                               },
-                              context_instance = RequestContext(request))
+                          )
 
 def email_aliases(request,name=''):
     doc = get_object_or_404(Document, name=name) if name else None
