@@ -733,7 +733,7 @@ def document_bibtex(request, name, rev=None):
                                    rfc=rfc,
                                    latest_revision=latest_revision),
                               content_type="text/plain; charset=utf-8",
-                              request=request)
+                          )
 
 
 def document_writeup(request, name):
