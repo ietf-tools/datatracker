@@ -108,7 +108,7 @@ def send_status_change_eval_email(request,doc):
     send_mail_preformatted(request,msg,override=override)
 
 class UploadForm(forms.Form):
-    content = forms.CharField(widget=forms.Textarea, label="Status change text", help_text="Edit the status change text.", required=False)
+    content = forms.CharField(widget=forms.Textarea, label="Status change text", help_text="Edit the status change text.", required=False, strip=False)
     txt = forms.FileField(label=".txt format", help_text="Or upload a .txt file.", required=False)
 
     def clean_content(self):

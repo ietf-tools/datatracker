@@ -417,7 +417,6 @@ class StatusChangeSubmitTests(TestCase):
         self.assertEqual(doc.rev,u'00')
         with open(path) as f:
             self.assertEqual(f.read(),"Some initial review text\n")
-            f.close()
         self.assertTrue( "mid-review-00" in doc.latest_event(NewRevisionDocEvent).desc)
 
     def test_subsequent_submission(self):
