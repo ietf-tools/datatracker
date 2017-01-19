@@ -208,7 +208,7 @@ class ReviewTests(TestCase):
         )
 
         # Need one more person in review team one so we can test incrementing skip_count without immediately decrementing it
-        another_reviewer = PersonFactory.create()
+        another_reviewer = PersonFactory.create(name = u"Extra TestReviewer") # needs to be lexically greater than the exsting one
         another_reviewer.role_set.create(name_id='reviewer', email=another_reviewer.email(), group=review_req1.team)
         
         # get
