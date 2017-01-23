@@ -448,6 +448,18 @@ class ReviewerSettingsForm(forms.ModelForm):
         model = ReviewerSettings
         fields = ['min_interval', 'filter_re', 'skip_next', 'remind_days_before_deadline']
 
+    def __init__(self, *args, **kwargs):
+       exclude_fields = kwargs.pop('exclude_fields', [])
+       super(ReviewerSettingsForm, self).__init__(*args, **kwargs)
+       for field_name in exclude_fields:
+            self.fields.pop(field_name)
+
+    def clean_skip_next(self):
+        skip_next = self.cleaned_data.get('skip_next')
+        if skip_next < 0:
+            raise forms.ValidationError("Skip next must not be negative")
+        return skip_next
+
 class AddUnavailablePeriodForm(forms.ModelForm):
     class Meta:
         model = UnavailablePeriod
@@ -496,6 +508,10 @@ def change_reviewer_settings(request, acronym, reviewer_email, group_type=None):
             or can_manage_review_requests_for_team(request.user, group)):
         return HttpResponseForbidden("You do not have permission to perform this action")
 
+    exclude_fields = []
+    if not can_manage_review_requests_for_team(request.user, group):
+        exclude_fields.append('skip_next')
+
     settings = ReviewerSettings.objects.filter(person=reviewer, team=group).first()
     if not settings:
         settings = ReviewerSettings(person=reviewer, team=group)
@@ -513,7 +529,7 @@ def change_reviewer_settings(request, acronym, reviewer_email, group_type=None):
     if request.method == "POST" and request.POST.get("action") == "change_settings":
         prev_min_interval = settings.get_min_interval_display()
         prev_skip_next = settings.skip_next
-        settings_form = ReviewerSettingsForm(request.POST, instance=settings)
+        settings_form = ReviewerSettingsForm(request.POST, instance=settings, exclude_fields=exclude_fields)
         if settings_form.is_valid():
             settings = settings_form.save()
 
@@ -528,7 +544,7 @@ def change_reviewer_settings(request, acronym, reviewer_email, group_type=None):
 
             return HttpResponseRedirect(back_url)
     else:
-        settings_form = ReviewerSettingsForm(instance=settings)
+        settings_form = ReviewerSettingsForm(instance=settings,exclude_fields=exclude_fields)
 
     # periods
     unavailable_periods = unavailable_periods_to_list().filter(person=reviewer, team=group)

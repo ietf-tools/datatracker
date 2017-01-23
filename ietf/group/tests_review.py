@@ -373,20 +373,31 @@ class ReviewTests(TestCase):
             "action": "change_settings",
             "min_interval": "7",
             "filter_re": "test-[regexp]",
-            "skip_next": "2",
             "remind_days_before_deadline": "6"
         })
         self.assertEqual(r.status_code, 302)
         settings = ReviewerSettings.objects.get(person=reviewer, team=review_req.team)
         self.assertEqual(settings.min_interval, 7)
         self.assertEqual(settings.filter_re, "test-[regexp]")
-        self.assertEqual(settings.skip_next, 2)
+        self.assertEqual(settings.skip_next, 0)
         self.assertEqual(settings.remind_days_before_deadline, 6)
         self.assertEqual(len(outbox), 1)
         self.assertTrue("reviewer availability" in outbox[0]["subject"].lower())
         msg_content = outbox[0].get_payload(decode=True).decode("utf-8").lower()
         self.assertTrue("frequency changed", msg_content)
         self.assertTrue("skip next", msg_content)
+
+        # Normal reviewer should not be able to change skip_next
+        r = self.client.post(url, {
+            "action": "change_settings",
+            "min_interval": "7",
+            "filter_re": "test-[regexp]",
+            "remind_days_before_deadline": "6",
+            "skip_next" : "2",
+        })
+        self.assertEqual(r.status_code, 302)
+        settings = ReviewerSettings.objects.get(person=reviewer, team=review_req.team)
+        self.assertEqual(settings.skip_next, 0)
 
         # add unavailable period
         start_date = datetime.date.today() + datetime.timedelta(days=10)
@@ -434,6 +445,22 @@ class ReviewTests(TestCase):
         msg_content = outbox[0].get_payload(decode=True).decode("utf-8").lower()
         self.assertTrue(start_date.isoformat(), msg_content)
         self.assertTrue(end_date.isoformat(), msg_content)
+
+        # secretaries and the secretariat should be able to change skip_next
+        for username in ["secretary","reviewsecretary"]:
+            skip_next_val = {'secretary':'3','reviewsecretary':'4'}[username]
+            self.client.login(username=username,password=username+"+password")
+            r = self.client.post(url, {
+                "action": "change_settings",
+                "min_interval": "7",
+                "filter_re": "test-[regexp]",
+                "remind_days_before_deadline": "6",
+                "skip_next" : skip_next_val,
+            })
+            self.assertEqual(r.status_code, 302)
+            settings = ReviewerSettings.objects.get(person=reviewer, team=review_req.team)
+            self.assertEqual(settings.skip_next, int(skip_next_val))
+            
 
     def test_change_review_secretary_settings(self):
         doc = make_test_data()
