@@ -248,7 +248,8 @@ class Command(BaseCommand):
         urls = [ u for u in group.groupurl_set.all() if name.lower() in u.name.lower() ]
         if not urls:
             self.note("  adding %s %s URL ..." % (group.acronym, name.lower()))
-            group.groupurl_set.add(GroupURL(group=group, name=name, url=url))
+            url = GroupURL.objects.create(group=group, name=name, url=url)
+            group.groupurl_set.add(url)
 
     def add_custom_pages(self, group, env):
         for template_name in settings.TRAC_WIKI_PAGES_TEMPLATES:
