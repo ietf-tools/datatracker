@@ -81,7 +81,7 @@ class StatesField(forms.ModelMultipleChoiceField):
 class DocumentForm(forms.ModelForm):
     states = StatesField(queryset=State.objects.all(), required=False)
     comment_about_changes = forms.CharField(
-        widget=forms.Textarea(attrs={'rows':10,'cols':40,'class':'vLargeTextField'}),
+        widget=forms.Textarea(attrs={'rows':10,'cols':40,'class':'vLargeTextField'}), strip=False,
         help_text="This comment about the changes made will be saved in the document history.")
     
     def __init__(self, *args, **kwargs):

@@ -31,7 +31,7 @@ def choose_material_type(request, acronym):
 class UploadMaterialForm(forms.Form):
     title = forms.CharField(max_length=Document._meta.get_field("title").max_length)
     name = forms.CharField(max_length=Document._meta.get_field("name").max_length)
-    abstract = forms.CharField(max_length=Document._meta.get_field("abstract").max_length,widget=forms.Textarea)
+    abstract = forms.CharField(max_length=Document._meta.get_field("abstract").max_length,widget=forms.Textarea, strip=False)
     state = forms.ModelChoiceField(State.objects.all(), empty_label=None)
     material = forms.FileField(label='File')
 

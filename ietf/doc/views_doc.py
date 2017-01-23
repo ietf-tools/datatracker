@@ -972,7 +972,7 @@ def document_json(request, name, rev=None):
     return HttpResponse(json.dumps(data, indent=2), content_type='application/json')
 
 class AddCommentForm(forms.Form):
-    comment = forms.CharField(required=True, widget=forms.Textarea)
+    comment = forms.CharField(required=True, widget=forms.Textarea, strip=False)
 
 @role_required('Area Director', 'Secretariat', 'IRTF Chair', 'WG Chair', 'RG Chair', 'WG Secretary', 'RG Secretary', 'IANA', 'RFC Editor')
 def add_comment(request, name):

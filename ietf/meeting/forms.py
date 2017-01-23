@@ -139,7 +139,7 @@ class InterimSessionModelForm(forms.ModelForm):
     requested_duration = DurationField(required=True)
     end_time = forms.TimeField(required=False)
     remote_instructions = forms.CharField(max_length=1024, required=True)
-    agenda = forms.CharField(required=False, widget=forms.Textarea)
+    agenda = forms.CharField(required=False, widget=forms.Textarea, strip=False)
     agenda_note = forms.CharField(max_length=255, required=False)
 
     class Meta:
@@ -236,7 +236,7 @@ class InterimAnnounceForm(forms.ModelForm):
 class InterimCancelForm(forms.Form):
     group = forms.CharField(max_length=255, required=False)
     date = forms.DateField(required=False)
-    comments = forms.CharField(required=False, widget=forms.Textarea(attrs={'placeholder': 'enter optional comments here'}))
+    comments = forms.CharField(required=False, widget=forms.Textarea(attrs={'placeholder': 'enter optional comments here'}), strip=False)
 
     def __init__(self, *args, **kwargs):
         super(InterimCancelForm, self).__init__(*args, **kwargs)

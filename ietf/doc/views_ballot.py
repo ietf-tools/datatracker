@@ -90,8 +90,8 @@ def position_label(position_value):
 # -------------------------------------------------
 class EditPositionForm(forms.Form):
     position = forms.ModelChoiceField(queryset=BallotPositionName.objects.all(), widget=forms.RadioSelect, initial="norecord", required=True)
-    discuss = forms.CharField(required=False, widget=forms.Textarea)
-    comment = forms.CharField(required=False, widget=forms.Textarea)
+    discuss = forms.CharField(required=False, widget=forms.Textarea, strip=False)
+    comment = forms.CharField(required=False, widget=forms.Textarea, strip=False)
 
     def __init__(self, *args, **kwargs):
         ballot_type = kwargs.pop("ballot_type")
@@ -414,7 +414,7 @@ def undefer_ballot(request, name):
                                    back_url=doc.get_absolute_url()))
 
 class LastCallTextForm(forms.Form):
-    last_call_text = forms.CharField(widget=forms.Textarea, required=True)
+    last_call_text = forms.CharField(widget=forms.Textarea, required=True, strip=False)
     
     def clean_last_call_text(self):
         lines = self.cleaned_data["last_call_text"].split("\r\n")
@@ -500,7 +500,7 @@ def lastcalltext(request, name):
                                    ))
 
 class BallotWriteupForm(forms.Form):
-    ballot_writeup = forms.CharField(widget=forms.Textarea, required=True)
+    ballot_writeup = forms.CharField(widget=forms.Textarea, required=True, strip=False)
 
     def clean_ballot_writeup(self):
         return self.cleaned_data["ballot_writeup"].replace("\r", "")
@@ -592,7 +592,7 @@ def ballot_writeupnotes(request, name):
                                    ))
 
 class BallotRfcEditorNoteForm(forms.Form):
-    rfc_editor_note = forms.CharField(widget=forms.Textarea, label="RFC Editor Note", required=True)
+    rfc_editor_note = forms.CharField(widget=forms.Textarea, label="RFC Editor Note", required=True, strip=False)
 
     def clean_rfc_editor_note(self):
         return self.cleaned_data["rfc_editor_note"].replace("\r", "")
@@ -643,7 +643,7 @@ def ballot_rfceditornote(request, name):
                                    ))
 
 class ApprovalTextForm(forms.Form):
-    approval_text = forms.CharField(widget=forms.Textarea, required=True)
+    approval_text = forms.CharField(widget=forms.Textarea, required=True, strip=False)
 
     def clean_approval_text(self):
         return self.cleaned_data["approval_text"].replace("\r", "")

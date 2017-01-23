@@ -25,7 +25,7 @@ from ietf.mailtrigger.utils import gather_address_lists
 
 class ChangeStateForm(forms.Form):
     new_state = forms.ModelChoiceField(State.objects.filter(type="statchg", used=True), label="Status Change Evaluation State", empty_label=None, required=True)
-    comment = forms.CharField(widget=forms.Textarea, help_text="Optional comment for the review history.", required=False)
+    comment = forms.CharField(widget=forms.Textarea, help_text="Optional comment for the review history.", required=False, strip=False)
 
 
 @role_required("Area Director", "Secretariat")
@@ -305,7 +305,7 @@ def default_approval_text(status_change,relateddoc):
 from django.forms.formsets import formset_factory
 
 class AnnouncementForm(forms.Form):
-    announcement_text = forms.CharField(widget=forms.Textarea, label="Status Change Announcement", help_text="Edit the announcement message.", required=True)
+    announcement_text = forms.CharField(widget=forms.Textarea, label="Status Change Announcement", help_text="Edit the announcement message.", required=True, strip=False)
     label = None
       
     def __init__(self, *args, **kwargs):

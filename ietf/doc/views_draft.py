@@ -44,7 +44,7 @@ from ietf.mailtrigger.utils import gather_address_lists
 class ChangeStateForm(forms.Form):
     state = forms.ModelChoiceField(State.objects.filter(used=True, type="draft-iesg"), empty_label=None, required=True)
     substate = forms.ModelChoiceField(DocTagName.objects.filter(slug__in=IESG_SUBSTATE_TAGS), required=False)
-    comment = forms.CharField(widget=forms.Textarea, required=False)
+    comment = forms.CharField(widget=forms.Textarea, required=False, strip=False)
 
     def clean(self):
         retclean = self.cleaned_data
@@ -210,7 +210,7 @@ def change_iana_state(request, name, state_type):
     
 class ChangeStreamForm(forms.Form):
     stream = forms.ModelChoiceField(StreamName.objects.exclude(slug="legacy"), required=False)
-    comment = forms.CharField(widget=forms.Textarea, required=False)
+    comment = forms.CharField(widget=forms.Textarea, required=False, strip=False)
 
 @login_required
 def change_stream(request, name):
@@ -292,7 +292,7 @@ def doc_ajax_internet_draft(request):
 
 class ReplacesForm(forms.Form):
     replaces = SearchableDocAliasesField(required=False)
-    comment = forms.CharField(widget=forms.Textarea, required=False)
+    comment = forms.CharField(widget=forms.Textarea, required=False, strip=False)
 
     def __init__(self, *args, **kwargs):
         self.doc = kwargs.pop('doc')
@@ -344,7 +344,7 @@ class SuggestedReplacesForm(forms.Form):
     replaces = forms.ModelMultipleChoiceField(queryset=DocAlias.objects.all(),
                                               label="Suggestions", required=False, widget=forms.CheckboxSelectMultiple,
                                               help_text="Select only the documents that are replaced by this document")
-    comment = forms.CharField(label="Optional comment", widget=forms.Textarea, required=False)
+    comment = forms.CharField(label="Optional comment", widget=forms.Textarea, required=False, strip=False)
 
     def __init__(self, suggested, *args, **kwargs):
         super(SuggestedReplacesForm, self).__init__(*args, **kwargs)
@@ -404,7 +404,7 @@ def review_possibly_replaces(request, name):
 
 class ChangeIntentionForm(forms.Form):
     intended_std_level = forms.ModelChoiceField(IntendedStdLevelName.objects.filter(used=True), empty_label="(None)", required=True, label="Intended RFC status")
-    comment = forms.CharField(widget=forms.Textarea, required=False)
+    comment = forms.CharField(widget=forms.Textarea, required=False, strip=False)
 
 def change_intention(request, name):
     """Change the intended publication status of a Document of type 'draft' , notifying parties 
@@ -474,7 +474,7 @@ class EditInfoForm(forms.Form):
     ad = forms.ModelChoiceField(Person.objects.filter(role__name="ad", role__group__state="active",role__group__type='area').order_by('name'), label="Responsible AD", empty_label="(None)", required=True)
     create_in_state = forms.ModelChoiceField(State.objects.filter(used=True, type="draft-iesg", slug__in=("pub-req", "watching")), empty_label=None, required=False)
     notify = forms.CharField(max_length=255, label="Notice emails", help_text="Separate email addresses with commas.", required=False)
-    note = forms.CharField(widget=forms.Textarea, label="IESG note", required=False)
+    note = forms.CharField(widget=forms.Textarea, label="IESG note", required=False, strip=False)
     telechat_date = forms.TypedChoiceField(coerce=lambda x: datetime.datetime.strptime(x, '%Y-%m-%d').date(), empty_value=None, required=False, widget=forms.Select(attrs={'onchange':'make_bold()'}))
     returning_item = forms.BooleanField(required=False)
 
@@ -812,7 +812,7 @@ def resurrect(request, name):
                                    back_url=doc.get_absolute_url()))
 
 class IESGNoteForm(forms.Form):
-    note = forms.CharField(widget=forms.Textarea, label="IESG note", required=False)
+    note = forms.CharField(widget=forms.Textarea, label="IESG note", required=False, strip=False)
 
     def clean_note(self):
         # not munging the database content to use html line breaks --
@@ -858,7 +858,7 @@ def edit_iesg_note(request, name):
                                    ))
 
 class ShepherdWriteupUploadForm(forms.Form):
-    content = forms.CharField(widget=forms.Textarea, label="Shepherd writeup", help_text="Edit the shepherd writeup.", required=False)
+    content = forms.CharField(widget=forms.Textarea, label="Shepherd writeup", help_text="Edit the shepherd writeup.", required=False, strip=False)
     txt = forms.FileField(label=".txt format", help_text="Or upload a .txt file.", required=False)
 
     def clean_content(self):
@@ -1116,7 +1116,7 @@ def edit_consensus(request, name):
 
 class PublicationForm(forms.Form):
     subject = forms.CharField(max_length=200, required=True)
-    body = forms.CharField(widget=forms.Textarea, required=True)
+    body = forms.CharField(widget=forms.Textarea, required=True, strip=False)
 
 def request_publication(request, name):
     """Request publication by RFC Editor for a document which hasn't
@@ -1210,7 +1210,7 @@ def request_publication(request, name):
 class AdoptDraftForm(forms.Form):
     group = forms.ModelChoiceField(queryset=Group.objects.filter(type__in=["wg", "rg"], state="active").order_by("-type", "acronym"), required=True, empty_label=None)
     newstate = forms.ModelChoiceField(queryset=State.objects.filter(type__in=['draft-stream-ietf','draft-stream-irtf'],slug__in=['wg-cand', 'c-adopt', 'adopt-wg', 'info', 'wg-doc', 'candidat','active']),required=True,label="State")
-    comment = forms.CharField(widget=forms.Textarea, required=False, label="Comment", help_text="Optional comment explaining the reasons for the adoption.")
+    comment = forms.CharField(widget=forms.Textarea, required=False, label="Comment", help_text="Optional comment explaining the reasons for the adoption.", strip=False)
     weeks = forms.IntegerField(required=False, label="Expected weeks in adoption state")
 
     def __init__(self, *args, **kwargs):
@@ -1334,7 +1334,7 @@ def adopt_draft(request, name):
 class ChangeStreamStateForm(forms.Form):
     new_state = forms.ModelChoiceField(queryset=State.objects.filter(used=True), label='State' )
     weeks = forms.IntegerField(label='Expected weeks in state',required=False)
-    comment = forms.CharField(widget=forms.Textarea, required=False, help_text="Optional comment for the document history.")
+    comment = forms.CharField(widget=forms.Textarea, required=False, help_text="Optional comment for the document history.", strip=False)
     tags = forms.ModelMultipleChoiceField(queryset=DocTagName.objects.filter(used=True), widget=forms.CheckboxSelectMultiple, required=False)
 
     def __init__(self, *args, **kwargs):

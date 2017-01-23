@@ -339,7 +339,7 @@ class MergePersonForm(forms.Form):
 class NominateForm(forms.ModelForm):
     searched_email = SearchableEmailField(only_users=False)
     qualifications = forms.CharField(label="Candidate's qualifications for the position",
-                               widget=forms.Textarea())
+                               widget=forms.Textarea(), strip=False)
     confirmation = forms.BooleanField(label='Email comments back to me as confirmation.',
                                       help_text="If you want to get a confirmation mail containing your feedback in cleartext, please check the 'email comments back to me as confirmation'.",
                                       required=False)
@@ -440,7 +440,7 @@ class NominateForm(forms.ModelForm):
 
 class NominateNewPersonForm(forms.ModelForm):
     qualifications = forms.CharField(label="Candidate's qualifications for the position",
-                               widget=forms.Textarea())
+                               widget=forms.Textarea(), strip=False)
     confirmation = forms.BooleanField(label='Email comments back to me as confirmation.',
                                       help_text="If you want to get a confirmation mail containing your feedback in cleartext, please check the 'email comments back to me as confirmation'.",
                                       required=False)
@@ -551,9 +551,7 @@ class NominateNewPersonForm(forms.ModelForm):
 
 class FeedbackForm(forms.ModelForm):
     nominator_email = forms.CharField(label='Commenter email',required=False)
-
-    comments = forms.CharField(label='Comments',
-                               widget=forms.Textarea())
+    comments = forms.CharField(label='Comments', widget=forms.Textarea(), strip=False)
     confirmation = forms.BooleanField(label='Email comments back to me as confirmation (if selected, your comments will be emailed to you in cleartext when you press Save).',
                                       required=False)
 
@@ -634,7 +632,7 @@ class FeedbackForm(forms.ModelForm):
 
 class FeedbackEmailForm(forms.Form):
 
-    email_text = forms.CharField(label='Email text', widget=forms.Textarea())
+    email_text = forms.CharField(label='Email text', widget=forms.Textarea(), strip=False)
 
     def __init__(self, *args, **kwargs):
         self.nomcom = kwargs.pop('nomcom', None)
@@ -646,7 +644,7 @@ class FeedbackEmailForm(forms.Form):
 class QuestionnaireForm(forms.ModelForm):
 
     comments = forms.CharField(label='Questionnaire response from this candidate',
-                               widget=forms.Textarea())
+                               widget=forms.Textarea(), strip=False)
     def __init__(self, *args, **kwargs):
         self.nomcom = kwargs.pop('nomcom', None)
         self.user = kwargs.pop('user', None)
@@ -676,7 +674,7 @@ class QuestionnaireForm(forms.ModelForm):
         fields = ( 'comments', )
 
 class NomComTemplateForm(DBTemplateForm):
-    content = forms.CharField(label="Text", widget=forms.Textarea(attrs={'cols': '120', 'rows':'40', }))
+    content = forms.CharField(label="Text", widget=forms.Textarea(attrs={'cols': '120', 'rows':'40', }), strip=False)
 
 class PositionForm(forms.ModelForm):
 
@@ -695,7 +693,7 @@ class PositionForm(forms.ModelForm):
 
 class PrivateKeyForm(forms.Form):
 
-    key = forms.CharField(label='Private key', widget=forms.Textarea(), required=False)
+    key = forms.CharField(label='Private key', widget=forms.Textarea(), required=False, strip=False)
 
     def clean_key(self):
         key = self.cleaned_data.get('key', None)
@@ -883,5 +881,5 @@ class EditNomineeForm(forms.ModelForm):
         fields = ('nominee_email',)
 
 class NominationResponseCommentForm(forms.Form):
-    comments = forms.CharField(widget=forms.Textarea,required=False,help_text="Any comments provided will be encrytped and will only be visible to the NomCom.")
+    comments = forms.CharField(widget=forms.Textarea,required=False,help_text="Any comments provided will be encrytped and will only be visible to the NomCom.", strip=False)
 

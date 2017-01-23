@@ -145,7 +145,7 @@ class AddAreaModelForm(forms.ModelForm):
 #     name = forms.CharField(max_length=80,required=True)
 #     status = forms.IntegerField(widget=forms.Select(choices=STATE_CHOICES),required=True)
 #     start_date = forms.DateField()
-#     comments = forms.CharField(widget=forms.Textarea(attrs={'rows':'1'}),required=False)
+#     comments = forms.CharField(widget=forms.Textarea(attrs={'rows':'1'}),required=False, strip=False)
 # 
 #     def clean_acronym(self):
 #         # get name, strip leading and trailing spaces

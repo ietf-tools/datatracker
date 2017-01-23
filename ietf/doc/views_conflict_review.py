@@ -24,7 +24,7 @@ from ietf.mailtrigger.utils import gather_address_lists
 
 class ChangeStateForm(forms.Form):
     review_state = forms.ModelChoiceField(State.objects.filter(used=True, type="conflrev"), label="Conflict review state", empty_label=None, required=True)
-    comment = forms.CharField(widget=forms.Textarea, help_text="Optional comment for the review history.", required=False)
+    comment = forms.CharField(widget=forms.Textarea, help_text="Optional comment for the review history.", required=False, strip=False)
 
 @role_required("Area Director", "Secretariat")
 def change_state(request, name, option=None):
@@ -126,7 +126,7 @@ def send_conflict_eval_email(request,review):
                addrs.cc)
 
 class UploadForm(forms.Form):
-    content = forms.CharField(widget=forms.Textarea, label="Conflict review response", help_text="Edit the conflict review response.", required=False)
+    content = forms.CharField(widget=forms.Textarea, label="Conflict review response", help_text="Edit the conflict review response.", required=False, strip=False)
     txt = forms.FileField(label=".txt format", help_text="Or upload a .txt file.", required=False)
 
     def clean_content(self):
@@ -277,7 +277,7 @@ def default_approval_text(review):
 
 
 class AnnouncementForm(forms.Form):
-    announcement_text = forms.CharField(widget=forms.Textarea, label="IETF Conflict Review Announcement", help_text="Edit the announcement message.", required=True)
+    announcement_text = forms.CharField(widget=forms.Textarea, label="IETF Conflict Review Announcement", help_text="Edit the announcement message.", required=True, strip=False)
 
 @role_required("Secretariat")
 def approve(request, name):

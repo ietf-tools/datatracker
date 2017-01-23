@@ -284,7 +284,7 @@ def assign_reviewer(request, name, request_id):
     })
 
 class RejectReviewerAssignmentForm(forms.Form):
-    message_to_secretary = forms.CharField(widget=forms.Textarea, required=False, help_text="Optional explanation of rejection, will be emailed to team secretary if filled in")
+    message_to_secretary = forms.CharField(widget=forms.Textarea, required=False, help_text="Optional explanation of rejection, will be emailed to team secretary if filled in", strip=False)
 
 @login_required
 def reject_reviewer_assignment(request, name, request_id):
@@ -354,7 +354,7 @@ class CompleteReviewForm(forms.Form):
 
     review_url = forms.URLField(label="Link to message", required=False)
     review_file = forms.FileField(label="Text file to upload", required=False)
-    review_content = forms.CharField(widget=forms.Textarea, required=False)
+    review_content = forms.CharField(widget=forms.Textarea, required=False, strip=False)
     completion_date = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={ "autoclose": "1" }, initial=datetime.date.today, help_text="Date of announcement of the results of this review")
     completion_time = forms.TimeField(widget=forms.HiddenInput, initial=datetime.time.min)
     cc = MultiEmailField(required=False, help_text="Email addresses to send to in addition to the review team list")
@@ -621,7 +621,7 @@ def search_mail_archive(request, name, request_id):
     return JsonResponse(res)
 
 class EditReviewRequestCommentForm(forms.ModelForm):
-    comment = forms.CharField(widget=forms.Textarea)
+    comment = forms.CharField(widget=forms.Textarea, strip=False)
     class Meta:
         fields = ['comment',]
         model = ReviewRequest
