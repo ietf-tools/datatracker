@@ -503,8 +503,6 @@ class Document(DocumentInfo):
         super(Document, self).save(*args, **kwargs)
 
     def telechat_date(self, e=None):
-        if hasattr(self, '_telechat_date'):
-            return self._telechat_date
         if not e:
             e = self.latest_event(TelechatDocEvent, type="scheduled_for_telechat")
         return e.telechat_date if e and e.telechat_date and e.telechat_date >= datetime.date.today() else None
