@@ -9,7 +9,6 @@ from django.contrib import messages
 from django.core.urlresolvers import reverse
 from django.http import Http404, HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import render, get_object_or_404, redirect
-from django.template import RequestContext
 from django.template.loader import render_to_string
 from django.db.models import Count
 from django.forms.models import modelformset_factory, inlineformset_factory
@@ -54,7 +53,7 @@ def index(request):
         else:
             nomcom.ann_url = None
     return render(request, 'nomcom/index.html',
-                              {'nomcom_list': nomcom_list,}, RequestContext(request))
+                              {'nomcom_list': nomcom_list,})
 
 
 def year_index(request, year):
@@ -65,7 +64,7 @@ def year_index(request, year):
                               {'nomcom': nomcom,
                                'year': year,
                                'selected': 'index',
-                               'template': template}, RequestContext(request))
+                               'template': template})
 
 def announcements(request):
     address_re = re.compile("<.*>")
@@ -127,7 +126,7 @@ def private_key(request, year):
                                'year': year,
                                'back_url': back_url,
                                'form': form,
-                               'selected': 'private_key'}, RequestContext(request))
+                               'selected': 'private_key'})
 
 
 @role_required("Nomcom")
@@ -195,7 +194,7 @@ def private_index(request, year):
                                'selected_position': selected_position and int(selected_position) or None,
                                'selected': 'index',
                                'is_chair': is_chair,
-                              }, RequestContext(request))
+                              })
 
 
 @role_required("Nomcom Chair", "Nomcom Advisor")
@@ -262,7 +261,7 @@ def send_reminder_mail(request, year, type):
                                'reminder_description': reminder_description,
                                'state_description': state_description,
                                'is_chair_task' : True,
-                              }, RequestContext(request))
+                              })
 
 
 @role_required("Nomcom Chair", "Nomcom Advisor")
@@ -287,7 +286,7 @@ def private_merge_person(request, year):
                                'form': form,
                                'selected': 'merge_person',
                                'is_chair_task' : True,
-                              }, RequestContext(request))
+                              })
 
 
 @role_required("Nomcom Chair", "Nomcom Advisor")
@@ -312,7 +311,7 @@ def private_merge_nominee(request, year):
                                'form': form,
                                'selected': 'merge_nominee',
                                'is_chair_task' : True,
-                              }, RequestContext(request))
+                              })
 
 def requirements(request, year):
     nomcom = get_nomcom_by_year(year)
@@ -321,7 +320,7 @@ def requirements(request, year):
                               {'nomcom': nomcom,
                                'positions': positions,
                                'year': year,
-                               'selected': 'requirements'}, RequestContext(request))
+                               'selected': 'requirements'})
 
 
 def questionnaires(request, year):
@@ -331,7 +330,7 @@ def questionnaires(request, year):
                               {'nomcom': nomcom,
                                'positions': positions,
                                'year': year,
-                               'selected': 'questionnaires'}, RequestContext(request))
+                               'selected': 'questionnaires'})
 
 
 @login_required
@@ -366,14 +365,14 @@ def nominate(request, year, public, newperson):
         return render(request, template,
                               {'nomcom': nomcom,
                                'year': year,
-                               'selected': 'nominate'}, RequestContext(request))
+                               'selected': 'nominate'})
 
     if nomcom.group.state_id == 'conclude':
         messages.warning(request, "Nominations to this Nomcom are closed.")
         return render(request, template,
                               {'nomcom': nomcom,
                                'year': year,
-                               'selected': 'nominate'}, RequestContext(request))
+                               'selected': 'nominate'})
 
     if request.method == 'POST':
         if newperson:
@@ -397,7 +396,7 @@ def nominate(request, year, public, newperson):
                               {'form': form,
                                'nomcom': nomcom,
                                'year': year,
-                               'selected': 'nominate'}, RequestContext(request))
+                               'selected': 'nominate'})
 
 @login_required
 def public_feedback(request, year):
@@ -492,7 +491,7 @@ def private_feedback_email(request, year):
                            'year': year,
                            'selected': 'feedback_email',
                            'is_chair_task' : True,
-                          }, RequestContext(request))
+                          })
 
     form = FeedbackEmailForm(nomcom=nomcom)
 
@@ -508,7 +507,7 @@ def private_feedback_email(request, year):
                               {'form': form,
                                'nomcom': nomcom,
                                'year': year,
-                               'selected': 'feedback_email'}, RequestContext(request))
+                               'selected': 'feedback_email'})
 
 @role_required("Nomcom Chair", "Nomcom Advisor")
 def private_questionnaire(request, year):
@@ -532,7 +531,7 @@ def private_questionnaire(request, year):
                            'year': year,
                            'selected': 'questionnaire',
                            'is_chair_task' : True,
-                          }, RequestContext(request))
+                          })
 
     if request.method == 'POST':
         form = QuestionnaireForm(data=request.POST,
@@ -550,7 +549,7 @@ def private_questionnaire(request, year):
                                'questionnaire_response': questionnaire_response,
                                'nomcom': nomcom,
                                'year': year,
-                               'selected': 'questionnaire'}, RequestContext(request))
+                               'selected': 'questionnaire'})
 
 
 def process_nomination_status(request, year, nominee_position_id, state, date, hash):
@@ -605,7 +604,7 @@ def process_nomination_status(request, year, nominee_position_id, state, date, h
                                'state': state,
                                'need_confirmation': need_confirmation,
                                'selected': 'feedback',
-                               'form': form }, RequestContext(request))
+                               'form': form })
 
 
 @role_required("Nomcom")
@@ -660,7 +659,7 @@ def view_feedback(request, year):
                                'independent_feedback_types': independent_feedback_types,
                                'independent_feedback': independent_feedback,
                                'nominees_feedback': nominees_feedback,
-                               'nomcom': nomcom}, RequestContext(request))
+                               'nomcom': nomcom})
 
 
 @role_required("Nomcom Chair", "Nomcom Advisor")
@@ -759,7 +758,7 @@ def view_feedback_pending(request, year):
                                'types': FeedbackTypeName.objects.all().order_by('pk'),
                                'nomcom': nomcom,
                                'is_chair_task' : True,
-                              }, RequestContext(request))
+                              })
 
 
 @role_required("Nomcom")
@@ -775,7 +774,7 @@ def view_feedback_unrelated(request, year):
                               {'year': year,
                                'selected': 'view_feedback',
                                'feedback_types': feedback_types,
-                               'nomcom': nomcom}, RequestContext(request))
+                               'nomcom': nomcom})
 
 
 @role_required("Nomcom")
@@ -798,7 +797,7 @@ def view_feedback_nominee(request, year, nominee_id):
                                'nominee': nominee,
                                'feedback_types': feedback_types,
                                'last_seen_time' : last_seen_time,
-                               'nomcom': nomcom}, RequestContext(request))
+                               'nomcom': nomcom})
 
 
 @role_required("Nomcom Chair", "Nomcom Advisor")
@@ -823,7 +822,7 @@ def edit_nominee(request, year, nominee_id):
                                'form': form,
                                'nomcom': nomcom,
                                'is_chair_task' : True,
-                              }, RequestContext(request))
+                              })
 
 
 @role_required("Nomcom Chair", "Nomcom Advisor")
@@ -863,7 +862,7 @@ def edit_nomcom(request, year):
                                'year': year,
                                'selected': 'edit_nomcom',
                                'is_chair_task' : True,
-                              }, RequestContext(request))
+                              })
 
 
 
@@ -880,7 +879,7 @@ def list_templates(request, year):
                                'selected': 'edit_templates',
                                'nomcom': nomcom,
                                'is_chair_task' : True,
-                              }, RequestContext(request))
+                              })
 
 
 @role_required("Nomcom Chair", "Nomcom Advisor")
@@ -918,7 +917,7 @@ def list_positions(request, year):
                                'selected': 'edit_positions',
                                'nomcom': nomcom,
                                'is_chair_task' : True,
-                              }, RequestContext(request))
+                              })
 
 
 @role_required("Nomcom Chair", "Nomcom Advisor")
@@ -939,7 +938,7 @@ def remove_position(request, year, position_id):
                                'position': position,
                                'nomcom': nomcom,
                                'is_chair_task' : True,
-                              }, RequestContext(request))
+                              })
 
 
 @role_required("Nomcom Chair", "Nomcom Advisor")
@@ -971,7 +970,7 @@ def edit_position(request, year, position_id=None):
                                'year': year,
                                'nomcom': nomcom,
                                'is_chair_task' : True,
-                              }, RequestContext(request))
+                              })
 
 @role_required("Nomcom Chair", "Nomcom Advisor")
 def configuration_help(request, year):
