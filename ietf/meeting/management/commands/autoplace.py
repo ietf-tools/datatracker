@@ -31,7 +31,7 @@ class Command(BaseCommand):
             dest='profile',
             default=False,
             help='Enable verbose mode')
-       parser.add_argument('--recordsteps',
+        parser.add_argument('--recordsteps',
             action='store_true',
             dest='recordsteps',
             default=False,
@@ -42,15 +42,15 @@ class Command(BaseCommand):
             default=False,
             help='Enable verbose mode')
         parser.add_argument('--maxstep',
-                    action="store", type="int",
-                    dest='maxstep',
-                    default=20000,
-                    help='Maximum number of steps')
+            action="store", type=int,
+            dest='maxstep',
+            default=20000,
+            help='Maximum number of steps')
         parser.add_argument('--seed',
-                    action="store", type="int",
-                    dest='seed',
-                    default=None,
-                    help='Seed to use for calculation')
+            action="store", type=int,
+            dest='seed',
+            default=None,
+            help='Seed to use for calculation')
 
 
     def handle(self, *labels, **options):

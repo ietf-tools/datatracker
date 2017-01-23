@@ -36,7 +36,6 @@ import os, datetime, urllib, json, glob, re
 
 from django.http import HttpResponse, Http404 , HttpResponseForbidden
 from django.shortcuts import render, get_object_or_404, redirect
-from django.template import RequestContext
 from django.template.loader import render_to_string
 from django.core.urlresolvers import reverse as urlreverse
 from django.conf import settings

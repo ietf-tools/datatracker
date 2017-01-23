@@ -6,7 +6,6 @@ from django import forms
 from django.http import HttpResponseRedirect, HttpResponseForbidden, Http404
 from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
-from django.template import RequestContext
 from django.conf import settings
 from django.forms.utils import ErrorList
 from django.contrib.auth.decorators import login_required

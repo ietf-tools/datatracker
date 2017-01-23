@@ -39,7 +39,6 @@ python manage.py makefixture --format=xml --indent=4 YourModel[3] AnotherModel a
 #no support for generic relations
 #no support for one-to-one relations
 from django.core import serializers
-from django.core.management.base import BaseCommand
 from django.core.management.base import CommandError
 from django.core.management.base import LabelCommand
 from django.db.models.fields.related import ForeignKey
