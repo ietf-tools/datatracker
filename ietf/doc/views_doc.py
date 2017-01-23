@@ -816,7 +816,7 @@ def document_shepherd_writeup(request, name):
                                     writeup=writeup_text,
                                     can_edit=can_edit_shepherd_writeup
                                    ),
-                              request=request)
+                              )
 
 def document_references(request, name):
     doc = get_object_or_404(Document,docalias__name=name)
