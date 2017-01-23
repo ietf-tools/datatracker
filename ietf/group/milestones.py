@@ -8,12 +8,14 @@ from django.http import HttpResponseForbidden, HttpResponseBadRequest, HttpRespo
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 
+import debug                            # pyflakes:ignore
+
 from ietf.doc.models import DocEvent
 from ietf.doc.utils import get_chartering_type
 from ietf.doc.fields import SearchableDocumentsField
 from ietf.group.models import GroupMilestone, MilestoneGroupEvent
-from ietf.group.utils import (save_milestone_in_history, can_manage_group, milestone_reviewer_for_group_type,
-                              get_group_or_404)
+from ietf.group.utils import (save_milestone_in_history, can_manage_group_type, can_manage_group,
+                              milestone_reviewer_for_group_type, get_group_or_404)
 from ietf.name.models import GroupMilestoneStateName
 from ietf.group.mails import email_milestones_changed
 from ietf.utils.fields import DatepickerDateField
@@ -93,12 +95,13 @@ def edit_milestones(request, acronym, group_type=None, milestone_set="current"):
         raise Http404
 
     needs_review = False
-    if not can_manage_group(request.user, group):
-        if group.has_role(request.user, group.features.admin_roles):
+    if can_manage_group(request.user, group):
+        if not can_manage_group_type(request.user, group):
+            # The user is chair or similar, not AD:
             if milestone_set == "current":
                 needs_review = True
-        else:
-            return HttpResponseForbidden("You are not chair of this group.")
+    else:
+        return HttpResponseForbidden("You don't have permission to access this view")
 
     if milestone_set == "current":
         title = "Edit milestones for %s %s" % (group.acronym, group.type.name)
@@ -328,11 +331,9 @@ def reset_charter_milestones(request, group_type, acronym):
     group = get_group_or_404(acronym, group_type)
     if not group.features.has_milestones:
         raise Http404
-    
-    can_manage = can_manage_group(request.user, group)
-    is_chair = group.has_role(request.user, "chair")
-    if (not can_manage) and (not is_chair):
-        return HttpResponseForbidden("You are not chair of this group.")
+
+    if not can_manage_group(request.user, group):
+        return HttpResponseForbidden("You don't have permission to access this view")
 
     current_milestones = group.groupmilestone_set.filter(state="active")
     charter_milestones = group.groupmilestone_set.filter(state="charter")

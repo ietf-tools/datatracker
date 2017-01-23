@@ -89,15 +89,7 @@ def save_milestone_in_history(milestone):
 
     return h
 
-def can_manage_group_type(user, group_type):
-    if group_type == "rg":
-        return has_role(user, ('IRTF Chair', 'Secretariat'))
-    elif group_type == "wg":
-        return has_role(user, ('Area Director', 'Secretariat'))
-
-    return has_role(user, 'Secretariat')
-
-def can_manage_group(user, group):
+def can_manage_group_type(user, group):
     if group.type_id == "rg":
         return has_role(user, ('IRTF Chair', 'Secretariat'))
     elif group.type_id == "wg":
@@ -108,6 +100,11 @@ def can_manage_group(user, group):
         elif group.is_decendant_of("irtf"):
             return has_role(user, ('IRTF Chair', 'Secretariat'))
     return has_role(user, ('Secretariat'))
+
+def can_manage_group(user, group):
+    if can_manage_group_type(user, group):
+        return True
+    return group.has_role(user, group.features.admin_roles)
 
 def milestone_reviewer_for_group_type(group_type):
     if group_type == "rg":
@@ -196,7 +193,7 @@ def construct_group_menu_context(request, group, selected, group_type, others):
     actions = []
 
     is_admin = group.has_role(request.user, group.features.admin_roles)
-    can_manage = can_manage_group(request.user, group)
+    can_manage = can_manage_group_type(request.user, group)
 
     if group.features.has_milestones:
         if group.state_id != "proposed" and (is_admin or can_manage):

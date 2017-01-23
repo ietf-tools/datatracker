@@ -54,7 +54,7 @@ from ietf.doc.utils import ( add_links_in_new_revision_events, augment_events_wi
     add_events_message_info, get_unicode_document_content)
 from ietf.community.utils import augment_docs_with_tracking_info
 from ietf.group.models import Role
-from ietf.group.utils import can_manage_group, can_manage_materials
+from ietf.group.utils import can_manage_group_type, can_manage_materials
 from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream, user_is_person, role_required
 from ietf.name.models import StreamName, BallotPositionName
 from ietf.person.models import Email
@@ -450,7 +450,7 @@ def document_main(request, name, rev=None):
         if chartering and not snapshot:
             milestones = doc.group.groupmilestone_set.filter(state="charter")
 
-        can_manage = can_manage_group(request.user, doc.group)
+        can_manage = can_manage_group_type(request.user, doc.group)
 
         return render_to_response("doc/document_charter.html",
                                   dict(doc=doc,

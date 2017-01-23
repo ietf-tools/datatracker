@@ -16,7 +16,7 @@ from ietf.doc.utils import get_tags_for_stream_id
 from ietf.doc.utils_charter import charter_name_for_group
 from ietf.group.models import ( Group, Role, GroupEvent, GroupHistory, GroupStateName,
     GroupStateTransitions, GroupTypeName, GroupURL, ChangeStateGroupEvent )
-from ietf.group.utils import save_group_in_history, can_manage_group
+from ietf.group.utils import save_group_in_history, can_manage_group, can_manage_group_type
 from ietf.group.utils import get_group_or_404, setup_default_community_list_for_group
 from ietf.ietfauth.utils import has_role
 from ietf.person.fields import SearchableEmailsField
@@ -401,7 +401,7 @@ def conclude(request, acronym, group_type=None):
     """Request the closing of group, prompting for instructions."""
     group = get_group_or_404(acronym, group_type)
 
-    if not can_manage_group(request.user, group):
+    if not can_manage_group_type(request.user, group):
         return HttpResponseForbidden("You don't have permission to access this view")
 
     if request.method == 'POST':

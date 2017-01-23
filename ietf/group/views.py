@@ -57,7 +57,7 @@ from ietf.doc.utils_search import prepare_document_table
 from ietf.doc.utils_charter import charter_name_for_group
 from ietf.group.models import Group, Role, ChangeStateGroupEvent
 from ietf.name.models import GroupTypeName
-from ietf.group.utils import (get_charter_text, can_manage_group_type, can_manage_group,
+from ietf.group.utils import (get_charter_text, can_manage_group_type, 
                               milestone_reviewer_for_group_type, can_provide_status_update,
                               can_manage_materials, get_group_or_404,
                               construct_group_menu_context, get_group_materials)
@@ -296,7 +296,10 @@ def chartering_groups(request):
 
     for t in group_types:
         t.chartering_groups = Group.objects.filter(type=t, charter__states__in=charter_states).select_related("state", "charter").order_by("acronym")
-        t.can_manage = can_manage_group_type(request.user, t.slug)
+        if t.chartering_groups.exists():
+            t.can_manage = can_manage_group_type(request.user, t.chartering_groups.first())
+        else:
+            t.can_manage = False
 
         for g in t.chartering_groups:
             g.chartering_type = get_chartering_type(g.charter)
@@ -414,7 +417,7 @@ def group_about(request, acronym, group_type=None):
     e = group.latest_event(type__in=("changed_state", "requested_close",))
     requested_close = group.state_id != "conclude" and e and e.type == "requested_close"
 
-    can_manage = can_manage_group(request.user, group)
+    can_manage = can_manage_group_type(request.user, group)
     charter_submit_url = "" 
     if group.features.has_chartering_process: 
         charter_submit_url = urlreverse("charter_submit", kwargs={ "name": charter_name_for_group(group) }) 
