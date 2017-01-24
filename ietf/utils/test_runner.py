@@ -396,7 +396,7 @@ class IetfTestRunner(DiscoverRunner):
 
             settings.TEMPLATES[0]['OPTIONS']['loaders'] = ('ietf.utils.test_runner.TemplateCoverageLoader',) + settings.TEMPLATES[0]['OPTIONS']['loaders']
 
-            settings.MIDDLEWARE_CLASSES = ('ietf.utils.test_runner.RecordUrlsMiddleware',) + settings.MIDDLEWARE_CLASSES
+            settings.MIDDLEWARE_CLASSES = ('ietf.utils.test_runner.RecordUrlsMiddleware',) + tuple(settings.MIDDLEWARE_CLASSES)
             url_coverage_collection = True
 
             self.code_coverage_checker = settings.TEST_CODE_COVERAGE_CHECKER
