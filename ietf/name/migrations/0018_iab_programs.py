@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
 from django.db import migrations
@@ -19,7 +19,7 @@ def removeNames(apps,schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('name', '0016_auto_20161013_1010'),
+        ('name', '0017_add_role_name_trac_admin'),
     ]
 
     operations = [
