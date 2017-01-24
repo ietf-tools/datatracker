@@ -28,8 +28,9 @@ from ietf.group.utils import save_group_in_history
 from ietf.meeting.factories import SessionFactory
 from ietf.name.models import DocTagName, GroupStateName, GroupTypeName
 from ietf.person.models import Person, Email
+from ietf.person.factories import PersonFactory
 from ietf.utils.mail import outbox, empty_outbox
-from ietf.utils.test_data import make_test_data, create_person, make_review_data
+from ietf.utils.test_data import make_test_data, make_review_data
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase, unicontent, reload_db_objects
 
 def group_urlreverse_list(group, viewname):
@@ -62,30 +63,15 @@ class GroupPagesTests(TestCase):
         self.assertTrue(group.name in unicontent(r))
         self.assertTrue(group.ad_role().person.plain_name() in unicontent(r))
 
-        url = urlreverse('ietf.group.views.active_groups', kwargs=dict(group_type="rg"))
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        self.assertTrue('Active research groups' in unicontent(r))
-
-        url = urlreverse('ietf.group.views.active_groups', kwargs=dict(group_type="area"))
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        self.assertTrue("Far Future (farfut)" in unicontent(r))
-
-        url = urlreverse('ietf.group.views.active_groups', kwargs=dict(group_type="ag"))
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        self.assertTrue("Active area groups" in unicontent(r))
-
-        url = urlreverse('ietf.group.views.active_groups', kwargs=dict(group_type="dir"))
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        self.assertTrue("Active directorates" in unicontent(r))
-
-        url = urlreverse('ietf.group.views.active_groups', kwargs=dict(group_type="team"))
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        self.assertTrue("Active teams" in unicontent(r))
+        for t in ('rg','area','ag','dir','team','program'):
+            g = GroupFactory.create(type_id=t,state_id='active') 
+            if t=='dir':
+                g.parent = GroupFactory.create(type_id='area',state_id='active')
+                g.save()
+            url = urlreverse('ietf.group.views.active_groups', kwargs=dict(group_type=t))
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            self.assertTrue(g.acronym in unicontent(r))
 
         url = urlreverse('ietf.group.views.active_groups', kwargs=dict())
         r = self.client.get(url)
@@ -269,42 +255,72 @@ class GroupPagesTests(TestCase):
 
     def test_group_about(self):
 
-        def verify_cannot_edit_group(url, username):
-            self.client.login(username=username, password=username+"+password")
-            r = self.client.get(url)
-            self.assertEqual(r.status_code, 403)
-
-        def verify_can_edit_group(url, username):
-            self.client.login(username=username, password=username+"+password")
-            r = self.client.get(url)
-            self.assertEqual(r.status_code, 200)
-
         make_test_data()
-        group = Group.objects.create(
-            type_id="team",
-            acronym="testteam",
-            name="Test Team",
-            description="The test team is testing.",
-            state_id="active",
-            parent = Group.objects.get(acronym="farfut"),
-        )
-        create_person(group, "chair", name="Testteam Chairman", username="teamchairman")
 
-        for url in [group.about_url(),] + group_urlreverse_list(group, 'ietf.group.views.group_about'):
-            url = group.about_url()
+        p = PersonFactory(user__username='iab-member')
+        Group.objects.get(acronym='iab').role_set.create(name_id='member',person=p,email=p.email())
+
+        interesting_users = [ 'plain','iana','iab-chair','irtf-chair', 'marschairman', 'teamchairman','ad', 'iab-member', 'secretary', ]
+
+        can_edit = {
+            'wg'   : ['secretary','ad'],
+            'rg'   : ['secretary','irtf-chair'],
+            'ag'   : ['secretary', ],
+            'team' : ['secretary',], # The code currently doesn't let ads edit teams or directorates. Maybe it should.
+            'dir'  : ['secretary',],
+            'program' : ['secretary', 'iab-member'],
+        }
+
+        def setup_role(group, role_id):
+            p = PersonFactory(user__username="%s_%s"%(group.acronym,role_id))
+            group.role_set.create(name_id=role_id,person=p,email=p.email())
+            can_edit[group.type_id].append(p.user.username)
+            interesting_users.append(p.user.username)
+
+        test_groups = []
+
+        for t in ['wg','rg','ag','team']:
+            g = GroupFactory(type_id=t)
+            setup_role(g,'chair')
+            test_groups.append(g)
+
+        g = GroupFactory(type_id='dir')
+        setup_role(g,'secr')
+        test_groups.append(g)
+
+        g = GroupFactory(type_id='program')
+        setup_role(g, 'lead')
+        test_groups.append(g)
+
+        def verify_cannot_edit_group(url, group, username):
+            self.client.logout()
+            self.client.login(username=username, password=username+"+password")
             r = self.client.get(url)
-            self.assertEqual(r.status_code, 200)
-            self.assertTrue(group.name in unicontent(r))
-            self.assertTrue(group.acronym in unicontent(r))
-            self.assertTrue(group.description in unicontent(r))
+            self.assertTrue(r.status_code in (302,403),"%s should not be able to edit %s of type %s"%(username,group.acronym,group.type_id))
 
-        for url in group_urlreverse_list(group, 'ietf.group.views_edit.edit'):
+        def verify_can_edit_group(url, group, username):
+            self.client.logout()
+            self.client.login(username=username, password=username+"+password")
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200, "%s should be able to edit %s of type %s"%(username,group.acronym,group.type_id))
 
-            for username in ['plain','iana','iab chair','irtf chair','marschairman']:
-                verify_cannot_edit_group(url, username)
+        for group in test_groups:
 
-            for username in ['secretary','teamchairman','ad']:
-                verify_can_edit_group(url, username)
+            for url in [group.about_url(),] + group_urlreverse_list(group, 'ietf.group.views.group_about'):
+                url = group.about_url()
+                r = self.client.get(url)
+                self.assertEqual(r.status_code, 200)
+                self.assertTrue(group.name in unicontent(r))
+                self.assertTrue(group.acronym in unicontent(r))
+                self.assertTrue(group.description in unicontent(r))
+    
+            for url in group_urlreverse_list(group, 'ietf.group.views_edit.edit'):
+    
+                for username in can_edit[group.type_id]:
+                    verify_can_edit_group(url, group, username)
+    
+                for username in list(set(interesting_users)-set(can_edit[group.type_id])):
+                    verify_cannot_edit_group(url, group, username)
 
     def test_materials(self):
         make_test_data()

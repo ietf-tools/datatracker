@@ -99,6 +99,8 @@ def can_manage_group_type(user, group):
             return has_role(user, ('Area Director', 'Secretariat'))
         elif group.is_decendant_of("irtf"):
             return has_role(user, ('IRTF Chair', 'Secretariat'))
+    elif group.type_id == "program":
+        return has_role(user, ('IAB', 'Secretariat',))        
     return has_role(user, ('Secretariat'))
 
 def can_manage_group(user, group):

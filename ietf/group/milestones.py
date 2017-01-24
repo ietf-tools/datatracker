@@ -101,7 +101,7 @@ def edit_milestones(request, acronym, group_type=None, milestone_set="current"):
             if milestone_set == "current":
                 needs_review = True
     else:
-        return HttpResponseForbidden("You don't have permission to access this view")
+        return HttpResponseForbidden("You are not authorized to edit the milestones of this group.")
 
     if milestone_set == "current":
         title = "Edit milestones for %s %s" % (group.acronym, group.type.name)
@@ -333,7 +333,7 @@ def reset_charter_milestones(request, group_type, acronym):
         raise Http404
 
     if not can_manage_group(request.user, group):
-        return HttpResponseForbidden("You don't have permission to access this view")
+        return HttpResponseForbidden("You are not authorized to change the milestones for this group.")
 
     current_milestones = group.groupmilestone_set.filter(state="active")
     charter_milestones = group.groupmilestone_set.filter(state="charter")

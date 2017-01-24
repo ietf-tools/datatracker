@@ -49,6 +49,8 @@ def can_manage_community_list(user, clist):
             return Role.objects.filter(name__slug='ad', person__user=user, group=clist.group).exists()
         elif clist.group.type_id in ('wg', 'rg'):
             return Role.objects.filter(name__slug='chair', person__user=user, group=clist.group).exists()
+        elif clist.group.type_id in ('program'):
+            return Role.objects.filter(name__slug='lead', person__user=user, group=clist.group).exists()
 
     return False
 

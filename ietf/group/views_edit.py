@@ -416,7 +416,11 @@ def conclude(request, acronym, group_type=None):
             e.desc = "Requested closing group"
             e.save()
 
-            return redirect(group.features.about_page, group_type=group_type, acronym=group.acronym)
+            kwargs = {'acronym':group.acronym}
+            if group_type:
+                kwargs['group_type'] = group_type
+   
+            return redirect(group.features.about_page, **kwargs)
     else:
         form = ConcludeForm()
 
