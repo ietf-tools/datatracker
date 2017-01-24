@@ -1,6 +1,7 @@
 {% extends "group/group_base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
+{% load markup_tags %}
 {% load firstof from future %}
 {% load ietf_filters %}
 
@@ -82,7 +83,7 @@
 	</tr>
       {% endif %}
 
-      {% if group.features.has_documents %}
+      {% if group.features.has_dependencies %}
 	<tr id='dependency_graph'>
 	  <td></td>
 	  <th>Dependencies</th>
@@ -142,7 +143,7 @@
     </tbody>
     {% endif %}
 
-    {% if group.state_id != "conclude" and group.type_id != "sdo" and group.type_id != "rfcedtyp" and group.type_id != "isoc" %}
+    {% if group.state_id != "conclude" and group.features.has_default_jabber %}
     <tbody class="meta">
       <tr>
 	 <th>Jabber chat</th>
@@ -165,7 +166,8 @@
     {{ group.charter_text|linebreaks }}
   {% else %}
     <h2>About</h2>
-    {{ group.description|default:"No description yet."|linebreaks }}
+    {% comment %}{{ group.description|default:"No description yet."|linebreaks }}{% endcomment %}
+    {{ group.description|default:"No description yet."| apply_markup:"restructuredtext" }}
   {% endif %}
 
   {% if group.features.has_milestones %}

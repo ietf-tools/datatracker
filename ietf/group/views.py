@@ -219,11 +219,13 @@ def active_groups(request, group_type=None):
         return active_teams(request)
     elif group_type == "dir":
         return active_dirs(request)
+    elif group_type == "program":
+        return active_programs(request)
     else:
         raise Http404
 
 def active_group_types(request):
-    grouptypes = GroupTypeName.objects.filter(slug__in=['wg','rg','ag','team','dir','area'])
+    grouptypes = GroupTypeName.objects.filter(slug__in=['wg','rg','ag','team','dir','area','program'])
     return render(request, 'group/active_groups.html', {'grouptypes':grouptypes})
 
 def active_dirs(request):
@@ -239,6 +241,12 @@ def active_teams(request):
     for group in teams:
         group.chairs = sorted(roles(group, "chair"), key=extract_last_name)
     return render(request, 'group/active_teams.html', {'teams' : teams })
+
+def active_programs(request):
+    programs = Group.objects.filter(type="program", state="active").order_by("name")
+    for group in programs:
+        group.leads = sorted(roles(group, "lead"), key=extract_last_name)
+    return render(request, 'group/active_programs.html', {'programs' : programs })
 
 def active_areas(request):
 	areas = Group.objects.filter(type="area", state="active").order_by("name")  

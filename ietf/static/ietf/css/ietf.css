@@ -702,3 +702,11 @@ ul.progress-section {
    background-color: #f5f5f5;
 }
 
+/* Move bootstrap's blockquote styling out of the way */
+
+blockquote {
+  font-size: inherit;
+  padding: 10.5px 21px;
+  margin: inherit; 
+  border-left: inherit;
+}

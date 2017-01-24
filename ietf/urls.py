@@ -59,7 +59,7 @@ urlpatterns = patterns('',
     (r'^submit/', include('ietf.submit.urls')),
     (r'^sync/', include('ietf.sync.urls')),
     (r'^templates/', include('ietf.dbtemplate.urls')),
-    (r'^(?P<group_type>(wg|rg|ag|team|dir|area))/', include('ietf.group.urls_info')),
+    (r'^(?P<group_type>(wg|rg|ag|team|dir|area|program))/', include('ietf.group.urls_info')),
 
     # Redirects
     (r'^(?P<path>public)/', include('ietf.redirects.urls')),

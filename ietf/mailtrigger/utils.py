@@ -66,8 +66,11 @@ def gather_relevant_expansions(**kwargs):
 
         relevant.update(starts_with('group_'))
         relevant.update(starts_with('milestones_'))
-        relevant.update(starts_with('session_'))
-        relevant.update(['charter_external_review',])
+        group = kwargs['group']       
+        if group.type_id in ['rg','wg',]:
+            relevant.update(starts_with('session_'))
+        if group.type_id in ['wg',]:
+            relevant.update(['charter_external_review',])
 
     if 'submission' in kwargs:
 

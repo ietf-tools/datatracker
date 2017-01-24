@@ -5,8 +5,10 @@ class GroupFeatures(object):
     has_milestones = False
     has_chartering_process = False
     has_documents = False # i.e. drafts/RFCs
+    has_dependencies = False # Do dependency graphs for group documents make sense?
     has_materials = False
     has_reviews = False
+    has_default_jabber = False
     customize_workflow = False
     about_page = "group_about"
     default_tab = about_page
@@ -19,10 +21,18 @@ class GroupFeatures(object):
             self.has_chartering_process = True
             self.has_documents = True
             self.customize_workflow = True
+            self.has_default_jabber = True
+            self.has_dependencies = True
             self.default_tab = "group_docs"
         elif group.type_id in ("team",):
             self.has_materials = True
             self.default_tab = "group_about"
+        elif group.type_id in ("program",):
+            self.has_documents = True
+            self.has_milestones = True
+            self.admin_roles = ["lead",]
+        elif group.type_id == "dir":
+            self.admin_roles = ["chair", "secr"]
 
         if self.has_chartering_process:
             self.about_page = "group_charter"
@@ -33,5 +43,3 @@ class GroupFeatures(object):
             import ietf.group.views
             self.default_tab = ietf.group.views_review.review_requests
 
-        if group.type_id == "dir":
-            self.admin_roles = ["chair", "secr"]

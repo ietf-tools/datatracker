@@ -16,6 +16,8 @@ from ietf.person.models import Person, Email
 from ietf.utils.test_data import make_test_data
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase
 from ietf.utils.mail import outbox
+from ietf.group.factories import GroupFactory
+from ietf.person.factories import PersonFactory
 
 class CommunityListTests(TestCase):
     def test_rule_matching(self):
@@ -157,6 +159,19 @@ class CommunityListTests(TestCase):
         # test GET, rest is tested with personal list
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
+
+        # Verify GET also works with non-WG and RG groups
+        for gtype in ['area','program']:
+            g = GroupFactory.create(type_id=gtype)
+            # make sure the group's features have been initialized to improve coverage
+            _ = g.features # pyflakes:ignore
+            p = PersonFactory()
+            g.role_set.create(name_id={'area':'ad','program':'lead'}[gtype],person=p, email=p.email())
+            url = urlreverse(ietf.community.views.manage_list, kwargs={ "acronym": g.acronym })
+            setup_default_community_list_for_group(g)
+            self.client.login(username=p.user.username,password=p.user.username+"+password")
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
 
     def test_track_untrack_document(self):
         draft = make_test_data()

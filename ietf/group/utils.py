@@ -94,6 +94,8 @@ def can_manage_group_type(user, group_type):
         return has_role(user, ('IRTF Chair', 'Secretariat'))
     elif group_type == "wg":
         return has_role(user, ('Area Director', 'Secretariat'))
+    elif group_type == "program":
+        return has_role(user, ('IAB', 'Secretariat',))
 
     return has_role(user, 'Secretariat')
 
@@ -107,11 +109,15 @@ def can_manage_group(user, group):
             return has_role(user, ('Area Director', 'Secretariat'))
         elif group.is_decendant_of("irtf"):
             return has_role(user, ('IRTF Chair', 'Secretariat'))
+    elif group.type_id == "program":
+        return has_role(user,('IAB','Secretariat',))
     return has_role(user, ('Secretariat'))
 
 def milestone_reviewer_for_group_type(group_type):
     if group_type == "rg":
         return "IRTF Chair"
+    elif group_type== "program":
+        return "IAB"
     else:
         return "Area Director"
 
