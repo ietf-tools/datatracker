@@ -678,7 +678,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('group', '0009_auto_20150930_0758'),
-        ('name', '0017_iab_programs'),
+        ('name', '0018_iab_programs'),
         ('person', '0014_auto_20160613_0751'),
         ('community','0004_cleanup_data'),
         ('review', '0010_auto_20161214_1537'),
