@@ -165,10 +165,11 @@ def main():
     user = User.objects.filter(is_superuser=True).first()
     admin_site = admin.site
     using = 'default'
-    deletable_objects, perms_needed, protected = admin.utils.get_deleted_objects(
+    deletable_objects = admin.utils.get_deleted_objects(
         objs, opts, user, admin_site, using)
 
-    if len(deletable_objects) > 1:
+    deletable_objects_summary = deletable_objects[1]
+    if len(deletable_objects_summary) > 1:    # should only inlcude one object (Person)
         print "Not Deleting Person: {}({})".format(source.ascii,source.pk)
         print "Related objects remain:"
         pprint.pprint(deletable_objects[1])
