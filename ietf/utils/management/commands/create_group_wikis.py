@@ -41,6 +41,8 @@ class Command(BaseCommand):
         make_option('--dummy-run', '-n', default=False, action='store_true', dest='dummy_run', help='Make no changes, just show what would be done'),
     )
     
+    secretariat = Group.objects.get(acronym='secretariat')
+
     def note(self, msg):
         if self.verbosity > 1:
             self.stdout.write(msg)
@@ -171,7 +173,7 @@ class Command(BaseCommand):
                 self.maybe_add_group_url(group, 'Issue tracker', settings.TRAC_ISSUE_URL_PATTERN % group.acronym)
                 # Use custom assets (if any) from the master setup
                 self.symlink_to_master_assets(group, env)
-                if group.type_id == 'wg':
+                if group.type_id in ['wg', 'rg', ]:
                     self.add_wg_draft_states(group, env)
                 self.add_custom_wiki_pages(group, env)
                 self.add_default_wiki_pages(group, env)
@@ -198,7 +200,8 @@ class Command(BaseCommand):
                 if not user in permissions:
                     permissions[user] = []
                 permissions[user].append(action)
-            roles = group.role_set.filter(name_id__in=['chair', 'secr', 'ad'])
+            roles = ( list( group.role_set.filter(name_id__in=set(['chair', 'secr', 'ad', 'trac-admin', ]+group.features.admin_roles)))
+                    + list(self.secretariat.role_set.filter(name_id__in=['trac-admin', ]) ))
             users = []
             for role in roles:
                 user = role.email.address.lower()
@@ -287,7 +290,7 @@ class Command(BaseCommand):
             raise CommandError('The SVN base direcory specified for the SVN directories (%s) does not exist.' % os.path.dirname(self.svn_dir_pattern))
 
         groups = Group.objects.filter(
-                        type__slug__in=['wg','rg','area'],
+                        type__slug__in=settings.TRAC_CREATE_GROUP_TYPES,
                         state__slug='active',
                     ).order_by('acronym')
         if self.group_list:
@@ -309,8 +312,7 @@ class Command(BaseCommand):
                     if not trac_env: 
                         self.errors.append(msg)
                 else:
-                    if not self.dummy_run:
-                        trac_env = Environment(group.trac_dir)
+                    trac_env = Environment(group.trac_dir)
 
                 if not trac_env and not self.dummy_run:
                     continue
