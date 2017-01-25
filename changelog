@@ -1,3 +1,45 @@
+ietfdb (6.41.0) ietf; urgency=medium
+
+  **IAB Programs Support and Wiki Support for Teams and Directorates**
+
+  This release introduces support for IAB programs, and also extends the
+  creation and permissions management support for Trac wikis to teams and
+  directorates.  There are also some bugfixes.  From the commit log:
+
+  * Merged in [12724] from rcross@amsl.com:
+    Resolve issue with merge_person_records caused by Django 1.8 upgrade.
+    Fixes issue #2141.  
+
+  * Merged in [12722] from rjsparks@nostrum.com:
+    Added programs to the datatracker. Added use of restructuredtext for group
+    about pages. Generalized several places where code handles different group
+    types. Improved testing of group about.  
+
+  * Changed settings_sqlitetest so that local developer additions to context
+    processors and middleware classes are avoided.
+
+  * Added a trac-admin role name, for help in assigning trac-admin rights to
+    trac instances.  Extended the create_group_wikis management command to
+    create and update wikis for groups of type 'team','ag' and 'dir', in
+    addition to 'wg','rg' and 'area'; and also add people with role trac-admin
+    in the group or in the secretariat to those given TRAC_ADMIN permissions
+    in a Trac instance.
+
+  * Changed semantics for can_manage_group() to include chairs etc, and
+    changed calls with the old semantics to use can_manage_group_type().
+    Rewrote can_manage_group() in terms of can_manage_group_type() and
+    additional checks.  Fixes issue #2155.
+
+  * Merged in [12706] from rjsparks@nostrum.com:
+    Restrict editing ReviewSettings.skip_next to team secretaries and the 
+    secretariat. Improve validation of skip_next value. Fixes #2149.  
+
+  * Changed the failure leeway of the code coverage test percentage from 
+    0.005% back to 0.02%.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  25 Jan 2017 12:17:30 -0800
+
+
 ietfdb (6.40.4) ietf; urgency=medium
 
   This is a bugfix release, with some enhancements, mostly related to the
