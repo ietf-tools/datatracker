@@ -20,7 +20,8 @@
 
 {% block content %}
   {% origin %}
-
+  <div class="row">
+    <div class="col-md-10">
       <h1>IESG agenda: {{ date }} </h1>
 
       <ul class="nav nav-tabs" role="tablist">
@@ -124,10 +125,13 @@
 
     <div class="col-md-2 hidden-print bs-docs-sidebar" id="affix">
       <ul class="nav nav-pills nav-stacked small" data-spy="affix">
-        {% for num, section in sections %}
-          {% if num|sectionlevel <= 1 %}
+	{% for num, section in sections %}
+	  {% if num|sectionlevel <= 1 %}
 	    <li><a href="#{{num}}">{{ section.title|safe }}</a></li>
 	  {% endif %}
 	{% endfor %}
       </ul>
+    </div>
+
+  </div>
 {% endblock content %}
