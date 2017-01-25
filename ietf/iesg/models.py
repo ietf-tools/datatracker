@@ -38,7 +38,7 @@ from django.db import models
 
 class TelechatAgendaItem(models.Model):
     TYPE_CHOICES = (
-        (1, "Working Group News"),
+        (1, "Any Other Business (WG News, New Proposals, etc.)"),
         (2, "IAB News"),
         (3, "Management Item")
         )

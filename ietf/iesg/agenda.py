@@ -128,7 +128,7 @@ def agenda_sections():
         ('4.2.2', {'title':"Proposed for approval", 'docs':[]}),
         ('5', {'title':"IAB news we can use"}),
         ('6', {'title':"Management issues"}),
-        ('7', {'title':"Working Group news"}),
+        ('7', {'title':"Any Other Business (WG News, New Proposals, etc.)"}),
         ])
 
 def fill_in_agenda_administrivia(date, sections):
