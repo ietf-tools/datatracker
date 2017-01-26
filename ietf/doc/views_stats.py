@@ -83,8 +83,10 @@ def make_title(queryargs):
     title += ' revisions'
     # radio choices
     by = queryargs.get('by')
-    if by == "author":
-        title += ' with author %s' % queryargs['author'].title()
+    if by == 'author':
+        author = queryargs.get('author')
+        if author:
+            title += ' with author %s' % author.title()
     elif by == "group":
         group = queryargs.get('group')
         if group:
