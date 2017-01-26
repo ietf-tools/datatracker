@@ -48,12 +48,12 @@ def get_authors(draft):
     Takes a draft object and returns a list of authors suitable for a tombstone document
     """
     authors = []
-    for a in draft.authors.all():
+    for a in draft.documentauthor_set.all():
         initial = ''
         prefix, first, middle, last, suffix = a.person.name_parts()
         if first:
             initial = first + '. '
-        entry = '%s%s <%s>' % (initial,last,a.address)
+        entry = '%s%s <%s>' % (initial,last,a.email.address)
         authors.append(entry)
     return authors
 
@@ -64,10 +64,10 @@ def get_abbr_authors(draft):
     """
     initial = ''
     result = ''
-    authors = DocumentAuthor.objects.filter(document=draft)
+    authors = DocumentAuthor.objects.filter(document=draft).order_by("order")
     
     if authors:
-        prefix, first, middle, last, suffix = authors[0].author.person.name_parts()
+        prefix, first, middle, last, suffix = authors[0].person.name_parts()
         if first:
             initial = first[0] + '. '
         result = '%s%s' % (initial,last)
@@ -140,9 +140,9 @@ def get_fullcc_list(draft):
     """
     emails = {}
     # get authors
-    for author in draft.authors.all():
-        if author.address not in emails:
-            emails[author.address] = '"%s"' % (author.person.name)
+    for author in draft.documentauthor_set.all():
+        if author.email and author.email.address not in emails:
+            emails[author.email.address] = '"%s"' % (author.person.name)
     
     if draft.group.acronym != 'none':
         # add chairs

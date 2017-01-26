@@ -14,7 +14,8 @@ from ietf.name.models import (TimeSlotTypeName, GroupStateName, DocTagName, Inte
     ConstraintName, MeetingTypeName, DocRelationshipName, RoomResourceName, IprLicenseTypeName,
     LiaisonStatementTagName, FeedbackTypeName, LiaisonStatementState, StreamName,
     BallotPositionName, DBTemplateTypeName, NomineePositionStateName,
-    ReviewRequestStateName, ReviewTypeName, ReviewResultName)
+    ReviewRequestStateName, ReviewTypeName, ReviewResultName,
+    FormalLanguageName)
 
 
 class TimeSlotTypeNameResource(ModelResource):
@@ -455,4 +456,21 @@ class ReviewResultNameResource(ModelResource):
             "order": ALL,
         }
 api.name.register(ReviewResultNameResource())
+
+
+
+class FormalLanguageNameResource(ModelResource):
+    class Meta:
+        queryset = FormalLanguageName.objects.all()
+        serializer = api.Serializer()
+        cache = SimpleCache()
+        #resource_name = 'formallanguagename'
+        filtering = { 
+            "slug": ALL,
+            "name": ALL,
+            "desc": ALL,
+            "used": ALL,
+            "order": ALL,
+        }
+api.name.register(FormalLanguageNameResource())
 

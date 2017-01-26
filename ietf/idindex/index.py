@@ -115,15 +115,15 @@ def all_id2_txt():
     file_types = file_types_for_drafts()
 
     authors = {}
-    for a in DocumentAuthor.objects.filter(document__name__startswith="draft-").order_by("order").select_related("author", "author__person").iterator():
+    for a in DocumentAuthor.objects.filter(document__name__startswith="draft-").order_by("order").select_related("email", "person").iterator():
         if a.document_id not in authors:
             l = authors[a.document_id] = []
         else:
             l = authors[a.document_id]
-        if "@" in a.author.address:
-            l.append(u'%s <%s>' % (a.author.person.plain_name().replace("@", ""), a.author.address.replace(",", "")))
+        if a.email:
+            l.append(u'%s <%s>' % (a.person.plain_name().replace("@", ""), a.email.address.replace(",", "")))
         else:
-            l.append(a.author.person.plain_name())
+            l.append(a.person.plain_name())
 
     shepherds = dict((e.pk, e.formatted_email().replace('"', ''))
                      for e in Email.objects.filter(shepherd_document_set__type="draft").select_related("person").distinct())
@@ -234,12 +234,12 @@ def active_drafts_index_by_group(extra_values=()):
             d["initial_rev_time"] = time
 
     # add authors
-    for a in DocumentAuthor.objects.filter(document__states=active_state).order_by("order").select_related("author__person"):
+    for a in DocumentAuthor.objects.filter(document__states=active_state).order_by("order").select_related("person"):
         d = docs_dict.get(a.document_id)
         if d:
             if "authors" not in d:
                 d["authors"] = []
-            d["authors"].append(a.author.person.plain_ascii()) # This should probably change to .plain_name() when non-ascii names are permitted
+            d["authors"].append(a.person.plain_ascii()) # This should probably change to .plain_name() when non-ascii names are permitted
 
     # put docs into groups
     for d in docs_dict.itervalues():

@@ -199,7 +199,7 @@ class Recipient(models.Model):
             submission = kwargs['submission']
             doc=submission.existing_document()
             if doc:
-                old_authors = [i.author.formatted_email() for i in doc.documentauthor_set.all() if not i.author.invalid_address()]
+                old_authors = [author.formatted_email() for author in doc.documentauthor_set.all() if author.email]
                 new_authors = [u'"%s" <%s>' % (author["name"], author["email"]) for author in submission.authors_parsed() if author["email"]]
                 addrs.extend(old_authors)
                 if doc.group and set(old_authors)!=set(new_authors):

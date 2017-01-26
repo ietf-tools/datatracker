@@ -12,9 +12,6 @@ def insert_initial_formal_language_names(apps, schema_editor):
     FormalLanguageName.objects.get_or_create(slug="json", name="JSON", desc="Javascript Object Notation", order=5)
     FormalLanguageName.objects.get_or_create(slug="xml", name="XML", desc="Extensible Markup Language", order=6)
 
-def noop(apps, schema_editor):
-    pass
-    
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -22,5 +19,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(insert_initial_formal_language_names, noop)
+        migrations.RunPython(insert_initial_formal_language_names, migrations.RunPython.noop)
     ]

@@ -9,6 +9,7 @@ decorator>=3.4.0
 defusedxml>=0.4.1		# for TastyPie when ussing xml; not a declared dependency
 Django>=1.8.16,<1.9
 django-bootstrap3>=5.1.1,<7.0.0 # django-bootstrap 7.0 requires django 1.8
+django-countries>=4.0
 django-formtools>=1.0		# instead of django.contrib.formtools in 1.8
 django-markup>=1.1
 django-tastypie>=0.13.1

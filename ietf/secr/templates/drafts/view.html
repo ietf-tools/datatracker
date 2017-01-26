@@ -73,7 +73,7 @@
         <h2>Author(s)</h2>
         <table class="full-width">
         {% for author in draft.documentauthor_set.all %}
-          <tr><td><a href="{% url "rolodex_view" id=author.author.person.id %}">{{ author.author.person.name }}</a></td></tr>
+          <tr><td><a href="{% url "rolodex_view" id=author.person.id %}">{{ author.person.name }}</a></td></tr>
         {% endfor %}
         </table>
       </div> <!-- inline-related -->

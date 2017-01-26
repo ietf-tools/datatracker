@@ -212,9 +212,9 @@ class ToOneField(tastypie.fields.ToOneField):
         if not foreign_obj:
             if not self.null:
                 if callable(self.attribute):
-                    raise ApiFieldError("The related resource for resource %s could not be found." % (previous_obj))
+                    raise ApiFieldError(u"The related resource for resource %s could not be found." % (previous_obj))
                 else:
-                    raise ApiFieldError("The model '%r' has an empty attribute '%s' and doesn't allow a null value." % (previous_obj, attr))
+                    raise ApiFieldError(u"The model '%r' has an empty attribute '%s' and doesn't allow a null value." % (previous_obj, attr))
             return None
 
         fk_resource = self.get_related_resource(foreign_obj)

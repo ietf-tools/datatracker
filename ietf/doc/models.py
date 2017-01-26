@@ -11,6 +11,8 @@ from django.contrib.contenttypes.models import ContentType
 from django.conf import settings
 from django.utils.html import mark_safe
 
+from django_countries.fields import CountryField
+
 import debug                            # pyflakes:ignore
 
 from ietf.group.models import Group
@@ -254,7 +256,7 @@ class DocumentInfo(models.Model):
             return state.name
 
     def author_list(self):
-        return ", ".join(email.address for email in self.authors.all())
+        return u", ".join(author.email_id for author in self.documentauthor_set.all() if author.email_id)
 
     # This, and several other ballot related functions here, assume that there is only one active ballot for a document at any point in time.
     # If that assumption is violated, they will only expose the most recently created ballot
@@ -399,20 +401,32 @@ class RelatedDocument(models.Model):
 
         return None
 
-class DocumentAuthor(models.Model):
-    document = models.ForeignKey('Document')
-    author = models.ForeignKey(Email, help_text="Email address used by author for submission")
+class DocumentAuthorInfo(models.Model):
+    person = models.ForeignKey(Person)
+    # email should only be null for some historic documents
+    email = models.ForeignKey(Email, help_text="Email address used by author for submission", blank=True, null=True)
+    affiliation = models.CharField(max_length=100, blank=True, help_text="Organization/company used by author for submission")
+    country = CountryField(blank=True, help_text="Country used by author for submission")
     order = models.IntegerField(default=1)
 
-    def __unicode__(self):
-        return u"%s %s (%s)" % (self.document.name, self.author.get_name(), self.order)
+    def formatted_email(self):
+        if self.email:
+            return u'"%s" <%s>' % (self.person.plain_ascii(), self.email.address)
+        else:
+            return ""
 
     class Meta:
+        abstract = True
         ordering = ["document", "order"]
-    
+
+class DocumentAuthor(DocumentAuthorInfo):
+    document = models.ForeignKey('Document')
+
+    def __unicode__(self):
+        return u"%s %s (%s)" % (self.document.name, self.person, self.order)
+
 class Document(DocumentInfo):
     name = models.CharField(max_length=255, primary_key=True)           # immutable
-    authors = models.ManyToManyField(Email, through=DocumentAuthor, blank=True)
 
     def __unicode__(self):
         return self.name
@@ -609,16 +623,13 @@ class RelatedDocHistory(models.Model):
     def __unicode__(self):
         return u"%s %s %s" % (self.source.doc.name, self.relationship.name.lower(), self.target.name)
 
-class DocHistoryAuthor(models.Model):
-    document = models.ForeignKey('DocHistory')
-    author = models.ForeignKey(Email)
-    order = models.IntegerField()
+class DocHistoryAuthor(DocumentAuthorInfo):
+    # use same naming convention as non-history version to make it a bit
+    # easier to write generic code
+    document = models.ForeignKey('DocHistory', related_name="documentauthor_set")
 
     def __unicode__(self):
-        return u"%s %s (%s)" % (self.document.doc.name, self.author.get_name(), self.order)
-
-    class Meta:
-        ordering = ["document", "order"]
+        return u"%s %s (%s)" % (self.document.doc.name, self.person, self.order)
 
 class DocHistory(DocumentInfo):
     doc = models.ForeignKey(Document, related_name="history_set")
@@ -627,7 +638,7 @@ class DocHistory(DocumentInfo):
     # canonical_name and replace the function on Document with a
     # property
     name = models.CharField(max_length=255)
-    authors = models.ManyToManyField(Email, through=DocHistoryAuthor, blank=True)
+
     def __unicode__(self):
         return unicode(self.doc.name)
 

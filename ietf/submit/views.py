@@ -259,7 +259,7 @@ def submission_status(request, submission_id, access_token=None):
     group_authors_changed = False
     doc = submission.existing_document()
     if doc and doc.group:
-        old_authors = [ i.author.person for i in doc.documentauthor_set.all() ]
+        old_authors = [ author.person for author in doc.documentauthor_set.all() ]
         new_authors = [ get_person_from_name_email(**p) for p in submission.authors_parsed() ]
         group_authors_changed = set(old_authors)!=set(new_authors)
 

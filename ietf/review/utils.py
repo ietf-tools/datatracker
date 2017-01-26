@@ -752,7 +752,7 @@ def make_assignment_choices(email_queryset, review_req):
         connections[r.person_id] = "is group {}".format(r.name)
     if doc.shepherd:
         connections[doc.shepherd.person_id] = "is shepherd of document"
-    for author in DocumentAuthor.objects.filter(document=doc, author__person__in=possible_person_ids).values_list("author__person", flat=True):
+    for author in DocumentAuthor.objects.filter(document=doc, person__in=possible_person_ids).values_list("person", flat=True):
         connections[author] = "is author of document"
 
     # unavailable periods

@@ -65,7 +65,8 @@ class Submission(models.Model):
                 if line:
                     parsed = parse_email_line(line)
                     if not parsed["email"]:
-                        parsed["email"] = ensure_person_email_info_exists(**parsed).address
+                        person, email = ensure_person_email_info_exists(**parsed)
+                        parsed["email"] = email.address
                     res.append(parsed)
             self._cached_authors_parsed = res
         return self._cached_authors_parsed

@@ -63,15 +63,15 @@ def get_document_emails(ipr):
     messages = []
     for rel in ipr.iprdocrel_set.all():
         doc = rel.document.document
-        authors = doc.authors.all()
-        
+
         if is_draft(doc):
             doc_info = 'Internet-Draft entitled "{}" ({})'.format(doc.title,doc.name)
         else:
             doc_info = 'RFC entitled "{}" (RFC{})'.format(doc.title,get_rfc_num(doc))
 
         addrs = gather_address_lists('ipr_posted_on_doc',doc=doc).as_strings(compact=False)
-        author_names = ', '.join([a.person.name for a in authors])
+
+        author_names = ', '.join(a.person.name for a in doc.documentauthor_set.select_related("person"))
     
         context = dict(
             doc_info=doc_info,

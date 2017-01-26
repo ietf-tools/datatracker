@@ -19,7 +19,7 @@ from ietf.group.utils import setup_default_community_list_for_group
 from ietf.meeting.models import Meeting
 from ietf.message.models import Message
 from ietf.name.models import FormalLanguageName
-from ietf.person.models import Person, Email
+from ietf.person.models import Person
 from ietf.person.factories import UserFactory, PersonFactory
 from ietf.submit.models import Submission, Preapproval
 from ietf.submit.mail import add_submission_email, process_response_email
@@ -249,9 +249,10 @@ class SubmitTests(TestCase):
         self.assertEqual(draft.stream_id, "ietf")
         self.assertTrue(draft.expires >= datetime.datetime.now() + datetime.timedelta(days=settings.INTERNET_DRAFT_DAYS_TO_EXPIRE - 1))
         self.assertEqual(draft.get_state("draft-stream-%s" % draft.stream_id).slug, "wg-doc")
-        self.assertEqual(draft.authors.count(), 1)
-        self.assertEqual(draft.authors.all()[0].get_name(), "Author Name")
-        self.assertEqual(draft.authors.all()[0].address, "author@example.com")
+        authors = draft.documentauthor_set.all()
+        self.assertEqual(len(authors), 1)
+        self.assertEqual(authors[0].person.plain_name(), "Author Name")
+        self.assertEqual(authors[0].email.address, "author@example.com")
         self.assertEqual(set(draft.formal_languages.all()), set(FormalLanguageName.objects.filter(slug="json")))
         self.assertEqual(draft.relations_that_doc("replaces").count(), 1)
         self.assertTrue(draft.relations_that_doc("replaces").first().target, replaced_alias)
@@ -290,12 +291,12 @@ class SubmitTests(TestCase):
             draft.save_with_history([DocEvent.objects.create(doc=draft, type="added_comment", by=Person.objects.get(user__username="secretary"), desc="Test")])
         if not change_authors:
             draft.documentauthor_set.all().delete()
-            ensure_person_email_info_exists('Author Name','author@example.com')
-            draft.documentauthor_set.create(author=Email.objects.get(address='author@example.com'))
+            author_person, author_email = ensure_person_email_info_exists('Author Name','author@example.com')
+            draft.documentauthor_set.create(person=author_person, email=author_email)
         else:
             # Make it such that one of the previous authors has an invalid email address
-            bogus_email = ensure_person_email_info_exists('Bogus Person',None)  
-            DocumentAuthor.objects.create(document=draft,author=bogus_email,order=draft.documentauthor_set.latest('order').order+1)
+            bogus_person, bogus_email = ensure_person_email_info_exists('Bogus Person',None)
+            DocumentAuthor.objects.create(document=draft, person=bogus_person, email=bogus_email, order=draft.documentauthor_set.latest('order').order+1)
 
         prev_author = draft.documentauthor_set.all()[0]
 
@@ -342,7 +343,7 @@ class SubmitTests(TestCase):
         confirm_email = outbox[-1]
         self.assertTrue("Confirm submission" in confirm_email["Subject"])
         self.assertTrue(name in confirm_email["Subject"])
-        self.assertTrue(prev_author.author.address in confirm_email["To"])
+        self.assertTrue(prev_author.email.address in confirm_email["To"])
         if change_authors:
             self.assertTrue("author@example.com" not in confirm_email["To"])
         self.assertTrue("submitter@example.com" not in confirm_email["To"])
@@ -423,9 +424,10 @@ class SubmitTests(TestCase):
             self.assertEqual(draft.stream_id, "ietf")
             self.assertEqual(draft.get_state_slug("draft-stream-%s" % draft.stream_id), "wg-doc")
         self.assertEqual(draft.get_state_slug("draft-iana-review"), "changed")
-        self.assertEqual(draft.authors.count(), 1)
-        self.assertEqual(draft.authors.all()[0].get_name(), "Author Name")
-        self.assertEqual(draft.authors.all()[0].address, "author@example.com")
+        authors = draft.documentauthor_set.all()
+        self.assertEqual(len(authors), 1)
+        self.assertEqual(authors[0].person.plain_name(), "Author Name")
+        self.assertEqual(authors[0].email.address, "author@example.com")
         self.assertEqual(len(outbox), mailbox_before + 3)
         self.assertTrue((u"I-D Action: %s" % name) in outbox[-3]["Subject"])
         self.assertTrue((u"I-D Action: %s" % name) in draft.message_set.order_by("-time")[0].subject)

@@ -125,18 +125,18 @@ class PersonInfo(models.Model):
 
     def has_drafts(self):
         from ietf.doc.models import Document
-        return Document.objects.filter(authors__person=self, type='draft').exists()
+        return Document.objects.filter(documentauthor__person=self, type='draft').exists()
     def rfcs(self):
         from ietf.doc.models import Document
-        rfcs = list(Document.objects.filter(authors__person=self, type='draft', states__slug='rfc'))
+        rfcs = list(Document.objects.filter(documentauthor__person=self, type='draft', states__slug='rfc'))
         rfcs.sort(key=lambda d: d.canonical_name() )
         return rfcs
     def active_drafts(self):
         from ietf.doc.models import Document
-        return Document.objects.filter(authors__person=self, type='draft', states__slug='active').order_by('-time')
+        return Document.objects.filter(documentauthor__person=self, type='draft', states__slug='active').order_by('-time')
     def expired_drafts(self):
         from ietf.doc.models import Document
-        return Document.objects.filter(authors__person=self, type='draft', states__slug__in=['repl', 'expired', 'auth-rm', 'ietf-rm']).order_by('-time')
+        return Document.objects.filter(documentauthor__person=self, type='draft', states__slug__in=['repl', 'expired', 'auth-rm', 'ietf-rm']).order_by('-time')
 
     class Meta:
         abstract = True
@@ -231,15 +231,11 @@ class Email(models.Model):
         else:
             return self.address
 
-    def invalid_address(self):
-        # we have some legacy authors with unknown email addresses
-        return self.address.startswith("unknown-email") and "@" not in self.address
-
     def email_address(self):
         """Get valid, current email address; in practise, for active,
         non-invalid addresses it is just the address field. In other
         cases, we default to person's email address."""
-        if self.invalid_address() or not self.active:
+        if not self.active:
             if self.person:
                 return self.person.email_address()
             return

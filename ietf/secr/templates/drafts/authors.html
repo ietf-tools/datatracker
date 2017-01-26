@@ -24,6 +24,8 @@
         <tr>
           <th>Name</th>
           <th>Email</th>
+          <th>Affiliation</th>
+          <th>Country</th>
           <th>Order</th>
           <th>Action</th>
         </tr>
@@ -31,8 +33,10 @@
       <tbody>
         {% for author in draft.documentauthor_set.all %}
           <tr class="{% cycle row1,row2 %}">
-            <td>{{ author.author.person }}</td>
-            <td>{{ author.author }}</td>
+            <td>{{ author.person }}</td>
+            <td>{{ author.email }}</td>
+            <td>{{ author.affiliation }}</td>
+            <td>{{ author.country.name }}</td>
             <td>{{ author.order }}</td>
             <td><a href="{% url "drafts_author_delete" id=draft.pk oid=author.id %}">Delete</a></td>
           </tr>
@@ -49,6 +53,10 @@
           <tr>
             <td>{{ form.person.errors }}{{ form.person }}{% if form.person.help_text %}<br>{{ form.person.help_text }}{% endif %}</td>
             <td>{{ form.email.errors }}{{ form.email }}{% if form.email.help_text %}<br>{{ form.email.help_text }}{% endif %}</td>
+          </tr>
+          <tr>
+            <td>{{ form.affiliation.errors }}{{ form.affiliation }}{% if form.affiliation.help_text %}<br>{{ form.affiliation.help_text }}{% endif %}</td>
+            <td>{{ form.country.errors }}{{ form.country }}{% if form.country.help_text %}<br>{{ form.country.help_text }}{% endif %}</td>
             <td><input type="submit" name="submit" value="Add" /></td>
           </tr>
         </table>    

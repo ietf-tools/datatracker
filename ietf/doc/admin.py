@@ -25,7 +25,7 @@ class DocAliasInline(admin.TabularInline):
 
 class DocAuthorInline(admin.TabularInline):
     model = DocumentAuthor
-    raw_id_fields = ['author', ]    
+    raw_id_fields = ['person', 'email']
     extra = 1
 
 class RelatedDocumentInline(admin.TabularInline):
@@ -99,7 +99,7 @@ class DocumentAdmin(admin.ModelAdmin):
     list_display = ['name', 'rev', 'group', 'pages', 'intended_std_level', 'author_list', 'time']
     search_fields = ['name']
     list_filter = ['type']
-    raw_id_fields = ['authors', 'group', 'shepherd', 'ad']
+    raw_id_fields = ['group', 'shepherd', 'ad']
     inlines = [DocAliasInline, DocAuthorInline, RelatedDocumentInline, ]
     form = DocumentForm
 
@@ -121,7 +121,7 @@ class DocHistoryAdmin(admin.ModelAdmin):
     list_display = ['doc', 'rev', 'state', 'group', 'pages', 'intended_std_level', 'author_list', 'time']
     search_fields = ['doc__name']
     ordering = ['time', 'doc', 'rev']
-    raw_id_fields = ['doc', 'authors', 'group', 'shepherd', 'ad']
+    raw_id_fields = ['doc', 'group', 'shepherd', 'ad']
 
     def state(self, instance):
         return instance.get_state()
@@ -174,7 +174,7 @@ class BallotPositionDocEventAdmin(DocEventAdmin):
 admin.site.register(BallotPositionDocEvent, BallotPositionDocEventAdmin)
     
 class DocumentAuthorAdmin(admin.ModelAdmin):
-    list_display = ['id', 'document', 'author', 'order']
-    search_fields = [ 'document__name', 'author__address', ]
+    list_display = ['id', 'document', 'person', 'email', 'order']
+    search_fields = [ 'document__name', 'person__name', 'email__address', ]
 admin.site.register(DocumentAuthor, DocumentAuthorAdmin)
     

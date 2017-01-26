@@ -258,10 +258,7 @@ class ReviewTests(TestCase):
 
         # set up some reviewer-suitability factors
         reviewer_email = Email.objects.get(person__user__username="reviewer")
-        DocumentAuthor.objects.create(
-            author=reviewer_email,
-            document=doc,
-        )
+        DocumentAuthor.objects.create(person=reviewer_email.person, email=reviewer_email, document=doc)
         doc.rev = "10"
         doc.save_with_history([DocEvent.objects.create(doc=doc, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
 

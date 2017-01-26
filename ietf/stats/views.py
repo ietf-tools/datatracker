@@ -3,7 +3,6 @@ import itertools
 import json
 import calendar
 import os
-import re
 from collections import defaultdict
 
 from django.shortcuts import render
@@ -141,7 +140,7 @@ def document_stats(request, stats_type=None, document_type=None):
 
         bins = defaultdict(list)
 
-        for name, author_count in generate_canonical_names(docalias_qs.values_list("name").annotate(Count("document__authors"))):
+        for name, author_count in generate_canonical_names(docalias_qs.values_list("name").annotate(Count("document__documentauthor"))):
             bins[author_count].append(name)
 
         series_data = []
