@@ -6,8 +6,14 @@ ietfdb (6.41.0) ietf; urgency=medium
   creation and permissions management support for Trac wikis to teams and
   directorates.  There are also some bugfixes.  From the commit log:
 
+  * Changed the title of Section 7 of the IESG agenda as requested.  Fixes 
+    issue #2167.
+
+  * Fixed up the div tree to bring back the section navigation on the IESG
+    agenda page, and fixed the div level and width for the footer.
+
   * Merged in [12724] from rcross@amsl.com:
-    Resolve issue with merge_person_records caused by Django 1.8 upgrade.
+    Resolved an issue with merge_person_records caused by Django 1.8 upgrade.
     Fixes issue #2141.  
 
   * Merged in [12722] from rjsparks@nostrum.com:
@@ -37,7 +43,7 @@ ietfdb (6.41.0) ietf; urgency=medium
   * Changed the failure leeway of the code coverage test percentage from 
     0.005% back to 0.02%.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  25 Jan 2017 12:17:30 -0800
+ -- Henrik Levkowetz <henrik@levkowetz.com>  26 Jan 2017 12:19:19 +0000
 
 
 ietfdb (6.40.4) ietf; urgency=medium
