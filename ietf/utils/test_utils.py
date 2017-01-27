@@ -276,7 +276,7 @@ def unicontent(r):
 def reload_db_objects(*objects):
     """Rerequest the given arguments from the database so they're refreshed, to be used like
 
-    foo, bar = reload_objects(foo, bar)"""
+    foo, bar = reload_db_objects(foo, bar)"""
 
     t = tuple(o.__class__.objects.get(pk=o.pk) for o in objects)
     if len(objects) == 1:
@@ -307,5 +307,27 @@ class TestCase(django.test.TestCase):
         self.assertTrue(resp['Content-Type'].startswith('text/html'))
         self.assertValidHTML(resp.content)
 
+    def assertNoFormPostErrors(self, response, error_css_selector=".has-error"):
+        """Try to fish out form errors, if none found at least check the
+        status code to be a redirect.
+
+        Assumptions:
+         - a POST is followed by a 302 redirect
+         - form errors can be found with a simple CSS selector
+
+        """
+
+        if response.status_code == 200:
+            from pyquery import PyQuery
+            from lxml import html
+            self.maxDiff = None
+
+            errors = [html.tostring(n).decode() for n in PyQuery(response.content)(error_css_selector)]
+            if errors:
+                explanation = u"{} != {}\nGot form back with errors:\n----\n".format(response.status_code, 302) + u"----\n".join(errors)
+                self.assertEqual(response.status_code, 302, explanation)
+
+        self.assertEqual(response.status_code, 302)
+        
     def __str__(self):
         return "%s (%s.%s)" % (self._testMethodName, strclass(self.__class__),self._testMethodName)
