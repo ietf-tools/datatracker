@@ -42,7 +42,7 @@ def validate_submission(submission):
     if not submission.abstract:
         errors['abstract'] = 'Abstract is empty or was not found'
 
-    if not submission.authors_parsed():
+    if not submission.authors:
         errors['authors'] = 'No authors found'
 
     # revision
@@ -427,14 +427,16 @@ def ensure_person_email_info_exists(name, email):
 
 def update_authors(draft, submission):
     persons = []
-    for order, author in enumerate(submission.authors_parsed()):
-        person, email = ensure_person_email_info_exists(author["name"], author["email"])
+    for order, author in enumerate(submission.authors):
+        person, email = ensure_person_email_info_exists(author["name"], author.get("email"))
 
         a = DocumentAuthor.objects.filter(document=draft, person=person).first()
         if not a:
             a = DocumentAuthor(document=draft, person=person)
 
         a.email = email
+        a.affiliation = author.get("affiliation") or ""
+        a.country = author.get("country") or ""
         a.order = order
         a.save()
 

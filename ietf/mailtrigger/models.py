@@ -177,7 +177,7 @@ class Recipient(models.Model):
         addrs = []
         if 'submission' in kwargs:
             submission = kwargs['submission']
-            addrs.extend(["%s <%s>" % (author["name"], author["email"]) for author in submission.authors_parsed() if author["email"]]) 
+            addrs.extend(["%s <%s>" % (author["name"], author["email"]) for author in submission.authors if author.get("email")])
         return addrs
 
     def gather_submission_group_chairs(self, **kwargs):
@@ -200,7 +200,7 @@ class Recipient(models.Model):
             doc=submission.existing_document()
             if doc:
                 old_authors = [author.formatted_email() for author in doc.documentauthor_set.all() if author.email]
-                new_authors = [u'"%s" <%s>' % (author["name"], author["email"]) for author in submission.authors_parsed() if author["email"]]
+                new_authors = [u'"%s" <%s>' % (author["name"], author["email"]) for author in submission.authors if author.get("email")]
                 addrs.extend(old_authors)
                 if doc.group and set(old_authors)!=set(new_authors):
                     if doc.group.type_id in ['wg','rg','ag']:
@@ -212,7 +212,7 @@ class Recipient(models.Model):
                     if doc.stream_id and doc.stream_id not in ['ietf']:
                         addrs.extend(Recipient.objects.get(slug='stream_managers').gather(**{'streams':[doc.stream_id]}))
             else:
-                addrs.extend([u"%s <%s>" % (author["name"], author["email"]) for author in submission.authors_parsed() if author["email"]])
+                addrs.extend([u"%s <%s>" % (author["name"], author["email"]) for author in submission.authors if author.get("email")])
                 if submission.submitter_parsed()["email"]: 
                     addrs.append(submission.submitter)
         return addrs

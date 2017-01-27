@@ -125,7 +125,7 @@ class SubmitTests(TestCase):
             q = PyQuery(r.content)
             print(q('div.has-error div.alert').text())
 
-        self.assertEqual(r.status_code, 302)
+        self.assertNoFormPostErrors(r, ".has-error,.alert-danger")
 
         status_url = r["Location"]
         for format in formats:
@@ -133,10 +133,12 @@ class SubmitTests(TestCase):
         self.assertEqual(Submission.objects.filter(name=name).count(), 1)
         submission = Submission.objects.get(name=name)
         self.assertTrue(all([ c.passed!=False for c in submission.checks.all() ]))
-        self.assertEqual(len(submission.authors_parsed()), 1)
-        author = submission.authors_parsed()[0]
+        self.assertEqual(len(submission.authors), 1)
+        author = submission.authors[0]
         self.assertEqual(author["name"], "Author Name")
         self.assertEqual(author["email"], "author@example.com")
+        self.assertEqual(author["affiliation"], "Test Centre Inc.")
+        # FIXMEself.assertEqual(author["country"], "UK")
 
         return status_url
 
@@ -664,7 +666,7 @@ class SubmitTests(TestCase):
 
             "authors-prefix": ["authors-", "authors-0", "authors-1", "authors-2"],
         })
-        self.assertEqual(r.status_code, 302)
+        self.assertNoFormPostErrors(r, ".has-error,.alert-danger")
 
         submission = Submission.objects.get(name=name)
         self.assertEqual(submission.title, "some title")
@@ -676,14 +678,14 @@ class SubmitTests(TestCase):
         self.assertEqual(submission.replaces, draft.docalias_set.all().first().name)
         self.assertEqual(submission.state_id, "manual")
 
-        authors = submission.authors_parsed()
+        authors = submission.authors
         self.assertEqual(len(authors), 3)
         self.assertEqual(authors[0]["name"], "Person 1")
         self.assertEqual(authors[0]["email"], "person1@example.com")
         self.assertEqual(authors[1]["name"], "Person 2")
         self.assertEqual(authors[1]["email"], "person2@example.com")
         self.assertEqual(authors[2]["name"], "Person 3")
-        self.assertEqual(authors[2]["email"], "unknown-email-Person-3")
+        self.assertEqual(authors[2]["email"], "")
 
         self.assertEqual(len(outbox), mailbox_before + 1)
         self.assertTrue("Manual Post Requested" in outbox[-1]["Subject"])
@@ -939,7 +941,6 @@ class SubmitTests(TestCase):
         files = {"txt": submission_file(name, rev, group, "txt", "test_submission.nonascii", author=author) }
 
         r = self.client.post(url, files)
-
         self.assertEqual(r.status_code, 302)
         status_url = r["Location"]
         r = self.client.get(status_url)
@@ -1443,8 +1444,8 @@ Subject: test
         self.assertEqual(Submission.objects.filter(name=name).count(), 1)
         submission = Submission.objects.get(name=name)
         self.assertTrue(all([ c.passed!=False for c in submission.checks.all() ]))
-        self.assertEqual(len(submission.authors_parsed()), 1)
-        author = submission.authors_parsed()[0]
+        self.assertEqual(len(submission.authors), 1)
+        author = submission.authors[0]
         self.assertEqual(author["name"], "Author Name")
         self.assertEqual(author["email"], "author@example.com")
 

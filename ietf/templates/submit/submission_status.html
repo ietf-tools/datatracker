@@ -2,7 +2,7 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
 {% load staticfiles %}
-{% load ietf_filters submit_tags %}
+{% load ietf_filters submit_tags country %}
 
 {% block title %}Submission status of {{ submission.name }}-{{ submission.rev }}{% endblock %}
 
@@ -195,17 +195,21 @@
     <tr>
       <th>Authors</th>
       <td>
-        {% with submission.authors_parsed as authors %}
+        {% with submission.authors as authors %}
           {{ authors|length }} author{{ authors|pluralize }}
         {% endwith %}
         {% if errors.authors %}<p class="text-danger"><b>{{ errors.authors|safe }}</b></p>{% endif %}
       </td>
     </tr>
 
-    {% for author in submission.authors_parsed %}
+    {% for author in submission.authors %}
       <tr>
         <th>Author {{ forloop.counter }}</th>
-        <td>{{ author.name }} {% if author.email %}&lt;{{ author.email }}&gt;{% endif %}</td>
+        <td>
+          {{ author.name }} {% if author.email %}&lt;{{ author.email }}&gt;{% endif %}
+          {% if author.affiliation %}- {{ author.affiliation }}{% endif %}
+          {% if author.country %}- {{ author.country|country_name }}{% endif %}
+        </td>
       </tr>
     {% endfor %}
 

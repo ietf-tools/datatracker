@@ -12,6 +12,8 @@ from django.conf import settings
 from django.utils.html import mark_safe
 from django.core.urlresolvers import reverse as urlreverse
 
+from django_countries.fields import countries
+
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import Document
@@ -30,6 +32,14 @@ from ietf.submit.parsers.ps_parser import PSParser
 from ietf.submit.parsers.xml_parser import XMLParser
 from ietf.utils.draft import Draft
 
+def clean_country(country):
+    country = country.upper()
+    for code, name in countries:
+        if country == code:
+            return code
+        if country == name.upper():
+            return code
+    return "" # unknown
 
 class SubmissionUploadForm(forms.Form):
     txt = forms.FileField(label=u'.txt format', required=False)
@@ -178,18 +188,14 @@ class SubmissionUploadForm(forms.Form):
                 self.abstract = self.xmlroot.findtext('front/abstract').strip()
                 if type(self.abstract) is unicode:
                     self.abstract = unidecode(self.abstract)
-                self.author_list = []
                 author_info = self.xmlroot.findall('front/author')
                 for author in author_info:
-                    author_dict = dict(
-                        company = author.findtext('organization'),
-                        last_name = author.attrib.get('surname'),
-                        full_name = author.attrib.get('fullname'),
-                        email = author.findtext('address/email'),
-                    )
-                    self.author_list.append(author_dict)
-                    line = "%(full_name)s <%(email)s>" % author_dict
-                    self.authors.append(line)
+                    self.authors.append({
+                        "name": author.attrib.get('fullname'),
+                        "email": author.findtext('address/email'),
+                        "affiliation": author.findtext('organization'),
+                        "country": clean_country(author.findtext('address/postal/country')),
+                    })
             except forms.ValidationError:
                 raise
             except Exception as e:
@@ -325,18 +331,12 @@ class SubmissionUploadForm(forms.Form):
                 return None
 
 class NameEmailForm(forms.Form):
-    """For validating supplied submitter and author information."""
     name = forms.CharField(required=True)
-    email = forms.EmailField(label=u'Email address')
-
-    #Fields for secretariat only
-    approvals_received = forms.BooleanField(label=u'Approvals received', required=False, initial=False)
+    email = forms.EmailField(label=u'Email address', required=True)
 
     def __init__(self, *args, **kwargs):
-        email_required = kwargs.pop("email_required", True)
         super(NameEmailForm, self).__init__(*args, **kwargs)
 
-        self.fields["email"].required = email_required
         self.fields["name"].widget.attrs["class"] = "name"
         self.fields["email"].widget.attrs["class"] = "email"
 
@@ -345,6 +345,18 @@ class NameEmailForm(forms.Form):
 
     def clean_email(self):
         return self.cleaned_data["email"].replace("\n", "").replace("\r", "").replace("<", "").replace(">", "").strip()
+
+class AuthorForm(NameEmailForm):
+    affiliation = forms.CharField(max_length=100, required=False)
+    country = forms.ChoiceField(choices=[('', "(Not specified)")] + list(countries), required=False)
+
+    def __init__(self, *args, **kwargs):
+        super(AuthorForm, self).__init__(*args, **kwargs)
+        self.fields["email"].required = False
+
+class SubmitterForm(NameEmailForm):
+    #Fields for secretariat only
+    approvals_received = forms.BooleanField(label=u'Approvals received', required=False, initial=False)
 
     def cleaned_line(self):
         line = self.cleaned_data["name"]

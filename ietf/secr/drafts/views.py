@@ -574,8 +574,6 @@ def authors(request, id):
 
             return redirect('drafts_view', id=id)
 
-        print form.is_valid(), form.errors
-
         if form.is_valid():
             person = form.cleaned_data['person']
             email = form.cleaned_data['email']

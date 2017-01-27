@@ -39,7 +39,7 @@ class Submission(models.Model):
     words = models.IntegerField(null=True, blank=True)
     formal_languages = models.ManyToManyField(FormalLanguageName, blank=True, help_text="Formal languages used in document")
 
-    authors = models.TextField(blank=True, help_text="List of author names and emails, one author per line, e.g. \"John Doe &lt;john@example.org&gt;\".")
+    authors = jsonfield.JSONField(default=list, help_text="List of authors with name, email, affiliation and country code.")
     note = models.TextField(blank=True)
     replaces = models.CharField(max_length=1000, blank=True)
 
@@ -55,21 +55,6 @@ class Submission(models.Model):
 
     def __unicode__(self):
         return u"%s-%s" % (self.name, self.rev)
-
-    def authors_parsed(self):
-        if not hasattr(self, '_cached_authors_parsed'):
-            from ietf.submit.utils import ensure_person_email_info_exists
-            res = []
-            for line in self.authors.replace("\r", "").split("\n"):
-                line = line.strip()
-                if line:
-                    parsed = parse_email_line(line)
-                    if not parsed["email"]:
-                        person, email = ensure_person_email_info_exists(**parsed)
-                        parsed["email"] = email.address
-                    res.append(parsed)
-            self._cached_authors_parsed = res
-        return self._cached_authors_parsed
 
     def submitter_parsed(self):
         return parse_email_line(self.submitter)
