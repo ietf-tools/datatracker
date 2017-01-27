@@ -7,6 +7,8 @@ def fix_invalid_emails(apps, schema_editor):
     Email = apps.get_model("person", "Email")
     Role = apps.get_model("group", "Role")
     RoleHistory = apps.get_model("group", "RoleHistory")
+    DocumentAuthor = apps.get_model("doc", "DocumentAuthor")
+    DocHistoryAuthor = apps.get_model("doc", "DocHistoryAuthor")
 
     e = Email.objects.filter(address="unknown-email-Gigi-Karmous-Edwards").first()
     if e:
@@ -29,13 +31,19 @@ def fix_invalid_emails(apps, schema_editor):
         RoleHistory.objects.filter(email=e).update(email=new_e)
         e.delete()
 
-    Email = apps.get_model("person", "Email")
-    DocumentAuthor = apps.get_model("doc", "DocumentAuthor")
-    DocHistoryAuthor = apps.get_model("doc", "DocHistoryAuthor")
+    e = Email.objects.filter(address="unknown-email-Greg-<gregimirsky@gmail.com>>").first()
+    if e:
+        # current email
+        new_e = Email.objects.get(address="gregimirsky@gmail.com")
+        DocumentAuthor.objects.filter(email=e).update(email=new_e)
+        DocHistoryAuthor.objects.filter(email=e).update(email=new_e)
+        e.delete()
 
     DocumentAuthor.objects.filter(email__address__startswith="unknown-email-").exclude(email__address__contains="@").update(email=None)
     DocHistoryAuthor.objects.filter(email__address__startswith="unknown-email-").exclude(email__address__contains="@").update(email=None)
     Email.objects.exclude(address__contains="@").filter(address__startswith="unknown-email-").delete()
+
+    assert not Email.objects.filter(address__startswith="unknown-email-")
 
 class Migration(migrations.Migration):
 
