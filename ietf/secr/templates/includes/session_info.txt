@@ -13,6 +13,12 @@ Conflicts to Avoid:
 {% if session.conflict3 %} Third Priority: {{ session.conflict3 }}{% endif %}
 
 
+People who must be present:
+{% for person in session.bethere %}  {{ person.ascii_name }}
+{% endfor %}
+Resources Requested:
+{% for resource in session.resources %}  {{ resource.desc }}
+{% endfor %}
 Special Requests:
   {{ session.comments }}
 ---------------------------------------------------------
