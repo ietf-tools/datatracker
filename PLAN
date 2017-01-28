@@ -111,3 +111,22 @@ Notes
   (or some other source, if a better is found).  WorldOmeters has running counters,
   but ask for a lot of money for even one.
 
+* Notable New Django Features in 1.8:
+
+  + New data types: UUIDField, DurationField
+  + Query Expressions (enhanced expressivity, conditionals, database functions)
+  + Improved TestCase fixture loading, additional .setUpTestData() method.
+  - Support for alternative template engines
+  - Security enhancements (request/response cycle middleware)
+  - PostgreSQL-specific fields
+
+* Notable New Django Features in 1.9:
+
+  + New on_commit() hook, for post-commit actions, for instance sending email
+  + Password validation option with pluggable validators
+  + New admin style
+  + Running tests in parallel
+  + TIME_ZONE setting lets us set USE_TZ = True without converting time fields
+  + DateTimeFields can be queried with date
+  - Permission mixins for class-based views
+
