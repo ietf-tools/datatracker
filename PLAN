@@ -124,9 +124,8 @@ Notes
 
   + New on_commit() hook, for post-commit actions, for instance sending email
   + Password validation option with pluggable validators
-  + New admin style
   + Running tests in parallel
-  + TIME_ZONE setting lets us set USE_TZ = True without converting time fields
   + DateTimeFields can be queried with date
   - Permission mixins for class-based views
+  - New admin style
 
