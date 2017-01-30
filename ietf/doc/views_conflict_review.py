@@ -1,10 +1,9 @@
 import datetime, os
 
 from django import forms
-from django.shortcuts import render_to_response, get_object_or_404, redirect
+from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponseRedirect, Http404
 from django.core.urlresolvers import reverse
-from django.template import RequestContext
 from django.template.loader import render_to_string
 from django.conf import settings
 
@@ -24,7 +23,7 @@ from ietf.mailtrigger.utils import gather_address_lists
 
 class ChangeStateForm(forms.Form):
     review_state = forms.ModelChoiceField(State.objects.filter(used=True, type="conflrev"), label="Conflict review state", empty_label=None, required=True)
-    comment = forms.CharField(widget=forms.Textarea, help_text="Optional comment for the review history.", required=False)
+    comment = forms.CharField(widget=forms.Textarea, help_text="Optional comment for the review history.", required=False, strip=False)
 
 @role_required("Area Director", "Secretariat")
 def change_state(request, name, option=None):
@@ -78,13 +77,12 @@ def change_state(request, name, option=None):
         init = dict(review_state=s.pk if s else None)
         form = ChangeStateForm(initial=init)
 
-    return render_to_response('doc/change_state.html',
+    return render(request, 'doc/change_state.html',
                               dict(form=form,
                                    doc=review,
                                    login=login,
                                    help_url=reverse('state_help', kwargs=dict(type="conflict-review")),
-                                   ),
-                              context_instance=RequestContext(request))
+                                   ))
 
 def send_conflict_review_started_email(request, review):
     addrs = gather_address_lists('conflrev_requested',doc=review).as_strings(compact=False)
@@ -127,7 +125,7 @@ def send_conflict_eval_email(request,review):
                addrs.cc)
 
 class UploadForm(forms.Form):
-    content = forms.CharField(widget=forms.Textarea, label="Conflict review response", help_text="Edit the conflict review response.", required=False)
+    content = forms.CharField(widget=forms.Textarea, label="Conflict review response", help_text="Edit the conflict review response.", required=False, strip=False)
     txt = forms.FileField(label=".txt format", help_text="Or upload a .txt file.", required=False)
 
     def clean_content(self):
@@ -209,13 +207,12 @@ def submit(request, name):
 
         form = UploadForm(initial=init)
 
-    return render_to_response('doc/conflict_review/submit.html',
+    return render(request, 'doc/conflict_review/submit.html',
                               {'form': form,
                                'next_rev': next_rev,
                                'review' : review,
                                'conflictdoc' : review.relateddocument_set.get(relationship__slug='conflrev').target.document,
-                              },
-                              context_instance=RequestContext(request))
+                              })
 
 @role_required("Area Director", "Secretariat")
 def edit_ad(request, name):
@@ -243,12 +240,12 @@ def edit_ad(request, name):
     
     conflictdoc = review.relateddocument_set.get(relationship__slug='conflrev').target.document
     titletext = 'the conflict review of %s-%s' % (conflictdoc.canonical_name(),conflictdoc.rev)
-    return render_to_response('doc/change_ad.html',
+    return render(request, 'doc/change_ad.html',
                               {'form': form,
                                'doc': review,
                                'titletext': titletext
                               },
-                              context_instance = RequestContext(request))
+                          )
 
 def default_approval_text(review):
 
@@ -279,7 +276,7 @@ def default_approval_text(review):
 
 
 class AnnouncementForm(forms.Form):
-    announcement_text = forms.CharField(widget=forms.Textarea, label="IETF Conflict Review Announcement", help_text="Edit the announcement message.", required=True)
+    announcement_text = forms.CharField(widget=forms.Textarea, label="IETF Conflict Review Announcement", help_text="Edit the announcement message.", required=True, strip=False)
 
 @role_required("Secretariat")
 def approve(request, name):
@@ -330,13 +327,12 @@ def approve(request, name):
         init = { "announcement_text" : default_approval_text(review) }
         form = AnnouncementForm(initial=init)
     
-    return render_to_response('doc/conflict_review/approve.html',
+    return render(request, 'doc/conflict_review/approve.html',
                               dict(
                                    review = review,
                                    conflictdoc = review.relateddocument_set.get(relationship__slug='conflrev').target.document,   
                                    form = form,
-                                   ),
-                              context_instance=RequestContext(request))
+                                   ))
 
 class SimpleStartReviewForm(forms.Form):
     notify = forms.CharField(max_length=255, label="Notice emails", help_text="Separate email addresses with commas.", required=False)
@@ -453,11 +449,11 @@ def start_review_as_secretariat(request, name):
                }
         form = StartReviewForm(initial=init)
 
-    return render_to_response('doc/conflict_review/start.html',
+    return render(request, 'doc/conflict_review/start.html',
                               {'form':   form,
                                'doc_to_review': doc_to_review,
                               },
-                              context_instance = RequestContext(request))
+                          )
 
 def start_review_as_stream_owner(request, name):
     """Start the conflict review process using defaults for everything but notify and let the secretariat know"""
@@ -487,8 +483,8 @@ def start_review_as_stream_owner(request, name):
                }
         form = SimpleStartReviewForm(initial=init)
 
-    return render_to_response('doc/conflict_review/start.html',
+    return render(request, 'doc/conflict_review/start.html',
                               {'form':   form,
                                'doc_to_review': doc_to_review,
                               },
-                              context_instance = RequestContext(request))
+                          )

@@ -217,7 +217,7 @@
                 </tr>
             {% endif %}
 
-            {% if item.timeslot.type.slug = 'session' or item.timeslot.type.slug == 'plenary' %}
+            {% if item.timeslot.type.slug == 'session' or item.timeslot.type.slug == 'plenary' %}
               {% if item.session.historic_group %}
                 <tr id="row-{{item.slug}}" data-ske="row-{{ item.slug }}" {% if item.timeslot.type.slug == 'plenary' %}class="{{item.timeslot.type.slug}}danger"{% endif %}>
 		  {% if item.timeslot.type.slug == 'plenary' %}

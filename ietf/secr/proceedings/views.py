@@ -10,8 +10,7 @@ from django.contrib import messages
 from django.core.urlresolvers import reverse
 from django.db.models import Max
 from django.http import HttpResponseRedirect
-from django.shortcuts import render_to_response, get_object_or_404, redirect
-from django.template import RequestContext
+from django.shortcuts import render, get_object_or_404, redirect
 
 from ietf.secr.utils.decorators import sec_only
 from ietf.secr.utils.group import get_my_groups
@@ -180,11 +179,10 @@ def ajax_generate_proceedings(request, meeting_num):
     path = os.path.join(settings.SECR_PROCEEDINGS_DIR,meeting.number,'index.html')
     last_run = datetime.datetime.fromtimestamp(os.path.getmtime(path))
 
-    return render_to_response('includes/proceedings_functions.html',{
+    return render(request, 'includes/proceedings_functions.html',{
         'meeting':meeting,
         'last_run':last_run,
         'proceedings_url':proceedings_url},
-        RequestContext(request,{}),
     )
 
 # --------------------------------------------------
@@ -223,11 +221,10 @@ def main(request):
     # we today's date to see if we're past the submissio cutoff
     today = datetime.date.today()
 
-    return render_to_response('proceedings/main.html',{
+    return render(request, 'proceedings/main.html',{
         'meetings': meetings,
         'interim_meetings': interim_meetings,
         'today': today},
-        RequestContext(request,{}),
     )
 
 @sec_only
@@ -311,12 +308,11 @@ def recording(request, meeting_num):
     else:
         form = RecordingForm(meeting=meeting)
     
-    return render_to_response('proceedings/recording.html',{
+    return render(request, 'proceedings/recording.html',{
         'meeting':meeting,
         'form':form,
         'sessions':sessions,
         'unmatched_recordings': get_unmatched_recordings(meeting)},
-        RequestContext(request, {}),
     )
 
 @role_required('Secretariat')
@@ -350,11 +346,10 @@ def recording_edit(request, meeting_num, name):
     else:
         form = RecordingEditForm(instance=recording)
     
-    return render_to_response('proceedings/recording_edit.html',{
+    return render(request, 'proceedings/recording_edit.html',{
         'meeting':meeting,
         'form':form,
         'recording':recording},
-        RequestContext(request, {}),
     )
     
 # TODO - should probably rename this since it's not selecting groups anymore
@@ -382,11 +377,10 @@ def select(request, meeting_num):
     pptx = Document.objects.filter(session__meeting=meeting,type='slides',external_url__endswith='.pptx').exclude(states__slug='deleted')
     ppt_count = ppt.count() + pptx.count()
 
-    return render_to_response('proceedings/select.html', {
+    return render(request, 'proceedings/select.html', {
         'meeting': meeting,
         'last_run': last_run,
         'proceedings_url': proceedings_url,
         'ppt_count': ppt_count},
-        RequestContext(request,{}),
     )
 

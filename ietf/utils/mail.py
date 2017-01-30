@@ -164,7 +164,7 @@ def send_mail_subj(request, to, frm, stemplate, template, context, *args, **kwar
     Send an email message, exactly as send_mail(), but the
     subject field is a template.
     '''
-    subject = render_to_string(stemplate, context, context_instance=mail_context(request)).replace("\n"," ").strip()
+    subject = render_to_string(stemplate, context ).replace("\n"," ").strip()
     return send_mail(request, to, frm, subject, template, context, *args, **kwargs)
 
 def send_mail(request, to, frm, subject, template, context, *args, **kwargs):
@@ -174,7 +174,7 @@ def send_mail(request, to, frm, subject, template, context, *args, **kwargs):
     The body is a text/plain rendering of the template with the context.
     extra is a dict of extra headers to add.
     '''
-    txt = render_to_string(template, context, context_instance=mail_context(request))
+    txt = render_to_string(template, context, request=request)
     return send_mail_text(request, to, frm, subject, txt, *args, **kwargs)
 
 def encode_message(txt):

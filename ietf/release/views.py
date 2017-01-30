@@ -4,8 +4,7 @@ import json
 import datetime
 import gzip
 
-from django.template import RequestContext
-from django.shortcuts import render_to_response
+from django.shortcuts import render
 from django.conf import settings
 from django.http import HttpResponse
 
@@ -60,7 +59,7 @@ def release(request, version=None):
                 if "coverage" in coverage[key]:
                     coverage[key]["percentage"] = coverage[key]["coverage"] * 100
 
-    return render_to_response('release/release.html',
+    return render(request, 'release/release.html',
         {
             'releases': log_entries,
             'version': version,
@@ -68,7 +67,7 @@ def release(request, version=None):
             'coverage': coverage,
             'code_coverage_url': code_coverage_url,
             'code_coverage_time': code_coverage_time,
-        },
-        context_instance=RequestContext(request))
+        } )
+
 
     

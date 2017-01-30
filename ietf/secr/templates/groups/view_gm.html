@@ -27,7 +27,7 @@
         </thead>
         <tbody>
           {% for gm in group.groupmilestone_set.all %}
-          <tr class="{% cycle row1,row2 %}">
+          <tr class="{% cycle 'row1' 'row2' %}">
             <td>{{ gm.desc }}</td>
             <td>{{ gm.expected_due_date|date:"Y-m-d" }}</td>
             <td>{{ gm.done_date|date:"Y-m-d" }}</td>

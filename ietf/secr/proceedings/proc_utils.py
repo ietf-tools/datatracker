@@ -91,7 +91,8 @@ def create_recording(session,url):
                                        rev=doc.rev,
                                        desc='New revision available',
                                        time=doc.time)
-    session.sessionpresentation_set.add(SessionPresentation(session=session,document=doc,rev=doc.rev))
+    pres = SessionPresentation.objects.create(session=session,document=doc,rev=doc.rev)
+    session.sessionpresentation_set.add(pres)
 
 def mycomp(timeslot):
     '''

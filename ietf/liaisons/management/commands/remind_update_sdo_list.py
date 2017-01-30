@@ -1,4 +1,3 @@
-from optparse import make_option
 
 from django.core.management.base import BaseCommand
 
@@ -8,10 +7,10 @@ from ietf.liaisons.mails import send_sdo_reminder
 
 class Command(BaseCommand):
     help = (u"Send a remind to each SDO Liaison Manager to update the list of persons authorized to send liaison statements on behalf of his SDO")
-    option_list = BaseCommand.option_list + (
-        make_option('-s', '--sdo-pk', dest='sdo_pk',
-                    help='Send the reminder to the SDO with this primary key. If not provided reminder will be sent to all SDOs'),
-        )
+
+    def add_arguments(self, parser):
+        parser.add_argument('-s', '--sdo-pk', dest='sdo_pk',
+            help='Send the reminder to the SDO with this primary key. If not provided reminder will be sent to all SDOs')
 
     def handle(self, *args, **options):
         sdo_pk = options.get('sdo_pk', None)

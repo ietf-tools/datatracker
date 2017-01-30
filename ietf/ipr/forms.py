@@ -46,14 +46,14 @@ class MessageModelChoiceField(forms.ModelChoiceField):
 # Forms
 # ----------------------------------------------------------------
 class AddCommentForm(forms.Form):
-    comment = forms.CharField(required=True, widget=forms.Textarea)
+    comment = forms.CharField(required=True, widget=forms.Textarea, strip=False)
     private = forms.BooleanField(label="Private comment", required=False,help_text="If this box is checked the comment will not appear in the disclosure's public history view.")
 
 class AddEmailForm(forms.Form):
     direction = forms.ChoiceField(choices=(("incoming", "Incoming"), ("outgoing", "Outgoing")),
         widget=forms.RadioSelect)
     in_reply_to = MessageModelChoiceField(queryset=Message.objects,label="In Reply To",required=False)
-    message = forms.CharField(required=True, widget=forms.Textarea)
+    message = forms.CharField(required=True, widget=forms.Textarea, strip=False)
 
     def __init__(self, *args, **kwargs):
         self.ipr = kwargs.pop('ipr', None)
@@ -107,16 +107,16 @@ class GenericDisclosureForm(forms.Form):
     otherwise create a GenericIprDisclosure object."""
     compliant = forms.BooleanField(label="This disclosure complies with RFC 3979", required=False)
     holder_legal_name = forms.CharField(max_length=255)
-    notes = forms.CharField(label="Additional notes", max_length=255,widget=forms.Textarea,required=False)
+    notes = forms.CharField(label="Additional notes", max_length=255,widget=forms.Textarea,required=False, strip=False)
     other_designations = forms.CharField(label="Designations for other contributions", max_length=255,required=False)
     holder_contact_name = forms.CharField(label="Name", max_length=255)
     holder_contact_email = forms.EmailField(label="Email")
-    holder_contact_info = forms.CharField(label="Other Info (address, phone, etc.)", max_length=255,widget=forms.Textarea,required=False)
+    holder_contact_info = forms.CharField(label="Other Info (address, phone, etc.)", max_length=255,widget=forms.Textarea,required=False, strip=False)
     submitter_name = forms.CharField(max_length=255,required=False)
     submitter_email = forms.EmailField(required=False)
-    patent_info = forms.CharField(max_length=255,widget=forms.Textarea, required=False, help_text="Patent, Serial, Publication, Registration, or Application/File number(s), Date(s) granted or applied for, Country, and any additional notes.")
+    patent_info = forms.CharField(max_length=255,widget=forms.Textarea, required=False, help_text="Patent, Serial, Publication, Registration, or Application/File number(s), Date(s) granted or applied for, Country, and any additional notes.", strip=False)
     has_patent_pending = forms.BooleanField(required=False)
-    statement = forms.CharField(max_length=255,widget=forms.Textarea,required=False)
+    statement = forms.CharField(max_length=255,widget=forms.Textarea,required=False, strip=False)
     updates = SearchableIprDisclosuresField(required=False, help_text="If this disclosure <strong>updates</strong> other disclosures identify here which ones. Leave this field blank if this disclosure does not update any prior disclosures. <strong>Note</strong>: Updates to IPR disclosures must only be made by authorized representatives of the original submitters. Updates will automatically be forwarded to the current Patent Holder's Contact and to the Submitter of the original IPR disclosure.")
     same_as_ii_above = forms.BooleanField(label="Same as in section II above", required=False)
     
@@ -262,7 +262,7 @@ class NonDocSpecificIprDisclosureForm(IprDisclosureFormBase):
         
 class NotifyForm(forms.Form):
     type = forms.CharField(widget=forms.HiddenInput)
-    text = forms.CharField(widget=forms.Textarea)
+    text = forms.CharField(widget=forms.Textarea, strip=False)
     
 class ThirdPartyIprDisclosureForm(IprDisclosureFormBase):
     class Meta:
@@ -298,5 +298,5 @@ class SearchForm(forms.Form):
 
 class StateForm(forms.Form):
     state = forms.ModelChoiceField(queryset=IprDisclosureStateName.objects,label="New State",empty_label=None)
-    comment = forms.CharField(required=False, widget=forms.Textarea, help_text="You may add a comment to be included in the disclosure history.")
+    comment = forms.CharField(required=False, widget=forms.Textarea, help_text="You may add a comment to be included in the disclosure history.", strip=False)
     private = forms.BooleanField(label="Private comment", required=False, help_text="If this box is checked the comment will not appear in the disclosure's public history view.")

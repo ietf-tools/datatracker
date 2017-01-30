@@ -8,8 +8,7 @@ from django.core.cache import cache
 from django.core.urlresolvers import reverse as urlreverse
 from django.db.models.aggregates import Count
 from django.http import JsonResponse, HttpResponseBadRequest
-from django.shortcuts import render_to_response
-from django.template import RequestContext
+from django.shortcuts import render
 from django.views.decorators.cache import cache_page
 
 import debug                            # pyflakes:ignore
@@ -111,13 +110,13 @@ def make_title(queryargs):
     return title
 
 def chart_newrevisiondocevent(request):
-    return render_to_response("doc/stats/highstock.html", {
+    return render(request, "doc/stats/highstock.html", {
             "title": "Document Statistics",
             "confurl": urlreverse("ietf.doc.views_stats.chart_conf_newrevisiondocevent"),
             "dataurl": urlreverse("ietf.doc.views_stats.chart_data_newrevisiondocevent"),
             "queryargs": request.GET.urlencode(),
-            },
-        context_instance=RequestContext(request))
+            }
+        )
 
 #@cache_page(60*15)
 def chart_data_newrevisiondocevent(request):

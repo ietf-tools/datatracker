@@ -214,7 +214,7 @@ class EmailForm(forms.Form):
     to = forms.CharField(max_length=255)
     cc = forms.CharField(required=False)
     subject = forms.CharField(max_length=255)
-    body = forms.CharField(widget=forms.Textarea())
+    body = forms.CharField(widget=forms.Textarea(), strip=False)
 
 class ExtendForm(forms.Form):
     expiration_date = forms.DateField()

@@ -100,21 +100,25 @@ def make_meeting_test_data(meeting=None):
 
     doc = DocumentFactory.create(name='agenda-42-mars', type_id='agenda', title="Agenda",
         external_url="agenda-42-mars.txt", group=mars, rev='00', states=[('draft','active')])
-    mars_session.sessionpresentation_set.add(SessionPresentation(session=mars_session,document=doc,rev=doc.rev)) # 
+    pres = SessionPresentation.objects.create(session=mars_session,document=doc,rev=doc.rev)
+    mars_session.sessionpresentation_set.add(pres) # 
 
     doc = DocumentFactory.create(name='minutes-42-mars', type_id='minutes', title="Minutes",
         external_url="minutes-42-mars.txt", group=mars, rev='00', states=[('minutes','active')])
-    mars_session.sessionpresentation_set.add(SessionPresentation(session=mars_session,document=doc,rev=doc.rev))
+    pres = SessionPresentation.objects.create(session=mars_session,document=doc,rev=doc.rev)
+    mars_session.sessionpresentation_set.add(pres)
 
     doc = DocumentFactory.create(name='slides-42-mars-1-active', type_id='slides', title="Slideshow",
         external_url="slides-42-mars.txt", group=mars, rev='00',
         states=[('slides','active'), ('reuse_policy', 'single')])
-    mars_session.sessionpresentation_set.add(SessionPresentation(session=mars_session,document=doc,rev=doc.rev))
+    pres = SessionPresentation.objects.create(session=mars_session,document=doc,rev=doc.rev)
+    mars_session.sessionpresentation_set.add(pres)
 
     doc = DocumentFactory.create(name='slides-42-mars-2-deleted', type_id='slides',
         title="Bad Slideshow", external_url="slides-42-mars-2-deleted.txt", group=mars, rev='00',
         states=[('slides','deleted'), ('reuse_policy', 'single')])
-    mars_session.sessionpresentation_set.add(SessionPresentation(session=mars_session,document=doc,rev=doc.rev))
+    pres = SessionPresentation.objects.create(session=mars_session,document=doc,rev=doc.rev)
+    mars_session.sessionpresentation_set.add(pres)
     
     # Future Interim Meetings
     date = datetime.date.today() + datetime.timedelta(days=365)

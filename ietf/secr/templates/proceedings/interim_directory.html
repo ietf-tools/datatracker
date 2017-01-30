@@ -11,7 +11,7 @@
       <td></td>
     </tr>
   {% for meeting in meetings %}
-    <tr class="{% cycle row1,row2 %}">
+    <tr class="{% cycle 'row1' 'row2' %}">
       <td align="left" style="white-space: nowrap">{{ meeting.date }}</td>
       <td><a href="https://datatracker.ietf.org/wg/{{ meeting.group.acronym }}">{{ meeting.group.acronym }}</a></td>
       {% if meeting.agenda %}

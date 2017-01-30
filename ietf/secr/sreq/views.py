@@ -3,8 +3,7 @@ import datetime
 from django.contrib import messages
 from django.db.models import Q
 from django.http import Http404
-from django.shortcuts import render_to_response, get_object_or_404, redirect
-from django.template import RequestContext
+from django.shortcuts import render, get_object_or_404, redirect
 
 from ietf.group.models import Group
 from ietf.ietfauth.utils import has_role, role_required
@@ -299,11 +298,10 @@ def confirm(request, acronym):
     # GET logic
     session_conflicts = session_conflicts_as_string(group, meeting)
 
-    return render_to_response('sreq/confirm.html', {
+    return render(request, 'sreq/confirm.html', {
         'session': form,
         'group': group,
         'session_conflicts': session_conflicts},
-        RequestContext(request, {}),
     )
 
 #Move this into make_initial
@@ -460,13 +458,12 @@ def edit_mtg(request, num, acronym):
             return redirect('sessions_new', acronym=acronym)
         form = SessionForm(initial=initial)
 
-    return render_to_response('sreq/edit.html', {
+    return render(request, 'sreq/edit.html', {
         'is_locked': is_locked,
         'meeting': meeting,
         'form': form,
         'group': group,
         'session_conflicts': session_conflicts},
-        RequestContext(request, {}),
     )
 
 @role_required(*AUTHORIZED_ROLES)
@@ -484,9 +481,8 @@ def main(request):
 
     if is_locked and not has_role(request.user,'Secretariat'):
         message = get_lock_message()
-        return render_to_response('sreq/locked.html', {
+        return render(request, 'sreq/locked.html', {
         'message': message},
-        RequestContext(request, {}),
     )
 
     # TODO this is not currently used in the main template
@@ -522,13 +518,12 @@ def main(request):
         if group.session_set.filter(meeting=meeting,status='notmeet'):
             group.not_meeting = True
 
-    return render_to_response('sreq/main.html', {
+    return render(request, 'sreq/main.html', {
         'is_locked': is_locked,
         'form': form,
         'meeting': meeting,
         'scheduled_groups': scheduled_groups,
         'unscheduled_groups': unscheduled_groups},
-        RequestContext(request, {}),
     )
 
 @check_permissions
@@ -584,12 +579,11 @@ def new(request, acronym):
         add_essential_people(group,initial)
         form = SessionForm(initial=initial)
 
-    return render_to_response('sreq/new.html', {
+    return render(request, 'sreq/new.html', {
         'meeting': meeting,
         'form': form,
         'group': group,
         'session_conflicts': session_conflicts},
-        RequestContext(request, {}),
     )
 
 @check_permissions
@@ -676,10 +670,9 @@ def tool_status(request):
         else:
             form = ToolStatusForm()
 
-    return render_to_response('sreq/tool_status.html', {
+    return render(request, 'sreq/tool_status.html', {
         'is_locked': is_locked,
         'form': form},
-        RequestContext(request, {}),
     )
 
 @role_required(*AUTHORIZED_ROLES)
@@ -727,7 +720,7 @@ def view(request, acronym, num = None):
     # build session dictionary (like querydict from new session request form) for use in template
     session = get_initial_session(sessions)
 
-    return render_to_response('sreq/view.html', {
+    return render(request, 'sreq/view.html', {
         'is_locked': is_locked,
         'session': session,
         'activities': activities,
@@ -735,6 +728,5 @@ def view(request, acronym, num = None):
         'group': group,
         'session_conflicts': session_conflicts,
         'show_approve_button': show_approve_button},
-        RequestContext(request, {}),
     )
 

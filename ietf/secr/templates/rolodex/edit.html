@@ -39,7 +39,7 @@
             <tbody>
 	     {% for form in email_formset.forms %}
                   {% if form.non_field_errors %}{{ form.non_field_errors }}{% endif %}
-		  <tr class="{% cycle row1,row2 %}">
+		  <tr class="{% cycle 'row1' 'row2' %}">
 		  {# Include the hidden fields in the form #}
 		  {% for hidden in form.hidden_fields %}
 		    {{ hidden }}

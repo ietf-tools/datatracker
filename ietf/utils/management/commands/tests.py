@@ -1,3 +1,6 @@
+import os
+import tempfile
+
 from django.core.management import call_command
 from django.test import TestCase
 from django.utils.six import StringIO
@@ -7,8 +10,7 @@ import debug                            # pyflakes:ignore
 class CoverageChangeTestCase(TestCase):
 
     def test_coverage_change(self):
-        master = StringIO(
-            """{
+        master_txt ="""{
               "5.12.0": {
                 "code": {
                   "coverage": 0.5921474057048117, 
@@ -40,9 +42,8 @@ class CoverageChangeTestCase(TestCase):
               }, 
               "version": "5.12.0"
             }
-            """)
-        latest = StringIO(
-            """{
+            """
+        latest_txt = """{
               "latest": {
                 "code": {
                   "coverage": 0.5921474057048117, 
@@ -74,11 +75,19 @@ class CoverageChangeTestCase(TestCase):
               },
               "version":"latest"
             }
-            """)
+            """
+        mfh, master = tempfile.mkstemp(suffix='.json')
+        with open(master, "w") as file:
+            file.write(master_txt)
+        lfh, latest = tempfile.mkstemp(suffix='.json')
+        with open(latest, "w") as file:
+            file.write(latest_txt)
         output = StringIO()
         call_command('coverage_changes', master, latest, stdout=output)
         text = output.getvalue()
-        
+        os.unlink(master)
+        os.unlink(latest)
+
         for l in [
             r"admin/group/group/change_form.html                             False      True",
             r"^api/v1/?$                                                      True     False",

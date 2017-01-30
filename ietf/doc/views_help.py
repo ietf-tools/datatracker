@@ -1,5 +1,4 @@
-from django.shortcuts import render_to_response, get_object_or_404
-from django.template import RequestContext
+from django.shortcuts import render, get_object_or_404
 from django.http import Http404
 
 from ietf.doc.models import State, StateType, IESG_SUBSTATE_TAGS
@@ -45,14 +44,14 @@ def state_help(request, type):
         possible = get_tags_for_stream_id(state_type.slug.replace("draft-stream-", ""))
         tags = DocTagName.objects.filter(slug__in=possible)
 
-    return render_to_response("doc/state_help.html", {
-            "title": title,
-            "state_type": state_type,
-            "states": states,
-            "has_next_states": has_next_states,
-            "tags": tags,
-            },
-                              context_instance=RequestContext(request))
+    return render(request, "doc/state_help.html",
+                           {
+                               "title": title,
+                               "state_type": state_type,
+                               "states": states,
+                               "has_next_states": has_next_states,
+                               "tags": tags,
+                           } )
 
 def relationship_help(request,subset=None):
     subsets = { "reference": ['refnorm','refinfo','refunk','refold'],
@@ -63,7 +62,4 @@ def relationship_help(request,subset=None):
     rels = DocRelationshipName.objects.filter(used=True)
     if subset:
        rels = rels.filter(slug__in=subsets[subset]) 
-    return render_to_response("doc/relationship_help.html", {
-               "relations": rels
-              },
-                              context_instance=RequestContext(request))
+    return render(request, "doc/relationship_help.html", { "relations": rels } )
