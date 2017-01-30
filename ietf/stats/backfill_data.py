@@ -21,6 +21,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--document", help="specific document name")
 parser.add_argument("--words", action="store_true", help="fill in word count")
 parser.add_argument("--formlang", action="store_true", help="fill in formal languages")
+parser.add_argument("--authors", action="store_true", help="fill in author info")
 args = parser.parse_args()
 
 formal_language_dict = { l.pk: l for l in FormalLanguageName.objects.all() }
@@ -31,7 +32,7 @@ docs_qs = Document.objects.filter(type="draft")
 if args.document:
     docs_qs = docs_qs.filter(docalias__name=args.document)
 
-for doc in docs_qs.prefetch_related("docalias_set", "formal_languages"):
+for doc in docs_qs.prefetch_related("docalias_set", "formal_languages", "documentauthor_set", "documentauthor_set__person", "documentauthor_set__person__alias_set"):
     canonical_name = doc.name
     for n in doc.docalias_set.all():
         if n.name.startswith("rfc"):
@@ -71,6 +72,35 @@ for doc in docs_qs.prefetch_related("docalias_set", "formal_languages"):
                 for l in old_formal_languages - new_formal_languages:
                     doc.formal_languages.remove(l)
                     updated = True
+
+        if args.authors:
+            old_authors = doc.documentauthor_set.all()
+            old_authors_by_name = {}
+            old_authors_by_email = {}
+            for author in old_authors:
+                for alias in author.person.alias_set.all():
+                    old_authors_by_name[alias.name] = author
+
+                if author.email_id:
+                    old_authors_by_email[author.email_id] = author
+
+            for full, _, _, _, _, email, company in d.get_author_list():
+                old_author = None
+                if email:
+                    old_author = old_authors_by_email.get(email)
+                if not old_author:
+                    old_author = old_authors_by_name.get(full)
+
+                if not old_author:
+                    print "UNKNOWN AUTHOR", doc.name, full, email, company
+                    continue
+
+                if old_author.affiliation != company:
+                    print "new affiliation", old_author.affiliation, company
+                    old_author.affiliation = company
+                    old_author.save(update_fields=["affiliation"])
+                    updated = True
+
 
         if updates:
             Document.objects.filter(pk=doc.pk).update(**updates)
