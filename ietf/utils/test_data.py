@@ -10,8 +10,8 @@ from ietf.doc.models import Document, DocAlias, State, DocumentAuthor, BallotTyp
 from ietf.group.models import Group, GroupHistory, Role, RoleHistory
 from ietf.iesg.models import TelechatDate
 from ietf.ipr.models import HolderIprDisclosure, IprDocRel, IprDisclosureStateName, IprLicenseTypeName
-from ietf.meeting.models import Meeting
-from ietf.name.models import StreamName, DocRelationshipName
+from ietf.meeting.models import Meeting, ResourceAssociation
+from ietf.name.models import StreamName, DocRelationshipName, RoomResourceName
 from ietf.person.models import Person, Email
 from ietf.group.utils import setup_default_community_list_for_group
 from ietf.review.models import (ReviewRequest, ReviewerSettings, ReviewResultName, ReviewTypeName, ReviewTeamSettings )
@@ -377,6 +377,10 @@ def make_test_data():
     rfc_for_status_change_test_factory('draft-ietf-random-otherthing',9998,'inf')
     rfc_for_status_change_test_factory('draft-was-never-issued',14,'unkn')
 
+    # Session Request ResourceAssociation
+    name = RoomResourceName.objects.get(slug='project')
+    ResourceAssociation.objects.create(name=name,icon='projector.png',desc='Projector in room')
+    
     # Instances of the remaining document types 
     # (Except liaison, liai-att, and recording  which the code in ietf.doc does not use...)
     # Meeting-related documents are created in make_meeting_test_data, and

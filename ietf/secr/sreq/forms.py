@@ -1,5 +1,7 @@
 from django import forms
 
+import debug                            # pyflakes:ignore
+
 from ietf.group.models import Group
 from ietf.meeting.models import ResourceAssociation
 from ietf.person.fields import SearchablePersonsField
@@ -66,7 +68,7 @@ class SessionForm(forms.Form):
     wg_selector2 = forms.ChoiceField(choices=WG_CHOICES,required=False)
     wg_selector3 = forms.ChoiceField(choices=WG_CHOICES,required=False)
     third_session = forms.BooleanField(required=False)
-    resources     = forms.MultipleChoiceField(choices=[(x.pk,x.desc) for x in ResourceAssociation.objects.all()], widget=forms.CheckboxSelectMultiple,required=False)
+    resources     = forms.MultipleChoiceField(widget=forms.CheckboxSelectMultiple,required=False)
     bethere       = SearchablePersonsField(label="Must be present", required=False)
 
     def __init__(self, *args, **kwargs):
@@ -82,7 +84,8 @@ class SessionForm(forms.Form):
         self.fields['wg_selector3'].widget.attrs['onChange'] = "document.form_post.conflict3.value=document.form_post.conflict3.value + ' ' + this.options[this.selectedIndex].value; return handleconflictfield(3);"
         self.fields['wg_selector3'].widget.attrs['onClick'] = "return check_prior_conflict(3);"
         self.fields['third_session'].widget.attrs['onClick'] = "if (document.form_post.num_session.selectedIndex < 2) { alert('Cannot use this field - Number of Session is not set to 2'); return false; } else { if (this.checked==true) { document.form_post.length_session3.disabled=false; } else { document.form_post.length_session3.value=0;document.form_post.length_session3.disabled=true; } }"
-        
+        self.fields["resources"].choices = [(x.pk,x.desc) for x in ResourceAssociation.objects.all() ]
+
         # check third_session checkbox if instance and length_session3
         # assert False, (self.instance, self.fields['length_session3'].initial)
         if self.initial and 'length_session3' in self.initial:

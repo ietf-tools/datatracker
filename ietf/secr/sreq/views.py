@@ -6,6 +6,8 @@ from django.http import Http404
 from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.template import RequestContext
 
+import debug                            # pyflakes:ignore
+
 from ietf.group.models import Group
 from ietf.ietfauth.utils import has_role, role_required
 from ietf.meeting.models import Meeting, Session, Constraint, ResourceAssociation
