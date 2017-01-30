@@ -89,7 +89,7 @@ def document_stats(request, stats_type=None):
 
     # statistics type - one of the tables or the chart
     possible_stats_types = add_url_to_choices([
-        ("authors", "Authors"),
+        ("authors", "Number of authors"),
         ("pages", "Pages"),
         ("words", "Words"),
         ("format", "Format"),
@@ -466,9 +466,12 @@ def review_stats(request, stats_type=None, acronym=None):
             else:
                 return l + [element]
 
-        possible_teams = [(slug, label, build_review_stats_url(get_overrides={
-            "team": add_if_exists_else_subtract(slug, selected_teams)
-        })) for slug, label in possible_teams]
+        possible_teams = add_url_to_choices(
+            possible_teams,
+            lambda slug: build_review_stats_url(get_overrides={
+                "team": add_if_exists_else_subtract(slug, selected_teams)
+            })
+        )
         query_teams = [t for t in query_teams if t.acronym in selected_teams]
 
         extracted_data = extract_review_request_data(query_teams, query_reviewers, from_time, to_time)
@@ -518,7 +521,7 @@ def review_stats(request, stats_type=None, acronym=None):
         
         possible_states = add_url_to_choices(
             [(s.slug, s.name) for s in states],
-            build_review_stats_url(get_overrides={ "completion": None, "result": None, "state": slug })
+            lambda slug: build_review_stats_url(get_overrides={ "completion": None, "result": None, "state": slug })
         )
 
         selected_state = get_choice(request, "state", possible_states)
