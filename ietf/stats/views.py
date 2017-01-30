@@ -24,7 +24,7 @@ from ietf.submit.models import Submission
 from ietf.group.models import Role, Group
 from ietf.person.models import Person
 from ietf.name.models import ReviewRequestStateName, ReviewResultName
-from ietf.doc.models import DocAlias
+from ietf.doc.models import DocAlias, Document
 from ietf.ietfauth.utils import has_role
 
 def stats_index(request):
@@ -54,49 +54,75 @@ def generate_query_string(query_dict, overrides):
 
     return query_part
 
-def document_stats(request, stats_type=None, document_type=None):
-    def build_document_stats_url(stats_type_override=Ellipsis, document_type_override=Ellipsis, get_overrides={}):
+def get_choice(request, get_parameter, possible_choices, multiple=False):
+    # the statistics are built with links to make navigation faster,
+    # so we don't really have a form in most cases, so just use this
+    # helper instead to select between the choices
+    values = request.GET.getlist(get_parameter)
+    found = [t[0] for t in possible_choices if t[0] in values]
+
+    if multiple:
+        return found
+    else:
+        if found:
+            return found[0]
+        else:
+            return None
+
+def add_url_to_choices(choices, url_builder):
+    return [ (slug, label, url_builder(slug)) for slug, label in choices]
+
+def put_into_bin(value, bin_size):
+    if value is None:
+        return (value, value)
+
+    v = (value // bin_size) * bin_size
+    return (v, "{} - {}".format(v, v + bin_size - 1))
+
+def document_stats(request, stats_type=None):
+    def build_document_stats_url(stats_type_override=Ellipsis, get_overrides={}):
         kwargs = {
             "stats_type": stats_type if stats_type_override is Ellipsis else stats_type_override,
-            "document_type": document_type if document_type_override is Ellipsis else document_type_override,
         }
 
         return urlreverse(document_stats, kwargs={ k: v for k, v in kwargs.iteritems() if v is not None }) + generate_query_string(request.GET, get_overrides)
 
     # statistics type - one of the tables or the chart
-    possible_stats_types = [
+    possible_stats_types = add_url_to_choices([
         ("authors", "Authors"),
         ("pages", "Pages"),
         ("words", "Words"),
         ("format", "Format"),
         ("formlang", "Formal languages"),
-    ]
-
-    possible_stats_types = [ (slug, label, build_document_stats_url(stats_type_override=slug))
-                             for slug, label in possible_stats_types ]
+    ], lambda slug: build_document_stats_url(stats_type_override=slug))
 
     if not stats_type:
         return HttpResponseRedirect(build_document_stats_url(stats_type_override=possible_stats_types[0][0]))
 
-    possible_document_types = [
-        ("all", "All"),
+
+    possible_document_types = add_url_to_choices([
+        ("", "All"),
         ("rfc", "RFCs"),
         ("draft", "Drafts"),
-    ]
+    ], lambda slug: build_document_stats_url(get_overrides={ "type": slug }))
 
-    possible_document_types = [ (slug, label, build_document_stats_url(document_type_override=slug))
-                                for slug, label in possible_document_types ]
+    document_type = get_choice(request, "type", possible_document_types) or ""
 
-    if not document_type:
-        return HttpResponseRedirect(build_document_stats_url(document_type_override=possible_document_types[0][0]))
-    
 
-    def put_into_bin(value, bin_size):
-        if value is None:
-            return (value, value)
+    possible_time_choices = add_url_to_choices([
+        ("", "All time"),
+        ("5y", "Past 5 years"),
+    ], lambda slug: build_document_stats_url(get_overrides={ "time": slug }))
 
-        v = (value // bin_size) * bin_size
-        return (v, "{} - {}".format(v, v + bin_size - 1))
+    time_choice = request.GET.get("time") or ""
+
+    from_time = None
+    if "y" in time_choice:
+        try:
+            years = int(time_choice.rstrip("y"))
+            from_time = datetime.datetime.today() - dateutil.relativedelta.relativedelta(years=years)
+        except ValueError:
+            pass
 
     def generate_canonical_names(docalias_qs):
         for doc_id, ts in itertools.groupby(docalias_qs.order_by("document"), lambda t: t[0]):
@@ -120,15 +146,26 @@ def document_stats(request, stats_type=None, document_type=None):
     elif document_type == "draft":
         docalias_qs = docalias_qs.exclude(document__states__type="draft", document__states__slug="rfc")
 
+    if from_time:
+        # this is actually faster than joining in the database,
+        # despite the round-trip back and forth
+        docs_within_time_constraint = list(Document.objects.filter(
+            type="draft",
+            docevent__time__gte=from_time,
+            docevent__type__in=["published_rfc", "new_revision"],
+        ).values_list("pk"))
+
+        docalias_qs = docalias_qs.filter(document__in=docs_within_time_constraint)
+
     chart_data = []
     table_data = []
 
-    if document_type == "all":
-        doc_label = "document"
-    elif document_type == "rfc":
+    if document_type == "rfc":
         doc_label = "RFC"
     elif document_type == "draft":
         doc_label = "draft"
+    else:
+        doc_label = "document"
 
     stats_title = ""
     bin_size = 1
@@ -280,6 +317,8 @@ def document_stats(request, stats_type=None, document_type=None):
         "stats_type": stats_type,
         "possible_document_types": possible_document_types,
         "document_type": document_type,
+        "possible_time_choices": possible_time_choices,
+        "time_choice": time_choice,
         "doc_label": doc_label,
         "bin_size": bin_size,
         "content_template": "stats/document_stats_{}.html".format(stats_type),
@@ -306,18 +345,6 @@ def review_stats(request, stats_type=None, acronym=None):
 
         return urlreverse(review_stats, kwargs=kwargs) + generate_query_string(request.GET, get_overrides)
 
-    def get_choice(get_parameter, possible_choices, multiple=False):
-        values = request.GET.getlist(get_parameter)
-        found = [t[0] for t in possible_choices if t[0] in values]
-
-        if multiple:
-            return found
-        else:
-            if found:
-                return found[0]
-            else:
-                return None
-
     # which overview - team or reviewer
     if acronym:
         level = "reviewer"
@@ -334,21 +361,19 @@ def review_stats(request, stats_type=None, acronym=None):
     if level == "team":
         possible_stats_types.append(("time", "Changes over time"))
 
-    possible_stats_types = [ (slug, label, build_review_stats_url(stats_type_override=slug))
-                             for slug, label in possible_stats_types ]
+    possible_stats_types = add_url_to_choices(possible_stats_types,
+                                              lambda slug: build_review_stats_url(stats_type_override=slug))
 
     if not stats_type:
         return HttpResponseRedirect(build_review_stats_url(stats_type_override=possible_stats_types[0][0]))
 
     # what to count
-    possible_count_choices = [
+    possible_count_choices = add_url_to_choices([
         ("", "Review requests"),
         ("pages", "Reviewed pages"),
-    ]
+    ], lambda slug: build_review_stats_url(get_overrides={ "count": slug }))
 
-    possible_count_choices = [ (slug, label, build_review_stats_url(get_overrides={ "count": slug })) for slug, label in possible_count_choices ]
-
-    count = get_choice("count", possible_count_choices) or ""
+    count = get_choice(request, "count", possible_count_choices) or ""
 
     # time range
     def parse_date(s):
@@ -433,7 +458,7 @@ def review_stats(request, stats_type=None, acronym=None):
 
     if stats_type == "time":
         possible_teams = [(t.acronym, t.acronym) for t in teams]
-        selected_teams = get_choice("team", possible_teams, multiple=True)
+        selected_teams = get_choice(request, "team", possible_teams, multiple=True)
 
         def add_if_exists_else_subtract(element, l):
             if element in l:
@@ -475,33 +500,28 @@ def review_stats(request, stats_type=None, acronym=None):
 
         # choice
 
-        possible_completion_types = [
+        possible_completion_types = add_url_to_choices([
             ("completed_in_time", "Completed in time"),
             ("completed_late", "Completed late"),
             ("not_completed", "Not completed"),
             ("average_assignment_to_closure_days", "Avg. compl. days"),
-        ]
+        ], lambda slug: build_review_stats_url(get_overrides={ "completion": slug, "result": None, "state": None }))
 
-        possible_completion_types = [
-            (slug, label, build_review_stats_url(get_overrides={ "completion": slug, "result": None, "state": None }))
-            for slug, label in possible_completion_types
-        ]
+        selected_completion_type = get_choice(request, "completion", possible_completion_types)
 
-        selected_completion_type = get_choice("completion", possible_completion_types)
+        possible_results = add_url_to_choices(
+            [(r.slug, r.name) for r in results],
+            lambda slug: build_review_stats_url(get_overrides={ "completion": None, "result": slug, "state": None })
+        )
 
-        possible_results = [
-            (r.slug, r.name, build_review_stats_url(get_overrides={ "completion": None, "result": r.slug, "state": None }))
-            for r in results
-        ]
-
-        selected_result = get_choice("result", possible_results)
+        selected_result = get_choice(request, "result", possible_results)
         
-        possible_states = [
-            (s.slug, s.name, build_review_stats_url(get_overrides={ "completion": None, "result": None, "state": s.slug }))
-            for s in states
-        ]
+        possible_states = add_url_to_choices(
+            [(s.slug, s.name) for s in states],
+            build_review_stats_url(get_overrides={ "completion": None, "result": None, "state": slug })
+        )
 
-        selected_state = get_choice("state", possible_states)
+        selected_state = get_choice(request, "state", possible_states)
 
         if not selected_completion_type and not selected_result and not selected_state:
             selected_completion_type = "completed_in_time"

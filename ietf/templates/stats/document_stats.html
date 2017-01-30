@@ -33,6 +33,15 @@
         {% endfor %}
       </div>
     </div>
+
+    <div>
+      Time:
+      <div class="btn-group">
+        {% for slug, label, url in possible_time_choices %}
+          <a class="btn btn-default {% if slug == time_choice %}active{% endif %}" href="{{ url }}">{{ label }}</a>
+        {% endfor %}
+      </div>
+    </div>
   </div>
 
   {% include content_template %}
