@@ -19,7 +19,7 @@ $(document).ready(function () {
         var stdNameRegExp = new RegExp("^(rfc|bcp|fyi|std)[0-9]+$", 'i');
         var draftRegExp = new RegExp("^draft-", 'i');
 
-        var html = [];t
+        var html = [];
         $.each(($(this).data("elements") || "").split("|"), function (i, element) {
             if (!$.trim(element))
                 return;
