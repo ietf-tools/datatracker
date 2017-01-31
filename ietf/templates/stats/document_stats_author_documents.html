@@ -13,12 +13,13 @@
      xAxis: {
          tickInterval: 1,
          title: {
-             text: 'Number of authors'
-         }
+             text: 'Author of number of {{ doc_label }}s'
+         },
+         max: 20
      },
      yAxis: {
          title: {
-             text: 'Percentage of {{ doc_label }}s'
+             text: 'Percentage of authors'
          },
          labels: {
              formatter: function () {
@@ -28,7 +29,7 @@
      },
      tooltip: {
          formatter: function () {
-             var s = '<b>' + this.x + ' ' + (this.x == 1 ? "author" : 'authors') + '</b>';
+             var s = '<b>' + this.x + ' ' + (this.x == 1 ? "{{ doc_label }}" : '{{ doc_label }}s') + '</b>';
 
              $.each(this.points, function () {
                  s += '<br/>' + chartConf.yAxis.title.text + ': ' + this.y.toFixed(1) + '%';
@@ -47,15 +48,15 @@
 <table class="table table-condensed stats-data">
   <thead>
     <tr>
+      <th>Documents</th>
+      <th>Percentage of authors</th>
       <th>Authors</th>
-      <th>Percentage of {{ doc_label }}s</th>
-      <th>{{ doc_label|capfirst }}s</th>
     </tr>
   </thead>
   <tbody>
-    {% for author_count, percentage, names in table_data %}
+    {% for document_count, percentage, names in table_data %}
       <tr>
-        <td>{{ author_count }}</td>
+        <td>{{ document_count }}</td>
         <td>{{ percentage|floatformat:2 }}%</td>
         <td>{% include "stats/includes/number_with_details_cell.html" %}</td>
       </tr>

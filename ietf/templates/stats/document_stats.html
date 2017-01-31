@@ -13,28 +13,39 @@
 {% block content %}
   {% origin %}
 
-  <h1>Document statistics</h1>
+  <h1>Draft/RFC statistics</h1>
 
   <div class="stats-options well">
     <div>
-      Show:
+      Documents:
+      
       <div class="btn-group">
-        {% for slug, label, url in possible_stats_types %}
+        {% for slug, label, url in possible_document_stats_types %}
           <a class="btn btn-default {% if slug == stats_type %}active{% endif %}" href="{{ url }}">{{ label }}</a>
         {% endfor %}
       </div>
     </div>
 
     <div>
-      Document type:
+      Authors:
+      
       <div class="btn-group">
-        {% for slug, label, url in possible_document_types %}
-          <a class="btn btn-default {% if slug == document_type %}active{% endif %}" href="{{ url }}">{{ label }}</a>
+        {% for slug, label, url in possible_author_stats_types %}
+          <a class="btn btn-default {% if slug == stats_type %}active{% endif %}" href="{{ url }}">{{ label }}</a>
         {% endfor %}
       </div>
     </div>
 
+    <h5>Options</h5>
+
     <div>
+      Document type:
+      <div style="margin-right:3em;" class="btn-group">
+        {% for slug, label, url in possible_document_types %}
+          <a class="btn btn-default {% if slug == document_type %}active{% endif %}" href="{{ url }}">{{ label }}</a>
+        {% endfor %}
+      </div>
+
       Time:
       <div class="btn-group">
         {% for slug, label, url in possible_time_choices %}

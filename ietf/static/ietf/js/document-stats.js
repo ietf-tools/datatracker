@@ -15,20 +15,26 @@ $(document).ready(function () {
         var chart = Highcharts.chart('chart', window.chartConf);
     }
 
-    $(".popover-docnames").each(function () {
+    $(".popover-details").each(function () {
         var stdNameRegExp = new RegExp("^(rfc|bcp|fyi|std)[0-9]+$", 'i');
+        var draftRegExp = new RegExp("^draft-", 'i');
 
-        var html = [];
-        $.each(($(this).data("docnames") || "").split(" "), function (i, docname) {
-            if (!$.trim(docname))
+        var html = [];t
+        $.each(($(this).data("elements") || "").split("|"), function (i, element) {
+            if (!$.trim(element))
                 return;
 
-            var displayName = docname;
+            if (draftRegExp.test(element) || stdNameRegExp.test(element)) {
+                var displayName = element;
 
-            if (stdNameRegExp.test(docname))
-                displayName = docname.slice(0, 3).toUpperCase() + " " + docname.slice(3);
+                if (stdNameRegExp.test(element))
+                    displayName = element.slice(0, 3).toUpperCase() + " " + element.slice(3);
 
-            html.push('<div class="docname"><a href="/doc/' + docname + '/">' + displayName + '</a></div>');
+                html.push('<div class="docname"><a href="/doc/' + element + '/">' + displayName + '</a></div>');
+            }
+            else {
+                html.push('<div>' + element + '</div>');
+            }
         });
 
         if ($(this).data("sliced"))

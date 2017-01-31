@@ -9,7 +9,7 @@ from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.core.urlresolvers import reverse as urlreverse
 from django.http import HttpResponseRedirect, HttpResponseForbidden
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.utils.safestring import mark_safe
 from django.conf import settings
 
@@ -88,7 +88,7 @@ def document_stats(request, stats_type=None):
         return urlreverse(document_stats, kwargs={ k: v for k, v in kwargs.iteritems() if v is not None }) + generate_query_string(request.GET, get_overrides)
 
     # statistics type - one of the tables or the chart
-    possible_stats_types = add_url_to_choices([
+    possible_document_stats_types = add_url_to_choices([
         ("authors", "Number of authors"),
         ("pages", "Pages"),
         ("words", "Words"),
@@ -96,8 +96,18 @@ def document_stats(request, stats_type=None):
         ("formlang", "Formal languages"),
     ], lambda slug: build_document_stats_url(stats_type_override=slug))
 
+    # statistics type - one of the tables or the chart
+    possible_author_stats_types = add_url_to_choices([
+        ("author/documents", "Number of documents"),
+        ("author/affiliation", "Affiliation"),
+        ("author/country", "Country"),
+        ("author/continent", "Continent"),
+        ("author/citation", "Citations"),
+    ], lambda slug: build_document_stats_url(stats_type_override=slug))
+    
+
     if not stats_type:
-        return HttpResponseRedirect(build_document_stats_url(stats_type_override=possible_stats_types[0][0]))
+        return HttpResponseRedirect(build_document_stats_url(stats_type_override=possible_document_stats_types[0][0]))
 
 
     possible_document_types = add_url_to_choices([
@@ -124,196 +134,248 @@ def document_stats(request, stats_type=None):
         except ValueError:
             pass
 
-    def generate_canonical_names(docalias_qs):
-        for doc_id, ts in itertools.groupby(docalias_qs.order_by("document"), lambda t: t[0]):
-            chosen = None
-            for t in ts:
-                if chosen is None:
-                    chosen = t
-                else:
-                    if t[0].startswith("rfc"):
-                        chosen = t
-                    elif t[0].startswith("draft") and not chosen[0].startswith("rfc"):
-                        chosen = t
-
-            yield chosen
-
-    # filter documents
-    docalias_qs = DocAlias.objects.filter(document__type="draft")
-
-    if document_type == "rfc":
-        docalias_qs = docalias_qs.filter(document__states__type="draft", document__states__slug="rfc")
-    elif document_type == "draft":
-        docalias_qs = docalias_qs.exclude(document__states__type="draft", document__states__slug="rfc")
-
-    if from_time:
-        # this is actually faster than joining in the database,
-        # despite the round-trip back and forth
-        docs_within_time_constraint = list(Document.objects.filter(
-            type="draft",
-            docevent__time__gte=from_time,
-            docevent__type__in=["published_rfc", "new_revision"],
-        ).values_list("pk"))
-
-        docalias_qs = docalias_qs.filter(document__in=docs_within_time_constraint)
-
     chart_data = []
     table_data = []
-
-    if document_type == "rfc":
-        doc_label = "RFC"
-    elif document_type == "draft":
-        doc_label = "draft"
-    else:
-        doc_label = "document"
-
     stats_title = ""
     bin_size = 1
 
-    total_docs = docalias_qs.count()
 
-    if stats_type == "authors":
-        stats_title = "Number of authors for each {}".format(doc_label)
+    if any(stats_type == t[0] for t in possible_document_stats_types):
+        # filter documents
+        docalias_qs = DocAlias.objects.filter(document__type="draft")
 
-        bins = defaultdict(list)
+        if document_type == "rfc":
+            docalias_qs = docalias_qs.filter(document__states__type="draft", document__states__slug="rfc")
+        elif document_type == "draft":
+            docalias_qs = docalias_qs.exclude(document__states__type="draft", document__states__slug="rfc")
 
-        for name, author_count in generate_canonical_names(docalias_qs.values_list("name").annotate(Count("document__documentauthor"))):
-            bins[author_count].append(name)
+        if from_time:
+            # this is actually faster than joining in the database,
+            # despite the round-trip back and forth
+            docs_within_time_constraint = list(Document.objects.filter(
+                type="draft",
+                docevent__time__gte=from_time,
+                docevent__type__in=["published_rfc", "new_revision"],
+            ).values_list("pk"))
 
-        series_data = []
-        for author_count, names in sorted(bins.iteritems(), key=lambda t: t[0]):
-            percentage = len(names) * 100.0 / total_docs
-            series_data.append((author_count, percentage))
-            table_data.append((author_count, percentage, names))
+            docalias_qs = docalias_qs.filter(document__in=docs_within_time_constraint)
 
-        chart_data.append({
-            "data": series_data,
-            "animation": False,
-        })
+        if document_type == "rfc":
+            doc_label = "RFC"
+        elif document_type == "draft":
+            doc_label = "draft"
+        else:
+            doc_label = "document"
 
-    elif stats_type == "pages":
-        stats_title = "Number of pages for each {}".format(doc_label)
+        total_docs = docalias_qs.count()
 
-        bins = defaultdict(list)
+        def generate_canonical_names(docalias_qs):
+            for doc_id, ts in itertools.groupby(docalias_qs.order_by("document"), lambda t: t[0]):
+                chosen = None
+                for t in ts:
+                    if chosen is None:
+                        chosen = t
+                    else:
+                        if t[0].startswith("rfc"):
+                            chosen = t
+                        elif t[0].startswith("draft") and not chosen[0].startswith("rfc"):
+                            chosen = t
 
-        for name, pages in generate_canonical_names(docalias_qs.values_list("name", "document__pages")):
-            bins[pages].append(name)
+                yield chosen
 
-        series_data = []
-        for pages, names in sorted(bins.iteritems(), key=lambda t: t[0]):
-            percentage = len(names) * 100.0 / total_docs
-            if pages is not None:
-                series_data.append((pages, len(names)))
-            table_data.append((pages, percentage, names))
+        if stats_type == "authors":
+            stats_title = "Number of authors for each {}".format(doc_label)
 
-        chart_data.append({
-            "data": series_data,
-            "animation": False,
-        })
+            bins = defaultdict(list)
 
-    elif stats_type == "words":
-        stats_title = "Number of words for each {}".format(doc_label)
+            for name, author_count in generate_canonical_names(docalias_qs.values_list("name").annotate(Count("document__documentauthor"))):
+                bins[author_count].append(name)
 
-        bin_size = 500
+            series_data = []
+            for author_count, names in sorted(bins.iteritems(), key=lambda t: t[0]):
+                percentage = len(names) * 100.0 / total_docs
+                series_data.append((author_count, percentage))
+                table_data.append((author_count, percentage, names))
 
-        bins = defaultdict(list)
+            chart_data.append({
+                "data": series_data,
+                "animation": False,
+            })
 
-        for name, words in generate_canonical_names(docalias_qs.values_list("name", "document__words")):
-            bins[put_into_bin(words, bin_size)].append(name)
+        elif stats_type == "pages":
+            stats_title = "Number of pages for each {}".format(doc_label)
 
-        series_data = []
-        for (value, words), names in sorted(bins.iteritems(), key=lambda t: t[0][0]):
-            percentage = len(names) * 100.0 / total_docs
-            if words is not None:
-                series_data.append((value, len(names)))
+            bins = defaultdict(list)
 
-            table_data.append((words, percentage, names))
+            for name, pages in generate_canonical_names(docalias_qs.values_list("name", "document__pages")):
+                bins[pages].append(name)
 
-        chart_data.append({
-            "data": series_data,
-            "animation": False,
-        })
+            series_data = []
+            for pages, names in sorted(bins.iteritems(), key=lambda t: t[0]):
+                percentage = len(names) * 100.0 / total_docs
+                if pages is not None:
+                    series_data.append((pages, len(names)))
+                    table_data.append((pages, percentage, names))
 
-    elif stats_type == "format":
-        stats_title = "Submission formats for each {}".format(doc_label)
+            chart_data.append({
+                "data": series_data,
+                "animation": False,
+            })
 
-        bins = defaultdict(list)
+        elif stats_type == "words":
+            stats_title = "Number of words for each {}".format(doc_label)
 
-        # on new documents, we should have a Submission row with the file types
-        submission_types = {}
+            bin_size = 500
 
-        for doc_name, file_types in Submission.objects.values_list("draft", "file_types").order_by("submission_date", "id"):
-            submission_types[doc_name] = file_types
+            bins = defaultdict(list)
 
-        doc_names_with_missing_types = {}
-        for canonical_name, rev, doc_name in generate_canonical_names(docalias_qs.values_list("name", "document__rev", "document__name")):
-            types = submission_types.get(doc_name)
-            if types:
-                for dot_ext in types.split(","):
-                    bins[dot_ext.lstrip(".").upper()].append(canonical_name)
+            for name, words in generate_canonical_names(docalias_qs.values_list("name", "document__words")):
+                bins[put_into_bin(words, bin_size)].append(name)
 
-            else:
+            series_data = []
+            for (value, words), names in sorted(bins.iteritems(), key=lambda t: t[0][0]):
+                percentage = len(names) * 100.0 / total_docs
+                if words is not None:
+                    series_data.append((value, len(names)))
 
-                if canonical_name.startswith("rfc"):
-                    filename = canonical_name
+                table_data.append((words, percentage, names))
+
+            chart_data.append({
+                "data": series_data,
+                "animation": False,
+            })
+
+        elif stats_type == "format":
+            stats_title = "Submission formats for each {}".format(doc_label)
+
+            bins = defaultdict(list)
+
+            # on new documents, we should have a Submission row with the file types
+            submission_types = {}
+
+            for doc_name, file_types in Submission.objects.values_list("draft", "file_types").order_by("submission_date", "id"):
+                submission_types[doc_name] = file_types
+
+            doc_names_with_missing_types = {}
+            for canonical_name, rev, doc_name in generate_canonical_names(docalias_qs.values_list("name", "document__rev", "document__name")):
+                types = submission_types.get(doc_name)
+                if types:
+                    for dot_ext in types.split(","):
+                        bins[dot_ext.lstrip(".").upper()].append(canonical_name)
+
                 else:
-                    filename = canonical_name + "-" + rev
 
-                doc_names_with_missing_types[filename] = canonical_name
+                    if canonical_name.startswith("rfc"):
+                        filename = canonical_name
+                    else:
+                        filename = canonical_name + "-" + rev
 
-        # look up the remaining documents on disk
-        for filename in itertools.chain(os.listdir(settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR), os.listdir(settings.RFC_PATH)):
-            t = filename.split(".", 1)
-            if len(t) != 2:
-                continue
+                    doc_names_with_missing_types[filename] = canonical_name
 
-            basename, ext = t
-            if any(ext.lower().endswith(blacklisted_ext.lower()) for blacklisted_ext in settings.DOCUMENT_FORMAT_BLACKLIST):
-                continue
+            # look up the remaining documents on disk
+            for filename in itertools.chain(os.listdir(settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR), os.listdir(settings.RFC_PATH)):
+                t = filename.split(".", 1)
+                if len(t) != 2:
+                    continue
 
-            canonical_name = doc_names_with_missing_types.get(basename)
+                basename, ext = t
+                if any(ext.lower().endswith(blacklisted_ext.lower()) for blacklisted_ext in settings.DOCUMENT_FORMAT_BLACKLIST):
+                    continue
 
-            if canonical_name:
-                bins[ext.upper()].append(canonical_name)
+                canonical_name = doc_names_with_missing_types.get(basename)
 
-        series_data = []
-        for fmt, names in sorted(bins.iteritems(), key=lambda t: t[0]):
-            percentage = len(names) * 100.0 / total_docs
-            series_data.append((fmt, len(names)))
+                if canonical_name:
+                    bins[ext.upper()].append(canonical_name)
 
-            table_data.append((fmt, percentage, names))
+            series_data = []
+            for fmt, names in sorted(bins.iteritems(), key=lambda t: t[0]):
+                percentage = len(names) * 100.0 / total_docs
+                series_data.append((fmt, len(names)))
 
-        chart_data.append({
-            "data": series_data,
-            "animation": False,
-        })
+                table_data.append((fmt, percentage, names))
 
-    elif stats_type == "formlang":
-        stats_title = "Formal languages used for each {}".format(doc_label)
+            chart_data.append({
+                "data": series_data,
+                "animation": False,
+            })
 
-        bins = defaultdict(list)
+        elif stats_type == "formlang":
+            stats_title = "Formal languages used for each {}".format(doc_label)
 
-        for name, formal_language_name in generate_canonical_names(docalias_qs.values_list("name", "document__formal_languages__name")):
-            bins[formal_language_name].append(name)
+            bins = defaultdict(list)
 
-        series_data = []
-        for formal_language, names in sorted(bins.iteritems(), key=lambda t: t[0]):
-            percentage = len(names) * 100.0 / total_docs
-            if formal_language is not None:
-                series_data.append((formal_language, len(names)))
-                table_data.append((formal_language, percentage, names))
+            for name, formal_language_name in generate_canonical_names(docalias_qs.values_list("name", "document__formal_languages__name")):
+                bins[formal_language_name].append(name)
 
-        chart_data.append({
-            "data": series_data,
-            "animation": False,
-        })
+            series_data = []
+            for formal_language, names in sorted(bins.iteritems(), key=lambda t: t[0]):
+                percentage = len(names) * 100.0 / total_docs
+                if formal_language is not None:
+                    series_data.append((formal_language, len(names)))
+                    table_data.append((formal_language, percentage, names))
 
-        
+            chart_data.append({
+                "data": series_data,
+                "animation": False,
+            })
+
+    elif any(stats_type == t[0] for t in possible_author_stats_types):
+        person_filters = Q(documentauthor__document__type="draft")
+
+        # filter persons
+        if document_type == "rfc":
+            person_filters &= Q(documentauthor__document__states__type="draft", documentauthor__document__states__slug="rfc")
+        elif document_type == "draft":
+            person_filters &= ~Q(documentauthor__document__states__type="draft", documentauthor__document__states__slug="rfc")
+
+        if from_time:
+            # this is actually faster than joining in the database,
+            # despite the round-trip back and forth
+            docs_within_time_constraint = list(Document.objects.filter(
+                type="draft",
+                docevent__time__gte=from_time,
+                docevent__type__in=["published_rfc", "new_revision"],
+            ).values_list("pk"))
+
+            person_filters &= Q(documentauthor__document__in=docs_within_time_constraint)
+
+        person_qs = Person.objects.filter(person_filters)
+
+        if document_type == "rfc":
+            doc_label = "RFC"
+        elif document_type == "draft":
+            doc_label = "draft"
+        else:
+            doc_label = "document"
+
+        total_persons = person_qs.count()
+
+        if stats_type == "author/documents":
+            stats_title = "Number of {}s for each author".format(doc_label)
+
+            bins = defaultdict(list)
+
+            for name, document_count in person_qs.values_list("name").annotate(Count("documentauthor")):
+                bins[document_count].append(name)
+
+            series_data = []
+            for document_count, names in sorted(bins.iteritems(), key=lambda t: t[0]):
+                percentage = len(names) * 100.0 / total_persons
+                series_data.append((document_count, percentage))
+                table_data.append((document_count, percentage, names))
+
+            chart_data.append({
+                "data": series_data,
+                "animation": False,
+            })
+
+
     return render(request, "stats/document_stats.html", {
         "chart_data": mark_safe(json.dumps(chart_data)),
         "table_data": table_data,
         "stats_title": stats_title,
-        "possible_stats_types": possible_stats_types,
+        "possible_document_stats_types": possible_document_stats_types,
+        "possible_author_stats_types": possible_author_stats_types,
         "stats_type": stats_type,
         "possible_document_types": possible_document_types,
         "document_type": document_type,
@@ -321,8 +383,9 @@ def document_stats(request, stats_type=None):
         "time_choice": time_choice,
         "doc_label": doc_label,
         "bin_size": bin_size,
-        "content_template": "stats/document_stats_{}.html".format(stats_type),
+        "content_template": "stats/document_stats_{}.html".format(stats_type.replace("/", "_")),
     })
+
 
 @login_required
 def review_stats(request, stats_type=None, acronym=None):

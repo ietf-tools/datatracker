@@ -9,9 +9,11 @@
 
   <h1>{% block title %}Statistics{% endblock %}</h1>
 
+  <p>Statistics on...</p>
+
   <ul>
-    <li><a href="{% url "ietf.stats.views.document_stats" %}">Documents (number of authors, size, formats used)</a></li>
-    <li><a rel="nofollow" href="{% url "ietf.stats.views.review_stats" %}">Reviews in review teams</a> (requires login)</li>
+    <li><a href="{% url "ietf.stats.views.document_stats" %}">Drafts/RFCs (authors, countries, formats, ...)</a></li>
+    <li><a rel="nofollow" href="{% url "ietf.stats.views.review_stats" %}">Reviews of drafts in review teams</a> (requires login)</li>
   </ul>
 
 {% endblock %}
