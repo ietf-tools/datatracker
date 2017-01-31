@@ -18,7 +18,7 @@
       </thead>
       <tbody>
         {% for item in times %}
-          <tr class="{% cycle row1,row2 %}">
+          <tr class="{% cycle 'row1' 'row2' %}">
             <td>{{ item.time|date:"D" }}</td>
             <td>{{ item.time|date:"H:i" }} - {{ item.end_time|date:"H:i" }}</td>
             <td>{{ item.name }}</td>

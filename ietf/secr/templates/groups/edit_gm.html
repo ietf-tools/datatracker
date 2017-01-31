@@ -37,7 +37,7 @@
         {% if form.non_field_errors %}
         <tr><td colspan="3">{{ form.non_field_errors }}</td></tr>
         {% endif %}
-        <tr class="{% cycle row1,row2 %}">
+        <tr class="{% cycle 'row1' 'row2' %}">
 
           {% for hidden in form.hidden_fields %}
             {{ hidden }}

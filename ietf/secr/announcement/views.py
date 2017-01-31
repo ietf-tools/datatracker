@@ -1,8 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseForbidden
-from django.shortcuts import render_to_response, redirect
-from django.template import RequestContext
+from django.shortcuts import render, redirect
 
 from ietf.group.models import Role
 from ietf.ietfauth.utils import has_role
@@ -68,10 +67,7 @@ def main(request):
 
         return redirect('announcement_confirm')
 
-    return render_to_response('announcement/main.html', {
-        'form': form},
-        RequestContext(request, {}),
-    )
+    return render(request, 'announcement/main.html', { 'form': form} )
 
 @login_required
 @check_for_cancel('../')
@@ -107,8 +103,7 @@ def confirm(request):
     else:
         to = data['to']
 
-    return render_to_response('announcement/confirm.html', {
+    return render(request, 'announcement/confirm.html', {
         'message': data,
         'to': to},
-        RequestContext(request, {}),
     )

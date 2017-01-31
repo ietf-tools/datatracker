@@ -37,8 +37,8 @@ from ietf.group.views import fill_in_charter_info
 class ChangeStateForm(forms.Form):
     charter_state = forms.ModelChoiceField(State.objects.filter(used=True, type="charter"), label="Charter state", empty_label=None, required=False)
     initial_time = forms.IntegerField(initial=0, label="Review time", help_text="(in weeks)", required=False)
-    message = forms.CharField(widget=forms.Textarea, help_text="Leave blank to change state without notifying the Secretariat.", required=False, label=mark_safe("Message to the Secretariat"))
-    comment = forms.CharField(widget=forms.Textarea, help_text="Optional comment for the charter history.", required=False)
+    message = forms.CharField(widget=forms.Textarea, help_text="Leave blank to change state without notifying the Secretariat.", required=False, label=mark_safe("Message to the Secretariat"), strip=False)
+    comment = forms.CharField(widget=forms.Textarea, help_text="Optional comment for the charter history.", required=False, strip=False)
     def __init__(self, *args, **kwargs):
         self.hide = kwargs.pop('hide', None)
         group = kwargs.pop('group')
@@ -233,8 +233,8 @@ def change_state(request, name, option=None):
 
 class ChangeTitleForm(forms.Form):
     charter_title = forms.CharField(widget=forms.TextInput, label="Charter title", help_text="Enter new charter title.", required=True)
-    message = forms.CharField(widget=forms.Textarea, help_text="Leave blank to change the title without notifying the Secretariat.", required=False, label=mark_safe("Message to Secretariat"))
-    comment = forms.CharField(widget=forms.Textarea, help_text="Optional comment for the charter history.", required=False)
+    message = forms.CharField(widget=forms.Textarea, help_text="Leave blank to change the title without notifying the Secretariat.", required=False, label=mark_safe("Message to Secretariat"), strip=False)
+    comment = forms.CharField(widget=forms.Textarea, help_text="Optional comment for the charter history.", required=False, strip=False)
     def __init__(self, *args, **kwargs):
         charter = kwargs.pop('charter')
         super(ChangeTitleForm, self).__init__(*args, **kwargs)
@@ -335,7 +335,7 @@ def edit_ad(request, name):
 
 
 class UploadForm(forms.Form):
-    content = forms.CharField(widget=forms.Textarea, label="Charter text", help_text="Edit the charter text.", required=False)
+    content = forms.CharField(widget=forms.Textarea, label="Charter text", help_text="Edit the charter text.", required=False, strip=False)
     txt = forms.FileField(label=".txt format", help_text="Or upload a .txt file.", required=False)
 
     def clean_content(self):
@@ -454,15 +454,15 @@ def submit(request, name, option=None):
     })
 
 class ActionAnnouncementTextForm(forms.Form):
-    announcement_text = forms.CharField(widget=forms.Textarea, required=True)
+    announcement_text = forms.CharField(widget=forms.Textarea, required=True, strip=False)
 
     def clean_announcement_text(self):
         return self.cleaned_data["announcement_text"].replace("\r", "")
 
 
 class ReviewAnnouncementTextForm(forms.Form):
-    announcement_text = forms.CharField(widget=forms.Textarea, required=True)
-    new_work_text = forms.CharField(widget=forms.Textarea, required=True)
+    announcement_text = forms.CharField(widget=forms.Textarea, required=True, strip=False)
+    new_work_text = forms.CharField(widget=forms.Textarea, required=True, strip=False)
 
     def clean_announcement_text(self):
         return self.cleaned_data["announcement_text"].replace("\r", "")
@@ -612,7 +612,7 @@ def action_announcement_text(request, name):
                   ))
 
 class BallotWriteupForm(forms.Form):
-    ballot_writeup = forms.CharField(widget=forms.Textarea, required=True)
+    ballot_writeup = forms.CharField(widget=forms.Textarea, required=True, strip=False)
 
     def clean_ballot_writeup(self):
         return self.cleaned_data["ballot_writeup"].replace("\r", "")

@@ -38,7 +38,7 @@ def get_person(name):
 # ---------------------------------------------
 
 class DescriptionForm (forms.Form):
-    description = forms.CharField(widget=forms.Textarea(attrs={'rows':'20'}),required=True)
+    description = forms.CharField(widget=forms.Textarea(attrs={'rows':'20'}),required=True, strip=False)
 
 class GroupMilestoneForm(forms.ModelForm):
     class Meta:

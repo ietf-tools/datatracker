@@ -4,8 +4,6 @@ import os
 import copy
 import syslog
 import pkg_resources
-from optparse import make_option
-#from optparse import make_option
 
 from trac.core import TracError
 from trac.env import Environment
@@ -30,17 +28,16 @@ syslog.openlog(logtag, syslog.LOG_PID, syslog.LOG_USER)
 class Command(BaseCommand):
     help = "Create group wikis for WGs, RGs and Areas which don't have one."
 
-    option_list = BaseCommand.option_list + (
-        make_option('--wiki-dir-pattern', dest='wiki_dir_pattern',
+    def add_arguments(self, parser):
+        parser.add_argument('--wiki-dir-pattern', dest='wiki_dir_pattern',
             default=settings.TRAC_WIKI_DIR_PATTERN,
-            help='A pattern with %s placeholder for group wiki path'),
-        make_option('--svn-dir-pattern', dest='svn_dir_pattern',
+            help='A pattern with %s placeholder for group wiki path')
+        parser.add_argument('--svn-dir-pattern', dest='svn_dir_pattern',
             default=settings.TRAC_SVN_DIR_PATTERN,
-            help='A pattern with %s placeholder for group svn path'),
-        make_option('--group-list', '-g', dest='group_list', help='Limit processing to groups with the given acronyms (a comma-separated list)'),
-        make_option('--dummy-run', '-n', default=False, action='store_true', dest='dummy_run', help='Make no changes, just show what would be done'),
-    )
-    
+            help='A pattern with %s placeholder for group svn path')
+        parser.add_argument('--group-list', '-g', dest='group_list', help='Limit processing to groups with the given acronyms (a comma-separated list)')
+        parser.add_argument('--dummy-run', '-n', default=False, action='store_true', dest='dummy_run', help='Make no changes, just show what would be done')
+
     secretariat = Group.objects.get(acronym='secretariat')
 
     def note(self, msg):
@@ -254,7 +251,8 @@ class Command(BaseCommand):
         urls = [ u for u in group.groupurl_set.all() if name.lower() in u.name.lower() ]
         if not urls:
             self.note("  adding %s %s URL ..." % (group.acronym, name.lower()))
-            group.groupurl_set.add(GroupURL(group=group, name=name, url=url))
+            url = GroupURL.objects.create(group=group, name=name, url=url)
+            group.groupurl_set.add(url)
 
     def add_custom_pages(self, group, env):
         for template_name in settings.TRAC_WIKI_PAGES_TEMPLATES:

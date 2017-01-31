@@ -376,9 +376,9 @@ class EditSubmissionForm(forms.ModelForm):
     rev = forms.CharField(label=u'Revision', max_length=2, required=True)
     document_date = forms.DateField(required=True)
     pages = forms.IntegerField(required=True)
-    abstract = forms.CharField(widget=forms.Textarea, required=True)
+    abstract = forms.CharField(widget=forms.Textarea, required=True, strip=False)
 
-    note = forms.CharField(label=mark_safe(u'Comment to the Secretariat'), widget=forms.Textarea, required=False)
+    note = forms.CharField(label=mark_safe(u'Comment to the Secretariat'), widget=forms.Textarea, required=False, strip=False)
 
     class Meta:
         model = Submission
@@ -446,7 +446,7 @@ class SubmissionEmailForm(forms.Form):
     submission_pk = forms.IntegerField(required=False, widget=forms.HiddenInput())
     direction = forms.ChoiceField(choices=(("incoming", "Incoming"), ("outgoing", "Outgoing")),
                                   widget=forms.RadioSelect)
-    message = forms.CharField(required=True, widget=forms.Textarea,
+    message = forms.CharField(required=True, widget=forms.Textarea, strip=False,
                               help_text="Copy the entire message including headers. To do so, view the source, select all, copy then paste into the text area above")
     #in_reply_to = MessageModelChoiceField(queryset=Message.objects,label="In Reply To",required=False)
 

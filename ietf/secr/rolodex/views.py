@@ -3,8 +3,7 @@ from django.contrib.auth.models import User
 from django.db import IntegrityError
 from django.forms.models import inlineformset_factory
 from django.http import HttpResponseRedirect
-from django.shortcuts import render_to_response, get_object_or_404, redirect
-from django.template import RequestContext
+from django.shortcuts import render, get_object_or_404, redirect
 
 from ietf.ietfauth.utils import role_required
 from ietf.person.models import Person, Email, Alias
@@ -47,11 +46,10 @@ def add(request):
     else:
         form = NameForm()
 
-    return render_to_response('rolodex/add.html', {
+    return render(request, 'rolodex/add.html', {
         'form': form,
         'results': results,
         'name': name},
-        RequestContext(request, {}),
     )
 
 @role_required('Secretariat')
@@ -103,10 +101,9 @@ def add_proceed(request):
     else:
         form = NewPersonForm(initial={'name':name,'ascii':name})
 
-    return render_to_response('rolodex/add_proceed.html', {
+    return render(request, 'rolodex/add_proceed.html', {
         'name': name,
         'form': form},
-        RequestContext(request, {}),
     )
 
 @role_required('Secretariat')
@@ -138,10 +135,7 @@ def delete(request, id):
             messages.warning(request, 'This feature is disabled')
             return redirect('rolodex')
 
-    return render_to_response('rolodex/delete.html', {
-        'person': person},
-        RequestContext(request, {}),
-    )
+    return render(request, 'rolodex/delete.html', { 'person': person}, )
     
 @role_required('Secretariat')
 def edit(request, id):
@@ -194,11 +188,10 @@ def edit(request, id):
         # initialize formsets
         email_formset = EmailFormset(instance=person, prefix='email')
             
-    return render_to_response('rolodex/edit.html', {
+    return render(request, 'rolodex/edit.html', {
         'person': person,
         'person_form': person_form, 
         'email_formset': email_formset},
-        RequestContext(request, {}),
     )
 
 @role_required('Secretariat')
@@ -249,11 +242,10 @@ def search(request):
     else:
         form = SearchForm()
     
-    return render_to_response('rolodex/search.html', {
+    return render(request, 'rolodex/search.html', {
         'results' : results,
         'form': form,
         'not_found': not_found},
-        RequestContext(request, {}),
     )
 
 @role_required('Secretariat')
@@ -276,9 +268,8 @@ def view(request, id):
     person.emails = person.email_set.filter(active=True)
     roles = person.role_set.all().order_by('name__name','group__acronym')
     
-    return render_to_response('rolodex/view.html', {
+    return render(request, 'rolodex/view.html', {
         'person': person,
         'roles': roles},
-        RequestContext(request, {}),
     )
 

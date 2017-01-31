@@ -8,7 +8,6 @@ https://docs.djangoproject.com/en/dev/howto/custom-management-commands/
 """
 
 from django.core.management.base import BaseCommand
-from optparse import make_option
 #import cProfile, pstats, io
 import sys
 from ietf.meeting.models import Schedule, Meeting
@@ -26,33 +25,33 @@ class Command(BaseCommand):
     seed    = None
     recordsteps = False
 
-    option_list = BaseCommand.option_list + (
-        make_option('--profile',
+    def add_arguments(self, parser):
+        parser.add_argument('--profile',
             action='store_true',
             dest='profile',
             default=False,
-            help='Enable verbose mode'),
-       make_option('--recordsteps',
+            help='Enable verbose mode')
+        parser.add_argument('--recordsteps',
             action='store_true',
             dest='recordsteps',
             default=False,
-            help='Enable recording progress to table'),
-        make_option('--verbose',
+            help='Enable recording progress to table')
+        parser.add_argument('--verbose',
             action='count',
             dest='verbose',
             default=False,
-            help='Enable verbose mode'),
-        make_option('--maxstep',
-                    action="store", type="int",
-                    dest='maxstep',
-                    default=20000,
-                    help='Maximum number of steps'),
-        make_option('--seed',
-                    action="store", type="int",
-                    dest='seed',
-                    default=None,
-                    help='Seed to use for calculation'),
-        )
+            help='Enable verbose mode')
+        parser.add_argument('--maxstep',
+            action="store", type=int,
+            dest='maxstep',
+            default=20000,
+            help='Maximum number of steps')
+        parser.add_argument('--seed',
+            action="store", type=int,
+            dest='seed',
+            default=None,
+            help='Seed to use for calculation')
+
 
     def handle(self, *labels, **options):
         self.verbose  = options.get('verbose', 1)

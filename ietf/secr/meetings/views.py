@@ -10,8 +10,7 @@ from django.db.models import Max
 from django.forms.formsets import formset_factory
 from django.forms.models import inlineformset_factory
 from django.http import HttpResponseRedirect, HttpResponse
-from django.shortcuts import render_to_response, get_object_or_404, redirect
-from django.template import RequestContext
+from django.shortcuts import render, get_object_or_404, redirect
 from django.utils.functional import curry
 
 from ietf.ietfauth.utils import role_required
@@ -324,9 +323,8 @@ def add(request):
         max_number = Meeting.objects.filter(type='ietf').aggregate(Max('number'))['number__max']
         form = MeetingModelForm(initial={'number':int(max_number) + 1})
 
-    return render_to_response('meetings/add.html', {
+    return render(request, 'meetings/add.html', {
         'form': form},
-        RequestContext(request, {}),
     )
 
 @role_required('Secretariat')
@@ -354,13 +352,12 @@ def blue_sheet(request, meeting_id):
     else:
         form = UploadBlueSheetForm()
 
-    return render_to_response('meetings/blue_sheet.html', {
+    return render(request, 'meetings/blue_sheet.html', {
         'meeting': meeting,
         'url': url,
         'form': form,
         'last_run': last_run,
         'uploaded_files': uploaded_files},
-        RequestContext(request, {}),
     )
 
 @role_required('Secretariat')
@@ -423,10 +420,9 @@ def edit_meeting(request, meeting_id):
     else:
         form = MeetingModelForm(instance=meeting)
 
-    return render_to_response('meetings/edit_meeting.html', {
+    return render(request, 'meetings/edit_meeting.html', {
         'meeting': meeting,
         'form' : form, },
-        RequestContext(request,{}),
     )
 
 @role_required('Secretariat')
@@ -442,10 +438,9 @@ def main(request):
     choices = [ (str(x.number),str(x.number)) for x in meetings ]
     form = GroupSelectForm(choices=choices)
 
-    return render_to_response('meetings/main.html', {
+    return render(request, 'meetings/main.html', {
         'form': form,
         'meetings': meetings},
-        RequestContext(request, {}),
     )
 
 @role_required('Secretariat')
@@ -511,12 +506,11 @@ def non_session(request, meeting_id, schedule_name):
     if TimeSlot.objects.filter(meeting=meeting,type='other',location__isnull=True):
         messages.warning(request, 'There are non-session items which do not have a room assigned')
 
-    return render_to_response('meetings/non_session.html', {
+    return render(request, 'meetings/non_session.html', {
         'slots': slots,
         'form': form,
         'meeting': meeting,
         'schedule': schedule},
-        RequestContext(request, {}),
     )
 
 @role_required('Secretariat')
@@ -585,12 +579,11 @@ def non_session_edit(request, meeting_id, schedule_name, slot_id):
                    'short':session.short}
         form = NonSessionEditForm(meeting=meeting,session=session,initial=initial)
 
-    return render_to_response('meetings/non_session_edit.html', {
+    return render(request, 'meetings/non_session_edit.html', {
         'meeting': meeting,
         'form': form,
         'schedule': schedule,
         'slot': slot},
-        RequestContext(request, {}),
     )
 
 @role_required('Secretariat')
@@ -622,11 +615,10 @@ def notifications(request, meeting_id):
         messages.success(request, "Notifications Sent")
         return redirect('meetings_view', meeting_id=meeting.number)
 
-    return render_to_response('meetings/notifications.html', {
+    return render(request, 'meetings/notifications.html', {
         'meeting': meeting,
         'groups': sorted(groups, key=lambda a: a.acronym),
         'last_notice': last_notice },
-        RequestContext(request, {}),
     )
 
 @role_required('Secretariat')
@@ -691,11 +683,10 @@ def rooms(request, meeting_id, schedule_name):
     else:
         formset = RoomFormset(instance=meeting, prefix='room')
 
-    return render_to_response('meetings/rooms.html', {
+    return render(request, 'meetings/rooms.html', {
         'meeting': meeting,
         'schedule': schedule,
         'formset': formset},
-        RequestContext(request, {}),
     )
 
 @role_required('Secretariat')
@@ -802,14 +793,13 @@ def schedule(request, meeting_id, schedule_name, acronym):
     else:
         formset = NewSessionFormset(initial=initial)
 
-    return render_to_response('meetings/schedule.html', {
+    return render(request, 'meetings/schedule.html', {
         'group': group,
         'meeting': meeting,
         'schedule': schedule,
         'show_request': True,
         'session': legacy_session,
         'formset': formset},
-        RequestContext(request, {}),
     )
 
 @role_required('Secretariat')
@@ -820,10 +810,9 @@ def select(request, meeting_id, schedule_name):
     meeting = get_object_or_404(Meeting, number=meeting_id)
     schedule = get_object_or_404(Schedule, meeting=meeting, name=schedule_name)
     
-    return render_to_response('meetings/select.html', {
+    return render(request, 'meetings/select.html', {
         'meeting': meeting,
         'schedule': schedule},
-        RequestContext(request, {}),
     )
     
 @role_required('Secretariat')
@@ -862,14 +851,13 @@ def select_group(request, meeting_id, schedule_name):
     irtfs = filter(lambda a: a.type_id=='rg' and a.state_id in ('active','proposed'), unscheduled_groups)
     irtf_form = GroupSelectForm(choices=build_choices(irtfs))
 
-    return render_to_response('meetings/select_group.html', {
+    return render(request, 'meetings/select_group.html', {
         'group_form': group_form,
         'bof_form': bof_form,
         'irtf_form': irtf_form,
         'scheduled_groups': scheduled_groups,
         'meeting': meeting,
         'schedule': schedule},
-        RequestContext(request, {}),
     )
 
 @role_required('Secretariat')
@@ -929,12 +917,11 @@ def times(request, meeting_id, schedule_name):
     else:
         form = TimeSlotForm()
 
-    return render_to_response('meetings/times.html', {
+    return render(request, 'meetings/times.html', {
         'form': form,
         'meeting': meeting,
         'schedule': schedule,
         'times': times},
-        RequestContext(request, {}),
     )
 
 @role_required('Secretariat')
@@ -985,11 +972,10 @@ def times_edit(request, meeting_id, schedule_name, time):
                    'name':timeslots.first().name}
         form = TimeSlotForm(initial=initial)
 
-    return render_to_response('meetings/times_edit.html', {
+    return render(request, 'meetings/times_edit.html', {
         'meeting': meeting,
         'schedule': schedule,
         'form': form},
-        RequestContext(request, {}),
     )
 
 @role_required('Secretariat')
@@ -1039,7 +1025,6 @@ def view(request, meeting_id):
     '''
     meeting = get_object_or_404(Meeting, number=meeting_id)
     
-    return render_to_response('meetings/view.html', {
+    return render(request, 'meetings/view.html', {
         'meeting': meeting},
-        RequestContext(request, {}),
     )

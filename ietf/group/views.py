@@ -492,7 +492,7 @@ def group_about_status_meeting(request, acronym, num, group_type=None):
                  )
 
 class StatusUpdateForm(forms.Form):
-    content = forms.CharField(widget=forms.Textarea, label='Status update', help_text = 'Edit the status update', required=False)
+    content = forms.CharField(widget=forms.Textarea, label='Status update', help_text = 'Edit the status update', required=False, strip=False)
     txt = forms.FileField(label='.txt format', help_text='Or upload a .txt file', required=False)
 
     def clean_content(self):

@@ -1,6 +1,5 @@
 import sys
 
-from optparse import make_option
 from textwrap import dedent
 
 from django.contrib.auth.models import User
@@ -46,11 +45,11 @@ class Command(BaseCommand):
 
     help = dedent(__doc__).strip()
             
-    option_list = BaseCommand.option_list + (
-        make_option('--force',
+    def add_arguments(self, parser):
+        parser.add_argument('--force',
             action='store_true', dest='overwrite', default=False,
-            help='Overwrite existing passwords in the auth_user table.'),
-        )
+            help='Overwrite existing passwords in the auth_user table.')
+
 
     args = '[path [path [...]]]'
 

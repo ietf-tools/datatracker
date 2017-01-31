@@ -7,8 +7,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.db.models import Max
 from django.forms.formsets import formset_factory
-from django.shortcuts import render_to_response, get_object_or_404, redirect, render
-from django.template import RequestContext
+from django.shortcuts import render, get_object_or_404, redirect
 
 from ietf.doc.models import Document, DocumentAuthor, DocAlias, DocRelationshipName, RelatedDocument, State
 from ietf.doc.models import DocEvent, NewRevisionDocEvent
@@ -402,9 +401,8 @@ def abstract(request, id):
     '''
     draft = get_object_or_404(Document, name=id)
 
-    return render_to_response('drafts/abstract.html', {
+    return render(request, 'drafts/abstract.html', {
         'draft': draft},
-        RequestContext(request, {}),
     )
 
 @role_required('Secretariat')
@@ -492,10 +490,9 @@ def add(request):
         form = AddModelForm()
         upload_form = UploadForm()
         
-    return render_to_response('drafts/add.html', {
+    return render(request, 'drafts/add.html', {
         'form': form,
         'upload_form': upload_form},
-        RequestContext(request, {}),
     )
 
 @role_required('Secretariat')
@@ -532,10 +529,9 @@ def approvals(request):
     approved = Preapproval.objects.all().order_by('name')
     form = None
     
-    return render_to_response('drafts/approvals.html', {
+    return render(request, 'drafts/approvals.html', {
         'form': form,
         'approved': approved},
-        RequestContext(request, {}),
     )
 
 @role_required('Secretariat')
@@ -589,10 +585,9 @@ def authors(request, id):
     else: 
         form = AuthorForm()
 
-    return render_to_response('drafts/authors.html', {
+    return render(request, 'drafts/authors.html', {
         'draft': draft,
         'form': form},
-        RequestContext(request, {}),
     )
 
 @role_required('Secretariat')
@@ -638,12 +633,11 @@ def confirm(request, id):
     email = request.session.get('email','')
     action = request.session.get('action','')
     
-    return render_to_response('drafts/confirm.html', {
+    return render(request, 'drafts/confirm.html', {
         'details': details,
         'email': email,
         'action': action,
         'draft': draft},
-        RequestContext(request, {}),
     )
 
 @role_required('Secretariat')
@@ -661,9 +655,8 @@ def dates(request):
     '''
     meeting = get_meeting()
         
-    return render_to_response('drafts/dates.html', {
+    return render(request, 'drafts/dates.html', {
         'meeting':meeting},
-        RequestContext(request, {}),
     )
 
 @role_required('Secretariat')
@@ -748,17 +741,16 @@ def email(request, id):
                 type=request.session['action'],
                 input=request.session.get('data', None)))
         except Exception, e:
-            return render_to_response('drafts/error.html', { 'error': e},)
+            return render(request, 'drafts/error.html', { 'error': e},)
         
         # for "revision" action skip email page and go directly to confirm
         if request.session['action'] == 'revision':
             request.session['email'] = form.initial
             return redirect('drafts_confirm', id=id)
 
-    return render_to_response('drafts/email.html', {
+    return render(request, 'drafts/email.html', {
         'form': form,
         'draft': draft},
-        RequestContext(request, {}),
     )
 
 @role_required('Secretariat')
@@ -787,10 +779,9 @@ def extend(request, id):
     else:
         form = ExtendForm(initial={'revision_date':datetime.date.today().isoformat()})
 
-    return render_to_response('drafts/extend.html', {
+    return render(request, 'drafts/extend.html', {
         'form': form,
         'draft': draft},
-        RequestContext(request, {}),
     )
     
 @role_required('Secretariat')
@@ -863,11 +854,10 @@ def makerfc(request, id):
         form = RfcModelForm(instance=draft)
         obs_formset = ObsFormset(prefix='obs')
     
-    return render_to_response('drafts/makerfc.html', {
+    return render(request, 'drafts/makerfc.html', {
         'form': form,
         'obs_formset': obs_formset,
         'draft': draft},
-        RequestContext(request, {}),
     )
 
 @role_required('Secretariat')
@@ -879,9 +869,8 @@ def nudge_report(request):
     docs = Document.objects.filter(type='draft',states__slug='active')
     docs = docs.filter(states=12,tags='need-rev')
                 
-    return render_to_response('drafts/report_nudge.html', {
+    return render(request, 'drafts/report_nudge.html', {
         'docs': docs},
-        RequestContext(request, {}),
     )
     
 @role_required('Secretariat')
@@ -910,10 +899,9 @@ def replace(request, id):
     else:
         form = ReplaceForm(draft=draft)
 
-    return render_to_response('drafts/replace.html', {
+    return render(request, 'drafts/replace.html', {
         'form': form,
         'draft': draft},
-        RequestContext(request, {}),
     )
 
 @role_required('Secretariat')
@@ -960,11 +948,10 @@ def revision(request, id):
         form = RevisionModelForm(instance=draft,initial={'revision_date':datetime.date.today().isoformat()})
         upload_form = UploadForm(draft=draft)
         
-    return render_to_response('drafts/revision.html', {
+    return render(request, 'drafts/revision.html', {
         'form': form,
         'upload_form': upload_form,
         'draft': draft},
-        RequestContext(request, {}),
     )
 
 @role_required('Secretariat')
@@ -1033,10 +1020,9 @@ def search(request):
         active_state = State.objects.get(type='draft',slug='active')
         form = SearchForm(initial={'state':active_state.pk})
 
-    return render_to_response('drafts/search.html', {
+    return render(request, 'drafts/search.html', {
         'results': results,
         'form': form},
-        RequestContext(request, {}),
     )
 
 @role_required('Secretariat')
@@ -1074,11 +1060,10 @@ def update(request, id):
         form = RevisionModelForm(instance=draft,initial={'revision_date':datetime.date.today().isoformat()})
         upload_form = UploadForm(draft=draft)
         
-    return render_to_response('drafts/revision.html', {
+    return render(request, 'drafts/revision.html', {
         'form': form,
         'upload_form':upload_form,
         'draft': draft},
-        RequestContext(request, {}),
     )
 
 @role_required('Secretariat')
@@ -1133,13 +1118,12 @@ def view(request, id):
     except AttributeError:
         pass
 
-    return render_to_response('drafts/view.html', {
+    return render(request, 'drafts/view.html', {
         'is_active': is_active,
         'is_expired': is_expired,
         'is_withdrawn': is_withdrawn,
         'is_development': is_development,
         'draft': draft},
-        RequestContext(request, {}),
     )
 
 @role_required('Secretariat')
@@ -1168,9 +1152,8 @@ def withdraw(request, id):
     else:
         form = WithdrawForm()
 
-    return render_to_response('drafts/withdraw.html', {
+    return render(request, 'drafts/withdraw.html', {
         'draft': draft,
         'form': form},
-        RequestContext(request, {}),
     )
     

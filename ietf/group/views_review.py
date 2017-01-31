@@ -347,7 +347,7 @@ class EmailOpenAssignmentsForm(forms.Form):
     cc = MultiEmailField(required=False)
     reply_to = MultiEmailField(required=False)
     subject = forms.CharField()
-    body = forms.CharField(widget=forms.Textarea)
+    body = forms.CharField(widget=forms.Textarea, strip=False)
 
 @login_required
 def email_open_review_assignments(request, acronym, group_type=None):

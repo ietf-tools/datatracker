@@ -394,7 +394,7 @@ def edit(request, group_type=None, acronym=None, action="edit"):
 
 
 class ConcludeForm(forms.Form):
-    instructions = forms.CharField(widget=forms.Textarea(attrs={'rows': 30}), required=True)
+    instructions = forms.CharField(widget=forms.Textarea(attrs={'rows': 30}), required=True, strip=False)
 
 @login_required
 def conclude(request, acronym, group_type=None):

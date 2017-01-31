@@ -1,17 +1,17 @@
 from django.core.management.base import BaseCommand, CommandError
 from django.core import serializers
-from optparse import make_option
 
 
 class Command(BaseCommand):
-    option_list = BaseCommand.option_list + (
-        make_option('--format', default='json', dest='format',
-            help='Specifies the output serialization format for fixtures.'),
-        make_option('--indent', default=None, dest='indent', type='int',
-            help='Specifies the indent level to use when pretty-printing output'),
-    #    make_option('--schedulename', action='store',  dest='schedulename', default=False,
+
+    def add_arguments(self, parser):
+        parser.add_argument('--format', default='json', dest='format',
+            help='Specifies the output serialization format for fixtures.')
+        parser.add_argument('--indent', default=None, dest='indent', type='int',
+            help='Specifies the indent level to use when pretty-printing output')
+    #    parser.add_argument('--schedulename', action='store',  dest='schedulename', default=False,
     #        help='Tells Django to stop running the test suite after first failed test.')
-    )
+
     help = 'Saves the scheduled information for a named schedule in JSON format'
     args = 'meetingname [owner] schedname'
 

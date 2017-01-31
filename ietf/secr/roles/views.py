@@ -1,8 +1,7 @@
 from django.contrib import messages
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
-from django.shortcuts import render_to_response, get_object_or_404
-from django.template import RequestContext
+from django.shortcuts import render, get_object_or_404
 
 from ietf.group.models import Group, Role
 from ietf.group.utils import save_group_in_history
@@ -34,10 +33,9 @@ def ajax_get_roles(request, acronym):
     '''
     group = get_object_or_404(Group, acronym=acronym)
     
-    return render_to_response('roles/roles.html', {
+    return render(request, 'roles/roles.html', {
         'group': group,
         'roles': group.role_set.all()},
-        RequestContext(request, {}),
     )
 # --------------------------------------------------
 # STANDARD VIEW FUNCTIONS
@@ -105,8 +103,7 @@ def main(request):
         if 'group' in request.GET:
             group_form = GroupSelectForm(choices=choices,initial={'group':request.GET['group']})
             
-    return render_to_response('roles/main.html', {
+    return render(request, 'roles/main.html', {
         'group_form': group_form,
         'role_form': role_form},
-        RequestContext(request, {}),
     )

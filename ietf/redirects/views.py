@@ -4,6 +4,8 @@ from django.http import HttpResponsePermanentRedirect, Http404, BadHeaderError
 from django.shortcuts import get_object_or_404
 import re
 
+import debug                            # pyflakes:ignore
+
 from ietf.redirects.models import Redirect, Command
 
 def redirect(request, path="", script=""):

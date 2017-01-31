@@ -35,8 +35,7 @@
 import os, datetime, urllib, json, glob, re
 
 from django.http import HttpResponse, Http404 , HttpResponseForbidden
-from django.shortcuts import render, render_to_response, get_object_or_404, redirect
-from django.template import RequestContext
+from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django.core.urlresolvers import reverse as urlreverse
 from django.conf import settings
@@ -70,7 +69,7 @@ from ietf.review.utils import no_review_from_teams_on_doc
 
 def render_document_top(request, doc, tab, name):
     tabs = []
-    tabs.append(("Document", "document", urlreverse("doc_view", kwargs=dict(name=name)), True))
+    tabs.append(("Document", "document", urlreverse("doc_view", kwargs=dict(name=name)), True, None))
 
     ballot = doc.latest_event(BallotDocEvent, type="created_ballot")
     if doc.type_id in ("draft","conflrev", "statchg"):
@@ -79,10 +78,10 @@ def render_document_top(request, doc, tab, name):
         tabs.append(("IESG Review", "ballot", urlreverse("doc_ballot", kwargs=dict(name=name)), ballot, None if ballot else "IESG Review Ballot has not been created yet"))
 
     if doc.type_id == "draft" or (doc.type_id == "charter" and doc.group.type_id == "wg"):
-        tabs.append(("IESG Writeups", "writeup", urlreverse("doc_writeup", kwargs=dict(name=name)), True))
+        tabs.append(("IESG Writeups", "writeup", urlreverse("doc_writeup", kwargs=dict(name=name)), True, None))
 
-    tabs.append(("Email expansions","email",urlreverse("doc_email", kwargs=dict(name=name)), True))
-    tabs.append(("History", "history", urlreverse("doc_history", kwargs=dict(name=name)), True))
+    tabs.append(("Email expansions","email",urlreverse("doc_email", kwargs=dict(name=name)), True, None))
+    tabs.append(("History", "history", urlreverse("doc_history", kwargs=dict(name=name)), True, None))
 
     if name.startswith("rfc"):
         name = "RFC %s" % name[3:]
@@ -365,7 +364,7 @@ def document_main(request, name, rev=None):
         review_requests = review_requests_to_list_for_docs([doc]).get(doc.pk, [])
         no_review_from_teams = no_review_from_teams_on_doc(doc, rev or doc.rev)
 
-        return render_to_response("doc/document_draft.html",
+        return render(request, "doc/document_draft.html",
                                   dict(doc=doc,
                                        group=group,
                                        top=top,
@@ -427,8 +426,7 @@ def document_main(request, name, rev=None):
                                        presentations=presentations,
                                        review_requests=review_requests,
                                        no_review_from_teams=no_review_from_teams,
-                                       ),
-                                  context_instance=RequestContext(request))
+                                       ))
 
     if doc.type_id == "charter":
         filename = "%s-%s.txt" % (doc.canonical_name(), doc.rev)
@@ -452,7 +450,7 @@ def document_main(request, name, rev=None):
 
         can_manage = can_manage_group_type(request.user, doc.group)
 
-        return render_to_response("doc/document_charter.html",
+        return render(request, "doc/document_charter.html",
                                   dict(doc=doc,
                                        top=top,
                                        chartering=chartering,
@@ -466,8 +464,7 @@ def document_main(request, name, rev=None):
                                        group=group,
                                        milestones=milestones,
                                        can_manage=can_manage,
-                                       ),
-                                  context_instance=RequestContext(request))
+                                       ))
 
     if doc.type_id == "conflrev":
         filename = "%s-%s.txt" % (doc.canonical_name(), doc.rev)
@@ -483,7 +480,7 @@ def document_main(request, name, rev=None):
         if doc.get_state_slug() in ("iesgeval") and doc.active_ballot():
             ballot_summary = needed_ballot_positions(doc, doc.active_ballot().active_ad_positions().values())
 
-        return render_to_response("doc/document_conflict_review.html",
+        return render(request, "doc/document_conflict_review.html",
                                   dict(doc=doc,
                                        top=top,
                                        content=content,
@@ -494,8 +491,7 @@ def document_main(request, name, rev=None):
                                        conflictdoc=conflictdoc,
                                        ballot_summary=ballot_summary,
                                        approved_states=('appr-reqnopub-pend','appr-reqnopub-sent','appr-noprob-pend','appr-noprob-sent'),
-                                       ),
-                                  context_instance=RequestContext(request))
+                                       ))
 
     if doc.type_id == "statchg":
         filename = "%s-%s.txt" % (doc.canonical_name(), doc.rev)
@@ -518,7 +514,7 @@ def document_main(request, name, rev=None):
         else:
             sorted_relations=None
 
-        return render_to_response("doc/document_status_change.html",
+        return render(request, "doc/document_status_change.html",
                                   dict(doc=doc,
                                        top=top,
                                        content=content,
@@ -529,8 +525,7 @@ def document_main(request, name, rev=None):
                                        ballot_summary=ballot_summary,
                                        approved_states=('appr-pend','appr-sent'),
                                        sorted_relations=sorted_relations,
-                                       ),
-                                  context_instance=RequestContext(request))
+                                       ))
 
     # TODO : Add "recording", and "bluesheets" here when those documents are appropriately
     #        created and content is made available on disk
@@ -564,7 +559,7 @@ def document_main(request, name, rev=None):
 
             other_types.append((t, url))
 
-        return render_to_response("doc/document_material.html",
+        return render(request, "doc/document_material.html",
                                   dict(doc=doc,
                                        top=top,
                                        content=content,
@@ -575,8 +570,7 @@ def document_main(request, name, rev=None):
                                        in_group_materials_types = doc.group and doc.group.features.has_materials and doc.type_id in doc.group.features.material_types,
                                        other_types=other_types,
                                        presentations=presentations,
-                                       ),
-                                  context_instance=RequestContext(request))
+                                       ))
 
 
     if doc.type_id == "review":
@@ -707,14 +701,13 @@ def document_history(request, name):
     else:
         can_add_comment = has_role(request.user, ("Area Director", "Secretariat", "IRTF Chair"))
 
-    return render_to_response("doc/document_history.html",
+    return render(request, "doc/document_history.html",
                               dict(doc=doc,
                                    top=top,
                                    diff_revisions=diff_revisions,
                                    events=events,
                                    can_add_comment=can_add_comment,
-                                   ),
-                              context_instance=RequestContext(request))
+                                   ))
 
 
 def document_bibtex(request, name, rev=None):
@@ -732,14 +725,14 @@ def document_bibtex(request, name, rev=None):
                 doc = h
                 break
 
-    return render_to_response("doc/document_bibtex.bib",
+    return render(request, "doc/document_bibtex.bib",
                               dict(doc=doc,
                                    replaced_by=replaced_by,
                                    published=published,
                                    rfc=rfc,
                                    latest_revision=latest_revision),
                               content_type="text/plain; charset=utf-8",
-                              context_instance=RequestContext(request))
+                          )
 
 
 def document_writeup(request, name):
@@ -799,13 +792,12 @@ def document_writeup(request, name):
     if not sections:
         raise Http404
 
-    return render_to_response("doc/document_writeup.html",
+    return render(request, "doc/document_writeup.html",
                               dict(doc=doc,
                                    top=top,
                                    sections=sections,
                                    can_edit=has_role(request.user, ("Area Director", "Secretariat")),
-                                   ),
-                              context_instance=RequestContext(request))
+                                   ))
 
 def document_shepherd_writeup(request, name):
     doc = get_object_or_404(Document, docalias__name=name)
@@ -818,17 +810,17 @@ def document_shepherd_writeup(request, name):
     can_edit_stream_info = is_authorized_in_doc_stream(request.user, doc)
     can_edit_shepherd_writeup = can_edit_stream_info or user_is_person(request.user, doc.shepherd and doc.shepherd.person) or has_role(request.user, ["Area Director"])
 
-    return render_to_response("doc/shepherd_writeup.html",
+    return render(request, "doc/shepherd_writeup.html",
                                dict(doc=doc,
                                     writeup=writeup_text,
                                     can_edit=can_edit_shepherd_writeup
                                    ),
-                              context_instance=RequestContext(request))
+                              )
 
 def document_references(request, name):
     doc = get_object_or_404(Document,docalias__name=name)
     refs = doc.relations_that_doc(['refnorm','refinfo','refunk','refold'])
-    return render_to_response("doc/document_references.html",dict(doc=doc,refs=sorted(refs,key=lambda x:x.target.name),),context_instance=RequestContext(request))
+    return render(request, "doc/document_references.html",dict(doc=doc,refs=sorted(refs,key=lambda x:x.target.name),))
 
 def document_referenced_by(request, name):
     doc = get_object_or_404(Document,docalias__name=name)
@@ -840,13 +832,12 @@ def document_referenced_by(request, name):
     else:
        numdocs=None
     refs=sorted(refs,key=lambda x:(['refnorm','refinfo','refunk','refold'].index(x.relationship.slug),x.source.canonical_name()))
-    return render_to_response("doc/document_referenced_by.html",
+    return render(request, "doc/document_referenced_by.html",
                dict(alias_name=name,
                     doc=doc,
                     numdocs=numdocs,
                     refs=refs,
-                    ),
-               context_instance=RequestContext(request))
+                    ))
 
 def document_ballot_content(request, doc, ballot_id, editable=True):
     """Render HTML string with content of ballot page."""
@@ -903,7 +894,7 @@ def document_ballot_content(request, doc, ballot_id, editable=True):
                                    summary=summary,
                                    all_ballots=all_ballots,
                                    ),
-                              context_instance=RequestContext(request))
+                              request=request)
 
 def document_ballot(request, name, ballot_id=None):
     doc = get_object_or_404(Document, docalias__name=name)
@@ -913,22 +904,20 @@ def document_ballot(request, name, ballot_id=None):
 
     request.session['ballot_edit_return_point'] = request.path_info
 
-    return render_to_response("doc/document_ballot.html",
+    return render(request, "doc/document_ballot.html",
                               dict(doc=doc,
                                    top=top,
                                    ballot_content=c,
-                                   ),
-                              context_instance=RequestContext(request))
+                                   ))
 
 def ballot_popup(request, name, ballot_id):
     doc = get_object_or_404(Document, docalias__name=name)
     c = document_ballot_content(request, doc, ballot_id=ballot_id, editable=False)
-    return render_to_response("doc/ballot_popup.html",
+    return render(request, "doc/ballot_popup.html",
                               dict(doc=doc,
                                    ballot_content=c,
                                    ballot_id=ballot_id,
-                                   ),
-                              context_instance=RequestContext(request))
+                                   ))
 
 
 def document_json(request, name, rev=None):
@@ -982,7 +971,7 @@ def document_json(request, name, rev=None):
     return HttpResponse(json.dumps(data, indent=2), content_type='application/json')
 
 class AddCommentForm(forms.Form):
-    comment = forms.CharField(required=True, widget=forms.Textarea)
+    comment = forms.CharField(required=True, widget=forms.Textarea, strip=False)
 
 @role_required('Area Director', 'Secretariat', 'IRTF Chair', 'WG Chair', 'RG Chair', 'WG Secretary', 'RG Secretary', 'IANA', 'RFC Editor')
 def add_comment(request, name):
@@ -1019,10 +1008,9 @@ def add_comment(request, name):
     else:
         form = AddCommentForm()
   
-    return render_to_response('doc/add_comment.html',
+    return render(request, 'doc/add_comment.html',
                               dict(doc=doc,
-                                   form=form),
-                              context_instance=RequestContext(request))
+                                   form=form))
 
 @role_required("Area Director", "Secretariat")
 def telechat_date(request, name):
@@ -1109,12 +1097,12 @@ def edit_notify(request, name):
         titletext = 'the conflict review of %s' % conflictdoc.canonical_name()
     else:
         titletext = '%s' % doc.canonical_name()
-    return render_to_response('doc/edit_notify.html',
+    return render(request, 'doc/edit_notify.html',
                               {'form':   form,
                                'doc': doc,
                                'titletext': titletext,
                               },
-                              context_instance = RequestContext(request))
+                          )
 
 def email_aliases(request,name=''):
     doc = get_object_or_404(Document, name=name) if name else None

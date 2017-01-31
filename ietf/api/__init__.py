@@ -47,29 +47,29 @@ class Serializer(BaseSerializer):
         available to a browser. This is on the TODO list but not currently
         implemented.
         """
-        from django.template.loader import render_to_string as render
+        from django.template.loader import render_to_string
 
         options = options or {}
 
         serialized = self.to_simple_html(data, options)
-        return render("api/base.html", {"data": serialized})
+        return render_to_string("api/base.html", {"data": serialized})
 
     def to_simple_html(self, data, options):
         """
         """
-        from django.template.loader import render_to_string as render
+        from django.template.loader import render_to_string
         #
         if isinstance(data, (list, tuple)):
-            return render("api/listitem.html", {"data": [self.to_simple_html(item, options) for item in data]})
+            return render_to_string("api/listitem.html", {"data": [self.to_simple_html(item, options) for item in data]})
         if isinstance(data, dict):
-            return render("api/dictitem.html", {"data": dict((key, self.to_simple_html(val, options)) for (key, val) in data.items())})
+            return render_to_string("api/dictitem.html", {"data": dict((key, self.to_simple_html(val, options)) for (key, val) in data.items())})
         elif isinstance(data, Bundle):
-            return render("api/dictitem.html", {"data":dict((key, self.to_simple_html(val, options)) for (key, val) in data.data.items())})
+            return render_to_string("api/dictitem.html", {"data":dict((key, self.to_simple_html(val, options)) for (key, val) in data.data.items())})
         elif hasattr(data, 'dehydrated_type'):
             if getattr(data, 'dehydrated_type', None) == 'related' and data.is_m2m == False:
-                return render("api/relitem.html", {"fk": data.fk_resource, "val": self.to_simple_html(data.value, options)})
+                return render_to_string("api/relitem.html", {"fk": data.fk_resource, "val": self.to_simple_html(data.value, options)})
             elif getattr(data, 'dehydrated_type', None) == 'related' and data.is_m2m == True:
-                render("api/listitem.html", {"data": [self.to_simple_html(bundle, options) for bundle in data.m2m_bundles]})
+                render_to_string("api/listitem.html", {"data": [self.to_simple_html(bundle, options) for bundle in data.m2m_bundles]})
             else:
                 return self.to_simple_html(data.value, options)
         elif isinstance(data, datetime.datetime):
@@ -85,7 +85,7 @@ class Serializer(BaseSerializer):
         elif data is None:
             return None
         elif isinstance(data, basestring) and data.startswith("/api/v1/"):  # XXX Will not work for Python 3
-            return render("api/relitem.html", {"fk": data, "val": data.split('/')[-2]})
+            return render_to_string("api/relitem.html", {"fk": data, "val": data.split('/')[-2]})
         else:
             return force_text(data)
 

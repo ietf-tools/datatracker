@@ -1,8 +1,7 @@
 from django.contrib import messages
 from django.conf import settings
 from django.forms.models import inlineformset_factory
-from django.shortcuts import render_to_response, get_object_or_404, redirect
-from django.template import RequestContext
+from django.shortcuts import render, get_object_or_404, redirect
 
 from ietf.group.models import Group, GroupMilestone, ChangeStateGroupEvent, GroupEvent, GroupURL, Role
 from ietf.group.utils import save_group_in_history, get_charter_text, setup_default_community_list_for_group
@@ -120,10 +119,9 @@ def add(request):
         form = GroupModelForm(initial={'state':'active','type':'wg'})
         awp_formset = AWPFormSet(prefix='awp')
 
-    return render_to_response('groups/add.html', {
+    return render(request, 'groups/add.html', {
         'form': form,
         'awp_formset': awp_formset},
-        RequestContext(request, {}),
     )
 
 @role_required('Secretariat')
@@ -147,9 +145,8 @@ def blue_dot(request):
     # sort the list
     sorted_chairs = sorted(chairs, key = lambda a: a['name'])
 
-    return render_to_response('groups/blue_dot_report.txt', {
-        'chairs':sorted_chairs},
-        RequestContext(request, {}), content_type="text/plain; charset=%s"%settings.DEFAULT_CHARSET,
+    return render(request, 'groups/blue_dot_report.txt', { 'chairs':sorted_chairs },
+        content_type="text/plain; charset=%s"%settings.DEFAULT_CHARSET,
     )
 
 @role_required('Secretariat')
@@ -174,10 +171,9 @@ def charter(request, acronym):
     else:
         charter_text = ''
 
-    return render_to_response('groups/charter.html', {
+    return render(request, 'groups/charter.html', {
         'group': group,
         'charter_text': charter_text},
-        RequestContext(request, {}),
     )
 
 @role_required('Secretariat')
@@ -273,11 +269,10 @@ def edit(request, acronym):
 
     messages.warning(request, "WARNING: don't use this tool to change group names.  Use Datatracker when possible.")
 
-    return render_to_response('groups/edit.html', {
+    return render(request, 'groups/edit.html', {
         'group': group,
         'awp_formset': awp_formset,
         'form': form},
-        RequestContext(request, {}),
     )
 
 @role_required('Secretariat')
@@ -311,10 +306,9 @@ def edit_gm(request, acronym):
     else:
         formset = GMFormset(instance=group, prefix='goalmilestone')
 
-    return render_to_response('groups/edit_gm.html', {
+    return render(request, 'groups/edit_gm.html', {
         'group': group,
         'formset': formset},
-        RequestContext(request, {}),
     )
 
 @role_required('Secretariat')
@@ -355,10 +349,9 @@ def people(request, acronym):
     else:
         form = RoleForm(initial={'name':'chair'},group=group)
 
-    return render_to_response('groups/people.html', {
+    return render(request, 'groups/people.html', {
         'form':form,
         'group':group},
-        RequestContext(request, {}),
     )
 
 @role_required('Secretariat')
@@ -434,10 +427,9 @@ def search(request):
     for result in results:
         add_legacy_fields(result)
 
-    return render_to_response('groups/search.html', {
+    return render(request, 'groups/search.html', {
         'results': results,
         'form': form},
-        RequestContext(request, {}),
     )
 
 @role_required('Secretariat')
@@ -459,10 +451,7 @@ def view(request, acronym):
 
     add_legacy_fields(group)
 
-    return render_to_response('groups/view.html', {
-        'group': group},
-        RequestContext(request, {}),
-    )
+    return render(request, 'groups/view.html', { 'group': group } )
 
 @role_required('Secretariat')
 def view_gm(request, acronym):
@@ -481,7 +470,4 @@ def view_gm(request, acronym):
 
     group = get_object_or_404(Group, acronym=acronym)
 
-    return render_to_response('groups/view_gm.html', {
-        'group': group},
-        RequestContext(request, {}),
-    )
+    return render(request, 'groups/view_gm.html', { 'group': group } )

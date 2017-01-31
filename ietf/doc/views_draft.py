@@ -4,9 +4,8 @@ import datetime
 
 from django import forms
 from django.http import HttpResponseRedirect, HttpResponseForbidden, Http404
-from django.shortcuts import render_to_response, get_object_or_404, redirect, render
+from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
-from django.template import RequestContext
 from django.conf import settings
 from django.forms.utils import ErrorList
 from django.contrib.auth.decorators import login_required
@@ -44,7 +43,7 @@ from ietf.mailtrigger.utils import gather_address_lists
 class ChangeStateForm(forms.Form):
     state = forms.ModelChoiceField(State.objects.filter(used=True, type="draft-iesg"), empty_label=None, required=True)
     substate = forms.ModelChoiceField(DocTagName.objects.filter(slug__in=IESG_SUBSTATE_TAGS), required=False)
-    comment = forms.CharField(widget=forms.Textarea, required=False)
+    comment = forms.CharField(widget=forms.Textarea, required=False, strip=False)
 
     def clean(self):
         retclean = self.cleaned_data
@@ -131,10 +130,9 @@ def change_state(request, name):
                 if new_state.slug == "lc-req":
                     request_last_call(request, doc)
 
-                    return render_to_response('doc/draft/last_call_requested.html',
+                    return render(request, 'doc/draft/last_call_requested.html',
                                               dict(doc=doc,
-                                                   url=doc.get_absolute_url()),
-                                              context_instance=RequestContext(request))
+                                                   url=doc.get_absolute_url()))
                 
             return HttpResponseRedirect(doc.get_absolute_url())
 
@@ -159,14 +157,13 @@ def change_state(request, name):
             to_iesg_eval = State.objects.get(used=True, type="draft-iesg", slug="iesg-eva")
             next_states = next_states.exclude(slug="iesg-eva")
 
-    return render_to_response('doc/draft/change_state.html',
+    return render(request, 'doc/draft/change_state.html',
                               dict(form=form,
                                    doc=doc,
                                    state=state,
                                    prev_state=prev_state,
                                    next_states=next_states,
-                                   to_iesg_eval=to_iesg_eval),
-                              context_instance=RequestContext(request))
+                                   to_iesg_eval=to_iesg_eval))
 
 class ChangeIanaStateForm(forms.Form):
     state = forms.ModelChoiceField(State.objects.all(), required=False)
@@ -204,16 +201,15 @@ def change_iana_state(request, name, state_type):
     else:
         form = ChangeIanaStateForm(state_type, initial=dict(state=prev_state.pk if prev_state else None))
 
-    return render_to_response('doc/draft/change_iana_state.html',
+    return render(request, 'doc/draft/change_iana_state.html',
                               dict(form=form,
-                                   doc=doc),
-                              context_instance=RequestContext(request))
+                                   doc=doc))
 
 
     
 class ChangeStreamForm(forms.Form):
     stream = forms.ModelChoiceField(StreamName.objects.exclude(slug="legacy"), required=False)
-    comment = forms.CharField(widget=forms.Textarea, required=False)
+    comment = forms.CharField(widget=forms.Textarea, required=False, strip=False)
 
 @login_required
 def change_stream(request, name):
@@ -275,11 +271,10 @@ def change_stream(request, name):
         stream = doc.stream
         form = ChangeStreamForm(initial=dict(stream=stream))
 
-    return render_to_response('doc/draft/change_stream.html',
+    return render(request, 'doc/draft/change_stream.html',
                               dict(form=form,
                                    doc=doc,
-                                   ),
-                              context_instance=RequestContext(request))
+                                   ))
 
 @jsonapi
 def doc_ajax_internet_draft(request):
@@ -296,7 +291,7 @@ def doc_ajax_internet_draft(request):
 
 class ReplacesForm(forms.Form):
     replaces = SearchableDocAliasesField(required=False)
-    comment = forms.CharField(widget=forms.Textarea, required=False)
+    comment = forms.CharField(widget=forms.Textarea, required=False, strip=False)
 
     def __init__(self, *args, **kwargs):
         self.doc = kwargs.pop('doc')
@@ -348,7 +343,7 @@ class SuggestedReplacesForm(forms.Form):
     replaces = forms.ModelMultipleChoiceField(queryset=DocAlias.objects.all(),
                                               label="Suggestions", required=False, widget=forms.CheckboxSelectMultiple,
                                               help_text="Select only the documents that are replaced by this document")
-    comment = forms.CharField(label="Optional comment", widget=forms.Textarea, required=False)
+    comment = forms.CharField(label="Optional comment", widget=forms.Textarea, required=False, strip=False)
 
     def __init__(self, suggested, *args, **kwargs):
         super(SuggestedReplacesForm, self).__init__(*args, **kwargs)
@@ -408,7 +403,7 @@ def review_possibly_replaces(request, name):
 
 class ChangeIntentionForm(forms.Form):
     intended_std_level = forms.ModelChoiceField(IntendedStdLevelName.objects.filter(used=True), empty_label="(None)", required=True, label="Intended RFC status")
-    comment = forms.CharField(widget=forms.Textarea, required=False)
+    comment = forms.CharField(widget=forms.Textarea, required=False, strip=False)
 
 def change_intention(request, name):
     """Change the intended publication status of a Document of type 'draft' , notifying parties 
@@ -467,11 +462,10 @@ def change_intention(request, name):
         intended_std_level = doc.intended_std_level
         form = ChangeIntentionForm(initial=dict(intended_std_level=intended_std_level))
 
-    return render_to_response('doc/draft/change_intended_status.html',
+    return render(request, 'doc/draft/change_intended_status.html',
                               dict(form=form,
                                    doc=doc,
-                                   ),
-                              context_instance=RequestContext(request))
+                                   ))
 
 class EditInfoForm(forms.Form):
     intended_std_level = forms.ModelChoiceField(IntendedStdLevelName.objects.filter(used=True), empty_label="(None)", required=True, label="Intended RFC status")
@@ -479,7 +473,7 @@ class EditInfoForm(forms.Form):
     ad = forms.ModelChoiceField(Person.objects.filter(role__name="ad", role__group__state="active",role__group__type='area').order_by('name'), label="Responsible AD", empty_label="(None)", required=True)
     create_in_state = forms.ModelChoiceField(State.objects.filter(used=True, type="draft-iesg", slug__in=("pub-req", "watching")), empty_label=None, required=False)
     notify = forms.CharField(max_length=255, label="Notice emails", help_text="Separate email addresses with commas.", required=False)
-    note = forms.CharField(widget=forms.Textarea, label="IESG note", required=False)
+    note = forms.CharField(widget=forms.Textarea, label="IESG note", required=False, strip=False)
     telechat_date = forms.TypedChoiceField(coerce=lambda x: datetime.datetime.strptime(x, '%Y-%m-%d').date(), empty_value=None, required=False, widget=forms.Select(attrs={'onchange':'make_bold()'}))
     returning_item = forms.BooleanField(required=False)
 
@@ -603,7 +597,7 @@ def to_iesg(request,name):
 
         return HttpResponseRedirect(doc.get_absolute_url())
 
-    return render_to_response('doc/submit_to_iesg.html',
+    return render(request, 'doc/submit_to_iesg.html',
                               dict(doc=doc,
                                    warn=warn,
                                    target_state=target_state,
@@ -611,8 +605,7 @@ def to_iesg(request,name):
                                    shepherd_writeup=shepherd_writeup,
                                    tags=tags,
                                    notify=notify,
-                                  ),
-                              context_instance=RequestContext(request))
+                                  ))
 
 @role_required('Area Director','Secretariat')
 def edit_info(request, name):
@@ -754,12 +747,11 @@ def edit_info(request, name):
     if doc.group.type_id not in ("individ", "area"):
         form.standard_fields = [x for x in form.standard_fields if x.name != "area"]
 
-    return render_to_response('doc/draft/edit_info.html',
+    return render(request, 'doc/draft/edit_info.html',
                               dict(doc=doc,
                                    form=form,
                                    user=request.user,
-                                   ballot_issued=doc.latest_event(type="sent_ballot_announcement")),
-                              context_instance=RequestContext(request))
+                                   ballot_issued=doc.latest_event(type="sent_ballot_announcement")))
 
 @role_required('Area Director','Secretariat')
 def request_resurrect(request, name):
@@ -780,10 +772,9 @@ def request_resurrect(request, name):
         
         return HttpResponseRedirect(doc.get_absolute_url())
   
-    return render_to_response('doc/draft/request_resurrect.html',
+    return render(request, 'doc/draft/request_resurrect.html',
                               dict(doc=doc,
-                                   back_url=doc.get_absolute_url()),
-                              context_instance=RequestContext(request))
+                                   back_url=doc.get_absolute_url()))
 
 @role_required('Secretariat')
 def resurrect(request, name):
@@ -814,14 +805,13 @@ def resurrect(request, name):
 
         return HttpResponseRedirect(doc.get_absolute_url())
   
-    return render_to_response('doc/draft/resurrect.html',
+    return render(request, 'doc/draft/resurrect.html',
                               dict(doc=doc,
                                    resurrect_requested_by=resurrect_requested_by,
-                                   back_url=doc.get_absolute_url()),
-                              context_instance=RequestContext(request))
+                                   back_url=doc.get_absolute_url()))
 
 class IESGNoteForm(forms.Form):
-    note = forms.CharField(widget=forms.Textarea, label="IESG note", required=False)
+    note = forms.CharField(widget=forms.Textarea, label="IESG note", required=False, strip=False)
 
     def clean_note(self):
         # not munging the database content to use html line breaks --
@@ -861,14 +851,13 @@ def edit_iesg_note(request, name):
     else:
         form = IESGNoteForm(initial=initial)
 
-    return render_to_response('doc/draft/edit_iesg_note.html',
+    return render(request, 'doc/draft/edit_iesg_note.html',
                               dict(doc=doc,
                                    form=form,
-                                   ),
-                              context_instance=RequestContext(request))
+                                   ))
 
 class ShepherdWriteupUploadForm(forms.Form):
-    content = forms.CharField(widget=forms.Textarea, label="Shepherd writeup", help_text="Edit the shepherd writeup.", required=False)
+    content = forms.CharField(widget=forms.Textarea, label="Shepherd writeup", help_text="Edit the shepherd writeup.", required=False, strip=False)
     txt = forms.FileField(label=".txt format", help_text="Or upload a .txt file.", required=False)
 
     def clean_content(self):
@@ -941,11 +930,10 @@ def edit_shepherd_writeup(request, name):
                                               )
         form = ShepherdWriteupUploadForm(initial=init)
 
-    return render_to_response('doc/draft/change_shepherd_writeup.html',
+    return render(request, 'doc/draft/change_shepherd_writeup.html',
                               {'form': form,
                                'doc' : doc,
-                              },
-                              context_instance=RequestContext(request))
+                              })
 
 class ShepherdForm(forms.Form):
     shepherd = SearchableEmailField(required=False, only_users=True)
@@ -1078,11 +1066,11 @@ def edit_ad(request, name):
         init = { "ad" : doc.ad_id }
         form = AdForm(initial=init)
 
-    return render_to_response('doc/draft/change_ad.html',
-                              {'form':   form,
-                               'doc': doc,
-                              },
-                              context_instance = RequestContext(request))
+    return render(request, 'doc/draft/change_ad.html',
+                    {'form':   form,
+                     'doc': doc,
+                    },
+                 )
 
 class ConsensusForm(forms.Form):
     consensus = forms.ChoiceField(choices=(("Unknown", "Unknown"), ("Yes", "Yes"), ("No", "No")),
@@ -1119,15 +1107,15 @@ def edit_consensus(request, name):
     else:
         form = ConsensusForm(initial=dict(consensus=nice_consensus(prev_consensus)))
 
-    return render_to_response('doc/draft/change_consensus.html',
+    return render(request, 'doc/draft/change_consensus.html',
                               {'form': form,
                                'doc': doc,
                               },
-                              context_instance = RequestContext(request))
+                          )
 
 class PublicationForm(forms.Form):
     subject = forms.CharField(max_length=200, required=True)
-    body = forms.CharField(widget=forms.Textarea, required=True)
+    body = forms.CharField(widget=forms.Textarea, required=True, strip=False)
 
 def request_publication(request, name):
     """Request publication by RFC Editor for a document which hasn't
@@ -1157,11 +1145,10 @@ def request_publication(request, name):
                 import ietf.sync.rfceditor
                 response, error = ietf.sync.rfceditor.post_approved_draft(settings.RFC_EDITOR_SYNC_NOTIFICATION_URL, doc.name)
                 if error:
-                    return render_to_response('doc/draft/rfceditor_post_approved_draft_failed.html',
+                    return render(request, 'doc/draft/rfceditor_post_approved_draft_failed.html',
                                       dict(name=doc.name,
                                            response=response,
-                                           error=error),
-                                      context_instance=RequestContext(request))
+                                           error=error))
 
             m.subject = form.cleaned_data["subject"]
             m.body = form.cleaned_data["body"]
@@ -1208,7 +1195,7 @@ def request_publication(request, name):
         form = PublicationForm(initial=dict(subject=subject,
                                             body=body))
 
-    return render_to_response('doc/draft/request_publication.html',
+    return render(request, 'doc/draft/request_publication.html',
                               dict(form=form,
                                    doc=doc,
                                    message=m,
@@ -1217,12 +1204,12 @@ def request_publication(request, name):
                                        True if (doc.stream_id and doc.stream_id=='ietf')
                                        else (consensus_event != None and consensus_event.consensus != None)),
                                ),
-                              context_instance = RequestContext(request))
+                          )
 
 class AdoptDraftForm(forms.Form):
     group = forms.ModelChoiceField(queryset=Group.objects.filter(type__in=["wg", "rg"], state="active").order_by("-type", "acronym"), required=True, empty_label=None)
     newstate = forms.ModelChoiceField(queryset=State.objects.filter(type__in=['draft-stream-ietf','draft-stream-irtf'],slug__in=['wg-cand', 'c-adopt', 'adopt-wg', 'info', 'wg-doc', 'candidat','active']),required=True,label="State")
-    comment = forms.CharField(widget=forms.Textarea, required=False, label="Comment", help_text="Optional comment explaining the reasons for the adoption.")
+    comment = forms.CharField(widget=forms.Textarea, required=False, label="Comment", help_text="Optional comment explaining the reasons for the adoption.", strip=False)
     weeks = forms.IntegerField(required=False, label="Expected weeks in adoption state")
 
     def __init__(self, *args, **kwargs):
@@ -1338,16 +1325,15 @@ def adopt_draft(request, name):
     else:
         form = AdoptDraftForm(user=request.user)
 
-    return render_to_response('doc/draft/adopt_draft.html',
+    return render(request, 'doc/draft/adopt_draft.html',
                               {'doc': doc,
                                'form': form,
-                              },
-                              context_instance=RequestContext(request))
+                              })
 
 class ChangeStreamStateForm(forms.Form):
     new_state = forms.ModelChoiceField(queryset=State.objects.filter(used=True), label='State' )
     weeks = forms.IntegerField(label='Expected weeks in state',required=False)
-    comment = forms.CharField(widget=forms.Textarea, required=False, help_text="Optional comment for the document history.")
+    comment = forms.CharField(widget=forms.Textarea, required=False, help_text="Optional comment for the document history.", strip=False)
     tags = forms.ModelMultipleChoiceField(queryset=DocTagName.objects.filter(used=True), widget=forms.CheckboxSelectMultiple, required=False)
 
     def __init__(self, *args, **kwargs):
@@ -1483,11 +1469,10 @@ def change_stream_state(request, name, state_type):
     milestones = doc.groupmilestone_set.all()
 
 
-    return render_to_response("doc/draft/change_stream_state.html",
+    return render(request, "doc/draft/change_stream_state.html",
                               {"doc": doc,
                                "form": form,
                                "milestones": milestones,
                                "state_type": state_type,
                                "next_states": next_states,
-                              },
-                              context_instance=RequestContext(request))
+                              })

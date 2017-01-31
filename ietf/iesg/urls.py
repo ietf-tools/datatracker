@@ -32,27 +32,27 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from django.conf.urls import patterns
+from django.conf.urls import url
 from django.views.generic import RedirectView
 from django.conf import settings
 
-urlpatterns = patterns('',
-    (r'^telechat/.*$', RedirectView.as_view(url='https://www.ietf.org/iesg/minutes.html', permanent=True)),
-    (r'^ann/(?:ind|new|prev)/$', RedirectView.as_view(url="/iesg/decisions/", permanent=True)),
-    (r'^telechatdates/$', RedirectView.as_view(url='/admin/iesg/telechatdate/', permanent=True)),
+urlpatterns = [
+    url(r'^telechat/.*$', RedirectView.as_view(url='https://www.ietf.org/iesg/minutes.html', permanent=True)),
+    url(r'^ann/(?:ind|new|prev)/$', RedirectView.as_view(url="/iesg/decisions/", permanent=True)),
+    url(r'^telechatdates/$', RedirectView.as_view(url='/admin/iesg/telechatdate/', permanent=True)),
 
-    (r'^decisions/(?:(?P<year>[0-9]{4})/)?$', "ietf.iesg.views.review_decisions"),
-    (r'^agenda/(?:%(date)s/)?$' % settings.URL_REGEXPS, "ietf.iesg.views.agenda"),
-    (r'^agenda/(?:%(date)s/)?agenda.txt$' % settings.URL_REGEXPS, "ietf.iesg.views.agenda_txt"),
-    (r'^agenda/(?:%(date)s/)?agenda.json$' % settings.URL_REGEXPS, "ietf.iesg.views.agenda_json"),
-    (r'^agenda/(?:%(date)s/)?scribe_template.html$' % settings.URL_REGEXPS, "ietf.iesg.views.agenda_scribe_template"),
-    (r'^agenda/(?:%(date)s/)?moderator_package.html$' % settings.URL_REGEXPS, "ietf.iesg.views.agenda_moderator_package"),
-    (r'^agenda/(?:%(date)s/)?agenda_package.txt$' % settings.URL_REGEXPS, "ietf.iesg.views.agenda_package"),
+    url(r'^decisions/(?:(?P<year>[0-9]{4})/)?$', "ietf.iesg.views.review_decisions"),
+    url(r'^agenda/(?:%(date)s/)?$' % settings.URL_REGEXPS, "ietf.iesg.views.agenda"),
+    url(r'^agenda/(?:%(date)s/)?agenda.txt$' % settings.URL_REGEXPS, "ietf.iesg.views.agenda_txt"),
+    url(r'^agenda/(?:%(date)s/)?agenda.json$' % settings.URL_REGEXPS, "ietf.iesg.views.agenda_json"),
+    url(r'^agenda/(?:%(date)s/)?scribe_template.html$' % settings.URL_REGEXPS, "ietf.iesg.views.agenda_scribe_template"),
+    url(r'^agenda/(?:%(date)s/)?moderator_package.html$' % settings.URL_REGEXPS, "ietf.iesg.views.agenda_moderator_package"),
+    url(r'^agenda/(?:%(date)s/)?agenda_package.txt$' % settings.URL_REGEXPS, "ietf.iesg.views.agenda_package"),
 
-    (r'^agenda/documents.txt$', "ietf.iesg.views.agenda_documents_txt"),
-    (r'^agenda/documents/$', "ietf.iesg.views.agenda_documents"),
-    (r'^agenda/telechat-(?:%(date)s-)?docs.tgz' % settings.URL_REGEXPS, "ietf.iesg.views.telechat_docs_tarfile"),
-    (r'^discusses/$', "ietf.iesg.views.discusses"),
-    (r'^milestones/$', "ietf.iesg.views.milestones_needing_review"),
-    (r'^photos/$', "ietf.iesg.views.photos"),
-)
+    url(r'^agenda/documents.txt$', "ietf.iesg.views.agenda_documents_txt"),
+    url(r'^agenda/documents/$', "ietf.iesg.views.agenda_documents"),
+    url(r'^agenda/telechat-(?:%(date)s-)?docs.tgz' % settings.URL_REGEXPS, "ietf.iesg.views.telechat_docs_tarfile"),
+    url(r'^discusses/$', "ietf.iesg.views.discusses"),
+    url(r'^milestones/$', "ietf.iesg.views.milestones_needing_review"),
+    url(r'^photos/$', "ietf.iesg.views.photos"),
+]

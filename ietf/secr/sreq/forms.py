@@ -135,5 +135,5 @@ class SessionForm(forms.Form):
         return data
         
 class ToolStatusForm(forms.Form):
-    message = forms.CharField(widget=forms.Textarea(attrs={'rows':'3','cols':'80'}))
+    message = forms.CharField(widget=forms.Textarea(attrs={'rows':'3','cols':'80'}), strip=False)
 

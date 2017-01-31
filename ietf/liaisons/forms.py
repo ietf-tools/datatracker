@@ -118,7 +118,7 @@ def validate_emails(value):
 # Form Classes
 # -------------------------------------------------
 class AddCommentForm(forms.Form):
-    comment = forms.CharField(required=True, widget=forms.Textarea)
+    comment = forms.CharField(required=True, widget=forms.Textarea, strip=False)
     private = forms.BooleanField(label="Private comment", required=False,help_text="If this box is checked the comment will not appear in the statement's public history view.")
 
 class RadioRenderer(RadioFieldRenderer):
@@ -210,7 +210,7 @@ class LiaisonModelForm(BetterModelForm):
     '''
     from_groups = forms.ModelMultipleChoiceField(queryset=Group.objects.all(),label=u'Groups',required=False)
     from_contact = forms.EmailField()
-    to_contacts = forms.CharField(label="Contacts", widget=forms.Textarea(attrs={'rows':'3', }))
+    to_contacts = forms.CharField(label="Contacts", widget=forms.Textarea(attrs={'rows':'3', }), strip=False)
     to_groups = forms.ModelMultipleChoiceField(queryset=Group.objects,label=u'Groups',required=False)
     deadline = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1" }, label='Deadline', required=True)
     related_to = SearchableLiaisonStatementsField(label=u'Related Liaison Statement', required=False)

@@ -32,7 +32,7 @@
          </td>
       </tr>
    {% endifchanged %}
-    {% if ss.timeslot.type.name = 'Session' %} {% if ss.session.group %}
+    {% if ss.timeslot.type.name == 'Session' %} {% if ss.session.group %}
      <tr id="{{meeting.number}}-{{ss.timeslot.time|date:"D-Hi"|lower}}-{{ss.session.group.parent.acronym|upper}}-{{ss.session.group.acronym|lower}}" class="grouprow">
        <td style="width:200px">{% if ss.timeslot.show_location %}{{ss.timeslot.get_location}}{% endif %}</td>
        <td style="width:50px">{{ss.session.group.parent.acronym|upper}}</td>
@@ -42,13 +42,13 @@
        <td>
            {% if ss.session.agenda %}<a href="/meeting/{{ meeting.number }}/agenda/{{ ss.session.group.acronym }}/">{{ss.session.group.name}}</a>
            {% else %}{{ss.session.group.name}}{% endif %}
-           {% if ss.session.group.state.name = "BOF" %} BOF {% endif %}
+           {% if ss.session.group.state.name == "BOF" %} BOF {% endif %}
            {% if ss.session.agenda_note %}
            <br/><span class="note">{{ss.session.agenda_note}}</span>{% endif %}</td>
      </tr>
 
    {% endif %} {% endif %}
-   {% if ss.timeslot.type.name = 'Plenary' %}
+   {% if ss.timeslot.type.name == 'Plenary' %}
      <tr class="grouprow">
        <td style="width:200px">{% if ss.timeslot.show_location %}{{ss.timeslot.get_location}}{% endif %}</td>
        <td></td>

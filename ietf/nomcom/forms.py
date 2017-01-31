@@ -3,8 +3,7 @@ from django import forms
 from formtools.preview import FormPreview, AUTO_ID
 from django.shortcuts import get_object_or_404, redirect
 from django.utils.decorators import method_decorator
-from django.shortcuts import render_to_response
-from django.template.context import RequestContext
+from django.shortcuts import render
 from django.core.urlresolvers import reverse
 from django.utils.html import mark_safe
 
@@ -118,14 +117,16 @@ class EditMembersFormPreview(FormPreview):
     def preview_get(self, request):
         "Displays the form"
         f = self.form(auto_id=self.get_auto_id(), initial=self.get_initial(request))
-        return render_to_response(self.form_template,
-                                  {'form': f,
-                                  'stage_field': self.unused_name('stage'),
-                                  'state': self.state,
-                                  'year': self.year,
-                                  'nomcom': self.nomcom,
-                                  'selected': 'edit_members'},
-                                  context_instance=RequestContext(request))
+        return render(request, self.form_template,
+                                  {
+                                      'form': f,
+                                      'stage_field': self.unused_name('stage'),
+                                      'state': self.state,
+                                      'year': self.year,
+                                      'nomcom': self.nomcom,
+                                      'selected': 'edit_members',
+                                  }
+                              )
 
     def get_initial(self, request):
         members = self.group.role_set.filter(name__slug='member')
@@ -163,9 +164,9 @@ class EditMembersFormPreview(FormPreview):
             self.process_preview(request, f, context)
             context['hash_field'] = self.unused_name('hash')
             context['hash_value'] = self.security_hash(request, f)
-            return render_to_response(self.preview_template, context, context_instance=RequestContext(request))
+            return render(request, self.preview_template, context )
         else:
-            return render_to_response(self.form_template, context, context_instance=RequestContext(request))
+            return render(request, self.form_template, context )
 
     def post_post(self, request):
         "Validates the POST data. If valid, calls done(). Else, redisplays form."
@@ -178,7 +179,7 @@ class EditMembersFormPreview(FormPreview):
             self.process_preview(request, f, context)
             return self.done(request, f.cleaned_data)
         else:
-            return render_to_response(self.form_template, context, context_instance=RequestContext(request))
+            return render(request, self.form_template, context )
 
     def done(self, request, cleaned_data):
         members_info = self.state['members_info']
@@ -338,7 +339,7 @@ class MergePersonForm(forms.Form):
 class NominateForm(forms.ModelForm):
     searched_email = SearchableEmailField(only_users=False)
     qualifications = forms.CharField(label="Candidate's qualifications for the position",
-                               widget=forms.Textarea())
+                               widget=forms.Textarea(), strip=False)
     confirmation = forms.BooleanField(label='Email comments back to me as confirmation.',
                                       help_text="If you want to get a confirmation mail containing your feedback in cleartext, please check the 'email comments back to me as confirmation'.",
                                       required=False)
@@ -439,7 +440,7 @@ class NominateForm(forms.ModelForm):
 
 class NominateNewPersonForm(forms.ModelForm):
     qualifications = forms.CharField(label="Candidate's qualifications for the position",
-                               widget=forms.Textarea())
+                               widget=forms.Textarea(), strip=False)
     confirmation = forms.BooleanField(label='Email comments back to me as confirmation.',
                                       help_text="If you want to get a confirmation mail containing your feedback in cleartext, please check the 'email comments back to me as confirmation'.",
                                       required=False)
@@ -550,9 +551,7 @@ class NominateNewPersonForm(forms.ModelForm):
 
 class FeedbackForm(forms.ModelForm):
     nominator_email = forms.CharField(label='Commenter email',required=False)
-
-    comments = forms.CharField(label='Comments',
-                               widget=forms.Textarea())
+    comments = forms.CharField(label='Comments', widget=forms.Textarea(), strip=False)
     confirmation = forms.BooleanField(label='Email comments back to me as confirmation (if selected, your comments will be emailed to you in cleartext when you press Save).',
                                       required=False)
 
@@ -633,7 +632,7 @@ class FeedbackForm(forms.ModelForm):
 
 class FeedbackEmailForm(forms.Form):
 
-    email_text = forms.CharField(label='Email text', widget=forms.Textarea())
+    email_text = forms.CharField(label='Email text', widget=forms.Textarea(), strip=False)
 
     def __init__(self, *args, **kwargs):
         self.nomcom = kwargs.pop('nomcom', None)
@@ -645,7 +644,7 @@ class FeedbackEmailForm(forms.Form):
 class QuestionnaireForm(forms.ModelForm):
 
     comments = forms.CharField(label='Questionnaire response from this candidate',
-                               widget=forms.Textarea())
+                               widget=forms.Textarea(), strip=False)
     def __init__(self, *args, **kwargs):
         self.nomcom = kwargs.pop('nomcom', None)
         self.user = kwargs.pop('user', None)
@@ -675,7 +674,7 @@ class QuestionnaireForm(forms.ModelForm):
         fields = ( 'comments', )
 
 class NomComTemplateForm(DBTemplateForm):
-    content = forms.CharField(label="Text", widget=forms.Textarea(attrs={'cols': '120', 'rows':'40', }))
+    content = forms.CharField(label="Text", widget=forms.Textarea(attrs={'cols': '120', 'rows':'40', }), strip=False)
 
 class PositionForm(forms.ModelForm):
 
@@ -694,7 +693,7 @@ class PositionForm(forms.ModelForm):
 
 class PrivateKeyForm(forms.Form):
 
-    key = forms.CharField(label='Private key', widget=forms.Textarea(), required=False)
+    key = forms.CharField(label='Private key', widget=forms.Textarea(), required=False, strip=False)
 
     def clean_key(self):
         key = self.cleaned_data.get('key', None)
@@ -882,5 +881,5 @@ class EditNomineeForm(forms.ModelForm):
         fields = ('nominee_email',)
 
 class NominationResponseCommentForm(forms.Form):
-    comments = forms.CharField(widget=forms.Textarea,required=False,help_text="Any comments provided will be encrytped and will only be visible to the NomCom.")
+    comments = forms.CharField(widget=forms.Textarea,required=False,help_text="Any comments provided will be encrytped and will only be visible to the NomCom.", strip=False)
 
