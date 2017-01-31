@@ -1,3 +1,25 @@
+ietfdb (6.41.1) ietf; urgency=medium
+
+  This is a minor bugfix release in preparation for merging in the Django 1.9
+  upgrade work.  From the commit log:
+
+  * Merged in [12748] from rcross@amsl.com:
+    Added requested resources and people who must be there to email
+    notifications of session requests.  Fixes #2172.  
+
+  * Added notes to PLAN on features of the new django releases we might want
+    to put to use.
+
+  * Fixed an issue with building links from URLs which are already part of a
+    link.  Fixes issue #2175.
+
+  * Fixed a place where missing queryargument data could cause a 500 error.
+
+  * Updated the installation instructions based on feedback from
+    mlarson@amsl.com.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  31 Jan 2017 14:08:58 +0000
+
 ietfdb (6.41.0) ietf; urgency=medium
 
   **IAB Programs Support and Wiki Support for Teams and Directorates**
