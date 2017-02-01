@@ -1,3 +1,19 @@
+ietfdb (6.42.0) ietf; urgency=medium
+
+  **Django 1.9**
+
+  This release upgrades the datatracker to use version 1.9 of the Django
+  framework.  Django 1.9 provides pluggable password validation support,
+  stricter template syntax (which prevents some common mistakes), simplified
+  call syntax for some common API calls, better database consistency checks
+  when creating many-to-many key relationship (preventing references to
+  nonexistent entries), and more [a].  A full diff of the upgrade changes is
+  available in changeset [12764].
+
+  [a] https://docs.djangoproject.com/en/1.9/releases/1.9/
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  01 Feb 2017 18:12:13 +0000
+
 ietfdb (6.41.1) ietf; urgency=medium
 
   This is a minor bugfix release in preparation for merging in the Django 1.9
