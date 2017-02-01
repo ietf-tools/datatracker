@@ -37,6 +37,7 @@ import debug      # pyflakes:ignore
 from django import template
 from django.core.urlresolvers import reverse as urlreverse
 from django.db.models import Q
+from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 
 from ietf.ietfauth.utils import user_is_person, has_role
@@ -99,10 +100,10 @@ def ballot_icon(context, doc):
             my_blocking = True
             break
 
-    res = ['<a %s href="%s" data-toggle="modal" data-target="#modal-%d" title="IESG positions (click to show more)" class="ballot-icon"><table' % (
+    res = [ format_html('<a %s href="%s" data-toggle="modal" data-target="#modal-%d" title="IESG positions (click to show more)" class="ballot-icon"><table', *(
             right_click_string,
             urlreverse("ietf.doc.views_doc.ballot_popup", kwargs=dict(name=doc.name, ballot_id=ballot.pk)),
-            ballot.pk,)]
+            ballot.pk,))]
     if my_blocking:
         res.append(' class="is-blocking" ')
     res.append('>')
@@ -130,7 +131,7 @@ def ballot_icon(context, doc):
     # See http://getbootstrap.com/javascript/#modals-usage
     res.append('<div id="modal-%d" class="modal fade" tabindex="-1" role="dialog" aria-hidden="true"><div class="modal-dialog modal-lg"><div class="modal-content"></div></div></div>' % ballot.pk)
 
-    return "".join(res)
+    return mark_safe("".join(res))
 
 @register.filter
 def ballotposition(doc, user):
