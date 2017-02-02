@@ -100,10 +100,10 @@ def ballot_icon(context, doc):
             my_blocking = True
             break
 
-    res = [ format_html('<a %s href="%s" data-toggle="modal" data-target="#modal-%d" title="IESG positions (click to show more)" class="ballot-icon"><table', *(
+    res = ['<a %s href="%s" data-toggle="modal" data-target="#modal-%d" title="IESG positions (click to show more)" class="ballot-icon"><table' % (
             right_click_string,
             urlreverse("ietf.doc.views_doc.ballot_popup", kwargs=dict(name=doc.name, ballot_id=ballot.pk)),
-            ballot.pk,))]
+            ballot.pk,)]
     if my_blocking:
         res.append(' class="is-blocking" ')
     res.append('>')
