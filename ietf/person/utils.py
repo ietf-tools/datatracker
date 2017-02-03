@@ -163,11 +163,9 @@ def get_aliased_affiliations(affiliations):
     for similar_affiliations in affiliations_with_case_spellings.itervalues():
         if len(similar_affiliations) > 1:
             most_popular = sorted(similar_affiliations, key=affiliation_sort_key, reverse=True)[0]
-            print similar_affiliations, most_popular
             for affiliation in similar_affiliations:
                 if affiliation != most_popular:
                     res[affiliation] = most_popular
-                    print affiliation, "->", most_popular
 
     return res
 
