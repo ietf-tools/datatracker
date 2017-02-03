@@ -25,6 +25,7 @@ from ietf.group.models import Role, Group
 from ietf.person.models import Person
 from ietf.name.models import ReviewRequestStateName, ReviewResultName
 from ietf.doc.models import DocAlias, Document
+from ietf.person.utils import get_aliased_affiliations
 from ietf.ietfauth.utils import has_role
 
 def stats_index(request):
@@ -351,7 +352,7 @@ def document_stats(request, stats_type=None):
         total_persons = person_qs.count()
 
         if stats_type == "author/documents":
-            stats_title = "Number of {}s for each author".format(doc_label)
+            stats_title = "Number of {}s per author".format(doc_label)
 
             bins = defaultdict(list)
 
@@ -363,6 +364,38 @@ def document_stats(request, stats_type=None):
                 percentage = len(names) * 100.0 / total_persons
                 series_data.append((document_count, percentage))
                 table_data.append((document_count, percentage, names))
+
+            chart_data.append({
+                "data": series_data,
+                "animation": False,
+            })
+
+        elif stats_type == "author/affiliation":
+            stats_title = "Number of {} authors per affiliation".format(doc_label)
+
+            bins = defaultdict(list)
+
+            # Since people don't write the affiliation names in the
+            # same way, and we don't want to go back and edit them
+            # either, we transform them here.
+
+            name_affiliation_set = set((name, affiliation)
+                                       for name, affiliation in person_qs.values_list("name", "documentauthor__affiliation"))
+
+            aliases = get_aliased_affiliations(affiliation for _, affiliation in name_affiliation_set)
+
+            for name, affiliation in name_affiliation_set:
+                bins[aliases.get(affiliation, affiliation)].append(name)
+
+            series_data = []
+            for affiliation, names in sorted(bins.iteritems(), key=lambda t: t[0].lower()):
+                percentage = len(names) * 100.0 / total_persons
+                if affiliation:
+                    series_data.append((affiliation, len(names)))
+                table_data.append((affiliation, percentage, names))
+
+            series_data.sort(key=lambda t: t[1], reverse=True)
+            series_data = series_data[:30]
 
             chart_data.append({
                 "data": series_data,

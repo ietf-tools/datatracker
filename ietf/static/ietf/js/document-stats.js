@@ -30,10 +30,10 @@ $(document).ready(function () {
                 if (stdNameRegExp.test(element))
                     displayName = element.slice(0, 3).toUpperCase() + " " + element.slice(3);
 
-                html.push('<div class="docname"><a href="/doc/' + element + '/">' + displayName + '</a></div>');
+                html.push('<div class="element"><a href="/doc/' + element + '/">' + displayName + '</a></div>');
             }
             else {
-                html.push('<div>' + element + '</div>');
+                html.push('<div class="element">' + element + '</div>');
             }
         });
 
@@ -44,6 +44,7 @@ $(document).ready(function () {
             trigger: "focus",
             template: '<div class="popover" role="tooltip"><div class="arrow"></div><h3 class="popover-title"></h3><div class="popover-content"></div></div>',
             content: html.join(""),
+            placement: "top",
             html: true
         }).on("click", function (e) {
             e.preventDefault();

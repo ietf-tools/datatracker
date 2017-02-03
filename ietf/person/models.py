@@ -241,3 +241,26 @@ class Email(models.Model):
             return
         return self.address
 
+
+class AffiliationAlias(models.Model):
+    """Records that alias should be treated as name for statistical
+    purposes."""
+
+    alias = models.CharField(max_length=255, help_text="Note that aliases are matched without regarding case.")
+    name = models.CharField(max_length=255)
+
+    def __unicode__(self):
+        return u"{} -> {}".format(self.alias, self.name)
+
+    def save(self, *args, **kwargs):
+        self.alias = self.alias.lower()
+        super(AffiliationAlias, self).save(*args, **kwargs)
+
+class AffiliationIgnoredEnding(models.Model):
+    """Records that ending should be stripped from the affiliation for statistical purposes."""
+
+    ending = models.CharField(max_length=255, help_text="Regexp with ending, e.g. 'Inc\\.?' - remember to escape .!")
+
+    def __unicode__(self):
+        return self.ending
+    
