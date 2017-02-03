@@ -170,6 +170,10 @@ DEV="$(printf %d.%d.%d.dev0 $MAJOR $MINOR $NEXT)"
 
 #cd $DIR ??
 
+note "Updating bower assets ..."
+$do ietf/manage.py bower_install
+$do svn commit ietf/externals/static -m "Updated bower-managed static web assets"
+
 note "Collecting static files ..."
 $do ietf/manage.py collectstatic --noinput --ignore=bower.json --ignore='README.*' | grep -v "Found another file with the destination path"
 $do svn commit static/lib/ -m "Updated static files under static/lib/"
