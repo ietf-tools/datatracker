@@ -37,7 +37,6 @@ import debug      # pyflakes:ignore
 from django import template
 from django.core.urlresolvers import reverse as urlreverse
 from django.db.models import Q
-from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 
 from ietf.ietfauth.utils import user_is_person, has_role
