@@ -96,8 +96,11 @@ class DocumentInfo(models.Model):
             return settings.INTERNET_DRAFT_PATH
         elif self.type_id in ("agenda", "minutes", "slides", "bluesheets") and self.meeting_related():
             doc = self.doc if isinstance(self, DocHistory) else self
-            meeting = doc.session_set.first().meeting
-            return os.path.join(meeting.get_materials_path(), self.type_id) + "/"
+            if doc.session_set.exists():
+                meeting = doc.session_set.first().meeting
+                return os.path.join(meeting.get_materials_path(), self.type_id) + "/"
+            else:
+                return ""
         elif self.type_id == "charter":
             return settings.CHARTER_PATH
         elif self.type_id == "conflrev": 
