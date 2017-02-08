@@ -32,24 +32,27 @@
 
 # Copyright The IETF Trust 2007, All Rights Reserved
 
+import importlib
+
 from datetime import datetime as DateTime, timedelta as TimeDelta, date as Date
 from collections import defaultdict
 
-from django.conf import settings
-from django.http import Http404  #, HttpResponse, HttpResponseRedirect
-from django.shortcuts import render, redirect, get_object_or_404
-#from django.contrib.auth import REDIRECT_FIELD_NAME, authenticate, login
-from django.contrib.auth.decorators import login_required
-#from django.utils.http import urlquote
 import django.core.signing
-from django.contrib.sites.models import Site
-from django.contrib.auth.models import User
 from django import forms
+from django.contrib import messages
+from django.conf import settings
+from django.contrib.auth import update_session_auth_hash
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
+from django.contrib.sites.models import Site
+from django.core.urlresolvers import reverse as urlreverse
+from django.http import Http404, HttpResponseRedirect  #, HttpResponse, 
+from django.shortcuts import render, redirect, get_object_or_404
 
 import debug                            # pyflakes:ignore
 
 from ietf.group.models import Role, Group
-from ietf.ietfauth.forms import RegistrationForm, PasswordForm, ResetPasswordForm, TestEmailForm, WhitelistForm
+from ietf.ietfauth.forms import RegistrationForm, PasswordForm, ResetPasswordForm, TestEmailForm, WhitelistForm, ChangePasswordForm
 from ietf.ietfauth.forms import get_person_form, RoleEmailForm, NewEmailForm
 from ietf.ietfauth.htpasswd import update_htpasswd_file
 from ietf.ietfauth.utils import role_required
@@ -465,3 +468,46 @@ def review_overview(request):
         'review_wishes': review_wishes,
         'review_wish_form': review_wish_form,
     })
+
+@login_required
+def change_password(request):
+    success = False
+    person = None
+
+    try:
+        person = request.user.person
+    except Person.DoesNotExist:
+        return render(request, 'registration/missing_person.html')
+
+    emails = Email.objects.filter(person=person, active=True).order_by('-primary','-time').first
+
+    if request.method == 'POST':
+        user = request.user
+        form = ChangePasswordForm(user, request.POST)
+        if form.is_valid():
+            new_password = form.cleaned_data["new_password"]
+
+            user.set_password(new_password)
+            user.save()
+            # password is also stored in htpasswd file
+            update_htpasswd_file(user.username, new_password)
+            # keep the session
+            update_session_auth_hash(request, user)
+
+            messages.success(request, "Your password was successfully changed")
+            return HttpResponseRedirect(urlreverse('ietf.ietfauth.views.profile'))
+
+    else:
+        form = ChangePasswordForm(request.user)
+
+    hlibname, hashername = settings.PASSWORD_HASHERS[0].rsplit('.',1)
+
+    hlib = importlib.import_module(hlibname)
+    hasher = getattr(hlib, hashername)
+    return render(request, 'registration/change_password.html', {
+        'form': form,
+        'success': success,
+        'hasher': hasher,
+    })
+
+    
