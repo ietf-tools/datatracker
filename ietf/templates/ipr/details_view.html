@@ -200,9 +200,19 @@
             specification, is as follows(select one licensing declaration option only):
           </p>
           
+	  {% if ipr.licensing.slug == "provided-later" %}
+	  <div>
+	     Possible licencing choices a), b), and c) when Licencing Declaration to be Provided Later:
+	     <ul style="list-style: none">
+		{% for desc in choices_abc %}
+		<li>{{ desc}}</li>
+		{% endfor %}
+	     </ul>
+	  </p>
+	  {% endif %}
           <dl class="dl-horizontal">
             <dt>Licensing</dt>
-            <dd>{% if ipr.licensing.slug == "later" %}{{ ipr.licensing.desc|slice:"2:"|slice:":43" }}{% else %}{{ ipr.licensing.desc|slice:"2:" }}{% endif %}</dd>
+            <dd>{% if ipr.licensing.slug == "provided-later" %}{{ ipr.licensing.desc|slice:"2:"|slice:":117" }}){% else %}{{ ipr.licensing.desc|slice:"2:" }}{% endif %}</dd>
 
             <dt>Licensing information, comments, notes, or URL for further information</dt>
             <dd>{{ ipr.licensing_comments|default:"(No information submitted)"|linebreaks }}</dd>
