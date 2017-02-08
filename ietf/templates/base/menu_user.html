@@ -16,16 +16,14 @@
   {% else %}
     {% if user.is_authenticated %}
       <li><a rel="nofollow" href="/accounts/logout/" >Sign out</a></li>
-      <li><a rel="nofollow" href="/accounts/profile/">Account info</a></li>
+      <li><a rel="nofollow" href="/accounts/profile/">Edit profile</a></li>
     {% else %}
       <li><a rel="nofollow" href="/accounts/login/?next={{request.get_full_path|urlencode}}">Sign in</a></li>
       <li><a rel="nofollow" href="/accounts/reset/">Password reset</a></li>
     {% endif %}
   {% endif %}
 
-  {% if not request.user.is_authenticated %}
-    <li><a href="{% url "ietf.ietfauth.views.create_account" %}">New account</a></li>
-  {% endif %}
+  <li><a href="{% url "ietf.ietfauth.views.create_account" %}">{% if request.user.is_authenticated %}Manage account{% else %}New account{% endif %}</a></li>
   <li><a href="{%url "ietf.cookies.views.preferences" %}" rel="nofollow">Preferences</a></li>
 
   {% if user|has_role:"Reviewer" %}

@@ -8,27 +8,24 @@
 
 {% block content %}
   {% origin %}
-  <div class="col-md-2 col-sm-0"></div>
-  <div class="col-md-8 col-sm-12">
-    <h1>Sign in</h1>
+  <h1>Sign in</h1>
 
-    <form method="post">
-      {% csrf_token %}
-      {% bootstrap_form form %}
+  <form method="post">
+    {% csrf_token %}
+    {% bootstrap_form form %}
 
-      {% buttons %}
-	<table class="col-md-12">
-	   <tr>
-	      <td >
-		 <button type="submit" class="btn btn-primary">Sign in</button>
-	      </td>
-	      <td >
-		 Forgot your password?  <a href="{% url 'ietf.ietfauth.views.password_reset' %}">Request a reset</a>.
-	      </td>
-	   </tr>
-	</table>
-      {% endbuttons %}
-    </form>
-  </div>
-  <div class="col-md-2 col-sm-0"></div>
+    {% buttons %}
+      <table class="col-md-12">
+	 <tr>
+	    <td >
+	       <button type="submit" class="btn btn-primary">Sign in</button>
+	    </td>
+	    <td >
+	       Forgot your password?  <a href="{% url 'ietf.ietfauth.views.password_reset' %}">Request a reset</a>.
+	    </td>
+	 </tr>
+      </table>
+    {% endbuttons %}
+  </form>
+
 {% endblock %}

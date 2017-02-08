@@ -32,7 +32,6 @@ from ietf.ipr.utils import (get_genitive, get_ipr_summary,
     iprs_from_docs, related_docs)
 from ietf.message.models import Message
 from ietf.message.utils import infer_message
-from ietf.name.models import IprLicenseTypeName
 from ietf.person.models import Person
 from ietf.secr.utils.document import get_rfc_num, is_draft
 from ietf.utils.draft_search import normalize_draftname
@@ -704,7 +703,6 @@ def get_details_tabs(ipr, selected):
         ('History', urlreverse('ipr_history', kwargs={ 'id': ipr.pk }))
     ]]
 
-@debug.trace
 def show(request, id):
     """View of individual declaration"""
     ipr = get_object_or_404(IprDisclosureBase, id=id).get_child()
@@ -719,7 +717,6 @@ def show(request, id):
     return render(request, "ipr/details_view.html",  {
         'ipr': ipr,
         'tabs': get_details_tabs(ipr, 'Disclosure'),
-        'choices_abc': [ i.desc for i in IprLicenseTypeName.objects.filter(slug__in=['no-license', 'royalty-free', 'reasonable', ]) ],
         'updates_iprs': ipr.relatedipr_source_set.all(),
         'updated_by_iprs': ipr.relatedipr_target_set.filter(source__state="posted")
     })

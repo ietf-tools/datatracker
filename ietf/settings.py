@@ -54,13 +54,6 @@ ADMINS = (
     ('Ryan Cross', 'rcross@amsl.com'),
 )
 
-PASSWORD_HASHERS = [
-    'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
-    'django.contrib.auth.hashers.PBKDF2PasswordHasher',
-    'django.contrib.auth.hashers.SHA1PasswordHasher',
-    'django.contrib.auth.hashers.CryptPasswordHasher',
-]
-
 ALLOWED_HOSTS = [".ietf.org", ".ietf.org.", "209.208.19.216", "4.31.198.44", ]
 
 
@@ -303,12 +296,11 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     # External apps 
     'bootstrap3',
-    'django_markup',
-    'django_password_strength',
     'djangobwr',
     'form_utils',
     'tastypie',
     'widget_tweaks',
+    'django_markup',
     # IETF apps
     'ietf.api',
     'ietf.community',
@@ -789,6 +781,7 @@ ACCOUNT_REQUEST_EMAIL = 'account-request@ietf.org'
 SILENCED_SYSTEM_CHECKS = [
     "fields.W342",  # Setting unique=True on a ForeignKey has the same effect as using a OneToOneField.
 ]
+
 
 # Put the production SECRET_KEY in settings_local.py, and also any other
 # sensitive or site-specific changes.  DO NOT commit settings_local.py to svn.

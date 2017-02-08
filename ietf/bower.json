@@ -15,8 +15,7 @@
     "respond": "~1",
     "select2": "~3",
     "select2-bootstrap-css": "~1",
-    "spin.js": "~2",
-    "zxcvbn": "~4"
+    "spin.js": "~2"
   },
   "devDependencies": {},
   "overrides": {
