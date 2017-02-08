@@ -14,6 +14,7 @@ from trac.wiki.model import WikiPage
 
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
+from django.db.models import Q
 from django.template.loader import render_to_string
 
 import debug                            # pyflakes:ignore
@@ -69,17 +70,21 @@ class Command(BaseCommand):
         return self.do_cmd(settings.SVN_ADMIN_COMMAND, *args)
 
     def create_svn(self, svn):
-        self.note("  Creating svn repository: %s" % svn)
-        if not os.path.exists(os.path.dirname(svn)):
-            msg = "Intended to create '%s', but parent directory is missing" % svn
-            self.log(msg)
-            return msg
-        err, out= self.svn_admin_cmd("create", svn )
-        if err:
-            msg = "Error %s creating svn repository %s:\n   %s" % (err, svn, out)
-            self.log(msg)
-            return msg
-        return None
+        if self.dummy_run:
+            self.note("  Would create svn repository: %s" % svn)
+            return "Dummy run, no svn repo created"
+        else:
+            self.note("  Creating svn repository: %s" % svn)
+            if not os.path.exists(os.path.dirname(svn)):
+                msg = "Intended to create '%s', but parent directory is missing" % svn
+                self.log(msg)
+                return msg
+            err, out= self.svn_admin_cmd("create", svn )
+            if err:
+                msg = "Error %s creating svn repository %s:\n   %s" % (err, svn, out)
+                self.log(msg)
+                return msg
+        return ""
 
     # --- trac ---
 
@@ -159,7 +164,7 @@ class Command(BaseCommand):
         # custom pages and settings.
         if self.dummy_run:
             self.note("Would create Trac for group '%s' at %s" % (group.acronym, group.trac_dir))
-            return None, None
+            return None, "Dummy run, no trac created"
         else:
             try:
                 self.note("Creating Trac for group '%s' at %s" % (group.acronym, group.trac_dir))
@@ -178,7 +183,7 @@ class Command(BaseCommand):
                 # Components (i.e., drafts) will be handled during components
                 # update later
                 # Permissions will be handled during permission update later.
-                return env, None
+                return env, ""
             except TracError as e:
                 msg = "While creating Trac instance for %s: %s" % (group, e)
                 self.log(msg)
@@ -287,11 +292,12 @@ class Command(BaseCommand):
         if not os.path.exists(os.path.dirname(self.svn_dir_pattern)):
             raise CommandError('The SVN base direcory specified for the SVN directories (%s) does not exist.' % os.path.dirname(self.svn_dir_pattern))
 
-        groups = Group.objects.filter(
-                        type__slug__in=settings.TRAC_CREATE_GROUP_TYPES,
-                        state__slug='active',
-                    ).order_by('acronym')
+        gfilter  = Q(type__slug__in=settings.TRAC_CREATE_GROUP_TYPES, state__slug='active')
+        gfilter |= Q(acronym__in=settings.TRAC_CREATE_GROUP_ACRONYMS)
+
+        groups = Group.objects.filter(gfilter).order_by('acronym')
         if self.group_list:
+            
             groups = groups.filter(acronym__in=self.group_list)
 
         for group in groups:
