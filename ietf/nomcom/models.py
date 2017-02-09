@@ -117,9 +117,9 @@ class Nominee(models.Model):
 
     def __unicode__(self):
         if self.email.person and self.email.person.name:
-            return u'%s <%s>' % (self.email.person.plain_name(), self.email.address)
+            return u'%s <%s> %s' % (self.email.person.plain_name(), self.email.address, self.nomcom.year())
         else:
-            return self.email.address
+            return u'%s %s' % (self.email.address, self.nomcom.year())
 
     def name(self):
         if self.email.person and self.email.person.name:
