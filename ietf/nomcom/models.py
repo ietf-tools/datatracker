@@ -114,6 +114,7 @@ class Nominee(models.Model):
     class Meta:
         verbose_name_plural = 'Nominees'
         unique_together = ('email', 'nomcom')
+        ordering = ['-nomcom__group__acronym', 'email__address', ]
 
     def __unicode__(self):
         if self.email.person and self.email.person.name:
