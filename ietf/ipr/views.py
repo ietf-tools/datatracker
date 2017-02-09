@@ -704,7 +704,6 @@ def get_details_tabs(ipr, selected):
         ('History', urlreverse('ipr_history', kwargs={ 'id': ipr.pk }))
     ]]
 
-@debug.trace
 def show(request, id):
     """View of individual declaration"""
     ipr = get_object_or_404(IprDisclosureBase, id=id).get_child()

@@ -1,4 +1,5 @@
 import re
+from unidecode import unidecode
 
 from django import forms
 from django.conf import settings
@@ -8,7 +9,7 @@ from django.contrib.auth.models import User
 from django.utils.html import mark_safe
 from django.core.urlresolvers import reverse as urlreverse
 
-from unidecode import unidecode
+from django_password_strength.widgets import PasswordStrengthInput, PasswordConfirmationInput
 
 import debug                            # pyflakes:ignore
 
@@ -31,8 +32,8 @@ class RegistrationForm(forms.Form):
 
 
 class PasswordForm(forms.Form):
-    password = forms.CharField(widget=forms.PasswordInput)
-    password_confirmation = forms.CharField(widget=forms.PasswordInput,
+    password = forms.CharField(widget=PasswordStrengthInput)
+    password_confirmation = forms.CharField(widget=PasswordConfirmationInput,
                                             help_text="Enter the same password as above, for verification.")
 
     def clean_password_confirmation(self):
@@ -166,3 +167,28 @@ class WhitelistForm(forms.ModelForm):
         exclude = ['by', 'time' ]
 
     
+from django import forms
+
+
+class ChangePasswordForm(forms.Form):
+    current_password = forms.CharField(widget=forms.PasswordInput)
+
+
+    new_password = forms.CharField(widget=PasswordStrengthInput)
+    new_password_confirmation = forms.CharField(widget=PasswordConfirmationInput)
+
+    def __init__(self, user, data=None):
+        self.user = user
+        super(ChangePasswordForm, self).__init__(data)
+
+    def clean_current_password(self):
+        password = self.cleaned_data.get('current_password', None)
+        if not self.user.check_password(password):
+            raise ValidationError('Invalid password')
+            
+    def clean(self):
+        new_password = self.cleaned_data.get('new_password', None)
+        conf_password = self.cleaned_data.get('new_password_confirmation', None)
+        if not new_password == conf_password:
+            raise ValidationError("The password confirmation is different than the new password")
+            

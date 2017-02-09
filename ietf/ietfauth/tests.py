@@ -6,10 +6,12 @@ from urlparse import urlsplit
 from pyquery import PyQuery
 from unittest import skipIf
 
-from django.core.urlresolvers import reverse as urlreverse
 import django.contrib.auth.views
+from django.core.urlresolvers import reverse as urlreverse
 from django.contrib.auth.models import User
 from django.conf import settings
+
+import debug                            # pyflakes:ignore
 
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized, unicontent
 from ietf.utils.test_data import make_test_data, make_review_data
@@ -399,3 +401,51 @@ class IetfAuthTests(TestCase):
         update_htpasswd_file("foo", "passwd")
         self.assertTrue(self.username_in_htpasswd_file("foo"))
         
+
+    def test_change_password(self):
+
+        chpw_url = urlreverse(ietf.ietfauth.views.change_password)
+        prof_url = urlreverse(ietf.ietfauth.views.profile)
+        login_url = urlreverse(django.contrib.auth.views.login)
+        redir_url = '%s?next=%s' % (login_url, chpw_url)
+
+        # get without logging in
+        r = self.client.get(chpw_url)
+        self.assertRedirects(r, redir_url)
+
+        user = User.objects.create(username="someone@example.com", email="someone@example.com")
+        user.set_password("password")
+        user.save()
+        p = Person.objects.create(name="Some One", ascii="Some One", user=user)
+        Email.objects.create(address=user.username, person=p)
+
+        # log in
+        r = self.client.post(redir_url, {"username":user.username, "password":"password"})
+        self.assertRedirects(r, chpw_url)
+
+        # wrong current password
+        r = self.client.post(chpw_url, {"current_password": "fiddlesticks",
+                                        "new_password": "foobar",
+                                        "new_password_confirmation": "foobar",
+                                       })
+        self.assertEqual(r.status_code, 200)
+        self.assertFormError(r, 'form', 'current_password', 'Invalid password')
+
+        # mismatching new passwords
+        r = self.client.post(chpw_url, {"current_password": "password",
+                                        "new_password": "foobar",
+                                        "new_password_confirmation": "barfoo",
+                                       })
+        self.assertEqual(r.status_code, 200)
+        self.assertFormError(r, 'form', None, "The password confirmation is different than the new password")
+
+        # correct password change
+        r = self.client.post(chpw_url, {"current_password": "password",
+                                        "new_password": "foobar",
+                                        "new_password_confirmation": "foobar",
+                                       })
+        self.assertRedirects(r, prof_url)
+        # refresh user object
+        user = User.objects.get(username="someone@example.com")
+        self.assertTrue(user.check_password(u'foobar'))
+

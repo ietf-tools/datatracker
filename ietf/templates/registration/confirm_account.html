@@ -1,10 +1,17 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
+{% load staticfiles %}
 
 {% load bootstrap3 %}
 
 {% block title %}Complete account creation{% endblock %}
+
+{% block js %}
+      {{ block.super }}
+      <script type="text/javascript" src="{% static 'zxcvbn/zxcvbn.js' %}"></script>
+      <script type="text/javascript" src="{% static 'ietf/js/password_strength.js' %}"></script>
+{% endblock %}
 
 {% block content %}
   {% origin %}
