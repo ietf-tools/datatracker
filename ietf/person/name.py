@@ -16,9 +16,13 @@ def name_parts(name):
     if len(parts) > 2 and parts[0] in ["M", "M.", "Sri", ] and "." not in parts[1]:
         prefix = parts[0];
         parts = parts[1:]
-    if len(parts) > 1 and parts[0] in ["Mr", "Mr.", "Mrs", "Mrs.", "Ms", "Ms.", "Miss", "Dr", "Dr.", "Doctor", "Prof", "Prof.", "Professor", "Sir", "Lady", "Dame", ]:
-        prefix = parts[0];
+    prefix = []
+    while len(parts) > 1 and parts[0] in ["Mr", "Mr.", "Mrs", "Mrs.", "Ms", "Ms.", "Miss", "Dr",
+        "Dr.", "Doctor", "Prof", "Prof.", "Professor", "Sir", "Lady", "Dame", 
+        "Gen.", "Col.", "Maj.", "Capt.", "Lieut.", "Lt.", "Cmdr.", "Col.", ]:
+        prefix.append(parts[0])
         parts = parts[1:]
+    prefix = " ".join(prefix)
     if len(parts) > 2:
         if parts[-1] in ["Jr", "Jr.", "II", "2nd", "III", "3rd", "Ph.D."]:
             suffix = parts[-1]
