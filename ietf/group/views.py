@@ -79,7 +79,7 @@ def fill_in_charter_info(group, include_drafts=False):
     group.areadirector = getattr(group.ad_role(),'email',None)
 
     personnel = {}
-    for r in Role.objects.filter(group=group).select_related("email", "person", "name"):
+    for r in Role.objects.filter(group=group).order_by('person__name').select_related("email", "person", "name"):
         if r.name_id not in personnel:
             personnel[r.name_id] = []
         personnel[r.name_id].append(r)

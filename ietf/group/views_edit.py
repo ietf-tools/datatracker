@@ -380,7 +380,7 @@ def edit(request, group_type=None, acronym=None, action="edit"):
                         )
 
             for slug in roles_for_group_type(group_type):
-                init[slug + "_roles"] = Email.objects.filter(role__group=group, role__name=slug)
+                init[slug + "_roles"] = Email.objects.filter(role__group=group, role__name=slug).order_by('role__person__name')
         else:
             init = dict(ad=request.user.person.id if group_type == "wg" and has_role(request.user, "Area Director") else None,
                         )
