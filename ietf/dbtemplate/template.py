@@ -4,7 +4,7 @@ from docutils.core import publish_string
 from docutils.utils import SystemMessage
 import debug                            # pyflakes:ignore
 
-from django.template import loaders
+from django.template.loaders.base import Loader as BaseLoader
 from django.template.base import Template as DjangoTemplate, TemplateEncodingError
 from django.template.exceptions import TemplateDoesNotExist
 from django.utils.encoding import smart_unicode
@@ -61,7 +61,7 @@ class RSTTemplate(PlainTemplate):
             e.args = tuple(args)
             raise e
 
-class Loader(loaders.base.Loader):
+class Loader(BaseLoader):
     def __init__(self, engine):
         super(Loader, self).__init__(engine)
         self.is_usable = True
