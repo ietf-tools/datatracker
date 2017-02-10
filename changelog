@@ -1,3 +1,65 @@
+ietfdb (6.43.0) ietf; urgency=medium
+
+  **Password Strength Meter**
+
+  This release provides a zxcvbn-based password strenght meter when setting
+  or changing a datatracker user password, and changes the default password
+  hasher from PBKDF2 to BCrypt.  It adds support for datatracker management
+  of additional wikis,  and changes the management of bower-packaged web
+  assets to updating them to the latest minor release on each new datatracker
+  release.  It also fixes a few bugs, and tweaks the IPR declaration pages to
+  provide more complete information for declarations which indicate that 
+  licensing conditions will be provided later.
+
+  From the commit log:
+
+  * Added a change password page, and linked to it from the account profile 
+    page and user menu.  Added zxcvbn-based browser-side password strength 
+    estimation on the various password setting, re-setting, and changing forms. 
+    Added a change password test.  Changed ietfauth/urls.py to not use the 
+    deprecated string form for views in urlpatterns.
+
+  * Re-styled some auth-related forms to use a narrower form body on large 
+    screens, for aesthethic reasons.
+
+  * Added an explicit setting for the password hashers to use, in order to 
+    place the bcrypt hasher first.  This makes BCrypt the default hasher.  
+    Added the django_password_strength app to installed apps.
+
+  * Added the zxcvbn bower component, for use in client-side password 
+    strength estimation.
+
+  * Added django-bcrypt (for bcrypt password hashing) and 
+    django-password-strength (for browser-side zxcvbn password strength 
+    estimation) to the requirements.
+
+  * Added ordering for nomcom  Nominee objects.
+
+  * Expanded the Nominee __unicode__() method to provide unique results by 
+    including the nomcom year.
+
+  * Tweaked the IPR Details page to show the possible a), b), and c) 
+    choices under section 'V' when licensing declaration to be provided later 
+    has been chosen.
+
+  * Added a guard to prevent trying to get a document path for a meeting 
+    document when the document is not associated with a meeting session.
+
+  * Added support for management of trac wikis for explicitly named groups, 
+    such as the IESG and IAOC.  Tweaked the dummy-run handling of the 
+    create_group_wikis management command.
+
+  * Added updating of static web assets to the release script.
+
+  * Fixed a bug in a queryset argument in all_id_text(); __in was not used, 
+    but the value given was a multi-row queryset.
+
+  * @register.simple_tag now (in Django 1.9) needs explicit mark_safe() (or 
+    format_html() which invokes mark_safe()).  Fixed one case which needed this.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  10 Feb 2017 10:52:10 +0000
+
+
 ietfdb (6.42.0) ietf; urgency=medium
 
   **Django 1.9**
