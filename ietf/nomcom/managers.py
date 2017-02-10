@@ -1,14 +1,17 @@
 from django.db import models
 from django.db.models.query import QuerySet
 
+import debug                            # pyflakes:ignore
 
 class MixinManager(object):
     def __getattr__(self, attr, *args):
-        try:
-            return getattr(self.__class__, attr, *args)
-        except AttributeError:
-            return getattr(self.get_queryset(), attr, *args)
-
+        if  attr.startswith('__'):
+            return getattr(self.__class__, attr, *args)            
+        else:
+            try:
+                return getattr(self.__class__, attr, *args)
+            except AttributeError:
+                return getattr(self.get_queryset(), attr, *args)
 
 class NomineePositionQuerySet(QuerySet):
 

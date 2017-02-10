@@ -7,7 +7,7 @@ coverage>=4.0.1,!=4.0.2
 #cssselect>=0.6.1               # for PyQuery
 decorator>=3.4.0
 defusedxml>=0.4.1		# for TastyPie when ussing xml; not a declared dependency
-Django>=1.9,<1.10
+Django>=1.10,<1.11
 django-bcrypt>=0.9.2
 django-bootstrap3>=7.0
 django-formtools>=1.0		# instead of django.contrib.formtools in 1.8
