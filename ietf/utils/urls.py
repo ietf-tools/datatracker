@@ -6,7 +6,7 @@ from inspect import isclass
 
 from django.conf.urls import url as django_url
 
-def url(regex, view, kwargs=None, name=None, prefix=''):
+def url(regex, view, kwargs=None, name=None):
     if isinstance(view, (list, tuple)):
         pass                            # use the name passed in
     elif isinstance(view, six.string_types):
@@ -23,5 +23,5 @@ def url(regex, view, kwargs=None, name=None, prefix=''):
     if name:
         #debug.show('name')
         pass
-    return django_url(regex, view, kwargs=kwargs, name=name, prefix=prefix)
+    return django_url(regex, view, kwargs=kwargs, name=name)
     

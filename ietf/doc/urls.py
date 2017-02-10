@@ -34,7 +34,7 @@ from django.conf.urls import url, include
 from django.views.generic import RedirectView
 from django.conf import settings
 
-from ietf.doc import views_search, views_draft, views_ballot, views_status_change, views_doc, views_stats
+from ietf.doc import views_search, views_draft, views_ballot, views_status_change, views_doc, views_stats, views_help
 
 session_patterns = [
     url(r'^add$', views_doc.add_sessionpresentation),
@@ -116,9 +116,9 @@ urlpatterns = [
     url(r'^%(name)s/edit/approveballot/$' % settings.URL_REGEXPS, views_ballot.approve_ballot, name='doc_approve_ballot'),
     url(r'^%(name)s/edit/makelastcall/$' % settings.URL_REGEXPS, views_ballot.make_last_call, name='doc_make_last_call'),
 
-    url(r'^help/state/(?P<type>[\w-]+)/$', 'ietf.doc.views_help.state_help', name="state_help"),
-    url(r'^help/relationships/$', 'ietf.doc.views_help.relationship_help', name="relationship_help"),
-    url(r'^help/relationships/(?P<subset>\w+)/$', 'ietf.doc.views_help.relationship_help', name="relationship_subset_help"),
+    url(r'^help/state/(?P<type>[\w-]+)/$', views_help.state_help, name="state_help"),
+    url(r'^help/relationships/$', views_help.relationship_help, name="relationship_help"),
+    url(r'^help/relationships/(?P<subset>\w+)/$', views_help.relationship_help, name="relationship_subset_help"),
 
     url(r'^%(name)s/meetings/?$' % settings.URL_REGEXPS, views_doc.all_presentations),
 
