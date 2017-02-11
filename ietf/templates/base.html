@@ -140,10 +140,13 @@
 	        {% if version_num %}
 		  <a href="/release/about">About</a> |
 	          IETF Datatracker |
-	          <a href="/release/{{version_num}}/">Version {{ version_num }}</a>
-	          | {{revision_date}} |
+	          <a href="/release/{{version_num}}/">Version {{ version_num }}</a> |
+	          {{revision_date}} |
 	        {% endif %}
 	        <a href="https://tools.ietf.org/tools/ietfdb/newticket">Report a bug <span class="fa fa-bug"></span></a>
+		<br>
+		  Python {{ python_version }} |
+		  Django {{ django_version }}
 	      </p>
 	    </div>
 	  </div>
