@@ -4,6 +4,7 @@
 {% load staticfiles %}
 {% load ietf_filters %}
 {% load textfilters %}
+{% load htmlfilters %}
 
 {% block title %}
   IETF {{ schedule.meeting.number }} meeting agenda
@@ -255,7 +256,7 @@
 
                     <td>
                       {% if item.session.historic_group.charter %}
-                        <a href="{% url 'group_charter' acronym=item.session.historic_group.acronym %}">{{item.session.historic_group.acronym}}</a>
+                        <a href="{% url 'ietf.group.views.group_about' acronym=item.session.historic_group.acronym %}">{{item.session.historic_group.acronym}}</a>
                       {% else %}
                         {{item.session.historic_group.acronym}}
                       {% endif %}

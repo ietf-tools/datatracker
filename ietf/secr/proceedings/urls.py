@@ -1,6 +1,6 @@
-from django.conf.urls import url
 from django.conf import settings
 from ietf.meeting.views import OldUploadRedirect
+from ietf.utils.urls import url
 
 from ietf.secr.proceedings import views
 

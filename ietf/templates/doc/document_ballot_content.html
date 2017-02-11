@@ -21,7 +21,7 @@
         <li class="disabled"><span><b>Ballots</b></span></li>
         {% for b in all_ballots %}
           <li {% if b == ballot %}class="active"{% endif %}>
-            <a href="{% url "doc_ballot" name=doc.name ballot_id=b.pk %}">
+            <a href="{% url "ietf.doc.views_doc.document_ballot" name=doc.name ballot_id=b.pk %}">
 	      {{ b.ballot_type.name }} ({{ b.rev }})
             </a>
           </li>

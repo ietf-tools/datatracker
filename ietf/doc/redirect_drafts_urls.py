@@ -1,11 +1,11 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
-from django.conf.urls import url
 from django.views.generic import RedirectView
 from django.http import HttpResponsePermanentRedirect
 from django.shortcuts import get_object_or_404
 
 from ietf.group.models import Group
+from ietf.utils.urls import url
 
 urlpatterns = [
     url(r'^$', RedirectView.as_view(url='/doc/', permanent=True)),

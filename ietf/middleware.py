@@ -9,8 +9,18 @@ import re
 import smtplib
 import unicodedata
 
+# old-style middleware
 class SQLLogMiddleware(object):
     def process_response(self, request, response):
+	for q in connection.queries:
+	    if re.match('(update|insert)', q['sql'], re.IGNORECASE):
+		log(q['sql'])
+        return response
+
+# new-style middleware
+def sql_log_middleware_factory(get_response):
+    def sql_log_middleware(request):
+        response = get_response(request)
 	for q in connection.queries:
 	    if re.match('(update|insert)', q['sql'], re.IGNORECASE):
 		log(q['sql'])
@@ -23,6 +33,11 @@ class SMTPExceptionMiddleware(object):
 	    return render(request, 'email_failed.html',
                           {'exception': extype, 'args': value, 'traceback': "".join(tb)} )
 	return None
+
+def smtp_exception_middleware_factory(get_response):
+    def smtp_exception_middleware(request):
+        response = get_response(request)
+        return response
 
 class RedirectTrailingPeriod(object):
     def process_response(self, request, response):

@@ -559,7 +559,7 @@ class EditCharterTests(TestCase):
         self.assertTrue("approved" in outbox[0]['Subject'].lower())
         self.assertTrue("iesg-secretary" in outbox[0]['To'])
         body = outbox[0].get_payload()
-        for word in ["WG",   "/wg/ames/charter/",
+        for word in ["WG",   "/wg/ames/about/",
             "Charter", "/doc/charter-ietf-ames/", ]:
             self.assertIn(word, body)
         #

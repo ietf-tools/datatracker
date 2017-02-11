@@ -1,7 +1,7 @@
-from django.conf.urls import url
 from django.conf import settings
 
 from ietf.secr.roles import views
+from ietf.utils.urls import url
 
 urlpatterns = [
     url(r'^$', views.main, name='roles'),

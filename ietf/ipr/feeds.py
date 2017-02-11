@@ -10,7 +10,7 @@ from ietf.ipr.models import IprDisclosureBase
 class LatestIprDisclosuresFeed(Feed):
     feed_type = Atom1Feed
     title = "IPR Disclosures to the IETF"
-    link = reverse_lazy('ipr_showlist')
+    link = reverse_lazy('ietf.ipr.views.showlist')
     description = "Updates on new IPR Disclosures made to the IETF."
     language = "en"
     feed_url = "/feed/ipr/"

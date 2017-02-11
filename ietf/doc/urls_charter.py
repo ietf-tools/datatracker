@@ -1,9 +1,9 @@
 # Copyright The IETF Trust 2011, All Rights Reserved
 
-from django.conf.urls import url
 from django.conf import settings
 
 from ietf.doc import views_charter, views_doc
+from ietf.utils.urls import url
 
 urlpatterns = [
     url(r'^state/$', views_charter.change_state, name='charter_change_state'),

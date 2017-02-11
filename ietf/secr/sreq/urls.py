@@ -1,7 +1,7 @@
-from django.conf.urls import url
 from django.conf import settings
 
 from ietf.secr.sreq import views
+from ietf.utils.urls import url
 
 urlpatterns = [
     url(r'^$', views.main, name='sessions'),
@@ -12,7 +12,7 @@ urlpatterns = [
     url(r'^%(acronym)s/cancel/$' % settings.URL_REGEXPS, views.cancel, name='sessions_cancel'),
     url(r'^%(acronym)s/confirm/$' % settings.URL_REGEXPS, views.confirm, name='sessions_confirm'),
     url(r'^%(acronym)s/edit/$' % settings.URL_REGEXPS, views.edit, name='sessions_edit'),
-    url(r'^%(acronym)s/new/$' % settings.URL_REGEXPS, views.new, name='sessions_new'),
+    url(r'^%(acronym)s/new/$' % settings.URL_REGEXPS, views.new),
     url(r'^%(acronym)s/no_session/$' % settings.URL_REGEXPS, views.no_session, name='sessions_no_session'),
     url(r'^(?P<num>[A-Za-z0-9_\-\+]+)/%(acronym)s/edit/$' % settings.URL_REGEXPS, views.edit_mtg, name='sessions_edit'),
 ]

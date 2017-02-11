@@ -76,7 +76,7 @@ class NomcomViewsTest(TestCase):
         self.year = NOMCOM_YEAR
 
         # private urls
-        self.private_index_url = reverse('nomcom_private_index', kwargs={'year': self.year})
+        self.private_index_url = reverse('ietf.nomcom.views.private_index', kwargs={'year': self.year})
         self.private_merge_person_url = reverse('ietf.nomcom.views.private_merge_person', kwargs={'year': self.year})
         self.private_merge_nominee_url = reverse('ietf.nomcom.views.private_merge_nominee', kwargs={'year': self.year})
         self.edit_members_url = reverse('nomcom_edit_members', kwargs={'year': self.year})
@@ -1131,7 +1131,7 @@ class InactiveNomcomTests(TestCase):
         self.assertEqual(response.status_code, 403)
 
     def test_cannot_modify_nominees(self):
-        url = reverse('nomcom_private_index', kwargs={'year':self.nc.year()})
+        url = reverse('ietf.nomcom.views.private_index', kwargs={'year':self.nc.year()})
         login_testing_unauthorized(self, self.chair.user.username, url)
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
@@ -1287,7 +1287,7 @@ class FeedbackLastSeenTests(TestCase):
         self.assertEqual( len(q('.label-success')), 0 )
 
     def test_feedback_nominee_badges(self):
-        url = reverse('nomcom_view_feedback_nominee',kwargs={'year':self.nc.year(),'nominee_id':self.nominee.id})
+        url = reverse('ietf.nomcom.views.view_feedback_nominee', kwargs={'year':self.nc.year(), 'nominee_id':self.nominee.id})
         login_testing_unauthorized(self, self.member.user.username, url)
         provide_private_key_to_test_client(self)
         response = self.client.get(url)
@@ -1679,7 +1679,7 @@ Junk body for testing
         self.assertEqual(response.status_code, 404)
 
     def test_edit_nominee(self):
-        nominee = self.nc.nominee_set.first()
+        nominee = self.nc.nominee_set.order_by('pk').first()
         new_email = EmailFactory(person=nominee.person)
         url = reverse('nomcom_edit_nominee',kwargs={'year':self.nc.year(),'nominee_id':nominee.id})
         login_testing_unauthorized(self,self.chair.user.username,url)
@@ -1687,7 +1687,7 @@ Junk body for testing
         self.assertEqual(response.status_code, 200)
         response = self.client.post(url,{'nominee_email':new_email.address})
         self.assertEqual(response.status_code, 302)
-        nominee = self.nc.nominee_set.first()
+        nominee = self.nc.nominee_set.order_by('pk').first()
         self.assertEqual(nominee.email,new_email)
 
     def test_request_merge(self):

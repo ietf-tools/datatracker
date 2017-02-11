@@ -5,6 +5,7 @@ import time
 from pyquery import PyQuery 
 from unittest import skipIf
 
+import django.contrib.auth.views
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.core.urlresolvers import reverse as urlreverse
 #from django.test.utils import override_settings
@@ -126,7 +127,7 @@ class SlideReorderTests(StaticLiveServerTestCase):
         return '%s%s'%(self.live_server_url,urlreverse(*args,**kwargs))
 
     def secr_login(self):
-        url = '%s%s'%(self.live_server_url, urlreverse('django.contrib.auth.views.login'))
+        url = '%s%s'%(self.live_server_url, urlreverse(django.contrib.auth.views.login))
         self.driver.get(url)
         self.driver.find_element_by_name('username').send_keys('secretary')
         self.driver.find_element_by_name('password').send_keys('secretary+password')

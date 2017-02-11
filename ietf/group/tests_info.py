@@ -342,7 +342,7 @@ class GroupPagesTests(TestCase):
             self.assertTrue(doc.title in unicontent(r))
             self.assertTrue(doc.name in unicontent(r))
 
-        url =  urlreverse("group_materials", kwargs={ 'acronym': group.acronym })
+        url =  urlreverse("ietf.group.views.materials", kwargs={ 'acronym': group.acronym })
 
         # try deleting the document and check it's gone
         doc.set_state(State.objects.get(type="slides", slug="deleted"))
@@ -429,7 +429,7 @@ class GroupEditTests(TestCase):
     def test_create(self):
         make_test_data()
 
-        url = urlreverse('group_create', kwargs=dict(group_type="wg"))
+        url = urlreverse('ietf.group.views_edit.edit', kwargs=dict(group_type="wg", action="charter"))
         login_testing_unauthorized(self, "secretary", url)
 
         num_wgs = len(Group.objects.filter(type="wg"))
@@ -488,7 +488,7 @@ class GroupEditTests(TestCase):
 
         make_test_data()
 
-        url = urlreverse('group_create', kwargs=dict(group_type="rg"))
+        url = urlreverse('ietf.group.views_edit.edit', kwargs=dict(group_type="rg", action="charter"))
         login_testing_unauthorized(self, "secretary", url)
 
         irtf = Group.objects.get(acronym='irtf')
@@ -513,7 +513,7 @@ class GroupEditTests(TestCase):
     def test_create_based_on_existing_bof(self):
         make_test_data()
 
-        url = urlreverse('group_create', kwargs=dict(group_type="wg"))
+        url = urlreverse('ietf.group.views_edit.edit', kwargs=dict(group_type="wg", action="charter"))
         login_testing_unauthorized(self, "secretary", url)
 
         group = Group.objects.get(acronym="mars")
@@ -548,7 +548,7 @@ class GroupEditTests(TestCase):
         make_test_data()
         group = Group.objects.get(acronym="mars")
 
-        url = urlreverse('group_edit', kwargs=dict(group_type=group.type_id, acronym=group.acronym))
+        url = urlreverse('ietf.group.views_edit.edit', kwargs=dict(group_type=group.type_id, acronym=group.acronym, action="edit"))
         login_testing_unauthorized(self, "secretary", url)
 
         # normal get
@@ -625,7 +625,7 @@ class GroupEditTests(TestCase):
         review_req = make_review_data(doc)
         group = review_req.team
 
-        url = urlreverse('group_edit', kwargs=dict(group_type=group.type_id, acronym=group.acronym))
+        url = urlreverse('ietf.group.views_edit.edit', kwargs=dict(group_type=group.type_id, acronym=group.acronym, action="edit"))
         login_testing_unauthorized(self, "secretary", url)
 
         # normal get

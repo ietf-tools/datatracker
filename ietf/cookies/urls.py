@@ -1,7 +1,7 @@
 # Copyright The IETF Trust 2010, All Rights Reserved
 
-from django.conf.urls import url
 from ietf.cookies import views
+from ietf.utils.urls import url
 
 urlpatterns = [
     url(r'^$', views.preferences),

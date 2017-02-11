@@ -1,11 +1,11 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
-from django.conf.urls import url, include
+from django.conf.urls import include
 from django.views.generic import RedirectView
 from django.conf import settings
 
-from ietf.meeting import views
-from ietf.meeting import ajax
+from ietf.meeting import views, ajax
+from ietf.utils.urls import url
 
 safe_for_all_meeting_types = [
     url(r'^session/(?P<acronym>[-a-z0-9]+)/?$',  views.session_details),
@@ -38,8 +38,8 @@ type_ietf_only_patterns = [
     url(r'^agenda/by-type$', views.agenda_by_type),
     url(r'^agenda/by-type/(?P<type>[a-z]+)$', views.agenda_by_type),
     url(r'^agenda/by-type/(?P<type>[a-z]+)/ics$', views.agenda_by_type_ics),
-    url(r'^agendas/list$', views.list_agendas, name='meeting_list_agendas'),
-    url(r'^agendas/edit$', RedirectView.as_view(pattern_name='meeting_list_agendas', permanent=True)),
+    url(r'^agendas/list$', views.list_agendas),
+    url(r'^agendas/edit$', RedirectView.as_view(pattern_name='ietf.meeting.views.list_agendas', permanent=True)),
     url(r'^timeslots/edit$',                     views.edit_timeslots),
     url(r'^rooms$',                              ajax.timeslot_roomsurl),
     url(r'^room/(?P<roomid>\d+).json$',          ajax.timeslot_roomurl),

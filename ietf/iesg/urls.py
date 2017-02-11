@@ -32,11 +32,11 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from django.conf.urls import url
 from django.views.generic import RedirectView
 from django.conf import settings
 
 from ietf.iesg import views
+from ietf.utils.urls import url
 
 urlpatterns = [
     url(r'^telechat/.*$', RedirectView.as_view(url='https://www.ietf.org/iesg/minutes.html', permanent=True)),

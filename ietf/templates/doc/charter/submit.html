@@ -91,7 +91,7 @@
       {% if group.charter %}
         <a class="btn btn-default pull-right" href="{% url "doc_view" name=name %}">Back</a>
       {% else %}
-        <a class="btn btn-default pull-right" href="{% url "group_charter" group_type=group.type_id acronym=group.acronym %}">Back</a>
+        <a class="btn btn-default pull-right" href="{% url "ietf.group.views.group_about" group_type=group.type_id acronym=group.acronym %}">Back</a>
       {% endif %}
     {% endbuttons %}
   </form>

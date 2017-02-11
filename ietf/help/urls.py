@@ -1,6 +1,6 @@
-from django.conf.urls import url
 
 from ietf.help import views
+from ietf.utils.urls import url
 
 urlpatterns = [
     url(r'^state/(?P<doc>[-\w]+)/(?P<type>[-\w]+)/?$', views.state),

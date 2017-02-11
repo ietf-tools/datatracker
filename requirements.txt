@@ -3,6 +3,7 @@ setuptools>=18.5			# Require this first, to prevent later errors
 #
 beautifulsoup4>=4.4
 bibtexparser>=0.6.2
+bleach>=1.5.0
 coverage>=4.0.1,!=4.0.2
 #cssselect>=0.6.1               # for PyQuery
 decorator>=3.4.0

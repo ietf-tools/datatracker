@@ -1,6 +1,6 @@
-from django.conf.urls import url
 
 from ietf.secr.rolodex import views
+from ietf.utils.urls import url
 
 urlpatterns = [
     url(r'^$', views.search, name='rolodex'),

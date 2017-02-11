@@ -76,7 +76,7 @@
 	<th><a href="{% url "state_help" type="status-change" %}">State</a></th>
 	<td class="edit">
 	  {% if not snapshot and user|has_role:"Area Director,Secretariat" %}
-	    <a class="btn btn-default btn-xs pull-right" href="{% url "status_change_change_state" name=doc.name %}">Edit</a>
+	    <a class="btn btn-default btn-xs pull-right" href="{% url "ietf.doc.views_status_change.change_state" name=doc.name %}">Edit</a>
 	  {% endif %}
 	</td>
 	<td>

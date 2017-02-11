@@ -76,13 +76,16 @@ template_coverage_collection = None
 url_coverage_collection = None
 
 
-def safe_create_1(self, verbosity, *args, **kwargs):
+def safe_create_test_db(self, verbosity, *args, **kwargs):
     global test_database_name, old_create
-    print "     Creating test database..."
-    if settings.DATABASES["default"]["ENGINE"] == 'django.db.backends.mysql':
-        settings.DATABASES["default"]["OPTIONS"] = settings.DATABASE_TEST_OPTIONS
-        print "     Using OPTIONS: %s" % settings.DATABASES["default"]["OPTIONS"]
+    keepdb = kwargs.get('keepdb', False)
+    if not keepdb:
+        print "     Creating test database..."
+        if settings.DATABASES["default"]["ENGINE"] == 'django.db.backends.mysql':
+            settings.DATABASES["default"]["OPTIONS"] = settings.DATABASE_TEST_OPTIONS
+            print "     Using OPTIONS: %s" % settings.DATABASES["default"]["OPTIONS"]
     test_database_name = old_create(self, 0, *args, **kwargs)
+
     if settings.GLOBAL_TEST_FIXTURES:
         print "     Loading global test fixtures: %s" % ", ".join(settings.GLOBAL_TEST_FIXTURES)
         loadable = [f for f in settings.GLOBAL_TEST_FIXTURES if "." not in f]
@@ -92,18 +95,21 @@ def safe_create_1(self, verbosity, *args, **kwargs):
             if f not in loadable:
                 # try to execute the fixture
                 components = f.split(".")
-                module = importlib.import_module(".".join(components[:-1]))
+                module_name = ".".join(components[:-1])
+                module = importlib.import_module(module_name)
                 fn = getattr(module, components[-1])
                 fn()
 
     return test_database_name
 
-def safe_destroy_0_1(*args, **kwargs):
+def safe_destroy_test_db(*args, **kwargs):
     global test_database_name, old_destroy
-    print "     Checking that it's safe to destroy test database..."
-    if settings.DATABASES["default"]["NAME"] != test_database_name:
-        print '     NOT SAFE; Changing settings.DATABASES["default"]["NAME"] from %s to %s' % (settings.DATABASES["default"]["NAME"], test_database_name)
-        settings.DATABASES["default"]["NAME"] = test_database_name
+    keepdb = kwargs.get('keepdb', False)
+    if not keepdb:
+        print "     Checking that it's safe to destroy test database..."
+        if settings.DATABASES["default"]["NAME"] != test_database_name:
+            print '     NOT SAFE; Changing settings.DATABASES["default"]["NAME"] from %s to %s' % (settings.DATABASES["default"]["NAME"], test_database_name)
+            settings.DATABASES["default"]["NAME"] = test_database_name
     return old_destroy(*args, **kwargs)
 
 class TemplateCoverageLoader(BaseLoader):
@@ -338,6 +344,7 @@ class IetfTestRunner(DiscoverRunner):
 
     @classmethod
     def add_arguments(cls, parser):
+        super(IetfTestRunner, cls).add_arguments(parser)
         parser.add_argument('--skip-coverage',
             action='store_true', dest='skip_coverage', default=False,
             help='Skip test coverage measurements for code, templates, and URLs. ' )
@@ -497,9 +504,9 @@ class IetfTestRunner(DiscoverRunner):
             raise EnvironmentError("Refusing to run tests on production server")
 
         old_create = connection.creation.__class__.create_test_db
-        connection.creation.__class__.create_test_db = safe_create_1
+        connection.creation.__class__.create_test_db = safe_create_test_db
         old_destroy = connection.creation.__class__.destroy_test_db
-        connection.creation.__class__.destroy_test_db = safe_destroy_0_1
+        connection.creation.__class__.destroy_test_db = safe_destroy_test_db
 
         self.run_full_test_suite = not test_labels
 

@@ -1,6 +1,6 @@
-from django.conf.urls import url
 
 from ietf.submit import views
+from ietf.utils.urls import url
 
 urlpatterns = [ 
     url(r'^$', views.upload_submission),

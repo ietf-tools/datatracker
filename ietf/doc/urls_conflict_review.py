@@ -1,6 +1,6 @@
-from django.conf.urls import url
 
 from ietf.doc import views_conflict_review, views_doc
+from ietf.utils.urls import url
 
 urlpatterns = [
     url(r'^state/$',                 views_conflict_review.change_state,  name='conflict_review_change_state'),

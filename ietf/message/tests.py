@@ -26,7 +26,7 @@ class MessageTests(TestCase):
             )
         msg.related_groups.add(nomcom)
 
-        r = self.client.get(urlreverse("nomcom_announcement", kwargs=dict(message_id=msg.id)))
+        r = self.client.get(urlreverse("ietf.message.views.message", kwargs=dict(message_id=msg.id)))
         self.assertEqual(r.status_code, 200)
         self.assertTrue(msg.subject in unicontent(r))
         self.assertTrue(msg.to in unicontent(r))

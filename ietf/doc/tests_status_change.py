@@ -77,7 +77,7 @@ class StatusChangeTests(TestCase):
     def test_change_state(self):
 
         doc = Document.objects.get(name='status-change-imaginary-mid-review')
-        url = urlreverse('status_change_change_state',kwargs=dict(name=doc.name))
+        url = urlreverse('ietf.doc.views_status_change.change_state',kwargs=dict(name=doc.name))
 
         login_testing_unauthorized(self, "ad", url)
 
@@ -432,7 +432,7 @@ class StatusChangeSubmitTests(TestCase):
             f.write('This is the old proposal.')
             f.close()
         # Put the old proposal into IESG review (exercises ballot tab when looking at an older revision below)
-        state_change_url = urlreverse('status_change_change_state',kwargs=dict(name=doc.name))
+        state_change_url = urlreverse('ietf.doc.views_status_change.change_state',kwargs=dict(name=doc.name))
         iesgeval_pk = str(State.objects.get(slug='iesgeval',type__slug='statchg').pk)
         r = self.client.post(state_change_url,dict(new_state=iesgeval_pk))
         self.assertEqual(r.status_code, 302)

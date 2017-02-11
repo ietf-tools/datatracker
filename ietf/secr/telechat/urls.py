@@ -1,6 +1,6 @@
-from django.conf.urls import url
 
 from ietf.secr.telechat import views
+from ietf.utils.urls import url
 
 urlpatterns = [
     url(r'^$', views.main, name='telechat'),

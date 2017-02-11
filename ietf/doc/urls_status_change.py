@@ -1,9 +1,9 @@
-from django.conf.urls import url
 
 from ietf.doc import views_status_change, views_doc
+from ietf.utils.urls import url
 
 urlpatterns = [
-    url(r'^state/$',                 views_status_change.change_state,   name='status_change_change_state'),
+    url(r'^state/$',                 views_status_change.change_state),
     url(r'^submit/$',                views_status_change.submit,         name='status_change_submit'),
     url(r'^ad/$',                    views_status_change.edit_ad,        name='status_change_ad'),
     url(r'^title/$',                 views_status_change.edit_title,     name='status_change_title'),

@@ -36,7 +36,7 @@
           {% for fb_dict in staterank.list %}
             <tr>
               <td>
-    	        <a href="{% url "nomcom_view_feedback_nominee" year fb_dict.nominee.id %}">{{ fb_dict.nominee.name }}</a>
+    	        <a href="{% url 'ietf.nomcom.views.view_feedback_nominee' year=year nominee_id=fb_dict.nominee.id %}">{{ fb_dict.nominee.name }}</a>
                 <span class="hidden-xs">&lt;{{fb_dict.nominee.email.address}}&gt;</span>
               </td>
               {% for fbtype_name, fbtype_count, fbtype_newflag in fb_dict.feedback %}

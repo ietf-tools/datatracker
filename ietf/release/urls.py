@@ -1,7 +1,7 @@
-from django.conf.urls import url
 from django.views.generic import TemplateView
 
 from ietf.release import views
+from ietf.utils.urls import url
 
 urlpatterns = [
     url(r'^$',  views.release),

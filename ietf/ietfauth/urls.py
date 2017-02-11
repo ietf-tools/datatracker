@@ -1,9 +1,9 @@
 # Copyright The IETF Trust 2007, 2009, All Rights Reserved
 
-from django.conf.urls import url
 from django.contrib.auth.views import login, logout
 
 from ietf.ietfauth import views
+from ietf.utils.urls import url
 
 urlpatterns = [
         url(r'^$', views.index),

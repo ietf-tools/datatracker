@@ -45,7 +45,7 @@ class SubmitRequestCase(TestCase):
     def test_submit_request(self):
         make_test_data()
         group = Group.objects.get(acronym='mars')
-        url = reverse('sessions_new',kwargs={'acronym':group.acronym})
+        url = reverse('ietf.secr.sreq.views.new',kwargs={'acronym':group.acronym})
         post_data = {'num_session':'1',
                      'length_session1':'3600',
                      'attendees':'10',
@@ -58,7 +58,7 @@ class SubmitRequestCase(TestCase):
     def test_submit_request_invalid(self):
         make_test_data()
         group = Group.objects.get(acronym='mars')
-        url = reverse('sessions_new',kwargs={'acronym':group.acronym})
+        url = reverse('ietf.secr.sreq.views.new',kwargs={'acronym':group.acronym})
         post_data = {'num_session':'2',
                      'length_session1':'3600',
                      'attendees':'10',
@@ -134,7 +134,7 @@ class LockAppTestCase(TestCase):
         meeting.session_request_lock_message='locked'
         meeting.save()
         group = Group.objects.get(acronym='mars')
-        url = reverse('sessions_new',kwargs={'acronym':group.acronym})
+        url = reverse('ietf.secr.sreq.views.new',kwargs={'acronym':group.acronym})
         
         # try as WG Chair
         self.client.login(username="marschairman", password="marschairman+password")

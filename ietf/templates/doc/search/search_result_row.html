@@ -84,7 +84,7 @@
 
   <td class="ipr text-center">
     {% if doc.related_ipr %}
-      <a href="{% url "ipr_search" %}?submit=draft&amp;id={{ doc.name }}">
+      <a href="{% url "ietf.ipr.views.search" %}?submit=draft&amp;id={{ doc.name }}">
         <span class="label label-default">{{ doc.related_ipr|length }}</span>
       </a>
     {% endif %}

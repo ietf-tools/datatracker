@@ -169,9 +169,9 @@ def construct_group_menu_context(request, group, selected, group_type, others):
     if group.features.has_documents:
         entries.append(("Documents", urlreverse("ietf.group.views.group_documents", kwargs=kwargs)))
     if group.features.has_chartering_process:
-        entries.append(("Charter", urlreverse("group_charter", kwargs=kwargs)))
+        entries.append(("Charter", urlreverse("ietf.group.views.group_about", kwargs=kwargs)))
     else:
-        entries.append(("About", urlreverse("group_about", kwargs=kwargs)))
+        entries.append(("About", urlreverse("ietf.group.views.group_about", kwargs=kwargs)))
     if group.features.has_materials and get_group_materials(group).exists():
         entries.append(("Materials", urlreverse("ietf.group.views.materials", kwargs=kwargs)))
     if group.features.has_reviews:
@@ -220,7 +220,7 @@ def construct_group_menu_context(request, group, selected, group_type, others):
 
 
     if group.state_id != "conclude" and (is_admin or can_manage):
-        actions.append((u"Edit group", urlreverse("group_edit", kwargs=kwargs)))
+        actions.append((u"Edit group", urlreverse("ietf.group.views_edit.edit", dict(kwargs, action="edit"))))
 
     if group.features.customize_workflow and (is_admin or can_manage):
         actions.append((u"Customize workflow", urlreverse("ietf.group.views_edit.customize_workflow", kwargs=kwargs)))

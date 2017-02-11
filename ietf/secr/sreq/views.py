@@ -457,7 +457,7 @@ def edit_mtg(request, num, acronym):
 
     else:
         if not sessions:
-            return redirect('sessions_new', acronym=acronym)
+            return redirect('ietf.secr.sreq.views.new', acronym=acronym)
         form = SessionForm(initial=initial)
 
     return render(request, 'sreq/edit.html', {
@@ -493,7 +493,7 @@ def main(request):
         if button_text == 'Group will not meet':
             return redirect('sessions_no_session', acronym=request.POST['group'])
         else:
-            return redirect('sessions_new', acronym=request.POST['group'])
+            return redirect('ietf.secr.sreq.views.new', acronym=request.POST['group'])
 
     meeting = get_meeting()
     scheduled_groups,unscheduled_groups = groups_by_session(request.user, meeting, types=['wg','rg','ag'])
@@ -568,7 +568,7 @@ def new(request, acronym):
         previous_sessions = Session.objects.filter(meeting=previous_meeting,group=group).exclude(status__in=('notmeet','deleted')).order_by('id')
         if not previous_sessions:
             messages.warning(request, 'This group did not meet at %s' % previous_meeting)
-            return redirect('sessions_new', acronym=acronym)
+            return redirect('ietf.secr.sreq.views.new', acronym=acronym)
 
         initial = get_initial_session(previous_sessions)
         add_essential_people(group,initial)
@@ -696,7 +696,7 @@ def view(request, acronym, num = None):
         if is_locked:
             return redirect('sessions')
         else:
-            return redirect('sessions_new', acronym=acronym)
+            return redirect('ietf.secr.sreq.views.new', acronym=acronym)
 
     # TODO simulate activity records
     activities = [{'act_date':sessions[0].requested.strftime('%b %d, %Y'),

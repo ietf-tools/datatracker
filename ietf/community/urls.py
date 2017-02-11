@@ -1,7 +1,7 @@
-from django.conf.urls import url
 
 
 from ietf.community import views
+from ietf.utils.urls import url
 
 urlpatterns = [
     url(r'^personal/(?P<username>[^/]+)/$', views.view_list),
