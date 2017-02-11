@@ -220,7 +220,7 @@ def construct_group_menu_context(request, group, selected, group_type, others):
 
 
     if group.state_id != "conclude" and (is_admin or can_manage):
-        actions.append((u"Edit group", urlreverse("ietf.group.views_edit.edit", dict(kwargs, action="edit"))))
+        actions.append((u"Edit group", urlreverse("ietf.group.views_edit.edit", kwargs=dict(kwargs, action="edit"))))
 
     if group.features.customize_workflow and (is_admin or can_manage):
         actions.append((u"Customize workflow", urlreverse("ietf.group.views_edit.customize_workflow", kwargs=kwargs)))
