@@ -174,7 +174,7 @@ class ChangePasswordForm(forms.Form):
     current_password = forms.CharField(widget=forms.PasswordInput)
 
 
-    new_password = forms.CharField(widget=PasswordStrengthInput)
+    new_password = forms.CharField(widget=PasswordStrengthInput(attrs={'class':'password_strength'}))
     new_password_confirmation = forms.CharField(widget=PasswordConfirmationInput)
 
     def __init__(self, user, data=None):
