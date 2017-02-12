@@ -51,6 +51,7 @@ ADMINS = (
 )
 
 PASSWORD_HASHERS = [
+    'django.contrib.auth.hashers.Argon2PasswordHasher',
     'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
     'django.contrib.auth.hashers.PBKDF2PasswordHasher',
     'django.contrib.auth.hashers.SHA1PasswordHasher',
@@ -79,7 +80,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'USER': 'ietf',
         #'PASSWORD': 'ietf',
-        #'OPTIONS': {},
+        'OPTIONS': {'sql_mode': 'STRICT_TRANS_TABLES', },
     },
 }
 
@@ -261,7 +262,7 @@ if DEBUG:
     TEMPLATES[0]['OPTIONS']['string_if_invalid'] = "** No value found for '%s' **"
 
 
-MIDDLEWARE_CLASSES = (
+MIDDLEWARE = (
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -269,11 +270,11 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.http.ConditionalGetMiddleware',
-    'ietf.middleware.SQLLogMiddleware',
+    'ietf.middleware.sql_log_middleware',
     'ietf.middleware.SMTPExceptionMiddleware',
-    'ietf.middleware.RedirectTrailingPeriod',
+    'ietf.middleware.redirect_trailing_period_middleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'ietf.middleware.UnicodeNfkcNormalization',
+    'ietf.middleware.unicode_nfkc_normalization_middleware',
 )
 
 ROOT_URLCONF = 'ietf.urls'
@@ -298,6 +299,7 @@ INSTALLED_APPS = (
     'django.contrib.sites',
     'django.contrib.staticfiles',
     # External apps 
+    'anora',
     'bootstrap3',
     'django_markup',
     'django_password_strength',
@@ -674,7 +676,7 @@ SELENIUM_TESTS_ONLY = False
 # Set debug apps in settings_local.DEV_APPS
 
 DEV_APPS = ()
-DEV_MIDDLEWARE_CLASSES = ()
+DEV_MIDDLEWARE = ()
 
 # django-debug-toolbar and the debug listing of sql queries at the bottom of
 # each page when in dev mode can overlap in functionality, and can slow down
@@ -798,7 +800,7 @@ for app in INSTALLED_APPS:
 
 # Add DEV_APPS to INSTALLED_APPS
 INSTALLED_APPS += DEV_APPS
-MIDDLEWARE_CLASSES += DEV_MIDDLEWARE_CLASSES
+MIDDLEWARE += DEV_MIDDLEWARE
 TEMPLATES[0]['OPTIONS']['context_processors'] += DEV_TEMPLATE_CONTEXT_PROCESSORS
 
 

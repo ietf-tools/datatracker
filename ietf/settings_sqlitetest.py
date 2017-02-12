@@ -50,6 +50,6 @@ MEDIA_URL = '/test/media/'
 PHOTOS_DIR = MEDIA_ROOT + PHOTOS_DIRNAME                            # pyflakes:ignore
 
 # Undo any developer-dependent middleware when running the tests
-MIDDLEWARE_CLASSES = [ c for c in MIDDLEWARE_CLASSES if not c in DEV_MIDDLEWARE_CLASSES ] # pyflakes:ignore
+MIDDLEWARE = [ c for c in MIDDLEWARE if not c in DEV_MIDDLEWARE ] # pyflakes:ignore
 
 TEMPLATES[0]['OPTIONS']['context_processors'] = [ p for p in TEMPLATES[0]['OPTIONS']['context_processors'] if not p in DEV_TEMPLATE_CONTEXT_PROCESSORS ] # pyflakes:ignore

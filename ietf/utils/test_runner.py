@@ -122,11 +122,13 @@ class TemplateCoverageLoader(BaseLoader):
         raise TemplateDoesNotExist(template_name)
     load_template_source.is_usable = True
 
-class RecordUrlsMiddleware(object):
-    def process_request(self, request):
+def record_urls_middleware(get_response):
+    def record_urls(request):
         global url_coverage_collection, visited_urls
         if url_coverage_collection == True:
             visited_urls.add(request.path)
+        return get_response(request)
+    return record_urls
 
 def get_url_patterns(module, apps=None):
     def include(name):
@@ -403,7 +405,7 @@ class IetfTestRunner(DiscoverRunner):
 
             settings.TEMPLATES[0]['OPTIONS']['loaders'] = ('ietf.utils.test_runner.TemplateCoverageLoader',) + settings.TEMPLATES[0]['OPTIONS']['loaders']
 
-            settings.MIDDLEWARE_CLASSES = ('ietf.utils.test_runner.RecordUrlsMiddleware',) + tuple(settings.MIDDLEWARE_CLASSES)
+            settings.MIDDLEWARE = ('ietf.utils.test_runner.record_urls_middleware',) + tuple(settings.MIDDLEWARE)
             url_coverage_collection = True
 
             self.code_coverage_checker = settings.TEST_CODE_COVERAGE_CHECKER
