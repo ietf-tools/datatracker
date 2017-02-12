@@ -3,8 +3,6 @@ from __future__ import unicode_literals
 
 from django.db import models, migrations
 import datetime
-import ietf.meeting.timedeltafield
-
 
 class Migration(migrations.Migration):
 
@@ -112,7 +110,7 @@ class Migration(migrations.Migration):
                 ('attendees', models.IntegerField(null=True, blank=True)),
                 ('agenda_note', models.CharField(max_length=255, blank=True)),
                 ('requested', models.DateTimeField(default=datetime.datetime.now)),
-                ('requested_duration', ietf.meeting.timedeltafield.TimedeltaField(default=0)),
+                ('requested_duration', models.IntegerField(default=0)),
                 ('comments', models.TextField(blank=True)),
                 ('scheduled', models.DateTimeField(null=True, blank=True)),
                 ('modified', models.DateTimeField(default=datetime.datetime.now)),
@@ -141,7 +139,7 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('name', models.CharField(max_length=255)),
                 ('time', models.DateTimeField()),
-                ('duration', ietf.meeting.timedeltafield.TimedeltaField()),
+                ('duration', models.IntegerField()),
                 ('show_location', models.BooleanField(default=True, help_text=b'Show location in agenda')),
                 ('modified', models.DateTimeField(default=datetime.datetime.now)),
                 ('location', models.ForeignKey(blank=True, to='meeting.Room', null=True)),
