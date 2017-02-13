@@ -40,7 +40,7 @@ urlpatterns = [
     url(r'^(?P<year>\d{4})/feedback/$', views.public_feedback, name='nomcom_public_feedback'),
     url(r'^(?P<year>\d{4})/nominate/$', views.public_nominate, name='nomcom_public_nominate'),
     url(r'^(?P<year>\d{4})/nominate/newperson$', views.public_nominate_newperson, name='nomcom_public_nominate_newperson'),
-    url(r'^(?P<year>\d{4})/process-nomination-status/(?P<nominee_position_id>\d+)/(?P<state>[\w]+)/(?P<date>[\d]+)/(?P<hash>[a-f0-9]+)/$', views.process_nomination_status, name='nomcom_process_nomination_status'),
+    url(r'^(?P<year>\d{4})/process-nomination-status/(?P<nominee_position_id>\d+)/(?P<state>[\w]+)/(?P<date>[\d]+)/(?P<hash>[a-f0-9]+)/$', views.process_nomination_status),
 # use the generic view from message
     url(r'^ann/(?P<message_id>\d+)/$', message_views.message, {'group_type': "nomcom" }),
 ]

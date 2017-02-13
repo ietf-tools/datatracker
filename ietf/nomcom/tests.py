@@ -1103,7 +1103,7 @@ class InactiveNomcomTests(TestCase):
     def test_acceptance_closed(self):
         today = datetime.date.today().strftime('%Y%m%d')
 	pid = self.nc.position_set.first().nomineeposition_set.first().id 
-        url = reverse('nomcom_process_nomination_status', kwargs = {
+        url = reverse('ietf.nomcom.views.process_nomination_status', kwargs = {
                       'year' : self.nc.year(),
                       'nominee_position_id' : pid,
                       'state' : 'accepted',
@@ -1330,16 +1330,15 @@ class NewActiveNomComTests(TestCase):
         self.assertEqual(response.status_code,200)
 
     def test_accept_reject_nomination_edges(self):
-
-        np = self.nc.nominee_set.first().nomineeposition_set.first()
-
+        self.client.logout()
+        np = self.nc.nominee_set.order_by('pk').first().nomineeposition_set.order_by('pk').first()
         kwargs={'year':self.nc.year(),
                 'nominee_position_id':np.id,
                 'state':'accepted',
                 'date':np.time.strftime("%Y%m%d"),
                 'hash':get_hash_nominee_position(np.time.strftime("%Y%m%d"),np.id),
                }
-        url = reverse('nomcom_process_nomination_status', kwargs=kwargs)
+        url = reverse('ietf.nomcom.views.process_nomination_status', kwargs=kwargs)
         response = self.client.get(url)
         self.assertEqual(response.status_code,403)
         self.assertTrue('already was' in unicontent(response))
@@ -1349,13 +1348,13 @@ class NewActiveNomComTests(TestCase):
         np.save()
         kwargs['date'] = np.time.strftime("%Y%m%d")
         kwargs['hash'] = get_hash_nominee_position(np.time.strftime("%Y%m%d"),np.id)
-        url = reverse('nomcom_process_nomination_status', kwargs=kwargs)
+        url = reverse('ietf.nomcom.views.process_nomination_status', kwargs=kwargs)
         response = self.client.get(url)
         self.assertEqual(response.status_code,403)
         self.assertTrue('Link expired' in unicontent(response))
 
         kwargs['hash'] = 'bad'
-        url = reverse('nomcom_process_nomination_status', kwargs=kwargs)
+        url = reverse('ietf.nomcom.views.process_nomination_status', kwargs=kwargs)
         response = self.client.get(url)
         self.assertEqual(response.status_code,403)
         self.assertTrue('Bad hash!' in unicontent(response))
@@ -1363,7 +1362,7 @@ class NewActiveNomComTests(TestCase):
     def test_accept_reject_nomination_comment(self):
         np = self.nc.nominee_set.first().nomineeposition_set.first()
         hash = get_hash_nominee_position(np.time.strftime("%Y%m%d"),np.id)
-        url = reverse('nomcom_process_nomination_status',
+        url = reverse('ietf.nomcom.views.process_nomination_status',
                       kwargs={'year':self.nc.year(),
                               'nominee_position_id':np.id,
                               'state':'accepted',
