@@ -569,16 +569,6 @@ def document_content(doc):
     return get_document_content(doc.name,path,markup=False)
 
 @register.filter
-def session_start_time(session):
-    timeslot = session.official_timeslotassignment().timeslot
-    return timeslot.time
-
-@register.filter
-def session_end_time(session):
-    timeslot = session.official_timeslotassignment().timeslot
-    return timeslot.time + timeslot.duration
-
-@register.filter
 def format_timedelta(timedelta):
     s = timedelta.seconds
     hours, remainder = divmod(s, 3600)
