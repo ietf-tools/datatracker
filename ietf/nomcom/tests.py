@@ -1071,7 +1071,7 @@ class InactiveNomcomTests(TestCase):
             self.assertTrue( q('#nominees a') )
             self.assertFalse( q('#nominees a[href]') )
     
-            url += "?nominee=%d&position=%d" % (self.nc.nominee_set.first().id, self.nc.nominee_set.first().nomineeposition_set.first().position.id)
+            url += "?nominee=%d&position=%d" % (self.nc.nominee_set.order_by('pk').first().id, self.nc.nominee_set.order_by('pk').first().nomineeposition_set.order_by('pk').first().position.id)
             response = self.client.get(url)
             self.assertEqual(response.status_code, 200)
             q = PyQuery(response.content)
@@ -1102,7 +1102,7 @@ class InactiveNomcomTests(TestCase):
 
     def test_acceptance_closed(self):
         today = datetime.date.today().strftime('%Y%m%d')
-	pid = self.nc.position_set.first().nomineeposition_set.first().id 
+	pid = self.nc.position_set.first().nomineeposition_set.order_by('pk').first().id 
         url = reverse('ietf.nomcom.views.process_nomination_status', kwargs = {
                       'year' : self.nc.year(),
                       'nominee_position_id' : pid,
@@ -1247,7 +1247,7 @@ class FeedbackLastSeenTests(TestCase):
         self.nc = NomComFactory.create(**nomcom_kwargs_for_year())
         self.author = PersonFactory.create().email_set.first().address
         self.member = self.nc.group.role_set.filter(name='member').first().person
-        self.nominee = self.nc.nominee_set.first()
+        self.nominee = self.nc.nominee_set.order_by('pk').first()
         self.position = self.nc.position_set.first()
         for type_id in ['comment','nomina','questio']:
             f = FeedbackFactory.create(author=self.author,nomcom=self.nc,type_id=type_id)
@@ -1360,7 +1360,7 @@ class NewActiveNomComTests(TestCase):
         self.assertTrue('Bad hash!' in unicontent(response))
 
     def test_accept_reject_nomination_comment(self):
-        np = self.nc.nominee_set.first().nomineeposition_set.first()
+        np = self.nc.nominee_set.order_by('pk').first().nomineeposition_set.order_by('pk').first()
         hash = get_hash_nominee_position(np.time.strftime("%Y%m%d"),np.id)
         url = reverse('ietf.nomcom.views.process_nomination_status',
                       kwargs={'year':self.nc.year(),
@@ -1452,7 +1452,7 @@ Junk body for testing
         self.assertEqual(np.nominee.feedback_set.count(),fb_count_before+1)
 
         fb = FeedbackFactory(nomcom=self.nc,type_id=None)
-        nominee = self.nc.nominee_set.first()
+        nominee = self.nc.nominee_set.order_by('pk').first()
         position = self.nc.position_set.exclude(nomineeposition__nominee=nominee).first()
         self.assertIsNotNone(position)
         fb_count_before = nominee.feedback_set.count()
@@ -1538,7 +1538,7 @@ Junk body for testing
         fb0 = FeedbackFactory(nomcom=self.nc,type_id=None)
         fb1 = FeedbackFactory(nomcom=self.nc,type_id=None)
         fb2 = FeedbackFactory(nomcom=self.nc,type_id=None)
-        nominee = self.nc.nominee_set.first()
+        nominee = self.nc.nominee_set.order_by('pk').first()
         new_position_for_nominee = self.nc.position_set.exclude(nomineeposition__nominee=nominee).first()
 
         # Initial formset
