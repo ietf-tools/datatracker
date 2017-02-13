@@ -11,11 +11,7 @@ import warnings
 
 warnings.simplefilter("always", DeprecationWarning)
 warnings.filterwarnings("ignore", message="Report.file_reporters will no longer be available in Coverage.py 4.2", module="coverage.report")
-warnings.filterwarnings("ignore", message="initial_data fixtures are deprecated. Use data migrations instead.", module="django.core.management.commands.loaddata")
 warnings.filterwarnings("ignore", message="The popen2 module is deprecated.  Use the subprocess module.", module="ietf.utils.pipe")
-# This is triggered by the TimedeltaField, which we retain only for the sake
-# of old migrations:
-warnings.filterwarnings("ignore", message=r"SubfieldBase has been deprecated. Use Field.from_db_value instead.")
 
 
 try:
