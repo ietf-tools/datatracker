@@ -33,7 +33,7 @@
         {% endcomment %}
         <tr><td>Primary Area:</td>
             <td>{% if not group.parent %}(No Data){% else %}
-                  <a href="{% url "areas_view" name=group.parent.acronym %}">{{ group.parent }}</a>
+                  <a href="{% url "ietf.secr.areas.views.view" name=group.parent.acronym %}">{{ group.parent }}</a>
                 {% endif %}
             </td>
         </tr>

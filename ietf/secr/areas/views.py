@@ -144,9 +144,9 @@ def edit(request, name):
                                               time=new_area.time)
                 
                 messages.success(request, 'The Area entry was changed successfully')
-                return redirect('areas_view', name=name)
+                return redirect('ietf.secr.areas.views.view', name=name)
         else:
-            return redirect('areas_view', name=name)
+            return redirect('ietf.secr.areas.views.view', name=name)
     else:
         form = AreaForm(instance=area)
         awp_formset = AWPFormSet(instance=area)
@@ -215,7 +215,7 @@ def people(request, name):
                 Role.objects.create(name_id='pre-ad',group=area,email=email,person=person)
                 
                 messages.success(request, 'New Area Director added successfully!')
-                return redirect('areas_view', name=name)
+                return redirect('ietf.secr.areas.views.view', name=name)
     else:
         form = AreaDirectorForm()
 
@@ -279,7 +279,7 @@ def modify(request, name):
             
             messages.success(request, 'Voting rights have been granted successfully!')
 
-        return redirect('areas_view', name=name)
+        return redirect('ietf.secr.areas.views.view', name=name)
 
 @role_required('Secretariat')
 def view(request, name):
