@@ -11,6 +11,8 @@ from django.core.validators import ValidationError
 from django.contrib.sites.models import Site
 from django.template.loader import render_to_string
 
+import debug                            # pyflakes:ignore
+
 from ietf.utils.log import log
 from ietf.utils.mail import send_mail, send_mail_message
 from ietf.doc.models import Document
@@ -20,6 +22,7 @@ from ietf.message.models import Message, MessageAttachment
 from ietf.utils.accesstoken import generate_access_token
 from ietf.mailtrigger.utils import gather_address_lists, get_base_submission_message_address
 from ietf.submit.models import SubmissionEmailEvent, Submission
+from ietf.submit.checkers import DraftIdnitsChecker
 
 def send_submission_confirmation(request, submission, chair_notice=False):
     subject = 'Confirm submission of I-D %s' % submission.name
@@ -80,10 +83,14 @@ def send_manual_post_request(request, submission, errors):
     subject = u'Manual Post Requested for %s' % submission.name
     from_email = settings.IDSUBMIT_FROM_EMAIL
     (to_email,cc) = gather_address_lists('sub_manual_post_requested',submission=submission)
+    checker = DraftIdnitsChecker(options=[]) # don't use the default --submitcheck limitation
+    file_name = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.txt' % (submission.name, submission.rev))
+    nitspass, nitsmsg, nitserr, nitswarn, nitsresult = checker.check_file_txt(file_name)
     send_mail(request, to_email, from_email, subject, 'submit/manual_post_request.txt', {
         'submission': submission,
         'url': settings.IDTRACKER_BASE_URL + urlreverse('ietf.submit.views.submission_status', kwargs=dict(submission_id=submission.pk)),
         'errors': errors,
+        'idnits': nitsmsg,
     }, cc=cc)
 
 

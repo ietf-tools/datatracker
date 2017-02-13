@@ -1,7 +1,15 @@
 {% autoescape off %}
 Hi,
 
-Manual posting has been requested for the following Internet-Draft:
+Manual posting has been requested for the following Internet-Draft.
+
+{% if errors %}The problems found during automated submission were: {% for err in errors.values %}
+  - {{ err }}{% endfor %}
+
+If the authors claim that this is incorrect, then please look at the actual
+draft and verify that it does not have the problems indicated.
+{% endif %}
+Full idnits results are available at the end of this message.
 
 I-D Submission Tool URL: 
   {{ url }}
@@ -18,7 +26,8 @@ I-D Submission Tool URL:
 
   Submitter       : {{ submission.submitter }}
 
-  Abstract        : {{ submission.abstract }}
+  Abstract        : 
+{{ submission.abstract }}
 
 
   Authors:
@@ -28,4 +37,10 @@ I-D Submission Tool URL:
   Comment to the secretariat:
 
 {{ submission.note }}
+
+
+  Idnits result:
+
+{{ idnits }}
+
 {% endautoescape %}

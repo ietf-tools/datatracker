@@ -49,6 +49,12 @@ class DraftIdnitsChecker(object):
     # symbol = '<span class="fa fa-check-square"></span>'
     symbol = ""
 
+    def __init__(self, options=["--submitcheck", "--nitcount", ]):
+        assert isinstance(options, list)
+        if not "--nitcount" in options:
+            options.append("--nitcount")
+        self.options = ' '.join(options)
+
     def check_file_txt(self, path):
         """
         Run an idnits check, and return a passed/failed indication, a message,
@@ -66,7 +72,7 @@ class DraftIdnitsChecker(object):
         warnstart = ['  == ', '  -- ']
         
 
-        cmd = "%s --submitcheck --nitcount %s" % (settings.IDSUBMIT_IDNITS_BINARY, path)
+        cmd = "%s %s %s" % (settings.IDSUBMIT_IDNITS_BINARY, self.options, path)
         code, out, err = pipe(cmd)
         if code != 0 or out == "":
             message = "idnits error: %s:\n  Error %s: %s" %( cmd, code, err)
