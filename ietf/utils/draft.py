@@ -196,7 +196,7 @@ class Draft():
         line = ""
         newpage = False
         sentence = False
-        shortline = False
+        shortprev = False
         blankcount = 0
         linecount = 0
         # two functions with side effects
@@ -238,7 +238,7 @@ class Draft():
             if re.search("\f", line, re.I):
                 pages, page, newpage = begpage(pages, page, newpage)
                 continue
-            if re.search("^ *Internet.Draft.+   .+[12][0-9][0-9][0-9] *$", line, re.I):
+            if re.search("^ *Internet.Draft.+  .+[12][0-9][0-9][0-9] *$", line, re.I):
                 pages, page, newpage = begpage(pages, page, newpage, line)
                 continue
     #        if re.search("^ *Internet.Draft  +", line, re.I):
@@ -263,7 +263,9 @@ class Draft():
                 sentence = True
             if re.search("[^ \t]", line):
                 if newpage:
-                    if sentence or shortline:
+                    # 33 is a somewhat arbitrary count for a 'short' line
+                    shortthis = len(line.strip()) < 33 # 33 is a somewhat arbitrary count for a 'short' line
+                    if sentence or (shortprev and not shortthis):
                         stripped += [""]
                 else:
                     if blankcount:
@@ -271,7 +273,7 @@ class Draft():
                 blankcount = 0
                 sentence = False
                 newpage = False
-                shortline = len(line.strip()) < 18
+                shortprev = len(line.strip()) < 33 # 33 is a somewhat arbitrary count for a 'short' line
             if re.search("[.:]$", line):
                 sentence = True
             if re.search("^[ \t]*$", line):
