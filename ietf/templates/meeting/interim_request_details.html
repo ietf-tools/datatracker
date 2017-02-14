@@ -26,18 +26,18 @@
     <dd>{{ meeting.country }}</dd>
     <dt>Timezone</dt>
     <dd>{{ meeting.time_zone }}</dd>
-    {% for session in sessions %}
+    {% for assignment in meeting.agenda.assignments.all %}
       <br>
       <dt>Date</dt>
-      <dd>{{ session.official_timeslotassignment.timeslot.time|date:"Y-m-d" }}
+      <dd>{{ assignment.timeslot.time|date:"Y-m-d" }}
       <dt>Start Time</dt>
-      <dd>{{ session.official_timeslotassignment.timeslot.time|date:"H:i" }}
+      <dd>{{ assignment.timeslot.time|date:"H:i" }}
       <dt>Duration</dt>
-      <dd>{{ session.requested_duration|format_timedelta }}
+      <dd>{{ assignment.session.requested_duration|format_timedelta }}
       <dt>Remote Instructions</dt>
-      <dd>{{ session.remote_instructions }}
+      <dd>{{ assignment.session.remote_instructions }}
       <dt>Additional Info</dt>
-      <dd>{{ session.agenda_note }}</dd>
+      <dd>{{ assignment.session.agenda_note }}</dd>
     {% endfor %}
   </dl>
 
