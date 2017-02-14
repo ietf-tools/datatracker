@@ -196,6 +196,7 @@ class Draft():
         line = ""
         newpage = False
         sentence = False
+        shortline = False
         blankcount = 0
         linecount = 0
         # two functions with side effects
@@ -262,7 +263,7 @@ class Draft():
                 sentence = True
             if re.search("[^ \t]", line):
                 if newpage:
-                    if sentence:
+                    if sentence or shortline:
                         stripped += [""]
                 else:
                     if blankcount:
@@ -270,6 +271,7 @@ class Draft():
                 blankcount = 0
                 sentence = False
                 newpage = False
+                shortline = len(line.strip()) < 18
             if re.search("[.:]$", line):
                 sentence = True
             if re.search("^[ \t]*$", line):
