@@ -173,7 +173,6 @@ from django import forms
 class ChangePasswordForm(forms.Form):
     current_password = forms.CharField(widget=forms.PasswordInput)
 
-
     new_password = forms.CharField(widget=PasswordStrengthInput)
     new_password_confirmation = forms.CharField(widget=PasswordConfirmationInput)
 
@@ -185,10 +184,29 @@ class ChangePasswordForm(forms.Form):
         password = self.cleaned_data.get('current_password', None)
         if not self.user.check_password(password):
             raise ValidationError('Invalid password')
+        return password
             
     def clean(self):
         new_password = self.cleaned_data.get('new_password', None)
         conf_password = self.cleaned_data.get('new_password_confirmation', None)
         if not new_password == conf_password:
             raise ValidationError("The password confirmation is different than the new password")
-            
+
+
+class ChangeUsernameForm(forms.Form):
+    username = forms.ChoiceField(choices=['-','--------'])
+    password = forms.CharField(widget=forms.PasswordInput, help_text="Confirm the change with your password")
+
+    def __init__(self, user, *args, **kwargs):
+        assert isinstance(user, User)
+        super(ChangeUsernameForm, self).__init__(*args, **kwargs)
+        self.user = user
+        emails = user.person.email_set.filter(active=True)
+        choices = [ (email.address, email.address) for email in emails ]
+        self.fields['username'] = forms.ChoiceField(choices=choices)
+
+    def clean_password(self):
+        password = self.cleaned_data['password']
+        if not self.user.check_password(password):
+            raise ValidationError('Invalid password')
+        return password

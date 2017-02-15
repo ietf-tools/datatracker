@@ -18,5 +18,6 @@ urlpatterns = [
         url(r'^reset/confirm/(?P<auth>[^/]+)/$', views.confirm_password_reset),
         url(r'^review/$', views.review_overview),
         url(r'^testemail/$', views.test_email),
-        url(r'whitelist/add/?$', views.add_account_whitelist),
+        url(r'^username/$', views.change_username),
+        url(r'^whitelist/add/?$', views.add_account_whitelist),
 ]

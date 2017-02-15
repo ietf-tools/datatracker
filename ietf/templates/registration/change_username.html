@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+
+{% load bootstrap3 %}
+{% load staticfiles %}
+
+{% block title %}Change username{% endblock %}
+
+
+{% block content %}
+  {% origin %}
+
+  <div class="row">
+    <div class="col-md-2 col-sm-0"></div>
+    <div class="col-md-8 col-sm-12">
+      <h1>Change username</h1>
+
+      <div class="help-block">
+	 This form lets you change your username (login) from {{ user.username }} to
+	 one of your other active email addresses.  If you want to change to a new
+	 email address, then please first
+	 <a href="{% url 'ietf.ietfauth.views.profile' %}">edit your profile</a>
+	 to add that email address to the active email addresses for your account.
+      </div>
+
+      <form method="post">
+	{% csrf_token %}
+	{% bootstrap_form form %}
+
+	{% buttons %}
+	  <button type="submit" class="btn btn-primary">Change username</button>
+	{% endbuttons %}
+      </form>
+
+    </div>
+    <div class="col-md-2 col-sm-0"></div>
+  </div>
+
+{% endblock %}

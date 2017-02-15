@@ -449,3 +449,50 @@ class IetfAuthTests(TestCase):
         user = User.objects.get(username="someone@example.com")
         self.assertTrue(user.check_password(u'foobar'))
 
+    def test_change_username(self):
+
+        chun_url = urlreverse(ietf.ietfauth.views.change_username)
+        prof_url = urlreverse(ietf.ietfauth.views.profile)
+        login_url = urlreverse(django.contrib.auth.views.login)
+        redir_url = '%s?next=%s' % (login_url, chun_url)
+
+        # get without logging in
+        r = self.client.get(chun_url)
+        self.assertRedirects(r, redir_url)
+
+        user = User.objects.create(username="someone@example.com", email="someone@example.com")
+        user.set_password("password")
+        user.save()
+        p = Person.objects.create(name="Some One", ascii="Some One", user=user)
+        Email.objects.create(address=user.username, person=p)
+        Email.objects.create(address="othername@example.org", person=p)        
+
+        # log in
+        r = self.client.post(redir_url, {"username":user.username, "password":"password"})
+        self.assertRedirects(r, chun_url)
+
+        # wrong username
+        r = self.client.post(chun_url, {"username": "fiddlesticks",
+                                        "password": "password",
+                                       })
+        self.assertEqual(r.status_code, 200)
+        self.assertFormError(r, 'form', 'username',
+            "Select a valid choice. fiddlesticks is not one of the available choices.")
+
+        # wrong password
+        r = self.client.post(chun_url, {"username": "othername@example.org",
+                                        "password": "foobar",
+                                       })
+        self.assertEqual(r.status_code, 200)
+        self.assertFormError(r, 'form', 'password', 'Invalid password')
+
+        # correct username change
+        r = self.client.post(chun_url, {"username": "othername@example.org",
+                                        "password": "password",
+                                       })
+        self.assertRedirects(r, prof_url)
+        # refresh user object
+        prev = user
+        user = User.objects.get(username="othername@example.org")
+        self.assertEqual(prev, user)
+        self.assertTrue(user.check_password(u'password'))

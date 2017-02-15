@@ -52,8 +52,9 @@ from django.shortcuts import render, redirect, get_object_or_404
 import debug                            # pyflakes:ignore
 
 from ietf.group.models import Role, Group
-from ietf.ietfauth.forms import RegistrationForm, PasswordForm, ResetPasswordForm, TestEmailForm, WhitelistForm, ChangePasswordForm
-from ietf.ietfauth.forms import get_person_form, RoleEmailForm, NewEmailForm
+from ietf.ietfauth.forms import ( RegistrationForm, PasswordForm, ResetPasswordForm, TestEmailForm,
+                                WhitelistForm, ChangePasswordForm, get_person_form, RoleEmailForm,
+                                NewEmailForm, ChangeUsernameForm )
 from ietf.ietfauth.htpasswd import update_htpasswd_file
 from ietf.ietfauth.utils import role_required
 from ietf.mailinglists.models import Subscribed, Whitelisted
@@ -518,6 +519,48 @@ def change_password(request):
         'user': user,
         'success': success,
         'hasher': hasher,
+    })
+
+    
+@login_required
+def change_username(request):
+    person = None
+
+    try:
+        person = request.user.person
+    except Person.DoesNotExist:
+        return render(request, 'registration/missing_person.html')
+
+    emails = [ e.address for e in Email.objects.filter(person=person, active=True) ]
+    emailz = [ e.address for e in person.email_set.filter(active=True) ]
+    assert emails == emailz
+    user = request.user
+
+    if request.method == 'POST':
+        form = ChangeUsernameForm(user, request.POST)
+        if form.is_valid():
+            new_username = form.cleaned_data["username"]
+            password = form.cleaned_data["password"]
+            assert new_username in emails
+
+            user.username = new_username.lower()
+            user.save()
+            # password is also stored in htpasswd file
+            update_htpasswd_file(user.username, password)
+            # keep the session
+            update_session_auth_hash(request, user)
+
+            send_mail(request, emails, None, "Datatracker username change notification", "registration/username_change_email.txt", {})
+
+            messages.success(request, "Your username was successfully changed")
+            return HttpResponseRedirect(urlreverse('ietf.ietfauth.views.profile'))
+
+    else:
+        form = ChangeUsernameForm(request.user)
+
+    return render(request, 'registration/change_username.html', {
+        'form': form,
+        'user': user,
     })
 
     

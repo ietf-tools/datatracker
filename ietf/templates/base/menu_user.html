@@ -17,17 +17,19 @@
     {% if user.is_authenticated %}
       <li><a rel="nofollow" href="/accounts/logout/" >Sign out</a></li>
       <li><a rel="nofollow" href="/accounts/profile/">Account info</a></li>
+      <li><a href="{%url "ietf.cookies.views.preferences" %}" rel="nofollow">Preferences</a></li>
       <li><a rel="nofollow" href="/accounts/password/">Change password</a></li>
+      <li><a rel="nofollow" href="/accounts/username/">Change username</a></li>
     {% else %}
       <li><a rel="nofollow" href="/accounts/login/?next={{request.get_full_path|urlencode}}">Sign in</a></li>
       <li><a rel="nofollow" href="/accounts/reset/">Password reset</a></li>
+      <li><a href="{%url "ietf.cookies.views.preferences" %}" rel="nofollow">Preferences</a></li>
     {% endif %}
   {% endif %}
 
   {% if not request.user.is_authenticated %}
     <li><a href="{% url "ietf.ietfauth.views.create_account" %}">New account</a></li>
   {% endif %}
-  <li><a href="{%url "ietf.cookies.views.preferences" %}" rel="nofollow">Preferences</a></li>
 
   {% if user|has_role:"Reviewer" %}
     <li><a href="{% url "ietf.ietfauth.views.review_overview" %}">My reviews</a></li>
