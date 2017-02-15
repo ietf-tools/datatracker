@@ -34,14 +34,16 @@
       <div class="col-sm-10">
         <div class="row">
 	  <div class="col-sm-5" id="emails">
-	    {% for email in emails %}
-	      <div class="checkbox">
-	        <label>
-                  <input type="checkbox" name="active_emails" value="{{ email.pk }}" {% if email.active %}checked{% endif %}>
-                  {{ email }}
-	        </label>
-	      </div>
-	    {% endfor %}
+	    <table class="table table-condensed">
+	      <tr ><th>Primary</th><th>Active</th><th>Address</th></tr>
+	      {% for email in emails %}
+	      <tr >
+		 <td><input type="radio" name="primary_email" value="{{ email.pk }}" {% if email.primary %}checked{% endif %}></td>
+		 <td><input type="checkbox" name="active_emails" value="{{ email.pk }}" {% if email.active %}checked{% endif %}></td>
+		 <td>{{ email }}</td>
+	      </tr>
+	      {% endfor %}
+	    </table>
 	  </div>
 	  <div class="col-sm-7">
 	    <div class="help-block">Note: Email addresses cannot be deleted, only deactivated.</div>
@@ -81,11 +83,11 @@
    $(document).ready(function() {
        $("input[name=active_emails]").on("change keypress click", function () {
            if (this.checked) {
-               $(this).parent().addClass("text-success");;
-               $(this).parent().removeClass("text-danger line-through");
+               $(this).parent().parent().addClass("text-success");;
+               $(this).parent().parent().removeClass("text-danger line-through");
            } else {
-               $(this).parent().addClass("text-danger line-through");
-               $(this).parent().removeClass("text-success");
+               $(this).parent().parent().addClass("text-danger line-through");
+               $(this).parent().parent().removeClass("text-success");
            }
        }).trigger("change");
 

@@ -236,9 +236,13 @@ def profile(request):
                     r.email = e
                     r.save()
 
+            primary_email = request.POST.get("primary_email", None)
             active_emails = request.POST.getlist("active_emails", [])
             for email in emails:
                 email.active = email.pk in active_emails
+                email.primary = email.address == primary_email
+                if email.primary and not email.active:
+                    email.active = True
                 email.save()
 
             # Make sure the alias table contains any new and/or old names.
