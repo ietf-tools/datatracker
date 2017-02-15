@@ -25,7 +25,8 @@ class StatisticsTests(TestCase):
         self.assertTrue(authors_url in r["Location"])
 
         # check various stats types
-        for stats_type in ["authors", "pages", "words", "format", "formlang", "author/documents", "author/affiliation"]:
+        for stats_type in ["authors", "pages", "words", "format", "formlang",
+                           "author/documents", "author/affiliation", "author/country", "author/continent"]:
             for document_type in ["", "rfc", "draft"]:
                 for time_choice in ["", "5y"]:
                     url = urlreverse(ietf.stats.views.document_stats, kwargs={ "stats_type": stats_type })

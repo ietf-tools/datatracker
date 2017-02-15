@@ -81,7 +81,7 @@ def upload_submission(request):
                     # If we don't have an xml file, try to extract the
                     # relevant information from the text file
                     for author in form.parsed_draft.get_author_list():
-                        full_name, first_name, middle_initial, last_name, name_suffix, email, company = author
+                        full_name, first_name, middle_initial, last_name, name_suffix, email, country, company = author
 
                         name = full_name.replace("\n", "").replace("\r", "").replace("<", "").replace(">", "").strip()
 
@@ -114,7 +114,7 @@ def upload_submission(request):
                             "name": name,
                             "email": email,
                             "affiliation": company,
-                            # FIXME: missing country
+                            "country": country
                         })
 
                 if form.abstract:

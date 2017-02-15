@@ -23,9 +23,9 @@ from ietf.review.utils import (extract_review_request_data,
 from ietf.submit.models import Submission
 from ietf.group.models import Role, Group
 from ietf.person.models import Person
-from ietf.name.models import ReviewRequestStateName, ReviewResultName
+from ietf.name.models import ReviewRequestStateName, ReviewResultName, CountryName
 from ietf.doc.models import DocAlias, Document
-from ietf.person.utils import get_aliased_affiliations
+from ietf.stats.utils import get_aliased_affiliations, get_aliased_countries
 from ietf.ietfauth.utils import has_role
 
 def stats_index(request):
@@ -139,6 +139,8 @@ def document_stats(request, stats_type=None):
     table_data = []
     stats_title = ""
     bin_size = 1
+    alias_data = []
+    eu_countries = None
 
 
     if any(stats_type == t[0] for t in possible_document_stats_types):
@@ -332,7 +334,7 @@ def document_stats(request, stats_type=None):
         if from_time:
             # this is actually faster than joining in the database,
             # despite the round-trip back and forth
-            docs_within_time_constraint = list(Document.objects.filter(
+            docs_within_time_constraint = set(Document.objects.filter(
                 type="draft",
                 docevent__time__gte=from_time,
                 docevent__type__in=["published_rfc", "new_revision"],
@@ -349,7 +351,7 @@ def document_stats(request, stats_type=None):
         else:
             doc_label = "document"
 
-        total_persons = person_qs.count()
+        total_persons = person_qs.distinct().count()
 
         if stats_type == "author/documents":
             stats_title = "Number of {}s per author".format(doc_label)
@@ -402,6 +404,86 @@ def document_stats(request, stats_type=None):
                 "animation": False,
             })
 
+            for alias, name in sorted(aliases.iteritems(), key=lambda t: t[1]):
+                alias_data.append((name, alias))
+            
+        elif stats_type == "author/country":
+            stats_title = "Number of {} authors per country".format(doc_label)
+
+            bins = defaultdict(list)
+
+            # Since people don't write the country names in the
+            # same way, and we don't want to go back and edit them
+            # either, we transform them here.
+
+            name_country_set = set((name, country)
+                                   for name, country in person_qs.values_list("name", "documentauthor__country"))
+
+            aliases = get_aliased_countries(country for _, country in name_country_set)
+
+            countries = { c.name: c for c in CountryName.objects.all() }
+            eu_name = "EU"
+            eu_countries = set(c for c in countries.itervalues() if c.in_eu)
+
+            for name, country in name_country_set:
+                country_name = aliases.get(country, country)
+                bins[country_name].append(name)
+
+                c = countries.get(country_name)
+                if c and c.in_eu:
+                    bins[eu_name].append(name)
+
+            series_data = []
+            for country, names in sorted(bins.iteritems(), key=lambda t: t[0].lower()):
+                percentage = len(names) * 100.0 / total_persons
+                if country:
+                    series_data.append((country, len(names)))
+                table_data.append((country, percentage, names))
+
+            series_data.sort(key=lambda t: t[1], reverse=True)
+            series_data = series_data[:30]
+
+            chart_data.append({
+                "data": series_data,
+                "animation": False,
+            })
+
+            for alias, country_name in aliases.iteritems():
+                alias_data.append((country_name, alias, countries.get(country_name)))
+
+            alias_data.sort()
+
+        elif stats_type == "author/continent":
+            stats_title = "Number of {} authors per continent".format(doc_label)
+
+            bins = defaultdict(list)
+
+            name_country_set = set((name, country)
+                                   for name, country in person_qs.values_list("name", "documentauthor__country"))
+
+            aliases = get_aliased_countries(country for _, country in name_country_set)
+
+            country_to_continent = dict(CountryName.objects.values_list("name", "continent__name"))
+
+            for name, country in name_country_set:
+                country_name = aliases.get(country, country)
+                continent_name = country_to_continent.get(country_name, "")
+                bins[continent_name].append(name)
+
+            series_data = []
+            for continent, names in sorted(bins.iteritems(), key=lambda t: t[0].lower()):
+                percentage = len(names) * 100.0 / total_persons
+                if continent:
+                    series_data.append((continent, len(names)))
+                table_data.append((continent, percentage, names))
+
+            series_data.sort(key=lambda t: t[1], reverse=True)
+
+            chart_data.append({
+                "data": series_data,
+                "animation": False,
+            })
+
 
     return render(request, "stats/document_stats.html", {
         "chart_data": mark_safe(json.dumps(chart_data)),
@@ -416,6 +498,10 @@ def document_stats(request, stats_type=None):
         "time_choice": time_choice,
         "doc_label": doc_label,
         "bin_size": bin_size,
+        "show_aliases_url": build_document_stats_url(get_overrides={ "showaliases": "1" }),
+        "hide_aliases_url": build_document_stats_url(get_overrides={ "showaliases": None }),
+        "alias_data": alias_data,
+        "eu_countries": sorted(eu_countries or [], key=lambda c: c.name),
         "content_template": "stats/document_stats_{}.html".format(stats_type.replace("/", "_")),
     })
 

@@ -174,7 +174,8 @@ class BallotPositionDocEventAdmin(DocEventAdmin):
 admin.site.register(BallotPositionDocEvent, BallotPositionDocEventAdmin)
     
 class DocumentAuthorAdmin(admin.ModelAdmin):
-    list_display = ['id', 'document', 'person', 'email', 'affiliation', 'order']
-    search_fields = [ 'document__name', 'person__name', 'email__address', 'affiliation']
+    list_display = ['id', 'document', 'person', 'email', 'affiliation', 'country', 'order']
+    search_fields = ['document__docalias__name', 'person__name', 'email__address', 'affiliation', 'country']
+    raw_id_fields = ["document", "person", "email"]
 admin.site.register(DocumentAuthor, DocumentAuthorAdmin)
     

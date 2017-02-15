@@ -6,8 +6,7 @@ from tastypie.cache import SimpleCache
 
 from ietf import api
 
-from ietf.person.models import (Person, Email, Alias, PersonHistory,
-    AffiliationAlias, AffiliationIgnoredEnding)
+from ietf.person.models import (Person, Email, Alias, PersonHistory)
 
 
 from ietf.utils.resources import UserResource
@@ -82,29 +81,3 @@ class PersonHistoryResource(ModelResource):
             "user": ALL_WITH_RELATIONS,
         }
 api.person.register(PersonHistoryResource())
-
-class AffiliationIgnoredEndingResource(ModelResource):
-    class Meta:
-        queryset = AffiliationIgnoredEnding.objects.all()
-        serializer = api.Serializer()
-        cache = SimpleCache()
-        #resource_name = 'affiliationignoredending'
-        filtering = { 
-            "id": ALL,
-            "ending": ALL,
-        }
-api.person.register(AffiliationIgnoredEndingResource())
-
-class AffiliationAliasResource(ModelResource):
-    class Meta:
-        queryset = AffiliationAlias.objects.all()
-        serializer = api.Serializer()
-        cache = SimpleCache()
-        #resource_name = 'affiliationalias'
-        filtering = { 
-            "id": ALL,
-            "alias": ALL,
-            "name": ALL,
-        }
-api.person.register(AffiliationAliasResource())
-

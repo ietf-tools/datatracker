@@ -1,7 +1,8 @@
 from django.contrib import admin
 
 from ietf.name.models import (
-    BallotPositionName, ConstraintName, DBTemplateTypeName, DocRelationshipName,
+    BallotPositionName, ConstraintName, ContinentName, CountryName,
+    DBTemplateTypeName, DocRelationshipName,
     DocReminderTypeName, DocTagName, DocTypeName, DraftSubmissionStateName,
     FeedbackTypeName, FormalLanguageName, GroupMilestoneStateName, GroupStateName, GroupTypeName,
     IntendedStdLevelName, IprDisclosureStateName, IprEventTypeName, IprLicenseTypeName,
@@ -10,8 +11,11 @@ from ietf.name.models import (
     ReviewRequestStateName, ReviewResultName, ReviewTypeName, RoleName, RoomResourceName,
     SessionStatusName, StdLevelName, StreamName, TimeSlotTypeName, )
 
+from ietf.stats.models import CountryAlias
+
 class NameAdmin(admin.ModelAdmin):
     list_display = ["slug", "name", "desc", "used"]
+    search_fields = ["slug", "name"]
     prepopulate_from = { "slug": ("name",) }
 
 class DocRelationshipNameAdmin(NameAdmin):
@@ -26,8 +30,19 @@ class GroupTypeNameAdmin(NameAdmin):
     list_display = ["slug", "name", "verbose_name", "desc", "used"]
 admin.site.register(GroupTypeName, GroupTypeNameAdmin)
 
+class CountryAliasInline(admin.TabularInline):
+    model = CountryAlias
+    extra = 1
+
+class CountryNameAdmin(NameAdmin):
+    list_display = ["slug", "name", "continent", "in_eu"]
+    list_filter = ["continent", "in_eu"]
+    inlines = [CountryAliasInline]
+admin.site.register(CountryName, CountryNameAdmin)
+
 admin.site.register(BallotPositionName, NameAdmin)
 admin.site.register(ConstraintName, NameAdmin)
+admin.site.register(ContinentName, NameAdmin)
 admin.site.register(DBTemplateTypeName, NameAdmin)
 admin.site.register(DocReminderTypeName, NameAdmin)
 admin.site.register(DocTagName, NameAdmin)

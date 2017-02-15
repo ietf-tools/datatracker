@@ -12,8 +12,6 @@ from django.conf import settings
 from django.utils.html import mark_safe
 from django.core.urlresolvers import reverse as urlreverse
 
-from django_countries.fields import countries
-
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import Document
@@ -31,15 +29,6 @@ from ietf.submit.parsers.plain_parser import PlainParser
 from ietf.submit.parsers.ps_parser import PSParser
 from ietf.submit.parsers.xml_parser import XMLParser
 from ietf.utils.draft import Draft
-
-def clean_country(country):
-    country = country.upper()
-    for code, name in countries:
-        if country == code:
-            return code
-        if country == name.upper():
-            return code
-    return "" # unknown
 
 class SubmissionUploadForm(forms.Form):
     txt = forms.FileField(label=u'.txt format', required=False)
@@ -194,7 +183,7 @@ class SubmissionUploadForm(forms.Form):
                         "name": author.attrib.get('fullname'),
                         "email": author.findtext('address/email'),
                         "affiliation": author.findtext('organization'),
-                        "country": clean_country(author.findtext('address/postal/country')),
+                        "country": author.findtext('address/postal/country'),
                     })
             except forms.ValidationError:
                 raise
@@ -348,7 +337,7 @@ class NameEmailForm(forms.Form):
 
 class AuthorForm(NameEmailForm):
     affiliation = forms.CharField(max_length=100, required=False)
-    country = forms.ChoiceField(choices=[('', "(Not specified)")] + list(countries), required=False)
+    country = forms.CharField(max_length=255, required=False)
 
     def __init__(self, *args, **kwargs):
         super(AuthorForm, self).__init__(*args, **kwargs)

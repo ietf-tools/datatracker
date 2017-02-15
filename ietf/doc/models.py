@@ -11,8 +11,6 @@ from django.contrib.contenttypes.models import ContentType
 from django.conf import settings
 from django.utils.html import mark_safe
 
-from django_countries.fields import CountryField
-
 import debug                            # pyflakes:ignore
 
 from ietf.group.models import Group
@@ -406,7 +404,7 @@ class DocumentAuthorInfo(models.Model):
     # email should only be null for some historic documents
     email = models.ForeignKey(Email, help_text="Email address used by author for submission", blank=True, null=True)
     affiliation = models.CharField(max_length=100, blank=True, help_text="Organization/company used by author for submission")
-    country = CountryField(blank=True, help_text="Country used by author for submission")
+    country = models.CharField(max_length=255, blank=True, help_text="Country used by author for submission")
     order = models.IntegerField(default=1)
 
     def formatted_email(self):

@@ -99,4 +99,10 @@ class ReviewResultName(NameModel):
     """Almost ready, Has issues, Has nits, Not Ready,
     On the right track, Ready, Ready with issues,
     Ready with nits, Serious Issues"""
+class ContinentName(NameModel):
+    "Africa, Antarctica, Asia, ..."
+class CountryName(NameModel):
+    "Afghanistan, Aaland Islands, Albania, ..."
+    continent = models.ForeignKey(ContinentName)
+    in_eu = models.BooleanField(verbose_name="In EU", default=False)
 

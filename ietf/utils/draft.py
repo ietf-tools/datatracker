@@ -196,6 +196,7 @@ class Draft():
         line = ""
         newpage = False
         sentence = False
+        shortline = False
         blankcount = 0
         linecount = 0
         # two functions with side effects
@@ -262,7 +263,7 @@ class Draft():
                 sentence = True
             if re.search("[^ \t]", line):
                 if newpage:
-                    if sentence:
+                    if sentence or shortline:
                         stripped += [""]
                 else:
                     if blankcount:
@@ -270,6 +271,7 @@ class Draft():
                 blankcount = 0
                 sentence = False
                 newpage = False
+                shortline = len(line.strip()) < 18
             if re.search("[.:]$", line):
                 sentence = True
             if re.search("^[ \t]*$", line):
@@ -847,7 +849,8 @@ class Draft():
                 nonblank_count = 0
                 blanklines = 0
                 email = None
-                for line in self.lines[start+1:]:
+                country = None
+                for line_offset, line in enumerate(self.lines[start+1:]):
                     _debug( "       " + line.strip())
                     # Break on the second blank line
                     if not line:
@@ -887,15 +890,18 @@ class Draft():
                         else:
                             pass
 
-                    try:
-                        column = line[beg:end].strip()
-                    except:
-                        column = line
-                    column = re.sub(" *\(at\) *", "@", column)
-                    column = re.sub(" *\(dot\) *", ".", column)
-                    column = re.sub(" +at +", "@", column)
-                    column = re.sub(" +dot +", ".", column)
-                    column = re.sub("&cisco.com", "@cisco.com", column)
+                    def columnify(l):
+                        try:
+                            column = l.replace('\t', 8 * ' ')[max(0, beg - 1):end].strip()
+                        except:
+                            column = l
+                        column = re.sub(" *(?:\(at\)| <at> | at ) *", "@", column)
+                        column = re.sub(" *(?:\(dot\)| <dot> | dot ) *", ".", column)
+                        column = re.sub("&cisco.com", "@cisco.com", column)
+                        column = column.replace("\xa0", " ")
+                        return column
+
+                    column = columnify(line)
 
     #                 if re.search("^\w+: \w+", column):
     #                     keyword = True
@@ -906,13 +912,42 @@ class Draft():
     #                         break
 
                     #_debug( "  Column text :: " + column)
+                    if nonblank_count >= 2 and blanklines == 0:
+                        # Usually, the contact info lines will look
+                        # like this: "Email: someone@example.com" or
+                        # "Tel: +1 (412)-2390 23123", but sometimes
+                        # the : is left out. That's okay for things we
+                        # can't misinterpret, but "tel" may match "Tel
+                        # Aviv 69710, Israel" so match
+                        # - misc contact info
+                        # - tel/fax [number]
+                        # - [phone number]
+                        # - [email]
+
+                        other_contact_info_regex = re.compile(r'^(((contact )?e|\(e|e-|m|electronic )?mail|email_id|mailto|e-main|(tele)?phone|voice|mobile|work|uri|url|tel:)\b|^((ph|tel\.?|telefax|fax) *[:.]? *\(?( ?\+ ?)?[0-9]+)|^(\++[0-9]+|\(\+*[0-9]+\)|\(dsn\)|[0-9]+)([ -.]*\b|\b[ -.]*)(([0-9]{2,}|\([0-9]{2,}\)|(\([0-9]\)|[0-9])[ -][0-9]{2,}|\([0-9]\)[0-9]+)([ -.]+([0-9]+|\([0-9]+\)))+|([0-9]{7,}|\([0-9]{7,}\)))|^(<?[-a-z0-9._+]+|{([-a-z0-9._+]+, ?)+[-a-z0-9._+]+})@[-a-z0-9._]+>?|^https?://|^www\.')
+                        next_line_index = start + 1 + line_offset + 1
+
+                        if (not country
+                            and not other_contact_info_regex.search(column.lower())
+                            and next_line_index < len(self.lines)):
+
+                            next_line_lower = columnify(self.lines[next_line_index]).lower().strip()
+
+                            if not next_line_lower or other_contact_info_regex.search(next_line_lower):
+                                # country should be here, as the last
+                                # part of the address, right before an
+                                # empty line or other contact info
+                                country = column.strip() or None
+                                _debug(" Country: %s" % country)
+
                     _debug("3: authors[%s]: %s" % (i, authors[i]))
 
                     emailmatch = re.search("[-A-Za-z0-9_.+]+@[-A-Za-z0-9_.]+", column)
                     if emailmatch and not "@" in author:
                         email = emailmatch.group(0).lower()
                         break
-                authors[i] = authors[i] + ( email, )
+
+                authors[i] = authors[i] + ( email, country)
             else:
                 if not author in ignore:
                     companies[i] = authors[i]
@@ -938,8 +973,8 @@ class Draft():
         _debug(" * Final company list: %s" % (companies,))
         _debug(" * Final companies_seen: %s" % (companies_seen,))
         self._author_info = authors        
-        self._authors_with_firm = [ "%s <%s> (%s)"%(full,email,company) for full,first,middle,last,suffix,email,company in authors ] # pyflakes:ignore
-        self._authors = [ "%s <%s>"%(full,email) if email else full for full,first,middle,last,suffix,email,company in authors ]
+        self._authors_with_firm = [ "%s <%s> (%s)"%(full,email,company) for full,first,middle,last,suffix,email,country,company in authors ] # pyflakes:ignore
+        self._authors = [ "%s <%s>"%(full,email) if email else full for full,first,middle,last,suffix,email,country,company in authors ]
         self._authors.sort()
         _debug(" * Final author list: " + ", ".join(self._authors))
         _debug("-"*72)
@@ -1159,10 +1194,10 @@ def getmeta(fn):
 def _output(docname, fields, outfile=sys.stdout):
     global company_domain
     if opt_getauthors:
-        # Output an (incomplete!) getauthors-compatible format.  Country
-        # information is always UNKNOWN, and information about security and
-        # iana sections presence is missing.
-        for full,first,middle,last,suffix,email,company in fields["_authorlist"]:
+        # Output an (incomplete!) getauthors-compatible format.
+        # Information about security and iana sections presence is
+        # missing.
+        for full,first,middle,last,suffix,email,country,company in fields["_authorlist"]:
             if company in company_domain:
                 company = company_domain[company]
             else:
@@ -1173,7 +1208,7 @@ def _output(docname, fields, outfile=sys.stdout):
             fields["name"] = full
             fields["email"] = email
             fields["company"] = company
-            fields["country"] = "UNKNOWN"
+            fields["country"] = country or "UNKNOWN"
             try:
                 year, month, day = fields["doccreationdate"].split("-")
             except ValueError:

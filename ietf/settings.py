@@ -293,7 +293,6 @@ INSTALLED_APPS = (
     'tastypie',
     'widget_tweaks',
     'django_markup',
-    'django_countries',
     # IETF apps
     'ietf.api',
     'ietf.community',
@@ -315,6 +314,7 @@ INSTALLED_APPS = (
     'ietf.redirects',
     'ietf.release',
     'ietf.review',
+    'ietf.stats',
     'ietf.submit',
     'ietf.sync',
     'ietf.utils',

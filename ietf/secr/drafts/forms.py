@@ -4,8 +4,6 @@ import os
 
 from django import forms
 
-from django_countries.fields import countries
-
 from ietf.doc.models import Document, DocAlias, State
 from ietf.name.models import IntendedStdLevelName, DocRelationshipName
 from ietf.group.models import Group
@@ -107,7 +105,7 @@ class AuthorForm(forms.Form):
     person = forms.CharField(max_length=50,widget=forms.TextInput(attrs={'class':'name-autocomplete'}),help_text="To see a list of people type the first name, or last name, or both.")
     email = forms.CharField(widget=forms.Select(),help_text="Select an email.")
     affiliation = forms.CharField(max_length=100, required=False, help_text="Affiliation")
-    country = forms.ChoiceField(choices=[('', "(Not specified)")] + list(countries), required=False, help_text="Country")
+    country = forms.CharField(max_length=255, required=False, help_text="Country")
 
     # check for id within parenthesis to ensure name was selected from the list
     def clean_person(self):

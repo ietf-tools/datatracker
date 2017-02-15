@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 
-from ietf.person.models import Email, Alias, Person, AffiliationAlias, AffiliationIgnoredEnding
+from ietf.person.models import Email, Alias, Person
 from ietf.person.name import name_parts
 
 class EmailAdmin(admin.ModelAdmin):
@@ -32,14 +32,3 @@ class PersonAdmin(admin.ModelAdmin):
     inlines = [ EmailInline, AliasInline, ]
 #    actions = None
 admin.site.register(Person, PersonAdmin)
-
-class AffiliationAliasAdmin(admin.ModelAdmin):
-    list_filter = ["name"]
-    list_display = ["alias", "name"]
-    search_fields = ["alias", "name"]
-admin.site.register(AffiliationAlias, AffiliationAliasAdmin)
-
-class AffiliationIgnoredEndingAdmin(admin.ModelAdmin):
-    list_display = ["ending"]
-    search_fields = ["ending"]
-admin.site.register(AffiliationIgnoredEnding, AffiliationIgnoredEndingAdmin)

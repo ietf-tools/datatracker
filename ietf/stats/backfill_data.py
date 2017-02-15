@@ -26,7 +26,6 @@ args = parser.parse_args()
 
 formal_language_dict = { l.pk: l for l in FormalLanguageName.objects.all() }
 
-
 docs_qs = Document.objects.filter(type="draft")
 
 if args.document:
@@ -80,11 +79,20 @@ for doc in docs_qs.prefetch_related("docalias_set", "formal_languages", "documen
             for author in old_authors:
                 for alias in author.person.alias_set.all():
                     old_authors_by_name[alias.name] = author
+                old_authors_by_name[author.person.plain_name()] = author
 
                 if author.email_id:
                     old_authors_by_email[author.email_id] = author
 
-            for full, _, _, _, _, email, company in d.get_author_list():
+            # the draft parser sometimes has a problem if affiliation
+            # isn't in the second line, then it will report an extra
+            # author - skip those
+            seen = set()
+            for full, _, _, _, _, email, country, company in d.get_author_list():
+                if email in seen:
+                    continue
+                seen.add(email)
+
                 old_author = None
                 if email:
                     old_author = old_authors_by_email.get(email)
@@ -92,15 +100,29 @@ for doc in docs_qs.prefetch_related("docalias_set", "formal_languages", "documen
                     old_author = old_authors_by_name.get(full)
 
                 if not old_author:
-                    print "UNKNOWN AUTHOR", doc.name, full, email, company
+                    print "UNKNOWN AUTHOR", doc.name, full, email, country, company
                     continue
 
                 if old_author.affiliation != company:
-                    print "new affiliation", old_author.affiliation, company
+                    print "new affiliation", canonical_name, "[", full, "]", old_author.affiliation, "->", company
                     old_author.affiliation = company
                     old_author.save(update_fields=["affiliation"])
                     updated = True
 
+                if country is None:
+                    country = ""
+
+                try:
+                    country = country.decode("utf-8")
+                except UnicodeDecodeError:
+                    country = country.decode("latin-1")
+
+                if old_author.country != country:
+                    print "new country", canonical_name ,"[", full, "]", old_author.country.encode("utf-8"), "->", country.encode("utf-8")
+                    old_author.country = country
+                    old_author.save(update_fields=["country"])
+                    updated = True
+                    
 
         if updates:
             Document.objects.filter(pk=doc.pk).update(**updates)

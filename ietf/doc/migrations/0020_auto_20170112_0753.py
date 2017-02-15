@@ -2,7 +2,6 @@
 from __future__ import unicode_literals
 
 from django.db import migrations, models
-import django_countries.fields
 
 
 class Migration(migrations.Migration):
@@ -49,7 +48,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='dochistoryauthor',
             name='country',
-            field=django_countries.fields.CountryField(blank=True, help_text=b'Country used by author for submission', max_length=2),
+            field=models.CharField(blank=True, help_text=b'Country used by author for submission', max_length=255),
         ),
         migrations.RenameField(
             model_name='dochistoryauthor',
@@ -74,7 +73,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='documentauthor',
             name='country',
-            field=django_countries.fields.CountryField(blank=True, help_text=b'Country used by author for submission', max_length=2),
+            field=models.CharField(blank=True, help_text=b'Country used by author for submission', max_length=255),
         ),
         migrations.RenameField(
             model_name='documentauthor',
