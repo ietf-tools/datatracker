@@ -1,3 +1,49 @@
+ietfdb (6.44.0) ietf; urgency=medium
+
+  **Improved account editing**
+
+  This is a small feature release with some bugfixes.  It introduces the
+  ability for datatracker users to change their username from the current
+  one to one of the (other) active email addresses of their account, and
+  the ability to indicate which of the active email addresses should be
+  considered the primary email address.  It adds a menu endtry for document
+  search, which was not easy to navigate to internally if you didn't know how.
+  Other minor fixes are mentioned in the commit log:
+
+  * Added the ability for logged-in users to change their login (username) 
+    to any of the active email addresses of the account.  Fixes ticket #2052.
+
+  * Tweaked the company name extraction code in class Draft.
+
+  * Added support for indicating the primary email address of one's 
+    datatracker account.  Fixes issue #2106.
+
+  * Merged in [12835] from rcross@amsl.com:
+    Fixes #2202.  Interim sessions appear unordered.  Switch templates to 
+    use ordered assignments() related object manager.  Also removed now unused 
+    template filters.   
+
+  * Added a menu entry for Document Search
+
+  * Tweaked the author extraction to recognize short lines as paragraph 
+    ends, not only lines ending in '.' or ':'
+
+  * Stabilized a number of nomcom tests by enforcing queryset ordering.
+
+  * Added more information about submission errors and a full idnits run to 
+    the manual post email sent to the secretariat.
+
+  * Added some updates to /release/about
+
+  * Added ordering by name to group personnel lists in edit and about 
+    views.  This ordering is by the person's profile name, without attempting 
+    to determine which name part is family name or given name.  Fixes #2184.
+
+  * Extended the name_parts() method to consider military rank prefixes.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  15 Feb 2017 08:59:35 -0800
+
+
 ietfdb (6.43.0) ietf; urgency=medium
 
   **Password Strength Meter**
