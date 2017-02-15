@@ -12,5 +12,5 @@ urlpatterns = [
     url(r'^(?P<date>[0-9\-]+)/management/$', views.management, name='telechat_management'),
     url(r'^(?P<date>[0-9\-]+)/minutes/$', views.minutes, name='telechat_minutes'),
     url(r'^(?P<date>[0-9\-]+)/roll-call/$', views.roll_call, name='telechat_roll_call'),
-    url(r'^new/$', views.new, name='telechat_new'),
+    url(r'^new/$', views.new),
 ]

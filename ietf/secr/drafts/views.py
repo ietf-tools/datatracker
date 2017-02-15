@@ -518,7 +518,7 @@ def announce(request, id):
                            content_type='Multipart/Mixed; Boundary="NextPart"')
             
     messages.success(request, 'Announcement scheduled successfully!')
-    return redirect('drafts_view', id=id)
+    return redirect('ietf.secr.drafts.views.view', id=id)
 
 @role_required('Secretariat')
 def approvals(request):
@@ -568,7 +568,7 @@ def authors(request, id):
                 del request.session['action']
                 return redirect('drafts_announce', id=id)
 
-            return redirect('drafts_view', id=id)
+            return redirect('ietf.secr.drafts.views.view', id=id)
 
         if form.is_valid():
             author = form.cleaned_data['email']
@@ -605,7 +605,7 @@ def confirm(request, id):
             # TODO do cancel functions from session (ie remove uploaded files?)
             # clear session data
             clear_non_auth(request.session)
-            return redirect('drafts_view', id=id)
+            return redirect('ietf.secr.drafts.views.view', id=id)
 
         action = request.session['action']
         if action == 'revision':
@@ -627,7 +627,7 @@ def confirm(request, id):
         clear_non_auth(request.session)
     
         messages.success(request, '%s action performed successfully!' % action)
-        return redirect('drafts_view', id=id)
+        return redirect('ietf.secr.drafts.views.view', id=id)
 
     details = get_action_details(draft, request.session) 
     email = request.session.get('email','')
@@ -681,7 +681,7 @@ def edit(request, id):
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
-            return redirect('drafts_view', id=id)
+            return redirect('ietf.secr.drafts.views.view', id=id)
 
         form = EditModelForm(request.POST, instance=draft)
         if form.is_valid():
@@ -696,7 +696,7 @@ def edit(request, id):
                 
                 messages.success(request, 'Draft modified successfully!')
             
-            return redirect('drafts_view', id=id)
+            return redirect('ietf.secr.drafts.views.view', id=id)
         else:
             #assert False, form.errors
             pass
@@ -724,7 +724,7 @@ def email(request, id):
         if button_text == 'Cancel':
             # clear session data
             clear_non_auth(request.session)
-            return redirect('drafts_view', id=id)
+            return redirect('ietf.secr.drafts.views.view', id=id)
 
         form = EmailForm(request.POST)
         if form.is_valid():
@@ -768,7 +768,7 @@ def extend(request, id):
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
-            return redirect('drafts_view', id=id)
+            return redirect('ietf.secr.drafts.views.view', id=id)
 
         form = ExtendForm(request.POST)
         if form.is_valid():
@@ -803,13 +803,13 @@ def makerfc(request, id):
     # raise error if draft intended standard is empty
     if not draft.intended_std_level:
         messages.error(request, 'ERROR: intended RFC status is not set')
-        return redirect('drafts_view', id=id)
+        return redirect('ietf.secr.drafts.views.view', id=id)
 
     ObsFormset = formset_factory(RfcObsoletesForm, extra=15, max_num=15)
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
-            return redirect('drafts_view', id=id)
+            return redirect('ietf.secr.drafts.views.view', id=id)
 
         form = RfcModelForm(request.POST, instance=draft)
         obs_formset = ObsFormset(request.POST, prefix='obs')
@@ -846,7 +846,7 @@ def makerfc(request, id):
             rfc.save_with_history([e])
 
             messages.success(request, 'RFC created successfully!')
-            return redirect('drafts_view', id=id)
+            return redirect('ietf.secr.drafts.views.view', id=id)
         else:
             # assert False, (form.errors, obs_formset.errors)
             pass      
@@ -888,7 +888,7 @@ def replace(request, id):
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
-            return redirect('drafts_view', id=id)
+            return redirect('ietf.secr.drafts.views.view', id=id)
 
         form = ReplaceForm(request.POST, draft=draft)
         if form.is_valid():
@@ -927,7 +927,7 @@ def revision(request, id):
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
-            return redirect('drafts_view', id=id)
+            return redirect('ietf.secr.drafts.views.view', id=id)
 
         upload_form = UploadForm(request.POST, request.FILES, draft=draft)
         form = RevisionModelForm(request.POST, instance=draft)
@@ -1015,7 +1015,7 @@ def search(request):
             
             # if there's just one result go straight to view
             if len(results) == 1:
-                return redirect('drafts_view', id=results[0].name)
+                return redirect('ietf.secr.drafts.views.view', id=results[0].name)
     else:
         active_state = State.objects.get(type='draft',slug='active')
         form = SearchForm(initial={'state':active_state.pk})
@@ -1039,7 +1039,7 @@ def update(request, id):
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
-            return redirect('drafts_view', id=id)
+            return redirect('ietf.secr.drafts.views.view', id=id)
 
         upload_form = UploadForm(request.POST, request.FILES, draft=draft)
         form = RevisionModelForm(request.POST, instance=draft)
@@ -1139,7 +1139,7 @@ def withdraw(request, id):
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
-            return redirect('drafts_view', id=id)
+            return redirect('ietf.secr.drafts.views.view', id=id)
 
         form = WithdrawForm(request.POST)
         if form.is_valid():

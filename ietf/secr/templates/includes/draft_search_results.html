@@ -10,7 +10,7 @@
   <tbody>
     {% for item in results %}
        <tr class="{% cycle 'row1' 'row2' %}">
-         <td><a href="{% url "drafts_view" id=item.name %}">{{ item.name }}</a></td>
+         <td><a href="{% url "ietf.secr.drafts.views.view" id=item.name %}">{{ item.name }}</a></td>
          <td>{{item.group.acronym}}</td>
          <td>{{item.get_state}}</td>
          <td>{{item.intended_std_level}}</td>

@@ -22,9 +22,9 @@
       Sessions Request Tool: IETF {{ meeting.number }}
       {% if user|has_role:"Secretariat" %}
           {% if is_locked %}
-          <span class="locked"><a href="{% url "sessions_tool_status" %}">Tool Status: Locked</a></span>
+          <span class="locked"><a href="{% url "ietf.secr.sreq.views.tool_status" %}">Tool Status: Locked</a></span>
           {% else %}
-          <span class="unlocked"><a href="{% url "sessions_tool_status" %}">Tool Status: Unlocked</a></span>
+          <span class="unlocked"><a href="{% url "ietf.secr.sreq.views.tool_status" %}">Tool Status: Unlocked</a></span>
           {% endif %}
       {% endif %}
     </h2>
@@ -49,7 +49,7 @@
          <p>The list below includes those working groups for which you or your co-chair has requested sessions at the upcoming IETF meeting. You can click on an acronym to initiate changes to a session, or cancel a session.</p>
            <ul>
            {% for group in scheduled_groups %}
-             <li><a href="{% url "sessions_view" acronym=group.acronym %}">{{ group.acronym }} - {{ group.status_message }}</a></li>
+             <li><a href="{% url "ietf.secr.sreq.views.view" acronym=group.acronym %}">{{ group.acronym }} - {{ group.status_message }}</a></li>
            {% empty %}
              <i>NONE</i>
            {% endfor %}

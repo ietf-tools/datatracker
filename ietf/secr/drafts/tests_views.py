@@ -5,6 +5,8 @@ from StringIO import StringIO
 from django.conf import settings
 from django.core.urlresolvers import reverse as urlreverse
 
+import debug                            # pyflakes:ignore
+
 from ietf.doc.models import State
 from ietf.person.models import Person
 from ietf.submit.models import Preapproval
@@ -50,7 +52,7 @@ class SecrDraftsTestCase(TestCase):
         
     def test_add(self):
         draft = make_test_data()
-        url = urlreverse('drafts_add')
+        url = urlreverse('ietf.secr.drafts.views.add')
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
@@ -79,7 +81,7 @@ class SecrDraftsTestCase(TestCase):
         make_test_data()
         Preapproval.objects.create(name='draft-dummy',
             by=Person.objects.get(name="(System)"))
-        url = urlreverse('drafts_approvals')
+        url = urlreverse('ietf.secr.drafts.views.approvals')
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
@@ -132,26 +134,26 @@ class SecrDraftsTestCase(TestCase):
         
     def test_search(self):
         draft = make_test_data()
-        url = urlreverse('drafts')
+        url = urlreverse('ietf.secr.drafts.views.search')
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         
         post = dict(filename='draft',state=1,submit='submit')
-        response = self.client.post(url,post)
+        response = self.client.post(url, post)
         self.assertEqual(response.status_code, 200)
         self.assertTrue(draft.name in response.content)
     
     def test_update(self):
         draft = make_test_data()
-        url = urlreverse('drafts_update', kwargs={'id':draft.name})
+        url = urlreverse('ietf.secr.drafts.views.update', kwargs={'id':draft.name})
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         
     def test_view(self):
         draft = make_test_data()
-        url = urlreverse('drafts_view', kwargs={'id':draft.name})
+        url = urlreverse('ietf.secr.drafts.views.view', kwargs={'id':draft.name})
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
