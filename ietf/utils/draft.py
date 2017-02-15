@@ -672,10 +672,15 @@ class Draft():
                 break
 
         found_pos = []
+        company_or_author = None
         for i in range(len(authors)):
             _debug("1: authors[%s]: %s" % (i, authors[i]))
             _debug("   company[%s]: %s" % (i, companies[i]))
             author = authors[i]
+            if i+1 < len(authors):
+                company_or_author = authors[i+1]
+            else:
+                company_or_author = None
             if author in [ None, '', ]:
                 continue
             suffix_match = re.search(" %(suffix)s$" % aux, author)
@@ -843,7 +848,8 @@ class Draft():
                     if authmatch:
                         _debug("     ? Other author or company ?  : %s" % authmatch)
                         _debug("     Line: "+line.strip())
-                        if nonblank_count == 1 or (nonblank_count == 2 and not blanklines):
+                        _debug("     C or A: %s"%company_or_author)
+                        if nonblank_count == 1 or (nonblank_count == 2 and not blanklines) or (company_or_author==line.strip() and not blanklines):
                             # First line after an author -- this is a company
                             companies_seen += [ c.lower() for c in authmatch ]
                             companies_seen += [ line.strip().lower() ] # XXX fix this for columnized author list
