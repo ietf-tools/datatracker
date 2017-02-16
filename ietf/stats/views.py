@@ -353,6 +353,17 @@ def document_stats(request, stats_type=None):
 
         total_persons = person_qs.distinct().count()
 
+        def prune_unknown_bin_with_known(bins):
+            # remove from the unknown bin all authors within the
+            # named/known bins
+            all_known = set(n for b, names in bins.iteritems() if b for n in names)
+            unknown = []
+            for name in bins[""]:
+                if name not in all_known:
+                    unknown.append(name)
+            bins[""] = unknown
+
+
         if stats_type == "author/documents":
             stats_title = "Number of {}s per author".format(doc_label)
 
@@ -388,6 +399,8 @@ def document_stats(request, stats_type=None):
 
             for name, affiliation in name_affiliation_set:
                 bins[aliases.get(affiliation, affiliation)].append(name)
+
+            prune_unknown_bin_with_known(bins)
 
             series_data = []
             for affiliation, names in sorted(bins.iteritems(), key=lambda t: t[0].lower()):
@@ -433,13 +446,7 @@ def document_stats(request, stats_type=None):
                 if c and c.in_eu:
                     bins[eu_name].append(name)
 
-            # remove from the unknown bin all authors with a known country
-            all_known = set(n for b, names in bins.iteritems() if b for n in names)
-            unknown = []
-            for name in bins[""]:
-                if name not in all_known:
-                    unknown.append(name)
-            bins[""] = unknown
+            prune_unknown_bin_with_known(bins)
 
             series_data = []
             for country, names in sorted(bins.iteritems(), key=lambda t: t[0].lower()):
@@ -478,13 +485,7 @@ def document_stats(request, stats_type=None):
                 continent_name = country_to_continent.get(country_name, "")
                 bins[continent_name].append(name)
 
-            # remove from the unknown bin all authors with a known continent
-            all_known = set(n for b, names in bins.iteritems() if b for n in names)
-            unknown = []
-            for name in bins[""]:
-                if name not in all_known:
-                    unknown.append(name)
-            bins[""] = unknown
+            prune_unknown_bin_with_known(bins)
 
             series_data = []
             for continent, names in sorted(bins.iteritems(), key=lambda t: t[0].lower()):
