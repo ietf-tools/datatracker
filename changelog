@@ -25,6 +25,11 @@ ietfdb (6.44.0) ietf; urgency=medium
 
   * Added a menu entry for Document Search
 
+  * Fixed an issue with the test-crawler which could cause false positives 
+    for urls containing apostrophe.
+
+  * Fixed a html entity issue.
+
   * Tweaked the author extraction to recognize short lines as paragraph 
     ends, not only lines ending in '.' or ':'
 
@@ -41,7 +46,7 @@ ietfdb (6.44.0) ietf; urgency=medium
 
   * Extended the name_parts() method to consider military rank prefixes.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  15 Feb 2017 08:59:35 -0800
+ -- Henrik Levkowetz <henrik@levkowetz.com>  16 Feb 2017 10:14:00 +0000
 
 
 ietfdb (6.43.0) ietf; urgency=medium
