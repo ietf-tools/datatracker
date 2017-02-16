@@ -48,3 +48,15 @@ def sanitize_html(html):
                                   quote_attr_values=True)
     output_generator = s.serialize(stream)
     return u''.join(output_generator)
+
+
+def unescape(text):
+    """
+    Returns the given text with ampersands, quotes and angle brackets decoded
+    for use in URLs.
+
+    This function undoes what django.utils.html.escape() does
+    """
+    return text.replace('&#39;', "'").replace('&quot;', '"').replace('&gt;', '>').replace('&lt;', '<' ).replace('&amp;', '&')
+
+    

@@ -59,6 +59,7 @@ import debug    # pyflakes:ignore
 # connection.queries = DontSaveQueries()
 
 from ietf.name.models import DocTypeName
+from ietf.utils.html import unescape
 
 # --- Constants ---
 
@@ -83,7 +84,6 @@ def extract_html_urls(content):
     for m in re.finditer(r'(<(?:(?:a|link) [^>]*href|(?:img|script) [^>]*src)=[\'"]([^"]+)[\'"][^>]*>)', content):
         if re.search(r'rel=["\']?nofollow["\']', m.group(1)):
             continue
-
         url = strip_url(m.group(2))
         if len(url) > MAX_URL_LENGTH:
             continue # avoid infinite GET parameter appendages
@@ -94,7 +94,7 @@ def extract_html_urls(content):
         if url.startswith("//"):
             continue
 
-        yield url
+        yield unescape(url)
 
 def extract_tastypie_urls(content):
     VISIT_OBJECTS = False
@@ -352,6 +352,7 @@ if __name__ == "__main__":
                     try:
                         for u in extract_html_urls(r.content):
                             if u not in visited and u not in urls:
+                                debug.show('u')
                                 urls[u] = url
                                 referrers[u] = url
 
