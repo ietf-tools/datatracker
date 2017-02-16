@@ -66,9 +66,8 @@
 <p>In case no country information is found for an author in the time
   period, the author is counted as (unknown).</p>
 
-<p>An author is counted in EU if the country is a member of the EU
-  now, even if that was not the case at publication.
-  EU members:
+<p>EU (European Union) is not a country, but has been added for reference, as the sum of
+  all current EU member countries:
   {% for c in eu_countries %}{{ c.name }}{% if not forloop.last %}, {% endif %}{% endfor %}.</p>
 
 <h3>Country Aliases</h3>
