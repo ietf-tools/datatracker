@@ -433,6 +433,14 @@ def document_stats(request, stats_type=None):
                 if c and c.in_eu:
                     bins[eu_name].append(name)
 
+            # remove from the unknown bin all authors with a known country
+            all_known = set(n for b, names in bins.iteritems() if b for n in names)
+            unknown = []
+            for name in bins[""]:
+                if name not in all_known:
+                    unknown.append(name)
+            bins[""] = unknown
+
             series_data = []
             for country, names in sorted(bins.iteritems(), key=lambda t: t[0].lower()):
                 percentage = len(names) * 100.0 / total_persons
@@ -469,6 +477,14 @@ def document_stats(request, stats_type=None):
                 country_name = aliases.get(country, country)
                 continent_name = country_to_continent.get(country_name, "")
                 bins[continent_name].append(name)
+
+            # remove from the unknown bin all authors with a known continent
+            all_known = set(n for b, names in bins.iteritems() if b for n in names)
+            unknown = []
+            for name in bins[""]:
+                if name not in all_known:
+                    unknown.append(name)
+            bins[""] = unknown
 
             series_data = []
             for continent, names in sorted(bins.iteritems(), key=lambda t: t[0].lower()):
