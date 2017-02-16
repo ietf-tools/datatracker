@@ -84,20 +84,12 @@ def get_aliased_affiliations(affiliations):
     return res
 
 
-
-
 def get_aliased_countries(countries):
     known_aliases = dict(CountryAlias.objects.values_list("alias", "country__name"))
 
-    iso_code_aliases = {}
-
     # add aliases for known countries
     for slug, name in CountryName.objects.values_list("slug", "name"):
-        if len(name) > 2:
-            known_aliases[name.lower()] = name
-
-        if len(slug) == 2 and slug[0].isupper() and slug[1].isupper():
-            iso_code_aliases[slug] = name # add ISO code
+        known_aliases[name.lower()] = name
 
     def lookup_alias(possible_alias):
         name = known_aliases.get(possible_alias)
@@ -185,14 +177,16 @@ def get_aliased_countries(countries):
         if found:
             continue
 
-        # if everything else has failed, try ISO code
-        country = iso_code_aliases.get(country, country)
-        if country in known_countries:
-            res[original_country] = country
-            continue
-
         # unknown country
         res[original_country] = ""
 
     return res
 
+
+def clean_country_name(country_name):
+    if country_name:
+        country_name = get_aliased_countries([country_name]).get(country_name, country_name)
+        if country_name and CountryName.objects.filter(name=country_name).exists():
+            return country_name
+
+    return ""

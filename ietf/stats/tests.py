@@ -3,7 +3,7 @@ from pyquery import PyQuery
 from django.core.urlresolvers import reverse as urlreverse
 
 from ietf.utils.test_data import make_test_data, make_review_data
-from ietf.utils.test_utils import login_testing_unauthorized, TestCase
+from ietf.utils.test_utils import login_testing_unauthorized, TestCase, unicontent
 import ietf.stats.views
 
 class StatisticsTests(TestCase):
@@ -38,6 +38,16 @@ class StatisticsTests(TestCase):
                     q = PyQuery(r.content)
                     self.assertTrue(q('#chart'))
                     self.assertTrue(q('table.stats-data'))
+
+    def test_known_country_list(self):
+        make_test_data()
+
+        # check redirect
+        url = urlreverse(ietf.stats.views.known_country_list)
+
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue("United States" in unicontent(r))
 
     def test_review_stats(self):
         doc = make_test_data()

@@ -526,6 +526,18 @@ def document_stats(request, stats_type=None):
     })
 
 
+def known_countries_list(request, stats_type=None, acronym=None):
+    countries = CountryName.objects.prefetch_related("countryalias_set")
+    for c in countries:
+        # the sorting is a bit of a hack - it puts the ISO code first
+        # since it was added in a migration
+        c.aliases = sorted(c.countryalias_set.all(), key=lambda a: a.pk)
+
+    return render(request, "stats/known_countries_list.html", {
+        "countries": countries
+    })
+
+
 @login_required
 def review_stats(request, stats_type=None, acronym=None):
     # This view is a bit complex because we want to show a bunch of

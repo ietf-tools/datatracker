@@ -31,6 +31,7 @@ from ietf.submit.utils import ( approvable_submissions_for_user, preapprovals_fo
     recently_approved_by_user, validate_submission, create_submission_event,
     docevent_from_submission, post_submission, cancel_submission, rename_submission_files,
     get_person_from_name_email )
+from ietf.stats.utils import clean_country_name
 from ietf.utils.accesstoken import generate_random_key, generate_access_token
 from ietf.utils.draft import Draft
 from ietf.utils.log import log
@@ -400,6 +401,9 @@ def submission_status(request, submission_id, access_token=None):
         else:
             # something went wrong, turn this into a GET and let the user deal with it
             return HttpResponseRedirect("")
+
+    for author in submission.authors:
+        author["cleaned_country"] = clean_country_name(author.get("country"))
 
     return render(request, 'submit/submission_status.html', {
         'selected': 'status',

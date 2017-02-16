@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% load origin %}
+
+{% load ietf_filters staticfiles bootstrap3 %}
+
+{% block content %}
+  {% origin %}
+
+  <h1>{% block title %}Countries known to the Datatracker{% endblock %}</h1>
+
+  <table class="table table-condensed table-striped">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Aliases (lowercase aliases are matched case-insensitive)</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in countries %}
+        <tr>
+          <td>{{ c.name }}</td>
+          <td>
+            {% for a in c.aliases %}
+              {{ a.alias }}{% if not forloop.last %},{% endif %}
+            {% endfor %}
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+{% endblock %}

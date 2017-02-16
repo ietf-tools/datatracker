@@ -195,9 +195,7 @@
     <tr>
       <th>Authors</th>
       <td>
-        {% with submission.authors as authors %}
-          {{ authors|length }} author{{ authors|pluralize }}
-        {% endwith %}
+        {{ submission.authors|length }} author{{ submission.authors|pluralize }}
         {% if errors.authors %}<p class="text-danger"><b>{{ errors.authors|safe }}</b></p>{% endif %}
       </td>
     </tr>
@@ -207,8 +205,27 @@
         <th>Author {{ forloop.counter }}</th>
         <td>
           {{ author.name }} {% if author.email %}&lt;{{ author.email }}&gt;{% endif %}
-          - {% if author.affiliation %}{{ author.affiliation }}{% else %}<i>unknown affiliation</i>{% endif %}
-          - {% if author.country %}{{ author.country }}{% else %}<i>unknown country</i>{% endif %}
+          -
+          {% if author.affiliation %}
+            {{ author.affiliation }}
+          {% else %}
+            <i>unknown affiliation</i>
+          {% endif %}
+          -
+          {% if author.country %}
+            {{ author.country }}
+            {% if author.cleaned_country and author.country != author.cleaned_country %}
+              (understood to be {{ author.cleaned_country }})
+            {% endif %}
+          {% else %}
+            <i>unknown country</i>
+          {% endif %}
+
+          {% if author.country and not author.cleaned_country %}
+            <br>
+            <b class="text-warning">Unrecognized country: "{{ author.country }}"</b>: Please use a <a href="{% url "ietf.stats.views.known_countries_list" %}">recognized country name</a>.
+          {% endif %}
+          
         </td>
       </tr>
     {% endfor %}
