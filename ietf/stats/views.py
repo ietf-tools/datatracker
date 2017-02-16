@@ -24,7 +24,7 @@ from ietf.submit.models import Submission
 from ietf.group.models import Role, Group
 from ietf.person.models import Person
 from ietf.name.models import ReviewRequestStateName, ReviewResultName, CountryName
-from ietf.doc.models import DocAlias, Document
+from ietf.doc.models import DocAlias, Document, State
 from ietf.stats.utils import get_aliased_affiliations, get_aliased_countries
 from ietf.ietfauth.utils import has_role
 
@@ -147,10 +147,11 @@ def document_stats(request, stats_type=None):
         # filter documents
         docalias_qs = DocAlias.objects.filter(document__type="draft")
 
+        rfc_state = State.objects.get(type="draft", slug="rfc")
         if document_type == "rfc":
-            docalias_qs = docalias_qs.filter(document__states__type="draft", document__states__slug="rfc")
+            docalias_qs = docalias_qs.filter(document__states=rfc_state)
         elif document_type == "draft":
-            docalias_qs = docalias_qs.exclude(document__states__type="draft", document__states__slug="rfc")
+            docalias_qs = docalias_qs.exclude(document__states=rfc_state)
 
         if from_time:
             # this is actually faster than joining in the database,
@@ -326,10 +327,11 @@ def document_stats(request, stats_type=None):
         person_filters = Q(documentauthor__document__type="draft")
 
         # filter persons
+        rfc_state = State.objects.get(type="draft", slug="rfc")
         if document_type == "rfc":
-            person_filters &= Q(documentauthor__document__states__type="draft", documentauthor__document__states__slug="rfc")
+            person_filters &= Q(documentauthor__document__states=rfc_state)
         elif document_type == "draft":
-            person_filters &= ~Q(documentauthor__document__states__type="draft", documentauthor__document__states__slug="rfc")
+            person_filters &= ~Q(documentauthor__document__states=rfc_state)
 
         if from_time:
             # this is actually faster than joining in the database,
@@ -351,18 +353,14 @@ def document_stats(request, stats_type=None):
         else:
             doc_label = "document"
 
-        total_persons = person_qs.distinct().count()
-
         def prune_unknown_bin_with_known(bins):
             # remove from the unknown bin all authors within the
             # named/known bins
             all_known = set(n for b, names in bins.iteritems() if b for n in names)
-            unknown = []
-            for name in bins[""]:
-                if name not in all_known:
-                    unknown.append(name)
-            bins[""] = unknown
+            bins[""] = [name for name in bins[""] if name not in all_known]
 
+        def count_bins(bins):
+            return len(set(n for b, names in bins.iteritems() if b for n in names))
 
         if stats_type == "author/documents":
             stats_title = "Number of {}s per author".format(doc_label)
@@ -371,6 +369,8 @@ def document_stats(request, stats_type=None):
 
             for name, document_count in person_qs.values_list("name").annotate(Count("documentauthor")):
                 bins[document_count].append(name)
+
+            total_persons = count_bins(bins)
 
             series_data = []
             for document_count, names in sorted(bins.iteritems(), key=lambda t: t[0]):
@@ -401,6 +401,7 @@ def document_stats(request, stats_type=None):
                 bins[aliases.get(affiliation, affiliation)].append(name)
 
             prune_unknown_bin_with_known(bins)
+            total_persons = count_bins(bins)
 
             series_data = []
             for affiliation, names in sorted(bins.iteritems(), key=lambda t: t[0].lower()):
@@ -447,6 +448,7 @@ def document_stats(request, stats_type=None):
                     bins[eu_name].append(name)
 
             prune_unknown_bin_with_known(bins)
+            total_persons = count_bins(bins)
 
             series_data = []
             for country, names in sorted(bins.iteritems(), key=lambda t: t[0].lower()):
@@ -486,6 +488,7 @@ def document_stats(request, stats_type=None):
                 bins[continent_name].append(name)
 
             prune_unknown_bin_with_known(bins)
+            total_persons = count_bins(bins)
 
             series_data = []
             for continent, names in sorted(bins.iteritems(), key=lambda t: t[0].lower()):
