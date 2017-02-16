@@ -559,9 +559,7 @@ def complete_review(request, name, request_id):
             if need_to_email_review:
                 # email the review
                 subject = "{} of {}-{}".format("Partial review" if review_req.state_id == "part-completed" else "Review", review_req.doc.name, review_req.reviewed_rev)
-                msg = send_mail(request, to, 
-                                (request.user.person.plain_name(),request.user.person.email_address()),
-                                subject,
+                msg = send_mail(request, to, request.user.person.formatted_email(), subject,
                                 "review/completed_review.txt", {
                                     "review_req": review_req,
                                     "content": encoded_content.decode("utf-8"),
