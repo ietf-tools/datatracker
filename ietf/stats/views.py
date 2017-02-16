@@ -199,7 +199,7 @@ def document_stats(request, stats_type=None):
 
             series_data = []
             for author_count, names in sorted(bins.iteritems(), key=lambda t: t[0]):
-                percentage = len(names) * 100.0 / total_docs
+                percentage = len(names) * 100.0 / (total_docs or 1)
                 series_data.append((author_count, percentage))
                 table_data.append((author_count, percentage, names))
 
@@ -218,7 +218,7 @@ def document_stats(request, stats_type=None):
 
             series_data = []
             for pages, names in sorted(bins.iteritems(), key=lambda t: t[0]):
-                percentage = len(names) * 100.0 / total_docs
+                percentage = len(names) * 100.0 / (total_docs or 1)
                 if pages is not None:
                     series_data.append((pages, len(names)))
                     table_data.append((pages, percentage, names))
@@ -240,7 +240,7 @@ def document_stats(request, stats_type=None):
 
             series_data = []
             for (value, words), names in sorted(bins.iteritems(), key=lambda t: t[0][0]):
-                percentage = len(names) * 100.0 / total_docs
+                percentage = len(names) * 100.0 / (total_docs or 1)
                 if words is not None:
                     series_data.append((value, len(names)))
 
@@ -295,7 +295,7 @@ def document_stats(request, stats_type=None):
 
             series_data = []
             for fmt, names in sorted(bins.iteritems(), key=lambda t: t[0]):
-                percentage = len(names) * 100.0 / total_docs
+                percentage = len(names) * 100.0 / (total_docs or 1)
                 series_data.append((fmt, len(names)))
 
                 table_data.append((fmt, percentage, names))
@@ -315,7 +315,7 @@ def document_stats(request, stats_type=None):
 
             series_data = []
             for formal_language, names in sorted(bins.iteritems(), key=lambda t: t[0]):
-                percentage = len(names) * 100.0 / total_docs
+                percentage = len(names) * 100.0 / (total_docs or 1)
                 if formal_language is not None:
                     series_data.append((formal_language, len(names)))
                     table_data.append((formal_language, percentage, names))
@@ -376,7 +376,7 @@ def document_stats(request, stats_type=None):
 
             series_data = []
             for document_count, names in sorted(bins.iteritems(), key=lambda t: t[0]):
-                percentage = len(names) * 100.0 / total_persons
+                percentage = len(names) * 100.0 / (total_persons or 1)
                 series_data.append((document_count, percentage))
                 table_data.append((document_count, percentage, names))
 
@@ -407,7 +407,7 @@ def document_stats(request, stats_type=None):
 
             series_data = []
             for affiliation, names in sorted(bins.iteritems(), key=lambda t: t[0].lower()):
-                percentage = len(names) * 100.0 / total_persons
+                percentage = len(names) * 100.0 / (total_persons or 1)
                 if affiliation:
                     series_data.append((affiliation, len(names)))
                 table_data.append((affiliation, percentage, names))
@@ -454,7 +454,7 @@ def document_stats(request, stats_type=None):
 
             series_data = []
             for country, names in sorted(bins.iteritems(), key=lambda t: t[0].lower()):
-                percentage = len(names) * 100.0 / total_persons
+                percentage = len(names) * 100.0 / (total_persons or 1)
                 if country:
                     series_data.append((country, len(names)))
                 table_data.append((country, percentage, names))
@@ -494,7 +494,7 @@ def document_stats(request, stats_type=None):
 
             series_data = []
             for continent, names in sorted(bins.iteritems(), key=lambda t: t[0].lower()):
-                percentage = len(names) * 100.0 / total_persons
+                percentage = len(names) * 100.0 / (total_persons or 1)
                 if continent:
                     series_data.append((continent, len(names)))
                 table_data.append((continent, percentage, names))

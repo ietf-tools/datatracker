@@ -43,7 +43,7 @@ class StatisticsTests(TestCase):
         make_test_data()
 
         # check redirect
-        url = urlreverse(ietf.stats.views.known_country_list)
+        url = urlreverse(ietf.stats.views.known_countries_list)
 
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
