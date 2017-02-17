@@ -352,7 +352,6 @@ if __name__ == "__main__":
                     try:
                         for u in extract_html_urls(r.content):
                             if u not in visited and u not in urls:
-                                debug.show('u')
                                 urls[u] = url
                                 referrers[u] = url
 
