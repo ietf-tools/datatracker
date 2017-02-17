@@ -190,3 +190,18 @@ def clean_country_name(country_name):
             return country_name
 
     return ""
+
+
+def compute_hirsch_index(citation_counts):
+    """Computes the h-index given a sequence containing the number of
+    citations for each document."""
+
+    i = 0
+
+    for count in sorted(citation_counts, reverse=True):
+        if i + 1 > count:
+            break
+
+        i += 1
+
+    return i

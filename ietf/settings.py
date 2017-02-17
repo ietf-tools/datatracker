@@ -518,6 +518,8 @@ IPR_EMAIL_FROM = 'ietf-ipr@ietf.org'
 
 IANA_EVAL_EMAIL = "drafts-eval@icann.org"
 
+SECRETARIAT_TICKET_EMAIL = "ietf-action@ietf.org"
+
 # Put real password in settings_local.py
 IANA_SYNC_PASSWORD = "secret"
 IANA_SYNC_CHANGES_URL = "https://datatracker.iana.org:4443/data-tracker/changes"

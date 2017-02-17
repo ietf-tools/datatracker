@@ -30,7 +30,7 @@ class CountryAlias(models.Model):
     """Records that alias should be treated as country for statistical
     purposes."""
 
-    alias = models.CharField(max_length=255, help_text="Note that lower-case aliases are matched case-insensitive while aliases with at least one uppercase letter is matched case-sensitive.")
+    alias = models.CharField(max_length=255, help_text="Note that lower-case aliases are matched case-insensitive while aliases with at least one uppercase letter is matched case-sensitive. So 'United States' is best entered as 'united states' so it both matches 'United States' and 'United states' and 'UNITED STATES', whereas 'US' is best entered as 'US' so it doesn't accidentally match an ordinary word like 'us'.")
     country = models.ForeignKey(CountryName, max_length=255)
 
     def __unicode__(self):

@@ -536,7 +536,8 @@ def known_countries_list(request, stats_type=None, acronym=None):
         c.aliases = sorted(c.countryalias_set.all(), key=lambda a: a.pk)
 
     return render(request, "stats/known_countries_list.html", {
-        "countries": countries
+        "countries": countries,
+        "ticket_email_address": settings.SECRETARIAT_TICKET_EMAIL,
     })
 
 

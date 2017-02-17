@@ -223,7 +223,7 @@
 
           {% if author.country and not author.cleaned_country %}
             <br>
-            <b class="text-warning">Unrecognized country: "{{ author.country }}"</b>: Please use a <a href="{% url "ietf.stats.views.known_countries_list" %}">recognized country name</a>.
+            <b class="text-warning">Unrecognized country: "{{ author.country }}"</b>: See <a href="{% url "ietf.stats.views.known_countries_list" %}">recognized country names</a>.
           {% endif %}
           
         </td>
