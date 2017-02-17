@@ -573,6 +573,10 @@ table.simple-table td:last-child {
   text-indent: -1em;
 }
 
+.document-stats #chart {
+  height: 25em;
+}
+
 .stats-time-graph {
   height: 15em;
 }
