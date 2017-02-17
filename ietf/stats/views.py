@@ -23,9 +23,10 @@ from ietf.review.utils import (extract_review_request_data,
 from ietf.submit.models import Submission
 from ietf.group.models import Role, Group
 from ietf.person.models import Person
-from ietf.name.models import ReviewRequestStateName, ReviewResultName, CountryName
+from ietf.name.models import ReviewRequestStateName, ReviewResultName, CountryName, DocRelationshipName
+from ietf.person.name import plain_name
 from ietf.doc.models import DocAlias, Document, State
-from ietf.stats.utils import get_aliased_affiliations, get_aliased_countries
+from ietf.stats.utils import get_aliased_affiliations, get_aliased_countries, compute_hirsch_index
 from ietf.ietfauth.utils import has_role
 
 def stats_index(request):
@@ -103,7 +104,8 @@ def document_stats(request, stats_type=None):
         ("author/affiliation", "Affiliation"),
         ("author/country", "Country"),
         ("author/continent", "Continent"),
-        ("author/citation", "Citations"),
+        ("author/citations", "Citations"),
+        ("author/hindex", "Impact"),
     ], lambda slug: build_document_stats_url(stats_type_override=slug))
     
 
@@ -346,7 +348,7 @@ def document_stats(request, stats_type=None):
 
             person_filters &= Q(documentauthor__document__in=docs_within_time_constraint)
 
-        person_qs = Person.objects.filter(person_filters)
+        person_qs = Person.objects.filter(person_filters, documentauthor__document="draft-arkko-dual-stack-extra-lite")
 
         if document_type == "rfc":
             doc_label = "RFC"
@@ -369,6 +371,8 @@ def document_stats(request, stats_type=None):
 
             bins = defaultdict(list)
 
+            person_qs = Person.objects.filter(person_filters)
+
             for name, document_count in person_qs.values_list("name").annotate(Count("documentauthor")):
                 bins[document_count].append(name)
 
@@ -378,7 +382,7 @@ def document_stats(request, stats_type=None):
             for document_count, names in sorted(bins.iteritems(), key=lambda t: t[0]):
                 percentage = len(names) * 100.0 / (total_persons or 1)
                 series_data.append((document_count, percentage))
-                table_data.append((document_count, percentage, names))
+                table_data.append((document_count, percentage, [plain_name(n) for n in names]))
 
             chart_data.append({
                 "data": series_data,
@@ -389,6 +393,8 @@ def document_stats(request, stats_type=None):
             stats_title = "Number of {} authors per affiliation".format(doc_label)
 
             bins = defaultdict(list)
+
+            person_qs = Person.objects.filter(person_filters)
 
             # Since people don't write the affiliation names in the
             # same way, and we don't want to go back and edit them
@@ -410,7 +416,7 @@ def document_stats(request, stats_type=None):
                 percentage = len(names) * 100.0 / (total_persons or 1)
                 if affiliation:
                     series_data.append((affiliation, len(names)))
-                table_data.append((affiliation, percentage, names))
+                table_data.append((affiliation, percentage, [plain_name(n) for n in names]))
 
             series_data.sort(key=lambda t: t[1], reverse=True)
             series_data = series_data[:30]
@@ -427,6 +433,8 @@ def document_stats(request, stats_type=None):
             stats_title = "Number of {} authors per country".format(doc_label)
 
             bins = defaultdict(list)
+
+            person_qs = Person.objects.filter(person_filters)
 
             # Since people don't write the country names in the
             # same way, and we don't want to go back and edit them
@@ -457,7 +465,7 @@ def document_stats(request, stats_type=None):
                 percentage = len(names) * 100.0 / (total_persons or 1)
                 if country:
                     series_data.append((country, len(names)))
-                table_data.append((country, percentage, names))
+                table_data.append((country, percentage, [plain_name(n) for n in names]))
 
             series_data.sort(key=lambda t: t[1], reverse=True)
             series_data = series_data[:30]
@@ -476,6 +484,8 @@ def document_stats(request, stats_type=None):
             stats_title = "Number of {} authors per continent".format(doc_label)
 
             bins = defaultdict(list)
+
+            person_qs = Person.objects.filter(person_filters)
 
             name_country_set = set((name, country)
                                    for name, country in person_qs.values_list("name", "documentauthor__country"))
@@ -497,7 +507,7 @@ def document_stats(request, stats_type=None):
                 percentage = len(names) * 100.0 / (total_persons or 1)
                 if continent:
                     series_data.append((continent, len(names)))
-                table_data.append((continent, percentage, names))
+                table_data.append((continent, percentage, [plain_name(n) for n in names]))
 
             series_data.sort(key=lambda t: t[1], reverse=True)
 
@@ -506,6 +516,59 @@ def document_stats(request, stats_type=None):
                 "animation": False,
             })
 
+        elif stats_type == "author/citations":
+            stats_title = "Number of citations of {}s written by author".format(doc_label)
+
+            bins = defaultdict(list)
+
+            cite_relationships = list(DocRelationshipName.objects.filter(slug__in=['refnorm', 'refinfo', 'refunk', 'refold']))
+            person_filters &= Q(documentauthor__document__docalias__relateddocument__relationship__in=cite_relationships)
+
+            person_qs = Person.objects.filter(person_filters)
+
+            for name, citations in person_qs.values_list("name").annotate(Count("documentauthor__document__docalias__relateddocument")):
+                bins[citations].append(name)
+
+            total_persons = count_bins(bins)
+
+            series_data = []
+            for citations, names in sorted(bins.iteritems(), key=lambda t: t[0], reverse=True):
+                percentage = len(names) * 100.0 / (total_persons or 1)
+                series_data.append((citations, percentage))
+                table_data.append((citations, percentage, [plain_name(n) for n in names]))
+
+            chart_data.append({
+                "data": sorted(series_data, key=lambda t: t[0]),
+                "animation": False,
+            })
+
+        elif stats_type == "author/hindex":
+            stats_title = "h-index for {}s written by author".format(doc_label)
+
+            bins = defaultdict(list)
+
+            cite_relationships = list(DocRelationshipName.objects.filter(slug__in=['refnorm', 'refinfo', 'refunk', 'refold']))
+            person_filters &= Q(documentauthor__document__docalias__relateddocument__relationship__in=cite_relationships)
+
+            person_qs = Person.objects.filter(person_filters)
+
+            values = person_qs.values_list("name", "documentauthor__document").annotate(Count("documentauthor__document__docalias__relateddocument"))
+            for name, ts in itertools.groupby(values.order_by("name"), key=lambda t: t[0]):
+                h_index = compute_hirsch_index([citations for _, document, citations in ts])
+                bins[h_index].append(name)
+
+            total_persons = count_bins(bins)
+
+            series_data = []
+            for citations, names in sorted(bins.iteritems(), key=lambda t: t[0], reverse=True):
+                percentage = len(names) * 100.0 / (total_persons or 1)
+                series_data.append((citations, percentage))
+                table_data.append((citations, percentage, [plain_name(n) for n in names]))
+
+            chart_data.append({
+                "data": sorted(series_data, key=lambda t: t[0]),
+                "animation": False,
+            })
 
     return render(request, "stats/document_stats.html", {
         "chart_data": mark_safe(json.dumps(chart_data)),

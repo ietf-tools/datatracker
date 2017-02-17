@@ -1,1 +1,7 @@
-<a class="popover-details" href="" data-elements="{% for n in names|slice:":20" %}{{ n }}{% if not forloop.last %}|{% endif %}{% endfor %}" data-sliced="{% if names|length > 20 %}1{% endif %}">{{ names|length }}</a>
+{% if content_limit and names|length <= content_limit %}
+  {% for n in names %}
+    {{ n }}<br>
+  {% endfor %}
+{% else %}
+  <a class="popover-details" href="" data-elements="{% for n in names|slice:":20" %}{{ n }}{% if not forloop.last %}|{% endif %}{% endfor %}" data-sliced="{% if names|length > 20 %}1{% endif %}">{{ names|length }}</a>
+{% endif %}

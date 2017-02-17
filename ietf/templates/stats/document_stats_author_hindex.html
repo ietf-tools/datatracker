@@ -13,9 +13,8 @@
      xAxis: {
          tickInterval: 1,
          title: {
-             text: 'Author of number of {{ doc_label }}s'
-         },
-         max: 20
+             text: 'h-index of {{ doc_label }}s by author'
+         }
      },
      yAxis: {
          title: {
@@ -29,7 +28,7 @@
      },
      tooltip: {
          formatter: function () {
-             var s = '<b>' + this.x + ' ' + (this.x == 1 ? "{{ doc_label }}" : '{{ doc_label }}s') + '</b>';
+             var s = '<b>' + ' h-index ' + this.x + '</b>';
 
              $.each(this.points, function () {
                  s += '<br/>' + chartConf.yAxis.title.text + ': ' + this.y.toFixed(1) + '%';
@@ -48,18 +47,28 @@
 <table class="table table-condensed stats-data">
   <thead>
     <tr>
-      <th>Documents</th>
+      <th>h-index</th>
       <th>Percentage of authors</th>
       <th>Authors</th>
     </tr>
   </thead>
   <tbody>
-    {% for document_count, percentage, names in table_data %}
+    {% for h_index, percentage, names in table_data %}
       <tr>
-        <td>{{ document_count }}</td>
+        <td>{{ h_index }}</td>
         <td>{{ percentage|floatformat:2 }}%</td>
-        <td>{% include "stats/includes/number_with_details_cell.html" with content_limit=10 %}</td>
+        <td>{% include "stats/includes/number_with_details_cell.html" with content_limit=25 %}</td>
       </tr>
     {% endfor %}
   </tbody>
 </table>
+
+<p>Hirsch index or h-index is a
+  <a href="https://www.wikipedia.org/wiki/H-index">measure of the
+    productivity and impact of the publications of an author</a>. An
+  author with an h-index of 5 has had 5 publications each cited at
+  least 5 times - to increase the index to 6, the 5 publications plus
+  1 more would have to have been cited at least 6 times, each. Thus a
+  high h-index requires many highly-cited publications.</p>
+
+<p>Note that the h-index calculations do not exclude self-references.</p>

@@ -14,7 +14,7 @@ from django.utils.text import slugify
 
 import debug                            # pyflakes:ignore
 
-from ietf.person.name import name_parts, initials
+from ietf.person.name import name_parts, initials, plain_name
 from ietf.utils.mail import send_mail_preformatted
 from ietf.utils.storage import NoLocationMigrationFileSystemStorage
 
@@ -47,8 +47,7 @@ class PersonInfo(models.Model):
             return (first and first[0]+"." or "")+(middle or "")+" "+last+(suffix and " "+suffix or "")
     def plain_name(self):
         if not hasattr(self, '_cached_plain_name'):
-            prefix, first, middle, last, suffix = name_parts(self.name)
-            self._cached_plain_name = u" ".join([first, last])
+            self._cached_plain_name = plain_name(self.name)
         return self._cached_plain_name
     def ascii_name(self):
         if not hasattr(self, '_cached_ascii_name'):

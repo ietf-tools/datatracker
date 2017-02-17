@@ -5,17 +5,16 @@
 <script>
  var chartConf = {
      chart: {
-         type: 'column'
+         type: 'area'
      },
      title: {
          text: '{{ stats_title|escapejs }}'
      },
      xAxis: {
-         tickInterval: 1,
          title: {
-             text: 'Author of number of {{ doc_label }}s'
+             text: 'Number of citations of {{ doc_label }}s by author'
          },
-         max: 20
+         max: 500
      },
      yAxis: {
          title: {
@@ -29,7 +28,7 @@
      },
      tooltip: {
          formatter: function () {
-             var s = '<b>' + this.x + ' ' + (this.x == 1 ? "{{ doc_label }}" : '{{ doc_label }}s') + '</b>';
+             var s = '<b>' + this.x + ' ' + (this.x == 1 ? "citation" : 'citations') + '</b>';
 
              $.each(this.points, function () {
                  s += '<br/>' + chartConf.yAxis.title.text + ': ' + this.y.toFixed(1) + '%';
@@ -48,18 +47,20 @@
 <table class="table table-condensed stats-data">
   <thead>
     <tr>
-      <th>Documents</th>
+      <th>Citations</th>
       <th>Percentage of authors</th>
       <th>Authors</th>
     </tr>
   </thead>
   <tbody>
-    {% for document_count, percentage, names in table_data %}
+    {% for citations, percentage, names in table_data %}
       <tr>
-        <td>{{ document_count }}</td>
+        <td>{{ citations }}</td>
         <td>{{ percentage|floatformat:2 }}%</td>
         <td>{% include "stats/includes/number_with_details_cell.html" with content_limit=10 %}</td>
       </tr>
     {% endfor %}
   </tbody>
 </table>
+
+<p>Note that the citation counts do not exclude self-references.</p>
