@@ -1,6 +1,14 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
-from email.utils import make_msgid, formatdate, formataddr, parseaddr, getaddresses
+import copy
+import datetime
+import smtplib
+import sys
+import textwrap
+import time
+import traceback
+
+from email.utils import make_msgid, formatdate, formataddr as simple_formataddr, parseaddr, getaddresses
 from email.mime.text import MIMEText
 from email.mime.message import MIMEMessage
 from email.mime.multipart import MIMEMultipart
@@ -8,20 +16,17 @@ from email.header import Header
 from email import message_from_string
 from email import charset as Charset
 
-import smtplib
 from django.conf import settings
 from django.contrib import messages
 from django.core.exceptions import ImproperlyConfigured
 from django.template.loader import render_to_string
 from django.template import Context,RequestContext
+
+import debug                            # pyflakes:ignore
+
 import ietf
 from ietf.utils.log import log
-import sys
-import time
-import copy
-import textwrap
-import traceback
-import datetime
+from ietf.utils.text import isascii
 
 # Testing mode:
 # import ietf.utils.mail
@@ -189,9 +194,22 @@ def send_mail_text(request, to, frm, subject, txt, cc=None, extra=None, toUser=F
     msg = encode_message(txt)
     return send_mail_mime(request, to, frm, subject, msg, cc, extra, toUser, bcc)
         
+def formataddr(addrtuple):
+    """
+    Takes a name and email address, and inspects the name to see if it needs
+    to be encoded in an email.header.Header before being used in an email.message
+    address field.  Does what's needed, and returns a string value suitable for
+    use in a To: or Cc: email header field.
+    """
+    name, addr = addrtuple
+    if name and not isascii(name):
+        name = str(Header(name, 'utf-8'))
+    return simple_formataddr((name, addr))
+
 def condition_message(to, frm, subject, msg, cc, extra):
+
     if isinstance(frm, tuple):
-	frm = formataddr(frm)
+        frm = formataddr(frm)
     if isinstance(to, list) or isinstance(to, tuple):
         to = ", ".join([isinstance(addr, tuple) and formataddr(addr) or addr for addr in to if addr])
     if isinstance(cc, list) or isinstance(cc, tuple):

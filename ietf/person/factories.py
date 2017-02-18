@@ -2,10 +2,14 @@ import os
 import factory
 import faker 
 import shutil
+import random
+import faker.config
 from unidecode import unidecode
 
 from django.conf import settings
 from django.contrib.auth.models import User
+
+import debug                            # pyflakes:ignore
 
 from ietf.person.models import Person, Alias, Email
 
@@ -15,10 +19,12 @@ class UserFactory(factory.DjangoModelFactory):
     class Meta:
         model = User
         django_get_or_create = ('username',)
+        exclude = ['locale', ]
 
-    first_name = factory.Faker('first_name')
-    last_name = factory.Faker('last_name')
-    email = factory.LazyAttributeSequence(lambda u, n: '%s.%s_%d@%s'%(u.first_name,u.last_name,n,fake.domain_name()))
+    locale = random.sample(faker.config.AVAILABLE_LOCALES, 1)[0]
+    first_name = factory.Faker('first_name', locale)
+    last_name = factory.Faker('last_name', locale)
+    email = factory.LazyAttributeSequence(lambda u, n: '%s.%s_%d@%s'%(unidecode(u.first_name),unidecode(u.last_name),n, fake.domain_name()))
     username = factory.LazyAttribute(lambda u: u.email)
 
     @factory.post_generation

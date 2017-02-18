@@ -49,3 +49,10 @@ def fill(text, width):
             wrapped.append(para)
     return "\n\n".join(wrapped)
         
+def isascii(text):
+    try:
+        text.encode('ascii')
+        return True
+    except UnicodeEncodeError:
+        return False
+        

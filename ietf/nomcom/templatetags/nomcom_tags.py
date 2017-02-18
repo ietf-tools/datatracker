@@ -5,14 +5,14 @@ from django import template
 from django.conf import settings
 from django.template.defaultfilters import linebreaksbr, force_escape
 
-from ietf.utils.pipe import pipe
-from ietf.utils.log import log
-from ietf.doc.templatetags.ietf_filters import wrap_text
-
-from ietf.person.models import Person
-from ietf.nomcom.utils import get_nomcom_by_year, retrieve_nomcom_private_key
-
 import debug           # pyflakes:ignore
+
+from ietf.doc.templatetags.ietf_filters import wrap_text
+from ietf.nomcom.utils import get_nomcom_by_year, retrieve_nomcom_private_key
+from ietf.person.models import Person
+from ietf.utils.log import log
+from ietf.utils.mail import formataddr
+from ietf.utils.pipe import pipe
 
 
 register = template.Library()
@@ -41,7 +41,7 @@ def formatted_email(address):
         persons = Person.objects.filter(email__address__in=[address])
         person = persons and persons[0] or None
     if person and person.name:
-        return u'"%s" <%s>' % (person.plain_name(), address)
+        return formataddr((person.plain_name(), address))
     else:
         return address
 

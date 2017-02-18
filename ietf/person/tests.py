@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
 
 import json
 from pyquery import PyQuery
@@ -41,7 +42,7 @@ class PersonTests(TestCase):
         url = urlreverse("ietf.person.views.profile", kwargs={ "email_or_name": person.plain_name()})
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertIn(person.photo_name(), r.content)
+        self.assertIn(person.photo_name(), r.content.decode(r.charset))
         q = PyQuery(r.content)
         self.assertIn("Photo of %s"%person, q("div.bio-text img.bio-photo").attr("alt"))
 

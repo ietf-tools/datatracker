@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 import pprint 
 
 from django.contrib import admin
@@ -18,7 +19,7 @@ def merge_persons(source,target,stream):
         if alias.name in target_aliases:
             alias.delete()
         else:
-            print >>stream,"Merging alias: {}".format(alias.name)
+            print >>stream, "Merging alias: {}".format(alias.name)
             alias.person = target
             alias.save()
     

@@ -1,15 +1,18 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
 import datetime
+import email.utils
 from urlparse import urljoin
 
 from django.db import models
 
+import debug                            # pyflakes:ignore
+
 from ietf.group.colors import fg_group_colors, bg_group_colors
 from ietf.name.models import GroupStateName, GroupTypeName, DocTagName, GroupMilestoneStateName, RoleName
 from ietf.person.models import Email, Person
+from ietf.utils.mail import formataddr
 
-import debug                            # pyflakes:ignore
 
 class GroupInfo(models.Model):
     time = models.DateTimeField(default=datetime.datetime.now)
@@ -254,8 +257,11 @@ class Role(models.Model):
     def __unicode__(self):
         return u"%s is %s in %s" % (self.person.plain_name(), self.name.name, self.group.acronym or self.group.name)
 
+    def formatted_ascii_email(self):
+        return email.utils.formataddr((self.person.plain_ascii(), self.email.address))
+
     def formatted_email(self):
-        return u'"%s" <%s>' % (self.person.plain_name(), self.email.address)
+        return formataddr((self.person.plain_name(), self.email.address))
 
 class RoleHistory(models.Model):
     # RoleHistory doesn't have a time field as it's not supposed to be

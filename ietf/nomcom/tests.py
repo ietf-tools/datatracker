@@ -1705,7 +1705,7 @@ Junk body for testing
                                          'duplicate_persons':[nominee2.person.pk]})
         self.assertEqual(response.status_code, 302)
         self.assertEqual(len(outbox),1)
-        self.assertTrue(all([str(x.person.pk) in unicode(outbox[0]) for x in [nominee1,nominee2]]))
+        self.assertTrue(all([str(x.person.pk) in outbox[0].get_payload(decode=True) for x in [nominee1,nominee2]]))
 
 
 class NomComIndexTests(TestCase):

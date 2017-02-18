@@ -358,8 +358,8 @@ class SubmitTests(TestCase):
                 if stream_type=='ise':
                    self.assertTrue("rfc-ise@" in confirm_email["To"].lower())
         else:
-            self.assertTrue("chairs have been copied" not in unicode(confirm_email))
-            self.assertTrue("mars-chairs@" not in confirm_email["To"].lower())
+            self.assertNotIn("chairs have been copied", unicode(confirm_email))
+            self.assertNotIn("mars-chairs@", confirm_email["To"].lower())
 
         confirm_url = self.extract_confirm_url(confirm_email)
 
