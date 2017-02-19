@@ -178,7 +178,7 @@ def add_comment(request, id):
                 desc=form.cleaned_data['comment']
             )
             messages.success(request, 'Comment added.')
-            return redirect("ipr_history", id=ipr.id)
+            return redirect("ietf.ipr.views.history", id=ipr.id)
     else:
         form = AddCommentForm()
   
@@ -192,7 +192,7 @@ def add_email(request, id):
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
-            return redirect("ipr_history", id=ipr.id)
+            return redirect("ietf.ipr.views.history", id=ipr.id)
         
         form = AddEmailForm(request.POST,ipr=ipr)
         if form.is_valid():
@@ -214,7 +214,7 @@ def add_email(request, id):
                 in_reply_to = in_reply_to
             )
             messages.success(request, 'Email added.')
-            return redirect("ipr_history", id=ipr.id)
+            return redirect("ietf.ipr.views.history", id=ipr.id)
     else:
         form = AddEmailForm(ipr=ipr)
         
@@ -703,7 +703,7 @@ def get_details_tabs(ipr, selected):
         t + (t[0].lower() == selected.lower(),)
         for t in [
         ('Disclosure', urlreverse('ietf.ipr.views.show', kwargs={ 'id': ipr.pk })),
-        ('History', urlreverse('ipr_history', kwargs={ 'id': ipr.pk }))
+        ('History', urlreverse('ietf.ipr.views.history', kwargs={ 'id': ipr.pk }))
     ]]
 
 def show(request, id):

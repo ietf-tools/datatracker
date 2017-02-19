@@ -148,6 +148,13 @@ class IprTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertTrue('This IPR disclosure was removed' in unicontent(r))
         
+    def test_ipr_history(self):
+        make_test_data()
+        ipr = IprDisclosureBase.objects.get(title='Statement regarding rights')
+        r = self.client.get(urlreverse("ietf.ipr.views.history", kwargs=dict(id=ipr.pk)))
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(ipr.title in unicontent(r))
+
     def test_iprs_for_drafts(self):
         draft = make_test_data()
         ipr = IprDisclosureBase.objects.get(title='Statement regarding rights')

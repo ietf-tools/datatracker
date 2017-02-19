@@ -19,7 +19,7 @@ urlpatterns = [
     url(r'^(?P<id>\d+)/addemail/$', views.add_email, name='ipr_add_email'),
     url(r'^(?P<id>\d+)/edit/$', views.edit, name='ipr_edit'),
     url(r'^(?P<id>\d+)/email/$', views.email, name='ipr_email'),
-    url(r'^(?P<id>\d+)/history/$', views.history, name='ipr_history'),
+    url(r'^(?P<id>\d+)/history/$', views.history),
     url(r'^(?P<id>\d+)/notify/(?P<type>update|posted)/$', views.notify, name='ipr_notify'),
     url(r'^(?P<id>\d+)/post/$', views.post, name='ipr_post'),
     url(r'^(?P<id>\d+)/state/$', views.state, name='ipr_state'),
