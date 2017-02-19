@@ -1,3 +1,16 @@
+ietfdb (6.44.1) ietf; urgency=medium
+
+  **Non-ASCII Name Support for Email Address Fields**
+
+  This is a bugfix relelease which provides a reworked email address handling
+  in order to be able to support non-ascii names as part of email address
+  fields.  It also provides reworked generation of user names in the test
+  suite in order to generate names from multiple non-ascii locales.  This
+  fixes issue #2080.  The release also cleans the slate for the upcoming merge
+  in of the Django 1.10 branch.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  19 Feb 2017 11:42:27 +0000
+
 ietfdb (6.44.0) ietf; urgency=medium
 
   **Improved account editing**
