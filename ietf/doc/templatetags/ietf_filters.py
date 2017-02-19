@@ -15,7 +15,6 @@ from django import template
 from django.conf import settings
 from django.utils.html import escape
 from django.template.defaultfilters import truncatewords_html, linebreaksbr, stringfilter, striptags, urlize
-from django.template import resolve_variable
 from django.utils.safestring import mark_safe, SafeData
 from django.utils.html import strip_tags
 
@@ -395,17 +394,6 @@ def has_role(user, role_names):
     if not user:
         return False
     return has_role(user, role_names.split(','))
-
-@register.filter
-def stable_dictsort(value, arg):
-    """
-    Like dictsort, except it's stable (preserves the order of items
-    whose sort key is the same). See also bug report
-    http://code.djangoproject.com/ticket/12110
-    """
-    decorated = [(resolve_variable('var.' + arg, {'var' : item}), item) for item in value]
-    decorated.sort(lambda a, b: cmp(a[0], b[0]) if a[0] and b[0] else -1 if b[0] else 1 if a[0] else 0)
-    return [item[1] for item in decorated]
 
 @register.filter
 def ad_area(user):

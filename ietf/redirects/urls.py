@@ -1,7 +1,9 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
-from django.conf.urls import url
+
+from ietf.redirects import views
+from ietf.utils.urls import url
 
 urlpatterns = [
-    url(r'^(?P<script>.*?\.cgi)(/.*)?$', 'ietf.redirects.views.redirect'),
+    url(r'^(?P<script>.*?\.cgi)(/.*)?$', views.redirect),
 ]

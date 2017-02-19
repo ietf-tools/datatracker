@@ -35,7 +35,7 @@
     {% if user|has_role:"Secretariat" %}
         <div class="button-group">
           <ul id="proceedings-meeting-buttons">
-            <li><button onclick="window.location='{% url "meetings_add" %}'">Add</button></li>
+            <li><button onclick="window.location='{% url "ietf.secr.meetings.views.add" %}'">Add</button></li>
           </ul>
         </div> <!-- button-group -->
     {% endif %}

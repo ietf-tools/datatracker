@@ -1,3 +1,5 @@
+import functools
+
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
 from django.utils.http import urlquote
@@ -12,4 +14,4 @@ def nomcom_private_key_required(view_func):
             return HttpResponseRedirect('%s?back_to=%s' % (reverse('nomcom_private_key', None, args=(year, )), urlquote(request.get_full_path())))
         else:
             return view_func(request, *args, **kwargs)
-    return inner
+    return functools.update_wrapper(inner, view_func)

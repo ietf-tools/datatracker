@@ -29,8 +29,8 @@
          <div class="inline-related">
          <br>
          <ul class="session-buttons">
-             <li><button onclick="if (window.confirm('A message will be sent to agenda@ietf.com as well as to the area director(s).\n\nContinue?')) { window.location='{% url "sessions_no_session" acronym=group.acronym %}'};">Send a notification that the group does not plan to hold a session at IETF {{ meeting.number }}</button></li>
-             <li><button onclick="window.location='{% url "sessions_new" acronym=group.acronym %}?previous'">Retrieve all information from previous meeting</button></li>
+             <li><button onclick="if (window.confirm('A message will be sent to agenda@ietf.com as well as to the area director(s).\n\nContinue?')) { window.location='{% url "ietf.secr.sreq.views.no_session" acronym=group.acronym %}'};">Send a notification that the group does not plan to hold a session at IETF {{ meeting.number }}</button></li>
+             <li><button onclick="window.location='{% url "ietf.secr.sreq.views.new" acronym=group.acronym %}?previous'">Retrieve all information from previous meeting</button></li>
          </ul>
         
          {% include "includes/sessions_request_form.html" %}

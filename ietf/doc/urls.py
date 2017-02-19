@@ -30,11 +30,12 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from django.conf.urls import url, include
+from django.conf.urls import include
 from django.views.generic import RedirectView
 from django.conf import settings
 
-from ietf.doc import views_search, views_draft, views_ballot, views_status_change, views_doc, views_stats
+from ietf.doc import views_search, views_draft, views_ballot, views_status_change, views_doc, views_stats, views_help
+from ietf.utils.urls import url
 
 session_patterns = [
     url(r'^add$', views_doc.add_sessionpresentation),
@@ -49,7 +50,7 @@ urlpatterns = [
     url(r'^in-last-call/$', views_search.drafts_in_last_call, name="drafts_in_last_call"),
     url(r'^ad/(?P<name>[\w.-]+)/$(?u)', views_search.docs_for_ad, name="docs_for_ad"),
     url(r'^ad2/(?P<name>[\w.-]+)/$(?u)', RedirectView.as_view(url='/doc/ad/%(name)s/', permanent=True)),
-    url(r'^rfc-status-changes/$', views_status_change.rfc_status_changes, name='rfc_status_changes'),
+    url(r'^rfc-status-changes/$', views_status_change.rfc_status_changes, name='ietf.doc.views_status_change.rfc_status_changes'),
     url(r'^start-rfc-status-change/(?:%(name)s/)?$' % settings.URL_REGEXPS, views_status_change.start_rfc_status_change, name='start_rfc_status_change'),
     url(r'^iesg/(?P<last_call_only>[A-Za-z0-9.-]+/)?$', views_search.drafts_in_iesg_process, name="drafts_in_iesg_process"),
     url(r'^email-aliases/$', views_doc.email_aliases),
@@ -67,19 +68,19 @@ urlpatterns = [
     url(r'^%(name)s/(?:%(rev)s/)?bibtex/$' % settings.URL_REGEXPS, views_doc.document_bibtex),
     url(r'^%(name)s/history/$' % settings.URL_REGEXPS, views_doc.document_history, name="doc_history"),
     url(r'^%(name)s/writeup/$' % settings.URL_REGEXPS, views_doc.document_writeup, name="doc_writeup"),
-    url(r'^%(name)s/email/$' % settings.URL_REGEXPS, views_doc.document_email, name="doc_email"),
+    url(r'^%(name)s/email/$' % settings.URL_REGEXPS, views_doc.document_email, name="ietf.doc.views_doc.document_email"),
     url(r'^%(name)s/shepherdwriteup/$' % settings.URL_REGEXPS, views_doc.document_shepherd_writeup, name="doc_shepherd_writeup"),
     url(r'^%(name)s/references/$' % settings.URL_REGEXPS, views_doc.document_references, name="doc_references"),
     url(r'^%(name)s/referencedby/$' % settings.URL_REGEXPS, views_doc.document_referenced_by, name="doc_referenced_by"),
-    url(r'^%(name)s/ballot/$' % settings.URL_REGEXPS, views_doc.document_ballot, name="doc_ballot"),
-    url(r'^%(name)s/ballot/(?P<ballot_id>[0-9]+)/$' % settings.URL_REGEXPS, views_doc.document_ballot, name="doc_ballot"),
+    url(r'^%(name)s/ballot/$' % settings.URL_REGEXPS, views_doc.document_ballot),
+    url(r'^%(name)s/ballot/(?P<ballot_id>[0-9]+)/$' % settings.URL_REGEXPS, views_doc.document_ballot),
     url(r'^%(name)s/ballot/(?P<ballot_id>[0-9]+)/position/$' % settings.URL_REGEXPS, views_ballot.edit_position),
     url(r'^%(name)s/ballot/(?P<ballot_id>[0-9]+)/emailposition/$' % settings.URL_REGEXPS, views_ballot.send_ballot_comment, name='doc_send_ballot_comment'),
     url(r'^%(name)s/(?:%(rev)s/)?doc.json$' % settings.URL_REGEXPS, views_doc.document_json),
     url(r'^%(name)s/ballotpopup/(?P<ballot_id>[0-9]+)/$' % settings.URL_REGEXPS, views_doc.ballot_popup),
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/reviewrequest/', include("ietf.doc.urls_review")),
 
-    url(r'^%(name)s/email-aliases/$' % settings.URL_REGEXPS, RedirectView.as_view(pattern_name='doc_email', permanent=False),name='doc_specific_email_aliases'),
+    url(r'^%(name)s/email-aliases/$' % settings.URL_REGEXPS, RedirectView.as_view(pattern_name='ietf.doc.views_doc.document_email', permanent=False),name='doc_specific_email_aliases'),
 
     url(r'^%(name)s/edit/state/$' % settings.URL_REGEXPS, views_draft.change_state, name='doc_change_state'), # IESG state
     url(r'^%(name)s/edit/state/(?P<state_type>iana-action|iana-review)/$' % settings.URL_REGEXPS, views_draft.change_iana_state, name='doc_change_iana_state'),
@@ -116,9 +117,9 @@ urlpatterns = [
     url(r'^%(name)s/edit/approveballot/$' % settings.URL_REGEXPS, views_ballot.approve_ballot, name='doc_approve_ballot'),
     url(r'^%(name)s/edit/makelastcall/$' % settings.URL_REGEXPS, views_ballot.make_last_call, name='doc_make_last_call'),
 
-    url(r'^help/state/(?P<type>[\w-]+)/$', 'ietf.doc.views_help.state_help', name="state_help"),
-    url(r'^help/relationships/$', 'ietf.doc.views_help.relationship_help', name="relationship_help"),
-    url(r'^help/relationships/(?P<subset>\w+)/$', 'ietf.doc.views_help.relationship_help', name="relationship_subset_help"),
+    url(r'^help/state/(?P<type>[\w-]+)/$', views_help.state_help, name="state_help"),
+    url(r'^help/relationships/$', views_help.relationship_help, name="relationship_help"),
+    url(r'^help/relationships/(?P<subset>\w+)/$', views_help.relationship_help, name="relationship_subset_help"),
 
     url(r'^%(name)s/meetings/?$' % settings.URL_REGEXPS, views_doc.all_presentations),
 

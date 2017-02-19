@@ -76,7 +76,7 @@ class NomcomViewsTest(TestCase):
         self.year = NOMCOM_YEAR
 
         # private urls
-        self.private_index_url = reverse('nomcom_private_index', kwargs={'year': self.year})
+        self.private_index_url = reverse('ietf.nomcom.views.private_index', kwargs={'year': self.year})
         self.private_merge_person_url = reverse('ietf.nomcom.views.private_merge_person', kwargs={'year': self.year})
         self.private_merge_nominee_url = reverse('ietf.nomcom.views.private_merge_nominee', kwargs={'year': self.year})
         self.edit_members_url = reverse('nomcom_edit_members', kwargs={'year': self.year})
@@ -1103,7 +1103,7 @@ class InactiveNomcomTests(TestCase):
     def test_acceptance_closed(self):
         today = datetime.date.today().strftime('%Y%m%d')
 	pid = self.nc.position_set.first().nomineeposition_set.order_by('pk').first().id 
-        url = reverse('nomcom_process_nomination_status', kwargs = {
+        url = reverse('ietf.nomcom.views.process_nomination_status', kwargs = {
                       'year' : self.nc.year(),
                       'nominee_position_id' : pid,
                       'state' : 'accepted',
@@ -1131,7 +1131,7 @@ class InactiveNomcomTests(TestCase):
         self.assertEqual(response.status_code, 403)
 
     def test_cannot_modify_nominees(self):
-        url = reverse('nomcom_private_index', kwargs={'year':self.nc.year()})
+        url = reverse('ietf.nomcom.views.private_index', kwargs={'year':self.nc.year()})
         login_testing_unauthorized(self, self.chair.user.username, url)
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
@@ -1287,7 +1287,7 @@ class FeedbackLastSeenTests(TestCase):
         self.assertEqual( len(q('.label-success')), 0 )
 
     def test_feedback_nominee_badges(self):
-        url = reverse('nomcom_view_feedback_nominee',kwargs={'year':self.nc.year(),'nominee_id':self.nominee.id})
+        url = reverse('ietf.nomcom.views.view_feedback_nominee', kwargs={'year':self.nc.year(), 'nominee_id':self.nominee.id})
         login_testing_unauthorized(self, self.member.user.username, url)
         provide_private_key_to_test_client(self)
         response = self.client.get(url)
@@ -1330,16 +1330,15 @@ class NewActiveNomComTests(TestCase):
         self.assertEqual(response.status_code,200)
 
     def test_accept_reject_nomination_edges(self):
-
+        self.client.logout()
         np = self.nc.nominee_set.order_by('pk').first().nomineeposition_set.order_by('pk').first()
-
         kwargs={'year':self.nc.year(),
                 'nominee_position_id':np.id,
                 'state':'accepted',
                 'date':np.time.strftime("%Y%m%d"),
                 'hash':get_hash_nominee_position(np.time.strftime("%Y%m%d"),np.id),
                }
-        url = reverse('nomcom_process_nomination_status', kwargs=kwargs)
+        url = reverse('ietf.nomcom.views.process_nomination_status', kwargs=kwargs)
         response = self.client.get(url)
         self.assertEqual(response.status_code,403)
         self.assertTrue('already was' in unicontent(response))
@@ -1349,13 +1348,13 @@ class NewActiveNomComTests(TestCase):
         np.save()
         kwargs['date'] = np.time.strftime("%Y%m%d")
         kwargs['hash'] = get_hash_nominee_position(np.time.strftime("%Y%m%d"),np.id)
-        url = reverse('nomcom_process_nomination_status', kwargs=kwargs)
+        url = reverse('ietf.nomcom.views.process_nomination_status', kwargs=kwargs)
         response = self.client.get(url)
         self.assertEqual(response.status_code,403)
         self.assertTrue('Link expired' in unicontent(response))
 
         kwargs['hash'] = 'bad'
-        url = reverse('nomcom_process_nomination_status', kwargs=kwargs)
+        url = reverse('ietf.nomcom.views.process_nomination_status', kwargs=kwargs)
         response = self.client.get(url)
         self.assertEqual(response.status_code,403)
         self.assertTrue('Bad hash!' in unicontent(response))
@@ -1363,7 +1362,7 @@ class NewActiveNomComTests(TestCase):
     def test_accept_reject_nomination_comment(self):
         np = self.nc.nominee_set.order_by('pk').first().nomineeposition_set.order_by('pk').first()
         hash = get_hash_nominee_position(np.time.strftime("%Y%m%d"),np.id)
-        url = reverse('nomcom_process_nomination_status',
+        url = reverse('ietf.nomcom.views.process_nomination_status',
                       kwargs={'year':self.nc.year(),
                               'nominee_position_id':np.id,
                               'state':'accepted',

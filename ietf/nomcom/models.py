@@ -150,7 +150,7 @@ class NomineePosition(models.Model):
         super(NomineePosition, self).save(**kwargs)
 
     def __unicode__(self):
-        return u"%s - %s" % (self.nominee, self.position)
+        return u"%s - %s - %s" % (self.nominee, self.state, self.position)
 
     @property
     def questionnaires(self):

@@ -126,7 +126,7 @@ class PositionFactory(factory.DjangoModelFactory):
     class Meta:
         model = Position
 
-    name = factory.Faker('sentence',nb_words=10)
+    name = factory.Faker('sentence',nb_words=5)
     is_open = True
 
 class NomineeFactory(factory.DjangoModelFactory):

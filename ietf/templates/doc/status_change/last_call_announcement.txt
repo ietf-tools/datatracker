@@ -20,6 +20,6 @@ The affected document{{ urls|pluralize }} can be obtained via
 {% for u in urls %}{{ settings.IDTRACKER_BASE_URL}}{{ u }}
 {% endfor %}
 IESG discussion of this request can be tracked via
-{{ settings.IDTRACKER_BASE_URL }}{% url "doc_ballot" name=doc %}
+{{ settings.IDTRACKER_BASE_URL }}{% url "ietf.doc.views_doc.document_ballot" name=doc %}
 
 {% endautoescape %}

@@ -1757,11 +1757,11 @@ def interim_request(request):
                 meeting = form.save(date=get_earliest_session_date(formset))
 
                 # need to use curry here to pass custom variable to form init
-                SessionFormset.form = staticmethod(curry(
-                    InterimSessionModelForm,
+                SessionFormset.form.__init__ = curry(
+                    InterimSessionModelForm.__init__,
                     user=request.user,
                     group=group,
-                    is_approved_or_virtual=(is_approved or is_virtual)))
+                    is_approved_or_virtual=(is_approved or is_virtual))
                 formset = SessionFormset(instance=meeting, data=request.POST)
                 formset.is_valid()
                 formset.save()
@@ -1777,11 +1777,11 @@ def interim_request(request):
             # subsequently dealt with individually
             elif meeting_type == 'series':
                 series = []
-                SessionFormset.form = staticmethod(curry(
-                    InterimSessionModelForm,
+                SessionFormset.form.__init__ = curry(
+                    InterimSessionModelForm.__init__,
                     user=request.user,
                     group=group,
-                    is_approved_or_virtual=(is_approved or is_virtual)))
+                    is_approved_or_virtual=(is_approved or is_virtual))
                 formset = SessionFormset(instance=Meeting(), data=request.POST)
                 formset.is_valid()  # re-validate
                 for session_form in formset.forms:
@@ -1896,13 +1896,15 @@ def interim_request_edit(request, number):
                                        data=request.POST)
         group = Group.objects.get(pk=form.data['group'])
         is_approved = is_meeting_approved(meeting)
-        SessionFormset.form = staticmethod(curry(
-            InterimSessionModelForm,
+
+        SessionFormset.form.__init__ = curry(
+            InterimSessionModelForm.__init__,
             user=request.user,
             group=group,
-            is_approved_or_virtual=is_approved))
-        formset = SessionFormset(instance=meeting,
-                                 data=request.POST)
+            is_approved_or_virtual=is_approved)
+
+        formset = SessionFormset(instance=meeting, data=request.POST)
+
         if form.is_valid() and formset.is_valid():
             meeting = form.save(date=get_earliest_session_date(formset))
             formset.save()

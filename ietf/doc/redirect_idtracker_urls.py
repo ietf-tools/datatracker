@@ -1,5 +1,6 @@
-from django.conf.urls import url
 from django.views.generic import RedirectView
+
+from ietf.utils.urls import url
 
 urlpatterns = [
     url(r'^help/(?:sub)?state/(?:\d+/)?$', RedirectView.as_view(url='/doc/help/state/draft-iesg/', permanent=True)),

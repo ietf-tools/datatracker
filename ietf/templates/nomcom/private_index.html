@@ -89,7 +89,7 @@
 	  {% endif %}
 
 	  <td>
-	    <a href="{% url "ietf.nomcom.views.view_feedback_nominee" year=year nominee_id=np.nominee.id %}#comment">{{ np.nominee }}</a>
+	    <a href="{% url 'ietf.nomcom.views.view_feedback_nominee' year=year nominee_id=np.nominee.id %}#comment">{{ np.nominee }}</a>
 	  </td>
 	  <td>{{ np.position.name }}</td>
 	  <td>{{ np.state }}</td>

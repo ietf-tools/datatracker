@@ -5,7 +5,7 @@ submitted by {{ requester }}.
 The third session requires your approval.
 
 To approve the session go to the session request view here:
-https://datatracker.ietf.org{% url "sessions_view" acronym=group.acronym %}
+https://datatracker.ietf.org{% url "ietf.secr.sreq.views.view" acronym=group.acronym %}
 and click "Approve Third Session".
 
 Regards,

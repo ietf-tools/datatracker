@@ -45,7 +45,7 @@
 	    {% for m in regime.announcements|dictsortreversed:"time" %}
 	      <tr>
 		<td class="text-nowrap">{{ m.time|date:"Y-m-d" }}</td>
-		<td><a href="{% url "nomcom_announcement" message_id=m.id %}">{{ m.subject }}</a></td>
+		<td><a href="{% url "ietf.message.views.message" message_id=m.id %}">{{ m.subject }}</a></td>
 		<td>{{ m.to_name }}</td>
 	      </tr>
 	    {% endfor %}

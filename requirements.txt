@@ -1,14 +1,17 @@
 # -*- conf-mode -*-
 setuptools>=18.5			# Require this first, to prevent later errors
 #
+anora>=0.1.2
+argon2-cffi>=16.1.0		# For the Argon2 password hasher option
 beautifulsoup4>=4.4
 bibtexparser>=0.6.2
+bleach>=1.5.0
 coverage>=4.0.1,!=4.0.2
 #cssselect>=0.6.1               # for PyQuery
 decorator>=3.4.0
 defusedxml>=0.4.1		# for TastyPie when ussing xml; not a declared dependency
-Django>=1.9,<1.10
-django-bcrypt>=0.9.2
+Django>=1.10,<1.11
+django-bcrypt>=0.9.2		# for the BCrypt password hasher option.  Remove when all bcrypt upgraded to argon2
 django-bootstrap3>=7.0
 django-formtools>=1.0		# instead of django.contrib.formtools in 1.8
 django-markup>=1.1

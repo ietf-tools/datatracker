@@ -1,5 +1,7 @@
-from django.conf.urls import url
+
+from ietf.secr.console import views
+from ietf.utils.urls import url
 
 urlpatterns = [
-    url(r'^$', 'ietf.secr.console.views.main', name='console'),
+    url(r'^$', views.main, name='console'),
 ]

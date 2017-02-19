@@ -1,9 +1,9 @@
 # Copyright The IETF Trust 2008, All Rights Reserved
 
-from django.conf.urls import url
 from django.conf import settings
 
-import views_stream
+from ietf.group import views_stream
+from ietf.utils.urls import url
 
 urlpatterns = [
     url(r'^$', views_stream.streams),

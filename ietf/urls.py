@@ -2,18 +2,21 @@
 
 from django.conf import settings
 from django.conf.urls import include
-from django.conf.urls.static import static
+from django.conf.urls.static import static as static_url
 from django.contrib import admin
-from django.views.generic import TemplateView
+from django.contrib.sitemaps import views as sitemap_views
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
+from django.views import static as static_view
+from django.views.generic import TemplateView
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc import views_search
-from ietf.liaisons.sitemaps import LiaisonMap
-from ietf.ipr.sitemaps import IPRMap
-from ietf.utils.urls import url
 from ietf import api
+from ietf.doc import views_search
+from ietf.help import views as help_views
+from ietf.ipr.sitemaps import IPRMap
+from ietf.liaisons.sitemaps import LiaisonMap
+from ietf.utils.urls import url
 
 admin.autodiscover()
 api.autodiscover()
@@ -54,8 +57,8 @@ urlpatterns = [
     url(r'^person/', include('ietf.person.urls')),
     url(r'^release/', include('ietf.release.urls')),
     url(r'^secr/', include('ietf.secr.urls')),
-    url(r'^sitemap-(?P<section>.+).xml$', 'django.contrib.sitemaps.views.sitemap', {'sitemaps': sitemaps}),
-    url(r'^sitemap.xml$', 'django.contrib.sitemaps.views.index', { 'sitemaps': sitemaps}),
+    url(r'^sitemap-(?P<section>.+).xml$', sitemap_views.sitemap, {'sitemaps': sitemaps}),
+    url(r'^sitemap.xml$', sitemap_views.index, { 'sitemaps': sitemaps}),
     url(r'^stats/', include('ietf.stats.urls')),
     url(r'^stream/', include('ietf.group.urls_stream')),
     url(r'^submit/', include('ietf.submit.urls')),
@@ -86,10 +89,10 @@ if settings.SERVER_MODE in ('development', 'test'):
     urlpatterns += staticfiles_urlpatterns()
     urlpatterns += [
             url(r'^_test500/$', lambda x: None),
-            url(r'^environment/$', 'ietf.help.views.environment'),
+            url(r'^environment/$', help_views.environment),
             ## maybe preserve some static legacy URLs ?
-            url(r'^(?P<path>(?:images|css|js)/.*)$', 'django.views.static.serve', {'document_root': settings.STATIC_ROOT+'ietf/'}),
+            url(r'^(?P<path>(?:images|css|js)/.*)$', static_view.serve, {'document_root': settings.STATIC_ROOT+'ietf/'}),
         ]
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += static_url(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     settings.DEBUG = save_debug
 

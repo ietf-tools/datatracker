@@ -10,8 +10,8 @@ import debug                            # pyflakes:ignore
 
 from ietf.person.factories import EmailFactory,PersonFactory
 from ietf.person.models import Person
-from ietf.utils.test_utils import TestCase
 from ietf.utils.test_data import make_test_data
+from ietf.utils.test_utils import TestCase
 from ietf.utils.mail import outbox, empty_outbox
 
 
@@ -35,7 +35,7 @@ class PersonTests(TestCase):
 
     def test_profile(self):
         person = PersonFactory(with_bio=True)
-
+        
         self.assertTrue(person.photo is not None)
         self.assertTrue(person.photo.name is not None)
 

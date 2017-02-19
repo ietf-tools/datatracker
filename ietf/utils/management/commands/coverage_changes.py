@@ -40,6 +40,7 @@ class Command(BaseCommand):
         return parser
 
     def add_arguments(self, parser):
+        parser.add_argument('filenames', nargs="*")
         parser.add_argument('--sections', default='template,url,code', dest='sections',
             help='Specify which kinds of coverage changes to show. Default: %(default)s\n')
         parser.add_argument('--release', dest='release',
@@ -172,7 +173,8 @@ class Command(BaseCommand):
                     header_written = True
                 self.stdout.write(self.list_line_format % (key, lval))
 
-    def handle(self, *filenames, **options):
+    def handle(self, *args, **options):
+
         sections = options.get('sections', ','.join(self.valid_sections))
         options.pop('sections')
         sections = sections.split(',')
@@ -182,6 +184,8 @@ class Command(BaseCommand):
                     "Valid names are %s or any combination of them."%(section, ','.join(self.valid_sections)))
 
         absolute = options.get('absolute', False)
+
+        filenames = options.get('filenames')
 
         if absolute:
             if not filenames:

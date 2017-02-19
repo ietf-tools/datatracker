@@ -86,7 +86,7 @@ class SearchablePersonsField(forms.CharField):
 
         # doing this in the constructor is difficult because the URL
         # patterns may not have been fully constructed there yet
-        self.widget.attrs["data-ajax-url"] = urlreverse("ajax_select2_search_person_email", kwargs={ "model_name": self.model.__name__.lower() })
+        self.widget.attrs["data-ajax-url"] = urlreverse("ietf.person.views.ajax_select2_search", kwargs={ "model_name": self.model.__name__.lower() })
         query_args = {}
         if self.only_users:
             query_args["user"] = "1"

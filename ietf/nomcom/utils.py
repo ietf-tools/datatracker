@@ -211,14 +211,14 @@ def send_accept_reminder_to_nominee(nominee_position):
     (to_email, cc) = gather_address_lists('nomination_accept_reminder',nominee=nominee.email.address)
 
     hash = get_hash_nominee_position(today, nominee_position.id)
-    accept_url = reverse('nomcom_process_nomination_status',
+    accept_url = reverse('ietf.nomcom.views.process_nomination_status',
                           None,
                           args=(get_year_by_nomcom(nomcom),
                           nominee_position.id,
                           'accepted',
                           today,
                           hash))
-    decline_url = reverse('nomcom_process_nomination_status',
+    decline_url = reverse('ietf.nomcom.views.process_nomination_status',
                           None,
                           args=(get_year_by_nomcom(nomcom),
                           nominee_position.id,
@@ -290,14 +290,14 @@ def make_nomineeposition(nomcom, candidate, position, author):
         domain = Site.objects.get_current().domain
         today = datetime.date.today().strftime('%Y%m%d')
         hash = get_hash_nominee_position(today, nominee_position.id)
-        accept_url = reverse('nomcom_process_nomination_status',
+        accept_url = reverse('ietf.nomcom.views.process_nomination_status',
                               None,
                               args=(get_year_by_nomcom(nomcom),
                               nominee_position.id,
                               'accepted',
                               today,
                               hash))
-        decline_url = reverse('nomcom_process_nomination_status',
+        decline_url = reverse('ietf.nomcom.views.process_nomination_status',
                               None,
                               args=(get_year_by_nomcom(nomcom),
                               nominee_position.id,

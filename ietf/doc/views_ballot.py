@@ -116,7 +116,7 @@ def edit_position(request, name, ballot_id):
     if 'ballot_edit_return_point' in request.session:
         return_to_url = request.session['ballot_edit_return_point']
     else:
-        return_to_url = urlreverse("doc_ballot", kwargs=dict(name=doc.name, ballot_id=ballot_id))
+        return_to_url = urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=doc.name, ballot_id=ballot_id))
 
     # if we're in the Secretariat, we can select an AD to act as stand-in for
     if has_role(request.user, "Secretariat"):
@@ -245,12 +245,12 @@ def send_ballot_comment(request, name, ballot_id):
     if 'ballot_edit_return_point' in request.session:
         return_to_url = request.session['ballot_edit_return_point']
     else:
-        return_to_url = urlreverse("doc_ballot", kwargs=dict(name=doc.name, ballot_id=ballot_id))
+        return_to_url = urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=doc.name, ballot_id=ballot_id))
 
     if 'HTTP_REFERER' in request.META:
         back_url = request.META['HTTP_REFERER']
     else:
-        back_url = urlreverse("doc_ballot", kwargs=dict(name=doc.name, ballot_id=ballot_id))
+        back_url = urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=doc.name, ballot_id=ballot_id))
 
     # if we're in the Secretariat, we can select an AD to act as stand-in for
     if not has_role(request.user, "Area Director"):

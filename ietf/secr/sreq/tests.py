@@ -32,7 +32,7 @@ class SreqUrlTests(TestCase):
 class SessionRequestTestCase(TestCase):
     def test_main(self):
         make_meeting_test_data()
-        url = reverse('sessions')
+        url = reverse('ietf.secr.sreq.views.main')
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
@@ -45,7 +45,7 @@ class SubmitRequestCase(TestCase):
     def test_submit_request(self):
         make_test_data()
         group = Group.objects.get(acronym='mars')
-        url = reverse('sessions_new',kwargs={'acronym':group.acronym})
+        url = reverse('ietf.secr.sreq.views.new',kwargs={'acronym':group.acronym})
         post_data = {'num_session':'1',
                      'length_session1':'3600',
                      'attendees':'10',
@@ -53,12 +53,12 @@ class SubmitRequestCase(TestCase):
                      'comments':'need projector'}
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.post(url,post_data)
-        self.assertRedirects(r, reverse('sessions_confirm', kwargs={'acronym':group.acronym}))
+        self.assertRedirects(r, reverse('ietf.secr.sreq.views.confirm', kwargs={'acronym':group.acronym}))
 
     def test_submit_request_invalid(self):
         make_test_data()
         group = Group.objects.get(acronym='mars')
-        url = reverse('sessions_new',kwargs={'acronym':group.acronym})
+        url = reverse('ietf.secr.sreq.views.new',kwargs={'acronym':group.acronym})
         post_data = {'num_session':'2',
                      'length_session1':'3600',
                      'attendees':'10',
@@ -78,7 +78,7 @@ class SubmitRequestCase(TestCase):
         ad = group.parent.role_set.filter(name='ad').first().person
         resource = ResourceAssociation.objects.first()
         url = reverse('ietf.secr.sreq.views.new',kwargs={'acronym':group.acronym})
-        confirm_url = reverse('sessions_confirm',kwargs={'acronym':group.acronym})
+        confirm_url = reverse('ietf.secr.sreq.views.confirm',kwargs={'acronym':group.acronym})
         len_before = len(outbox)
         post_data = {'num_session':'1',
                      'length_session1':'3600',
@@ -93,7 +93,7 @@ class SubmitRequestCase(TestCase):
         self.assertRedirects(r, confirm_url)
         # confirm
         r = self.client.post(confirm_url,{'submit':'Submit'})
-        self.assertRedirects(r, reverse('sessions'))
+        self.assertRedirects(r, reverse('ietf.secr.sreq.views.main'))
         self.assertEqual(len(outbox),len_before+1)
         notification = outbox[-1]
         notification_payload = unicode(notification.get_payload(decode=True),"utf-8","replace")
@@ -110,7 +110,7 @@ class LockAppTestCase(TestCase):
         meeting.session_request_lock_message='locked'
         meeting.save()
         group = Group.objects.get(acronym='mars')
-        url = reverse('sessions_edit',kwargs={'acronym':group.acronym})
+        url = reverse('ietf.secr.sreq.views.edit',kwargs={'acronym':group.acronym})
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
@@ -122,7 +122,7 @@ class LockAppTestCase(TestCase):
         meeting.session_request_lock_message='locked'
         meeting.save()
         group = Group.objects.get(acronym='mars')
-        url = reverse('sessions_view',kwargs={'acronym':group.acronym})
+        url = reverse('ietf.secr.sreq.views.view',kwargs={'acronym':group.acronym})
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(url,follow=True)
         self.assertEqual(r.status_code, 200)
@@ -134,11 +134,11 @@ class LockAppTestCase(TestCase):
         meeting.session_request_lock_message='locked'
         meeting.save()
         group = Group.objects.get(acronym='mars')
-        url = reverse('sessions_new',kwargs={'acronym':group.acronym})
+        url = reverse('ietf.secr.sreq.views.new',kwargs={'acronym':group.acronym})
         
         # try as WG Chair
         self.client.login(username="marschairman", password="marschairman+password")
-        r = self.client.get(url,follow=True)
+        r = self.client.get(url, follow=True)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('#session-request-form')),0)
@@ -158,7 +158,7 @@ class NotMeetingCase(TestCase):
     def test_not_meeting(self):
         make_meeting_test_data()
         group = Group.objects.get(acronym='mars')
-        url = reverse('sessions_no_session',kwargs={'acronym':group.acronym}) 
+        url = reverse('ietf.secr.sreq.views.no_session',kwargs={'acronym':group.acronym}) 
         self.client.login(username="secretary", password="secretary+password")
 
         empty_outbox()

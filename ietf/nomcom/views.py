@@ -113,7 +113,7 @@ def private_key(request, year):
     else:
         messages.warning(request, "You don't have a private decryption key set for this session yet")
 
-    back_url = request.GET.get('back_to', reverse('nomcom_private_index', None, args=(year, )))
+    back_url = request.GET.get('back_to', reverse('ietf.nomcom.views.private_index', None, args=(year, )))
     if request.method == 'POST':
         form = PrivateKeyForm(data=request.POST)
         if form.is_valid():
@@ -276,7 +276,7 @@ def private_merge_person(request, year):
             if form.is_valid():
                 form.save()
                 messages.success(request, 'A merge request has been sent to the secretariat.')
-                return redirect('nomcom_private_index',year=year)
+                return redirect('ietf.nomcom.views.private_index',year=year)
         else:
             form = MergePersonForm(nomcom=nomcom)
 
@@ -301,7 +301,7 @@ def private_merge_nominee(request, year):
             if form.is_valid():
                 form.save()
                 messages.success(request, 'The Nominee records have been joined.')
-                return redirect('nomcom_private_index',year=year)
+                return redirect('ietf.nomcom.views.private_index',year=year)
         else:
             form = MergeNomineeForm(nomcom=nomcom)
 
@@ -811,7 +811,7 @@ def edit_nominee(request, year, nominee_id):
         if form.is_valid():
             form.save()
             messages.success(request, 'The nomination address for %s has been changed to %s'%(nominee.name(),nominee.email.address))
-            return redirect('nomcom_private_index', year=year)
+            return redirect('ietf.nomcom.views.private_index', year=year)
     else:
         form = EditNomineeForm(instance=nominee)
 

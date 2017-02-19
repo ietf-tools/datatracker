@@ -21,7 +21,7 @@
   <p>Use this to generate blue sheets for meeting sessions.</p>
   <ul class="none">
     <li>
-      <form style="display:inline" method="post" action="{% url "meetings_blue_sheet_generate" meeting_id=meeting.number%}">{% csrf_token %}
+      <form style="display:inline" method="post" action="{% url "ietf.secr.meetings.views.blue_sheet_generate" meeting_id=meeting.number%}">{% csrf_token %}
           <input type="submit" value="Generate Blue Sheets">
       </form>
       &nbsp;&nbsp;Last run:

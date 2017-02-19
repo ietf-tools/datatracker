@@ -21,7 +21,7 @@
     <h2>Draft - View</h2>
       <table class="full-width">
         <tr><td>Document Name:</td><td>{{ draft.title }}</td></tr>
-        <tr><td>Area:</td><td>{% if draft.group.parent %}<a href="{% url "areas_view" name=draft.group.parent.acronym %}">{{ draft.group.parent }}{% endif %}</td></tr>
+        <tr><td>Area:</td><td>{% if draft.group.parent %}<a href="{% url "ietf.secr.areas.views.view" name=draft.group.parent.acronym %}">{{ draft.group.parent }}{% endif %}</td></tr>
         <tr><td>Group:</td><td>{% if draft.group %}<a href="{% url "groups_view" acronym=draft.group.acronym %}">{{ draft.group.acronym }}{% endif %}</td></tr>
         <tr><td>Area Director:</td><td>{{ draft.ad }}</td></tr>
         <tr><td>Shepherd:</td><td>{% if draft.shepherd %}{{ draft.shepherd.person }} &lt;{{ draft.shepherd.address }}&gt;{% else %}None{% endif %}</td></tr>
@@ -56,8 +56,8 @@
         <tr><td>RFC Number:</td><td>{{ draft.rfc_number|default_if_none:"" }}</td></tr>
         <tr><td>Comments:</td><td>{{ draft.internal_comments|default_if_none:"" }}</td></tr>
         <tr><td>Last Modified Date:</td><td>{{ draft.time }}</td></tr>
-        <tr><td>Replaced by:</td><td>{% if draft.replaced_by %}<a href="{% url "drafts_view" id=draft.replaced_by.name %}">{{ draft.replaced_by.name }}{% endif %}</td></tr>
-        <tr><td>Related Documents:</td><td>{% for item in draft.relateddocument_set.all %}{% if not forloop.first %}, {% endif %}{{ item.relationship }} <a href="{% url "drafts_view" id=item.target.document.pk %}">{{ item.target.name }}</a>{% endfor %}</td></tr>
+        <tr><td>Replaced by:</td><td>{% if draft.replaced_by %}<a href="{% url "ietf.secr.drafts.views.view" id=draft.replaced_by.name %}">{{ draft.replaced_by.name }}{% endif %}</td></tr>
+        <tr><td>Related Documents:</td><td>{% for item in draft.relateddocument_set.all %}{% if not forloop.first %}, {% endif %}{{ item.relationship }} <a href="{% url "ietf.secr.drafts.views.view" id=item.target.document.pk %}">{{ item.target.name }}</a>{% endfor %}</td></tr>
         <tr><td>Tags:</td>
             <td>{% for tag in draft.tags.all %}
                   {% if not forloop.first %}, {% endif %}

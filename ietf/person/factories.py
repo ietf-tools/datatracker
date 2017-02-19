@@ -8,6 +8,7 @@ from unidecode import unidecode
 
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.utils.text import slugify
 
 import debug                            # pyflakes:ignore
 
@@ -24,7 +25,8 @@ class UserFactory(factory.DjangoModelFactory):
     locale = random.sample(faker.config.AVAILABLE_LOCALES, 1)[0]
     first_name = factory.Faker('first_name', locale)
     last_name = factory.Faker('last_name', locale)
-    email = factory.LazyAttributeSequence(lambda u, n: '%s.%s_%d@%s'%(unidecode(u.first_name),unidecode(u.last_name),n, fake.domain_name()))
+    email = factory.LazyAttributeSequence(lambda u, n: '%s.%s_%d@%s'%( slugify(unidecode(u.first_name)),
+                                                slugify(unidecode(u.last_name)), n, fake.domain_name()))
     username = factory.LazyAttribute(lambda u: u.email)
 
     @factory.post_generation
@@ -92,6 +94,7 @@ class EmailFactory(factory.DjangoModelFactory):
         model = Email
         django_get_or_create = ('address',)
 
-    address = factory.Sequence(lambda n:'%s.%s_%d@%s' % (fake.first_name(),fake.last_name(),n,fake.domain_name()))
+    address = factory.Sequence(lambda n:'%s.%s_%d@%s' % ( slugify(unidecode(fake.first_name())),
+                                    slugify(unidecode(fake.last_name())), n, fake.domain_name()))
     active = True
     primary = False

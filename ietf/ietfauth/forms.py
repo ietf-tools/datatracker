@@ -43,6 +43,11 @@ class PasswordForm(forms.Form):
             raise forms.ValidationError("The two password fields didn't match.")
         return password_confirmation
 
+class PersonPasswordForm(forms.ModelForm, PasswordForm):
+    class Meta:
+        model = Person
+        fields = ['name', 'ascii']
+
 
 def ascii_cleaner(supposedly_ascii):
     outside_printable_ascii_pattern = r'[^\x20-\x7F]'
@@ -173,7 +178,7 @@ from django import forms
 class ChangePasswordForm(forms.Form):
     current_password = forms.CharField(widget=forms.PasswordInput)
 
-    new_password = forms.CharField(widget=PasswordStrengthInput)
+    new_password = forms.CharField(widget=PasswordStrengthInput(attrs={'class':'password_strength'}))
     new_password_confirmation = forms.CharField(widget=PasswordConfirmationInput)
 
     def __init__(self, user, data=None):

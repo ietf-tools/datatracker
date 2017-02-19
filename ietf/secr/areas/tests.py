@@ -19,7 +19,7 @@ class SecrAreasTestCase(TestCase):
     def test_main(self):
         "Main Test"
         make_test_data()
-        url = reverse('areas')
+        url = reverse('ietf.secr.areas.views.list_areas')
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
@@ -29,7 +29,7 @@ class SecrAreasTestCase(TestCase):
         make_test_data()
         augment_data()
         areas = Group.objects.filter(type='area',state='active')
-        url = reverse('areas_view', kwargs={'name':areas[0].acronym})
+        url = reverse('ietf.secr.areas.views.view', kwargs={'name':areas[0].acronym})
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)

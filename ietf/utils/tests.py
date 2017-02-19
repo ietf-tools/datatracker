@@ -21,7 +21,6 @@ from django.templatetags.static import StaticNode
 
 import debug                            # pyflakes:ignore
 
-import ietf.urls
 from ietf.utils.management.commands import pyflakes
 from ietf.utils.mail import send_mail_text, send_mail_mime, outbox 
 from ietf.utils.test_data import make_test_data
@@ -162,6 +161,8 @@ class TemplateChecksTestCase(TestCase):
         urlconf can be found, a full resolution would also fail.
         """
         #
+        import ietf.urls
+
         def check_that_url_tag_callbacks_exists(node, origin, callbacks):
             """
             Check that an URLNode's callback is in callbacks.

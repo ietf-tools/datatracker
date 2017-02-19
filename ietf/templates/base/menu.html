@@ -58,7 +58,7 @@
     <li><a href="{% url "ietf.submit.views.approvals" %}">Approve a draft</a></li>
 
     {% for g in user|managed_groups %}
-      <li><a href="{% url "group_docs" g.acronym %}">{{ g.acronym }} {{ g.type.slug }} docs</a></li>
+      <li><a href="{% url "ietf.group.views.group_documents" g.acronym %}">{{ g.acronym }} {{ g.type.slug }} docs</a></li>
     {% endfor %}
     {% for g in user|managed_groups %}
       <li><a href="{% url "ietf.group.views.meetings" g.acronym %}">{{ g.acronym }} {{ g.type.slug }} meetings</a></li>
@@ -75,7 +75,7 @@
 
   {% if user|has_role:"Area Director,Secretariat" %}
     {% if flavor == "top" %}<li class="divider hidden-xs"></li>{% endif %}
-    <li><a href="{% url "rfc_status_changes" %}">RFC status changes</a></li>
+    <li><a href="{% url "ietf.doc.views_status_change.rfc_status_changes" %}">RFC status changes</a></li>
   {% endif %}
   {% if flavor == "top" %}<li class="divider hidden-xs"></li>{% endif %}
   <li {%if flavor == "top" %}class="dropdown-header hidden-xs"{% else %}class="nav-header"{% endif %}>RFC streams</li>

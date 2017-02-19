@@ -11,15 +11,7 @@ import warnings
 
 warnings.simplefilter("always", DeprecationWarning)
 warnings.filterwarnings("ignore", message="Report.file_reporters will no longer be available in Coverage.py 4.2", module="coverage.report")
-warnings.filterwarnings("ignore", message="initial_data fixtures are deprecated. Use data migrations instead.", module="django.core.management.commands.loaddata")
 warnings.filterwarnings("ignore", message="The popen2 module is deprecated.  Use the subprocess module.", module="ietf.utils.pipe")
-warnings.filterwarnings("ignore", message="Reversing by dotted path is deprecated")
-warnings.filterwarnings("ignore", message=r"Support for string view arguments to url\(\) is deprecated and will be removed in Django 1.10")
-# This is triggered by the TimedeltaField, which we retain only for the sake
-# of old migrations:
-warnings.filterwarnings("ignore", message=r"SubfieldBase has been deprecated. Use Field.from_db_value instead.")
-# Bootstrap3 library code:
-warnings.filterwarnings("ignore", message=r"render\(\) must be called with a dict, not a Context", module="bootstrap3.utils")
 
 
 try:
@@ -55,6 +47,7 @@ ADMINS = (
 )
 
 PASSWORD_HASHERS = [
+    'django.contrib.auth.hashers.Argon2PasswordHasher',
     'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
     'django.contrib.auth.hashers.PBKDF2PasswordHasher',
     'django.contrib.auth.hashers.SHA1PasswordHasher',
@@ -83,7 +76,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'USER': 'ietf',
         #'PASSWORD': 'ietf',
-        #'OPTIONS': {},
+        'OPTIONS': {'sql_mode': 'STRICT_TRANS_TABLES', },
     },
 }
 
@@ -265,7 +258,7 @@ if DEBUG:
     TEMPLATES[0]['OPTIONS']['string_if_invalid'] = "** No value found for '%s' **"
 
 
-MIDDLEWARE_CLASSES = (
+MIDDLEWARE = (
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -273,11 +266,11 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.http.ConditionalGetMiddleware',
-    'ietf.middleware.SQLLogMiddleware',
+    'ietf.middleware.sql_log_middleware',
     'ietf.middleware.SMTPExceptionMiddleware',
-    'ietf.middleware.RedirectTrailingPeriod',
+    'ietf.middleware.redirect_trailing_period_middleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'ietf.middleware.UnicodeNfkcNormalization',
+    'ietf.middleware.unicode_nfkc_normalization_middleware',
 )
 
 ROOT_URLCONF = 'ietf.urls'
@@ -302,6 +295,7 @@ INSTALLED_APPS = (
     'django.contrib.sites',
     'django.contrib.staticfiles',
     # External apps 
+    'anora',
     'bootstrap3',
     'django_markup',
     'django_password_strength',
@@ -678,7 +672,7 @@ SELENIUM_TESTS_ONLY = False
 # Set debug apps in settings_local.DEV_APPS
 
 DEV_APPS = ()
-DEV_MIDDLEWARE_CLASSES = ()
+DEV_MIDDLEWARE = ()
 
 # django-debug-toolbar and the debug listing of sql queries at the bottom of
 # each page when in dev mode can overlap in functionality, and can slow down
@@ -802,7 +796,7 @@ for app in INSTALLED_APPS:
 
 # Add DEV_APPS to INSTALLED_APPS
 INSTALLED_APPS += DEV_APPS
-MIDDLEWARE_CLASSES += DEV_MIDDLEWARE_CLASSES
+MIDDLEWARE += DEV_MIDDLEWARE
 TEMPLATES[0]['OPTIONS']['context_processors'] += DEV_TEMPLATE_CONTEXT_PROCESSORS
 
 

@@ -1,5 +1,6 @@
-from django.conf.urls import url
 from django.views.generic import RedirectView
+
+from ietf.utils.urls import url
 
 urlpatterns = [
     url(r'^nomcom/$', RedirectView.as_view(url="/nomcom/ann/", permanent=True)),

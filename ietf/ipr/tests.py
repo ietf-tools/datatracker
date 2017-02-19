@@ -108,14 +108,14 @@ class IprTests(TestCase):
     def test_showlist(self):
         make_test_data()
         ipr = IprDisclosureBase.objects.get(title='Statement regarding rights')
-        r = self.client.get(urlreverse("ipr_showlist"))
+        r = self.client.get(urlreverse("ietf.ipr.views.showlist"))
         self.assertEqual(r.status_code, 200)
         self.assertTrue(ipr.title in unicontent(r))
 
     def test_show_posted(self):
         make_test_data()
         ipr = IprDisclosureBase.objects.get(title='Statement regarding rights')
-        r = self.client.get(urlreverse("ipr_show", kwargs=dict(id=ipr.pk)))
+        r = self.client.get(urlreverse("ietf.ipr.views.show", kwargs=dict(id=ipr.pk)))
         self.assertEqual(r.status_code, 200)
         self.assertTrue(ipr.title in unicontent(r))
         
@@ -123,28 +123,28 @@ class IprTests(TestCase):
         make_test_data()
         ipr = IprDisclosureBase.objects.get(title='Statement regarding rights')
         ipr.set_state('parked')
-        r = self.client.get(urlreverse("ipr_show", kwargs=dict(id=ipr.pk)))
+        r = self.client.get(urlreverse("ietf.ipr.views.show", kwargs=dict(id=ipr.pk)))
         self.assertEqual(r.status_code, 404)
 
     def test_show_pending(self):
         make_test_data()
         ipr = IprDisclosureBase.objects.get(title='Statement regarding rights')
         ipr.set_state('pending')
-        r = self.client.get(urlreverse("ipr_show", kwargs=dict(id=ipr.pk)))
+        r = self.client.get(urlreverse("ietf.ipr.views.show", kwargs=dict(id=ipr.pk)))
         self.assertEqual(r.status_code, 404)
         
     def test_show_rejected(self):
         make_test_data()
         ipr = IprDisclosureBase.objects.get(title='Statement regarding rights')
         ipr.set_state('rejected')
-        r = self.client.get(urlreverse("ipr_show", kwargs=dict(id=ipr.pk)))
+        r = self.client.get(urlreverse("ietf.ipr.views.show", kwargs=dict(id=ipr.pk)))
         self.assertEqual(r.status_code, 404)
         
     def test_show_removed(self):
         make_test_data()
         ipr = IprDisclosureBase.objects.get(title='Statement regarding rights')
         ipr.set_state('removed')
-        r = self.client.get(urlreverse("ipr_show", kwargs=dict(id=ipr.pk)))
+        r = self.client.get(urlreverse("ietf.ipr.views.show", kwargs=dict(id=ipr.pk)))
         self.assertEqual(r.status_code, 200)
         self.assertTrue('This IPR disclosure was removed' in unicontent(r))
         
@@ -176,7 +176,7 @@ class IprTests(TestCase):
         draft = make_test_data()
         ipr = IprDisclosureBase.objects.get(title="Statement regarding rights").get_child()
 
-        url = urlreverse("ipr_search")
+        url = urlreverse("ietf.ipr.views.search")
 
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)

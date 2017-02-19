@@ -1,5 +1,5 @@
-from django.conf.urls import url
 from ietf.doc import views_review
+from ietf.utils.urls import url
 
 urlpatterns = [
     url(r'^$', views_review.request_review),

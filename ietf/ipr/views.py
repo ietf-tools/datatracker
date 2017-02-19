@@ -296,7 +296,7 @@ def edit(request, id, updates=None):
                 desc="Changed disclosure metadata")
             
             messages.success(request,'Disclosure modified')
-            return redirect("ipr_show", id=ipr.id)
+            return redirect("ietf.ipr.views.show", id=ipr.id)
 
     else:
         if ipr.updates:
@@ -320,7 +320,7 @@ def email(request, id):
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
-            return redirect("ipr_show", id=ipr.id)
+            return redirect("ietf.ipr.views.show", id=ipr.id)
             
         form = MessageModelForm(request.POST)
         if form.is_valid():
@@ -349,7 +349,7 @@ def email(request, id):
             send_mail_message(None,msg)
 
             messages.success(request, 'Email sent.')
-            return redirect('ipr_show', id=ipr.id)
+            return redirect('ietf.ipr.views.show', id=ipr.id)
     
     else:
         reply_to = get_reply_to()
@@ -455,7 +455,9 @@ def new(request, type, updates=None):
             valid_formsets = True
             
         if form.is_valid() and valid_formsets:
-            updates = form.cleaned_data.get('updates')
+            if 'updates' in form.cleaned_data:
+                updates = form.cleaned_data['updates']
+                del form.cleaned_data['updates']
             disclosure = form.save(commit=False)
             disclosure.by = person
             disclosure.state = IprDisclosureStateName.objects.get(slug='pending')
@@ -528,7 +530,7 @@ def notify(request, id, type):
                     message = message,
                 )
             messages.success(request,'Notifications sent')
-            return redirect("ipr_show", id=ipr.id)
+            return redirect("ietf.ipr.views.show", id=ipr.id)
             
     else:
         if type == 'update':
@@ -700,7 +702,7 @@ def get_details_tabs(ipr, selected):
     return [
         t + (t[0].lower() == selected.lower(),)
         for t in [
-        ('Disclosure', urlreverse('ipr_show', kwargs={ 'id': ipr.pk })),
+        ('Disclosure', urlreverse('ietf.ipr.views.show', kwargs={ 'id': ipr.pk })),
         ('History', urlreverse('ipr_history', kwargs={ 'id': ipr.pk }))
     ]]
 
@@ -770,7 +772,7 @@ def state(request, id):
                     desc=form.cleaned_data['comment']
                 )
             messages.success(request, 'State Changed')
-            return redirect("ipr_show", id=ipr.id)
+            return redirect("ietf.ipr.views.show", id=ipr.id)
     else:
         form = StateForm(initial={'state':ipr.state.pk,'private':True})
   
