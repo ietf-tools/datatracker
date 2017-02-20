@@ -175,7 +175,7 @@ $do ietf/manage.py bower_install
 $do svn commit ietf/externals/static -m "Updated bower-managed static web assets"
 # Get rid of bower-installed files which we don't use:
 $do rm $(svn st ietf/externals/ | grep '^\?' | awk '{print $2}')
-$do rm -rf rm -rf ietf/externals/static/datatracker/
+$do rm -rf ietf/externals/static/datatracker/
 
 note "Collecting static files ..."
 $do ietf/manage.py collectstatic --noinput --ignore=bower.json --ignore='README.*' | grep -v "Found another file with the destination path"
