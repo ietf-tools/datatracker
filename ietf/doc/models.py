@@ -18,7 +18,7 @@ from ietf.name.models import ( DocTypeName, DocTagName, StreamName, IntendedStdL
     DocRelationshipName, DocReminderTypeName, BallotPositionName, ReviewRequestStateName )
 from ietf.person.models import Email, Person
 from ietf.utils.admin import admin_link
-
+from ietf.utils.validators import validate_no_control_chars
 
 class StateType(models.Model):
     slug = models.CharField(primary_key=True, max_length=30) # draft, draft-iesg, charter, ...
@@ -65,7 +65,7 @@ class DocumentInfo(models.Model):
     time = models.DateTimeField(default=datetime.datetime.now) # should probably have auto_now=True
 
     type = models.ForeignKey(DocTypeName, blank=True, null=True) # Draft, Agenda, Minutes, Charter, Discuss, Guideline, Email, Review, Issue, Wiki, External ...
-    title = models.CharField(max_length=255)
+    title = models.CharField(max_length=255, validators=[validate_no_control_chars, ])
 
     states = models.ManyToManyField(State, blank=True) # plain state (Active/Expired/...), IESG state, stream state
     tags = models.ManyToManyField(DocTagName, blank=True) # Revised ID Needed, ExternalParty, AD Followup, ...
