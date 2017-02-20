@@ -1,3 +1,34 @@
+ietfdb (6.45.0) ietf; urgency=medium
+
+  **Django 1.10**
+
+  This release upgrades the datatracker to use version 1.10 of the Django
+  framework.  Django 1.10 provides support for unicode login names, the new
+  Argon2 password hasher, and makes available a number of minor conveniences.
+
+  This release also removed support for automatic generation of dotted-path
+  names for the view function in urlpatterns, which seems to violate the DRY
+  (Don't Repeat Yourself) principle in programming.  I plan to have words with
+  the Django developers about this during DjangoCon Europe in May.  That
+  change necessitated a workaround url() function and a lot of clean-up and
+  conversion.  The conversion work is not finished, but we're getting there,
+  and meanwhile everything is functional with Django 1.10.  For the Django
+  1.10 release notes, see [a].
+
+  A full diff of the upgrade changes is available in changeset [12881].
+
+  The next Django release, 1.11, will be the last version which will run on
+  Python 2.7; the following release, 2.0, will require Python 3; probably
+  python 3.4 or higher.  The Django 1.11 release will be a LTS (Long Term
+  Support) release which will get security upgrades for 3 years after its
+  release.  We should upgrade to 1.11 when it's released later this year, and
+  then plan on converting the datatracker code base to Python 3, in order to
+  be ready for Django 2.x before LTS ends some time in 2020.
+
+  [a] https://docs.djangoproject.com/en/1.10/releases/1.10/
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  20 Feb 2017 11:45:05 +0000
+
 ietfdb (6.44.1) ietf; urgency=medium
 
   **Non-ASCII Name Support for Email Address Fields**
