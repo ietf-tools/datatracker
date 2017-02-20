@@ -54,7 +54,7 @@ import debug                            # pyflakes:ignore
 from ietf.group.models import Role, Group
 from ietf.ietfauth.forms import ( RegistrationForm, PasswordForm, ResetPasswordForm, TestEmailForm,
                                 WhitelistForm, ChangePasswordForm, get_person_form, RoleEmailForm,
-                                NewEmailForm, ChangeUsernameForm )
+                                NewEmailForm, ChangeUsernameForm, PersonPasswordForm)
 from ietf.ietfauth.htpasswd import update_htpasswd_file
 from ietf.ietfauth.utils import role_required
 from ietf.mailinglists.models import Subscribed, Whitelisted
@@ -138,7 +138,7 @@ def confirm_account(request, auth):
 
     success = False
     if request.method == 'POST':
-        form = PasswordForm(request.POST)
+        form = PersonPasswordForm(request.POST)
         if form.is_valid():
             password = form.cleaned_data["password"]
 
@@ -157,9 +157,11 @@ def confirm_account(request, auth):
                 person = email_obj.person
 
             if not person:
+                name = form.cleaned_data["name"]
+                ascii = form.cleaned_data["ascii"]
                 person = Person.objects.create(user=user,
-                                               name=email,
-                                               ascii=email)
+                                               name=name,
+                                               ascii=ascii)
             if not email_obj:
                 email_obj = Email.objects.create(address=email, person=person)
             else:
@@ -172,7 +174,7 @@ def confirm_account(request, auth):
 
             success = True
     else:
-        form = PasswordForm()
+        form = PersonPasswordForm()
 
     return render(request, 'registration/confirm_account.html', {
         'form': form,

@@ -24,8 +24,8 @@
 
             $('.' + self.config.passwordClass).on('keyup', function() {
                 var password_strength_bar = $(this).parent().find('.password_strength_bar');
-		var password_strength_info = $(this).parent().find('.password_strength_info');
-		var password_strength_offline_info = $(this).parent().parent().parent().find('.password_strength_offline_info');
+                var password_strength_info = $(this).parent().find('.password_strength_info');
+                var password_strength_offline_info = $(this).parent().parent().parent().find('.password_strength_offline_info');
 
                 if( $(this).val() ) {
                     var result = zxcvbn( $(this).val() );
@@ -39,12 +39,12 @@
                     }
 
                     password_strength_bar.width( ((result.score+1)/5)*100 + '%' ).attr('aria-valuenow', result.score + 1);
-		    // henrik@levkowetz.com -- this is the only changed line:
-		    password_strength_info.find('.password_strength_time').html(result.crack_times_display.online_no_throttling_10_per_second);
-		    password_strength_info.removeClass('hidden');
+                    // henrik@levkowetz.com -- this is the only changed line:
+                    password_strength_info.find('.password_strength_time').html(result.crack_times_display.online_no_throttling_10_per_second);
+                    password_strength_info.removeClass('hidden');
 
-		    password_strength_offline_info.find('.password_strength_time').html(result.crack_times_display.offline_slow_hashing_1e4_per_second);
-		    password_strength_offline_info.removeClass('hidden');
+                    password_strength_offline_info.find('.password_strength_time').html(result.crack_times_display.offline_slow_hashing_1e4_per_second);
+                    password_strength_offline_info.removeClass('hidden');
                 } else {
                     password_strength_bar.removeClass('progress-bar-success').addClass('progress-bar-warning');
                     password_strength_bar.width( '0%' ).attr('aria-valuenow', 0);

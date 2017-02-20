@@ -11,7 +11,7 @@ import debug                            # pyflakes:ignore
 from ietf.person.factories import EmailFactory,PersonFactory
 from ietf.person.models import Person
 from ietf.utils.test_data import make_test_data
-from ietf.utils.test_utils import TestCase
+from ietf.utils.test_utils import TestCase, unicontent
 from ietf.utils.mail import outbox, empty_outbox
 
 
@@ -42,7 +42,7 @@ class PersonTests(TestCase):
         url = urlreverse("ietf.person.views.profile", kwargs={ "email_or_name": person.plain_name()})
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertIn(person.photo_name(), r.content.decode(r.charset))
+        self.assertIn(person.photo_name(), unicontent(r))
         q = PyQuery(r.content)
         self.assertIn("Photo of %s"%person, q("div.bio-text img.bio-photo").attr("alt"))
 

@@ -265,13 +265,7 @@ def login_testing_unauthorized(test_case, username, url, password=None):
 
 def unicontent(r):
     "Return a HttpResponse object's content as unicode"
-    content_type = r._headers.get("content-type", "text/html; charset=utf-8")
-    if 'charset=' in content_type:
-        mediatype, charset = content_type.split(';')
-        encoding = charset.split('=')[1].strip()
-    else:
-        encoding = 'utf-8'
-    return r.content.decode(encoding)
+    return r.content.decode(r.charset)
 
 def reload_db_objects(*objects):
     """Rerequest the given arguments from the database so they're refreshed, to be used like

@@ -127,7 +127,7 @@ class IetfAuthTests(TestCase):
         empty_outbox()
         r = self.client.post(url, { 'email': email })
         self.assertEqual(r.status_code, 200)
-        self.assertIn("Account created", unicontent(r))
+        self.assertIn("Account request received", unicontent(r))
         self.assertEqual(len(outbox), 1)
 
         # go to confirm page
@@ -141,7 +141,7 @@ class IetfAuthTests(TestCase):
         self.assertEqual(User.objects.filter(username=email).count(), 0)
 
         # confirm
-        r = self.client.post(confirm_url, { 'password': 'secret', 'password_confirmation': 'secret' })
+        r = self.client.post(confirm_url, { 'name': 'User Name', 'ascii': 'User Name', 'password': 'secret', 'password_confirmation': 'secret' })
         self.assertEqual(r.status_code, 200)
         self.assertEqual(User.objects.filter(username=email).count(), 1)
         self.assertEqual(Person.objects.filter(user__username=email).count(), 1)

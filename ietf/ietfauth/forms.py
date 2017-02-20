@@ -15,7 +15,7 @@ import debug                            # pyflakes:ignore
 
 from ietf.person.models import Person, Email
 from ietf.mailinglists.models import Whitelisted
-
+from ietf.utils.text import isascii
 
 class RegistrationForm(forms.Form):
     email = forms.EmailField(label="Your email (lowercase)")
@@ -32,9 +32,12 @@ class RegistrationForm(forms.Form):
 
 
 class PasswordForm(forms.Form):
-    password = forms.CharField(widget=PasswordStrengthInput)
-    password_confirmation = forms.CharField(widget=PasswordConfirmationInput,
-                                            help_text="Enter the same password as above, for verification.")
+    password = forms.CharField(widget=PasswordStrengthInput(attrs={'class':'password_strength'}))
+    password_confirmation = forms.CharField(widget=PasswordConfirmationInput(
+                                                        confirm_with='password',
+                                                        attrs={'class':'password_confirmation'}),
+                                            help_text="Enter the same password as above, for verification.",)
+                                            
 
     def clean_password_confirmation(self):
         password = self.cleaned_data.get("password", "")
@@ -42,12 +45,6 @@ class PasswordForm(forms.Form):
         if password != password_confirmation:
             raise forms.ValidationError("The two password fields didn't match.")
         return password_confirmation
-
-class PersonPasswordForm(forms.ModelForm, PasswordForm):
-    class Meta:
-        model = Person
-        fields = ['name', 'ascii']
-
 
 def ascii_cleaner(supposedly_ascii):
     outside_printable_ascii_pattern = r'[^\x20-\x7F]'
@@ -63,6 +60,26 @@ def prevent_system_name(name):
     name_without_spaces = name.replace(" ", "").replace("\t", "")
     if "(system)" in name_without_spaces.lower():
         raise forms.ValidationError("Please pick another name - this name is reserved.")
+
+class PersonPasswordForm(forms.ModelForm, PasswordForm):
+
+    class Meta:
+        model = Person
+        fields = ['name', 'ascii']
+
+    def clean_name(self):
+        name = self.cleaned_data.get('name', '')
+        prevent_at_symbol(name)
+        prevent_system_name(name)
+
+        return name
+
+    def clean_ascii(self):
+        ascii = self.cleaned_data.get('ascii', '')
+        if not isascii(ascii):
+            raise forms.ValidationError("Ascii name contains non-ASCII characters.")
+
+        return ascii
 
 def get_person_form(*args, **kwargs):
 
@@ -179,7 +196,9 @@ class ChangePasswordForm(forms.Form):
     current_password = forms.CharField(widget=forms.PasswordInput)
 
     new_password = forms.CharField(widget=PasswordStrengthInput(attrs={'class':'password_strength'}))
-    new_password_confirmation = forms.CharField(widget=PasswordConfirmationInput)
+    new_password_confirmation = forms.CharField(widget=PasswordConfirmationInput(
+                                                    confirm_with='new_password',
+                                                    attrs={'class':'password_confirmation'}))
 
     def __init__(self, user, data=None):
         self.user = user
