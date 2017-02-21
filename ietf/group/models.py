@@ -257,6 +257,13 @@ class Role(models.Model):
     def __unicode__(self):
         return u"%s is %s in %s" % (self.person.plain_name(), self.name.name, self.group.acronym or self.group.name)
 
+    def name_and_email(self):
+        "Returns name and email, e.g.: u'Ano Nymous <ano@nymous.org>' "
+        if self.person:
+            return u"%s <%s>" % (self.person.plain_name(), self.email.address)
+        else:
+            return u"<%s>" % self.address
+
     def formatted_ascii_email(self):
         return email.utils.formataddr((self.person.plain_ascii(), self.email.address))
 

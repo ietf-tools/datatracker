@@ -324,10 +324,10 @@ def edit(request, group_type=None, acronym=None, action="edit"):
                     added = set(new) - set(old)
                     deleted = set(old) - set(new)
                     if added:
-                        change_text=title + ' added: ' + ", ".join(x.formatted_email() for x in added)
+                        change_text=title + ' added: ' + ", ".join(x.name_and_email() for x in added)
                         personnel_change_text+=change_text+"\n"
                     if deleted:
-                        change_text=title + ' deleted: ' + ", ".join(x.formatted_email() for x in deleted)
+                        change_text=title + ' deleted: ' + ", ".join(x.name_and_email() for x in deleted)
                         personnel_change_text+=change_text+"\n"
                     changed_personnel.update(set(old)^set(new))
 

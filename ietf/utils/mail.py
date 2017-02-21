@@ -183,11 +183,8 @@ def send_mail(request, to, frm, subject, template, context, *args, **kwargs):
     return send_mail_text(request, to, frm, subject, txt, *args, **kwargs)
 
 def encode_message(txt):
-    if isinstance(txt, unicode):
-        msg = MIMEText(txt.encode('utf-8'), 'plain', 'UTF-8')
-    else:
-        msg = MIMEText(txt)
-    return msg
+    assert isinstance(txt, unicode)
+    return MIMEText(txt.encode('utf-8'), 'plain', 'UTF-8')
 
 def send_mail_text(request, to, frm, subject, txt, cc=None, extra=None, toUser=False, bcc=None):
     """Send plain text message."""
@@ -307,6 +304,7 @@ def send_mail_mime(request, to, frm, subject, msg, cc=None, extra=None, toUser=F
 def parse_preformatted(preformatted, extra={}, override={}):
     """Parse preformatted string containing mail with From:, To:, ...,"""
     msg = message_from_string(preformatted.encode("utf-8"))
+    msg.set_charset('UTF-8')
 
     for k, v in override.iteritems():
          if k in msg:
@@ -332,7 +330,8 @@ def send_mail_preformatted(request, preformatted, extra={}, override={}):
     extra headers as needed)."""
 
     (msg,headers,bcc) = parse_preformatted(preformatted, extra, override)
-    send_mail_text(request, msg['To'], msg["From"], msg["Subject"], msg.get_payload(), extra=headers, bcc=bcc)
+    txt = msg.get_payload().decode(str(msg.get_charset()))
+    send_mail_text(request, msg['To'], msg["From"], msg["Subject"], txt, extra=headers, bcc=bcc)
     return msg
 
 def send_mail_message(request, message, extra={}):

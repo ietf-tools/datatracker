@@ -243,7 +243,18 @@ class Email(models.Model):
         else:
             return self.address
 
+    def name_and_email(self):
+        "Returns name and email, e.g.: u'Ano Nymous <ano@nymous.org>' "
+        if self.person:
+            return u"%s <%s>" % (self.person.plain_name(), self.address)
+        else:
+            return u"<%s>" % self.address
+
     def formatted_email(self):
+        """
+        Similar to name_and_email(), but with email header-field
+        encoded words (RFC 2047) and quotes as needed.
+        """
         if self.person:
             return formataddr((self.person.plain_name(), self.address))
         else:

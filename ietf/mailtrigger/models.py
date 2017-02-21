@@ -216,7 +216,7 @@ class Recipient(models.Model):
                     if doc.stream_id and doc.stream_id not in ['ietf']:
                         addrs.extend(Recipient.objects.get(slug='stream_managers').gather(**{'streams':[doc.stream_id]}))
             else:
-                addrs.extend([u"%s <%s>" % (author["name"], author["email"]) for author in submission.authors_parsed() if author["email"]])
+                addrs.extend([formataddr((author["name"], author["email"])) for author in submission.authors_parsed() if author["email"]])
                 if submission.submitter_parsed()["email"]: 
                     addrs.append(submission.submitter)
         return addrs

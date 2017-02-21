@@ -52,7 +52,7 @@ class TestSMTPServer(TestCase):
     def test_address_rejected(self):
 
         def send_simple_mail(to):
-            send_mail_text(None, to=to, frm=None, subject="Test for rejection", txt="dummy body")
+            send_mail_text(None, to=to, frm=None, subject="Test for rejection", txt=u"dummy body")
 
         len_before = len(outbox)
         send_simple_mail('good@example.com,poison@example.com')

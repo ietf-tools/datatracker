@@ -5,6 +5,8 @@ from django.core.urlresolvers import reverse as urlreverse
 from django.template.loader import render_to_string
 from django.utils.encoding import smart_text
 
+import debug                            # pyflakes:ignore
+
 from ietf.doc.models import NewRevisionDocEvent, WriteupDocEvent 
 from ietf.group.models import ChangeStateGroupEvent
 from ietf.name.models import GroupStateName

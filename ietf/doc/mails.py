@@ -369,6 +369,7 @@ def email_iana(request, doc, to, msg, cc=None):
     # fix up message and send it with extra info on doc in headers
     import email
     parsed_msg = email.message_from_string(msg.encode("utf-8"))
+    parsed_msg.set_charset('UTF-8')
 
     extra = {}
     extra["Reply-To"] = "noreply@ietf.org"
@@ -377,7 +378,7 @@ def email_iana(request, doc, to, msg, cc=None):
     
     send_mail_text(request, to,
                    parsed_msg["From"], parsed_msg["Subject"],
-                   parsed_msg.get_payload(),
+                   parsed_msg.get_payload().decode(str(parsed_msg.get_charset())),
                    extra=extra,
                    cc=cc)
 
