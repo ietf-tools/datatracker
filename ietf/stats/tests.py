@@ -26,7 +26,9 @@ class StatisticsTests(TestCase):
 
         # check various stats types
         for stats_type in ["authors", "pages", "words", "format", "formlang",
-                           "author/documents", "author/affiliation", "author/country", "author/continent"]:
+                           "author/documents", "author/affiliation", "author/country",
+                           "author/continent", "author/citations", "author/hindex",
+                           "yearly/affiliation", "yearly/country", "yearly/continent"]:
             for document_type in ["", "rfc", "draft"]:
                 for time_choice in ["", "5y"]:
                     url = urlreverse(ietf.stats.views.document_stats, kwargs={ "stats_type": stats_type })
@@ -37,7 +39,8 @@ class StatisticsTests(TestCase):
                     self.assertEqual(r.status_code, 200)
                     q = PyQuery(r.content)
                     self.assertTrue(q('#chart'))
-                    self.assertTrue(q('table.stats-data'))
+                    if not stats_type.startswith("yearly"):
+                        self.assertTrue(q('table.stats-data'))
 
     def test_known_country_list(self):
         make_test_data()

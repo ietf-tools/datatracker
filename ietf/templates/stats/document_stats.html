@@ -36,6 +36,16 @@
       </div>
     </div>
 
+    <div>
+      Yearly:
+      
+      <div class="btn-group">
+        {% for slug, label, url in possible_yearly_stats_types %}
+          <a class="btn btn-default {% if slug == stats_type %}active{% endif %}" href="{{ url }}">{{ label }}</a>
+        {% endfor %}
+      </div>
+    </div>
+
     <h5>Options</h5>
 
     <div>

@@ -25,7 +25,7 @@ from ietf.group.models import Role, Group
 from ietf.person.models import Person
 from ietf.name.models import ReviewRequestStateName, ReviewResultName, CountryName, DocRelationshipName
 from ietf.person.name import plain_name
-from ietf.doc.models import DocAlias, Document, State
+from ietf.doc.models import DocAlias, Document, State, DocEvent
 from ietf.stats.utils import get_aliased_affiliations, get_aliased_countries, compute_hirsch_index
 from ietf.ietfauth.utils import has_role
 
@@ -81,6 +81,15 @@ def put_into_bin(value, bin_size):
     v = (value // bin_size) * bin_size
     return (v, "{} - {}".format(v, v + bin_size - 1))
 
+def prune_unknown_bin_with_known(bins):
+    # remove from the unknown bin all authors within the
+    # named/known bins
+    all_known = { n for b, names in bins.iteritems() if b for n in names }
+    bins[""] = [name for name in bins[""] if name not in all_known]
+
+def count_bins(bins):
+    return len({ n for b, names in bins.iteritems() if b for n in names })
+
 def document_stats(request, stats_type=None):
     def build_document_stats_url(stats_type_override=Ellipsis, get_overrides={}):
         kwargs = {
@@ -89,7 +98,7 @@ def document_stats(request, stats_type=None):
 
         return urlreverse(document_stats, kwargs={ k: v for k, v in kwargs.iteritems() if v is not None }) + generate_query_string(request.GET, get_overrides)
 
-    # statistics type - one of the tables or the chart
+    # statistics types
     possible_document_stats_types = add_url_to_choices([
         ("authors", "Number of authors"),
         ("pages", "Pages"),
@@ -98,17 +107,22 @@ def document_stats(request, stats_type=None):
         ("formlang", "Formal languages"),
     ], lambda slug: build_document_stats_url(stats_type_override=slug))
 
-    # statistics type - one of the tables or the chart
     possible_author_stats_types = add_url_to_choices([
         ("author/documents", "Number of documents"),
         ("author/affiliation", "Affiliation"),
         ("author/country", "Country"),
         ("author/continent", "Continent"),
         ("author/citations", "Citations"),
-        ("author/hindex", "Impact"),
+        ("author/hindex", "h-index"),
     ], lambda slug: build_document_stats_url(stats_type_override=slug))
     
-
+    possible_yearly_stats_types = add_url_to_choices([
+        ("yearly/affiliation", "Affiliation"),
+        ("yearly/country", "Country"),
+        ("yearly/continent", "Continent"),
+    ], lambda slug: build_document_stats_url(stats_type_override=slug))
+    
+    
     if not stats_type:
         return HttpResponseRedirect(build_document_stats_url(stats_type_override=possible_document_stats_types[0][0]))
 
@@ -132,14 +146,15 @@ def document_stats(request, stats_type=None):
     from_time = None
     if "y" in time_choice:
         try:
-            years = int(time_choice.rstrip("y"))
-            from_time = datetime.datetime.today() - dateutil.relativedelta.relativedelta(years=years)
+            y = int(time_choice.rstrip("y"))
+            from_time = datetime.datetime.today() - dateutil.relativedelta.relativedelta(years=y)
         except ValueError:
             pass
 
     chart_data = []
     table_data = []
     stats_title = ""
+    template_name = stats_type.replace("/", "_")
     bin_size = 1
     alias_data = []
     eu_countries = None
@@ -205,10 +220,7 @@ def document_stats(request, stats_type=None):
                 series_data.append((author_count, percentage))
                 table_data.append((author_count, percentage, names))
 
-            chart_data.append({
-                "data": series_data,
-                "animation": False,
-            })
+            chart_data.append({ "data": series_data })
 
         elif stats_type == "pages":
             stats_title = "Number of pages for each {}".format(doc_label)
@@ -225,10 +237,7 @@ def document_stats(request, stats_type=None):
                     series_data.append((pages, len(names)))
                     table_data.append((pages, percentage, names))
 
-            chart_data.append({
-                "data": series_data,
-                "animation": False,
-            })
+            chart_data.append({ "data": series_data })
 
         elif stats_type == "words":
             stats_title = "Number of words for each {}".format(doc_label)
@@ -248,10 +257,7 @@ def document_stats(request, stats_type=None):
 
                 table_data.append((words, percentage, names))
 
-            chart_data.append({
-                "data": series_data,
-                "animation": False,
-            })
+            chart_data.append({ "data": series_data })
 
         elif stats_type == "format":
             stats_title = "Submission formats for each {}".format(doc_label)
@@ -302,10 +308,7 @@ def document_stats(request, stats_type=None):
 
                 table_data.append((fmt, percentage, names))
 
-            chart_data.append({
-                "data": series_data,
-                "animation": False,
-            })
+            chart_data.append({ "data": series_data })
 
         elif stats_type == "formlang":
             stats_title = "Formal languages used for each {}".format(doc_label)
@@ -322,10 +325,7 @@ def document_stats(request, stats_type=None):
                     series_data.append((formal_language, len(names)))
                     table_data.append((formal_language, percentage, names))
 
-            chart_data.append({
-                "data": series_data,
-                "animation": False,
-            })
+            chart_data.append({ "data": series_data })
 
     elif any(stats_type == t[0] for t in possible_author_stats_types):
         person_filters = Q(documentauthor__document__type="draft")
@@ -348,7 +348,7 @@ def document_stats(request, stats_type=None):
 
             person_filters &= Q(documentauthor__document__in=docs_within_time_constraint)
 
-        person_qs = Person.objects.filter(person_filters, documentauthor__document="draft-arkko-dual-stack-extra-lite")
+        person_qs = Person.objects.filter(person_filters)
 
         if document_type == "rfc":
             doc_label = "RFC"
@@ -356,15 +356,6 @@ def document_stats(request, stats_type=None):
             doc_label = "draft"
         else:
             doc_label = "document"
-
-        def prune_unknown_bin_with_known(bins):
-            # remove from the unknown bin all authors within the
-            # named/known bins
-            all_known = set(n for b, names in bins.iteritems() if b for n in names)
-            bins[""] = [name for name in bins[""] if name not in all_known]
-
-        def count_bins(bins):
-            return len(set(n for b, names in bins.iteritems() if b for n in names))
 
         if stats_type == "author/documents":
             stats_title = "Number of {}s per author".format(doc_label)
@@ -384,10 +375,7 @@ def document_stats(request, stats_type=None):
                 series_data.append((document_count, percentage))
                 table_data.append((document_count, percentage, [plain_name(n) for n in names]))
 
-            chart_data.append({
-                "data": series_data,
-                "animation": False,
-            })
+            chart_data.append({ "data": series_data })
 
         elif stats_type == "author/affiliation":
             stats_title = "Number of {} authors per affiliation".format(doc_label)
@@ -400,8 +388,10 @@ def document_stats(request, stats_type=None):
             # same way, and we don't want to go back and edit them
             # either, we transform them here.
 
-            name_affiliation_set = set((name, affiliation)
-                                       for name, affiliation in person_qs.values_list("name", "documentauthor__affiliation"))
+            name_affiliation_set = {
+                (name, affiliation)
+                for name, affiliation in person_qs.values_list("name", "documentauthor__affiliation")
+            }
 
             aliases = get_aliased_affiliations(affiliation for _, affiliation in name_affiliation_set)
 
@@ -421,10 +411,7 @@ def document_stats(request, stats_type=None):
             series_data.sort(key=lambda t: t[1], reverse=True)
             series_data = series_data[:30]
 
-            chart_data.append({
-                "data": series_data,
-                "animation": False,
-            })
+            chart_data.append({ "data": series_data })
 
             for alias, name in sorted(aliases.iteritems(), key=lambda t: t[1]):
                 alias_data.append((name, alias))
@@ -440,14 +427,16 @@ def document_stats(request, stats_type=None):
             # same way, and we don't want to go back and edit them
             # either, we transform them here.
 
-            name_country_set = set((name, country)
-                                   for name, country in person_qs.values_list("name", "documentauthor__country"))
+            name_country_set = {
+                (name, country)
+                for name, country in person_qs.values_list("name", "documentauthor__country")
+            }
 
             aliases = get_aliased_countries(country for _, country in name_country_set)
 
             countries = { c.name: c for c in CountryName.objects.all() }
             eu_name = "EU"
-            eu_countries = set(c for c in countries.itervalues() if c.in_eu)
+            eu_countries = { c for c in countries.itervalues() if c.in_eu }
 
             for name, country in name_country_set:
                 country_name = aliases.get(country, country)
@@ -470,10 +459,7 @@ def document_stats(request, stats_type=None):
             series_data.sort(key=lambda t: t[1], reverse=True)
             series_data = series_data[:30]
 
-            chart_data.append({
-                "data": series_data,
-                "animation": False,
-            })
+            chart_data.append({ "data": series_data })
 
             for alias, country_name in aliases.iteritems():
                 alias_data.append((country_name, alias, countries.get(country_name)))
@@ -487,8 +473,10 @@ def document_stats(request, stats_type=None):
 
             person_qs = Person.objects.filter(person_filters)
 
-            name_country_set = set((name, country)
-                                   for name, country in person_qs.values_list("name", "documentauthor__country"))
+            name_country_set = {
+                (name, country)
+                for name, country in person_qs.values_list("name", "documentauthor__country")
+            }
 
             aliases = get_aliased_countries(country for _, country in name_country_set)
 
@@ -511,10 +499,7 @@ def document_stats(request, stats_type=None):
 
             series_data.sort(key=lambda t: t[1], reverse=True)
 
-            chart_data.append({
-                "data": series_data,
-                "animation": False,
-            })
+            chart_data.append({ "data": series_data })
 
         elif stats_type == "author/citations":
             stats_title = "Number of citations of {}s written by author".format(doc_label)
@@ -537,10 +522,7 @@ def document_stats(request, stats_type=None):
                 series_data.append((citations, percentage))
                 table_data.append((citations, percentage, [plain_name(n) for n in names]))
 
-            chart_data.append({
-                "data": sorted(series_data, key=lambda t: t[0]),
-                "animation": False,
-            })
+            chart_data.append({ "data": sorted(series_data, key=lambda t: t[0]) })
 
         elif stats_type == "author/hindex":
             stats_title = "h-index for {}s written by author".format(doc_label)
@@ -565,10 +547,152 @@ def document_stats(request, stats_type=None):
                 series_data.append((citations, percentage))
                 table_data.append((citations, percentage, [plain_name(n) for n in names]))
 
-            chart_data.append({
-                "data": sorted(series_data, key=lambda t: t[0]),
-                "animation": False,
-            })
+            chart_data.append({ "data": sorted(series_data, key=lambda t: t[0]) })
+
+    elif any(stats_type == t[0] and stats_type.split("/")[1] in ["affiliation", "country", "continent"]
+             for t in possible_yearly_stats_types):
+
+        person_filters = Q(documentauthor__document__type="draft")
+
+        # filter persons
+        rfc_state = State.objects.get(type="draft", slug="rfc")
+        if document_type == "rfc":
+            person_filters &= Q(documentauthor__document__states=rfc_state)
+        elif document_type == "draft":
+            person_filters &= ~Q(documentauthor__document__states=rfc_state)
+
+        doc_years = defaultdict(set)
+
+        docevent_qs = DocEvent.objects.filter(
+            doc__type="draft",
+            type__in=["published_rfc", "new_revision"],
+        ).values_list("doc", "time").order_by("doc")
+
+        for doc, time in docevent_qs.iterator():
+            doc_years[doc].add(time.year)
+
+        person_qs = Person.objects.filter(person_filters)
+
+        if document_type == "rfc":
+            doc_label = "RFC"
+        elif document_type == "draft":
+            doc_label = "draft"
+        else:
+            doc_label = "document"
+
+        template_name = "yearly"
+
+        years_from = from_time.year if from_time else 1
+        years_to = datetime.date.today().year - 1
+
+        def add_yearly_chart_data_from_bins(bins, limit):
+            aggregated_bins = defaultdict(set)
+            years = set()
+            for (year, label), names in bins.iteritems():
+                years.add(year)
+                aggregated_bins[label].update(names)
+
+            years = list(sorted(y for y in years))
+
+            limit = 8
+            sorted_bins = sorted(aggregated_bins.iteritems(), key=lambda t: len(t[1]), reverse=True)
+            top = [ label for label, names in list(sorted_bins)[:limit]]
+
+            for label in top:
+                series_data = []
+
+                for y in years:
+                    names = bins.get((y, label), set())
+
+                    series_data.append((y, len(names)))
+
+                chart_data.append({
+                    "data": series_data,
+                    "name": label
+                })
+            
+
+        if stats_type == "yearly/affiliation":
+            stats_title = "Number of {} authors per affiliation over the years".format(doc_label)
+
+            person_qs = Person.objects.filter(person_filters)
+
+            name_affiliation_doc_set = {
+                (name, affiliation, doc)
+                for name, affiliation, doc in person_qs.values_list("name", "documentauthor__affiliation", "documentauthor__document")
+            }
+
+            aliases = get_aliased_affiliations(affiliation for _, affiliation, _ in name_affiliation_doc_set)
+
+            bins = defaultdict(set)
+            for name, affiliation, doc in name_affiliation_doc_set:
+                a = aliases.get(affiliation, affiliation)
+                if a:
+                    for year in doc_years.get(doc):
+                        if years_from <= year <= years_to:
+                            bins[(year, a)].add(name)
+
+            add_yearly_chart_data_from_bins(bins, limit=8)
+
+        elif stats_type == "yearly/country":
+            stats_title = "Number of {} authors per country over the years".format(doc_label)
+
+            person_qs = Person.objects.filter(person_filters)
+
+            name_country_doc_set = {
+                (name, country, doc)
+                for name, country, doc in person_qs.values_list("name", "documentauthor__country", "documentauthor__document")
+            }
+
+            aliases = get_aliased_countries(country for _, country, _ in name_country_doc_set)
+
+            countries = { c.name: c for c in CountryName.objects.all() }
+            eu_name = "EU"
+            eu_countries = { c for c in countries.itervalues() if c.in_eu }
+
+            bins = defaultdict(set)
+
+            for name, country, doc in name_country_doc_set:
+                country_name = aliases.get(country, country)
+                c = countries.get(country_name)
+
+                if country_name:
+                    for year in doc_years.get(doc):
+                        if years_from <= year <= years_to:
+                            bins[(year, country_name)].add(name)
+
+                            if c and c.in_eu:
+                                bins[(year, eu_name)].add(name)
+
+            add_yearly_chart_data_from_bins(bins, limit=8)
+
+
+        elif stats_type == "yearly/continent":
+            stats_title = "Number of {} authors per continent".format(doc_label)
+
+            person_qs = Person.objects.filter(person_filters)
+
+            name_country_doc_set = {
+                (name, country, doc)
+                for name, country, doc in person_qs.values_list("name", "documentauthor__country", "documentauthor__document")
+            }
+
+            aliases = get_aliased_countries(country for _, country, _ in name_country_doc_set)
+
+            country_to_continent = dict(CountryName.objects.values_list("name", "continent__name"))
+
+            bins = defaultdict(set)
+
+            for name, country, doc in name_country_doc_set:
+                country_name = aliases.get(country, country)
+                continent_name = country_to_continent.get(country_name, "")
+
+                if continent_name:
+                    for year in doc_years.get(doc):
+                        if years_from <= year <= years_to:
+                            bins[(year, continent_name)].add(name)
+
+            add_yearly_chart_data_from_bins(bins, limit=8)
 
     return render(request, "stats/document_stats.html", {
         "chart_data": mark_safe(json.dumps(chart_data)),
@@ -576,6 +700,7 @@ def document_stats(request, stats_type=None):
         "stats_title": stats_title,
         "possible_document_stats_types": possible_document_stats_types,
         "possible_author_stats_types": possible_author_stats_types,
+        "possible_yearly_stats_types": possible_yearly_stats_types,
         "stats_type": stats_type,
         "possible_document_types": possible_document_types,
         "document_type": document_type,
@@ -587,7 +712,7 @@ def document_stats(request, stats_type=None):
         "hide_aliases_url": build_document_stats_url(get_overrides={ "showaliases": None }),
         "alias_data": alias_data,
         "eu_countries": sorted(eu_countries or [], key=lambda c: c.name),
-        "content_template": "stats/document_stats_{}.html".format(stats_type.replace("/", "_")),
+        "content_template": "stats/document_stats_{}.html".format(template_name),
     })
 
 
