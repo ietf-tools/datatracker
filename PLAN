@@ -7,11 +7,6 @@ Updated: $Date$
 Planned work in rough order
 ===========================
 
-* Upgrade to Django 1.9 / 1.10
-
-* Clean up document author records containing 'none', and find and fix
-  the code which produces them.
-
 * Add a 'rev' field to DocEvent, migrate 'rev' information from New
   Revision and Submit DocEvents, and infer 'rev' information for others
 
