@@ -392,7 +392,7 @@ def submission_status(request, submission_id, access_token=None):
 
             create_submission_event(request, submission, "Approved and posted submission")
 
-            return redirect("doc_view", name=submission.name)
+            return redirect("ietf.doc.views_doc.document_main", name=submission.name)
 
 
         elif action == "forcepost" and submission.state.next_states.filter(slug="posted"):
@@ -408,7 +408,7 @@ def submission_status(request, submission_id, access_token=None):
 
             create_submission_event(request, submission, desc)
 
-            return redirect("doc_view", name=submission.name)
+            return redirect("ietf.doc.views_doc.document_main", name=submission.name)
 
 
         else:
@@ -536,7 +536,7 @@ def confirm_submission(request, submission_id, auth_token):
 
         create_submission_event(request, submission, "Confirmed and posted submission")
 
-        return redirect("doc_view", name=submission.name)
+        return redirect("ietf.doc.views_doc.document_main", name=submission.name)
 
     return render(request, 'submit/confirm_submission.html', {
         'submission': submission,

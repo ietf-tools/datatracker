@@ -23,7 +23,7 @@
     {% endifchanged %}
 
     <p>
-      {{ e.desc }} <a href="{% url "doc_view" e.doc.name %}">{{ e.doc.name }}</a>
+      {{ e.desc }} <a href="{% url "ietf.doc.views_doc.document_main" e.doc.name %}">{{ e.doc.name }}</a>
       {% if e.doc.intended_std_level %}({{ e.doc.intended_std_level }}){% endif %}
       - {{ e.doc.title }}
     </p>

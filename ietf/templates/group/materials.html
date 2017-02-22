@@ -32,7 +32,7 @@
       <tbody>
         {% for d in docs %}
           <tr>
-            <td><a class="title-link" href="{% url "doc_view" name=d.name %}">{{ d.title }}</a></td>
+            <td><a class="title-link" href="{% url "ietf.doc.views_doc.document_main" name=d.name %}">{{ d.title }}</a></td>
             <td class='snippable'>{{ d.abstract|format_snippet }} </td>
             <td>{{ d.rev }}</td>
             <td>{{ d.time|date:"Y-m-d" }}</td>

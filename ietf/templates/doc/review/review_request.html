@@ -15,9 +15,9 @@
         <th>Review of</th>
         <td>
           {% if review_req.requested_rev %}
-            <a href="{% url "doc_view" name=review_req.doc.name rev=review_req.requested_rev %}">{{ review_req.doc.name }}-{{ review_req.requested_rev }}</a>
+            <a href="{% url "ietf.doc.views_doc.document_main" name=review_req.doc.name rev=review_req.requested_rev %}">{{ review_req.doc.name }}-{{ review_req.requested_rev }}</a>
           {% else %}
-            <a href="{% url "doc_view" name=review_req.doc.name %}">{{ review_req.doc.name }}</a>
+            <a href="{% url "ietf.doc.views_doc.document_main" name=review_req.doc.name %}">{{ review_req.doc.name }}</a>
           {% endif %}
         </td>
       </tr>
@@ -167,7 +167,7 @@
         <tr>
           <th></th>
           <th>Reviewed rev.</th>
-          <td><a href="{% url "doc_view" name=review_req.doc.name rev=review_req.reviewed_rev %}">{{ review_req.reviewed_rev }}</a> {% if review_req.reviewed_rev != review_req.doc.rev %}(document currently at {{ review_req.doc.rev }}){% endif %}</td>
+          <td><a href="{% url "ietf.doc.views_doc.document_main" name=review_req.doc.name rev=review_req.reviewed_rev %}">{{ review_req.reviewed_rev }}</a> {% if review_req.reviewed_rev != review_req.doc.rev %}(document currently at {{ review_req.doc.rev }}){% endif %}</td>
         </tr>
       {% endif %}
 

@@ -669,7 +669,7 @@ def crawl_history(doc):
         for d in docs:
             for e in d.docevent_set.filter(type='new_revision').distinct():
                 if hasattr(e, 'newrevisiondocevent'):
-                    url = urlreverse("doc_view", kwargs=dict(name=d)) + e.newrevisiondocevent.rev + "/"
+                    url = urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=d)) + e.newrevisiondocevent.rev + "/"
                     history[url] = {
                         'name': d.name,
                         'rev': e.newrevisiondocevent.rev,
@@ -684,7 +684,7 @@ def crawl_history(doc):
     else:
         e = doc.latest_event(type='iesg_approved')
     if e:
-        url = urlreverse("doc_view", kwargs=dict(name=e.doc))
+        url = urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=e.doc))
         history[url] = {
             'name': e.doc.canonical_name(),
             'rev': e.doc.canonical_name(),

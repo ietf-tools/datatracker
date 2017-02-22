@@ -847,7 +847,7 @@ def edit_iesg_note(request, name):
                 doc.note = new_note
                 doc.save_with_history([c])
 
-            return redirect('doc_view', name=doc.name)
+            return redirect('ietf.doc.views_doc.document_main', name=doc.name)
     else:
         form = IESGNoteForm(initial=initial)
 
@@ -904,7 +904,7 @@ def edit_shepherd_writeup(request, name):
                 e.text = writeup
                 e.save()
             
-                return redirect('doc_view', name=doc.name)
+                return redirect('ietf.doc.views_doc.document_main', name=doc.name)
 
         elif "reset_text" in request.POST:
 
@@ -974,7 +974,7 @@ def edit_shepherd(request, name):
             else:
                 messages.info(request,"The selected shepherd was already assigned - no changes have been made.")
 
-            return redirect('doc_view', name=doc.name)
+            return redirect('ietf.doc.views_doc.document_main', name=doc.name)
 
     else:
         form = ShepherdForm(initial={ "shepherd": doc.shepherd_id })
@@ -1020,7 +1020,7 @@ def change_shepherd_email(request, name):
             else:
                 messages.info(request,"The selected shepherd address was already assigned - no changes have been made.")
 
-            return redirect('doc_view', name=doc.name)
+            return redirect('ietf.doc.views_doc.document_main', name=doc.name)
 
     else:
         form = ChangeShepherdEmailForm(initial=initial)
@@ -1060,7 +1060,7 @@ def edit_ad(request, name):
 
             doc.save_with_history([c])
     
-            return redirect('doc_view', name=doc.name)
+            return redirect('ietf.doc.views_doc.document_main', name=doc.name)
 
     else:
         init = { "ad" : doc.ad_id }
@@ -1102,7 +1102,7 @@ def edit_consensus(request, name):
 
                 e.save()
 
-            return redirect('doc_view', name=doc.name)
+            return redirect('ietf.doc.views_doc.document_main', name=doc.name)
 
     else:
         form = ConsensusForm(initial=dict(consensus=nice_consensus(prev_consensus)))
@@ -1178,7 +1178,7 @@ def request_publication(request, name):
                     events.append(e)
                 doc.save_with_history(events)
 
-            return redirect('doc_view', name=doc.name)
+            return redirect('ietf.doc.views_doc.document_main', name=doc.name)
 
     else:
         if doc.intended_std_level_id in ("std", "ds", "ps", "bcp"):

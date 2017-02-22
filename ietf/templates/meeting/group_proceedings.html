@@ -90,7 +90,7 @@
     <td>
      {% with session.all_meeting_drafts as drafts %}
        {% for draft in drafts %}
-         <a href="{% url "doc_view" name=draft.canonical_name %}">{{ draft.canonical_name }}</a><br>
+         <a href="{% url "ietf.doc.views_doc.document_main" name=draft.canonical_name %}">{{ draft.canonical_name }}</a><br>
        {% empty %} 
          {% if not meeting.proceedings_final %}
            <span class="label label-warning">No drafts</span>

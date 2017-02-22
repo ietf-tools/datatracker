@@ -64,7 +64,7 @@ urlpatterns = [
     url(r'^active/$', views_search.index_active_drafts, name="index_active_drafts"),
     url(r'^select2search/(?P<model_name>(document|docalias))/(?P<doc_type>draft)/$', views_search.ajax_select2_search_docs, name="ajax_select2_search_docs"),
 
-    url(r'^%(name)s/(?:%(rev)s/)?$' % settings.URL_REGEXPS, views_doc.document_main, name="doc_view"),
+    url(r'^%(name)s/(?:%(rev)s/)?$' % settings.URL_REGEXPS, views_doc.document_main),
     url(r'^%(name)s/(?:%(rev)s/)?bibtex/$' % settings.URL_REGEXPS, views_doc.document_bibtex),
     url(r'^%(name)s/history/$' % settings.URL_REGEXPS, views_doc.document_history, name="doc_history"),
     url(r'^%(name)s/writeup/$' % settings.URL_REGEXPS, views_doc.document_writeup, name="doc_writeup"),

@@ -39,7 +39,7 @@
       {% endif %}
       {% if not option or option == "abandon" %}
         <button class="btn btn-primary" type="submit">Save & notify secretariat</button>
-        <a class="btn btn-default pull-right" href="{% url "doc_view" name=doc.name %}">Back</a>
+        <a class="btn btn-default pull-right" href="{% url "ietf.doc.views_doc.document_main" name=doc.name %}">Back</a>
       {% endif %}
     {% endbuttons %}
   </form>

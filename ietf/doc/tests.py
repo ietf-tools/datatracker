@@ -128,63 +128,63 @@ class SearchTests(TestCase):
         # exact match
         r = self.client.get(urlreverse("doc_search_for_name", kwargs=dict(name=draft.name)))
         self.assertEqual(r.status_code, 302)
-        self.assertEqual(urlparse.urlparse(r["Location"]).path, urlreverse("doc_view", kwargs=dict(name=draft.name)))
+        self.assertEqual(urlparse.urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
 
         # prefix match
         r = self.client.get(urlreverse("doc_search_for_name", kwargs=dict(name="-".join(draft.name.split("-")[:-1]))))
         self.assertEqual(r.status_code, 302)
-        self.assertEqual(urlparse.urlparse(r["Location"]).path, urlreverse("doc_view", kwargs=dict(name=draft.name)))
+        self.assertEqual(urlparse.urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
 
         # non-prefix match
         r = self.client.get(urlreverse("doc_search_for_name", kwargs=dict(name="-".join(draft.name.split("-")[1:]))))
         self.assertEqual(r.status_code, 302)
-        self.assertEqual(urlparse.urlparse(r["Location"]).path, urlreverse("doc_view", kwargs=dict(name=draft.name)))
+        self.assertEqual(urlparse.urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
 
         # other doctypes than drafts
         doc = Document.objects.get(name='charter-ietf-mars')
         r = self.client.get(urlreverse("doc_search_for_name", kwargs=dict(name='charter-ietf-ma')))
         self.assertEqual(r.status_code, 302)
-        self.assertEqual(urlparse.urlparse(r["Location"]).path, urlreverse("doc_view", kwargs=dict(name=doc.name)))
+        self.assertEqual(urlparse.urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))
 
         doc = Document.objects.filter(name__startswith='conflict-review-').first()
         r = self.client.get(urlreverse("doc_search_for_name", kwargs=dict(name="-".join(doc.name.split("-")[:-1]))))
         self.assertEqual(r.status_code, 302)
-        self.assertEqual(urlparse.urlparse(r["Location"]).path, urlreverse("doc_view", kwargs=dict(name=doc.name)))
+        self.assertEqual(urlparse.urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))
 
         doc = Document.objects.filter(name__startswith='status-change-').first()
         r = self.client.get(urlreverse("doc_search_for_name", kwargs=dict(name="-".join(doc.name.split("-")[:-1]))))
         self.assertEqual(r.status_code, 302)
-        self.assertEqual(urlparse.urlparse(r["Location"]).path, urlreverse("doc_view", kwargs=dict(name=doc.name)))
+        self.assertEqual(urlparse.urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))
 
         doc = Document.objects.filter(name__startswith='agenda-').first()
         r = self.client.get(urlreverse("doc_search_for_name", kwargs=dict(name="-".join(doc.name.split("-")[:-1]))))
         self.assertEqual(r.status_code, 302)
-        self.assertEqual(urlparse.urlparse(r["Location"]).path, urlreverse("doc_view", kwargs=dict(name=doc.name)))
+        self.assertEqual(urlparse.urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))
 
         doc = Document.objects.filter(name__startswith='minutes-').first()
         r = self.client.get(urlreverse("doc_search_for_name", kwargs=dict(name="-".join(doc.name.split("-")[:-1]))))
         self.assertEqual(r.status_code, 302)
-        self.assertEqual(urlparse.urlparse(r["Location"]).path, urlreverse("doc_view", kwargs=dict(name=doc.name)))
+        self.assertEqual(urlparse.urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))
 
         doc = Document.objects.filter(name__startswith='slides-').first()
         r = self.client.get(urlreverse("doc_search_for_name", kwargs=dict(name="-".join(doc.name.split("-")[:-1]))))
         self.assertEqual(r.status_code, 302)
-        self.assertEqual(urlparse.urlparse(r["Location"]).path, urlreverse("doc_view", kwargs=dict(name=doc.name)))
+        self.assertEqual(urlparse.urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))
 
         # match with revision
         r = self.client.get(urlreverse("doc_search_for_name", kwargs=dict(name=draft.name + "-" + prev_rev)))
         self.assertEqual(r.status_code, 302)
-        self.assertEqual(urlparse.urlparse(r["Location"]).path, urlreverse("doc_view", kwargs=dict(name=draft.name, rev=prev_rev)))
+        self.assertEqual(urlparse.urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name, rev=prev_rev)))
 
         # match with non-existing revision
         r = self.client.get(urlreverse("doc_search_for_name", kwargs=dict(name=draft.name + "-09")))
         self.assertEqual(r.status_code, 302)
-        self.assertEqual(urlparse.urlparse(r["Location"]).path, urlreverse("doc_view", kwargs=dict(name=draft.name)))
+        self.assertEqual(urlparse.urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
 
         # match with revision and extension
         r = self.client.get(urlreverse("doc_search_for_name", kwargs=dict(name=draft.name + "-" + prev_rev + ".txt")))
         self.assertEqual(r.status_code, 302)
-        self.assertEqual(urlparse.urlparse(r["Location"]).path, urlreverse("doc_view", kwargs=dict(name=draft.name, rev=prev_rev)))
+        self.assertEqual(urlparse.urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name, rev=prev_rev)))
         
         # no match
         r = self.client.get(urlreverse("doc_search_for_name", kwargs=dict(name="draft-ietf-doesnotexist-42")))
@@ -448,46 +448,46 @@ Man                    Expires September 22, 2015               [Page 3]
         # active draft
         draft.set_state(State.objects.get(type="draft", slug="active"))
 
-        r = self.client.get(urlreverse("doc_view", kwargs=dict(name=draft.name)))
+        r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
         self.assertEqual(r.status_code, 200)
         self.assertTrue("Active Internet-Draft" in unicontent(r))
         self.assertTrue("Show full document text" in unicontent(r))
         self.assertFalse("Deimos street" in unicontent(r))
 
-        r = self.client.get(urlreverse("doc_view", kwargs=dict(name=draft.name)) + "?include_text=0")
+        r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)) + "?include_text=0")
         self.assertEqual(r.status_code, 200)
         self.assertTrue("Active Internet-Draft" in unicontent(r))
         self.assertFalse("Show full document text" in unicontent(r))
         self.assertTrue("Deimos street" in unicontent(r))
 
-        r = self.client.get(urlreverse("doc_view", kwargs=dict(name=draft.name)) + "?include_text=foo")
+        r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)) + "?include_text=foo")
         self.assertEqual(r.status_code, 200)
         self.assertTrue("Active Internet-Draft" in unicontent(r))
         self.assertFalse("Show full document text" in unicontent(r))
         self.assertTrue("Deimos street" in unicontent(r))
 
-        r = self.client.get(urlreverse("doc_view", kwargs=dict(name=draft.name)) + "?include_text=1")
+        r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)) + "?include_text=1")
         self.assertEqual(r.status_code, 200)
         self.assertTrue("Active Internet-Draft" in unicontent(r))
         self.assertFalse("Show full document text" in unicontent(r))
         self.assertTrue("Deimos street" in unicontent(r))
 
         self.client.cookies = SimpleCookie({'full_draft': 'on'})
-        r = self.client.get(urlreverse("doc_view", kwargs=dict(name=draft.name)))
+        r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
         self.assertEqual(r.status_code, 200)
         self.assertTrue("Active Internet-Draft" in unicontent(r))
         self.assertFalse("Show full document text" in unicontent(r))
         self.assertTrue("Deimos street" in unicontent(r))
 
         self.client.cookies = SimpleCookie({'full_draft': 'off'})
-        r = self.client.get(urlreverse("doc_view", kwargs=dict(name=draft.name)))
+        r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
         self.assertEqual(r.status_code, 200)
         self.assertTrue("Active Internet-Draft" in unicontent(r))
         self.assertTrue("Show full document text" in unicontent(r))
         self.assertFalse("Deimos street" in unicontent(r))
 
         self.client.cookies = SimpleCookie({'full_draft': 'foo'})
-        r = self.client.get(urlreverse("doc_view", kwargs=dict(name=draft.name)))
+        r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
         self.assertEqual(r.status_code, 200)
         self.assertTrue("Active Internet-Draft" in unicontent(r))
         self.assertTrue("Show full document text" in unicontent(r))
@@ -496,7 +496,7 @@ Man                    Expires September 22, 2015               [Page 3]
         # expired draft
         draft.set_state(State.objects.get(type="draft", slug="expired"))
 
-        r = self.client.get(urlreverse("doc_view", kwargs=dict(name=draft.name)))
+        r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
         self.assertEqual(r.status_code, 200)
         self.assertTrue("Expired Internet-Draft" in unicontent(r))
 
@@ -517,7 +517,7 @@ Man                    Expires September 22, 2015               [Page 3]
                                              target=draft.docalias_set.get(name__startswith="draft"),
                                              relationship_id="replaces")
 
-        r = self.client.get(urlreverse("doc_view", kwargs=dict(name=draft.name)))
+        r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
         self.assertEqual(r.status_code, 200)
         self.assertTrue("Replaced Internet-Draft" in unicontent(r))
         self.assertTrue(replacement.name in unicontent(r))
@@ -532,12 +532,12 @@ Man                    Expires September 22, 2015               [Page 3]
         rfc_alias = DocAlias.objects.create(name="rfc123456", document=draft)
         bcp_alias = DocAlias.objects.create(name="bcp123456", document=draft)
 
-        r = self.client.get(urlreverse("doc_view", kwargs=dict(name=draft.name)))
+        r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
         self.assertEqual(r.status_code, 302)
-        r = self.client.get(urlreverse("doc_view", kwargs=dict(name=bcp_alias.name)))
+        r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=bcp_alias.name)))
         self.assertEqual(r.status_code, 302)
 
-        r = self.client.get(urlreverse("doc_view", kwargs=dict(name=rfc_alias.name)))
+        r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=rfc_alias.name)))
         self.assertEqual(r.status_code, 200)
         self.assertTrue("RFC 123456" in unicontent(r))
         self.assertTrue(draft.name in unicontent(r))
@@ -551,12 +551,12 @@ Man                    Expires September 22, 2015               [Page 3]
             group=Group.objects.get(type="individ"),
             std_level_id="ps")
         DocAlias.objects.create(name=rfc.name, document=rfc)
-        r = self.client.get(urlreverse("doc_view", kwargs=dict(name=rfc.name)))
+        r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=rfc.name)))
         self.assertEqual(r.status_code, 200)
         self.assertTrue("RFC 1234567" in unicontent(r))
 
         # unknown draft
-        r = self.client.get(urlreverse("doc_view", kwargs=dict(name="draft-xyz123")))
+        r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name="draft-xyz123")))
         self.assertEqual(r.status_code, 404)
 
     def test_document_primary_and_history_views(self):
@@ -582,14 +582,14 @@ Man                    Expires September 22, 2015               [Page 3]
             doc.rev = "01"
             doc.save_with_history([DocEvent.objects.create(doc=doc, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
 
-            r = self.client.get(urlreverse("doc_view", kwargs=dict(name=doc.name)))
+            r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))
             self.assertEqual(r.status_code, 200)
             self.assertTrue("%s-01"%docname in unicontent(r))
     
-            r = self.client.get(urlreverse("doc_view", kwargs=dict(name=doc.name,rev="01")))
+            r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name,rev="01")))
             self.assertEqual(r.status_code, 302)
      
-            r = self.client.get(urlreverse("doc_view", kwargs=dict(name=doc.name,rev="00")))
+            r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name,rev="00")))
             self.assertEqual(r.status_code, 200)
             self.assertTrue("%s-00"%docname in unicontent(r))
 
@@ -597,13 +597,13 @@ class DocTestCase(TestCase):
     def test_document_charter(self):
         make_test_data()
 
-        r = self.client.get(urlreverse("doc_view", kwargs=dict(name="charter-ietf-mars")))
+        r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name="charter-ietf-mars")))
         self.assertEqual(r.status_code, 200)
 
     def test_document_conflict_review(self):
         make_test_data()
 
-        r = self.client.get(urlreverse("doc_view", kwargs=dict(name='conflict-review-imaginary-irtf-submission')))
+        r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name='conflict-review-imaginary-irtf-submission')))
         self.assertEqual(r.status_code, 200)
 
     def test_document_material(self):
@@ -630,7 +630,7 @@ class DocTestCase(TestCase):
             )
         SessionPresentation.objects.create(session=session, document=doc, rev=doc.rev)
 
-        r = self.client.get(urlreverse("doc_view", kwargs=dict(name=doc.name)))
+        r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))
         self.assertEqual(r.status_code, 200)
 
     def test_document_ballot(self):
@@ -799,17 +799,17 @@ class DocTestCase(TestCase):
         doc = make_test_data()
 
         self.client.login(username='iab-chair', password='iab-chair+password')
-        r = self.client.get(urlreverse("doc_view", kwargs=dict(name=doc.name)))
+        r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))
         self.assertEqual(r.status_code, 200)
         self.assertTrue("Request publication" not in unicontent(r))
 
         Document.objects.filter(pk=doc.pk).update(stream='iab')
-        r = self.client.get(urlreverse("doc_view", kwargs=dict(name=doc.name)))
+        r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))
         self.assertEqual(r.status_code, 200)
         self.assertTrue("Request publication" in unicontent(r))
 
         doc.states.add(State.objects.get(type_id='draft-stream-iab',slug='rfc-edit'))
-        r = self.client.get(urlreverse("doc_view", kwargs=dict(name=doc.name)))
+        r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))
         self.assertEqual(r.status_code, 200)
         self.assertTrue("Request publication" not in unicontent(r))
 

@@ -38,7 +38,7 @@ class GroupChangesFeed(Feed):
 
     def item_link(self, obj):
         if isinstance(obj, DocEvent):
-            return urlreverse("doc_view", kwargs={'name': obj.doc_id })
+            return urlreverse("ietf.doc.views_doc.document_main", kwargs={'name': obj.doc_id })
         elif isinstance(obj, GroupEvent):
             return obj.group.about_url()
 

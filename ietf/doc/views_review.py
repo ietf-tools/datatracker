@@ -136,7 +136,7 @@ def request_review(request, name):
 
                 email_review_request_change(request, review_req, subject, msg, by=request.user.person, notify_secretary=True, notify_reviewer=False, notify_requested_by=True)
 
-            return redirect('doc_view', name=doc.name)
+            return redirect('ietf.doc.views_doc.document_main', name=doc.name)
 
     else:
         if lc_ends:
@@ -571,7 +571,7 @@ def complete_review(request, name, request_id):
                     review.external_url = mailarch.construct_message_url(list_name, email.utils.unquote(msg["Message-ID"]))
                     review.save_with_history([close_event])
 
-            return redirect("doc_view", name=review_req.review.name)
+            return redirect("ietf.doc.views_doc.document_main", name=review_req.review.name)
     else:
         initial={
             "reviewed_rev": review_req.reviewed_rev,

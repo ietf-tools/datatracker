@@ -166,7 +166,7 @@ def edit_material(request, name=None, acronym=None, action=None, doc_type=None):
             if events:
                 doc.save_with_history(events)
 
-            return redirect("doc_view", name=doc.name)
+            return redirect("ietf.doc.views_doc.document_main", name=doc.name)
     else:
         form = UploadMaterialForm(document_type, action, group, doc)
 

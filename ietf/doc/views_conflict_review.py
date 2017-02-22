@@ -71,7 +71,7 @@ def change_state(request, name, option=None):
                     send_conflict_eval_email(request,review)
 
 
-            return redirect('doc_view', name=review.name)
+            return redirect('ietf.doc.views_doc.document_main', name=review.name)
     else:
         s = review.get_state()
         init = dict(review_state=s.pk if s else None)
@@ -176,7 +176,7 @@ def submit(request, name):
 
                 review.save_with_history(events)
 
-                return redirect('doc_view', name=review.name)
+                return redirect('ietf.doc.views_doc.document_main', name=review.name)
 
         elif "reset_text" in request.POST:
 
@@ -231,7 +231,7 @@ def edit_ad(request, name):
 
             review.save_with_history([c])
 
-            return redirect('doc_view', name=review.name)
+            return redirect('ietf.doc.views_doc.document_main', name=review.name)
 
     else:
         init = { "ad" : review.ad_id }
@@ -412,7 +412,7 @@ def build_conflict_review_document(login, doc_to_review, ad, notify, create_in_s
 
     c = DocEvent(type="added_comment", doc=doc_to_review, by=login)
     # Is it really OK to put html tags into comment text?
-    c.desc = 'IETF conflict review initiated - see <a href="%s">%s</a>' % (reverse('doc_view', kwargs={'name':conflict_review.name}),conflict_review.name)
+    c.desc = 'IETF conflict review initiated - see <a href="%s">%s</a>' % (reverse('ietf.doc.views_doc.document_main', kwargs={'name':conflict_review.name}),conflict_review.name)
     c.save()
 
     return conflict_review

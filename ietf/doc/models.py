@@ -228,7 +228,7 @@ class DocumentInfo(models.Model):
             elif state.slug == "repl":
                 rs = self.related_that("replaces")
                 if rs:
-                    return mark_safe("Replaced by " + ", ".join("<a href=\"%s\">%s</a>" % (urlreverse('doc_view', kwargs=dict(name=alias.document)), alias.document) for alias in rs))
+                    return mark_safe("Replaced by " + ", ".join("<a href=\"%s\">%s</a>" % (urlreverse('ietf.doc.views_doc.document_main', kwargs=dict(name=alias.document)), alias.document) for alias in rs))
                 else:
                     return "Replaced"
             elif state.slug == "active":
@@ -439,7 +439,7 @@ class Document(DocumentInfo):
                         filename = self.external_url
                     url = '%sproceedings/%s/%s/%s' % (settings.IETF_HOST_URL,meeting.number,self.type_id,filename)
                 return url
-        return urlreverse('doc_view', kwargs={ 'name': name }, urlconf="ietf.urls")
+        return urlreverse('ietf.doc.views_doc.document_main', kwargs={ 'name': name }, urlconf="ietf.urls")
 
 
     def file_tag(self):

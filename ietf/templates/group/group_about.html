@@ -52,7 +52,7 @@
 	  <th>Charter</th>
 	  <td>
 	    {% if group.charter %}
-	      <a href="{% url "doc_view" name=group.charter.name %}">{{ group.charter.name }}-{{ group.charter.rev }}</a>
+	      <a href="{% url "ietf.doc.views_doc.document_main" name=group.charter.name %}">{{ group.charter.name }}-{{ group.charter.rev }}</a>
 	      <span class="label label-info">{{ group.charter.get_state.name }}</span>
 	    {% else %}
 	      (None)

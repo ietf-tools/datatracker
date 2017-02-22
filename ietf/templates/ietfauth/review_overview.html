@@ -95,7 +95,7 @@
     <table class="table">
       {% for w in review_wishes %}
         <tr>
-          <td><a href="{% url "doc_view" w.doc_id %}">{{ w.doc_id }}</a></td>
+          <td><a href="{% url "ietf.doc.views_doc.document_main" w.doc_id %}">{{ w.doc_id }}</a></td>
           <td>{{ w.team.acronym }}</td>
           <td>
             <form method="post">

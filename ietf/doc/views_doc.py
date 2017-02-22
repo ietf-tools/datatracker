@@ -69,7 +69,7 @@ from ietf.review.utils import no_review_from_teams_on_doc
 
 def render_document_top(request, doc, tab, name):
     tabs = []
-    tabs.append(("Document", "document", urlreverse("doc_view", kwargs=dict(name=name)), True, None))
+    tabs.append(("Document", "document", urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=name)), True, None))
 
     ballot = doc.latest_event(BallotDocEvent, type="created_ballot")
     if doc.type_id in ("draft","conflrev", "statchg"):
@@ -103,7 +103,7 @@ def document_main(request, name, rev=None):
     if rev==None and doc.type_id == "draft" and not name.startswith("rfc"):
         for a in aliases:
             if a.startswith("rfc"):
-                return redirect("doc_view", name=a)
+                return redirect("ietf.doc.views_doc.document_main", name=a)
 
     if doc.type_id == 'conflrev':
         conflictdoc = doc.related_that_doc('conflrev')[0].document
@@ -120,7 +120,7 @@ def document_main(request, name, rev=None):
 
     if rev != None:
         if rev == doc.rev:
-            return redirect('doc_view', name=name)
+            return redirect('ietf.doc.views_doc.document_main', name=name)
 
         # find the entry in the history
         for h in doc.history_set.order_by("-time"):
@@ -130,7 +130,7 @@ def document_main(request, name, rev=None):
                 break
 
         if not snapshot:
-            return redirect('doc_view', name=name)
+            return redirect('ietf.doc.views_doc.document_main', name=name)
 
         if doc.type_id == "charter":
             # find old group, too
@@ -1043,7 +1043,7 @@ def telechat_date(request, name):
             else:
                 cleaned_returning_item = form.cleaned_data['returning_item']
             update_telechat(request, doc, login, form.cleaned_data['telechat_date'],cleaned_returning_item)
-            return redirect('doc_view', name=doc.name)
+            return redirect('ietf.doc.views_doc.document_main', name=doc.name)
     else:
         form = TelechatForm(initial=initial)
         if doc.type.slug=='charter':
@@ -1077,7 +1077,7 @@ def edit_notify(request, name):
                     e = make_notify_changed_event(request, doc, login.person, new_notify)
                     doc.notify = new_notify
                     doc.save_with_history([e])
-                return redirect('doc_view', name=doc.name)
+                return redirect('ietf.doc.views_doc.document_main', name=doc.name)
 
         elif "regenerate_addresses" in request.POST:
             init = { "notify" : get_initial_notify(doc) }

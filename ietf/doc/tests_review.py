@@ -111,7 +111,7 @@ class ReviewTests(TestCase):
         review_req.doc = older_doc
         review_req.save()
 
-        url = urlreverse('doc_view', kwargs={ "name": doc.name })
+        url = urlreverse('ietf.doc.views_doc.document_main', kwargs={ "name": doc.name })
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         content = unicontent(r)
@@ -572,7 +572,7 @@ class ReviewTests(TestCase):
         self.assertTrue(settings.MAILING_LIST_ARCHIVE_URL in review_req.review.external_url)
 
         # check the review document page
-        url = urlreverse('doc_view', kwargs={ "name": review_req.review.name })
+        url = urlreverse('ietf.doc.views_doc.document_main', kwargs={ "name": review_req.review.name })
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         content = unicontent(r)

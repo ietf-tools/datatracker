@@ -21,7 +21,7 @@ def email_admin_re_charter(request, group, subject, text, mailtrigger):
               dict(text=text,
                    group=group,
                    group_url=settings.IDTRACKER_BASE_URL + group.about_url(),
-                   charter_url=settings.IDTRACKER_BASE_URL + urlreverse('doc_view', kwargs=dict(name=group.charter.name)) if group.charter else "[no charter]",
+                   charter_url=settings.IDTRACKER_BASE_URL + urlreverse('ietf.doc.views_doc.document_main', kwargs=dict(name=group.charter.name)) if group.charter else "[no charter]",
                    ),
               cc=cc,
              )

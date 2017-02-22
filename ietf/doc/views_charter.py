@@ -172,7 +172,7 @@ def change_state(request, name, option=None):
                 e.desc = "Initial review time expires %s" % e.expires.strftime("%Y-%m-%d")
                 e.save()
 
-            return redirect('doc_view', name=charter.name)
+            return redirect('ietf.doc.views_doc.document_main', name=charter.name)
     else:
         hide = ['initial_time']
         s = charter.get_state()
@@ -276,7 +276,7 @@ def change_title(request, name, option=None):
                 if message:
                     email_admin_re_charter(request, group, "Charter title changed to %s" % new_title, message,'charter_state_edit_admin_needed')
                 email_state_changed(request, charter, "Title changed to %s." % new_title,'doc_state_edited')
-            return redirect('doc_view', name=charter.name)
+            return redirect('ietf.doc.views_doc.document_main', name=charter.name)
     else:
         form = ChangeTitleForm(charter=charter)
     title = "Change charter title of %s %s" % (group.acronym, group.type.name)
@@ -323,7 +323,7 @@ def edit_ad(request, name):
                 charter.ad = new_ad
                 charter.save_with_history(events)
 
-            return redirect('doc_view', name=charter.name)
+            return redirect('ietf.doc.views_doc.document_main', name=charter.name)
     else:
         init = { "ad" : charter.ad_id }
         form = AdForm(initial=init)
@@ -424,7 +424,7 @@ def submit(request, name, option=None):
             if option:
                 return redirect('charter_startstop_process', name=charter.name, option=option)
             else:
-                return redirect("doc_view", name=charter.name)
+                return redirect("ietf.doc.views_doc.document_main", name=charter.name)
     else:
         init = { "content": "" }
 

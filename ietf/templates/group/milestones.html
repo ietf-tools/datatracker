@@ -20,7 +20,7 @@
         <td>
 	  {{ milestone.desc }}
 	  {% for d in milestone.docs.all %}
-	    <br><a href="{% url "doc_view" name=d.name %}">{{ d.name }}</a>
+	    <br><a href="{% url "ietf.doc.views_doc.document_main" name=d.name %}">{{ d.name }}</a>
 	  {% endfor %}
         </td>
       </tr>

@@ -301,7 +301,7 @@ def edit_milestones(request, acronym, group_type=None, milestone_set="current"):
                 email_milestones_changed(request, group, changes, states)
 
             if milestone_set == "charter":
-                return redirect('doc_view', name=group.charter.canonical_name())
+                return redirect('ietf.doc.views_doc.document_main', name=group.charter.canonical_name())
             else:
                 return HttpResponseRedirect(group.about_url())
     else:

@@ -472,7 +472,7 @@ class StatusChangeSubmitTests(TestCase):
         self.assertTrue(q('textarea')[0].text.strip().startswith("Provide a description"))
 
         # make sure we can see the old revision
-        url = urlreverse('doc_view',kwargs=dict(name=doc.name,rev='00'))
+        url = urlreverse('ietf.doc.views_doc.document_main',kwargs=dict(name=doc.name,rev='00'))
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
         self.assertTrue("This is the old proposal." in unicontent(r))

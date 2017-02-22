@@ -51,7 +51,7 @@
               </td>
 
               <td>
-	        <a href="{% url "doc_view" name=g.charter.name %}">{{ g.name }}</a>
+	        <a href="{% url "ietf.doc.views_doc.document_main" name=g.charter.name %}">{{ g.name }}</a>
               </td>
 
               <td class="text-nowrap">{{ g.charter.time|date:"Y-m-d" }}</td>

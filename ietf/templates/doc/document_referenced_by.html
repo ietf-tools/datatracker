@@ -44,7 +44,7 @@
         {% with ref.source.canonical_name as name %}
           <tr>
             <td>
-	      <a href="{% url 'doc_view' name=name %}">{{name}}</a>
+	      <a href="{% url 'ietf.doc.views_doc.document_main' name=name %}">{{name}}</a>
 	      {% if ref.target.name != alias_name %}
 	        <br><span class="label label-info">As {{ref.target.name}}</span>
 	      {% endif %}

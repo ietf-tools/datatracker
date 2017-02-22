@@ -78,7 +78,7 @@ def change_state(request, name, option=None):
                                                    url = status_change.get_absolute_url(),
                                                   ))
 
-            return redirect('doc_view', name=status_change.name)
+            return redirect('ietf.doc.views_doc.document_main', name=status_change.name)
     else:
         s = status_change.get_state()
         init = dict(new_state=s.pk if s else None,
@@ -158,7 +158,7 @@ def submit(request, name):
 
                 doc.save_with_history(events)
 
-                return redirect('doc_view', name=doc.name)
+                return redirect('ietf.doc.views_doc.document_main', name=doc.name)
 
         elif "reset_text" in request.POST:
 
@@ -216,7 +216,7 @@ def edit_title(request, name):
 
             status_change.save_with_history([c])
 
-            return redirect("doc_view", name=status_change.name)
+            return redirect("ietf.doc.views_doc.document_main", name=status_change.name)
 
     else:
         init = { "title" : status_change.title }
@@ -247,7 +247,7 @@ def edit_ad(request, name):
 
             status_change.save_with_history([c])
     
-            return redirect("doc_view", name=status_change.name)
+            return redirect("ietf.doc.views_doc.document_main", name=status_change.name)
 
     else:
         init = { "ad" : status_change.ad_id }
@@ -359,7 +359,7 @@ def approve(request, name):
             for rel in status_change.relateddocument_set.filter(relationship__slug__in=STATUSCHANGE_RELATIONS):
                 # Add a document event to each target
                 c = DocEvent(type="added_comment", doc=rel.target.document, by=login)
-                c.desc = "New status of %s approved by the IESG\n%s%s" % (newstatus(rel), settings.IDTRACKER_BASE_URL,reverse('doc_view', kwargs={'name': status_change.name}))
+                c.desc = "New status of %s approved by the IESG\n%s%s" % (newstatus(rel), settings.IDTRACKER_BASE_URL,reverse('ietf.doc.views_doc.document_main', kwargs={'name': status_change.name}))
                 c.save()
 
             return HttpResponseRedirect(status_change.get_absolute_url())

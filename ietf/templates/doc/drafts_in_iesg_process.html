@@ -44,7 +44,7 @@
             </td>
 
             <td>
-	      <a href="{% url "doc_view" doc.name %}">{{ doc.name }}</a>
+	      <a href="{% url "ietf.doc.views_doc.document_main" doc.name %}">{{ doc.name }}</a>
           <br><b>{{ doc.title }}</b>
 	      {% if doc.note %}
 	        <br><i>Note: {{ doc.note|linebreaksbr|urlize }}</i>

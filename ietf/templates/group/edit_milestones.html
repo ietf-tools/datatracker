@@ -21,7 +21,7 @@
   <p>Links:
     <a href="{{ group.about_url }}">{{ group.acronym }} {{ group.type.name }}</a>
     {% if group.charter %}
-      - <a href="{% url "doc_view" name=group.charter.canonical_name %}">{{ group.charter.canonical_name }}</a>
+      - <a href="{% url "ietf.doc.views_doc.document_main" name=group.charter.canonical_name %}">{{ group.charter.canonical_name }}</a>
     {% endif %}
   </p>
 
@@ -84,7 +84,7 @@
     </table>
 
     {% buttons %}
-      <a class="btn btn-default pull-right" href="{% if milestone_set == "charter" %}{% url "doc_view" name=group.charter.canonical_name %}{% else %}{{ group.about_url }}{% endif %}">Cancel</a>
+      <a class="btn btn-default pull-right" href="{% if milestone_set == "charter" %}{% url "ietf.doc.views_doc.document_main" name=group.charter.canonical_name %}{% else %}{{ group.about_url }}{% endif %}">Cancel</a>
 
       <button style="display:none" class="btn btn-primary" type="submit" data-labelsave="Save" data-labelreview="Review changes">Save</button>
       <input type="hidden" name="action" value="save">

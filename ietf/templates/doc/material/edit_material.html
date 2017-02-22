@@ -34,7 +34,7 @@
     {% bootstrap_form form %}
 
     {% buttons %}
-      <a class="btn btn-default pull-right" href="{% if doc_name %}{% url "doc_view" name=doc_name %}{% else %}{% url "ietf.group.views.materials" acronym=group.acronym %}{% endif %}">Back</a>
+      <a class="btn btn-default pull-right" href="{% if doc_name %}{% url "ietf.doc.views_doc.document_main" name=doc_name %}{% else %}{% url "ietf.group.views.materials" acronym=group.acronym %}{% endif %}">Back</a>
       <button class="btn btn-primary" type="submit">{% if action == "new" or action == "revise" %}Upload{% else %}Save{% endif %}</button>
     {% endbuttons %}
   </form>

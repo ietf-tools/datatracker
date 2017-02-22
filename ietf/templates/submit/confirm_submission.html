@@ -10,7 +10,7 @@
 
   {% if submission.state_id != "auth" and submission.state_id != "aut-appr" %}
     {% if submission.state_id == "posted" %}
-      <p>The submission has already been posted. See the <a href="{% url "doc_view" name=submission.name %}">draft here</a>.</p>
+      <p>The submission has already been posted. See the <a href="{% url "ietf.doc.views_doc.document_main" name=submission.name %}">draft here</a>.</p>
     {% else %}
       <p>The submission is not in a state where it can be confirmed.</p>
 

@@ -82,7 +82,7 @@
         <tbody>
           {% for d in recently_approved %}
             <tr>
-              <td><a href="{% url "doc_view" d.name %}">{{ d.name }}</a></td>
+              <td><a href="{% url "ietf.doc.views_doc.document_main" d.name %}">{{ d.name }}</a></td>
               <td>{{ d.submission_date }}</td>
             </tr>
           {% endfor %}

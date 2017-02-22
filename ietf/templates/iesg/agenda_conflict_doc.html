@@ -10,7 +10,7 @@
         <a href="{{doc.href}}">
 	  <span class="fa fa-file"></span>
         </a>
-        <a href="{% url "doc_view" name=doc.canonical_name %}">{{ doc.canonical_name }}</a>
+        <a href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}">{{ doc.canonical_name }}</a>
         <br>
         <i>{{ doc.title }}</i>
       </dd>
@@ -20,7 +20,7 @@
         <a href="https://www.ietf.org/id/{{ conflictdoc.name }}-{{ conflictdoc.rev }}.txt">
 	  <span class="fa fa-file"></span>
         </a>
-        <a href="{% url "doc_view" name=conflictdoc.name %}">{{ conflictdoc.name }}</a>
+        <a href="{% url "ietf.doc.views_doc.document_main" name=conflictdoc.name %}">{{ conflictdoc.name }}</a>
         <br>
         <i>{{ conflictdoc.title }}</i>
       </dd>

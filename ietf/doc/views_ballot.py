@@ -332,7 +332,7 @@ def clear_ballot(request, name):
             create_ballot_if_not_open(doc, by, t.slug)
         if doc.get_state('draft-iesg').slug == 'defer':
             do_undefer_ballot(request,doc)
-        return redirect("doc_view", name=doc.name)
+        return redirect("ietf.doc.views_doc.document_main", name=doc.name)
 
     return render(request, 'doc/ballot/clear_ballot.html',
                               dict(doc=doc,

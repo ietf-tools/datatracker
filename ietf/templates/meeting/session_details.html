@@ -38,9 +38,9 @@
           {% for pres in session.filtered_artifacts %}
             <tr>
               {% if pres.rev %}
-                {% url 'doc_view' name=pres.document.name rev=pres.rev as url %}
+                {% url 'ietf.doc.views_doc.document_main' name=pres.document.name rev=pres.rev as url %}
               {% else %}
-                {% url 'doc_view' name=pres.document.name as url %}
+                {% url 'ietf.doc.views_doc.document_main' name=pres.document.name as url %}
               {% endif %}
               <td>
                 <a href="{{pres.document.get_absolute_url}}">{{pres.document.title}}</a>
@@ -84,9 +84,9 @@
           {% for pres in session.filtered_slides %}
             <tr data-order="{{pres.order}}" data-url="{% url 'ietf.meeting.views.set_slide_order' session_id=session.pk num=session.meeting.number name=pres.document.name %}">
               {% if pres.rev %}
-                {% url 'doc_view' name=pres.document.name rev=pres.rev as url %}
+                {% url 'ietf.doc.views_doc.document_main' name=pres.document.name rev=pres.rev as url %}
               {% else %}
-                {% url 'doc_view' name=pres.document.name as url %}
+                {% url 'ietf.doc.views_doc.document_main' name=pres.document.name as url %}
               {% endif %}
               <td>
                 <a href="{{pres.document.get_absolute_url}}">{{pres.document.title}} </a>
@@ -119,9 +119,9 @@
             <tr>
               <td>
                 {% if pres.rev %}
-                  {% url 'doc_view' name=pres.document.name rev=pres.rev as url %}
+                  {% url 'ietf.doc.views_doc.document_main' name=pres.document.name rev=pres.rev as url %}
                 {% else %}
-                  {% url 'doc_view' name=pres.document.name as url %}
+                  {% url 'ietf.doc.views_doc.document_main' name=pres.document.name as url %}
                 {% endif %}
                 <a href="{{url}}">{{pres.document.title}} ({{ pres.document.name }}{% if pres.rev %}-{{ pres.rev }}{% endif %})</a>
               </td>

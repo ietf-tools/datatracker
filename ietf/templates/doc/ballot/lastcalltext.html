@@ -9,7 +9,7 @@
 
 {% block content %}
   {% origin %}
-  <h1>Last call text<br><small><a href="{% url "doc_view" name=doc.canonical_name %}">{{ doc }}</a></small></h1>
+  <h1>Last call text<br><small><a href="{% url "ietf.doc.views_doc.document_main" name=doc.canonical_name %}">{{ doc }}</a></small></h1>
 
   <form method="post">
     {% csrf_token %}
