@@ -68,14 +68,17 @@ def get_child_group_role_emails(parent, roles, group_type='wg'):
         emails |= get_group_role_emails(group, roles)
     return emails
 
-def get_group_ad_emails(wg):
-    " Get list of area directors' email addresses for a given WG "
-    if not wg.acronym or wg.acronym == 'none':
+def get_group_ad_emails(group):
+    " Get list of area directors' email addresses for a given GROUP "
+    if not group.acronym or group.acronym == 'none':
         return set()
-    emails = get_group_role_emails(wg.parent, roles=('pre-ad', 'ad', 'chair'))
+    if group.type.slug == 'area':
+        emails = get_group_role_emails(group, roles=('pre-ad', 'ad', 'chair'))
+    else:
+        emails = get_group_role_emails(group.parent, roles=('pre-ad', 'ad', 'chair'))
     # Make sure the assigned AD is included (in case that is not one of the area ADs)
-    if wg.state.slug=='active':
-        wg_ad_email = wg.ad_role() and wg.ad_role().email.address
+    if group.state.slug=='active':
+        wg_ad_email = group.ad_role() and group.ad_role().email.address
         if wg_ad_email:
             emails.add(wg_ad_email)
     return emails
