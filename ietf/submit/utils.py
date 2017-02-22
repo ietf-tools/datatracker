@@ -1,5 +1,6 @@
 import os
 import datetime
+from unidecode import unidecode
 
 from django.conf import settings
 
@@ -19,7 +20,6 @@ from ietf.person.models import Person, Email
 from ietf.community.utils import update_name_contains_indexes_with_new_doc
 from ietf.submit.mail import announce_to_lists, announce_new_version, announce_to_authors
 from ietf.submit.models import Submission, SubmissionEvent, Preapproval, DraftSubmissionStateName
-from ietf.utils import unaccent
 from ietf.utils.log import log
 
 
@@ -387,23 +387,25 @@ def get_person_from_name_email(name, email):
     return None
 
 def ensure_person_email_info_exists(name, email):
-    person = get_person_from_name_email(name, email)
+    addr = email
+    email = None
+    person = get_person_from_name_email(name, addr)
 
     # make sure we have a person
     if not person:
         person = Person()
         person.name = name
-        person.ascii = unaccent.asciify(person.name)
+        person.ascii = unidecode(person.name)
         person.save()
 
     # make sure we have an email address
-    if email:
+    if addr:
         active = True
-        addr = email.lower()
+        addr = addr.lower()
     else:
         # we're in trouble, use a fake one
         active = False
-        addr = u"unknown-email-%s" % person.plain_name().replace(" ", "-")
+        addr = u"unknown-email-%s" % person.plain_ascii().replace(" ", "-")
 
     try:
         email = person.email_set.get(address=addr)
