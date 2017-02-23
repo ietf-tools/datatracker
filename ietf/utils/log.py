@@ -1,19 +1,20 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
-try:
-    import syslog
-    logger = syslog.syslog
-except ImportError:                     # import syslog will fail on Windows boxes
-    import logging
-    logging.basicConfig(filename='tracker.log',level=logging.INFO)
-    logger = logging.info
-
-    pass
-    
+import logging
 import inspect
 import os.path
 
+try:
+    import syslog
+    logfunc = syslog.syslog
+except ImportError:                     # import syslog will fail on Windows boxes
+    logging.basicConfig(filename='tracker.log',level=logging.INFO)
+    logfunc = logging.info
+    pass
+
 from django.conf import settings
+
+import debug                            # pyflakes:ignore
 
 def getclass(frame):
     cls = None
@@ -31,6 +32,7 @@ def getcaller():
     return (pmodule, pclass, pfunction, pfile, pline)
 
 def log(msg):
+    "Uses syslog by preference.  Logs the given calling point and message."
     if settings.SERVER_MODE == 'test':
         return
     if isinstance(msg, unicode):
@@ -45,6 +47,30 @@ def log(msg):
             where = " in " + func + "()"
     except IndexError:
         file, line, where = "/<UNKNOWN>", 0, ""
-    logger("ietf%s(%d)%s: %s" % (file, line, where, msg))
+    logfunc("ietf%s(%d)%s: %s" % (file, line, where, msg))
 
 
+
+logger = logging.getLogger('django')
+
+def affirm(statement):
+    """
+    This acts like an assertion.  It uses the django logger in order to send
+    the failed assertion and a backtrace as for an internal server error.
+
+    """
+    class Traceback():
+        pass
+    frame = inspect.stack()[1][0]
+    value = eval(statement, frame.f_globals, frame.f_locals)
+    if not value:
+        if settings.DEBUG is True:
+            raise AssertionError(statement)
+        else:
+            # build a simulated traceback object
+            tb = Traceback()
+            tb.tb_frame = frame
+            tb.tb_lasti = None
+            tb.tb_lineno = frame.f_lineno
+            tb.tb_next = None
+            logger.error("AssertionError: '%s'", statement, exc_info=(AssertionError, statement, tb), extra=frame.f_locals)
