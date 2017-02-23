@@ -1,5 +1,8 @@
+# Copyright The IETF Trust 2011, All Rights Reserved
+
 import os
 import datetime
+import six
 from unidecode import unidecode
 
 from django.conf import settings
@@ -20,7 +23,8 @@ from ietf.person.models import Person, Email
 from ietf.community.utils import update_name_contains_indexes_with_new_doc
 from ietf.submit.mail import announce_to_lists, announce_new_version, announce_to_authors
 from ietf.submit.models import Submission, SubmissionEvent, Preapproval, DraftSubmissionStateName
-from ietf.utils.log import log
+from ietf.utils import unaccent
+from ietf.utils import log
 
 
 def validate_submission(submission):
@@ -255,7 +259,7 @@ def post_submission(request, submission, approvedDesc):
 
     trouble = rebuild_reference_relations(draft, filename=os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.txt' % (submission.name, submission.rev)))
     if trouble:
-        log('Rebuild_reference_relations trouble: %s'%trouble)
+        log.log('Rebuild_reference_relations trouble: %s'%trouble)
     
     if draft.stream_id == "ietf" and draft.group.type_id == "wg" and draft.rev == "00":
         # automatically set state "WG Document"
@@ -395,7 +399,10 @@ def ensure_person_email_info_exists(name, email):
     if not person:
         person = Person()
         person.name = name
-        person.ascii = unidecode(person.name)
+        if isinstance(person.name, six.text_type):
+            person.ascii = unidecode(person.name).decode('ascii')
+        else:
+            person.ascii = unaccent.asciify(person.name).decode('ascii')
         person.save()
 
     # make sure we have an email address
@@ -437,6 +444,7 @@ def update_authors(draft, submission):
 
         a.order = order
         a.save()
+        log.affirm('a.author_id != "none"')
 
         authors.append(email)
 
@@ -465,7 +473,7 @@ def move_files_to_repository(submission):
             os.rename(source, dest)
         else:
             if os.path.exists(dest):
-                log("Intended to move '%s' to '%s', but found source missing while destination exists.")
+                log.log("Intended to move '%s' to '%s', but found source missing while destination exists.")
             elif ext in submission.file_types.split(','):
                 raise ValueError("Intended to move '%s' to '%s', but found source and destination missing.")
 
