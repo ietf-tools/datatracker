@@ -73,7 +73,7 @@
         <td>
           {% for req in review_req.other_completed_requests %}
             {% if req.reviewer == review_req.reviewer %}<strong>{% endif %}
-            <a href="{% url "ietf.doc.views_review.review_request" name=req.doc request_id=req.id %}">{{req.team.acronym|capfirst}} {{req.type.name}} review of -{{req.reviewed_rev}} by {{req.reviewer.person.plain_name}}</a> {% if req.reviewed_rev != req.doc.rev %} (<a href="{{ rfcdiff_base_url }}?url1={{ req.doc.name }}-{{ req.reviewed_rev }}&url2={{ req.doc.name }}-{{ req.doc.rev }}">diff</a>){% endif %}</br>
+            <a href="{% url "ietf.doc.views_review.review_request" name=req.doc request_id=req.id %}">{{req.team.acronym|capfirst}} {{req.type.name}} review of -{{req.reviewed_rev}} by {{req.reviewer.person.plain_name}}</a> {% if req.reviewed_rev != req.doc.rev %} (<a href="{{ rfcdiff_base_url }}?url1={{ req.doc.name }}-{{ req.reviewed_rev }}&url2={{ req.doc.name }}-{{ req.doc.rev }}">diff</a>){% endif %}<br>
             {% if req.reviewer == review_req.reviewer %}</strong>{% endif %}
           {% endfor %}
         </td>
