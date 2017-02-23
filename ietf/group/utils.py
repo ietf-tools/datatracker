@@ -169,12 +169,9 @@ def construct_group_menu_context(request, group, selected, group_type, others):
 
     # menu entries
     entries = []
+    entries.append(("About", urlreverse("ietf.group.views.group_about", kwargs=kwargs)))
     if group.features.has_documents:
         entries.append(("Documents", urlreverse("ietf.group.views.group_documents", kwargs=kwargs)))
-    if group.features.has_chartering_process:
-        entries.append(("Charter", urlreverse("ietf.group.views.group_about", kwargs=kwargs)))
-    else:
-        entries.append(("About", urlreverse("ietf.group.views.group_about", kwargs=kwargs)))
     if group.features.has_materials and get_group_materials(group).exists():
         entries.append(("Materials", urlreverse("ietf.group.views.materials", kwargs=kwargs)))
     if group.features.has_reviews:
@@ -199,6 +196,7 @@ def construct_group_menu_context(request, group, selected, group_type, others):
 
     is_admin = group.has_role(request.user, group.features.admin_roles)
     can_manage = can_manage_group_type(request.user, group)
+    can_edit_group = False              # we'll set this further down
 
     if group.features.has_milestones:
         if group.state_id != "proposed" and (is_admin or can_manage):
@@ -223,6 +221,7 @@ def construct_group_menu_context(request, group, selected, group_type, others):
 
 
     if group.state_id != "conclude" and (is_admin or can_manage):
+        can_edit_group = True
         actions.append((u"Edit group", urlreverse("ietf.group.views_edit.edit", kwargs=dict(kwargs, action="edit"))))
 
     if group.features.customize_workflow and (is_admin or can_manage):
@@ -237,6 +236,7 @@ def construct_group_menu_context(request, group, selected, group_type, others):
         "menu_entries": entries,
         "menu_actions": actions,
         "group_type": group_type,
+        "can_edit_group": can_edit_group,
     }
 
     d.update(others)

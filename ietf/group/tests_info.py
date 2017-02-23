@@ -620,6 +620,44 @@ class GroupEditTests(TestCase):
         for prefix in ['ad1','ad2','aread','marschairman','marsdelegate']:
             self.assertTrue(prefix+'@' in outbox[0]['To'])
 
+
+    def test_edit_field(self):
+        make_test_data()
+        group = Group.objects.get(acronym="mars")
+
+        # Edit name
+        url = urlreverse('ietf.group.views_edit.edit', kwargs=dict(acronym=group.acronym, action="edit", field="name"))
+        login_testing_unauthorized(self, "secretary", url)
+        # normal get
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('div#content > form input[name=name]')), 1)
+        self.assertEqual(len(q('form input[name=acronym]')), 0)
+        # edit info
+        r = self.client.post(url, dict(name="Mars Not Special Interest Group"))
+        self.assertEqual(r.status_code, 302)
+        #
+        group = Group.objects.get(acronym="mars")
+        self.assertEqual(group.name, "Mars Not Special Interest Group")
+
+
+        # Edit list email
+        url = urlreverse('ietf.group.views_edit.edit', kwargs=dict(group_type=group.type_id, acronym=group.acronym, action="edit", field="list_email"))
+        # normal get
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('div#content > form input[name=list_email]')), 1)
+        self.assertEqual(len(q('div#content > form input[name=name]')), 0)
+        # edit info
+        r = self.client.post(url, dict(list_email="mars@mail"))
+        self.assertEqual(r.status_code, 302)
+        #
+        group = Group.objects.get(acronym="mars")
+        self.assertEqual(group.list_email, "mars@mail")
+
+
     def test_edit_reviewers(self):
         doc = make_test_data()
         review_req = make_review_data(doc)

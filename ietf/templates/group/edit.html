@@ -30,9 +30,13 @@
     {% endif %}
   </h1>
 
+  {% if not request.user.is_authenticated %}
   <p class="alert alert-info">Note that persons with authorization to manage information, e.g.
     chairs and delegates, need a datatracker account to actually do
     so. New accounts can be <a href="{% url "ietf.ietfauth.views.create_account" %}">created here</a>.</p>
+  {% else %}
+    <p></p>
+  {% endif %}
 
   <form class="form-horizontal" method="post">
     {% csrf_token %}

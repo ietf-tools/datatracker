@@ -23,6 +23,7 @@ urlpatterns = [
     url(r'^deps/(?P<output_type>[\w-]+)/$', views.dependencies),
     url(r'^meetings/$', views.meetings),
     url(r'^edit/$', views_edit.edit, {'action': "edit"}),
+    url(r'^edit/(?P<field>\w+)/?$', views_edit.edit, {'action': "edit"}),
     url(r'^conclude/$', views_edit.conclude),
     url(r'^milestones/$', milestone_views.edit_milestones, {'milestone_set': "current"}, "group_edit_milestones"),
     url(r'^milestones/charter/$', milestone_views.edit_milestones, {'milestone_set': "charter"}, "group_edit_charter_milestones"),

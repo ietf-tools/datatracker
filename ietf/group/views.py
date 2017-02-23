@@ -435,7 +435,7 @@ def group_about(request, acronym, group_type=None):
 
 
     return render(request, 'group/group_about.html',
-                  construct_group_menu_context(request, group, "charter" if group.features.has_chartering_process else "about", group_type, {
+                  construct_group_menu_context(request, group, "about", group_type, {
                       "milestones_in_review": group.groupmilestone_set.filter(state="review"),
                       "milestone_reviewer": milestone_reviewer_for_group_type(group_type),
                       "requested_close": requested_close,

@@ -57,6 +57,13 @@ class GroupForm(forms.Form):
     def __init__(self, *args, **kwargs):
         self.group = kwargs.pop('group', None)
         self.group_type = kwargs.pop('group_type', False)
+        if "field" in kwargs:
+            field = kwargs["field"]
+            del kwargs["field"]
+            if field in roles_for_group_type(self.group_type):
+                field = field + "_roles"
+        else:
+            field = None
 
         super(self.__class__, self).__init__(*args, **kwargs)
 
@@ -85,6 +92,10 @@ class GroupForm(forms.Form):
                                  - set(roles_for_group_type(self.group_type)))
         for r in role_fields_to_remove:
             del self.fields[r + "_roles"]
+        if field:
+            for f in self.fields:
+                if f != field:
+                    del self.fields[f]
 
     def clean_acronym(self):
         # Changing the acronym of an already existing group will cause 404s all
@@ -158,6 +169,7 @@ class GroupForm(forms.Form):
             raise forms.ValidationError("You requested the creation of a BoF, but specified no parent area.  A parent is required when creating a bof.")
         return cleaned_data
 
+
 def format_urls(urls, fs="\n"):
     res = []
     for u in urls:
@@ -221,7 +233,7 @@ def format_urls(urls, fs="\n"):
 #     return redirect('charter_submit', name=group.charter.name, option="initcharter")
 
 @login_required
-def edit(request, group_type=None, acronym=None, action="edit"):
+def edit(request, group_type=None, acronym=None, action="edit", field=None):
     """Edit or create a group, notifying parties as
     necessary and logging changes as group events."""
     if action == "edit":
@@ -241,7 +253,7 @@ def edit(request, group_type=None, acronym=None, action="edit"):
             return HttpResponseForbidden("You don't have permission to access this view")
 
     if request.method == 'POST':
-        form = GroupForm(request.POST, group=group, group_type=group_type)
+        form = GroupForm(request.POST, group=group, group_type=group_type, field=field)
         if form.is_valid():
             clean = form.cleaned_data
             if new_group:
@@ -284,6 +296,8 @@ def edit(request, group_type=None, acronym=None, action="edit"):
                 return entry % dict(attr=attr, new=new, old=old)
 
             def diff(attr, name):
+                if field and attr != field:
+                    return
                 v = getattr(group, attr)
                 if clean[attr] != v:
                     changes.append((attr, clean[attr], desc(name, clean[attr], v)))
@@ -335,20 +349,21 @@ def edit(request, group_type=None, acronym=None, action="edit"):
                 email_personnel_change(request, group, personnel_change_text, changed_personnel)
 
             # update urls
-            new_urls = clean['urls']
-            old_urls = format_urls(group.groupurl_set.order_by('url'), ", ")
-            if ", ".join(sorted(new_urls)) != old_urls:
-                changes.append(('urls', new_urls, desc('Urls', ", ".join(sorted(new_urls)), old_urls)))
-                group.groupurl_set.all().delete()
-                # Add new ones
-                for u in new_urls:
-                    m = re.search('(?P<url>[\w\d:#@%/;$()~_?\+-=\\\.&]+)( \((?P<name>.+)\))?', u)
-                    if m:
-                        if m.group('name'):
-                            url = GroupURL(url=m.group('url'), name=m.group('name'), group=group)
-                        else:
-                            url = GroupURL(url=m.group('url'), name='', group=group)
-                        url.save()
+            if 'urls' in clean:
+                new_urls = clean['urls']
+                old_urls = format_urls(group.groupurl_set.order_by('url'), ", ")
+                if ", ".join(sorted(new_urls)) != old_urls:
+                    changes.append(('urls', new_urls, desc('Urls', ", ".join(sorted(new_urls)), old_urls)))
+                    group.groupurl_set.all().delete()
+                    # Add new ones
+                    for u in new_urls:
+                        m = re.search('(?P<url>[\w\d:#@%/;$()~_?\+-=\\\.&]+)( \((?P<name>.+)\))?', u)
+                        if m:
+                            if m.group('name'):
+                                url = GroupURL(url=m.group('url'), name=m.group('name'), group=group)
+                            else:
+                                url = GroupURL(url=m.group('url'), name='', group=group)
+                            url.save()
 
             group.time = datetime.datetime.now()
 
@@ -384,14 +399,12 @@ def edit(request, group_type=None, acronym=None, action="edit"):
         else:
             init = dict(ad=request.user.person.id if group_type == "wg" and has_role(request.user, "Area Director") else None,
                         )
-        form = GroupForm(initial=init, group=group, group_type=group_type)
+        form = GroupForm(initial=init, group=group, group_type=group_type, field=field)
 
     return render(request, 'group/edit.html',
                   dict(group=group,
                        form=form,
                        action=action))
-
-
 
 class ConcludeForm(forms.Form):
     instructions = forms.CharField(widget=forms.Textarea(attrs={'rows': 30}), required=True, strip=False)

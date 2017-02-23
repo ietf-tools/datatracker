@@ -11,17 +11,23 @@
   {% endif %}
 
   <table class="table table-condensed">
-    <thead><tr><th colspan="3"></th></tr></thead>
+    <thead><tr><th colspan="4"></th></tr></thead>
     <tbody class="meta">
       <tr>
 	<th>{{ group.type.name }}</th>
 	<th>Name</th>
+	<td class="edit">
+	  {% if can_edit_group %}
+	    <a class="btn btn-default btn-xs" href="{% url 'ietf.group.views_edit.edit' acronym=group.acronym field='name' %}">Edit</a>
+	  {% endif %}
+	</td>
 	<td>{{ group.name }}</td>
       </tr>
 
       <tr>
 	<td></td>
 	<th>Acronym</th>
+	<td class="edit"></td>
 	<td>{{ group.acronym }}</td>
       </tr>
 
@@ -29,15 +35,23 @@
 	<td></td>
 	{% if group.parent and group.parent.type_id == "area" %}
 	  <th>{{ group.parent.type.name }}</th>
+	  <td class="edit"></td>
 	  <td>{{ group.parent.name }} ({{ group.parent.acronym }})</td>
 	{% else %}
-	  <th></th><td></td>
+	  <th></th>
+	  <td class="edit"></td>
+	  <td></td>
 	{% endif %}
       </tr>
 
       <tr>
       <td></td> 
       <th>State</th> 
+      <td class="edit">
+	  {% if can_edit_group %}
+	    <a class="btn btn-default btn-xs" href="{% url 'ietf.group.views_edit.edit' acronym=group.acronym field='state' %}">Edit</a>
+	  {% endif %}
+      </td>
       <td> 
 	{{ group.state.name }} 
 	{% if requested_close %} 
@@ -50,6 +64,7 @@
 	<tr>
 	  <td></td>
 	  <th>Charter</th>
+	  <td class="edit"></td>
 	  <td>
 	    {% if group.charter %}
 	      <a href="{% url "ietf.doc.views_doc.document_main" name=group.charter.name %}">{{ group.charter.name }}-{{ group.charter.rev }}</a>
@@ -68,16 +83,19 @@
 	<tr id='status_update'>
 	  <td></td>
 	  <th>Status Update</th>
+	  <td class="edit">
+	     {% if can_provide_status_update %}
+	       <a class="btn btn-default btn-xs" href="{% url "ietf.group.views.group_about_status_edit" acronym=group.acronym %}">Edit</a>
+	     {% endif %}
+	  </td>
 	  <td>
 	     {% if status_update %}
+		<a href="{% url "ietf.group.views.group_about_status" acronym=group.acronym %}">Show update</a>
 		(last changed {{status_update.time|date:"Y-m-d"}})
 	     {% else %}
 		(None)
 	     {% endif %}
-	     <a class="btn btn-default btn-xs" href="{% url "ietf.group.views.group_about_status" acronym=group.acronym %}">Show</a>
-	     {% if can_provide_status_update %}
-	       <a class="btn btn-default btn-xs" href="{% url "ietf.group.views.group_about_status_edit" acronym=group.acronym %}">Edit</a>
-	     {% endif %}
+
 	  </td>
 	</tr>
       {% endif %}
@@ -86,6 +104,7 @@
 	<tr id='dependency_graph'>
 	  <td></td>
 	  <th>Dependencies</th>
+	  <td class="edit"></td>
 	  <td>
 	     <a href="{% url 'ietf.group.views.dependencies' group_type=group.type_id acronym=group.acronym output_type='svg' %}">
 		Document dependency graph (SVG)
@@ -98,7 +117,12 @@
         {% if urls %}
 	<tr>
           <td></td>
-          <th>More info</th>
+          <th>Additional URLs</th>
+	  <td class="edit">
+	    {% if can_edit_group %}
+	      <a class="btn btn-default btn-xs" href="{% url 'ietf.group.views_edit.edit' acronym=group.acronym field='urls' %}">Edit</a>
+	    {% endif %}
+	  </td>
           <td>
             {% for url in urls %}
               <a href="{{ url.url }}">{% firstof url.name url.url %}</a>{% if not forloop.last %}<br>{% endif %}
@@ -118,6 +142,11 @@
 	    <td></td>
 	  {% endif %}
 	  <th>{{ label }}</th>
+	  <td class="edit">
+	    {% if can_edit_group and not slug == "ad" %}
+	      <a class="btn btn-default btn-xs" href="{% url 'ietf.group.views_edit.edit' acronym=group.acronym field=slug %}">Edit</a>
+	    {% endif %}
+	  </td>
 	  <td>
 
 
@@ -135,10 +164,34 @@
     <tbody class="meta">
       <tr>
 	 <th>Mailing list</th>
-	 <th>Address</th><td>{{ group.list_email|urlize }}</td>
+	 <th>Address</th>
+	 <td class="edit">
+	    {% if can_edit_group %}
+	      <a class="btn btn-default btn-xs" href="{% url 'ietf.group.views_edit.edit' acronym=group.acronym field='list_email' %}">Edit</a>
+	    {% endif %}
+	 </td>
+	 <td>{{ group.list_email|urlize }}</td>
       </tr>
-      <tr><td></td><th>To subscribe</th><td>{{ group.list_subscribe|urlize }}</td></tr>
-      <tr><td></td><th>Archive</th><td>{{ group.list_archive|urlize }}</td></tr>
+      <tr>
+	 <td></td>
+	 <th>To subscribe</th>
+	 <td class="edit">
+	    {% if can_edit_group %}
+	      <a class="btn btn-default btn-xs" href="{% url 'ietf.group.views_edit.edit' acronym=group.acronym field='list_subscribe' %}">Edit</a>
+	    {% endif %}
+	 </td>
+	 <td>{{ group.list_subscribe|urlize }}</td>
+      </tr>
+      <tr>
+	 <td></td>
+	 <th>Archive</th>
+	 <td class="edit">
+	    {% if can_edit_group %}
+	      <a class="btn btn-default btn-xs" href="{% url 'ietf.group.views_edit.edit' acronym=group.acronym field='list_archive' %}">Edit</a>
+	    {% endif %}
+	 </td>
+	 <td>{{ group.list_archive|urlize }}</td>
+      </tr>
     </tbody>
     {% endif %}
 
@@ -146,13 +199,15 @@
     <tbody class="meta">
       <tr>
 	 <th>Jabber chat</th>
-        <th>Room address</th>
-        <td><a href="xmpp:{{ group.acronym }}@jabber.ietf.org?join">xmpp:{{ group.acronym }}@jabber.ietf.org?join</a></td>
+	 <th>Room address</th>
+	 <td class="edit"></td>
+	 <td><a href="xmpp:{{ group.acronym }}@jabber.ietf.org?join">xmpp:{{ group.acronym }}@jabber.ietf.org?join</a></td>
       </tr>
 
       <tr>
         <td></td>
         <th>Logs</th>
+	<td class="edit"></td>
         <td><a href="https://jabber.ietf.org/logs/{{ group.acronym }}/">https://jabber.ietf.org/logs/{{ group.acronym }}/</a></td>
       </tr>
     </tbody>
