@@ -141,7 +141,10 @@ def main():
     changes.append(handle_users(source,target))
 
     # find all related objects and migrate
-    for related_object in source._meta.get_all_related_objects():
+    related_objects = [  f for f in source._meta.get_fields()
+        if (f.one_to_many or f.one_to_one)
+        and f.auto_created and not f.concrete ]
+    for related_object in related_objects:
         accessor = related_object.get_accessor_name()
         field_name = related_object.field.name
         queryset = getattr(source, accessor).all()
