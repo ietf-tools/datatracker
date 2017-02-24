@@ -1,3 +1,86 @@
+ietfdb (6.46.0) ietf; urgency=medium
+
+  **Name i18n Improvements, tweaks to Group Pages and Account Setup**
+
+  This release introduces use of non-ascii names in the name parts of outgoing
+  emails instead of always using asciified names.  It improves the account
+  setup workflow, improves the ease of editing group attributes and makes it
+  more apparent which attributes can be edited.  It also adds a code quality
+  assurance tool which makes easy notification on unexpected states available,
+  and applies it to one difficult-to-debug issue.  There are also a number of
+  bugfixes, as usual.  From the commit log:
+
+  * Changes to address ease of editing various group attributes, in particular
+    intended to make it easier to see that you can edit things like the
+    external/additional URLs:
+
+    - Added the ability to edit individual fields in a group's about page, and
+      added edit buttons for editable fields on the about page, just as for
+      documents (the ability to edit all editable fields already was available
+      from the 'Edit group' button on the /group//about/ page).
+
+    - Made the tab label for the group-about tab consistently say 'About',
+      instead of 'Charter' for some groups.
+
+    - Shifted the position of the about tab to the start of the tab line.
+
+    - Removed the datatracker account requirement information at the top of the
+      group edit page for users logged in to their account.
+
+    - Tweaked the 'Show update' link on the 'Status Update' line.
+
+    - Changed the label for the external URLs from 'More Info' to 'Additional
+      URLs', which was already in use on the edit form.
+
+  * Fixed a html issue on the review request page.
+
+  * Made some changes to the missing-email submission handling.  This may have
+    fixed the creation of author records containing 'none' email entries, but
+    as I've not been able to reproduce the issue, this is uncertain.
+
+  * Made the logging settings explicit in ietf/settings.py (instead of copying
+    default then modifying), and added enough surrounding information to make
+    it possible to read also for people not very familiar with Python's
+    intricate logging infrastructure.  To a large extent to understand myself
+    how the logging is set up in Django, and where to hook in the affirm()
+    function.
+
+  * Added an affirm($statement) function, which acts like an assert, and
+    lets us trigger an email message with traceback when the statement to
+    affirm is False.  Use instead of assert if we still want the server to
+    produce a response, even if something is wrong with the internal state.
+
+  * Added a log.affirm() call at the point where we may discover new flawed
+    document author records.  Fixed a place where the generation of
+    Person.ascii from Person.name wasn't done well.
+
+  * Changed the AD email list results from get_group_ad_emails() to make more
+    sense when the group is an area, not a wg.
+
+  * Fixed url lookups for doc.views_doc.document_main() to only use
+    dotted-path, and removed the doc_view explicit url name.  Fixes a 500
+    error in /submit/status/NNNN/.
+
+  * Added explicit charset setting and consistent encoding to several email
+    paths through the datatracker.  After introducing support for non-ascii
+    names in email addresses, using role.formatted_email() to insert names
+    into email content doesn't work any more, since uncode names will now be
+    rfc2047-encoded in formatted_email().  Added another method
+    role.name_and_email() for this case.  Replaced another case of '%s <%s>'
+    name-and-email formatting with formataddr().  Fixed some tests which did
+    not send unicode email bodies to the email functions.  Fixes issue #2017.
+
+  * Added a validator to Document.title to prevent control chars in the title
+    (this complements a recent cleanup of more than 120 instances of document
+    titles containing vertical tabs).
+
+  * Changed the New Account creation to require a proper name at the same time
+    as the account password is set, before actually creating the account.
+    Also tweaked the password strength and confirmation code.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  23 Feb 2017 13:07:38 -0800
+
+
 ietfdb (6.45.0) ietf; urgency=medium
 
   **Django 1.10**
