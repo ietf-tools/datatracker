@@ -78,7 +78,7 @@ ietfdb (6.46.0) ietf; urgency=medium
     as the account password is set, before actually creating the account.
     Also tweaked the password strength and confirmation code.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  23 Feb 2017 13:07:38 -0800
+ -- Henrik Levkowetz <henrik@levkowetz.com>  24 Feb 2017 10:38:17 +0000
 
 
 ietfdb (6.45.0) ietf; urgency=medium
