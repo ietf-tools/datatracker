@@ -1,6 +1,6 @@
 ietfdb (6.46.0) ietf; urgency=medium
 
-  **Name i18n Improvements, tweaks to Group Pages and Account Setup**
+  **Name i18n improvements, tweaks to Group Pages and Account Setup**
 
   This release introduces use of non-ascii names in the name parts of outgoing
   emails instead of always using asciified names.  It improves the account
@@ -114,7 +114,7 @@ ietfdb (6.45.0) ietf; urgency=medium
 
 ietfdb (6.44.1) ietf; urgency=medium
 
-  **Non-ASCII Name Support for Email Address Fields**
+  **Non-ASCII name support for email address fields**
 
   This is a bugfix relelease which provides a reworked email address handling
   in order to be able to support non-ascii names as part of email address
@@ -178,7 +178,7 @@ ietfdb (6.44.0) ietf; urgency=medium
 
 ietfdb (6.43.0) ietf; urgency=medium
 
-  **Password Strength Meter**
+  **Password strength meter**
 
   This release provides a zxcvbn-based password strenght meter when setting
   or changing a datatracker user password, and changes the default password
@@ -278,7 +278,7 @@ ietfdb (6.41.1) ietf; urgency=medium
 
 ietfdb (6.41.0) ietf; urgency=medium
 
-  **IAB Programs Support and Wiki Support for Teams and Directorates**
+  **IAB programs support and wiki support for teams and directorates**
 
   This release introduces support for IAB programs, and also extends the
   creation and permissions management support for Trac wikis to teams and
@@ -716,7 +716,7 @@ ietfdb (6.38.2) ietf; urgency=medium
 
 ietfdb (6.38.1) ietf; urgency=medium
 
-  **IETF 97 Code Sprint Release 2**
+  **IETF 97 code sprint release 2**
 
   This release contains a further datatracker enhancement from the IETF-97
   Code Sprint:
@@ -730,7 +730,7 @@ ietfdb (6.38.1) ietf; urgency=medium
 
 ietfdb (6.38.0) ietf; urgency=medium
 
-  **IETF 97 Code Sprint**
+  **IETF 97 code sprint**
 
   This release contains datatracker bugfixes and enhancements from the IETF-97
   Code Sprint.  This brings in many useful bugfixes and enhancements, as
