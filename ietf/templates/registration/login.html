@@ -12,9 +12,16 @@
   <div class="col-md-8 col-sm-12">
     <h1>Sign in</h1>
 
+
     <form method="post">
       {% csrf_token %}
       {% bootstrap_form form %}
+
+      {% if alert %}
+	<p class="alert alert-danger">
+	   {{ alert }}
+	</p>
+      {% endif %}
 
       {% buttons %}
 	<table class="col-md-12">

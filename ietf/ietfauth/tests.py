@@ -62,10 +62,10 @@ class IetfAuthTests(TestCase):
         make_test_data()
 
         # try logging in without a next
-        r = self.client.get(urlreverse(django.contrib.auth.views.login))
+        r = self.client.get(urlreverse(ietf.ietfauth.views.login))
         self.assertEqual(r.status_code, 200)
 
-        r = self.client.post(urlreverse(django.contrib.auth.views.login), {"username":"plain", "password":"plain+password"})
+        r = self.client.post(urlreverse(ietf.ietfauth.views.login), {"username":"plain", "password":"plain+password"})
         self.assertEqual(r.status_code, 302)
         self.assertEqual(urlsplit(r["Location"])[2], urlreverse(ietf.ietfauth.views.profile))
 
@@ -75,10 +75,10 @@ class IetfAuthTests(TestCase):
 
         r = self.client.get(urlreverse(ietf.ietfauth.views.profile))
         self.assertEqual(r.status_code, 302)
-        self.assertEqual(urlsplit(r["Location"])[2], urlreverse(django.contrib.auth.views.login))
+        self.assertEqual(urlsplit(r["Location"])[2], urlreverse(ietf.ietfauth.views.login))
 
         # try logging in with a next
-        r = self.client.post(urlreverse(django.contrib.auth.views.login) + "?next=/foobar", {"username":"plain", "password":"plain+password"})
+        r = self.client.post(urlreverse(ietf.ietfauth.views.login) + "?next=/foobar", {"username":"plain", "password":"plain+password"})
         self.assertEqual(r.status_code, 302)
         self.assertEqual(urlsplit(r["Location"])[2], "/foobar")
 
@@ -153,7 +153,7 @@ class IetfAuthTests(TestCase):
         email = "new-account@example.com"
 
         # add whitelist entry
-        r = self.client.post(urlreverse(django.contrib.auth.views.login), {"username":"secretary", "password":"secretary+password"})
+        r = self.client.post(urlreverse(ietf.ietfauth.views.login), {"username":"secretary", "password":"secretary+password"})
         self.assertEqual(r.status_code, 302)
         self.assertEqual(urlsplit(r["Location"])[2], urlreverse(ietf.ietfauth.views.profile))
 
@@ -406,7 +406,7 @@ class IetfAuthTests(TestCase):
 
         chpw_url = urlreverse(ietf.ietfauth.views.change_password)
         prof_url = urlreverse(ietf.ietfauth.views.profile)
-        login_url = urlreverse(django.contrib.auth.views.login)
+        login_url = urlreverse(ietf.ietfauth.views.login)
         redir_url = '%s?next=%s' % (login_url, chpw_url)
 
         # get without logging in
@@ -453,7 +453,7 @@ class IetfAuthTests(TestCase):
 
         chun_url = urlreverse(ietf.ietfauth.views.change_username)
         prof_url = urlreverse(ietf.ietfauth.views.profile)
-        login_url = urlreverse(django.contrib.auth.views.login)
+        login_url = urlreverse(ietf.ietfauth.views.login)
         redir_url = '%s?next=%s' % (login_url, chun_url)
 
         # get without logging in

@@ -43,7 +43,10 @@ from django.contrib import messages
 from django.conf import settings
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth.hashers import identify_hasher
 from django.contrib.auth.models import User
+from django.contrib.auth.views import login as django_login
 from django.contrib.sites.models import Site
 from django.core.urlresolvers import reverse as urlreverse
 from django.http import Http404, HttpResponseRedirect  #, HttpResponse, 
@@ -565,4 +568,29 @@ def change_username(request):
         'user': user,
     })
 
-    
+
+
+def login(request, extra_context=None):
+    """
+    This login function is a wrapper around django's login() for the purpose
+    of providing a notification if the user's password has been cleared.  The
+    warning will be triggered if the password field has been set to something
+    which is not recognized as a valid password hash.
+    """
+
+    if request.method == "POST":
+        form = AuthenticationForm(request, data=request.POST)
+        username = form.data.get('username')
+        user = User.objects.filter(username=username).first()
+        if user:
+            try:
+                identify_hasher(user.password)
+            except ValueError:
+                extra_context = {"alert":
+                                    "Note: Your password has been cleared because "
+                                    "of possible password leakage.  "
+                                    "Please use the password reset link below "
+                                    "to set a new password for your account.",
+                                }
+
+    return django_login(request, extra_context=extra_context)
