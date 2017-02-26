@@ -53,7 +53,7 @@ class SearchableIprDisclosuresField(forms.CharField):
 
         # doing this in the constructor is difficult because the URL
         # patterns may not have been fully constructed there yet
-        self.widget.attrs["data-ajax-url"] = urlreverse("ipr_ajax_search")
+        self.widget.attrs["data-ajax-url"] = urlreverse('ietf.ipr.views.ajax_search')
 
         return u",".join(unicode(e.pk) for e in value)
 

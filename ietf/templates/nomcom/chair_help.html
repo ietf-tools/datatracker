@@ -72,7 +72,7 @@ You will upload the certificate to the datatracker (and make it available to peo
 
 <h3 class="anchor-target" id="configure">Configure the Datatracker NomCom</h3>
 
-<p>Sign into the datatracker and go to the <a href="{% url 'nomcom_edit_nomcom' year %}">NomCom Configuration Page</a>.</p>
+<p>Sign into the datatracker and go to the <a href="{% url 'ietf.nomcom.views.edit_nomcom' year %}">NomCom Configuration Page</a>.</p>
 <p>Use the Browse button to select the public nomcom{{year|slice:"2:"}}.cert file created above.</p>
 <p>Enter any special instructions you want to appear on the nomination entry form in the "Help text for nomination form" box. These will appear on the form immediately below the field labeled "Candidate's qualifications for the position".</p>
 <p>Choose whether to have the datatracker send questionnares, and whether to automatically remind people to accept nominations and return questionnaires, according to the instructions on the form.</p>
@@ -89,7 +89,7 @@ such as the IAB, or the IESG areas where multiple ADs in that area are at the en
 
 <h3 class="anchor-target" id="templates">Customize the web-form and email templates</h3>
 
-<p>Edit each of the templates at {% url 'nomcom_list_templates' year %}. The "Home page of group" template is where to put information about the current nomcom members and policies. It is also a good place to list incumbents in positions, and information about whether the incumbents will stand again. See the home page of past nomcoms for examples.</p>
+<p>Edit each of the templates at {% url 'ietf.nomcom.views.list_templates' year %}. The "Home page of group" template is where to put information about the current nomcom members and policies. It is also a good place to list incumbents in positions, and information about whether the incumbents will stand again. See the home page of past nomcoms for examples.</p>
 
 <h3 class="anchor-target" id="test">Test the results</h3>
 <p> Before advertising that your nomcom pages are ready for the community to use, test your configuration. Create a dummy nominee for at least one position, and give it some feedback. You will be able to move this out of the way later. Once you've marked positions as open, ask your nomcom members to look over the expertise and questionnaires tab (which show rendered view of each of the templates for each position) to ensure they contain what you want the community to see. Please don't assume that everything is all right without looking. It's a good idea to give the secretariat and the tools team a heads up a few (preferably 3 to 5) days notice before announcing that your pages are ready for community use.

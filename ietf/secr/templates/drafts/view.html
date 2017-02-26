@@ -22,7 +22,7 @@
       <table class="full-width">
         <tr><td>Document Name:</td><td>{{ draft.title }}</td></tr>
         <tr><td>Area:</td><td>{% if draft.group.parent %}<a href="{% url "ietf.secr.areas.views.view" name=draft.group.parent.acronym %}">{{ draft.group.parent }}{% endif %}</td></tr>
-        <tr><td>Group:</td><td>{% if draft.group %}<a href="{% url "groups_view" acronym=draft.group.acronym %}">{{ draft.group.acronym }}{% endif %}</td></tr>
+        <tr><td>Group:</td><td>{% if draft.group %}<a href="{% url 'ietf.secr.groups.views.view' acronym=draft.group.acronym %}">{{ draft.group.acronym }}{% endif %}</td></tr>
         <tr><td>Area Director:</td><td>{{ draft.ad }}</td></tr>
         <tr><td>Shepherd:</td><td>{% if draft.shepherd %}{{ draft.shepherd.person }} &lt;{{ draft.shepherd.address }}&gt;{% else %}None{% endif %}</td></tr>
         <tr><td>Notify:</td><td>{{ draft.notify }}</td></tr>
@@ -49,7 +49,7 @@
         <tr><td>Start Date:</td><td>{{ draft.start_date }}</td></tr>
         <tr><td>Number of Pages:</td><td>{{ draft.pages }}</td></tr>
         {% comment %}<tr><td>Local Path:</td><td>/ftp/internet-drafts/{{ draft.local_path|default_if_none:"" }}</td></tr>{% endcomment %}
-        <tr><td>Abstract:</td><td><a href="{% url "drafts_abstract" id=draft.name %}">Click here to view the abstract</td></tr>
+        <tr><td>Abstract:</td><td><a href="{% url 'ietf.secr.drafts.views.abstract' id=draft.name %}">Click here to view the abstract</td></tr>
         <tr><td>Expiration Date:</td><td>{{ draft.expires|date:"M. d, Y" }}</td></tr>
         <tr><td>Intended Status:</td><td>{{ draft.intended_std_level|default_if_none:"" }}</td></tr>
         <tr><td>Standardization Level:</td><td>{{ draft.std_level|default_if_none:"" }}</td></tr>
@@ -73,7 +73,7 @@
         <h2>Author(s)</h2>
         <table class="full-width">
         {% for author in draft.documentauthor_set.all %}
-          <tr><td><a href="{% url "rolodex_view" id=author.author.person.id %}">{{ author.author.person.name }}</a></td></tr>
+          <tr><td><a href="{% url 'ietf.secr.rolodex.views.view' id=author.author.person.id %}">{{ author.author.person.name }}</a></td></tr>
         {% endfor %}
         </table>
       </div> <!-- inline-related -->

@@ -60,7 +60,7 @@
 
         {% buttons %}
         <input class="btn btn-primary" type="submit" value="Save feedback" name="end">
-        <a class="btn btn-default" href="{% url "nomcom_view_feedback_pending" year %}">Cancel & leave unclassified</a>
+        <a class="btn btn-default" href="{% url 'ietf.nomcom.views.view_feedback_pending' year %}">Cancel & leave unclassified</a>
         {% endbuttons %}
 
       {% else %}

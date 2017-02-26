@@ -89,7 +89,7 @@ def add(request):
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
-            return redirect('groups')
+            return redirect('ietf.secr.groups.views.search')
 
         form = GroupModelForm(request.POST)
         awp_formset = AWPFormSet(request.POST, prefix='awp')
@@ -113,7 +113,7 @@ def add(request):
                                                  desc='Started group')
 
             messages.success(request, 'The Group was created successfully!')
-            return redirect('groups_view', acronym=group.acronym)
+            return redirect('ietf.secr.groups.views.view', acronym=group.acronym)
 
     else:
         form = GroupModelForm(initial={'state':'active','type':'wg'})
@@ -197,7 +197,7 @@ def delete_role(request, acronym, id):
     role.delete()
 
     messages.success(request, 'The entry was deleted successfully')
-    return redirect('groups_people', acronym=acronym)
+    return redirect('ietf.secr.groups.views.people', acronym=acronym)
 
 @role_required('Secretariat')
 def edit(request, acronym):
@@ -220,7 +220,7 @@ def edit(request, acronym):
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
-            return redirect('groups_view', acronym=acronym)
+            return redirect('ietf.secr.groups.views.view', acronym=acronym)
 
         form = GroupModelForm(request.POST, instance=group)
         awp_formset = AWPFormSet(request.POST, instance=group)
@@ -261,7 +261,7 @@ def edit(request, acronym):
 
                 messages.success(request, 'The Group was changed successfully')
 
-            return redirect('groups_view', acronym=acronym)
+            return redirect('ietf.secr.groups.views.view', acronym=acronym)
 
     else:
         form = GroupModelForm(instance=group)
@@ -296,13 +296,13 @@ def edit_gm(request, acronym):
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
-            return redirect('groups_view', acronym=acronym)
+            return redirect('ietf.secr.groups.views.view', acronym=acronym)
 
         formset = GMFormset(request.POST, instance=group, prefix='goalmilestone')
         if formset.is_valid():
             formset.save()
             messages.success(request, 'The Goals Milestones were changed successfully')
-            return redirect('groups_view', acronym=acronym)
+            return redirect('ietf.secr.groups.views.view', acronym=acronym)
     else:
         formset = GMFormset(instance=group, prefix='goalmilestone')
 
@@ -345,7 +345,7 @@ def people(request, acronym):
                                 group=group)
 
             messages.success(request, 'New %s added successfully!' % name)
-            return redirect('groups_people', acronym=group.acronym)
+            return redirect('ietf.secr.groups.views.people', acronym=group.acronym)
     else:
         form = RoleForm(initial={'name':'chair'},group=group)
 
@@ -372,7 +372,7 @@ def search(request):
     if request.method == 'POST':
         form = SearchForm(request.POST)
         if request.POST['submit'] == 'Add':
-            return redirect('groups_add')
+            return redirect('ietf.secr.groups.views.add')
 
         if form.is_valid():
             kwargs = {}
@@ -412,7 +412,7 @@ def search(request):
 
             # if there's just one result go straight to view
             if len(results) == 1:
-                return redirect('groups_view', acronym=results[0].acronym)
+                return redirect('ietf.secr.groups.views.view', acronym=results[0].acronym)
 
     # process GET argument to support link from area app
     elif 'primary_area' in request.GET:

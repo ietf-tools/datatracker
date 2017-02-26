@@ -72,7 +72,7 @@ def add_proceed(request):
         post_data = request.session['post_data']
     else:
         messages.error('ERROR: unable to save session data (enable cookies)') # pylint: disable=no-value-for-parameter
-        return redirect('rolodex_add')
+        return redirect('ietf.secr.rolodex.views.add')
 
     name = post_data['name']
 
@@ -97,7 +97,7 @@ def add_proceed(request):
             person.save()
             
             messages.success(request, 'The Rolodex entry was added successfully')
-            return redirect('rolodex_view', id=person.id)
+            return redirect('ietf.secr.rolodex.views.view', id=person.id)
     else:
         form = NewPersonForm(initial={'name':name,'ascii':name})
 
@@ -133,7 +133,7 @@ def delete(request, id):
             #person.delete()
             
             messages.warning(request, 'This feature is disabled')
-            return redirect('rolodex')
+            return redirect('ietf.secr.rolodex.views.search')
 
     return render(request, 'rolodex/delete.html', { 'person': person}, )
     
@@ -158,7 +158,7 @@ def edit(request, id):
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
-            return redirect('rolodex_view', id=id)
+            return redirect('ietf.secr.rolodex.views.view', id=id)
 
         person_form = EditPersonForm(request.POST, instance=person)
         email_formset = EmailFormset(request.POST, instance=person, prefix='email')
@@ -177,7 +177,7 @@ def edit(request, id):
             # add new names to alias
             
             messages.success(request, 'The Rolodex entry was changed successfully')
-            return redirect('rolodex_view', id=id)
+            return redirect('ietf.secr.rolodex.views.view', id=id)
 
     else:
         person_form = EditPersonForm(instance=person)
@@ -235,7 +235,7 @@ def search(request):
             
             # if there's just one result go straight to view
             if len(results) == 1:
-                return redirect('rolodex_view', id=results[0].person.id)
+                return redirect('ietf.secr.rolodex.views.view', id=results[0].person.id)
 
             if not results:
                 not_found = 'No record found' 

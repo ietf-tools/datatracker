@@ -11,7 +11,7 @@
   <tbody>
     {% for item in results %}
        <tr class="{% cycle 'row1' 'row2' %}">
-         <td><a href="{% url "groups_view" acronym=item.acronym %}">{{item.name}}</a></td>
+         <td><a href="{% url 'ietf.secr.groups.views.view' acronym=item.acronym %}">{{item.name}}</a></td>
          <td>{{item.acronym}}</td>
          <td>{{item.state}}</td>
          <td>{{item.type}}</td>

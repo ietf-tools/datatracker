@@ -65,7 +65,7 @@ def main(request):
             data['nomcom'] = data['nomcom'].pk
         request.session['data'] = data
 
-        return redirect('announcement_confirm')
+        return redirect('ietf.secr.announcement.views.confirm')
 
     return render(request, 'announcement/main.html', { 'form': form} )
 
@@ -77,7 +77,7 @@ def confirm(request):
         data = request.session['data']
     else:
         messages.error(request, 'No session data.  Your session may have expired or cookies are disallowed.')
-        return redirect('announcement')
+        return redirect('ietf.secr.announcement.views.main')
 
     if request.method == 'POST':
         form = AnnounceForm(data, user=request.user)
@@ -96,7 +96,7 @@ def confirm(request):
         clear_non_auth(request.session)
 
         messages.success(request, 'The announcement was sent.')
-        return redirect('announcement')
+        return redirect('ietf.secr.announcement.views.main')
 
     if data['to'] == 'Other...':
         to = ','.join(data['to_custom'])

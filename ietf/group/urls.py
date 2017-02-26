@@ -8,7 +8,7 @@ from ietf.utils.urls import url
 
 urlpatterns = [
     url(r'^$', views.active_groups), 
-    url(r'^groupmenu.json', views_ajax.group_menu_data, None, "group_menu_data"),
+    url(r'^groupmenu.json', views_ajax.group_menu_data, None, 'ietf.group.views_ajax.group_menu_data'),
     url(r'^%(acronym)s.json$' % settings.URL_REGEXPS, views_ajax.group_json),
     url(r'^chartering/$', views.chartering_groups),
     url(r'^chartering/create/(?P<group_type>(wg|rg))/$', views_edit.edit, {'action': "charter"}),

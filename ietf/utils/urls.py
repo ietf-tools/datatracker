@@ -10,8 +10,6 @@ from django.views.generic import View
 def url(regex, view, kwargs=None, name=None):
     if callable(view) and hasattr(view, '__name__'):
         view_name = "%s.%s" % (view.__module__, view.__name__)
-    elif callable(view) and hasattr(view, '__class__'):
-        view_name = "%s.%s" % (view.__module__, view.__class__.__name__)
     else:
         view_name = regex
 

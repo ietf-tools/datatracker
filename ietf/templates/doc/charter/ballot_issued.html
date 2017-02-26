@@ -11,6 +11,6 @@
   <p>Ballot has been sent out.</p>
 
   <div class="buttonlist">
-    <a class="btn btn-default" href="{% url "doc_writeup" name=doc.name %}">Back</a>
+    <a class="btn btn-default" href="{% url 'ietf.doc.views_doc.document_writeup' name=doc.name %}">Back</a>
   </div>
 {% endblock %}

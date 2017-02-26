@@ -10,7 +10,7 @@
   {% origin %}
   <h1>Begin RFC status change review</h1>
 
-  <p><a class="btn btn-default" href="{% url "state_help" type="status-change"  %}">Help on states</a></p>
+  <p><a class="btn btn-default" href="{% url 'ietf.doc.views_help.state_help' type="status-change"  %}">Help on states</a></p>
 
   <form class="start-rfc-status-change-review" method="post">
     {% csrf_token %}

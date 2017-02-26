@@ -94,7 +94,7 @@
 	  <th>Replaces</th>
 	  <td class="edit">
             {% if can_edit_stream_info and not snapshot %}
-	      <a class="btn btn-default btn-xs" href="{% url "doc_change_replaces" name=doc.name %}">Edit</a>
+	      <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_draft.replaces' name=doc.name %}">Edit</a>
 	    {% endif %}
 	  </td>
 	  <td>
@@ -121,7 +121,7 @@
               <th>Possibly Replaces</th>
               <td class="edit">
                 {% if can_edit_replaces and not snapshot %}
-                  <a class="btn btn-default btn-xs" href="{% url "doc_review_possibly_replaces" name=doc.name %}">Edit</a>
+                  <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_draft.review_possibly_replaces' name=doc.name %}">Edit</a>
                 {% endif %}
               </td>
               <td>
@@ -136,7 +136,7 @@
               <th>Possibly Replaced By</th>
               <td class="edit">
                 {% if can_edit_replaces and not snapshot %}
-                  {% comment %}<a class="btn btn-default btn-xs" href="{% url "doc_review_possibly_replaces" name=doc.name %}">Edit</a>{% endcomment %}
+                  {% comment %}<a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_draft.review_possibly_replaces' name=doc.name %}">Edit</a>{% endcomment %}
                 {% endif %}
               </td>
               <td>
@@ -151,7 +151,7 @@
 	<th>Stream</th>
 	<td class="edit">
           {% if can_change_stream and not snapshot %}
-	    <a class="btn btn-default btn-xs" href="{% url "doc_change_stream" name=doc.name %}">Edit</a>
+	    <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_draft.change_stream' name=doc.name %}">Edit</a>
 	  {% endif %}
 	</td>
 	<td>
@@ -165,7 +165,7 @@
 	  <th>Intended RFC status</th>
 	  <td class="edit">
             {% if can_edit_stream_info and not snapshot %}
-              <a class="btn btn-default btn-xs" href="{% url "doc_change_intended_status" name=doc.name %}">Edit</a>
+              <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_draft.change_intention' name=doc.name %}">Edit</a>
 	    {% endif %}
 	  </td>
 	  <td>
@@ -244,7 +244,7 @@
 	  </th>
 	  <td class="edit">
             {% if doc.stream and can_edit_stream_info and doc.stream.slug != "legacy" and not snapshot %}
-	      <a class="btn btn-default btn-xs" href="{% url "doc_change_stream_state" name=doc.name state_type=stream_state_type_slug %}">Edit</a>
+	      <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_draft.change_stream_state' name=doc.name state_type=stream_state_type_slug %}">Edit</a>
 	    {% endif %}
 	  </td>
 	  <td>
@@ -271,7 +271,7 @@
 	  <th>Consensus Boilerplate</th>
 	  <td class="edit">
             {% if can_edit_stream_info and not snapshot %}
-	      <a class="btn btn-default btn-xs" href="{% url "doc_edit_consensus" name=doc.name %}">Edit</a>
+	      <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_draft.edit_consensus' name=doc.name %}">Edit</a>
 	    {% endif %}
 	  </td>
 	  <td>
@@ -309,9 +309,9 @@
 	  <td class="edit">
 
 	    {% if can_edit_stream_info and not snapshot %}
-	      <a class="btn btn-default btn-xs" href="{% url "doc_edit_shepherd" name=doc.name %}">Edit</a>
+	      <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_draft.edit_shepherd' name=doc.name %}">Edit</a>
 	    {% elif is_shepherd %}
-	      <a class="btn btn-default btn-xs" href="{% url "doc_change_shepherd_email" name=doc.name %}">Change Email</a>
+	      <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_draft.change_shepherd_email' name=doc.name %}">Change Email</a>
 	    {% endif %}
 	  </td>
 	  <td>
@@ -325,7 +325,7 @@
 	    <th>Shepherd write-up</th>
 	    <td class="edit">
 	      {% if can_edit_shepherd_writeup %}
-	        {% url "doc_edit_shepherd_writeup" name=doc.name as doc_edit_url %}
+	        {% url 'ietf.doc.views_draft.edit_shepherd_writeup' name=doc.name as doc_edit_url %}
 	        {% if doc_edit_url %}
 		  <a class="btn btn-default btn-xs" href="{{doc_edit_url}}">Edit</a>
 	        {% endif %}
@@ -333,7 +333,7 @@
 	    </td>
 	    <td>
 	      {% if shepherd_writeup %}
-	        <a class="btn btn-default btn-xs" href="{% url "doc_shepherd_writeup" name=doc.name %}">Show</a>
+	        <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_doc.document_shepherd_writeup' name=doc.name %}">Show</a>
 		(last changed {{ shepherd_writeup.time|date:"Y-m-d"}})
 	      {% else %}
 	        (None)
@@ -347,7 +347,7 @@
 	  <th>RFC Editor Note</th>
 	  <td class="edit">
 	    {% if can_edit_stream_info %}
-	    <a class="btn btn-default btn-xs" href="{% url "doc_ballot_rfceditornote" name=doc.name %}">Edit</a>
+	    <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_ballot.ballot_rfceditornote' name=doc.name %}">Edit</a>
 	    {% endif %}
 	  </td>
 	  <td>
@@ -372,7 +372,7 @@
 	  <th><a href="{% url "ietf.help.views.state" doc=doc.type.slug type="iesg" %}">IESG state</a></th>
 	  <td class="edit">
 	    {% if iesg_state and can_edit %}
-	    <a class="btn btn-default btn-xs" href="{% url "doc_change_state" name=doc.name %}">Edit</a>
+	    <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_draft.change_state' name=doc.name %}">Edit</a>
 	    {% endif %}
 	  </td>
 	  <td>
@@ -386,7 +386,7 @@
 	    <th>Consensus Boilerplate</th>
 	    <td class="edit">
 	      {% if can_edit or can_edit_stream_info and not snapshot %}
-	      <a class="btn btn-default btn-xs" href="{% url "doc_edit_consensus" name=doc.name %}">Edit</a>
+	      <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_draft.edit_consensus' name=doc.name %}">Edit</a>
 	      {% endif %}
 	    </td>
 	    <td>
@@ -400,7 +400,7 @@
 	  <th>Telechat date</th>
 	  <td class="edit">
 	    {% if can_edit and not snapshot %}
-	    <a class="btn btn-default btn-xs" href="{% url "doc_change_telechat_date" name=doc.name %}">Edit</a>
+	    <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_doc.telechat_date' name=doc.name %}">Edit</a>
 	    {% endif %}
 	  </td>
 	  <td>
@@ -426,7 +426,7 @@
 	  <th>Responsible AD</th>
 	  <td class="edit">
 	    {% if can_edit %}
-	      <a class="btn btn-default btn-xs" href="{% url "doc_change_ad" name=doc.name %}">Edit</a>
+	      <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_draft.edit_ad' name=doc.name %}">Edit</a>
 	    {% endif %}
 	  </td>
 	  <td>
@@ -441,7 +441,7 @@
 	      <th>IESG note</th>
 	      <td class="edit">
 	        {% if can_edit and not snapshot %}
-		  <a class="btn btn-default btn-xs" href="{% url "doc_change_iesg_note" name=doc.name %}">Edit</a>
+		  <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_draft.edit_iesg_note' name=doc.name %}">Edit</a>
 	        {% endif %}
 	    </td>
 	    <td>
@@ -456,7 +456,7 @@
 	  <th>Send notices to</th>
 	  <td class="edit">
 	    {% if can_edit_notify and not snapshot %}
-	      <a class="btn btn-default btn-xs" href="{% url "doc_change_notify" name=doc.name %}">Edit</a>
+	      <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_doc.edit_notify' name=doc.name %}">Edit</a>
 	    {% endif %}
 	  </td>
 	  <td>
@@ -474,7 +474,7 @@
 	<th><a href="{% url "ietf.help.views.state" doc=doc.type.slug type="iana-review" %}">IANA review state</a></th>
 	<td class="edit">
           {% if can_edit_iana_state and not snapshot %}
-	    <a class="btn btn-default btn-xs" href="{% url "doc_change_iana_state" name=doc.name state_type="iana-review" %}">Edit</a>
+	    <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_draft.change_iana_state' name=doc.name state_type="iana-review" %}">Edit</a>
 	  {% endif %}
 	</td>
 	<td>
@@ -487,7 +487,7 @@
 	<th>IANA action state</th>
 	<td class="edit">
           {% if can_edit_iana_state and not snapshot %}
-	    <a class="btn btn-default btn-xs" href="{% url "doc_change_iana_state" name=doc.name state_type="iana-action" %}">Edit</a>
+	    <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_draft.change_iana_state' name=doc.name state_type="iana-action" %}">Edit</a>
 	  {% endif %}
 	</td>
 	<td>
@@ -513,8 +513,8 @@
   <div class="buttonlist">
     <a class="btn btn-default btn-xs" href="mailto:{{ doc.name }}@ietf.org?subject=Mail%20regarding%20{{ doc.name }}"><span class="fa fa-envelope-o"></span> Email authors</a>
     <a class="btn btn-default btn-xs" href="{% url "ietf.ipr.views.search" %}?submit=draft&amp;id={{ doc.name }}" rel="nofollow"><span class="fa fa-bolt"></span> IPR {% if doc.related_ipr %} <span class="badge">{{doc.related_ipr|length}}</span>{% endif %}</a>
-    <a class="btn btn-default btn-xs" href="{% url "doc_references" doc.canonical_name %}" rel="nofollow"><span class="fa fa-long-arrow-left"></span> References</a>
-    <a class="btn btn-default btn-xs" href="{% url "doc_referenced_by" doc.canonical_name %}" rel="nofollow"><span class="fa fa-long-arrow-right"></span> Referenced by</a>
+    <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_doc.document_references' doc.canonical_name %}" rel="nofollow"><span class="fa fa-long-arrow-left"></span> References</a>
+    <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_doc.document_referenced_by' doc.canonical_name %}" rel="nofollow"><span class="fa fa-long-arrow-right"></span> Referenced by</a>
     <a class="btn btn-default btn-xs" href="https://www.ietf.org/tools/idnits?url=https://www.ietf.org/archive/id/{{ doc.filename_with_rev }}" rel="nofollow" target="_blank"><span class="fa fa-exclamation"></span> Nits</a>
     <div class="dropdown inline">
       <button class="btn btn-default btn-xs dropdown-toggle" type="button" id="ddSearchMenu" data-toggle="dropdown" aria-expanded="true">
@@ -534,9 +534,9 @@
     {% endif %}
 
     {% if can_edit and iesg_state %}
-      <a class="btn btn-default btn-xs" href="{% url "doc_ballot_lastcall" name=doc.name %}">Last call text</a>
-      <a class="btn btn-default btn-xs" href="{% url "doc_ballot_writeupnotes" name=doc.name %}">Ballot text</a>
-      <a class="btn btn-default btn-xs" href="{% url "doc_ballot_approvaltext" name=doc.name %}">Announcement text</a>
+      <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_ballot.lastcalltext' name=doc.name %}">Last call text</a>
+      <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_ballot.ballot_writeupnotes' name=doc.name %}">Ballot text</a>
+      <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_ballot.ballot_approvaltext' name=doc.name %}">Announcement text</a>
     {% endif %}
 
     {% if actions %}

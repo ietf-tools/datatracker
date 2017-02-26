@@ -22,7 +22,7 @@ class ProceedingsTestCase(TestCase):
     def test_main(self):
         "Main Test"
         make_test_data()
-        url = reverse('proceedings')
+        url = reverse('ietf.secr.proceedings.views.main')
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
@@ -35,7 +35,7 @@ class ProceedingsTestCase(TestCase):
 class RecordingTestCase(TestCase):
     def test_page(self):
         meeting = make_meeting_test_data()
-        url = reverse('proceedings_recording', kwargs={'meeting_num':meeting.number})
+        url = reverse('ietf.secr.proceedings.views.recording', kwargs={'meeting_num':meeting.number})
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
@@ -48,7 +48,7 @@ class RecordingTestCase(TestCase):
         status = SessionStatusName.objects.get(slug='sched')
         session.status = status
         session.save()
-        url = reverse('proceedings_recording', kwargs={'meeting_num':meeting.number})
+        url = reverse('ietf.secr.proceedings.views.recording', kwargs={'meeting_num':meeting.number})
         data = dict(group=group.acronym,external_url='http://youtube.com/xyz',session=session.pk)
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.post(url,data,follow=True)
@@ -58,7 +58,7 @@ class RecordingTestCase(TestCase):
         # now test edit
         doc = session.materials.filter(type='recording').first()
         external_url = 'http://youtube.com/aaa'
-        url = reverse('proceedings_recording_edit', kwargs={'meeting_num':meeting.number,'name':doc.name})
+        url = reverse('ietf.secr.proceedings.views.recording_edit', kwargs={'meeting_num':meeting.number,'name':doc.name})
         response = self.client.post(url,dict(external_url=external_url),follow=True)
         self.assertEqual(response.status_code, 200)
         self.failUnless(external_url in response.content)

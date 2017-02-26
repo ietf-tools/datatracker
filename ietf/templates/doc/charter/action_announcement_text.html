@@ -20,7 +20,7 @@
       <button type="submit" class="btn btn-warning" name="regenerate_text" value="Reenerate"">Regenerate</button>
 
       {% if user|has_role:"Secretariat" %}
-          <a type="submit" class="btn btn-default" href="{% url "charter_approve" name=charter.canonical_name %}">Charter approval page</a>
+          <a type="submit" class="btn btn-default" href="{% url 'ietf.doc.views_charter.approve' name=charter.canonical_name %}">Charter approval page</a>
       {% endif %}
 
       <a class="btn btn-default pull-right" href="{{ back_url }}">Back</a>

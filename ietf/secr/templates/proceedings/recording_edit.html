@@ -8,14 +8,14 @@
 
 {% block breadcrumbs %}{{ block.super }} 
   {% if meeting.type_id == "interim" %}
-    &raquo; <a href="{% url "proceedings" %}">Proceedings</a>
+    &raquo; <a href="{% url 'ietf.secr.proceedings.views.main' %}">Proceedings</a>
     &raquo; {{ meeting }}
-    &raquo; <a href="{% url "proceedings_recording" meeting_num=meeting.number %}">Recording</a>
+    &raquo; <a href="{% url 'ietf.secr.proceedings.views.recording' meeting_num=meeting.number %}">Recording</a>
     &raquo; {{ recording.name }}
   {% else %}
-    &raquo; <a href="{% url "proceedings" %}">Proceedings</a>
-    &raquo; <a href="{% url "proceedings_select" meeting_num=meeting.number %}">{{ meeting.number }}</a>
-    &raquo; <a href="{% url "proceedings_recording" meeting_num=meeting.number %}">Recording</a>
+    &raquo; <a href="{% url 'ietf.secr.proceedings.views.main' %}">Proceedings</a>
+    &raquo; <a href="{% url 'ietf.secr.proceedings.views.select' meeting_num=meeting.number %}">{{ meeting.number }}</a>
+    &raquo; <a href="{% url 'ietf.secr.proceedings.views.recording' meeting_num=meeting.number %}">Recording</a>
     &raquo; {{ recording.name }}
   {% endif %}
 {% endblock %}

@@ -146,7 +146,7 @@ def doc(request, date):
     agenda = agenda_data(date=date)
     doc = get_first_doc(agenda)
     if doc:
-        return redirect('telechat_doc_detail', date=date, name=doc.name)
+        return redirect('ietf.secr.telechat.views.doc_detail', date=date, name=doc.name)
     else:
         return render(request, 'telechat/doc.html', {
         'agenda': agenda,
@@ -233,7 +233,7 @@ def doc_detail(request, date, name):
 
             if has_changed:
                 messages.success(request,'Ballot position changed.')
-            return redirect('telechat_doc_detail', date=date, name=name)
+            return redirect('ietf.secr.telechat.views.doc_detail', date=date, name=name)
 
         # logic from doc/views_draft.py change_state
         elif button_text == 'update_state':
@@ -269,7 +269,7 @@ def doc_detail(request, date, name):
                         request_last_call(request, doc)
 
                 messages.success(request,'Document state updated')
-                return redirect('telechat_doc_detail', date=date, name=name)
+                return redirect('ietf.secr.telechat.views.doc_detail', date=date, name=name)
     else:
         formset = BallotFormset(initial=initial_ballot)
         state_form = ChangeStateForm(initial=initial_state)
@@ -315,7 +315,7 @@ def doc_navigate(request, date, name, nav):
     elif nav == 'previous' and index != 0:
         target = docs[index - 1].name
 
-    return redirect('telechat_doc_detail', date=date, name=target)
+    return redirect('ietf.secr.telechat.views.doc_detail', date=date, name=target)
 
 @role_required('Secretariat')
 def main(request):
@@ -324,7 +324,7 @@ def main(request):
     '''
     if request.method == 'POST':
         date = request.POST['date']
-        return redirect('telechat_doc', date=date)
+        return redirect('ietf.secr.telechat.views.doc', date=date)
 
     choices = [ (d.date.strftime('%Y-%m-%d'),
                  d.date.strftime('%Y-%m-%d')) for d in TelechatDate.objects.all() ]
@@ -388,7 +388,7 @@ def new(request):
         Telechat.objects.create(telechat_date=date)
 
         messages.success(request,'New Telechat Agenda created')
-        return redirect('telechat_doc', date=date)
+        return redirect('ietf.secr.telechat.views.doc', date=date)
 
 @role_required('Secretariat')
 def roll_call(request, date):

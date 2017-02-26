@@ -10,31 +10,31 @@
   <tr valign="top">
     <td>
       <h3>IESG</h3>
-       <li> <a href="{% url "announcement" %}"><b>Announcement</b></a></li><br>
-       <li> <a href="{% url "telechat" %}"><b>Telechat</b></a></li><br>
-       <li> <a href="{% url "console" %}"><b>Console</b></a></li><br>
+       <li> <a href="{% url 'ietf.secr.announcement.views.main' %}"><b>Announcement</b></a></li><br>
+       <li> <a href="{% url 'ietf.secr.telechat.views.main' %}"><b>Telechat</b></a></li><br>
+       <li> <a href="{% url 'ietf.secr.console.views.main' %}"><b>Console</b></a></li><br>
    </td>
    <td>
      <h3>IDs and WGs Process</h3>
        <li> <a href="{% url "ietf.secr.drafts.views.search" %}"><b>Drafts</b></a></li><br>
        <li> <a href="{% url "ietf.secr.areas.views.list_areas" %}"><b>Areas</b></a></li><br>
-       <li> <a href="{% url "groups" %}"><b>Groups</b></a></li><br>
-       <li> <a href="{% url "rolodex" %}"><b>Rolodex</b></a></li><br>
-       <li> <a href="{% url "roles" %}"><b>Roles</b></a></li><br>
+       <li> <a href="{% url 'ietf.secr.groups.views.search' %}"><b>Groups</b></a></li><br>
+       <li> <a href="{% url 'ietf.secr.rolodex.views.search' %}"><b>Rolodex</b></a></li><br>
+       <li> <a href="{% url 'ietf.secr.roles.views.main' %}"><b>Roles</b></a></li><br>
     </td>
   </tr>
   <tr valign="top">
     <td>
       <h3>Meetings and Proceedings</h3>
-       <li> <a href="{% url "drafts_dates" %}"><b>Draft Submission Dates</b></a></li><br>
+       <li> <a href="{% url 'ietf.secr.drafts.views.dates' %}"><b>Draft Submission Dates</b></a></li><br>
        <li> <a href="{% url "ietf.secr.sreq.views.main" %}"><b>Session Requests</b></a></li><br>
-       <li> <a href="{% url "proceedings" %}"><b>Meeting Materials Manager (Proceedings)</b></a></li><br>
+       <li> <a href="{% url 'ietf.secr.proceedings.views.main' %}"><b>Meeting Materials Manager (Proceedings)</b></a></li><br>
        <li> <a href="{% url "ietf.secr.meetings.views.main" %}"><b>Meeting Manager</b></a></li><br>
        <li> <a href="{% url "ietf.secr.meetings.views.blue_sheet_redirect" %}"><b>Blue Sheets</b></a></li><br>
     </td>
     <td>
       <h3>IPR</h3>
-       <li> <a href="{% url "ipr_admin_main" %}"><b>IPR Admin</b></a></li><br>
+       <li> <a href="{% url 'ietf.ipr.views.admin' state='pending' %}"><b>IPR Admin</b></a></li><br>
     </td>
   </tr>
 </table>
@@ -46,8 +46,8 @@
     <td>
       <h3>Section 1</h3>
         <li> <a href="{% url "ietf.secr.sreq.views.main" %}"><b>Session Requests</b></a></li><br>
-        <li> <a href="{% url "proceedings" %}"><b>Meeting Material Manager</b></a></li><br>
-        <li> <a href="{% url "announcement" %}"><b>Announcements</b></a></li><br>
+        <li> <a href="{% url 'ietf.secr.proceedings.views.main' %}"><b>Meeting Material Manager</b></a></li><br>
+        <li> <a href="{% url 'ietf.secr.announcement.views.main' %}"><b>Announcements</b></a></li><br>
    </td>
    <td>
      <h3>Section 2</h3>

@@ -484,7 +484,7 @@ def add(request):
             request.session['action'] = 'add'
             
             messages.success(request, 'New draft added successfully!')
-            return redirect('drafts_authors', id=draft.name)
+            return redirect('ietf.secr.drafts.views.authors', id=draft.name)
 
     else:
         form = AddModelForm()
@@ -541,7 +541,7 @@ def author_delete(request, id, oid):
     '''
     DocumentAuthor.objects.get(id=oid).delete()
     messages.success(request, 'The author was deleted successfully')
-    return redirect('drafts_authors', id=id)
+    return redirect('ietf.secr.drafts.views.authors', id=id)
 
 @role_required('Secretariat')
 def authors(request, id):
@@ -566,7 +566,7 @@ def authors(request, id):
             action = request.session.get('action','')
             if action == 'add':
                 del request.session['action']
-                return redirect('drafts_announce', id=id)
+                return redirect('ietf.secr.drafts.views.announce', id=id)
 
             return redirect('ietf.secr.drafts.views.view', id=id)
 
@@ -580,7 +580,7 @@ def authors(request, id):
             DocumentAuthor.objects.create(document=draft,author=author,order=order)
             
             messages.success(request, 'Author added successfully!')
-            return redirect('drafts_authors', id=id)
+            return redirect('ietf.secr.drafts.views.authors', id=id)
 
     else: 
         form = AuthorForm()
@@ -729,7 +729,7 @@ def email(request, id):
         form = EmailForm(request.POST)
         if form.is_valid():
             request.session['email'] = form.data
-            return redirect('drafts_confirm', id=id)
+            return redirect('ietf.secr.drafts.views.confirm', id=id)
     else:
         # the resurrect email body references the last revision number, handle
         # exception if no last revision found
@@ -746,7 +746,7 @@ def email(request, id):
         # for "revision" action skip email page and go directly to confirm
         if request.session['action'] == 'revision':
             request.session['email'] = form.initial
-            return redirect('drafts_confirm', id=id)
+            return redirect('ietf.secr.drafts.views.confirm', id=id)
 
     return render(request, 'drafts/email.html', {
         'form': form,
@@ -774,7 +774,7 @@ def extend(request, id):
         if form.is_valid():
             request.session['data'] = form.cleaned_data
             request.session['action'] = 'extend'
-            return redirect('drafts_email', id=id)
+            return redirect('ietf.secr.drafts.views.email', id=id)
 
     else:
         form = ExtendForm(initial={'revision_date':datetime.date.today().isoformat()})
@@ -894,7 +894,7 @@ def replace(request, id):
         if form.is_valid():
             request.session['data'] = form.cleaned_data
             request.session['action'] = 'replace'
-            return redirect('drafts_email', id=id)
+            return redirect('ietf.secr.drafts.views.email', id=id)
 
     else:
         form = ReplaceForm(draft=draft)
@@ -913,7 +913,7 @@ def resurrect(request, id):
     '''
     
     request.session['action'] = 'resurrect'
-    return redirect('drafts_email', id=id)
+    return redirect('ietf.secr.drafts.views.email', id=id)
 
 @role_required('Secretariat')
 def revision(request, id):
@@ -942,7 +942,7 @@ def revision(request, id):
             request.session['revision'] = revision
             request.session['file_type'] = file_type_list
             
-            return redirect('drafts_email', id=id)
+            return redirect('ietf.secr.drafts.views.email', id=id)
 
     else:
         form = RevisionModelForm(instance=draft,initial={'revision_date':datetime.date.today().isoformat()})
@@ -1054,7 +1054,7 @@ def update(request, id):
             request.session['data']['filename'] = filename
             request.session['file_type'] = file_type_list
        
-            return redirect('drafts_email', id=id)
+            return redirect('ietf.secr.drafts.views.email', id=id)
 
     else:
         form = RevisionModelForm(instance=draft,initial={'revision_date':datetime.date.today().isoformat()})
@@ -1147,7 +1147,7 @@ def withdraw(request, id):
             request.session['data'] = form.data
             request.session['action'] = 'withdraw'
             
-            return redirect('drafts_email', id=id)
+            return redirect('ietf.secr.drafts.views.email', id=id)
 
     else:
         form = WithdrawForm()

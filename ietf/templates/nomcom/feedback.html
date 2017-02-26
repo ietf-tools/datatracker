@@ -73,7 +73,7 @@
                   about {{form.nominee.email.person.name}} ({{form.nominee.email.address}}) for the {{form.position.name}} position.</p>
               {% endif %}
           </h3>
-          <p>This feedback will only be available to <a href="{% url 'nomcom_year_index' year=year %}">NomCom {{year}}</a>.
+          <p>This feedback will only be available to <a href="{% url 'ietf.nomcom.views.year_index' year=year %}">NomCom {{year}}</a>.
              You may have the feedback mailed back to you by selecting the option below.</p>
 
           <form id="feedbackform" method="post">

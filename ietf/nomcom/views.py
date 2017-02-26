@@ -383,7 +383,7 @@ def nominate(request, year, public, newperson):
             form.save()
             messages.success(request, 'Your nomination has been registered. Thank you for the nomination.')
             if newperson:
-                return redirect('nomcom_%s_nominate' % ('public' if public else 'private'), year=year)
+                return redirect('ietf.nomcom.views.%s_nominate' % ('public' if public else 'private'), year=year)
             else:
                 form = NominateForm(nomcom=nomcom, user=request.user, public=public)
     else:
@@ -700,7 +700,7 @@ def view_feedback_pending(request, year):
                 extra_ids = None
             else:
                 messages.success(request, 'Feedback saved')
-                return redirect('nomcom_view_feedback_pending', year=year)
+                return redirect('ietf.nomcom.views.view_feedback_pending', year=year)
     elif request.method == 'POST':
         formset = FeedbackFormSet(request.POST)
         for form in formset.forms:
@@ -734,7 +734,7 @@ def view_feedback_pending(request, year):
                     messages.success(request, '%s messages classified. You must enter more information for the following feedback.' % moved)
             else:
                 messages.success(request, 'Feedback saved')
-                return redirect('nomcom_view_feedback_pending', year=year)
+                return redirect('ietf.nomcom.views.view_feedback_pending', year=year)
     else:
         formset = FeedbackFormSet(queryset=feedbacks)
         for form in formset.forms:
@@ -932,7 +932,7 @@ def remove_position(request, year, position_id):
 
     if request.POST.get('remove', None):
         position.delete()
-        return redirect('nomcom_list_positions', year=year)
+        return redirect('ietf.nomcom.views.list_positions', year=year)
     return render(request, 'nomcom/remove_position.html',
                               {'year': year,
                                'position': position,
@@ -960,7 +960,7 @@ def edit_position(request, year, position_id=None):
         form = PositionForm(request.POST, instance=position, nomcom=nomcom)
         if form.is_valid():
             form.save()
-            return redirect('nomcom_list_positions', year=year)
+            return redirect('ietf.nomcom.views.list_positions', year=year)
     else:
         form = PositionForm(instance=position, nomcom=nomcom)
 

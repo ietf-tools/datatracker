@@ -10,7 +10,7 @@
   {% if template_list %}
     <ul>
       {% for template in template_list %}
-        <li><a href="{% url "nomcom_edit_template" year template.id %}">{{ template }}</a></li>
+        <li><a href="{% url 'ietf.nomcom.views.edit_template' year template.id %}">{{ template }}</a></li>
       {% endfor %}
     </ul>
   {% else %}
@@ -24,7 +24,7 @@
       <h3>{{ position.name }}</h3>
       <ul>
         {% for template in position.get_templates %}
-          <li><a href="{% url "nomcom_edit_template" year template.id %}">{{ template }}</a></li>
+          <li><a href="{% url 'ietf.nomcom.views.edit_template' year template.id %}">{{ template }}</a></li>
         {% endfor %}
       </ul>
     {% endfor %}

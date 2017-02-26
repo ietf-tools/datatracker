@@ -19,7 +19,7 @@
   </p>
 
   <p>
-    Showing RFCs and active Internet-Drafts, sorted by <a href="{% url 'relationship_subset_help' subset='reference' %}">reference type</a>, then document name.
+    Showing RFCs and active Internet-Drafts, sorted by <a href="{% url 'ietf.doc.views_help.relationship_help' subset='reference' %}">reference type</a>, then document name.
   </p>
 
   {% if numdocs %}
@@ -51,8 +51,8 @@
             </td>
             <td>
 	      <b>{{ref.source.title}}</b><br>
-	      <a class="btn btn-default btn-xs" href="{% url 'doc_references' name %}">Refs</a>
-	      <a class="btn btn-default btn-xs" href="{% url 'doc_referenced_by' name %}">Ref'd by</a>
+	      <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_doc.document_references' name %}">Refs</a>
+	      <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_doc.document_referenced_by' name %}">Ref'd by</a>
             </td>
             <td>
 	      {% ifequal ref.source.get_state.slug 'rfc' %}

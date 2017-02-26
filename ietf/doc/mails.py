@@ -500,7 +500,7 @@ def send_review_possibly_replaces_request(request, doc, submitter_info):
               dict(doc= doc,
                    submitter_info=submitter_info,
                    possibly_replaces=doc.related_that_doc("possibly-replaces"),
-                   review_url=settings.IDTRACKER_BASE_URL + urlreverse("doc_review_possibly_replaces", kwargs={ "name": doc.name })),
+                   review_url=settings.IDTRACKER_BASE_URL + urlreverse('ietf.doc.views_draft.review_possibly_replaces', kwargs={ "name": doc.name })),
               cc=list(cc),)
 
 def email_charter_internal_review(request, charter):

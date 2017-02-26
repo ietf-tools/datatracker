@@ -287,7 +287,7 @@ def search_for_name(request, name):
         else:
             search_args += "&rfcs=on&activedrafts=on&olddrafts=on"
 
-    return cached_redirect(cache_key, urlreverse("doc_search") + search_args)
+    return cached_redirect(cache_key, urlreverse('ietf.doc.views_search.search') + search_args)
 
 def ad_dashboard_group(doc):
 

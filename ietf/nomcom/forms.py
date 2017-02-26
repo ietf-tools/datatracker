@@ -192,7 +192,7 @@ class EditMembersFormPreview(FormPreview):
                                        person=member['person'],
                                        email=member['email_obj'])
 
-        return redirect('nomcom_edit_members', year=self.year)
+        return redirect('ietf.nomcom.forms.EditMembersFormPreview', year=self.year)
 
 
 class EditNomcomForm(forms.ModelForm):
@@ -351,7 +351,7 @@ class NominateForm(forms.ModelForm):
 
         super(NominateForm, self).__init__(*args, **kwargs)
 
-        new_person_url_name = 'nomcom_%s_nominate_newperson' % ('public' if self.public else 'private' )
+        new_person_url_name = 'ietf.nomcom.views.%s_nominate_newperson' % ('public' if self.public else 'private' )
         self.fields['searched_email'].label = 'Candidate email'
         self.fields['searched_email'].help_text = 'Search by name or email address. Click <a href="%s">here</a> if the search does not find the candidate you want to nominate.' % reverse(new_person_url_name,kwargs={'year':self.nomcom.year()})
         self.fields['nominator_email'].label = 'Nominator email'
@@ -476,7 +476,7 @@ class NominateNewPersonForm(forms.ModelForm):
     def clean_candidate_email(self):
         candidate_email = self.cleaned_data['candidate_email']
         if Email.objects.filter(address=candidate_email).exists():
-            normal_url_name = 'nomcom_%s_nominate' % 'public' if self.public else 'private'
+            normal_url_name = 'ietf.nomcom.views.%s_nominate' % 'public' if self.public else 'private'
             msg = '%s is already in the datatracker. \
                    Use the <a href="%s">normal nomination form</a> to nominate the person \
                    with this address.\

@@ -17,6 +17,7 @@ class PersonResource(ModelResource):
         queryset = Person.objects.all()
         serializer = api.Serializer()
         #resource_name = 'person'
+        ordering = ['id', ]
         filtering = { 
             "id": ALL,
             "time": ALL,

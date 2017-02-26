@@ -78,10 +78,10 @@ def render_document_top(request, doc, tab, name):
         tabs.append(("IESG Review", "ballot", urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=name)), ballot, None if ballot else "IESG Review Ballot has not been created yet"))
 
     if doc.type_id == "draft" or (doc.type_id == "charter" and doc.group.type_id == "wg"):
-        tabs.append(("IESG Writeups", "writeup", urlreverse("doc_writeup", kwargs=dict(name=name)), True, None))
+        tabs.append(("IESG Writeups", "writeup", urlreverse('ietf.doc.views_doc.document_writeup', kwargs=dict(name=name)), True, None))
 
-    tabs.append(("Email expansions","email",urlreverse("ietf.doc.views_doc.document_email", kwargs=dict(name=name)), True, None))
-    tabs.append(("History", "history", urlreverse("doc_history", kwargs=dict(name=name)), True, None))
+    tabs.append(("Email expansions","email",urlreverse('ietf.doc.views_doc.document_email', kwargs=dict(name=name)), True, None))
+    tabs.append(("History", "history", urlreverse('ietf.doc.views_doc.document_history', kwargs=dict(name=name)), True, None))
 
     if name.startswith("rfc"):
         name = "RFC %s" % name[3:]
@@ -321,20 +321,20 @@ def document_main(request, name, rev=None):
         actions = []
 
         if can_adopt_draft(request.user, doc) and not doc.get_state_slug() in ["rfc"] and not snapshot:
-            actions.append(("Manage Document Adoption in Group", urlreverse('doc_adopt_draft', kwargs=dict(name=doc.name))))
+            actions.append(("Manage Document Adoption in Group", urlreverse('ietf.doc.views_draft.adopt_draft', kwargs=dict(name=doc.name))))
 
         if doc.get_state_slug() == "expired" and not resurrected_by and can_edit and not snapshot:
-            actions.append(("Request Resurrect", urlreverse('doc_request_resurrect', kwargs=dict(name=doc.name))))
+            actions.append(("Request Resurrect", urlreverse('ietf.doc.views_draft.request_resurrect', kwargs=dict(name=doc.name))))
 
         if doc.get_state_slug() == "expired" and has_role(request.user, ("Secretariat",)) and not snapshot:
-            actions.append(("Resurrect", urlreverse('doc_resurrect', kwargs=dict(name=doc.name))))
+            actions.append(("Resurrect", urlreverse('ietf.doc.views_draft.resurrect', kwargs=dict(name=doc.name))))
 
         if (doc.get_state_slug() not in ["rfc", "expired"] and doc.stream_id in ("ise", "irtf")
             and can_edit_stream_info and not conflict_reviews and not snapshot):
             label = "Begin IETF Conflict Review"
             if not doc.intended_std_level:
                 label += " (note that intended status is not set)"
-            actions.append((label, urlreverse('conflict_review_start', kwargs=dict(name=doc.name))))
+            actions.append((label, urlreverse('ietf.doc.views_conflict_review.start_review', kwargs=dict(name=doc.name))))
 
         if (doc.get_state_slug() not in ["rfc", "expired"] and doc.stream_id in ("iab", "ise", "irtf")
             and can_edit_stream_info and not snapshot):
@@ -344,13 +344,13 @@ def document_main(request, name, rev=None):
                     label += " (note that intended status is not set)"
                 if iesg_state and iesg_state.slug != 'dead':
                     label += " (Warning: the IESG state indicates ongoing IESG processing)"
-                actions.append((label, urlreverse('doc_request_publication', kwargs=dict(name=doc.name))))
+                actions.append((label, urlreverse('ietf.doc.views_draft.request_publication', kwargs=dict(name=doc.name))))
 
         if doc.get_state_slug() not in ["rfc", "expired"] and doc.stream_id in ("ietf",) and not snapshot:
             if not iesg_state and can_edit:
-                actions.append(("Begin IESG Processing", urlreverse('doc_edit_info', kwargs=dict(name=doc.name)) + "?new=1"))
+                actions.append(("Begin IESG Processing", urlreverse('ietf.doc.views_draft.edit_info', kwargs=dict(name=doc.name)) + "?new=1"))
             elif can_edit_stream_info and (not iesg_state or iesg_state.slug == 'watching'):
-                actions.append(("Submit to IESG for Publication", urlreverse('doc_to_iesg', kwargs=dict(name=doc.name))))
+                actions.append(("Submit to IESG for Publication", urlreverse('ietf.doc.views_draft.to_iesg', kwargs=dict(name=doc.name))))
 
         augment_docs_with_tracking_info([doc], request.user)
 
@@ -673,7 +673,7 @@ def document_history(request, name):
 
             url = ""
             if name.startswith("charter"):
-                url = request.build_absolute_uri(urlreverse("charter_with_milestones_txt", kwargs=dict(name=e.doc.name, rev=e.rev)))
+                url = request.build_absolute_uri(urlreverse('ietf.doc.views_charter.charter_with_milestones_txt', kwargs=dict(name=e.doc.name, rev=e.rev)))
             elif name.startswith("conflict-review"):
                 url = find_history_active_at(e.doc, e.time).href()
             elif name.startswith("status-change"):
@@ -756,15 +756,15 @@ def document_writeup(request, name):
         if doc.get_state("draft-iesg"):
             writeups.append(("Announcement",
                              text_from_writeup("changed_ballot_approval_text"),
-                             urlreverse("doc_ballot_approvaltext", kwargs=dict(name=doc.name))))
+                             urlreverse('ietf.doc.views_ballot.ballot_approvaltext', kwargs=dict(name=doc.name))))
 
         writeups.append(("Ballot Text",
                          text_from_writeup("changed_ballot_writeup_text"),
-                         urlreverse("doc_ballot_writeupnotes", kwargs=dict(name=doc.name))))
+                         urlreverse('ietf.doc.views_ballot.ballot_writeupnotes', kwargs=dict(name=doc.name))))
 
         writeups.append(("RFC Editor Note",
                          text_from_writeup("changed_rfc_editor_note_text"),
-                         urlreverse("doc_ballot_rfceditornote", kwargs=dict(name=doc.name))))
+                         urlreverse('ietf.doc.views_ballot.ballot_rfceditornote', kwargs=dict(name=doc.name))))
 
     elif doc.type_id == "charter":
         sections.append(("WG Review Announcement",
@@ -1004,7 +1004,7 @@ def add_comment(request, name):
 
             email_comment(request, doc, e)
 
-            return redirect("doc_history", name=doc.name)
+            return redirect('ietf.doc.views_doc.document_history', name=doc.name)
     else:
         form = AddCommentForm()
   

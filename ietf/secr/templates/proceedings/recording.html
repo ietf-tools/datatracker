@@ -16,11 +16,11 @@
 
 {% block breadcrumbs %}{{ block.super }} 
   {% if meeting.type_id == "interim" %}
-    &raquo; <a href="{% url "proceedings" %}">Proceedings</a>
+    &raquo; <a href="{% url 'ietf.secr.proceedings.views.main' %}">Proceedings</a>
     &raquo; {{ meeting }}
   {% else %}
-    &raquo; <a href="{% url "proceedings" %}">Proceedings</a>
-    &raquo; <a href="{% url "proceedings_select" meeting_num=meeting.number %}">{{ meeting.number }}</a>
+    &raquo; <a href="{% url 'ietf.secr.proceedings.views.main' %}">Proceedings</a>
+    &raquo; <a href="{% url 'ietf.secr.proceedings.views.select' meeting_num=meeting.number %}">{{ meeting.number }}</a>
     &raquo; Recording
   {% endif %}
 {% endblock %}
@@ -66,7 +66,7 @@
              <td>{{ session.official_timeslotassignment.timeslot.time|date:"m-d H:i" }}</td>
              <td class="document-name" >{{ recording.name }}</td>
              <td><a href="{{ recording.href }}">{{ recording.href }}</a></td>
-             <td><a href="{% url "proceedings_recording_edit" meeting_num=meeting.number name=recording.name %}">Edit</a></td>
+             <td><a href="{% url 'ietf.secr.proceedings.views.recording_edit' meeting_num=meeting.number name=recording.name %}">Edit</a></td>
              </tr>
              {% endfor %}
            {% else %}

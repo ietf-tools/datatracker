@@ -6,6 +6,8 @@ import urlparse
 from django.conf import settings
 from django.template.loader import render_to_string
 
+import debug                            # pyflakes:ignore
+
 from ietf.dbtemplate.models import DBTemplate
 from ietf.meeting.models import Session
 from ietf.group.utils import can_manage_materials

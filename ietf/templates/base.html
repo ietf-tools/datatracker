@@ -43,7 +43,7 @@
     <link rel="apple-touch-icon" href="{% static 'ietf/images/apple-touch-icon.png' %}">
   </head>
 
-  <body {% block bodyAttrs %}{%endblock%} data-group-menu-data-url="{% url "group_menu_data" %}">
+  <body {% block bodyAttrs %}{%endblock%} data-group-menu-data-url="{% url 'ietf.group.views_ajax.group_menu_data' %}">
     {% with debug_server_mode="production" %}
       <nav class="navbar {% if server_mode and server_mode == "production" %}navbar-inverse{% else %}navbar-default{% endif %} navbar-fixed-top">
         <div class="container-fluid">

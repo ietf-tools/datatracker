@@ -25,7 +25,7 @@ class ConflictReviewTests(TestCase):
     def test_start_review_as_secretary(self):
 
         doc = Document.objects.get(name='draft-imaginary-independent-submission')
-        url = urlreverse('conflict_review_start',kwargs=dict(name=doc.name))
+        url = urlreverse('ietf.doc.views_conflict_review.start_review',kwargs=dict(name=doc.name))
 
         login_testing_unauthorized(self, "secretary", url)
         
@@ -80,7 +80,7 @@ class ConflictReviewTests(TestCase):
     def test_start_review_as_stream_owner(self):
 
         doc = Document.objects.get(name='draft-imaginary-independent-submission')
-        url = urlreverse('conflict_review_start',kwargs=dict(name=doc.name))
+        url = urlreverse('ietf.doc.views_conflict_review.start_review',kwargs=dict(name=doc.name))
 
         login_testing_unauthorized(self, "ise-chair", url)
 
@@ -129,7 +129,7 @@ class ConflictReviewTests(TestCase):
     def test_change_state(self):
 
         doc = Document.objects.get(name='conflict-review-imaginary-irtf-submission')
-        url = urlreverse('conflict_review_change_state',kwargs=dict(name=doc.name))
+        url = urlreverse('ietf.doc.views_conflict_review.change_state',kwargs=dict(name=doc.name))
 
         login_testing_unauthorized(self, "ad", url)
 
@@ -167,7 +167,7 @@ class ConflictReviewTests(TestCase):
 
     def test_edit_notices(self):
         doc = Document.objects.get(name='conflict-review-imaginary-irtf-submission')
-        url = urlreverse('conflict_review_notices',kwargs=dict(name=doc.name))
+        url = urlreverse('ietf.doc.views_doc.edit_notify;conflict-review',kwargs=dict(name=doc.name))
 
         login_testing_unauthorized(self, "ad", url)
 
@@ -197,7 +197,7 @@ class ConflictReviewTests(TestCase):
 
     def test_edit_ad(self):
         doc = Document.objects.get(name='conflict-review-imaginary-irtf-submission')
-        url = urlreverse('conflict_review_ad',kwargs=dict(name=doc.name))
+        url = urlreverse('ietf.doc.views_conflict_review.edit_ad',kwargs=dict(name=doc.name))
 
         login_testing_unauthorized(self, "ad", url)
 
@@ -218,7 +218,7 @@ class ConflictReviewTests(TestCase):
 
     def test_edit_telechat_date(self):
         doc = Document.objects.get(name='conflict-review-imaginary-irtf-submission')
-        url = urlreverse('conflict_review_telechat_date',kwargs=dict(name=doc.name))
+        url = urlreverse('ietf.doc.views_doc.telechat_date;conflict-review',kwargs=dict(name=doc.name))
 
         login_testing_unauthorized(self, "ad", url)
 
@@ -263,7 +263,7 @@ class ConflictReviewTests(TestCase):
     def approve_test_helper(self,approve_type):
 
         doc = Document.objects.get(name='conflict-review-imaginary-irtf-submission')
-        url = urlreverse('conflict_review_approve',kwargs=dict(name=doc.name))
+        url = urlreverse('ietf.doc.views_conflict_review.approve',kwargs=dict(name=doc.name))
 
         login_testing_unauthorized(self, "secretary", url)
         
@@ -314,7 +314,7 @@ class ConflictReviewTests(TestCase):
 class ConflictReviewSubmitTests(TestCase):
     def test_initial_submission(self):
         doc = Document.objects.get(name='conflict-review-imaginary-irtf-submission')
-        url = urlreverse('conflict_review_submit',kwargs=dict(name=doc.name))
+        url = urlreverse('ietf.doc.views_conflict_review.submit',kwargs=dict(name=doc.name))
         login_testing_unauthorized(self, "ad", url)
 
         # normal get
@@ -341,7 +341,7 @@ class ConflictReviewSubmitTests(TestCase):
 
     def test_subsequent_submission(self):
         doc = Document.objects.get(name='conflict-review-imaginary-irtf-submission')
-        url = urlreverse('conflict_review_submit',kwargs=dict(name=doc.name))
+        url = urlreverse('ietf.doc.views_conflict_review.submit',kwargs=dict(name=doc.name))
         login_testing_unauthorized(self, "ad", url)
 
         # A little additional setup 

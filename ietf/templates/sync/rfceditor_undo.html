@@ -22,7 +22,7 @@
       {% for e in events %}
         <tr>
           <td>{{ e.time|date:"Y-m-d H:i:s"}}</td>
-          <td><a href="{% url "doc_history" e.doc_id %}">{{ e.doc_id }}</a></td>
+          <td><a href="{% url 'ietf.doc.views_doc.document_history' e.doc_id %}">{{ e.doc_id }}</a></td>
           <td>{{ e.desc|safe }}</td>
           <td>
 	    <form method="post">

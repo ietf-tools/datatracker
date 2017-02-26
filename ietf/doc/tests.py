@@ -40,7 +40,7 @@ class SearchTests(TestCase):
     def test_search(self):
         draft = make_test_data()
 
-        base_url = urlreverse("doc_search")
+        base_url = urlreverse('ietf.doc.views_search.search')
 
         # only show form, no search yet
         r = self.client.get(base_url)
@@ -126,72 +126,72 @@ class SearchTests(TestCase):
         draft.save_with_history([DocEvent.objects.create(doc=draft, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
 
         # exact match
-        r = self.client.get(urlreverse("doc_search_for_name", kwargs=dict(name=draft.name)))
+        r = self.client.get(urlreverse('ietf.doc.views_search.search_for_name', kwargs=dict(name=draft.name)))
         self.assertEqual(r.status_code, 302)
         self.assertEqual(urlparse.urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
 
         # prefix match
-        r = self.client.get(urlreverse("doc_search_for_name", kwargs=dict(name="-".join(draft.name.split("-")[:-1]))))
+        r = self.client.get(urlreverse('ietf.doc.views_search.search_for_name', kwargs=dict(name="-".join(draft.name.split("-")[:-1]))))
         self.assertEqual(r.status_code, 302)
         self.assertEqual(urlparse.urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
 
         # non-prefix match
-        r = self.client.get(urlreverse("doc_search_for_name", kwargs=dict(name="-".join(draft.name.split("-")[1:]))))
+        r = self.client.get(urlreverse('ietf.doc.views_search.search_for_name', kwargs=dict(name="-".join(draft.name.split("-")[1:]))))
         self.assertEqual(r.status_code, 302)
         self.assertEqual(urlparse.urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
 
         # other doctypes than drafts
         doc = Document.objects.get(name='charter-ietf-mars')
-        r = self.client.get(urlreverse("doc_search_for_name", kwargs=dict(name='charter-ietf-ma')))
+        r = self.client.get(urlreverse('ietf.doc.views_search.search_for_name', kwargs=dict(name='charter-ietf-ma')))
         self.assertEqual(r.status_code, 302)
         self.assertEqual(urlparse.urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))
 
         doc = Document.objects.filter(name__startswith='conflict-review-').first()
-        r = self.client.get(urlreverse("doc_search_for_name", kwargs=dict(name="-".join(doc.name.split("-")[:-1]))))
+        r = self.client.get(urlreverse('ietf.doc.views_search.search_for_name', kwargs=dict(name="-".join(doc.name.split("-")[:-1]))))
         self.assertEqual(r.status_code, 302)
         self.assertEqual(urlparse.urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))
 
         doc = Document.objects.filter(name__startswith='status-change-').first()
-        r = self.client.get(urlreverse("doc_search_for_name", kwargs=dict(name="-".join(doc.name.split("-")[:-1]))))
+        r = self.client.get(urlreverse('ietf.doc.views_search.search_for_name', kwargs=dict(name="-".join(doc.name.split("-")[:-1]))))
         self.assertEqual(r.status_code, 302)
         self.assertEqual(urlparse.urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))
 
         doc = Document.objects.filter(name__startswith='agenda-').first()
-        r = self.client.get(urlreverse("doc_search_for_name", kwargs=dict(name="-".join(doc.name.split("-")[:-1]))))
+        r = self.client.get(urlreverse('ietf.doc.views_search.search_for_name', kwargs=dict(name="-".join(doc.name.split("-")[:-1]))))
         self.assertEqual(r.status_code, 302)
         self.assertEqual(urlparse.urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))
 
         doc = Document.objects.filter(name__startswith='minutes-').first()
-        r = self.client.get(urlreverse("doc_search_for_name", kwargs=dict(name="-".join(doc.name.split("-")[:-1]))))
+        r = self.client.get(urlreverse('ietf.doc.views_search.search_for_name', kwargs=dict(name="-".join(doc.name.split("-")[:-1]))))
         self.assertEqual(r.status_code, 302)
         self.assertEqual(urlparse.urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))
 
         doc = Document.objects.filter(name__startswith='slides-').first()
-        r = self.client.get(urlreverse("doc_search_for_name", kwargs=dict(name="-".join(doc.name.split("-")[:-1]))))
+        r = self.client.get(urlreverse('ietf.doc.views_search.search_for_name', kwargs=dict(name="-".join(doc.name.split("-")[:-1]))))
         self.assertEqual(r.status_code, 302)
         self.assertEqual(urlparse.urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))
 
         # match with revision
-        r = self.client.get(urlreverse("doc_search_for_name", kwargs=dict(name=draft.name + "-" + prev_rev)))
+        r = self.client.get(urlreverse('ietf.doc.views_search.search_for_name', kwargs=dict(name=draft.name + "-" + prev_rev)))
         self.assertEqual(r.status_code, 302)
         self.assertEqual(urlparse.urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name, rev=prev_rev)))
 
         # match with non-existing revision
-        r = self.client.get(urlreverse("doc_search_for_name", kwargs=dict(name=draft.name + "-09")))
+        r = self.client.get(urlreverse('ietf.doc.views_search.search_for_name', kwargs=dict(name=draft.name + "-09")))
         self.assertEqual(r.status_code, 302)
         self.assertEqual(urlparse.urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
 
         # match with revision and extension
-        r = self.client.get(urlreverse("doc_search_for_name", kwargs=dict(name=draft.name + "-" + prev_rev + ".txt")))
+        r = self.client.get(urlreverse('ietf.doc.views_search.search_for_name', kwargs=dict(name=draft.name + "-" + prev_rev + ".txt")))
         self.assertEqual(r.status_code, 302)
         self.assertEqual(urlparse.urlparse(r["Location"]).path, urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name, rev=prev_rev)))
         
         # no match
-        r = self.client.get(urlreverse("doc_search_for_name", kwargs=dict(name="draft-ietf-doesnotexist-42")))
+        r = self.client.get(urlreverse('ietf.doc.views_search.search_for_name', kwargs=dict(name="draft-ietf-doesnotexist-42")))
         self.assertEqual(r.status_code, 302)
 
         parsed = urlparse.urlparse(r["Location"])
-        self.assertEqual(parsed.path, urlreverse("doc_search"))
+        self.assertEqual(parsed.path, urlreverse('ietf.doc.views_search.search'))
         self.assertEqual(urlparse.parse_qs(parsed.query)["name"][0], "draft-ietf-doesnotexist-42")
 
     def test_frontpage(self):
@@ -203,23 +203,23 @@ class SearchTests(TestCase):
     def test_drafts_pages(self):
         draft = make_test_data()
 
-        r = self.client.get(urlreverse("docs_for_ad", kwargs=dict(name=draft.ad.full_name_as_key())))
+        r = self.client.get(urlreverse('ietf.doc.views_search.docs_for_ad', kwargs=dict(name=draft.ad.full_name_as_key())))
         self.assertEqual(r.status_code, 200)
         self.assertTrue(draft.title in unicontent(r))
 
         draft.set_state(State.objects.get(type="draft-iesg", slug="lc"))
-        r = self.client.get(urlreverse("drafts_in_last_call"))
+        r = self.client.get(urlreverse('ietf.doc.views_search.drafts_in_last_call'))
         self.assertEqual(r.status_code, 200)
         self.assertTrue(draft.title in unicontent(r))
         
     def test_indexes(self):
         draft = make_test_data()
 
-        r = self.client.get(urlreverse("index_all_drafts"))
+        r = self.client.get(urlreverse('ietf.doc.views_search.index_all_drafts'))
         self.assertEqual(r.status_code, 200)
         self.assertTrue(draft.name in unicontent(r))
 
-        r = self.client.get(urlreverse("index_active_drafts"))
+        r = self.client.get(urlreverse('ietf.doc.views_search.index_active_drafts'))
         self.assertEqual(r.status_code, 200)
         self.assertTrue(draft.title in unicontent(r))
 
@@ -227,7 +227,7 @@ class SearchTests(TestCase):
         draft = make_test_data()
 
         # Document
-        url = urlreverse("ajax_select2_search_docs", kwargs={
+        url = urlreverse('ietf.doc.views_search.ajax_select2_search_docs', kwargs={
             "model_name": "document",
             "doc_type": "draft",
         })
@@ -239,7 +239,7 @@ class SearchTests(TestCase):
         # DocAlias
         doc_alias = draft.docalias_set.get()
 
-        url = urlreverse("ajax_select2_search_docs", kwargs={
+        url = urlreverse('ietf.doc.views_search.ajax_select2_search_docs', kwargs={
             "model_name": "docalias",
             "doc_type": "draft",
         })
@@ -734,7 +734,7 @@ class DocTestCase(TestCase):
             text="This is a note for the RFC Editor.",
             by=Person.objects.get(name="(System)"))
 
-        url = urlreverse('doc_writeup', kwargs=dict(name=doc.name))
+        url = urlreverse('ietf.doc.views_doc.document_writeup', kwargs=dict(name=doc.name))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertTrue(appr.text in unicontent(r))
@@ -750,7 +750,7 @@ class DocTestCase(TestCase):
             type="added_comment",
             by=Person.objects.get(name="(System)"))
 
-        url = urlreverse('doc_history', kwargs=dict(name=doc.name))
+        url = urlreverse('ietf.doc.views_doc.document_history', kwargs=dict(name=doc.name))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertTrue(e.desc in unicontent(r))
@@ -790,7 +790,7 @@ class DocTestCase(TestCase):
         self.assertTrue(r.status_code, 200)
 
     def test_state_help(self):
-        url = urlreverse('state_help', kwargs=dict(type="draft-iesg"))
+        url = urlreverse('ietf.doc.views_help.state_help', kwargs=dict(type="draft-iesg"))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertTrue(State.objects.get(type="draft-iesg", slug="lc").name in unicontent(r))
@@ -871,7 +871,7 @@ class DocTestCase(TestCase):
 class AddCommentTestCase(TestCase):
     def test_add_comment(self):
         draft = make_test_data()
-        url = urlreverse('doc_add_comment', kwargs=dict(name=draft.name))
+        url = urlreverse('ietf.doc.views_doc.add_comment', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "secretary", url)
 
         # normal get
@@ -919,11 +919,11 @@ class ReferencesTest(TestCase):
         doc1 = Document.objects.get(name='draft-ietf-mars-test')
         doc2 = DocAlias.objects.get(name='draft-imaginary-independent-submission')
         RelatedDocument.objects.get_or_create(source=doc1,target=doc2,relationship=DocRelationshipName.objects.get(slug='refnorm'))
-        url = urlreverse('doc_references', kwargs=dict(name=doc1.name))
+        url = urlreverse('ietf.doc.views_doc.document_references', kwargs=dict(name=doc1.name))
         r = self.client.get(url)
         self.assertEquals(r.status_code, 200)
         self.assertTrue(doc2.name in unicontent(r))
-        url = urlreverse('doc_referenced_by', kwargs=dict(name=doc2.name))
+        url = urlreverse('ietf.doc.views_doc.document_referenced_by', kwargs=dict(name=doc2.name))
         r = self.client.get(url)
         self.assertEquals(r.status_code, 200)
         self.assertTrue(doc1.name in unicontent(r))
@@ -963,7 +963,7 @@ expand-draft-ietf-ames-test.all@virtual.ietf.org  ames-author@example.ames, ames
         os.unlink(self.doc_alias_file.name)
 
     def testAliases(self):
-        url = urlreverse('doc_specific_email_aliases', kwargs=dict(name="draft-ietf-mars-test"))
+        url = urlreverse('ietf.doc.urls.redirect.document_email', kwargs=dict(name="draft-ietf-mars-test"))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 302)
 

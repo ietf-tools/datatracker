@@ -59,7 +59,7 @@ def delete_role(request, acronym, id):
     role.delete()
     
     messages.success(request, 'The entry was deleted successfully')
-    url = reverse('roles') + '?group=%s' % group.acronym
+    url = reverse('ietf.secr.roles.views.main') + '?group=%s' % group.acronym
     return HttpResponseRedirect(url)
 
 @role_required('Secretariat')
@@ -94,7 +94,7 @@ def main(request):
                                 group=group)
 
             messages.success(request, 'New %s added successfully!' % name)
-            url = reverse('roles') + '?group=%s' % group.acronym
+            url = reverse('ietf.secr.roles.views.main') + '?group=%s' % group.acronym
             return HttpResponseRedirect(url)
     
     else:

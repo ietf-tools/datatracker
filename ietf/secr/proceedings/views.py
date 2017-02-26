@@ -262,7 +262,7 @@ def process_pdfs(request, meeting_num):
         messages.warning(request, '%s PDF files processed.  %s PowerPoint files still not converted.' % (count, warn_count))
     else:
         messages.success(request, '%s PDF files processed' % count)
-    url = reverse('proceedings_select', kwargs={'meeting_num':meeting_num})
+    url = reverse('ietf.secr.proceedings.views.select', kwargs={'meeting_num':meeting_num})
     return HttpResponseRedirect(url)
 
 @role_required('Secretariat')
@@ -273,7 +273,7 @@ def progress_report(request, meeting_num):
     meeting = get_object_or_404(Meeting, number=meeting_num)
     gen_progress({'meeting':meeting},final=False)
 
-    url = reverse('proceedings_select', kwargs={'meeting_num':meeting_num})
+    url = reverse('ietf.secr.proceedings.views.select', kwargs={'meeting_num':meeting_num})
     return HttpResponseRedirect(url)
 
 @role_required('Secretariat')
@@ -295,7 +295,7 @@ def recording(request, meeting_num):
             
             if Document.objects.filter(type='recording',external_url=external_url):
                 messages.error(request, "Recording already exists")
-                return redirect('proceedings_recording', meeting_num=meeting_num)
+                return redirect('ietf.secr.proceedings.views.recording', meeting_num=meeting_num)
             else:
                 create_recording(session,external_url)
             
@@ -303,7 +303,7 @@ def recording(request, meeting_num):
             create_proceedings(meeting,session.group)
             
             messages.success(request,'Recording added')
-            return redirect('proceedings_recording', meeting_num=meeting_num)
+            return redirect('ietf.secr.proceedings.views.recording', meeting_num=meeting_num)
     
     else:
         form = RecordingForm(meeting=meeting)
@@ -326,7 +326,7 @@ def recording_edit(request, meeting_num, name):
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
-            return redirect("proceedings_recording", meeting_num=meeting_num)
+            return redirect('ietf.secr.proceedings.views.recording', meeting_num=meeting_num)
             
         form = RecordingEditForm(request.POST, instance=recording)
         if form.is_valid():
@@ -342,7 +342,7 @@ def recording_edit(request, meeting_num, name):
 
             create_proceedings(meeting,recording.group)
             messages.success(request,'Recording saved')
-            return redirect('proceedings_recording', meeting_num=meeting_num)
+            return redirect('ietf.secr.proceedings.views.recording', meeting_num=meeting_num)
     else:
         form = RecordingEditForm(instance=recording)
     

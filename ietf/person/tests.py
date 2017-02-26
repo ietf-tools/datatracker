@@ -41,6 +41,9 @@ class PersonTests(TestCase):
 
         url = urlreverse("ietf.person.views.profile", kwargs={ "email_or_name": person.plain_name()})
         r = self.client.get(url)
+        #debug.show('person.name')
+        #debug.show('person.plain_name()')
+        #debug.show('person.photo_name()')
         self.assertContains(r, person.photo_name(), status_code=200)
         q = PyQuery(r.content)
         self.assertIn("Photo of %s"%person, q("div.bio-text img.bio-photo").attr("alt"))

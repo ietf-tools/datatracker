@@ -59,7 +59,7 @@
         <a class="btn btn-default" href="{% url "ietf.ipr.views.about" %}">Submit an IPR disclosure</a>
         <a class="btn btn-default" href="{% url "ietf.ipr.views.search" %}">Search IPR disclosures</a>
         {% if user|has_role:"Secretariat" %}
-          <a class="btn btn-default" href="{% url "ipr_admin_main" %}">Administrative View</a>
+          <a class="btn btn-default" href="{% url 'ietf.ipr.views.admin' %}">Administrative View</a>
         {% endif %}
       </p>
 

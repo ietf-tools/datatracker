@@ -26,16 +26,16 @@
       {% if user|has_role:"Secretariat" %}
         {# admin actions #}
         {% if ipr.updates and ipr.state_id == 'pending' and not ipr.update_notified_date %}
-          <a class="btn btn-default" href="{% url "ipr_notify" id=ipr.id type="update"%}" title="Notify the submitter of IPR that is being updated">Notify</a>
+          <a class="btn btn-default" href="{% url 'ietf.ipr.views.notify' id=ipr.id type="update"%}" title="Notify the submitter of IPR that is being updated">Notify</a>
         {% endif %}
 
         {% if ipr.updates and ipr.state_id == 'pending' and ipr.update_notified_date or not ipr.updates and ipr.state_id == 'pending' %}
-          <a class="btn btn-default" href="{% url "ipr_post" id=ipr.id %}"><span class="glyphicon glyphicon-ok" aria-hidden="true"></span> Post</a>
+          <a class="btn btn-default" href="{% url 'ietf.ipr.views.post' id=ipr.id %}"><span class="glyphicon glyphicon-ok" aria-hidden="true"></span> Post</a>
         {% endif %}
 
-        <a class="btn btn-default" href="{% url "ipr_email" id=ipr.id %}" title="Email submitter of this disclsoure"><span class="glyphicon glyphicon-envelope" aria-hidden="true"></span> Email</a>
-        <a class="btn btn-default" href="{% url "ipr_edit" id=ipr.id %}">Edit</a>
-        <a class="btn btn-default" href="{% url "ipr_state" id=ipr.id %}">Change State</a>
+        <a class="btn btn-default" href="{% url 'ietf.ipr.views.email' id=ipr.id %}" title="Email submitter of this disclsoure"><span class="glyphicon glyphicon-envelope" aria-hidden="true"></span> Email</a>
+        <a class="btn btn-default" href="{% url 'ietf.ipr.views.edit' id=ipr.id %}">Edit</a>
+        <a class="btn btn-default" href="{% url 'ietf.ipr.views.state' id=ipr.id %}">Change State</a>
       {% endif %}
     </div>
 

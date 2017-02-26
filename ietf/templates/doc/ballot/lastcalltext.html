@@ -28,7 +28,7 @@
       {% endif %}
       <button type="submit" class="btn btn-warning" name="regenerate_last_call_text" value="Regenerate Last Call Text">Regenerate text</button>
       {% if user|has_role:"Secretariat" and can_make_last_call %}
-        <a class="btn btn-primary" href="{% url "doc_make_last_call" name=doc.name %}">Issue last call</a>
+        <a class="btn btn-primary" href="{% url 'ietf.doc.views_ballot.make_last_call' name=doc.name %}">Issue last call</a>
       {% endif %}
     {% endbuttons %}
   </form>

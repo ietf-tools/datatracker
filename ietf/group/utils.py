@@ -200,7 +200,7 @@ def construct_group_menu_context(request, group, selected, group_type, others):
 
     if group.features.has_milestones:
         if group.state_id != "proposed" and (is_admin or can_manage):
-            actions.append((u"Edit milestones", urlreverse("group_edit_milestones", kwargs=kwargs)))
+            actions.append((u"Edit milestones", urlreverse('ietf.group.milestones.edit_milestones;current', kwargs=kwargs)))
 
     if group.features.has_documents:
         clist = CommunityList.objects.filter(group=group).first()

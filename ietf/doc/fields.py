@@ -67,7 +67,7 @@ class SearchableDocumentsField(forms.CharField):
 
         # doing this in the constructor is difficult because the URL
         # patterns may not have been fully constructed there yet
-        self.widget.attrs["data-ajax-url"] = urlreverse("ajax_select2_search_docs", kwargs={
+        self.widget.attrs["data-ajax-url"] = urlreverse('ietf.doc.views_search.ajax_select2_search_docs', kwargs={
             "doc_type": self.doc_type,
             "model_name": self.model.__name__.lower()
         })

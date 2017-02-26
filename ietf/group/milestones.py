@@ -132,7 +132,7 @@ def edit_milestones(request, acronym, group_type=None, milestone_set="current"):
                 m.state = GroupMilestoneStateName.objects.get(slug="active")
         elif milestone_set == "charter":
             m.state = GroupMilestoneStateName.objects.get(slug="charter")
-
+        
         m.desc = c["desc"]
         m.due = due_month_year_to_date(c)
         m.resolved = c["resolved"]
@@ -374,7 +374,7 @@ def reset_charter_milestones(request, group_type, acronym):
                                     )
 
 
-        return redirect('group_edit_charter_milestones', group_type=group.type_id, acronym=group.acronym)
+        return redirect('ietf.group.milestones.edit_milestones;charter', group_type=group.type_id, acronym=group.acronym)
 
     return render(request, 'group/reset_charter_milestones.html',
                   dict(group=group,

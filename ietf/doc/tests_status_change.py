@@ -24,7 +24,7 @@ from ietf.utils.test_utils import login_testing_unauthorized
 class StatusChangeTests(TestCase):
     def test_start_review(self):
 
-        url = urlreverse('start_rfc_status_change')
+        url = urlreverse('ietf.doc.views_status_change.start_rfc_status_change')
         login_testing_unauthorized(self, "secretary", url)
 
         # normal get should succeed and get a reasonable form
@@ -126,7 +126,7 @@ class StatusChangeTests(TestCase):
 
     def test_edit_notices(self):
         doc = Document.objects.get(name='status-change-imaginary-mid-review')
-        url = urlreverse('status_change_notices',kwargs=dict(name=doc.name))
+        url = urlreverse('ietf.doc.views_doc.edit_notify;status-change',kwargs=dict(name=doc.name))
 
         login_testing_unauthorized(self, "ad", url)
 
@@ -161,7 +161,7 @@ class StatusChangeTests(TestCase):
 
     def test_edit_title(self):
         doc = Document.objects.get(name='status-change-imaginary-mid-review')
-        url = urlreverse('status_change_title',kwargs=dict(name=doc.name))
+        url = urlreverse('ietf.doc.views_status_change.edit_title',kwargs=dict(name=doc.name))
 
         login_testing_unauthorized(self, "ad", url)
 
@@ -180,7 +180,7 @@ class StatusChangeTests(TestCase):
 
     def test_edit_ad(self):
         doc = Document.objects.get(name='status-change-imaginary-mid-review')
-        url = urlreverse('status_change_ad',kwargs=dict(name=doc.name))
+        url = urlreverse('ietf.doc.views_status_change.edit_ad',kwargs=dict(name=doc.name))
 
         login_testing_unauthorized(self, "ad", url)
 
@@ -200,7 +200,7 @@ class StatusChangeTests(TestCase):
 
     def test_edit_telechat_date(self):
         doc = Document.objects.get(name='status-change-imaginary-mid-review')
-        url = urlreverse('status_change_telechat_date',kwargs=dict(name=doc.name))
+        url = urlreverse('ietf.doc.views_doc.telechat_date;status-change',kwargs=dict(name=doc.name))
 
         login_testing_unauthorized(self, "ad", url)
 
@@ -245,7 +245,7 @@ class StatusChangeTests(TestCase):
 
     def test_edit_lc(self):
         doc = Document.objects.get(name='status-change-imaginary-mid-review')
-        url = urlreverse('status_change_last_call',kwargs=dict(name=doc.name))
+        url = urlreverse('ietf.doc.views_status_change.last_call',kwargs=dict(name=doc.name))
 
         login_testing_unauthorized(self, "ad", url)
 
@@ -289,7 +289,7 @@ class StatusChangeTests(TestCase):
 
     def test_approve(self):
         doc = Document.objects.get(name='status-change-imaginary-mid-review')
-        url = urlreverse('status_change_approve',kwargs=dict(name=doc.name))
+        url = urlreverse('ietf.doc.views_status_change.approve',kwargs=dict(name=doc.name))
 
         login_testing_unauthorized(self, "secretary", url)
         
@@ -331,7 +331,7 @@ class StatusChangeTests(TestCase):
 
     def test_edit_relations(self):
         doc = Document.objects.get(name='status-change-imaginary-mid-review')
-        url = urlreverse('status_change_relations',kwargs=dict(name=doc.name))
+        url = urlreverse('ietf.doc.views_status_change.edit_relations',kwargs=dict(name=doc.name))
 
         login_testing_unauthorized(self, "secretary", url)
         
@@ -395,7 +395,7 @@ class StatusChangeTests(TestCase):
 class StatusChangeSubmitTests(TestCase):
     def test_initial_submission(self):
         doc = Document.objects.get(name='status-change-imaginary-mid-review')
-        url = urlreverse('status_change_submit',kwargs=dict(name=doc.name))
+        url = urlreverse('ietf.doc.views_status_change.submit',kwargs=dict(name=doc.name))
         login_testing_unauthorized(self, "ad", url)
 
         # normal get
@@ -421,7 +421,7 @@ class StatusChangeSubmitTests(TestCase):
 
     def test_subsequent_submission(self):
         doc = Document.objects.get(name='status-change-imaginary-mid-review')
-        url = urlreverse('status_change_submit',kwargs=dict(name=doc.name))
+        url = urlreverse('ietf.doc.views_status_change.submit',kwargs=dict(name=doc.name))
         login_testing_unauthorized(self, "ad", url)
 
         # A little additional setup 

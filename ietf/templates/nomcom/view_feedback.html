@@ -68,7 +68,7 @@
       <tbody>
         <tr>
           <td>
-	    <a href="{% url "nomcom_view_feedback_unrelated" year %}">View feedback not related to nominees</a>
+	    <a href="{% url 'ietf.nomcom.views.view_feedback_unrelated' year %}">View feedback not related to nominees</a>
           </td>
           {% for count in independent_feedback %}
             <td>{{ count }}</td>

@@ -15,7 +15,7 @@ class SecrTelechatTestCase(TestCase):
     def test_main(self):
         "Main Test"
         augment_data()
-        url = reverse('telechat')
+        url = reverse('ietf.secr.telechat.views.main')
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
@@ -25,7 +25,7 @@ class SecrTelechatTestCase(TestCase):
         augment_data()
         d = TelechatDate.objects.all()[0]
         date = d.date.strftime('%Y-%m-%d')
-        url = reverse('telechat_doc', kwargs={'date':date})
+        url = reverse('ietf.secr.telechat.views.doc', kwargs={'date':date})
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)

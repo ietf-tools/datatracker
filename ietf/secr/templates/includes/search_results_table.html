@@ -10,7 +10,7 @@
   <tbody>
     {% for item in results %}
        <tr class="{% cycle 'row1' 'row2' %}">
-         <td><a href="{% url "rolodex_view" id=item.person.id %}">{{item.name}}</a></td>
+         <td><a href="{% url 'ietf.secr.rolodex.views.view' id=item.person.id %}">{{item.name}}</a></td>
          <td>{{item.person.affiliation}}</td>
          <td>{{item.person.email_address}}</td>
          <td>{{item.person.id}}</a></td>

@@ -14,7 +14,7 @@
 
   <ul class="material-types">
     {% for t in material_types %}
-      <li><a href="{% url "group_new_material" acronym=group.acronym doc_type=t.slug %}">{{ t.name }}</a></li>
+      <li><a href="{% url 'ietf.doc.views_material.edit_material' acronym=group.acronym doc_type=t.slug %}">{{ t.name }}</a></li>
     {% endfor %}
   </ul>
 {% endblock content %}

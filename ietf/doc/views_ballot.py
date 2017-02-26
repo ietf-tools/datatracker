@@ -201,11 +201,11 @@ def edit_position(request, name, ballot_id):
                 qstr=""
                 if request.GET.get('ad'):
                     qstr += "?ad=%s" % request.GET.get('ad')
-                return HttpResponseRedirect(urlreverse("doc_send_ballot_comment", kwargs=dict(name=doc.name, ballot_id=ballot_id)) + qstr)
+                return HttpResponseRedirect(urlreverse('ietf.doc.views_ballot.send_ballot_comment', kwargs=dict(name=doc.name, ballot_id=ballot_id)) + qstr)
             elif request.POST.get("Defer"):
-                return redirect("doc_defer_ballot", name=doc)
+                return redirect('ietf.doc.views_ballot.defer_ballot', name=doc)
             elif request.POST.get("Undefer"):
-                return redirect("doc_undefer_ballot", name=doc)
+                return redirect('ietf.doc.views_ballot.undefer_ballot', name=doc)
             else:
                 return HttpResponseRedirect(return_to_url)
     else:

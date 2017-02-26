@@ -48,7 +48,7 @@
       <th>Title</th>
       <td class="edit">
         {% if not snapshot and can_manage_material %}
-          {% doc_edit_button "material_edit" name=doc.name action="title" %}
+          {% doc_edit_button 'ietf.doc.views_material.edit_material' name=doc.name action="title" %}
         {% endif %}
       </td>
       <td>{{ doc.title }}</td>
@@ -59,7 +59,7 @@
         <th>Abstract</th>
         <td class="edit">
           {% if not snapshot and can_manage_material %}
-            {% doc_edit_button "material_edit" name=doc.name action="abstract" %}
+            {% doc_edit_button 'ietf.doc.views_material.edit_material' name=doc.name action="abstract" %}
           {% endif %}
         </td>
         <td>{{ doc.abstract|format_snippet }}</td>
@@ -70,7 +70,7 @@
       <th>State</th>
       <td class="edit">
         {% if not snapshot and can_manage_material %}
-          {% doc_edit_button "material_edit" name=doc.name action="state" %}
+          {% doc_edit_button 'ietf.doc.views_material.edit_material' name=doc.name action="state" %}
         {% endif %}
       </td>
       <td>{{ doc.get_state.name }}</td>
@@ -117,7 +117,7 @@
 
   <p class="buttonlist">
     {% if not snapshot and can_manage_material and in_group_materials_types %}
-      <a class="btn btn-default" href="{% url "material_edit" name=doc.name action="revise" %}">Upload New Revision</a>
+      <a class="btn btn-default" href="{% url 'ietf.doc.views_material.edit_material' name=doc.name action="revise" %}">Upload New Revision</a>
     {% endif %}
   </p>
 

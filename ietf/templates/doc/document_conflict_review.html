@@ -65,7 +65,7 @@
 	<th><a href="doc/help/state/conflict-review/">State</a></th>
 	<td class="edit">
 	  {% if not snapshot and user|has_role:"Area Director,Secretariat" %}
-	    <a title="{{ doc.get_state.desc }}" class="btn btn-default btn-xs pull-right" href="{% url "conflict_review_change_state" name=doc.name %}">Edit</a>
+	    <a title="{{ doc.get_state.desc }}" class="btn btn-default btn-xs pull-right" href="{% url 'ietf.doc.views_conflict_review.change_state' name=doc.name %}">Edit</a>
 	  {% endif %}
 	</td>
 	<td>
@@ -80,7 +80,7 @@
 	<th>Shepherding AD</th>
 	<td class="edit">
 	  {% if not snapshot and user|has_role:"Area Director,Secretariat" and doc.get_state_slug not in approved_states %}
-	    <a class="btn btn-default btn-xs pull-right" href="{% url "conflict_review_ad" name=doc.name %}">Edit</a>
+	    <a class="btn btn-default btn-xs pull-right" href="{% url 'ietf.doc.views_conflict_review.edit_ad' name=doc.name %}">Edit</a>
 	  {% endif %}
 	</td>
 	<td>
@@ -94,7 +94,7 @@
 	  <th>Telechat date</th>
 	  <td class="edit">
 	    {% if not snapshot and user|has_role:"Area Director,Secretariat" and doc.get_state_slug not in approved_states %}
-	      <a class="btn btn-default btn-xs pull-right" href="{% url "conflict_review_telechat_date" name=doc.name %}">Edit</a>
+	      <a class="btn btn-default btn-xs pull-right" href="{% url 'ietf.doc.views_doc.telechat_date;conflict-review' name=doc.name %}">Edit</a>
 	    {% endif %}
 	  </td>
 	  <td>
@@ -117,7 +117,7 @@
 	<th>Send notices to</th>
 	<td class="edit">
 	  {% if not snapshot and user|has_role:"Area Director,Secretariat" and doc.get_state_slug not in approved_states %}
-	    <a class="btn btn-default btn-xs pull-right" href="{% url "conflict_review_notices" name=doc.name %}">Edit</a>
+	    <a class="btn btn-default btn-xs pull-right" href="{% url 'ietf.doc.views_doc.edit_notify;conflict-review' name=doc.name %}">Edit</a>
 	  {% endif %}
 	</td>
 	<td>
@@ -129,13 +129,13 @@
 
   <h2>Conflict review<br><small>{{ conflictdoc.name }}-{{ conflictdoc.rev }}</small></h2>
   {% if not snapshot and user|has_role:"Area Director,Secretariat" and doc.get_state_slug != 'apprsent' %}
-    <a class="btn btn-default" href="{% url "conflict_review_submit" name=doc.name %}">Change conflict review text</a>
+    <a class="btn btn-default" href="{% url 'ietf.doc.views_conflict_review.submit' name=doc.name %}">Change conflict review text</a>
   {% endif %}
 
   {% if not snapshot and user|has_role:"Area Director,Secretariat" %}
     {% if request.user|has_role:"Secretariat" %}
       {% if doc.get_state_slug == 'appr-reqnopub-pend' or doc.get_state_slug == 'appr-noprob-pend' %}
-        <a class="btn btn-primary" href="{% url "conflict_review_approve" name=doc.name %}">Approve conflict review</a>
+        <a class="btn btn-primary" href="{% url 'ietf.doc.views_conflict_review.approve' name=doc.name %}">Approve conflict review</a>
       {% endif %}
     {% endif %}
   {% endif %}

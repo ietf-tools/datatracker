@@ -28,7 +28,7 @@
 
 
 {% block breadcrumbs %}{{ block.super }} 
-  &raquo; <a href="{% url "proceedings" %}">Proceedings</a>
+  &raquo; <a href="{% url 'ietf.secr.proceedings.views.main' %}">Proceedings</a>
   &raquo; {{ meeting.number }}
 {% endblock %}
 

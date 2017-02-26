@@ -449,7 +449,7 @@ def statehelp(state):
     "Output help icon with tooltip for state."
     from django.core.urlresolvers import reverse as urlreverse
     tooltip = escape(strip_tags(state.desc))
-    url = urlreverse("state_help", kwargs=dict(type=state.type_id)) + "#" + state.slug
+    url = urlreverse('ietf.doc.views_help.state_help', kwargs=dict(type=state.type_id)) + "#" + state.slug
     return mark_safe('<a class="state-help-icon" href="%s" title="%s">?</a>' % (url, tooltip))
 
 @register.filter

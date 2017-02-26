@@ -73,7 +73,7 @@ class UploadMaterialForm(forms.Form):
 
         existing = Document.objects.filter(type=self.doc_type, name=name)
         if existing:
-            url = urlreverse("material_edit", kwargs={ 'name': existing[0].name, 'action': 'revise' })
+            url = urlreverse('ietf.doc.views_material.edit_material', kwargs={ 'name': existing[0].name, 'action': 'revise' })
             raise forms.ValidationError(mark_safe("Can't upload: %s with name %s already exists. Choose another title and name for what you're uploading or <a href=\"%s\">revise the existing %s</a>." % (self.doc_type.name, name, url, name)))
 
         return name

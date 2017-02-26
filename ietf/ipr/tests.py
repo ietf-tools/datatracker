@@ -439,7 +439,7 @@ class IprTests(TestCase):
     def test_addcomment(self):
         make_test_data()
         ipr = IprDisclosureBase.objects.get(title='Statement regarding rights')
-        url = urlreverse("ipr_add_comment", kwargs={ "id": ipr.id })
+        url = urlreverse('ietf.ipr.views.add_comment', kwargs={ "id": ipr.id })
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
@@ -462,7 +462,7 @@ class IprTests(TestCase):
     def test_addemail(self):
         make_test_data()
         ipr = IprDisclosureBase.objects.get(title='Statement regarding rights')
-        url = urlreverse("ipr_add_email", kwargs={ "id": ipr.id })
+        url = urlreverse('ietf.ipr.views.add_email', kwargs={ "id": ipr.id })
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
@@ -485,7 +485,7 @@ I would like to revoke this declaration.
         
     def test_admin_pending(self):
         make_test_data()
-        url = urlreverse("ipr_admin",kwargs={'state':'pending'})
+        url = urlreverse('ietf.ipr.views.admin',kwargs={'state':'pending'})
         self.client.login(username="secretary", password="secretary+password")
                 
         # test for presence of pending ipr
@@ -502,7 +502,7 @@ I would like to revoke this declaration.
         
     def test_admin_removed(self):
         make_test_data()
-        url = urlreverse("ipr_admin",kwargs={'state':'removed'})
+        url = urlreverse('ietf.ipr.views.admin',kwargs={'state':'removed'})
         self.client.login(username="secretary", password="secretary+password")
         
         # test for presence of pending ipr
@@ -523,7 +523,7 @@ I would like to revoke this declaration.
     def test_post(self):
         make_test_data()
         ipr = IprDisclosureBase.objects.get(title='Statement regarding rights')
-        url = urlreverse("ipr_post", kwargs={ "id": ipr.id })
+        url = urlreverse('ietf.ipr.views.post', kwargs={ "id": ipr.id })
         login_testing_unauthorized(self, "secretary", url)
 
         r = self.client.get(url,follow=True)
@@ -535,7 +535,7 @@ I would like to revoke this declaration.
         self.assertEqual(r.status_code,200)
         ipr = IprDisclosureBase.objects.get(title='Statement regarding rights')
         self.assertEqual(ipr.state.slug,'posted')
-        url = urlreverse('ipr_notify',kwargs={ 'id':ipr.id, 'type':'posted'})
+        url = urlreverse('ietf.ipr.views.notify',kwargs={ 'id':ipr.id, 'type':'posted'})
         r = self.client.get(url,follow=True)
         q = PyQuery(r.content)
         data = dict()
@@ -560,7 +560,7 @@ I would like to revoke this declaration.
         # first send a mail
         make_test_data()
         ipr = IprDisclosureBase.objects.get(title='Statement regarding rights')
-        url = urlreverse("ipr_email",kwargs={ "id": ipr.id })
+        url = urlreverse('ietf.ipr.views.email',kwargs={ "id": ipr.id })
         self.client.login(username="secretary", password="secretary+password")
         yesterday = datetime.date.today() - datetime.timedelta(1)
         data = dict(

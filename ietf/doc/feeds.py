@@ -24,7 +24,7 @@ class DocumentChangesFeed(Feed):
     def link(self, obj):
 	if obj is None:
 	    raise FeedDoesNotExist
-        return urlreverse("doc_history", kwargs=dict(name=obj.canonical_name()))
+        return urlreverse('ietf.doc.views_doc.document_history', kwargs=dict(name=obj.canonical_name()))
 
     def subtitle(self, obj):
         return "History of change entries for %s." % obj.display_name()
@@ -47,7 +47,7 @@ class DocumentChangesFeed(Feed):
 	return unicode(item.by)
 
     def item_link(self, item):
-        return urlreverse("doc_history", kwargs=dict(name=item.doc.canonical_name())) + "#history-%s" % item.pk
+        return urlreverse('ietf.doc.views_doc.document_history', kwargs=dict(name=item.doc.canonical_name())) + "#history-%s" % item.pk
 
 class InLastCallFeed(Feed):
     title = "Documents in Last Call"

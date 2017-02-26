@@ -32,13 +32,13 @@
 
     {% if doc.type_id == "draft" or doc.type_id == "conflrev" %}
       {% if deferred %}
-        <a class="btn btn-default" href="{% url "doc_undefer_ballot" name=doc.name %}">Undefer ballot</a>
+        <a class="btn btn-default" href="{% url 'ietf.doc.views_ballot.undefer_ballot' name=doc.name %}">Undefer ballot</a>
       {% else %}
-        <a class="btn btn-warning" href="{% url "doc_defer_ballot" name=doc.name %}">Defer ballot</a>
+        <a class="btn btn-warning" href="{% url 'ietf.doc.views_ballot.defer_ballot' name=doc.name %}">Defer ballot</a>
       {% endif %}
 
       {% if user|has_role:"Secretariat" %}
-        <a class="btn btn-danger" href="{% url "doc_clear_ballot" name=doc.name %}">Clear ballot</a>
+        <a class="btn btn-danger" href="{% url 'ietf.doc.views_ballot.clear_ballot' name=doc.name %}">Clear ballot</a>
       {% endif %}
     {% endif %}
   {% endif %}

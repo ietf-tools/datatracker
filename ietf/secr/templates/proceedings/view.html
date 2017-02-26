@@ -41,7 +41,7 @@
       <div class="button-group">
      {% if meeting.frozen == 0 %}
        <ul>
-             <li><button onclick="window.location='{% url "proceedings_select" meeting_num=meeting.number %}'">Upload Materials</button></li>
+             <li><button onclick="window.location='{% url 'ietf.secr.proceedings.views.select' meeting_num=meeting.number %}'">Upload Materials</button></li>
              <li><button onclick="window.location='convert/'">Convert Materials</button></li>
              <li><button onclick="window.location='status/'">Proceedings {{ meeting.number }} Status</button></li>
         </ul>

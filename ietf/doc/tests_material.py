@@ -72,7 +72,7 @@ class GroupMaterialTests(TestCase):
     def test_upload_slides(self):
         group = Group.objects.create(type_id="team", acronym="testteam", name="Test Team", state_id="active")
 
-        url = urlreverse('group_new_material', kwargs=dict(acronym=group.acronym, doc_type="slides"))
+        url = urlreverse('ietf.doc.views_material.edit_material', kwargs=dict(acronym=group.acronym, doc_type="slides"))
         login_testing_unauthorized(self, "secretary", url)
 
         # normal get
@@ -121,7 +121,7 @@ class GroupMaterialTests(TestCase):
     def test_change_state(self):
         doc = self.create_slides()
 
-        url = urlreverse('material_edit', kwargs=dict(name=doc.name, action="state"))
+        url = urlreverse('ietf.doc.views_material.edit_material', kwargs=dict(name=doc.name, action="state"))
         login_testing_unauthorized(self, "secretary", url)
 
         # post
@@ -133,7 +133,7 @@ class GroupMaterialTests(TestCase):
     def test_edit_title(self):
         doc = self.create_slides()
 
-        url = urlreverse('material_edit', kwargs=dict(name=doc.name, action="title"))
+        url = urlreverse('ietf.doc.views_material.edit_material', kwargs=dict(name=doc.name, action="title"))
         login_testing_unauthorized(self, "secretary", url)
 
         # post
@@ -156,7 +156,7 @@ class GroupMaterialTests(TestCase):
             )
         SessionPresentation.objects.create(session=session, document=doc, rev=doc.rev)
 
-        url = urlreverse('material_edit', kwargs=dict(name=doc.name, action="revise"))
+        url = urlreverse('ietf.doc.views_material.edit_material', kwargs=dict(name=doc.name, action="revise"))
         login_testing_unauthorized(self, "secretary", url)
 
         content = "some text"

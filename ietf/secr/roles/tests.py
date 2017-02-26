@@ -18,7 +18,7 @@ class SecrRolesMainTestCase(TestCase):
     def test_main(self):
         "Main Test"
         augment_data()
-        url = reverse('roles')
+        url = reverse('ietf.secr.roles.views.main')
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
@@ -28,8 +28,8 @@ class SecrRolesMainTestCase(TestCase):
         augment_data()
         group = Group.objects.filter(acronym='mars')[0]
         role = group.role_set.all()[0]
-        url = reverse('roles_delete_role', kwargs={'acronym':group.acronym,'id':role.id})
-        target = reverse('roles') + '?group=%s' % group.acronym
+        url = reverse('ietf.secr.roles.views.delete_role', kwargs={'acronym':group.acronym,'id':role.id})
+        target = reverse('ietf.secr.roles.views.main') + '?group=%s' % group.acronym
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.get(url,follow=True)
         self.assertRedirects(response, target)
@@ -40,8 +40,8 @@ class SecrRolesMainTestCase(TestCase):
         augment_data()
         person = Person.objects.get(name='Areað Irector')
         group = Group.objects.filter(acronym='mars')[0]
-        url = reverse('roles')
-        target = reverse('roles') + '?group=%s' % group.acronym
+        url = reverse('ietf.secr.roles.views.main')
+        target = reverse('ietf.secr.roles.views.main') + '?group=%s' % group.acronym
         post_data = {'group_acronym':group.acronym,
                      'name':'chair',
                      'person':'Joe Smith - (%s)' % person.id,

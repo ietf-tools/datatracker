@@ -58,7 +58,7 @@
 	<th>Title</th>
 	<td class="edit">
 	  {% if not snapshot and can_manage %}
-	    {% doc_edit_button "charter_change_title" name=doc.name %}
+	    {% doc_edit_button 'ietf.doc.views_charter.change_title' name=doc.name %}
 	  {% endif %}
 	</td>
 	<td>{{ doc.title }}</td>
@@ -76,7 +76,7 @@
 	<th><a href="/doc/help/state/charter/">State</a></th>
 	<td class="edit">
 	  {% if not snapshot and can_manage %}
-	    {% doc_edit_button "charter_change_state" name=doc.name %}
+	    {% doc_edit_button 'ietf.doc.views_charter.change_state' name=doc.name %}
 	  {% endif %}
 	</td>
 	<td>
@@ -117,7 +117,7 @@
 	<th>Charter Edit AD</th>
 	<td class="edit">
 	  {% if can_manage %}
-	    {% doc_edit_button "charter_edit_ad" name=doc.name %}
+	    {% doc_edit_button 'ietf.doc.views_charter.edit_ad' name=doc.name %}
 	  {% endif %}
 	</td>
 	<td>
@@ -132,7 +132,7 @@
 	  <th>Telechat date</th>
 	  <td class="edit">
 	    {% if can_manage %}
-	      {% doc_edit_button "charter_telechat_date" name=doc.name %}
+	      {% doc_edit_button 'ietf.doc.views_doc.telechat_date;charter' name=doc.name %}
 	    {% endif %}
 	  </td>
 	  <td>
@@ -154,7 +154,7 @@
 	<th>Send notices to</th>
 	<td class="edit">
 	  {% if can_manage %}
-	    {% doc_edit_button "charter_edit_notify" name=doc.name %}
+	    {% doc_edit_button 'ietf.doc.views_doc.edit_notify;charter' name=doc.name %}
 	  {% endif %}
 	</td>
 	<td>
@@ -168,13 +168,13 @@
   <p class="buttonlist">
     {% if not snapshot and can_manage %}
       {% if chartering %}
-        {% url "charter_startstop_process" name=doc.name option='abandon' as abandon_url %}
+        {% url 'ietf.doc.views_charter.change_state' name=doc.name option='abandon' as abandon_url %}
         {% if abandon_url %}
           <a class="btn btn-danger" href="{{ abandon_url }}">Abandon chartering</a>
         {% endif %}
 
         {% if user|has_role:"Secretariat" %}
-          {% url "charter_approve" name=doc.name as approve_url %}
+          {% url 'ietf.doc.views_charter.approve' name=doc.name as approve_url %}
           {% if approve_url %}
             <a class="btn btn-primary" href="{{ approve_url }}">Approve charter</a>
           {% endif %}
@@ -183,12 +183,12 @@
       {% else %}
 
         {% if group.state_id == "proposed" or group.state_id == "bof" %}
-          {% url "charter_submit" name=doc.name option='initcharter' as start_url %}
+          {% url 'ietf.doc.views_charter.submit' name=doc.name option='initcharter' as start_url %}
           {% if start_url %}
             <a class="btn btn-default" href="{{ start_url }}">Start chartering</a>
           {% endif %}
         {% else %}
-          {% url "charter_submit" name=doc.name option='recharter' as recharter_url %}
+          {% url 'ietf.doc.views_charter.submit' name=doc.name option='recharter' as recharter_url %}
           {% if recharter_url %}
             <a class="btn btn-default" href="{{ recharter_url }}">Recharter</a>
           {% endif %}
@@ -200,7 +200,7 @@
   <h2>Charter<br><small>{{ doc.canonical_name }}-{{ doc.rev }}</small></h2>
 
   {% if not snapshot and can_manage and chartering and group.state_id != "conclude" %}
-    <p><a class="btn btn-default" href="{% url "charter_submit" name=doc.name %}">Change charter text</a></p>
+    <p><a class="btn btn-default" href="{% url 'ietf.doc.views_charter.submit' name=doc.name %}">Change charter text</a></p>
   {% endif %}
 
   {% if doc.rev != "" %}
@@ -210,7 +210,7 @@
   {% if not snapshot and chartering %}
     <h2>Proposed milestones</h2>
     {% if can_manage %}
-      <p><a class="btn btn-primary" href="{% url "group_edit_charter_milestones" group_type=doc.group.type_id acronym=doc.group.acronym %}">Edit milestones</a></p>
+      <p><a class="btn btn-primary" href="{% url 'ietf.group.milestones.edit_milestones;charter' group_type=doc.group.type_id acronym=doc.group.acronym %}">Edit milestones</a></p>
     {% endif %}
 
     {% if milestones %}

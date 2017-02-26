@@ -9,7 +9,7 @@
 {% endblock %}
 
 {% block breadcrumbs %}{{ block.super }} 
-  &raquo; <a href="{% url "telechat" %}">Telechat</a> 
+  &raquo; <a href="{% url 'ietf.secr.telechat.views.main' %}">Telechat</a> 
 {% endblock %}
 
 {% block content %}
@@ -26,7 +26,7 @@
         {% if section.docs %}
         <ul class="doc-list">
           {% for doc in section.docs %}
-          <li><a href="{% url "telechat_doc_detail" date=date name=doc.name %}">{{ doc.name }}</a></li>
+          <li><a href="{% url 'ietf.secr.telechat.views.doc_detail' date=date name=doc.name %}">{{ doc.name }}</a></li>
           {% endfor %}
         </ul>
         {% else %}
@@ -48,11 +48,11 @@
   {% if date %}
   <div id="telechat-nav">
     <ul id="list-nav">
-      <li><a href="{% url "telechat_roll_call" date=date %}">Roll Call</a></li>
-      <li><a href="{% url "telechat_bash" date=date %}">Bash Agenda</a></li>
-      <li><a href="{% url "telechat_minutes" date=date %}">Minute Approval</a></li>
-      <li><a href="{% url "telechat_doc" date=date %}">Main Agenda</a></li>
-      <li><a href="{% url "telechat_management" date=date %}">Management Issues</a></li>
+      <li><a href="{% url 'ietf.secr.telechat.views.roll_call' date=date %}">Roll Call</a></li>
+      <li><a href="{% url 'ietf.secr.telechat.views.bash' date=date %}">Bash Agenda</a></li>
+      <li><a href="{% url 'ietf.secr.telechat.views.minutes' date=date %}">Minute Approval</a></li>
+      <li><a href="{% url 'ietf.secr.telechat.views.doc' date=date %}">Main Agenda</a></li>
+      <li><a href="{% url 'ietf.secr.telechat.views.management' date=date %}">Management Issues</a></li>
     </ul>
   </div>
   {% endif %}

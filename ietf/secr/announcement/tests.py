@@ -17,7 +17,7 @@ class SecrAnnouncementTestCase(TestCase):
     def test_main(self):
         "Main Test"
         make_test_data()
-        url = reverse('announcement')
+        url = reverse('ietf.secr.announcement.views.main')
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
@@ -29,7 +29,7 @@ class UnauthorizedAnnouncementCase(TestCase):
     def test_unauthorized(self):
         "Unauthorized Test"
         make_test_data()
-        url = reverse('announcement')
+        url = reverse('ietf.secr.announcement.views.main')
         person = Person.objects.filter(role__group__acronym='mars')[0]
         self.client.login(username=person.user.username, password=person.user.username+"+password")
         r = self.client.get(url)
@@ -39,7 +39,7 @@ class SubmitAnnouncementCase(TestCase):
     def test_invalid_submit(self):
         "Invalid Submit"
         make_test_data()
-        url = reverse('announcement')
+        url = reverse('ietf.secr.announcement.views.main')
         post_data = {'id_subject':''}
         #self.client.login(username='rcross', password='rcross+password")
         self.client.login(username="secretary", password="secretary+password")
@@ -52,8 +52,8 @@ class SubmitAnnouncementCase(TestCase):
         "Valid Submit"
         make_test_data()
         #ietf.utils.mail.test_mode = True
-        url = reverse('announcement')
-        redirect = reverse('announcement_confirm')
+        url = reverse('ietf.secr.announcement.views.main')
+        redirect = reverse('ietf.secr.announcement.views.confirm')
         post_data = {'to':'Other...',
                      'to_custom':'rcross@amsl.com',
                      'frm':'IETF Secretariat &lt;ietf-secretariat@ietf.org&gt;',

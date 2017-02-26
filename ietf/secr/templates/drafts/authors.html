@@ -34,7 +34,7 @@
             <td>{{ author.author.person }}</td>
             <td>{{ author.author }}</td>
             <td>{{ author.order }}</td>
-            <td><a href="{% url "drafts_author_delete" id=draft.pk oid=author.id %}">Delete</a></td>
+            <td><a href="{% url 'ietf.secr.drafts.views.author_delete' id=draft.pk oid=author.id %}">Delete</a></td>
           </tr>
         {% endfor %}
       </tbody>

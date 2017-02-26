@@ -30,7 +30,7 @@
         <h2>Directors</h2>
         <table  class="full-width">
 	{% for director in directors %}
-          <tr><td><a href="{% url "rolodex_view" id=director.person.id %}">{{ director.person.name }}</a>{% if director.name.slug == "pre-ad" %} (Incoming){% endif %}</td></tr>
+          <tr><td><a href="{% url 'ietf.secr.rolodex.views.view' id=director.person.id %}">{{ director.person.name }}</a>{% if director.name.slug == "pre-ad" %} (Incoming){% endif %}</td></tr>
         {% endfor %}
         </table>
       </div> <!-- inline-group -->
@@ -44,7 +44,7 @@
           <!-- <li><button onclick="window.location='../../'">Back</button></li> -->
           <li><button onclick="window.location='edit/'">Edit</button></li>
           <li><button onclick="window.location='people/'">People</button></li>
-          <li><button onclick="window.location='{% url "groups_search" %}?primary_area={{ area.id }}'">Groups</button></li>
+          <li><button onclick="window.location='{% url 'ietf.secr.groups.views.search' %}?primary_area={{ area.id }}'">Groups</button></li>
 	</ul>
       </div> <!-- button-group -->
 </div> <!-- module -->

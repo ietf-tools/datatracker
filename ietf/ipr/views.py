@@ -232,9 +232,9 @@ def admin(request, state):
     tabs = [
         t + (t[0].lower() == state.lower(),)
         for t in [
-            ('Pending', urlreverse('ipr_admin', kwargs={'state':'pending'})),
-            ('Removed', urlreverse('ipr_admin', kwargs={'state':'removed'})),
-            ('Parked', urlreverse('ipr_admin', kwargs={'state':'parked'})),
+            ('Pending', urlreverse('ietf.ipr.views.admin', kwargs={'state':'pending'})),
+            ('Removed', urlreverse('ietf.ipr.views.admin', kwargs={'state':'removed'})),
+            ('Parked', urlreverse('ietf.ipr.views.admin', kwargs={'state':'parked'})),
         ]]
 
     return render(request, 'ipr/admin_list.html',  {
@@ -561,7 +561,7 @@ def post(request, id):
         desc="Disclosure Posted")
     
     messages.success(request, 'Disclosure Posted')
-    return redirect("ipr_notify", id=ipr.id, type='posted')
+    return redirect('ietf.ipr.views.notify', id=ipr.id, type='posted')
     
 def search(request):
     search_type = request.GET.get("submit")

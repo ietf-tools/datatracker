@@ -18,8 +18,8 @@
 
   {% if user|has_role:"Area Director,Secretariat,IANA,RFC Editor" %}
     <p class="buttonlist">
-      <a class="btn btn-default" href="{% url "ipr_add_comment" id=ipr.id %}" title="Add comment to history">Add comment</a>
-      <a class="btn btn-default" href="{% url "ipr_add_email" id=ipr.id %}" title="Add email to history">Add email</a>
+      <a class="btn btn-default" href="{% url 'ietf.ipr.views.add_comment' id=ipr.id %}" title="Add comment to history">Add comment</a>
+      <a class="btn btn-default" href="{% url 'ietf.ipr.views.add_email' id=ipr.id %}" title="Add email to history">Add email</a>
     </p>
   {% endif %}
 

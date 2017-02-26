@@ -13,7 +13,7 @@
             <td>{{ role.name }}</td>
             <td>{{ role.person }}</td>
             <td>{{ role.email }}</td>
-            <td><a href="{% url "roles_delete_role" acronym=group.acronym id=role.id %}">Delete</a></td>
+            <td><a href="{% url 'ietf.secr.roles.views.delete_role' acronym=group.acronym id=role.id %}">Delete</a></td>
           </tr>
         {% endfor %}
       </tbody>

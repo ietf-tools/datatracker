@@ -422,7 +422,7 @@ def submit(request, name, option=None):
             charter.save_with_history(events)
 
             if option:
-                return redirect('charter_startstop_process', name=charter.name, option=option)
+                return redirect('ietf.doc.views_charter.change_state', name=charter.name, option=option)
             else:
                 return redirect("ietf.doc.views_doc.document_main", name=charter.name)
     else:
@@ -533,9 +533,9 @@ def review_announcement_text(request, name):
                 charter.save_with_history(events)
 
             if request.GET.get("next", "") == "approve":
-                return redirect('charter_approve', name=charter.canonical_name())
+                return redirect('ietf.doc.views_charter.approve', name=charter.canonical_name())
 
-            return redirect('doc_writeup', name=charter.canonical_name())
+            return redirect('ietf.doc.views_doc.document_writeup', name=charter.canonical_name())
 
         if "regenerate_text" in request.POST:
             (existing, existing_new_work) = default_review_text(group, charter, by)
@@ -551,11 +551,11 @@ def review_announcement_text(request, name):
             if any(x in request.POST for x in ['send_nw_only','send_both']):
                 parsed_msg = send_mail_preformatted(request, form.cleaned_data['new_work_text'])
                 messages.success(request, "The email To: '%s' with Subject: '%s' has been sent." % (parsed_msg["To"],parsed_msg["Subject"],))
-            return redirect('doc_writeup', name=charter.name)
+            return redirect('ietf.doc.views_doc.document_writeup', name=charter.name)
 
     return render(request, 'doc/charter/review_announcement_text.html',
                   dict(charter=charter,
-                       back_url=urlreverse("doc_writeup", kwargs=dict(name=charter.name)),
+                       back_url=urlreverse('ietf.doc.views_doc.document_writeup', kwargs=dict(name=charter.name)),
                        announcement_text_form=form,
                   ))
 
@@ -591,9 +591,9 @@ def action_announcement_text(request, name):
                 existing.save()
 
             if request.GET.get("next", "") == "approve":
-                return redirect('charter_approve', name=charter.canonical_name())
+                return redirect('ietf.doc.views_charter.approve', name=charter.canonical_name())
 
-            return redirect('doc_writeup', name=charter.canonical_name())
+            return redirect('ietf.doc.views_doc.document_writeup', name=charter.canonical_name())
 
         if "regenerate_text" in request.POST:
             e = default_action_text(group, charter, by)
@@ -603,11 +603,11 @@ def action_announcement_text(request, name):
         if "send_text" in request.POST and form.is_valid():
             parsed_msg = send_mail_preformatted(request, form.cleaned_data['announcement_text'])
             messages.success(request, "The email To: '%s' with Subject: '%s' has been sent." % (parsed_msg["To"],parsed_msg["Subject"],))
-            return redirect('doc_writeup', name=charter.name)
+            return redirect('ietf.doc.views_doc.document_writeup', name=charter.name)
 
     return render(request, 'doc/charter/action_announcement_text.html',
                   dict(charter=charter,
-                       back_url=urlreverse("doc_writeup", kwargs=dict(name=charter.name)),
+                       back_url=urlreverse('ietf.doc.views_doc.document_writeup', kwargs=dict(name=charter.name)),
                        announcement_text_form=form,
                   ))
 

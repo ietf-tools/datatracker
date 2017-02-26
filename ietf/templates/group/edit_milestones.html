@@ -37,7 +37,7 @@
 
   {% if can_reset %}
     <p>
-      You can <a href="{% url "group_reset_charter_milestones" group_type=group.type_id acronym=group.acronym %}">reset
+      You can <a href="{% url 'ietf.group.milestones.reset_charter_milestones' group_type=group.type_id acronym=group.acronym %}">reset
       this list</a> to the milestones currently in use for the {{ group.acronym }} {{ group.type.name }}.
     </p>
   {% endif %}

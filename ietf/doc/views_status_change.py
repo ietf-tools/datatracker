@@ -91,7 +91,7 @@ def change_state(request, name, option=None):
                               dict(form=form,
                                    doc=status_change,
                                    login=login,
-                                   help_url=reverse('state_help', kwargs=dict(type="status-change")),
+                                   help_url=reverse('ietf.doc.views_help.state_help', kwargs=dict(type="status-change")),
                                    ))
 
 def send_status_change_eval_email(request,doc):

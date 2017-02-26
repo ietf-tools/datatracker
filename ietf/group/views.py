@@ -428,7 +428,7 @@ def group_about(request, acronym, group_type=None):
     can_manage = can_manage_group_type(request.user, group)
     charter_submit_url = "" 
     if group.features.has_chartering_process: 
-        charter_submit_url = urlreverse("charter_submit", kwargs={ "name": charter_name_for_group(group) }) 
+        charter_submit_url = urlreverse('ietf.doc.views_charter.submit', kwargs={ "name": charter_name_for_group(group) }) 
 
     can_provide_update = can_provide_status_update(request.user, group)
     status_update = group.latest_event(type="status_update")

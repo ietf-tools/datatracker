@@ -12,13 +12,13 @@
   <h1>NomCom {{ year }} {% if nomcom.group.state_id == 'conclude' %}(Concluded){% endif %}</h1>
 
   <ul class="nav nav-tabs" role="tablist">
-    <li {% if selected == "index" %}class="active"{% endif %}><a href="{% url "nomcom_year_index" year %}">Home</a></li>
+    <li {% if selected == "index" %}class="active"{% endif %}><a href="{% url 'ietf.nomcom.views.year_index' year %}">Home</a></li>
     {% if nomcom|has_publickey %}
-      <li {% if selected == "nominate" %}class="active"{% endif %}><a href="{% url "nomcom_public_nominate" year %}">Nominate</a></li>
-      <li {% if selected == "feedback" %}class="active"{% endif %}><a href="{% url "nomcom_public_feedback" year %}">Provide feedback</a></li>
+      <li {% if selected == "nominate" %}class="active"{% endif %}><a href="{% url 'ietf.nomcom.views.public_nominate' year %}">Nominate</a></li>
+      <li {% if selected == "feedback" %}class="active"{% endif %}><a href="{% url 'ietf.nomcom.views.public_feedback' year %}">Provide feedback</a></li>
     {% endif %}
-    <li {% if selected == "requirements" %}class="active"{% endif %}><a href="{% url "nomcom_requirements" year %}">Desired expertise</a></li>
-    <li {% if selected == "questionnaires" %}class="active"{% endif %}><a href="{% url "nomcom_questionnaires" year %}">Questionnaires</a></li>
+    <li {% if selected == "requirements" %}class="active"{% endif %}><a href="{% url 'ietf.nomcom.views.requirements' year %}">Desired expertise</a></li>
+    <li {% if selected == "questionnaires" %}class="active"{% endif %}><a href="{% url 'ietf.nomcom.views.questionnaires' year %}">Questionnaires</a></li>
   </ul>
 
   {% block nomcom_content %}

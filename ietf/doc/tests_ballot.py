@@ -141,7 +141,7 @@ class EditPositionTests(TestCase):
             comment="Test!",
             comment_time=datetime.datetime.now())
         
-        url = urlreverse('doc_send_ballot_comment', kwargs=dict(name=draft.name,
+        url = urlreverse('ietf.doc.views_ballot.send_ballot_comment', kwargs=dict(name=draft.name,
                                                                 ballot_id=ballot.pk))
         login_testing_unauthorized(self, "ad", url)
 
@@ -185,7 +185,7 @@ class EditPositionTests(TestCase):
 class BallotWriteupsTests(TestCase):
     def test_edit_last_call_text(self):
         draft = make_test_data()
-        url = urlreverse('doc_ballot_lastcall', kwargs=dict(name=draft.name))
+        url = urlreverse('ietf.doc.views_ballot.lastcalltext', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "secretary", url)
 
         # normal get
@@ -225,7 +225,7 @@ class BallotWriteupsTests(TestCase):
 
     def test_request_last_call(self):
         draft = make_test_data()
-        url = urlreverse('doc_ballot_lastcall', kwargs=dict(name=draft.name))
+        url = urlreverse('ietf.doc.views_ballot.lastcalltext', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "secretary", url)
 
         # give us an announcement to send
@@ -250,7 +250,7 @@ class BallotWriteupsTests(TestCase):
 
     def test_edit_ballot_writeup(self):
         draft = make_test_data()
-        url = urlreverse('doc_ballot_writeupnotes', kwargs=dict(name=draft.name))
+        url = urlreverse('ietf.doc.views_ballot.ballot_writeupnotes', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "secretary", url)
 
         # add a IANA review note
@@ -279,7 +279,7 @@ class BallotWriteupsTests(TestCase):
 
     def test_edit_ballot_rfceditornote(self):
         draft = make_test_data()
-        url = urlreverse('doc_ballot_rfceditornote', kwargs=dict(name=draft.name))
+        url = urlreverse('ietf.doc.views_ballot.ballot_rfceditornote', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "secretary", url)
 
         # add a note to the RFC Editor
@@ -318,7 +318,7 @@ class BallotWriteupsTests(TestCase):
 
     def test_issue_ballot(self):
         draft = make_test_data()
-        url = urlreverse('doc_ballot_writeupnotes', kwargs=dict(name=draft.name))
+        url = urlreverse('ietf.doc.views_ballot.ballot_writeupnotes', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "ad", url)
 
 
@@ -340,7 +340,7 @@ class BallotWriteupsTests(TestCase):
 
     def test_edit_approval_text(self):
         draft = make_test_data()
-        url = urlreverse('doc_ballot_approvaltext', kwargs=dict(name=draft.name))
+        url = urlreverse('ietf.doc.views_ballot.ballot_approvaltext', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "secretary", url)
 
         # normal get
@@ -427,7 +427,7 @@ class BallotWriteupsTests(TestCase):
         events.append(e)
 
         # IETF Stream Documents
-        for p in ['doc_ballot_approvaltext','doc_ballot_writeupnotes','doc_ballot_rfceditornote']:
+        for p in ['ietf.doc.views_ballot.ballot_approvaltext','ietf.doc.views_ballot.ballot_writeupnotes','ietf.doc.views_ballot.ballot_rfceditornote']:
             url = urlreverse(p, kwargs=dict(name=draft.name))
 
             for username in ['plain','marschairman','iab chair','irtf chair','ise','iana']:
@@ -439,7 +439,7 @@ class BallotWriteupsTests(TestCase):
         # RFC Editor Notes for documents in the IAB Stream
         draft.stream_id = 'iab'
         draft.save_with_history(events)
-        url = urlreverse('doc_ballot_rfceditornote', kwargs=dict(name=draft.name))
+        url = urlreverse('ietf.doc.views_ballot.ballot_rfceditornote', kwargs=dict(name=draft.name))
 
         for username in ['plain','marschairman','ad','irtf chair','ise','iana']:
             verify_fail(username, url)
@@ -454,7 +454,7 @@ class BallotWriteupsTests(TestCase):
 
         draft.stream_id = 'irtf'
         draft.save_with_history([e])
-        url = urlreverse('doc_ballot_rfceditornote', kwargs=dict(name=draft.name))
+        url = urlreverse('ietf.doc.views_ballot.ballot_rfceditornote', kwargs=dict(name=draft.name))
 
         for username in ['plain','marschairman','ad','iab chair','ise','iana']:
             verify_fail(username, url)
@@ -469,7 +469,7 @@ class BallotWriteupsTests(TestCase):
 
         draft.stream_id = 'ise'
         draft.save_with_history([e])
-        url = urlreverse('doc_ballot_rfceditornote', kwargs=dict(name=draft.name))
+        url = urlreverse('ietf.doc.views_ballot.ballot_rfceditornote', kwargs=dict(name=draft.name))
 
         for username in ['plain','marschairman','ad','iab chair','irtf chair','iana']:
             verify_fail(username, url)
@@ -482,7 +482,7 @@ class ApproveBallotTests(TestCase):
         draft = make_test_data()
         draft.set_state(State.objects.get(used=True, type="draft-iesg", slug="iesg-eva")) # make sure it's approvable
 
-        url = urlreverse('doc_approve_ballot', kwargs=dict(name=draft.name))
+        url = urlreverse('ietf.doc.views_ballot.approve_ballot', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "secretary", url)
 
         # normal get
@@ -532,7 +532,7 @@ class ApproveBallotTests(TestCase):
         draft = make_test_data()
         draft.set_state(State.objects.get(used=True, type="draft-iesg", slug="nopubadw"))
 
-        url = urlreverse('doc_approve_ballot', kwargs=dict(name=draft.name))
+        url = urlreverse('ietf.doc.views_ballot.approve_ballot', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "secretary", url)
 
         # disapprove (the Martians aren't going to be happy)
@@ -551,7 +551,7 @@ class MakeLastCallTests(TestCase):
         draft = make_test_data()
         draft.set_state(State.objects.get(used=True, type="draft-iesg", slug="lc-req"))
 
-        url = urlreverse('doc_make_last_call', kwargs=dict(name=draft.name))
+        url = urlreverse('ietf.doc.views_ballot.make_last_call', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "secretary", url)
 
         # normal get
@@ -591,7 +591,7 @@ class DeferUndeferTestCase(TestCase):
     def helper_test_defer(self,name):
 
         doc = Document.objects.get(name=name)
-        url = urlreverse('doc_defer_ballot',kwargs=dict(name=doc.name))
+        url = urlreverse('ietf.doc.views_ballot.defer_ballot',kwargs=dict(name=doc.name))
 
         login_testing_unauthorized(self, "ad", url)
 
@@ -651,7 +651,7 @@ class DeferUndeferTestCase(TestCase):
     def helper_test_undefer(self,name):
 
         doc = Document.objects.get(name=name)
-        url = urlreverse('doc_undefer_ballot',kwargs=dict(name=doc.name))
+        url = urlreverse('ietf.doc.views_ballot.undefer_ballot',kwargs=dict(name=doc.name))
 
         login_testing_unauthorized(self, "ad", url)
 
@@ -735,7 +735,7 @@ class RegenerateLastCallTestCase(TestCase):
                     intended_std_level_id='ps',
                 )
     
-        url = urlreverse('doc_ballot_lastcall', kwargs=dict(name=draft.name))
+        url = urlreverse('ietf.doc.views_ballot.lastcalltext', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "secretary", url)
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)

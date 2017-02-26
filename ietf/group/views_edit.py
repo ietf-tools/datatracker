@@ -230,7 +230,7 @@ def format_urls(urls, fs="\n"):
 #         group.charter = get_or_create_initial_charter(group, group_type)
 #         group.save()
 # 
-#     return redirect('charter_submit', name=group.charter.name, option="initcharter")
+#     return redirect('ietf.doc.views_charter.submit', name=group.charter.name, option="initcharter")
 
 @login_required
 def edit(request, group_type=None, acronym=None, action="edit", field=None):
@@ -377,7 +377,7 @@ def edit(request, group_type=None, acronym=None, action="edit", field=None):
             group.save()
 
             if action=="charter":
-                return redirect('charter_submit', name=charter_name_for_group(group), option="initcharter")
+                return redirect('ietf.doc.views_charter.submit', name=charter_name_for_group(group), option="initcharter")
 
             return HttpResponseRedirect(group.about_url())
     else: # form.is_valid()

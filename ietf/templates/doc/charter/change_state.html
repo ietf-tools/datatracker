@@ -11,7 +11,7 @@
   <h1>{{ title }}</h1>
 
   {% if not option %}
-    <p><a class="btn btn-info" href="{% url "state_help" type="charter" %}">Help on states</a></p>
+    <p><a class="btn btn-info" href="{% url 'ietf.doc.views_help.state_help' type="charter" %}">Help on states</a></p>
   {% endif %}
 
   <form method="post">
