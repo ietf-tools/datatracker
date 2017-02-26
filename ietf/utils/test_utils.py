@@ -37,7 +37,7 @@ import re
 import sys
 import html5lib
 from datetime import datetime
-import urllib2 as urllib
+import urllib2
 from difflib import unified_diff
 from unittest.util import strclass
 
@@ -99,7 +99,7 @@ def read_testurls(filename):
 def split_url(url):
     if "?" in url:
         url, args = url.split("?", 1)
-        args = dict([ map(urllib.unquote,arg.split("=", 1)) for arg in args.split("&") if "=" in arg ])
+        args = dict([ map(urllib2.unquote,arg.split("=", 1)) for arg in args.split("&") if "=" in arg ])
     else:
         args = {}
     return url, args
@@ -216,7 +216,7 @@ class SimpleUrlTestCase(django.test.TestCase,RealDatabaseTest):
             print "    Fetching "+refurl
             refhtml = None
             try:
-                mfile = urllib.urlopen(refurl)
+                mfile = urllib2.urlopen(refurl)
                 refhtml = mfile.read()
                 mfile.close()
             except Exception, e:
