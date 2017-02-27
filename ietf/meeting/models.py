@@ -759,9 +759,6 @@ class SchedTimeSessAssignment(models.Model):
     class Meta:
         ordering = ["timeslot__time", "timeslot__type__slug", "session__group__parent__name", "session__group__acronym", "session__name", ]
 
-    # use to distinguish this from FakeSchedTimeSessAssignment in placement.py
-    faked   = "real"
-
     def __unicode__(self):
         return u"%s [%s<->%s]" % (self.schedule, self.session, self.timeslot)
 
