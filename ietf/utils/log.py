@@ -65,7 +65,7 @@ def affirm(statement):
     value = eval(statement, frame.f_globals, frame.f_locals)
     if not value:
         if settings.DEBUG is True:
-            raise AssertionError(statement)
+            raise AssertionError("Assertion '%s' failed." % (statement,))
         else:
             # build a simulated traceback object
             tb = Traceback()
@@ -73,4 +73,4 @@ def affirm(statement):
             tb.tb_lasti = None
             tb.tb_lineno = frame.f_lineno
             tb.tb_next = None
-            logger.error("AssertionError: '%s'", statement, exc_info=(AssertionError, statement, tb), extra=frame.f_locals)
+            logger.error("Assertion '%s' failed.", statement, exc_info=(AssertionError, statement, tb), extra=frame.f_locals)
