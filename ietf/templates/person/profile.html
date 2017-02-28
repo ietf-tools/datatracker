@@ -34,8 +34,8 @@
   </div>
 
   <div class="col-md-12">
-     <h2 id="roles">Roles</h2>
      {% if person.role_set.exists %}
+       <h2 id="roles">Roles</h2>
        <table class="table">
 	  {% for role in person.role_set.all %}
 	    {% if role.group.state_id == 'active' or role.group.state_id == 'bof' %}
