@@ -444,7 +444,7 @@ def update_authors(draft, submission):
 
         a.order = order
         a.save()
-        log.affirm('a.author_id != "none"')
+        log.assertion('a.author_id != "none"')
 
         authors.append(email)
 

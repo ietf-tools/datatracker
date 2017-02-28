@@ -170,7 +170,7 @@ class Meeting(models.Model):
         return qs
 
     def sessions_that_can_be_placed(self):
-        log.affirm('not "Reachable Code"')
+        log.unreachable()
         from django.db.models import Q
         donotplace_groups = Q(group__acronym="edu")
         donotplace_groups |= Q(group__acronym="tools")
@@ -544,7 +544,7 @@ class TimeSlot(models.Model):
     rooms.
     """
     def create_concurrent_timeslots(self):
-        log.affirm('not "Reachable Code"')
+        log.unreachable()
         rooms = self.meeting.room_set.all()
         self.room = rooms[0]
 	self.save()
@@ -653,7 +653,7 @@ class Schedule(models.Model):
 
     @property
     def official_class(self):
-        log.affirm('not "Reachable Code"')
+        log.unreachable()
         if self.is_official:
             return "agenda_official"
         else:
@@ -698,13 +698,13 @@ class Schedule(models.Model):
 
     @property
     def group_mapping(self):
-        log.affirm('not "Reachable Code"')
+        log.unreachable()
         assignments,sessions,total,scheduled = self.group_session_mapping
         return assignments
 
     @property
     def group_session_mapping(self):
-        log.affirm('not "Reachable Code"')
+        log.unreachable()
         assignments = dict()
         sessions    = dict()
         total       = 0
@@ -730,14 +730,14 @@ class Schedule(models.Model):
 
     # calculate badness of entire schedule
     def calc_badness(self):
-        log.affirm('not "Reachable Code"')
+        log.unreachable()
         # now calculate badness
         assignments = self.group_mapping
         return self.calc_badness1(assignments)
 
     # calculate badness of entire schedule
     def calc_badness1(self, assignments):
-        log.affirm('not "Reachable Code"')
+        log.unreachable()
         badness = 0
         for sess in self.sessions_that_can_meet:
             badness += sess.badness(assignments)
@@ -789,7 +789,7 @@ class SchedTimeSessAssignment(models.Model):
 
     @property
     def area(self):
-        log.affirm('not "Reachable Code"')
+        log.unreachable()
         if not self.session or not self.session.group:
             return ""
         if self.session.group.type_id == "irtf":
@@ -802,7 +802,7 @@ class SchedTimeSessAssignment(models.Model):
 
     @property
     def group_type_str(self):
-        log.affirm('not "Reachable Code"')
+        log.unreachable()
         if not self.session or not self.session.group:
             return ""
         if self.session.group and self.session.group.type_id == "wg":
@@ -815,7 +815,7 @@ class SchedTimeSessAssignment(models.Model):
 
     @property
     def slottype(self):
-        log.affirm('not "Reachable Code"')
+        log.unreachable()
         if self.timeslot and self.timeslot.type:
             return self.timeslot.type.slug
         else:
@@ -919,20 +919,20 @@ class Constraint(models.Model):
 
     @property
     def person_conflicted(self):
-        log.affirm('not "Reachable Code"')
+        log.unreachable()
         if self.person is None:
             return "unknown person"
         return self.person.name
 
     def status(self):
-        log.affirm('not "Reachable Code"')
+        log.unreachable()
         if self.active_status is not None:
             return self.active_status
         else:
             return True
 
     def __lt__(self, y):
-        log.affirm('not "Reachable Code"')
+        log.unreachable()
         #import sys
         #sys.stdout.write("me: %s y: %s\n" % (self.name.slug, y.name.slug))
         if self.name.slug == 'conflict' and y.name.slug == 'conflic2':
@@ -944,7 +944,7 @@ class Constraint(models.Model):
         return False
 
     def constraint_cost(self):
-        log.affirm('not "Reachable Code"')
+        log.unreachable()
         return self.name.penalty;
 
     def json_url(self):
@@ -1162,7 +1162,7 @@ class Session(models.Model):
         return self.timeslotassignment_for_agenda(self.meeting.agenda)
 
     def unique_constraints(self):
-        log.affirm('not "Reachable Code"')
+        log.unreachable()
         global constraint_cache_uses, constraint_cache_initials
         constraint_cache_uses += 1
         # this cache keeps the automatic placer from visiting the database continuously
@@ -1267,13 +1267,13 @@ class Session(models.Model):
             
         return self._agenda_file
     def badness_test(self, num):
-        log.affirm('not "Reachable Code"')
+        log.unreachable()
         from settings import BADNESS_CALC_LOG # pylint: disable=import-error
         #sys.stdout.write("num: %u / BAD: %u\n" % (num, BADNESS_CALC_LOG))
         return BADNESS_CALC_LOG >= num
 
     def badness_log(self, num, msg):
-        log.affirm('not "Reachable Code"')
+        log.unreachable()
         if self.badness_test(num):
             sys.stdout.write(msg)
 
@@ -1290,7 +1290,7 @@ class Session(models.Model):
     #    not being scheduled is worth  10,000,000 points
     #
     def badness(self, assignments):
-        log.affirm('not "Reachable Code"')
+        log.unreachable()
         badness = 0
 
         if not (self.group in assignments):
@@ -1381,7 +1381,7 @@ class Session(models.Model):
         return badness
 
     def setup_conflicts(self):
-        log.affirm('not "Reachable Code"')
+        log.unreachable()
         conflicts = self.unique_constraints()
 
         self.session_conflicts = []
@@ -1420,7 +1420,7 @@ class Session(models.Model):
     #    not being scheduled is worth  10,000,000 points
     #
     def badness_fast(self, timeslot, scheduleslot, session_pk_list):
-        log.affirm('not "Reachable Code"')
+        log.unreachable()
         from settings import BADNESS_UNPLACED, BADNESS_TOOSMALL_50, BADNESS_TOOSMALL_100, BADNESS_TOOBIG, BADNESS_MUCHTOOBIG # pylint: disable=import-error
 
         badness = 0

@@ -53,7 +53,7 @@ def log(msg):
 
 logger = logging.getLogger('django')
 
-def affirm(statement):
+def assertion(statement):
     """
     This acts like an assertion.  It uses the django logger in order to send
     the failed assertion and a backtrace as for an internal server error.
@@ -74,3 +74,20 @@ def affirm(statement):
             tb.tb_lineno = frame.f_lineno
             tb.tb_next = None
             logger.error("Assertion '%s' failed.", statement, exc_info=(AssertionError, statement, tb), extra=frame.f_locals)
+
+def unreachable():
+    "Raises an assertion or sends traceback to admins if executed."
+    class Traceback():
+        pass
+    frame = inspect.stack()[1][0]
+    if settings.DEBUG is True:
+        raise AssertionError("Arrived at code in %s() which was marked unreachable." % frame.f_code.co_name)
+    else:
+        # build a simulated traceback object
+        tb = Traceback()
+        tb.tb_frame = frame
+        tb.tb_lasti = None
+        tb.tb_lineno = frame.f_lineno
+        tb.tb_next = None
+        logger.error("Arrived at code in %s() which was marked unreachable.", frame.f_code.co_name, exc_info=(AssertionError, frame.f_code.co_name, tb), extra=frame.f_locals)
+    
