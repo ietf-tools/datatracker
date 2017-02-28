@@ -908,7 +908,6 @@ class Constraint(models.Model):
         return u"%s %s target=%s person=%s" % (self.source, self.name.name.lower(), self.target, self.person)
 
     def brief_display(self):
-        log.affirm('not "Reachable Code"')
         if self.target and self.person:
             return u"%s ; %s" % (self.target.acronym, self.person)
         elif self.target and not self.person:
