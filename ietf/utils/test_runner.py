@@ -65,6 +65,7 @@ import ietf
 import ietf.utils.mail
 from ietf.utils.test_smtpserver import SMTPTestServerDriver
 from ietf.utils.test_utils import TestCase
+from ietf.checks import maybe_create_svn_symlinks
 
 loaded_templates = set()
 visited_urls = set()
@@ -423,6 +424,10 @@ class IetfTestRunner(DiscoverRunner):
             print("     Changing TEMPLATES[0]['OPTIONS']['string_if_invalid'] to '' during testing")
             settings.TEMPLATES[0]['OPTIONS']['string_if_invalid'] = ''
 
+        if settings.INTERNAL_IPS:
+            print "     Changing INTERNAL_IPS to '[]' during testing."
+            settings.INTERNAL_IPS = []
+
         assert not settings.IDTRACKER_BASE_URL.endswith('/')
 
         # Try to set up an SMTP test server.  In case other test runs are
@@ -439,6 +444,7 @@ class IetfTestRunner(DiscoverRunner):
             except socket.error:
                 pass
 
+        maybe_create_svn_symlinks(settings)
 
         super(IetfTestRunner, self).setup_test_environment(**kwargs)
 

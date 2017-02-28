@@ -261,15 +261,9 @@ def check_cache(app_configs, **kwargs):
             errors.append(cache_error("Cache didn't accept session cookie age", "E0016"))
     return errors
     
-@checks.register('cache')
-def check_svn_import(app_configs, **kwargs):
-    #
-    if already_ran():
-        return []
-    #
-    errors = []
-    # 
+def maybe_create_svn_symlinks(settings):
     site_packages_dir = None
+    errors = []
     for p in sys.path:
         if ('/env/' in p or '/venv/' in p) and '/site-packages' in p:
             site_packages_dir = p
@@ -289,6 +283,17 @@ def check_svn_import(app_configs, **kwargs):
                     hint = "Please provide the correct python system site-package paths for\n"
                     "svn and libsvn in SVN_PACKAGES.",
                     id = "datatracker.E0015",))
+    return errors
+
+@checks.register('cache')
+def check_svn_import(app_configs, **kwargs):
+    #
+    if already_ran():
+        return []
+    #
+    errors = []
+    # 
+    errors += maybe_create_svn_symlinks(settings)
     #
     if settings.SERVER_MODE == 'production':
         try:
