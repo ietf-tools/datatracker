@@ -270,6 +270,9 @@ class Role(models.Model):
     def formatted_email(self):
         return formataddr((self.person.plain_name(), self.email.address))
 
+    class Meta:
+        ordering = ['name_id', ]
+
 class RoleHistory(models.Model):
     # RoleHistory doesn't have a time field as it's not supposed to be
     # used on its own - there should always be a GroupHistory

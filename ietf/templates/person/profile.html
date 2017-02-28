@@ -33,8 +33,33 @@
     </div>
   </div>
 
+  <div class="col-md-12">
+     <h2 id="roles">Roles</h2>
+     {% if person.role_set.exists %}
+       <table class="table">
+	  {% for role in person.role_set.all %}
+	    {% if role.group.state_id == 'active' or role.group.state_id == 'bof' %}
+	      {% if role.group.acronym != 'secretariat' %}
+	      <tr>
+		<td>
+		  {{ role.name.name }}
+		  {% if role.group.type_id == 'sdo' %}for{% elif role.name_id == 'reviewer' %}in{% else %}of{% endif %}
+		  <a href="{% url 'ietf.group.views.group_about' acronym=role.group.acronym %}">{{ role.group.name }}</a>
+		  (<a href="{% url 'ietf.group.views.group_about' acronym=role.group.acronym %}">{{ role.group.acronym }}</a>)
+		</td>
+		<td>
+		  <a href="mailto:{{role.email.address}}">{{ role.email.address }}</a>
+		</td>
+	      </tr>
+	      {% endif %}
+	    {% endif %}
+	  {% endfor %}
+       </table>
+     {% endif %}
+  </div>
+
   <div class="col-md-6">
-     <h2>RFCs</h2>
+     <h2 id="rfcs">RFCs</h2>
      {% if person.rfcs %}
 	<table class="table">
 	  {% for doc in person.rfcs  %}
@@ -50,7 +75,7 @@
      {% endif %}
   </div>
   <div class="col-md-6">
-     <h2>Active Drafts</h2>
+     <h2 id="drafts">Active Drafts</h2>
      {% if person.active_drafts.exists %}
 	<list>
 	   {% for doc in person.active_drafts %}
