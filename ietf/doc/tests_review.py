@@ -567,6 +567,7 @@ class ReviewTests(TestCase):
 
         self.assertEqual(len(outbox), 1)
         self.assertTrue(review_req.team.list_email in outbox[0]["To"])
+        self.assertTrue(review_req.reviewer.role_set.filter(group=review_req.team,name='reviewer').first().email.address in outbox[0]["From"])
         self.assertTrue("This is a review" in outbox[0].get_payload(decode=True).decode("utf-8"))
 
         self.assertTrue(settings.MAILING_LIST_ARCHIVE_URL in review_req.review.external_url)

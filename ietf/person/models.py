@@ -112,7 +112,7 @@ class PersonInfo(models.Model):
             return ""
     def formatted_ascii_email(self):
         e = self.email_set.filter(primary=True).first()
-        if not e:
+        if not e or not e.active:
             e = self.email_set.order_by("-active", "-time").first()
         if e:
             return e.formatted_ascii_email()

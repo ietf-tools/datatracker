@@ -559,7 +559,12 @@ def complete_review(request, name, request_id):
             if need_to_email_review:
                 # email the review
                 subject = "{} of {}-{}".format("Partial review" if review_req.state_id == "part-completed" else "Review", review_req.doc.name, review_req.reviewed_rev)
-                msg = send_mail(request, to, request.user.person.formatted_email(), subject,
+                role = request.user.person.role_set.filter(group=review_req.team,name='reviewer').first()
+                if role and role.email.active:
+                    frm = role.formatted_email()
+                else:
+                    frm =  request.user.person.formatted_email()
+                msg = send_mail(request, to, frm, subject,
                                 "review/completed_review.txt", {
                                     "review_req": review_req,
                                     "content": encoded_content.decode("utf-8"),
