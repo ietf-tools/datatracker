@@ -186,8 +186,6 @@ def retrieve_search_results(form, all_types=False):
     return docs
 
 def search(request):
-    from ietf.utils import log
-    log.unreachable()
     if request.GET:
         # backwards compatibility
         get_params = request.GET.copy()
