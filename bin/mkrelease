@@ -171,8 +171,9 @@ DEV="$(printf %d.%d.%d.dev0 $MAJOR $MINOR $NEXT)"
 #cd $DIR ??
 
 note "Updating bower assets ..."
-$do ietf/manage.py bower_install > /dev/null
-$do svn st ietf/externals/static | grep -v '^\?'
+$do ietf/manage.py bower_install > .mkrelease-bower-install.log
+$do rm .mkrelease-bower-install.log	# This happens at once unless the previous command returns error
+$do svn st ietf/externals/static | grep -v '^\?' || true
 $do svn commit ietf/externals/static -m "Updated bower-managed static web assets"
 # Get rid of bower-installed files which we don't use:
 $do rm -rf ietf/externals/static/datatracker/
@@ -180,7 +181,7 @@ $do rm $(svn st ietf/externals/ | grep '^\?' | awk '{print $2}')
 
 
 note "Collecting static files ..."
-$do ietf/manage.py collectstatic --noinput --ignore=bower.json --ignore='README.*' | grep -v "Found another file with the destination path"
+$do ietf/manage.py collectstatic --noinput --ignore=bower.json --ignore='README.*' --ignore=rev | grep -v "Found another file with the destination path"
 $do svn commit static/lib/ -m "Updated static files under static/lib/"
 
 # note "Checking that there's a recent test-crawler log"
