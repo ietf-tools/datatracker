@@ -26,13 +26,8 @@ Planned work in rough order
 
 * Add a bullet for the IESG request for a "recent ballots" page (IESG request)
 
-* Introduce and API for Meetecho to use to associate recordings with sessions
+* Introduce an API for Meetecho to use to associate recordings with sessions
   (and perhaps automate making copies of those videos)
-
-* Introduce the use of email.header.Header() in order to be able to handle
-  non-ascii names in email From:, To: and Cc: fields.
-
-* Add support for IAB Programs
 
 * Revisit photo uploads: Add photo upload for people with roles.  Add
   photos to wg pages and group overview pages.
@@ -42,9 +37,22 @@ Planned work in rough order
   on multiple floors (probably means modelling break areas the same way
   as other sessions, and removing the break_area char_field on Meeting.
 
+* Transition to Python 3.  This will make it easier to add add support for
+  internationalsed email, and also other i18n enhancements.
+
 * Add support for internationalised email addresses according to RFC 6531
   when sending email (this is not supported by smtplib under Python 2.7,
   so will need support code in the application until we migrate to Python 3.5)
+
+* Transition to PostgreSQL.  This will make it easier to start using
+  timezone-aware timestamps throughout the code, which will make it easy
+  to present localized times on web-pages.  It will also provide additional
+  tools for performance analysis
+
+* Transition to using timezone-aware timestamps.  Migrate database timestamps
+  to be timezone-aware.  This means converting all timestamps to PST8PDT,
+  except for meeting-related timestamps, which use the meeting.time_zone.
+  Once done, set USE_TZ to True in settings.
 
 * Performance analysis of database table and index setup
 
