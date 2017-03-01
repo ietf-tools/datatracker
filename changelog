@@ -1,3 +1,59 @@
+ietfdb (6.46.1) ietf; urgency=medium
+
+  This is a bugfix release with some minor enhancements.  From the commit
+  log:
+
+  * Merged in [12932] from rjsparks@nostrum.com:
+    Changed primary but inactive email addresses to the most recently touched
+    active email for a Person. If a person has more than one primary email,
+    make all but the first be not primary. Fixes #2214.  
+
+  * Merged in [12930] from rjsparks@nostrum.com:
+    Use the Role email associated with a reviewer as the From when emailing 
+    a review. Fixes #2201.  
+
+  * Created a special function, log.unreachable(), to mark code unreachable, 
+    and changed a function name from log.affirm() to log.assertion().
+
+  * Added ordering to Role, and a roles section at the top of the personal 
+    profile page.
+
+  * Added svn symlink check and creation to the test suite setup.  Forced test
+    settings to use an empty INTERNAL_IPS list for improved consistency in
+    code coverage figures.
+
+  * Preparation for dead code removal: Marked probable dead code with 
+    affirm() statements which will signal if we ever reach that point in the 
+    code.  If no signals seen, the marked functions/methods will be removed 
+    after one release cycle.
+
+  * Removed a big chunk of dead code: placement.py and related.
+
+  * Cleaned up the remaining explicit url names, using dotted-paths to view
+    functions instead.  In total almost 700 changes.
+
+  * Tweaked an import to make Python 2to3 able to handle it, while testing
+    conversion to Python 3 by means of the 2to3 tool.
+
+  * Fixed an issue that left html meta-characters unescaped in the
+    release-notes shown under /release/
+
+  * Added an alert on the login form, to be shown if a user's password has 
+    been cleared.  Adjusted url reverse strings to match the changed view 
+    function.
+
+  * Tweaked the wording on the account creation whitelisting page to 
+    emphasise the wording to be asked then emailing a querent.
+
+  * Personal profile pages already show the primary (unicode) name of a 
+    person.  Added the asciified name in parentheses, if different from the 
+    primary name, in the page header.
+
+  * Tweaked the release script's bower update part.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  01 Mar 2017 12:27:16 +0000
+
+
 ietfdb (6.46.0) ietf; urgency=medium
 
   **Name i18n improvements, tweaks to Group Pages and Account Setup**
