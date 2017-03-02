@@ -1208,7 +1208,7 @@ def request_publication(request, name):
 
 class AdoptDraftForm(forms.Form):
     group = forms.ModelChoiceField(queryset=Group.objects.filter(type__in=["wg", "rg"], state="active").order_by("-type", "acronym"), required=True, empty_label=None)
-    newstate = forms.ModelChoiceField(queryset=State.objects.filter(type__in=['draft-stream-ietf','draft-stream-irtf'],slug__in=['wg-cand', 'c-adopt', 'adopt-wg', 'info', 'wg-doc', 'candidat','active']),required=True,label="State")
+    newstate = forms.ModelChoiceField(queryset=State.objects.filter(type__in=['draft-stream-ietf','draft-stream-irtf'], used=True).exclude(slug__in=settings.GROUP_STATES_WITH_EXTRA_PROCESSING), required=True, label="State")
     comment = forms.CharField(widget=forms.Textarea, required=False, label="Comment", help_text="Optional comment explaining the reasons for the adoption.", strip=False)
     weeks = forms.IntegerField(required=False, label="Expected weeks in adoption state")
 
@@ -1218,16 +1218,16 @@ class AdoptDraftForm(forms.Form):
         super(AdoptDraftForm, self).__init__(*args, **kwargs)
 
         if has_role(user, "Secretariat"):
-            state_choices = State.objects.filter(type__in=['draft-stream-ietf','draft-stream-irtf'],slug__in=['wg-cand', 'c-adopt', 'adopt-wg', 'info', 'wg-doc', 'candidat','active'])
+            state_choices = State.objects.filter(type__in=['draft-stream-ietf','draft-stream-irtf'], used=True).exclude(slug__in=settings.GROUP_STATES_WITH_EXTRA_PROCESSING)
         elif has_role(user, "IRTF Chair"):
             #The IRTF chair can adopt a draft into any RG
             group_ids = list(Group.objects.filter(type="rg", state="active").values_list('id', flat=True))
             group_ids.extend(list(Group.objects.filter(type="wg", state="active", role__person__user=user, role__name__in=("chair", "delegate", "secr")).values_list('id', flat=True)))
             self.fields["group"].queryset = self.fields["group"].queryset.filter(id__in=group_ids).distinct()
-            state_choices = State.objects.filter(type__in=['draft-stream-ietf','draft-stream-irtf'],slug__in=['wg-cand', 'c-adopt', 'adopt-wg', 'info', 'wg-doc', 'candidat','active'])
+            state_choices = State.objects.filter(type='draft-stream-irtf', used=True).exclude(slug__in=settings.GROUP_STATES_WITH_EXTRA_PROCESSING)
         else:
             self.fields["group"].queryset = self.fields["group"].queryset.filter(role__person__user=user, role__name__in=("chair", "delegate", "secr")).distinct()
-            state_choices = State.objects.filter(type__in=['draft-stream-ietf','draft-stream-irtf'],slug__in=['wg-cand', 'c-adopt', 'adopt-wg', 'info', 'wg-doc'])
+            state_choices = State.objects.filter(type='draft-stream-ietf', used=True).exclude(slug__in=settings.GROUP_STATES_WITH_EXTRA_PROCESSING)
 
         self.fields['group'].choices = [(g.pk, '%s - %s' % (g.acronym, g.name)) for g in self.fields["group"].queryset]
         self.fields['newstate'].choices = [('','-- Pick a state --')]

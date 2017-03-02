@@ -515,6 +515,11 @@ TEST_CODE_COVERAGE_REPORT_FILE = os.path.join(TEST_CODE_COVERAGE_REPORT_DIR, "in
 # WG Chair configuration
 MAX_WG_DELEGATES = 3
 
+# These states aren't available in forms with drop-down choices for new
+# document state:
+GROUP_STATES_WITH_EXTRA_PROCESSING = ["sub-pub", "rfc-edit", ]
+
+
 DATE_FORMAT = "Y-m-d"
 DATETIME_FORMAT = "Y-m-d H:i T"
 
