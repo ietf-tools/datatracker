@@ -300,6 +300,12 @@ class MeetingTests(TestCase):
         self.assertTrue(meeting.number in unicontent(r))
         self.assertTrue("mars" in unicontent(r))
 
+        self.client.login(username="ad", password="ad+password")
+        r = self.client.get(urlreverse("ietf.meeting.views.materials_editable_groups", kwargs={'num':meeting.number}))
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(meeting.number in unicontent(r))
+        self.assertTrue("frfarea" in unicontent(r))
+
         self.client.login(username="plain",password="plain+password")
         r = self.client.get(urlreverse("ietf.meeting.views.materials_editable_groups", kwargs={'num':meeting.number}))
         self.assertEqual(r.status_code, 200)
