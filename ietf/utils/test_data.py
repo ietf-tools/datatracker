@@ -181,6 +181,16 @@ def make_test_data():
     group.save()
     setup_default_community_list_for_group(group)
 
+    # frfarea AG
+    frfarea = Group.objects.create(
+        name="Far Future Area Group",
+        acronym="frfarea",
+        state_id="active",
+        type_id="ag",
+        parent=area,
+        list_email="frfarea-ag@ietf.org",
+        )
+
     # irg RG
     irg_rg = Group.objects.create(
         name="Internet Research Group",
@@ -225,6 +235,9 @@ def make_test_data():
     create_person(ames_wg, "secr", name="Mr Secretary", username="amessecretary")
     ames_wg.role_set.get_or_create(name_id='ad',person=ad,email=ad.role_email('ad'))
     ames_wg.save()
+
+    frfarea.role_set.get_or_create(name_id='chair',person=ad,email=ad.role_email('ad'))
+    frfarea.save()
 
     create_person(irg_rg, "chair", name="Irg Chair Man", username="irgchairman")
 

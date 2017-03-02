@@ -38,7 +38,7 @@ class SessionRequestTestCase(TestCase):
         self.assertEqual(r.status_code, 200)
         sched = r.context['scheduled_groups']
         unsched = r.context['unscheduled_groups']
-        self.assertEqual(len(unsched),2)
+        self.assertEqual(len(unsched),3)
         self.assertEqual(len(sched),2)
 
 class SubmitRequestCase(TestCase):
