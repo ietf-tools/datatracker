@@ -126,3 +126,17 @@ Notes
   - Permission mixins for class-based views
   - New admin style
 
+
+* WG document state slug renaming.
+
+  adopt-wg	-> adopted-by-wg
+  c-adopt	-> candidate-for-wg-adoption
+  chair-w	-> waiting-for-chair-goahead
+  dead		-> dead-wg-draft
+  info		-> adopted-for-wg-info-only
+  parked
+  sub-pub	-> submitted-for-publication
+  wg-cand	-> wg-candidate
+  wg-doc	-> wg-document
+  wg-lc		-> wg-last-call
+  writeupw	-> waiting-for-shepherd-writeup
