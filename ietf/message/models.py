@@ -21,7 +21,7 @@ class Message(models.Model):
     reply_to = models.CharField(max_length=255, blank=True)
     body = models.TextField()
     content_type = models.CharField(default="text/plain", max_length=255, blank=True)
-    msgid = models.CharField(max_length=255, blank=True, default=email.utils.make_msgid)
+    msgid = models.CharField(max_length=255, blank=True, null=True, default=email.utils.make_msgid)
 
     related_groups = models.ManyToManyField(Group, blank=True)
     related_docs = models.ManyToManyField(Document, blank=True)
