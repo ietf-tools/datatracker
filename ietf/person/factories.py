@@ -51,6 +51,10 @@ class PersonFactory(factory.DjangoModelFactory):
         make_alias = getattr(AliasFactory, 'create' if create else 'build')
         make_alias(person=obj,name=obj.name)
         make_alias(person=obj,name=obj.ascii)
+        if obj.name != obj.plain_name():
+            make_alias(person=obj,name=obj.plain_name())
+        if obj.ascii != obj.plain_ascii():
+            make_alias(person=obj,name=obj.plain_ascii())
 
     @factory.post_generation
     def default_emails(obj, create, extracted, **kwargs): # pylint: disable=no-self-argument

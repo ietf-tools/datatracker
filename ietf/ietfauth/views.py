@@ -165,6 +165,10 @@ def confirm_account(request, auth):
                 person = Person.objects.create(user=user,
                                                name=name,
                                                ascii=ascii)
+
+                for name in set([ person.name, person.ascii, person.plain_name(), person.plain_ascii(), ]):
+                    Alias.objects.create(person=person, name=name)
+
             if not email_obj:
                 email_obj = Email.objects.create(address=email, person=person)
             else:
@@ -253,7 +257,7 @@ def profile(request):
 
             # Make sure the alias table contains any new and/or old names.
             existing_aliases = set(Alias.objects.filter(person=person).values_list("name", flat=True))
-            curr_names = set(x for x in [updated_person.name, updated_person.ascii, updated_person.ascii_short, updated_person.plain_name(), ] if x)
+            curr_names = set(x for x in [updated_person.name, updated_person.ascii, updated_person.ascii_short, updated_person.plain_name(), updated_person.plain_ascii(), ] if x)
             new_aliases = curr_names - existing_aliases
             for name in new_aliases:
                 Alias.objects.create(person=updated_person, name=name)
