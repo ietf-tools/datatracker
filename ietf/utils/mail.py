@@ -25,7 +25,7 @@ from django.template import Context,RequestContext
 import debug                            # pyflakes:ignore
 
 import ietf
-from ietf.utils.log import log
+from ietf.utils.log import log, unreachable
 from ietf.utils.text import isascii
 
 # Testing mode:
@@ -169,6 +169,7 @@ def send_mail_subj(request, to, frm, stemplate, template, context, *args, **kwar
     Send an email message, exactly as send_mail(), but the
     subject field is a template.
     '''
+    unreachable()                       # 03 Mar 2017
     subject = render_to_string(stemplate, context ).replace("\n"," ").strip()
     return send_mail(request, to, frm, subject, template, context, *args, **kwargs)
 
@@ -341,6 +342,8 @@ def send_mail_message(request, message, extra={}):
     e = extra.copy()
     if message.reply_to:
         e['Reply-to'] = message.reply_to
+    if message.msgid:
+        e['Message-ID'] = message.msgid
 
     return send_mail_text(request, message.to, message.frm, message.subject,
                           message.body, cc=message.cc, bcc=message.bcc, extra=e)
