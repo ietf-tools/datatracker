@@ -29,6 +29,9 @@ Planned work in rough order
 
 * Add a 'recent ballots' page (IESG request)
 
+* Rework email sending so that all emails sent by the datatracker, except for
+  logging and failure emails sent to ADMINS, are captured as a Message object.
+
 * Introduce an API for Meetecho to use to associate recordings with sessions
   (and perhaps automate making copies of those videos)
 
