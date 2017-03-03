@@ -16,8 +16,9 @@ from ietf.doc.models import (Document, NewRevisionDocEvent, State, DocAlias,
 from ietf.name.models import ReviewRequestStateName, ReviewResultName, DocTypeName
 from ietf.review.models import ReviewRequest
 from ietf.group.models import Group
-from ietf.person.fields import PersonEmailChoiceField, SearchablePersonField
 from ietf.ietfauth.utils import is_authorized_in_doc_stream, user_is_person, has_role
+from ietf.message.models import Message
+from ietf.person.fields import PersonEmailChoiceField, SearchablePersonField
 from ietf.review.utils import (active_review_teams, assign_review_request_to_reviewer,
                                can_request_review_of_doc, can_manage_review_requests_for_team,
                                email_review_request_change, make_new_review_request_from_existing,
@@ -27,7 +28,7 @@ from ietf.review import mailarch
 from ietf.utils.fields import DatepickerDateField
 from ietf.utils.text import strip_prefix, xslugify
 from ietf.utils.textupload import get_cleaned_text_file_content
-from ietf.utils.mail import send_mail
+from ietf.utils.mail import send_mail_message
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.utils.fields import MultiEmailField
 
@@ -564,12 +565,24 @@ def complete_review(request, name, request_id):
                     frm = role.formatted_email()
                 else:
                     frm =  request.user.person.formatted_email()
-                msg = send_mail(request, to, frm, subject,
-                                "review/completed_review.txt", {
-                                    "review_req": review_req,
-                                    "content": encoded_content.decode("utf-8"),
-                                },
-                                cc=form.cleaned_data["cc"])
+                related_groups = [ review_req.team, ]
+                if review_req.doc.group:
+                    related_groups.append(review_req.doc.group)
+                msg = Message.objects.create(
+                        by=request.user.person,
+                        subject=subject,
+                        frm=frm,
+                        to=", ".join(to),
+                        cc=form.cleaned_data["cc"],
+                        body = render_to_string("review/completed_review.txt", {
+                            "review_req": review_req,
+                            "content": encoded_content.decode("utf-8"),
+                        }),
+                    )
+                msg.related_groups.add(*related_groups)
+                msg.related_docs.add(review_req.doc)
+
+                msg = send_mail_message(request, msg)
 
                 list_name = mailarch.list_name_from_email(review_req.team.list_email)
                 if list_name:

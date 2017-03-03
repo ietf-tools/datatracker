@@ -12,14 +12,16 @@ from pyquery import PyQuery
 
 import debug                            # pyflakes:ignore
 
+import ietf.review.mailarch
+from ietf.doc.models import DocumentAuthor, Document, DocAlias, RelatedDocument, DocEvent, ReviewRequestDocEvent
+from ietf.group.models import Group
+from ietf.message.models import Message
+from ietf.name.models import ReviewResultName, ReviewRequestStateName, ReviewTypeName, DocRelationshipName
+from ietf.person.models import Email, Person
 from ietf.review.models import (ReviewRequest, ReviewerSettings,
                                 ReviewWish, UnavailablePeriod, NextReviewerInTeam)
 from ietf.review.utils import reviewer_rotation_list, possibly_advance_next_reviewer_for_team
-import ietf.review.mailarch
-from ietf.person.models import Email, Person
-from ietf.name.models import ReviewResultName, ReviewRequestStateName, ReviewTypeName, DocRelationshipName
-from ietf.group.models import Group
-from ietf.doc.models import DocumentAuthor, Document, DocAlias, RelatedDocument, DocEvent, ReviewRequestDocEvent
+
 from ietf.utils.test_utils import TestCase
 from ietf.utils.test_data import make_test_data, make_review_data, create_person
 from ietf.utils.test_utils import login_testing_unauthorized, unicontent, reload_db_objects
@@ -571,6 +573,12 @@ class ReviewTests(TestCase):
         self.assertTrue("This is a review" in outbox[0].get_payload(decode=True).decode("utf-8"))
 
         self.assertTrue(settings.MAILING_LIST_ARCHIVE_URL in review_req.review.external_url)
+
+        msgid = outbox[0]["Message-ID"]
+        message = Message.objects.get(msgid=msgid)
+        self.assertEqual(email.utils.parseaddr(outbox[0]["To"]), email.utils.parseaddr(message.to))
+        self.assertEqual(email.utils.parseaddr(outbox[0]["From"]), email.utils.parseaddr(message.frm))
+        self.assertEqual(outbox[0].get_payload(decode=True).decode(str(outbox[0].get_charset())), message.body)
 
         # check the review document page
         url = urlreverse('ietf.doc.views_doc.document_main', kwargs={ "name": review_req.review.name })
