@@ -574,6 +574,10 @@ class ReviewTests(TestCase):
 
         self.assertTrue(settings.MAILING_LIST_ARCHIVE_URL in review_req.review.external_url)
 
+        # Check that the review has the reviewer as author
+        self.assertEqual(review_req.reviewer, review_req.review.authors.first())
+
+        # Check that we have a copy of the outgoing message
         msgid = outbox[0]["Message-ID"]
         message = Message.objects.get(msgid=msgid)
         self.assertEqual(email.utils.parseaddr(outbox[0]["To"]), email.utils.parseaddr(message.to))

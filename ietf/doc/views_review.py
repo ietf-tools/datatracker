@@ -12,7 +12,7 @@ from django.template.loader import render_to_string, TemplateDoesNotExist
 from django.core.urlresolvers import reverse as urlreverse
 
 from ietf.doc.models import (Document, NewRevisionDocEvent, State, DocAlias,
-                             LastCallDocEvent, ReviewRequestDocEvent)
+                             LastCallDocEvent, ReviewRequestDocEvent, DocumentAuthor)
 from ietf.name.models import ReviewRequestStateName, ReviewResultName, DocTypeName
 from ietf.review.models import ReviewRequest
 from ietf.group.models import Group
@@ -557,14 +557,18 @@ def complete_review(request, name, request_id):
 
                 email_review_request_change(request, review_req, subject, msg, request.user.person, notify_secretary=True, notify_reviewer=False, notify_requested_by=False)
 
+            role = request.user.person.role_set.filter(group=review_req.team,name='reviewer').first()
+            if role and role.email.active:
+                author_email = role.email
+                frm = role.formatted_email()
+            else:
+                author_email = request.user.person.email()
+                frm =  request.user.person.formatted_email()
+            author, created = DocumentAuthor.objects.get_or_create(document=review, author=author_email)
+
             if need_to_email_review:
                 # email the review
                 subject = "{} of {}-{}".format("Partial review" if review_req.state_id == "part-completed" else "Review", review_req.doc.name, review_req.reviewed_rev)
-                role = request.user.person.role_set.filter(group=review_req.team,name='reviewer').first()
-                if role and role.email.active:
-                    frm = role.formatted_email()
-                else:
-                    frm =  request.user.person.formatted_email()
                 related_groups = [ review_req.team, ]
                 if review_req.doc.group:
                     related_groups.append(review_req.doc.group)
