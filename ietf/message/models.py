@@ -1,6 +1,9 @@
+import datetime
+import email.utils
+
 from django.db import models
 
-import datetime
+import debug                            # pyflakes:ignore
 
 from ietf.person.models import Person
 from ietf.group.models import Group
@@ -18,6 +21,7 @@ class Message(models.Model):
     reply_to = models.CharField(max_length=255, blank=True)
     body = models.TextField()
     content_type = models.CharField(default="text/plain", max_length=255, blank=True)
+    msgid = models.CharField(max_length=255, blank=True, default=email.utils.make_msgid)
 
     related_groups = models.ManyToManyField(Group, blank=True)
     related_docs = models.ManyToManyField(Document, blank=True)
