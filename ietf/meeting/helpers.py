@@ -25,6 +25,7 @@ from ietf.mailtrigger.utils import gather_address_lists
 from ietf.person.models  import Person
 from ietf.meeting.models import Meeting, Schedule, TimeSlot, SchedTimeSessAssignment
 from ietf.utils.history import find_history_active_at, find_history_replacements_active_at
+from ietf.utils import log
 from ietf.utils.mail import send_mail
 from ietf.utils.pipe import pipe
 
@@ -450,6 +451,7 @@ def get_earliest_session_date(formset):
 
 def get_interim_initial(meeting):
     '''Returns a dictionary suitable to initialize a InterimRequestForm'''
+    log.unreachable()
     initial = {}
     initial['group'] = meeting.session_set.first().group
     if meeting.city:
@@ -469,6 +471,7 @@ def get_interim_initial(meeting):
 
 def get_interim_session_initial(meeting):
     '''Returns a list of dictionaries suitable to initialize a InterimSessionForm'''
+    log.unreachable()
     initials = []
     for session in meeting.session_set.all():
         initial = {}
@@ -639,6 +642,7 @@ def send_interim_minutes_reminder(meeting):
 def check_interim_minutes():
     """Finds interim meetings that occured 10 days ago, if they don't
     have minutes send a reminder."""
+    log.unreachable()
     date = datetime.datetime.today() - datetime.timedelta(days=10)
     meetings = Meeting.objects.filter(type='interim', session__status='sched', date=date)
     for meeting in meetings:
