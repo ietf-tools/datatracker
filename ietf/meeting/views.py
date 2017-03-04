@@ -59,6 +59,7 @@ from ietf.meeting.helpers import send_interim_announcement_request
 from ietf.meeting.utils import finalize
 from ietf.secr.proceedings.utils import handle_upload_file
 from ietf.secr.proceedings.proc_utils import get_progress_stats, post_process
+from ietf.utils import log
 from ietf.utils.mail import send_mail_message
 from ietf.utils.pipe import pipe
 from ietf.utils.pdf import pdf_pages
@@ -268,6 +269,7 @@ class RoomForm(ModelForm):
 
 @role_required('Secretariat')
 def edit_roomurl(request, num, roomid):
+    log.unreachable()                   # 6.46.2
     meeting = get_meeting(num)
 
     try:
