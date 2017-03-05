@@ -107,6 +107,7 @@ class DocumentAdmin(admin.ModelAdmin):
     def save_model(self, request, obj, form, change):
         e = DocEvent.objects.create(
                 doc=obj,
+                rev=obj.rev,
                 by=request.user.person,
                 type='changed_document',
                 desc=form.cleaned_data.get('comment_about_changes'),
@@ -149,15 +150,14 @@ admin.site.register(BallotType, BallotTypeAdmin)
 # events
 
 class DocEventAdmin(admin.ModelAdmin):
-    def rev(self, obj):
-        h = obj.get_dochistory()
-        return h.rev if h else ""
+    def event_type(self, obj):
+        return str(obj.type)
     def doc_time(self, obj):
         h = obj.get_dochistory()
         return h.time if h else ""
     def short_desc(self, obj):
         return obj.desc[:32]
-    list_display = ["id", "doc", "type", "rev", "by", "time", "doc_time", "short_desc" ]
+    list_display = ["id", "doc", "event_type", "rev", "by", "time", "doc_time", "short_desc" ]
     search_fields = ["doc__name", "by__name"]
     raw_id_fields = ["doc", "by"]
 admin.site.register(DocEvent, DocEventAdmin)

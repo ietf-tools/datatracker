@@ -760,6 +760,7 @@ class DocEvent(models.Model):
     type = models.CharField(max_length=50, choices=EVENT_TYPES)
     by = models.ForeignKey(Person)
     doc = models.ForeignKey('doc.Document')
+    rev = models.CharField(verbose_name="revision", max_length=16, blank=True)
     desc = models.TextField()
 
     def for_current_revision(self):
@@ -772,23 +773,11 @@ class DocEvent(models.Model):
     def __unicode__(self):
         return u"%s %s by %s at %s" % (self.doc.name, self.get_type_display().lower(), self.by.plain_name(), self.time)
 
-    def get_rev(self):
-        e = self
-        # check subtypes which has a rev attribute
-        for sub in ['newrevisiondocevent', 'submissiondocevent', ]:
-            if hasattr(e, sub):
-                e = getattr(e, sub)
-                break
-        if hasattr(e, 'rev'):
-            return e.rev
-        else:
-            return None
-
     class Meta:
         ordering = ['-time', '-id']
         
 class NewRevisionDocEvent(DocEvent):
-    rev = models.CharField(max_length=16)
+    pass
 
 class StateDocEvent(DocEvent):
     state_type = models.ForeignKey(StateType)
@@ -911,7 +900,6 @@ class AddedMessageEvent(DocEvent):
 
 class SubmissionDocEvent(DocEvent):
     import ietf.submit.models
-    rev = models.CharField(max_length=16)
     submission = models.ForeignKey(ietf.submit.models.Submission)
 
 # dumping store for removed events
