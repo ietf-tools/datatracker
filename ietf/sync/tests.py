@@ -22,7 +22,7 @@ class IANASyncTests(TestCase):
     def test_protocol_page_sync(self):
         draft = make_test_data()
         DocAlias.objects.create(name="rfc1234", document=draft)
-        DocEvent.objects.create(doc=draft, type="published_rfc", by=Person.objects.get(name="(System)"))
+        DocEvent.objects.create(doc=draft, rev=draft.rev, type="published_rfc", by=Person.objects.get(name="(System)"))
 
         rfc_names = iana.parse_protocol_page('<html><a href="/go/rfc1234/">RFC 1234</a></html>')
         self.assertEqual(len(rfc_names), 1)

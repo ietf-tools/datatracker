@@ -287,7 +287,7 @@ def edit_milestones(request, acronym, group_type=None, milestone_set="current"):
                     continue
 
                 if milestone_set == "charter":
-                    DocEvent.objects.create(doc=group.charter, type="changed_charter_milestone",
+                    DocEvent.objects.create(doc=group.charter, rev=group.charter.rev, type="changed_charter_milestone",
                                             by=request.user.person, desc=change)
                 else:
                     MilestoneGroupEvent.objects.create(group=group, type="changed_milestone",
@@ -353,6 +353,7 @@ def reset_charter_milestones(request, group_type, acronym):
 
             DocEvent.objects.create(type="changed_charter_milestone",
                                     doc=group.charter,
+                                    rev=group.charter.rev,
                                     desc='Deleted milestone "%s"' % m.desc,
                                     by=request.user.person,
                                     )
@@ -369,6 +370,7 @@ def reset_charter_milestones(request, group_type, acronym):
 
             DocEvent.objects.create(type="changed_charter_milestone",
                                     doc=group.charter,
+                                    rev=group.charter.rev,
                                     desc='Added milestone "%s", due %s, from current group milestones' % (new.desc, new.due.strftime("%B %Y")),
                                     by=request.user.person,
                                     )

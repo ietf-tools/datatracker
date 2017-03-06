@@ -206,12 +206,12 @@ class EditCharterTests(TestCase):
         # Make it so that the charter has been through internal review, and passed its external review
         # ballot on a previous telechat 
         last_week = datetime.date.today()-datetime.timedelta(days=7)
-        BallotDocEvent.objects.create(type='created_ballot',by=login,doc=charter,
+        BallotDocEvent.objects.create(type='created_ballot',by=login,doc=charter, rev=charter.rev,
                                       ballot_type=BallotType.objects.get(doc_type=charter.type,slug='r-extrev'),
                                       time=last_week)
-        TelechatDocEvent.objects.create(type='scheduled_for_telechat',doc=charter,by=login,telechat_date=last_week,returning_item=False)
-        BallotDocEvent.objects.create(type='created_ballot',by=login,doc=charter,
-                                      ballot_type=BallotType.objects.get(doc_type=charter.type,slug='approve'))
+        TelechatDocEvent.objects.create(type='scheduled_for_telechat', doc=charter, rev=charter.rev, by=login, telechat_date=last_week, returning_item=False)
+        BallotDocEvent.objects.create(type='created_ballot', by=login, doc=charter, rev=charter.rev,
+                                      ballot_type=BallotType.objects.get(doc_type=charter.type, slug='approve'))
         
         # Put the charter onto a future telechat and verify returning item is not set
         telechat_date = TelechatDate.objects.active()[1].date
@@ -459,6 +459,7 @@ class EditCharterTests(TestCase):
             ballot_type=BallotType.objects.get(doc_type="charter", slug="approve"),
             by=by,
             doc=charter,
+            rev=charter.rev,
             desc="Created ballot",
             )
 
@@ -507,6 +508,7 @@ class EditCharterTests(TestCase):
             ballot_type=BallotType.objects.get(doc_type="charter", slug="approve"),
             by=p,
             doc=charter,
+            rev=charter.rev,
             desc="Created ballot",
             )
 

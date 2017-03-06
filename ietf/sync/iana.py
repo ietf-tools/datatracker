@@ -48,7 +48,7 @@ def update_rfc_log_from_protocol_page(rfc_names, rfc_must_published_later_than):
         ).distinct()
 
     for d in docs:
-        e = DocEvent(doc=d)
+        e = DocEvent(doc=d, rev=d.rev)
         e.by = system
         e.type = "rfc_in_iana_registry"
         e.desc = "IANA registries were updated to include %s" % d.display_name()
@@ -296,7 +296,7 @@ def add_review_comment(doc_name, review_time, by, comment):
             e = DocEvent.objects.get(doc__name=doc_name, time=review_time, type="iana_review")
         except DocEvent.DoesNotExist:
             doc = Document.objects.get(name=doc_name)
-            e = DocEvent(doc=doc, time=review_time, type="iana_review")
+            e = DocEvent(doc=doc, rev=doc.rev, time=review_time, type="iana_review")
 
         e.desc = comment
         e.by = by

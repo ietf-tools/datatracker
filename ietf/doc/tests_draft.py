@@ -423,7 +423,7 @@ class EditInfoTests(TestCase):
         draft.unset_state('draft-iesg')
         draft.set_state(State.objects.get(type='draft-stream-ietf',slug='writeupw'))
         draft.stream = StreamName.objects.get(slug='ietf')
-        draft.save_with_history([DocEvent.objects.create(doc=draft, type="changed_stream", by=Person.objects.get(user__username="secretary"), desc="Test")])
+        draft.save_with_history([DocEvent.objects.create(doc=draft, rev=draft.rev, type="changed_stream", by=Person.objects.get(user__username="secretary"), desc="Test")])
         r = self.client.post(url,
                              dict(intended_std_level=str(draft.intended_std_level_id),
                                   ad=ad.pk,
@@ -455,7 +455,7 @@ class EditInfoTests(TestCase):
         self.assertEqual(draft.latest_event(ConsensusDocEvent, type="changed_consensus").consensus, True)
 
         # reset
-        e = DocEvent(doc=draft,by=Person.objects.get(name="(System)"),type='changed_document')
+        e = DocEvent(doc=draft, rev=draft.rev, by=Person.objects.get(name="(System)"), type='changed_document')
         e.desc = u"Intended Status changed to <b>%s</b> from %s"% (draft.intended_std_level_id, 'bcp')
         e.save()
 
@@ -464,7 +464,7 @@ class EditInfoTests(TestCase):
         r = self.client.post(url, dict(consensus="Unknown"))
         self.assertEqual(r.status_code, 403) # BCPs must have a consensus
 
-        e = DocEvent(doc=draft,by=Person.objects.get(name="(System)"),type='changed_document')
+        e = DocEvent(doc=draft, rev=draft.rev, by=Person.objects.get(name="(System)"), type='changed_document')
         e.desc = u"Intended Status changed to <b>%s</b> from %s"% (draft.intended_std_level_id, 'inf')
         e.save()
 
@@ -513,7 +513,7 @@ class ResurrectTests(TestCase):
         draft = make_test_data()
         draft.set_state(State.objects.get(used=True, type="draft", slug="expired"))
 
-        DocEvent.objects.create(doc=draft,
+        DocEvent.objects.create(doc=draft, rev=draft.rev,
                              type="requested_resurrect",
                              by=Person.objects.get(name="Areað Irector"))
 
@@ -598,7 +598,7 @@ class ExpireIDsTests(TestCase):
         # hack into expirable state
         draft.unset_state("draft-iesg")
         draft.expires = datetime.datetime.now() + datetime.timedelta(days=10)
-        draft.save_with_history([DocEvent.objects.create(doc=draft, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
+        draft.save_with_history([DocEvent.objects.create(doc=draft, rev=draft.rev, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
 
         self.assertEqual(len(list(get_soon_to_expire_drafts(14))), 1)
         
@@ -622,7 +622,7 @@ class ExpireIDsTests(TestCase):
         # hack into expirable state
         draft.unset_state("draft-iesg")
         draft.expires = datetime.datetime.now()
-        draft.save_with_history([DocEvent.objects.create(doc=draft, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
+        draft.save_with_history([DocEvent.objects.create(doc=draft, rev=draft.rev, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
 
         self.assertEqual(len(list(get_expired_drafts())), 1)
 
@@ -702,14 +702,11 @@ class ExpireIDsTests(TestCase):
         # expire draft
         draft.set_state(State.objects.get(used=True, type="draft", slug="expired"))
         draft.expires = datetime.datetime.now() - datetime.timedelta(days=1)
-        draft.save_with_history([DocEvent.objects.create(doc=draft, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
+        draft.save_with_history([DocEvent.objects.create(doc=draft, rev=draft.rev, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
 
-        e = DocEvent()
-        e.doc = draft
-        e.by = Person.objects.get(name="(System)")
-        e.type = "expired_document"
-        e.text = "Document has expired"
-        e.time = draft.expires
+        e = DocEvent(doc=draft, rev=draft.rev, type= "expired_document", time=draft.expires,
+                     by=Person.objects.get(name="(System)"))
+        e.text="Document has expired"
         e.save()
 
         txt = "%s-%s.txt" % (draft.name, draft.rev)
@@ -734,10 +731,7 @@ class ExpireLastCallTests(TestCase):
         
         self.assertEqual(len(list(get_expired_last_calls())), 0)
 
-        e = LastCallDocEvent()
-        e.doc = draft
-        e.by = secretary
-        e.type = "sent_last_call"
+        e = LastCallDocEvent(doc=draft, rev=draft.rev, type="sent_last_call", by=secretary)
         e.text = "Last call sent"
         e.expires = datetime.datetime.now() + datetime.timedelta(days=14)
         e.save()
@@ -745,10 +739,7 @@ class ExpireLastCallTests(TestCase):
         self.assertEqual(len(list(get_expired_last_calls())), 0)
 
         # test expired
-        e = LastCallDocEvent()
-        e.doc = draft
-        e.by = secretary
-        e.type = "sent_last_call"
+        e = LastCallDocEvent(doc=draft, rev=draft.rev, type="sent_last_call", by=secretary)
         e.text = "Last call sent"
         e.expires = datetime.datetime.now()
         e.save()
@@ -922,7 +913,7 @@ class IndividualInfoFormsTests(TestCase):
 
     def test_doc_change_shepherd(self):
         self.doc.shepherd = None
-        self.doc.save_with_history([DocEvent.objects.create(doc=self.doc, type="changed_shepherd", by=Person.objects.get(user__username="secretary"), desc="Test")])
+        self.doc.save_with_history([DocEvent.objects.create(doc=self.doc, rev=self.doc.rev, type="changed_shepherd", by=Person.objects.get(user__username="secretary"), desc="Test")])
 
         url = urlreverse('ietf.doc.views_draft.edit_shepherd',kwargs=dict(name=self.docname))
         
@@ -974,19 +965,19 @@ class IndividualInfoFormsTests(TestCase):
 
     def test_doc_change_shepherd_email(self):
         self.doc.shepherd = None
-        self.doc.save_with_history([DocEvent.objects.create(doc=self.doc, type="changed_shepherd", by=Person.objects.get(user__username="secretary"), desc="Test")])
+        self.doc.save_with_history([DocEvent.objects.create(doc=self.doc, rev=self.doc.rev, type="changed_shepherd", by=Person.objects.get(user__username="secretary"), desc="Test")])
 
         url = urlreverse('ietf.doc.views_draft.change_shepherd_email',kwargs=dict(name=self.docname))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 404)
 
         self.doc.shepherd = Email.objects.get(person__user__username="ad1")
-        self.doc.save_with_history([DocEvent.objects.create(doc=self.doc, type="changed_shepherd", by=Person.objects.get(user__username="secretary"), desc="Test")])
+        self.doc.save_with_history([DocEvent.objects.create(doc=self.doc, rev=self.doc.rev, type="changed_shepherd", by=Person.objects.get(user__username="secretary"), desc="Test")])
 
         login_testing_unauthorized(self, "plain", url)
 
         self.doc.shepherd = Email.objects.get(person__user__username="plain")
-        self.doc.save_with_history([DocEvent.objects.create(doc=self.doc, type="changed_shepherd", by=Person.objects.get(user__username="secretary"), desc="Test")])
+        self.doc.save_with_history([DocEvent.objects.create(doc=self.doc, rev=self.doc.rev, type="changed_shepherd", by=Person.objects.get(user__username="secretary"), desc="Test")])
 
         new_email = Email.objects.create(address="anotheremail@example.com", person=self.doc.shepherd.person)
 
@@ -1021,7 +1012,7 @@ class IndividualInfoFormsTests(TestCase):
         # Try again when no longer a shepherd.
 
         self.doc.shepherd = None
-        self.doc.save_with_history([DocEvent.objects.create(doc=self.doc, type="changed_shepherd", by=Person.objects.get(user__username="secretary"), desc="Test")])
+        self.doc.save_with_history([DocEvent.objects.create(doc=self.doc, rev=self.doc.rev, type="changed_shepherd", by=Person.objects.get(user__username="secretary"), desc="Test")])
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
         q = PyQuery(r.content)
@@ -1130,7 +1121,7 @@ class RequestPublicationTests(TestCase):
         draft.stream = StreamName.objects.get(slug="iab")
         draft.group = Group.objects.get(acronym="iab")
         draft.intended_std_level = IntendedStdLevelName.objects.get(slug="inf")
-        draft.save_with_history([DocEvent.objects.create(doc=draft, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
+        draft.save_with_history([DocEvent.objects.create(doc=draft, rev=draft.rev, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
         draft.set_state(State.objects.get(used=True, type="draft-stream-iab", slug="approved"))
 
         url = urlreverse('ietf.doc.views_draft.request_publication', kwargs=dict(name=draft.name))
@@ -1171,7 +1162,7 @@ class AdoptDraftTests(TestCase):
         draft.stream = None
         draft.group = Group.objects.get(type="individ")
         draft.unset_state("draft-stream-ietf")
-        draft.save_with_history([DocEvent.objects.create(doc=draft, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
+        draft.save_with_history([DocEvent.objects.create(doc=draft, rev=draft.rev, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
 
         url = urlreverse('ietf.doc.views_draft.adopt_draft', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "marschairman", url)

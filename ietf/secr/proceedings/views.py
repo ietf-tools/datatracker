@@ -251,6 +251,7 @@ def process_pdfs(request, meeting_num):
                 type='changed_document',
                 by=Person.objects.get(name="(System)"),
                 doc=doc,
+                rev=doc.rev,
                 desc='Set URL to PDF version',
             )
             doc.save_with_history([e])
@@ -336,6 +337,7 @@ def recording_edit(request, meeting_num, name):
                 type='changed_document',
                 by=request.user.person,
                 doc=recording,
+                rev=recording.rev,
                 desc=u'Changed URL to %s' % recording.external_url,
             )
             recording.save_with_history([e])

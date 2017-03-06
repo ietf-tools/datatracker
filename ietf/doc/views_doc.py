@@ -997,7 +997,7 @@ def add_comment(request, name):
         if form.is_valid():
             c = form.cleaned_data['comment']
             
-            e = DocEvent(doc=doc, by=login)
+            e = DocEvent(doc=doc, rev=doc.rev, by=login)
             e.type = "added_comment"
             e.desc = c
             e.save()
@@ -1145,7 +1145,7 @@ def edit_sessionpresentation(request,name,session_id):
             new_selection = form.cleaned_data['version']
             if initial['version'] != new_selection:
                 doc.sessionpresentation_set.filter(pk=sp.pk).update(rev=None if new_selection=='current' else new_selection)
-                c = DocEvent(type="added_comment", doc=doc, by=request.user.person)
+                c = DocEvent(type="added_comment", doc=doc, rev=doc.rev, by=request.user.person)
                 c.desc = "Revision for session %s changed to  %s" % (sp.session,new_selection)
                 c.save()
             return redirect('ietf.doc.views_doc.all_presentations', name=name)
@@ -1166,7 +1166,7 @@ def remove_sessionpresentation(request,name,session_id):
 
     if request.method == 'POST':
         doc.sessionpresentation_set.filter(pk=sp.pk).delete()
-        c = DocEvent(type="added_comment", doc=doc, by=request.user.person)
+        c = DocEvent(type="added_comment", doc=doc, rev=doc.rev, by=request.user.person)
         c.desc = "Removed from session: %s" % (sp.session)
         c.save()
         return redirect('ietf.doc.views_doc.all_presentations', name=name)
@@ -1203,7 +1203,7 @@ def add_sessionpresentation(request,name):
             version = version_form.cleaned_data['version']
             rev = None if version=='current' else version
             doc.sessionpresentation_set.create(session_id=session_id,rev=rev)
-            c = DocEvent(type="added_comment", doc=doc, by=request.user.person)
+            c = DocEvent(type="added_comment", doc=doc, rev=doc.rev, by=request.user.person)
             c.desc = "%s to session: %s" % ('Added -%s'%rev if rev else 'Added', Session.objects.get(pk=session_id))
             c.save()
             return redirect('ietf.doc.views_doc.all_presentations', name=name)

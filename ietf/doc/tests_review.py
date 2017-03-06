@@ -268,7 +268,7 @@ class ReviewTests(TestCase):
             document=doc,
         )
         doc.rev = "10"
-        doc.save_with_history([DocEvent.objects.create(doc=doc, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
+        doc.save_with_history([DocEvent.objects.create(doc=doc, rev=doc.rev, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
 
         # previous review
         ReviewRequest.objects.create(

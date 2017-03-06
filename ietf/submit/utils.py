@@ -280,7 +280,7 @@ def post_submission(request, submission, approvedDesc):
         draft.tags.remove("need-rev")
         draft.tags.add("ad-f-up")
 
-        e = DocEvent(type="changed_document", doc=draft)
+        e = DocEvent(type="changed_document", doc=draft, rev=draft.rev)
         e.desc = "Sub state has been changed to <b>AD Followup</b> from <b>Revised ID Needed</b>"
         e.by = system
         e.save()
@@ -366,7 +366,7 @@ def update_replaces_from_submission(request, submission, draft):
         for r in suggested:
             RelatedDocument.objects.create(source=draft, target=r, relationship=possibly_replaces)
 
-        DocEvent.objects.create(doc=draft, by=by, type="added_suggested_replaces",
+        DocEvent.objects.create(doc=draft, rev=draft.rev, by=by, type="added_suggested_replaces",
                                 desc="Added suggested replacement relationships: %s" % ", ".join(d.name for d in suggested))
 
     return approved, suggested

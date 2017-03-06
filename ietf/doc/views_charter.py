@@ -131,13 +131,13 @@ def change_state(request, name, option=None):
                     close_open_ballots(charter, by)
 
                     # Special log for abandoned efforts
-                    e = DocEvent(type="changed_document", doc=charter, by=by)
+                    e = DocEvent(type="changed_document", doc=charter, rev=charter.rev, by=by)
                     e.desc = "Chartering effort abandoned"
                     e.save()
                     events.append(e)
 
                 if comment:
-                    events.append(DocEvent.objects.create(type="added_comment", doc=charter, by=by, desc=comment))
+                    events.append(DocEvent.objects.create(type="added_comment", doc=charter, rev=charter.rev, by=by, desc=comment))
 
                 charter.save_with_history(events)
 
@@ -167,7 +167,7 @@ def change_state(request, name, option=None):
                     fix_charter_revision_after_approval(charter, by)
 
             if charter_state.slug == "infrev" and clean["initial_time"] and clean["initial_time"] != 0:
-                e = InitialReviewDocEvent(type="initial_review", by=by, doc=charter)
+                e = InitialReviewDocEvent(type="initial_review", by=by, doc=charter, rev=charter.rev)
                 e.expires = datetime.datetime.now() + datetime.timedelta(weeks=clean["initial_time"])
                 e.desc = "Initial review time expires %s" % e.expires.strftime("%Y-%m-%d")
                 e.save()
@@ -266,7 +266,7 @@ def change_title(request, name, option=None):
 
                 if not comment:
                     comment = "Changed charter title from '%s' to '%s'." % (prev_title, new_title)
-                e = DocEvent(type="added_comment", doc=charter, by=by)
+                e = DocEvent(type="added_comment", doc=charter, rev=charter.rev, by=by)
                 e.desc = comment
                 e.save()
                 events.append(e)
@@ -312,7 +312,7 @@ def edit_ad(request, name):
             new_ad = form.cleaned_data['ad']
             if new_ad != charter.ad:
                 events = []
-                e = DocEvent(doc=charter, by=by)
+                e = DocEvent(doc=charter, rev=charter.rev, by=by)
                 e.desc = "Responsible AD changed to %s" % new_ad.plain_name()
                 if charter.ad:
                    e.desc += " from %s" % charter.ad.plain_name()
@@ -486,7 +486,7 @@ def review_announcement_text(request, name):
         raise Http404
 
     if not existing_new_work:
-        existing_new_work = WriteupDocEvent(doc=charter)
+        existing_new_work = WriteupDocEvent(doc=charter, rev=charter.rev)
         existing_new_work.by = by
         existing_new_work.type = "changed_new_work_text"
         existing_new_work.desc = "%s review text was changed" % group.type.name
@@ -504,7 +504,7 @@ def review_announcement_text(request, name):
 
             t = form.cleaned_data['announcement_text']
             if t != existing.text:
-                e = WriteupDocEvent(doc=charter)
+                e = WriteupDocEvent(doc=charter, rev=charter.rev)
                 e.by = by
                 e.type = "changed_review_announcement"
                 e.desc = "%s review text was changed" % (group.type.name)
@@ -518,7 +518,7 @@ def review_announcement_text(request, name):
 
             t = form.cleaned_data['new_work_text']
             if t != existing_new_work.text:
-                e = WriteupDocEvent(doc=charter)
+                e = WriteupDocEvent(doc=charter, rev=charter.rev)
                 e.by = by
                 e.type = "changed_new_work_text" 
                 e.desc = "%s new work message text was changed" % (group.type.name)
@@ -581,7 +581,7 @@ def action_announcement_text(request, name):
         if "save_text" in request.POST and form.is_valid():
             t = form.cleaned_data['announcement_text']
             if t != existing.text:
-                e = WriteupDocEvent(doc=charter)
+                e = WriteupDocEvent(doc=charter, rev=charter.rev)
                 e.by = by
                 e.type = "changed_action_announcement" 
                 e.desc = "%s action text was changed" % group.type.name
@@ -643,7 +643,7 @@ def ballot_writeupnotes(request, name):
         if form.is_valid():
             t = form.cleaned_data["ballot_writeup"]
             if t != existing.text:
-                e = WriteupDocEvent(doc=charter, by=by)
+                e = WriteupDocEvent(doc=charter, rev=charter.rev, by=by)
                 e.type = "changed_ballot_writeup_text"
                 e.desc = "Ballot writeup was changed"
                 e.text = t
@@ -656,7 +656,7 @@ def ballot_writeupnotes(request, name):
             if "send_ballot" in request.POST and approval:
                 if has_role(request.user, "Area Director") and not charter.latest_event(BallotPositionDocEvent, type="changed_ballot_position", ad=by, ballot=ballot):
                     # sending the ballot counts as a yes
-                    pos = BallotPositionDocEvent(doc=charter, by=by)
+                    pos = BallotPositionDocEvent(doc=charter, rev=charter.rev, by=by)
                     pos.type = "changed_ballot_position"
                     pos.ad = by
                     pos.pos_id = "yes"
@@ -667,7 +667,7 @@ def ballot_writeupnotes(request, name):
                 msg = generate_issue_ballot_mail(request, charter, ballot)
                 send_mail_preformatted(request, msg)
 
-                e = DocEvent(doc=charter, by=by)
+                e = DocEvent(doc=charter, rev=charter.rev, by=by)
                 e.by = by
                 e.type = "sent_ballot_announcement"
                 e.desc = "Ballot has been sent"
@@ -709,7 +709,7 @@ def approve(request, name):
 
         events = []
         # approve
-        e = DocEvent(doc=charter, by=by)
+        e = DocEvent(doc=charter, rev=charter.rev, by=by)
         e.type = "iesg_approved"
         e.desc = "IESG has approved the charter"
         e.save()

@@ -17,6 +17,7 @@ from ietf.group.models import Group
 from ietf.name.models import ( DocTypeName, DocTagName, StreamName, IntendedStdLevelName, StdLevelName,
     DocRelationshipName, DocReminderTypeName, BallotPositionName, ReviewRequestStateName )
 from ietf.person.models import Email, Person
+from ietf.utils import log
 from ietf.utils.admin import admin_link
 from ietf.utils.validators import validate_no_control_chars
 
@@ -760,7 +761,7 @@ class DocEvent(models.Model):
     type = models.CharField(max_length=50, choices=EVENT_TYPES)
     by = models.ForeignKey(Person)
     doc = models.ForeignKey('doc.Document')
-    rev = models.CharField(verbose_name="revision", max_length=16, blank=True)
+    rev = models.CharField(verbose_name="revision", max_length=16, null=True, blank=True)
     desc = models.TextField()
 
     def for_current_revision(self):
@@ -772,6 +773,10 @@ class DocEvent(models.Model):
 
     def __unicode__(self):
         return u"%s %s by %s at %s" % (self.doc.name, self.get_type_display().lower(), self.by.plain_name(), self.time)
+
+    def save(self, *args, **kwargs):
+        super(DocEvent, self).save(*args, **kwargs)        
+        log.assertion('self.rev != None')
 
     class Meta:
         ordering = ['-time', '-id']
@@ -854,7 +859,7 @@ class BallotDocEvent(DocEvent):
             norecord = BallotPositionName.objects.get(slug="norecord")
             for ad in active_ads:
                 if ad not in seen:
-                    e = BallotPositionDocEvent(type="changed_ballot_position", doc=self.doc, ad=ad)
+                    e = BallotPositionDocEvent(type="changed_ballot_position", doc=self.doc, rev=self.doc.rev, ad=ad)
                     e.by = ad
                     e.pos = norecord
                     e.old_ad = False

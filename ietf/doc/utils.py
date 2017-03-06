@@ -172,16 +172,16 @@ def needed_ballot_positions(doc, active_positions):
 def create_ballot_if_not_open(doc, by, ballot_slug, time=None):
     if not doc.ballot_open(ballot_slug):
         if time:
-            e = BallotDocEvent(type="created_ballot", by=by, doc=doc, time=time)
+            e = BallotDocEvent(type="created_ballot", by=by, doc=doc, rev=doc.rev, time=time)
         else:
-            e = BallotDocEvent(type="created_ballot", by=by, doc=doc)
+            e = BallotDocEvent(type="created_ballot", by=by, doc=doc, rev=doc.rev)
         e.ballot_type = BallotType.objects.get(doc_type=doc.type, slug=ballot_slug)
         e.desc = u'Created "%s" ballot' % e.ballot_type.name
         e.save()
 
 def close_ballot(doc, by, ballot_slug):
     if doc.ballot_open(ballot_slug):
-        e = BallotDocEvent(type="closed_ballot", doc=doc, by=by)
+        e = BallotDocEvent(type="closed_ballot", doc=doc, rev=doc.rev, by=by)
         e.ballot_type = BallotType.objects.get(doc_type=doc.type,slug=ballot_slug)
         e.desc = 'Closed "%s" ballot' % e.ballot_type.name
         e.save()
@@ -331,7 +331,7 @@ def add_state_change_event(doc, by, prev_state, new_state, prev_tags=[], new_tag
     def tags_suffix(tags):
         return (u"::" + u"::".join(t.name for t in tags)) if tags else u""
 
-    e = StateDocEvent(doc=doc, by=by)
+    e = StateDocEvent(doc=doc, rev=doc.rev, by=by)
     e.type = "changed_state"
     e.state_type = (prev_state or new_state).type
     e.state = new_state
@@ -414,7 +414,7 @@ def make_notify_changed_event(request, doc, by, new_notify, time=None):
     else:
         event_type = 'added_comment'
 
-    e = DocEvent(type=event_type, doc=doc, by=by)
+    e = DocEvent(type=event_type, doc=doc, rev=doc.rev, by=by)
     e.desc = "Notification list changed to %s" % (escape(new_notify) or "none")
     if doc.notify:
         e.desc += " from %s" % escape(doc.notify)
@@ -455,6 +455,7 @@ def update_telechat(request, doc, by, new_telechat_date, new_returning_item=None
     e.type = "scheduled_for_telechat"
     e.by = by
     e.doc = doc
+    e.rev = doc.rev
     e.returning_item = returning
     e.telechat_date = new_telechat_date
 
@@ -536,7 +537,7 @@ def set_replaces_for_document(request, doc, new_replaces, by, email_subject, com
 
     events = []
 
-    e = DocEvent(doc=doc, by=by, type='changed_document')
+    e = DocEvent(doc=doc, rev=doc.rev, by=by, type='changed_document')
     new_replaces_names = u", ".join(d.name for d in new_replaces) or u"None"
     old_replaces_names = u", ".join(d.name for d in old_replaces) or u"None"
     e.desc = u"This document now replaces <b>%s</b> instead of %s" % (new_replaces_names, old_replaces_names)
@@ -545,7 +546,7 @@ def set_replaces_for_document(request, doc, new_replaces, by, email_subject, com
     events.append(e)
 
     if comment:
-        events.append(DocEvent.objects.create(doc=doc, by=by, type="added_comment", desc=comment))
+        events.append(DocEvent.objects.create(doc=doc, rev=doc.rev, by=by, type="added_comment", desc=comment))
 
     for d in old_replaces:
         if d not in new_replaces:

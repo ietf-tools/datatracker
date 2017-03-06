@@ -604,6 +604,7 @@ def post_process(doc):
             type='changed_document',
             by=Person.objects.get(name="(System)"),
             doc=doc,
+            rev=doc.rev,
             desc='Converted document to PDF',
         )
         doc.save_with_history([e])

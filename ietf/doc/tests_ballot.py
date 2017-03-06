@@ -127,14 +127,14 @@ class EditPositionTests(TestCase):
     def test_send_ballot_comment(self):
         draft = make_test_data()
         draft.notify = "somebody@example.com"
-        draft.save_with_history([DocEvent.objects.create(doc=draft, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
+        draft.save_with_history([DocEvent.objects.create(doc=draft, rev=draft.rev, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
 
         ad = Person.objects.get(name="Areað Irector")
 
         ballot = draft.latest_event(BallotDocEvent, type="created_ballot")
 
         BallotPositionDocEvent.objects.create(
-            doc=draft, type="changed_ballot_position",
+            doc=draft, rev=draft.rev, type="changed_ballot_position",
             by=ad, ad=ad, ballot=ballot, pos=BallotPositionName.objects.get(slug="discuss"),
             discuss="This draft seems to be lacking a clearer title?",
             discuss_time=datetime.datetime.now(),
@@ -257,6 +257,7 @@ class BallotWriteupsTests(TestCase):
         draft.set_state(State.objects.get(used=True, type="draft-iana-review", slug="not-ok"))
         DocEvent.objects.create(type="iana_review",
                                 doc=draft,
+                                rev=draft.rev,
                                 by=Person.objects.get(user__username="iana"),
                                 desc="IANA does not approve of this document, it does not make sense.",
                                 )
@@ -285,6 +286,7 @@ class BallotWriteupsTests(TestCase):
         # add a note to the RFC Editor
         WriteupDocEvent.objects.create(
             doc=draft,
+            rev=draft.rev,
             desc="Changed text",
             type="changed_rfc_editor_note_text",
             text="This is a note for the RFC Editor.",
@@ -374,7 +376,7 @@ class BallotWriteupsTests(TestCase):
         draft.group = Group.objects.get(type="individ")
         draft.stream_id = "irtf"
         draft.set_state(State.objects.get(used=True, type="draft-iesg", slug="iesg-eva"))
-        draft.save_with_history([DocEvent.objects.create(doc=draft, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
+        draft.save_with_history([DocEvent.objects.create(doc=draft, rev=draft.rev, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
 
         r = self.client.post(url, dict(regenerate_approval_text="1"))
         self.assertEqual(r.status_code, 200)
@@ -403,6 +405,7 @@ class BallotWriteupsTests(TestCase):
         e.type = "changed_ballot_approval_text"
         e.by = Person.objects.get(name="(System)")
         e.doc = draft
+        e.rev = draft.rev
         e.desc = u"Ballot approval text was generated"
         e.text = u"Test approval text."
         e.save()
@@ -412,6 +415,7 @@ class BallotWriteupsTests(TestCase):
         e.type = "changed_ballot_writeup_text"
         e.by = Person.objects.get(name="(System)")
         e.doc = draft
+        e.rev = draft.rev
         e.desc = u"Ballot writeup was generated"
         e.text = u"Test ballot writeup text."
         e.save()
@@ -421,6 +425,7 @@ class BallotWriteupsTests(TestCase):
         e.type = "changed_ballot_rfceditornote_text"
         e.by = Person.objects.get(name="(System)")
         e.doc = draft
+        e.rev = draft.rev
         e.desc = u"RFC Editor Note for ballot was generated"
         e.text = u"Test note to the RFC Editor text."
         e.save()
@@ -448,7 +453,7 @@ class BallotWriteupsTests(TestCase):
             verify_can_see(username, url)
 
         # RFC Editor Notes for documents in the IRTF Stream
-        e = DocEvent(doc=draft,by=Person.objects.get(name="(System)"),type='changed_stream')
+        e = DocEvent(doc=draft, rev=draft.rev, by=Person.objects.get(name="(System)"), type='changed_stream')
         e.desc = u"Changed stream to <b>%s</b>" % 'irtf'
         e.save()
 
@@ -463,7 +468,7 @@ class BallotWriteupsTests(TestCase):
             verify_can_see(username, url)
 
         # RFC Editor Notes for documents in the IAB Stream
-        e = DocEvent(doc=draft,by=Person.objects.get(name="(System)"),type='changed_stream')
+        e = DocEvent(doc=draft, rev=draft.rev, by=Person.objects.get(name="(System)"), type='changed_stream')
         e.desc = u"Changed stream to <b>%s</b>" % 'ise'
         e.save()
 
@@ -496,6 +501,7 @@ class ApproveBallotTests(TestCase):
         # add a note to the RFC Editor
         WriteupDocEvent.objects.create(
             doc=draft,
+            rev=draft.rev,
             desc="Changed text",
             type="changed_rfc_editor_note_text",
             text="This is a note for the RFC Editor.",
@@ -606,6 +612,7 @@ class DeferUndeferTestCase(TestCase):
 
         e = TelechatDocEvent(type="scheduled_for_telechat",
                              doc = doc,
+                             rev = doc.rev,
                              by = Person.objects.get(name="Areað Irector"),
                              telechat_date = first_date,
                              returning_item = False, 
@@ -662,6 +669,7 @@ class DeferUndeferTestCase(TestCase):
 
         e = TelechatDocEvent(type="scheduled_for_telechat",
                              doc = doc,
+                             rev = doc.rev,
                              by = Person.objects.get(name="Areað Irector"),
                              telechat_date = second_date,
                              returning_item = True, 

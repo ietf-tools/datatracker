@@ -43,7 +43,7 @@ def change_state(request, name, option=None):
             comment = clean['comment'].rstrip()
 
             if comment:
-                c = DocEvent(type="added_comment", doc=status_change, by=login)
+                c = DocEvent(type="added_comment", doc=status_change, rev=status_change.rev, by=login)
                 c.desc = comment
                 c.save()
 
@@ -60,7 +60,7 @@ def change_state(request, name, option=None):
                     if has_role(request.user, "Area Director") and not status_change.latest_event(BallotPositionDocEvent, ad=login, ballot=ballot, type="changed_ballot_position"):
 
                         # The AD putting a status change into iesgeval who doesn't already have a position is saying "yes"
-                        pos = BallotPositionDocEvent(doc=status_change, by=login)
+                        pos = BallotPositionDocEvent(doc=status_change, rev=status_change.rev, by=login)
                         pos.ballot = ballot
                         pos.type = "changed_ballot_position"
                         pos.ad = login
@@ -210,7 +210,7 @@ def edit_title(request, name):
 
             status_change.title = form.cleaned_data['title']
 
-            c = DocEvent(type="added_comment", doc=status_change, by=request.user.person)
+            c = DocEvent(type="added_comment", doc=status_change, rev=status_change.rev, by=request.user.person)
             c.desc = "Title changed to '%s'"%status_change.title
             c.save()
 
@@ -241,7 +241,7 @@ def edit_ad(request, name):
         if form.is_valid():
             status_change.ad = form.cleaned_data['ad']
 
-            c = DocEvent(type="added_comment", doc=status_change, by=request.user.person)
+            c = DocEvent(type="added_comment", doc=status_change, rev=status_change.rev, by=request.user.person)
             c.desc = "Shepherding AD changed to "+status_change.ad.name
             c.save()
 
@@ -339,7 +339,7 @@ def approve(request, name):
 
             close_open_ballots(status_change, login)
 
-            e = DocEvent(doc=status_change, by=login)
+            e = DocEvent(doc=status_change, rev=status_change.rev, by=login)
             e.type = "iesg_approved"
             e.desc = "IESG has approved the status change"
             e.save()
@@ -352,13 +352,13 @@ def approve(request, name):
 
                 send_mail_preformatted(request,form.cleaned_data['announcement_text'])
 
-                c = DocEvent(type="added_comment", doc=status_change, by=login)
+                c = DocEvent(type="added_comment", doc=status_change, rev=status_change.rev, by=login)
                 c.desc = "The following approval message was sent\n"+form.cleaned_data['announcement_text']
                 c.save()
 
             for rel in status_change.relateddocument_set.filter(relationship__slug__in=STATUSCHANGE_RELATIONS):
                 # Add a document event to each target
-                c = DocEvent(type="added_comment", doc=rel.target.document, by=login)
+                c = DocEvent(type="added_comment", doc=rel.target.document, rev=rel.target.document.rev, by=login)
                 c.desc = "New status of %s approved by the IESG\n%s%s" % (newstatus(rel), settings.IDTRACKER_BASE_URL,reverse('ietf.doc.views_doc.document_main', kwargs={'name': status_change.name}))
                 c.save()
 
@@ -575,7 +575,7 @@ def edit_relations(request, name):
             for key in new_relations:
                 status_change.relateddocument_set.create(target=DocAlias.objects.get(name=key),
                                                          relationship_id=new_relations[key])
-            c = DocEvent(type="added_comment", doc=status_change, by=login)
+            c = DocEvent(type="added_comment", doc=status_change, rev=status_change.rev, by=login)
             c.desc = "Affected RFC list changed.\nOLD:"
             for relname,relslug in (set(old_relations.items())-set(new_relations.items())):
                 c.desc += "\n  "+relname+": "+DocRelationshipName.objects.get(slug=relslug).name
@@ -627,6 +627,7 @@ def generate_last_call_text(request, doc):
     e.type = 'changed_last_call_text'
     e.by = request.user.person
     e.doc = doc
+    e.rev = doc.rev
     e.desc = 'Last call announcement was generated'
     e.text = unicode(new_text)
     e.save()
@@ -655,7 +656,7 @@ def last_call(request, name):
 
                 t = form.cleaned_data['last_call_text']
                 if t != last_call_event.text:
-                    e = WriteupDocEvent(doc=status_change, by=login)
+                    e = WriteupDocEvent(doc=status_change, rev=status_change.rev, by=login)
                     e.by = login
                     e.type = "changed_last_call_text"
                     e.desc = "Last call announcement was changed"

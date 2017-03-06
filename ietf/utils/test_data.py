@@ -298,6 +298,7 @@ def make_test_data():
         type="started_iesg_process",
         by=ad,
         doc=draft,
+        rev=draft.rev,
         desc="Started IESG process",
         )
 
@@ -314,6 +315,7 @@ def make_test_data():
         ballot_type=BallotType.objects.get(doc_type="draft", slug="approve"),
         by=ad,
         doc=draft,
+        rev=draft.rev,
         desc="Created ballot",
         )
 

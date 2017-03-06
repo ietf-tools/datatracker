@@ -151,7 +151,7 @@ def edit_material(request, name=None, acronym=None, action=None, doc_type=None):
                 events.append(e)
 
             if prev_title != doc.title:
-                e = DocEvent(doc=doc, by=request.user.person, type='changed_document')
+                e = DocEvent(doc=doc, rev=doc.rev, by=request.user.person, type='changed_document')
                 e.desc = u"Changed title to <b>%s</b>" % doc.title
                 if prev_title:
                     e.desc += u" from %s" % prev_title

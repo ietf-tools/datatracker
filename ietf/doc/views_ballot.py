@@ -137,7 +137,7 @@ def edit_position(request, name, ballot_id):
             # save the vote
             clean = form.cleaned_data
 
-            pos = BallotPositionDocEvent(doc=doc, by=login)
+            pos = BallotPositionDocEvent(doc=doc, rev=doc.rev, by=login)
             pos.type = "changed_ballot_position"
             pos.ballot = ballot
             pos.ad = ad
@@ -159,7 +159,7 @@ def edit_position(request, name, ballot_id):
                 changes.append("comment")
 
                 if pos.comment:
-                    e = DocEvent(doc=doc)
+                    e = DocEvent(doc=doc, rev=doc.rev)
                     e.by = ad # otherwise we can't see who's saying it
                     e.type = "added_comment"
                     e.desc = "[Ballot comment]\n" + pos.comment
@@ -171,7 +171,7 @@ def edit_position(request, name, ballot_id):
                 changes.append("discuss")
 
                 if pos.pos.blocking:
-                    e = DocEvent(doc=doc, by=login)
+                    e = DocEvent(doc=doc, rev=doc.rev, by=login)
                     e.by = ad # otherwise we can't see who's saying it
                     e.type = "added_comment"
                     e.desc = "[Ballot %s]\n" % pos.pos.name.lower()
@@ -446,7 +446,7 @@ def lastcalltext(request, name):
             if form.is_valid():
                 t = form.cleaned_data['last_call_text']
                 if t != existing.text:
-                    e = WriteupDocEvent(doc=doc, by=login)
+                    e = WriteupDocEvent(doc=doc, rev=doc.rev, by=login)
                     e.by = login
                     e.type = "changed_last_call_text"
                     e.desc = "Last call announcement was changed"
@@ -523,7 +523,7 @@ def ballot_writeupnotes(request, name):
         if form.is_valid():
             t = form.cleaned_data["ballot_writeup"]
             if t != existing.text:
-                e = WriteupDocEvent(doc=doc, by=login)
+                e = WriteupDocEvent(doc=doc, rev=doc.rev, by=login)
                 e.by = login
                 e.type = "changed_ballot_writeup_text"
                 e.desc = "Ballot writeup was changed"
@@ -538,7 +538,7 @@ def ballot_writeupnotes(request, name):
 
                 if has_role(request.user, "Area Director") and not doc.latest_event(BallotPositionDocEvent, ad=login, ballot=ballot):
                     # sending the ballot counts as a yes
-                    pos = BallotPositionDocEvent(doc=doc, by=login)
+                    pos = BallotPositionDocEvent(doc=doc, rev=doc.rev, by=login)
                     pos.ballot = ballot
                     pos.type = "changed_ballot_position"
                     pos.ad = login
@@ -568,7 +568,7 @@ def ballot_writeupnotes(request, name):
                 send_mail_preformatted(request, msg, extra=extra_automation_headers(doc),
                                        override={ "To": "IANA <%s>"%settings.IANA_EVAL_EMAIL, "CC": None, "Bcc": None , "Reply-To": None})
 
-                e = DocEvent(doc=doc, by=login)
+                e = DocEvent(doc=doc, rev=doc.rev, by=login)
                 e.by = login
                 e.type = "sent_ballot_announcement"
                 e.desc = "Ballot has been issued"
@@ -618,7 +618,7 @@ def ballot_rfceditornote(request, name):
         if form.is_valid():
             t = form.cleaned_data["rfc_editor_note"]
             if t != existing.text:
-                e = WriteupDocEvent(doc=doc, by=login)
+                e = WriteupDocEvent(doc=doc, rev=doc.rev, by=login)
                 e.by = login
                 e.type = "changed_rfc_editor_note_text"
                 e.desc = "RFC Editor Note was changed"
@@ -626,7 +626,7 @@ def ballot_rfceditornote(request, name):
                 e.save()
 
     if request.method == 'POST' and "clear_ballot_rfceditornote" in request.POST:
-        e = WriteupDocEvent(doc=doc, by=login)
+        e = WriteupDocEvent(doc=doc, rev=doc.rev, by=login)
         e.by = login
         e.type = "changed_rfc_editor_note_text"
         e.desc = "RFC Editor Note was cleared"
@@ -669,7 +669,7 @@ def ballot_approvaltext(request, name):
             if form.is_valid():
                 t = form.cleaned_data['approval_text']
                 if t != existing.text:
-                    e = WriteupDocEvent(doc=doc, by=login)
+                    e = WriteupDocEvent(doc=doc, rev=doc.rev, by=login)
                     e.by = login
                     e.type = "changed_ballot_approval_text"
                     e.desc = "Ballot approval text was changed"
@@ -771,7 +771,7 @@ def approve_ballot(request, name):
         # fixup document
         close_open_ballots(doc, login)
 
-        e = DocEvent(doc=doc, by=login)
+        e = DocEvent(doc=doc, rev=doc.rev, by=login)
         if action == "do_not_publish":
             e.type = "iesg_disapproved"
             e.desc = "Do Not Publish note has been sent to the RFC Editor"
@@ -865,7 +865,7 @@ def make_last_call(request, name):
             e = add_state_change_event(doc, login, prev_state, new_state, prev_tags=prev_tags, new_tags=new_tags)
             if e:
                 events.append(e)
-            e = LastCallDocEvent(doc=doc, by=login)
+            e = LastCallDocEvent(doc=doc, rev=doc.rev, by=login)
             e.type = "sent_last_call"
             e.desc = "The following Last Call announcement was sent out:<br><br>"
             e.desc += announcement

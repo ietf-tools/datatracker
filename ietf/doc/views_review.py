@@ -121,6 +121,7 @@ def request_review(request, name):
                 ReviewRequestDocEvent.objects.create(
                     type="requested_review",
                     doc=doc,
+                    rev=doc.rev,
                     by=request.user.person,
                     desc="Requested {} review by {}".format(review_req.type.name, review_req.team.acronym.upper()),
                     time=review_req.time,
@@ -313,6 +314,7 @@ def reject_reviewer_assignment(request, name, request_id):
             ReviewRequestDocEvent.objects.create(
                 type="closed_review_request",
                 doc=review_req.doc,
+                rev=review_req.doc.rev,
                 by=request.user.person,
                 desc="Assignment of request for {} review by {} to {} was rejected".format(
                     review_req.type.name,
@@ -530,6 +532,7 @@ def complete_review(request, name, request_id):
                 close_event = ReviewRequestDocEvent(type="closed_review_request", review_request=review_req)
 
             close_event.doc = review_req.doc
+            close_event.rev = review_req.doc.rev
             close_event.by = request.user.person
             close_event.desc = desc
             close_event.state = review_req.state

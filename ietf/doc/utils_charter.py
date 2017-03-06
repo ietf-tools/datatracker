@@ -138,6 +138,7 @@ def generate_ballot_writeup(request, doc):
     e.type = "changed_ballot_writeup_text"
     e.by = request.user.person
     e.doc = doc
+    e.rev = doc.rev,
     e.desc = u"Ballot writeup was generated"
     e.text = unicode(render_to_string("doc/charter/ballot_writeup.txt"))
 
@@ -151,7 +152,7 @@ def default_action_text(group, charter, by):
         action = "Rechartered"
 
     addrs = gather_address_lists('ballot_approved_charter',doc=charter,group=group).as_strings(compact=False)
-    e = WriteupDocEvent(doc=charter, by=by)
+    e = WriteupDocEvent(doc=charter, rev=charter.rev, by=by)
     e.by = by
     e.type = "changed_action_announcement"
     e.desc = "%s action text was changed" % group.type.name
@@ -189,7 +190,7 @@ def default_review_text(group, charter, by):
     now = datetime.datetime.now()
     addrs = gather_address_lists('charter_external_review',group=group).as_strings(compact=False)
 
-    e1 = WriteupDocEvent(doc=charter, by=by)
+    e1 = WriteupDocEvent(doc=charter, rev=charter.rev, by=by)
     e1.by = by
     e1.type = "changed_review_announcement"
     e1.desc = "%s review text was changed" % group.type.name
@@ -212,7 +213,7 @@ def default_review_text(group, charter, by):
                               )
     e1.time = now
 
-    e2 = WriteupDocEvent(doc=charter, by=by)
+    e2 = WriteupDocEvent(doc=charter, rev=charter.rev, by=by)
     e2.by = by
     e2.type = "changed_new_work_text"
     e2.desc = "%s review text was changed" % group.type.name

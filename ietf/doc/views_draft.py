@@ -106,6 +106,7 @@ def change_state(request, name):
                 if comment:
                     c = DocEvent(type="added_comment")
                     c.doc = doc
+                    c.rev = doc.rev
                     c.by = login
                     c.desc = comment
                     c.save()
@@ -248,14 +249,14 @@ def change_stream(request, name):
 
                 events = []
 
-                e = DocEvent(doc=doc,by=login,type='changed_document')
+                e = DocEvent(doc=doc, rev=doc.rev, by=login, type='changed_document')
                 e.desc = u"Stream changed to <b>%s</b> from %s"% (new_stream, old_stream or "None")
                 e.save()
 
                 events.append(e)
 
                 if comment:
-                    c = DocEvent(doc=doc,by=login,type="added_comment")
+                    c = DocEvent(doc=doc, rev=doc.rev, by=login, type="added_comment")
                     c.desc = comment
                     c.save()
                     events.append(c)
@@ -379,7 +380,7 @@ def review_possibly_replaces(request, name):
             events = []
 
             # all suggestions reviewed, so get rid of them
-            events.append(DocEvent.objects.create(doc=doc, by=by, type="reviewed_suggested_replaces",
+            events.append(DocEvent.objects.create(doc=doc, rev=doc.rev, by=by, type="reviewed_suggested_replaces",
                                                   desc="Reviewed suggested replacement relationships: %s" % ", ".join(d.name for d in suggested)))
             RelatedDocument.objects.filter(source=doc, target__in=suggested,relationship__slug='possibly-replaces').delete()
 
@@ -389,7 +390,7 @@ def review_possibly_replaces(request, name):
                                                         comment=comment))
 
             if comment:
-                events.append(DocEvent.objects.create(doc=doc, by=by, type="added_comment", desc=comment))
+                events.append(DocEvent.objects.create(doc=doc, rev=doc.rev, by=by, type="added_comment", desc=comment))
 
             doc.save_with_history(events)
 
@@ -431,13 +432,13 @@ def change_intention(request, name):
                 doc.intended_std_level = new_level
 
                 events = []
-                e = DocEvent(doc=doc,by=login,type='changed_document')
+                e = DocEvent(doc=doc, rev=doc.rev, by=login, type='changed_document')
                 e.desc = u"Intended Status changed to <b>%s</b> from %s"% (new_level,old_level) 
                 e.save()
                 events.append(e)
 
                 if comment:
-                    c = DocEvent(doc=doc,by=login,type="added_comment")
+                    c = DocEvent(doc=doc, rev=doc.rev, by=login, type="added_comment")
                     c.desc = comment
                     c.save()
                     events.append(c)
@@ -445,7 +446,7 @@ def change_intention(request, name):
                 de = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
                 prev_consensus = de and de.consensus
                 if not prev_consensus and doc.intended_std_level_id in ("std", "ds", "ps", "bcp"):
-                    ce = ConsensusDocEvent(doc=doc, by=login, type="changed_consensus")
+                    ce = ConsensusDocEvent(doc=doc, rev=doc.rev, by=login, type="changed_consensus")
                     ce.consensus = True
                     ce.desc = "Changed consensus to <b>%s</b> from %s" % (nice_consensus(True),
                                                                           nice_consensus(prev_consensus))
@@ -553,6 +554,7 @@ def to_iesg(request,name):
                 e.type = "started_iesg_process"
                 e.by = by
                 e.doc = doc
+                e.rev = doc.rev
                 e.desc = "IESG process started in state <b>%s</b>" % target_state['iesg'].name
                 e.save()
                 events.append(e)
@@ -578,7 +580,7 @@ def to_iesg(request,name):
                 changes.append(previous_writeup.text)
 
             for c in changes:
-                e = DocEvent(doc=doc, by=by)
+                e = DocEvent(doc=doc, rev=doc.rev, by=by)
                 e.desc = c
                 e.type = "changed_document"
                 e.save()
@@ -648,6 +650,7 @@ def edit_info(request, name):
                         e.type = "changed_document"
                         e.by = by
                         e.doc = doc
+                        e.rev = doc.rev
                         e.desc = "Working group state set to %s" % submitted_state.name
                         e.save()
                         events.append(e)
@@ -660,6 +663,7 @@ def edit_info(request, name):
                     e.type = "added_comment"
                     e.by = Person.objects.get(name="(System)")
                     e.doc = doc
+                    e.rev = doc.rev
                     e.desc = "Earlier history may be found in the Comment Log for <a href=\"%s\">%s</a>" % (replaces[0], replaces[0].get_absolute_url())
                     e.save()
                     events.append(e)
@@ -668,6 +672,7 @@ def edit_info(request, name):
                 e.type = "started_iesg_process"
                 e.by = by
                 e.doc = doc
+                e.rev = doc.rev
                 e.desc = "IESG process started in state <b>%s</b>" % doc.get_state("draft-iesg").name
                 e.save()
                 events.append(e)
@@ -716,7 +721,7 @@ def edit_info(request, name):
                     doc.group = r["area"]
 
             for c in changes:
-                events.append(DocEvent.objects.create(doc=doc, by=by, desc=c, type="changed_document"))
+                events.append(DocEvent.objects.create(doc=doc, rev=doc.rev, by=by, desc=c, type="changed_document"))
 
             # Todo - chase this
             e = update_telechat(request, doc, by,
@@ -767,7 +772,7 @@ def request_resurrect(request, name):
 
         email_resurrect_requested(request, doc, by)
         
-        e = DocEvent(doc=doc, by=by)
+        e = DocEvent(doc=doc, rev=doc.rev, by=by)
         e.type = "requested_resurrect"
         e.desc = "Resurrection was requested"
         e.save()
@@ -795,7 +800,7 @@ def resurrect(request, name):
             email_resurrection_completed(request, doc, requester=resurrect_requested_by)
 
         events = []
-        e = DocEvent(doc=doc, by=request.user.person)
+        e = DocEvent(doc=doc, rev=doc.rev, by=request.user.person)
         e.type = "completed_resurrect"
         e.desc = "Resurrection was completed"
         e.save()
@@ -842,7 +847,7 @@ def edit_iesg_note(request, name):
                     else:
                         log_message = "Note added '%s'" % new_note
 
-                c = DocEvent(type="added_comment", doc=doc, by=login)
+                c = DocEvent(type="added_comment", doc=doc, rev=doc.rev, by=login)
                 c.desc = log_message
                 c.save()
 
@@ -893,7 +898,7 @@ def edit_shepherd_writeup(request, name):
                      writeup = from_file
                 else:
                      writeup = form.cleaned_data['content']
-                e = WriteupDocEvent(doc=doc, by=login, type="changed_protocol_writeup")
+                e = WriteupDocEvent(doc=doc, rev=doc.rev, by=login, type="changed_protocol_writeup")
 
 		# Add the shepherd writeup to description if the document is in submitted for publication state
                 stream_state = doc.get_state("draft-stream-%s" % doc.stream_id)
@@ -958,7 +963,7 @@ def edit_shepherd(request, name):
 
                 doc.shepherd = form.cleaned_data['shepherd']
 
-                c = DocEvent(type="added_comment", doc=doc, by=request.user.person)
+                c = DocEvent(type="added_comment", doc=doc, rev=doc.rev, by=request.user.person)
                 c.desc = "Document shepherd changed to "+ (doc.shepherd.person.name if doc.shepherd else "(None)")
                 c.save()
                 events.append(c)
@@ -1013,7 +1018,7 @@ def change_shepherd_email(request, name):
                 doc.shepherd = form.cleaned_data['shepherd']
 
                 events = []
-                c = DocEvent(type="added_comment", doc=doc, by=request.user.person)
+                c = DocEvent(type="added_comment", doc=doc, rev=doc.rev, by=request.user.person)
                 c.desc = "Document shepherd email changed"
                 c.save()
                 events.append(c)
@@ -1056,7 +1061,7 @@ def edit_ad(request, name):
         if form.is_valid():
             doc.ad = form.cleaned_data['ad']
 
-            c = DocEvent(type="added_comment", doc=doc, by=request.user.person)
+            c = DocEvent(type="added_comment", doc=doc, rev=doc.rev, by=request.user.person)
             c.desc = "Shepherding AD changed to "+doc.ad.name
             c.save()
 
@@ -1094,7 +1099,7 @@ def edit_consensus(request, name):
         form = ConsensusForm(request.POST)
         if form.is_valid():
             if form.cleaned_data["consensus"] != prev_consensus:
-                e = ConsensusDocEvent(doc=doc, type="changed_consensus", by=request.user.person)
+                e = ConsensusDocEvent(doc=doc, rev=doc.rev, type="changed_consensus", by=request.user.person)
                 e.consensus = {"Unknown":None,"Yes":True,"No":False}[form.cleaned_data["consensus"]]
                 if not e.consensus and doc.intended_std_level_id in ("std", "ds", "ps", "bcp"):
                     return HttpResponseForbidden("BCPs and Standards Track documents must include the consensus boilerplate")
@@ -1166,7 +1171,7 @@ def request_publication(request, name):
             (m.to, m.cc) = gather_address_lists('pubreq_rfced_iana',doc=doc)
             send_mail_message(request, m, extra=extra_automation_headers(doc))
 
-            e = DocEvent(doc=doc, type="requested_publication", by=request.user.person)
+            e = DocEvent(doc=doc, type="requested_publication", rev=doc.rev, by=request.user.person)
             e.desc = "Sent request for publication to the RFC Editor"
             e.save()
             events.append(e)
@@ -1272,7 +1277,7 @@ def adopt_draft(request, name):
 
             # stream
             if doc.stream != new_stream:
-                e = DocEvent(type="changed_stream", by=by, doc=doc)
+                e = DocEvent(type="changed_stream", doc=doc, rev=doc.rev, by=by)
                 e.desc = u"Changed stream to <b>%s</b>" % new_stream.name
                 if doc.stream:
                     e.desc += u" from %s" % doc.stream.name
@@ -1285,7 +1290,7 @@ def adopt_draft(request, name):
 
             # group
             if group != doc.group:
-                e = DocEvent(type="changed_group", by=by, doc=doc)
+                e = DocEvent(type="changed_group", doc=doc, rev=doc.rev, by=by)
                 e.desc = u"Changed group to <b>%s (%s)</b>" % (group.name, group.acronym.upper())
                 if doc.group.type_id != "individ":
                     e.desc += " from %s (%s)" % (doc.group.name, doc.group.acronym.upper())
@@ -1316,7 +1321,7 @@ def adopt_draft(request, name):
 
             # comment
             if comment:
-                e = DocEvent(type="added_comment", by=by, doc=doc)
+                e = DocEvent(type="added_comment", doc=doc, rev=doc.rev, by=by)
                 e.desc = comment
                 e.save()
                 events.append(e)
@@ -1438,7 +1443,7 @@ def change_stream_state(request, name, state_type):
             if existing_tags != new_tags:
                 doc.tags = new_tags
 
-                e = DocEvent(type="changed_document", by=by, doc=doc)
+                e = DocEvent(type="changed_document", doc=doc, rev=doc.rev, by=by)
                 added_tags = new_tags - existing_tags
                 removed_tags = existing_tags - new_tags
                 l = []
@@ -1454,7 +1459,7 @@ def change_stream_state(request, name, state_type):
 
             # comment
             if comment:
-                e = DocEvent(type="added_comment", by=by, doc=doc)
+                e = DocEvent(type="added_comment", doc=doc, rev=doc.rev, by=by)
                 e.desc = comment
                 e.save()
                 events.append(e)

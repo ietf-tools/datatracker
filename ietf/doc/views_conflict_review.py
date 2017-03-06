@@ -41,7 +41,7 @@ def change_state(request, name, option=None):
             comment = clean['comment'].rstrip()
 
             if comment:
-                c = DocEvent(type="added_comment", doc=review, by=login)
+                c = DocEvent(type="added_comment", doc=review, rev=review.rev, by=login)
                 c.desc = comment
                 c.save()
 
@@ -60,7 +60,7 @@ def change_state(request, name, option=None):
                     if has_role(request.user, "Area Director") and not review.latest_event(BallotPositionDocEvent, ad=login, ballot=ballot, type="changed_ballot_position"):
 
                         # The AD putting a conflict review into iesgeval who doesn't already have a position is saying "yes"
-                        pos = BallotPositionDocEvent(doc=review, by=login)
+                        pos = BallotPositionDocEvent(doc=review, rev=review.rev, by=login)
                         pos.ballot = ballot
                         pos.type = "changed_ballot_position"
                         pos.ad = login
@@ -225,7 +225,7 @@ def edit_ad(request, name):
         if form.is_valid():
             review.ad = form.cleaned_data['ad']
 
-            c = DocEvent(type="added_comment", doc=review, by=request.user.person)
+            c = DocEvent(type="added_comment", doc=review, rev=review.rev, by=request.user.person)
             c.desc = "Shepherding AD changed to "+review.ad.name
             c.save()
 
@@ -305,7 +305,7 @@ def approve(request, name):
 
             close_open_ballots(review, login)
 
-            e = DocEvent(doc=review, by=login)
+            e = DocEvent(doc=review, rev=review.rev, by=login)
             e.type = "iesg_approved"
             e.desc = "IESG has approved the conflict review response"
             e.save()
@@ -316,7 +316,7 @@ def approve(request, name):
             # send announcement
             send_mail_preformatted(request, form.cleaned_data['announcement_text'])
 
-            c = DocEvent(type="added_comment", doc=review, by=login)
+            c = DocEvent(type="added_comment", doc=review, rev=review.rev, by=login)
             c.desc = "The following approval message was sent\n"+form.cleaned_data['announcement_text']
             c.save()
 
@@ -406,11 +406,11 @@ def build_conflict_review_document(login, doc_to_review, ad, notify, create_in_s
             
     conflict_review.relateddocument_set.create(target=DocAlias.objects.get(name=doc_to_review.name),relationship_id='conflrev')
 
-    c = DocEvent(type="added_comment", doc=conflict_review, by=login)
+    c = DocEvent(type="added_comment", doc=conflict_review, rev=conflict_review.rev, by=login)
     c.desc = "IETF conflict review requested"
     c.save()
 
-    c = DocEvent(type="added_comment", doc=doc_to_review, by=login)
+    c = DocEvent(type="added_comment", doc=doc_to_review, rev=doc_to_review.rev, by=login)
     # Is it really OK to put html tags into comment text?
     c.desc = 'IETF conflict review initiated - see <a href="%s">%s</a>' % (reverse('ietf.doc.views_doc.document_main', kwargs={'name':conflict_review.name}),conflict_review.name)
     c.save()

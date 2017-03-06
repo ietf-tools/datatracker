@@ -7,13 +7,10 @@ Updated: $Date$
 Planned work in rough order
 ===========================
 
-* Add a 'rev' field to DocEvent, migrate 'rev' information from New
-  Revision and Submit DocEvents, and infer 'rev' information for others
-
-* Break out the htmlzation code used on tools in a library, and use that
-  in the datatracker rendering, replacing the simpler code currently in use.
-  This is also going to require some fancy caching, to avoid re-building the
-  html if not needed, as it takes quite some time.
+* Break out the htmlzation code used on tools.ietf.org in a library, and use
+  that in the datatracker rendering, replacing the simpler code currently in
+  use.  This is also going to require some fancy caching, to avoid re-building
+  the html if not needed, as it takes quite some time.
 
 * Use the htmlization lib to improve the rendering of draft text in the
   datatracker's /doc/draft-foo-bar/ pages.

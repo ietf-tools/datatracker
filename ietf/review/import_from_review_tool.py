@@ -599,7 +599,7 @@ with db_con.cursor() as c:
 
                 e = ReviewRequestDocEvent.objects.filter(type="closed_review_request", doc=review_req.doc, review_request=review_req).first()
                 if not e:
-                    e = ReviewRequestDocEvent(type="closed_review_request", doc=review_req.doc, review_request=review_req)
+                    e = ReviewRequestDocEvent(type="closed_review_request", doc=review_req.doc, rev=review_req.doc.rev, review_request=review_req)
                 e.time = parse_timestamp(timestamp)
                 e.by = by
                 e.state = states.get(state) if state else None
@@ -647,7 +647,7 @@ with db_con.cursor() as c:
 
                 e = ReviewRequestDocEvent.objects.filter(type="requested_review", doc=review_req.doc, review_request=review_req).first()
                 if not e:
-                    e = ReviewRequestDocEvent(type="requested_review", doc=review_req.doc, review_request=review_req)
+                    e = ReviewRequestDocEvent(type="requested_review", doc=review_req.doc, rev=review_req.doc.rev, review_request=review_req)
                 e.time = request_time
                 e.by = by
                 e.desc = "Requested {} review by {}".format(review_req.type.name, review_req.team.acronym.upper())
@@ -659,7 +659,7 @@ with db_con.cursor() as c:
             elif key == "assigned":
                 e = ReviewRequestDocEvent.objects.filter(type="assigned_review_request", doc=review_req.doc, review_request=review_req).first()
                 if not e:
-                    e = ReviewRequestDocEvent(type="assigned_review_request", doc=review_req.doc, review_request=review_req)
+                    e = ReviewRequestDocEvent(type="assigned_review_request", doc=review_req.doc, rev=review_req.doc.rev, review_request=review_req)
                 e.time = parse_timestamp(timestamp)
                 e.by = by
                 e.desc = "Request for {} review by {} is assigned to {}".format(
@@ -675,7 +675,7 @@ with db_con.cursor() as c:
             elif key == "closed" and review_req.state_id not in ("requested", "accepted"):
                 e = ReviewRequestDocEvent.objects.filter(type="closed_review_request", doc=review_req.doc, review_request=review_req).first()
                 if not e:
-                    e = ReviewRequestDocEvent(type="closed_review_request", doc=review_req.doc, review_request=review_req)
+                    e = ReviewRequestDocEvent(type="closed_review_request", doc=review_req.doc, rev=review_req.doc.rev, review_request=review_req)
                 e.time = parse_timestamp(timestamp)
                 e.by = by
                 e.state = states.get(state) if state else None
@@ -765,7 +765,7 @@ with db_con.cursor() as c:
             if "closed" not in event_collection and "assigned" in event_collection:
                 e = ReviewRequestDocEvent.objects.filter(type="closed_review_request", doc=review_req.doc, review_request=review_req).first()
                 if not e:
-                    e = ReviewRequestDocEvent(type="closed_review_request", doc=review_req.doc, review_request=review_req)
+                    e = ReviewRequestDocEvent(type="closed_review_request", doc=review_req.doc, rev=review_req.doc.rev, review_request=review_req)
                 e.time = donetime or datetime.datetime.now()
                 e.by = by
                 e.state = review_req.state

@@ -28,6 +28,7 @@ def request_last_call(request, doc):
     e.type = "requested_last_call"
     e.by = request.user.person
     e.doc = doc
+    e.rev = doc.rev
     e.desc = "Last call was requested"
     e.save()
 

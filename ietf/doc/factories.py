@@ -79,6 +79,10 @@ class DocEventFactory(factory.DjangoModelFactory):
     doc = factory.SubFactory(DocumentFactory)
     desc = factory.Faker('sentence',nb_words=6)
 
+    @factory.lazy_attribute
+    def rev(self):
+        return self.doc.rev
+
 class NewRevisionDocEventFactory(DocEventFactory):
     class Meta:
         model = NewRevisionDocEvent

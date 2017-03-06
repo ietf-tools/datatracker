@@ -163,7 +163,7 @@ def update_drafts_from_queue(drafts):
 
         # check if we've noted it's been received
         if d.get_state_slug("draft-iesg") == "ann" and not prev_state and not d.latest_event(DocEvent, type="rfc_editor_received_announcement"):
-            e = DocEvent(doc=d, by=system, type="rfc_editor_received_announcement")
+            e = DocEvent(doc=d, rev=d.rev, by=system, type="rfc_editor_received_announcement")
             e.desc = "Announcement was received by RFC Editor"
             e.save()
             send_mail_text(None, "iesg-secretary@ietf.org", None,
@@ -409,7 +409,7 @@ def update_docs_from_rfc_index(data, skip_older_than_date=None):
                 doc.group = Group.objects.get(type="individ") # fallback for newly created doc
 
         if not doc.latest_event(type="published_rfc"):
-            e = DocEvent(doc=doc, type="published_rfc")
+            e = DocEvent(doc=doc, rev=doc.rev, type="published_rfc")
             # unfortunately, rfc_published_date doesn't include the correct day
             # at the moment because the data only has month/year, so
             # try to deduce it
@@ -481,6 +481,7 @@ def update_docs_from_rfc_index(data, skip_older_than_date=None):
         if changes:
             events.append(DocEvent.objects.create(
                 doc=doc,
+                rev=doc.rev,
                 by=system,
                 type="sync_from_rfc_editor",
                 desc=u"Received changes through RFC Editor sync (%s)" % u", ".join(changes),

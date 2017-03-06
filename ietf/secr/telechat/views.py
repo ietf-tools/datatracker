@@ -219,7 +219,7 @@ def doc_detail(request, date, name):
                     # create new BallotPositionDocEvent
                     clean = form.cleaned_data
                     ad = Person.objects.get(id=clean['id'])
-                    pos = BallotPositionDocEvent(doc=doc,by=login)
+                    pos = BallotPositionDocEvent(doc=doc, rev=doc.rev, by=login)
                     pos.type = "changed_ballot_position"
                     pos.ad = ad
                     pos.ballot = doc.latest_event(BallotDocEvent, type="created_ballot")

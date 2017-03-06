@@ -143,7 +143,7 @@ def expire_draft(doc):
             if e:
                 events.append(e)
 
-    events.append(DocEvent.objects.create(doc=doc, by=system, type="expired_document", desc="Document has expired"))
+    events.append(DocEvent.objects.create(doc=doc, rev=doc.rev, by=system, type="expired_document", desc="Document has expired"))
 
     doc.set_state(State.objects.get(used=True, type="draft", slug="expired"))
     doc.save_with_history(events)

@@ -82,6 +82,7 @@ def handle_substate(doc):
         system = Person.objects.get(name="(system)")
         DocEvent.objects.create(type="changed_document",
                                 doc=doc,
+                                rev=doc.rev,
                                 desc="Sub state has been changed to <b>AD Followup</b> from <b>Revised ID Needed</b>",
                                 by=system)
         
@@ -173,6 +174,7 @@ def do_extend(draft, request):
         type='changed_document',
         by=request.user.person,
         doc=draft,
+        rev=draft.rev,
         time=draft.time,
         desc='Extended expiry',
     )
@@ -203,6 +205,7 @@ def do_replace(draft, request):
         type='changed_document',
         by=request.user.person,
         doc=replaced_by,
+        rev=replaced_by.rev,
         time=draft.time,
         desc='This document now replaces <b>%s</b>' % request.session['data']['replaced'],
     )
@@ -689,6 +692,7 @@ def edit(request, id):
                 e = DocEvent.objects.create(type='changed_document',
                                             by=request.user.person,
                                             doc=draft,
+                                            rev=draft.rev,
                                             desc='Changed field(s): %s' % ','.join(form.changed_data))
                 # see EditModelForm.save() for detailed logic
                 form.save(commit=False)
@@ -824,6 +828,7 @@ def makerfc(request, id):
             e = DocEvent.objects.create(type='published_rfc',
                                         by=request.user.person,
                                         doc=rfc,
+                                        rev=draft.rev,
                                         desc="Published RFC")
 
             # change state

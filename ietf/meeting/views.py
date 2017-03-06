@@ -1125,7 +1125,7 @@ def add_session_drafts(request, session_id, num):
         if form.is_valid():
             for draft in form.cleaned_data['drafts']:
                 session.sessionpresentation_set.create(document=draft,rev=None)
-                c = DocEvent(type="added_comment", doc=draft, by=request.user.person)
+                c = DocEvent(type="added_comment", doc=draft, rev=draft.rev, by=request.user.person)
                 c.desc = "Added to session: %s" % session
                 c.save()
             return redirect('ietf.meeting.views.session_details', num=session.meeting.number, acronym=session.group.acronym)
@@ -1189,7 +1189,7 @@ def upload_session_bluesheets(request, session_id, num):
                 session.sessionpresentation_set.create(document=doc,rev='00')
             filename = '%s-%s%s'% ( doc.name, doc.rev, ext)
             doc.external_url = filename
-            e = NewRevisionDocEvent.objects.create(doc=doc,by=request.user.person,type='new_revision',desc='New revision available: %s'%doc.rev,rev=doc.rev)
+            e = NewRevisionDocEvent.objects.create(doc=doc, rev=doc.rev, by=request.user.person, type='new_revision', desc='New revision available: %s'%doc.rev)
             doc.save_with_history([e])
             handle_upload_file(file, filename, session.meeting, 'bluesheets')
             return redirect('ietf.meeting.views.session_details',num=num,acronym=session.group.acronym)
@@ -1284,7 +1284,7 @@ def upload_session_minutes(request, session_id, num):
                         other_session.sessionpresentation_set.create(document=doc,rev=doc.rev)
             filename = '%s-%s%s'% ( doc.name, doc.rev, ext)
             doc.external_url = filename
-            e = NewRevisionDocEvent.objects.create(doc=doc,time=doc.time,by=request.user.person,type='new_revision',desc='New revision available: %s'%doc.rev,rev=doc.rev)
+            e = NewRevisionDocEvent.objects.create(doc=doc, time=doc.time, by=request.user.person, type='new_revision', desc='New revision available: %s'%doc.rev, rev=doc.rev)
             doc.save_with_history([e])
             # The way this function builds the filename it will never trigger the file delete in handle_file_upload.
             handle_upload_file(file, filename, session.meeting, 'minutes')
@@ -1531,7 +1531,7 @@ def remove_sessionpresentation(request, session_id, num, name):
         return HttpResponseForbidden("The materials cutoff for this session has passed. Contact the secretariat for further action.")
     if request.method == 'POST':
         session.sessionpresentation_set.filter(pk=sp.pk).delete()
-        c = DocEvent(type="added_comment", doc=sp.document, by=request.user.person)
+        c = DocEvent(type="added_comment", doc=sp.document, rev=sp.document.rev, by=request.user.person)
         c.desc = "Removed from session: %s" % (session)
         c.save()
         return redirect('ietf.meeting.views.session_details', num=session.meeting.number, acronym=session.group.acronym)

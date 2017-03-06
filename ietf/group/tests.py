@@ -43,7 +43,7 @@ class StreamTests(TestCase):
     def test_stream_documents(self):
         draft = make_test_data()
         draft.stream_id = "iab"
-        draft.save_with_history([DocEvent.objects.create(doc=draft, type="changed_stream", by=Person.objects.get(user__username="secretary"), desc="Test")])
+        draft.save_with_history([DocEvent.objects.create(doc=draft, rev=draft.rev, type="changed_stream", by=Person.objects.get(user__username="secretary"), desc="Test")])
 
         r = self.client.get(urlreverse("ietf.group.views_stream.stream_documents", kwargs=dict(acronym="iab")))
         self.assertEqual(r.status_code, 200)

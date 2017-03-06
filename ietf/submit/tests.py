@@ -284,7 +284,7 @@ class SubmitTests(TestCase):
             draft.group.save()
         if not stream_type=='ietf':
             draft.stream_id=stream_type
-            draft.save_with_history([DocEvent.objects.create(doc=draft, type="added_comment", by=Person.objects.get(user__username="secretary"), desc="Test")])
+            draft.save_with_history([DocEvent.objects.create(doc=draft, rev=draft.rev, type="added_comment", by=Person.objects.get(user__username="secretary"), desc="Test")])
         if not change_authors:
             draft.documentauthor_set.all().delete()
             ensure_person_email_info_exists('Author Name','author@example.com')
@@ -300,7 +300,7 @@ class SubmitTests(TestCase):
         draft.set_state(State.objects.get(used=True, type="draft-iana-review", slug="not-ok"))
 
         # pretend it was approved to check that we notify the RFC Editor
-        e = DocEvent(type="iesg_approved", doc=draft)
+        e = DocEvent(type="iesg_approved", doc=draft, rev=draft.rev)
         e.time = draft.time
         e.by = Person.objects.get(name="(System)")
         e.desc = "The IESG approved the document"
@@ -312,6 +312,7 @@ class SubmitTests(TestCase):
         ballot_position.pos_id = "discuss"
         ballot_position.type = "changed_ballot_position"
         ballot_position.doc = draft
+        ballot_position.rev = draft.rev
         ballot_position.ad = ballot_position.by = Person.objects.get(user__username="ad2")
         ballot_position.save()
 
@@ -520,7 +521,7 @@ class SubmitTests(TestCase):
     def test_submit_update_individual(self):
         draft = make_test_data()
         draft.group = None
-        draft.save_with_history([DocEvent.objects.create(doc=draft, type="added_comment", by=Person.objects.get(user__username="secretary"), desc="Test")])
+        draft.save_with_history([DocEvent.objects.create(doc=draft, rev=draft.rev, type="added_comment", by=Person.objects.get(user__username="secretary"), desc="Test")])
         replaces_count = draft.relateddocument_set.filter(relationship_id='replaces').count()
         name = draft.name
         rev = '%02d'%(int(draft.rev)+1)

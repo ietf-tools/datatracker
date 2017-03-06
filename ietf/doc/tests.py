@@ -119,11 +119,11 @@ class SearchTests(TestCase):
     def test_search_for_name(self):
         draft = make_test_data()
         make_meeting_test_data()
-        draft.save_with_history([DocEvent.objects.create(doc=draft, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
+        draft.save_with_history([DocEvent.objects.create(doc=draft, rev=draft.rev, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
 
         prev_rev = draft.rev
         draft.rev = "%02d" % (int(prev_rev) + 1)
-        draft.save_with_history([DocEvent.objects.create(doc=draft, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
+        draft.save_with_history([DocEvent.objects.create(doc=draft, rev=draft.rev, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
 
         # exact match
         r = self.client.get(urlreverse('ietf.doc.views_search.search_for_name', kwargs=dict(name=draft.name)))
@@ -526,7 +526,7 @@ Man                    Expires September 22, 2015               [Page 3]
         # draft published as RFC
         draft.set_state(State.objects.get(type="draft", slug="rfc"))
         draft.std_level_id = "bcp"
-        draft.save_with_history([DocEvent.objects.create(doc=draft, type="published_rfc", by=Person.objects.get(name="(System)"))])
+        draft.save_with_history([DocEvent.objects.create(doc=draft, rev=draft.rev, type="published_rfc", by=Person.objects.get(name="(System)"))])
 
 
         rfc_alias = DocAlias.objects.create(name="rfc123456", document=draft)
@@ -577,10 +577,10 @@ Man                    Expires September 22, 2015               [Page 3]
                        ]:
             doc = Document.objects.get(name=docname)
             # give it some history
-            doc.save_with_history([DocEvent.objects.create(doc=doc, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
+            doc.save_with_history([DocEvent.objects.create(doc=doc, rev=doc.rev, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
 
             doc.rev = "01"
-            doc.save_with_history([DocEvent.objects.create(doc=doc, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
+            doc.save_with_history([DocEvent.objects.create(doc=doc, rev=doc.rev, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
 
             r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))
             self.assertEqual(r.status_code, 200)
@@ -638,10 +638,11 @@ class DocTestCase(TestCase):
         ballot = doc.active_ballot()
 
         # make sure we have some history
-        doc.save_with_history([DocEvent.objects.create(doc=doc, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
+        doc.save_with_history([DocEvent.objects.create(doc=doc, rev=doc.rev, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
 
         pos = BallotPositionDocEvent.objects.create(
             doc=doc,
+            rev=doc.rev,
             ballot=ballot,
             type="changed_ballot_position",
             pos_id="yes",
@@ -715,6 +716,7 @@ class DocTestCase(TestCase):
 
         appr = WriteupDocEvent.objects.create(
             doc=doc,
+            rev=doc.rev,
             desc="Changed text",
             type="changed_ballot_approval_text",
             text="This is ballot approval text.",
@@ -722,6 +724,7 @@ class DocTestCase(TestCase):
 
         notes = WriteupDocEvent.objects.create(
             doc=doc,
+            rev=doc.rev,
             desc="Changed text",
             type="changed_ballot_writeup_text",
             text="This is ballot writeup notes.",
@@ -729,6 +732,7 @@ class DocTestCase(TestCase):
 
         rfced_note = WriteupDocEvent.objects.create(
             doc=doc,
+            rev=doc.rev,
             desc="Changed text",
             type="changed_rfc_editor_note_text",
             text="This is a note for the RFC Editor.",
@@ -746,6 +750,7 @@ class DocTestCase(TestCase):
 
         e = DocEvent.objects.create(
             doc=doc,
+            rev=doc.rev,
             desc="Something happened.",
             type="added_comment",
             by=Person.objects.get(name="(System)"))
@@ -760,6 +765,7 @@ class DocTestCase(TestCase):
 
         e = DocEvent.objects.create(
             doc=doc,
+            rev=doc.rev,
             desc="Something happened.",
             type="added_comment",
             by=Person.objects.get(name="(System)"))
@@ -775,6 +781,7 @@ class DocTestCase(TestCase):
 
         LastCallDocEvent.objects.create(
             doc=doc,
+            rev=doc.rev,
             desc="Last call",
             type="sent_last_call",
             by=Person.objects.get(user__username="secretary"),

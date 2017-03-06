@@ -440,6 +440,7 @@ def assign_review_request_to_reviewer(request, review_req, reviewer, add_skip=Fa
     ReviewRequestDocEvent.objects.create(
         type="assigned_review_request",
         doc=review_req.doc,
+        rev=review_req.doc.rev,
         by=request.user.person,
         desc="Request for {} review by {} is assigned to {}".format(
             review_req.type.name,
@@ -513,6 +514,7 @@ def close_review_request(request, review_req, close_state):
         ReviewRequestDocEvent.objects.create(
             type="closed_review_request",
             doc=review_req.doc,
+            rev=review_req.doc.rev,
             by=request.user.person,
             desc="Closed request for {} review by {} with state '{}'".format(
                 review_req.type.name, review_req.team.acronym.upper(), close_state.name),

@@ -378,6 +378,7 @@ class GroupPagesTests(TestCase):
 
         de = DocEvent.objects.create(
             doc=group.charter,
+            rev=group.charter.rev,
             desc="Something else happened.",
             type="added_comment",
             by=Person.objects.get(name="(System)"))

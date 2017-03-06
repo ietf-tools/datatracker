@@ -57,6 +57,7 @@ class ReviewTests(TestCase):
             type="scheduled_for_telechat",
             by=Person.objects.get(name="(System)"),
             doc=doc,
+            rev=doc.rev,
             telechat_date=TelechatDate.objects.all().first().date,
         )
         doc.rev = "10"
