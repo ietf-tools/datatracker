@@ -64,7 +64,7 @@ def assertion(statement):
     frame = inspect.stack()[1][0]
     value = eval(statement, frame.f_globals, frame.f_locals)
     if not value:
-        if settings.DEBUG is True:
+        if settings.DEBUG is True or settings.SERVER_MODE == 'test':
             raise AssertionError("Assertion '%s' failed." % (statement,))
         else:
             # build a simulated traceback object
@@ -80,7 +80,7 @@ def unreachable():
     class Traceback():
         pass
     frame = inspect.stack()[1][0]
-    if settings.DEBUG is True:
+    if settings.DEBUG is True or settings.SERVER_MODE == 'test':
         raise AssertionError("Arrived at code in %s() which was marked unreachable." % frame.f_code.co_name)
     else:
         # build a simulated traceback object
