@@ -4,10 +4,22 @@ ietfdb (6.47.0) ietf; urgency=medium
 
   This is a small mixed feature and bugfix release.  It adds two new document
   WG States, provides some internal enhancements, and removes a bunch of dead
-  code.  Bugfixes as indicated in the commit log excerpt:
+  code.  Bugfixes as indicated in this excerpt from the commit log:
+
+
+  * Added a 'rev' field to DocEvent, and removed the corresponding field 
+    from NewRevisionDocEvent and SubmissionDocEvent.  Added a migration for an 
+    initial schema change, one data migration to copy and infer revision 
+    information, another schema migration to remove extraneous revision field, 
+    and another data migration to fix up bad timestamps and bad revision info 
+    from the period 2016-09-10 to 2016-10-04.  Updated more than 200 instances
+    of DocEvent creation to supply a 'rev' value.
 
   * Added a data migration which adds 2 new document WG states: 'Waiting for
     Implementation' and 'Held by WG'.
+
+  * Fixed a problem with assertion() and unreachable(), which could break 
+    if certain names (like 'args') were set in the calling frame.
 
   * Removed dead code marked as unreachable in the previous release, and added
     unreachable marks for newly identified probable dead code.
