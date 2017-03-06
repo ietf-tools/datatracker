@@ -73,7 +73,7 @@ def assertion(statement):
             tb.tb_lasti = None
             tb.tb_lineno = frame.f_lineno
             tb.tb_next = None
-            logger.error("Assertion '%s' failed.", statement, exc_info=(AssertionError, statement, tb), extra=frame.f_locals)
+            logger.error("Assertion '%s' failed.", statement, exc_info=(AssertionError, statement, tb))
 
 def unreachable():
     "Raises an assertion or sends traceback to admins if executed."
@@ -89,5 +89,5 @@ def unreachable():
         tb.tb_lasti = None
         tb.tb_lineno = frame.f_lineno
         tb.tb_next = None
-        logger.error("Arrived at code in %s() which was marked unreachable.", frame.f_code.co_name, exc_info=(AssertionError, frame.f_code.co_name, tb), extra=frame.f_locals)
+        logger.error("Arrived at code in %s() which was marked unreachable.", frame.f_code.co_name, exc_info=(AssertionError, frame.f_code.co_name, tb))
     
