@@ -2,24 +2,23 @@ ietfdb (6.47.0) ietf; urgency=medium
 
   **New document WG states: Waiting for Implementation, and Held by WG**
 
-  This is a small mixed feature and bugfix release.  It adds two new document
-  WG States, provides some internal enhancements, and removes a bunch of dead
-  code.  Bugfixes as indicated in this excerpt from the commit log:
-
-
-  * Added a 'rev' field to DocEvent, and removed the corresponding field 
-    from NewRevisionDocEvent and SubmissionDocEvent.  Added a migration for an 
-    initial schema change, one data migration to copy and infer revision 
-    information, another schema migration to remove extraneous revision field, 
-    and another data migration to fix up bad timestamps and bad revision info 
-    from the period 2016-09-10 to 2016-10-04.  Updated more than 200 instances
-    of DocEvent creation to supply a 'rev' value.
+  This is a mixed feature and bugfix release.  It adds two new document WG
+  States, provides several internal enhancements, and removes a bunch of dead
+  code.  Bugfixes are as indicated in this excerpt from the commit log:
 
   * Added a data migration which adds 2 new document WG states: 'Waiting for
     Implementation' and 'Held by WG'.
 
-  * Fixed a problem with assertion() and unreachable(), which could break 
-    if certain names (like 'args') were set in the calling frame.
+  * Added a 'rev' field to DocEvent, and removed the corresponding field from
+    NewRevisionDocEvent and SubmissionDocEvent.  Added a migration for an
+    initial schema change, one data migration to copy and infer revision
+    information, another schema migration to remove extraneous revision field,
+    and another data migration to fix up bad timestamps and bad revision info
+    from the period 2016-09-10 to 2016-10-04.  Updated more than 200 instances
+    of DocEvent creation to supply a 'rev' value.
+
+  * Fixed a problem with assertion() and unreachable(), which could break if
+    certain names (like 'args') were set in the calling frame.
 
   * Removed dead code marked as unreachable in the previous release, and added
     unreachable marks for newly identified probable dead code.
@@ -32,32 +31,32 @@ ietfdb (6.47.0) ietf; urgency=medium
   * Added a data migration to add author information to existing reviews.
 
   * Added code to create all appropriate aliases when a Person record is
-    created, both in ietfauth and in PersonFactory.  This was not consitently
+    created, both in ietfauth and in PersonFactory.  This was not consistently
     done earlier, leading to test-suite failures for test factory persons with
     more than one given name.
 
   * Added document author information for review document objects.
 
-  * Improved handling of a case where a meeting floor have been defined, 
-    but no floor image uploaded yet.
+  * Improved handling of a case where a meeting floor have been defined, but
+    no floor image uploaded yet.
 
   * Changed email notification code for reviews done, in order to save the
     message as a Message instance before sending it.  Added test code to check
     that a Message instance is created and matches what goes out.
 
-  * Merged in [12917] from rcross@amsl.com:
-    Fixes #2207. bin/merge-person-records remove
-    _meta.get_all_related_objects() deprecated in Django 1.10.  
+  * Merged in [12917] from rcross@amsl.com: Fixes #2207.
+    bin/merge-person-records remove _meta.get_all_related_objects() deprecated
+    in Django 1.10.  
 
-  * Merged in [12950] from rcross@amsl.com:
-    Provide material mangement access to Area Group chairs.  Fixes #2219.
+  * Merged in [12950] from rcross@amsl.com: Provide material management access
+    to Area Group chairs.  Fixes #2219.
 
-  * Changed the state choices in the document adoption form to exclude the 
-    few that should not be available, rather than explicitly list all others.  
+  * Changed the state choices in the document adoption form to exclude the few
+    that should not be available, rather than explicitly list all others.
     This makes it possible to add new document WG states without editing the
     code, in many cases.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  04 Mar 2017 05:46:38 -0800
+ -- Henrik Levkowetz <henrik@levkowetz.com>  07 Mar 2017 10:38:08 +0000
 
 ietfdb (6.46.1) ietf; urgency=medium
 
