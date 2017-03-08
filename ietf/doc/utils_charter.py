@@ -126,10 +126,11 @@ def historic_milestones_for_charter(charter, rev):
         just_before_next_rev = datetime.datetime.now()
 
     res = []
-    for m in charter.chartered_group.groupmilestone_set.all():
-        mh = find_history_active_at(m, just_before_next_rev)
-        if mh and mh.state_id == need_state:
-            res.append(mh)
+    if charter.chartered_group:
+        for m in charter.chartered_group.groupmilestone_set.all():
+            mh = find_history_active_at(m, just_before_next_rev)
+            if mh and mh.state_id == need_state:
+                res.append(mh)
 
     return res
     
