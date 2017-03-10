@@ -35,7 +35,7 @@ def backward(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('meeting', '0047_fix_shared_timeslot_audio'),
+        ('meeting', '0046_auto_20170201_0857'),
     ]
 
     operations = [
