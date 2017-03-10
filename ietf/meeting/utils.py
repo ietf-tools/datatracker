@@ -9,6 +9,7 @@ from django.template.loader import render_to_string
 from ietf.dbtemplate.models import DBTemplate
 from ietf.meeting.models import Session
 from ietf.group.utils import can_manage_materials
+from ietf.secr.proceedings.proc_utils import import_audio_files
 
 def group_sessions(sessions):
 
@@ -120,6 +121,7 @@ def finalize(meeting):
                 sp.rev = '00'
             sp.save()
     
+    import_audio_files(meeting)
     create_proceedings_templates(meeting)
     meeting.proceedings_final = True
     meeting.save()
