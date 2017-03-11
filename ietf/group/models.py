@@ -2,6 +2,7 @@
 
 import datetime
 import email.utils
+import re
 from urlparse import urljoin
 
 from django.db import models
@@ -167,6 +168,22 @@ class Group(GroupInfo):
         if previous_meeting:
             status_events = status_events.filter(time__gte=previous_meeting.end_date()+datetime.timedelta(days=1))
         return status_events.first()
+
+    def get_description(self):
+        """
+        Return self.description if set, otherwise the first paragraph of the
+        charter if any, else a short error message.  Used to provide a
+        fallback for self.description in group.resources.GroupResource.
+        """
+        desc = 'No description available'
+        if self.description:
+            desc = self.description
+        elif self.charter:
+            text = self.charter.text()
+            # split into paragraphs and grab the first non-empty one
+            if text:
+                desc = [ p for p in re.split('\r?\n\s*\r?\n\s*', text) if p.strip() ][0]
+        return desc
 
 class GroupHistory(GroupInfo):
     group = models.ForeignKey(Group, related_name='history_set')

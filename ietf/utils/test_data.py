@@ -133,6 +133,7 @@ def make_test_data():
     group = Group.objects.create(
         name="Martian Special Interest Group",
         acronym="mars",
+        description="This group discusses mars issues.",
         state_id="active",
         type_id="wg",
         parent=area,
@@ -159,6 +160,7 @@ def make_test_data():
     group = Group.objects.create(
         name="Asteroid Mining Equipment Standardization Group",
         acronym="ames",
+        description="This group works towards standardization of asteroid mining equipment.",
         state_id="proposed",
         type_id="wg",
         parent=area,
@@ -185,6 +187,7 @@ def make_test_data():
     frfarea = Group.objects.create(
         name="Far Future Area Group",
         acronym="frfarea",
+        description="This group discusses future space colonization issues.",
         state_id="active",
         type_id="ag",
         parent=area,
@@ -195,6 +198,7 @@ def make_test_data():
     irg_rg = Group.objects.create(
         name="Internet Research Group",
         acronym="irg",
+        description="This group handles internet research.",
         state_id="active",
         type_id="rg",
         parent=irtf,
