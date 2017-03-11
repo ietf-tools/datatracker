@@ -5,7 +5,7 @@ anora>=0.1.2
 argon2-cffi>=16.1.0		# For the Argon2 password hasher option
 beautifulsoup4>=4.4
 bibtexparser>=0.6.2
-bleach>=1.5.0
+bleach>=1.5.0,<2.0.0
 coverage>=4.0.1,!=4.0.2
 #cssselect>=0.6.1               # for PyQuery
 decorator>=3.4.0
