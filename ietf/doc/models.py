@@ -1,6 +1,9 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
-import datetime, os
+import datetime
+import logging
+import os
+import re
 
 from django.db import models
 from django.core import checks
@@ -19,7 +22,10 @@ from ietf.name.models import ( DocTypeName, DocTagName, StreamName, IntendedStdL
 from ietf.person.models import Email, Person
 from ietf.utils import log
 from ietf.utils.admin import admin_link
+from ietf.utils.rfcmarkup import markup
 from ietf.utils.validators import validate_no_control_chars
+
+logger = logging.getLogger('django')
 
 class StateType(models.Model):
     slug = models.CharField(primary_key=True, max_length=30) # draft, draft-iesg, charter, ...
@@ -92,24 +98,53 @@ class DocumentInfo(models.Model):
         return ext.lstrip(".").lower()
 
     def get_file_path(self):
-
-        if self.type_id == "draft":
-            return settings.INTERNET_DRAFT_PATH
-        elif self.type_id in ("agenda", "minutes", "slides", "bluesheets") and self.meeting_related():
-            doc = self.doc if isinstance(self, DocHistory) else self
-            if doc.session_set.exists():
-                meeting = doc.session_set.first().meeting
-                return os.path.join(meeting.get_materials_path(), self.type_id) + "/"
+        if not hasattr(self, '_cached_file_path'):
+            if self.type_id == "draft":
+                if self.get_state_slug() == "rfc":
+                    self._cached_file_path = settings.RFC_PATH
+                else:
+                    self._cached_file_path = settings.INTERNET_DRAFT_PATH
+            elif self.type_id in ("agenda", "minutes", "slides", "bluesheets") and self.meeting_related():
+                doc = self.doc if isinstance(self, DocHistory) else self
+                if doc.session_set.exists():
+                    meeting = doc.session_set.first().meeting
+                    self._cached_file_path = os.path.join(meeting.get_materials_path(), self.type_id) + "/"
+                else:
+                    self._cached_file_path = ""
+            elif self.type_id == "charter":
+                self._cached_file_path = settings.CHARTER_PATH
+            elif self.type_id == "conflrev": 
+                self._cached_file_path = settings.CONFLICT_REVIEW_PATH
+            elif self.type_id == "statchg":
+                self._cached_file_path = settings.STATUS_CHANGE_PATH
             else:
-                return ""
-        elif self.type_id == "charter":
-            return settings.CHARTER_PATH
-        elif self.type_id == "conflrev": 
-            return settings.CONFLICT_REVIEW_PATH
-        elif self.type_id == "statchg":
-            return settings.STATUS_CHANGE_PATH
-        else:
-            return settings.DOCUMENT_PATH_PATTERN.format(doc=self)
+                self._cached_file_path = settings.DOCUMENT_PATH_PATTERN.format(doc=self)
+        return self._cached_file_path
+
+    def get_base_name(self):
+        if not hasattr(self, '_cached_base_name'):
+            if self.type_id == 'draft':
+                if self.get_state_slug() == 'rfc':
+                    self._cached_base_name = "%s.txt" % self.canonical_name()
+                else:
+                    self._cached_base_name = "%s-%s.txt" % (self.name, self.rev)
+            elif self.type_id in ["slides", "agenda", "minutes", "bluesheets", ] and self.meeting_related():
+                if self.external_url:
+                    # we need to remove the extension for the globbing below to work
+                    self._cached_base_name = self.external_url
+                else:
+                    self._cached_base_name = "%s.txt" % self.canonical_name() # meeting materials are unversioned at the moment
+            else:
+                if self.rev:
+                    self._cached_base_name = "%s-%s.txt" % (self.canonical_name(), self.rev)
+                else:
+                    self._cached_base_name = "%s.txt" % (self.canonical_name(), )
+        return self._cached_base_name
+
+    def get_file_name(self):
+        if not hasattr(self, '_cached_file_name'):
+            self._cached_file_name = os.path.join(self.get_file_path(), self.get_base_name())
+        return self._cached_file_name
 
     def href(self, meeting=None):
         """
@@ -604,7 +639,26 @@ class Document(DocumentInfo):
         else:
             event = self.latest_event(type='new_revision')
         return event.time
-        
+
+    def text(self):
+        path = self.get_file_name()
+        try:
+            with open(path, 'rb') as file:
+                text = file.read().decode('utf-8')
+        except (IOError, UnicodeDecodeError) as e:
+            text = None
+            logger.error("Failure to read document text for %s", self.name, exc_info=e)
+        #
+        return text
+
+
+    def htmlized(self):
+        text = self.text()
+        html = None
+        if text:
+            html = markup(text, path="/doc")
+            html = re.sub(r'<hr[^>]*/>','', html)
+        return html
 
 class RelatedDocHistory(models.Model):
     source = models.ForeignKey('DocHistory')
