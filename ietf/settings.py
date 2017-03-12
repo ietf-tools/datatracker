@@ -132,6 +132,7 @@ OLD_PHOTO_DIRS = [
 IETF_HOST_URL = 'https://www.ietf.org/'
 IETF_ID_URL = IETF_HOST_URL + 'id/'
 IETF_ID_ARCHIVE_URL = IETF_HOST_URL + 'archive/id/'
+IETF_AUDIO_URL = IETF_HOST_URL + 'audio/'
 
 
 # Absolute path to the directory static files should be collected to.
@@ -598,7 +599,7 @@ CACHES = {
 }
 
 IPR_EMAIL_FROM = 'ietf-ipr@ietf.org'
-
+AUDIO_IMPORT_EMAIL = ['agenda@ietf.org']
 IANA_EVAL_EMAIL = "drafts-eval@icann.org"
 
 # Put real password in settings_local.py
