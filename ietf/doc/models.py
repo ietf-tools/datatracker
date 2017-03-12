@@ -3,7 +3,7 @@
 import datetime
 import logging
 import os
-import re
+#import re
 
 from django.db import models
 from django.core import checks
@@ -22,7 +22,7 @@ from ietf.name.models import ( DocTypeName, DocTagName, StreamName, IntendedStdL
 from ietf.person.models import Email, Person
 from ietf.utils import log
 from ietf.utils.admin import admin_link
-from ietf.utils.rfcmarkup import markup
+#from ietf.utils.rfcmarkup import markup
 from ietf.utils.validators import validate_no_control_chars
 
 logger = logging.getLogger('django')
@@ -652,13 +652,13 @@ class Document(DocumentInfo):
         return text
 
 
-    def htmlized(self):
-        text = self.text()
-        html = None
-        if text:
-            html = markup(text, path="/doc")
-            html = re.sub(r'<hr[^>]*/>','', html)
-        return html
+#     def htmlized(self):
+#         text = self.text()
+#         html = None
+#         if text:
+#             html = markup(text, path="/doc")
+#             html = re.sub(r'<hr[^>]*/>','', html)
+#         return html
 
 class RelatedDocHistory(models.Model):
     source = models.ForeignKey('DocHistory')
