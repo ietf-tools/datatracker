@@ -1,3 +1,42 @@
+ietfdb (6.47.1) ietf; urgency=medium
+
+  This is a small patch release which provides a few bug fixes and
+  enhancements:  If no description is available for a group in the database,
+  the first paragraph of the charter (if available) is provided in the REST
+  API, in order to better support the new www.ietf.org website.  For cases
+  where email issue reports is wanted, there is now an email address provided
+  in the page footer, in addition to the issue tracker address.  Bugfixes
+  as shown in the commit log:
+
+  * Improved the log.assertion() and unreachable() functions to send a 
+    deeper traceback when reporting by email, rather than just the last stack 
+    frame.
+
+  * Merged in [12990] and [12991] from rcross@amsl.com:
+    Refactor session audio file import.  Add informative email.  Fixes #2164.
+
+  * Made the default navbar colour match the production navbar, rather than 
+    the dev navbar.  Gives 500 errors in production a regular navbar, rather 
+    than a dev navbar.
+
+  * Require bleach<2.0.0.  Bleach 2 requires html5lib 1.x, which requires a 
+    rewrite of ietf.utils.html.
+
+  * Modified the REST API to provide group descriptions taken from the 
+    group charters if group.description is blank.
+
+  * Added a text() methods on Document, to help with display of htmlized text.
+
+  * Added a guard against trying to fetch milestones for a group value of 
+    None.
+
+  * Added a link to report bugs by email to the page footer.
+
+  * Fixed a reverse url lookup issue in a template.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  13 Mar 2017 17:09:40 +0000
+
+
 ietfdb (6.47.0) ietf; urgency=medium
 
   **New document WG states: Waiting for Implementation, and Held by WG**
