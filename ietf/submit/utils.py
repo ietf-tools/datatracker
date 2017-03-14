@@ -23,8 +23,9 @@ from ietf.person.models import Person, Email
 from ietf.community.utils import update_name_contains_indexes_with_new_doc
 from ietf.submit.mail import announce_to_lists, announce_new_version, announce_to_authors
 from ietf.submit.models import Submission, SubmissionEvent, Preapproval, DraftSubmissionStateName
-from ietf.utils import unaccent
 from ietf.utils import log
+from ietf.utils import unaccent
+from ietf.utils.mail import is_valid_email
 
 
 def validate_submission(submission):
@@ -373,20 +374,20 @@ def update_replaces_from_submission(request, submission, draft):
 
 def get_person_from_name_email(name, email):
     # try email
-    if email:
+    if email and (email.startswith('unknown-email-') or is_valid_email(email)):
         persons = Person.objects.filter(email__address=email).distinct()
         if len(persons) == 1:
             return persons[0]
     else:
         persons = Person.objects.none()
 
-    if not persons:
+    if not persons.exists():
         persons = Person.objects.all()
 
     # try full name
     p = persons.filter(alias__name=name).distinct()
-    if p:
-        return p[0]
+    if p.exists():
+        return p.first()
 
     return None
 
@@ -406,7 +407,7 @@ def ensure_person_email_info_exists(name, email):
         person.save()
 
     # make sure we have an email address
-    if addr:
+    if addr and (addr.startswith('unknown-email-') or is_valid_email(addr)):
         active = True
         addr = addr.lower()
     else:

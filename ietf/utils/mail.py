@@ -18,7 +18,8 @@ from email import charset as Charset
 
 from django.conf import settings
 from django.contrib import messages
-from django.core.exceptions import ImproperlyConfigured
+from django.core.exceptions import ImproperlyConfigured, ValidationError
+from django.core.validators import validate_email
 from django.template.loader import render_to_string
 from django.template import Context,RequestContext
 
@@ -438,3 +439,9 @@ def send_error_to_secretariat(msg):
         (extype,value) = sys.exc_info()[:2]
         log("SMTP Exception: %s : %s" % (extype,value))
     
+def is_valid_email(address):
+    try:
+        validate_email(address)
+        return True
+    except ValidationError:
+        return False
