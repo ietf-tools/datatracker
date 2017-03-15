@@ -58,7 +58,7 @@ def showballoticon(doc):
        if doc.get_state_slug() not in ("iesgeval","defer"):
            return False
     elif doc.type_id == "statchg":
-       if doc.get_state_slug() not in ("iesgeval","defer"):
+       if doc.get_state_slug() not in ("iesgeval","defer", "in-lc"):
            return False
 
     return True
