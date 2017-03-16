@@ -238,7 +238,7 @@ class SecrMeetingTestCase(TestCase):
         response = self.client.post(url, {
             'day':'1',
             'time':'08:00',
-            'duration':'1 0:0:0',
+            'duration':'09:00',
             'name':'Testing'
         })
         self.assertEqual(response.status_code, 302)
@@ -251,6 +251,23 @@ class SecrMeetingTestCase(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
     
+    def test_meetings_nonsession_add_invalid(self):
+        make_meeting_test_data()
+        group = Group.objects.get(acronym='secretariat')
+        url = reverse('ietf.secr.meetings.views.non_session',kwargs={'meeting_id':42,'schedule_name':'test-agenda'})
+        self.client.login(username="secretary", password="secretary+password")
+        response = self.client.post(url, {
+            'day':'1',
+            'time':'08:00',
+            'duration':'10',
+            'name':'Testing',
+            'short':'test',
+            'type':'reg',
+            'group':group.pk,
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue('invalid format' in response.content)
+
     def test_meetings_select_group(self):
         make_meeting_test_data()
         url = reverse('ietf.secr.meetings.views.select_group',kwargs={'meeting_id':42,'schedule_name':'test-agenda'})
