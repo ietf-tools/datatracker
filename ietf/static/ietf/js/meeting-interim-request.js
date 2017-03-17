@@ -22,7 +22,7 @@ var interimRequest = {
         interimRequest.inPerson.each(interimRequest.toggleLocation);
         interimRequest.checkAddButton();
         interimRequest.checkHelpText();
-        interimRequest.checkTimezone();
+        interimRequest.initTimezone();
         $('input[name$="-time"]').each(interimRequest.calculateEndTime);
         $('input[name$="-time"]').each(interimRequest.updateInfo);
         $('#id_country').select2({placeholder:"Country"});
@@ -152,7 +152,12 @@ var interimRequest = {
         }
     },
 
-    checkTimezone : function() {
+    initTimezone : function() {
+        if (interimRequest.isEditView()) {
+            // Don't set timezone in edit view, already set
+            return true;
+        }
+
         if(window.Intl && typeof window.Intl === "object"){
             var tzname = Intl.DateTimeFormat().resolvedOptions().timeZone;
             if($('#id_time_zone option[value="'+tzname+'"]').length > 0){
@@ -187,6 +192,15 @@ var interimRequest = {
         return interimRequest.pad(hours) + ":" + interimRequest.pad(minutes);
     },
     
+    isEditView : function() {
+        // Called on init, returns true if editing existing meeting request
+        if ($('#id_session_set-0-date').val()) {
+            return true;
+        } else {
+            return false;
+        }
+    },
+
     meetingTypeChanged : function () {
         interimRequest.checkAddButton();
         interimRequest.checkInPerson();
