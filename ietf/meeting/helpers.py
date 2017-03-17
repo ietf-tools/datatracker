@@ -300,28 +300,6 @@ def session_constraint_expire(request,session):
 # -------------------------------------------------
 
 
-def assign_interim_session(form):
-    """Helper function to create a timeslot and assign the interim session"""
-    time = datetime.datetime.combine(
-        form.cleaned_data['date'],
-        form.cleaned_data['time'])
-    session = form.instance
-    if session.official_timeslotassignment():
-        slot = session.official_timeslotassignment().timeslot
-        slot.time = time
-        slot.save()
-    else:
-        slot = TimeSlot.objects.create(
-            meeting=session.meeting,
-            type_id="session",
-            duration=session.requested_duration,
-            time=time)
-        SchedTimeSessAssignment.objects.create(
-            timeslot=slot,
-            session=session,
-            schedule=session.meeting.agenda)
-
-
 def can_approve_interim_request(meeting, user):
     '''Returns True if the user has permissions to approve an interim meeting request'''
     if meeting.type.slug != 'interim':
@@ -657,6 +635,29 @@ def sessions_post_save(forms):
         if not form.has_changed():
             continue
         if ('date' in form.changed_data) or ('time' in form.changed_data):
-            assign_interim_session(form)
+            update_interim_session_assignment(form)
         if 'agenda' in form.changed_data:
             form.save_agenda()
+
+
+def update_interim_session_assignment(form):
+    """Helper function to create / update timeslot assigned to interim session"""
+    time = datetime.datetime.combine(
+        form.cleaned_data['date'],
+        form.cleaned_data['time'])
+    session = form.instance
+    if session.official_timeslotassignment():
+        slot = session.official_timeslotassignment().timeslot
+        slot.time = time
+        slot.duration = session.requested_duration
+        slot.save()
+    else:
+        slot = TimeSlot.objects.create(
+            meeting=session.meeting,
+            type_id="session",
+            duration=session.requested_duration,
+            time=time)
+        SchedTimeSessAssignment.objects.create(
+            timeslot=slot,
+            session=session,
+            schedule=session.meeting.agenda)

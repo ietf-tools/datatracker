@@ -1280,12 +1280,13 @@ class InterimTests(TestCase):
         form_initial = r.context['form'].initial
         formset_initial =  r.context['formset'].forms[0].initial
         new_time = formset_initial['time'] + datetime.timedelta(hours=1)
+        new_duration = formset_initial['requested_duration'] + datetime.timedelta(hours=1)
         data = {'group':group.pk,
                 'meeting_type':'single',
                 'session_set-0-id':meeting.session_set.first().id,
                 'session_set-0-date':formset_initial['date'].strftime('%Y-%m-%d'),
                 'session_set-0-time':new_time.strftime('%H:%M'),
-                'session_set-0-requested_duration':formset_initial['requested_duration'],
+                'session_set-0-requested_duration':self.strfdelta(new_duration, '{hours}:{minutes}'),
                 'session_set-0-remote_instructions':formset_initial['remote_instructions'],
                 #'session_set-0-agenda':formset_initial['agenda'],
                 'session_set-0-agenda_note':formset_initial['agenda_note'],
@@ -1299,7 +1300,14 @@ class InterimTests(TestCase):
         session = meeting.session_set.first()
         timeslot = session.official_timeslotassignment().timeslot
         self.assertEqual(timeslot.time,new_time)
-        
+        self.assertEqual(timeslot.duration,new_duration)
+    
+    def strfdelta(self, tdelta, fmt):
+        d = {"days": tdelta.days}
+        d["hours"], rem = divmod(tdelta.seconds, 3600)
+        d["minutes"], d["seconds"] = divmod(rem, 60)
+        return fmt.format(**d)
+
     def test_interim_request_details_permissions(self):
         make_meeting_test_data()
         meeting = Meeting.objects.filter(type='interim',session__status='apprw',session__group__acronym='mars').first()
