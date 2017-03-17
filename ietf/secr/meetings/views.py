@@ -99,7 +99,7 @@ def build_nonsession(meeting,schedule):
         return None
     
     delta = meeting.date - last_meeting.date
-    system = Person.objects.get(name='(system)')
+    system = Person.objects.get(name='(System)')
     secretariat = Group.objects.get(acronym='secretariat')
     
     for slot in TimeSlot.objects.filter(meeting=last_meeting,type__in=('break','reg','other','plenary','lead')):
@@ -487,7 +487,7 @@ def non_session(request, meeting_id, schedule_name):
                                   name=name,
                                   short=short,
                                   group=group,
-                                  requested_by=Person.objects.get(name='(system)'),
+                                  requested_by=Person.objects.get(name='(System)'),
                                   status_id='sched',
                                   type=type,
                              )
