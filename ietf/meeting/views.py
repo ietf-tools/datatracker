@@ -1918,8 +1918,6 @@ def interim_request_edit(request, number):
                 message = message + ' and change announcement sent'
             messages.success(request, message)
             return redirect(interim_request_details, number=number)
-        else:
-            assert False, (form.errors, formset.errors)
 
     else:
         form = InterimMeetingModelForm(request=request, instance=meeting)
