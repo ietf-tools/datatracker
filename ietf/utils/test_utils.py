@@ -32,12 +32,14 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import os
 import html5lib
 import urllib2
 from unittest.util import strclass
 
 import django.test
 from django.conf import settings
+from django.utils.text import slugify
 
 import debug                            # pyflakes:ignore
 
@@ -97,6 +99,14 @@ class TestCase(django.test.TestCase):
         self.assertHttpOK(resp)
         self.assertTrue(resp['Content-Type'].startswith('text/html'))
         self.assertValidHTML(resp.content)
+
+    def tempdir(self, label):
+        slug = slugify(self.__class__.replace('.','-'))
+        dirname = "tmp-{label}-{slug}".format(**locals())
+        path = os.path.abspath(dirname)
+        if not os.path.exists(path):
+            os.mkdir(path)
+        return path
 
     def __str__(self):
         return "%s (%s.%s)" % (self._testMethodName, strclass(self.__class__),self._testMethodName)
