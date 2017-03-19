@@ -155,7 +155,7 @@ def check_html_valid(url, response, args):
     if not key in validated_urls:
         note('Validate: %-32s: %s' % (url[:32], key))
         # These URLs have known issues, skip them until those are fixed
-        if re.search('(/secr|admin/)|/doc/.*/edit/info/', url):
+        if re.search('(/secr|admin/|/doc/.*/edit/info/|rfc542$|rfc776$|draft-leroux-pce-pcecp-interarea-reqs)', url):
             log("%s blacklisted; skipping HTML validation" % url)
             validated_urls[key] = True
             return
@@ -183,13 +183,20 @@ def check_html_valid(url, response, args):
         else:
             try:
                 parser.parse(content)
-            except Exception:
-                e = SyntaxWarning("ParseError")
+            except Exception as e:
                 for err in parser.errors:
                     pos, code, data = err
-                    tags.append(u"WARN invalid html: Position %s: %s" %
-                                (pos, code))
+                    tags.append(u"WARN invalid html at line, pos %s: %s" % (pos, e))
                 warnings += 1
+
+def skip_extract_from(url):
+    for pattern in (
+            r'^/doc/html/[a-z0-9-]+',
+            r'^/meeting/[a-z0-9-]+/agenda/[a-z0-9-]+',
+        ):
+        if re.search(pattern, url):
+            return True
+    return False
 
 def skip_url(url):
     for pattern in (
@@ -201,10 +208,13 @@ def skip_url(url):
             # This bad url occurs in an uploaded html agenda:
             r"/site/ietfdhcwg/_/rsrc/1311005436000/system/app/css/overlay.css\?cb=simple100%250150goog-ws-left",
             r"/dir/tsvdir/reviews/",
+            r"draft-touch-msword-template-v2\.0",
         ):
         if re.search(pattern, url):
             return True
     return False
+
+
 
 def log(s):
     print(s)
@@ -350,10 +360,11 @@ if __name__ == "__main__":
 
                 if ctype == "text/html":
                     try:
-                        for u in extract_html_urls(r.content):
-                            if u not in visited and u not in urls:
-                                urls[u] = url
-                                referrers[u] = url
+                        if not skip_extract_from(url):
+                            for u in extract_html_urls(r.content):
+                                if u not in visited and u not in urls:
+                                    urls[u] = url
+                                    referrers[u] = url
 
                         check_html_valid(url, r, args)
 
