@@ -2,6 +2,7 @@
 
 import datetime
 import email.utils
+import os
 import re
 from urlparse import urljoin
 
@@ -179,10 +180,12 @@ class Group(GroupInfo):
         if self.description:
             desc = self.description
         elif self.charter:
-            text = self.charter.text()
-            # split into paragraphs and grab the first non-empty one
-            if text:
-                desc = [ p for p in re.split('\r?\n\s*\r?\n\s*', text) if p.strip() ][0]
+            path = self.charter.get_file_name()
+            if os.path.exists(path):
+                text = self.charter.text()
+                # split into paragraphs and grab the first non-empty one
+                if text:
+                    desc = [ p for p in re.split('\r?\n\s*\r?\n\s*', text) if p.strip() ][0]
         return desc
 
 class GroupHistory(GroupInfo):
