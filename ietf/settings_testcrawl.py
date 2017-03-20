@@ -19,7 +19,18 @@ TEMPLATES[0]['OPTIONS']['loaders'] = (
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-    }
+        'OPTIONS': {
+            'MAX_ENTRIES': 10000,
+        },
+    },
+    'htmlized': {
+        'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+        #'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+        'LOCATION': '/var/cache/datatracker/htmlized',
+        'OPTIONS': {
+            'MAX_ENTRIES': 100000,
+        },
+    },
 }
 
 PASSWORD_HASHERS = ( 'django.contrib.auth.hashers.MD5PasswordHasher', )

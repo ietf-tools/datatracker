@@ -12,6 +12,8 @@ from django.forms import ValidationError
 from django.utils.html import escape
 from django.core.urlresolvers import reverse as urlreverse
 
+import debug                            # pyflakes:ignore
+
 from ietf.doc.models import Document, DocHistory, State, DocumentAuthor, DocHistoryAuthor
 from ietf.doc.models import DocAlias, RelatedDocument, RelatedDocHistory, BallotType, DocReminder
 from ietf.doc.models import DocEvent, ConsensusDocEvent, BallotDocEvent, NewRevisionDocEvent, StateDocEvent
@@ -705,3 +707,130 @@ def get_search_cache_key(params):
     key = "doc:document:search:" + hashlib.sha512(json.dumps(kwargs, sort_keys=True)).hexdigest()
     return key
     
+def label_wrap(label, items, joiner=',', max=50):
+    lines = []
+    if not items:
+        return lines
+    line = '%s: %s' % (label, items[0])
+    for item in items[1:]:
+        if len(line)+len(joiner+' ')+len(item) > max:
+            lines.append(line+joiner)
+            line = ' '*(len(label)+len(': ')) + item
+        else:
+            line += joiner+' '+item
+    if line:
+        lines.append(line)
+    return lines
+
+def join_justified(left, right, width=72):
+    count = max(len(left), len(right))
+    left = left + ['']*(count-len(left))
+    right = right + ['']*(count-len(right))
+    lines = []
+    i = 0
+    while True:
+        l = left[i]
+        r = right[i]
+        if len(l)+1+len(r) > width:
+            left = left + ['']
+            right = right[:i] + [''] + right[i:]
+            r = right[i]
+            count += 1
+        lines.append( l + ' ' + r.rjust(width-len(l)-1) )
+        i += 1
+        if i >= count:
+            break
+    return lines
+
+def build_doc_meta_block(doc, path):
+    def add_markup(path, doc, lines):
+        is_hst = doc.is_dochistory()
+        rev = doc.rev
+        if is_hst:
+            doc = doc.doc
+        name = doc.name
+        rfcnum = doc.rfc_number()
+        errata_url = settings.RFC_EDITOR_ERRATA_URL.format(rfc_number=rfcnum) if not is_hst else ""
+        ipr_url = "%s?submit=draft&amp;id=%s" % (urlreverse('ietf.ipr.views.search'), name)
+        for i, line in enumerate(lines):
+            # add draft links
+            line = re.sub(r'\b(draft-[-a-z0-9]+)\b', '<a href="%s/\g<1>">\g<1></a>'%(path, ), line)
+            # add rfcXXXX to RFC links
+            line = re.sub(r' (rfc[0-9]+)\b', ' <a href="%s/\g<1>">\g<1></a>'%(path, ), line)
+            # add XXXX to RFC links
+            line = re.sub(r' ([0-9]{3,5})\b', ' <a href="%s/rfc\g<1>">\g<1></a>'%(path, ), line)
+            # add draft revision links
+            line = re.sub(r' ([0-9]{2})\b', ' <a href="%s/%s-\g<1>">\g<1></a>'%(path, name, ), line)
+            if rfcnum:
+                # add errata link
+                line = re.sub(r'Errata exist', '<a class="text-warning" href="%s">Errata exist</a>'%(errata_url, ), line)
+            if is_hst or not rfcnum:
+                # make current draft rev bold
+                line = re.sub(r'>(%s)<'%rev, '><b>\g<1></b><', line)
+            line = re.sub(r'IPR declarations', '<a class="text-warning" href="%s">IPR declarations</a>'%(ipr_url, ), line)
+            line = line.replace(r'[txt]', '[<a href="%s">txt</a>]' % doc.href())
+            lines[i] = line
+        return lines
+    #
+    now = datetime.datetime.now()
+    draft_state = doc.get_state('draft')
+    block = ''
+    meta = {}
+    if doc.type_id == 'draft':
+        revisions = []
+        ipr = doc.related_ipr()
+        if ipr:
+            meta['ipr'] = [ "IPR declarations" ]
+        if doc.is_rfc() and not doc.is_dochistory():
+            if not doc.name.startswith('rfc'):
+                meta['from'] = [ "%s-%s"%(doc.name, doc.rev) ]
+            meta['errata'] = [ "Errata exist" ] if doc.tags.filter(slug='errata').exists() else []
+            meta['obsoletedby'] = [ alias.document.rfc_number() for alias in doc.related_that('obs') ]
+            meta['obsoletedby'].sort()
+            meta['updatedby'] = [ alias.document.rfc_number() for alias in doc.related_that('updates') ]
+            meta['updatedby'].sort()
+            meta['stdstatus'] = [ doc.std_level.name ]
+        else:
+            dd = doc.doc if doc.is_dochistory() else doc
+            revisions += [ '(%s)%s'%(d.name, ' '*(2-((len(d.name)-1)%3))) for d in dd.replaces() ]
+            revisions += doc.revisions()
+            if doc.is_dochistory() and doc.doc.is_rfc():
+                revisions += [ doc.doc.canonical_name() ]
+            else:
+                revisions += [ d.name for d in doc.replaced_by() ]
+            meta['versions'] = revisions
+            if not doc.is_dochistory and draft_state.slug == 'active' and now > doc.expires:
+                # Active past expiration date
+                meta['active'] = [ 'Document is active' ]
+                meta['state' ] = [ doc.friendly_state() ]
+            intended_std = doc.intended_std_level if doc.intended_std_level else None
+            if intended_std:
+                if intended_std.slug in ['ps', 'ds', 'std']:
+                    meta['stdstatus'] = [ "Standards Track" ]
+                else:
+                    meta['stdstatus'] = [ intended_std.name ]
+    elif doc.type_id == 'charter':
+        meta['versions'] = doc.revisions()
+    #
+    # Add markup to items that needs it.
+    if 'versions' in meta:
+        meta['versions'] = label_wrap('Versions', meta['versions'], joiner="")
+    for label in ['Obsoleted by', 'Updated by', 'From' ]:
+        item = label.replace(' ','').lower()
+        if item in meta and meta[item]:
+            meta[item] = label_wrap(label, meta[item])
+    #
+    left = []
+    right = []
+    #right = [ '[txt]']
+    for item in [ 'from', 'versions', 'obsoletedby', 'updatedby', ]:
+        if item in meta and meta[item]:
+            left += meta[item]
+    for item in ['stdstatus', 'active', 'state', 'ipr', 'errata', ]:
+        if item in meta and meta[item]:
+            right += meta[item]
+    lines = join_justified(left, right)
+    block = '\n'.join(add_markup(path, doc, lines))
+    #
+    return block
+

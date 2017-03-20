@@ -493,6 +493,15 @@ Man                    Expires September 22, 2015               [Page 3]
         self.assertTrue("Show full document text" in unicontent(r))
         self.assertFalse("Deimos street" in unicontent(r))
 
+        r = self.client.get(urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=draft.name)))
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue("Versions:" in unicontent(r))
+        self.assertTrue("Deimos street" in unicontent(r))
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('.rfcmarkup pre')), 4)
+        self.assertEqual(len(q('span.h1')), 2)
+        self.assertEqual(len(q('a[href]')), 116)
+
         # expired draft
         draft.set_state(State.objects.get(type="draft", slug="expired"))
 
