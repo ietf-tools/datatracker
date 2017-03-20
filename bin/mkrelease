@@ -175,7 +175,7 @@ changes=$( sed -n "/^$PROJ ($VER.*)/,/^ -- /p" changelog )
 [ "$changes" ] || die "No changelog information for $VER found"
 #note "$changes"
 
-note "Checking that we don't have both schema and data migrations"
+note "Checking that we don't have both schema and data migrations ..."
 cur=$(svn info | awk '/^Revision:/ { print $2 }')
 migrations=$(svn log $PWD -v -r HEAD:$((cur-100)) | sed -n -e '1,/^Set version info and settings back to development mode/p' | grep '^...A /.*/migrations/0.*.py' | cut -c6- | awk '{ print $1 }' | sed -re 's|/trunk/||')
 if [ -n "$migrations" ]; then
