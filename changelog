@@ -1,3 +1,57 @@
+ietfdb (6.47.2) ietf; urgency=medium
+
+  This is a patch release with bug fixes related to ballot grids and
+  secretariat meeting functionality, and internal enhancements.  It also
+  clears the way for the upcoming merge in of new draft htmlization code from
+  tools.ietf.org.
+
+  From the commit log:
+
+  * Added a check to bin/mkrelease, preventing releases with both schema 
+    change migrations and data migrations.  Data migrations often take some 
+    time, which will delay the time between the schema changes and deployment 
+    of the matching new code.
+
+  * Refined the test crawler a bit, to avoid extracting URLs from html which
+    is outside the datatracker's control, such as uploaded WG agendas.  (These
+    could lead to false warnings about problems with the datatracker's links).
+    Also exempted some pages with known-bad character issues from html
+    validation, and refined the error reporting for html validation failures.
+
+  * Added a utility function to create temporary directories with distinct
+    name based on test-class name and given labels.  This will help in
+    parallelizing the runs.
+
+  * Silenced an unnecessary error which could occur when looking for charter
+    documents for groups (such as bofs) without them, when asking the REST API
+    for group descriptions.
+
+  * Merged in [13022] from rcross@amsl.com:
+    Fixed the interim meeting edit form returning 500 when the duration field
+    is empty.  Fixes #2206.  
+
+  * Merged in [13021] from rcross@amsl.com:
+    Fixed an issue where editing an interim meeting duration does not update
+    underlying timeslot duration.  Fixes #2203.  
+
+  * Merged in [13018] from rcross@amsl.com:
+    Fixed an issue with interim meeting time-zone getting reset on edit.
+    Fixes issue #2204.  
+
+  * Merged in [13017] from rcross@amsl.com:
+    Added placeholders and validations to secretariat non-session time input 
+    fields.  Fixes #2208.   
+
+  * Applied a patch from rjsparks@nostrum.com to make ballot grids show for 
+    statchg documents in ietf last call.
+
+  * Added more email validation for draft submission author emails, and 
+    blocked some paths that could lead to bad email addresses ('none') being 
+    set as document author email addresses.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  20 Mar 2017 12:02:49 +0000
+
+
 ietfdb (6.47.1) ietf; urgency=medium
 
   This is a small patch release which provides a few bug fixes and
