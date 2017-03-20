@@ -24,7 +24,7 @@
 
   <td class="doc">
     <div>
-      <a class="symbol-link" href="{{ doc.get_absolute_url }}"><span class="fa fa-info-circle fa-lg"></span></a>
+      <a class="symbol-link" href="{{ doc.get_absolute_url }}"><span class="fa fa-info-circle"></span></a>
       <a href="{% url 'ietf.doc.views_doc.document_html' name=doc.canonical_name %}">{% if doc.get_state_slug == "rfc" %}RFC {{ doc.rfc_number }}{% else %}{{ doc.name }}-{{ doc.rev }}{% endif %}</a>
       {% if doc.get_state_slug == "rfc" and "draft" in doc.name %}
         <i>(was {{ doc.name }})</i>
