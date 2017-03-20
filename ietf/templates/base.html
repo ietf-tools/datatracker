@@ -44,7 +44,7 @@
   </head>
 
   <body {% block bodyAttrs %}{%endblock%} data-group-menu-data-url="{% url 'ietf.group.views_ajax.group_menu_data' %}">
-      <nav class="navbar {% if server_mode and server_mode != "production" %}navbar-default{% else %}navbar-inverse{% endif %} navbar-fixed-top">
+      <nav class="navbar {% if server_mode and server_mode != "production" %}navbar-default{% else %}navbar-inverse{% endif %} {% if navbar_mode %}{{ navbar_mode }}{% else %}navbar-fixed-top{% endif %}">
         <div class="container-fluid">
 	  <div class="navbar-header">
 	    <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar-collapse">
@@ -57,7 +57,7 @@
 	       <img alt="IETF Logo" src="{% static 'ietf/images/ietflogo-small-transparent.png' %}">
 	       {% if not user.is_authenticated %}
 		  {% if server_mode and server_mode != "production" %}
-		  <b><i>Development mode</i></b>
+		  <b><i><small>Development mode</small></i></b>
 		  {% else %}
 		  Datatracker
 		  {% endif %}
@@ -115,6 +115,7 @@
           </div>
         {% endif %}
 
+	{% block footer %}
 	<hr>
 	  <div class="col-md-12">
 	    <div class="text-center padded">
@@ -130,6 +131,7 @@
 	        <a href="https://www.iana.org/" class="padded">IANA</a>
 	    </div>
 	  </div>
+
 
         <footer class="row">
 	  <div class="col-md-12">
@@ -151,8 +153,12 @@
 	    </div>
 	  </div>
         </footer>
-        {% include "debug.html" %}
+	{% endblock %}
+
       </div>
+
+      {% include "debug.html" %}
+
       <script src="{% static 'jquery/jquery.min.js' %}"></script>
       {% comment %}
       <!-- Remove the *-nojs attributes if we are running js.  This depends on jQuery's removeClass(): -->

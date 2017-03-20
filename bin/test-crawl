@@ -155,10 +155,19 @@ def check_html_valid(url, response, args):
     if not key in validated_urls:
         note('Validate: %-32s: %s' % (url[:32], key))
         # These URLs have known issues, skip them until those are fixed
-        if re.search('(/secr|admin/|/doc/.*/edit/info/|rfc542$|rfc776$|draft-leroux-pce-pcecp-interarea-reqs)', url):
-            log("%s blacklisted; skipping HTML validation" % url)
-            validated_urls[key] = True
-            return
+        for pattern in (
+                '/secr',
+		'admin/',
+		'/doc/.*/edit/info/',
+		'rfc542$',
+		'rfc776$',
+		'draft-leroux-pce-pcecp-interarea-reqs',
+                'draft-fujiwara-dnsop-resolver-update',
+            ):
+            if re.search(pattern, url):
+                validated_urls[key] = True
+                log("%s blacklisted; skipping HTML validation" % url)
+                return
 
         if hasattr(response, "content"):
             content = response.content
@@ -193,6 +202,7 @@ def skip_extract_from(url):
     for pattern in (
             r'^/doc/html/[a-z0-9-]+',
             r'^/meeting/[a-z0-9-]+/agenda/[a-z0-9-]+',
+            r'^/static/coverage/',
         ):
         if re.search(pattern, url):
             return True
@@ -209,6 +219,17 @@ def skip_url(url):
             r"/site/ietfdhcwg/_/rsrc/1311005436000/system/app/css/overlay.css\?cb=simple100%250150goog-ws-left",
             r"/dir/tsvdir/reviews/",
             r"draft-touch-msword-template-v2\.0",
+            # These will always 404:
+            r"^/doc/html/charter-ietf-cicm",
+            r"^/doc/html/charter-ietf-dcon",
+            r"^/doc/html/charter-ietf-fun",
+            r"^/doc/html/charter-ietf-multrans",
+            r"^/doc/html/charter-ietf-sdn",
+            r"^/doc/html/charter-ietf-woes",
+            r"^/doc/html/draft-floyd-cc-alt",
+            r"^/doc/html/draft-ietf-sipping-overload-design",
+            r"^/doc/html/status-change-icmpv6-dns-ipv6-to-internet-standard",
+            r"^/static/coverage/",
         ):
         if re.search(pattern, url):
             return True

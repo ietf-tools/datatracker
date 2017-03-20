@@ -23,7 +23,7 @@
 	institution =	{% templatetag openbrace %}Internet Engineering Task Force{% templatetag closebrace %},
 	publisher =	{% templatetag openbrace %}Internet Engineering Task Force{% templatetag closebrace %},
 	note =		{% templatetag openbrace %}Work in Progress{% templatetag closebrace %},
-	url =		{% templatetag openbrace %}https://tools.ietf.org/html/{{doc.name}}-{{doc.rev}}{% templatetag closebrace %},{% endif %}
+	url =		{% templatetag openbrace %}https://datatracker.ietf.org/doc/html/{{doc.name}}-{{doc.rev}}{% templatetag closebrace %},{% endif %}
 	author =	{% templatetag openbrace %}{% for entry in doc.authors.all %}{% with entry.person as author %}{{author.name}}{% endwith %}{% if not forloop.last %} and {% endif %}{% endfor %}{% templatetag closebrace %},
 	title =		{% templatetag openbrace %}{% templatetag openbrace %}{{doc.title}}{% templatetag closebrace %}{% templatetag closebrace %},
 	pagetotal =	{{ doc.pages }},

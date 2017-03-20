@@ -61,7 +61,7 @@ ALLOWED_HOSTS = [".ietf.org", ".ietf.org.", "209.208.19.216", "4.31.198.44", ]
 TOOLS_SERVER = 'tools.' + IETF_DOMAIN
 TOOLS_SERVER_URL = 'https://' + TOOLS_SERVER
 TOOLS_ID_PDF_URL = TOOLS_SERVER_URL + '/pdf/'
-TOOLS_ID_HTML_URL = TOOLS_SERVER_URL + '/html/'
+TOOLS_ID_HTML_URL = '/doc/html/'
 
 # Override this in the settings_local.py file:
 SERVER_EMAIL = 'Django Server <django-project@' + TOOLS_SERVER + '>'
@@ -524,12 +524,14 @@ GROUP_STATES_WITH_EXTRA_PROCESSING = ["sub-pub", "rfc-edit", ]
 DATE_FORMAT = "Y-m-d"
 DATETIME_FORMAT = "Y-m-d H:i T"
 
+
+DRAFT_NAMES_WITH_DOT = "(draft-[a-z-]+-(ion-sig-uni4.0|pilc-2.5g3g|trade-iotp-v1.0-[a-z]+|msword-template-v2.0))"
 URL_REGEXPS = {
     "acronym": r"(?P<acronym>[-a-z0-9]+)",
     "charter": r"(?P<name>charter-[-a-z0-9]+)",
     "date": r"(?P<date>\d{4}-\d{2}-\d{2})",
-    "name": r"(?P<name>[A-Za-z0-9._+-]+)",
-    "rev": r"(?P<rev>[0-9-]+)",
+    "name": r"(?P<name>([A-Za-z0-9_+-]+?|%s))" % DRAFT_NAMES_WITH_DOT,
+    "rev": r"(?P<rev>[0-9-]{2})",
     "owner": r"(?P<owner>[-A-Za-z0-9\'+._]+@[A-Za-z0-9-._]+)",
     "schedule_name": r"(?P<name>[A-Za-z0-9-:_]+)",
 }
@@ -595,8 +597,21 @@ CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
         'LOCATION': '127.0.0.1:11211',
-    }
+        'OPTIONS': {
+            'MAX_ENTRIES': 10000,       # 10,000
+        },
+    },
+    'htmlized': {
+        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+        'LOCATION': '/var/cache/datatracker/htmlized',
+        'OPTIONS': {
+            'MAX_ENTRIES': 100000,      # 100,000
+        },
+    },
 }
+
+HTMLIZER_VERSION = 1
+HTMLIZER_URL_PREFIX = "/doc/html"
 
 IPR_EMAIL_FROM = 'ietf-ipr@ietf.org'
 AUDIO_IMPORT_EMAIL = ['agenda@ietf.org']
@@ -613,6 +628,7 @@ RFC_EDITOR_SYNC_PASSWORD="secret"
 RFC_EDITOR_SYNC_NOTIFICATION_URL = "https://www.rfc-editor.org/parser/parser.php"
 RFC_EDITOR_QUEUE_URL = "https://www.rfc-editor.org/queue2.xml"
 RFC_EDITOR_INDEX_URL = "https://www.rfc-editor.org/rfc/rfc-index.xml"
+RFC_EDITOR_ERRATA_URL = "https://www.rfc-editor.org/errata_search.php?rfc={rfc_number}&amp;rec_status=0"
 
 # NomCom Tool settings
 ROLODEX_URL = ""
@@ -889,7 +905,15 @@ if SERVER_MODE != 'production':
     CACHES = {
          'default': {
              'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
-         }
+         },
+        'htmlized': {
+            'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+            #'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+            'LOCATION': '/var/cache/datatracker/htmlized',
+            'OPTIONS': {
+                'MAX_ENTRIES': 1000,
+            },
+        }
     }
     SESSION_ENGINE = "django.contrib.sessions.backends.db"
 

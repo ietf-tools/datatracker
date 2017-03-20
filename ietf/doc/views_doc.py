@@ -50,7 +50,7 @@ from ietf.doc.utils import ( add_links_in_new_revision_events, augment_events_wi
     can_adopt_draft, get_chartering_type, get_document_content, get_tags_for_stream_id,
     needed_ballot_positions, nice_consensus, prettify_std_name, update_telechat, has_same_ballot,
     get_initial_notify, make_notify_changed_event, crawl_history, default_consensus,
-    add_events_message_info, get_unicode_document_content)
+    add_events_message_info, get_unicode_document_content, build_doc_meta_block)
 from ietf.community.utils import augment_docs_with_tracking_info
 from ietf.group.models import Role
 from ietf.group.utils import can_manage_group_type, can_manage_materials
@@ -67,9 +67,13 @@ from ietf.review.models import ReviewRequest
 from ietf.review.utils import can_request_review_of_doc, review_requests_to_list_for_docs
 from ietf.review.utils import no_review_from_teams_on_doc
 
+
 def render_document_top(request, doc, tab, name):
     tabs = []
-    tabs.append(("Document", "document", urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=name)), True, None))
+    tabs.append(("Status", "status", urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=name)), True, None))
+
+    if doc.type_id in ["draft", "charter", ]:
+        tabs.append(("Document", "document", urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=name)), True, None))
 
     ballot = doc.latest_event(BallotDocEvent, type="created_ballot")
     if doc.type_id in ("draft","conflrev", "statchg"):
@@ -141,7 +145,7 @@ def document_main(request, name, rev=None):
     # set this after we've found the right doc instance
     group = doc.group
 
-    top = render_document_top(request, doc, "document", name)
+    top = render_document_top(request, doc, "status", name)
 
 
     telechat = doc.latest_event(TelechatDocEvent, type="scheduled_for_telechat")
@@ -597,8 +601,38 @@ def document_main(request, name, rev=None):
                            other_reviews=other_reviews,
                       ))
 
-    raise Http404
+    raise Http404("Document not found: %s" % (name + ("-%s"%rev if rev else "")))
 
+
+def document_html(request, name, rev=None):
+    if name.startswith('rfc0'):
+        name = "rfc" + name[3:].lstrip('0')
+    if name.startswith('review-') and re.search('-\d\d\d\d-\d\d$', name):
+        name = "%s-%s" % (name, rev)
+    docs = Document.objects.filter(docalias__name=name)
+    if not docs.exists():
+        # handle some special cases, like draft-ietf-tsvwg-ieee-802-11
+        name = '%s-%s' % (name, rev)
+        rev=None
+        docs = Document.objects.filter(docalias__name=name)
+    doc = docs.get()
+
+    if not os.path.exists(doc.get_file_name()):
+        raise Http404("Document not found: %s" % doc.get_base_name())
+
+    top = render_document_top(request, doc, "document", name)
+    if not rev and not name.startswith('rfc'):
+        rev = doc.rev
+    if rev:
+        docs = DocHistory.objects.filter(doc=doc, rev=rev)
+        if docs.exists():
+            doc = docs.first()
+        else:
+            doc = doc.fake_history_obj(rev)
+    if doc.type_id in ['draft',]:
+        doc.meta = build_doc_meta_block(doc, settings.HTMLIZER_URL_PREFIX)
+
+    return render(request, "doc/document_html.html", {"doc":doc, "top":top, "navbar_mode":"navbar-static-top",  })
 
 def check_doc_email_aliases():
     pattern = re.compile('^expand-(.*?)(\..*?)?@.*? +(.*)$')

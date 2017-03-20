@@ -59,13 +59,14 @@ urlpatterns = [
     url(r'^stats/newrevisiondocevent/data/?$', views_stats.chart_data_newrevisiondocevent),
     url(r'^stats/person/(?P<id>[0-9]+)/drafts/conf/?$', views_stats.chart_conf_person_drafts),
     url(r'^stats/person/(?P<id>[0-9]+)/drafts/data/?$', views_stats.chart_data_person_drafts),
+    url(r'^html/%(name)s(?:-%(rev)s)?(\.txt|\.html)?$' % settings.URL_REGEXPS, views_doc.document_html),
 
     url(r'^all/$', views_search.index_all_drafts),
     url(r'^active/$', views_search.index_active_drafts),
     url(r'^select2search/(?P<model_name>(document|docalias))/(?P<doc_type>draft)/$', views_search.ajax_select2_search_docs),
 
-    url(r'^%(name)s/(?:%(rev)s/)?$' % settings.URL_REGEXPS, views_doc.document_main),
-    url(r'^%(name)s/(?:%(rev)s/)?bibtex/$' % settings.URL_REGEXPS, views_doc.document_bibtex),
+    url(r'^%(name)s(?:/%(rev)s)?/$' % settings.URL_REGEXPS, views_doc.document_main),
+    url(r'^%(name)s(?:/%(rev)s)?/bibtex/$' % settings.URL_REGEXPS, views_doc.document_bibtex),
     url(r'^%(name)s/history/$' % settings.URL_REGEXPS, views_doc.document_history),
     url(r'^%(name)s/writeup/$' % settings.URL_REGEXPS, views_doc.document_writeup),
     url(r'^%(name)s/email/$' % settings.URL_REGEXPS, views_doc.document_email),

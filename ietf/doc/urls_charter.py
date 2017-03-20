@@ -1,7 +1,5 @@
 # Copyright The IETF Trust 2011, All Rights Reserved
 
-from django.conf import settings
-
 from ietf.doc import views_charter, views_doc
 from ietf.utils.urls import url
 
@@ -17,5 +15,5 @@ urlpatterns = [
     url(r'^ballotwriteupnotes/$', views_charter.ballot_writeupnotes),
     url(r'^approve/$', views_charter.approve),
     url(r'^submit/(?:(?P<option>initcharter|recharter)/)?$', views_charter.submit),
-    url(r'^withmilestones-%(rev)s.txt$' % settings.URL_REGEXPS, views_charter.charter_with_milestones_txt),
+    url(r'^withmilestones-(?P<rev>[0-9-]{2,5}).txt$', views_charter.charter_with_milestones_txt),
 ]

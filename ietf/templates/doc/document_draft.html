@@ -3,6 +3,7 @@
 {% load origin %}
 {% load staticfiles %}
 {% load ietf_filters %}
+{% load cache %}
 
 {% block pagehead %}
   <link rel="alternate" type="application/atom+xml" title="Document changes" href="/feed/document-changes/{{ name }}/">
@@ -547,10 +548,24 @@
   </div>
 
   {% if doc.get_state_slug == "active" or doc.get_state_slug == "rfc" %}
-    {{ content|safe }}
 
     {% if split_content %}
+      {{ content|safe }}
       <a class="btn btn-default btn-block" href="?include_text=1"><span class="fa fa-caret-down"></span> Show full document text</a>
+    {% else %}
+    <div class="col-md-12">
+      <div class="col-md-2"></div>
+      <div class="col-md-8 rfcmarkup">
+      {% with 1209600 as two_weeks %}
+	{% cache two_weeks htmlized doc.name doc.rev using="htmlized" %}
+	  <div>
+	  {{ doc.htmlized|default:"Generation of htmlized text failed"|safe }}
+	  </div>
+	{% endcache %}
+      {% endwith %}
+      </div>
+      <div class="col-md-2"></div>
+    </div>
     {% endif %}
 
   {% else %}
@@ -559,7 +574,8 @@
       <div class="panel-heading">
 	 This Internet-Draft is no longer active. A copy of
 	 the expired Internet-Draft can be found at<br/>
-          <a href="{{doc.href}}">{{doc.href}}</a>
+	 {% url 'ietf.doc.views_doc.document_html' name=doc.name rev=doc.rev as html_url %}
+	 <a href="{{ html_url }}">{{ html_url }}</a>
       </div>
       <div class="panel-body">
         <p>

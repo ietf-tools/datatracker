@@ -197,7 +197,7 @@ def rfclink(string):
     URL for that RFC.
     """
     string = str(string);
-    return "https://tools.ietf.org/html/rfc" + string;
+    return "/doc/html/rfc" + string;
 
 @register.filter(name='urlize_ietf_docs', is_safe=True, needs_autoescape=True)
 def urlize_ietf_docs(string, autoescape=None):

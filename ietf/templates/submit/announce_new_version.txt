@@ -12,7 +12,7 @@ Diff from previous version:
 {{rfcdiff_base_url}}?url2={{ submission.name }}-{{ submission.rev }}
 
 Please note that it may take a couple of minutes from the time of submission
-until the htmlized version and diff are available at tools.ietf.org.
+until the diff is available at tools.ietf.org.
 
 IETF Secretariat.
 {% endautoescape %}

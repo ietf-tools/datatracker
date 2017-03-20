@@ -430,6 +430,8 @@ def ensure_person_email_info_exists(name, email):
             email.active = active
 
         email.person = person
+        if email.time is None:
+            email.time = datetime.datetime.now()
         email.save()
 
     return email

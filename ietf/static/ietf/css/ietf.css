@@ -6,7 +6,7 @@
  */
 
 /* Passing for static navbar; see http://getbootstrap.com/components/#navbar-fixed-top */
-body { padding-top: 70px; }
+body { padding-top: 72px; }
 
 /* Browse Happy prompt */
 .browsehappy {
@@ -101,7 +101,12 @@ body { padding-top: 70px; }
 h2.anchor-target:before,
 h3.anchor-target:before,
 h4.anchor-target:before,
+.h1.anchor-target:before,
+.h2.anchor-target:before,
+.h3.anchor-target:before,
+.h4.anchor-target:before,
 tr th.anchor-target:before,
+span.anchor-target:before,
 div.anchor-target:before {
   content: '';
   display: block;
@@ -110,7 +115,10 @@ div.anchor-target:before {
   height: 65px;
   margin-top: -65px;
 }
-div.anchor-target { z-index: 0; }
+div.anchor-target {
+  z-index: 0;
+  height: 0px;
+}
 
 /* Make the panel title font normally large */
 .panel-title { font-size: 14px }
@@ -715,3 +723,107 @@ blockquote {
   padding-top: 4px;
   padding-right: 4px;
 } 
+
+
+.symbol-link,
+.symbol-link a:link,
+.symbol-link a:visited {
+  padding-right: 0.5em;
+}
+
+
+.rfcmarkup div {
+  margin-top: 1em;
+}
+.rfcmarkup pre {
+	font-size: 10.5pt;
+	margin-right: 0;
+	margin-left: 0;
+	border: 0;
+	margin: 0;
+	padding: 0;
+	padding-bottom: 1em;
+	background-color: white;
+	line-height: 1.12;
+}
+
+.rfcmarkup pre span.h1,
+.rfcmarkup pre span.h2,
+.rfcmarkup pre span.h3,
+.rfcmarkup pre span.h4,
+.rfcmarkup pre span.h5,
+.rfcmarkup pre span.h6 {
+	font-weight: bold;
+	line-height: 0pt;
+	display: inline;
+	white-space: pre;
+	font-family: monospace;
+	font-size: 1em;
+	font-weight: bold;
+
+}
+.rfcmarkup pre span.invisible {
+	text-decoration: none;
+	color: white;
+}
+
+.rfcmarkup pre a { text-decoration: underline; }
+
+.rfcmarkup pre .grey,
+.rfcmarkup pre .grey a:link,
+.rfcmarkup pre .grey a:visited {
+	color: #777;
+}
+
+.rfcmarkup pre.meta-info {
+  padding: 0.5em;
+  margin-left: -0.5em;
+  margin-bottom: 0.5em;
+  background-color: #f8f8f8;
+  border: 1px solid #e0e0e0;
+  width: 89ex;
+}
+
+.rfcmarkup hr {
+	margin: 0;
+	width: 80ex;
+}
+
+.rfcmarkup .text-warning,
+.rfcmarkup a.text-warning,
+.rfcmarkup a.text-warning:focus,
+.rfcmarkup a.text-warning:active,
+.rfcmarkup a.text-warning:visited,
+.rfcmarkup a.text-warning:hover
+{
+  color: #d9534f;			/* brand-danger colour */
+}
+
+@media print {
+  .rfcmarkup .noprint { display: none; }
+  .rfcmarkup a,
+  .rfcmarkup a:visited,
+  .rfcmarkup pre a,
+  .rfcmarkup pre a:visited {
+    text-decoration: none;
+  }
+  .rfcmarkup a[href]:after {
+    content: "";
+  }
+  .rfcmarkup abbr[title]:after {
+    content: "";
+  }
+  .rfcmarkup pre {
+    font-size: 10pt;
+
+    margin-top: 0;
+    margin-bottom: 0;
+    margin-left: auto;
+    margin-right: auto;
+    
+
+  }
+  .rfcmarkup .newpage {
+    page-break-before: always;
+  }
+}
