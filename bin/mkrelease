@@ -170,6 +170,22 @@ DEV="$(printf %d.%d.%d.dev0 $MAJOR $MINOR $NEXT)"
 
 #cd $DIR ??
 
+note "Checking that changelog information is available ..."
+changes=$( sed -n "/^$PROJ ($VER.*)/,/^ -- /p" changelog )
+[ "$changes" ] || die "No changelog information for $VER found"
+#note "$changes"
+
+note "Checking that we don't have both schema and data migrations"
+cur=$(svn info | awk '/^Revision:/ { print $2 }')
+migrations=$(svn log $PWD -v -r HEAD:$((cur-100)) | sed -n -e '1,/^Set version info and settings back to development mode/p' | grep '^...A /.*/migrations/0.*.py' | cut -c6- | awk '{ print $1 }' | sed -re 's|/trunk/||')
+if [ -n "$migrations" ]; then
+    datamigr=$(for m in "$migrations"; do egrep -sl 'migrations\.RunPython' $m; done || true)
+    schemamigr=$(for m in "$migrations"; do egrep -sl 'migrations\.(Add|Alter|Create|Delete|Remove|Rename)(Field|Model|UniqueTogether)' $m; done || true)
+    if [ -n "$datamigr" -a -n "$schemamigr" ]; then
+	die "\n   Found both data migrations and schema migrations in this release.\n   This is likely to cause delay between schema changes and deployment,\n   which means the old code will run on the new schema longer than necessary."
+    fi
+fi
+
 note "Updating bower assets ..."
 $do ietf/manage.py bower_install > .mkrelease-bower-install.log
 $do rm .mkrelease-bower-install.log	# This happens at once unless the previous command returns error
@@ -188,11 +204,6 @@ $do svn commit static/lib/ -m "Updated static files under static/lib/"
 # touch -d $RDATE .svn/.latest-commit
 # TCLOG=$(ls -t ../test-crawl-*.log | head -n 1)
 # [ $TCLOG -nt .svn/.latest-commit ] || die "Looked for ../test-crawl-*.log, but didn't find one newer than the latest repository commit ($RDATE)"
-
-note "Checking that changelog information is available ..."
-changes=$( sed -n "/^$PROJ ($VER.*)/,/^ -- /p" changelog )
-[ "$changes" ] || die "No changelog information for $VER found"
-#note "$changes"
 
 note "Upgrading the python library modules before checking migrations and running tests ..."
 pip install --upgrade -r requirements.txt
