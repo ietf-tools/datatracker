@@ -427,7 +427,12 @@ class DocumentInfo(models.Model):
         return text
 
     def htmlized(self):
+        name = self.get_base_name()
         text = self.text()
+        if name.endswith('.html'):
+            return text
+        if not name.endswith('.txt'):
+            return None
         html = None
         if text:
             # The path here has to match the urlpattern for htmlized documents
