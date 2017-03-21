@@ -100,7 +100,7 @@ class DocumentInfo(models.Model):
         if not hasattr(self, '_cached_file_path'):
             if self.type_id == "draft":
                 if self.is_dochistory():
-                    self._cached_file_path = settings.INTERNET_DRAFT_PATH
+                    self._cached_file_path = settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR
                 else:
                     if self.get_state_slug() == "rfc":
                         self._cached_file_path = settings.RFC_PATH
