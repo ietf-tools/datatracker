@@ -1,3 +1,24 @@
+ietfdb (6.48.0) ietf; urgency=medium
+
+  **HTMLized drafts and RFCs**
+
+  This introduces improved htmlization of drafts and RFCs in the datatracker,
+  using the code originally developed for tools.ietf.org.  This initial
+  changeset does not update all internal links to point at the htmlized
+  document instead of at the document meta-information tab; it is expected
+  that further work will change some, but certainly not all, of the internal
+  document links to do so.
+
+  Document search-result lines (and lines in document lists which use the same
+  format) now link to the document meta-information tab using a circled 'i'
+  information symbol, while the text link points at the htmlized text.  This
+  may also change, pending feedback from users.
+
+  Here's the changeset: https://tools.ietf.org/tools/ietfdb/changeset/13041
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  21 Mar 2017 13:02:37 +0000
+
+
 ietfdb (6.47.2) ietf; urgency=medium
 
   This is a patch release with bug fixes related to ballot grids and
