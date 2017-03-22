@@ -1,3 +1,36 @@
+ietfdb (6.48.1) ietf; urgency=medium
+
+  This is a small patch release to catch up with patches for 6.48.0 before
+  generating the IETF-98 sprint participant branches.
+
+  * Added better handling of missing documents (such as rfc575, which was
+    never issued, but is still requested.)
+
+  * Improved Document.get_file_path() to return even more correct draft
+    paths.
+
+  * Changed some test assertions so they provide more information on failure.
+
+  * Tweaked the 'rev' pattern, and added handling of revision number format
+    exceptios when breaking apart name and rev for documents which don't use
+    the charter rev model.
+
+  * Tweaks to docker/copydb.
+
+  * On request, reverted the document rendering on the document status page 
+    to the old look.
+
+  * Changed where to look for the text version of drafts, to always look in
+    the comprehensive ID archive
+
+  * Reverted a bad css change from the rfcmarkup work.
+
+  * Made Document.htmlized() be a bit smarter about handling documents 
+    which have not been provided in .txt format.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  22 Mar 2017 12:37:06 +0000
+
+
 ietfdb (6.48.0) ietf; urgency=medium
 
   **HTMLized drafts and RFCs**
