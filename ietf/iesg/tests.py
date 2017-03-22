@@ -398,9 +398,9 @@ class IESGAgendaTests(TestCase):
 
         tar = tarfile.open(None, fileobj=StringIO.StringIO(r.content))
         names = tar.getnames()
-        self.assertTrue(d1_filename in names)
-        self.assertTrue(d2_filename not in names)
-        self.assertTrue("manifest.txt" in names)
+        self.assertIn(d1_filename, names)
+        self.assertNotIn(d2_filename, names)
+        self.assertIn("manifest.txt", names)
 
         f = tar.extractfile(d1_filename)
         self.assertEqual(f.read(), "test content")
