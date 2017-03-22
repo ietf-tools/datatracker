@@ -613,13 +613,17 @@ def document_html(request, name, rev=None):
         name = "%s-%s" % (name, rev[:-3])
         rev = rev[-2:]
     docs = Document.objects.filter(docalias__name=name)
-    if not docs.exists():
+    if rev and not docs.exists():
         # handle some special cases, like draft-ietf-tsvwg-ieee-802-11
         name = '%s-%s' % (name, rev)
         rev=None
         docs = Document.objects.filter(docalias__name=name)
-    doc = docs.get()
+    if not docs.exists():
+        raise Http404("Document not found: %s" % name)
+    if docs.count() > 1:
+        raise Http404("Multiple documents matched: %s" % name)
 
+    doc = docs.get()
     if not os.path.exists(doc.get_file_name()):
         raise Http404("Document not found: %s" % doc.get_base_name())
 
