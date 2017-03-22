@@ -105,7 +105,7 @@ class DocumentInfo(models.Model):
                     if self.get_state_slug() == "rfc":
                         self._cached_file_path = settings.RFC_PATH
                     else:
-                        self._cached_file_path = settings.INTERNET_DRAFT_PATH
+                        self._cached_file_path = settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR
             elif self.type_id in ("agenda", "minutes", "slides", "bluesheets") and self.meeting_related():
                 doc = self.doc if isinstance(self, DocHistory) else self
                 if doc.session_set.exists():
