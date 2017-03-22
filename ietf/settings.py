@@ -531,7 +531,7 @@ URL_REGEXPS = {
     "charter": r"(?P<name>charter-[-a-z0-9]+)",
     "date": r"(?P<date>\d{4}-\d{2}-\d{2})",
     "name": r"(?P<name>([A-Za-z0-9_+-]+?|%s))" % DRAFT_NAMES_WITH_DOT,
-    "rev": r"(?P<rev>[0-9-]{2})",
+    "rev": r"(?P<rev>[0-9]{1,2}(-[0-9]{2})?)",
     "owner": r"(?P<owner>[-A-Za-z0-9\'+._]+@[A-Za-z0-9-._]+)",
     "schedule_name": r"(?P<name>[A-Za-z0-9-:_]+)",
 }

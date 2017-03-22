@@ -609,6 +609,9 @@ def document_html(request, name, rev=None):
         name = "rfc" + name[3:].lstrip('0')
     if name.startswith('review-') and re.search('-\d\d\d\d-\d\d$', name):
         name = "%s-%s" % (name, rev)
+    if rev and not name.startswith('charter-') and re.search('[0-9]{1,2}-[0-9]{2}', rev):
+        name = "%s-%s" % (name, rev[:-3])
+        rev = rev[-2:]
     docs = Document.objects.filter(docalias__name=name)
     if not docs.exists():
         # handle some special cases, like draft-ietf-tsvwg-ieee-802-11
