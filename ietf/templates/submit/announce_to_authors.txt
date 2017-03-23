@@ -11,6 +11,7 @@ Group:		{{ group }}
 Pages:		{{ submission.pages }}
 URL:            https://www.ietf.org/internet-drafts/{{ submission.name }}-{{ submission.rev }}.txt
 Status:         https://datatracker.ietf.org/doc/{{ submission.name }}/
+Htmlized:       https://tools.ietf.org/html/{{ submission.name }}-{{ submission.rev }}
 Htmlized:       https://datatracker.ietf.org/doc/html/{{ submission.name }}-{{ submission.rev }}
 {% if submission.rev != "00" %}Diff:           {{rfcdiff_base_url}}?url2={{ submission.name }}-{{ submission.rev }}{% endif %}
 
@@ -20,7 +21,7 @@ Abstract:
 {{ submission.note|default:"" }}
 
 Please note that it may take a couple of minutes from the time of submission
-until the diff is available at tools.ietf.org.
+until the htmlized version and diff are available at tools.ietf.org.
 
 The IETF Secretariat
 {% endautoescape %}
