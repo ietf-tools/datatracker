@@ -99,14 +99,16 @@ class DocumentInfo(models.Model):
     def get_file_path(self):
         if not hasattr(self, '_cached_file_path'):
             if self.type_id == "draft":
-                if self.get_state_slug() == "rfc":
-                    self._cached_file_path = settings.RFC_PATH
+                if self.is_dochistory():
+                    self._cached_file_path = settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR
                 else:
-                    state = self.get_state('draft')
-                    if not state or state.slug == 'active':
-                        self._cached_file_path = settings.INTERNET_DRAFT_PATH
+                    if self.get_state_slug() == "rfc":
+                        self._cached_file_path = settings.RFC_PATH
                     else:
-                        self._cached_file_path = settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR
+                        if self.get_state('draft').slug == 'active':
+                            self._cached_file_path = settings.INTERNET_DRAFT_PATH
+                        else:
+                            self._cached_file_path = settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR
             elif self.type_id in ("agenda", "minutes", "slides", "bluesheets") and self.meeting_related():
                 doc = self.doc if isinstance(self, DocHistory) else self
                 if doc.session_set.exists():
