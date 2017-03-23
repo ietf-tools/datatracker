@@ -38,12 +38,12 @@ SERVER_MODE = 'development'
 IETF_DOMAIN = 'ietf.org'
 
 ADMINS = (
-    ('IETF Django Developers', 'django-project@' + IETF_DOMAIN),
-    ('GMail Tracker Archive', 'ietf.tracker.archive+errors@gmail.com'),
     ('Henrik Levkowetz', 'henrik@levkowetz.com'),
     ('Robert Sparks', 'rjsparks@nostrum.com'),
     ('Ole Laursen', 'olau@iola.dk'),
     ('Ryan Cross', 'rcross@amsl.com'),
+    ('Glen Barney', 'glen@amsl.com'),
+    ('Matt Larson', 'mlarson@amsl.com'),
 )
 
 PASSWORD_HASHERS = [
@@ -54,7 +54,7 @@ PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.CryptPasswordHasher',
 ]
 
-ALLOWED_HOSTS = [".ietf.org", ".ietf.org.", "209.208.19.216", "4.31.198.44", ]
+ALLOWED_HOSTS = [".ietf.org", ".ietf.org.", "209.208.19.216", "4.31.198.44", "127.0.0.1", "localhost:8000", ]
 
 
 # Server name of the tools server
