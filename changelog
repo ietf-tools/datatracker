@@ -1,3 +1,20 @@
+ietfdb (6.48.2) ietf; urgency=medium
+
+  Another small patch release to fix internal issues and annoyances
+  users have expressed with some changes from 6.48.0:
+
+  * Reverted some links to htmlized draft versions, on request.
+
+  * Added an ALLOWED_HOSTS setting to settings_testcrawl.
+
+  * Removed list emails from the ADMINS setting, and added localhost to 
+    ALLOWED_HOSTS.
+
+  * Another fix for get_file_path().
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  23 Mar 2017 04:01:01 -0700
+
+
 ietfdb (6.48.1) ietf; urgency=medium
 
   This is a small patch release to catch up with patches for 6.48.0 before
