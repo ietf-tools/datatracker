@@ -420,7 +420,8 @@ class DocumentInfo(models.Model):
             with open(path, 'rb') as file:
                 raw = file.read()
         except IOError as e:
-            logger.error("IOError for %s: %s", path, e, exc_info=e)
+            import sys
+            logger.error("IOError for %s: %s", path, e, exc_info=sys.exc_info())
             return None
         try:
             text = raw.decode('utf-8')
