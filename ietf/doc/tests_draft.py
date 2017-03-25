@@ -154,7 +154,7 @@ class ChangeStateTests(TestCase):
         self.assertTrue("rfc-editor@" in outbox[-1]['To'])
         self.assertTrue("iana@" in outbox[-1]['To'])
 
-        self.assertTrue("ID Tracker State Update Notice:" in outbox[-2]['Subject'])
+        self.assertTrue("Datatracker State Update Notice:" in outbox[-2]['Subject'])
         self.assertTrue("aread@" in outbox[-2]['To'])
         
 
@@ -224,7 +224,7 @@ class ChangeStateTests(TestCase):
         # mail notice
         self.assertEqual(len(outbox), 2) 
 
-        self.assertTrue("ID Tracker State Update" in outbox[0]['Subject'])
+        self.assertTrue("Datatracker State Update" in outbox[0]['Subject'])
         self.assertTrue("aread@" in outbox[0]['To'])
 
         self.assertTrue("Last Call:" in outbox[1]['Subject'])

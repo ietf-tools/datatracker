@@ -18,7 +18,7 @@ def announcement_from_form(data, **kwargs):
     '''
     # possible overrides
     by = kwargs.get('by',Person.objects.get(name='(System)'))
-    from_val = kwargs.get('from_val','ID Tracker <internet-drafts-reply@ietf.org>')
+    from_val = kwargs.get('from_val','Datatracker <internet-drafts-reply@ietf.org>')
     content_type = kwargs.get('content_type','')
     
     # from the form

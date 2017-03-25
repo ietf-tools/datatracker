@@ -134,7 +134,7 @@ class EditCharterTests(TestCase):
             self.assertIn("State Update Notice", outbox[-1]['Subject'])
             self.assertIn("ames-chairs@", outbox[-1]['To'])
             body = outbox[-1].get_payload()
-            for word in ["State changed", "ID Tracker URL", ]:
+            for word in ["State changed", "Datatracker URL", ]:
                 self.assertIn(word, body)
 
         by = Person.objects.get(user__username="secretary")

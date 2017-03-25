@@ -23,7 +23,7 @@ def email_state_changed(request, doc, text, mailtrigger_id=None):
     
     text = strip_tags(text)
     send_mail(request, to, None,
-              "ID Tracker State Update Notice: %s" % doc.file_tag(),
+              "Datatracker State Update Notice: %s" % doc.file_tag(),
               "doc/mail/state_changed_email.txt",
               dict(text=text,
                    url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()),
