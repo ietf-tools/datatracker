@@ -82,6 +82,11 @@ for n,a in api._api_list:
         url(r'^api/v1/', include(a.urls)),
     ]
 
+# Custom API endpoints
+urlpatterns += [
+    url(r'^api/notify/v1/meeting/', include('ietf.meeting.api_urls')),
+]
+
 # This is needed to serve files during testing
 if settings.SERVER_MODE in ('development', 'test'):
     save_debug = settings.DEBUG
