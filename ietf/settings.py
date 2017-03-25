@@ -614,7 +614,7 @@ HTMLIZER_VERSION = 1
 HTMLIZER_URL_PREFIX = "/doc/html"
 
 IPR_EMAIL_FROM = 'ietf-ipr@ietf.org'
-AUDIO_IMPORT_EMAIL = ['agenda@ietf.org']
+AUDIO_IMPORT_EMAIL = ['agenda@ietf.org','ietf@meetecho.com']
 IANA_EVAL_EMAIL = "drafts-eval@icann.org"
 
 # Put real password in settings_local.py
