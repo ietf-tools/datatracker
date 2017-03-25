@@ -2,7 +2,7 @@ import datetime
 import json
 from urlparse import urlsplit
 
-from django.core.urlresolvers import reverse as urlreverse
+from django.urls import reverse as urlreverse
 
 import debug                            # pyflakes:ignore
 

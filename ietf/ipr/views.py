@@ -5,7 +5,7 @@ import itertools
 
 from django.conf import settings
 from django.contrib import messages
-from django.core.urlresolvers import reverse as urlreverse
+from django.urls import reverse as urlreverse
 from django.db.models import Q
 from django.forms.models import inlineformset_factory
 from django.forms.formsets import formset_factory

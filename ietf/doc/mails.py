@@ -6,7 +6,7 @@ import textwrap, datetime
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from django.conf import settings
-from django.core.urlresolvers import reverse as urlreverse
+from django.urls import reverse as urlreverse
 
 from ietf.utils.mail import send_mail, send_mail_text
 from ietf.ipr.utils import iprs_from_docs, related_docs

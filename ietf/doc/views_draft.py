@@ -222,7 +222,7 @@ def change_stream(request, name):
         raise Http404
 
     if not (has_role(request.user, ("Area Director", "Secretariat")) or
-            (request.user.is_authenticated() and
+            (request.user.is_authenticated and
              Role.objects.filter(name="chair",
                                  group__acronym__in=StreamName.objects.values_list("slug", flat=True),
                                  person__user=request.user))):

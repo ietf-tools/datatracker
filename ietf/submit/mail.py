@@ -6,7 +6,7 @@ import os
 import pyzmail
 
 from django.conf import settings
-from django.core.urlresolvers import reverse as urlreverse
+from django.urls import reverse as urlreverse
 from django.core.validators import ValidationError
 from django.contrib.sites.models import Site
 from django.template.loader import render_to_string
@@ -97,7 +97,7 @@ def send_manual_post_request(request, submission, errors):
 def announce_to_lists(request, submission):
     m = Message()
     m.by = Person.objects.get(name="(System)")
-    if request.user.is_authenticated():
+    if request.user.is_authenticated:
         try:
             m.by = request.user.person
         except Person.DoesNotExist:

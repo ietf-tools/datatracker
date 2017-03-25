@@ -56,7 +56,7 @@ from django.template import TemplateDoesNotExist
 from django.template.loaders.base import Loader as BaseLoader
 from django.test.runner import DiscoverRunner
 from django.core.management import call_command
-from django.core.urlresolvers import RegexURLResolver
+from django.urls import RegexURLResolver
 
 import debug                            # pyflakes:ignore
 debug.debug = True

@@ -7,7 +7,7 @@ import debug                            # pyflakes:ignore
 
 from django.conf import settings
 from django.contrib import messages
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.db.models import Max
 from django.http import HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404, redirect

@@ -9,7 +9,7 @@ from django.http import HttpRequest, Http404
 from django.db.models import Max, Q, Prefetch, F
 from django.conf import settings
 from django.core.cache import cache
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.utils.cache import get_cache_key
 from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string

@@ -10,7 +10,7 @@ import StringIO
 from django.db import IntegrityError
 from django.db.models import Max
 from django.conf import settings
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.core.files import File
 from django.contrib.auth.models import User
 

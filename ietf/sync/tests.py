@@ -6,7 +6,7 @@ import StringIO
 import shutil
 
 from django.conf import settings
-from django.core.urlresolvers import reverse as urlreverse
+from django.urls import reverse as urlreverse
 
 from ietf.doc.models import Document, DocAlias, DocEvent, DeletedEvent, DocTagName, RelatedDocument, State, StateDocEvent
 from ietf.doc.utils import add_state_change_event

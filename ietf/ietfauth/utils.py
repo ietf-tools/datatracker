@@ -14,7 +14,7 @@ from ietf.person.models import Person
 
 def user_is_person(user, person):
     """Test whether user is associated with person."""
-    if not user.is_authenticated() or not person:
+    if not user.is_authenticated or not person:
         return False
 
     if person.user_id == None:
@@ -29,7 +29,7 @@ def has_role(user, role_names, *args, **kwargs):
     if isinstance(role_names, str) or isinstance(role_names, unicode):
         role_names = [ role_names ]
     
-    if not user or not user.is_authenticated():
+    if not user or not user.is_authenticated:
         return False
 
     # use cache to avoid checking the same permissions again and again
@@ -93,7 +93,7 @@ def passes_test_decorator(test_func, message):
     def decorate(view_func):
         @wraps(view_func, assigned=available_attrs(view_func))
         def inner(request, *args, **kwargs):
-            if not request.user.is_authenticated():
+            if not request.user.is_authenticated:
                 return HttpResponseRedirect('%s?%s=%s' % (settings.LOGIN_URL, REDIRECT_FIELD_NAME, urlquote(request.get_full_path())))
             elif test_func(request.user, *args, **kwargs):
                 return view_func(request, *args, **kwargs)
@@ -117,7 +117,7 @@ def is_authorized_in_doc_stream(user, doc):
     if has_role(user, ["Secretariat"]):
         return True
 
-    if not user.is_authenticated():
+    if not user.is_authenticated:
         return False
 
     # must be authorized in the stream or group

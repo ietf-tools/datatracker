@@ -4,7 +4,7 @@ from unittest import skipIf
 from pyquery import PyQuery
 
 from django.conf import settings
-from django.core.urlresolvers import reverse as urlreverse
+from django.urls import reverse as urlreverse
 from django.db.models import Q
 from django.test import Client
 

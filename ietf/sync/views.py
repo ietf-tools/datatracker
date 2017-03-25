@@ -49,7 +49,7 @@ def notify(request, org, notification):
         if settings.SERVER_MODE == "production" and not request.is_secure():
             return HttpResponseForbidden("You must use HTTPS when sending username/password")
 
-        if not user.is_authenticated():
+        if not user.is_authenticated:
             try:
                 user = User.objects.get(username=username)
             except User.DoesNotExist:

@@ -3,7 +3,7 @@ from collections import defaultdict
 
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404
-from django.core.urlresolvers import reverse as urlreverse
+from django.urls import reverse as urlreverse
 from django.utils.html import escape
 from django.views.decorators.cache import cache_page, cache_control
 

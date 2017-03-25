@@ -4,7 +4,7 @@ import re
 import unicodedata
 import textwrap
 
-from django.utils.functional import allow_lazy
+from django.utils.functional import keep_lazy
 from django.utils import six
 from django.utils.safestring import mark_safe
 
@@ -18,7 +18,7 @@ def xslugify(value):
     value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore').decode('ascii')
     value = re.sub('[^\w\s/-]', '', value).strip().lower()
     return mark_safe(re.sub('[-\s/]+', '-', value))
-xslugify = allow_lazy(xslugify, six.text_type)
+xslugify = keep_lazy(xslugify, six.text_type)
 
 def strip_prefix(text, prefix):
     if text.startswith(prefix):

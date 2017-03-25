@@ -7,7 +7,7 @@ import os
 from django.db import models
 from django.core import checks
 from django.core.exceptions import ValidationError
-from django.core.urlresolvers import reverse as urlreverse
+from django.urls import reverse as urlreverse
 from django.core.validators import URLValidator
 from django.contrib.contenttypes.models import ContentType
 from django.conf import settings

@@ -108,7 +108,7 @@ def validate_submission_document_date(submission_date, document_date):
 
 def create_submission_event(request, submission, desc):
     by = None
-    if request and request.user.is_authenticated():
+    if request and request.user.is_authenticated:
         try:
             by = request.user.person
         except Person.DoesNotExist:
@@ -324,7 +324,7 @@ def update_replaces_from_submission(request, submission, draft):
 
     is_secretariat = has_role(request.user, "Secretariat")
     is_chair_of = []
-    if request.user.is_authenticated():
+    if request.user.is_authenticated:
         is_chair_of = list(Group.objects.filter(role__person__user=request.user, role__name="chair"))
 
     replaces = DocAlias.objects.filter(name__in=submission.replaces.split(",")).select_related("document", "document__group")
@@ -355,7 +355,7 @@ def update_replaces_from_submission(request, submission, draft):
 
 
     try:
-        by = request.user.person if request.user.is_authenticated() else Person.objects.get(name="(System)")
+        by = request.user.person if request.user.is_authenticated else Person.objects.get(name="(System)")
     except Person.DoesNotExist:
         by = Person.objects.get(name="(System)")
     set_replaces_for_document(request, draft, existing_replaces + approved, by,
@@ -487,7 +487,7 @@ def remove_submission_files(submission):
             os.unlink(source)
 
 def approvable_submissions_for_user(user):
-    if not user.is_authenticated():
+    if not user.is_authenticated:
         return []
 
     res = Submission.objects.filter(state="grp-appr").order_by('-submission_date')
@@ -498,7 +498,7 @@ def approvable_submissions_for_user(user):
     return res.filter(group__role__name="chair", group__role__person__user=user)
 
 def preapprovals_for_user(user):
-    if not user.is_authenticated():
+    if not user.is_authenticated:
         return []
 
     posted = Submission.objects.distinct().filter(state="posted").values_list('name', flat=True)
@@ -513,7 +513,7 @@ def preapprovals_for_user(user):
     return res
 
 def recently_approved_by_user(user, since):
-    if not user.is_authenticated():
+    if not user.is_authenticated:
         return []
 
     res = Submission.objects.distinct().filter(state="posted", submission_date__gte=since, rev="00").order_by('-submission_date')

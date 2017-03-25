@@ -6,7 +6,7 @@ import xml2rfc
 
 from django.conf import settings
 from django.contrib import messages
-from django.core.urlresolvers import reverse as urlreverse
+from django.urls import reverse as urlreverse
 from django.core.validators import validate_email, ValidationError
 from django.http import HttpResponseRedirect, Http404, HttpResponseForbidden, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render

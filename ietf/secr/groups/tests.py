@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from ietf.utils.test_utils import TestCase
 from ietf.group.models import Group
 from ietf.person.models import Person

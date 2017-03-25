@@ -37,7 +37,7 @@ import os, datetime, urllib, json, glob, re
 from django.http import HttpResponse, Http404 , HttpResponseForbidden
 from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
-from django.core.urlresolvers import reverse as urlreverse
+from django.urls import reverse as urlreverse
 from django.conf import settings
 from django import forms
 
@@ -162,7 +162,7 @@ def document_main(request, name, rev=None):
         can_edit = has_role(request.user, ("Area Director", "Secretariat"))
         stream_slugs = StreamName.objects.values_list("slug", flat=True)
         can_change_stream = bool(can_edit or (
-                request.user.is_authenticated() and
+                request.user.is_authenticated and
                 Role.objects.filter(name__in=("chair", "secr", "auth", "delegate"),
                                     group__acronym__in=stream_slugs,
                                     person__user=request.user)))
@@ -735,7 +735,7 @@ def document_history(request, name):
     # figure out if the current user can add a comment to the history
     if doc.type_id == "draft" and doc.group != None:
         can_add_comment = bool(has_role(request.user, ("Area Director", "Secretariat", "IRTF Chair", "IANA", "RFC Editor")) or (
-            request.user.is_authenticated() and
+            request.user.is_authenticated and
             Role.objects.filter(name__in=("chair", "secr"),
                 group__acronym=doc.group.acronym,
                 person__user=request.user)))
@@ -1023,7 +1023,7 @@ def add_comment(request, name):
 
     if doc.type_id == "draft" and doc.group != None:
         can_add_comment = bool(has_role(request.user, ("Area Director", "Secretariat", "IRTF Chair", "IANA", "RFC Editor")) or (
-            request.user.is_authenticated() and
+            request.user.is_authenticated and
             Role.objects.filter(name__in=("chair", "secr"),
                 group__acronym=doc.group.acronym,
                 person__user=request.user)))
@@ -1150,7 +1150,7 @@ def email_aliases(request,name=''):
     if not name:
         # require login for the overview page, but not for the
         # document-specific pages 
-        if not request.user.is_authenticated():
+        if not request.user.is_authenticated:
                 return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
     aliases = get_doc_email_aliases(name)
 

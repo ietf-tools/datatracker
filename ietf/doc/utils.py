@@ -10,7 +10,7 @@ from collections import defaultdict
 from django.conf import settings
 from django.forms import ValidationError
 from django.utils.html import escape
-from django.core.urlresolvers import reverse as urlreverse
+from django.urls import reverse as urlreverse
 
 import debug                            # pyflakes:ignore
 
@@ -95,7 +95,7 @@ def get_tags_for_stream_id(stream_id):
         return []
 
 def can_adopt_draft(user, doc):
-    if not user.is_authenticated():
+    if not user.is_authenticated:
         return False
 
     if has_role(user, "Secretariat"):

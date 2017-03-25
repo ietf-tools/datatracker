@@ -52,7 +52,7 @@ class GroupInfo(models.Model):
 
     def about_url(self):
         # bridge gap between group-type prefixed URLs and /group/ ones
-        from django.core.urlresolvers import reverse as urlreverse
+        from django.urls import reverse as urlreverse
         kwargs = { 'acronym': self.acronym }
         if self.type_id in ("wg", "rg"):
             kwargs["group_type"] = self.type_id
@@ -89,7 +89,7 @@ class Group(GroupInfo):
     def has_role(self, user, role_names):
         if isinstance(role_names, str) or isinstance(role_names, unicode):
             role_names = [role_names]
-        return user.is_authenticated() and self.role_set.filter(name__in=role_names, person__user=user).exists()
+        return user.is_authenticated and self.role_set.filter(name__in=role_names, person__user=user).exists()
 
     def is_decendant_of(self, sought_parent):
         p = self.parent

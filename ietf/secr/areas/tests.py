@@ -1,4 +1,4 @@
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 
 from ietf.group.models import Group, GroupEvent
 from ietf.person.models import Person

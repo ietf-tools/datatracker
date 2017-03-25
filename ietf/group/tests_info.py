@@ -11,8 +11,8 @@ from tempfile import NamedTemporaryFile
 import debug                            # pyflakes:ignore
 
 from django.conf import settings
-from django.core.urlresolvers import reverse as urlreverse
-from django.core.urlresolvers import NoReverseMatch
+from django.urls import reverse as urlreverse
+from django.urls import NoReverseMatch
 from django.contrib.auth.models import User
 
 from django.utils.html import escape

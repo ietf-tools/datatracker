@@ -281,7 +281,7 @@ def agenda_update(request, meeting, schedule):
 
     user = request.user
 
-    if not user.is_authenticated():
+    if not user.is_authenticated:
         return HttpResponse({'error':'no permission'}, status=403)
 
     cansee,canedit,secretariat = agenda_permissions(meeting, schedule, request.user)

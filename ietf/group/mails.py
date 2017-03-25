@@ -6,7 +6,7 @@ import re
 from django.utils.html import strip_tags
 from django.utils.text import wrap
 from django.conf import settings
-from django.core.urlresolvers import reverse as urlreverse
+from django.urls import reverse as urlreverse
 
 from ietf.utils.mail import send_mail, send_mail_text
 from ietf.mailtrigger.utils import gather_address_lists

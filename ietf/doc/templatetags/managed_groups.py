@@ -6,7 +6,7 @@ register = template.Library()
 
 @register.filter
 def managed_groups(user):
-    if not (user and hasattr(user, "is_authenticated") and user.is_authenticated()):
+    if not (user and hasattr(user, "is_authenticated") and user.is_authenticated):
         return []
 
     groups = []
@@ -26,7 +26,7 @@ def managed_groups(user):
 
 @register.filter
 def managed_review_groups(user):
-    if not (user and hasattr(user, "is_authenticated") and user.is_authenticated()):
+    if not (user and hasattr(user, "is_authenticated") and user.is_authenticated):
         return []
 
     groups = []

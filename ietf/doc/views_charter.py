@@ -2,7 +2,7 @@ import os, datetime, textwrap, json
 
 from django.http import HttpResponseRedirect, HttpResponseNotFound, HttpResponseForbidden, Http404
 from django.shortcuts import get_object_or_404, redirect, render
-from django.core.urlresolvers import reverse as urlreverse
+from django.urls import reverse as urlreverse
 from django import forms
 from django.utils.safestring import mark_safe
 from django.conf import settings

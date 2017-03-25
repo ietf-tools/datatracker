@@ -13,7 +13,7 @@ def streams_menu(context):
 
     user = context["request"].user if "request" in context else AnonymousUser()
 
-    if user.is_authenticated():
+    if user.is_authenticated:
         streams = StreamName.objects.exclude(slug="legacy")
 
         if has_role(user, "Secretariat"):

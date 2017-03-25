@@ -9,7 +9,7 @@ from django.contrib.auth.decorators import login_required
 from django.utils.html import mark_safe
 from django.core.exceptions import ValidationError
 from django.template.loader import render_to_string, TemplateDoesNotExist
-from django.core.urlresolvers import reverse as urlreverse
+from django.urls import reverse as urlreverse
 
 from ietf.doc.models import (Document, NewRevisionDocEvent, State, DocAlias,
                              LastCallDocEvent, ReviewRequestDocEvent, DocumentAuthor)

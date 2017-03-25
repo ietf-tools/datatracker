@@ -7,7 +7,7 @@ from StringIO import StringIO
 from textwrap import wrap
 
 from django.conf import settings
-from django.core.urlresolvers import reverse as urlreverse
+from django.urls import reverse as urlreverse
 
 from ietf.doc.models import Document, DocEvent, NewRevisionDocEvent, BallotPositionDocEvent, TelechatDocEvent, State
 from ietf.doc.utils import create_ballot_if_not_open

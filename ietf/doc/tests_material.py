@@ -9,7 +9,7 @@ from pyquery import PyQuery
 import debug              # pyflakes:ignore
 
 from django.conf import settings
-from django.core.urlresolvers import reverse as urlreverse
+from django.urls import reverse as urlreverse
 
 from ietf.doc.models import Document, State, DocAlias, NewRevisionDocEvent
 from ietf.group.models import Group

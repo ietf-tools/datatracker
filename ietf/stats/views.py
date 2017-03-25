@@ -2,7 +2,7 @@ import datetime, itertools, json, calendar
 
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
-from django.core.urlresolvers import reverse as urlreverse
+from django.urls import reverse as urlreverse
 from django.http import HttpResponseRedirect, HttpResponseForbidden
 
 import dateutil.relativedelta

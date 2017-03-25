@@ -1,6 +1,6 @@
 from pyquery import PyQuery
 
-from django.core.urlresolvers import reverse as urlreverse
+from django.urls import reverse as urlreverse
 
 from ietf.utils.test_data import make_test_data, make_review_data
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase

@@ -35,7 +35,7 @@ import datetime
 import debug      # pyflakes:ignore
 
 from django import template
-from django.core.urlresolvers import reverse as urlreverse
+from django.urls import reverse as urlreverse
 from django.db.models import Q
 from django.utils.safestring import mark_safe
 

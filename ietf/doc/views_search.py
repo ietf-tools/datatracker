@@ -36,7 +36,7 @@ import datetime
 from django import forms
 from django.conf import settings
 from django.core.cache import cache
-from django.core.urlresolvers import reverse as urlreverse
+from django.urls import reverse as urlreverse
 from django.db.models import Q
 from django.http import Http404, HttpResponseBadRequest, HttpResponse, HttpResponseRedirect, QueryDict
 from django.shortcuts import render
