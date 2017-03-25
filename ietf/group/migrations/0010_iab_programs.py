@@ -628,9 +628,9 @@ References
 * “Procedures for Handling Liaison Statements to and from the IETF”, `RFC 4053`__
 * “Guidelines for Acting as an IETF Liaison to Another Organization”, `RFC 4691`__
 
-__ http:/www.rfc-editor.org/rfc/rfc4052
-__ http:/www.rfc-editor.org/rfc/rfc4053
-__ http:/www.rfc-editor.org/rfc/rfc4691
+__ http://www.rfc-editor.org/rfc/rfc4052
+__ http://www.rfc-editor.org/rfc/rfc4053
+__ http://www.rfc-editor.org/rfc/rfc4691
 
 Other Links
 -----------

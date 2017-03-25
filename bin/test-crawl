@@ -187,7 +187,7 @@ def check_html_valid(url, response, args):
                             (" " * m["hiliteStart"], "^" * m["hiliteLength"]))
                 # disregard some HTML issues that are (usually) due to invalid
                 # database content
-                if not re.search('Forbidden code point|Bad value|seamless|The first child', m["message"]):
+                if not re.search('Forbidden code point|Bad value|seamless|The first child|Duplicate ID|The first occurrence of ID', m["message"]):
                     warnings += 1
         else:
             try:

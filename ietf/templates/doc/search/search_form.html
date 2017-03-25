@@ -54,8 +54,8 @@
 
 	  <div class="form-group search_field">
 	    <div class="col-sm-4">
-              <input type="radio" name="by" value="author" {% if form.by.value == "author" %}checked{% endif %} id="id_author"/>
-	      <label for="id_author" class="control-label">Author</label>
+              <input type="radio" name="by" value="author" {% if form.by.value == "author" %}checked{% endif %} id="author"/>
+	      <label for="author" class="control-label">Author</label>
 	    </div>
 	    <div class="col-sm-8">
 	      {{ form.author|add_class:"form-control" }}
@@ -64,8 +64,8 @@
 
 	  <div class="form-group search_field">
 	    <div class="col-sm-4">
-              <input type="radio" name="by" value="group" {% if form.by.value == "group" %}checked{% endif %} id="id_group"/>
-	      <label for="id_group" class="control-label">WG</label>
+              <input type="radio" name="by" value="group" {% if form.by.value == "group" %}checked{% endif %} id="group"/>
+	      <label for="group" class="control-label">WG</label>
 	    </div>
 	    <div class="col-sm-8">
 	      {{ form.group|add_class:"form-control" }}
@@ -75,8 +75,8 @@
 
 	  <div class="form-group search_field">
 	    <div class="col-sm-4">
-              <input type="radio" name="by" value="area" {% if form.by.value == "area" %}checked{% endif %} id="id_area"/>
-	      <label for="id_area" class="control-label">Area</label>
+              <input type="radio" name="by" value="area" {% if form.by.value == "area" %}checked{% endif %} id="area"/>
+	      <label for="area" class="control-label">Area</label>
 	    </div>
 	    <div class="col-sm-8">
 	      {{ form.area|add_class:"form-control" }}
@@ -85,8 +85,8 @@
 
 	  <div class="form-group search_field">
 	    <div class="col-sm-4">
-              <input type="radio" name="by" value="ad" {% if form.by.value == "ad" %}checked{% endif %} id="id_ad"/>
-	      <label for="id_ad" class="control-label">AD</label>
+              <input type="radio" name="by" value="ad" {% if form.by.value == "ad" %}checked{% endif %} id="areadir"/>
+	      <label for="areadir" class="control-label">AD</label>
 	    </div>
 	    <div class="col-sm-8">
 	      {{ form.ad|add_class:"form-control" }}
@@ -95,8 +95,8 @@
 
 	  <div class="form-group search_field">
 	    <div class="col-sm-4">
-              <input type="radio" name="by" value="state" {% if form.by.value == "state" %}checked{% endif %} id="id_state"/>
-	      <label for="id_state" class="control-label">IESG State</label>
+              <input type="radio" name="by" value="state" {% if form.by.value == "state" %}checked{% endif %} id="state"/>
+	      <label for="state" class="control-label">IESG State</label>
 	    </div>
 	    <div class="col-sm-4">
 	      {{ form.state|add_class:"form-control col-sm-4" }}
@@ -108,8 +108,8 @@
 
 	  <div class="form-group search_field">
 	    <div class="col-sm-4">
-              <input type="radio" name="by" value="stream" {% if form.by.value == "stream" %}checked{% endif %} id="id_stream"/>
-	      <label for="id_stream" class="control-label">Stream</label>
+              <input type="radio" name="by" value="stream" {% if form.by.value == "stream" %}checked{% endif %} id="stream"/>
+	      <label for="stream" class="control-label">Stream</label>
 	    </div>
 	    <div class="col-sm-4">
 	      {{ form.stream|add_class:"form-control" }}
