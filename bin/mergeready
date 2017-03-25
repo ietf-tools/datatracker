@@ -177,6 +177,7 @@ mergeinfo = cache[repo] if repo in cache else {}
 
 merged_revs = {}
 write_cache = False
+loginfo_format = r'^r[0-9]+ \| [^@]+@[^@]+ \| \d\d\d\d-\d\d-\d\d '
 note("Getting svn:mergeinfo for current branch")
 for line in pipe('svn propget svn:mergeinfo .').splitlines():
     if opt_verbose:
@@ -192,7 +193,7 @@ for line in pipe('svn propget svn:mergeinfo .').splitlines():
                 try:
                     commit_log = pipe('svn log -v -r %s:%s %s%s' % (beg, end, repo, branch))
                     for logline in commit_log.splitlines():
-                        if re.search('^r[0-9]+ ', logline):
+                        if re.search(loginfo_format, logline):
                             rev, who, when = split_loginfo(logline)
                             merged[rev] = branch[1:]
                             write_cache = True
@@ -251,7 +252,7 @@ def get_ready_commits(repo, tree):
         note("Running '%s' ..." % cmd)
     commit_log = pipe(cmd)
     for line in commit_log.splitlines():
-        if re.search('^r[0-9]+ \|', line):
+        if re.search(loginfo_format, line):
             rev, who, when = split_loginfo(line)
             branch = None
             continue
@@ -335,7 +336,7 @@ for branch in branches:
     rev = None
     mod = False
     for line in commit_log.splitlines():
-        if re.search('^r[0-9]+ ', line):
+        if re.search(loginfo_format, line):
             rev, who, when = split_loginfo(line)
         elif re.search('^   [AMD]', line):
             if not ' (from ' in line and not mod:
