@@ -121,24 +121,20 @@ done
 # ----------------------------------------------------------------------
 # The program itself
 
-if [ "$(uname)" != "Linux" ]; then
-    if [ "$(uname)" = "Darwin" ]; then
-	APP="/Applications/Docker.app"
-	CMD="open -a"
-    else
-	die "This script does not have support for your architecture ($(uname)); sorry :-("
-    fi
-    if [ -n "$(type -p docker-machine)" ]; then
-	machine=$(type -p docker-machine)
-    else
-	die "Could not find boot2docker or docker-machine -- you need to set one of those before running this script."
-    fi
+[ -f /proc/1/cgroups ] && grep 'docker' /proc/1/cgroups && die "It looks like you're inside docker already ..."
+
+if   [ "$(uname)" = "Darwin" ]; then
+    APP="/Applications/Docker.app"
+    CMD="open -a"
+elif [ "$(uname)" = "Linux" ]; then
+    echo "Running on Linux."
 else
-    die "Didn't expect to run this script on Linux -- are you inside docker?"
+    die "This script does not have support for your architecture ($(uname)); sorry :-("
 fi
 
-
-if [ -e "$APP" ]; then
+if   [ "$(uname)" = "Linux" ]; then
+    echo "Not trying to start a virtual docker machine on Linux"
+elif [ -e "$APP" ]; then
     info=$(docker info 2>&1 || true)
     if ! docker info 1> /dev/null 2>&1; then
 	echo -e "The docker VM doesn't seem to be running; docker info gave:\n  $info"
@@ -183,57 +179,60 @@ else
     fi
 fi
 
-echo ""
-echo "Starting a docker container for '$TAG'."
 
-docker ps | grep -q $REPO:$TAG && die \
-"It seems that another docker container is already running the
-image '$REPO:$TAG'.  Continuing here can cause various problems,
-such as changes from within the container being saved from different
-containers to the same image, overwriting earlier changes, and
-multiple containers trying to use the same database files.  Better
-to bail out here.  Quitting."
-
-if [ -n "$DOWNLOAD" ]; then
-    (
-	cd $(dirname $MYSQLDIR)
-	wget -N $DBURL && tar xjf ietf_utf8.bin.tar.bz2 && chmod -R go+rwX mysql
-    )
-    [ -d "$MYSQLDIR" ] || die "The download seems to have failed; still no $MYSQLDIR.  Giving up."
-else
-    [ -d "$MYSQLDIR" ] || die "Expected $MYSQLDIR to exist, but it\ndidn't.  Use '$program -d' to download and unpack the database."
-fi
-
-if ! docker images $REPO | grep -q $TAG; then
-    echo "Fetching docker image '$REPO:$TAG'"
-    if ! docker pull $REPO:$TAG; then
-	docker pull $REPO:latest || die "Failed to pull down the '$REPO:latest' docker image"
-	id=$(docker images $REPO | grep latest  | awk '{print $3}')
-	echo "Tagging $REPO:latest as $REPO:$TAG for use as environment for this branch."
-	docker tag $id $REPO:$TAG
+image=$(docker ps | grep "$REPO:$TAG" | awk '{ print $1 }')
+if [ "$image" ]; then
+    if [ "$*" ]; then
+        echo "Running 'cd ~/${parent#$HOME/}; $*'"
+	docker exec -u $WHO $image bash -c "cd ~/${parent#$HOME/}; $*"
+    else
+	docker exec -u $WHO -ti $image bash
     fi
-fi
-
-echo -e "\nThe web interface for 'runserver' should appear on $URL\n"
-if [ -z "$MYSQLDIR" ]; then
-    docker run -ti -p $PORT:8000 -v $HOME:/home/$WHO                            \
-	-e USER=$WHO -e DATADIR=${parent#$HOME/}/data -e CWD=${PWD#$HOME/}	\
-	-e TAG=$TAG -e FILEDIR=${FILEDIR#$HOME}	\
-	$REPO:$TAG "$@"
 else
-    docker run -ti -p $PORT:8000 -v $HOME:/home/$WHO -v $MYSQLDIR:/var/lib/mysql\
-	-e USER=$WHO -e DATADIR=${parent#$HOME/}/data -e CWD=${PWD#$HOME/}	\
-	-e TAG=$TAG -e FILEDIR=${FILEDIR#$HOME}	\
-	$REPO:$TAG "$@"
+    echo ""
+    echo "Starting a docker container for '$TAG'."
+
+    if [ -n "$DOWNLOAD" ]; then
+	(
+	    cd $(dirname $MYSQLDIR)
+	    wget -N $DBURL && tar xjf ietf_utf8.bin.tar.bz2 && chmod -R go+rwX mysql
+	)
+	[ -d "$MYSQLDIR" ] || die "The download seems to have failed; still no $MYSQLDIR.  Giving up."
+    else
+	[ -d "$MYSQLDIR" ] || die "Expected $MYSQLDIR to exist, but it\ndidn't.  Use '$program -d' to download and unpack the database."
+    fi
+
+    if ! docker images $REPO | grep -q $TAG; then
+	echo "Fetching docker image '$REPO:$TAG'"
+	if ! docker pull $REPO:$TAG; then
+	    docker pull $REPO:latest || die "Failed to pull down the '$REPO:latest' docker image"
+	    id=$(docker images $REPO | grep latest  | awk '{print $3}')
+	    echo "Tagging $REPO:latest as $REPO:$TAG for use as environment for this branch."
+	    docker tag $id $REPO:$TAG
+	fi
+    fi
+
+    echo -e "\nThe web interface for 'runserver' should appear on $URL\n"
+    if [ -z "$MYSQLDIR" ]; then
+	docker run -ti -p $PORT:8000 -v $HOME:/home/$WHO                            \
+	    -e USER=$WHO -e DATADIR=${parent#$HOME/}/data -e CWD=${PWD#$HOME/}	\
+	    -e TAG=$TAG -e FILEDIR=${FILEDIR#$HOME}	\
+	    $REPO:$TAG "$@"
+    else
+	docker run -ti -p $PORT:8000 -v $HOME:/home/$WHO -v $MYSQLDIR:/var/lib/mysql\
+	    -e USER=$WHO -e DATADIR=${parent#$HOME/}/data -e CWD=${PWD#$HOME/}	\
+	    -e TAG=$TAG -e FILEDIR=${FILEDIR#$HOME}	\
+	    $REPO:$TAG "$@"
+    fi
+
+    echo ""
+    echo "Committing changes in the container to an image:"
+    latest=$(docker ps -lq)
+    docker commit $latest $REPO:$TAG
+
+    echo ""
+    echo "Cleaning up containers and images"
+    docker rm $latest
+    docker images -f dangling=true -q | xargs docker rmi -f
+
 fi
-
-echo ""
-echo "Committing changes in the container to an image:"
-latest=$(docker ps -lq)
-docker commit $latest $REPO:$TAG
-
-echo ""
-echo "Cleaning up containers and images"
-docker rm $latest
-docker images -f dangling=true -q | xargs docker rmi -f
-
