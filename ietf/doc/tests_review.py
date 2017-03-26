@@ -5,7 +5,7 @@ import tarfile, tempfile, mailbox
 import email.mime.multipart, email.mime.text, email.utils
 from StringIO import StringIO
 
-from django.core.urlresolvers import reverse as urlreverse
+from django.urls import reverse as urlreverse
 from django.conf import settings
 
 from pyquery import PyQuery

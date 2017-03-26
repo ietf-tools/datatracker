@@ -4,7 +4,7 @@ from formtools.preview import FormPreview, AUTO_ID
 from django.shortcuts import get_object_or_404, redirect
 from django.utils.decorators import method_decorator
 from django.shortcuts import render
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.utils.html import mark_safe
 
 from ietf.dbtemplate.forms import DBTemplateForm

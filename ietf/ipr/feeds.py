@@ -2,7 +2,7 @@
 
 from django.contrib.syndication.views import Feed
 from django.utils.feedgenerator import Atom1Feed
-from django.core.urlresolvers import reverse_lazy
+from django.urls import reverse_lazy
 from django.utils.safestring import mark_safe
 
 from ietf.ipr.models import IprDisclosureBase

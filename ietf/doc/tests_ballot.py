@@ -4,7 +4,7 @@ from pyquery import PyQuery
 
 import debug                            # pyflakes:ignore
 
-from django.core.urlresolvers import reverse as urlreverse
+from django.urls import reverse as urlreverse
 
 from ietf.doc.models import ( Document, State, DocEvent, BallotDocEvent,
     BallotPositionDocEvent, LastCallDocEvent, WriteupDocEvent, TelechatDocEvent )

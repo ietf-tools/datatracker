@@ -2,7 +2,7 @@ import json
 
 from pyquery import PyQuery
 
-from django.core.urlresolvers import reverse as urlreverse
+from django.urls import reverse as urlreverse
 from django.contrib.auth.models import User
 
 from ietf.community.models import CommunityList, SearchRule, EmailSubscription

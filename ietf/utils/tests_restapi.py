@@ -3,7 +3,7 @@ from __future__ import print_function
 import debug
 debug.debug = True
 
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 
 from tastypie.test import ResourceTestCaseMixin
 

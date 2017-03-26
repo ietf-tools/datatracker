@@ -5,7 +5,7 @@ import datetime
 import StringIO
 from pyquery import PyQuery
 
-from django.core.urlresolvers import reverse as urlreverse
+from django.urls import reverse as urlreverse
 from django.conf import settings
 
 import debug                            # pyflakes:ignore

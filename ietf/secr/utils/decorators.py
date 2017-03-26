@@ -47,7 +47,7 @@ def check_permissions(func):
     meeting_id, slide_id
     """
     def wrapper(request, *args, **kwargs):
-        if not request.user.is_authenticated():
+        if not request.user.is_authenticated:
             return HttpResponseRedirect('%s?%s=%s' % (settings.LOGIN_URL, REDIRECT_FIELD_NAME, urlquote(request.get_full_path())))
         
         session = None

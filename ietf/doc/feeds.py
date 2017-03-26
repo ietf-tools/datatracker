@@ -4,7 +4,7 @@ import datetime
 
 from django.contrib.syndication.views import Feed, FeedDoesNotExist
 from django.utils.feedgenerator import Atom1Feed, Rss201rev2Feed
-from django.core.urlresolvers import reverse as urlreverse
+from django.urls import reverse as urlreverse
 from django.template.defaultfilters import truncatewords, truncatewords_html, date as datefilter, linebreaks
 from django.utils.html import strip_tags
 

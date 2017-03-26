@@ -1,5 +1,5 @@
 from django.views.generic import RedirectView
-from django.core.urlresolvers import reverse_lazy
+from django.urls import reverse_lazy
 
 from ietf.mailtrigger import views
 from ietf.utils.urls import url

@@ -5,7 +5,7 @@ import json
 import datetime
 
 from django.conf import settings
-from django.core.urlresolvers import reverse as urlreverse
+from django.urls import reverse as urlreverse
 
 from pyquery import PyQuery
 

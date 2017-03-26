@@ -3,7 +3,7 @@ import urllib
 
 from pyquery import PyQuery
 
-from django.core.urlresolvers import reverse as urlreverse
+from django.urls import reverse as urlreverse
 
 import debug                            # pyflakes:ignore
 

@@ -397,7 +397,7 @@ def has_role(user, role_names):
 
 @register.filter
 def ad_area(user):
-    if user and user.is_authenticated():
+    if user and user.is_authenticated:
         from ietf.group.models import Group
         g = Group.objects.filter(role__name__in=("pre-ad", "ad"), role__person__user=user)
         if g:
@@ -428,7 +428,7 @@ def format_snippet(text, trunc_words=25):
 @register.simple_tag
 def doc_edit_button(url_name, *args, **kwargs):
     """Given URL name/args/kwargs, looks up the URL just like "url" tag and returns a properly formatted button for the document material tables."""
-    from django.core.urlresolvers import reverse as urlreverse
+    from django.urls import reverse as urlreverse
     return mark_safe(u'<a class="btn btn-default btn-xs" href="%s">Edit</a>' % (urlreverse(url_name, args=args, kwargs=kwargs)))
 
 @register.filter
@@ -447,7 +447,7 @@ def state(doc, slug):
 @register.filter
 def statehelp(state):
     "Output help icon with tooltip for state."
-    from django.core.urlresolvers import reverse as urlreverse
+    from django.urls import reverse as urlreverse
     tooltip = escape(strip_tags(state.desc))
     url = urlreverse('ietf.doc.views_help.state_help', kwargs=dict(type=state.type_id)) + "#" + state.slug
     return mark_safe('<a class="state-help-icon" href="%s" title="%s">?</a>' % (url, tooltip))

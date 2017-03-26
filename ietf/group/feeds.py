@@ -2,7 +2,7 @@
 
 from django.contrib.syndication.views import Feed, FeedDoesNotExist
 from django.utils.feedgenerator import Atom1Feed
-from django.core.urlresolvers import reverse as urlreverse
+from django.urls import reverse as urlreverse
 from django.utils.html import strip_tags
 from django.template.defaultfilters import truncatewords
 

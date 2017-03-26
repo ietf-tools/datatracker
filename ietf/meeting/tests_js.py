@@ -6,7 +6,7 @@ from pyquery import PyQuery
 from unittest import skipIf
 
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
-from django.core.urlresolvers import reverse as urlreverse
+from django.urls import reverse as urlreverse
 #from django.test.utils import override_settings
 
 import debug                            # pyflakes:ignore

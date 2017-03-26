@@ -22,7 +22,7 @@ def view_list(request, username=None):
     docs = docs_tracked_by_community_list(clist)
     docs, meta = prepare_document_table(request, docs, request.GET)
 
-    subscribed = request.user.is_authenticated() and EmailSubscription.objects.filter(community_list=clist, email__person__user=request.user)
+    subscribed = request.user.is_authenticated and EmailSubscription.objects.filter(community_list=clist, email__person__user=request.user)
 
     return render(request, 'community/view_list.html', {
         'clist': clist,

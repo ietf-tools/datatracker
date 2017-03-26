@@ -1,5 +1,5 @@
 from django.db import connection
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 
 from pyquery import PyQuery
 

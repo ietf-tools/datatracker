@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from django.db import models
 from django.db.models import signals
-from django.core.urlresolvers import reverse as urlreverse
+from django.urls import reverse as urlreverse
 
 from ietf.doc.models import Document, DocEvent, State
 from ietf.group.models import Group

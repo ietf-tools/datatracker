@@ -1,4 +1,4 @@
-from django.core.urlresolvers import reverse as urlreverse
+from django.urls import reverse as urlreverse
 from django.conf import settings
 
 from ietf.utils.mail import send_mail

@@ -10,7 +10,7 @@ from unidecode import unidecode
 from django import forms
 from django.conf import settings
 from django.utils.html import mark_safe
-from django.core.urlresolvers import reverse as urlreverse
+from django.urls import reverse as urlreverse
 
 import debug                            # pyflakes:ignore
 

@@ -48,7 +48,7 @@ from django.contrib.auth.hashers import identify_hasher
 from django.contrib.auth.models import User
 from django.contrib.auth.views import login as django_login
 from django.contrib.sites.models import Site
-from django.core.urlresolvers import reverse as urlreverse
+from django.urls import reverse as urlreverse
 from django.http import Http404, HttpResponseRedirect  #, HttpResponse, 
 from django.shortcuts import render, redirect, get_object_or_404
 
@@ -81,7 +81,7 @@ def index(request):
 
 # @login_required
 # def ietf_login(request):
-#     if not request.user.is_authenticated():
+#     if not request.user.is_authenticated:
 #         return HttpResponse("Not authenticated?", status=500)
 # 
 #     redirect_to = request.REQUEST.get(REDIRECT_FIELD_NAME, '')

@@ -3,7 +3,7 @@ import os
 import shutil
 
 from django.conf import settings
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 
 from ietf.doc.models import Document
 from ietf.group.models import Group

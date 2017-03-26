@@ -2,7 +2,7 @@ import os
 
 from django.shortcuts import get_object_or_404
 from django.utils.safestring import mark_safe
-from django.core.urlresolvers import reverse as urlreverse
+from django.urls import reverse as urlreverse
 
 import debug                            # pyflakes:ignore
 

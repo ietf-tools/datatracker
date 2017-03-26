@@ -7,7 +7,7 @@ from StringIO import StringIO
 import debug         # pyflakes:ignore
 
 from django.conf import settings
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 
 from ietf.group.models import Group, GroupEvent
 from ietf.meeting.models import Meeting, Room, TimeSlot, SchedTimeSessAssignment

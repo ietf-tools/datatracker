@@ -6,7 +6,7 @@ import debug    # pyflakes:ignore
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import Http404, HttpResponseForbidden, HttpResponseRedirect
 from django.contrib.auth.decorators import login_required
-from django.core.urlresolvers import reverse as urlreverse
+from django.urls import reverse as urlreverse
 from django.db.models import Max
 from django import forms
 from django.template.loader import render_to_string

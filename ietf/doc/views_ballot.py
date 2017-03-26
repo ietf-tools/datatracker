@@ -5,7 +5,7 @@ import datetime, json
 
 from django.http import HttpResponseForbidden, HttpResponseRedirect, Http404
 from django.shortcuts import render, get_object_or_404, redirect
-from django.core.urlresolvers import reverse as urlreverse
+from django.urls import reverse as urlreverse
 from django.template.loader import render_to_string
 from django import forms
 from django.conf import settings

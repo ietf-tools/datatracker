@@ -1,6 +1,6 @@
 import datetime
 
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 
 from ietf.utils.test_utils import TestCase
 from ietf.iesg.models import TelechatDate

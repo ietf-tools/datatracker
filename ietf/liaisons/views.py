@@ -3,7 +3,7 @@ import json
 from email.utils import parseaddr
 
 from django.contrib import messages
-from django.core.urlresolvers import reverse as urlreverse
+from django.urls import reverse as urlreverse
 from django.core.validators import validate_email, ValidationError
 from django.db.models import Q, Prefetch
 from django.http import HttpResponse, HttpResponseForbidden
@@ -36,7 +36,7 @@ EMAIL_ALIASES = {
 # -------------------------------------------------
 def _can_reply(liaison, user):
     '''Returns true if the user can send a reply to this liaison'''
-    if user.is_authenticated():
+    if user.is_authenticated:
         person = get_person_for_user(user)
         if has_role(user, "Secretariat"):
             return True
@@ -51,7 +51,7 @@ def _can_take_care(liaison, user):
     if not liaison.deadline or liaison.action_taken:
         return False
 
-    if user.is_authenticated():
+    if user.is_authenticated:
         if has_role(user, "Secretariat"):
             return True
         else:

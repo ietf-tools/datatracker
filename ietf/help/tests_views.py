@@ -1,6 +1,6 @@
 from pyquery import PyQuery
 
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 
 import debug                            # pyflakes:ignore
 

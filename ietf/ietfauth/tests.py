@@ -7,7 +7,7 @@ from pyquery import PyQuery
 from unittest import skipIf
 
 import django.contrib.auth.views
-from django.core.urlresolvers import reverse as urlreverse
+from django.urls import reverse as urlreverse
 from django.contrib.auth.models import User
 from django.conf import settings
 

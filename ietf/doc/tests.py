@@ -13,7 +13,7 @@ from pyquery import PyQuery
 from tempfile import NamedTemporaryFile
 from Cookie import SimpleCookie
 
-from django.core.urlresolvers import reverse as urlreverse
+from django.urls import reverse as urlreverse
 from django.conf import settings
 
 from tastypie.test import ResourceTestCaseMixin

@@ -36,7 +36,7 @@ def lookup_community_list(username=None, acronym=None):
     return clist
 
 def can_manage_community_list(user, clist):
-    if not user or not user.is_authenticated():
+    if not user or not user.is_authenticated:
         return False
 
     if clist.user:
@@ -60,7 +60,7 @@ def augment_docs_with_tracking_info(docs, user):
 
     tracked = set()
 
-    if user and user.is_authenticated():
+    if user and user.is_authenticated:
         clist = CommunityList.objects.filter(user=user).first()
         if clist:
             tracked.update(docs_tracked_by_community_list(clist).filter(pk__in=docs).values_list("pk", flat=True))

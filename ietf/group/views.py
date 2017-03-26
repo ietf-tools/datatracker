@@ -46,7 +46,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.template.loader import render_to_string
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.conf import settings
-from django.core.urlresolvers import reverse as urlreverse
+from django.urls import reverse as urlreverse
 from django.views.decorators.cache import cache_page
 from django.db.models import Q
 
@@ -376,7 +376,7 @@ def group_documents(request, acronym, group_type=None):
 
     docs, meta, docs_related, meta_related = prepare_group_documents(request, group, clist)
 
-    subscribed = request.user.is_authenticated() and EmailSubscription.objects.filter(community_list=clist, email__person__user=request.user)
+    subscribed = request.user.is_authenticated and EmailSubscription.objects.filter(community_list=clist, email__person__user=request.user)
 
     context = construct_group_menu_context(request, group, "documents", group_type, {
                 'docs': docs,
@@ -772,7 +772,7 @@ def email_aliases(request, acronym=None, group_type=None):
     if not acronym:
         # require login for the overview page, but not for the group-specific
         # pages 
-        if not request.user.is_authenticated():
+        if not request.user.is_authenticated:
                 return redirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
 
     aliases = get_group_email_aliases(acronym, group_type)

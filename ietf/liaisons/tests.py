@@ -3,7 +3,7 @@ import json
 
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.core.urlresolvers import reverse as urlreverse
+from django.urls import reverse as urlreverse
 from django.db.models import Q
 from StringIO import StringIO
 from pyquery import PyQuery
