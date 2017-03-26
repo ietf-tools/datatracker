@@ -49,7 +49,7 @@ from ietf.doc.models import ( Document, DocAlias, DocHistory, DocEvent, BallotDo
 from ietf.doc.utils import ( add_links_in_new_revision_events, augment_events_with_revision,
     can_adopt_draft, get_chartering_type, get_document_content, get_tags_for_stream_id,
     needed_ballot_positions, nice_consensus, prettify_std_name, update_telechat, has_same_ballot,
-    get_initial_notify, make_notify_changed_event, crawl_history, default_consensus,
+    get_initial_notify, make_notify_changed_event, make_rev_history, default_consensus,
     add_events_message_info, get_unicode_document_content, build_doc_meta_block)
 from ietf.community.utils import augment_docs_with_tracking_info
 from ietf.group.models import Role
@@ -996,7 +996,7 @@ def document_json(request, name, rev=None):
     data["ad"] = doc.ad.role_email("ad").formatted_email() if doc.ad else None
 
     latest_revision = doc.latest_event(NewRevisionDocEvent, type="new_revision")
-    data["rev_history"] = crawl_history(latest_revision.doc if latest_revision else doc)
+    data["rev_history"] = make_rev_history(latest_revision.doc if latest_revision else doc)
 
     if doc.type_id == "draft":
         data["iesg_state"] = extract_name(doc.get_state("draft-iesg"))
