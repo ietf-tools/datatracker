@@ -184,7 +184,7 @@ image=$(docker ps | grep "$REPO:$TAG" | awk '{ print $1 }')
 if [ "$image" ]; then
     if [ "$*" ]; then
         echo "Running 'cd ~/${parent#$HOME/}; $*'"
-	docker exec -u $WHO $image bash -c "cd ~/${parent#$HOME/}; $*"
+	docker exec -u $WHO -t $image bash -c "cd ~/${parent#$HOME/}; $*"
     else
 	docker exec -u $WHO -ti $image bash
     fi

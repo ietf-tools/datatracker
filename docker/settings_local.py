@@ -21,3 +21,7 @@ IDSUBMIT_STAGING_PATH = "test/staging/"
 INTERNET_DRAFT_ARCHIVE_DIR = "test/archive/"
 
 AGENDA_PATH = 'test/data/proceedings/'
+
+USING_DEBUG_EMAIL_SERVER=True
+EMAIL_HOST='localhost'
+EMAIL_PORT=2025
