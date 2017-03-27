@@ -276,6 +276,8 @@ class Command(BaseCommand):
         self.svn_dir_pattern = options.get('svn_dir_pattern', settings.TRAC_SVN_DIR_PATTERN)
         self.group_list = options.get('group_list', None)
         self.dummy_run = options.get('dummy_run', False)
+        self.wiki_dir_pattern = os.path.join(settings.BASE_DIR, '..', self.wiki_dir_pattern)
+        self.svn_dir_pattern = os.path.join(settings.BASE_DIR, '..', self.svn_dir_pattern)
 
         if not self.group_list is None:
             self.group_list = self.group_list.split('.')

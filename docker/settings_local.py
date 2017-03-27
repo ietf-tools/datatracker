@@ -25,3 +25,6 @@ AGENDA_PATH = 'test/data/proceedings/'
 USING_DEBUG_EMAIL_SERVER=True
 EMAIL_HOST='localhost'
 EMAIL_PORT=2025
+
+TRAC_WIKI_DIR_PATTERN = "test/wiki/%s"
+TRAC_SVN_DIR_PATTERN = "test/svn/%s"
