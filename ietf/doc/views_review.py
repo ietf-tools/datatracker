@@ -129,7 +129,7 @@ def request_review(request, name):
                     state=None,
                 )
 
-                subject = "%s %s Review requested" % (review_req.team.acronym, review_req.type.name)
+                subject = "%s %s Review requested: %s" % (review_req.team.acronym, review_req.type.name, doc.name)
 
                 msg = subject
 
