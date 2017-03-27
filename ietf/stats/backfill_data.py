@@ -84,9 +84,9 @@ for doc in docs_qs.prefetch_related("docalias_set", "formal_languages", "documen
                 if author.email_id:
                     old_authors_by_email[author.email_id] = author
 
-            # the draft parser sometimes has a problem if affiliation
-            # isn't in the second line, then it will report an extra
-            # author - skip those
+            # the draft parser sometimes has a problem when
+            # affiliation isn't in the second line and it then thinks
+            # it's an extra author - skip those extra authors
             seen = set()
             for full, _, _, _, _, email, country, company in d.get_author_list():
                 if email in seen:
@@ -118,7 +118,7 @@ for doc in docs_qs.prefetch_related("docalias_set", "formal_languages", "documen
                     country = country.decode("latin-1")
 
                 if old_author.country != country:
-                    print "new country", canonical_name ,"[", full, "]", old_author.country.encode("utf-8"), "->", country.encode("utf-8")
+                    print "new country", canonical_name ,"[", full, email, "]", old_author.country.encode("utf-8"), "->", country.encode("utf-8")
                     old_author.country = country
                     old_author.save(update_fields=["country"])
                     updated = True
