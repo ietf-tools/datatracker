@@ -77,13 +77,13 @@
   <div class="col-md-6">
      <h2 id="drafts">Active Drafts</h2>
      {% if person.active_drafts.exists %}
-	<list>
+	<ul>
 	   {% for doc in person.active_drafts %}
 	     <li>
 	       <a href="{{ doc.href }}">{{ doc.canonical_name }}</a>
 	     </li>
 	   {% endfor %}
-	</list>
+	</ul>
      {% else %}
        {{ person.first_name }} has no active drafts as of {{ today }}.
      {% endif %}
@@ -91,13 +91,13 @@
   <div class="col-md-6">
      <h2>Expired Drafts <small>exluding replaced drafts</small></h2>
      {% if person.expired_drafts.exists %}
-	<list>
+	<ul>
 	   {% for doc in person.expired_drafts %}
 	       {% if not doc.replaced_by %}
 	         <li><a href="{{ doc.href }}">{{ doc.canonical_name }}</a></li>
 	       {% endif %}
 	   {% endfor %}
-	</list>
+	</ul>
      {% else %}
        {{ person.first_name }} has no expired drafts as of {{ today }}.
      {% endif %}

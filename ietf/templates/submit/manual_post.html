@@ -13,7 +13,7 @@
 {% block submit_content %}
   {% origin %}
 
-    <h2 class="anchor-target" id="approvals">Submissions needing manual posting</h2>
+    <h2 class="anchor-target" id="man_post">Submissions needing manual posting</h2>
 
     {% if not manual %}
       <p id="no-manual">There are no submissions needing manual posting.</p>
@@ -44,7 +44,7 @@
       </table>
     {% endif %}
 
-    <h2 class="anchor-target" id="approvals">Submissions awaiting draft upload</h2>
+    <h2 class="anchor-target" id="id_upload">Submissions awaiting draft upload</h2>
 
     {% if not waiting_for_draft %}
       <p id="no-waiting-for-draft">There are no submissions awaiting draft upload.</p>

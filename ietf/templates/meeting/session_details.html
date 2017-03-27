@@ -79,7 +79,7 @@
     <div class="panel panel-default">
       <div class="panel-heading" data-toggle="tooltip" title="Drag and drop to reorder slides">Slides</div>
       <div class="panel-body">
-        <table class="table table-condensed table-striped" id="slides">
+        <table class="table table-condensed table-striped slides">
          <tbody>
           {% for pres in session.filtered_slides %}
             <tr data-order="{{pres.order}}" data-url="{% url 'ietf.meeting.views.set_slide_order' session_id=session.pk num=session.meeting.number name=pres.document.name %}">
@@ -174,7 +174,7 @@
         return $helper;
       };
 
-      $("#slides tbody").sortable({
+      $(".slides tbody").sortable({
         helper: rowWidthHelper,
         stop: function(event,ui) {adjustDatabase("#slides")}
       }).disableSelection();
