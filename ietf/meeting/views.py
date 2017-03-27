@@ -31,7 +31,7 @@ from django.template.loader import render_to_string
 from django.utils.functional import curry
 from django.views.decorators.cache import cache_page
 from django.utils.text import slugify
-from django.views.decorators.csrf import ensure_csrf_cookie
+from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt
 from django.views.generic import RedirectView
 from django.template.defaultfilters import filesizeformat
 
@@ -58,7 +58,7 @@ from ietf.meeting.helpers import send_interim_approval_request
 from ietf.meeting.helpers import send_interim_announcement_request
 from ietf.meeting.utils import finalize
 from ietf.secr.proceedings.utils import handle_upload_file
-from ietf.secr.proceedings.proc_utils import get_progress_stats, post_process
+from ietf.secr.proceedings.proc_utils import get_progress_stats, post_process, import_audio_files
 from ietf.utils import log
 from ietf.utils.mail import send_mail_message
 from ietf.utils.pipe import pipe
@@ -2162,3 +2162,15 @@ def proceedings_progress_report(request, num=None):
 class OldUploadRedirect(RedirectView):
     def get_redirect_url(self, **kwargs):
         return reverse_lazy('ietf.meeting.views.session_details',kwargs=self.kwargs)
+
+@csrf_exempt
+def api_import_recordings(request, number):
+    '''REST API to check for recording files and import'''
+    if request.method == 'POST':
+        meeting = get_meeting(number)
+        import_audio_files(meeting)
+        return HttpResponse(status=201)
+    else:
+        return HttpResponse(status=405)
+
+

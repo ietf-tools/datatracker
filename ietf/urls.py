@@ -16,6 +16,7 @@ from ietf.doc import views_search
 from ietf.help import views as help_views
 from ietf.ipr.sitemaps import IPRMap
 from ietf.liaisons.sitemaps import LiaisonMap
+from ietf.meeting import views as meeting_views
 from ietf.utils.urls import url
 
 admin.autodiscover()
@@ -81,6 +82,11 @@ for n,a in api._api_list:
     urlpatterns += [
         url(r'^api/v1/', include(a.urls)),
     ]
+
+# Custom API endpoints
+urlpatterns += [
+    url(r'^api/notify/meeting/import_recordings/(?P<number>[a-z0-9-]+)/?$', meeting_views.api_import_recordings),
+]
 
 # This is needed to serve files during testing
 if settings.SERVER_MODE in ('development', 'test'):

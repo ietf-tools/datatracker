@@ -6,6 +6,7 @@ from importlib import import_module
 from django.apps import apps
 from django.test import Client
 from django.conf import settings
+from django.urls import reverse as urlreverse
 
 from tastypie.exceptions import BadRequest
 from tastypie.test import ResourceTestCaseMixin
@@ -13,12 +14,25 @@ from tastypie.test import ResourceTestCaseMixin
 import debug                            # pyflakes:ignore
 
 from ietf.utils.test_utils import TestCase
+from ietf.meeting.test_data import make_meeting_test_data
 
 OMITTED_APPS = (
     'ietf.secr.meetings',
     'ietf.secr.proceedings',
     'ietf.ipr',
 )
+
+class CustomApiTestCase(TestCase):
+    def test_notify_meeting_import_audio_files(self):
+        meeting = make_meeting_test_data()
+        client = Client(Accept='application/json')
+        # try invalid method GET
+        url = urlreverse('ietf.meeting.views.api_import_recordings', kwargs={'number':meeting.number})
+        r = client.get(url)
+        self.assertEqual(r.status_code, 405)
+        # try valid method POST
+        r = client.post(url)
+        self.assertEqual(r.status_code, 201)
 
 class TastypieApiTestCase(ResourceTestCaseMixin, TestCase):
     def __init__(self, *args, **kwargs):
