@@ -388,8 +388,7 @@ class ConflictReviewSubmitTests(TestCase):
         
     def setUp(self):
         make_test_data()
-        self.test_dir = os.path.abspath("tmp-conflict-review-testdir")
-        os.mkdir(self.test_dir)
+        self.test_dir = self.tempdir('conflict-review')
         self.saved_conflict_review_path = settings.CONFLICT_REVIEW_PATH
         settings.CONFLICT_REVIEW_PATH = self.test_dir
 

@@ -479,9 +479,7 @@ class StatusChangeSubmitTests(TestCase):
 
     def setUp(self):
         make_test_data()
-        self.test_dir = os.path.abspath("tmp-status-change-testdir")
-        if not os.path.exists(self.test_dir):
-            os.mkdir(self.test_dir)
+        self.test_dir = self.tempdir('status-change')
         self.saved_status_change_path = settings.STATUS_CHANGE_PATH
         settings.STATUS_CHANGE_PATH = self.test_dir
 

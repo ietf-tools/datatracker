@@ -422,9 +422,7 @@ Man                    Expires September 22, 2015               [Page 3]
 """
 
     def setUp(self):
-        self.id_dir = os.path.abspath("tmp-id-dir")
-        if not os.path.exists(self.id_dir):
-            os.mkdir(self.id_dir)
+        self.id_dir = self.tempdir('id')
         self.saved_internet_draft_path = settings.INTERNET_DRAFT_PATH
         settings.INTERNET_DRAFT_PATH = self.id_dir
         self.saved_internet_all_drafts_archive_dir = settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR

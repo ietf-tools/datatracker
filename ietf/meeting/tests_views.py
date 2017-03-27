@@ -38,9 +38,7 @@ from ietf.doc.factories import DocumentFactory
 
 class MeetingTests(TestCase):
     def setUp(self):
-        self.materials_dir = os.path.abspath(settings.TEST_MATERIALS_DIR)
-        if not os.path.exists(self.materials_dir):
-            os.mkdir(self.materials_dir)
+        self.materials_dir = self.tempdir('materials')
         self.saved_agenda_path = settings.AGENDA_PATH
         settings.AGENDA_PATH = self.materials_dir
 
@@ -620,9 +618,7 @@ class EditScheduleListTests(TestCase):
 
 class InterimTests(TestCase):
     def setUp(self):
-        self.materials_dir = os.path.abspath(settings.TEST_MATERIALS_DIR)
-        if not os.path.exists(self.materials_dir):
-            os.mkdir(self.materials_dir)
+        self.materials_dir = self.tempdir('materials')
         self.saved_agenda_path = settings.AGENDA_PATH
         settings.AGENDA_PATH = self.materials_dir
 
@@ -1440,7 +1436,7 @@ class FinalizeProceedingsTests(TestCase):
 class MaterialsTests(TestCase):
 
     def setUp(self):
-        self.materials_dir = os.path.abspath(settings.TEST_MATERIALS_DIR)
+        self.materials_dir = self.tempdir('materials')
         if not os.path.exists(self.materials_dir):
             os.mkdir(self.materials_dir)
         self.saved_agenda_path = settings.AGENDA_PATH

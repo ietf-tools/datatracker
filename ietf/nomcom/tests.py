@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 #import tempfile
 import datetime
-import os
 import shutil
 import urlparse
 from pyquery import PyQuery
@@ -52,9 +51,7 @@ def get_cert_files():
 
 def build_test_public_keys_dir(obj):
     obj.saved_nomcom_public_keys_dir = settings.NOMCOM_PUBLIC_KEYS_DIR
-    obj.nomcom_public_keys_dir = os.path.abspath("tmp-nomcom-public-keys-dir")
-    if not os.path.exists(obj.nomcom_public_keys_dir):
-        os.mkdir(obj.nomcom_public_keys_dir)
+    obj.nomcom_public_keys_dir = obj.tempdir('nomcom-public-keys')
     settings.NOMCOM_PUBLIC_KEYS_DIR = obj.nomcom_public_keys_dir
 
 def clean_test_public_keys_dir(obj):

@@ -42,8 +42,7 @@ def group_urlreverse_list(group, viewname):
 
 class GroupPagesTests(TestCase):
     def setUp(self):
-        self.charter_dir = os.path.abspath("tmp-charter-dir")
-        os.mkdir(self.charter_dir)
+        self.charter_dir = self.tempdir('charter')
         self.saved_charter_path = settings.CHARTER_PATH
         settings.CHARTER_PATH = self.charter_dir
 
@@ -418,8 +417,7 @@ class GroupPagesTests(TestCase):
 
 class GroupEditTests(TestCase):
     def setUp(self):
-        self.charter_dir = os.path.abspath("tmp-charter-dir")
-        os.mkdir(self.charter_dir)
+        self.charter_dir = self.tempdir('charter')
         self.saved_charter_path = settings.CHARTER_PATH
         settings.CHARTER_PATH = self.charter_dir
 

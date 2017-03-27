@@ -461,10 +461,6 @@ TEST_DIFF_FAILURE_DIR = "/tmp/test/failure/"
 
 TEST_GHOSTDRIVER_LOG_PATH = "ghostdriver.log"
 
-TEST_MATERIALS_DIR = "tmp-meeting-materials-dir"
-
-TEST_BLUESHEET_DIR = "tmp-bluesheet-dir"
-
 # These are regexes
 TEST_URL_COVERAGE_EXCLUDE = [
     r"^\^admin/",

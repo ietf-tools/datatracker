@@ -41,8 +41,7 @@ class IetfAuthTests(TestCase):
         settings.USE_PYTHON_HTDIGEST = True
 
         self.saved_htpasswd_file = settings.HTPASSWD_FILE
-        self.htpasswd_dir = os.path.abspath("tmp-htpasswd-dir")
-        os.mkdir(self.htpasswd_dir)
+        self.htpasswd_dir = self.tempdir('htpasswd')
         settings.HTPASSWD_FILE = os.path.join(self.htpasswd_dir, "htpasswd")
         open(settings.HTPASSWD_FILE, 'a').close() # create empty file
 

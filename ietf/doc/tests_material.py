@@ -22,15 +22,17 @@ from ietf.utils.test_data import make_test_data
 
 class GroupMaterialTests(TestCase):
     def setUp(self):
-        self.materials_dir = os.path.abspath("tmp-document-dir")
-        if not os.path.exists(self.materials_dir):
-            os.makedirs(os.path.join(self.materials_dir, "slides"))
+        self.materials_dir = self.tempdir("materials")
+        self.slides_dir = os.path.join(self.materials_dir, "slides")
+        if not os.path.exists(self.slides_dir):
+            os.mkdir(self.slides_dir)
         self.saved_document_path_pattern = settings.DOCUMENT_PATH_PATTERN
         settings.DOCUMENT_PATH_PATTERN = self.materials_dir + "/{doc.type_id}/"
 
-        self.agenda_dir = os.path.abspath("tmp-agenda-dir")
-        if not os.path.exists(self.agenda_dir):
-            os.makedirs(os.path.join(self.agenda_dir, "42", "slides"))
+        self.agenda_dir = self.tempdir("agenda")
+        self.meeting_slides_dir = os.path.join(self.agenda_dir, "42", "slides")
+        if not os.path.exists(self.meeting_slides_dir):
+            os.makedirs(self.meeting_slides_dir)
         self.saved_agenda_path = settings.AGENDA_PATH
         settings.AGENDA_PATH = self.agenda_dir
 

@@ -39,11 +39,9 @@ class ProceedingsTestCase(TestCase):
 
 class RecordingTestCase(TestCase):
     def setUp(self):
-        self.meeting_recordings_dir = os.path.abspath("tmp-meeting-recordings-dir")
+        self.meeting_recordings_dir = self.tempdir('meeting-recordings')
         self.saved_meeting_recordings_dir = settings.MEETING_RECORDINGS_DIR
         settings.MEETING_RECORDINGS_DIR = self.meeting_recordings_dir
-        if not os.path.exists(self.meeting_recordings_dir):
-            os.makedirs(self.meeting_recordings_dir)
 
     def tearDown(self):
         shutil.rmtree(self.meeting_recordings_dir)
@@ -182,7 +180,7 @@ class OldProceedingsTestCase(TestCase):
     ''' Ensure coverage of fragments of old proceedings generation until those are removed ''' 
     def setUp(self):
         self.session = SessionFactory(meeting__type_id='ietf')
-        self.proceedings_dir = os.path.abspath("tmp-proceedings-dir")
+        self.proceedings_dir = self.tempdir('proceedings')
 
         # This unintuitive bit is a consequence of the surprising implementation of meeting.get_materials_path
         self.saved_agenda_path = settings.AGENDA_PATH

@@ -25,8 +25,7 @@ from ietf.utils.test_utils import login_testing_unauthorized
 
 class EditCharterTests(TestCase):
     def setUp(self):
-        self.charter_dir = os.path.abspath("tmp-charter-dir")
-        os.mkdir(self.charter_dir)
+        self.charter_dir = self.tempdir('charter')
         self.saved_charter_path = settings.CHARTER_PATH
         settings.CHARTER_PATH = self.charter_dir
 

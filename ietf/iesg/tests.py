@@ -95,9 +95,7 @@ class IESGAgendaTests(TestCase):
         by = Person.objects.get(name="Areað Irector")
         date = get_agenda_date()
 
-        self.draft_dir = os.path.abspath("tmp-agenda-draft-dir")
-        if not os.path.exists(self.draft_dir):
-            os.mkdir(self.draft_dir)
+        self.draft_dir = self.tempdir('agenda-draft')
         self.saved_internet_draft_path = settings.INTERNET_DRAFT_PATH
         settings.INTERNET_DRAFT_PATH = self.draft_dir
 

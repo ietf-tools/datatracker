@@ -211,12 +211,8 @@ class RFCSyncTests(TestCase):
     def setUp(self):
         self.save_id_dir = settings.INTERNET_DRAFT_PATH
         self.save_archive_dir = settings.INTERNET_DRAFT_ARCHIVE_DIR
-        self.id_dir = os.path.abspath("tmp-id-dir")
-        self.archive_dir = os.path.abspath("tmp-id-archive")
-        if not os.path.exists(self.id_dir):
-            os.mkdir(self.id_dir)
-        if not os.path.exists(self.archive_dir):
-            os.mkdir(self.archive_dir)
+        self.id_dir = self.tempdir('id')
+        self.archive_dir = self.tempdir('id-archive')
         settings.INTERNET_DRAFT_PATH = self.id_dir
         settings.INTERNET_DRAFT_ARCHIVE_DIR = self.archive_dir
 

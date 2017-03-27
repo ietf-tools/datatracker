@@ -107,7 +107,6 @@ def safe_destroy_test_db(*args, **kwargs):
     global test_database_name, old_destroy
     keepdb = kwargs.get('keepdb', False)
     if not keepdb:
-        print "     Checking that it's safe to destroy test database..."
         if settings.DATABASES["default"]["NAME"] != test_database_name:
             print '     NOT SAFE; Changing settings.DATABASES["default"]["NAME"] from %s to %s' % (settings.DATABASES["default"]["NAME"], test_database_name)
             settings.DATABASES["default"]["NAME"] = test_database_name
@@ -366,6 +365,8 @@ class IetfTestRunner(DiscoverRunner):
         self.root_dir = os.path.dirname(settings.BASE_DIR)
         self.coverage_file = os.path.join(self.root_dir, settings.TEST_COVERAGE_MASTER_FILE)
         super(IetfTestRunner, self).__init__(**kwargs)
+        if self.parallel:
+            self.check_coverage = False
 
     def setup_test_environment(self, **kwargs):
         global template_coverage_collection

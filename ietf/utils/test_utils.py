@@ -101,8 +101,8 @@ class TestCase(django.test.TestCase):
         self.assertValidHTML(resp.content)
 
     def tempdir(self, label):
-        slug = slugify(self.__class__.replace('.','-'))
-        dirname = "tmp-{label}-{slug}".format(**locals())
+        slug = slugify(self.__class__.__name__.replace('.','-'))
+        dirname = "tmp-{label}-{slug}-dir".format(**locals())
         path = os.path.abspath(dirname)
         if not os.path.exists(path):
             os.mkdir(path)
@@ -110,3 +110,5 @@ class TestCase(django.test.TestCase):
 
     def __str__(self):
         return "%s (%s.%s)" % (self._testMethodName, strclass(self.__class__),self._testMethodName)
+
+        

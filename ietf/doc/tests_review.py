@@ -30,10 +30,7 @@ from ietf.person.factories import PersonFactory
 
 class ReviewTests(TestCase):
     def setUp(self):
-        self.review_dir = os.path.abspath("tmp-review-dir")
-        if not os.path.exists(self.review_dir):
-            os.mkdir(self.review_dir)
-
+        self.review_dir = self.tempdir('review')
         self.old_document_path_pattern = settings.DOCUMENT_PATH_PATTERN
         settings.DOCUMENT_PATH_PATTERN = self.review_dir + "/{doc.type_id}/"
 

@@ -1,4 +1,3 @@
-import os
 import shutil
 
 from StringIO import StringIO
@@ -21,18 +20,15 @@ SECR_USER='secretary'
 class SecrDraftsTestCase(TestCase):
     def setUp(self):
         self.saved_internet_draft_path = settings.INTERNET_DRAFT_PATH
-        self.repository_dir = os.path.abspath("tmp-submit-repository-dir")
-        os.mkdir(self.repository_dir)
+        self.repository_dir = self.tempdir('submit-repository')
         settings.INTERNET_DRAFT_PATH = self.repository_dir
 
         self.saved_internet_draft_archive_dir = settings.INTERNET_DRAFT_ARCHIVE_DIR
-        self.archive_dir = os.path.abspath("tmp-submit-archive-dir")
-        os.mkdir(self.archive_dir)
+        self.archive_dir = self.tempdir('submit-archive')
         settings.INTERNET_DRAFT_ARCHIVE_DIR = self.archive_dir
 
         self.saved_idsubmit_manual_staging_dir = settings.IDSUBMIT_MANUAL_STAGING_DIR
-        self.manual_dir =  os.path.abspath("tmp-submit-manual-dir")
-        os.mkdir(self.manual_dir)
+        self.manual_dir =  self.tempdir('submit-manual')
         settings.IDSUBMIT_MANUAL_STAGING_DIR = self.manual_dir
 
     def tearDown(self):

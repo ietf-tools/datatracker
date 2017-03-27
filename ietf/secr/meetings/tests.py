@@ -20,24 +20,18 @@ from ietf.utils.test_utils import TestCase
 
 class SecrMeetingTestCase(TestCase):
     def setUp(self):
-        self.proceedings_dir = os.path.abspath("tmp-proceedings-dir")
-        if not os.path.exists(self.proceedings_dir):
-            os.mkdir(self.proceedings_dir)
+        self.proceedings_dir = self.tempdir('proceedings')
         self.saved_secr_proceedings_dir = settings.SECR_PROCEEDINGS_DIR
         settings.SECR_PROCEEDINGS_DIR = self.proceedings_dir
         self.saved_agenda_path = settings.AGENDA_PATH
         settings.AGENDA_PATH = self.proceedings_dir
         
-        self.bluesheet_dir = os.path.abspath(settings.TEST_BLUESHEET_DIR)
+        self.bluesheet_dir = self.tempdir('bluesheet')
         self.bluesheet_path = os.path.join(self.bluesheet_dir,'blue_sheet.rtf')
-        if not os.path.exists(self.bluesheet_dir):
-            os.mkdir(self.bluesheet_dir)
         self.saved_secr_blue_sheet_path = settings.SECR_BLUE_SHEET_PATH
         settings.SECR_BLUE_SHEET_PATH = self.bluesheet_path
 
-        self.materials_dir = os.path.abspath(settings.TEST_MATERIALS_DIR)
-        if not os.path.exists(self.materials_dir):
-            os.mkdir(self.materials_dir)
+        self.materials_dir = self.tempdir('materials')
         
     def tearDown(self):
         settings.SECR_PROCEEDINGS_DIR = self.saved_secr_proceedings_dir
