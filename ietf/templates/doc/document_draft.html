@@ -18,9 +18,9 @@
 
 {% block title %}
   {% if doc.get_state_slug == "rfc" %}
-    RFC {{ rfc_number }}
+    RFC {{ rfc_number }} - {{ doc.title }}
   {% else %}
-    {{ name }}-{{ doc.rev }}
+    {{ name }}-{{ doc.rev }} - {{ doc.title }}
   {% endif %}
 {% endblock %}
 
