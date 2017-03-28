@@ -131,11 +131,11 @@ RUN pip install virtualenv
 # Phantomjs
 WORKDIR /usr/local
 
-RUN wget -qN https://tools.ietf.org/tar/phantomjs-1.9.7-linux-x86_64.tar.bz2
-RUN tar xjf phantomjs-1.9.7-linux-x86_64.tar.bz2
+RUN wget -qN https://tools.ietf.org/tar/phantomjs-1.9.8-linux-x86_64.tar.bz2
+RUN tar xjf phantomjs-1.9.8-linux-x86_64.tar.bz2
 
 WORKDIR /usr/local/bin
-RUN ln -s /usr/local/phantomjs-1.9.7-linux-x86_64/bin/phantomjs .
+RUN ln -s /usr/local/phantomjs-1.9.8-linux-x86_64/bin/phantomjs .
 
 # idnits and dependencies
 RUN wget -q --no-check-certificate -P /usr/local/bin/ https://tools.ietf.org/tools/idnits/idnits && chmod +x /usr/local/bin/idnits
