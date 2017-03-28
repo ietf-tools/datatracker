@@ -204,6 +204,11 @@
 	          </td>
                   <td>
 	            {{item.timeslot.name}}
+
+                   {% if item.session.status.slug == 'canceled' %}
+                        <span class="label label-danger pull-right">CANCELLED</span>
+                   {% endif %}
+
 	          </td>
 		  <td class="col-md-2">
 		    <span class="hidden-xs">
