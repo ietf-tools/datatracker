@@ -263,10 +263,7 @@ class ReviewTests(TestCase):
 
         # set up some reviewer-suitability factors
         reviewer_email = Email.objects.get(person__user__username="reviewer")
-        DocumentAuthor.objects.create(
-            author=reviewer_email,
-            document=doc,
-        )
+        DocumentAuthor.objects.create(person=reviewer_email.person, email=reviewer_email, document=doc)
         doc.rev = "10"
         doc.save_with_history([DocEvent.objects.create(doc=doc, rev=doc.rev, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
 
@@ -575,7 +572,7 @@ class ReviewTests(TestCase):
         self.assertTrue(settings.MAILING_LIST_ARCHIVE_URL in review_req.review.external_url)
 
         # Check that the review has the reviewer as author
-        self.assertEqual(review_req.reviewer, review_req.review.authors.first())
+        self.assertEqual(review_req.reviewer, review_req.review.documentauthor_set.first().email)
 
         # Check that we have a copy of the outgoing message
         msgid = outbox[0]["Message-ID"]

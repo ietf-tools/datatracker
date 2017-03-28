@@ -31,7 +31,7 @@ I-D Submission Tool URL:
 
 
   Authors:
-{% for author in submission.authors_parsed %}    {{ author.name }}{% if author.email %} <{{ author.email }}>{% endif%}
+{% for author in submission.authors %}    {{ author.name }}{% if author.email %} <{{ author.email }}>{% endif%}
 {% endfor %}
 
   Comment to the secretariat:

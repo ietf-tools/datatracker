@@ -20,7 +20,8 @@ from ietf.group.models import Group
 from ietf.ietfauth.utils import has_role, role_required
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.message.models import Message, MessageAttachment
-from ietf.submit.forms import ( SubmissionUploadForm, NameEmailForm, EditSubmissionForm,
+from ietf.name.models import FormalLanguageName
+from ietf.submit.forms import ( SubmissionUploadForm, AuthorForm, SubmitterForm, EditSubmissionForm,
     PreapprovalForm, ReplacesForm, SubmissionEmailForm, MessageModelForm )
 from ietf.submit.mail import ( send_full_url, send_approval_request_to_group,
     send_submission_confirmation, send_manual_post_request, add_submission_email, get_reply_to )
@@ -30,6 +31,7 @@ from ietf.submit.utils import ( approvable_submissions_for_user, preapprovals_fo
     recently_approved_by_user, validate_submission, create_submission_event,
     docevent_from_submission, post_submission, cancel_submission, rename_submission_files,
     get_person_from_name_email )
+from ietf.stats.utils import clean_country_name
 from ietf.utils.accesstoken import generate_random_key, generate_access_token
 from ietf.utils.draft import Draft
 from ietf.utils.log import log
@@ -80,10 +82,9 @@ def upload_submission(request):
                     # If we don't have an xml file, try to extract the
                     # relevant information from the text file
                     for author in form.parsed_draft.get_author_list():
-                        full_name, first_name, middle_initial, last_name, name_suffix, email, company = author
+                        full_name, first_name, middle_initial, last_name, name_suffix, email, country, company = author
 
-                        line = full_name.replace("\n", "").replace("\r", "").replace("<", "").replace(">", "").strip()
-                        email = (email or "").strip()
+                        name = full_name.replace("\n", "").replace("\r", "").replace("<", "").replace(">", "").strip()
 
                         if email:
                             try:
@@ -91,29 +92,31 @@ def upload_submission(request):
                             except ValidationError:
                                 email = ""
 
-                        if email:
-                            # Try various ways of handling name and email, in order to avoid
-                            # triggering a 500 error here.  If the document contains non-ascii
-                            # characters, it will be flagged later by the idnits check.
-                            try:
-                                line += u" <%s>" % email
-                            except UnicodeDecodeError:
+                        def turn_into_unicode(s):
+                            if s is None:
+                                return u""
+
+                            if isinstance(s, unicode):
+                                return s
+                            else:
                                 try:
-                                    line = line.decode('utf-8')
-                                    email = email.decode('utf-8')
-                                    line += u" <%s>" % email
+                                    return s.decode("utf-8")
                                 except UnicodeDecodeError:
                                     try:
-                                        line = line.decode('latin-1')
-                                        email = email.decode('latin-1')
-                                        line += u" <%s>" % email
+                                        return s.decode("latin-1")
                                     except UnicodeDecodeError:
-                                        try:
-                                            line += " <%s>" % email
-                                        except UnicodeDecodeError:
-                                            pass
+                                        return ""
 
-                        authors.append(line)
+                        name = turn_into_unicode(name)
+                        email = turn_into_unicode(email)
+                        company = turn_into_unicode(company)
+
+                        authors.append({
+                            "name": name,
+                            "email": email,
+                            "affiliation": company,
+                            "country": country
+                        })
 
                 if form.abstract:
                     abstract = form.abstract
@@ -124,55 +127,39 @@ def upload_submission(request):
                 # for this revision.
                 # If so - we're going to update it otherwise we create a new object 
 
-                submission = Submission.objects.filter(name=form.filename, 
-                                                       rev=form.revision,
-                                                       state_id = "waiting-for-draft").distinct()
-                if (len(submission) == 0):
-                    submission = None
-                elif (len(submission) == 1):
-                    submission = submission[0]
-                    
-                    submission.state = DraftSubmissionStateName.objects.get(slug="uploaded")
-                    submission.remote_ip=form.remote_ip
-                    submission.title=form.title
-                    submission.abstract=abstract
-                    submission.rev=form.revision
-                    submission.pages=form.parsed_draft.get_pagecount()
-                    submission.authors="\n".join(authors)
-                    submission.first_two_pages=''.join(form.parsed_draft.pages[:2])
-                    submission.file_size=file_size
-                    submission.file_types=','.join(form.file_types)
-                    submission.submission_date=datetime.date.today()
-                    submission.document_date=form.parsed_draft.get_creation_date()
-                    submission.replaces=""
-                    
-                    submission.save()
+                submissions = Submission.objects.filter(name=form.filename,
+                                                        rev=form.revision,
+                                                        state_id = "waiting-for-draft").distinct()
+
+                if not submissions:
+                    submission = Submission(name=form.filename, rev=form.revision, group=form.group)
+                elif len(submissions) == 1:
+                    submission = submissions[0]
                 else:
                     raise Exception("Multiple submissions found waiting for upload")
 
-                if (submission == None):
-                    try:
-                        submission = Submission.objects.create(
-                                state=DraftSubmissionStateName.objects.get(slug="uploaded"),
-                                remote_ip=form.remote_ip,
-                                name=form.filename,
-                                group=form.group,
-                                title=form.title,
-                                abstract=abstract,
-                                rev=form.revision,
-                                pages=form.parsed_draft.get_pagecount(),
-                                authors="\n".join(authors),
-                                note="",
-                                first_two_pages=''.join(form.parsed_draft.pages[:2]),
-                                file_size=file_size,
-                                file_types=','.join(form.file_types),
-                                submission_date=datetime.date.today(),
-                                document_date=form.parsed_draft.get_creation_date(),
-                                replaces="",
-                        )
-                    except Exception as e:
-                        log("Exception: %s\n" % e)
-                        raise
+                try:
+                    submission.state = DraftSubmissionStateName.objects.get(slug="uploaded")
+                    submission.remote_ip = form.remote_ip
+                    submission.title = form.title
+                    submission.abstract = abstract
+                    submission.pages = form.parsed_draft.get_pagecount()
+                    submission.words = form.parsed_draft.get_wordcount()
+                    submission.authors = authors
+                    submission.first_two_pages = ''.join(form.parsed_draft.pages[:2])
+                    submission.file_size = file_size
+                    submission.file_types = ','.join(form.file_types)
+                    submission.submission_date = datetime.date.today()
+                    submission.document_date = form.parsed_draft.get_creation_date()
+                    submission.replaces = ""
+
+                    submission.save()
+
+                    submission.formal_languages = FormalLanguageName.objects.filter(slug__in=form.parsed_draft.get_formal_languages())
+
+                except Exception as e:
+                    log("Exception: %s\n" % e)
+                    raise
 
                 # run submission checkers
                 def apply_check(submission, checker, method, fn):
@@ -274,8 +261,8 @@ def submission_status(request, submission_id, access_token=None):
     group_authors_changed = False
     doc = submission.existing_document()
     if doc and doc.group:
-        old_authors = [ i.author.person for i in doc.documentauthor_set.all() ]
-        new_authors = [ get_person_from_name_email(**p) for p in submission.authors_parsed() ]
+        old_authors = [ author.person for author in doc.documentauthor_set.all() ]
+        new_authors = [ get_person_from_name_email(author["name"], author.get("email")) for author in submission.authors ]
         group_authors_changed = set(old_authors)!=set(new_authors)
 
     message = None
@@ -290,7 +277,7 @@ def submission_status(request, submission_id, access_token=None):
         message = ('success', 'The submission is pending approval by the authors of the previous version. An email has been sent to: %s' % ", ".join(confirmation_list))
 
 
-    submitter_form = NameEmailForm(initial=submission.submitter_parsed(), prefix="submitter")
+    submitter_form = SubmitterForm(initial=submission.submitter_parsed(), prefix="submitter")
     replaces_form = ReplacesForm(name=submission.name,initial=DocAlias.objects.filter(name__in=submission.replaces.split(",")))
 
     if request.method == 'POST':
@@ -299,7 +286,7 @@ def submission_status(request, submission_id, access_token=None):
             if not can_edit:
                 return HttpResponseForbidden("You do not have permission to perform this action")
 
-            submitter_form = NameEmailForm(request.POST, prefix="submitter")
+            submitter_form = SubmitterForm(request.POST, prefix="submitter")
             replaces_form = ReplacesForm(request.POST, name=submission.name)
             validations = [submitter_form.is_valid(), replaces_form.is_valid()]
             if all(validations):
@@ -415,6 +402,9 @@ def submission_status(request, submission_id, access_token=None):
             # something went wrong, turn this into a GET and let the user deal with it
             return HttpResponseRedirect("")
 
+    for author in submission.authors:
+        author["cleaned_country"] = clean_country_name(author.get("country"))
+
     return render(request, 'submit/submission_status.html', {
         'selected': 'status',
         'submission': submission,
@@ -447,7 +437,7 @@ def edit_submission(request, submission_id, access_token=None):
     # submission itself, one for the submitter, and a list of forms
     # for the authors
 
-    empty_author_form = NameEmailForm(email_required=False)
+    empty_author_form = AuthorForm()
 
     if request.method == 'POST':
         # get a backup submission now, the model form may change some
@@ -455,21 +445,23 @@ def edit_submission(request, submission_id, access_token=None):
         prev_submission = Submission.objects.get(pk=submission.pk)
 
         edit_form = EditSubmissionForm(request.POST, instance=submission, prefix="edit")
-        submitter_form = NameEmailForm(request.POST, prefix="submitter")
+        submitter_form = SubmitterForm(request.POST, prefix="submitter")
         replaces_form = ReplacesForm(request.POST,name=submission.name)
-        author_forms = [ NameEmailForm(request.POST, email_required=False, prefix=prefix)
+        author_forms = [ AuthorForm(request.POST, prefix=prefix)
                          for prefix in request.POST.getlist("authors-prefix")
                          if prefix != "authors-" ]
 
         # trigger validation of all forms
         validations = [edit_form.is_valid(), submitter_form.is_valid(), replaces_form.is_valid()] + [ f.is_valid() for f in author_forms ]
         if all(validations):
+            changed_fields = []
+
             submission.submitter = submitter_form.cleaned_line()
             replaces = replaces_form.cleaned_data.get("replaces", [])
             submission.replaces = ",".join(o.name for o in replaces)
-            submission.authors = "\n".join(f.cleaned_line() for f in author_forms)
-            if hasattr(submission, '_cached_authors_parsed'):
-                del submission._cached_authors_parsed
+            submission.authors = [ { attr: f.cleaned_data.get(attr) or ""
+                                     for attr in ["name", "email", "affiliation", "country"] }
+                                   for f in author_forms ]
             edit_form.save(commit=False) # transfer changes
 
             if submission.rev != prev_submission.rev:
@@ -478,12 +470,18 @@ def edit_submission(request, submission_id, access_token=None):
             submission.state = DraftSubmissionStateName.objects.get(slug="manual")
             submission.save()
 
+            formal_languages_changed = False
+            if set(submission.formal_languages.all()) != set(edit_form.cleaned_data["formal_languages"]):
+                submission.formal_languages = edit_form.cleaned_data["formal_languages"]
+                formal_languages_changed = True
+
             send_manual_post_request(request, submission, errors)
 
-            changed_fields = [
+            changed_fields += [
                 submission._meta.get_field(f).verbose_name
                 for f in list(edit_form.fields.keys()) + ["submitter", "authors"]
-                if getattr(submission, f) != getattr(prev_submission, f)
+                if (f == "formal_languages" and formal_languages_changed)
+                or getattr(submission, f) != getattr(prev_submission, f)
             ]
 
             if changed_fields:
@@ -498,10 +496,10 @@ def edit_submission(request, submission_id, access_token=None):
             form_errors = True
     else:
         edit_form = EditSubmissionForm(instance=submission, prefix="edit")
-        submitter_form = NameEmailForm(initial=submission.submitter_parsed(), prefix="submitter")
+        submitter_form = SubmitterForm(initial=submission.submitter_parsed(), prefix="submitter")
         replaces_form = ReplacesForm(name=submission.name,initial=DocAlias.objects.filter(name__in=submission.replaces.split(",")))
-        author_forms = [ NameEmailForm(initial=author, email_required=False, prefix="authors-%s" % i)
-                         for i, author in enumerate(submission.authors_parsed()) ]
+        author_forms = [ AuthorForm(initial=author, prefix="authors-%s" % i)
+                         for i, author in enumerate(submission.authors) ]
 
     return render(request, 'submit/edit_submission.html',
                               {'selected': 'status',

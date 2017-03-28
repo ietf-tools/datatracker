@@ -32,4 +32,3 @@ class PersonAdmin(admin.ModelAdmin):
     inlines = [ EmailInline, AliasInline, ]
 #    actions = None
 admin.site.register(Person, PersonAdmin)
-

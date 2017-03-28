@@ -104,6 +104,8 @@ class AuthorForm(forms.Form):
     '''
     person = forms.CharField(max_length=50,widget=forms.TextInput(attrs={'class':'name-autocomplete'}),help_text="To see a list of people type the first name, or last name, or both.")
     email = forms.CharField(widget=forms.Select(),help_text="Select an email.")
+    affiliation = forms.CharField(max_length=100, required=False, help_text="Affiliation")
+    country = forms.CharField(max_length=255, required=False, help_text="Country")
 
     # check for id within parenthesis to ensure name was selected from the list
     def clean_person(self):

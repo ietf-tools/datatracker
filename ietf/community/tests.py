@@ -33,7 +33,7 @@ class CommunityListTests(TestCase):
 
         rule_state_iesg = SearchRule.objects.create(rule_type="state_iesg", state=State.objects.get(type="draft-iesg", slug="lc"), community_list=clist)
 
-        rule_author = SearchRule.objects.create(rule_type="author", state=State.objects.get(type="draft", slug="active"), person=Person.objects.filter(email__documentauthor__document=draft).first(), community_list=clist)
+        rule_author = SearchRule.objects.create(rule_type="author", state=State.objects.get(type="draft", slug="active"), person=Person.objects.filter(documentauthor__document=draft).first(), community_list=clist)
 
         rule_ad = SearchRule.objects.create(rule_type="ad", state=State.objects.get(type="draft", slug="active"), person=draft.ad, community_list=clist)
 
@@ -115,7 +115,7 @@ class CommunityListTests(TestCase):
         r = self.client.post(url, {
             "action": "add_rule",
             "rule_type": "author_rfc",
-            "author_rfc-person": Person.objects.filter(email__documentauthor__document=draft).first().pk,
+            "author_rfc-person": Person.objects.filter(documentauthor__document=draft).first().pk,
             "author_rfc-state": State.objects.get(type="draft", slug="rfc").pk,
         })
         self.assertEqual(r.status_code, 302)

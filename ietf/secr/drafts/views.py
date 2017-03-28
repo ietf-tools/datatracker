@@ -540,7 +540,7 @@ def approvals(request):
 @role_required('Secretariat')
 def author_delete(request, id, oid):
     '''
-    This view deletes the specified author(email) from the draft
+    This view deletes the specified author from the draft
     '''
     DocumentAuthor.objects.get(id=oid).delete()
     messages.success(request, 'The author was deleted successfully')
@@ -574,13 +574,17 @@ def authors(request, id):
             return redirect('ietf.secr.drafts.views.view', id=id)
 
         if form.is_valid():
-            author = form.cleaned_data['email']
+            person = form.cleaned_data['person']
+            email = form.cleaned_data['email']
+            affiliation = form.cleaned_data.get('affiliation') or ""
+            country = form.cleaned_data.get('country') or ""
+
             authors = draft.documentauthor_set.all()
             if authors:
                 order = authors.aggregate(Max('order')).values()[0] + 1
             else:
                 order = 1
-            DocumentAuthor.objects.create(document=draft,author=author,order=order)
+            DocumentAuthor.objects.create(document=draft, person=person, email=email, affiliation=affiliation, country=country, order=order)
             
             messages.success(request, 'Author added successfully!')
             return redirect('ietf.secr.drafts.views.authors', id=id)

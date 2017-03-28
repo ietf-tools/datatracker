@@ -91,7 +91,7 @@ def make_immutable_base_data():
 
     # one area
     area = create_group(name="Far Future", acronym="farfut", type_id="area", parent=ietf)
-    create_person(area, "ad", name="Areað Irector", username="ad", email_address="aread@ietf.org")
+    create_person(area, "ad", name=u"Areað Irector", username="ad", email_address="aread@ietf.org")
 
     # second area
     opsarea = create_group(name="Operations", acronym="ops", type_id="area", parent=ietf)
@@ -293,7 +293,8 @@ def make_test_data():
 
     DocumentAuthor.objects.create(
         document=draft,
-        author=Email.objects.get(address="aread@ietf.org"),
+        person=Person.objects.get(email__address="aread@ietf.org"),
+        email=Email.objects.get(address="aread@ietf.org"),
         order=1
         )
 

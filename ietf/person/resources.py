@@ -6,7 +6,7 @@ from tastypie.cache import SimpleCache
 
 from ietf import api
 
-from ietf.person.models import Person, Email, Alias, PersonHistory
+from ietf.person.models import (Person, Email, Alias, PersonHistory)
 
 
 from ietf.utils.resources import UserResource
@@ -82,4 +82,3 @@ class PersonHistoryResource(ModelResource):
             "user": ALL_WITH_RELATIONS,
         }
 api.person.register(PersonHistoryResource())
-

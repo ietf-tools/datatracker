@@ -57,7 +57,7 @@ def port_rules_to_typed_system(apps, schema_editor):
 
 
         elif rule.rule_type in ["author", "author_rfc"]:
-            found_persons = list(try_to_uniquify_person(rule, Person.objects.filter(email__documentauthor__id__gte=1).filter(name__icontains=rule.value).distinct()))
+            found_persons = list(try_to_uniquify_person(rule, Person.objects.filter(documentauthor__id__gte=1).filter(name__icontains=rule.value).distinct()))
 
             if found_persons:
                 rule.person = found_persons[0]
