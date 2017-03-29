@@ -1,3 +1,5 @@
+import datetime
+
 from pyquery import PyQuery
 
 from django.urls import reverse as urlreverse
@@ -7,7 +9,9 @@ from ietf.utils.test_utils import login_testing_unauthorized, TestCase, uniconte
 import ietf.stats.views
 
 from ietf.submit.models import Submission
-from ietf.name.models import FormalLanguageName
+from ietf.doc.models import Document, DocAlias, State, RelatedDocument, NewRevisionDocEvent
+from ietf.person.models import Person
+from ietf.name.models import FormalLanguageName, DocRelationshipName
 
 class StatisticsTests(TestCase):
     def test_stats_index(self):
@@ -18,6 +22,7 @@ class StatisticsTests(TestCase):
     def test_document_stats(self):
         draft = make_test_data()
 
+        # create some data for the statistics
         Submission.objects.create(
             authors=[ { "name": "Some Body", "email": "somebody@example.com", "affiliation": "Some Inc.", "country": "US" }],
             pages=30,
@@ -29,6 +34,37 @@ class StatisticsTests(TestCase):
         )
 
         draft.formal_languages.add(FormalLanguageName.objects.get(slug="xml"))
+        Document.objects.filter(pk=draft.pk).update(words=4000)
+        # move it back so it shows up in the yearly summaries
+        NewRevisionDocEvent.objects.filter(doc=draft, rev=draft.rev).update(
+            time=datetime.datetime.now() - datetime.timedelta(days=500))
+
+        referencing_draft = Document.objects.create(
+            name="draft-ietf-mars-referencing",
+            type_id="draft",
+            title="Referencing",
+            stream_id="ietf",
+            abstract="Test",
+            rev="00",
+            pages=2,
+            words=100
+            )
+        referencing_draft.set_state(State.objects.get(used=True, type="draft", slug="active"))
+        DocAlias.objects.create(document=referencing_draft, name=referencing_draft.name)
+        RelatedDocument.objects.create(
+            source=referencing_draft,
+            target=draft.docalias_set.first(),
+            relationship=DocRelationshipName.objects.get(slug="refinfo")
+        )
+        NewRevisionDocEvent.objects.create(
+            type="new_revision",
+            by=Person.objects.get(name="(System)"),
+            doc=referencing_draft,
+            desc="New revision available",
+            rev=referencing_draft.rev,
+            time=datetime.datetime.now() - datetime.timedelta(days=1000)
+        )
+
 
         # check redirect
         url = urlreverse(ietf.stats.views.document_stats)

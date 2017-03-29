@@ -295,6 +295,8 @@ def make_test_data():
         document=draft,
         person=Person.objects.get(email__address="aread@ietf.org"),
         email=Email.objects.get(address="aread@ietf.org"),
+        country="Germany",
+        affiliation="IETF",
         order=1
         )
 
