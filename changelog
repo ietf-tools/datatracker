@@ -1,3 +1,110 @@
+ietfdb (6.49.0) ietf; urgency=medium
+
+  **IETF 98 code sprint release 1**
+
+  This release contains datatracker bugfixes and enhancements from the IETF-98
+  Code Sprint, where we had a record number of commits :-) The release brings
+  in many useful bugfixes and enhancements, as described below. Many thanks to
+  everyone who contributed!
+
+  * Changed to use doc.canonical_name instead of doc.name when computing 
+    the cache key for htmlized documents in order to trigger a new generation 
+    when a draft goes to RFC.
+
+  * Merged in [13137] from rcross@amsl.com:
+    Added CANCELLED message to agenda for 'other' session types.
+
+  * Merged in [13135] from peter@akayla.com:
+    Added document titles to HTML titles.  Fixes #1957.  
+
+  * Upgraded phantomjs in the docker image to 1.9.8.
+
+  * Merged in [13134] from lars@netapp.com:
+    Shrink all images with image_optim.  
+
+  * Merged in [13129] from lars@netapp.com:
+    Replaced a table with div.  
+
+  * Merged in [13125] from rcross@amsl.com:
+
+    Added a REST API endpoint to notify Datatracker that new session recording
+    files are available, triggering an import.  For use by the Meetech crew.
+
+  * Changed the creation of temporary test dirs to use names which include 
+    the test class name, in order to make it possible to run test cases in 
+    parallel.  Disabled coverage testing when running in parallel (those 
+    classes cannot be pickled and distributed to the test runner threads, and 
+    also won't pass coverage data back).  Tweaked the TestCase.tempdir() method.
+
+  * Modified an API test to make it pickleable (for parallel test runs).
+
+  * Merged in [13120] from rjsparks@nostrum.com:
+    Be more explicit on review message subject lines. Fixes #2103.  
+
+  * Merged in [13118] from lars@netapp.com:
+    Updated vnu.jar and fixed various HTML5 nits it found during a test crawl. 
+
+  * Merged in [13115] from mahoney@nostrum.com:
+    Added draftname to email subject for review request (addresses #2144).  
+
+  * Made relative paths work for the create_group_wikis commnand.  Added 
+    wiki and svn dir patterns to docker/settings_local.py.
+
+  * Merged in [13114] from rcross@amsl.com:
+    Added the meetecho address to settings.AUDIO_IMPORT_EMAIL.   
+
+  * Merged in [13113] from rcross@amsl.com:
+    Added a Country column to meeting/NN/proceedings/attendees.  Fixes #2228.   
+
+  * Merged in [13112] from lars@netapp.com:
+    Fixed various RemovedInDjango20Warning warnings.  
+
+  * Merged in [13109] from lars@netapp.com:
+    Renamed crawl_history to make_rev_history, which is more descriptive.
+    Fixes #2224 (thanks, Robert!) by generating graphs for the entire revision
+    history of a doc, both forward and backward in time.  
+
+  * Tweaked docker/run slightly.  Added 2 utility scripts docker/mailserver 
+    and docker/devserver, to start a debug smtp server and a development 
+    webserver in separate terminal windws.  These assume that the docker image 
+    already is running.  Tweaked the settings_local in docker/ to send email to 
+    the debug smtp server.
+
+  * Changed docker/run in order to more easily be able to run multiple 
+    terminals against the docker enviroment, and also start the dev server and 
+    a debug smtp server in separate terminal windows.
+
+  * Merged in [13108] from lars@netapp.com:
+    Changed 'ID Tracker' to 'Datatracker' in various places. Addresses #2100. 
+
+  * Merged in [13107] from lars@netapp.com:
+    Changes to bower.json to correctly pick up assets for some new versions of
+    various packages we use.  
+
+  * Merged in [13102] from lars@netapp.com:
+    Updated bootstrap-datepicker3 to 1.6.4.  
+
+  * Merged in [13101] from lars@netapp.com:
+    Updated jquery.tablesorter to v2.28.5.  
+
+  * Merged in [13100] from lars@netapp.com:
+    Removed empty template directory.  
+
+  * Merged in [13099] from lars@netapp.com:
+    Removed outdated (and unused) bootstrap version. 
+
+  * Refined the selection of commit log info lines.
+
+  * Merged in [13098] from lars@netapp.com:
+    Updated bootstrap to 3.3.7.  
+
+  * Updated DRAFT_NAMES_WITH_DOT for another dot draft.
+
+  * Improved traceback for a logger.error() message.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  29 Mar 2017 20:01:18 +0000
+
+
 ietfdb (6.48.2) ietf; urgency=medium
 
   Another small patch release to fix internal issues and annoyances
