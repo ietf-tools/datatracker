@@ -52,7 +52,7 @@
     {% endcomment %}
 
     {% with 1209600 as two_weeks %}
-      {% cache two_weeks htmlized doc.name doc.rev using="htmlized" %}
+      {% cache two_weeks htmlized doc.canonical_name doc.rev using="htmlized" %}
         <div>
 	{{ doc.htmlized|default:"Generation of htmlized text failed"|safe }}
 	</div>
