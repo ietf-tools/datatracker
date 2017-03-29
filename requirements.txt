@@ -42,6 +42,7 @@ requests!=2.12.*
 selenium>=2.42
 six>=1.8.0
 sqlparse>=0.2.2
+tblib>=1.3.0
 tqdm>=3.7.0
 Trac>=1.0.10,<1.2
 Unidecode>=0.4.18
