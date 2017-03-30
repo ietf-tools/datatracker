@@ -209,10 +209,10 @@ def document_stats(request, stats_type=None):
         if stats_type == "authors":
             stats_title = "Number of authors for each {}".format(doc_label)
 
-            bins = defaultdict(list)
+            bins = defaultdict(set)
 
             for name, canonical_name, author_count in generate_canonical_names(docalias_qs.values_list("document", "name").annotate(Count("document__documentauthor"))):
-                bins[author_count].append(canonical_name)
+                bins[author_count].add(canonical_name)
 
             series_data = []
             for author_count, names in sorted(bins.iteritems(), key=lambda t: t[0]):
@@ -225,10 +225,10 @@ def document_stats(request, stats_type=None):
         elif stats_type == "pages":
             stats_title = "Number of pages for each {}".format(doc_label)
 
-            bins = defaultdict(list)
+            bins = defaultdict(set)
 
             for name, canonical_name, pages in generate_canonical_names(docalias_qs.values_list("document", "name", "document__pages")):
-                bins[pages].append(canonical_name)
+                bins[pages].add(canonical_name)
 
             series_data = []
             for pages, names in sorted(bins.iteritems(), key=lambda t: t[0]):
@@ -244,10 +244,10 @@ def document_stats(request, stats_type=None):
 
             bin_size = 500
 
-            bins = defaultdict(list)
+            bins = defaultdict(set)
 
             for name, canonical_name, words in generate_canonical_names(docalias_qs.values_list("document", "name", "document__words")):
-                bins[put_into_bin(words, bin_size)].append(canonical_name)
+                bins[put_into_bin(words, bin_size)].add(canonical_name)
 
             series_data = []
             for (value, words), names in sorted(bins.iteritems(), key=lambda t: t[0][0]):
@@ -262,7 +262,7 @@ def document_stats(request, stats_type=None):
         elif stats_type == "format":
             stats_title = "Submission formats for each {}".format(doc_label)
 
-            bins = defaultdict(list)
+            bins = defaultdict(set)
 
             # on new documents, we should have a Submission row with the file types
             submission_types = {}
@@ -275,7 +275,7 @@ def document_stats(request, stats_type=None):
                 types = submission_types.get(doc_name)
                 if types:
                     for dot_ext in types.split(","):
-                        bins[dot_ext.lstrip(".").upper()].append(canonical_name)
+                        bins[dot_ext.lstrip(".").upper()].add(canonical_name)
 
                 else:
 
@@ -299,7 +299,7 @@ def document_stats(request, stats_type=None):
                 canonical_name = doc_names_with_missing_types.get(basename)
 
                 if canonical_name:
-                    bins[ext.upper()].append(canonical_name)
+                    bins[ext.upper()].add(canonical_name)
 
             series_data = []
             for fmt, names in sorted(bins.iteritems(), key=lambda t: t[0]):
@@ -313,10 +313,10 @@ def document_stats(request, stats_type=None):
         elif stats_type == "formlang":
             stats_title = "Formal languages used for each {}".format(doc_label)
 
-            bins = defaultdict(list)
+            bins = defaultdict(set)
 
             for name, canonical_name, formal_language_name in generate_canonical_names(docalias_qs.values_list("document", "name", "document__formal_languages__name")):
-                bins[formal_language_name].append(canonical_name)
+                bins[formal_language_name].add(canonical_name)
 
             series_data = []
             for formal_language, names in sorted(bins.iteritems(), key=lambda t: t[0]):
@@ -360,12 +360,12 @@ def document_stats(request, stats_type=None):
         if stats_type == "author/documents":
             stats_title = "Number of {}s per author".format(doc_label)
 
-            bins = defaultdict(list)
+            bins = defaultdict(set)
 
             person_qs = Person.objects.filter(person_filters)
 
             for name, document_count in person_qs.values_list("name").annotate(Count("documentauthor")):
-                bins[document_count].append(name)
+                bins[document_count].add(name)
 
             total_persons = count_bins(bins)
 
@@ -380,7 +380,7 @@ def document_stats(request, stats_type=None):
         elif stats_type == "author/affiliation":
             stats_title = "Number of {} authors per affiliation".format(doc_label)
 
-            bins = defaultdict(list)
+            bins = defaultdict(set)
 
             person_qs = Person.objects.filter(person_filters)
 
@@ -396,7 +396,7 @@ def document_stats(request, stats_type=None):
             aliases = get_aliased_affiliations(affiliation for _, affiliation in name_affiliation_set)
 
             for name, affiliation in name_affiliation_set:
-                bins[aliases.get(affiliation, affiliation)].append(name)
+                bins[aliases.get(affiliation, affiliation)].add(name)
 
             prune_unknown_bin_with_known(bins)
             total_persons = count_bins(bins)
@@ -419,7 +419,7 @@ def document_stats(request, stats_type=None):
         elif stats_type == "author/country":
             stats_title = "Number of {} authors per country".format(doc_label)
 
-            bins = defaultdict(list)
+            bins = defaultdict(set)
 
             person_qs = Person.objects.filter(person_filters)
 
@@ -440,11 +440,11 @@ def document_stats(request, stats_type=None):
 
             for name, country in name_country_set:
                 country_name = aliases.get(country, country)
-                bins[country_name].append(name)
+                bins[country_name].add(name)
 
                 c = countries.get(country_name)
                 if c and c.in_eu:
-                    bins[eu_name].append(name)
+                    bins[eu_name].add(name)
 
             prune_unknown_bin_with_known(bins)
             total_persons = count_bins(bins)
@@ -469,7 +469,7 @@ def document_stats(request, stats_type=None):
         elif stats_type == "author/continent":
             stats_title = "Number of {} authors per continent".format(doc_label)
 
-            bins = defaultdict(list)
+            bins = defaultdict(set)
 
             person_qs = Person.objects.filter(person_filters)
 
@@ -485,7 +485,7 @@ def document_stats(request, stats_type=None):
             for name, country in name_country_set:
                 country_name = aliases.get(country, country)
                 continent_name = country_to_continent.get(country_name, "")
-                bins[continent_name].append(name)
+                bins[continent_name].add(name)
 
             prune_unknown_bin_with_known(bins)
             total_persons = count_bins(bins)
@@ -504,7 +504,7 @@ def document_stats(request, stats_type=None):
         elif stats_type == "author/citations":
             stats_title = "Number of citations of {}s written by author".format(doc_label)
 
-            bins = defaultdict(list)
+            bins = defaultdict(set)
 
             cite_relationships = list(DocRelationshipName.objects.filter(slug__in=['refnorm', 'refinfo', 'refunk', 'refold']))
             person_filters &= Q(documentauthor__document__docalias__relateddocument__relationship__in=cite_relationships)
@@ -512,7 +512,7 @@ def document_stats(request, stats_type=None):
             person_qs = Person.objects.filter(person_filters)
 
             for name, citations in person_qs.values_list("name").annotate(Count("documentauthor__document__docalias__relateddocument")):
-                bins[citations].append(name)
+                bins[citations].add(name)
 
             total_persons = count_bins(bins)
 
@@ -527,7 +527,7 @@ def document_stats(request, stats_type=None):
         elif stats_type == "author/hindex":
             stats_title = "h-index for {}s written by author".format(doc_label)
 
-            bins = defaultdict(list)
+            bins = defaultdict(set)
 
             cite_relationships = list(DocRelationshipName.objects.filter(slug__in=['refnorm', 'refinfo', 'refunk', 'refold']))
             person_filters &= Q(documentauthor__document__docalias__relateddocument__relationship__in=cite_relationships)
@@ -537,7 +537,7 @@ def document_stats(request, stats_type=None):
             values = person_qs.values_list("name", "documentauthor__document").annotate(Count("documentauthor__document__docalias__relateddocument"))
             for name, ts in itertools.groupby(values.order_by("name"), key=lambda t: t[0]):
                 h_index = compute_hirsch_index([citations for _, document, citations in ts])
-                bins[h_index].append(name)
+                bins[h_index].add(name)
 
             total_persons = count_bins(bins)
 
