@@ -497,8 +497,8 @@ Man                    Expires September 22, 2015               [Page 3]
         self.assertTrue("Deimos street" in unicontent(r))
         q = PyQuery(r.content)
         self.assertEqual(len(q('.rfcmarkup pre')), 4)
-        self.assertEqual(len(q('span.h1')), 2)
-        self.assertEqual(len(q('a[href]')), 116)
+        self.assertEqual(len(q('.rfcmarkup span.h1')), 2)
+        self.assertEqual(len(q('.rfcmarkup a[href]')), 30)
 
         # expired draft
         draft.set_state(State.objects.get(type="draft", slug="expired"))
