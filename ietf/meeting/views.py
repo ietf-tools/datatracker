@@ -988,8 +988,8 @@ def json_agenda(request, num=None ):
             roomdict['level_name'] = room.floorplan.name
             roomdict['level_sort'] = room.floorplan.order
         if room.x1 is not None:
-            roomdict['x'] = room.x1+(room.x2/2.0)
-            roomdict['y'] = room.y1+(room.y2/2.0)
+            roomdict['x'] = (room.x1+room.x2)/2.0
+            roomdict['y'] = (room.y1+room.y2)/2.0
         roomdict['modified'] = room.time
         if room.floorplan and room.floorplan.image:
             roomdict['map'] = room.floorplan.image.url
