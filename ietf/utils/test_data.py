@@ -407,6 +407,49 @@ def make_test_data():
 
     return draft
 
+def make_downref_test_data():
+    # Add an additional draft that has a downref
+    ad = Person.objects.get(user__username="ad")
+    email=ad.role_email('ad')
+    mars_wg = Group.objects.get(acronym="mars")
+
+    draft = Document.objects.create(
+        name="draft-ietf-mars-approved-document",
+        time=datetime.datetime.now(),
+        type_id="draft",
+        title="Martian Network Frameworks",
+        stream_id="ietf",
+        group=mars_wg,
+        abstract="Frameworks for building Martian networks.",
+        rev="01",
+        pages=2,
+        intended_std_level_id="ps",
+        ad=ad,
+        expires=datetime.datetime.now() + datetime.timedelta(days=settings.INTERNET_DRAFT_DAYS_TO_EXPIRE),
+        notify="aliens@example.mars",
+        note="",
+        )
+
+    draft.set_state(State.objects.get(used=True, type="draft", slug="active"))
+    draft.set_state(State.objects.get(used=True, type="draft-iesg", slug="rfcqueue"))
+    draft.set_state(State.objects.get(used=True, type="draft-stream-%s" % draft.stream_id, slug="wg-doc"))
+
+    doc_alias = DocAlias.objects.create(
+        document=draft,
+        name=draft.name,
+        )
+
+    DocumentAuthor.objects.create(
+        document=draft,
+        author=Email.objects.get(address="aread@ietf.org"),
+        order=1,
+        )
+
+    rfc_doc_alias = DocAlias.objects.get(name='rfc9998')
+    RelatedDocument.objects.create(source=draft, target=rfc_doc_alias, relationship_id='downrefappr')
+
+    return draft
+
 def make_review_data(doc):
     team1 = create_group(acronym="reviewteam", name="Review Team", type_id="dir", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
     team2 = create_group(acronym="reviewteam2", name="Review Team 2", type_id="dir", list_email="reviewteam2@ietf.org", parent=Group.objects.get(acronym="farfut"))
