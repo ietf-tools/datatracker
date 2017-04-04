@@ -218,7 +218,7 @@ def get_registration_data(meeting):
     if response.status_code == 200:
         for registration in response.json():
             object, created = Registration.objects.get_or_create(
-                meeting=meeting,
+                meeting_id=meeting.pk,
                 first_name=registration['FirstName'],
                 last_name=registration['LastName'],
                 affiliation=registration['Company'],
