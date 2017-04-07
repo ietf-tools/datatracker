@@ -521,7 +521,7 @@ DATE_FORMAT = "Y-m-d"
 DATETIME_FORMAT = "Y-m-d H:i T"
 
 
-DRAFT_NAMES_WITH_DOT = "(draft-[a-z-]+-(ion-sig-uni4\.0|pilc-2\.5g3g|trade-iotp-v1\.0-[a-z]+|msword-template-v2\.0|1240\.his))"
+DRAFT_NAMES_WITH_DOT = "(draft-[a-z-]+-(ion-sig-uni4\.0|pilc-2\.5g3g|trade-iotp-v1\.0-[a-z]+|msword-template-v2\.0|1240\.his|802\.[0-9]+-[a-z0-9-]*))"
 URL_REGEXPS = {
     "acronym": r"(?P<acronym>[-a-z0-9]+)",
     "charter": r"(?P<name>charter-[-a-z0-9]+)",
