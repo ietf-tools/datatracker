@@ -250,9 +250,11 @@
 	  <td>
 	    {{ stream_state|default:"(None)" }}
 
+	    {% if milestones %} (<span class="milestone">wg milestone{{ milestones|pluralize }}:</span>
 	    {% for m in milestones %}
-	      <span title="{{ m.desc }} ({{ m.group.acronym }} milestone)" class="milestone">{{ m.due|date:"M Y" }}</span>
-	    {% endfor %}
+	      <span title="{{ m.desc }} ({{ m.group.acronym }} milestone)" class="milestone">{{ m.due|date:"M Y" }} - {{m}}</span>{% if not forloop.last %},{% endif %}
+	    {% endfor %})
+	    {% endif %}
 
 	    {% if stream_tags %}
 	      <div class="stream-tags">{% for tag in stream_tags %}{{ tag.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</div>
