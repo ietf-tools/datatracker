@@ -888,6 +888,9 @@ EVENT_TYPES = [
     ("requested_review", "Requested review"),
     ("assigned_review_request", "Assigned review request"),
     ("closed_review_request", "Closed review request"),
+
+    # downref
+    ("downref_approved", "Downref approved"),
     ]
 
 class DocEvent(models.Model):
