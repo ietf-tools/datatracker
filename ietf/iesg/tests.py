@@ -3,11 +3,12 @@ import os
 import shutil
 import json
 import datetime
+from pyquery import PyQuery
 
 from django.conf import settings
 from django.urls import reverse as urlreverse
 
-from pyquery import PyQuery
+import debug                            # pyflakes:ignore
 
 from ietf.doc.models import DocEvent, BallotDocEvent, BallotPositionDocEvent, TelechatDocEvent
 from ietf.doc.models import Document, DocAlias, State, RelatedDocument
@@ -449,7 +450,7 @@ class RescheduleOnAgendaTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         d_header_pos = r.content.find("IESG telechat %s" % d.isoformat())
-        draft_pos = r.content[d_header_pos:].find(draft.name)
+        draft_pos = unicontent(r)[d_header_pos:].find(draft.name)
         self.assertTrue(draft_pos>0)
 
         self.assertTrue(draft.latest_event(TelechatDocEvent, "scheduled_for_telechat"))
