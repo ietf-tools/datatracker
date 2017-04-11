@@ -7,11 +7,6 @@ Updated: $Date$
 Planned work in rough order
 ===========================
 
-* Break out the htmlzation code used on tools.ietf.org in a library, and use
-  that in the datatracker rendering, replacing the simpler code currently in
-  use.  This is also going to require some fancy caching, to avoid re-building
-  the html if not needed, as it takes quite some time.
-
 * Use the htmlization lib to improve the rendering of draft text in the
   datatracker's /doc/draft-foo-bar/ pages.
 
@@ -139,3 +134,40 @@ Notes
   wg-doc	-> wg-document
   wg-lc		-> wg-last-call
   writeupw	-> waiting-for-shepherd-writeup
+
+* DjangoCon Europe 2017 Notes:
+
+  - Add tracing of Django Query methods from code through templates to the
+    sql_queries list provided by 'django.template.context_processors.debug'
+    (DONE)
+
+  - Consider rewriting user switches using feature flags, for instance with
+    gargoyle.
+
+  - There is now a Django-REST-Framework add-on app which makes it easier to
+    do something similar with DRF as with Tastypie.  As Tastypie is not being
+    actively maintained, and DRF seems to have better performance, consider
+    building /api/v2 using DRF and drf-schema-adapter / drf-auto-endpoint.
+
+  - Consider adding JWT (RFC7519) support for /api/v1 /api/v2, to generate an
+    access token from a login, and use that instead of session support for
+    access control to access limited endpoints.
+
+  - Once we're on Django 3.5, start using static type annotations to improve
+    early discovery of incorrect function/method usage.  There are add-on
+    files avaliable for Django which provide type annotation for Django
+    functions and methods, and the Python stdlib is type annotated starting
+    with Python 3.5.  Check static typing violations with 'mypy'.
+
+  - Consider providing a user-selectable option to import photos from
+    gravatar.
+
+  - Consider using django-12factor to apply part of the 12-factor app
+    philosophy: https://12factor.net/
+
+
+
+
+  
+
+
