@@ -58,11 +58,12 @@ def get_doc_writeup(doc):
     writeup = 'This document has no writeup'
     if doc.type_id == 'draft':
         latest = doc.latest_event(WriteupDocEvent, type='changed_ballot_writeup_text')
-        if latest and doc.has_rfc_editor_note():
-            rfced_note = doc.latest_event(WriteupDocEvent, type="changed_rfc_editor_note_text")
-            writeup = latest.text + "\n\n" + rfced_note.text
-        else:
+        if latest:
             writeup = latest.text
+            if doc.has_rfc_editor_note():
+                rfced_note = doc.latest_event(WriteupDocEvent, type="changed_rfc_editor_note_text")
+                writeup = writeup + "\n\n" + rfced_note.text
+            
     if doc.type_id == 'charter':
         latest = doc.latest_event(WriteupDocEvent, type='changed_ballot_writeup_text')
         if latest:
