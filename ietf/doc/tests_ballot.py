@@ -753,7 +753,7 @@ class RegenerateLastCallTestCase(TestCase):
         draft = Document.objects.get(name=draft.name)
         lc_text = draft.latest_event(WriteupDocEvent, type="changed_last_call_text").text
         self.assertTrue("Subject: Last Call" in lc_text)
-        self.assertFalse("contains normative down" in lc_text)
+        self.assertFalse("contains these normative down" in lc_text)
 
         rfc = DocumentFactory.create(
                   stream_id='ise',
@@ -768,6 +768,15 @@ class RegenerateLastCallTestCase(TestCase):
         self.assertEqual(r.status_code, 200)
         draft = Document.objects.get(name=draft.name)
         lc_text = draft.latest_event(WriteupDocEvent, type="changed_last_call_text").text
-        self.assertTrue('contains these normative down' in lc_text)
-        self.assertTrue('rfc6666' in lc_text)
-        self.assertTrue('Independent Submission Editor stream' in lc_text)
+        self.assertTrue("contains these normative down" in lc_text)
+        self.assertTrue("rfc6666" in lc_text)
+        self.assertTrue("Independent Submission Editor stream" in lc_text)
+
+        draft.relateddocument_set.create(target=rfc.docalias_set.get(name='rfc6666'),relationship_id='downrefappr')
+
+        r = self.client.post(url, dict(regenerate_last_call_text="1"))
+        self.assertEqual(r.status_code, 200)
+        draft = Document.objects.get(name=draft.name)
+        lc_text = draft.latest_event(WriteupDocEvent, type="changed_last_call_text").text
+        self.assertFalse("contains these normative down" in lc_text)
+        self.assertFalse("rfc6666" in lc_text)

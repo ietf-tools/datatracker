@@ -148,7 +148,7 @@ def generate_last_call_announcement(request, doc):
     else:
         ipr_links = None
 
-    downrefs = [rel for rel in doc.relateddocument_set.all() if rel.is_downref()]
+    downrefs = [rel for rel in doc.relateddocument_set.all() if rel.is_downref() and not rel.is_approved_downref()]
 
     addrs = gather_address_lists('last_call_issued',doc=doc).as_strings()
     mail = render_to_string("doc/mail/last_call_announcement.txt",

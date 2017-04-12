@@ -36,6 +36,6 @@ No IPR declarations have been submitted directly on this I-D.
 The document contains these normative downward references.
 See RFC 3967 for additional information: 
 {% for ref in downrefs %}    {{ref.target.document.canonical_name}}: {{ref.target.document.title}} ({{ref.target.document.std_level}} - {{ref.target.document.stream.desc}})
-{% endfor %}Note that some of these references may already be listed in the acceptable Downref Registry.{%endif%}
+{% endfor %}{%endif%}
 
 {% endautoescape %}
