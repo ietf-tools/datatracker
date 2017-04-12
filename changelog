@@ -1,3 +1,64 @@
+ietfdb (6.49.1) ietf; urgency=medium
+
+  **IETF 98 code sprint release 2**
+
+  This release collects the remaining sprint contributions, and in particular
+  contains the move of the downref registry to the datatracker which has been
+  requested by the IESG.  This release also reverts some of the changes made in
+  6.48.0 with respect to presentation of htmlized drafts and RFCs.
+
+  From the commit log:
+
+  * Merged in [13181] from housley@vigilsec.com:
+    This completes a good chunk of the downref registry work requested in ticket
+    #2069. The registry has been imported to the database and can be shown, and
+    entries can be added to the registry.  Addresses issue #2069.
+
+  * Merged in [13183] from rcross@amsl.com:
+    Fix error when selecting a document on the Telechat agenda that does 
+    not have a writeup.  Fixes #2262.   
+
+  * Changed the signature of ietf.utils.aliases.dump_sublist() to include a 
+    list of the alias domains, in order to be able to generate IRTF group 
+    aliases @irtf.org.  Updated ietf/bin/generate-*-aliases accordingly.
+
+  * Trying to re-apply already run migrations after loading a new databases 
+    dump runs into the problem that new tables created by the migrations 
+    linger, even if the tables loaded from the dump match the non-migrated 
+    state.  Having lists of the tables matching the latest release available 
+    makes it easy to construct an sql command to dump the extra tables, so the 
+    migrations can be run.  Adding generation and saving of a table list to 
+    bin/mkrelease.
+
+  * Reverted the search result rows to the pre-6.48.0 state.
+
+  * Changed some tests to use unicontent(r) instead of r.content, which 
+    decodes non-ascii content according to the response charset.
+
+  * Added some debug functionality which makes it possible to see from 
+    where (python source file and line) an SQL query comes when looking at the 
+    sql query summary available at the bottom of pages in debug mode, on 
+    INTERNAL_IPS.
+
+  * Extended the DRAFT_NAMES_WITH_DOT regexp.
+
+  * Expand the milestone information on the document metainfo tab a bit.
+
+  * Fixed a bug in the json_agenda data, now calculating room midpoints 
+    correctly.
+
+  * Changed a test case to look at the html being verified, rather than the 
+    whole page, to avoid test failures due to for instance new menu entries.
+
+  * Getting to the floorplans for a meeting venue required going via the
+    agenda, which can take time to load.  Escpecially on a handheld device,
+    when you want to see where the room of your next session is, it would be
+    useful to have a menu entry to go directly to the meeting floor-plans.
+    Adding one.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  12 Apr 2017 05:09:30 -0700
+
+
 ietfdb (6.49.0) ietf; urgency=medium
 
   **IETF 98 code sprint release 1**
