@@ -494,6 +494,14 @@ class RelatedDocument(models.Model):
 
         return None
 
+    def is_approved_downref(self):
+
+        if self.target.document.get_state().slug == 'rfc':
+           if RelatedDocument.objects.filter(relationship_id='downref-approval', target=self.target):
+              return "Approved Downref"
+
+        return False
+
 class DocumentAuthor(models.Model):
     document = models.ForeignKey('Document')
     author = models.ForeignKey(Email, help_text="Email address used by author for submission")
