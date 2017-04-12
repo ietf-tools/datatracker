@@ -4,6 +4,7 @@ version=0.10
 program=${0##*/}
 progdir=${0%/*}
 if [ "$progdir" = "$program" ]; then progdir="."; fi
+PATH="$PATH:$progdir"
 
 # ----------------------------------------------------------------------
 function usage() {
@@ -206,10 +207,17 @@ $do svn commit static/lib/ -m "Updated static files under static/lib/"
 # [ $TCLOG -nt .svn/.latest-commit ] || die "Looked for ../test-crawl-*.log, but didn't find one newer than the latest repository commit ($RDATE)"
 
 note "Upgrading the python library modules before checking migrations and running tests ..."
-pip install --upgrade -r requirements.txt
+$do pip install --upgrade -r requirements.txt
 
 note "Checking that all model changes have been captured in migrations ..."
-ietf/manage.py makemigrations | tee /dev/stderr | grep -q "^No changes detected$" || die "Model changes without migrations found."
+$do ietf/manage.py makemigrations | tee /dev/stderr | grep -q "^No changes detected$" || die "Model changes without migrations found."
+
+note "Making sure all migrations have been run ..."
+$do ietf/manage.py migrate
+
+note "Saving the current list of tables (for later use)"
+$do ietf/manage.py dbshell <<< "show tables;" | tail -n +2 | jq -R -s "split(\"\n\") | {\"$VER\":.}" | jq -s 'add' - table-list.json | $do update table-list.json
+$do svn commit table-list.json -m "List of tables at the time of release $VER"
 
 note "Running the tests suite and writing release coverage data ..."
 $do ietf/manage.py test --settings=ietf.settings_releasetest --save-version-coverage=$VER
