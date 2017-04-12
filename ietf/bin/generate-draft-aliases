@@ -135,6 +135,7 @@ if __name__ == '__main__':
 
     interesting_drafts = active_drafts | inactive_recent_drafts
 
+    alias_domains = ['ietf.org', ]
     for draft in interesting_drafts.distinct().iterator():
         # Omit RFCs, we care only about drafts
         if draft.docalias_set.filter(name__startswith='rfc'):
@@ -144,7 +145,7 @@ if __name__ == '__main__':
         alias = draft.name
         all = []
         def handle_sublist(afile, vfile, alias, emails):
-            all.extend( dump_sublist(afile, vfile, alias, settings.DRAFT_VIRTUAL_DOMAIN, emails) )
+            all.extend( dump_sublist(afile, vfile, alias, alias_domains, settings.DRAFT_VIRTUAL_DOMAIN, emails) )
         #.authors (/and no suffix) = authors
         # First, do no suffix case
         handle_sublist(afile, vfile, alias,             get_draft_authors_emails(draft))

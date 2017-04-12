@@ -30,6 +30,8 @@ django.setup()
 
 from django.conf import settings
 
+import debug                            # pyflakes:ignore
+
 from ietf.group.models import Group
 from ietf.group.utils import get_group_ad_emails, get_group_role_emails, get_child_group_role_emails
 from ietf.utils.aliases import dump_sublist
@@ -74,21 +76,25 @@ if __name__ == '__main__':
 
     for wg in interesting_wgs.distinct().iterator():
         name = wg.acronym
-        dump_sublist(afile, vfile, name+'-ads',    settings.GROUP_VIRTUAL_DOMAIN, get_group_ad_emails(wg))
-        dump_sublist(afile, vfile, name+'-chairs', settings.GROUP_VIRTUAL_DOMAIN, get_group_role_emails(wg, ['chair', 'secr']))
+        dump_sublist(afile, vfile, name+'-ads',    ['ietf.org', ], settings.GROUP_VIRTUAL_DOMAIN, get_group_ad_emails(wg))
+        dump_sublist(afile, vfile, name+'-chairs', ['ietf.org', ], settings.GROUP_VIRTUAL_DOMAIN, get_group_role_emails(wg, ['chair', 'secr']))
 
     # - status = Active
     rgs = Group.objects.filter(type='rg').all()
+    debug.pprint('rgs')
     active_rgs = rgs.filter(state__in=ACTIVE_STATES)
+    debug.pprint('active_rgs')
 
     # - activity within last year? (use concluded_date)
     inactive_recent_rgs = rgs.exclude(state__in=ACTIVE_STATES).filter(time__gte=show_since)
     interesting_rgs = active_rgs | inactive_recent_rgs
+    debug.pprint('interesting_rgs')
 
     for rg in interesting_rgs.distinct().iterator():
         name = rg.acronym
+        debug.show('rg.acronym')
         #dump_sublist('%s%s' % (name, '-ads'), get_group_ad_emails, rg, True)
-        dump_sublist(afile, vfile, name+'-chairs', settings.GROUP_VIRTUAL_DOMAIN, get_group_role_emails(rg, ['chair', 'secr']))
+        dump_sublist(afile, vfile, name+'-chairs', ['ietf.org', 'irtf.org', ], settings.GROUP_VIRTUAL_DOMAIN, get_group_role_emails(rg, ['chair', 'secr']))
 
     # Additionally, for areaz, we should list -ads and -chairs
     # (for every chair in active groups within the area).
@@ -97,6 +103,6 @@ if __name__ == '__main__':
     for area in active_areas:
         name = area.acronym
         area_ad_emails = get_group_role_emails(area, ['pre-ad', 'ad', 'chair'])
-        dump_sublist(afile, vfile, name+'-ads'   , settings.GROUP_VIRTUAL_DOMAIN, area_ad_emails)
-        dump_sublist(afile, vfile, name+'-chairs', settings.GROUP_VIRTUAL_DOMAIN, (get_child_group_role_emails(area, ['chair', 'secr']) | area_ad_emails))
+        dump_sublist(afile, vfile, name+'-ads'   , ['ietf.org', ], settings.GROUP_VIRTUAL_DOMAIN, area_ad_emails)
+        dump_sublist(afile, vfile, name+'-chairs', ['ietf.org', ], settings.GROUP_VIRTUAL_DOMAIN, (get_child_group_role_emails(area, ['chair', 'secr']) | area_ad_emails))
 
