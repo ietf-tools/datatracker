@@ -57,10 +57,16 @@
 				<tbody>
 				{% if query.origin %}
 				{% for origin in query.origin %}
-				<tr class="code">
+				<tr class="origin">
 				   <td>{{ origin.1 }}({{ origin.2 }})</td>
 				   <td>{{ origin.6 }}()</td>
-				   <td>{{ origin.4.0 }}</td>
+				   <td class="code">
+				      {% for l in origin.4 %}
+				      <table>
+					 <tr><td class="{% if forloop.counter0 == origin.5 %} current{% endif %}">&nbsp;{{l}}</td></tr>
+				      </table>
+				      {% endfor %}
+				   </td>
 				</tr>
 				{% endfor %}
 				{% endif %}

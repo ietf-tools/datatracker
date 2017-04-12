@@ -829,17 +829,28 @@ blockquote {
   width: 90%;
 }
 
-#debug-query-table .code {
-  background-color: #eee;
+#debug-query-table .origin {
   font-family: 'PT Mono', monospace;
   font-size: 0.8em;
   word-break: break-all;
 }
 
-#debug-query-table table {
+#debug-query-table .code {
+  background-color: #eee;
+}
+
+#debug-query-table .code td {  
+  white-space: pre;
+}
+
+#debug-query-table .table {
   max-width: 100%;
 }
 
 #debug-query-table .sql {
   border-top: 1px solid #555;
+}
+
+#debug-query-table .code .current {
+  background-color: #ddd;
 }
