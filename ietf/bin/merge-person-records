@@ -27,6 +27,7 @@ django.setup()
 # -------------------------------------------------------------------------------------
 
 import argparse
+import datetime
 import pprint
 import syslog
 from django.contrib import admin
@@ -54,7 +55,7 @@ def determine_merge_order(source,target):
     if source.user and not target.user:
         source,target = target,source   # swap merge order
     if source.user and target.user:
-        source,target = sorted([source,target],key=lambda a: a.user.last_login)
+        source,target = sorted([source,target],key=lambda a: a.user.last_login if a.user.last_login else datetime.datetime.min)
     return source,target
 
 def get_extra_primary(source,target):
