@@ -28,7 +28,12 @@
     <form action="" method="post">{% csrf_token %}
     {{ formset.management_form }}
     <table id="telechat-positions-table">
-    <tr><th>Area Director</th><th>Yes</th><th>No Objections</th><th>Discuss</th><th>Abstain</th><th>Recuse</th><th>No Position</th></tr>
+    <tr>
+      <th>Area Director</th>
+      {% for position in document.active_ballot.ballot_type.positions.all %}
+          <th>{{ position.name }}</th>
+      {% endfor %}
+    </tr>
     {% for form in formset.forms %}
     <tr{% if form.initial.position == 'norecord' or form.initial.position == None %} class="green-row"{% endif %}{% if form.initial.position == 'discuss' %} class="red-row"{% endif %}><td>{{ form.initial.name }}{{ form.name }}{{ form.id }}</td>
     {% with form.position as field %}
