@@ -19,8 +19,13 @@ TELECHAT_TAGS = ('point','ad-f-up','extpty','need-rev')
 class BallotForm(forms.Form):
     name = forms.CharField(max_length=50,widget=forms.HiddenInput)
     id = forms.IntegerField(widget=forms.HiddenInput)
-    position = forms.ModelChoiceField(queryset=BallotPositionName.objects.exclude(slug='block').order_by('order'), widget=forms.RadioSelect, initial="norecord", required=True)
+    position = forms.ModelChoiceField(queryset=BallotPositionName.objects.all(), widget=forms.RadioSelect, initial="norecord", required=True)
     
+    def __init__(self, *args, **kwargs):
+        ballot_type = kwargs.pop("ballot_type")
+        super(BallotForm, self).__init__(*args, **kwargs)
+        self.fields['position'].queryset = ballot_type.positions.order_by('order')
+
 class ChangeStateForm(forms.Form):
     '''
     This form needs to handle documents of different types (draft, and conflrev for now).
