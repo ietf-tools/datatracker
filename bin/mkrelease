@@ -79,8 +79,8 @@ trap 'echo "$program($LINENO): Command failed with error code $? ([$$] $0 $*)"; 
 # Option parsing
 
 # Options
-shortopts=hnvV
-longopts=help,dry-run,verbose,version
+shortopts=hmnpvV
+longopts=help,message,dry-run,permit-migr-mix,verbose,version
 
 # Default values
 MSG=""
