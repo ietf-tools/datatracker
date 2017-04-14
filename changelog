@@ -7,15 +7,24 @@ ietfdb (6.49.1) ietf; urgency=medium
   requested by the IESG.  This release also reverts some of the changes made in
   6.48.0 with respect to presentation of htmlized drafts and RFCs.
 
-  From the commit log:
+  Excerpts from the commit log:
 
-  * Merged in [13181] from housley@vigilsec.com:
-    This completes a good chunk of the downref registry work requested in ticket
-    #2069. The registry has been imported to the database and can be shown, and
-    entries can be added to the registry.  Addresses issue #2069.
+  * Merged in [13181] and [13205] from housley@vigilsec.com:
+    This provides the downref registry work requested in ticket #2069. The
+    registry has been imported to the database and can be shown, and entries
+    can be added to the registry.  Dowref registry tests have been added to
+    the last call test case.  Fixes issue #2069.
+
+  * Merged in [13212] from rcross@amsl.com:
+    Fixed an issue in telechat app where ballot positions for WG actions are
+    incorrect.  Fixes #1336.  
+
+  * Merged in [13197] from rcross@amsl.com:
+    Fixed an issue with bin/merge-person-records when User.last_login == None.  
+    Fixes #2274.   
 
   * Merged in [13183] from rcross@amsl.com:
-    Fix error when selecting a document on the Telechat agenda that does 
+    Fixed error when selecting a document on the Telechat agenda that does 
     not have a writeup.  Fixes #2262.   
 
   * Changed the signature of ietf.utils.aliases.dump_sublist() to include a 
@@ -56,7 +65,7 @@ ietfdb (6.49.1) ietf; urgency=medium
     useful to have a menu entry to go directly to the meeting floor-plans.
     Adding one.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  12 Apr 2017 05:09:30 -0700
+ -- Henrik Levkowetz <henrik@levkowetz.com>  14 Apr 2017 12:50:00 +0000
 
 
 ietfdb (6.49.0) ietf; urgency=medium
