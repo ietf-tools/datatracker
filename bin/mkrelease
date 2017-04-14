@@ -87,6 +87,7 @@ MSG=""
 PROJ=ietfdb
 VERFILE=ietf/__init__.py
 SETTINGS=ietf/settings.py
+PERMIT_MIGR_MIX=""
 do=""
 
 if   [ "$(uname)" = "Linux" ]; then
@@ -107,6 +108,7 @@ while true ; do
 	-h| --help)		usage; exit;;	#	 Show this help, then exit
 	-m| --message)		MSG=$2; shift;;		# Specify a commit message
 	-n| --dry-run)		do="echo ==>";;	#	 Show what would be done	
+	-p| --permit-migr-mix)	PERMIT_MIGR_MIX=1;; # Permit mixed schema and data migrations
 	-v| --verbose)		VERBOSE=1;;	#	 Be more talkative
 	-V| --version)		version; exit;;	#	 Show program version, then exit
 	--)			shift; break;;
@@ -179,10 +181,18 @@ changes=$( sed -n "/^$PROJ ($VER.*)/,/^ -- /p" changelog )
 note "Checking that we don't have both schema and data migrations ..."
 cur=$(svn info | awk '/^Revision:/ { print $2 }')
 migrations=$(svn log $PWD -v -r HEAD:$((cur-100)) | sed -n -e '1,/^Set version info and settings back to development mode/p' | grep '^...A /.*/migrations/0.*.py' | cut -c6- | awk '{ print $1 }' | sed -re 's|/trunk/||')
-if [ -n "$migrations" ]; then
+if [ -n "$migrations" -a -z "$PERMIT_MIGR_MIX" ]; then
     datamigr=$(for m in "$migrations"; do egrep -sl 'migrations\.RunPython' $m; done || true)
     schemamigr=$(for m in "$migrations"; do egrep -sl 'migrations\.(Add|Alter|Create|Delete|Remove|Rename)(Field|Model|UniqueTogether)' $m; done || true)
     if [ -n "$datamigr" -a -n "$schemamigr" ]; then
+	echo -e "\n   Schema migrations:"
+	for m in $schemamigr; do
+	    echo "        $m"
+	done
+	echo -e "\n   Data migrations:"
+	for m in $datamigr; do
+	    echo "        $m"
+	done
 	die "\n   Found both data migrations and schema migrations in this release.\n   This is likely to cause delay between schema changes and deployment,\n   which means the old code will run on the new schema longer than necessary."
     fi
 fi
