@@ -419,13 +419,11 @@ class DocumentInfo(models.Model):
         try:
             with open(path, 'rb') as file:
                 raw = file.read()
-        except IOError as e:
-            import sys
-            logger.error("IOError for %s: %s", path, e, exc_info=sys.exc_info())
+        except IOError:
             return None
         try:
             text = raw.decode('utf-8')
-        except UnicodeDecodeError as e:
+        except UnicodeDecodeError:
             text = raw.decode('latin-1')
         #
         return text
