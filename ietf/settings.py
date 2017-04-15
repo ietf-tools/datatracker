@@ -46,6 +46,8 @@ ADMINS = (
     ('Matt Larson', 'mlarson@amsl.com'),
 )
 
+BUG_REPORT_EMAIL = "datatracker-project@ietf.org"
+
 PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.Argon2PasswordHasher',
     'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',

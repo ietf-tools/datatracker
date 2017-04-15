@@ -24,6 +24,7 @@ def revision_info(request):
         'version_num': __version__+__patch__,
         'django_version': django.get_version(),
         'python_version': python_version(),
+        'bugreport_email': settings.BUG_REPORT_EMAIL,
     }
 
 def debug_mark_queries_from_view(request):
