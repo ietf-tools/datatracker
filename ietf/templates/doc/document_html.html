@@ -3,7 +3,6 @@
 {% load origin %}
 {% load staticfiles %}
 {% load ietf_filters %}
-{% load cache %}
 
 {% block pagehead %}
   <link rel="alternate" type="application/atom+xml" title="Document changes" href="/feed/document-changes/{{ doc.name }}/">
@@ -51,13 +50,10 @@
     {% endif %}
     {% endcomment %}
 
-    {% with 1209600 as two_weeks %}
-      {% cache two_weeks htmlized doc.canonical_name doc.rev using="htmlized" %}
-        <div>
-	{{ doc.htmlized|default:"Generation of htmlized text failed"|safe }}
-	</div>
-      {% endcache %}
-    {% endwith %}
+    <div>
+    {{ doc.htmlized|default:"Generation of htmlized text failed"|safe }}
+    </div>
+
   </div>
   <div class="col-md-1"></div>
   <div class="col-md-1"></div>

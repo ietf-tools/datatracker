@@ -107,7 +107,11 @@ admin.site.register(SchedTimeSessAssignment, SchedTimeSessAssignmentAdmin)
 
 
 class ResourceAssociationAdmin(admin.ModelAdmin):
-    list_display = ["name", "icon", "desc", ]
+    def used(self, instance):
+        return instance.name.used
+    used.boolean = True
+
+    list_display = ["name", "icon", "used", "desc"]
 admin.site.register(ResourceAssociation, ResourceAssociationAdmin)
 
 class FloorPlanAdmin(admin.ModelAdmin):
