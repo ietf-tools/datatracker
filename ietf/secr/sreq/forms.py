@@ -84,7 +84,7 @@ class SessionForm(forms.Form):
         self.fields['wg_selector3'].widget.attrs['onChange'] = "document.form_post.conflict3.value=document.form_post.conflict3.value + ' ' + this.options[this.selectedIndex].value; return handleconflictfield(3);"
         self.fields['wg_selector3'].widget.attrs['onClick'] = "return check_prior_conflict(3);"
         self.fields['third_session'].widget.attrs['onClick'] = "if (document.form_post.num_session.selectedIndex < 2) { alert('Cannot use this field - Number of Session is not set to 2'); return false; } else { if (this.checked==true) { document.form_post.length_session3.disabled=false; } else { document.form_post.length_session3.value=0;document.form_post.length_session3.disabled=true; } }"
-        self.fields["resources"].choices = [(x.pk,x.desc) for x in ResourceAssociation.objects.all() ]
+        self.fields["resources"].choices = [(x.pk,x.desc) for x in ResourceAssociation.objects.filter(name__used=True).order_by('name__order') ]
 
         # check third_session checkbox if instance and length_session3
         # assert False, (self.instance, self.fields['length_session3'].initial)
