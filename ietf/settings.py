@@ -610,6 +610,7 @@ CACHES = {
 
 HTMLIZER_VERSION = 1
 HTMLIZER_URL_PREFIX = "/doc/html"
+HTMLIZER_CACHE_TIME = 60*60*24*14       # 14 days
 
 IPR_EMAIL_FROM = 'ietf-ipr@ietf.org'
 AUDIO_IMPORT_EMAIL = ['agenda@ietf.org','ietf@meetecho.com']

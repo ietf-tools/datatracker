@@ -6,6 +6,7 @@ import os
 
 from django.db import models
 from django.core import checks
+from django.core.cache import caches
 from django.core.exceptions import ValidationError
 from django.urls import reverse as urlreverse
 from django.core.validators import URLValidator
@@ -159,11 +160,12 @@ class DocumentInfo(models.Model):
     def revisions(self):
         revisions = []
         doc = self.doc if isinstance(self, DocHistory) else self
-        for e in doc.docevent_set.filter(type='new_revision').distinct().order_by("time", "id"):
+        for e in doc.docevent_set.filter(type='new_revision').distinct():
             if e.rev and not e.rev in revisions:
                 revisions.append(e.rev)
         if not doc.rev in revisions:
             revisions.append(doc.rev)
+        revisions.sort()
         return revisions
 
     def href(self, meeting=None):
@@ -435,11 +437,21 @@ class DocumentInfo(models.Model):
             return text
         if not name.endswith('.txt'):
             return None
-        html = None
+        html = ""
         if text:
-            # The path here has to match the urlpattern for htmlized documents
-            html = markup(text, path=settings.HTMLIZER_URL_PREFIX)
-            #html = re.sub(r'<hr[^>]*/>','', html)
+            cache = caches['htmlized']
+            key = name.split('.')[0]
+            html = cache.get(key)
+            if not html:
+                debug.say('cache miss for %s' % key)
+                # The path here has to match the urlpattern for htmlized
+                # documents in order to produce correct intra-document links
+                html = markup(text, path=settings.HTMLIZER_URL_PREFIX)
+                if html:
+                    debug.say('cache set for %s' % key)
+                    cache.set(key, html, settings.HTMLIZER_CACHE_TIME)
+            else:
+                debug.say('cache hit for %s' % key)
         return html
 
     class Meta:
