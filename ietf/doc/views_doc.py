@@ -72,9 +72,6 @@ def render_document_top(request, doc, tab, name):
     tabs = []
     tabs.append(("Status", "status", urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=name)), True, None))
 
-    if doc.type_id in ["draft", "charter", ]:
-        tabs.append(("Document", "document", urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=name)), True, None))
-
     ballot = doc.latest_event(BallotDocEvent, type="created_ballot")
     if doc.type_id in ("draft","conflrev", "statchg"):
         tabs.append(("IESG Evaluation Record", "ballot", urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=name)), ballot,  None if ballot else "IESG Evaluation Ballot has not been created yet"))
@@ -627,7 +624,7 @@ def document_html(request, name, rev=None):
     if not os.path.exists(doc.get_file_name()):
         raise Http404("Document not found: %s" % doc.get_base_name())
 
-    top = render_document_top(request, doc, "document", name)
+    top = render_document_top(request, doc, "status", name)
     if not rev and not name.startswith('rfc'):
         rev = doc.rev
     if rev:
