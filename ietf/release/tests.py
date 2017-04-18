@@ -1,3 +1,7 @@
+# Copyright The IETF Trust 2016, All Rights Reserved
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals, print_function
+
 from pyquery import PyQuery
 
 from django.urls import reverse
@@ -32,4 +36,17 @@ class ReleasePagesTest(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 
+    def test_stats(self):
+        url = reverse('ietf.release.views.stats')
+
+        r = self.client.get(url)
+        q = PyQuery(r.content)
+        # grab the script element text, split off the json data
+        s = q('#coverage-data').text()
+        self.assertIn("type: 'line',", s)
+        self.assertIn('"data": [[1426018457000, ', s)
+
+        s = q('#frequency-data').text()
+        self.assertIn("type: 'column',", s)
+        self.assertIn('"data": [[2007, 7], ', s)
 

@@ -1,13 +1,21 @@
+# Copyright The IETF Trust 2016, All Rights Reserved
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals, print_function
+
 import os
 import re
 import json
 import datetime
 import gzip
+from tzparse import tzparse
+from calendar import timegm
 
 from django.shortcuts import render
 from django.conf import settings
+from django.core.cache import cache
 from django.http import HttpResponse
 from django.utils.html import escape
+from django.utils.safestring import mark_safe
 
 import changelog
 import debug                            # pyflakes:ignore
@@ -15,6 +23,8 @@ import debug                            # pyflakes:ignore
 # workaround for thread import lock problem, http://bugs.python.org/issue7980
 import time                             
 time.strptime('1984', '%Y')             # we do this to force lib loading, instead of it happening lazily when changelog calls tzparse later
+
+import ietf
 
 def trac_links(text):
     # changeset links
@@ -24,11 +34,34 @@ def trac_links(text):
     return text
 
 
+def get_coverage_data():
+    key = 'ietf:release:get_coverage_data:%s' % ietf.__version__
+    coverage_data = cache.get(key)
+    if not coverage_data:
+        coverage_data = {}
+        if os.path.exists(settings.TEST_COVERAGE_MASTER_FILE):
+            if settings.TEST_COVERAGE_MASTER_FILE.endswith(".gz"):
+                with gzip.open(settings.TEST_COVERAGE_MASTER_FILE, "rb") as file:
+                    coverage_data = json.load(file)
+            else:
+                with open(settings.TEST_COVERAGE_MASTER_FILE) as file:
+                    coverage_data = json.load(file)
+        cache.set(key, coverage_data, 60*60*24)
+    return coverage_data
+
+def get_changelog_entries():
+    key = 'ietf:release:get_changelog_entries:%s' % ietf.__version__    
+    log_entries = cache.get(key)
+    if not log_entries:
+        if os.path.exists(settings.CHANGELOG_PATH):
+            log_entries = changelog.parse(settings.CHANGELOG_PATH)
+            cache.set(key, log_entries, 60*60*24)
+    return log_entries
+
 def release(request, version=None):
     entries = {}
-    if os.path.exists(settings.CHANGELOG_PATH):
-        log_entries = changelog.parse(settings.CHANGELOG_PATH)
-    else:
+    log_entries = get_changelog_entries()
+    if not log_entries:
         return HttpResponse("Error: changelog file %s not found" % settings.CHANGELOG_PATH)
     next = None
     for entry in log_entries:
@@ -48,18 +81,12 @@ def release(request, version=None):
         code_coverage_time = datetime.datetime.fromtimestamp(os.path.getmtime(settings.TEST_CODE_COVERAGE_REPORT_FILE))
 
     coverage = {}
-    if os.path.exists(settings.TEST_COVERAGE_MASTER_FILE):
-        if settings.TEST_COVERAGE_MASTER_FILE.endswith(".gz"):
-            with gzip.open(settings.TEST_COVERAGE_MASTER_FILE, "rb") as file:
-                coverage_data = json.load(file)
-        else:
-            with open(settings.TEST_COVERAGE_MASTER_FILE) as file:
-                coverage_data = json.load(file)
-        if version in coverage_data:
-            coverage = coverage_data[version]
-            for key in coverage:
-                if "coverage" in coverage[key]:
-                    coverage[key]["percentage"] = coverage[key]["coverage"] * 100
+    coverage_data = get_coverage_data()
+    if version in coverage_data:
+        coverage = coverage_data[version]
+        for key in coverage:
+            if "coverage" in coverage[key]:
+                coverage[key]["percentage"] = coverage[key]["coverage"] * 100
 
     return render(request, 'release/release.html',
         {
@@ -72,4 +99,51 @@ def release(request, version=None):
         } )
 
 
-    
+def stats(request):
+
+    coverage_chart_data = []
+    frequency_chart_data = []
+
+    coverage_data = get_coverage_data()
+    coverage_series_data = {}
+    for version in coverage_data:
+        if 'time' in coverage_data[version]:
+            t = coverage_data[version]['time']
+            secs = timegm(tzparse(t, "%Y-%m-%dT%H:%M:%SZ").timetuple()) * 1000
+            for coverage_type in coverage_data[version]:
+                if 'coverage' in coverage_data[version][coverage_type]:
+                    cov = coverage_data[version][coverage_type]['coverage']
+                    if not coverage_type in coverage_series_data:
+                        coverage_series_data[coverage_type] = []
+                    coverage_series_data[coverage_type].append([secs, cov])
+
+    for coverage_type in coverage_series_data:
+        coverage_series_data[coverage_type].sort()
+        # skip some early values
+        coverage_series_data[coverage_type] = coverage_series_data[coverage_type][2:]
+        coverage_chart_data.append({
+            'data': coverage_series_data[coverage_type],
+            'name': coverage_type,
+        })
+
+    log_entries = get_changelog_entries()
+    frequency = {}
+    frequency_series_data = []
+    for entry in log_entries:
+        year = entry.time.year
+        if not year in frequency:
+            frequency[year] = 0
+        frequency[year] += 1
+    for year in frequency:
+        frequency_series_data.append([year, frequency[year]])
+    frequency_series_data.sort()
+    frequency_chart_data.append({
+        'data': frequency_series_data,
+        'name': 'Releases',
+    })
+
+    return render(request, 'release/stats.html',
+        {
+            'coverage_chart_data': mark_safe(json.dumps(coverage_chart_data)),
+            'frequency_chart_data': mark_safe(json.dumps(frequency_chart_data)),
+        })
