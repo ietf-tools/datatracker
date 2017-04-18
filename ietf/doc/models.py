@@ -443,15 +443,11 @@ class DocumentInfo(models.Model):
             key = name.split('.')[0]
             html = cache.get(key)
             if not html:
-                debug.say('cache miss for %s' % key)
                 # The path here has to match the urlpattern for htmlized
                 # documents in order to produce correct intra-document links
                 html = markup(text, path=settings.HTMLIZER_URL_PREFIX)
                 if html:
-                    debug.say('cache set for %s' % key)
                     cache.set(key, html, settings.HTMLIZER_CACHE_TIME)
-            else:
-                debug.say('cache hit for %s' % key)
         return html
 
     class Meta:
