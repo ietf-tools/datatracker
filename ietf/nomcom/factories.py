@@ -137,6 +137,14 @@ class NomineeFactory(factory.DjangoModelFactory):
     person = factory.SubFactory(PersonFactory)   
     email = factory.LazyAttribute(lambda obj: obj.person.email())
 
+class NomineePositionFactory(factory.DjangoModelFactory):
+    class Meta:
+        model = NomineePosition
+
+    position = factory.SubFactory(PositionFactory)
+    nominee = factory.SubFactory(NomineeFactory)
+    state_id = 'accepted'
+
 class FeedbackFactory(factory.DjangoModelFactory):
     class Meta:
         model = Feedback
