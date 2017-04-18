@@ -365,7 +365,7 @@ class IetfTestRunner(DiscoverRunner):
         self.root_dir = os.path.dirname(settings.BASE_DIR)
         self.coverage_file = os.path.join(self.root_dir, settings.TEST_COVERAGE_MASTER_FILE)
         super(IetfTestRunner, self).__init__(**kwargs)
-        if self.parallel:
+        if self.parallel > 1:
             self.check_coverage = False
 
     def setup_test_environment(self, **kwargs):
