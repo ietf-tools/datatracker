@@ -5,7 +5,6 @@ django.setup()
 from django.apps import apps
 from django.core.management.base import BaseCommand #, CommandError
 from django.core.exceptions import FieldError
-from django.db import models
 from django.db.models.fields.related import ForeignKey, OneToOneField
 
 import debug                            # pyflakes:ignore
