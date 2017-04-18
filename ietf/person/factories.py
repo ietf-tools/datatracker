@@ -58,8 +58,11 @@ class PersonFactory(factory.DjangoModelFactory):
 
     @factory.post_generation
     def default_emails(obj, create, extracted, **kwargs): # pylint: disable=no-self-argument
-        make_email = getattr(EmailFactory, 'create' if create else 'build')
-        make_email(person=obj,address=obj.user.email)
+        if extracted is None:
+            extracted = True
+        if create and extracted:
+            make_email = getattr(EmailFactory, 'create' if create else 'build')
+            make_email(person=obj,address=obj.user.email)
 
     @factory.post_generation
     def default_photo(obj, create, extracted, **kwargs): # pylint: disable=no-self-argument
@@ -100,5 +103,7 @@ class EmailFactory(factory.DjangoModelFactory):
 
     address = factory.Sequence(lambda n:'%s.%s_%d@%s' % ( slugify(unidecode(fake.first_name())),
                                     slugify(unidecode(fake.last_name())), n, fake.domain_name()))
+    person = factory.SubFactory(PersonFactory)
+
     active = True
     primary = False
