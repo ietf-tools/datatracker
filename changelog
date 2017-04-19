@@ -1,3 +1,40 @@
+ietfdb (6.50.0) ietf; urgency=medium
+
+  This is a small feature release which provides a management command to
+  create / delete a set of related test and development data for a dummy
+  nomcom ('ietf/manage.py create_dummy_nomcom'), and adds statistics charts
+  for release coverage and frequency.  Room resources can now be marked as in
+  use or not, to control which resources are shown on the session request
+  form.  A few bugs have also been addressed, as indicated in the commit log:
+
+  * Merged in [13230] from rjsparks@nostrum.com:
+    Added scripts to create/delete a dummy nomcom to use in development
+    environments.  Fixes #2283. 
+
+  * Added charts for test coverage and release frequency.
+
+  * Fixed an if-statement which incorrectly disabled coverage testing when 
+    the parallel testing count was set to 1.
+
+  * Removed the 'Document' tab introduced in 6.48.0
+
+  * Moved the caching of htmlized documents into Document.htmlized() in 
+    order to avoid caching failed htmliztions (usually because of a missing 
+    .txt file).
+
+  * Added filtering of room resources in the session request form based on 
+    the 'used' flag of the room resource name.  Tweaked admin to show 'used' 
+    for ResourceAssociations.  Added Flipchart and U-shape-layout resources 
+    through a data migration, and added/modified resource icons.
+
+  * Replaced an old unworkable email addesss in the 404 page with the current
+    bugreport address, now configured in settings.py.
+
+  * Tweaked the use of the -p option of bin/mkrelease.  Added
+    sbirkholz@amsl.com to the release email addressees.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  19 Apr 2017 12:11:10 +0000
+
 ietfdb (6.49.1) ietf; urgency=medium
 
   **IETF 98 code sprint release 2**
