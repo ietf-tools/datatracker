@@ -17,7 +17,7 @@ def select2_id_name_json(objs):
         return escape(u"%s <%s>" % (e.person.name, e.address))
     def format_person(p):
         if p.name_count > 1:
-            return escape('%s (%s)' % (p.name,p.email().address))
+            return escape('%s (%s)' % (p.name,p.email().address if p.email() else 'no email address'))
         else:
             return escape(p.name)
 
