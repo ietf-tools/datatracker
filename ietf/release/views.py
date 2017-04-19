@@ -112,7 +112,7 @@ def stats(request):
             secs = timegm(tzparse(t, "%Y-%m-%dT%H:%M:%SZ").timetuple()) * 1000
             for coverage_type in coverage_data[version]:
                 if 'coverage' in coverage_data[version][coverage_type]:
-                    cov = coverage_data[version][coverage_type]['coverage']
+                    cov = round(coverage_data[version][coverage_type]['coverage'], 3)
                     if not coverage_type in coverage_series_data:
                         coverage_series_data[coverage_type] = []
                     coverage_series_data[coverage_type].append([secs, cov])
