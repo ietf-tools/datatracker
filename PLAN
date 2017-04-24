@@ -66,6 +66,11 @@ Planned work in rough order
 * Integrate better author data for RFCs from either the RFC Editor or from
   running the author extraction script on newly published RFCs.
 
+* Add an FK to person from author, and use that instead of the unknown-email-*
+  addresses to connect documents to authors when no email address is available.
+  (we still need to keep author email addresses in order to know which
+  address to associate with a given authorship, when we have an address).
+
 * Review places where we display persons' names but link to email addresses.
   Some of those probably should link to the person's profile page, instead.
 
