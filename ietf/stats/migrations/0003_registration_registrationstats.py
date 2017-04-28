@@ -10,7 +10,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('person', '0015_clean_primary'),
-        ('meeting', '0048_auto_20170330_1438'),
+        ('meeting', '0047_import_shared_audio_files'),
         ('stats', '0002_add_initial_aliases'),
     ]
 

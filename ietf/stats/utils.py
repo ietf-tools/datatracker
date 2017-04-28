@@ -216,7 +216,13 @@ def get_registration_data(meeting):
     num_created = 0
     response = requests.get(settings.REGISTRATION_ATTENDEES_BASE_URL + meeting.number)
     if response.status_code == 200:
-        for registration in response.json():
+        decoded = []
+        try:
+            decoded = response.json()
+        except ValueError:
+            pass
+
+        for registration in decoded:
             object, created = Registration.objects.get_or_create(
                 meeting_id=meeting.pk,
                 first_name=registration['FirstName'],

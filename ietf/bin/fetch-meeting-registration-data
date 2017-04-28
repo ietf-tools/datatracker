@@ -1,0 +1,47 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import sys, os, argparse
+
+basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+sys.path = [ basedir ] + sys.path
+os.environ["DJANGO_SETTINGS_MODULE"] = "ietf.settings"
+
+virtualenv_activation = os.path.join(basedir, "env", "bin", "activate_this.py")
+if os.path.exists(virtualenv_activation):
+    execfile(virtualenv_activation, dict(__file__=virtualenv_activation))
+
+import django
+django.setup()
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--meeting", help="meeting to fetch data for")
+parser.add_argument("--all", action="store_true", help="fetch data for all meetings")
+parser.add_argument("--latest", action="store_true", help="fetch data for latest meeting")
+args = parser.parse_args()
+
+
+import syslog
+
+from ietf.meeting.models import Meeting
+
+from ietf.stats.utils import get_registration_data
+
+meetings = Meeting.objects.none()
+if args.meeting:
+    meetings = Meeting.objects.filter(number=args.meeting, type="ietf")
+elif args.all:
+    meetings = Meeting.objects.filter(type="ietf").order_by("date")
+elif args.latest:
+    meetings = Meeting.objects.filter(type="ietf").order_by("-date")[:1]
+else:
+    print("Please use one of --meeting, --all or --latest")
+    sys.exit(1)
+
+for meeting in meetings:
+    total = get_registration_data(meeting)
+    msg = "Fetched data for meeting {}: {} registrations added".format(meeting.number, total)
+    if sys.stdout.isatty():
+        print(msg) # make debugging a bit easier
+    else:
+        syslog.syslog(msg)
