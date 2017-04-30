@@ -554,7 +554,7 @@ def suggested_review_requests_for_team(team):
         )
         last_call_expiry_events = { e.doc_id: e for e in LastCallDocEvent.objects.order_by("time", "id") }
         for doc in last_call_docs:
-            e = last_call_expiry_events[doc.pk] if doc.pk in last_call_expiry_events else LastCallDocEvent(expires=now.date(), time=now)
+            e = last_call_expiry_events[doc.pk] if doc.pk in last_call_expiry_events else LastCallDocEvent(expires=now, time=now)
 
             deadline = e.expires.date()
 
