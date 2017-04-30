@@ -1,5 +1,7 @@
 #!/usr/bin/env python
-# -*- python -*-
+# -*- coding: utf-8; mode: python; -*-
+# Copyright The IETF Trust 2017, All Rights Reserved
+from __future__ import print_function, unicode_literals
 
 
 """
@@ -46,8 +48,8 @@ if len(sys.argv) <= 1:
     print(__doc__ % locals())
     sys.exit(1)
 
-short_opt = "23hvV"
-long_opt  = ["help", "schema-v2", "schema-v3", "version","verbose",]
+short_opt = "23hsvV"
+long_opt  = ["help", "schema-v2", "schema-v3", "strip-only", "version","verbose",]
 
 try:
     opts, files = getopt.gnu_getopt(sys.argv[1:], short_opt, long_opt)
@@ -61,6 +63,7 @@ except Exception as e:
 # set default values, if any
 opt_verbose = False
 opt_schema  = "v2"
+opt_strip_only = False
 
 # handle individual options
 for opt, value in opts:
@@ -74,6 +77,8 @@ for opt, value in opts:
     elif opt in ["-v", "--version"]: # Output version information, then exit
         print(program, version)
         sys.exit(0)
+    elif opt in ["-s", "--strip-only"]: # Don't convert, only strip headers/footers
+        opt_strip_only = True
     elif opt in ["-V", "--verbose"]: # Output version information, then exit
         opt_verbose = True
 
@@ -102,10 +107,17 @@ for file in files:
         inf = Path(file)
         name = re.sub('-[0-9][0-9]', '', inf.stem)
         outf = inf.with_suffix('.xml')
-        txt = inf.open().read()
-        p = id2xml.DraftParser(schema=opt_schema)
-        xml = p.parse_to_xml(txt, name)
-        outf.open('w').write(xml)
+        with inf.open() as file:
+            txt = file.read()
+        if opt_strip_only:
+            lines, __ = id2xml.strip_pagebreaks(txt)
+            sys.stdout.write('\n'.join([l.txt for l in lines]))
+            sys.stdout.write('\n')
+            continue
+        parser = id2xml.DraftParser(inf.name, txt, schema=opt_schema)
+        xml = parser.parse_to_xml()
+        with outf.open('w') as out:
+            out.write(xml)
     except Exception as e:
         sys.stderr.write("Failure converting %s to xml: %s\n" % (inf.name, e))
         raise

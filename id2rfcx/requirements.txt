@@ -1,2 +1,4 @@
 lxml
 pathlib
+six
+xml2rfc
