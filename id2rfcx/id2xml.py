@@ -8,6 +8,7 @@ import sys
 import copy
 import lxml
 import zlib
+import shlex
 import datetime
 import textwrap
 from xml2rfc.writers.base import BaseRfcWriter
@@ -15,10 +16,13 @@ from xml2rfc.writers.base import BaseRfcWriter
 import debug
 debug.debug = True
 
-from collections import namedtuple
+from collections import namedtuple, deque
 from lxml.etree import Element, SubElement, ElementTree, ProcessingInstruction, CDATA
 from lxml.builder import E
 from StringIO import StringIO
+
+# ----------------------------------------------------------------------
+
 ns={
     'x':'http://relaxng.org/ns/structure/1.0',
     'a':'http://relaxng.org/ns/compatibility/annotations/1.0',
@@ -32,25 +36,25 @@ approvers = BaseRfcWriter.approvers
 status_of_memo = "Status of This Memo"
 appendix_prefix = "Appendix "
 #
-assignment_re = r'^\s*[A-Za-z][A-Za-z0-9_-]*\s*=\s*\S'
+code_re = r'(^\s*[A-Za-z][A-Za-z0-9_-]*\s*=\s*\S|{ *$|^ *})'
 #
-section_start_re = r"^((Appendix )?[A-Z0-9]+\.([0-9]+(\.[0-9]+)*\.?)? |Author's Address|Authors' Addresses)"
+section_start_re = r"^((Appendix )?[A-Z0-9]+\.([0-9]+(\.[0-9]+)*\.?)? |Author's Address|Authors' Addresses|Acknowledgements|Contributors)"
 #
 one_ref_re = r"(([0-9A-Z-]|I-?D.)[0-9A-Za-z-]*( [0-9A-Z-]+)?|(IEEE|ieee)[A-Za-z0-9.-]+|(ITU ?|ITU-T ?|G\\.)[A-Za-z0-9.-]+)";
 ref_ref_re =  r"\[{ref}(, *{ref})*\]".format(ref=one_ref_re)
 #
 # Elements of a reference item
 ref_anchor_re = r'\[(?P<anchor>[^]]+)\]'
-ref_name_re =   r'\w+, (?:\w-?\w?\.)+(?:, Ed\.)?'
-ref_last_re =   r'(?:\w-?\w?\.)+ \w+(?:, Ed\.)?'
-ref_org_re =   r'(?P<organization>\w+(?: \w+)*(, )?)'
+ref_name_re =   r'[-\' 0-9\w]+, (?:\w-?\w?\.)+(?:, Ed\.)?'
+ref_last_re =   r'(?:\w-?\w?\.)+ [-\' 0-9\w]+(?:, Ed\.)?'
+ref_org_re =   r'(?P<organization>[-/\w]+(?: [-/\w]+)*(, )?)'
 ref_auth_re =   r'(?P<authors>({name})(, {name})*(,? and {last})?)'.format(name=ref_name_re, last=ref_last_re)
 ref_title_re =  r'(?P<title>.+)'
 ref_series_one =r'(?:(?:(?:RFC|STD|BCP|FYI|DOI|Internet-Draft) [^,]+|draft-[a-z0-9-]+)(?: \(work in progress\))?)'
 ref_series_re = r'(?P<series>{item}(?:, {item})*)'.format(item=ref_series_one)
 ref_docname_re= r'(?P<docname>[^,]+)'
 month_re =      r'(?:January|February|March|April|May|June|July|August|September|October|November|December)'
-date_re =       r'(?P<date>{month} [12]\d\d\d)'.format(month=month_re)
+date_re =       r'(?P<date>({month} )?[12]\d\d\d)'.format(month=month_re)
 ref_url_re =    r'<(?P<target>(http|https|ftp)://[^>]+)>'
 #
 chunks = dict(
@@ -67,6 +71,7 @@ chunks = dict(
 reference_patterns = [
     r'{anchor}  *{authors}, "{title}", {series}, {date}(, {url})?\.'.format(**chunks),
     r'{anchor}  *{organiz}, "{title}"(, {docname})?, {date}(, {url})?\.'.format(**chunks),
+    r'{anchor}  *"{title}", {url}\.'.format(**chunks),
 ## Lines commented out below are for debugging, when the full regex doesn't match (is buggy).
 #    r'{anchor}  *{authors}, "{title}", {series}, {date}(, {url})?'.format(**chunks),
 #    r'{anchor}  *{organiz}, "{title}", {docname}, {date}'.format(**chunks),
@@ -170,13 +175,13 @@ def strip_pagebreaks(text):
             blankcount = 0
             sentence = False
             newpage = False
-        if re.search("[.:+]$", line):    # line ends with a period; don't join with next page para
+        if re.search("[.:+]\)?$", line):    # line ends with a period; don't join with next page para
             sentence = True
         if re.search("^[0-9]+\.", line): # line starts with a section number; don't join with next page para
             sentence = True
         if re.search("^ +[o*+-]  ", line): # line starts with a list bullet; don't join with next page para
             sentence = True
-        if re.search("^ +(E[Mm]ail):  ", line): # line starts with an address component; don't join with next page para
+        if re.search("^ +(E[Mm]ail): ", line): # line starts with an address component; don't join with next page para
             sentence = True
         if re.search("^[ \t]*$", line):
             blankcount += 1
@@ -225,6 +230,7 @@ def split_on_large_whitespace(line):
 def ind(line):
     return len(line.txt) - len(line.txt.lstrip())
 
+#@debug.trace
 def is_section_start(line, numlist=None):
     text = line.txt
     if text.startswith(appendix_prefix):
@@ -445,7 +451,8 @@ def table_borders(para):
         if line.txt:
             l = ''.join([ ( c if c in symbols else ' ' ) for c in line.txt ])
             # get rid of solitary dashes which could occur in table cell text
-            l = re.sub(' [-+]( |$)', r'  \1', l).strip()
+            if re.search('[A-Za-z0-9]', l):
+                l = re.sub(' [-+]( |$)', r'  \1', l).strip()
             if l:
                 borders.append(l)
     borders.sort()
@@ -476,7 +483,9 @@ def normalize_list_block(block):
                 items.append(widow)
                 widow = b
             else:
-                raise RuntimeError("Line %s: Anomaly: Expected indented list block after '%s', found '%s'" % (b[0].num, para2text(widow), para2text(b)))
+                items.append(widow)
+                widow = []
+                items.append(b)
         else:
             if len(b) == 1:
                 widow = b
@@ -576,6 +585,19 @@ def match_boilerplate(bp, txt):
         debug.pprint('txt')
         return False
 
+class Stack(deque):
+    def __init__(self, text):
+        sep = r'(\s+|[][<>\'"])'
+        tokens = re.split(sep, text)
+        super(Stack, self).__init__(tokens)
+    def pop(self):
+        try:
+            return super(Stack, self).popleft()
+        except IndexError:
+            return None
+    def push(self, x):
+        return super(Stack, self).appendleft(x)
+
 class DraftParser():
 
     text = None
@@ -663,6 +685,7 @@ class DraftParser():
         self.root.append(self.front())
         self.root.append(self.middle())
         self.root.append(self.back())
+        self.postprocess()
         return self.root
 
     # ------------------------------------------------------------------------
@@ -695,7 +718,7 @@ class DraftParser():
 
         front = Element('front')
         title = E.title(para2str(lines_title))
-        if self.short_title:
+        if self.short_title and self.short_title.strip() != title.text.strip():
             title.set('abbrev', self.short_title)
         front.append(title)
         #
@@ -950,7 +973,7 @@ class DraftParser():
                 if not line.txt.startswith('%s:' % W):
                     warn(line, "Expected the %s notice to start with '%s:', found '%s'" % (w, W, line.txt))
                 if self.is_draft and not '(if approved)' in line.txt:
-                    warn(line, "Expected the %s notice to end with '(if approved)', found '%s'" % (w, line.txt))
+                    self.warn(line.num, "Expected the %s notice to end with '(if approved)', found '%s'" % (w, line.txt))
                 numbers = line.txt.split()[1:]
                 while True:
                     num_list = [ n for n in numbers if n.isdigit() ]
@@ -1011,7 +1034,7 @@ class DraftParser():
 
         for line in lines:
             if line.txt.strip():
-                self.warn(line.num, "Did not expect any more top left text, found '%s'", (line.txt, ))
+                self.warn(line.num, "Did not expect any more top left text, found '%s'" % (line.txt, ))
 
         return workgroup, stream, series_number, rfc_number, obsoletes, updates, status, expires
 
@@ -1206,7 +1229,7 @@ class DraftParser():
             item = self.read_author_name()
             self.maybe_author_org(item)
             self.maybe_author_address(item)
-            line, p, = self.get_line()
+            line, p = self.get_line()
             assert line.txt.strip() == ''
             while True:
                 found = self.maybe_address_detail(item)
@@ -1275,6 +1298,7 @@ class DraftParser():
                     fail(line, expect, text)
         return True
 
+    #@debug.trace
     def read_author_name(self):
         line, p = self.get_line()
         if line is None:
@@ -1293,6 +1317,7 @@ class DraftParser():
         if text == '':
             self.push_line(line, p)
         
+    #@debug.trace
     def maybe_author_address(self, item):
         address = []
         while True:
@@ -1309,6 +1334,7 @@ class DraftParser():
             item['address']['postal'] = address
         return item
         
+    #@debug.trace
     def maybe_address_detail(self, item):
         line, p = self.get_line()
         if line is None:
@@ -1317,10 +1343,17 @@ class DraftParser():
         if text == '':
             self.push_line(line, p)
             return None
-        label, value = text.split(None, 1)
+        try:
+            label, value = text.split(None, 1)
+        except ValueError:
+            self.push_line(line, p)
+            return None
         if label in address_details:
             key = address_details[label]
             item['address'][key] = value
+        else:
+            self.push_line(line, p)
+            return None
         return item
 
     # ------------------------------------------------------------------------
@@ -1355,12 +1388,23 @@ class DraftParser():
             if title in ['References', 'Normative References', 'Informative References', 'Informational References', ]:
                 self.push_line(line, p)
                 return None
+            # Get title continuation lines
+            titleindent = line.txt.find(title)
+            while True:
+                next, p = self.get_line()
+                if next.txt.strip() == '':
+                    self.push_line(next, p)
+                    break
+                if ind(next) == titleindent:
+                    title += ' ' + next.txt.strip()
+                else:
+                    self.err(next.num, "Unexpected indentation: Expected a title continuation line with indentation %s, but got '%s'" % (titleindent, next.txt))
             section = Element(tag)
             if tag == 'section':
                 section.set('title', title)
                 section.set('anchor', 'section-%s'%number)
         else:
-            if number in ["Author's", "Authors'", "Acknowledgements", "Appendix", "Annex", ]:
+            if number in ["Author's", "Authors'", "Acknowledgements", "Appendix", "Annex", "Contributors", ]:
                 self.push_line(line, p)
                 return None
             self.err(line.num, "Unexpected section number; expected '%s' or a subsection, found '%s'" % ('.'.join(numlist), number))
@@ -1425,7 +1469,7 @@ class DraftParser():
                     # label
                     block.append(para)
                     break
-                elif linecount == 1 and len(block) == 1:
+                elif linecount == 1 and len(block) == 1 and not '  ' in para[0].txt:
                     # postamble, continue looking for a label
                     this_tag = tag
                 else:
@@ -1447,7 +1491,7 @@ class DraftParser():
             text = '\n'+para2text(flat)
             if tag == 'list':
                 for b in block:
-                    if re.search(assignment_re, b[0].txt):
+                    if re.search(code_re, b[0].txt):
                         # in vocabulary v3 this will be 'sourcecode'
                         tag = 'figure'
                         block = [ flat ]
@@ -1461,7 +1505,7 @@ class DraftParser():
                     label = None
                 assert len(block) in [1,2]
             if tag == 't':
-                element = Element(tag)
+                element = Element('t')
                 element.text = text
             elif tag == 'list':
                 element = Element('t')
@@ -1474,6 +1518,109 @@ class DraftParser():
                 element = self.make_figure(block, label)
 
         return element
+
+    #@debug.trace
+    def parse_text(self, text):
+        "A sequence of text, xref, and eref elements."
+        quotes = {
+            '"': '"',
+            "'": "'",
+        }
+        angles = {
+            '<': '>',
+        }
+        squares = {
+            '[': ']'
+        }
+        # ----
+        def get_quoted(stack, qbeg, qend):
+            """
+            Get quoted or bracketed string.
+            Does not handle nested instances.
+            """
+            chunk = ''
+            tok = stack.pop()
+            prev = ''
+            while True:
+                chunk += tok
+                tok = stack.pop()
+                if tok == qend:
+                    chunk += tok
+                    break
+                elif tok == '\n':
+                    tok = nl(stack, prev)
+                elif tok is None:
+                    break
+                prev = tok
+            return chunk
+        def nl(stack, prev):
+            while True:
+                tok = stack.pop()
+                if tok is None:
+                    break
+                if tok.strip() != '':
+                    stack.push(tok)
+                    break
+            tok = '' if prev.endswith('-') else ' '
+            return tok
+        def ref(tag, pair, stack, tok, keep=False):
+            stack.push(tok)
+            qbeg, qend = tok, pair[tok]
+            chunk = get_quoted(stack, qbeg, qend)
+            target = chunk[1:-1]
+            if target in self.reference_list:
+                e = Element(tag, target=target)
+                if keep:
+                    return [ qbeg, e, qend, ]
+                else:
+                    return [ e, ]
+            else:
+                return [ chunk ]
+        # ----
+        stack = Stack(text)
+        chunks = []
+        prev = ""
+        while True:
+            tok = stack.pop()
+            if tok is None:
+                break
+            if tok in quotes:
+                stack.push(tok)
+                qbeg, qend = tok, quotes[tok]
+                tok = get_quoted(stack, qbeg, qend)
+            elif tok in squares:
+                tokens = ref('xref', squares, stack, tok)
+                chunks += tokens[:-1]
+                tok = tokens[-1]
+            elif tok in angles:
+                tokens = ref('eref', angles, stack, tok, keep=True)
+                chunks += tokens[:-1]
+                tok = tokens[-1]
+            elif tok == '\n':
+                tok = nl(stack, prev)
+            chunks.append(tok)
+            prev = tok
+        t = Element('t')
+        if chunks:
+            e = None
+            text = []
+            for chunk in chunks:
+                if isinstance(chunk, six.string_types):
+                        text.append(chunk)
+                else:
+                    if e is None:
+                        t.text = ''.join(text)
+                    else:
+                        e.tail = ''.join(text)
+                    text = []
+                    e = chunk
+                    t.append(e)
+            if text:
+                if e is None:
+                    t.text = ''.join(text)
+                else:
+                    e.tail = ''.join(text)
+        return t
 
     #@debug.trace
     def identify_paragraph(self, para):
@@ -1529,7 +1676,7 @@ class DraftParser():
                     # righ align on the first column, but we ignore that)
                     tag = 'figure'
                 else:
-                    if len(border_set) == 2:
+                    if len(border_set) == 2 and not '+-+-+' in text:
                         tag = 'texttable'
                     else:
                         tag = 'figure'
@@ -1544,7 +1691,7 @@ class DraftParser():
             figure.set('anchor', 'figure-%s'%num)
         text = para2text(block.pop(0))
         artwork = Element('artwork')
-        artwork.text = CDATA(unindent(text, 3))
+        artwork.text = CDATA('\n'+unindent(text, 3)+'\n')
         figure.append(artwork)
         if block:
             text = para2text(block.pop(0))
@@ -1598,6 +1745,7 @@ class DraftParser():
             if '-' in border:
                 break
         # find a line with that border, and the table column start positions
+        columns = None
         for line in paragraph:
             if border in line.txt:
                 indent = line.txt.find(border)
@@ -1607,6 +1755,8 @@ class DraftParser():
                 else:
                     columns = border.split(sep)
                 break
+        if not columns:
+            self.err(paragraph[0].num, "Malformed table, expected table to start with a border, but found '%s'"%(paragraph[0].txt, ))
         colwidth = [ len(c)+1 for c in columns ]
         colpos = [ indent ]
         pos = indent
@@ -1662,6 +1812,9 @@ class DraftParser():
         # style = (numbers|letters|symbols|hanging|empty|format:...)
         # t[hangText] 
         #
+        if False:
+            debug.say('------------------------------------------------------------------------')
+            debug.pprint('block')
         #indents = indentation_levels(flatten(block))
         #debug.show('len(indents)')
         #if len(indents) > 2:
@@ -1669,10 +1822,8 @@ class DraftParser():
         #debug.pprint('items')
         indents = indentation_levels(flatten(block))
         list = Element('list')
-        list.text = '\n'
+        #
         if False:
-            debug.say('------------------------------------------------------------------------')
-            debug.pprint('block')
             debug.pprint('items')
             debug.pprint('indents')
             debug.show('base_indentation')
@@ -1681,6 +1832,7 @@ class DraftParser():
         if indents[0] > base_indentation and (len(item) == 1 or len(indentation_levels(item)) > 1):
             # handle extra indentation by adding an extra level of <t/><list/>
             list.set('hangIndent', str(indents[0]-base_indentation))
+            list.text = ' '
             t = Element('t')
             t.tail = '\n'
             t.append(self.make_list(block, base_indentation=indents[0]))
@@ -1748,6 +1900,16 @@ class DraftParser():
             back.append(section)
             num += 1
         #
+        while True:
+            # other sections
+            line = self.skip_blank_lines()
+            word = line.txt.split()[0]
+            if word in ['Acknowledgements', 'Contributors', ]:
+                section = self.section([word])
+                back.append(section)
+            else:
+                break
+        #
         self.read_authors_addresses()
 
         return back
@@ -1789,6 +1951,9 @@ class DraftParser():
         return None
 
     def reference(self):
+        line = self.skip_blank_lines()
+        if is_section_start(line):
+            return None
         reference = Element('reference')
         front = Element('front')
         reference.append(front)
@@ -1817,10 +1982,10 @@ class DraftParser():
                 # Front matter
                 key = 'title'
                 value = refinfo.get(key)
+                e = Element(key)
                 if value:
-                    e = Element(key)
                     e.text = value
-                    front.append(e)
+                front.append(e)
                 # Author info
                 if 'authors' in refinfo:
                     authors = refinfo.get('authors')
@@ -1830,7 +1995,6 @@ class DraftParser():
                             first, last = authors.split(' and ', 1)
                         else:
                             first, last = authors, None
-                        
                         for author in re.findall(ref_name_re, first):
                             editor = author.endswith(ed)
                             if editor:
@@ -1857,12 +2021,20 @@ class DraftParser():
                     org.text = organization
                     e.append(org)
                     front.append(e)
+                else:
+                    e = Element('author')
+                    front.append(e)
                 key = 'date'
                 value = refinfo.get(key)
                 if value:
-                    month, year = value.split(None, 1)
-                    e = Element(key, month=month, year=year)
-                    front.append(e)
+                    if ' ' in value:
+                        month, year = value.split(None, 1)
+                        e = Element(key, month=month, year=year)
+                    else:
+                        e = Element(key, year=value)                        
+                else:
+                    e = Element(key)
+                front.append(e)
                 # Document / Series
                 if 'series' in refinfo:
                     series  = refinfo.get('series')
@@ -1893,7 +2065,31 @@ class DraftParser():
                 self.push_para(para)
                 return None
             else:
-                self.err(line.num, "Failed parsing a reference: %s" % para2text(para))
-
+                self.warn(line.num, "Failed parsing a reference: %s" % para2text(para))
+                return reference
 
         return reference
+
+    # ------------------------------------------------------------------------
+    # postprocess
+    # ------------------------------------------------------------------------
+
+    def postprocess(self):
+        self.add_text_refs()
+
+    def add_text_refs(self):
+        """
+        Iterate through all <t> elements, and if they have .text, process
+        that to generate a new <t> element with <xref>s and <eref>s.
+        """
+        self.reference_list = [ r.get('anchor') for r  in self.root.findall('.//reference') ]
+        for old in self.root.findall('.//t'):
+            if old.text:
+                new = self.parse_text(old.text)
+                for key in old.keys():
+                    value = old.get(key)
+                    new.set(key, value)
+                for child in old:
+                    new.append(child)
+                old.getparent().replace(old, new)
+        
