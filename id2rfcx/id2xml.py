@@ -56,6 +56,7 @@ ref_docname_re= r'(?P<docname>[^,]+)'
 month_re =      r'(?:January|February|March|April|May|June|July|August|September|October|November|December)'
 date_re =       r'(?P<date>({month} )?[12]\d\d\d)'.format(month=month_re)
 ref_url_re =    r'<(?P<target>(http|https|ftp)://[^>]+)>'
+uri_re =        r'^<?\s*(?P<target>(http|https|ftp)://[^>\s]+)\s*>?$'
 #
 chunks = dict(
     anchor  = ref_anchor_re,
@@ -1532,28 +1533,29 @@ class DraftParser():
         squares = {
             '[': ']'
         }
+        endq = dict( (k,v) for (k,v) in quotes.items()+angles.items()+squares.items() )
         # ----
-        def get_quoted(stack, qbeg, qend):
+        def get_quoted(stack, tok):
             """
-            Get quoted or bracketed string.
-            Does not handle nested instances.
+            Get quoted or bracketed string. Does not handle nested instances.
             """
-            chunk = ''
-            tok = stack.pop()
+            chunk = tok
+            qend = endq[tok]
             prev = ''
             while True:
-                chunk += tok
                 tok = stack.pop()
-                if tok == qend:
-                    chunk += tok
+                if tok is None:
                     break
-                elif tok == '\n':
+                elif tok and tok[0] == '\n':
                     tok = nl(stack, prev)
-                elif tok is None:
+                chunk += tok
+                if tok == qend:
                     break
                 prev = tok
             return chunk
         def nl(stack, prev):
+            "Found a newline.  Process following whitespace and return an appropriate token."
+            lastchar = prev[-1]
             while True:
                 tok = stack.pop()
                 if tok is None:
@@ -1561,21 +1563,8 @@ class DraftParser():
                 if tok.strip() != '':
                     stack.push(tok)
                     break
-            tok = '' if prev.endswith('-') else ' '
+            tok = '' if lastchar in ['-', '/', ] else ' '
             return tok
-        def ref(tag, pair, stack, tok, keep=False):
-            stack.push(tok)
-            qbeg, qend = tok, pair[tok]
-            chunk = get_quoted(stack, qbeg, qend)
-            target = chunk[1:-1]
-            if target in self.reference_list:
-                e = Element(tag, target=target)
-                if keep:
-                    return [ qbeg, e, qend, ]
-                else:
-                    return [ e, ]
-            else:
-                return [ chunk ]
         # ----
         stack = Stack(text)
         chunks = []
@@ -1585,17 +1574,22 @@ class DraftParser():
             if tok is None:
                 break
             if tok in quotes:
-                stack.push(tok)
-                qbeg, qend = tok, quotes[tok]
-                tok = get_quoted(stack, qbeg, qend)
+                tok = get_quoted(stack, tok)
             elif tok in squares:
-                tokens = ref('xref', squares, stack, tok)
-                chunks += tokens[:-1]
-                tok = tokens[-1]
+                tok = get_quoted(stack, tok)
+                target = tok[1:-1]
+                if target in self.reference_list:
+                    tok = Element('xref', target=target)
             elif tok in angles:
-                tokens = ref('eref', angles, stack, tok, keep=True)
-                chunks += tokens[:-1]
-                tok = tokens[-1]
+                tok = get_quoted(stack, tok)
+                match = re.search(uri_re, tok)
+                if match:
+                    target= match.group('target')
+                    tok = Element('eref', target=target)
+            elif re.search(uri_re, tok):
+                match = re.search(uri_re, tok)
+                target= match.group('target')
+                tok = Element('eref', target=target)
             elif tok == '\n':
                 tok = nl(stack, prev)
             chunks.append(tok)
