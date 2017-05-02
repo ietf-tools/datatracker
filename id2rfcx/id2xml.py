@@ -278,7 +278,7 @@ def strip(para):
 def para2str(para):
     s = ''
     for ll in [ l.txt.strip() for l in para ]:
-        s += ll if not s or not ll or re.search('\S-$', s) else ' '+ll
+        s += ll if not s or not ll or re.search('\S[/-]$', s) else ' '+ll
     return s
 
 def para2text(para):
@@ -450,10 +450,10 @@ def table_borders(para):
     borders = []
     for line in para:
         if line.txt:
-            l = ''.join([ ( c if c in symbols else ' ' ) for c in line.txt ])
+            l = ''.join([ ( c if c in symbols else ' ' ) for c in line.txt ]).strip()
             # get rid of solitary dashes which could occur in table cell text
             if re.search('[A-Za-z0-9]', l):
-                l = re.sub(' [-+]( |$)', r'  \1', l).strip()
+                l = re.sub(' [-+]( |$)', r'  \1', l)
             if l:
                 borders.append(l)
     borders.sort()
@@ -544,22 +544,25 @@ def normalize_sublists(block):
 #@debug.trace
 def guess_list_style(line, slice=None):
     list_styles = [
-        ("numbers", r"^[1-9][0-9.]*\.$"),
-        ("letters", r"^[a-z][a-z.]*\.$"),
-        ("symbols", r"^[o*+-]$"),
-        ("hanging", r"\S.+"),
-        ("empty",   r"^$"),
+        ('numbers', r'^[1-9][0-9.]*\.$'),
+        ('letters', r'^[a-z][a-z.]*\.$'),
+        ('symbols', r'^[o*+-]$'),
+        ('hanging', r'\S.+'),
+        ('empty',   r'^$'),
     ]
-    if '  ' in line.txt.strip():
+    text = line.txt
+    strp = text.strip()
+    if (   re.search('^\S+  ', strp)        # doublespace after one nonspace chunk
+        or re.search('^.+[^.]  ', strp)):   # doublespace after arbitrary characters, but no period before spaces
         if slice:
             b, e = slice
         else:
             b = ind(line)
-            e = line.txt.find('  ', b)+2
-        marker = line.txt[b:e].rstrip()
-        text =   line.txt[e:]
+            e = text.find('  ', b)+2
+        marker = text[b:e].rstrip()
+        text =   text[e:]
     else:
-        marker = line.txt.strip()
+        marker = strp
         text = ''
     style = None
     for name, regex in list_styles:
@@ -1660,6 +1663,7 @@ class DraftParser():
                         or (linecount == 1 and re.search('^[0-9a-z][ivx]*\. ', line.txt.strip()))
                         #or (linecount == 1 and not ' ' in line.txt.strip())
                         or (linecount == 1 and (  ind(next[0]) > ind(para[0]) ))
+                        or ('  ' in line.txt.strip() and not '.  ' in line.txt.strip())
                         ):
                         tag = 'list'
                     else:
@@ -1846,7 +1850,6 @@ class DraftParser():
                     indent = indentation_levels(item)
                     first = line.txt
                     style, marker, rest = guess_list_style(line)
-                    #debug.show('style, marker, first')
                     if style and i == 0:
                         list.set('style', style)
                         if style == 'hanging' and len(indent) > 1:
@@ -1854,7 +1857,7 @@ class DraftParser():
                     t = Element('t')
                     t.tail = '\n'
                     if style == 'hanging':
-                        if indent[0] == indents[0] and len(indent) != 1:
+                        if indent[0] == indents[0]:
                             t.set('hangText', marker)
                             # Handle hanging lists with no item text on the first line
                             if rest == '':

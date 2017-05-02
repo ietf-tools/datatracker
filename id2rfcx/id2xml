@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8; mode: python; -*-
 # Copyright The IETF Trust 2017, All Rights Reserved
-from __future__ import print_function, unicode_literals
-
-
 """
 NAME
 	%(program)s - <short description>
@@ -26,6 +23,8 @@ COPYRIGHT
         Licenced under the 3-clause BSD license; see the file LICENSE
         for details.
 """
+
+from __future__ import print_function, unicode_literals
 
 import sys, os.path, getopt, re
 
