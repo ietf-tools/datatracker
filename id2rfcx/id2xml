@@ -3,13 +3,17 @@
 # Copyright The IETF Trust 2017, All Rights Reserved
 """
 NAME
-	%(program)s - <short description>
+	%(program)s - Convert text format RFCs and Internet-Drafts to .xml format
 
 SYNOPSIS
 	%(program)s [OPTIONS] ARGS
 
 DESCRIPTION
-	<long description>
+        %(program)s reads text-format RFCs and IETF drafs which are reasonably
+        well formatted (i.e., conforms to the text format produced by xml2rfc)
+        and tries to generate a reasonably appropriate .xml file following the
+        format accepted by xml2rfc, defined in RFC 7749 and its predecessors/
+        successors
 
 %(options)s
 
@@ -39,7 +43,7 @@ options = ""
 for line in re.findall("\n +(if|elif) +opt in \[(.+)\]:\s+#(.+)\n", open(sys.argv[0]).read()):
     if not options:
         options += "OPTIONS\n"
-    options += "        %-16s %s\n" % (line[1].replace('"', ''), line[2])
+    options += "        %-24s %s\n" % (line[1].replace('"', ''), line[2])
 options = options.strip()
 
 # with ' < 1:' on the next line, this is a no-op:
@@ -47,8 +51,8 @@ if len(sys.argv) <= 1:
     print(__doc__ % locals())
     sys.exit(1)
 
-short_opt = "23hsvV"
-long_opt  = ["help", "schema-v2", "schema-v3", "strip-only", "version","verbose",]
+short_opt = "23ho:p:svV"
+long_opt  = ["help", "v2", "schema-v2", "v3", "schema-v3", "output-file-", "output-path=", "strip-only", "version","verbose",]
 
 try:
     opts, files = getopt.gnu_getopt(sys.argv[1:], short_opt, long_opt)
@@ -63,22 +67,28 @@ except Exception as e:
 opt_verbose = False
 opt_schema  = "v2"
 opt_strip_only = False
+opt_output_path = None
+opt_output_file = None
 
 # handle individual options
 for opt, value in opts:
-    if   opt in ["-h", "--help"]: # Output this help, then exit
+    if   opt in ["-h", "--help"]:               # Output this help, then exit
         print(__doc__ % locals())
         sys.exit(1)
-    elif opt in ["-2", "--schema-v2"]: # Use v2 schema
+    elif opt in ["-2", "--v2", "--schema-v2"]:  # Use v2 (RFC 7749) schema (default)
         opt_schema="v2"
-    elif opt in ["-3", "--schema-v3"]: # Use v2 schema
-        opt_schema="v3"
-    elif opt in ["-v", "--version"]: # Output version information, then exit
+#    elif opt in ["-3", "--v3", "--schema-v3"]:  # Use v2 (RFC 7991) schema
+#        opt_schema="v3"
+    elif opt in ["-o", "--output-file"]:        # Set the output file name
+        opt_output_file = value
+    elif opt in ["-p", "--output-path"]:        # Set the output directory name
+        opt_output_path = value
+    elif opt in ["-s", "--strip-only"]:         # Don't convert, only strip headers/footers
+        opt_strip_only = True
+    elif opt in ["-v", "--version"]:            # Output version information, then exit
         print(program, version)
         sys.exit(0)
-    elif opt in ["-s", "--strip-only"]: # Don't convert, only strip headers/footers
-        opt_strip_only = True
-    elif opt in ["-V", "--verbose"]: # Output version information, then exit
+    elif opt in ["-V", "--verbose"]:            # Be (slightly) more verbose
         opt_verbose = True
 
 # ----------------------------------------------------------------------
@@ -101,22 +111,40 @@ def die(s, error=1):
 import id2xml
 from pathlib import Path
 
+if opt_output_path and opt_output_file:
+    die("Mutually exclusive options -o / -p; use one or the other")
+
+if opt_strip_only:
+    output_suffix = '.raw'
+else:
+    output_suffix = '.xml'
+
 for file in files:
     try:
         inf = Path(file)
         name = re.sub('-[0-9][0-9]', '', inf.stem)
-        outf = inf.with_suffix('.xml')
+        if opt_output_file:
+            # This is not what we want if opt_output_file=='-', but we fix
+            # that in the 'with' clause below
+            outf = Path(opt_output_file)
+        elif opt_output_path:
+            outf = Path(opt_output_path) / (inf.stem+output_suffix)
+        else:
+            outf = inf.with_suffix(output_suffix)
         with inf.open() as file:
             txt = file.read()
         if opt_strip_only:
             lines, __ = id2xml.strip_pagebreaks(txt)
-            sys.stdout.write('\n'.join([l.txt for l in lines]))
-            sys.stdout.write('\n')
-            continue
-        parser = id2xml.DraftParser(inf.name, txt, schema=opt_schema)
-        xml = parser.parse_to_xml()
-        with outf.open('w') as out:
-            out.write(xml)
+            with (sys.stdout if opt_output_file=='-' else outf.open('w')) as out:
+                out.write('\n'.join([l.txt for l in lines]))
+                out.write('\n')
+            note('Wrote stripped file to %s' % out.name)
+        else:
+            parser = id2xml.DraftParser(inf.name, txt, schema=opt_schema)
+            xml = parser.parse_to_xml()
+            with (sys.stdout if opt_output_file=='-' else outf.open('w')) as out:
+                out.write(xml)
+            note('Wrote converted file to %s' % out.name)
     except Exception as e:
-        sys.stderr.write("Failure converting %s to xml: %s\n" % (inf.name, e))
+        sys.stderr.write("Failure converting %s: %s\n" % (inf.name, e))
         raise
