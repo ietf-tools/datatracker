@@ -30,7 +30,9 @@ COPYRIGHT
 
 from __future__ import print_function, unicode_literals
 
-import sys, os.path, getopt, re
+import sys, os, getopt, re
+from id2xml import wrap
+
 
 version = "0.10"
 program = os.path.basename(sys.argv[0])
@@ -93,16 +95,19 @@ for opt, value in opts:
 
 # ----------------------------------------------------------------------
 def say(s):
-    sys.stderr.write("%s\n" % (s))
+    msg = "%s\n" % (s)
+    sys.stderr.write(wrap(msg))
 
 # ----------------------------------------------------------------------
 def note(s):
+    msg = "%s\n" % (s)
     if opt_verbose:
-        sys.stderr.write("%s\n" % (s))
+        sys.stderr.write(wrap(msg))
 
 # ----------------------------------------------------------------------
 def die(s, error=1):
-    sys.stderr.write("\n%s: Error: %s\n\n" % (program, s))
+    msg = "\n%s: Error:  %s\n\n" % (program, s)
+    sys.stderr.write(wrap(msg))
     sys.exit(error)
 
 # ----------------------------------------------------------------------
@@ -110,7 +115,11 @@ def die(s, error=1):
 
 import id2xml
 from pathlib import Path
-
+try:
+    import debug
+except ImportError:
+    pass
+    
 if opt_output_path and opt_output_file:
     die("Mutually exclusive options -o / -p; use one or the other")
 
@@ -131,6 +140,14 @@ for file in files:
             outf = Path(opt_output_path) / (inf.stem+output_suffix)
         else:
             outf = inf.with_suffix(output_suffix)
+            # if we're using an implicit output file name (derived from the
+            # input file name), and we're not just stripping headers, refuse
+            # to overwrite an existing file.  It could be the original xml
+            # file provided by the authors.
+            if not opt_strip_only and outf.exists():
+                die("The implied output file (%s) already exists.  Provide an explicit "
+                    "output filename (with -o) or a directory path (with -p) if you want "
+                    "%s to overwrite an existing file." % (outf, program, ))
         with inf.open() as file:
             txt = file.read()
         if opt_strip_only:

@@ -11,6 +11,7 @@ import zlib
 import shlex
 import datetime
 import textwrap
+from pyterminalsize import get_terminal_size
 from xml2rfc.writers.base import BaseRfcWriter
 
 import debug
@@ -95,7 +96,22 @@ address_details = {
     'URI:':     'uri',
 }
 
+# ----------------------------------------------------------------------
 
+def wrap(s):
+    cols = min(120, get_terminal_size()[0])
+
+    lines = s.split('\n')
+    wrapped = []
+    # Preserve any indent (after the general indent)
+    for line in lines:
+        prev_indent = ''
+        indent_match = re.search('^(\W+)', line)
+        # Change the existing wrap indent to the original one
+        if (indent_match):
+            prev_indent = indent_match.group(0)
+        wrapped.append(textwrap.fill(line, width=cols, subsequent_indent=prev_indent))
+    return '\n'.join(wrapped)
 
 def strip_pagebreaks(text):
     "Strip ID/RFC-style headers and footers from the given text"
@@ -452,7 +468,7 @@ def table_borders(para):
         if line.txt:
             l = ''.join([ ( c if c in symbols else ' ' ) for c in line.txt ]).strip()
             # get rid of solitary dashes which could occur in table cell text
-            if re.search('[A-Za-z0-9]', l):
+            if re.search('[A-Za-z0-9]', line.txt):
                 l = re.sub(' [-+]( |$)', r'  \1', l)
             if l:
                 borders.append(l)
@@ -631,14 +647,14 @@ class DraftParser():
 
     def warn(self, lnum, text):
         # compose message.  report 1-based line numbers, rather than 0-based.
-        msg = "%s(%s): %s" % (self.name, lnum+1, text)
-        sys.stderr.write(msg)
+        msg = "\n%s(%s): %s" % (self.name, lnum+1, text)
+        sys.stderr.write(wrap(msg))
         if not text.endswith('\n'):
             sys.stderr.write('\n')
 
     def err(self, lnum, text):
-        msg = "%s(%s): %s" % (self.name, lnum+1, text)
-        raise RuntimeError(msg)
+        msg = "\n%s(%s): %s" % (self.name, lnum+1, text)
+        raise RuntimeError(wrap(msg))
 
     def parse_to_xml(self, **kwargs):
         self.lines, self.short_title = strip_pagebreaks(self.raw.expandtabs())
@@ -1388,8 +1404,9 @@ class DraftParser():
             return None
         # Expect the start of a section: section number and title
         number, title = parse_section_start(line, numlist, level, appendix)
+
         if is_section_start(line, numlist):
-            if title in ['References', 'Normative References', 'Informative References', 'Informational References', ]:
+            if len(numlist)==1 and title in ['References', 'Normative References', 'Informative References', 'Informational References', ]:
                 self.push_line(line, p)
                 return None
             # Get title continuation lines
@@ -1463,17 +1480,25 @@ class DraftParser():
         while True:
             # collect one block worth of text
             para = self.get_para()
+            first = para[0].txt.strip()
             this_tag, text, linecount = self.identify_paragraph(para)
             #if not this_tag in ['t', 'figure', 'texttable', 'list', ]:
             if not this_tag in ['t', 'figure', 'texttable', 'list', ]:
                 self.push_para(para)
                 break
             if tag in ['figure', 'texttable']:
-                if para[0].txt.lstrip().startswith(tag2label[tag]):
+                expected = tag2label[tag]
+                othertag = 'figure' if tag=='texttable' else 'texttable'
+                unexpected = tag2label[othertag]
+                if first.startswith(expected):
                     # label
                     block.append(para)
                     break
-                elif linecount == 1 and len(block) == 1 and not '  ' in para[0].txt:
+                elif first.startswith(unexpected):
+                    self.warn(para[0].num, "Unexpected title: expected '%s ...', but found '%s'.  This looks like a %s that has been entered as a %s.  The generated XML will need adjustment." % (expected, first, tag, othertag))
+                    self.push_para(para)
+                    break
+                elif linecount == 1 and len(block) == 1 and not '  ' in first:
                     # postamble, continue looking for a label
                     this_tag = tag
                 else:
@@ -1503,7 +1528,8 @@ class DraftParser():
                         break
             if tag in ['figure', 'texttable']:
                 label = para2str(block[-1])
-                if label.startswith(tag2label[tag]):
+                expected = tag2label[tag]
+                if label.startswith(expected):
                     block.pop()
                 else:
                     label = None
@@ -1656,6 +1682,7 @@ class DraftParser():
                     debug.show('indents')
                     debug.show('linecount')
                     debug.show('sratio')
+                    debug.pprint('border_set')
                 if not '----' in text and (sratio < 0.5 or (sratio < 0.8 and linecount==1)):
                     next = self.next_para()
                     if ( len(indents) > 1 or indents[0] != 3 
@@ -1674,7 +1701,7 @@ class DraftParser():
                     # righ align on the first column, but we ignore that)
                     tag = 'figure'
                 else:
-                    if len(border_set) == 2 and not '+-+-+' in text:
+                    if len(border_set) == 2 and not '+-+-+' in text and line.txt.strip() in border_set:
                         tag = 'texttable'
                     else:
                         tag = 'figure'
@@ -1701,6 +1728,7 @@ class DraftParser():
 
     def make_table(self, block, title):
         paragraph = block.pop(0)
+        first_line = paragraph[0]
         # figure out the table characteristics
         borders = table_borders(paragraph)
         # styles:
@@ -1754,7 +1782,7 @@ class DraftParser():
                     columns = border.split(sep)
                 break
         if not columns:
-            self.err(paragraph[0].num, "Malformed table, expected table to start with a border, but found '%s'"%(paragraph[0].txt, ))
+            self.err(first_line.num, "Malformed table, expected table to start with a border, but found '%s'"%(first_line.txt, ))
         colwidth = [ len(c)+1 for c in columns ]
         colpos = [ indent ]
         pos = indent
@@ -1763,11 +1791,12 @@ class DraftParser():
             colpos.append(pos)
         # --- Process the table, generate xml elements ---
         texttable = Element('texttable')
-        if title and title.startswith('Table'):
-            __, num, title = title.split(None, 2)
-            num = num.replace(':','')
-            texttable.set('title', title)
-            texttable.set('anchor', 'table-%s'%num)
+        if title:
+            if title.startswith('Table'):
+                __, num, title = title.split(None, 2)
+                num = num.replace(':','')
+                texttable.set('title', title)
+                texttable.set('anchor', 'table-%s'%num)
         texttable.set('style', style)
         # skip top border
         line = paragraph.pop(0)
@@ -1920,7 +1949,7 @@ class DraftParser():
             return None
         #
         number, title = parse_section_start(line, numlist, level, appendix=False)
-        if not title in ['References', 'Normative References', 'Informative References', 'Informational References', 'Normative', 'Informative', ]:
+        if not title in ['References', 'Normative References', 'Informative References', 'Informational References', 'Normative', 'Informative', 'URIs', ]:
             self.push_line(line, p)
             return None
         # peek at the next nonblank line
@@ -2062,7 +2091,7 @@ class DraftParser():
                 self.push_para(para)
                 return None
             else:
-                self.warn(line.num, "Failed parsing a reference: %s" % para2text(para))
+                self.warn(line.num, "Failed parsing a reference:\n%s" % para2text(para))
                 return reference
 
         return reference
