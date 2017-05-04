@@ -1,5 +1,34 @@
 # Copyright The IETF Trust 2017, All Rights Reserved
 # -*- coding: utf-8 -*-
+
+"""
+NAME
+        id2xml - Convert text format RFCs and Internet-Drafts to .xml format
+
+SYNOPSIS
+        id2xml [OPTIONS] ARGS
+
+DESCRIPTION
+        id2xml reads text-format RFCs and IETF drafs which are reasonably
+        well formatted (i.e., conforms to the text format produced by xml2rfc)
+        and tries to generate a reasonably appropriate .xml file following the
+        format accepted by xml2rfc, defined in RFC 7749 and its predecessors/
+        successors
+
+%(options)s
+
+AUTHOR
+        Written by Henrik Levkowetz, <henrik@levkowetz.com>
+
+COPYRIGHT
+        Copyright (c) 2017, The IETF Trust
+        All rights reserved.
+
+        Licenced under the 3-clause BSD license; see the file LICENSE
+        for details.
+"""
+
+
 from __future__ import print_function, unicode_literals
 
 import re
@@ -14,14 +43,162 @@ import textwrap
 from pyterminalsize import get_terminal_size
 from xml2rfc.writers.base import BaseRfcWriter
 
-import debug
-debug.debug = True
+try:
+    import debug
+    debug.debug = True
+except ImportError:
+    pass
 
 from collections import namedtuple, deque
 from lxml.etree import Element, SubElement, ElementTree, ProcessingInstruction, CDATA
 from lxml.builder import E
 from StringIO import StringIO
 
+# ----------------------------------------------------------------------
+
+
+__version__ = "0.1.0"
+
+
+# ----------------------------------------------------------------------
+#
+# This is the entrypoint which is invoked from command-line scripts:
+
+def run():
+    import sys, os, getopt, re
+
+    program = os.path.basename(sys.argv[0])
+    progdir = os.path.dirname(sys.argv[0])
+
+
+
+    # ----------------------------------------------------------------------
+    # Parse options
+
+    options = ""
+    for line in re.findall("\n +(if|elif) +opt in \[(.+)\]:\s+#(.+)\n", open(__file__.replace('.pyc','.py')).read()):
+        if not options:
+            options += "OPTIONS\n"
+        options += "        %-24s %s\n" % (line[1].replace('"', ''), line[2])
+    options = options.strip()
+
+    # with ' < 1:' on the next line, this is a no-op:
+    if len(sys.argv) <= 1:
+        print(__doc__ % locals())
+        sys.exit(1)
+
+    short_opt = "23ho:p:svV"
+    long_opt  = ["help", "v2", "schema-v2", "v3", "schema-v3", "output-file-", "output-path=", "strip-only", "version","verbose",]
+
+    try:
+        opts, files = getopt.gnu_getopt(sys.argv[1:], short_opt, long_opt)
+    except Exception as e:
+        print("%s: %s" % (program, e))
+        sys.exit(1)
+
+    # ----------------------------------------------------------------------
+    # Handle options
+
+    # set default values, if any
+    opt_verbose = False
+    opt_schema  = "v2"
+    opt_strip_only = False
+    opt_output_path = None
+    opt_output_file = None
+
+    # handle individual options
+    for opt, value in opts:
+        if   opt in ["-h", "--help"]:               # Output this help, then exit
+            print(__doc__ % locals())
+            sys.exit(1)
+        elif opt in ["-2", "--v2", "--schema-v2"]:  # Use v2 (RFC 7749) schema (default)
+            opt_schema="v2"
+    #    elif opt in ["-3", "--v3", "--schema-v3"]:  # Use v2 (RFC 7991) schema
+    #        opt_schema="v3"
+        elif opt in ["-o", "--output-file"]:        # Set the output file name
+            opt_output_file = value
+        elif opt in ["-p", "--output-path"]:        # Set the output directory name
+            opt_output_path = value
+        elif opt in ["-s", "--strip-only"]:         # Don't convert, only strip headers/footers
+            opt_strip_only = True
+        elif opt in ["-v", "--version"]:            # Output version information, then exit
+            print(program, version)
+            sys.exit(0)
+        elif opt in ["-V", "--verbose"]:            # Be (slightly) more verbose
+            opt_verbose = True
+
+    # ----------------------------------------------------------------------
+    def say(s):
+        msg = "%s\n" % (s)
+        sys.stderr.write(wrap(msg))
+
+    # ----------------------------------------------------------------------
+    def note(s):
+        msg = "%s\n" % (s)
+        if opt_verbose:
+            sys.stderr.write(wrap(msg))
+
+    # ----------------------------------------------------------------------
+    def die(s, error=1):
+        msg = "\n%s: Error:  %s\n\n" % (program, s)
+        sys.stderr.write(wrap(msg))
+        sys.exit(error)
+
+    # ----------------------------------------------------------------------
+    # The program itself    
+
+    from pathlib import Path
+    try:
+        import debug
+    except ImportError:
+        pass
+
+    if opt_output_path and opt_output_file:
+        die("Mutually exclusive options -o / -p; use one or the other")
+
+    if opt_strip_only:
+        output_suffix = '.raw'
+    else:
+        output_suffix = '.xml'
+
+    for file in files:
+        try:
+            inf = Path(file)
+            name = re.sub('-[0-9][0-9]', '', inf.stem)
+            if opt_output_file:
+                # This is not what we want if opt_output_file=='-', but we fix
+                # that in the 'with' clause below
+                outf = Path(opt_output_file)
+            elif opt_output_path:
+                outf = Path(opt_output_path) / (inf.stem+output_suffix)
+            else:
+                outf = inf.with_suffix(output_suffix)
+                # if we're using an implicit output file name (derived from the
+                # input file name), and we're not just stripping headers, refuse
+                # to overwrite an existing file.  It could be the original xml
+                # file provided by the authors.
+                if not opt_strip_only and outf.exists():
+                    die("The implied output file (%s) already exists.  Provide an explicit "
+                        "output filename (with -o) or a directory path (with -p) if you want "
+                        "%s to overwrite an existing file." % (outf, program, ))
+            with inf.open() as file:
+                txt = file.read()
+            if opt_strip_only:
+                lines, __ = strip_pagebreaks(txt)
+                with (sys.stdout if opt_output_file=='-' else outf.open('w')) as out:
+                    out.write('\n'.join([l.txt for l in lines]))
+                    out.write('\n')
+                note('Wrote stripped file to %s' % out.name)
+            else:
+                parser = DraftParser(inf.name, txt, schema=opt_schema)
+                xml = parser.parse_to_xml()
+                with (sys.stdout if opt_output_file=='-' else outf.open('w')) as out:
+                    out.write(xml)
+                note('Wrote converted file to %s' % out.name)
+        except Exception as e:
+            sys.stderr.write("Failure converting %s: %s\n" % (inf.name, e))
+            raise
+    
 # ----------------------------------------------------------------------
 
 ns={
@@ -1406,7 +1583,7 @@ class DraftParser():
         number, title = parse_section_start(line, numlist, level, appendix)
 
         if is_section_start(line, numlist):
-            if len(numlist)==1 and title in ['References', 'Normative References', 'Informative References', 'Informational References', ]:
+            if len(numlist)==1 and title in ['References', 'Normative References', 'Informative References', 'Informational References', 'URIs', ]:
                 self.push_line(line, p)
                 return None
             # Get title continuation lines
@@ -1425,7 +1602,7 @@ class DraftParser():
                 section.set('title', title)
                 section.set('anchor', 'section-%s'%number)
         else:
-            if number in ["Author's", "Authors'", "Acknowledgements", "Appendix", "Annex", "Contributors", ]:
+            if number in ["Author's", "Authors'", "Acknowledgements", "Appendix", "Annex", "Contributors", "Index", ]:
                 self.push_line(line, p)
                 return None
             self.err(line.num, "Unexpected section number; expected '%s' or a subsection, found '%s'" % ('.'.join(numlist), number))
@@ -1569,6 +1746,7 @@ class DraftParser():
             Get quoted or bracketed string. Does not handle nested instances.
             """
             chunk = tok
+            qbeg = tok
             qend = endq[tok]
             prev = ''
             while True:
@@ -1577,6 +1755,8 @@ class DraftParser():
                     break
                 elif tok and tok[0] == '\n':
                     tok = nl(stack, prev)
+                elif tok == qbeg and not tok in quotes:
+                    tok = get_quoted(stack, tok)
                 chunk += tok
                 if tok == qend:
                     break
@@ -1584,7 +1764,7 @@ class DraftParser():
             return chunk
         def nl(stack, prev):
             "Found a newline.  Process following whitespace and return an appropriate token."
-            lastchar = prev[-1]
+            lastchar = prev[-1] if prev else ''
             while True:
                 tok = stack.pop()
                 if tok is None:
@@ -1916,6 +2096,10 @@ class DraftParser():
             for refs in references:
                 back.append(refs)
             self.section_number += 1
+        # maybe read the eref section
+        line = self.skip_blank_lines()
+        if line.txt.split()[1] == 'URIs':
+            section = self.section([str(self.section_number-1), str(len(refs)+1)])
         #
         num = ord('A')
         while True:
@@ -1930,7 +2114,7 @@ class DraftParser():
             # other sections
             line = self.skip_blank_lines()
             word = line.txt.split()[0]
-            if word in ['Acknowledgements', 'Contributors', ]:
+            if word in ['Acknowledgements', 'Contributors', 'Index', ]:
                 section = self.section([word])
                 back.append(section)
             else:
@@ -1949,7 +2133,7 @@ class DraftParser():
             return None
         #
         number, title = parse_section_start(line, numlist, level, appendix=False)
-        if not title in ['References', 'Normative References', 'Informative References', 'Informational References', 'Normative', 'Informative', 'URIs', ]:
+        if not title in ['References', 'Normative References', 'Informative References', 'Informational References', 'Normative', 'Informative',]:
             self.push_line(line, p)
             return None
         # peek at the next nonblank line
