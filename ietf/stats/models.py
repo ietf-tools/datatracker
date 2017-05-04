@@ -42,13 +42,13 @@ class CountryAlias(models.Model):
     class Meta:
         verbose_name_plural = "country aliases"
     
-class Registration(models.Model):
+class MeetingRegistration(models.Model):
     """Registration attendee records from the IETF registration system"""
     meeting = models.ForeignKey(Meeting)
     first_name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255)
     affiliation = models.CharField(blank=True, max_length=255)
-    country = models.CharField(max_length=2)        # ISO 3166
+    country_code = models.CharField(max_length=2)        # ISO 3166
     person = models.ForeignKey(Person, blank=True, null=True)
     
     def __unicode__(self):

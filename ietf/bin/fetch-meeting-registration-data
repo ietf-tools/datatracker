@@ -25,7 +25,7 @@ import syslog
 
 from ietf.meeting.models import Meeting
 
-from ietf.stats.utils import get_registration_data
+from ietf.stats.utils import get_meeting_registration_data
 
 meetings = Meeting.objects.none()
 if args.meeting:
@@ -39,7 +39,7 @@ else:
     sys.exit(1)
 
 for meeting in meetings:
-    total = get_registration_data(meeting)
+    total = get_meeting_registration_data(meeting)
     msg = "Fetched data for meeting {}: {} registrations added".format(meeting.number, total)
     if sys.stdout.isatty():
         print(msg) # make debugging a bit easier

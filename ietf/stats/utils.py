@@ -4,7 +4,7 @@ from collections import defaultdict
 
 from django.conf import settings
 
-from ietf.stats.models import AffiliationAlias, AffiliationIgnoredEnding, CountryAlias, Registration
+from ietf.stats.models import AffiliationAlias, AffiliationIgnoredEnding, CountryAlias, MeetingRegistration
 from ietf.name.models import CountryName
 
 def compile_affiliation_ending_stripping_regexp():
@@ -210,7 +210,7 @@ def compute_hirsch_index(citation_counts):
     return i
 
 
-def get_registration_data(meeting):
+def get_meeting_registration_data(meeting):
     """"Retrieve registration attendee data and summary statistics.  Returns number
     of Registration records created."""
     num_created = 0
@@ -223,12 +223,12 @@ def get_registration_data(meeting):
             pass
 
         for registration in decoded:
-            object, created = Registration.objects.get_or_create(
+            object, created = MeetingRegistration.objects.get_or_create(
                 meeting_id=meeting.pk,
                 first_name=registration['FirstName'],
                 last_name=registration['LastName'],
                 affiliation=registration['Company'],
-                country=registration['Country'])
+                country_code=registration['Country'])
             if created:
                 num_created += 1
     return num_created

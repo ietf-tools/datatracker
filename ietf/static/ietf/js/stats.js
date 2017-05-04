@@ -14,7 +14,7 @@ $(document).ready(function () {
         
         var chart = Highcharts.chart('chart', window.chartConf);
     }
-
+    /*
     $(".popover-details").each(function () {
         var stdNameRegExp = new RegExp("^(rfc|bcp|fyi|std)[0-9]+$", 'i');
         var draftRegExp = new RegExp("^draft-", 'i');
@@ -49,5 +49,5 @@ $(document).ready(function () {
         }).on("click", function (e) {
             e.preventDefault();
         });
-    });
+    });*/
 });

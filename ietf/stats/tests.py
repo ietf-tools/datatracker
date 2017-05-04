@@ -8,8 +8,8 @@ from django.urls import reverse as urlreverse
 
 from ietf.utils.test_data import make_test_data, make_review_data
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase, unicontent
-from ietf.stats.models import Registration
-from ietf.stats.utils import get_registration_data
+from ietf.stats.models import MeetingRegistration
+from ietf.stats.utils import get_meeting_registration_data
 import ietf.stats.views
 
 from ietf.submit.models import Submission
@@ -154,12 +154,12 @@ class StatisticsTests(TestCase):
         self.assertTrue(q('.review-stats td:contains("1")'))
 
     @patch('requests.get')
-    def test_get_registration_data(self, mock_get):
+    def test_get_meeting_registration_data(self, mock_get):
         response = Response()
         response.status_code = 200
         response._content = '[{"LastName":"Smith","FirstName":"John","Company":"ABC","Country":"US"}]'
         mock_get.return_value = response
         meeting = MeetingFactory(type_id='ietf', date=datetime.date(2016,7,14), number="96")
-        get_registration_data(meeting)
-        query = Registration.objects.filter(first_name='John',last_name='Smith',country='US')
-        self.assertTrue(query.count(),1)
+        get_meeting_registration_data(meeting)
+        query = MeetingRegistration.objects.filter(first_name='John',last_name='Smith',country_code='US')
+        self.assertTrue(query.count(), 1)

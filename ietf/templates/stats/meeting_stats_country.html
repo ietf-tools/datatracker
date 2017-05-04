@@ -1,0 +1,69 @@
+<h3>{{ stats_title }}</h3>
+
+<div id="chart"></div>
+
+<script>
+ var chartConf = {
+     chart: {
+         type: 'column'
+     },
+     plotOptions: {
+         column: {
+             animation: false
+         }
+     },
+     title: {
+         text: '{{ stats_title|escapejs }}'
+     },
+     xAxis: {
+         type: "category",
+         title: {
+             text: 'Country'
+         }
+     },
+     yAxis: {
+         title: {
+             text: 'Number of registrations'
+         }
+     },
+     tooltip: {
+         formatter: function () {
+             var s = '<b>' + this.points[0].key + '</b>';
+
+             $.each(this.points, function () {
+                 s += '<br/>' + chartConf.yAxis.title.text + ': ' + this.y;
+             });
+
+             return s;
+         },
+         shared: true
+     },
+     series: {{ chart_data }}
+ };
+</script>
+
+<h3>Data</h3>
+
+<table class="table table-condensed stats-data">
+  <thead>
+    <tr>
+      <th>Country</th>
+      <th>Percentage of registrations</th>
+      <th>Registrations</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for country, percentage, names in table_data %}
+      <tr>
+        <td>{{ country|default:"(unknown)" }}</td>
+        <td>{{ percentage|floatformat:2 }}%</td>
+        <td>{% include "stats/includes/number_with_details_cell.html" %}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<p>EU (European Union) is not a country, but has been added for reference, as the sum of
+  all current EU member countries:
+  {% for c in eu_countries %}{{ c.name }}{% if not forloop.last %}, {% endif %}{% endfor %}.</p>
+

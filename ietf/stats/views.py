@@ -12,6 +12,7 @@ from django.http import HttpResponseRedirect, HttpResponseForbidden
 from django.db.models import Count, Q
 from django.utils.safestring import mark_safe
 from django.conf import settings
+from django.shortcuts import get_object_or_404
 
 import dateutil.relativedelta
 
@@ -26,6 +27,8 @@ from ietf.person.models import Person
 from ietf.name.models import ReviewRequestStateName, ReviewResultName, CountryName, DocRelationshipName
 from ietf.person.name import plain_name
 from ietf.doc.models import DocAlias, Document, State, DocEvent
+from ietf.meeting.models import Meeting
+from ietf.stats.models import MeetingRegistration, CountryAlias
 from ietf.stats.utils import get_aliased_affiliations, get_aliased_countries, compute_hirsch_index
 from ietf.ietfauth.utils import has_role
 
@@ -86,9 +89,39 @@ def prune_unknown_bin_with_known(bins):
     # named/known bins
     all_known = { n for b, names in bins.iteritems() if b for n in names }
     bins[""] = [name for name in bins[""] if name not in all_known]
+    if not bins[""]:
+        del bins[""]
 
 def count_bins(bins):
     return len({ n for b, names in bins.iteritems() if b for n in names })
+
+def add_labeled_top_series_from_bins(chart_data, bins, limit):
+    """Take bins on the form (x, label): [name1, name2, ...], figure out
+    how many there are per label, take the overall top ones and put
+    them into sorted series like [(x1, len(names1)), (x2, len(names2)), ...]."""
+    aggregated_bins = defaultdict(set)
+    xs = set()
+    for (x, label), names in bins.iteritems():
+        xs.add(x)
+        aggregated_bins[label].update(names)
+
+    xs = list(sorted(xs))
+
+    sorted_bins = sorted(aggregated_bins.iteritems(), key=lambda t: len(t[1]), reverse=True)
+    top = [ label for label, names in list(sorted_bins)[:limit]]
+
+    for label in top:
+        series_data = []
+
+        for x in xs:
+            names = bins.get((x, label), set())
+
+            series_data.append((x, len(names)))
+
+        chart_data.append({
+            "data": series_data,
+            "name": label
+        })
 
 def document_stats(request, stats_type=None):
     def build_document_stats_url(stats_type_override=Ellipsis, get_overrides={}):
@@ -549,8 +582,7 @@ def document_stats(request, stats_type=None):
 
             chart_data.append({ "data": sorted(series_data, key=lambda t: t[0]) })
 
-    elif any(stats_type == t[0] and stats_type.split("/")[1] in ["affiliation", "country", "continent"]
-             for t in possible_yearly_stats_types):
+    elif any(stats_type == t[0] for t in possible_yearly_stats_types):
 
         person_filters = Q(documentauthor__document__type="draft")
 
@@ -585,32 +617,6 @@ def document_stats(request, stats_type=None):
         years_from = from_time.year if from_time else 1
         years_to = datetime.date.today().year - 1
 
-        def add_yearly_chart_data_from_bins(bins, limit):
-            aggregated_bins = defaultdict(set)
-            years = set()
-            for (year, label), names in bins.iteritems():
-                years.add(year)
-                aggregated_bins[label].update(names)
-
-            years = list(sorted(y for y in years))
-
-            limit = 8
-            sorted_bins = sorted(aggregated_bins.iteritems(), key=lambda t: len(t[1]), reverse=True)
-            top = [ label for label, names in list(sorted_bins)[:limit]]
-
-            for label in top:
-                series_data = []
-
-                for y in years:
-                    names = bins.get((y, label), set())
-
-                    series_data.append((y, len(names)))
-
-                chart_data.append({
-                    "data": series_data,
-                    "name": label
-                })
-            
 
         if stats_type == "yearly/affiliation":
             stats_title = "Number of {} authors per affiliation over the years".format(doc_label)
@@ -632,7 +638,7 @@ def document_stats(request, stats_type=None):
                         if years_from <= year <= years_to:
                             bins[(year, a)].add(name)
 
-            add_yearly_chart_data_from_bins(bins, limit=8)
+            add_labeled_top_series_from_bins(chart_data, bins, limit=8)
 
         elif stats_type == "yearly/country":
             stats_title = "Number of {} authors per country over the years".format(doc_label)
@@ -664,7 +670,7 @@ def document_stats(request, stats_type=None):
                             if c and c.in_eu:
                                 bins[(year, eu_name)].add(name)
 
-            add_yearly_chart_data_from_bins(bins, limit=8)
+            add_labeled_top_series_from_bins(chart_data, bins, limit=8)
 
 
         elif stats_type == "yearly/continent":
@@ -692,7 +698,7 @@ def document_stats(request, stats_type=None):
                         if years_from <= year <= years_to:
                             bins[(year, continent_name)].add(name)
 
-            add_yearly_chart_data_from_bins(bins, limit=8)
+            add_labeled_top_series_from_bins(chart_data, bins, limit=8)
 
     return render(request, "stats/document_stats.html", {
         "chart_data": mark_safe(json.dumps(chart_data)),
@@ -726,6 +732,198 @@ def known_countries_list(request, stats_type=None, acronym=None):
     return render(request, "stats/known_countries_list.html", {
         "countries": countries,
         "ticket_email_address": settings.SECRETARIAT_TICKET_EMAIL,
+    })
+
+def meeting_stats(request, num=None, stats_type=None):
+    meeting = None
+    if num is not None:
+        meeting = get_object_or_404(Meeting, number=num, type="ietf")
+
+    def build_meeting_stats_url(number=None, stats_type_override=Ellipsis, get_overrides={}):
+        kwargs = {
+            "stats_type": stats_type if stats_type_override is Ellipsis else stats_type_override,
+        }
+
+        if number is not None:
+            kwargs["num"] = number
+
+        return urlreverse(meeting_stats, kwargs={ k: v for k, v in kwargs.iteritems() if v is not None }) + generate_query_string(request.GET, get_overrides)
+
+    # statistics types
+    if meeting:
+        possible_stats_types = add_url_to_choices([
+            ("country", "Country"),
+            ("continent", "Continent"),
+        ], lambda slug: build_meeting_stats_url(number=meeting.number, stats_type_override=slug))
+    else:
+        possible_stats_types = add_url_to_choices([
+            ("overview", "Overview"),
+            ("country", "Country"),
+            ("continent", "Continent"),
+        ], lambda slug: build_meeting_stats_url(number=None, stats_type_override=slug))
+
+    if not stats_type:
+        return HttpResponseRedirect(build_meeting_stats_url(number=num, stats_type_override=possible_stats_types[0][0]))
+
+    chart_data = []
+    table_data = []
+    stats_title = ""
+    template_name = stats_type
+    bin_size = 1
+    eu_countries = None
+
+    def get_country_mapping(registrations):
+        return {
+            alias.alias: alias.country
+            for alias in CountryAlias.objects.filter(alias__in=set(r.country_code for r in registrations)).select_related("country", "country__continent")
+            if alias.alias.isupper()
+        }
+
+    if meeting and any(stats_type == t[0] for t in possible_stats_types):
+        registrations = MeetingRegistration.objects.filter(meeting=meeting)
+
+        if stats_type == "country":
+            stats_title = "Number of registrations for {} {} per country".format(meeting.type.name, meeting.number)
+
+            bins = defaultdict(set)
+
+            country_mapping = get_country_mapping(registrations)
+
+            eu_name = "EU"
+            eu_countries = set(CountryName.objects.filter(in_eu=True))
+
+            for r in registrations:
+                name = (r.first_name + " " + r.last_name).strip()
+                c = country_mapping.get(r.country_code)
+                bins[c.name if c else None].add(name)
+
+                if c and c.in_eu:
+                    bins[eu_name].add(name)
+
+            prune_unknown_bin_with_known(bins)
+            total_registrations = count_bins(bins)
+
+            series_data = []
+            for country, names in sorted(bins.iteritems(), key=lambda t: t[0].lower()):
+                percentage = len(names) * 100.0 / (total_registrations or 1)
+                if country:
+                    series_data.append((country, len(names)))
+                table_data.append((country, percentage, names))
+
+            series_data.sort(key=lambda t: t[1], reverse=True)
+            series_data = series_data[:30]
+
+            chart_data.append({ "data": series_data })
+
+        elif stats_type == "continent":
+            stats_title = "Number of registrations for {} {} per continent".format(meeting.type.name, meeting.number)
+
+            bins = defaultdict(set)
+
+            country_mapping = get_country_mapping(registrations)
+
+            for r in registrations:
+                name = (r.first_name + " " + r.last_name).strip()
+                c = country_mapping.get(r.country_code)
+                bins[c.continent.name if c else None].add(name)
+
+            prune_unknown_bin_with_known(bins)
+            total_registrations = count_bins(bins)
+
+            series_data = []
+            for continent, names in sorted(bins.iteritems(), key=lambda t: t[0].lower()):
+                percentage = len(names) * 100.0 / (total_registrations or 1)
+                if continent:
+                    series_data.append((continent, len(names)))
+                table_data.append((continent, percentage, names))
+
+            series_data.sort(key=lambda t: t[1], reverse=True)
+
+            chart_data.append({ "data": series_data })
+
+
+    elif not meeting and any(stats_type == t[0] for t in possible_stats_types):
+        template_name = "overview"
+
+        registrations = MeetingRegistration.objects.filter(meeting__type="ietf")
+
+        if stats_type == "overview":
+            stats_title = "Number of registrations per meeting"
+
+            bins = defaultdict(set)
+
+            for first_name, last_name, meeting_number in registrations.values_list("first_name", "last_name", "meeting__number"):
+                meeting_number = int(meeting_number)
+                name = (first_name + " " + last_name).strip()
+
+                bins[meeting_number].add(name)
+
+            meeting_cities = dict(Meeting.objects.filter(number__in=bins.iterkeys()).values_list("number", "city"))
+
+            series_data = []
+            for meeting_number, names in sorted(bins.iteritems()):
+                series_data.append((meeting_number, len(names)))
+                url = build_meeting_stats_url(number=meeting_number, stats_type_override="country")
+                label = "IETF {} - {}".format(meeting_number, meeting_cities.get(str(meeting_number), ""))
+                table_data.append((meeting_number, label, url, names))
+
+            series_data.sort(key=lambda t: t[0])
+            table_data.sort(key=lambda t: t[0], reverse=True)
+
+            chart_data.append({ "data": series_data })
+
+
+        elif stats_type == "country":
+            stats_title = "Number of registrations per country across meetings"
+
+            country_mapping = get_country_mapping(registrations)
+
+            eu_name = "EU"
+            eu_countries = set(CountryName.objects.filter(in_eu=True))
+
+            bins = defaultdict(set)
+
+            for first_name, last_name, country_code, meeting_number in registrations.values_list("first_name", "last_name", "country_code", "meeting__number"):
+                meeting_number = int(meeting_number)
+                name = (first_name + " " + last_name).strip()
+                c = country_mapping.get(country_code)
+
+                if c:
+                    bins[(meeting_number, c.name)].add(name)
+                    if c.in_eu:
+                        bins[(meeting_number, eu_name)].add(name)
+
+            add_labeled_top_series_from_bins(chart_data, bins, limit=8)
+
+
+        elif stats_type == "continent":
+            stats_title = "Number of registrations per country across meetings"
+
+            country_mapping = get_country_mapping(registrations)
+
+            bins = defaultdict(set)
+
+            for first_name, last_name, country_code, meeting_number in registrations.values_list("first_name", "last_name", "country_code", "meeting__number"):
+                meeting_number = int(meeting_number)
+                name = (first_name + " " + last_name).strip()
+                c = country_mapping.get(country_code)
+
+                if c:
+                    bins[(meeting_number, c.continent.name)].add(name)
+
+            add_labeled_top_series_from_bins(chart_data, bins, limit=8)
+
+
+    return render(request, "stats/meeting_stats.html", {
+        "chart_data": mark_safe(json.dumps(chart_data)),
+        "table_data": table_data,
+        "stats_title": stats_title,
+        "possible_stats_types": possible_stats_types,
+        "stats_type": stats_type,
+        "bin_size": bin_size,
+        "meeting": meeting,
+        "eu_countries": sorted(eu_countries or [], key=lambda c: c.name),
+        "content_template": "stats/meeting_stats_{}.html".format(template_name),
     })
 
 

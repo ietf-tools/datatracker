@@ -16,13 +16,13 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='Registration',
+            name='MeetingRegistration',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('first_name', models.CharField(max_length=255)),
                 ('last_name', models.CharField(max_length=255)),
                 ('affiliation', models.CharField(blank=True, max_length=255)),
-                ('country', models.CharField(max_length=2)),
+                ('country_code', models.CharField(max_length=2)),
                 ('meeting', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='meeting.Meeting')),
                 ('person', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='person.Person')),
             ],
