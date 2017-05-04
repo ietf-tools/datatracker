@@ -1,36 +1,34 @@
-# Copyright The IETF Trust 2017, All Rights Reserved
+#!/bin/env python
 # -*- coding: utf-8 -*-
+# Copyright The IETF Trust 2017, All Rights Reserved
 
 """
 NAME
-        id2xml - Convert text format RFCs and Internet-Drafts to .xml format
-
-SYNOPSIS
-        id2xml [OPTIONS] ARGS
+  id2xml - Convert text format RFCs and Internet-Drafts to .xml format
 
 DESCRIPTION
-        id2xml reads text-format RFCs and IETF drafs which are reasonably
-        well formatted (i.e., conforms to the text format produced by xml2rfc)
-        and tries to generate a reasonably appropriate .xml file following the
-        format accepted by xml2rfc, defined in RFC 7749 and its predecessors/
-        successors
-
-%(options)s
+  id2xml reads text-format RFCs and IETF drafts which are reasonably
+  well formatted (i.e., conforms to the text format produced by xml2rfc)
+  and tries to generate a reasonably appropriate .xml file following the
+  format accepted by xml2rfc, defined in RFC 7749 and its predecessors/
+  successors
+...
 
 AUTHOR
-        Written by Henrik Levkowetz, <henrik@levkowetz.com>
+  Written by Henrik Levkowetz, <henrik@levkowetz.com>
 
 COPYRIGHT
-        Copyright (c) 2017, The IETF Trust
-        All rights reserved.
+  Copyright (c) 2017, The IETF Trust.
+  All rights reserved.
 
-        Licenced under the 3-clause BSD license; see the file LICENSE
-        for details.
+  Licenced under the 3-clause BSD license; see the file LICENSE
+  for details.
 """
 
 
 from __future__ import print_function, unicode_literals
 
+import os
 import re
 import six
 import sys
@@ -42,6 +40,11 @@ import datetime
 import textwrap
 from pyterminalsize import get_terminal_size
 from xml2rfc.writers.base import BaseRfcWriter
+from collections import namedtuple, deque
+from lxml.etree import Element, SubElement, ElementTree, ProcessingInstruction, CDATA
+from lxml.builder import E
+from StringIO import StringIO
+from __init__ import __version__
 
 try:
     import debug
@@ -49,83 +52,38 @@ try:
 except ImportError:
     pass
 
-from collections import namedtuple, deque
-from lxml.etree import Element, SubElement, ElementTree, ProcessingInstruction, CDATA
-from lxml.builder import E
-from StringIO import StringIO
+
 
 # ----------------------------------------------------------------------
-
-
-__version__ = "0.1.0"
-
 
 # ----------------------------------------------------------------------
 #
 # This is the entrypoint which is invoked from command-line scripts:
 
 def run():
-    import sys, os, getopt, re
+    import sys, os, getopt, re, argparse
 
     program = os.path.basename(sys.argv[0])
     progdir = os.path.dirname(sys.argv[0])
 
-
-
     # ----------------------------------------------------------------------
     # Parse options
 
-    options = ""
-    for line in re.findall("\n +(if|elif) +opt in \[(.+)\]:\s+#(.+)\n", open(__file__.replace('.pyc','.py')).read()):
-        if not options:
-            options += "OPTIONS\n"
-        options += "        %-24s %s\n" % (line[1].replace('"', ''), line[2])
-    options = options.strip()
-
-    # with ' < 1:' on the next line, this is a no-op:
-    if len(sys.argv) <= 1:
-        print(__doc__ % locals())
-        sys.exit(1)
-
-    short_opt = "23ho:p:svV"
-    long_opt  = ["help", "v2", "schema-v2", "v3", "schema-v3", "output-file-", "output-path=", "strip-only", "version","verbose",]
-
-    try:
-        opts, files = getopt.gnu_getopt(sys.argv[1:], short_opt, long_opt)
-    except Exception as e:
-        print("%s: %s" % (program, e))
-        sys.exit(1)
-
-    # ----------------------------------------------------------------------
-    # Handle options
-
-    # set default values, if any
-    opt_verbose = False
-    opt_schema  = "v2"
-    opt_strip_only = False
-    opt_output_path = None
-    opt_output_file = None
-
-    # handle individual options
-    for opt, value in opts:
-        if   opt in ["-h", "--help"]:               # Output this help, then exit
-            print(__doc__ % locals())
-            sys.exit(1)
-        elif opt in ["-2", "--v2", "--schema-v2"]:  # Use v2 (RFC 7749) schema (default)
-            opt_schema="v2"
-    #    elif opt in ["-3", "--v3", "--schema-v3"]:  # Use v2 (RFC 7991) schema
-    #        opt_schema="v3"
-        elif opt in ["-o", "--output-file"]:        # Set the output file name
-            opt_output_file = value
-        elif opt in ["-p", "--output-path"]:        # Set the output directory name
-            opt_output_path = value
-        elif opt in ["-s", "--strip-only"]:         # Don't convert, only strip headers/footers
-            opt_strip_only = True
-        elif opt in ["-v", "--version"]:            # Output version information, then exit
-            print(program, version)
-            sys.exit(0)
-        elif opt in ["-V", "--verbose"]:            # Be (slightly) more verbose
-            opt_verbose = True
+    prolog, epilog = __doc__.split('...')
+    parser = argparse.ArgumentParser(description=prolog, epilog=epilog,
+                                     formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument('DRAFT', nargs='*',                             help="text format draft(s) to be converted to xml")
+    parser.add_argument('-2', '--v2', '--schema-v2', dest='schema', action='store_const', const='v2',
+                                                                        help="output v2 (RFC 7749) schema")
+    parser.add_argument('-3', '--v3', '--schema-v3', dest='schema', action='store_const', const='v3',
+                                                                        help="output v3 (RFC 7991) schema")
+    parser.add_argument('-o', '--output-file', metavar='FILE',          help="set the output file name")
+    parser.add_argument('-p', '--output-path', metavar="DIR",           help="set the output directory name")
+    parser.add_argument('-s', '--strip-only', action='store_true',      help="don't convert, only strip headers and footers")
+    parser.add_argument('-v', '--version', action='store_true',         help="output version information, then exit")
+    parser.add_argument('-V', '--verbose', action='store_true',         help="be (slightly) more verbose")
+    parser.set_defaults(schema='v2')
+    opts = parser.parse_args()
 
     # ----------------------------------------------------------------------
     def say(s):
@@ -135,7 +93,7 @@ def run():
     # ----------------------------------------------------------------------
     def note(s):
         msg = "%s\n" % (s)
-        if opt_verbose:
+        if opts.verbose:
             sys.stderr.write(wrap(msg))
 
     # ----------------------------------------------------------------------
@@ -147,16 +105,21 @@ def run():
     # ----------------------------------------------------------------------
     # The program itself    
 
+    files = opts.DRAFT
+    if opts.version:
+        print(program, __version__)
+        sys.exit(0)
+
     from pathlib import Path
     try:
         import debug
     except ImportError:
         pass
 
-    if opt_output_path and opt_output_file:
+    if opts.output_path and opts.output_file:
         die("Mutually exclusive options -o / -p; use one or the other")
 
-    if opt_strip_only:
+    if opts.strip_only:
         output_suffix = '.raw'
     else:
         output_suffix = '.xml'
@@ -165,34 +128,34 @@ def run():
         try:
             inf = Path(file)
             name = re.sub('-[0-9][0-9]', '', inf.stem)
-            if opt_output_file:
-                # This is not what we want if opt_output_file=='-', but we fix
+            if opts.output_file:
+                # This is not what we want if opts.output_file=='-', but we fix
                 # that in the 'with' clause below
-                outf = Path(opt_output_file)
-            elif opt_output_path:
-                outf = Path(opt_output_path) / (inf.stem+output_suffix)
+                outf = Path(opts.output_file)
+            elif opts.output_path:
+                outf = Path(opts.output_path) / (inf.stem+output_suffix)
             else:
                 outf = inf.with_suffix(output_suffix)
                 # if we're using an implicit output file name (derived from the
                 # input file name), and we're not just stripping headers, refuse
                 # to overwrite an existing file.  It could be the original xml
                 # file provided by the authors.
-                if not opt_strip_only and outf.exists():
+                if not opts.strip_only and outf.exists():
                     die("The implied output file (%s) already exists.  Provide an explicit "
                         "output filename (with -o) or a directory path (with -p) if you want "
                         "%s to overwrite an existing file." % (outf, program, ))
             with inf.open() as file:
                 txt = file.read()
-            if opt_strip_only:
+            if opts.strip_only:
                 lines, __ = strip_pagebreaks(txt)
-                with (sys.stdout if opt_output_file=='-' else outf.open('w')) as out:
+                with (sys.stdout if opts.output_file=='-' else outf.open('w')) as out:
                     out.write('\n'.join([l.txt for l in lines]))
                     out.write('\n')
                 note('Wrote stripped file to %s' % out.name)
             else:
-                parser = DraftParser(inf.name, txt, schema=opt_schema)
+                parser = DraftParser(inf.name, txt, schema=opts.schema)
                 xml = parser.parse_to_xml()
-                with (sys.stdout if opt_output_file=='-' else outf.open('w')) as out:
+                with (sys.stdout if opts.output_file=='-' else outf.open('w')) as out:
                     out.write(xml)
                 note('Wrote converted file to %s' % out.name)
         except Exception as e:
@@ -810,7 +773,7 @@ class DraftParser():
         'symrefs="yes"',
     ]
 
-    def __init__(self, name, text, schema="v3"):
+    def __init__(self, name, text, schema="v2"):
         self.name = name
         self.is_draft = name.startswith('draft-')
         self.is_rfc = name.lower().startswith('rfc')
@@ -818,7 +781,8 @@ class DraftParser():
             self.err(0, "Expected the input document name to start with either 'draft-' or 'rfc'")
         assert type(text) is six.text_type # unicode in 2.x, str in 3.x.  
         self.raw = text
-        self.schema = ElementTree(file=schema+".rng")
+        schema_file = os.path.join(os.path.dirname(__file__), 'data', schema+'.rng')
+        self.schema = ElementTree(file=schema_file)
         self.rfc_attr = self.schema.xpath("/x:grammar/x:define/x:element[@name='rfc']//x:attribute", namespaces=ns)
         self.rfc_attr_defaults = dict( (a.get('name'), a.get("{%s}defaultValue"%ns['a'], None)) for a in self.rfc_attr )
 
@@ -2302,4 +2266,7 @@ class DraftParser():
                 for child in old:
                     new.append(child)
                 old.getparent().replace(old, new)
-        
+
+if __name__ == '__main__':
+    run()
+    

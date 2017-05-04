@@ -1,0 +1,7 @@
+include id2xml/data/v2.rnc
+include id2xml/data/v2.rng
+include id2xml/data/v3.rnc
+include id2xml/data/v3.rng
+include requirements.txt
+include LICENSE
+include README.rst
