@@ -766,6 +766,7 @@ def meeting_stats(request, num=None, stats_type=None):
         return HttpResponseRedirect(build_meeting_stats_url(number=num, stats_type_override=possible_stats_types[0][0]))
 
     chart_data = []
+    piechart_data = []
     table_data = []
     stats_title = ""
     template_name = stats_type
@@ -795,7 +796,7 @@ def meeting_stats(request, num=None, stats_type=None):
             for r in registrations:
                 name = (r.first_name + " " + r.last_name).strip()
                 c = country_mapping.get(r.country_code)
-                bins[c.name if c else None].add(name)
+                bins[c.name if c else ""].add(name)
 
                 if c and c.in_eu:
                     bins[eu_name].add(name)
@@ -810,8 +811,15 @@ def meeting_stats(request, num=None, stats_type=None):
                     series_data.append((country, len(names)))
                 table_data.append((country, percentage, names))
 
+                if country and country != eu_name:
+                    piechart_data.append({ "name": country, "y": percentage })
+
             series_data.sort(key=lambda t: t[1], reverse=True)
-            series_data = series_data[:30]
+            series_data = series_data[:20]
+
+            piechart_data.sort(key=lambda d: d["y"], reverse=True)
+            pie_cut_off = 8
+            piechart_data = piechart_data[:pie_cut_off] + [{ "name": "Other", "y": sum(d["y"] for d in piechart_data[pie_cut_off:])}]
 
             chart_data.append({ "data": series_data })
 
@@ -825,7 +833,7 @@ def meeting_stats(request, num=None, stats_type=None):
             for r in registrations:
                 name = (r.first_name + " " + r.last_name).strip()
                 c = country_mapping.get(r.country_code)
-                bins[c.continent.name if c else None].add(name)
+                bins[c.continent.name if c else ""].add(name)
 
             prune_unknown_bin_with_known(bins)
             total_registrations = count_bins(bins)
@@ -916,6 +924,7 @@ def meeting_stats(request, num=None, stats_type=None):
 
     return render(request, "stats/meeting_stats.html", {
         "chart_data": mark_safe(json.dumps(chart_data)),
+        "piechart_data": mark_safe(json.dumps(piechart_data)),
         "table_data": table_data,
         "stats_title": stats_title,
         "possible_stats_types": possible_stats_types,

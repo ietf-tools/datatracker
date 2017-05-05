@@ -14,6 +14,10 @@ $(document).ready(function () {
         
         var chart = Highcharts.chart('chart', window.chartConf);
     }
+
+    if (window.pieChartConf) {
+        var pieChart = Highcharts.chart('pie-chart', window.pieChartConf);
+    }
     /*
     $(".popover-details").each(function () {
         var stdNameRegExp = new RegExp("^(rfc|bcp|fyi|std)[0-9]+$", 'i');

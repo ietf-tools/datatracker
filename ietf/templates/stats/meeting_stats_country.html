@@ -42,6 +42,36 @@
  };
 </script>
 
+<div id="pie-chart"></div>
+
+<script>
+ var pieChartConf = {
+     chart: {
+         type: 'pie'
+     },
+     plotOptions: {
+         pie: {
+             animation: false,
+             dataLabels: {
+                 enabled: true,
+                 format: "{point.name}: {point.percentage:.1f}%"
+             },
+             enableMouseTracking: false
+         }
+     },
+     title: {
+         text: "Countries at IETF {{ meeting.number }}"
+     },
+     tooltip: {
+     },
+     series: [ {
+         name: "Countries",
+         colorByPoint: true,
+         data: {{ piechart_data }}
+     }]
+ };
+</script>
+
 <h3>Data</h3>
 
 <table class="table table-condensed stats-data">
@@ -65,5 +95,5 @@
 
 <p>EU (European Union) is not a country, but has been added for reference, as the sum of
   all current EU member countries:
-  {% for c in eu_countries %}{{ c.name }}{% if not forloop.last %}, {% endif %}{% endfor %}.</p>
-
+  {% for c in eu_countries %}{{ c.name }}{% if not forloop.last %}, {% endif %}{% endfor %}.
+</p>

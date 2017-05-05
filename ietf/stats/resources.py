@@ -7,7 +7,7 @@ from tastypie.cache import SimpleCache
 from ietf import api
 from ietf.api import ToOneField                         # pyflakes:ignore
 
-from ietf.stats.models import CountryAlias, AffiliationIgnoredEnding, AffiliationAlias
+from ietf.stats.models import CountryAlias, AffiliationIgnoredEnding, AffiliationAlias, MeetingRegistration
 
 
 from ietf.name.resources import CountryNameResource
@@ -49,4 +49,21 @@ class AffiliationAliasResource(ModelResource):
             "name": ALL,
         }
 api.stats.register(AffiliationAliasResource())
+
+class MeetingRegistrationResource(ModelResource):
+    class Meta:
+        queryset = MeetingRegistration.objects.all()
+        serializer = api.Serializer()
+        cache = SimpleCache()
+        #resource_name = 'meetingregistration'
+        filtering = { 
+            "id": ALL,
+            "meeting": ALL_WITH_RELATIONS,
+            "first_name": ALL,
+            "last_name": ALL,
+            "affiliation": ALL,
+            "country_code": ALL,
+            "person": ALL_WITH_RELATIONS
+        }
+api.stats.register(MeetingRegistrationResource())
 
