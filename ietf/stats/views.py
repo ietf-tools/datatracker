@@ -878,7 +878,7 @@ def meeting_stats(request, num=None, stats_type=None):
             series_data.sort(key=lambda t: t[0])
             table_data.sort(key=lambda t: t[0], reverse=True)
 
-            chart_data.append({ "data": series_data })
+            chart_data.append({ "name": "Registrations", "data": series_data })
 
 
         elif stats_type == "country":
@@ -924,7 +924,6 @@ def meeting_stats(request, num=None, stats_type=None):
 
     return render(request, "stats/meeting_stats.html", {
         "chart_data": mark_safe(json.dumps(chart_data)),
-        "use_legend": chart_data and chart_data[0].get("name"),
         "piechart_data": mark_safe(json.dumps(piechart_data)),
         "table_data": table_data,
         "stats_title": stats_title,

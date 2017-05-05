@@ -15,7 +15,7 @@
              animation: false
          }
      },
-     {% if use_legend %}
+     {% if stats_type != "overview" %}
      legend: {
          align: "right",
          verticalAlign: "middle",
@@ -40,7 +40,7 @@
      },
      tooltip: {
          formatter: function () {
-             var s = '<b>' + this.x + '</b>';
+             var s = '<b>' + "IETF " + this.x + '</b>';
 
              $.each(this.points, function () {
                  s += '<br/>' + this.series.name + ': ' + this.y;
