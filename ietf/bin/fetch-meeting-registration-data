@@ -17,7 +17,7 @@ django.setup()
 parser = argparse.ArgumentParser()
 parser.add_argument("--meeting", help="meeting to fetch data for")
 parser.add_argument("--all", action="store_true", help="fetch data for all meetings")
-parser.add_argument("--latest", action="store_true", help="fetch data for latest meeting")
+parser.add_argument("--latest", type=int, help="fetch data for latest N meetings")
 args = parser.parse_args()
 
 
@@ -33,7 +33,7 @@ if args.meeting:
 elif args.all:
     meetings = Meeting.objects.filter(type="ietf").order_by("date")
 elif args.latest:
-    meetings = Meeting.objects.filter(type="ietf").order_by("-date")[:1]
+    meetings = Meeting.objects.filter(type="ietf").order_by("-date")[:args.latest]
 else:
     print("Please use one of --meeting, --all or --latest")
     sys.exit(1)
