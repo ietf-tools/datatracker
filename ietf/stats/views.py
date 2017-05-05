@@ -924,6 +924,7 @@ def meeting_stats(request, num=None, stats_type=None):
 
     return render(request, "stats/meeting_stats.html", {
         "chart_data": mark_safe(json.dumps(chart_data)),
+        "use_legend": chart_data and chart_data[0].get("name"),
         "piechart_data": mark_safe(json.dumps(piechart_data)),
         "table_data": table_data,
         "stats_title": stats_title,

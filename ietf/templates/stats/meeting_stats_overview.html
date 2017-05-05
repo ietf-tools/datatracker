@@ -15,12 +15,14 @@
              animation: false
          }
      },
+     {% if use_legend %}
      legend: {
          align: "right",
          verticalAlign: "middle",
          layout: "vertical",
          enabled: true
      },
+     {% endif %}
      title: {
          text: '{{ stats_title|escapejs }}'
      },
