@@ -77,8 +77,11 @@ def get_unmatched_recordings(meeting):
         files = os.listdir(path)
     except OSError:
         files = []
+    url = settings.IETF_AUDIO_URL + 'ietf%s' % meeting.number 
+    recordings = Document.objects.filter(type='recording',external_url__startswith=url)
+    filenames = [ d.external_url.split('/')[-1] for d in recordings ]
     for file in files:
-        if not Document.objects.filter(external_url__endswith=file).exists():
+        if file not in filenames:
             unmatched_recordings.append(file)
     return unmatched_recordings
 
