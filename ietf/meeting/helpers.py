@@ -528,7 +528,7 @@ def send_interim_approval_request(meetings):
     group = meetings[0].session_set.first().group
     requester = meetings[0].session_set.first().requested_by
     (to_email, cc_list) = gather_address_lists('session_requested',group=group,person=requester)
-    from_email = ('"IETF Meeting Session Request Tool"','session_request_developers@ietf.org')
+    from_email = (settings.SESSION_REQUEST_FROM_EMAIL)
     subject = '{group} - New Interim Meeting Request'.format(group=group.acronym)
     template = 'meeting/interim_approval_request.txt'
     approval_urls = []
@@ -554,7 +554,7 @@ def send_interim_announcement_request(meeting):
     group = meeting.session_set.first().group
     requester = meeting.session_set.first().requested_by
     (to_email, cc_list) = gather_address_lists('interim_approved')
-    from_email = ('"IETF Meeting Session Request Tool"','session_request_developers@ietf.org')
+    from_email = (settings.SESSION_REQUEST_FROM_EMAIL)
     subject = '{group} - interim meeting ready for announcement'.format(group=group.acronym)
     template = 'meeting/interim_announcement_request.txt'
     announce_url = settings.IDTRACKER_BASE_URL + reverse('ietf.meeting.views.interim_request_details', kwargs={'number': meeting.number})
