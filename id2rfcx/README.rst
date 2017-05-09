@@ -1,33 +1,24 @@
+Internet-Draft text to XML Conversion Tool
+==========================================
 
-NAME
-        id2xml - Convert text format RFCs and Internet-Drafts to .xml format
+This tool, 'id2xml', is indended for use by the RFC-Editor staff, in order to
+produce a first xml2rfc-compatible XML version from text-only internet draft
+submissions.  The XML follows RFC 7749 [1]_ in version 1.x of the tool, and
+will follow RFC 7991 [2]_ in version 2.x, which will be released once support
+is available to process XML sources which follows the RFC 7991 vocabulary.
 
-SYNOPSIS
-        id2xml [OPTIONS] ARGS
+id2xml may also be useful for Internet-Draft authors who wish to start working
+on a new version of an older draft or RFC, for which no xml2rfc-compatible XML
+source is available.
 
-DESCRIPTION
-        id2xml reads text-format RFCs and IETF drafs which are reasonably
-        well formatted (i.e., conforms to the text format produced by xml2rfc)
-        and tries to generate a reasonably appropriate .xml file following the
-        format accepted by xml2rfc, defined in RFC 7749 and its predecessors/
-        successors
+The releases of the 0.x release series are preview releases, with a number of known
+deficiencies.  They are released in order that potential users may provide
+feedback on the most desired improvements ahead of a 1.0.0 release.
 
-OPTIONS
-        -h, --help                Output this help, then exit
-        -2, --v2, --schema-v2     Use v2 (RFC 7749) schema (default)
-        -o, --output-file         Set the output file name
-        -p, --output-path         Set the output directory name
-        -s, --strip-only          Don't convert, only strip headers/footers
-        -v, --version             Output version information, then exit
-        -V, --verbose             Be (slightly) more verbose
 
-AUTHOR
-        Written by Henrik Levkowetz, <henrik@levkowetz.com>
+.. [1] Reschke, J., "The "xml2rfc" Version 2 Vocabulary", RFC 7749, DOI
+   10.17487/RFC7749, February 2016, <http://www.rfc-editor.org/info/rfc7749>.
 
-COPYRIGHT
-        Copyright (c) 2017, The IETF Trust
-        All rights reserved.
-
-        Licenced under the 3-clause BSD license; see the file LICENSE
-        for details.
+.. [2] Hoffman, P., "The "xml2rfc" Version 3 Vocabulary", RFC 7991, DOI
+   10.17487/RFC7991, December 2016, http://www.rfc-editor.org/info/rfc7991>.
 
