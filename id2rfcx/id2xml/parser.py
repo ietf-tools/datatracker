@@ -212,6 +212,7 @@ chunks = dict(
 
 reference_patterns = [
     r'{anchor}  *{authors}, "{title}", {series}, {date}(, {url})?\.'.format(**chunks),
+    r'{anchor}  *{authors}, "{title}", {date}(, {url})?\.'.format(**chunks),
     r'{anchor}  *{organiz}, "{title}"(, {docname})?, {date}(, {url})?\.'.format(**chunks),
     r'{anchor}  *"{title}", {url}\.'.format(**chunks),
 ## Lines commented out below are for debugging, when the full regex doesn't match (is buggy).
@@ -1827,7 +1828,7 @@ class DraftParser():
                     debug.show('linecount')
                     debug.show('sratio')
                     debug.pprint('border_set')
-                if not '----' in text and (sratio < 0.5 or (sratio < 0.8 and linecount==1)):
+                if not '----' in text and (sratio < 0.3 or (sratio < 0.8 and linecount==1)):
                     next = self.next_para()
                     if ( len(indents) > 1 or indents[0] != 3 
                         or (linecount == 1 and line.txt.strip()[:2] in ['o ', '* ', '+ ', '- ', ]) 
@@ -2062,7 +2063,8 @@ class DraftParser():
             self.section_number += 1
         # maybe read the eref section
         line = self.skip_blank_lines()
-        if line.txt.split()[1] == 'URIs':
+        parts = line.txt.split()
+        if len(parts)>1 and parts[1] == 'URIs':
             section = self.section([str(self.section_number-1), str(len(refs)+1)])
         #
         num = ord('A')
