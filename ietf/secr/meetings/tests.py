@@ -43,10 +43,14 @@ class SecrMeetingTestCase(TestCase):
 
     def test_main(self):
         "Main Test"
+        meeting = make_meeting_test_data()
         url = reverse('ietf.secr.meetings.views.main')
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
+        response = self.client.post(url, {'meeting':meeting.number})
+        url = reverse('ietf.secr.meetings.views.view', kwargs={'meeting_id':meeting.number})
+        self.assertRedirects(response,url)
 
     def test_view(self):
         "View Test"

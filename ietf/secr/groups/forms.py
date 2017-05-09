@@ -182,10 +182,14 @@ class RoleForm(forms.Form):
         person = cleaned_data['person']
         email = cleaned_data['email']
         name = cleaned_data['name']
+        group_acronym = cleaned_data['group_acronym']
         
         if Role.objects.filter(name=name,group=self.group,person=person,email=email):
             raise forms.ValidationError('ERROR: This is a duplicate entry')
         
+        if not group_acronym:
+            raise forms.ValidationError('You must select a group.')
+
         return cleaned_data
         
 class SearchForm(forms.Form):

@@ -88,6 +88,14 @@ class TimeChoiceField(forms.ChoiceField):
 #----------------------------------------------------------
 # Forms
 #----------------------------------------------------------
+class MeetingSelectForm(forms.Form):
+    meeting = forms.ChoiceField()
+
+    def __init__(self,*args,**kwargs):
+        choices = kwargs.pop('choices')
+        super(MeetingSelectForm, self).__init__(*args,**kwargs)
+        self.fields['meeting'].widget.choices = choices
+
 class MeetingModelForm(forms.ModelForm):
     idsubmit_cutoff_time_utc     = ietf.utils.fields.DurationField()
     idsubmit_cutoff_warning_days = ietf.utils.fields.DurationField()

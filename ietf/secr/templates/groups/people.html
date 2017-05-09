@@ -45,6 +45,7 @@
       <h3>Add Role</h3>
       <form id="groups-people" action="" method="post">{% csrf_token %}
         {{ form.non_field_errors }}
+        {{ form.group_acronym }}
         <table class="full-width">
           <tr>
             <td>{{ form.name.errors }}{{ form.name }}</td>

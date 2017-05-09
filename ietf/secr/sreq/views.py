@@ -12,7 +12,7 @@ from ietf.ietfauth.utils import has_role, role_required
 from ietf.meeting.models import Meeting, Session, Constraint, ResourceAssociation
 from ietf.meeting.helpers import get_meeting
 from ietf.name.models import SessionStatusName, ConstraintName
-from ietf.secr.sreq.forms import SessionForm, GroupSelectForm, ToolStatusForm
+from ietf.secr.sreq.forms import SessionForm, ToolStatusForm
 from ietf.secr.utils.decorators import check_permissions
 from ietf.secr.utils.group import groups_by_session
 from ietf.utils.mail import send_mail
@@ -487,14 +487,6 @@ def main(request):
         'message': message},
     )
 
-    # TODO this is not currently used in the main template
-    if request.method == 'POST':
-        button_text = request.POST.get('submit', '')
-        if button_text == 'Group will not meet':
-            return redirect('ietf.secr.sreq.views.no_session', acronym=request.POST['group'])
-        else:
-            return redirect('ietf.secr.sreq.views.new', acronym=request.POST['group'])
-
     meeting = get_meeting()
     scheduled_groups,unscheduled_groups = groups_by_session(request.user, meeting, types=['wg','rg','ag'])
 
@@ -502,11 +494,6 @@ def main(request):
     if not scheduled_groups and not unscheduled_groups:
         messages.warning(request, 'The account %s is not associated with any groups.  If you have multiple Datatracker accounts you may try another or report a problem to ietf-action@ietf.org' % request.user)
      
-    # load form select with unscheduled groups
-    choices = zip([ g.pk for g in unscheduled_groups ],
-                  [ str(g) for g in unscheduled_groups ])
-    form = GroupSelectForm(choices=choices)
-
     # add session status messages for use in template
     for group in scheduled_groups:
         sessions = group.session_set.filter(meeting=meeting)
@@ -522,7 +509,6 @@ def main(request):
 
     return render(request, 'sreq/main.html', {
         'is_locked': is_locked,
-        'form': form,
         'meeting': meeting,
         'scheduled_groups': scheduled_groups,
         'unscheduled_groups': unscheduled_groups},
