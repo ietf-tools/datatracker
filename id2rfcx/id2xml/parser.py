@@ -34,16 +34,12 @@ import six
 import sys
 import copy
 import lxml
-import zlib
-import shlex
-import datetime
 import textwrap
 from pyterminalsize import get_terminal_size
 from xml2rfc.writers.base import BaseRfcWriter
 from collections import namedtuple, deque
-from lxml.etree import Element, SubElement, ElementTree, ProcessingInstruction, CDATA
+from lxml.etree import Element, ElementTree, ProcessingInstruction, CDATA
 from lxml.builder import E
-from StringIO import StringIO
 from __init__ import __version__
 
 try:
@@ -61,10 +57,10 @@ except ImportError:
 # This is the entrypoint which is invoked from command-line scripts:
 
 def run():
-    import sys, os, getopt, re, argparse
+    import sys, os, argparse
 
     program = os.path.basename(sys.argv[0])
-    progdir = os.path.dirname(sys.argv[0])
+    #progdir = os.path.dirname(sys.argv[0])
 
     # ----------------------------------------------------------------------
     # Parse options
@@ -111,10 +107,6 @@ def run():
         sys.exit(0)
 
     from pathlib import Path
-    try:
-        import debug
-    except ImportError:
-        pass
 
     if opts.output_path and opts.output_file:
         die("Mutually exclusive options -o / -p; use one or the other")
@@ -127,7 +119,7 @@ def run():
     for file in files:
         try:
             inf = Path(file)
-            name = re.sub('-[0-9][0-9]', '', inf.stem)
+            #name = re.sub('-[0-9][0-9]', '', inf.stem)
             if opts.output_file:
                 # This is not what we want if opts.output_file=='-', but we fix
                 # that in the 'with' clause below
@@ -695,7 +687,6 @@ def normalize_sublists(block):
     if sub:
         items.append(sub)
         sub = []
-    postlist = items
     return items
 
 #@debug.trace
@@ -918,7 +909,7 @@ class DraftParser():
 
         line = self.skip_blank_lines()
         if line.txt == 'Table of Contents':
-            toc = self.section(['Table'], tag='toc')
+            self.section(['Table'], tag='toc')
             self.root.append(ProcessingInstruction('rfc', text='toc="yes"'))
 
         return front
@@ -929,15 +920,12 @@ class DraftParser():
         lines_title = []
         lines_name = []
         pad_len = 64                    # a bit less than 72, to accomodate some older documents
-        found_centered = False
-        found_blankline = False
         found_rightleft = False
         #
         self.skip_blank_lines()
         while True:
             line, p = self.get_line()
             if line.txt.strip() == "":
-                found_blankline = True
                 if lines_title and lines_name and found_rightleft:
                     break
                 else:
@@ -953,7 +941,6 @@ class DraftParser():
                 self.push_line(line, p)
                 break
             if center:
-                found_centered = True
                 if 'draft-' in center and not ' ' in center:
                     lines_name = Line(line.num, center.strip("[]<>"))
                     assert lines_name[1].startswith('draft-')
@@ -1123,7 +1110,6 @@ class DraftParser():
         if self.is_rfc:
             w = line.txt.split()[0]
             if w in series_names:
-                series_name = series_names[w]
                 series_number = line.txt.split(None, 1)[-1]
                 line = lines.pop(0) if lines else Line(None, "")
 
@@ -1133,7 +1119,7 @@ class DraftParser():
             W = w.capitalize()
             if w in ['obsoletes', 'updates']:
                 if not line.txt.startswith('%s:' % W):
-                    warn(line, "Expected the %s notice to start with '%s:', found '%s'" % (w, W, line.txt))
+                    self.warn(line, "Expected the %s notice to start with '%s:', found '%s'" % (w, W, line.txt))
                 if self.is_draft and not '(if approved)' in line.txt:
                     self.warn(line.num, "Expected the %s notice to end with '(if approved)', found '%s'" % (w, line.txt))
                 numbers = line.txt.split()[1:]
@@ -1164,7 +1150,7 @@ class DraftParser():
             if line.txt.startswith('Intended status: '):
                 status_text = line.txt.split(None, 2)[-1].strip()
                 if not status_text in category_names:
-                    warn(line, "Expected a recognized status name, found '%s'" % (w, line.txt))
+                    self.warn(line, "Expected a recognized status name, found '%s'" % (w, line.txt))
                 else:
                     status = category_names[status_text]
                 line = lines.pop(0) if lines else Line(None, "")
@@ -1172,7 +1158,7 @@ class DraftParser():
             if line.txt.startswith('Category: '):
                 status_text = line.txt.split(None, 1)[-1].strip()
                 if not status_text in category_names:
-                    warn(line, "Expected a recognized category, found '%s'" % (w, line.txt))
+                    self.warn(line, "Expected a recognized category, found '%s'" % (w, line.txt))
                 else:
                     status = category_names[status_text]
                 line = lines.pop(0) if lines else Line(None, "")
@@ -1464,7 +1450,7 @@ class DraftParser():
     def read_author_name(self):
         line, p = self.get_line()
         if line is None:
-            err(self.lines[-1].num, "Expected an author's name, but found end of file")
+            self.err(self.lines[-1].num, "Expected an author's name, but found end of file")
         name = line.txt.strip()
         item = match_name(name, self.authors)
         if item:
@@ -2010,7 +1996,6 @@ class DraftParser():
             t.append(self.make_list(block, base_indentation=indents[0]))
             list.append(t)
         else:
-            set_style = None
             t = None
             for i, item in enumerate(items):
                 # check for sublist
@@ -2022,7 +2007,6 @@ class DraftParser():
                 else:
                     line = item[0]
                     indent = indentation_levels(item)
-                    first = line.txt
                     style, marker, rest = guess_list_style(line)
                     if style and i == 0:
                         list.set('style', style)
