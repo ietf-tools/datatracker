@@ -102,6 +102,7 @@ def validate_emails(value):
     value = value.strip()           # strip whitespace
     if '\r\n' in value:             # cc_contacts has newlines
         value = value.replace('\r\n',',')
+    value = value.rstrip(',')       # strip trailing comma
     emails = value.split(',')
     for email in emails:
         name, addr = parseaddr(email)
@@ -277,7 +278,9 @@ class LiaisonModelForm(BetterModelForm):
     def clean_cc_contacts(self):
         '''Return a comma separated list of addresses'''
         cc_contacts = self.cleaned_data.get('cc_contacts')
-        return cc_contacts.replace('\r\n',',')
+        cc_contacts = cc_contacts.replace('\r\n',',')
+        cc_contacts = cc_contacts.rstrip(',')
+        return cc_contacts
 
     def clean(self):
         if not self.cleaned_data.get('body', None) and not self.has_attachments():
