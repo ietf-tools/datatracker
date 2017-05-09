@@ -22,4 +22,4 @@ dist:	id2xml/*
 	python setup.py bdist_wheel --python-tag py27
 
 upload:	dist
-	twine upload dist/id2xml-$(version)* -r testpypi
+	twine upload dist/id2xml-$(version)* -r pypi
