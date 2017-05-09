@@ -34,6 +34,8 @@ Planned work in rough order
   on multiple floors (probably means modelling break areas the same way
   as other sessions, and removing the break_area char_field on Meeting.
 
+* Upgrade Django to version 1.11
+
 * Transition to Python 3.  This will make it easier to add add support for
   internationalsed email, and also other i18n enhancements.
 
