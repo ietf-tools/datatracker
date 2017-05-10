@@ -917,7 +917,7 @@ class Session(models.Model):
     remote_instructions = models.CharField(blank=True,max_length=1024)
 
     materials = models.ManyToManyField(Document, through=SessionPresentation, blank=True)
-    resources = models.ManyToManyField(ResourceAssociation)
+    resources = models.ManyToManyField(ResourceAssociation, blank=True)
 
     unique_constraints_dict = None
 
