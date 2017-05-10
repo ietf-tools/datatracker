@@ -59,8 +59,9 @@ from ietf.group.models import Group, Role, ChangeStateGroupEvent
 from ietf.name.models import GroupTypeName
 from ietf.group.utils import (get_charter_text, can_manage_group_type, 
                               milestone_reviewer_for_group_type, can_provide_status_update,
-                              can_manage_materials, get_group_or_404, roles_for_group_type,
+                              can_manage_materials, get_group_or_404,
                               construct_group_menu_context, get_group_materials)
+from ietf.group.views_edit import roles_for_group_type
 from ietf.community.utils import docs_tracked_by_community_list
 from ietf.community.models import CommunityList, EmailSubscription
 from ietf.utils.pipe import pipe

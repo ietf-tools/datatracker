@@ -17,7 +17,7 @@ from ietf.doc.utils_charter import charter_name_for_group
 from ietf.group.models import ( Group, Role, GroupEvent, GroupHistory, GroupStateName,
     GroupStateTransitions, GroupTypeName, GroupURL, ChangeStateGroupEvent )
 from ietf.group.utils import (save_group_in_history, can_manage_group, can_manage_group_type,
-    get_group_or_404, setup_default_community_list_for_group, roles_for_group_type, )
+    get_group_or_404, setup_default_community_list_for_group, )
 from ietf.ietfauth.utils import has_role
 from ietf.person.fields import SearchableEmailsField
 from ietf.person.models import Person, Email
@@ -25,6 +25,16 @@ from ietf.group.mails import ( email_admin_re_charter, email_personnel_change)
 from ietf.utils.ordereddict import insert_after_in_ordered_dict
 from ietf.utils.text import strip_suffix
 
+
+# This function, in addition to encapsulating a group's roles list for
+# readability, also ensures that the roles with edit buttons in forms
+# are the same which are accepted byt the GroupForm.  Please adjust the
+# list here if you change the *_roles fields the GroupForm knows about.
+def roles_for_group_type(group_type):
+    roles = ["chair", "secr", "techadv", "delegate", ]
+    if group_type == "dir":
+        roles.append("reviewer")
+    return roles
 
 MAX_GROUP_DELEGATES = 3
 
