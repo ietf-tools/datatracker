@@ -1,3 +1,69 @@
+id2xml (0.9.1) ietf; urgency=low
+
+  This pre-release fixes some issues reported by rjsparks@nostrum.com
+  during initial testing, and by housley@vigilsec.com during text review:
+
+  * Fixed some issues found for draft-sparks-genarea-review-tracker-03.txt: 
+    Use of 'Work in Progress' annotation for non-draft references, code/figure 
+    text indented less than 3 spaces.
+
+  * Fixed a number of issues found for rfc7842: Use of None instead of 
+    blank string as null input to skip(); failed to accept spelling 
+    'acknowledgment', failed to set attribute 'numbered' to 'no' for back 
+    matter sections which were not numbered.
+
+  * Updated readme based on feedback from housley@vigilsec.com
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  10 May 2017 21:12:28 +0200
+
+id2xml (0.9.0) ietf; urgency=low
+
+  This is the first public release.  Recent changes:
+
+  * New readme text, more appropriate as pypi description.
+
+  * Increased the version number before pre-release, and added an upload: 
+    target to the makefile.
+
+  * Fixed an issue with identifying URIs sections, and tweaked the symbol 
+    ratio limit between figures and t/list items.
+
+  * Rearranged id2xml as a package instead of as a single-file module, in 
+    order to be able to enclose the v2 and v3 .rnc and .rng files (and possibly 
+    other data files in the future).  Added LICENCE, README and MANIFEST files. 
+
+  * Changed argument parsing to use argparse, and changed the Makefile to 
+    process the new help text into something txt2man can use to produce a 
+    manpage.
+
+  * Removed the local command-line script
+
+  * Moved the bulk of the command-line invocation code from id2xml to 
+    id2xml.run(), in order to support general setuptools script installation.  
+    Added recognition of 'URIs' sections generated from erefs.  Added a 
+    setup.py file and other supporting files to enable pip and setuptools 
+    installation.
+
+  * Added a guard against overwriting what could be the xml file.  Added 
+    wrapping of warning and error messages.
+
+  * Added -o (output file) and -p (output path) options to the invocation 
+    script, and tweaked the --help output.
+
+  * Fixed an issue with identification of sublists to lists, an issue with 
+    joining some URLs broken across lines, and an issue with wrong column 
+    settings when extracting table columns.
+
+  * Improved eref support, some refactoring.
+
+  * Added processing of erefs and xrefs to reference entries.
+
+  * Stable point: parsing front, back, and sections in place; generated xml 
+    produces text that matches original well when run through xml2rfc.  Major 
+    missing piece: parsing of text paragraphs to provide xref elements.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  09 May 2017 18:01:28 +0200
+
 id2xml (0.10)
 
     * Project created
