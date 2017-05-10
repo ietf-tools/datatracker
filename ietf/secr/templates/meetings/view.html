@@ -41,7 +41,7 @@
            <select name="forma" onchange="location = this.options[this.selectedIndex].value;">
              <option value="">Select a schedule...</option>
              {% for sched in meeting.schedule_set.all %}
-               <option value="{{ sched.name }}">{{ sched.name }}</option>
+               <option value="{{ sched.name }}">{{ sched.name }}{% if sched == meeting.agenda %} (official){% endif %}</option>
              {% endfor %}
            </select>
          </form></li>
