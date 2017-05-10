@@ -171,7 +171,7 @@ appendix_prefix = "Appendix "
 #
 code_re = r'(^\s*[A-Za-z][A-Za-z0-9_-]*\s*=\s*\S|{ *$|^ *})'
 #
-section_start_re = r"^((Appendix )?[A-Z0-9]+\.([0-9]+(\.[0-9]+)*\.?)? |Author's Address|Authors' Addresses|Acknowledgements|Contributors)"
+section_start_re = r"^((Appendix )?[A-Z0-9]+\.([0-9]+(\.[0-9]+)*\.?)? |Author's Address|Authors' Addresses|Acknowledgements|Acknowledgments|Contributors)"
 #
 one_ref_re = r"(([0-9A-Z-]|I-?D.)[0-9A-Za-z-]*( [0-9A-Z-]+)?|(IEEE|ieee)[A-Za-z0-9.-]+|(ITU ?|ITU-T ?|G\\.)[A-Za-z0-9.-]+)";
 ref_ref_re =  r"\[{ref}(, *{ref})*\]".format(ref=one_ref_re)
@@ -206,6 +206,7 @@ reference_patterns = [
     r'{anchor}  *{authors}, "{title}", {series}, {date}(, {url})?\.'.format(**chunks),
     r'{anchor}  *{authors}, "{title}", {date}(, {url})?\.'.format(**chunks),
     r'{anchor}  *{organiz}, "{title}"(, {docname})?, {date}(, {url})?\.'.format(**chunks),
+    r'{anchor}  *{organiz}, "{title}", {url}\.'.format(**chunks),
     r'{anchor}  *"{title}", {url}\.'.format(**chunks),
 ## Lines commented out below are for debugging, when the full regex doesn't match (is buggy).
 #    r'{anchor}  *{authors}, "{title}", {series}, {date}(, {url})?'.format(**chunks),
@@ -1290,9 +1291,9 @@ class DraftParser():
             assert category
             consensus = None
             # Status of memo paragraph 1
-            self.skip(boilerplate['status'][category].get('p1', None))
+            self.skip(boilerplate['status'][category].get('p1', ""))
             # Status of memo paragraph 2, first sentence
-            self.skip(boilerplate['status'][category].get('p2', None))
+            self.skip(boilerplate['status'][category].get('p2', ""))
             # Status of memo paragraph 2, middle part
             text = self.next_text()
             for part in boilerplate['status'].keys():
@@ -1518,6 +1519,20 @@ class DraftParser():
                 break
             middle.append(section)
             self.section_number += 1
+
+        while True:
+            # other sections
+            line = self.skip_blank_lines()
+            word = line.txt.split()[0]
+            if word in ['Acknowledgments', 'Acknowledgements', 'Contributors',]:
+                section = self.section([word])
+                #section.set('anchor', word.lower())
+                #section.set('title', word)
+                middle.append(section)
+            else:
+                break
+        #
+
         return middle
 
     #@debug.trace
@@ -1532,11 +1547,13 @@ class DraftParser():
             return None
         # Expect the start of a section: section number and title
         number, title = parse_section_start(line, numlist, level, appendix)
-
         if is_section_start(line, numlist):
             if len(numlist)==1 and title in ['References', 'Normative References', 'Informative References', 'Informational References', 'URIs', ]:
                 self.push_line(line, p)
                 return None
+            elif number in ["Author's", "Authors'", "Acknowledgments", "Acknowledgements", "Appendix", "Annex", "Contributors", "Index", ]:
+                title = number
+                number = ""
             # Get title continuation lines
             titleindent = line.txt.find(title)
             while True:
@@ -1551,9 +1568,13 @@ class DraftParser():
             section = Element(tag)
             if tag == 'section':
                 section.set('title', title)
-                section.set('anchor', 'section-%s'%number)
+                if number:
+                    section.set('anchor', 'section-%s'%number)
+                else:
+                    section.set('numbered', 'no')
+                    section.set('anchor', '%s'%slugify(title))                    
         else:
-            if number in ["Author's", "Authors'", "Acknowledgements", "Appendix", "Annex", "Contributors", "Index", ]:
+            if number in ["Author's", "Authors'", "Acknowledgments", "Acknowledgements", "Appendix", "Annex", "Contributors", "Index", ]:
                 self.push_line(line, p)
                 return None
             self.err(line.num, "Unexpected section number; expected '%s' or a subsection, found '%s'" % ('.'.join(numlist), number))
@@ -2064,7 +2085,7 @@ class DraftParser():
             # other sections
             line = self.skip_blank_lines()
             word = line.txt.split()[0]
-            if word in ['Acknowledgements', 'Contributors', 'Index', ]:
+            if word in ['Acknowledgments', 'Acknowledgements', 'Contributors', 'Index', ]:
                 section = self.section([word])
                 back.append(section)
             else:
