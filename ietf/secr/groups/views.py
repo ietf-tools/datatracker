@@ -347,7 +347,7 @@ def people(request, acronym):
             messages.success(request, 'New %s added successfully!' % name)
             return redirect('ietf.secr.groups.views.people', acronym=group.acronym)
     else:
-        form = RoleForm(initial={'name':'chair'},group=group)
+        form = RoleForm(initial={'name':'chair', 'group_acronym':group.acronym}, group=group)
 
     return render(request, 'groups/people.html', {
         'form':form,

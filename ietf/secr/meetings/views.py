@@ -20,7 +20,7 @@ from ietf.meeting.models import Meeting, Session, Room, TimeSlot, SchedTimeSessA
 from ietf.group.models import Group, GroupEvent
 from ietf.person.models import Person
 from ietf.secr.meetings.blue_sheets import create_blue_sheets
-from ietf.secr.meetings.forms import ( BaseMeetingRoomFormSet, MeetingModelForm,
+from ietf.secr.meetings.forms import ( BaseMeetingRoomFormSet, MeetingModelForm, MeetingSelectForm,
     MeetingRoomForm, NewSessionForm, NonSessionEditForm, NonSessionForm, TimeSlotForm,
     UploadBlueSheetForm, get_next_slot )
 from ietf.secr.proceedings.views import build_choices
@@ -433,10 +433,10 @@ def main(request):
     meetings = Meeting.objects.filter(type='ietf').order_by('-number')
 
     if request.method == 'POST':
-        return redirect('ietf.secr.meetings.views.view', meeting_id=request.POST['group'])
+        return redirect('ietf.secr.meetings.views.view', meeting_id=request.POST['meeting'])
 
     choices = [ (str(x.number),str(x.number)) for x in meetings ]
-    form = GroupSelectForm(choices=choices)
+    form = MeetingSelectForm(choices=choices)
 
     return render(request, 'meetings/main.html', {
         'form': form,

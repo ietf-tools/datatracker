@@ -52,3 +52,17 @@ class SecrRolesMainTestCase(TestCase):
         self.assertRedirects(response, target)
         self.failUnless('added successfully' in response.content)
 
+    def test_roles_add_no_group(self):
+        make_test_data()
+        augment_data()
+        person = Person.objects.get(name='Areað Irector')
+        url = reverse('ietf.secr.roles.views.main')
+        post_data = {'group_acronym':'',
+                     'name':'chair',
+                     'person':'Joe Smith - (%s)' % person.id,
+                     'email':person.email_set.all()[0].address,
+                     'submit':'Add'}
+        self.client.login(username="secretary", password="secretary+password")
+        response = self.client.post(url,post_data,follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.failUnless('You must select a group' in response.content)

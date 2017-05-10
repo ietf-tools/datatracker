@@ -124,7 +124,8 @@ class GroupsTest(TestCase):
         person = Person.objects.get(name='Areað Irector')
         group = Group.objects.filter(acronym='mars')[0]
         url = reverse('ietf.secr.groups.views.people', kwargs={'acronym':group.acronym})
-        post_data = {'name':'chair',
+        post_data = {'group_acronym':group.acronym,
+                     'name':'chair',
                      'person':'Joe Smith - (%s)' % person.id,
                      'email':person.email_set.all()[0].address,
                      'submit':'Add'}
