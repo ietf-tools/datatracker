@@ -840,6 +840,7 @@ EVENT_TYPES = [
     ("changed_document", "Changed document metadata"),
     ("added_comment", "Added comment"),
     ("added_message", "Added message"),
+    ("edited_authors", "Edited the documents author list"),
 
     ("deleted", "Deleted document"),
 
@@ -1068,3 +1069,10 @@ class DeletedEvent(models.Model):
 
     def __unicode__(self):
         return u"%s by %s %s" % (self.content_type, self.by, self.time)
+
+class EditedAuthorsDocEvent(DocEvent):
+    """ Capture the reasoning or authority for changing a document author list.
+        Allows programs to recognize and not change lists that have been manually verified and corrected.
+        Example 'basis' values might be from ['manually adjusted','recomputed by parsing document', etc.]
+    """
+    basis = models.CharField(help_text="What is the source or reasoning for the changes to the author list",max_length=255)

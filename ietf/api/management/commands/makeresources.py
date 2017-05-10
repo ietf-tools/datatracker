@@ -3,12 +3,12 @@ from __future__ import print_function
 import os
 import datetime
 import collections
+from importlib import import_module
 
 import debug                            # pyflakes:ignore
 
 from django.core.management.base import AppCommand
 from django.db import models
-from django.utils.importlib import import_module
 from django.template import Template, Context
 
 from tastypie.resources import ModelResource
@@ -53,16 +53,17 @@ def render(template, dictionary):
 
 class Command(AppCommand):
 
-    def handle_app(self, app, **options):
-        if app.__package__:
-            print("\nInspecting %s .." % app.__package__)
-            resource_file_path = os.path.join(os.path.dirname(app.__file__), "resources.py")
+    def handle_app_config(self, app, **options):
+        # dotted path to app
+        if app.name:
+            print("\nInspecting %s .." % app.name)
+            resource_file_path = os.path.join(app.path, "resources.py")
 
-            app_models = models.get_models(app)
+            app_models = app.get_models()
 
             app_resources = {}
             if os.path.exists(resource_file_path):
-                resources = import_module("%s.resources" % app.__package__)
+                resources = import_module("%s.resources" % app.name)
                 for n,v in resources.__dict__.items():
                     if issubclass(type(v), type(ModelResource)):
                         app_resources[n] = v
@@ -76,11 +77,11 @@ class Command(AppCommand):
                     do_update_resources = True
 
             if do_update_resources:
-                print("Updating resources.py for %s" % app.__package__)
+                print("Updating resources.py for %s" % app.name)
                 with open(resource_file_path, "a") as rfile:
                     info = dict(
-                        app=app.__package__,
-                        app_label=app.__package__.split('.')[-1],
+                        app=app.name,
+                        app_label=app.label,
                         date=datetime.datetime.now()
                     )
                     new_models = {}
@@ -106,7 +107,7 @@ class Command(AppCommand):
                                     if rel_model_name == model_name:
                                         # foreign key to self class -- quote
                                         # the rmodel_name
-                                        rmodel_name="'%s.resources.%sResource'" % (app.__package__, rel_model_name)
+                                        rmodel_name="'%s.resources.%sResource'" % (app.name, rel_model_name)
                                     else:
                                         rmodel_name=rel_model_name+"Resource"
                                     foreign_keys.append(dict(
@@ -134,7 +135,7 @@ class Command(AppCommand):
                                     if rel_model_name == model_name:
                                         # foreign key to self class -- quote
                                         # the rmodel_name
-                                        rmodel_name="'%s.resources.%sResource'" % (app.__package__, rel_model_name)
+                                        rmodel_name="'%s.resources.%sResource'" % (app.name, rel_model_name)
                                     else:
                                         rmodel_name=rel_model_name+"Resource"
                                     m2m_keys.append(dict(
@@ -158,7 +159,7 @@ class Command(AppCommand):
                             for k in imports:
                                 imports[k]["names"] = set(imports[k]["names"])
                             new_models[model_name] = dict(
-                                app=app.__package__.split('.')[-1],
+                                app=app.name.split('.')[-1],
                                 model=model,
                                 fields=model._meta.fields,
                                 m2m_fields=model._meta.many_to_many,
@@ -215,4 +216,4 @@ class Command(AppCommand):
                     info.update(dict(models=new_model_list))
                     rfile.write(render(resource_class_template, info))
             else:
-                print("  nothing to do for %s" % app.__package__)
+                print("  nothing to do for %s" % app.name)
