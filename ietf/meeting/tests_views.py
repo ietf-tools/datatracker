@@ -1144,28 +1144,27 @@ class InterimTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
 
-    def test_interim_request_details_skip_announcement(self):
+    def test_interim_request_details_announcement(self):
+        '''Test access to Announce / Skip Announce features'''
         make_meeting_test_data()
         date = datetime.date.today() + datetime.timedelta(days=30)
-        self.client.login(username="secretary", password="secretary+password")
-
-        # ensure skip announcement option exists for Research Group
-        group = Group.objects.get(acronym='irg')
-        meeting = make_interim_meeting(group=group, date=date, status='scheda')
-        url = urlreverse('ietf.meeting.views.interim_request_details',kwargs={'number':meeting.number})
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-        q = PyQuery(r.content)
-        self.assertEqual(len(q("a.btn:contains('Skip Announcement')")),1)
-
-        # ensure skip announcement option does not exist for IETF Working Group
         group = Group.objects.get(acronym='mars')
         meeting = make_interim_meeting(group=group, date=date, status='scheda')
         url = urlreverse('ietf.meeting.views.interim_request_details',kwargs={'number':meeting.number})
+
+        # Chair, no access
+        self.client.login(username="marschairman", password="marschairman+password")
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        self.assertEqual(len(q("a.btn:contains('Skip Announcement')")),0)
+        self.assertEqual(len(q("a.btn:contains('Announce')")),0)
+
+        # Secretariat has access
+        self.client.login(username="secretary", password="secretary+password")
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q("a.btn:contains('Announce')")),2)
 
     def test_interim_request_disapprove(self):
         make_meeting_test_data()
