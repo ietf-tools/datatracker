@@ -502,7 +502,7 @@ class Draft():
             r" {6}(\w+\s?\(.+\))$",
         ]
 
-        dateformat = r"(((%(month)s|%(mabbr)s) \d+, |\d+ (%(month)s|%(mabbr)s),? |\d+/\d+/)\d\d\d\d|\d\d\d\d-\d\d-\d\d)$" % aux
+        dateformat = r"(((%(months)s|%(mabbr)s) \d+, |\d+ (%(months)s|%(mabbr)s),? |\d+/\d+/)\d\d\d\d|\d\d\d\d-\d\d-\d\d)$" % aux
 
         address_section = r"^ *([0-9]+\.)? *(Author|Editor)('s|s'|s|\(s\)) (Address|Addresses|Information)"
 
