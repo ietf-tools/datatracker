@@ -242,3 +242,11 @@ def construct_group_menu_context(request, group, selected, group_type, others):
     d.update(others)
 
     return d
+
+
+def roles_for_group_type(group_type):
+    roles = ["chair", "secr", "techadv", "delegate", ]
+    if group_type == "dir":
+        roles.append("reviewer")
+    return roles
+

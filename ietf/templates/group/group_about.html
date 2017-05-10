@@ -143,7 +143,7 @@
 	  {% endif %}
 	  <th>{{ label }}</th>
 	  <td class="edit">
-	    {% if can_edit_group and not slug == "ad" %}
+	    {% if can_edit_group and slug in editable_roles %}
 	      <a class="btn btn-default btn-xs" href="{% url 'ietf.group.views_edit.edit' acronym=group.acronym field=slug %}">Edit</a>
 	    {% endif %}
 	  </td>

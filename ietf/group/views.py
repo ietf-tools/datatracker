@@ -59,7 +59,7 @@ from ietf.group.models import Group, Role, ChangeStateGroupEvent
 from ietf.name.models import GroupTypeName
 from ietf.group.utils import (get_charter_text, can_manage_group_type, 
                               milestone_reviewer_for_group_type, can_provide_status_update,
-                              can_manage_materials, get_group_or_404,
+                              can_manage_materials, get_group_or_404, roles_for_group_type,
                               construct_group_menu_context, get_group_materials)
 from ietf.community.utils import docs_tracked_by_community_list
 from ietf.community.models import CommunityList, EmailSubscription
@@ -443,6 +443,7 @@ def group_about(request, acronym, group_type=None):
                       "can_provide_status_update": can_provide_update,
                       "status_update": status_update,
                       "charter_submit_url": charter_submit_url,
+                      "editable_roles": roles_for_group_type(group_type),
                   }))
 
 def all_status(request):
