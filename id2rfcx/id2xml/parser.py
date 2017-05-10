@@ -171,7 +171,7 @@ appendix_prefix = "Appendix "
 #
 code_re = r'(^\s*[A-Za-z][A-Za-z0-9_-]*\s*=\s*\S|{ *$|^ *})'
 #
-section_start_re = r"^((Appendix )?[A-Z0-9]+\.([0-9]+(\.[0-9]+)*\.?)? |Author's Address|Authors' Addresses|Acknowledgements|Acknowledgments|Contributors)"
+section_start_re = r"^((Appendix )?[A-Z0-9]+\.([0-9]+(\.[0-9]+)*\.?)? |Status [Oo]f [Tt]his [Mm]emo|Author's Address|Authors' Addresses|Acknowledgements|Acknowledgments|Contributors)"
 #
 one_ref_re = r"(([0-9A-Z-]|I-?D.)[0-9A-Za-z-]*( [0-9A-Z-]+)?|(IEEE|ieee)[A-Za-z0-9.-]+|(ITU ?|ITU-T ?|G\\.)[A-Za-z0-9.-]+)";
 ref_ref_re =  r"\[{ref}(, *{ref})*\]".format(ref=one_ref_re)
@@ -207,6 +207,8 @@ reference_patterns = [
     r'{anchor}  *{authors}, "{title}", {date}(, {url})?\.'.format(**chunks),
     r'{anchor}  *{organiz}, "{title}"(, {docname})?, {date}(, {url})?\.'.format(**chunks),
     r'{anchor}  *{organiz}, "{title}", {url}\.'.format(**chunks),
+    r'{anchor}  *"{title}", Work in Progress ?, {date}(, {url})?\.'.format(**chunks),
+    r'{anchor}  *"{title}", Work in Progress ?, {url}\.'.format(**chunks),
     r'{anchor}  *"{title}", {url}\.'.format(**chunks),
 ## Lines commented out below are for debugging, when the full regex doesn't match (is buggy).
 #    r'{anchor}  *{authors}, "{title}", {series}, {date}(, {url})?'.format(**chunks),
@@ -1809,7 +1811,10 @@ class DraftParser():
             if is_section_start(line):
                 tag = 'section'
             elif not line.txt.startswith('   '):
-                tag = None
+                if line.txt.startswith(' '):
+                    tag = 'figure'
+                else:
+                    tag = None
             else:
                 # we want to distinguish between:
                 # * figure
