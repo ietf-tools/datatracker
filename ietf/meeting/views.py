@@ -66,7 +66,7 @@ from ietf.utils.pdf import pdf_pages
 from ietf.utils.text import xslugify
 
 from .forms import (InterimMeetingModelForm, InterimAnnounceForm, InterimSessionModelForm,
-    InterimCancelForm)
+    InterimCancelForm, InterimSessionInlineFormSet)
 
 
 def get_menu_entries(request):
@@ -1743,6 +1743,7 @@ def interim_request(request):
         Meeting,
         Session,
         form=InterimSessionModelForm,
+        formset=InterimSessionInlineFormSet,
         can_delete=False, extra=2)
 
     if request.method == 'POST':
