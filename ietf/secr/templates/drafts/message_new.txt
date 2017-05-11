@@ -8,8 +8,10 @@ A new Internet-Draft is available from the on-line Internet-Drafts directories.
     Filename      : {{ draft.name }}
     Pages         : {{ draft.pages }} 
     Date          : {{ revision_date }} 
-    
+
+{% autoescape off %}
 {{ draft.abstract }}
+{% endautoescape %} 
 
 A URL for this Internet-Draft is:
 https://www.ietf.org/internet-drafts/{{ draft.filename_with_rev }}
