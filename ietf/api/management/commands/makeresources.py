@@ -43,8 +43,7 @@ class {{model.name}}Resource(ModelResource):{% if model.foreign_keys %}{% for fk
             "{{ name }}": ALL_WITH_RELATIONS,{%endfor%}
         }
 api.{{app_label}}.register({{model.name}}Resource())
-{% endfor %}{% endautoescape %}
-"""
+{% endfor %}{% endautoescape %}"""
 
 def render(template, dictionary):
     template = Template(template, None, None)
@@ -69,14 +68,14 @@ class Command(AppCommand):
                         app_resources[n] = v
 
             do_update_resources = False
+            missing_resources = []
             for m in app_models:
                 model_name = m.__name__
                 rclass_name = model_name + "Resource"
-                resource_name = m.__name__.lower()
                 if not rclass_name in app_resources:
-                    do_update_resources = True
+                    missing_resources.append((m, rclass_name))
 
-            if do_update_resources:
+            if missing_resources:
                 print("Updating resources.py for %s" % app.name)
                 with open(resource_file_path, "a") as rfile:
                     info = dict(
@@ -85,93 +84,91 @@ class Command(AppCommand):
                         date=datetime.datetime.now()
                     )
                     new_models = {}
-                    for model in app_models:
+                    for model, rclass_name in missing_resources:
                         model_name = model.__name__
-                        rclass_name = model_name + "Resource"
                         resource_name = model.__name__.lower()
-                        if not rclass_name in app_resources:
-                            imports = collections.defaultdict(lambda: collections.defaultdict(list))
-                            print("Adding resource class for %s" % model_name)
-                            foreign_keys = []
-                            plain_names = []
-                            fk_names = []
-                            m2m_names = []
-                            #debug.pprint('dir(model)')
-                            for field in model._meta.fields:
-                                if isinstance(field, (models.ForeignKey, models.OneToOneField)):
-                                    #debug.show('field.name')
-                                    #debug.pprint('dir(field.rel.to)')
-                                    #exit()
-                                    rel_app=field.rel.to._meta.app_label
-                                    rel_model_name=field.rel.to.__name__
-                                    if rel_model_name == model_name:
-                                        # foreign key to self class -- quote
-                                        # the rmodel_name
-                                        rmodel_name="'%s.resources.%sResource'" % (app.name, rel_model_name)
-                                    else:
-                                        rmodel_name=rel_model_name+"Resource"
-                                    foreign_keys.append(dict(
-                                        field=field,
-                                        name=field.name,
-                                        app=rel_app,
-                                        module=rel_app.split('.')[-1],
-                                        model=field.rel.to,
-                                        model_name=rel_model_name,
-                                        rmodel_name=rmodel_name,
-                                        resource_name=field.rel.to.__name__.lower(),
-                                        ))
-                                    imports[rel_app]["module"] = rel_app
-                                    imports[rel_app]["names"].append(rel_model_name)
-                                    fk_names.append(field.name)
+                        imports = collections.defaultdict(lambda: collections.defaultdict(list))
+                        print("Adding resource class for %s" % model_name)
+                        foreign_keys = []
+                        plain_names = []
+                        fk_names = []
+                        m2m_names = []
+                        #debug.pprint('dir(model)')
+                        for field in model._meta.fields:
+                            if isinstance(field, (models.ForeignKey, models.OneToOneField)):
+                                #debug.show('field.name')
+                                #debug.pprint('dir(field.rel.to)')
+                                #exit()
+                                rel_app=field.rel.to._meta.app_label
+                                rel_model_name=field.rel.to.__name__
+                                if rel_model_name == model_name:
+                                    # foreign key to self class -- quote
+                                    # the rmodel_name
+                                    rmodel_name="'%s.resources.%sResource'" % (app.name, rel_model_name)
                                 else:
-                                    plain_names.append(field.name)
-                            m2m_keys = []
-                            for field in model._meta.many_to_many:
-                                    #debug.show('field.name')
-                                    #debug.pprint('dir(field.rel.to)')
-                                    #exit()
-                                    rel_app=field.rel.to._meta.app_label
-                                    rel_model_name=field.rel.to.__name__
-                                    if rel_model_name == model_name:
-                                        # foreign key to self class -- quote
-                                        # the rmodel_name
-                                        rmodel_name="'%s.resources.%sResource'" % (app.name, rel_model_name)
-                                    else:
-                                        rmodel_name=rel_model_name+"Resource"
-                                    m2m_keys.append(dict(
-                                        field=field,
-                                        name=field.name,
-                                        app=rel_app,
-                                        module=rel_app.split('.')[-1],
-                                        model=field.rel.to,
-                                        model_name=rel_model_name,
-                                        rmodel_name=rmodel_name,
-                                        resource_name=field.rel.to.__name__.lower(),
-                                        ))
-                                    imports[rel_app]["module"] = rel_app
-                                    imports[rel_app]["names"].append(rel_model_name)
-                                    m2m_names.append(field.name)
-                            # some special import cases
-                            if "auth" in imports:
-                                imports["auth"]["module"] = 'utils'
-                            if "contenttypes" in imports:
-                                imports["contenttypes"]["module"] = 'utils'
-                            for k in imports:
-                                imports[k]["names"] = set(imports[k]["names"])
-                            new_models[model_name] = dict(
-                                app=app.name.split('.')[-1],
-                                model=model,
-                                fields=model._meta.fields,
-                                m2m_fields=model._meta.many_to_many,
-                                name=model_name,
-                                imports=[ v for k,v in imports.items() ],
-                                foreign_keys=foreign_keys,
-                                m2m_keys=m2m_keys,
-                                resource_name=resource_name,
-                                plain_names=plain_names,
-                                fk_names=fk_names,
-                                m2m_names=m2m_names,
-                            )
+                                    rmodel_name=rel_model_name+"Resource"
+                                foreign_keys.append(dict(
+                                    field=field,
+                                    name=field.name,
+                                    app=rel_app,
+                                    module=rel_app.split('.')[-1],
+                                    model=field.rel.to,
+                                    model_name=rel_model_name,
+                                    rmodel_name=rmodel_name,
+                                    resource_name=field.rel.to.__name__.lower(),
+                                    ))
+                                imports[rel_app]["module"] = rel_app
+                                imports[rel_app]["names"].append(rel_model_name)
+                                fk_names.append(field.name)
+                            else:
+                                plain_names.append(field.name)
+                        m2m_keys = []
+                        for field in model._meta.many_to_many:
+                                #debug.show('field.name')
+                                #debug.pprint('dir(field.rel.to)')
+                                #exit()
+                                rel_app=field.rel.to._meta.app_label
+                                rel_model_name=field.rel.to.__name__
+                                if rel_model_name == model_name:
+                                    # foreign key to self class -- quote
+                                    # the rmodel_name
+                                    rmodel_name="'%s.resources.%sResource'" % (app.name, rel_model_name)
+                                else:
+                                    rmodel_name=rel_model_name+"Resource"
+                                m2m_keys.append(dict(
+                                    field=field,
+                                    name=field.name,
+                                    app=rel_app,
+                                    module=rel_app.split('.')[-1],
+                                    model=field.rel.to,
+                                    model_name=rel_model_name,
+                                    rmodel_name=rmodel_name,
+                                    resource_name=field.rel.to.__name__.lower(),
+                                    ))
+                                imports[rel_app]["module"] = rel_app
+                                imports[rel_app]["names"].append(rel_model_name)
+                                m2m_names.append(field.name)
+                        # some special import cases
+                        if "auth" in imports:
+                            imports["auth"]["module"] = 'utils'
+                        if "contenttypes" in imports:
+                            imports["contenttypes"]["module"] = 'utils'
+                        for k in imports:
+                            imports[k]["names"] = set(imports[k]["names"])
+                        new_models[model_name] = dict(
+                            app=app.name.split('.')[-1],
+                            model=model,
+                            fields=model._meta.fields,
+                            m2m_fields=model._meta.many_to_many,
+                            name=model_name,
+                            imports=[ v for k,v in imports.items() ],
+                            foreign_keys=foreign_keys,
+                            m2m_keys=m2m_keys,
+                            resource_name=resource_name,
+                            plain_names=plain_names,
+                            fk_names=fk_names,
+                            m2m_names=m2m_names,
+                        )
 
                     # Sort resources according to internal FK reference depth
                     new_model_list = []
@@ -212,6 +209,8 @@ class Command(AppCommand):
                     if rfile.tell() == 0:
                         print("Writing resource file head")
                         rfile.write(render(resource_head_template, info))
+                    else:
+                        print("\nNOTE: Not writing resource file head.\nYou may have to update the import from %s.models" % app.name)
 
                     info.update(dict(models=new_model_list))
                     rfile.write(render(resource_class_template, info))
