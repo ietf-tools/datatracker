@@ -3,6 +3,12 @@ ietfdb (6.50.1) ietf; urgency=medium
   This is a bugfix release, which also introduces some schema changes,
   in preparation for later data migrations.  From the commit log:
 
+  * Merged in [13309] from rcross@amsl.com:
+    Fix Edit button of session request view.  Fixes #2285.   
+
+  * Merged in [13308] from rcross@amsl.com: Add ability for secretariat to
+    skip announcement of regular interim meetings.  Fixes #2210.  
+
   * Merged in [13303] from rcross@amsl.com:
     Session admin edit fails if no resources selected.  Fixes #2211.
 
