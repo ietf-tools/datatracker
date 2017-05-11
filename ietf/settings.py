@@ -612,9 +612,11 @@ HTMLIZER_VERSION = 1
 HTMLIZER_URL_PREFIX = "/doc/html"
 HTMLIZER_CACHE_TIME = 60*60*24*14       # 14 days
 
+# Email settings
 IPR_EMAIL_FROM = 'ietf-ipr@ietf.org'
 AUDIO_IMPORT_EMAIL = ['agenda@ietf.org','ietf@meetecho.com']
 IANA_EVAL_EMAIL = "drafts-eval@icann.org"
+SESSION_REQUEST_FROM_EMAIL = 'IETF Meeting Session Request Tool <session-request@ietf.org>' 
 
 # Put real password in settings_local.py
 IANA_SYNC_PASSWORD = "secret"
