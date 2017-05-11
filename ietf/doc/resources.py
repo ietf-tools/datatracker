@@ -602,7 +602,25 @@ class ReviewRequestDocEventResource(ModelResource):
         }
 api.doc.register(ReviewRequestDocEventResource())
 
-
-
-
-
+from ietf.person.resources import PersonResource
+class EditedAuthorsDocEventResource(ModelResource):
+    by               = ToOneField(PersonResource, 'by')
+    doc              = ToOneField(DocumentResource, 'doc')
+    docevent_ptr     = ToOneField(DocEventResource, 'docevent_ptr')
+    class Meta:
+        queryset = EditedAuthorsDocEvent.objects.all()
+        serializer = api.Serializer()
+        cache = SimpleCache()
+        #resource_name = 'editedauthorsdocevent'
+        filtering = { 
+            "id": ALL,
+            "time": ALL,
+            "type": ALL,
+            "rev": ALL,
+            "desc": ALL,
+            "basis": ALL,
+            "by": ALL_WITH_RELATIONS,
+            "doc": ALL_WITH_RELATIONS,
+            "docevent_ptr": ALL_WITH_RELATIONS,
+        }
+api.doc.register(EditedAuthorsDocEventResource())
