@@ -1,3 +1,72 @@
+ietfdb (6.50.1) ietf; urgency=medium
+
+  This is a bugfix release, which also introduces some schema changes,
+  in preparation for later data migrations.  From the commit log:
+
+  * Merged in [13303] from rcross@amsl.com:
+    Session admin edit fails if no resources selected.  Fixes #2211.
+
+  * Added a guard to prevent problems with legacy drafts without any draft 
+    state.
+
+  * Tweaked the DRAFT_NAMES_WITH_DOT setting for another draft name 
+    exception.
+
+  * Merged in [13293] from rcross@amsl.com:
+    Improve help messages for multi-day and series interim meeting types.  
+    Fixes #2194.   
+
+  * Merged in [13292] from rcross@amsl.com:
+    Fixes #2002.  Trailing comma in Liaison cc_contacts field causes 
+    invalid email address error.   
+
+  * Merged in [13291] from rcross@amsl.com:
+    Change From address of session request notifications from 
+    session_request_developers@ietf.org to session-request@ietf.org.  Fix 
+    requester information in session request cancellation email.  Fixes #1621.  
+
+  * Updated doc resources.py with EditedAuthorsDocEventResource
+
+  * Updated the makeresources command to use the current 
+    AppCommand.handle_app_config() interface.
+
+  * Merged in [13276] from rcross@amsl.com:
+    Add group field to Roles add form validation.  Fixes #2292.   
+
+  * Merged in [13275] from rcross@amsl.com:
+    Refactor to prevent secretariat recordings entry page from timing out.  
+    Fixes #2287.   
+
+  * Merged in [13274] from rcross@amsl.com:
+    Indicate which schedule is the official schedule in Select a Schedule
+    drop-down.  Fixes #1456.  
+
+  * Aligned the availability of roles edit buttons on a group's about page
+    with the roles that the group edit GroupForm will accept.  Avoids
+    presentin edit forms without any fields and some server 500 errors. 
+
+  * Changed the alignment for the RFC 'Errata' label within the document name
+    and title column to consistently put it at the right side of the column,
+    for a tidier appearance.
+
+  * Fixed an issue with the author extraction code.
+
+  * Fixed a place where the LastCallDocEvent expiry value was set as a date 
+    instead of a datetime.
+
+  * Merged in [13246] from rjsparks@nostrum.com:
+    Distinguish group that have session requests from those that do not on 
+    the materials/editable-groups page. Fixes #2284.  
+
+  * Tweaked the test coverage percentage numbers shown in the release test
+    coverage chart to use only 3 decimal digits, not 12 ...
+
+  * Return a person search string instead of bombing out if there are 
+    multiple identical names where one don't have an active email address.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  11 May 2017 05:10:13 -0700
+
+
 ietfdb (6.50.0) ietf; urgency=medium
 
   This is a small feature release which provides a management command to
