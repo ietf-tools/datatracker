@@ -67,7 +67,6 @@ class Command(AppCommand):
                     if issubclass(type(v), type(ModelResource)):
                         app_resources[n] = v
 
-            do_update_resources = False
             missing_resources = []
             for m in app_models:
                 model_name = m.__name__

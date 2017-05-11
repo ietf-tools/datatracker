@@ -12,7 +12,7 @@ from ietf.doc.models import (BallotType, DeletedEvent, StateType, State, Documen
     TelechatDocEvent, DocReminder, LastCallDocEvent, NewRevisionDocEvent, WriteupDocEvent,
     InitialReviewDocEvent, DocHistoryAuthor, BallotDocEvent, RelatedDocument,
     RelatedDocHistory, BallotPositionDocEvent, AddedMessageEvent, SubmissionDocEvent,
-    ReviewRequestDocEvent)
+    ReviewRequestDocEvent, EditedAuthorsDocEvent)
 
 from ietf.name.resources import BallotPositionNameResource, DocTypeNameResource
 class BallotTypeResource(ModelResource):
