@@ -995,6 +995,43 @@ class InterimTests(TestCase):
         self.assertEqual(timeslot.duration,duration)
         self.assertEqual(session.agenda_note,agenda_note)
 
+    def test_interim_request_multi_day_non_consecutive(self):
+        make_meeting_test_data()
+        date = datetime.date.today() + datetime.timedelta(days=30)
+        date2 = date + datetime.timedelta(days=2)
+        time = datetime.datetime.now().time().replace(microsecond=0,second=0)
+        group = Group.objects.get(acronym='mars')
+        city = 'San Francisco'
+        country = 'US'
+        time_zone = 'US/Pacific'
+        remote_instructions = 'Use webex'
+        agenda = 'Intro. Slides. Discuss.'
+        agenda_note = 'On second level'
+        self.client.login(username="secretary", password="secretary+password")
+        data = {'group':group.pk,
+                'meeting_type':'multi-day',
+                'city':city,
+                'country':country,
+                'time_zone':time_zone,
+                'session_set-0-date':date.strftime("%Y-%m-%d"),
+                'session_set-0-time':time.strftime('%H:%M'),
+                'session_set-0-requested_duration':'03:00:00',
+                'session_set-0-remote_instructions':remote_instructions,
+                'session_set-0-agenda':agenda,
+                'session_set-0-agenda_note':agenda_note,
+                'session_set-1-date':date2.strftime("%Y-%m-%d"),
+                'session_set-1-time':time.strftime('%H:%M'),
+                'session_set-1-requested_duration':'03:00:00',
+                'session_set-1-remote_instructions':remote_instructions,
+                'session_set-1-agenda':agenda,
+                'session_set-1-agenda_note':agenda_note,
+                'session_set-TOTAL_FORMS':2,
+                'session_set-INITIAL_FORMS':0}
+
+        r = self.client.post(urlreverse("ietf.meeting.views.interim_request"),data)
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue('days must be consecutive' in r.content)
+
     def test_interim_request_series(self):
         make_meeting_test_data()
         meeting_count_before = Meeting.objects.filter(type='interim').count()

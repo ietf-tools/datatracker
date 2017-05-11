@@ -3,6 +3,7 @@ import codecs
 
 from django import forms
 from django.db.models import Q
+from django.forms import BaseInlineFormSet
 
 from ietf.doc.models import Document, DocAlias, State, NewRevisionDocEvent
 from ietf.doc.utils import get_document_content
@@ -36,6 +37,29 @@ class GroupModelChoiceField(forms.ModelChoiceField):
 # Forms
 # -------------------------------------------------
 
+class InterimSessionInlineFormSet(BaseInlineFormSet):
+    def __init__(self, *args, **kwargs):
+        super(InterimSessionInlineFormSet, self).__init__(*args, **kwargs)
+        if 'data' in kwargs:
+            self.meeting_type = kwargs['data']['meeting_type']
+
+    def clean(self):
+        '''Custom clean method to verify dates are consecutive for multi-day meetings'''
+        super(InterimSessionInlineFormSet, self).clean()
+        if self.meeting_type == 'multi-day':
+            dates = []
+            for form in self.forms:
+                date = form.cleaned_data.get('date')
+                if date:
+                    dates.append(date)
+            if len(dates) < 2:
+                return
+            dates.sort()
+            last_date = dates[0]
+            for date in dates[1:]:
+                if last_date.day + 1 != date.day:
+                    raise forms.ValidationError('For Multi-Day meetings, days must be consecutive')
+                last_date = date
 
 class InterimMeetingModelForm(forms.ModelForm):
     group = GroupModelChoiceField(queryset=Group.objects.filter(type__in=('wg', 'rg'), state__in=('active', 'proposed', 'bof')).order_by('acronym'), required=False)

@@ -40,15 +40,13 @@
 
             <div class="col-md-2 radio-inline"><strong>Meeting Type:</strong></div>
             
-            <label class="radio-inline">
-                <input type="radio" value="single" checked="checked" name="meeting_type">Single
+            {% for radio in form.meeting_type %}
+            <label class="radio-inline" for="{{ radio.id_for_label }}">
+                {{ radio.tag }}
+                {{ radio.choice_label }}
             </label>
-            <label class="radio-inline">
-                <input type="radio" value="multi-day" name="meeting_type">Multi-Day
-            </label>
-            <label class="radio-inline">
-                <input type="radio" value="series" name="meeting_type">Series
-            </label>
+            {% endfor %}
+
         </div> <!-- col-md-offset-2 -->
     </div> <!-- form-group form-inline -->
 
@@ -89,6 +87,13 @@
     </div>
 
     {{ formset.management_form }}
+
+    {% if formset.non_form_errors %}
+    <div class="form-group alert alert-danger">
+      {{ formset.non_form_errors }}
+    </div>
+    {% endif %}
+
     {% for form in formset %}
     <div class="fieldset{% if forloop.last %} template{% endif %}" >
     
