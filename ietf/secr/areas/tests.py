@@ -33,3 +33,21 @@ class SecrAreasTestCase(TestCase):
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
+
+    def test_add(self):
+        "Add Test"
+        make_test_data()
+        url = reverse('ietf.secr.areas.views.add')
+        self.client.login(username="secretary", password="secretary+password")
+        data = {'acronym':'ta',
+             'name':'Test Area',
+             'state':'active',
+             'start_date':'2017-01-01',
+             'awp-TOTAL_FORMS':'2',
+             'awp-INITIAL_FORMS':'0',
+             'submit':'Save'}
+        response = self.client.post(url,data)
+        self.assertRedirects(response, reverse('ietf.secr.areas.views.list_areas'))
+        area = Group.objects.get(acronym='ta')
+        iesg = Group.objects.get(acronym='iesg')
+        self.assertTrue(area.parent == iesg)

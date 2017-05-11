@@ -134,30 +134,11 @@ class AddAreaModelForm(forms.ModelForm):
         
     def save(self, force_insert=False, force_update=False, commit=True):
         area = super(AddAreaModelForm, self).save(commit=False)
-        area_type = GroupTypeName.objects.get(name='area')
-        area.type = area_type
+        area.type = GroupTypeName.objects.get(slug='area')
+        area.parent = Group.objects.get(acronym='iesg')
         if commit:
             area.save()
         return area
-        
-# class AddAreaForm(forms.Form):
-#     acronym = forms.CharField(max_length=16,required=True)
-#     name = forms.CharField(max_length=80,required=True)
-#     status = forms.IntegerField(widget=forms.Select(choices=STATE_CHOICES),required=True)
-#     start_date = forms.DateField()
-#     comments = forms.CharField(widget=forms.Textarea(attrs={'rows':'1'}),required=False, strip=False)
-# 
-#     def clean_acronym(self):
-#         # get name, strip leading and trailing spaces
-#         name = self.cleaned_data.get('acronym', '').strip()
-#         # check for invalid characters
-#         r1 = re.compile(r'[a-zA-Z\-\. ]+$')
-#         if name and not r1.match(name):
-#             raise forms.ValidationError("Enter a valid acronym (only letters,period,hyphen allowed)") 
-#         # ensure doesn't already exist
-#         if Group.objects.filter(acronym=name).exists():
-#             raise forms.ValidationError("This acronym already exists.  Enter a unique one.") 
-#         return name
         
 class AreaDirectorForm(forms.Form):
     ad_name = forms.CharField(max_length=100,label='Name',help_text="To see a list of people type the first name, or last name, or both.")
