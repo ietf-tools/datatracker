@@ -106,7 +106,8 @@ class DocumentInfo(models.Model):
                     if self.get_state_slug() == "rfc":
                         self._cached_file_path = settings.RFC_PATH
                     else:
-                        if self.get_state('draft').slug == 'active':
+                        draft_state = self.get_state('draft')
+                        if draft_state and draft_state.slug == 'active':
                             self._cached_file_path = settings.INTERNET_DRAFT_PATH
                         else:
                             self._cached_file_path = settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR
