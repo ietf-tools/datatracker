@@ -282,7 +282,7 @@ def strip_pagebreaks(text):
         if re.search("\f", line, re.I):
             page, newpage = begpage(page, newpage)
             continue
-        if lineno > 15:
+        if lineno > 25:
             regex = "^(Internet.Draft|RFC \d+)( +)(\S.*\S)( +)(Jan|Feb|Mar|March|Apr|April|May|Jun|June|Jul|July|Aug|Sep|Oct|Nov|Dec)[a-z]+ (19[89][0-9]|20[0-9][0-9]) *$"
             match = re.search(regex, line, re.I)
             if not match is None:
@@ -292,7 +292,7 @@ def strip_pagebreaks(text):
                 #debug.show('short_title')
                 page, newpage = begpage(page, newpage, line)
                 continue
-        if lineno > 15 and re.search(".{58,}(Jan|Feb|Mar|March|Apr|April|May|Jun|June|Jul|July|Aug|Sep|Oct|Nov|Dec)[a-z]+ (19[89][0-9]|20[0-9][0-9]) *$", line, re.I):
+        if lineno > 25 and re.search(".{58,}(Jan|Feb|Mar|March|Apr|April|May|Jun|June|Jul|July|Aug|Sep|Oct|Nov|Dec)[a-z]+ (19[89][0-9]|20[0-9][0-9]) *$", line, re.I):
             page, newpage = begpage(page, newpage, line)
             continue
         if re.search("^ *Internet.Draft.+[12][0-9][0-9][0-9] *$", line, re.I):
@@ -857,6 +857,16 @@ class DraftParser():
 
         workgroup, stream, series_number, rfc_number, obsoletes, updates, category, expires = self.parse_top_left(lines_left)
 
+        authors, date = self.parse_top_right(lines_right)
+
+        authornames = [ a['fullname'] for a in authors ] + [ a['organization'] for a in authors ]
+        
+        # fixups
+        if not stream and category in ['std', 'bcp']:
+            stream = 'IETF'
+        if not stream and 'Internet Architecture Board' in authornames:
+            stream = 'IAB'
+
         if stream:
             self.root.set('submissionType', stream)
         if rfc_number:
@@ -869,8 +879,6 @@ class DraftParser():
             self.root.set('obsoletes', ', '.join(obsoletes))
         if updates:
             self.root.set('updates', ', '.join(updates))
-
-        authors, date = self.parse_top_right(lines_right)
 
         front = Element('front')
         title = E.title(para2str(lines_title))
@@ -1576,7 +1584,7 @@ class DraftParser():
                     section.set('numbered', 'no')
                     section.set('anchor', '%s'%slugify(title))                    
         else:
-            if number in ["Author's", "Authors'", "Acknowledgments", "Acknowledgements", "Appendix", "Annex", "Contributors", "Index", ]:
+            if number in ["Author's", "Authors'", "Acknowledgments", "Acknowledgements", "Appendix", "Annex", "Contributors", "Index", "Status", ]:
                 self.push_line(line, p)
                 return None
             self.err(line.num, "Unexpected section number; expected '%s' or a subsection, found '%s'" % ('.'.join(numlist), number))
