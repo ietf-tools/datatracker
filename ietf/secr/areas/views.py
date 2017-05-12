@@ -83,7 +83,7 @@ def add(request):
                     group_url.save()
 
             messages.success(request, 'The Area was created successfully!')
-            return redirect('areas')
+            return redirect('ietf.secr.areas.views.list_areas')
     else:
         # display initial forms
         area_form = AddAreaModelForm()
