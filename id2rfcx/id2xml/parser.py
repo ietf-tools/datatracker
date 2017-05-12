@@ -58,9 +58,45 @@ except ImportError:
 
 def run():
     import sys, os, argparse
+    from pathlib import Path
 
     program = os.path.basename(sys.argv[0])
     #progdir = os.path.dirname(sys.argv[0])
+
+    # ----------------------------------------------------------------------
+    # Parse config file
+    conf = {}
+    for p in ['.', os.environ.get('HOME','.'), '/etc/', ]:
+        rcpath = Path(p)
+        if rcpath.exists():
+            rcfn = rcpath / '.id2xmlrc'
+            if rcfn.exists():
+                execfile(str(rcfn), conf)
+                break
+    class Options(object):
+        def __init__(self, **kwargs):
+            for k,v in kwargs.items():
+                if not k.startswith('__'):
+                    setattr(self, k, v)
+        pass
+    options = Options(**conf)
+
+    # ----------------------------------------------------------------------
+    def say(s):
+        msg = "%s\n" % (s)
+        sys.stderr.write(wrap(msg))
+
+    # ----------------------------------------------------------------------
+    def note(s):
+        msg = "%s\n" % (s)
+        if not options.quiet:
+            sys.stderr.write(wrap(msg))
+
+    # ----------------------------------------------------------------------
+    def die(s, error=1):
+        msg = "\n%s: Error:  %s\n\n" % (program, s)
+        sys.stderr.write(wrap(msg))
+        sys.exit(error)
 
     # ----------------------------------------------------------------------
     # Parse options
@@ -73,45 +109,31 @@ def run():
                                                                         help="output v2 (RFC 7749) schema")
     parser.add_argument('-3', '--v3', '--schema-v3', dest='schema', action='store_const', const='v3',
                                                                         help="output v3 (RFC 7991) schema")
+    parser.add_argument('-d', '--debug',                                help="debug mode")
     parser.add_argument('-o', '--output-file', metavar='FILE',          help="set the output file name")
     parser.add_argument('-p', '--output-path', metavar="DIR",           help="set the output directory name")
+    parser.add_argument('-q', '--quiet',                                help="be less verbose")
     parser.add_argument('-s', '--strip-only', action='store_true',      help="don't convert, only strip headers and footers")
     parser.add_argument('-v', '--version', action='store_true',         help="output version information, then exit")
     parser.add_argument('-V', '--verbose', action='store_true',         help="be (slightly) more verbose")
     parser.set_defaults(schema='v2')
-    opts = parser.parse_args()
 
-    # ----------------------------------------------------------------------
-    def say(s):
-        msg = "%s\n" % (s)
-        sys.stderr.write(wrap(msg))
-
-    # ----------------------------------------------------------------------
-    def note(s):
-        msg = "%s\n" % (s)
-        if opts.verbose:
-            sys.stderr.write(wrap(msg))
-
-    # ----------------------------------------------------------------------
-    def die(s, error=1):
-        msg = "\n%s: Error:  %s\n\n" % (program, s)
-        sys.stderr.write(wrap(msg))
-        sys.exit(error)
+    options = parser.parse_args(namespace=options)
 
     # ----------------------------------------------------------------------
     # The program itself    
 
-    files = opts.DRAFT
-    if opts.version:
+    files = options.DRAFT
+    if options.version:
         print(program, __version__)
         sys.exit(0)
 
     from pathlib import Path
 
-    if opts.output_path and opts.output_file:
+    if options.output_path and options.output_file:
         die("Mutually exclusive options -o / -p; use one or the other")
 
-    if opts.strip_only:
+    if options.strip_only:
         output_suffix = '.raw'
     else:
         output_suffix = '.xml'
@@ -120,36 +142,38 @@ def run():
         try:
             inf = Path(file)
             #name = re.sub('-[0-9][0-9]', '', inf.stem)
-            if opts.output_file:
-                # This is not what we want if opts.output_file=='-', but we fix
+            if options.output_file:
+                # This is not what we want if options.output_file=='-', but we fix
                 # that in the 'with' clause below
-                outf = Path(opts.output_file)
-            elif opts.output_path:
-                outf = Path(opts.output_path) / (inf.stem+output_suffix)
+                outf = Path(options.output_file)
+            elif options.output_path:
+                outf = Path(options.output_path) / (inf.stem+output_suffix)
             else:
                 outf = inf.with_suffix(output_suffix)
                 # if we're using an implicit output file name (derived from the
                 # input file name), and we're not just stripping headers, refuse
                 # to overwrite an existing file.  It could be the original xml
                 # file provided by the authors.
-                if not opts.strip_only and outf.exists():
+                if not options.strip_only and outf.exists():
                     die("The implied output file (%s) already exists.  Provide an explicit "
                         "output filename (with -o) or a directory path (with -p) if you want "
                         "%s to overwrite an existing file." % (outf, program, ))
             with inf.open() as file:
                 txt = file.read()
-            if opts.strip_only:
+            if options.strip_only:
+                note("Stripping '%s'" % (inf.name, ))
                 lines, __ = strip_pagebreaks(txt)
-                with (sys.stdout if opts.output_file=='-' else outf.open('w')) as out:
+                with (sys.stdout if options.output_file=='-' else outf.open('w')) as out:
                     out.write('\n'.join([l.txt for l in lines]))
                     out.write('\n')
-                note('Wrote stripped file to %s' % out.name)
+                note("Wrote stripped file to '%s'" % out.name)
             else:
-                parser = DraftParser(inf.name, txt, schema=opts.schema)
+                note("Converting '%s'" % (inf.name, ))
+                parser = DraftParser(inf.name, txt, options=options)
                 xml = parser.parse_to_xml()
-                with (sys.stdout if opts.output_file=='-' else outf.open('w')) as out:
+                with (sys.stdout if options.output_file=='-' else outf.open('w')) as out:
                     out.write(xml)
-                note('Wrote converted file to %s' % out.name)
+                note("Wrote converted file to '%s'" % out.name)
         except Exception as e:
             sys.stderr.write("Failure converting %s: %s\n" % (inf.name, e))
             raise
@@ -584,7 +608,7 @@ def symbol_ratio(text):
     ac = sum( c.isalnum() for c in text )
     # symbol count is total minus whitespace and alphanumerics
     sc = len(text) - wc - ac
-    sr = float(sc)/ac
+    sr = float(sc)/ac if ac else sc
     return sr
 
 def indentation_levels(para):
@@ -765,10 +789,13 @@ class DraftParser():
         'strict="yes"',
         'compact="yes"',
         'subcompact="no"',
-        'symrefs="yes"',
+        # we start out with symrefs="no", then change the setting to
+        # "yes" if we find a non-numeric reference anchor:
+        'symrefs="no"',
     ]
 
-    def __init__(self, name, text, schema="v2"):
+    def __init__(self, name, text, options):
+        self.options = options
         self.name = name
         self.is_draft = name.startswith('draft-')
         self.is_rfc = name.lower().startswith('rfc')
@@ -776,21 +803,28 @@ class DraftParser():
             self.err(0, "Expected the input document name to start with either 'draft-' or 'rfc'")
         assert type(text) is six.text_type # unicode in 2.x, str in 3.x.  
         self.raw = text
-        schema_file = os.path.join(os.path.dirname(__file__), 'data', schema+'.rng')
+        schema_file = os.path.join(os.path.dirname(__file__), 'data', self.options.schema+'.rng')
         self.schema = ElementTree(file=schema_file)
         self.rfc_attr = self.schema.xpath("/x:grammar/x:define/x:element[@name='rfc']//x:attribute", namespaces=ns)
         self.rfc_attr_defaults = dict( (a.get('name'), a.get("{%s}defaultValue"%ns['a'], None)) for a in self.rfc_attr )
 
-    def warn(self, lnum, text):
-        # compose message.  report 1-based line numbers, rather than 0-based.
-        msg = "\n%s(%s): %s" % (self.name, lnum+1, text)
+    def emit(self, msg):
         sys.stderr.write(wrap(msg))
-        if not text.endswith('\n'):
+        if not msg.endswith('\n'):
             sys.stderr.write('\n')
 
+    def warn(self, lnum, text):
+        # compose message.  report 1-based line numbers, rather than 0-based.
+        msg = "\n%s(%s): Warning: %s" % (self.name, lnum+1, text)
+        self.emit(msg)
+
     def err(self, lnum, text):
-        msg = "\n%s(%s): %s" % (self.name, lnum+1, text)
-        raise RuntimeError(wrap(msg))
+        msg = "\n%s(%s): Error: %s" % (self.name, lnum+1, text)
+        if options.debug:
+            raise RuntimeError(wrap(msg))
+        else:
+            self.emit(msg)
+            sys.exit(1)
 
     def parse_to_xml(self, **kwargs):
         self.lines, self.short_title = strip_pagebreaks(self.raw.expandtabs())
@@ -814,6 +848,8 @@ class DraftParser():
         for item in self.rfc_pi_defaults:
             pi = ProcessingInstruction('rfc', item)
             self.root.append(pi)
+            if 'symrefs' in item:
+                self.symrefs_pi = pi
 
         # Parse the document
         doc = self.document()
@@ -822,7 +858,7 @@ class DraftParser():
         if len(doc):
             doctype = '<!DOCTYPE rfc SYSTEM "rfc2629.dtd"'
             if self.entities:
-                doctype += '[\n'
+                doctype += ' [\n'
                 for entity in self.entities:
                     doctype += '<!ENTITY {name} SYSTEM "{url}">\n'.format(**entity)
                 doctype += ']'
@@ -835,6 +871,7 @@ class DraftParser():
                 pretty_print=True,
             ).decode('utf-8')
         else:
+            self.err(self.lines[self.l].num, "Failed producing an xml tree, bailing out")
             return None
 
     def document(self):
@@ -1768,7 +1805,11 @@ class DraftParser():
                 tok = get_quoted(stack, tok)
             elif tok in squares:
                 tok = get_quoted(stack, tok)
-                target = tok[1:-1]
+                ref = tok[1:-1]
+                if ref.isdigit():
+                    target = "ref-%s" % ref
+                else:
+                    target = ref
                 if target in self.reference_list:
                     tok = Element('xref', target=target)
             elif tok in angles:
@@ -1875,10 +1916,14 @@ class DraftParser():
     def make_figure(self, block, title):
         figure = Element('figure')
         if title and title.startswith('Figure'):
-            __, num, title = title.split(None, 2)
-            num = num.replace(':','')
-            figure.set('title', title)
-            figure.set('anchor', 'figure-%s'%num)
+            parts = title.split(None, 2)
+            if len(parts) > 1:
+                num = parts[1]
+                num = num.replace(':','')
+                figure.set('anchor', 'figure-%s'%num)
+            if len(parts) > 2:
+                title = parts[2]
+                figure.set('title', title)
         text = para2text(block.pop(0))
         artwork = Element('artwork')
         artwork.text = CDATA('\n'+unindent(text, 3)+'\n')
@@ -1958,10 +2003,14 @@ class DraftParser():
         texttable = Element('texttable')
         if title:
             if title.startswith('Table'):
-                __, num, title = title.split(None, 2)
-                num = num.replace(':','')
-                texttable.set('title', title)
-                texttable.set('anchor', 'table-%s'%num)
+                parts = title.split(None, 2)
+                if len(parts) > 1:
+                    num = parts[1]
+                    num = num.replace(':','')
+                    texttable.set('anchor', 'table-%s'%num)
+                if len(parts) > 2:
+                    title = parts[2]
+                    texttable.set('title', title)
         texttable.set('style', style)
         # skip top border
         line = paragraph.pop(0)
@@ -2169,10 +2218,15 @@ class DraftParser():
                 #
                 refinfo = match.groupdict()
                 # Attributes
-                for key in ['anchor', 'target', ]:
-                    value = refinfo.get(key)
-                    if value:
-                        reference.set(key, value)
+                anchor = refinfo.get('anchor')
+                if anchor:
+                    if anchor.isdigit():
+                        anchor = "ref-%s" % anchor
+                        refinfo['anchor'] = anchor
+                    reference.set('anchor', anchor)
+                target = refinfo.get('target')
+                if target:
+                    reference.set('target', target)
                 # Front matter
                 key = 'title'
                 value = refinfo.get(key)
@@ -2270,6 +2324,7 @@ class DraftParser():
 
     def postprocess(self):
         self.add_text_refs()
+        self.set_symref_pi()
 
     def add_text_refs(self):
         """
@@ -2286,6 +2341,16 @@ class DraftParser():
                 for child in old:
                     new.append(child)
                 old.getparent().replace(old, new)
+
+    def set_symref_pi(self):
+        if not hasattr(self, 'reference_list'):
+            self.err(0, "Internal error: set_symref_pi() called without reference_list having been set")
+        symrefs = "no"
+        for anchor in self.reference_list:
+            if anchor and not re.search('^ref-\d+$', anchor):
+                symrefs = "yes"
+        pi = ProcessingInstruction('rfc', 'symrefs="%s"'%symrefs)
+        self.root.replace(self.symrefs_pi, pi)
 
 if __name__ == '__main__':
     run()
