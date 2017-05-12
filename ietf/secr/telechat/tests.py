@@ -53,6 +53,16 @@ class SecrTelechatTestCase(TestCase):
         self.assertEqual(q("#telechat-positions-table").find("th:contains('Recuse')").length,1)
         self.assertEqual(q("#telechat-positions-table").find("th:contains('No Record')").length,1)
 
+    def test_doc_detail_draft_invalid(self):
+        '''Test using a document not on telechat agenda'''
+        draft = make_test_data()
+        date = get_next_telechat_date().strftime('%Y-%m-%d')
+        url = reverse('ietf.secr.telechat.views.doc_detail', kwargs={'date':date, 'name':draft.name})
+        self.client.login(username="secretary", password="secretary+password")
+        response = self.client.get(url, follow=True)
+        self.assertRedirects(response, reverse('ietf.secr.telechat.views.doc', kwargs={'date':date}))
+        self.assertTrue('not on the Telechat agenda' in response.content)
+
     def test_doc_detail_charter(self):
         make_test_data()
         by=Person.objects.get(name="(System)")
