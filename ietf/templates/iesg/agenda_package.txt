@@ -7,7 +7,7 @@ Contents:
 2. Agenda
    https://datatracker.ietf.org/iesg/agenda/
 3. Management Item Details
-   https://datatracker.ietf.org/cgi-bin/display_news.cgi?template_type=3
+   https://datatracker.ietf.org/iesg/agenda/#6
 4. Previous minutes
    https://www.ietf.org/iesg/internal/minutes.txt
 
