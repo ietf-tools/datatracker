@@ -124,6 +124,15 @@ def get_first_doc(agenda):
 
     return None
 
+def is_doc_on_telechat(doc,date):
+    '''Returns true if the document is on the Telechat agenda for date=date.
+    Where date is a string in the format YYYY-MM-DD
+    '''
+    if doc.telechat_date() and doc.telechat_date().strftime("%Y-%m-%d") == date:
+        return True
+    else:
+        return False
+
 # -------------------------------------------------
 # View Functions
 # -------------------------------------------------
@@ -162,6 +171,11 @@ def doc_detail(request, date, name):
     changes to ballot positions and document state.
     '''
     doc = get_object_or_404(Document, docalias__name=name)
+    if not is_doc_on_telechat(doc, date):
+        messages.warning(request, 'Dcoument: {name} is not on the Telechat agenda for {date}'.format(
+            name=doc.name,
+            date=date))
+        return redirect('ietf.secr.telechat.views.doc', date=date)
 
     # As of Datatracker v4.32, Conflict Review (conflrev) Document Types can
     # be added to the Telechat agenda.  If Document.type_id == draft use draft-iesg
