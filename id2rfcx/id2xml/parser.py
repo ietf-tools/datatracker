@@ -34,6 +34,7 @@ import six
 import sys
 import copy
 import lxml
+import inspect
 import textwrap
 from pyterminalsize import get_terminal_size
 from xml2rfc.writers.base import BaseRfcWriter
@@ -48,7 +49,10 @@ try:
 except ImportError:
     pass
 
-
+try:
+    from pprint import pformat
+except ImportError:
+    pformat = lambda x: x
 
 # ----------------------------------------------------------------------
 
@@ -65,7 +69,11 @@ def run():
 
     # ----------------------------------------------------------------------
     # Parse config file
-    conf = {}
+    # default values
+    conf = {
+        'logindent':    4,
+        'debug':        []
+        }
     for p in ['.', os.environ.get('HOME','.'), '/etc/', ]:
         rcpath = Path(p)
         if rcpath.exists():
@@ -101,18 +109,21 @@ def run():
     # ----------------------------------------------------------------------
     # Parse options
 
+    def commalist(value):
+        return [ s.strip() for s in value.split(',') ]
+
     prolog, epilog = __doc__.split('...')
     parser = argparse.ArgumentParser(description=prolog, epilog=epilog,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('DRAFT', nargs='*',                             help="text format draft(s) to be converted to xml")
-    parser.add_argument('-2', '--v2', '--schema-v2', dest='schema', action='store_const', const='v2',
+    parser.add_argument('-2', '--schema-v2', dest='schema', action='store_const', const='v2',
                                                                         help="output v2 (RFC 7749) schema")
-    parser.add_argument('-3', '--v3', '--schema-v3', dest='schema', action='store_const', const='v3',
+    parser.add_argument('-3', '--schema-v3', dest='schema', action='store_const', const='v3',
                                                                         help="output v3 (RFC 7991) schema")
-    parser.add_argument('-d', '--debug',                                help="debug mode")
+    parser.add_argument('-d', dest='debug', type=commalist, metavar='TAGS',help="a comma-separated list of debug tags")
     parser.add_argument('-o', '--output-file', metavar='FILE',          help="set the output file name")
     parser.add_argument('-p', '--output-path', metavar="DIR",           help="set the output directory name")
-    parser.add_argument('-q', '--quiet',                                help="be less verbose")
+    parser.add_argument('-q', '--quiet', action='store_true',           help="be more quiet")
     parser.add_argument('-s', '--strip-only', action='store_true',      help="don't convert, only strip headers and footers")
     parser.add_argument('-v', '--version', action='store_true',         help="output version information, then exit")
     parser.add_argument('-V', '--verbose', action='store_true',         help="be (slightly) more verbose")
@@ -166,14 +177,14 @@ def run():
                 with (sys.stdout if options.output_file=='-' else outf.open('w')) as out:
                     out.write('\n'.join([l.txt for l in lines]))
                     out.write('\n')
-                note("Wrote stripped file to '%s'" % out.name)
+                note("Written to '%s'" % out.name)
             else:
                 note("Converting '%s'" % (inf.name, ))
                 parser = DraftParser(inf.name, txt, options=options)
                 xml = parser.parse_to_xml()
                 with (sys.stdout if options.output_file=='-' else outf.open('w')) as out:
                     out.write(xml)
-                note("Wrote converted file to '%s'" % out.name)
+                note("Written to '%s'" % out.name)
         except Exception as e:
             sys.stderr.write("Failure converting %s: %s\n" % (inf.name, e))
             raise
@@ -190,16 +201,61 @@ Line = namedtuple('Line', ['num', 'txt'])
 boilerplate = BaseRfcWriter.boilerplate
 approvers = BaseRfcWriter.approvers
 
-status_of_memo = "Status of This Memo"
-appendix_prefix = "Appendix "
+#status_of_memo = "Status of This Memo"
+appendix_prefix = "^Appendix:? "
 #
 code_re = r'(^\s*[A-Za-z][A-Za-z0-9_-]*\s*=\s*\S|{ *$|^ *})'
 #
-section_start_re = r"^((Appendix )?[A-Z0-9]+\.([0-9]+(\.[0-9]+)*\.?)? |Status [Oo]f [Tt]his [Mm]emo|Author's Address|Authors' Addresses|Acknowledgements|Acknowledgments|Contributors)"
+
+section_names = {
+    'front': [
+        'abstract',
+        'copyright notice',
+        'status of this memo',
+        'table of contents',
+    ],
+    'middle': [
+        'acknowledegments',
+        'acknowledgments',
+        'contributors',
+    ],
+    'refs': [
+        'references',
+        'normative references',
+        'normative',
+        'informative references',
+        'informative',
+        'informational references',
+        'uris',
+    ],
+    'back': [
+        'acknowledgements',
+        'acknowledgments',
+        'annex',
+        'appendix',
+        "author's address",
+        "authors' addresses",
+        'contributors',
+        'index',
+    ],
+}
+
+section_names['all'] = [ n for p in section_names for n in section_names[p] ]
+
+section_name_start = copy.deepcopy(section_names)
+for part in section_name_start:
+    for i in range(len(section_name_start[part])):
+        section_name_start[part][i] = section_name_start[part][i].split()[0]
+
+section_start_re = {}
+for part in section_names:
+    section_start_re[part] = r"^((appendix:? )?[a-z0-9]+\.([0-9]+(\.[0-9]+)*\.?)? |%s)" % ('|'.join(section_names[part]))
+
+# ----------------------------------------------------------------------
 #
 one_ref_re = r"(([0-9A-Z-]|I-?D.)[0-9A-Za-z-]*( [0-9A-Z-]+)?|(IEEE|ieee)[A-Za-z0-9.-]+|(ITU ?|ITU-T ?|G\\.)[A-Za-z0-9.-]+)";
 ref_ref_re =  r"\[{ref}(, *{ref})*\]".format(ref=one_ref_re)
-#
+# 
 # Elements of a reference item
 ref_anchor_re = r'\[(?P<anchor>[^]]+)\]'
 ref_name_re =   r'[-\' 0-9\w]+, (?:\w-?\w?\.)+(?:, Ed\.)?'
@@ -209,8 +265,8 @@ ref_auth_re =   r'(?P<authors>({name})(, {name})*(,? and {last})?)'.format(name=
 ref_title_re =  r'(?P<title>.+)'
 ref_series_one =r'(?:(?:(?:RFC|STD|BCP|FYI|DOI|Internet-Draft) [^,]+|draft-[a-z0-9-]+)(?: \(work in progress\))?)'
 ref_series_re = r'(?P<series>{item}(?:, {item})*)'.format(item=ref_series_one)
-ref_docname_re= r'(?P<docname>[^,]+)'
-month_re =      r'(?:January|February|March|April|May|June|July|August|September|October|November|December)'
+ref_docname_re= r'(?P<docname>[^,]+(, pp\.? \d+(-\d+)?)?)'
+month_re =      r'(?:Jan(uary)?|Feb(ruary)?|March|April|May|June|July|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)'
 date_re =       r'(?P<date>({month} )?[12]\d\d\d)'.format(month=month_re)
 ref_url_re =    r'<(?P<target>(http|https|ftp)://[^>]+)>'
 uri_re =        r'^<?\s*(?P<target>(http|https|ftp)://[^>\s]+)\s*>?$'
@@ -229,7 +285,10 @@ chunks = dict(
 reference_patterns = [
     r'{anchor}  *{authors}, "{title}", {series}, {date}(, {url})?\.'.format(**chunks),
     r'{anchor}  *{authors}, "{title}", {date}(, {url})?\.'.format(**chunks),
-    r'{anchor}  *{organiz}, "{title}"(, {docname})?, {date}(, {url})?\.'.format(**chunks),
+    r'{anchor}  *{authors}, "{title}", {docname}, {date}(, {url})?\.'.format(**chunks),
+    r'{anchor}  *{organiz}, "{title}", {docname}, {date}(, {url})?\.'.format(**chunks),
+    r'{anchor}  *{authors}, "{title}", {date}(, {url})?\.'.format(**chunks),
+    r'{anchor}  *{organiz}, "{title}", {date}(, {url})?\.'.format(**chunks),
     r'{anchor}  *{organiz}, "{title}", {url}\.'.format(**chunks),
     r'{anchor}  *"{title}", Work in Progress ?, {date}(, {url})?\.'.format(**chunks),
     r'{anchor}  *"{title}", Work in Progress ?, {url}\.'.format(**chunks),
@@ -354,7 +413,7 @@ def strip_pagebreaks(text):
             newpage = False
         if re.search("[.:+]\)?$", line):    # line ends with a period; don't join with next page para
             sentence = True
-        if re.search("^[0-9]+\.", line): # line starts with a section number; don't join with next page para
+        if re.search("^[A-Z0-9][0-9]*\.", line): # line starts with a section number; don't join with next page para
             sentence = True
         if re.search("^ +[o*+-]  ", line): # line starts with a list bullet; don't join with next page para
             sentence = True
@@ -407,17 +466,26 @@ def split_on_large_whitespace(line):
 def ind(line):
     return len(line.txt) - len(line.txt.lstrip())
 
+
+
+
 #@debug.trace
-def is_section_start(line, numlist=None):
+def is_section_start(line, numlist=None, part=None):
+    assert part != None
+    if not line:
+        return True
     text = line.txt
-    if text.startswith(appendix_prefix):
-        text = text[len(appendix_prefix):]
-    return re.search('^%s([. ]|$)'%'.'.join(numlist), text) if numlist else re.search(section_start_re, text) != None
+    match = re.search(appendix_prefix, text)
+    if match:
+        text = text[len(match.group(0)):]
+    return re.search('^%s([. ]|$)'%'.'.join(numlist), text) if numlist else re.search(section_start_re[part], text.lower()) != None
 
 def parse_section_start(line, numlist, level, appendix):
     text = line.txt
-    if appendix and text.startswith(appendix_prefix):
-        text = text[len(appendix_prefix):]
+    if appendix:
+        match = re.search(appendix_prefix, text)
+        if match:
+            text = text[len(match.group(0)):]
     parts = text.strip().split(None, 1)
     if len(parts) == 2:
         number, title = parts
@@ -813,6 +881,32 @@ class DraftParser():
         if not msg.endswith('\n'):
             sys.stderr.write('\n')
 
+    def dsay(self, s):
+        if self.options.debug:
+            frame, filename, lineno, funcname, lines, lineindex = inspect.stack()[1]
+            if funcname in self.options.debug:
+                indent = ' ' * self.options.logindent
+                sys.stderr.write("%s%s.%s\n" % (indent, funcname, s))
+
+    def dshow(self, name):
+        if self.options.debug:
+            frame, filename, lineno, funcname, lines, lineindex = inspect.stack()[1]
+            if funcname in self.options.debug:
+                value = eval(name, frame.f_globals, frame.f_locals)
+                indent = ' ' * self.options.logindent
+                sys.stderr.write("%s%s.%s: '%s'\n" % (indent, funcname, name, value))
+
+    def dpprint(self, name):
+        if self.options.debug:
+            frame, filename, lineno, funcname, lines, lineindex = inspect.stack()[1]
+            if funcname in self.options.debug:
+                value = eval(name, frame.f_globals, frame.f_locals)
+                indent = ' ' * self.options.logindent
+                sys.stderr.write("%s%s.%s:\n" % (indent, funcname, name))
+                lines = pformat(value).split('\n')
+                for line in lines:
+                    sys.stderr.write("%s    %s\n"%(indent, line))
+
     def warn(self, lnum, text):
         # compose message.  report 1-based line numbers, rather than 0-based.
         msg = "\n%s(%s): Warning: %s" % (self.name, lnum+1, text)
@@ -820,7 +914,7 @@ class DraftParser():
 
     def err(self, lnum, text):
         msg = "\n%s(%s): Error: %s" % (self.name, lnum+1, text)
-        if options.debug:
+        if self.options.debug:
             raise RuntimeError(wrap(msg))
         else:
             self.emit(msg)
@@ -942,7 +1036,7 @@ class DraftParser():
         if workgroup:
             front.append(E.workgroup(workgroup))
         #
-        abstract = self.section(numlist=["Abstract"], tag='abstract')
+        abstract = self.section(numlist=["Abstract"], tag='abstract', part='front')
         if not abstract is None:
             front.append(abstract)
         #
@@ -957,7 +1051,7 @@ class DraftParser():
 
         line = self.skip_blank_lines()
         if line.txt == 'Table of Contents':
-            self.section(['Table'], tag='toc')
+            self.section(['Table'], tag='toc', part='front')
             self.root.append(ProcessingInstruction('rfc', text='toc="yes"'))
 
         return front
@@ -985,7 +1079,7 @@ class DraftParser():
             else:
                 padded = (line.txt + ' '*pad_len)[:pad_len]
             left, center, right = split_on_large_whitespace(padded)
-            if left.lower() in [ "abstract", "table of contents", status_of_memo.lower(), ]:
+            if left.lower() in section_names['front']:
                 self.push_line(line, p)
                 break
             if center:
@@ -1021,8 +1115,7 @@ class DraftParser():
         if self.p:
             line = Line(line.num, line.txt[self.p:])
             self.p = None
-        #debug.show('line')
-        #debug.show('line.txt')
+        self.dshow('line')
         return line, p
 
     def get_text_line(self):
@@ -1163,6 +1256,8 @@ class DraftParser():
 
         # maybe obsoletes and/or updates note
         while True:
+            if not line or line.txt.strip() == '':
+                break
             w = line.txt.lower().split()[0].rstrip(':')
             W = w.capitalize()
             if w in ['obsoletes', 'updates']:
@@ -1313,14 +1408,14 @@ class DraftParser():
         note = None
         line = self.skip_blank_lines()
         text = line.txt.strip()
-        if text == status_of_memo:
+        if text.lower() in section_names['front']:
             return None
         # Advance past the line we peeked at above
         line, p = self.get_line()
         note = Element('note')
         note.set('title', text)
         while True:
-            paragraph = self.get_block()
+            paragraph = self.get_block('front')
             if paragraph is None:
                 break
             elif paragraph.tag != 't':
@@ -1331,7 +1426,11 @@ class DraftParser():
 
     #@debug.trace
     def read_status_of_memo(self, workgroup, stream, rfc_number, category, date):
-        self.skip(status_of_memo)
+        line = self.skip_blank_lines()
+        if line.txt.strip().lower() == 'status of this memo':
+            self.skip(line.txt)
+        else:
+            self.skip('Status of This Memo')
         if self.is_rfc:
             assert stream
             assert rfc_number
@@ -1419,14 +1518,14 @@ class DraftParser():
             # [URI: uri]
             #
             line = self.skip_blank_lines()
-            if not line or is_section_start(line):
+            if not line or is_section_start(line, part='back'):
                 break
             #
             item = self.read_author_name()
             self.maybe_author_org(item)
             self.maybe_author_address(item)
             line, p = self.get_line()
-            assert line.txt.strip() == ''
+            assert not line or line.txt.strip() == ''
             while True:
                 found = self.maybe_address_detail(item)
                 if not found:
@@ -1561,7 +1660,7 @@ class DraftParser():
         middle = Element('middle')
         self.section_number = 1
         while True:
-            section = self.section(numlist=[ str(self.section_number) ])
+            section = self.section(numlist=[ str(self.section_number) ], part='middle')
             if section is None:
                 break
             middle.append(section)
@@ -1572,7 +1671,7 @@ class DraftParser():
             line = self.skip_blank_lines()
             word = line.txt.split()[0]
             if word in ['Acknowledgments', 'Acknowledgements', 'Contributors',]:
-                section = self.section([word])
+                section = self.section([word], part='middle')
                 #section.set('anchor', word.lower())
                 #section.set('title', word)
                 middle.append(section)
@@ -1583,23 +1682,22 @@ class DraftParser():
         return middle
 
     #@debug.trace
-    def section(self, numlist=["1"], level=0, tag='section', appendix=False):
+    def section(self, numlist=["1"], level=0, tag='section', appendix=False, part=None ):
         # (t | figure | texttable | iref)*, section*
         # figure out what a section number for this section is expected to
         # look like:
         #
+        self.dpprint('numlist, level, tag, appendix, part')
+        assert part != None
         section = None
         line, p = self.get_text_line()
         if line is None:
             return None
         # Expect the start of a section: section number and title
         number, title = parse_section_start(line, numlist, level, appendix)
-        if is_section_start(line, numlist):
-            if len(numlist)==1 and title in ['References', 'Normative References', 'Informative References', 'Informational References', 'URIs', ]:
-                self.push_line(line, p)
-                return None
-            elif number in ["Author's", "Authors'", "Acknowledgments", "Acknowledgements", "Appendix", "Annex", "Contributors", "Index", ]:
-                title = number
+        if is_section_start(line, numlist, part):
+            if number.lower() in section_name_start[part]:
+                title = line.txt
                 number = ""
             # Get title continuation lines
             titleindent = line.txt.find(title)
@@ -1621,17 +1719,18 @@ class DraftParser():
                     section.set('numbered', 'no')
                     section.set('anchor', '%s'%slugify(title))                    
         else:
-            if number in ["Author's", "Authors'", "Acknowledgments", "Acknowledgements", "Appendix", "Annex", "Contributors", "Index", "Status", ]:
+            if number.lower() in section_name_start['all']:
                 self.push_line(line, p)
                 return None
-            self.err(line.num, "Unexpected section number; expected '%s' or a subsection, found '%s'" % ('.'.join(numlist), number))
+            else:
+                self.err(line.num, "Unexpected section number; expected '%s' or a subsection, found '%s'" % ('.'.join(numlist), line.txt))
         #
         blank_line, p = self.get_line()
         if not blank_line.txt.strip() == '':
             self.warn(blank_line.num, "Unexpected text; expected a blank line after section title, found '%s'" % (blank_line, ))
             self.push_line(line, p)
         while True:
-            paragraph = self.get_block()
+            paragraph = self.get_block(part)
             if paragraph is None:
                 break
             else:
@@ -1642,9 +1741,9 @@ class DraftParser():
             num += 1
             sublist = numlist + [ str(num) ]
             line, p = self.get_text_line()
-            if is_section_start(line, sublist):
+            if is_section_start(line, sublist, part):
                 self.push_line(line, p)
-                subsection = self.section(sublist, level+1, appendix=appendix)
+                subsection = self.section(sublist, level+1, appendix=appendix, part=part)
                 if subsection is None:
                     break
                 else:
@@ -1657,12 +1756,13 @@ class DraftParser():
 
 
     #@debug.trace
-    def get_block(self):
+    def get_block(self, part):
         """
         This method does not parse and return one specific element type;
         it encapsulates the (t | figure | texttable | iref) alternatives
         which occur in <section>.
         """
+        self.dshow('part')
         tag2label = {
             'figure': 'Figure',
             'texttable': 'Table',
@@ -1676,8 +1776,9 @@ class DraftParser():
         while True:
             # collect one block worth of text
             para = self.get_para()
+            self.dshow('para')
             first = para[0].txt.strip()
-            this_tag, text, linecount = self.identify_paragraph(para)
+            this_tag, text, linecount = self.identify_paragraph(para, part)
             #if not this_tag in ['t', 'figure', 'texttable', 'list', ]:
             if not this_tag in ['t', 'figure', 'texttable', 'list', ]:
                 self.push_para(para)
@@ -1742,7 +1843,9 @@ class DraftParser():
                 element = self.make_table(block, label)
             elif tag == 'figure':
                 element = self.make_figure(block, label)
-
+            self.dshow('block')
+            self.dshow('tag')
+        self.dshow('element')
         return element
 
     #@debug.trace
@@ -1849,7 +1952,8 @@ class DraftParser():
         return t
 
     #@debug.trace
-    def identify_paragraph(self, para):
+    def identify_paragraph(self, para, part):
+        self.dshow('part')
         tag = None
         text = None
         sratio = None
@@ -1857,7 +1961,7 @@ class DraftParser():
         if para and para[0].txt:
             line = para[0]
             text = para2text(para)
-            if is_section_start(line):
+            if is_section_start(line, part=part):
                 tag = 'section'
             elif not line.txt.startswith('   '):
                 if line.txt.startswith(' '):
@@ -2132,12 +2236,12 @@ class DraftParser():
         line = self.skip_blank_lines()
         parts = line.txt.split()
         if len(parts)>1 and parts[1] == 'URIs':
-            section = self.section([str(self.section_number-1), str(len(refs)+1)])
+            section = self.section([str(self.section_number-1), str(len(refs)+1)], part='back')
         #
         num = ord('A')
         while True:
             line = self.skip_blank_lines()
-            section = self.section(numlist=[ chr(num) ], appendix=True)
+            section = self.section(numlist=[ chr(num) ], appendix=True, part='back')
             if section is None:
                 break
             back.append(section)
@@ -2148,7 +2252,7 @@ class DraftParser():
             line = self.skip_blank_lines()
             word = line.txt.split()[0]
             if word in ['Acknowledgments', 'Acknowledgements', 'Contributors', 'Index', ]:
-                section = self.section([word])
+                section = self.section([word], part='back')
                 back.append(section)
             else:
                 break
@@ -2161,7 +2265,7 @@ class DraftParser():
         refs = []
         # peek at the first nonblank line
         line, p = self.get_text_line()
-        if not is_section_start(line, numlist):
+        if not is_section_start(line, numlist, part='back'):
             self.push_line(line, p)
             return None
         #
@@ -2171,7 +2275,7 @@ class DraftParser():
             return None
         # peek at the next nonblank line
         line = self.skip_blank_lines()
-        if is_section_start(line):
+        if is_section_start(line, part='back'):
             num = 1
             while True:
                 sublist = numlist + [ str(num) ]
@@ -2195,7 +2299,7 @@ class DraftParser():
 
     def reference(self):
         line = self.skip_blank_lines()
-        if is_section_start(line):
+        if is_section_start(line, part='back'):
             return None
         reference = Element('reference')
         front = Element('front')
@@ -2205,16 +2309,15 @@ class DraftParser():
         if not para:
             return None
         text = para2str(para)
+        self.dshow('text')
         faild = None
         for regex in reference_patterns:
             match = re.search(regex, text)
             if match:
-                if faild and False:
-                    debug.show('text')
-                    debug.show('faild')
-                    debug.show('regex')
-                    debug.pprint('match.groups()')
-                    debug.pprint('match.groupdict()')
+                if faild:
+                    self.dshow('faild')
+                    self.dshow('regex')
+                    self.dpprint('match.groupdict()')
                 #
                 refinfo = match.groupdict()
                 # Attributes
@@ -2309,7 +2412,7 @@ class DraftParser():
             else:
                 faild = regex
         else:
-            if not line or is_section_start(line) or line.txt.startswith('Author'):
+            if not line or is_section_start(line, part='back'):
                 self.push_para(para)
                 return None
             else:
