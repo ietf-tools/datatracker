@@ -1,0 +1,186 @@
+61c61
+<    1.  Introduction  . . . . . . . . . . . . . . . . . . . . . . . .   3
+---
+>    1.  Introduction  . . . . . . . . . . . . . . . . . . . . . . . .   2
+77,78c77,78
+<    9.  References  . . . . . . . . . . . . . . . . . . . . . . . . .  17
+<      9.1.  Normative References  . . . . . . . . . . . . . . . . . .  17
+---
+>    9.  References  . . . . . . . . . . . . . . . . . . . . . . . . .  16
+>      9.1.  Normative References  . . . . . . . . . . . . . . . . . .  16
+80c80
+<    Acknowledgements  . . . . . . . . . . . . . . . . . . . . . . . .  18
+---
+>    10. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .  17
+82c82
+<    Authors' Addresses  . . . . . . . . . . . . . . . . . . . . . . .  19
+---
+>    Authors' Addresses  . . . . . . . . . . . . . . . . . . . . . . .  18
+145d144
+< 
+198,199c197,198
+<              Figure 1: Mobile Node (MN) with Multiple Tunnels
+<                           to the Home Agent (HA)
+---
+>     Figure 1: Mobile Node (MN) with Multiple Tunnels to the Home Agent
+>                                    (HA)
+368d366
+< 
+450c448
+<    |  Action | Value | Description                                     |
+---
+>    | Action  | Value | Description                                     |
+452c450
+<    |  DROP   |   0   | Drop matching packets. A filter rule            |
+---
+>    | DROP    | 0     | Drop matching packets. A filter rule            |
+457,458c455,456
+<    +---------+-------+-------------------------------------------------+
+<    | FORWARD |   1   | Forward matching packets to the first BID in the|
+---
+>    | FORWARD | 1     | Forward matching packets to the first BID in    |
+>    |         |       | the                                             |
+462a461
+>    |         |       |                                                 |
+465c464
+<               Figure 6: Action Rules for the Traffic Selector
+---
+>       Figure 6: Action Rules for the Traffic Selector
+467c466
+<    BID Count
+---
+>       BID Count
+469,492c468,491
+<       Total number of binding identifiers that follow this field.  The
+<       permitted values for this field are 1 through 8; each binding
+<       identifier is represented as an unsigned integer in a single octet
+<       field.  There is no delimiter between two binding identifier
+<       values; they are spaced consecutively.
+< 
+<    TS Format
+< 
+<       An 8-bit unsigned integer indicating the Traffic Selector (TS)
+<       Format.  The value (0) is reserved and MUST NOT be used.  When the
+<       value of the TS Format field is set to (1), the format that
+<       follows is the IPv4 Binary Traffic Selector specified in
+<       Section 3.1 of [RFC6088], and when the value of the TS Format
+<       field is set to (2), the format that follows is the IPv6 Binary
+<       Traffic Selector specified in Section 3.2 of [RFC6088].  The IPv6
+<       traffic selectors are only relevant when the mobile node registers
+<       IPv6 prefixes per [RFC5454].
+< 
+<    Traffic Selector
+< 
+<       A variable-length opaque field for including the traffic
+<       specification identified by the TS Format field.  It identifies
+<       the traffic selectors for matching the IP traffic and binding them
+<       to specific binding identifiers.
+---
+>          Total number of binding identifiers that follow this field.
+>          The permitted values for this field are 1 through 8; each
+>          binding identifier is represented as an unsigned integer in a
+>          single octet field.  There is no delimiter between two binding
+>          identifier values; they are spaced consecutively.
+> 
+>       TS Format
+> 
+>          An 8-bit unsigned integer indicating the Traffic Selector (TS)
+>          Format.  The value (0) is reserved and MUST NOT be used.  When
+>          the value of the TS Format field is set to (1), the format that
+>          follows is the IPv4 Binary Traffic Selector specified in
+>          Section 3.1 of [RFC6088], and when the value of the TS Format
+>          field is set to (2), the format that follows is the IPv6 Binary
+>          Traffic Selector specified in Section 3.2 of [RFC6088].  The
+>          IPv6 traffic selectors are only relevant when the mobile node
+>          registers IPv6 prefixes per [RFC5454].
+> 
+>       Traffic Selector
+> 
+>          A variable-length opaque field for including the traffic
+>          specification identified by the TS Format field.  It identifies
+>          the traffic selectors for matching the IP traffic and binding
+>          them to specific binding identifiers.
+718,720c717,719
+<               Requirement Levels", BCP 14, RFC 2119,
+<               DOI 10.17487/RFC2119, March 1997,
+<               <http://www.rfc-editor.org/info/rfc2119>.
+---
+>               Requirement Levels", BCP 14, RFC 2119, DOI 10.17487/
+>               RFC2119, March 1997, <http://www.rfc-editor.org/info/
+>               rfc2119>.
+723,725c722,724
+<               Chowdhury, K., and B. Patil, "Proxy Mobile IPv6",
+<               RFC 5213, DOI 10.17487/RFC5213, August 2008,
+<               <http://www.rfc-editor.org/info/rfc5213>.
+---
+>               Chowdhury, K., and B.  Patil, "Proxy Mobile IPv6", RFC
+>               5213, DOI 10.17487/RFC5213, August 2008, <http://www.rfc-
+>               editor.org/info/rfc5213>.
+731,734c730,733
+<    [RFC6088]  Tsirtsis, G., Giarreta, G., Soliman, H., and N. Montavont,
+<               "Traffic Selectors for Flow Bindings", RFC 6088,
+<               DOI 10.17487/RFC6088, January 2011,
+<               <http://www.rfc-editor.org/info/rfc6088>.
+---
+>    [RFC6088]  Tsirtsis, G., Giarreta, G., Soliman, H., and N.
+>               Montavont, "Traffic Selectors for Flow Bindings", RFC
+>               6088, DOI 10.17487/RFC6088, January 2011, <http://www.rfc-
+>               editor.org/info/rfc6088>.
+738,741c737,740
+<    [RFC2991]  Thaler, D. and C. Hopps, "Multipath Issues in Unicast and
+<               Multicast Next-Hop Selection", RFC 2991,
+<               DOI 10.17487/RFC2991, November 2000,
+<               <http://www.rfc-editor.org/info/rfc2991>.
+---
+>    [RFC2991]  Thaler, D. and C.  Hopps, "Multipath Issues in Unicast and
+>               Multicast Next-Hop Selection", RFC 2991, DOI 10.17487/
+>               RFC2991, November 2000, <http://www.rfc-editor.org/info/
+>               rfc2991>.
+743c742
+<    [RFC3753]  Manner, J., Ed. and M. Kojo, Ed., "Mobility Related
+---
+>    [RFC3753]  Manner, J., Ed. and M.  Kojo, Ed., "Mobility Related
+747c746
+<    [RFC5226]  Narten, T. and H. Alvestrand, "Guidelines for Writing an
+---
+>    [RFC5226]  Narten, T. and H.  Alvestrand, "Guidelines for Writing an
+749,750c748,749
+<               DOI 10.17487/RFC5226, May 2008,
+<               <http://www.rfc-editor.org/info/rfc5226>.
+---
+>               DOI 10.17487/RFC5226, May 2008, <http://www.rfc-
+>               editor.org/info/rfc5226>.
+752,753c751,752
+<    [RFC5454]  Tsirtsis, G., Park, V., and H. Soliman, "Dual-Stack Mobile
+<               IPv4", RFC 5454, DOI 10.17487/RFC5454, March 2009,
+---
+>    [RFC5454]  Tsirtsis, G., Park, V., and H.  Soliman, "Dual-Stack
+>               Mobile IPv4", RFC 5454, DOI 10.17487/RFC5454, March 2009,
+756c755
+<    [RFC6626]  Tsirtsis, G., Park, V., Narayanan, V., and K. Leung,
+---
+>    [RFC6626]  Tsirtsis, G., Park, V., Narayanan, V., and K.  Leung,
+761c760
+< Acknowledgements
+---
+> 10.
+774,775c773
+<    Ahmad Muhanna
+<    Email: asmuhanna@yahoo.com
+---
+>    Ahmad Muhanna Email: asmuhanna@yahoo.com
+777,778c775
+<    Srinivasa Kanduru
+<    Email: skanduru@gmail.com
+---
+>    Srinivasa Kanduru Email: skanduru@gmail.com
+780,781c777
+<    Vince Park
+<    Email: vpark@qualcomm.com
+---
+>    Vince Park Email: vpark@qualcomm.com
+783,784c779
+<    Hesham Soliman
+<    Email: hesham@elevatemobile.com
+---
+>    Hesham Soliman Email: hesham@elevatemobile.com

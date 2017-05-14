@@ -1,0 +1,344 @@
+56,57c56,57
+<    4.  Supported Features  . . . . . . . . . . . . . . . . . . . . .   5
+<    5.  Unsupported Features  . . . . . . . . . . . . . . . . . . . .   6
+---
+>    4.  Supported Features  . . . . . . . . . . . . . . . . . . . . .   6
+>    5.  Unsupported Features  . . . . . . . . . . . . . . . . . . . .   7
+62,63c62,63
+<      7.3.  List Styles . . . . . . . . . . . . . . . . . . . . . . .   7
+<        7.3.1.  Symbol  . . . . . . . . . . . . . . . . . . . . . . .   7
+---
+>      7.3.  List Styles . . . . . . . . . . . . . . . . . . . . . . .   8
+>        7.3.1.  Symbol  . . . . . . . . . . . . . . . . . . . . . . .   8
+66c66
+<        7.3.4.  Roman . . . . . . . . . . . . . . . . . . . . . . . .   8
+---
+>        7.3.4.  Roman . . . . . . . . . . . . . . . . . . . . . . . .   9
+68c68
+<        7.3.6.  Hanging . . . . . . . . . . . . . . . . . . . . . . .   9
+---
+>        7.3.6.  Hanging . . . . . . . . . . . . . . . . . . . . . . .  10
+81c81
+<      8.2.  Setting the title . . . . . . . . . . . . . . . . . . . .  13
+---
+>      8.2.  Setting the title . . . . . . . . . . . . . . . . . . . .  14
+89c89
+<      11.3.  URIs . . . . . . . . . . . . . . . . . . . . . . . . . .  14
+---
+>      11.3.  URIs . . . . . . . . . . . . . . . . . . . . . . . . . .  15
+97c97
+<      A.6.  Spanx Tests . . . . . . . . . . . . . . . . . . . . . . .  15
+---
+>      A.6.  Spanx Tests . . . . . . . . . . . . . . . . . . . . . . .  16
+100,101c100,101
+<      A.9.  Numbered examples . . . . . . . . . . . . . . . . . . . .  20
+<      A.10. Figure tests  . . . . . . . . . . . . . . . . . . . . . .  20
+---
+>      A.9.  Numbered examples . . . . . . . . . . . . . . . . . . . .  21
+>      A.10. Figure tests  . . . . . . . . . . . . . . . . . . . . . .  21
+117c117,118
+<       Note: this document is typeset in Pandoc and does not render
+---
+>    Note: this document is typeset in Pandoc and does not render
+> 
+168,169c169,171
+<     <front>
+<        <title>Writing I-Ds and RFCs using Pandoc v2</title>
+---
+> 
+>     <front> <title>Writing I-Ds and RFCs using Pandoc v2</title>
+> 
+173,174d174
+<        &pandocMiddle;
+<    </middle>
+175a176,178
+>     &pandocMiddle;
+> 
+>    </middle>
+189,190c192,193
+<    2.  back.pdc - holds appendices and references;
+<    3.  template.xml (probably a fairly static file).
+---
+>    2.  back.pdc - holds appendices and references; 3.  template.xml
+>    (probably a fairly static file).
+205c208
+<     This document was produced using the Pandoc2rfc tool.
+---
+>       This document was produced using the Pandoc2rfc tool.
+293,294c296,297
+<    it is _just_ Pandoc.  The best introduction to the Pandoc style is
+<    given in this README from Pandoc itself [7].
+---
+>       it is _just_ Pandoc.  The best introduction to the Pandoc style is
+>       given in this README from Pandoc itself [7].
+308,309c311
+<    # Section1 One
+<    Bla
+---
+>    # Section1 One Bla
+315d316
+< 
+327,328c328
+<    * Item one;
+<    * Item two.
+---
+>    * Item one; * Item two.
+340,341c340
+<    1. Item one;
+<    1. Item two.
+---
+>    1.  Item one; 1.  Item two.
+361d359
+< 
+368,369c366
+<    ii. Item one;
+<    ii. Item two.
+---
+>    ii.  Item one; ii.  Item two.
+373c370
+<    i.    Item one;
+---
+>    a.  Item one;
+375c372
+<    ii.   Item two.
+---
+>    b.  Item two.
+380,381c377
+<    II. Item one;
+<    II. Item two.
+---
+>    II.  Item one; II.  Item two.
+393,394c389
+<    a.  Item one;
+<    b.  Item two.
+---
+>    a.  Item one; b.  Item two.
+404,405c399
+<    A.  Item one;
+<    B.  Item two.
+---
+>    A.  Item one; B.  Item two.
+419,422c413,414
+<    :   Explanation one
+<    More stuff, because item is difficult to explain.
+<    * item1
+<    * item2
+---
+>       Explanation one More stuff, because item is difficult to explain.
+>       * item1 * item2
+426c418
+<    :   Explanation two
+---
+>       Explanation two
+529c521
+<      Table: A caption describing the table.
+---
+>       Table: A caption describing the table.
+531c523
+<       Figure 3: A caption describing the figure describing the table.
+---
+>        Figure 3: A caption describing the figure describing the table.
+553,556c545,547
+<    reference use.  See for instance
+<    This anchoring is completely handled from within the "xslt".  Note
+<    that duplicate anchors are an XML validation error which will make
+<    "xml2rfc" fail.
+---
+>    reference use.  See for instance This anchoring is completely handled
+>    from within the "xslt".  Note that duplicate anchors are an XML
+>    validation error which will make "xml2rfc" fail.
+591a583
+> 
+640,641c632,633
+<    [RFC4641]  Kolkman, O. and R. Gieben, "DNSSEC Operational Practices",
+<               RFC 4641, September 2006.
+---
+>    [RFC4641]  Kolkman, O. and R.  Gieben, "DNSSEC Operational
+>               Practices", RFC 4641, September 2006.
+645c637
+<    [1] http://xml.resource.org/experimental
+---
+>    [1] <http://xml.resource.org/experimental>
+647c639
+<    [2] http://pypi.python.org/pypi/xml2rfc/
+---
+>    [2] <http://pypi.python.org/pypi/xml2rfc/>
+649,650c641,642
+<    [3] http://daringfireball.net/projects/markdown/
+<    [4] http://johnmacfarlane.net/pandoc/
+---
+>    [3] <http://daringfireball.net/projects/markdown/> [4]
+>    <http://johnmacfarlane.net/pandoc/>
+652c644
+<    [5] https://github.com/miekg/pandoc2rfc
+---
+>    [5] <https://github.com/miekg/pandoc2rfc>
+654c646
+<    [6] http://johnmacfarlane.net/pandoc/README.html
+---
+>    [6] <http://johnmacfarlane.net/pandoc/README.html>
+656c648
+<    [7] http://johnmacfarlane.net/pandoc/README.html
+---
+>    [7] <http://johnmacfarlane.net/pandoc/README.html>
+658c650
+<    [8] http://miek.nl
+---
+>    [8] <http://miek.nl>
+680,681c672
+<    A verbatim code block
+<    jkasjksajassjasjsajsajkas
+---
+>    A verbatim code block jkasjksajassjasjsajsajkas
+723,725c714,715
+<    Another item to explain:  More explaining.
+< 
+<       Multiple paragraphs in such a list.
+---
+>    Another item to explain:  More explaining.  Multiple paragraphs in
+>       such a list.
+751,753c741
+<    1.  More
+< 
+<        Item to explain:  Explanation ...
+---
+>    1.  More Item to explain: Explanation ...
+773c761
+<    4.  Final item.
+---
+>    1.  Final item.
+776d763
+< 
+787c774
+<    i.    Item 1
+---
+>    a.  Item 1
+789c776
+<    ii.   Item 2
+---
+>    b.  Item 2
+837c824
+<    Item2:  Another description
+---
+>       Item2:  Another description
+841,844c828
+<    1.  First Item
+<    2.  Second item
+< 
+<    3.  Third item
+---
+>    1.  First Item 2.  Second item
+846c830
+<        A paragraph that comes first
+---
+>    1.  Third item A paragraph that comes first
+848c832
+<        A.  But what do you know
+---
+>        A. But what do you know
+850c834
+<        B.  This is another list
+---
+>        B. This is another list
+854,860c838,845
+<                   +--------+-------+---------+----------+
+<                   |  Right | Left  |  Center | Default  |
+<                   +--------+-------+---------+----------+
+<                   |     12 | 12    |    12   | 12       |
+<                   |    123 | 123   |   123   | 123      |
+<                   |      1 | 1     |    1    | 1        |
+<                   +--------+-------+---------+----------+
+---
+>                     +-------+------+--------+---------+
+>                     | Right | Left | Center | Default |
+>                     +-------+------+--------+---------+
+>                     | 12    | 12   | 12     | 12      |
+>                     | 123   | 123  | 123    | 123     |
+>                     | 1     | 1    | 1      | 1       |
+>                     |       |      |        |         |
+>                     +-------+------+--------+---------+
+864,873c849,863
+<    +-----------+-----------+---------------+---------------------------+
+<    |  Centered | Default   | Right Aligned | Left Aligned              |
+<    |   Header  | Aligned   |               |                           |
+<    +-----------+-----------+---------------+---------------------------+
+<    |   First   | row       |          12.0 | Example of a row that     |
+<    |           |           |               | spans multiple lines.     |
+<    |   Second  | row       |           5.0 | Here's another one. Note  |
+<    |           |           |               | the blank line between    |
+<    |           |           |               | rows.                     |
+<    +-----------+-----------+---------------+---------------------------+
+---
+>    +---------------+---------------+--------------+--------------------+
+>    | Centered      | Default       | Right        | Left Aligned       |
+>    | Header        | Aligned       | Aligned      |                    |
+>    +---------------+---------------+--------------+--------------------+
+>    | First         | row           | 12.0         | Example of a row   |
+>    |               |               |              | that               |
+>    |               |               |              | spans multiple     |
+>    |               |               |              | lines.             |
+>    | Second        | row           | 5.0          | Here's another     |
+>    |               |               |              | one. Note          |
+>    |               |               |              | the blank line     |
+>    |               |               |              | between            |
+>    |               |               |              | rows.              |
+>    |               |               |              |                    |
+>    +---------------+---------------+--------------+--------------------+
+878,883c868,874
+<           +---------------+---------------+--------------------+
+<           | Fruit         | Price         | Advantages         |
+<           +---------------+---------------+--------------------+
+<           | Bananas       | $1.34         | built-in wrapper   |
+<           | Oranges       | $2.10         | cures scurvy       |
+<           +---------------+---------------+--------------------+
+---
+>                   +---------+-------+------------------+
+>                   | Fruit   | Price | Advantages       |
+>                   +---------+-------+------------------+
+>                   | Bananas | $1.34 | built-in wrapper |
+>                   | Oranges | $2.10 | cures scurvy     |
+>                   |         |       |                  |
+>                   +---------+-------+------------------+
+915,918c906
+<    This is a figure
+<    This is a figure
+<    This is a figure
+<    This is a figure
+---
+>    This is a figure This is a figure This is a figure This is a figure
+920a909
+> 
+926,927c915
+<    This is a figure
+<    This is a figure
+---
+>    This is a figure This is a figure
+929c917
+<                      Figure 5: A non centered figure.
+---
+>       Figure 5: A non centered figure.
+933,935c921,922
+<    This is a figure with a title
+<    This is a figure with a title
+<    @title: and here it is: a title, don't mess it up *
+---
+>    This is a figure with a title This is a figure with a title @title:
+>    and here it is: a title, don't mess it up *
+943,951c930
+<    L
+<       list
+<          default markers  18
+<          Uppercase Letters  18
+< 
+<    T
+<       table
+<          grid  20
+<          simple  19
+---
+>       list default markers 18 Uppercase Letters 18
+953c932
+< Author's Address
+---
+>       table grid 20 simple 19
+954a934
+> Author's Address

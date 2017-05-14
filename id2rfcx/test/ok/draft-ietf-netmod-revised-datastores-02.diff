@@ -1,0 +1,214 @@
+78,80c78,80
+<      7.1.  Updates to the IETF XML Registry  . . . . . . . . . . . .  20
+<      7.2.  Updates to the YANG Module Names Registry . . . . . . . .  20
+<    8.  Security Considerations . . . . . . . . . . . . . . . . . . .  20
+---
+>      7.1.  Updates to the IETF XML Registry  . . . . . . . . . . . .  21
+>      7.2.  Updates to the YANG Module Names Registry . . . . . . . .  21
+>    8.  Security Considerations . . . . . . . . . . . . . . . . . . .  21
+82,83c82,83
+<    10. References  . . . . . . . . . . . . . . . . . . . . . . . . .  21
+<      10.1.  Normative References . . . . . . . . . . . . . . . . . .  21
+---
+>    10. References  . . . . . . . . . . . . . . . . . . . . . . . . .  22
+>      10.1.  Normative References . . . . . . . . . . . . . . . . . .  22
+86,89c86,89
+<      A.1.  Define which YANG modules can be used in the datastore  .  23
+<      A.2.  Define which subset of YANG-modeled data applies  . . . .  23
+<      A.3.  Define how data is actualized . . . . . . . . . . . . . .  23
+<      A.4.  Define which protocols can be used  . . . . . . . . . . .  23
+---
+>      A.1.  Define which YANG modules can be used in the datastore  .  24
+>      A.2.  Define which subset of YANG-modeled data applies  . . . .  24
+>      A.3.  Define how data is actualized . . . . . . . . . . . . . .  24
+>      A.4.  Define which protocols can be used  . . . . . . . . . . .  24
+91,101c91,101
+<    Appendix B.  Ephemeral Dynamic Datastore Example  . . . . . . . .  24
+<    Appendix C.  Example Data . . . . . . . . . . . . . . . . . . . .  25
+<      C.1.  System Example  . . . . . . . . . . . . . . . . . . . . .  26
+<      C.2.  BGP Example . . . . . . . . . . . . . . . . . . . . . . .  28
+<        C.2.1.  Datastores  . . . . . . . . . . . . . . . . . . . . .  30
+<        C.2.2.  Adding a Peer . . . . . . . . . . . . . . . . . . . .  30
+<        C.2.3.  Removing a Peer . . . . . . . . . . . . . . . . . . .  31
+<      C.3.  Interface Example . . . . . . . . . . . . . . . . . . . .  32
+<        C.3.1.  Pre-provisioned Interfaces  . . . . . . . . . . . . .  32
+<        C.3.2.  System-provided Interface . . . . . . . . . . . . . .  33
+<    Authors' Addresses  . . . . . . . . . . . . . . . . . . . . . . .  34
+---
+>    Appendix B.  Ephemeral Dynamic Datastore Example  . . . . . . . .  25
+>    Appendix C.  Example Data . . . . . . . . . . . . . . . . . . . .  27
+>      C.1.  System Example  . . . . . . . . . . . . . . . . . . . . .  27
+>      C.2.  BGP Example . . . . . . . . . . . . . . . . . . . . . . .  29
+>        C.2.1.  Datastores  . . . . . . . . . . . . . . . . . . . . .  31
+>        C.2.2.  Adding a Peer . . . . . . . . . . . . . . . . . . . .  31
+>        C.2.3.  Removing a Peer . . . . . . . . . . . . . . . . . . .  32
+>      C.3.  Interface Example . . . . . . . . . . . . . . . . . . . .  33
+>        C.3.1.  Pre-provisioned Interfaces  . . . . . . . . . . . . .  33
+>        C.3.2.  System-provided Interface . . . . . . . . . . . . . .  34
+>    Authors' Addresses  . . . . . . . . . . . . . . . . . . . . . . .  35
+266,270c266,270
+<    Implementation experience and requests from operators
+<    [I-D.ietf-netmod-opstate-reqs], [I-D.openconfig-netmod-opstate]
+<    indicate that the datastore model initially designed for NETCONF and
+<    refined by YANG needs to be extended.  In particular, the notion of
+<    intended configuration and applied configuration has developed.
+---
+>    Implementation experience and requests from operators [I-D.ietf-
+>    netmod-opstate-reqs], [I-D.openconfig-netmod-opstate] indicate that
+>    the datastore model initially designed for NETCONF and refined by
+>    YANG needs to be extended.  In particular, the notion of intended
+>    configuration and applied configuration has developed.
+699d698
+< 
+747d745
+< 
+895,901c893,901
+<       URI: urn:ietf:params:xml:ns:yang:ietf-datastores
+<       Registrant Contact: The IESG.
+<       XML: N/A, the requested URI is an XML namespace.
+< 
+<       URI: urn:ietf:params:xml:ns:yang:ietf-origin
+<       Registrant Contact: The IESG.
+<       XML: N/A, the requested URI is an XML namespace.
+---
+>    URI: urn:ietf:params:xml:ns:yang:ietf-datastores
+> 
+>       Registrant Contact: The IESG.  XML: N/A, the requested URI is an
+>       XML namespace.
+> 
+>    URI: urn:ietf:params:xml:ns:yang:ietf-origin
+> 
+>       Registrant Contact: The IESG.  XML: N/A, the requested URI is an
+>       XML namespace.
+909,917c909,913
+<       name:         ietf-datastores
+<       namespace:    urn:ietf:params:xml:ns:yang:ietf-datastores
+<       prefix:       ds
+<       reference:    RFC XXXX
+< 
+<       name:         ietf-origin
+<       namespace:    urn:ietf:params:xml:ns:yang:ietf-origin
+<       prefix:       or
+<       reference:    RFC XXXX
+---
+>    name:  ietf-datastores namespace: urn:ietf:params:xml:ns:yang:ietf-
+>       datastores prefix: ds reference: RFC XXXX
+> 
+>    name:  ietf-origin namespace: urn:ietf:params:xml:ns:yang:ietf-origin
+>       prefix: or reference: RFC XXXX
+929,930c925,926
+<    [I-D.wilton-netmod-opstate-yang], [I-D.ietf-netmod-opstate-reqs],
+<    [I-D.kwatsen-netmod-opstate], [I-D.openconfig-netmod-opstate]) and
+---
+>    [I-D.wilton-netmod-opstate-yang], [I-D.ietf-netmod-opstate-reqs], [I-
+>    D.kwatsen-netmod-opstate], [I-D.openconfig-netmod-opstate]) and
+963c959
+<               and A. Bierman, Ed., "Network Configuration Protocol
+---
+>               and A.  Bierman, Ed., "Network Configuration Protocol
+972,973c968,969
+<               7952, DOI 10.17487/RFC7952, August 2016,
+<               <http://www.rfc-editor.org/info/rfc7952>.
+---
+>               7952, DOI 10.17487/RFC7952, August 2016, <http://www.rfc-
+>               editor.org/info/rfc7952>.
+975c971
+<    [RFC8040]  Bierman, A., Bjorklund, M., and K. Watsen, "RESTCONF
+---
+>    [RFC8040]  Bierman, A., Bjorklund, M., and K.  Watsen, "RESTCONF
+982c978,979
+<               Bjorklund, M. and L. Lhotka, "Operational Data in NETCONF
+---
+> 
+>               Bjorklund, M. and L.  Lhotka, "Operational Data in NETCONF
+987c984
+<               Watsen, K. and T. Nadeau, "Terminology and Requirements
+---
+>               Watsen, K. and T.  Nadeau, "Terminology and Requirements
+991a989
+> 
+998,1000c996,1000
+<               Shakir, R., Shaikh, A., and M. Hines, "Consistent Modeling
+<               of Operational State Data in YANG", draft-openconfig-
+<               netmod-opstate-01 (work in progress), July 2015.
+---
+> 
+>               Shakir, R., Shaikh, A., and M.  Hines, "Consistent
+>               Modeling of Operational State Data in YANG", draft-
+>               openconfig- netmod-opstate-01 (work in progress), July
+>               2015.
+1002a1003
+> 
+1008,1009c1009,1010
+<               DOI 10.17487/RFC3688, January 2004,
+<               <http://www.rfc-editor.org/info/rfc3688>.
+---
+>               DOI 10.17487/RFC3688, January 2004, <http://www.rfc-
+>               editor.org/info/rfc3688>.
+1013,1014c1014,1015
+<               DOI 10.17487/RFC6020, October 2010,
+<               <http://www.rfc-editor.org/info/rfc6020>.
+---
+>               DOI 10.17487/RFC6020, October 2010, <http://www.rfc-
+>               editor.org/info/rfc6020>.
+1235a1237
+> 
+1239c1241
+<      <hostname or:origin="or:dynamic">bar</hostname>
+---
+>        <hostname or:origin="or:dynamic">bar</hostname>
+1317a1320
+> 
+1454,1459c1457,1464
+<      <interfaces>
+<        <interface>
+<          <name>et-0/0/0</name>
+<          <description>Test interface</description>
+<        </interface>
+<      </interfaces>
+---
+>       <interfaces>
+> 
+>         <interface> <name>et-0/0/0</name> <description>Test
+>         interface</description>
+> 
+>         </interface>
+> 
+>       </interfaces>
+1470,1476c1475,1483
+<      <interfaces origin="or:intended">
+<        <interface origin="or:intended">
+<          <name origin="or:intended">et-0/0/0</name>
+<          <description origin="or:intended">Test interface</description>
+<          <mtu origin="or:system">1500</mtu>
+<        </interface>
+<      </interfaces>
+---
+>       <interfaces origin="or:intended">
+> 
+>         <interface origin="or:intended"> <name origin="or:intended">et-
+>         0/0/0</name> <description origin="or:intended">Test
+>         interface</description> <mtu origin="or:system">1500</mtu>
+> 
+>         </interface>
+> 
+>       </interfaces>
+1503,1509c1510,1519
+<      <interfaces origin="or:intended">
+<        <interface origin="or:intended">
+<          <name origin="or:intended">lo0</name>
+<          <description origin="or:intended">loopback</description>
+<          <ipv4-address origin="or:system">127.0.0.1</ipv4-address>
+<        </interface>
+<      </interfaces>
+---
+>       <interfaces origin="or:intended">
+> 
+>         <interface origin="or:intended"> <name
+>         origin="or:intended">lo0</name> <description
+>         origin="or:intended">loopback</description> <ipv4-address
+>         origin="or:system">127.0.0.1</ipv4-address>
+> 
+>         </interface>
+> 
+>       </interfaces>

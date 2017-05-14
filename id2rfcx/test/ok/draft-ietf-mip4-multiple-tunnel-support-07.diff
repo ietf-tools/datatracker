@@ -1,0 +1,152 @@
+63,84c63,85
+<    1.  Introduction . . . . . . . . . . . . . . . . . . . . . . . . .  3
+<    2.  Conventions & Terminology  . . . . . . . . . . . . . . . . . .  3
+<      2.1.  Conventions  . . . . . . . . . . . . . . . . . . . . . . .  3
+<      2.2.  Terminology  . . . . . . . . . . . . . . . . . . . . . . .  3
+<    3.  Solution Overview  . . . . . . . . . . . . . . . . . . . . . .  4
+<      3.1.  Example Call Flow  . . . . . . . . . . . . . . . . . . . .  5
+<    4.  Message Extensions . . . . . . . . . . . . . . . . . . . . . .  6
+<      4.1.  Multipath Extension  . . . . . . . . . . . . . . . . . . .  6
+<      4.2.  Flow-Binding Extension . . . . . . . . . . . . . . . . . .  9
+<      4.3.  New Error Codes for Registration Reply . . . . . . . . . . 11
+<    5.  Protocol Operation . . . . . . . . . . . . . . . . . . . . . . 11
+<      5.1.  Mobile Node Considerations . . . . . . . . . . . . . . . . 11
+<      5.2.  Home Agent Considerations  . . . . . . . . . . . . . . . . 13
+<    6.  Routing Considerations . . . . . . . . . . . . . . . . . . . . 14
+<    7.  Protocol Configuration Variables . . . . . . . . . . . . . . . 14
+<    8.  IANA Considerations  . . . . . . . . . . . . . . . . . . . . . 15
+<    9.  Security Considerations  . . . . . . . . . . . . . . . . . . . 15
+<    10. Contributors . . . . . . . . . . . . . . . . . . . . . . . . . 16
+<    11. Acknowledgements . . . . . . . . . . . . . . . . . . . . . . . 16
+<    12. References . . . . . . . . . . . . . . . . . . . . . . . . . . 16
+<      12.1. Normative References . . . . . . . . . . . . . . . . . . . 16
+<      12.2. Informative References . . . . . . . . . . . . . . . . . . 17
+---
+>    1.  Introduction  . . . . . . . . . . . . . . . . . . . . . . . .   2
+>    2.  Conventions & Terminology . . . . . . . . . . . . . . . . . .   3
+>      2.1.  Conventions . . . . . . . . . . . . . . . . . . . . . . .   3
+>      2.2.  Terminology . . . . . . . . . . . . . . . . . . . . . . .   3
+>    3.  Solution Overview . . . . . . . . . . . . . . . . . . . . . .   4
+>      3.1.  Example Call Flow . . . . . . . . . . . . . . . . . . . .   5
+>    4.  Message Extensions  . . . . . . . . . . . . . . . . . . . . .   6
+>      4.1.  Multipath Extension . . . . . . . . . . . . . . . . . . .   6
+>      4.2.  Flow-Binding Extension  . . . . . . . . . . . . . . . . .   8
+>      4.3.  New Error Codes for Registration Reply  . . . . . . . . .  11
+>    5.  Protocol Operation  . . . . . . . . . . . . . . . . . . . . .  11
+>      5.1.  Mobile Node Considerations  . . . . . . . . . . . . . . .  11
+>      5.2.  Home Agent Considerations . . . . . . . . . . . . . . . .  13
+>    6.  Routing Considerations  . . . . . . . . . . . . . . . . . . .  13
+>    7.  Protocol Configuration Variables  . . . . . . . . . . . . . .  14
+>    8.  IANA Considerations . . . . . . . . . . . . . . . . . . . . .  14
+>    9.  Security Considerations . . . . . . . . . . . . . . . . . . .  15
+>    10. Contributors  . . . . . . . . . . . . . . . . . . . . . . . .  16
+>    11. Acknowledgements  . . . . . . . . . . . . . . . . . . . . . .  16
+>    12. References  . . . . . . . . . . . . . . . . . . . . . . . . .  16
+>      12.1.  Normative References . . . . . . . . . . . . . . . . . .  16
+>      12.2.  Informative References . . . . . . . . . . . . . . . . .  16
+>    Authors' Addresses  . . . . . . . . . . . . . . . . . . . . . . .  17
+131a133
+> 
+188,195c190,197
+<    +-------+----------------------+------------------------------------+
+<    | Flow  | CoA/Tunnel/BID       | Negotiated Flow Policy             |
+<    | Id    |                      |                                    |
+<    +-------+----------------------+------------------------------------+
+<    | 1.    | CoA-1/Tunnel-1/BID-1 | All SIP Flows over WiFI            |
+<    | 2.    | CoA-2/Tunnel-2/BID-2 | All HTTP Flows over LTE            |
+<    | 3.    | CoA-3/Tunnel-3/BID-3 | All SSH Flows over CDMA            |
+<    +-------+----------------------+------------------------------------+
+---
+>        +---------+----------------------+-------------------------+
+>        | Flow Id | CoA/Tunnel/BID       | Negotiated Flow Policy  |
+>        +---------+----------------------+-------------------------+
+>        | 1.      | CoA-1/Tunnel-1/BID-1 | All SIP Flows over WiFI |
+>        | 2.      | CoA-2/Tunnel-2/BID-2 | All HTTP Flows over LTE |
+>        | 3.      | CoA-3/Tunnel-3/BID-3 | All SSH Flows over CDMA |
+>        |         |                      |                         |
+>        +---------+----------------------+-------------------------+
+224d225
+< 
+388c389
+<       Sub-Type
+---
+>    Sub-Type
+390,391c391
+<          This field MUST be set to a value of 1 (Flow-Binding
+<          Extension).
+---
+>       This field MUST be set to a value of 1 (Flow-Binding Extension).
+399d398
+< 
+412a412
+>    |         |       |                                                 |
+415c415
+<                  Table 2: Action Rules for the Traffic Selector
+---
+>               Table 2: Action Rules for the Traffic Selector
+479,480c479,480
+<       agent MUST register this care-of address as one of the many
+<       care-of addresses through which the mobile node's home address is
+---
+>       agent MUST register this care-of address as one of the many care-
+>       of addresses through which the mobile node's home address is
+619c619,620
+<       that the multipath support is enabled.
+---
+> 
+>          that the multipath support is enabled.
+622c623,624
+<       support is disabled.
+---
+> 
+>          support is disabled.
+634c636
+<       Messages", at < http://www.iana.org/assignments/mobileip-numbers/
+---
+>       Messages", at <http://www.iana.org/assignments/mobileip-numbers/
+645c647
+<       Messages", at < http://www.iana.org/assignments/mobileip-numbers/
+---
+>       Messages", at <http://www.iana.org/assignments/mobileip-numbers/
+706c708
+<               and B. Patil, "Proxy Mobile IPv6", RFC 5213, August 2008.
+---
+>               and B.  Patil, "Proxy Mobile IPv6", RFC 5213, August 2008.
+708,709c710,711
+<    [RFC5944]  Perkins, C., "IP Mobility Support for IPv4, Revised",
+<               RFC 5944, November 2010.
+---
+>    [RFC5944]  Perkins, C., "IP Mobility Support for IPv4, Revised", RFC
+>               5944, November 2010.
+711,713c713,715
+<    [RFC6088]  Tsirtsis, G., Giarreta, G., Soliman, H., and N. Montavont,
+<               "Traffic Selectors for Flow Bindings", RFC 6088,
+<               January 2011.
+---
+>    [RFC6088]  Tsirtsis, G., Giarreta, G., Soliman, H., and N.
+>               Montavont, "Traffic Selectors for Flow Bindings", RFC
+>               6088, January 2011.
+717c719
+<    [RFC3753]  Manner, J. and M. Kojo, "Mobility Related Terminology",
+---
+>    [RFC3753]  Manner, J. and M.  Kojo, "Mobility Related Terminology",
+728c730
+<    EMail: sgundave@cisco.com
+---
+>    Email: sgundave@cisco.com
+736c738
+<    EMail: kleung@cisco.com
+---
+>    Email: kleung@cisco.com
+741c743
+<    EMail: tsirtsis@qualcomm.com
+---
+>    Email: tsirtsis@qualcomm.com
+746c748
+<    EMail: hesham@elevatemobile.com
+---
+>    Email: hesham@elevatemobile.com
+755c757
+<    EMail: alexandru.petrescu@cea.fr
+---
+>    Email: alexandru.petrescu@cea.fr

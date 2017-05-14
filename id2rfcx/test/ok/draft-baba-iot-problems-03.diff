@@ -1,0 +1,27 @@
+78,81c78
+<                related    threats (IoT Safety) . . . . . . . . . . .   4
+<          2.1.1.1.  Safety of body/life . . . . . . . . . . . . . . .   5
+<          2.1.1.2.  Safety of equipment . . . . . . . . . . . . . . .   5
+<          2.1.1.3.  Proper performance of equipment . . . . . . . . .   5
+---
+>                related threats (IoT Safety)  . . . . . . . . . . . .   4
+85,86c82,83
+<            data    management and data quantity  . . . . . . . . . .   7
+<        2.2.1.  Traffic patterns  . . . . . . . . . . . . . . . . . .   7
+---
+>            data management and data quantity . . . . . . . . . . . .   6
+>        2.2.1.  Traffic patterns  . . . . . . . . . . . . . . . . . .   6
+93c90
+<            equipment    updates  . . . . . . . . . . . . . . . . . .   8
+---
+>            equipment updates . . . . . . . . . . . . . . . . . . . .   8
+99c96
+<        2.5.2.  Speed of standardization  . . . . . . . . . . . . . .  10
+---
+>        2.5.2.  Speed of standardization  . . . . . . . . . . . . . .   9
+112,113c109,110
+<    3.  Non-technical Challenges  . . . . . . . . . . . . . . . . . .  13
+<      3.1.  Changing the product paradigm . . . . . . . . . . . . . .  13
+---
+>    3.  Non-technical Challenges  . . . . . . . . . . . . . . . . . .  12
+>      3.1.  Changing the product paradigm . . . . . . . . . . . . . .  12

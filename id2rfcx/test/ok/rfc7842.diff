@@ -1,0 +1,14 @@
+7,8c7,8
+<     Requirements for Improvements to the IETF Email List Archiving,
+<                   Web-Based Browsing, and Search Tool
+---
+>   Requirements for Improvements to the IETF Email List Archiving, Web-
+>                     Based Browsing, and Search Tool
+271,273c271,273
+<               and for Providing Web-Based Browsing and Searching",
+<               RFC 6778, DOI 10.17487/RFC6778, October 2012,
+<               <http://www.rfc-editor.org/info/rfc6778>.
+---
+>               and for Providing Web-Based Browsing and Searching", RFC
+>               6778, DOI 10.17487/RFC6778, October 2012, <http://www.rfc-
+>               editor.org/info/rfc6778>.
