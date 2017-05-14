@@ -20,6 +20,7 @@ testfiles= \
 textfiles= $(addprefix test/in/, $(testfiles))
 resfiles = $(addprefix test/out/, $(testfiles))
 xmlfiles = $(addsuffix .xml, $(basename $(resfiles)))
+diffiles = $(addsuffix .diff, $(basename $(resfiles)))
 tests    = $(addsuffix .test, $(basename $(resfiles)))
 
 
@@ -49,7 +50,7 @@ env/bin/id2xml:	id2xml/parser.py
 # ------------------------------------------------------------------------
 # test
 
-test:	env/bin/id2xml $(resfiles) $(tests) 
+test:	env/bin/id2xml $(resfiles) $(diffiles) $(tests) 
 
 infiles: $(textfiles)
 
@@ -61,7 +62,9 @@ test/in/rfc%.txt:
 
 test/out/%.test:	test/ok/%.diff test/out/%.diff
 #	cp $(word 2,$^) $(word 1,$^)
-	test `wc -l < $(word 1,$^)` -ge `wc -l < $(word 2,$^)`
+	@oklen=`wc -l < $(word 1,$^)`; outlen=`wc -l < $(word 2,$^)`; \
+	printf "Diff now / ok:  %-52s %4s / %4s\n" $(basename $(@F)) $$outlen $$oklen; \
+	test $$oklen -ge $$outlen;
 
 test/in/%.raw: test/in/%.txt
 	id2xml --strip-only $< -o $@
