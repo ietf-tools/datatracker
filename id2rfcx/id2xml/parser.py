@@ -324,7 +324,7 @@ def wrap(s):
     wrapped = []
     # Preserve any indent (after the general indent)
     for line in lines:
-        prev_indent = ''
+        prev_indent = '   '
         indent_match = re.search('^(\W+)', line)
         # Change the existing wrap indent to the original one
         if (indent_match):
