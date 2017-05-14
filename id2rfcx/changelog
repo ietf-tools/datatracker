@@ -1,3 +1,31 @@
+id2xml (0.9.2) ietf; urgency=low
+
+  This pre-release fixes additional issues reported by rjsparks@nostrum.com
+  during initial testing.  From the changelog:
+
+  * Added makefile rules to make diff comparison tests between original and 
+    generated .txt files, and some baseline diffs.
+
+  * Tweaked script message formatting slightly
+
+  * Added some config default values.  Tweaked the command-line switches.  
+    Generalized the handling of recognized non-numbered section names, 
+    including some code refactoring and simplification.  Added recognition of 
+    additional reference formats in the reference sections.  Added debug output 
+    methods which can be selectively switched on or off, per parser entity 
+    function, from the command line; with some related refactoring of the 
+    options handling.
+
+  * Added support for .id2xmlrc config files.  Added support for 
+    symrefs='no'.  Fixed a bug which could cause a divide-by-zero error.  Added 
+    --debug and --quiet options.  Changed conversion error messages to only 
+    show traceback when --debug is set.  Added handling of Figure and Table 
+    titles that only number the figure/table, without providing a title text.
+
+  * Added some fixes for older documents, and documents with many authors.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  15 May 2017 00:22:56 +0200
+
 id2xml (0.9.1) ietf; urgency=low
 
   This pre-release fixes some issues reported by rjsparks@nostrum.com
