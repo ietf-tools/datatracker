@@ -63,10 +63,10 @@ test/in/rfc%.txt:
 
 test/out/%.test:	test/ok/%.diff test/out/%.diff
 #	cp $(word 2,$^) $(word 1,$^)
-	@oklen=`wc -l < $(word 1,$^)`; outlen=`wc -l < $(word 2,$^)`;	\
+	@oklen=`grep '^<' $(word 1,$^) | wc -l`; outlen=`grep '^<' $(word 2,$^) | wc -l`;	\
 	totlen=`wc -l < test/in/$(basename $(@F)).txt`;			\
 	ratio=$$(( outlen * 100 / totlen ));				\
-	printf "Diff now/ok: %-50s %2s%%  %4s / %4s\n" $(basename $(@F)) $$ratio $$outlen $$oklen ; \
+	printf "Changed now/ok: %-48s %2s%%  %4s /%4s\n" $(basename $(@F)) $$ratio $$outlen $$oklen ; \
 	test $$oklen -ge $$outlen;
 
 test/in/%.raw: test/in/%.txt
