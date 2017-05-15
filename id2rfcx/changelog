@@ -1,3 +1,14 @@
+id2xml (0.9.3) ietf; urgency=low
+
+  * Added a mkrelease script.
+
+  * Tweaked the test summary. Corrected the revision number.
+
+  * Fixed some bugs in the manpage generation.  Updated the manifest and
+    cleaned up the repository content.  Bumped the version.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  15 May 2017 22:17:20 +0000
+
 id2xml (0.9.2) ietf; urgency=low
 
   This pre-release fixes additional issues reported by rjsparks@nostrum.com
