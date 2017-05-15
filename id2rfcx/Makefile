@@ -26,13 +26,14 @@ tests    = $(addsuffix .test, $(basename $(resfiles)))
 
 all: id2xml/id2xml.1.gz install upload
 
-%.1: id2xml/parser.py
-	./$< -h | sed -r -e 's/^optional arguments:/OPTIONS/' \
-			-e 's/^usage:/SYNOPSIS\n/' \
-			-e '$!N;s/\n                        /  /' \
-			-e 's/positional arguments:/ARGUMENTS/' \
-			-e 's/^  -/\n  -/' \
-		| txt2man -s1 -r'RFC Format Tools' -t $< > $@
+%.1: id2xml/parser.py id2xml/__init__.py
+	id2xml -h | sed -e 's/^optional arguments:/OPTIONS/'	\
+			-e 's/^usage:/SYNOPSIS\n/'		\
+			-e 's/^positional arguments:/ARGUMENTS/'\
+			-e 's/^  -/\n  -/'			\
+		  | sed -e '/^  -/N;s/\n         */  /'		\
+		  | txt2man -s1 -r'RFC Format Tools' -t $< > $@
+
 
 %.1.gz:	%.1
 	gzip < $< > $@
@@ -84,12 +85,19 @@ test/out/%.xml:	test/in/%.txt id2xml/parser.py
 
 # ------------------------------------------------------------------------
 
-dist:	id2xml/*
+dist/id2xml-$(version).tar.gz: setup.py id2xml/*
 	python setup.py -q sdist
-	gpg --detach-sign -a dist/id2xml-$(version).tar.gz
+
+dist/id2xml-$(version)-py27-none-any.whl: setup.py id2xml/*
 	python setup.py -q bdist_wheel --python-tag py27
-	gpg --detach-sign -a dist/id2xml-$(version)-py27-none-any.whl
 
+dist/%.asc: dist/%
+	gpg --detach-sign -a $<
 
-upload:	dist
+sdist:		dist/id2xml-$(version).tar.gz			dist/id2xml-$(version).tar.gz.asc
+bdist_wheel:	dist/id2xml-$(version)-py27-none-any.whl	dist/id2xml-$(version)-py27-none-any.whl.asc
+
+dist:	test sdist bdist_wheel
+
+upload:	install test dist
 	twine upload dist/id2xml-$(version)* -r pypi
