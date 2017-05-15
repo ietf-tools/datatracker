@@ -3,6 +3,7 @@ include LICENSE
 include Makefile
 include README.rst
 include requirements.txt
+include id2xml/id2xml.1.gz
 include id2xml/data/v2.rnc
 include id2xml/data/v2.rng
 include id2xml/data/v3.rnc
