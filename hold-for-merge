@@ -1,7 +1,5 @@
 # -*- conf-mode -*-
 
-/personal/rjs/6.49.2.dev0@13290		# Wait for 13289
-/personal/rjs/6.49.2.dev0@13289		# Added new models, hold the rest to a follow-up release
 /personal/lars/6.48.2.dev0@13124	# fails drag-and-drop test
 /branch/proceedings/6.29.1.dev0@11850	# Merged into /branch/proceedings/6.30.1.dev0, will be merged from there
 /branch/proceedings/6.29.1.dev0@11856	# Merged into /branch/proceedings/6.30.1.dev0, will be merged from there
