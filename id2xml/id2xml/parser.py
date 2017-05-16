@@ -359,16 +359,20 @@ def strip_pagebreaks(text):
         return page, newpage
     for lineno, line in enumerate(lines):
         line = line.rstrip()
-        if re.search("\[?[Pp]age [0-9ivx]+\]?[ \t\f]*$", line, re.I):
+        match = re.search("(  +)(\S.*\S)(  +)\[?[Pp]age [0-9ivx]+\]?[ \t\f]*$", line, re.I)
+        if match:
+            mid = match.group(2)
+            if not short_title and not mid.startswith('Expires'):
+                short_title = mid
             page, newpage = endpage(page, newpage, line)
             continue
         if re.search("\f", line, re.I):
             page, newpage = begpage(page, newpage)
             continue
         if lineno > 25:
-            regex = "^(Internet.Draft|RFC \d+)( +)(\S.*\S)( +)(Jan|Feb|Mar|March|Apr|April|May|Jun|June|Jul|July|Aug|Sep|Oct|Nov|Dec)[a-z]+ (19[89][0-9]|20[0-9][0-9]) *$"
+            regex = "^(Internet.Draft|RFC \d+)(  +)(\S.*\S)(  +)(Jan|Feb|Mar|March|Apr|April|May|Jun|June|Jul|July|Aug|Sep|Oct|Nov|Dec)[a-z]+ (19[89][0-9]|20[0-9][0-9]) *$"
             match = re.search(regex, line, re.I)
-            if not match is None:
+            if match:
                 #debug.show('line')
                 #debug.show('match')
                 short_title = match.group(3)
@@ -1012,7 +1016,11 @@ class DraftParser():
             self.root.set('updates', ', '.join(updates))
 
         front = Element('front')
-        title = E.title(para2str(lines_title))
+        title = Element('title')
+        title.text = para2str(lines_title)
+        if not self.short_title and len(title.text) > 40:
+            self.short_title = title.text[:40]
+
         if self.short_title and self.short_title.strip() != title.text.strip():
             title.set('abbrev', self.short_title)
         front.append(title)
@@ -1223,7 +1231,7 @@ class DraftParser():
                 self.warn(line.num, "The input document is named '%s' but has an RFC stream type:\n  '%'" % (self.name, line.txt))
         elif self.is_draft and line.txt == 'Internet-Draft':
             # no explicit workgroup.  remember line, and move on
-            workgroup = " "
+            workgroup = ""
             lines = [line]+lines
         else:
             workgroup = line.txt
