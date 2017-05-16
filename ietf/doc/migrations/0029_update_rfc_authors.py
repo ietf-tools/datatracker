@@ -1320,15 +1320,18 @@ def plain_name(person):
 
 def forward(apps, schema_editor):
     Document = apps.get_model('doc','Document')
+    Email = apps.get_model('person', 'Email')
     EditedAuthorsDocEvent = apps.get_model('doc','EditedAuthorsDocEvent')
     today = datetime.date.today().isoformat()
+    print("")                           # don't let tqdm overwrite the migration name
     for rfc_num, addlist, removelist in tqdm(changes):
         rfc = Document.objects.get(docalias__name='rfc%d'%rfc_num)
-        old_authors = ", ".join([plain_name(a.person) for a in rfc.authors.all()])
+        old_authors = ", ".join([plain_name(a.person) for a in rfc.authors.distinct()])
         rfc.documentauthor_set.filter(author__person_id__in=removelist).delete()
         for addr in addlist:
-            rfc.documentauthor_set.create(author_id=addr,order = -1)
-        new_authors = ", ".join([plain_name(a.person) for a in rfc.authors.all()])
+            email = Email.objects.get(address__iexact=addr)
+            rfc.documentauthor_set.create(author_id=email.address, order = -1)
+        new_authors = ", ".join([plain_name(a.person) for a in rfc.authors.distinct()])
         EditedAuthorsDocEvent.objects.create(
             by_id=1, # (System)
             type='edited_authors',
@@ -1340,7 +1343,7 @@ def forward(apps, schema_editor):
 
 def reverse(apps, schema_editor):
     Document = apps.get_model('doc','Document')
-    Document.objects.get(docalias__name='rfc1070').documentauthor_set.all().delete()
+    Document.objects.get(docalias__name='rfc1070').documentauthor_set.distinct().delete()
     pass
 
 class Migration(migrations.Migration):
