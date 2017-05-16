@@ -2166,7 +2166,7 @@ class DraftParser():
         items = normalize_list_block(block)
         #debug.pprint('items')
         indents = indentation_levels(flatten(block))
-        list = Element('list')
+        list = Element('list', style='empty')
         #
         if False:
             debug.pprint('items')
