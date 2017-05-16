@@ -4,6 +4,7 @@ version := $(shell python id2xml/parser.py --version | awk '{print $$2}' )
 testfiles= \
 	draft-baba-iot-problems-03.txt				\
 	draft-ietf-6man-rfc2460bis-11.txt			\
+	draft-ietf-curdle-cms-eddsa-signatures-05.txt		\
 	draft-ietf-httpbis-header-structure-01.txt		\
 	draft-ietf-i2nsf-client-facing-interface-req-01.txt	\
 	draft-ietf-mip4-multiple-tunnel-support-07.txt		\

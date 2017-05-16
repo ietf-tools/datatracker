@@ -1221,6 +1221,10 @@ class DraftParser():
             stream = submission_types[line.txt]
             if self.is_draft and stream != None:
                 self.warn(line.num, "The input document is named '%s' but has an RFC stream type:\n  '%'" % (self.name, line.txt))
+        elif self.is_draft and line.txt == 'Internet-Draft':
+            # no explicit workgroup.  remember line, and move on
+            workgroup = " "
+            lines = [line]+lines
         else:
             workgroup = line.txt
             stream = None
