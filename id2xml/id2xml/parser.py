@@ -1374,9 +1374,9 @@ class DraftParser():
                 match = re.search(regex, txt)
                 if match:
                     author = {
-                        'fullname': match.group(1),
-                        'initials': match.group(2),
-                        'surname':  match.group(3),
+                        'fullname': match.group(1).strip(),
+                        'initials': match.group(2).strip(),
+                        'surname':  match.group(3).strip(),
                     }
                     if is_editor:
                         author['role'] = 'editor'
@@ -2350,7 +2350,7 @@ class DraftParser():
                             editor = author.endswith(ed)
                             if editor:
                                 author = author[:-len(ed)]
-                            surname, initials = author.split(', ', 1)
+                            surname, initials = [ n.strip() for n in author.split(', ', 1) ]
                             e = Element('author', initials=initials, surname=surname, fullname=' '.join([initials, surname]))
                             if editor:
                                 e.set('role', 'editor')
@@ -2360,7 +2360,7 @@ class DraftParser():
                             editor = author.endswith(ed)
                             if editor:
                                 author = author[:-len(ed)]
-                            initials, surname = author.split(None, 1)
+                            initials, surname = [ n.strip() for n in author.split(None, 1) ]
                             e = Element('author', initials=initials, surname=surname, fullname=' '.join([initials, surname]))
                             if editor:
                                 e.set('role', 'editor')

@@ -24,7 +24,7 @@ diffiles = $(addsuffix .diff, $(basename $(resfiles)))
 tests    = $(addsuffix .test, $(basename $(resfiles)))
 
 
-all: id2xml/id2xml.1.gz install upload
+all: install upload
 
 %.1: id2xml/parser.py id2xml/__init__.py
 	id2xml -h | sed -e 's/^optional arguments:/OPTIONS/'	\
@@ -42,7 +42,7 @@ pyflakes:
 	pyflakes id2xml
 
 	
-install:
+install: id2xml/id2xml.1.gz
 	python setup.py -q install
 
 env/bin/id2xml:	id2xml/parser.py
