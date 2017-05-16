@@ -1,3 +1,39 @@
+ietfdb (6.51.0) ietf; urgency=medium
+
+  **Improved RFC Author Information**
+
+  This release provides the second part of the RFC Author information work
+  done by rjsparks@nostrum.com, the data migrations.  Based on manual and
+  automated consolidation of author information from the RFC Editor database,
+  the output from the ietf/utils/draft.py parser, the existing datatracker
+  data, and eyeballing the RFCs, this provides a dramatic increase of the
+  quality of the RFC author information data in the datatracker.
+
+  There are also some bugfixes:
+
+  * Merged in [13337] from rcross@amsl.com:
+    When editing interim meeting request show duration as HH:MM instead of
+    HH:MM:SS.  Fixes #2226.  
+
+  * Merged in [13290] from rjsparks@nostrum.com:
+    This provides the utility used to reconcile the RFC Editor database
+    against what the draft parser returns for document authors.
+
+  * Merged in [13336] from rcross@amsl.com:
+    Fix issue where deferring a ballot causes 500 error in Telechat app.  
+    Fixes #1342.   
+
+  * Merged in the data migrations from [13289] from rjsparks@nostrum.com:
+    Mapped a large number of email addresses found from the RFC Editor
+    database and from parsing RFCs to the right Person objects, and creating
+    Person objects as necessary. Updated the documentauthors set for RFCs
+    based on reconciling what the tracker already knew with the RFC Editor
+    database and the parsing the RFCs. Manually inspected the Updates to
+    ensure no author was inappropriately removed from the set.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  16 May 2017 15:34:37 +0000
+
+
 ietfdb (6.50.1) ietf; urgency=medium
 
   This is a bugfix release, which also introduces some schema changes,
