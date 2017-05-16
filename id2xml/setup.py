@@ -74,7 +74,7 @@ setup(
 
     # Alternatively, if you want to distribute just a my_module.py, uncomment
     # this:
-    #py_modules=["id2xml", "debug"],
+    #py_modules=["debug"],
 
     # List run-time dependencies here.  These will be installed by pip when
     # your project is installed. For an analysis of "install_requires" vs pip's
@@ -95,7 +95,7 @@ setup(
     # installed, specify them here.  If using Python 2.6 or less, then these
     # have to be included in MANIFEST.in as well.
     package_data={
-        'id2xml': ['data/*', 'id2xml.1.gz', ],
+        'id2xml': ['data/*', 'id2xml.1.gz', 'debug.py' ],
     },
 
     # Although 'package_data' is the preferred approach, in some case you may
