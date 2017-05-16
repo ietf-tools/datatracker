@@ -4,6 +4,7 @@ import tempfile
 from django import template
 from django.conf import settings
 from django.template.defaultfilters import linebreaksbr, force_escape
+from django.utils.safestring import mark_safe
 
 import debug           # pyflakes:ignore
 
@@ -70,4 +71,4 @@ def decrypt(string, request, year, plain=False):
 
     if not plain:
         return force_escape(linebreaksbr(out))
-    return wrap_text(force_escape(out))
+    return mark_safe(wrap_text(force_escape(out)))
