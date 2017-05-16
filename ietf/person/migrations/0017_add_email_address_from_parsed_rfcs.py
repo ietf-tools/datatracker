@@ -148,26 +148,39 @@ new_addresses = {
 }
 
 
+known_missing_person_records = [
+    (3150, "Steve Kille"),
+]
+
 def forward(apps,schema_editor):
 
     Email=apps.get_model('person','Email')
+    Person = apps.get_model('person', 'Person')
+
+    for id, name in known_missing_person_records:
+        if not Person.objects.filter(id=id).exists():
+            Person.objects.create(id=id, name=name, ascii=name)
 
     # Sanity check
-    for addr in new_addresses.keys():
+    for addr, id in new_addresses.items():
         if Email.objects.filter(address__iexact=addr).exists():
             raise Exception("%s already exists in the Email table"%addr)
+        if not Person.objects.filter(id=id).exists():
+            raise Exception("ID #%s is missing in the Person table"%id)
 
     for addr in new_addresses.keys():
         Email.objects.create(address=addr,person_id=new_addresses[addr],active=False,primary=False)
 
 def reverse(apps,schema_editor):
     Email=apps.get_model('person','Email')
+    Person = apps.get_model('person', 'Person')    
     #Person=apps.get_model('person','Person')
     #print "new_addresses = {"
     #for addr in sorted(new_addresses.keys()):
     #    print "'%s': %s, # %s"%(addr,new_addresses[addr],Person.objects.get(pk=new_addresses[addr]).name) 
     #print "}"
     Email.objects.filter(address__in=new_addresses.keys()).delete()
+    Person.objects.filter(id__in=[ id for id,name in known_missing_person_records ]).delete()
 
 class Migration(migrations.Migration):
 
