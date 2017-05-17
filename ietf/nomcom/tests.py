@@ -857,6 +857,8 @@ class NomcomViewsTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "alert-success")
         self.assertNotContains(response, "feedbackform")
+        q = PyQuery(response.content)
+        self.assertEqual( int(q("#nominees .badge").text()), Feedback.objects.filter(positions__in=[position],nominees__in=[nominee],type_id='comment').count() )
 
         ## check objects
         feedback = Feedback.objects.filter(positions__in=[position],

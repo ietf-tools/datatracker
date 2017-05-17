@@ -452,6 +452,9 @@ def feedback(request, year, public):
             form.save()
             messages.success(request, 'Your feedback has been registered.')
             form = None
+            counts.setdefault(position.pk,dict())
+            counts[position.pk].setdefault(nominee.pk,0)
+            counts[position.pk][nominee.pk] += 1
     else:
         if nominee and position:
             form = FeedbackForm(nomcom=nomcom, user=request.user, public=public,
