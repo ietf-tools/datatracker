@@ -1741,8 +1741,6 @@ class NoPublicKeyTests(TestCase):
         self.do_common_work(reverse('ietf.nomcom.views.private_feedback_email',kwargs={'year':self.nc.year()}),False)
         # No questionnaire responses
         self.do_common_work(reverse('ietf.nomcom.views.private_questionnaire',kwargs={'year':self.nc.year()}),False)
-        # Warn on edit nomcom
-        self.do_common_work(reverse('ietf.nomcom.views.edit_nomcom',kwargs={'year':self.nc.year()}),True)
 
 class MergePersonTests(TestCase):
     def setUp(self):

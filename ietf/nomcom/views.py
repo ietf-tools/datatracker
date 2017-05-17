@@ -108,11 +108,6 @@ def announcements(request):
 def private_key(request, year):
     nomcom = get_nomcom_by_year(year)
     
-    if request.session.get('NOMCOM_PRIVATE_KEY_%s' % year, None):
-        messages.warning(request, 'You already have a private decryption key set for this session.')
-    else:
-        messages.warning(request, "You don't have a private decryption key set for this session yet")
-
     back_url = request.GET.get('back_to', reverse('ietf.nomcom.views.private_index', None, args=(year, )))
     if request.method == 'POST':
         form = PrivateKeyForm(data=request.POST)
@@ -121,6 +116,12 @@ def private_key(request, year):
             return HttpResponseRedirect(back_url)
     else:
         form = PrivateKeyForm()
+
+    if request.session.get('NOMCOM_PRIVATE_KEY_%s' % year, None):
+        messages.warning(request, 'You already have a private decryption key set for this session.')
+    else:
+        messages.warning(request, "You don't have a private decryption key set for this session yet")
+
     return render(request, 'nomcom/private_key.html',
                               {'nomcom': nomcom,
                                'year': year,
@@ -831,11 +832,6 @@ def edit_nominee(request, year, nominee_id):
 @role_required("Nomcom Chair", "Nomcom Advisor")
 def edit_nomcom(request, year):
     nomcom = get_nomcom_by_year(year)
-
-    if nomcom.public_key:
-        messages.warning(request,  'Previous data will remain encrypted with the old key')
-    else:
-        messages.warning(request, 'This Nomcom does not yet have a public key')
 
     ReminderDateInlineFormSet = inlineformset_factory(parent_model=NomCom,
                                                       model=ReminderDates,
