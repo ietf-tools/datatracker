@@ -1,30 +1,13 @@
-77c77
-<            misconfiguration  . . . . . . . . . . . . . . . . . . . .  12
----
->            misconfiguration  . . . . . . . . . . . . . . . . . . . .  13
-187,189c187
-<    CRUD:  Create, Retrieve, Update, Delete
+188,189c188
 <    FW:  Firewall
 < 
 ---
->    CRUD:  Create, Retrieve, Update, Delete FW: Firewall
-198,199c196,197
-<    NSF:  Network Security Function, defined by
-<       [I-D.ietf-i2nsf-problem-and-use-cases]
----
->    NSF:  Network Security Function, defined by [I-D.ietf-i2nsf-problem-
->       and-use-cases]
-331d328
-< 
-352c349
+>       FW: Firewall
+352c351
 <    b.  Policy management with an explicit management system for control
 ---
 >    a.  Policy management with an explicit management system for control
-392d388
+406d404
 < 
-941a938
+744a743
 > 
-943c940
-<               and J. Jeong, "I2NSF Problem Statement and Use cases",
----
->               and J.  Jeong, "I2NSF Problem Statement and Use cases",

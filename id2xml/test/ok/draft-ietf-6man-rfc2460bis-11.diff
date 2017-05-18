@@ -1,37 +1,3 @@
-73,76c73,76
-<      4.8.  Defining New Extension Headers and Options  . . . . . . .  22
-<    5.  Packet Size Issues  . . . . . . . . . . . . . . . . . . . . .  23
-<    6.  Flow Labels . . . . . . . . . . . . . . . . . . . . . . . . .  24
-<    7.  Traffic Classes . . . . . . . . . . . . . . . . . . . . . . .  24
----
->      4.8.  Defining New Extension Headers and Options  . . . . . . .  23
->    5.  Packet Size Issues  . . . . . . . . . . . . . . . . . . . . .  24
->    6.  Flow Labels . . . . . . . . . . . . . . . . . . . . . . . . .  25
->    7.  Traffic Classes . . . . . . . . . . . . . . . . . . . . . . .  25
-79c79
-<      8.2.  Maximum Packet Lifetime . . . . . . . . . . . . . . . . .  26
----
->      8.2.  Maximum Packet Lifetime . . . . . . . . . . . . . . . . .  27
-81,89c81,89
-<      8.4.  Responding to Packets Carrying Routing Headers  . . . . .  27
-<    9.  IANA Considerations . . . . . . . . . . . . . . . . . . . . .  27
-<    10. Security Considerations . . . . . . . . . . . . . . . . . . .  28
-<    11. Acknowledgments . . . . . . . . . . . . . . . . . . . . . . .  30
-<    12. References  . . . . . . . . . . . . . . . . . . . . . . . . .  30
-<      12.1.  Normative References . . . . . . . . . . . . . . . . . .  30
-<      12.2.  Informative References . . . . . . . . . . . . . . . . .  31
-<    Appendix A.  Formatting Guidelines for Options  . . . . . . . . .  33
-<    Appendix B.  Changes Since RFC2460  . . . . . . . . . . . . . . .  36
----
->      8.4.  Responding to Packets Carrying Routing Headers  . . . . .  28
->    9.  IANA Considerations . . . . . . . . . . . . . . . . . . . . .  28
->    10. Security Considerations . . . . . . . . . . . . . . . . . . .  29
->    11. Acknowledgments . . . . . . . . . . . . . . . . . . . . . . .  31
->    12. References  . . . . . . . . . . . . . . . . . . . . . . . . .  31
->      12.1.  Normative References . . . . . . . . . . . . . . . . . .  31
->      12.2.  Informative References . . . . . . . . . . . . . . . . .  32
->    Appendix A.  Formatting Guidelines for Options  . . . . . . . . .  34
->    Appendix B.  Changes Since RFC2460  . . . . . . . . . . . . . . .  37
 100,129c100,112
 <       o  Expanded Addressing Capabilities
 < 

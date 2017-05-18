@@ -1,13 +1,3 @@
-71c71
-<    8.  IANA Considerations . . . . . . . . . . . . . . . . . . . . .  13
----
->    8.  IANA Considerations . . . . . . . . . . . . . . . . . . . . .  14
-73,74c73,74
-<    10. Acknowledgments . . . . . . . . . . . . . . . . . . . . . . .  14
-<    11. References  . . . . . . . . . . . . . . . . . . . . . . . . .  14
----
->    10. Acknowledgments . . . . . . . . . . . . . . . . . . . . . . .  15
->    11. References  . . . . . . . . . . . . . . . . . . . . . . . . .  15
 252,253c252,253
 <    The endpoint MUST include the "sdp_tls_id" DTLS extension
 <    [I-D.thomson-mmusic-sdp-uks] in the "ClientHello" message when

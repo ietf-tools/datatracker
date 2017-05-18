@@ -26,7 +26,7 @@ COPYRIGHT
 """
 
 
-from __future__ import print_function, unicode_literals
+from __future__ import print_function, unicode_literals, division
 
 import os
 import re
@@ -71,8 +71,11 @@ def run():
     # Parse config file
     # default values
     conf = {
-        'logindent':    4,
-        'debug':        []
+        'logindent':    [4],
+        'trace':        [],
+        'trace_all':    False,
+        'trailing_trace_lines':  10,
+        'trace_tail':   -1,
         }
     for p in ['.', os.environ.get('HOME','.'), '/etc/', ]:
         rcpath = Path(p)
@@ -120,11 +123,14 @@ def run():
                                                                         help="output v2 (RFC 7749) schema")
     parser.add_argument('-3', '--schema-v3', dest='schema', action='store_const', const='v3',
                                                                         help="output v3 (RFC 7991) schema")
-    parser.add_argument('-d', dest='debug', type=commalist, metavar='TAGS',help="a comma-separated list of debug tags")
+    parser.add_argument('-d', '--debug', action='store_true',           help="turn on debugging")
     parser.add_argument('-o', '--output-file', metavar='FILE',          help="set the output file name")
     parser.add_argument('-p', '--output-path', metavar="DIR",           help="set the output directory name")
     parser.add_argument('-q', '--quiet', action='store_true',           help="be more quiet")
     parser.add_argument('-s', '--strip-only', action='store_true',      help="don't convert, only strip headers and footers")
+    parser.add_argument('--start-trace', metavar='LINE', default=None,  help="start debug tracing when matching this line")
+    parser.add_argument('--stop-trace', metavar='LINE', default='^$',   help="stop debug tracing when matching this line")
+    parser.add_argument('--trace', type=commalist, metavar='METHODS',   help="a comma-separated list of methods to trace")
     parser.add_argument('-v', '--version', action='store_true',         help="output version information, then exit")
     parser.add_argument('-V', '--verbose', action='store_true',         help="be (slightly) more verbose")
     parser.set_defaults(schema='v2')
@@ -134,12 +140,9 @@ def run():
     # ----------------------------------------------------------------------
     # The program itself    
 
-    files = options.DRAFT
     if options.version:
         print(program, __version__)
         sys.exit(0)
-
-    from pathlib import Path
 
     if options.output_path and options.output_file:
         die("Mutually exclusive options -o / -p; use one or the other")
@@ -149,7 +152,7 @@ def run():
     else:
         output_suffix = '.xml'
 
-    for file in files:
+    for file in options.DRAFT:
         try:
             inf = Path(file)
             #name = re.sub('-[0-9][0-9]', '', inf.stem)
@@ -204,7 +207,7 @@ approvers = BaseRfcWriter.approvers
 #status_of_memo = "Status of This Memo"
 appendix_prefix = "^Appendix:? "
 #
-code_re = r'(^\s*[A-Za-z][A-Za-z0-9_-]*\s*=\s*\S|{ *$|^ *})'
+code_re = r'(?m)(^\s*[A-Za-z][A-Za-z0-9_-]*\s*=(\s*\S|\s*$)|{ *$|^ *}|::=|//\s|\s//|\s/\*|/\*\s)'
 #
 
 section_names = {
@@ -260,15 +263,16 @@ ref_ref_re =  r"\[{ref}(, *{ref})*\]".format(ref=one_ref_re)
 ref_anchor_re = r'\[(?P<anchor>[^]]+)\]'
 ref_name_re =   r'[-\' 0-9\w]+, (?:\w-?\w?\.)+(?:, Ed\.)?'
 ref_last_re =   r'(?:\w-?\w?\.)+ [-\' 0-9\w]+(?:, Ed\.)?'
-ref_org_re =   r'(?P<organization>[-/\w]+(?: [-/\w]+)*(, )?)'
+ref_org_re =   r'(?P<organization>[-/\w]+(?: [-/\w,.]+)*(, )?)'
 ref_auth_re =   r'(?P<authors>({name})(, {name})*(,? and {last})?)'.format(name=ref_name_re, last=ref_last_re)
 ref_title_re =  r'(?P<title>.+)'
 ref_series_one =r'(?:(?:(?:RFC|STD|BCP|FYI|DOI|Internet-Draft) [^,]+|draft-[a-z0-9-]+)(?: \(work in progress\))?)'
 ref_series_re = r'(?P<series>{item}(?:, {item})*)'.format(item=ref_series_one)
 ref_docname_re= r'(?P<docname>[^,]+(, pp\.? \d+(-\d+)?)?)'
+day_re =        r'(?:[1-9]|0[1-9]|1[0-9]|2[0-9]|30|31)'
 month_re =      r'(?:Jan(uary)?|Feb(ruary)?|March|April|May|June|July|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)'
-date_re =       r'(?P<date>({month} )?[12]\d\d\d)'.format(month=month_re)
-ref_url_re =    r'<(?P<target>(http|https|ftp)://[^>]+)>'
+date_re =       r'(?P<date>({day} )?({month} )?[12]\d\d\d)'.format(day=day_re, month=month_re)
+ref_url_re =    r'< ?(?P<target>(http|https|ftp)://[^ >]+)>'
 uri_re =        r'^<?\s*(?P<target>(http|https|ftp)://[^>\s]+)\s*>?$'
 #
 chunks = dict(
@@ -284,6 +288,7 @@ chunks = dict(
 
 reference_patterns = [
     r'{anchor}  *{authors}, "{title}", {series}, {date}(, {url})?\.'.format(**chunks),
+    r'{anchor}  *{authors}, "{title}", {series}, {date}, Work.in.progress\.'.format(**chunks),
     r'{anchor}  *{authors}, "{title}", {date}(, {url})?\.'.format(**chunks),
     r'{anchor}  *{authors}, "{title}", {docname}, {date}(, {url})?\.'.format(**chunks),
     r'{anchor}  *{organiz}, "{title}", {docname}, {date}(, {url})?\.'.format(**chunks),
@@ -470,10 +475,6 @@ def split_on_large_whitespace(line):
 def ind(line):
     return len(line.txt) - len(line.txt.lstrip())
 
-
-
-
-#@debug.trace
 def is_section_start(line, numlist=None, part=None):
     assert part != None
     if not line:
@@ -516,7 +517,7 @@ def flatten(listoflists):
     return [ l for sublist in listoflists for l in sublist if not l is list ]
 
 def strip(para):
-    para = copy.copy(para)
+    para = copy.deepcopy(para)
     while para and para[0].txt.strip() == '':
         del para[0]
     while para and para[-1].txt.strip() == '':
@@ -683,6 +684,12 @@ def symbol_ratio(text):
     sr = float(sc)/ac if ac else sc
     return sr
 
+def count_lines(text, width):
+    "Return a fractional line count (filled lines plus fraction of last line)"
+    lines = text.splitlines()
+    count = len(lines[:-1])+len(lines[-1])/width
+    return count
+
 def indentation_levels(para):
     indent = []
     for line in strip(para):
@@ -710,15 +717,19 @@ def table_borders(para):
 def normalize_list_block(block):
     "Join and split items as needed, to produce one item per list item."
     assert type(block) is list and type(block[0]) is list
+    orig = copy.deepcopy(block)
     items = []
     widow = []
+    #debug.pprint('0, block')
     for b in block:
-        b = strip(b)
+        s = strip(b)
+        #debug.pprint('b')
+        #debug.pprint('s')
         if widow:
             iw = ind(widow[0])
             sw, mw, __ = guess_list_style(widow[0])
-            ib = ind(b[0])
-            sb, mb, __ = guess_list_style(b[0])
+            ib = ind(s[0])
+            sb, mb, __ = guess_list_style(s[0])
             if ib > iw:
                 if sb in [None, 'hanging']:
                     widow += b
@@ -730,29 +741,33 @@ def normalize_list_block(block):
                     items.append(b)
             elif ib == iw:
                 items.append(widow)
-                widow = b
+                widow = copy.copy(b)
             else:
                 items.append(widow)
                 widow = []
                 items.append(b)
         else:
-            if len(b) == 1:
-                widow = b
+            if len(s) == 1:
+                widow = copy.copy(b)
             else:
                 items += split_list_block(b)
     if widow:
         items.append(widow)
+    #debug.pprint('1, items')
     items = normalize_sublists(items)
+    #debug.pprint('2, items')
+    assert block == orig
     return items
 
 def split_list_block(block):
     "Split a block if it contains a transition to a lower indentation level"
+    orig = copy.deepcopy(block)
     i = []
     items = []
     prev = 0
     for line in block:
         this = ind(line)
-        if this < prev:
+        if line.txt.strip() and this < prev:
             items.append(i)
             i = [ line ]
         else:
@@ -760,6 +775,7 @@ def split_list_block(block):
         prev = this
     if i:
         items.append(i)
+    assert block == orig
     return items
 
 def normalize_sublists(block):
@@ -767,6 +783,7 @@ def normalize_sublists(block):
     If a list block seems to contain a sublist, split that out and
     replace it with one sublist block.
     """
+    orig = copy.deepcopy(block)
     sub = []
     items = []
     line = block[0][0]
@@ -786,6 +803,7 @@ def normalize_sublists(block):
     if sub:
         items.append(sub)
         sub = []
+    assert block == orig
     return items
 
 #@debug.trace
@@ -849,13 +867,61 @@ class Stack(deque):
     def push(self, x):
         return super(Stack, self).appendleft(x)
 
+def dtrace(fn):
+    # From http://paulbutler.org/archives/python-debugging-with-decorators,
+    # substantially modified
+    """Decorator to print information about a function
+    call for use while debugging.
+    Prints function name, arguments, and call number
+    when the function is called. Prints this information
+    again along with the return value when the function
+    returns.
+    """
+    from decorator import decorator
+    import traceback as tb
+    import time
+    def fix(s,n=64):
+        import re
+        s = re.sub(r'\\t', ' ', s)
+        s = re.sub(r'\s+', ' ', s)
+        if len(s) > n+3:
+            s = s[:n]+"..."
+        return s
+    def wrap(fn, self, *params,**kwargs):
+        call = wrap.callcount = wrap.callcount + 1
+        if self.options.debug and (self.options.trace_all or fn.__name__ in self.options.trace):
+            indent = ' ' * self.options.logindent[0]
+            filename, lineno, caller, code = tb.extract_stack()[-3]
+            fc = "%s(%s)" % (fn.__name__, ', '.join(
+                [fix(repr(a)) for a in params] +
+                ["%s = %s" % (a, fix(repr(b))) for a,b in kwargs.items()]
+            ))
+            sys.stderr.write("%s* %s [#%s] From %s(%s)\n" % (indent, fc, call, caller, lineno))
+            #
+            self.prevfunc = self.funcname
+            self.funcname = fn.__name__
+            self.options.logindent[0] += 2
+            ret = fn(self, *params,**kwargs)
+            self.options.logindent[0] -= 2
+            self.funcname = self.prevfunc
+            #
+            sys.stderr.write("%s  %s [#%s] ==> %s\n" % (indent, fc, call, fix(repr(ret))))
+        else:
+            ret = fn(self, *params,**kwargs)
+
+        return ret
+    wrap.callcount = 0
+    return decorator(wrap, fn)
+
 class DraftParser():
 
     text = None
     root = None
     name = None
     schema = None
+    funcname = None
     entities = []
+    _identify_paragraph_cache = {}
 
     rfc_pi_defaults = [
         'strict="yes"',
@@ -887,29 +953,29 @@ class DraftParser():
 
     def dsay(self, s):
         if self.options.debug:
-            frame, filename, lineno, funcname, lines, lineindex = inspect.stack()[1]
-            if funcname in self.options.debug:
-                indent = ' ' * self.options.logindent
-                sys.stderr.write("%s%s.%s\n" % (indent, funcname, s))
+            if self.options.trace_all or self.funcname in self.options.trace:
+                frame, filename, lineno, funcname, lines, lineindex = inspect.stack()[1]
+                indent = ' ' * self.options.logindent[0]
+                sys.stderr.write("%s%s(%s): %s\n" % (indent, funcname, lineno, s))
 
     def dshow(self, name):
         if self.options.debug:
-            frame, filename, lineno, funcname, lines, lineindex = inspect.stack()[1]
-            if funcname in self.options.debug:
+            if self.options.trace_all or self.funcname in self.options.trace:
+                frame, filename, lineno, funcname, lines, lineindex = inspect.stack()[1]
                 value = eval(name, frame.f_globals, frame.f_locals)
-                indent = ' ' * self.options.logindent
-                sys.stderr.write("%s%s.%s: '%s'\n" % (indent, funcname, name, value))
+                indent = ' ' * self.options.logindent[0]
+                sys.stderr.write("%s%s(%s).%s: '%s'\n" % (indent, funcname, lineno, name, value))
 
     def dpprint(self, name):
         if self.options.debug:
-            frame, filename, lineno, funcname, lines, lineindex = inspect.stack()[1]
-            if funcname in self.options.debug:
+            if self.options.trace_all or self.funcname in self.options.trace:
+                frame, filename, lineno, funcname, lines, lineindex = inspect.stack()[1]
                 value = eval(name, frame.f_globals, frame.f_locals)
-                indent = ' ' * self.options.logindent
-                sys.stderr.write("%s%s.%s:\n" % (indent, funcname, name))
+                indent = ' ' * self.options.logindent[0]
+                sys.stderr.write("%s%s(%s).%s:\n" % (indent, funcname, lineno, name))
                 lines = pformat(value).split('\n')
                 for line in lines:
-                    sys.stderr.write("%s    %s\n"%(indent, line))
+                    sys.stderr.write("%s  %s\n"%(indent, line))
 
     def warn(self, lnum, text):
         # compose message.  report 1-based line numbers, rather than 0-based.
@@ -930,7 +996,7 @@ class DraftParser():
         self.p = None
 
         # Set up the <rfc/> element as root
-        self.root = Element('rfc')
+        self.root = self.element('rfc', None)
         for attr in self.rfc_attr_defaults:
             if not ':' in attr:
                 val = self.rfc_attr_defaults[attr]
@@ -979,9 +1045,21 @@ class DraftParser():
         self.postprocess()
         return self.root
 
+    @dtrace
+    def element(self, tag, *args, **kwargs):
+        "A wrapper method which lets us hook in debug output"
+        e = Element(tag, **kwargs)
+        e.tail = '\n\t'
+        if args:
+            assert len(args) == 1
+            text = args[0]
+            e.text = text
+        return e
+
     # ------------------------------------------------------------------------
     # front
     # ------------------------------------------------------------------------
+    @dtrace
     def front(self):
         # (title , author+ , date , area* , workgroup* , keyword* , abstract? , note*)
         lines_left, lines_right, lines_title, lines_name = self.get_first_page_top()
@@ -1015,9 +1093,8 @@ class DraftParser():
         if updates:
             self.root.set('updates', ', '.join(updates))
 
-        front = Element('front')
-        title = Element('title')
-        title.text = para2str(lines_title)
+        front = self.element('front')
+        title = self.element('title', para2str(lines_title))
         if not self.short_title and len(title.text) > 40:
             self.short_title = title.text[:40]
 
@@ -1064,6 +1141,7 @@ class DraftParser():
 
         return front
 
+    @dtrace
     def get_first_page_top(self):
         lines_left = []
         lines_right = []
@@ -1102,8 +1180,12 @@ class DraftParser():
                 lines_right.append(Line(line.num, right))
         return lines_left, lines_right, lines_title, lines_name
 
+    @dtrace
     def skip_blank_lines(self):
-        "Skip over blank lines, ending up before the first non-blank line, or at end of text"
+        """
+        Skip over blank lines, ending up before the first non-blank line,
+        or at end of text.  Return the coming non-blank line.
+        """
         while True:
             line, p = self.get_line()
             if line is None:
@@ -1112,8 +1194,8 @@ class DraftParser():
                 self.push_line(line, p)
                 break
         return line
+    next_line = skip_blank_lines
 
-    #@debug.trace
     def get_line(self):
         "Get the next line, whether blank or not, or None if no more lines."
         if self.p == None:
@@ -1123,6 +1205,22 @@ class DraftParser():
         if self.p:
             line = Line(line.num, line.txt[self.p:])
             self.p = None
+        if self.options.debug:
+            if self.options.start_trace and not self.options.trace_all:
+                if line and re.search(self.options.start_trace, line.txt.strip()) != None:
+                    self.options.trace_all = True
+            if self.options.trace_all:
+                if line and re.search(self.options.start_trace, line.txt.strip()) != None:
+                    # reset the tail count on every new ocurrence of the start pattern
+                    self.options.trace_tail = -1
+                if self.options.trace_tail > 0:
+                    self.options.trace_tail -= 1
+                elif self.options.trace_tail == 0:
+                    self.options.trace_tail -= 1
+                    self.options.trace_all = False
+                elif line and re.search(self.options.stop_trace, line.txt.strip()) != None:
+                    self.options.trace_tail = self.options.trailing_trace_lines
+
         self.dshow('line')
         return line, p
 
@@ -1136,6 +1234,7 @@ class DraftParser():
     def prev_line(self):
         return self.lines[self.l-1]
 
+    @dtrace
     def get_para(self):
         para = []
         # skip blank lines
@@ -1169,8 +1268,8 @@ class DraftParser():
         "Skip blank lines if any, then read lines until new blank line, and return text."
         return para2str(self.next_para())
 
-    #@debug.trace
     def push_line(self, push, pos):
+        self.dshow('push')
         if not self.lines[self.l].txt[pos:] == push.txt:
             if True:
                 debug.show('pos')
@@ -1183,7 +1282,6 @@ class DraftParser():
         else:
             self.l -= 1
 
-    #@debug.trace
     def push_part(self, push, pos):
         if not self.lines[self.l] == push:
             if True:
@@ -1193,12 +1291,12 @@ class DraftParser():
             assert self.lines[self.l] == push
         self.p = pos
 
-    #@debug.trace
     def push_para(self, para):
         para.reverse()
         for line in para:
             self.push_line(line, 0)
 
+    @dtrace
     def parse_top_left(self, lines):
         """
         Parse the top left of a draft or RFC.
@@ -1341,6 +1439,7 @@ class DraftParser():
 
         return workgroup, stream, series_number, rfc_number, obsoletes, updates, status, expires
 
+    @dtrace
     def parse_top_right(self, lines):
         aux = {
             "honor" : r"(?:[A-Z]\.|Dr\.?|Dr\.-Ing\.|Prof(?:\.?|essor)|Sir|Lady|Dame|Sri)",
@@ -1415,6 +1514,7 @@ class DraftParser():
         #debug.show('date')
         return self.authors, date
 
+    @dtrace
     def note(self):
         "An element similar to section, but simpler; containing only t+"
         note = None
@@ -1424,8 +1524,7 @@ class DraftParser():
             return None
         # Advance past the line we peeked at above
         line, p = self.get_line()
-        note = Element('note')
-        note.set('title', text)
+        note = self.element('note', title=text)
         while True:
             paragraph = self.get_block('front')
             if paragraph is None:
@@ -1436,7 +1535,7 @@ class DraftParser():
                 note.append(paragraph)
         return note
 
-    #@debug.trace
+    @dtrace
     def read_status_of_memo(self, workgroup, stream, rfc_number, category, date):
         line = self.skip_blank_lines()
         if line.txt.strip().lower() == 'status of this memo':
@@ -1498,6 +1597,7 @@ class DraftParser():
                 exp_date = parse_date(expires)
                 self.skip(boilerplate['draft_expire'] % expires)
 
+    @dtrace
     def read_copyright(self, date):
         assert date
         self.skip('Copyright Notice')
@@ -1511,7 +1611,7 @@ class DraftParser():
             self.skip(boilerplate['ipr_pre5378Trust200902_copyright'])
             self.root.set('ipr', 'pre5378Trust200902')
 
-    #@debug.trace
+    @dtrace
     def read_authors_addresses(self):
         line = self.skip_blank_lines()
         if line and (line.txt.startswith("Author's Address") or  line.txt.startswith("Authors' Addresses")):
@@ -1546,24 +1646,22 @@ class DraftParser():
         for author in self.authors:
             auth = self.root.find(".//author[@surname='{surname}'][@initials='{initials}']".format(**author))
             auth.set('fullname', author['fullname'])
-            addr = Element('address')
+            addr = self.element('address')
             auth.append(addr)
             for key in ['postal', 'phone', 'facsimile', 'email', 'uri', ]:
                 if key in author['address']:
                     value = author['address'][key]
                     if key == 'postal':
-                        e = Element(key)
+                        e = self.element(key, None)
                         for line in value:
-                            street = Element('street')
-                            street.text = line
+                            street = self.element('street', line)
                             e.append(street)
                         addr.append(e)
                     else:
-                        e = Element(key)
-                        e.text = value
+                        e = self.element(key, value)
                         addr.append(e)
 
-    #@debug.trace
+    @dtrace
     def skip(self, expect):
         "Read, match, and skip over the given text."
         self.skip_blank_lines()
@@ -1605,7 +1703,7 @@ class DraftParser():
                     fail(line, expect, text)
         return True
 
-    #@debug.trace
+    @dtrace
     def read_author_name(self):
         line, p = self.get_line()
         if line is None:
@@ -1616,6 +1714,7 @@ class DraftParser():
             item['fullname'] = name.replace(' (editor)','')
         return item
 
+    @dtrace
     def maybe_author_org(self, item):
         line, p = self.get_line()
         if line is None:
@@ -1624,7 +1723,7 @@ class DraftParser():
         if text == '':
             self.push_line(line, p)
         
-    #@debug.trace
+    @dtrace
     def maybe_author_address(self, item):
         address = []
         while True:
@@ -1641,7 +1740,7 @@ class DraftParser():
             item['address']['postal'] = address
         return item
         
-    #@debug.trace
+    @dtrace
     def maybe_address_detail(self, item):
         line, p = self.get_line()
         if line is None:
@@ -1666,13 +1765,15 @@ class DraftParser():
     # ------------------------------------------------------------------------
     # middle
     # ------------------------------------------------------------------------
-    #@debug.trace
+    @dtrace
     def middle(self):
         # section+
-        middle = Element('middle')
+        middle = self.element('middle')
         self.section_number = 1
         while True:
+            self.dsay('Get a regular middle section')
             section = self.section(numlist=[ str(self.section_number) ], part='middle')
+            self.dshow('section')
             if section is None:
                 break
             middle.append(section)
@@ -1682,7 +1783,7 @@ class DraftParser():
             # other sections
             line = self.skip_blank_lines()
             word = line.txt.split()[0]
-            if word in ['Acknowledgments', 'Acknowledgements', 'Contributors',]:
+            if word.lower() in section_name_start['middle']:
                 section = self.section([word], part='middle')
                 #section.set('anchor', word.lower())
                 #section.set('title', word)
@@ -1693,7 +1794,7 @@ class DraftParser():
 
         return middle
 
-    #@debug.trace
+    @dtrace
     def section(self, numlist=["1"], level=0, tag='section', appendix=False, part=None ):
         # (t | figure | texttable | iref)*, section*
         # figure out what a section number for this section is expected to
@@ -1708,6 +1809,9 @@ class DraftParser():
         # Expect the start of a section: section number and title
         number, title = parse_section_start(line, numlist, level, appendix)
         if is_section_start(line, numlist, part):
+            if len(numlist) == 1 and title.lower() in section_names['refs']:
+                self.push_line(line, p)
+                return None
             if number.lower() in section_name_start[part]:
                 title = line.txt
                 number = ""
@@ -1722,7 +1826,7 @@ class DraftParser():
                     title += ' ' + next.txt.strip()
                 else:
                     self.err(next.num, "Unexpected indentation: Expected a title continuation line with indentation %s, but got '%s'" % (titleindent, next.txt))
-            section = Element(tag)
+            section = self.element(tag, None)
             if tag == 'section':
                 section.set('title', title)
                 if number:
@@ -1767,7 +1871,7 @@ class DraftParser():
         return section
 
 
-    #@debug.trace
+    @dtrace
     def get_block(self, part):
         """
         This method does not parse and return one specific element type;
@@ -1785,46 +1889,70 @@ class DraftParser():
         # Collect related sections with embedded blank lines, like lists
         tag = None
         element = None
+        indentation = None
         while True:
             # collect one block worth of text
             para = self.get_para()
-            self.dshow('para')
-            first = para[0].txt.strip()
+            line = para[0]
+            this_ind = ind(line)
+            first = line.txt.strip()
             this_tag, text, linecount = self.identify_paragraph(para, part)
             #if not this_tag in ['t', 'figure', 'texttable', 'list', ]:
-            if not this_tag in ['t', 'figure', 'texttable', 'list', ]:
+            if not this_tag in ['t', 'figure', 'texttable', 'list', 'code', ]:
+                self.dsay('Break for %s (not part of <t>)' % this_tag)
                 self.push_para(para)
                 break
-            if tag in ['figure', 'texttable']:
+            if this_tag == 'code':
+                this_tag = 'figure'
+                while True:
+                    block.append(para)
+                    if '<CODE ENDS>' in text:
+                        break
+                    para = self.get_para()
+                    text = para2text(para)
+                break
+            elif tag in ['figure', 'texttable']:
                 expected = tag2label[tag]
                 othertag = 'figure' if tag=='texttable' else 'texttable'
                 unexpected = tag2label[othertag]
                 if first.startswith(expected):
-                    # label
+                    self.dsay('Break for label')
                     block.append(para)
                     break
                 elif first.startswith(unexpected):
                     self.warn(para[0].num, "Unexpected title: expected '%s ...', but found '%s'.  This looks like a %s that has been entered as a %s.  The generated XML will need adjustment." % (expected, first, tag, othertag))
                     self.push_para(para)
                     break
-                elif linecount == 1 and len(block) == 1 and not '  ' in first:
-                    # postamble, continue looking for a label
+                elif linecount == 1 and (tag=='figure' or len(block) == 1) and not '  ' in first:
                     this_tag = tag
-                else:
-                    # somethig which is not part of the figure or table
+                elif tag and this_tag != tag:
+                    self.dsay('Tag changed; push back para and break')
                     self.push_para(para)
                     break
+            elif tag=='list' and this_tag=='t' and indentation and this_ind > indentation:
+                this_tag = 'list'
             elif tag and this_tag != tag:
+                self.dsay('Tag changed; push back para and break')
                 self.push_para(para)
                 break
             block.append(para)
-            tag = this_tag
+            if not tag:
+                tag = this_tag
+            if not indentation:
+                indentation = this_ind
             # break here unless this is a type with embedded blank lines:
             if not this_tag in ['figure', 'texttable', 'list', ]:
+                self.dsay('Break for "%s"' % this_tag)
                 break
-            if tag in ['figure', 'texttable'] and len(block) >= 3:
+            if tag in ['texttable'] and len(block) >= 2:
+                self.dsay('Break for "%s" length %s' % (tag, len(block)))
                 break
+        if not tag:
+            tag = this_tag
+        self.dshow('tag')
+        self.dpprint('block')
         if block and tag:
+            self.dsay('Have block and tag')
             flat = flatten(block)
             text = '\n'+para2text(flat)
             if tag == 'list':
@@ -1842,12 +1970,18 @@ class DraftParser():
                     block.pop()
                 else:
                     label = None
-                assert len(block) in [1,2]
             if tag == 't':
-                element = Element('t')
-                element.text = text
+                indentation = ind(para[0])
+                if indentation != 3:
+                    t = self.element('t', text)
+                    l = self.element('list', style='hanging', hangIndent=str(indentation-3))
+                    l.append(t)
+                    element = self.element('t')
+                    element.append(l)
+                else:
+                    element = self.element('t', text)
             elif tag == 'list':
-                element = Element('t')
+                element = self.element('t')
                 element.append(self.make_list(block))
             elif tag == 'section':
                 self.push_para(para)
@@ -1855,12 +1989,11 @@ class DraftParser():
                 element = self.make_table(block, label)
             elif tag == 'figure':
                 element = self.make_figure(block, label)
-            self.dshow('block')
+            self.dpprint('block')
             self.dshow('tag')
-        self.dshow('element')
         return element
 
-    #@debug.trace
+    @dtrace
     def parse_text(self, text):
         "A sequence of text, xref, and eref elements."
         quotes = {
@@ -1926,22 +2059,22 @@ class DraftParser():
                 else:
                     target = ref
                 if target in self.reference_list:
-                    tok = Element('xref', target=target)
+                    tok = self.element('xref', target=target)
             elif tok in angles:
                 tok = get_quoted(stack, tok)
                 match = re.search(uri_re, tok)
                 if match:
                     target= match.group('target')
-                    tok = Element('eref', target=target)
+                    tok = self.element('eref', target=target)
             elif re.search(uri_re, tok):
                 match = re.search(uri_re, tok)
                 target= match.group('target')
-                tok = Element('eref', target=target)
+                tok = self.element('eref', target=target)
             elif tok == '\n':
                 tok = nl(stack, prev)
             chunks.append(tok)
             prev = tok
-        t = Element('t')
+        t = self.element('t')
         if chunks:
             e = None
             text = []
@@ -1961,11 +2094,11 @@ class DraftParser():
                     t.text = ''.join(text)
                 else:
                     e.tail = ''.join(text)
+        self.dshow('t.text')
         return t
 
-    #@debug.trace
+    @dtrace
     def identify_paragraph(self, para, part):
-        self.dshow('part')
         tag = None
         text = None
         sratio = None
@@ -1973,64 +2106,101 @@ class DraftParser():
         if para and para[0].txt:
             line = para[0]
             text = para2text(para)
+        if not text in self._identify_paragraph_cache:
+            self.dpprint('para')
+            # we want to distinguish between:
+            # * figure
+            # * list
+            #   - numbers
+            #   - letters
+            #   - symbols
+            #   - hanging
+            #   - empty
+            # * texttable
+            #   - none      no borders
+            #   - headers   border between headers and data, and beg/end
+            #   - full      like headers + frame + vertical borders
+            #   - all       like full + horizontal between data cells
+            # * plain text, <t>
             if is_section_start(line, part=part):
+                self.dsay('... section')
                 tag = 'section'
             elif not line.txt.startswith('   '):
+                self.dsay('... figure or None')
                 if line.txt.startswith(' '):
                     tag = 'figure'
                 else:
                     tag = None
+            elif '<CODE BEGINS>' in text:
+                self.dsay('... figure (code begins)')
+                tag = 'code'
             else:
-                # we want to distinguish between:
-                # * figure
-                # * list
-                #   - numbers
-                #   - letters
-                #   - symbols
-                #   - hanging
-                #   - empty
-                # * texttable
-                #   - none      no borders
-                #   - headers   border between headers and data, and beg/end
-                #   - full      like headers + frame + vertical borders
-                #   - all       like full + horizontal between data cells
-                # * plain text, <t>
                 indents = indentation_levels(para)
                 border_set = set(table_borders(para))
                 linecount = len(text.split('\n'))
-                sratio = symbol_ratio(text)
-                if False:
-                    debug.say('------')
-                    debug.show('indents')
-                    debug.show('linecount')
-                    debug.show('sratio')
-                    debug.pprint('border_set')
-                if not '----' in text and (sratio < 0.3 or (sratio < 0.8 and linecount==1)):
-                    next = self.next_para()
-                    if ( len(indents) > 1 or indents[0] != 3 
+                sym_ratio = symbol_ratio(text)
+                if not '----' in text and (sym_ratio < 0.3 or (sym_ratio < 0.8 and linecount==1)):
+                    self.dsay('... list, t, or figure')
+                    self.dshow('sym_ratio')
+                    self.dshow('linecount')
+                    self.dshow('len(indents)')
+                    next = self.next_line()
+                    if re.search(code_re, line.txt):
+                        self.dsay('... figure (matches code regex)')
+                        tag = 'figure'
+                    elif len(re.findall('\S   +\S', text)) > 2:
+                        self.dsay('... figure (matches odd whitespace regex)')
+                        tag = 'figure'
+                    elif (
+                        len(indents) > 1
                         or (linecount == 1 and line.txt.strip()[:2] in ['o ', '* ', '+ ', '- ', ]) 
                         or (linecount == 1 and re.search('^[0-9a-z][ivx]*\. ', line.txt.strip()))
                         #or (linecount == 1 and not ' ' in line.txt.strip())
-                        or (linecount == 1 and (  ind(next[0]) > ind(para[0]) ))
+                        or (linecount == 1 and (  ind(next) > ind(para[0]) ))
                         or ('  ' in line.txt.strip() and not '.  ' in line.txt.strip())
                         ):
+                        self.dsay('... list (for some reason)')
                         tag = 'list'
                     else:
-                        tag = 't'
+                        # try to differentiate between plain text and code/figure, based on
+                        # ratio between character count and line count
+                        if linecount == 1:
+                            self.dsay('... t (single line)')
+                            tag = 't'
+                        else:
+                            width = 72-indents[0]
+                            wrapped = textwrap.fill(text, width)
+                            filled  = count_lines(wrapped, width)
+                            actual = count_lines(text, width)
+                            # change in last line length when filling
+                            fill_change = (actual - filled)*width
+                            # 15 is a somewhat arbitrary character count larger than a common
+                            # word size and smaller than the regular line length
+                            if fill_change > 15 and linecount > 1:
+                                self.dsay('... figure (lines not properly filled)')
+                                tag = 'figure'
+                            else:
+                                self.dsay('... t (lines reasonably filled)')
+                                tag = 't'
                 elif len(indents) > 1:
+                    self.dsay('... figure (found several indentation levels)')
                     # uneven indentation; it's not a table (well, could
                     # be texttable with style none|headers and center or
                     # righ align on the first column, but we ignore that)
                     tag = 'figure'
                 else:
                     if len(border_set) == 2 and not '+-+-+' in text and line.txt.strip() in border_set:
+                        self.dsay('... texttable (found start border)')
                         tag = 'texttable'
                     else:
+                        self.dsay('... figure (last remaining option)')
                         tag = 'figure'
-        return tag, text, linecount
+            self._identify_paragraph_cache[text] = (tag, text, linecount)
+        return self._identify_paragraph_cache[text]
 
+    @dtrace
     def make_figure(self, block, title):
-        figure = Element('figure')
+        figure = self.element('figure')
         if title and title.startswith('Figure'):
             parts = title.split(None, 2)
             if len(parts) > 1:
@@ -2040,19 +2210,14 @@ class DraftParser():
             if len(parts) > 2:
                 title = parts[2]
                 figure.set('title', title)
-        text = para2text(block.pop(0))
-        artwork = Element('artwork')
-        artwork.text = CDATA('\n'+unindent(text, 3)+'\n')
+        text = para2text(flatten(block))
+        artwork = self.element('artwork', CDATA('\n'+unindent(text, 3)+'\n'))
         figure.append(artwork)
-        if block:
-            text = para2text(block.pop(0))
-            postamble = Element('postamble')
-            postamble.text = text
-            figure.append(postamble)
-        assert block == []
         return figure
 
+    @dtrace
     def make_table(self, block, title):
+        self.dpprint('block')
         paragraph = block.pop(0)
         first_line = paragraph[0]
         # figure out the table characteristics
@@ -2116,7 +2281,7 @@ class DraftParser():
             pos += w
             colpos.append(pos)
         # --- Process the table, generate xml elements ---
-        texttable = Element('texttable')
+        texttable = self.element('texttable')
         if title:
             if title.startswith('Table'):
                 parts = title.split(None, 2)
@@ -2142,8 +2307,7 @@ class DraftParser():
             headers = [ ' '.join(t) for t in zip(headers, columns) ]
         # generate <ttcol>
         for h in headers:
-            ttcol = Element('ttcol')
-            ttcol.text = h
+            ttcol = self.element('ttcol', h)
             texttable.append(ttcol)
         # collect table cells and generate <c>
         while paragraph:
@@ -2153,80 +2317,87 @@ class DraftParser():
             txt = line.txt.replace('|', ' ')
             columns = colsplit(colpos, txt)
             for t in columns:
-                c = Element('c')
-                c.text = t
+                c = self.element('c', t)
                 texttable.append(c)
         if block:
             text = para2text(block.pop())
-            postamble = Element('postamble')
-            postamble.text = text
+            postamble = self.element('postamble', text)
             texttable.append(postamble)
         assert block == []
         return texttable
 
+    @dtrace
     def make_list(self, block, base_indentation=3):
         #list[style, hangIndent, counter] : t+
         # style = (numbers|letters|symbols|hanging|empty|format:...)
         # t[hangText] 
         #
-        if False:
-            debug.say('------------------------------------------------------------------------')
-            debug.pprint('block')
         #indents = indentation_levels(flatten(block))
         #debug.show('len(indents)')
         #if len(indents) > 2:
         items = normalize_list_block(block)
+        self.dpprint('items')
         #debug.pprint('items')
         indents = indentation_levels(flatten(block))
-        list = Element('list', style='empty')
-        #
-        if False:
-            debug.pprint('items')
-            debug.pprint('indents')
-            debug.show('base_indentation')
+        list = self.element('list', style='empty')
         #
         item = items[0]
-        if indents[0] > base_indentation and (len(item) == 1 or len(indentation_levels(item)) > 1):
+        self.dpprint('indentation_levels(item)')
+        if indents[0] > base_indentation: # and (len(item) == 1 or len(indentation_levels(item)) > 2):
             # handle extra indentation by adding an extra level of <t/><list/>
             list.set('hangIndent', str(indents[0]-base_indentation))
-            list.text = ' '
-            t = Element('t')
+            list.text = '\n'
+            t = self.element('t')
             t.tail = '\n'
             t.append(self.make_list(block, base_indentation=indents[0]))
             list.append(t)
         else:
             t = None
             for i, item in enumerate(items):
+                self.dpprint('item')
                 # check for sublist
                 if type(item[0]) == type([]):
+                    self.dsay('sublist')
                     assert t is not None
                     line = item[0][0]
                     t.append(self.make_list(item, ind(line)))
                     t.tail = '\n'
                 else:
+                    self.dsay('list item')
                     line = item[0]
                     indent = indentation_levels(item)
                     style, marker, rest = guess_list_style(line)
+                    self.dshow('style')
+                    self.dshow('marker')
+                    self.dshow('rest')
                     if style and i == 0:
                         list.set('style', style)
                         if style == 'hanging' and len(indent) > 1:
                             list.set('hangIndent', str(indent[1] - indent[0]))
-                    t = Element('t')
+                    t = self.element('t', )
                     t.tail = '\n'
                     if style == 'hanging':
+                        self.dsay('hanging')
                         if indent[0] == indents[0]:
+                            self.dsay('same indentation')
                             t.set('hangText', marker)
-                            # Handle hanging lists with no item text on the first line
-                            if rest == '':
-                                list.append(t)
-                                t = Element('t')
-                                t.tail = '\n'
-                            text = '\n'.join( [ tt for tt in [ rest ]+[ l.txt for l in item[1:]] if tt] )
+                            blank_lines = '1' if len(item)>1 and item[1].txt.strip()=='' else '0'
+                            vspace = self.element('vspace', blankLines=blank_lines)
+                            vspace.tail = para2text(item[1:])
+                            t.append(vspace)
+                            text = rest
                         else:
-                            text = '\n'.join( [ tt for tt in [marker, rest ]+[ l.txt for l in item[1:]] if tt] )
+                            text = para2text(item)
+#                             alt = '\n'.join( [ tt for tt in [marker, rest ]+[ l.txt for l in item[1:]] if tt] )
+#                             if text != alt:
+#                                 debug.show('alt')
+#                                 debug.show('text')
+                    elif style == None:
+                        text = para2text(item)
                     else:
                         text = '\n'.join( [ tt for tt in [ rest ]+[ l.txt for l in item[1:]] if tt] )                        
                     t.text = text
+                    self.dshow('t.text')
                     list.append(t)
         return list
 
@@ -2235,8 +2406,9 @@ class DraftParser():
     # ------------------------------------------------------------------------
     # back
     # ------------------------------------------------------------------------
+    @dtrace
     def back(self):
-        back = Element('back')
+        back = self.element('back')
         while True:
             references = self.references([ str(self.section_number) ])
             if references is None:
@@ -2273,6 +2445,7 @@ class DraftParser():
 
         return back
 
+    @dtrace
     def references(self, numlist, level=0):
         refs = []
         # peek at the first nonblank line
@@ -2298,7 +2471,7 @@ class DraftParser():
                 num += 1
             return refs
         else:
-            references = Element('references', title=title)
+            references = self.element('references', title=title)
             refs.append(references)
             # a series of reference entries
             while True:
@@ -2309,12 +2482,13 @@ class DraftParser():
             return refs
         return None
 
+    @dtrace
     def reference(self):
         line = self.skip_blank_lines()
         if is_section_start(line, part='back'):
             return None
-        reference = Element('reference')
-        front = Element('front')
+        reference = self.element('reference')
+        front = self.element('front')
         reference.append(front)
         para = self.get_para()
         line = para[0]
@@ -2345,9 +2519,10 @@ class DraftParser():
                 # Front matter
                 key = 'title'
                 value = refinfo.get(key)
-                e = Element(key)
                 if value:
-                    e.text = value
+                    e = self.element(key, value)
+                else:
+                    e = self.element(key)
                 front.append(e)
                 # Author info
                 if 'authors' in refinfo:
@@ -2363,7 +2538,7 @@ class DraftParser():
                             if editor:
                                 author = author[:-len(ed)]
                             surname, initials = [ n.strip() for n in author.split(', ', 1) ]
-                            e = Element('author', initials=initials, surname=surname, fullname=' '.join([initials, surname]))
+                            e = self.element('author', initials=initials, surname=surname, fullname=' '.join([initials, surname]))
                             if editor:
                                 e.set('role', 'editor')
                             front.append(e)
@@ -2373,38 +2548,50 @@ class DraftParser():
                             if editor:
                                 author = author[:-len(ed)]
                             initials, surname = [ n.strip() for n in author.split(None, 1) ]
-                            e = Element('author', initials=initials, surname=surname, fullname=' '.join([initials, surname]))
+                            e = self.element('author', initials=initials, surname=surname, fullname=' '.join([initials, surname]))
                             if editor:
                                 e.set('role', 'editor')
                             front.append(e)
                 elif 'organization' in refinfo:
                     organization = refinfo.get('organization')
-                    e = Element('author')
-                    org = Element('organization')
-                    org.text = organization
+                    e = self.element('author')
+                    org = self.element('organization', organization)
                     e.append(org)
                     front.append(e)
                 else:
-                    e = Element('author')
+                    e = self.element('author')
                     front.append(e)
                 key = 'date'
                 value = refinfo.get(key)
                 if value:
                     if ' ' in value:
                         month, year = value.split(None, 1)
-                        e = Element(key, month=month, year=year)
+                        e = self.element(key, month=month, year=year)
                     else:
-                        e = Element(key, year=value)                        
+                        e = self.element(key, year=value)                        
                 else:
-                    e = Element(key)
+                    e = self.element(key)
                 front.append(e)
                 # Document / Series
                 if 'series' in refinfo:
                     series  = refinfo.get('series')
                     if series:
                         for item in re.findall(ref_series_one, series):
-                            name, value = item.split(None, 1)
-                            e = Element('seriesInfo', name=name, value=value)
+                            self.dshow('item')
+                            parts = item.split(None, 1)                            
+                            if len(parts) == 1:
+                                if item.startswith('draft-'):
+                                    name, value = 'Internet-Draft', item
+                                else:
+                                    name, value = '(Unknown)', item
+                            else:
+                                if item.startswith('draft-'):
+                                    name, value = 'Internet-Draft', parts[0]
+                                else:
+                                    name, value = parts
+                            self.dshow('name')
+                            self.dshow('value')
+                            e = self.element('seriesInfo', name=name, value=value)
                             reference.append(e)
                             if name == 'RFC':
                                 self.entities.append({'name': refinfo.get('anchor'),
@@ -2417,7 +2604,7 @@ class DraftParser():
                     docname = refinfo.get('docname')
                     if docname:
                         name, value = docname.split(None, 1)
-                        e = Element('seriesInfo', name=name, value=value)
+                        e = self.element('seriesInfo', name=name, value=value)
                         reference.append(e)
                 #
                 break
@@ -2456,6 +2643,13 @@ class DraftParser():
                 for child in old:
                     new.append(child)
                 old.getparent().replace(old, new)
+        for vspace in self.root.findall('.//vspace'):
+            if vspace.tail:
+                tmp = self.parse_text(vspace.tail)
+                vspace.tail = tmp.text
+                t = vspace.getparent()
+                for child in tmp:
+                    t.append(child)
 
     def set_symref_pi(self):
         if not hasattr(self, 'reference_list'):

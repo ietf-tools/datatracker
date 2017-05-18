@@ -10,9 +10,14 @@
 >    Working Group information can be found at <http://httpwg.github.io/>
 >    ; source code and issues list for this draft can be found at
 >    <https://github.com/httpwg/http-extensions/labels/header-structure> .
-234d233
-< 
-255,258c254,257
+211,212c211
+<      h1-common-structure-self-identifying-header:
+<              field-name ":" OWS ">" h1-common-structure "<"
+---
+>       h1-common-structure-self-identifying-header:
+213a213
+>               field-name ":" OWS ">" h1-common-structure "<"
+255,258c255,258
 <    XXX: Allow OWS in parsers, but not in generators ?
 <    In programming environments which do not define a native
 <    representation or serialization of Common Structure, the HTTP/1
@@ -22,7 +27,11 @@
 >    environments which do not define a native representation or
 >    serialization of Common Structure, the HTTP/1 serialization should be
 >    used.
-347,349c346,348
+308c308
+<      Date: >1475061449.201<
+---
+>    Date: >1475061449.201<
+347,349c347,349
 <               Requirement Levels", BCP 14, RFC 2119,
 <               DOI 10.17487/RFC2119, March 1997,
 <               <http://www.rfc-editor.org/info/rfc2119>.
@@ -30,13 +39,13 @@
 >               Requirement Levels", BCP 14, RFC 2119, DOI 10.17487/
 >               RFC2119, March 1997, <http://www.rfc-editor.org/info/
 >               rfc2119>.
-351,352c350,351
+351,352c351,352
 <    [RFC5137]  Klensin, J., "ASCII Escaping of Unicode Characters",
 <               BCP 137, RFC 5137, DOI 10.17487/RFC5137, February 2008,
 ---
 >    [RFC5137]  Klensin, J., "ASCII Escaping of Unicode Characters", BCP
 >               137, RFC 5137, DOI 10.17487/RFC5137, February 2008,
-355,358c354,357
+355,358c355,358
 <    [RFC5234]  Crocker, D., Ed. and P. Overell, "Augmented BNF for Syntax
 <               Specifications: ABNF", STD 68, RFC 5234,
 <               DOI 10.17487/RFC5234, January 2008,
@@ -46,13 +55,13 @@
 >               Syntax Specifications: ABNF", STD 68, RFC 5234, DOI
 >               10.17487/RFC5234, January 2008, <http://www.rfc-
 >               editor.org/info/rfc5234>.
-360,361c359,360
+360,361c360,361
 <    [RFC7230]  Fielding, R., Ed. and J. Reschke, Ed., "Hypertext Transfer
 <               Protocol (HTTP/1.1): Message Syntax and Routing",
 ---
 >    [RFC7230]  Fielding, R., Ed. and J.  Reschke, Ed., "Hypertext
 >               Transfer Protocol (HTTP/1.1): Message Syntax and Routing",
-367,375c366,374
+367,375c367,375
 <    [RFC7231]  Fielding, R., Ed. and J. Reschke, Ed., "Hypertext Transfer
 <               Protocol (HTTP/1.1): Semantics and Content", RFC 7231,
 <               DOI 10.17487/RFC7231, June 2014,
@@ -72,15 +81,15 @@
 >               Transfer Protocol (HTTP/1.1): Conditional Requests", RFC
 >               7232, DOI 10.17487/RFC7232, June 2014, <http://www.rfc-
 >               editor.org/info/rfc7232>.
-377c376
+377c377
 <    [RFC7233]  Fielding, R., Ed., Lafon, Y., Ed., and J. Reschke, Ed.,
 ---
 >    [RFC7233]  Fielding, R., Ed., Lafon, Y., Ed., and J.  Reschke, Ed.,
-382c381
+382c382
 <    [RFC7234]  Fielding, R., Ed., Nottingham, M., Ed., and J. Reschke,
 ---
 >    [RFC7234]  Fielding, R., Ed., Nottingham, M., Ed., and J.  Reschke,
-387,390c386,389
+387,390c387,390
 <    [RFC7235]  Fielding, R., Ed. and J. Reschke, Ed., "Hypertext Transfer
 <               Protocol (HTTP/1.1): Authentication", RFC 7235,
 <               DOI 10.17487/RFC7235, June 2014,
@@ -90,11 +99,11 @@
 >               Transfer Protocol (HTTP/1.1): Authentication", RFC 7235,
 >               DOI 10.17487/RFC7235, June 2014, <http://www.rfc-
 >               editor.org/info/rfc7235>.
-392c391
+392c392
 <    [RFC7239]  Petersson, A. and M. Nilsson, "Forwarded HTTP Extension",
 ---
 >    [RFC7239]  Petersson, A. and M.  Nilsson, "Forwarded HTTP Extension",
-397,399c396,398
+397,399c397,399
 <               Initiated Content-Encoding", RFC 7694,
 <               DOI 10.17487/RFC7694, November 2015,
 <               <http://www.rfc-editor.org/info/rfc7694>.

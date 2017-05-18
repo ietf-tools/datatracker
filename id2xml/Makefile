@@ -68,13 +68,13 @@ test/out/%.test:	test/ok/%.diff test/out/%.diff
 	totlen=`wc -l < test/in/$(basename $(@F)).txt`;			\
 	ratio=$$(( outlen * 100 / totlen ));				\
 	printf "Changed now/ok: %-48s %2s%%  %4s /%4s\n" $(basename $(@F)) $$ratio $$outlen $$oklen ; \
-	test $$oklen -ge $$outlen;
+	test $$oklen -ge $$outlen || { diff -y $^ | less; }
 
 test/in/%.raw: test/in/%.txt
-	id2xml --strip-only $< -o $@
+	id2xml --strip-only $< -o - | sed -r -e '/[Tt]able [Oo]f [Cc]ontents?/,/^[0-9]+\./d' > $@
 
 test/out/%.raw: test/out/%.txt
-	id2xml --strip-only $< -o $@
+	id2xml --strip-only $< -o - | sed -r -e '/[Tt]able [Oo]f [Cc]ontents?/,/^[0-9]+\./d' > $@
 
 test/out/%.diff:	test/in/%.raw test/out/%.raw 
 	diff $(word 1,$^) $(word 2,$^) > $@ || true

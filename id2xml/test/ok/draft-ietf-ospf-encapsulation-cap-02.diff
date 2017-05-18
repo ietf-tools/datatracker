@@ -1,11 +1,3 @@
-71c71
-<      5.1.  Tunnel Parameters sub-TLV . . . . . . . . . . . . . . . .   5
----
->      5.1.  Tunnel Parameters sub-TLV . . . . . . . . . . . . . . . .   6
-77c77
-<      6.2.  IGP Tunnel Encapsulation Types Registry . . . . . . . . .   6
----
->      6.2.  IGP Tunnel Encapsulation Types Registry . . . . . . . . .   7
 90,98c90,98
 <    o  Partial deployment of MPLS-SPRING as described in
 <       [I-D.xu-mpls-unified-source-routing-instruction], where IP tunnels
