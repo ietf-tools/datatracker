@@ -16,6 +16,9 @@ $(document).ready(function () {
     }
 
     if (window.pieChartConf) {
+        window.pieChartConf.credits = {
+            enabled: false
+        };
         var pieChart = Highcharts.chart('pie-chart', window.pieChartConf);
     }
     /*
