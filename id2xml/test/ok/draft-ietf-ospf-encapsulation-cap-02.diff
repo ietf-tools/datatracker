@@ -1,42 +1,46 @@
-90,98c90,98
-<    o  Partial deployment of MPLS-SPRING as described in
-<       [I-D.xu-mpls-unified-source-routing-instruction], where IP tunnels
-<       are used between MPLS-SPRING-enabled routers so as to traverse
-<       non- MPLS routers.
+127c127
+<       1.   L2TPv3 over IP [RFC3931] : Type code=1;
+---
+>       1.  L2TPv3 over IP [RFC3931] : Type code=1;
+129c129
+<       2.   GRE [RFC2784] : Type code=2;
+---
+>       2.  GRE [RFC2784] : Type code=2;
+131c131
+<       3.   Transmit tunnel endpoint [RFC5566] : Type code=3;
+---
+>       3.  Transmit tunnel endpoint [RFC5566] : Type code=3;
+133c133
+<       4.   IPsec in Tunnel-mode [RFC5566] : Type code=4;
+---
+>       4.  IPsec in Tunnel-mode [RFC5566] : Type code=4;
+135,136c135,136
+<       5.   IP in IP tunnel with IPsec Transport Mode [RFC5566] : Type
+<            code=5;
+---
+>       5.  IP in IP tunnel with IPsec Transport Mode [RFC5566] : Type
+>           code=5;
+138,139c138,139
+<       6.   MPLS-in-IP tunnel with IPsec Transport Mode [RFC5566] : Type
+<            code=6;
+---
+>       6.  MPLS-in-IP tunnel with IPsec Transport Mode [RFC5566] : Type
+>           code=6;
+141c141
+<       7.   IP in IP [RFC2003] [RFC4213]: Type code=7;
+---
+>       7.  IP in IP [RFC2003] [RFC4213]: Type code=7;
+143c143
+<       8.   VXLAN [RFC7348] : Type code=8;
+---
+>       8.  VXLAN [RFC7348] : Type code=8;
+145c145
+<       9.   NVGRE [RFC7637] : Type code=9;
+---
+>       9.  NVGRE [RFC7637] : Type code=9;
+158d157
 < 
-<    o  Partial deployment of MPLS-BIER as described in Section 6.9 of
-<       [I-D.ietf-bier-architecture], where IP tunnels are used between
-<       MPLS-BIER-capable routers so as to traverse non MPLS-BIER
-<       [I-D.ietf-bier-mpls-encapsulation] routers.
----
->    o  Partial deployment of MPLS-SPRING as described in [I-D.xu-mpls-
->       unified-source-routing-instruction], where IP tunnels are used
->       between MPLS-SPRING-enabled routers so as to traverse non- MPLS
->       routers.
-> 
->    o  Partial deployment of MPLS-BIER as described in Section 6.9 of [I-
->       D.ietf-bier-architecture], where IP tunnels are used between MPLS-
->       BIER-capable routers so as to traverse non MPLS-BIER [I-D.ietf-
->       bier-mpls-encapsulation] routers.
-146c146,147
-<       Tunnel Type (2 octets): identifies the type of tunneling
----
->    Tunnel Type (2 octets): identifies the type of tunneling
-> 
-182a184
->    Unknown types are to be ignored and skipped upon receipt.
-184c186
-<       Unknown types are to be ignored and skipped upon receipt.
----
->    Length (2 octets): unsigned integer indicating the total number of
-186d187
-<       Length (2 octets): unsigned integer indicating the total number of
-189c190,191
-<       Value (variable): zero or more Tunnel Encapsulation Attribute sub-
----
->    Value (variable): zero or more Tunnel Encapsulation Attribute sub-
-> 
-197,204c199,208
+174,181c173,180
 <                            +-----------------------------------+
 <                            |      Sub-TLV Type (1 Octet)       |
 <                            +-----------------------------------+
@@ -54,177 +58,3 @@
 >                        |                          |
 >                        |                          |
 >                        +--------------------------+
-> 
->    Sub-TLV Type (1 octet): each sub-TLV type defines a certain
-206d209
-<       Sub-TLV Type (1 octet): each sub-TLV type defines a certain
-218c221,222
-<       Sub-TLV Length (1 octet): unsigned integer indicating the total
----
->    Sub-TLV Length (1 octet): unsigned integer indicating the total
-> 
-221c225,226
-<       Sub-TLV Value (variable): encodings of the value field depend on
----
->    Sub-TLV Value (variable): encodings of the value field depend on
-> 
-275c280
-<               Registry Name: IGP Tunnel Encapsulation Type.
----
->       Registry Name: IGP Tunnel Encapsulation Type.
-309c314
-<               Registry Name: IGP Tunnel Encapsulation Attribute Types.
----
->       Registry Name: IGP Tunnel Encapsulation Attribute Types.
-350,356c355,361
-<    [RFC1700]  Reynolds, J. and J. Postel, "Assigned Numbers", RFC 1700,
-<               DOI 10.17487/RFC1700, October 1994,
-<               <http://www.rfc-editor.org/info/rfc1700>.
-< 
-<    [RFC2003]  Perkins, C., "IP Encapsulation within IP", RFC 2003,
-<               DOI 10.17487/RFC2003, October 1996,
-<               <http://www.rfc-editor.org/info/rfc2003>.
----
->    [RFC1700]  Reynolds, J. and J.  Postel, "Assigned Numbers", RFC 1700,
->               DOI 10.17487/RFC1700, October 1994, <http://www.rfc-
->               editor.org/info/rfc1700>.
-> 
->    [RFC2003]  Perkins, C., "IP Encapsulation within IP", RFC 2003, DOI
->               10.17487/RFC2003, October 1996, <http://www.rfc-
->               editor.org/info/rfc2003>.
-359,361c364,366
-<               Requirement Levels", BCP 14, RFC 2119,
-<               DOI 10.17487/RFC2119, March 1997,
-<               <http://www.rfc-editor.org/info/rfc2119>.
----
->               Requirement Levels", BCP 14, RFC 2119, DOI 10.17487/
->               RFC2119, March 1997, <http://www.rfc-editor.org/info/
->               rfc2119>.
-365,366c370,371
-<               DOI 10.17487/RFC2784, March 2000,
-<               <http://www.rfc-editor.org/info/rfc2784>.
----
->               DOI 10.17487/RFC2784, March 2000, <http://www.rfc-
->               editor.org/info/rfc2784>.
-368,376c373,381
-<    [RFC3931]  Lau, J., Ed., Townsley, M., Ed., and I. Goyret, Ed.,
-<               "Layer Two Tunneling Protocol - Version 3 (L2TPv3)",
-<               RFC 3931, DOI 10.17487/RFC3931, March 2005,
-<               <http://www.rfc-editor.org/info/rfc3931>.
-< 
-<    [RFC4213]  Nordmark, E. and R. Gilligan, "Basic Transition Mechanisms
-<               for IPv6 Hosts and Routers", RFC 4213,
-<               DOI 10.17487/RFC4213, October 2005,
-<               <http://www.rfc-editor.org/info/rfc4213>.
----
->    [RFC3931]  Lau, J., Ed., Townsley, M., Ed., and I.  Goyret, Ed.,
->               "Layer Two Tunneling Protocol - Version 3 (L2TPv3)", RFC
->               3931, DOI 10.17487/RFC3931, March 2005, <http://www.rfc-
->               editor.org/info/rfc3931>.
-> 
->    [RFC4213]  Nordmark, E. and R.  Gilligan, "Basic Transition
->               Mechanisms for IPv6 Hosts and Routers", RFC 4213, DOI
->               10.17487/RFC4213, October 2005, <http://www.rfc-
->               editor.org/info/rfc4213>.
-378c383
-<    [RFC5226]  Narten, T. and H. Alvestrand, "Guidelines for Writing an
----
->    [RFC5226]  Narten, T. and H.  Alvestrand, "Guidelines for Writing an
-380,381c385,386
-<               DOI 10.17487/RFC5226, May 2008,
-<               <http://www.rfc-editor.org/info/rfc5226>.
----
->               DOI 10.17487/RFC5226, May 2008, <http://www.rfc-
->               editor.org/info/rfc5226>.
-384c389
-<               S. Shaffer, "Extensions to OSPF for Advertising Optional
----
->               S.  Shaffer, "Extensions to OSPF for Advertising Optional
-390a396
-> 
-392c398
-<               S. Aldrin, "Multicast using Bit Index Explicit
----
->               S.  Aldrin, "Multicast using Bit Index Explicit
-396a403
-> 
-398c405
-<               Aldrin, S., and I. Meilik, "Encapsulation for Bit Index
----
->               Aldrin, S., and I.  Meilik, "Encapsulation for Bit Index
-404c411
-<               Maino, F., Kreeger, L., and U. Elzur, "Generic Protocol
----
->               Maino, F., Kreeger, L., and U.  Elzur, "Generic Protocol
-408a416
-> 
-410c418
-<               L., Jalil, L., and H. Assarpour, "Unified Source Routing
----
->               L., Jalil, L., and H.  Assarpour, "Unified Source Routing
-415,417c423,425
-<    [RFC2328]  Moy, J., "OSPF Version 2", STD 54, RFC 2328,
-<               DOI 10.17487/RFC2328, April 1998,
-<               <http://www.rfc-editor.org/info/rfc2328>.
----
->    [RFC2328]  Moy, J., "OSPF Version 2", STD 54, RFC 2328, DOI 10.17487/
->               RFC2328, April 1998, <http://www.rfc-editor.org/info/
->               rfc2328>.
-420c428
-<               Farinacci, D., Li, T., and A. Conta, "MPLS Label Stack
----
->               Farinacci, D., Li, T., and A.  Conta, "MPLS Label Stack
-424c432
-<    [RFC4023]  Worster, T., Rekhter, Y., and E. Rosen, Ed.,
----
->    [RFC4023]  Worster, T., Rekhter, Y., and E.  Rosen, Ed.,
-430c438
-<               J. Young, "Encapsulation of MPLS over Layer 2 Tunneling
----
->               J.  Young, "Encapsulation of MPLS over Layer 2 Tunneling
-434c442
-<    [RFC5340]  Coltun, R., Ferguson, D., Moy, J., and A. Lindem, "OSPF
----
->    [RFC5340]  Coltun, R., Ferguson, D., Moy, J., and A.  Lindem, "OSPF
-438c446
-<    [RFC5512]  Mohapatra, P. and E. Rosen, "The BGP Encapsulation
----
->    [RFC5512]  Mohapatra, P. and E.  Rosen, "The BGP Encapsulation
-440,442c448,450
-<               Tunnel Encapsulation Attribute", RFC 5512,
-<               DOI 10.17487/RFC5512, April 2009,
-<               <http://www.rfc-editor.org/info/rfc5512>.
----
->               Tunnel Encapsulation Attribute", RFC 5512, DOI 10.17487/
->               RFC5512, April 2009, <http://www.rfc-editor.org/info/
->               rfc5512>.
-444c452
-<    [RFC5565]  Wu, J., Cui, Y., Metz, C., and E. Rosen, "Softwire Mesh
----
->    [RFC5565]  Wu, J., Cui, Y., Metz, C., and E.  Rosen, "Softwire Mesh
-448c456
-<    [RFC5566]  Berger, L., White, R., and E. Rosen, "BGP IPsec Tunnel
----
->    [RFC5566]  Berger, L., White, R., and E.  Rosen, "BGP IPsec Tunnel
-453c461
-<               L., Sridhar, T., Bursell, M., and C. Wright, "Virtual
----
->               L., Sridhar, T., Bursell, M., and C.  Wright, "Virtual
-464,471c472,479
-<    [RFC7510]  Xu, X., Sheth, N., Yong, L., Callon, R., and D. Black,
-<               "Encapsulating MPLS in UDP", RFC 7510,
-<               DOI 10.17487/RFC7510, April 2015,
-<               <http://www.rfc-editor.org/info/rfc7510>.
-< 
-<    [RFC7637]  Garg, P., Ed. and Y. Wang, Ed., "NVGRE: Network
-<               Virtualization Using Generic Routing Encapsulation",
-<               RFC 7637, DOI 10.17487/RFC7637, September 2015,
----
->    [RFC7510]  Xu, X., Sheth, N., Yong, L., Callon, R., and D.  Black,
->               "Encapsulating MPLS in UDP", RFC 7510, DOI 10.17487/
->               RFC7510, April 2015, <http://www.rfc-editor.org/info/
->               rfc7510>.
-> 
->    [RFC7637]  Garg, P., Ed. and Y.  Wang, Ed., "NVGRE: Network
->               Virtualization Using Generic Routing Encapsulation", RFC
->               7637, DOI 10.17487/RFC7637, September 2015,

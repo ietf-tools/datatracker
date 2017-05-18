@@ -1,6 +1,6 @@
-131a133
-> 
-188,195c190,197
+115d114
+< 
+162,169c161,168
 <    +-------+----------------------+------------------------------------+
 <    | Flow  | CoA/Tunnel/BID       | Negotiated Flow Policy             |
 <    | Id    |                      |                                    |
@@ -18,88 +18,68 @@
 >        | 3.      | CoA-3/Tunnel-3/BID-3 | All SSH Flows over CDMA |
 >        |         |                      |                         |
 >        +---------+----------------------+-------------------------+
-224d225
+228a228
+> 
+273d272
 < 
-388c389
-<       Sub-Type
----
->    Sub-Type
-390,391c391
-<          This field MUST be set to a value of 1 (Flow-Binding
-<          Extension).
----
->       This field MUST be set to a value of 1 (Flow-Binding Extension).
-399d398
+319d317
 < 
-412a412
+386a385
 >    |         |       |                                                 |
-415c415
+389c388
 <                  Table 2: Action Rules for the Traffic Selector
 ---
 >               Table 2: Action Rules for the Traffic Selector
-479,480c479,480
+410d408
+< 
+453,454c451,452
 <       agent MUST register this care-of address as one of the many
 <       care-of addresses through which the mobile node's home address is
 ---
 >       agent MUST register this care-of address as one of the many care-
 >       of addresses through which the mobile node's home address is
-619c619,620
+593c591,592
 <       that the multipath support is enabled.
 ---
 > 
 >          that the multipath support is enabled.
-622c623,624
+596c595
 <       support is disabled.
 ---
-> 
 >          support is disabled.
-634c636
+608c607
 <       Messages", at < http://www.iana.org/assignments/mobileip-numbers/
 ---
 >       Messages", at <http://www.iana.org/assignments/mobileip-numbers/
-645c647
+619c618
 <       Messages", at < http://www.iana.org/assignments/mobileip-numbers/
 ---
 >       Messages", at <http://www.iana.org/assignments/mobileip-numbers/
-706c708
-<               and B. Patil, "Proxy Mobile IPv6", RFC 5213, August 2008.
----
->               and B.  Patil, "Proxy Mobile IPv6", RFC 5213, August 2008.
-708,709c710,711
-<    [RFC5944]  Perkins, C., "IP Mobility Support for IPv4, Revised",
-<               RFC 5944, November 2010.
----
->    [RFC5944]  Perkins, C., "IP Mobility Support for IPv4, Revised", RFC
->               5944, November 2010.
-711,713c713,715
-<    [RFC6088]  Tsirtsis, G., Giarreta, G., Soliman, H., and N. Montavont,
+645a645
+> 
+686,687c686,687
 <               "Traffic Selectors for Flow Bindings", RFC 6088,
 <               January 2011.
 ---
->    [RFC6088]  Tsirtsis, G., Giarreta, G., Soliman, H., and N.
->               Montavont, "Traffic Selectors for Flow Bindings", RFC
->               6088, January 2011.
-717c719
-<    [RFC3753]  Manner, J. and M. Kojo, "Mobility Related Terminology",
----
->    [RFC3753]  Manner, J. and M.  Kojo, "Mobility Related Terminology",
-728c730
+>               "Traffic Selectors for Flow Bindings", RFC 6088, January
+>               2011.
+702c702
 <    EMail: sgundave@cisco.com
 ---
 >    Email: sgundave@cisco.com
-736c738
+710c710
 <    EMail: kleung@cisco.com
 ---
 >    Email: kleung@cisco.com
-741c743
+715c715
 <    EMail: tsirtsis@qualcomm.com
 ---
 >    Email: tsirtsis@qualcomm.com
-746c748
+720c720
 <    EMail: hesham@elevatemobile.com
 ---
 >    Email: hesham@elevatemobile.com
-755c757
+729c729
 <    EMail: alexandru.petrescu@cea.fr
 ---
 >    Email: alexandru.petrescu@cea.fr

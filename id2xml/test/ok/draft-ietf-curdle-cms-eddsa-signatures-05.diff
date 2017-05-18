@@ -1,0 +1,87 @@
+2,4c2,5
+< Internet-Draft                                                R. Housley
+< Intended status: Standards Track                          Vigil Security
+< Expires: 11 October 2017                                   11 April 2017
+---
+> Network Working Group                                         R. Housley
+> Internet-Draft                                            Vigil Security
+> Intended status: Standards Track                          April 11, 2017
+> Expires: October 13, 2017
+7c8
+<             <draft-ietf-curdle-cms-eddsa-signatures-05.txt>
+---
+>              draft-ietf-curdle-cms-eddsa-signatures-05.txt
+33c34
+<    This Internet-Draft will expire on 11 October 2017.
+---
+>    This Internet-Draft will expire on October 13, 2017.
+105,106c106
+<    conventions for encoding the public key are defined in
+<    [CURDLE-PKIX].
+---
+>    conventions for encoding the public key are defined in [CURDLE-PKIX].
+191,192c191,192
+<    signing with Ed448, the digestAlgorithm SHOULD include
+<    id-shake256-len, and if present, the algorithm parameters field MUST
+---
+>    signing with Ed448, the digestAlgorithm SHOULD include id-
+>    shake256-len, and if present, the algorithm parameters field MUST
+212,214c212,214
+<    The SignerInfo signatureAlgorithm field MUST contain either
+<    id-Ed25519 or id-Ed448, depending on the elliptic curve that was used
+<    by the signer.  The algorithm parameters field MUST be absent.
+---
+>    The SignerInfo signatureAlgorithm field MUST contain either id-
+>    Ed25519 or id-Ed448, depending on the elliptic curve that was used by
+>    the signer.  The algorithm parameters field MUST be absent.
+241,243c241,243
+<    The SignerInfo signatureAlgorithm field MUST contain either
+<    id-Ed25519 or id-Ed448, depending on the elliptic curve that was used
+<    by the signer.  The algorithm parameters field MUST be absent.
+---
+>    The SignerInfo signatureAlgorithm field MUST contain either id-
+>    Ed25519 or id-Ed448, depending on the elliptic curve that was used by
+>    the signer.  The algorithm parameters field MUST be absent.
+296c296,298
+< 8.  Normative References
+---
+> 8.  References
+> 
+> 8.1.  Normative References
+302c304
+<               Josefsson, S., and J. Schaad, "Algorithm Identifiers for
+---
+>               Josefsson, S. and J. Schaad, "Algorithm Identifiers for
+305,306c307,308
+<               draft-ietf-curdle-pkix-02, 31 October 2016,
+<               Work-in-progress.
+---
+>               draft-ietf-curdle-pkix-02 (work in progress), 31 October
+>               2016.
+312,314c314,316
+<               Department of Commerce, "Secure Hash Standard", Federal
+<               Information Processing Standard (FIPS) 180-3, October
+<               2008.
+---
+>               Department of Commerce, "Secure Hash Standard",
+>               Federal Information Processing Standard (FIPS) 180-3,
+>               October 2008.
+321c323,324
+<    [STDWORDS] Bradner, S., "Key words for use in RFCs to Indicate
+---
+>    [STDWORDS]
+>               Bradner, S., "Key words for use in RFCs to Indicate
+325,326c328,329
+<               One (ASN.1): Specification of basic notation", ITU-T
+<               Recommendation X.680, 2015.
+---
+>               One (ASN.1): Specification of basic notation",
+>               ITU-T Recommendation X.680, 2015.
+333c336
+< 9.  Informative References
+---
+> 8.2.  Informative References
+344c347
+<    918 Spring Knoll Drive
+---
+>    Vigil Security

@@ -1,13 +1,12 @@
-188,189c188
-<    FW:  Firewall
+146d145
 < 
+148c147
+<    FW:  Firewall
 ---
 >       FW: Firewall
-352c351
+312c311
 <    b.  Policy management with an explicit management system for control
 ---
 >    a.  Policy management with an explicit management system for control
-406d404
+366d364
 < 
-744a743
-> 

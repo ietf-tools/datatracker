@@ -1,4 +1,4 @@
-123,131c123,129
+98,106c98,104
 <                   +--------------+---------------------+
 <                   | Gen-ART      | [Gen-ART] [RFC6385] |
 <                   | Secdir       | [Secdir]            |
@@ -16,178 +16,138 @@
 >    +-----------------------------+-------------------------------------+
 >    |                             |                                     |
 >    +-----------------------------+-------------------------------------+
-362c360
+337c335
 <       -  Assign at maximum one new review per week
 ---
 >       *  Assign at maximum one new review per week
-364c362
+339c337
 <       -  Assign at maximum one new review per fortnight
 ---
 >       *  Assign at maximum one new review per fortnight
-366c364
+341c339
 <       -  Assign at maximum one new review per month
 ---
 >       *  Assign at maximum one new review per month
-368,370c366,367
+343,345c341,342
 <       -  Assign at maximum one new review per two months
 < 
 <          Assign at maximum one new review per quarter
 ---
 >       *  Assign at maximum one new review per two months Assign at
 >          maximum one new review per quarter
-375c372
+350c347
 <       -  A hiatus must have a start date.  It may have an end date, or
 ---
 >       *  A hiatus must have a start date.  It may have an end date, or
-378c375
+353c350
 <       -  During a hiatus, the reviewer will not be included in the
 ---
 >       *  During a hiatus, the reviewer will not be included in the
-383c380
+358c355
 <       -  During a "soft" hiatus, the reviewer must not be assigned new
 ---
 >       *  During a "soft" hiatus, the reviewer must not be assigned new
-387c384
+362c359
 <       -  During a "hard" hiatus, the reviewer must not be assigned any
 ---
 >       *  During a "hard" hiatus, the reviewer must not be assigned any
-429a427
+404a402
 > 
-458c456
+433c431
 <       -  The current workflow, where the reviewer sends email to the
 ---
 >       *  The current workflow, where the reviewer sends email to the
-465c463
+440c438
 <       -  The tool should allow the reviewer to enter the review into the
 ---
 >       *  The tool should allow the reviewer to enter the review into the
-471c469
+446c444
 <       -  The tool could also allow the reviewer to submit the review to
 ---
 >       *  The tool could also allow the reviewer to submit the review to
-501c499
+476c474
 <       -  How many reviews have been completed
 ---
 >       *  How many reviews have been completed
-503c501
+478c476
 <       -  How many reviews are in progress
 ---
 >       *  How many reviews are in progress
-505c503
+480c478
 <       -  How many in progress reviews are late
 ---
 >       *  How many in progress reviews are late
-507c505
+482c480
 <       -  How many completed reviews were late
 ---
 >       *  How many completed reviews were late
-509c507
+484c482
 <       -  How many reviews were not completed at all
 ---
 >       *  How many reviews were not completed at all
-511c509
+486c484
 <       -  Average time to complete reviews (from assignment to
 ---
 >       *  Average time to complete reviews (from assignment to
-518c516
+493c491
 <       -  Total counts of reviews in each review state (done, rejected,
 ---
 >       *  Total counts of reviews in each review state (done, rejected,
-521c519
+496c494
 <       -  Total counts of completed reviews by result (ready, ready with
 ---
 >       *  Total counts of completed reviews by result (ready, ready with
-534c532
+509c507
 <       -  The secretariat and ADs can see any statistic.
 ---
 >       *  The secretariat and ADs can see any statistic.
-536c534
+511c509
 <       -  A team secretary can see any statistics for that team.
 ---
 >       *  A team secretary can see any statistics for that team.
-538c536
+513c511
 <       -  A reviewer can see any team aggregate statistics, or their own
 ---
 >       *  A reviewer can see any team aggregate statistics, or their own
-668a667
-> 
-674,675c673,674
+639c637
+<    [AppsDir]  "Applications Directorate", Work in Progress , April 2015,
+---
+>    [AppsDir]  "Applications Directorate", April 2015,
+644,646c642,643
+<               "Area Review Team Tool - Active Tickets", Work in Progress
+<               , April 2015, <https://wiki.tools.ietf.org/tools/art/trac/
+<               report/1>.
+---
+>               "Area Review Team Tool - Active Tickets", April 2015,
+>               <https://wiki.tools.ietf.org/tools/art/trac/report/1>.
+648,649c645
+<    [Gen-ART]  "General Area Review Team Guidelines", Work in Progress ,
 <               April 2015,
-<               <http://trac.tools.ietf.org/area/gen/trac/wiki>.
 ---
->               April 2015, <http://trac.tools.ietf.org/area/gen/trac/
->               wiki>.
-677a677
-> 
-685c685
-<    [RFC6385]  Barnes, M., Doria, A., Alvestrand, H., and B. Carpenter,
+>    [Gen-ART]  "General Area Review Team Guidelines", April 2015,
+653c649
+<               "MIB Doctors", Work in Progress , April 2015,
 ---
->    [RFC6385]  Barnes, M., Doria, A., Alvestrand, H., and B.  Carpenter,
-687,688c687,688
+>               "MIB Doctors", April 2015,
+656c652
+<    [OPS-dir]  "OPS Directorate", Work in Progress , April 2015,
+---
+>    [OPS-dir]  "OPS Directorate", April 2015,
+661,662c657,658
+<               "General Area Review Team (Gen-ART) Experiences", RFC
 <               6385, DOI 10.17487/RFC6385, October 2011,
-<               <http://www.rfc-editor.org/info/rfc6385>.
 ---
->               6385, DOI 10.17487/RFC6385, October 2011, <http://www.rfc-
->               editor.org/info/rfc6385>.
-697a698
-> 
-704,722c705,722
-<  from django.db import models
-<  from ietf.doc.models import Document
-<  from ietf.person.models import Email
-<  from ietf.group.models import Group, Role
-< 
-<  from ietf.name.models import NameModel
-< 
-<  class ReviewRequestStateName(NameModel):
-<      """ Requested, Accepted, Rejected, Withdrawn, Overtaken By Events,
-<          No Response , Completed  """
-< 
-<  class ReviewTypeName(NameModel):
-< 
-<      """ Early Review, Last Call, Telechat """
-< 
-<  class ReviewResultName(NameModel):
-<      """Almost ready, Has issues, Has nits, Not Ready,
-<         On the right track, Ready, Ready with issues,
-<         Ready with nits, Serious Issues"""
+>               "General Area Review Team (Gen-ART) Experiences",
+>               RFC 6385, DOI 10.17487/RFC6385, October 2011,
+665c661
+<    [RTG-dir]  "Routing Directorate", Work in Progress , April 2015,
 ---
->    from django.db import models
->    from ietf.doc.models import Document
->    from ietf.person.models import Email
->    from ietf.group.models import Group, Role
-> 
->    from ietf.name.models import NameModel
-> 
->   class ReviewRequestStateName(NameModel):
->       """ Requested, Accepted, Rejected, Withdrawn, Overtaken By Events,
->           No Response , Completed  """
-> 
->    class ReviewTypeName(NameModel):
-> 
->    """ Early Review, Last Call, Telechat """
->    class ReviewResultName(NameModel):
->        """Almost ready, Has issues, Has nits, Not Ready,
->           On the right track, Ready, Ready with issues,
->           Ready with nits, Serious Issues"""
-739,748c739,747
-<  class ReviewResultSet(models.Model):
-<      """
-<      This table provides a way to point out a set of ReviewResultName
-<      entries which are valid for a given team, in order to be able to
-<      limit the result choices that can be set for a given review, as a
-<      function of which team it is related to.
-<      """
-<      team        = models.ForeignKey(Group)
-<      valid       = models.ManyToManyField(ReviewResultName)
-< 
+>    [RTG-dir]  "Routing Directorate", April 2015,
+668c664
+<    [Secdir]   "Security Directorate", Work in Progress , April 2015,
 ---
->    class ReviewResultSet(models.Model):
->        """
->        This table provides a way to point out a set of ReviewResultName
->        entries which are valid for a given team, in order to be able to
->        limit the result choices that can be set for a given review, as a
->        function of which team it is related to.
->        """
->        team        = models.ForeignKey(Group)
->        valid       = models.ManyToManyField(ReviewResultName)
+>    [Secdir]   "Security Directorate", April 2015,
+673c669
+<               "YANG Doctors", Work in Progress , April 2015,
+---
+>               "YANG Doctors", April 2015,

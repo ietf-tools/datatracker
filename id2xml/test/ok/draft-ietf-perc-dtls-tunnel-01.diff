@@ -1,47 +1,33 @@
-252,253c252,253
-<    The endpoint MUST include the "sdp_tls_id" DTLS extension
-<    [I-D.thomson-mmusic-sdp-uks] in the "ClientHello" message when
----
->    The endpoint MUST include the "sdp_tls_id" DTLS extension [I-
->    D.thomson-mmusic-sdp-uks] in the "ClientHello" message when
-256,257c256,257
-<    both the offer and answer [RFC3264] messages as per
-<    [I-D.ietf-mmusic-dtls-sdp].
----
->    both the offer and answer [RFC3264] messages as per [I-D.ietf-mmusic-
->    dtls-sdp].
-454,456c454
+430,432c430
 <    o  Protocol version
 <    o  Message type identifier
 <    o  The message body
 ---
 >    o  Protocol version o Message type identifier o The message body
-494a493
+470a469
 > 
-509,510c508,509
+485,486c484,485
 <    o  version: indicates the version of this protocol (0x00).
 <    o  protection_profiles: The list of two-octet SRTP protection profile
 ---
 >    o  version: indicates the version of this protocol (0x00).  o
 >       protection_profiles: The list of two-octet SRTP protection profile
-538a538
+514a514
 > 
-541,542c541,543
+517,518c517,519
 <    o  mki: Master key identifier [RFC3711].
 <    o  client_write_SRTP_master_key: The value of the SRTP master key
 ---
 > 
 >    o  mki: Master key identifier [RFC3711].  o
 >       client_write_SRTP_master_key: The value of the SRTP master key
-543a545
+519a521
 > 
-545a548
+521a524
 > 
-547a551
+523a527
 > 
-557d560
-< 
-592,597c595,603
+568,573c572
 <             message_type: 0x01
 <                   length: 0x0007
 <        SupportedProfiles:
@@ -49,16 +35,14 @@
 <           protection_profiles:  0x0004 (length)
 <                                 0x0009000A (value)
 ---
-> 
 >             message_type: 0x01 length: 0x0007
-> 
+574a574,578
 >             SupportedProfiles:
-> 
 >                            version: 0x00
 > 
 >                            protection_profiles:  0x0004 (length)
 >                                                  0x0009000A (value)
-615,619c621,626
+591,595c595,600
 <              |   0x01  | Supported SRTP Protection Profiles |
 <              |   0x02  | Unsupported Version                |
 <              |   0x03  | Media Keys                         |
@@ -71,82 +55,9 @@
 >              | 0x04    | Tunneled DTLS                      |
 >              | 0x05    | Endpoint Disconnect                |
 >              |         |                                    |
-659c666,667
-<               Holmberg, C. and R. Shpount, "Using the SDP Offer/Answer
----
+621a627
 > 
->               Holmberg, C. and R.  Shpount, "Using the SDP Offer/Answer
-664,665c672,674
-<               Thomson, M. and E. Rescorla, "Unknown Key Share Attacks on
-<               uses of Transport Layer Security with the Session
----
-> 
->               Thomson, M. and E.  Rescorla, "Unknown Key Share Attacks
->               on uses of Transport Layer Security with the Session
-670,677c679,686
-<               Requirement Levels", BCP 14, RFC 2119,
-<               DOI 10.17487/RFC2119, March 1997,
-<               <http://www.rfc-editor.org/info/rfc2119>.
-< 
-<    [RFC3264]  Rosenberg, J. and H. Schulzrinne, "An Offer/Answer Model
-<               with Session Description Protocol (SDP)", RFC 3264,
-<               DOI 10.17487/RFC3264, June 2002,
-<               <http://www.rfc-editor.org/info/rfc3264>.
----
->               Requirement Levels", BCP 14, RFC 2119, DOI 10.17487/
->               RFC2119, March 1997, <http://www.rfc-editor.org/info/
->               rfc2119>.
-> 
->    [RFC3264]  Rosenberg, J. and H.  Schulzrinne, "An Offer/Answer Model
->               with Session Description Protocol (SDP)", RFC 3264, DOI
->               10.17487/RFC3264, June 2002, <http://www.rfc-
->               editor.org/info/rfc3264>.
-689,697c698,706
-<    [RFC4122]  Leach, P., Mealling, M., and R. Salz, "A Universally
-<               Unique IDentifier (UUID) URN Namespace", RFC 4122,
-<               DOI 10.17487/RFC4122, July 2005,
-<               <http://www.rfc-editor.org/info/rfc4122>.
-< 
-<    [RFC5246]  Dierks, T. and E. Rescorla, "The Transport Layer Security
-<               (TLS) Protocol Version 1.2", RFC 5246,
-<               DOI 10.17487/RFC5246, August 2008,
-<               <http://www.rfc-editor.org/info/rfc5246>.
----
->    [RFC4122]  Leach, P., Mealling, M., and R.  Salz, "A Universally
->               Unique IDentifier (UUID) URN Namespace", RFC 4122, DOI
->               10.17487/RFC4122, July 2005, <http://www.rfc-
->               editor.org/info/rfc4122>.
-> 
->    [RFC5246]  Dierks, T. and E.  Rescorla, "The Transport Layer Security
->               (TLS) Protocol Version 1.2", RFC 5246, DOI 10.17487/
->               RFC5246, August 2008, <http://www.rfc-editor.org/info/
->               rfc5246>.
-699c708
-<    [RFC5764]  McGrew, D. and E. Rescorla, "Datagram Transport Layer
----
->    [RFC5764]  McGrew, D. and E.  Rescorla, "Datagram Transport Layer
-701,703c710,712
-<               Real-time Transport Protocol (SRTP)", RFC 5764,
-<               DOI 10.17487/RFC5764, May 2010,
-<               <http://www.rfc-editor.org/info/rfc5764>.
----
->               Real-time Transport Protocol (SRTP)", RFC 5764, DOI
->               10.17487/RFC5764, May 2010, <http://www.rfc-
->               editor.org/info/rfc5764>.
-705c714
-<    [RFC6347]  Rescorla, E. and N. Modadugu, "Datagram Transport Layer
----
->    [RFC6347]  Rescorla, E. and N.  Modadugu, "Datagram Transport Layer
-712c721,722
-<               Jennings, C., Jones, P., and A. Roach, "SRTP Double
----
-> 
->               Jennings, C., Jones, P., and A.  Roach, "SRTP Double
-716c726
-<    [RFC4566]  Handley, M., Jacobson, V., and C. Perkins, "SDP: Session
----
->    [RFC4566]  Handley, M., Jacobson, V., and C.  Perkins, "SDP: Session
-723c733
+699c705
 <    Cisco Systems, Inc.
 ---
 >    Cisco Systems
