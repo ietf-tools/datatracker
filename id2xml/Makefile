@@ -88,10 +88,10 @@ test/out/%.xml:	test/in/%.txt id2xml/parser.py
 
 # ------------------------------------------------------------------------
 
-dist/id2xml-$(version).tar.gz: setup.py id2xml/*
+dist/id2xml-$(version).tar.gz: MANIFEST.in setup.py id2xml/*
 	python setup.py -q sdist
 
-dist/id2xml-$(version)-py27-none-any.whl: setup.py id2xml/*
+dist/id2xml-$(version)-py27-none-any.whl: MANIFEST.in setup.py id2xml/*
 	python setup.py -q bdist_wheel --python-tag py27
 
 dist/%.asc: dist/%
@@ -100,7 +100,7 @@ dist/%.asc: dist/%
 sdist:		dist/id2xml-$(version).tar.gz			dist/id2xml-$(version).tar.gz.asc
 bdist_wheel:	dist/id2xml-$(version)-py27-none-any.whl	dist/id2xml-$(version)-py27-none-any.whl.asc
 
-dist:	test sdist bdist_wheel
+dist:	test sdist # bdist_wheel
 
 upload:	install test dist
 	twine upload dist/id2xml-$(version)* -r pypi

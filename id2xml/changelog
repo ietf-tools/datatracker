@@ -1,3 +1,54 @@
+id2xml (1.0.0-rc1) ietf; urgency=low
+
+  * Improved the debug trace facilities with --start-trace on a text match,
+    --stop-trace on a text match, and --trace one or more function names
+
+  * Improved the code recognition regex, in order to handle more code and
+    constants fragments as figures.
+
+  * Added recognition and handling of <CODE BEGINS> and <CODE ENDS> marks
+
+  * Added recognition of reference text date strings containing days
+
+  * Added recognition of another usage of 'Work-in-progress' in references
+
+  * Modified list handling to recognise lists in additional formats, and to
+    use <vspace> to introduce line breaks and blank lines for some cases
+
+  * Added recognition of reference quotes within list text
+
+  * Added 2 new ways to recognize text which needs to be captured as figures
+    (based on recurring wide whitespace and on text not being paragraph filled)
+
+  * Added better handling of draft references for the purpose of generating
+    proper entity definitions in the doctype declaration
+
+  * Refined the test suite to show percentages of lines which deviate between
+    text master and the text generated from the generated xml, and to not
+    include differences in the ToC page numbers in the checked diff
+    linecounts.
+
+  * Added support for title abbreviation occuring in the footer, rather 
+    than the header.  Explicitly created a title abbreviation for long titles 
+    with no abbreviation available, rather than letting xml2rfc mangle the page 
+    header.
+
+  * Tweaked the setup to make the local debug.py available.
+
+  * Don't interpret 'Internet-Draft' at the top left of the first page as a 
+    workgroup name.  Test case added.
+
+  * Added list default style 'empty', based on an issue report from 
+    julian.reschke@gmx.de
+
+  * Added stripping of leading/trailing blanks from author name components 
+    (initials and surname), based on an issue report from julian.reschke@gmx.de
+
+  * Renamed the subversion branch to match the selected tool name.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  19 May 2017 20:32:32 +0200
+
+
 id2xml (0.9.3) ietf; urgency=low
 
   * Added a mkrelease script.
