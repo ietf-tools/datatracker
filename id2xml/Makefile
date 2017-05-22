@@ -20,6 +20,8 @@ testfiles= \
 
 textfiles= $(addprefix test/in/, $(testfiles))
 resfiles = $(addprefix test/out/, $(testfiles))
+okfiles  = $(addprefix test/ok/, $(testfiles))
+origxml  = $(addsuffix .xml, $(basename $(okfiles)))
 xmlfiles = $(addsuffix .xml, $(basename $(resfiles)))
 diffiles = $(addsuffix .diff, $(basename $(resfiles)))
 tests    = $(addsuffix .test, $(basename $(resfiles)))
@@ -27,12 +29,10 @@ tests    = $(addsuffix .test, $(basename $(resfiles)))
 
 all: install upload
 
-%.1: id2xml/parser.py id2xml/__init__.py
-	id2xml -h | sed -e 's/^optional arguments:/OPTIONS/'	\
-			-e 's/^usage:/SYNOPSIS\n/'		\
-			-e 's/^positional arguments:/ARGUMENTS/'\
-			-e 's/^  -/\n  -/'			\
-		  | sed -e '/^  -/N;s/\n         */  /'		\
+%.1: id2xml/parser.py id2xml/__init__.py Makefile
+	id2xml -h | sed -e 's/^  -/\n  -/'			\
+                  | sed -e '/^  -/N;s/\n         */  /'         \
+		  | sed -e 's/^         */         /'		\
 		  | txt2man -s1 -r'RFC Format Tools' -t $< > $@
 
 
@@ -49,6 +49,12 @@ install: id2xml/id2xml.1.gz
 env/bin/id2xml:	id2xml/parser.py
 	python setup.py -q install
 
+
+# ------------------------------------------------------------------------
+# specials
+
+.PRECIOUS: $(xmlfiles)
+
 # ------------------------------------------------------------------------
 # test
 
@@ -56,8 +62,13 @@ test:	env/bin/id2xml $(resfiles) $(diffiles) $(tests)
 
 infiles: $(textfiles)
 
+origxml: $(origxml)
+
 test/in/draft-%.txt:
 	wget -q -N -P test/in/ https://tools.ietf.org/id/$(notdir $@)
+
+test/ok/%.xml:
+	wget -q -N -P test/ok/ https://tools.ietf.org/id/$(notdir $@) || true
 
 test/in/rfc%.txt:
 	wget -q -N -P test/in/ https://tools.ietf.org/rfc/$(notdir $@)

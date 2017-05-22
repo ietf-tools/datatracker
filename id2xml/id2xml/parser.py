@@ -6,12 +6,16 @@
 NAME
   id2xml - Convert text format RFCs and Internet-Drafts to .xml format
 
+...
+
 DESCRIPTION
   id2xml reads text-format RFCs and IETF drafts which are reasonably
   well formatted (i.e., conforms to the text format produced by xml2rfc)
   and tries to generate a reasonably appropriate .xml file following the
   format accepted by xml2rfc, defined in RFC 7749 and its predecessors/
   successors
+
+OPTIONS
 ...
 
 AUTHOR
@@ -54,6 +58,8 @@ try:
 except ImportError:
     pformat = lambda x: x
 
+_prolog, _middle, _epilog = __doc__.split('...')
+
 # ----------------------------------------------------------------------
 
 # ----------------------------------------------------------------------
@@ -63,6 +69,7 @@ except ImportError:
 def run():
     import sys, os, argparse
     from pathlib import Path
+    global _prolog, _middle, _epilog
 
     program = os.path.basename(sys.argv[0])
     #progdir = os.path.dirname(sys.argv[0])
@@ -115,25 +122,35 @@ def run():
     def commalist(value):
         return [ s.strip() for s in value.split(',') ]
 
-    prolog, epilog = __doc__.split('...')
-    parser = argparse.ArgumentParser(description=prolog, epilog=epilog,
-                                     formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('DRAFT', nargs='*',                             help="text format draft(s) to be converted to xml")
-    parser.add_argument('-2', '--schema-v2', dest='schema', action='store_const', const='v2',
+    class HelpFormatter(argparse.RawDescriptionHelpFormatter):
+        def _format_usage(self, usage, actions, groups, prefix):
+            global _prolog
+            if prefix is None or prefix == 'usage: ':
+                prefix = 'SYNOPSIS\n  '
+            return _prolog+super(HelpFormatter, self)._format_usage(usage, actions, groups, prefix)
+
+    parser = argparse.ArgumentParser(description=_middle, epilog=_epilog,
+                                     formatter_class=HelpFormatter, add_help=False)
+
+    group = parser.add_argument_group(argparse.SUPPRESS)
+
+    group.add_argument('DRAFT', nargs='*',                              help="text format draft(s) to be converted to xml")
+    group.add_argument('-2', '--schema-v2', dest='schema', action='store_const', const='v2',
                                                                         help="output v2 (RFC 7749) schema")
-    parser.add_argument('-3', '--schema-v3', dest='schema', action='store_const', const='v3',
+    group.add_argument('-3', '--schema-v3', dest='schema', action='store_const', const='v3',
                                                                         help="output v3 (RFC 7991) schema")
-    parser.add_argument('-d', '--debug', action='store_true',           help="turn on debugging")
-    parser.add_argument('-o', '--output-file', metavar='FILE',          help="set the output file name")
-    parser.add_argument('-p', '--output-path', metavar="DIR",           help="set the output directory name")
-    parser.add_argument('-q', '--quiet', action='store_true',           help="be more quiet")
-    parser.add_argument('-s', '--strip-only', action='store_true',      help="don't convert, only strip headers and footers")
-    parser.add_argument('--start-trace', metavar='LINE', default=None,  help="start debug tracing when matching this line")
-    parser.add_argument('--stop-trace', metavar='LINE', default='^$',   help="stop debug tracing when matching this line")
-    parser.add_argument('--trace', type=commalist, metavar='METHODS',   help="a comma-separated list of methods to trace")
-    parser.add_argument('-v', '--version', action='store_true',         help="output version information, then exit")
-    parser.add_argument('-V', '--verbose', action='store_true',         help="be (slightly) more verbose")
-    parser.set_defaults(schema='v2')
+    group.add_argument('-d', '--debug', action='store_true',            help="turn on debugging")
+    group.add_argument('-h', '--help', action='help',                   help="show this help message and exit")
+    group.add_argument('-o', '--output-file', metavar='FILE',           help="set the output file name")
+    group.add_argument('-p', '--output-path', metavar="DIR",            help="set the output directory name")
+    group.add_argument('-q', '--quiet', action='store_true',            help="be more quiet")
+    group.add_argument('-s', '--strip-only', action='store_true',       help="don't convert, only strip headers and footers")
+    group.add_argument('--start-trace', metavar='REGEX', default=None,  help="start debug tracing on matching line")
+    group.add_argument('--stop-trace', metavar='REGEX', default='^$',   help="stop debug tracing on matching line")
+    group.add_argument('--trace', type=commalist, metavar='METHODS',    help="a comma-separated list of methods to trace")
+    group.add_argument('-v', '--version', action='store_true',          help="output version information, then exit")
+    group.add_argument('-V', '--verbose', action='store_true',          help="be (slightly) more verbose")
+    group.set_defaults(schema='v2')
 
     options = parser.parse_args(namespace=options)
 
