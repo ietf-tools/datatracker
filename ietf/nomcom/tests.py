@@ -1771,3 +1771,93 @@ class MergePersonTests(TestCase):
         self.assertEqual(self.nc.nominee_set.get(pk=self.nominee2.pk).feedback_set.count(),2)
         self.assertFalse(self.nc.nominee_set.filter(pk=self.nominee1.pk).exists())
         
+class AcceptingTests(TestCase):
+    def setUp(self):
+        build_test_public_keys_dir(self)
+        self.nc = NomComFactory(**nomcom_kwargs_for_year())
+        self.plain_person = PersonFactory.create()
+        self.member = self.nc.group.role_set.filter(name='member').first().person
+
+    def tearDown(self):
+        clean_test_public_keys_dir(self)
+
+    def test_public_accepting_nominations(self):
+        url = reverse('ietf.nomcom.views.public_nominate',kwargs={'year':self.nc.year()})
+
+        login_testing_unauthorized(self,self.plain_person.user.username,url)
+        response = self.client.get(url)
+        q=PyQuery(response.content)
+        self.assertEqual( len(q('#id_position option')) , 4 )
+
+        pos = self.nc.position_set.first()
+        pos.accepting_nominations=False
+        pos.save()
+        
+        response = self.client.get(url)
+        q=PyQuery(response.content)
+        self.assertEqual( len(q('#id_position option')) , 3 )
+
+    def test_private_accepting_nominations(self):
+        url = reverse('ietf.nomcom.views.private_nominate',kwargs={'year':self.nc.year()})
+
+        login_testing_unauthorized(self,self.member.user.username,url)
+        response = self.client.get(url)
+        q=PyQuery(response.content)
+        self.assertEqual( len(q('#id_position option')) , 4 )
+
+        pos = self.nc.position_set.first()
+        pos.accepting_nominations=False
+        pos.save()
+        
+        response = self.client.get(url)
+        q=PyQuery(response.content)
+        self.assertEqual( len(q('#id_position option')) , 4 )
+
+    def test_public_accepting_feedback(self):
+        url = reverse('ietf.nomcom.views.public_feedback',kwargs={'year':self.nc.year()})
+
+        login_testing_unauthorized(self,self.plain_person.user.username,url)
+        response = self.client.get(url)
+        q=PyQuery(response.content)
+        self.assertEqual( len(q('.badge')) , 3 )
+
+        pos = self.nc.position_set.first()
+        pos.accepting_feedback=False
+        pos.save()
+    
+        response = self.client.get(url)
+        q=PyQuery(response.content)
+        self.assertEqual( len(q('.badge')) , 2 )
+
+        url += "?nominee=%d&position=%d" % (pos.nominee_set.first().pk, pos.pk)
+        response = self.client.get(url)
+        self.assertTrue('not currently accepting feedback' in unicontent(response))
+
+        test_data = {'comments': 'junk',
+                     'position_name': pos.name,
+                     'nominee_name': pos.nominee_set.first().email.person.name,
+                     'nominee_email': pos.nominee_set.first().email.address,
+                     'confirmation': False,
+                     'nominator_email': self.plain_person.email().address,
+                     'nominator_name':  self.plain_person.plain_name(),
+                    }
+        response = self.client.post(url, test_data)
+        self.assertTrue('not currently accepting feedback' in unicontent(response))
+
+    def test_private_accepting_feedback(self):
+        url = reverse('ietf.nomcom.views.private_feedback',kwargs={'year':self.nc.year()})
+
+        login_testing_unauthorized(self,self.member.user.username,url)
+        response = self.client.get(url)
+        q=PyQuery(response.content)
+        self.assertEqual( len(q('.badge')) , 3 )
+
+        pos = self.nc.position_set.first()
+        pos.accepting_feedback=False
+        pos.save()
+    
+        response = self.client.get(url)
+        q=PyQuery(response.content)
+        self.assertEqual( len(q('.badge')) , 3 )
+
+

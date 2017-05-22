@@ -41,7 +41,7 @@ class PositionNomineeField(forms.ChoiceField):
 
     def __init__(self, *args, **kwargs):
         self.nomcom = kwargs.pop('nomcom')
-        positions = Position.objects.get_by_nomcom(self.nomcom).opened().order_by('name')
+        positions = Position.objects.get_by_nomcom(self.nomcom).filter(is_open=True).order_by('name')
         results = []
         for position in positions:
             accepted_nominees = [np.nominee for np in NomineePosition.objects.filter(position=position,state='accepted').exclude(nominee__duplicated__isnull=False)]
@@ -62,7 +62,7 @@ class PositionNomineeField(forms.ChoiceField):
             return nominee
         (position_id, nominee_id) = nominee.split('_')
         try:
-            position = Position.objects.get_by_nomcom(self.nomcom).opened().get(id=position_id)
+            position = Position.objects.get_by_nomcom(self.nomcom).filter(is_open=True).get(id=position_id)
         except Position.DoesNotExist:
             raise forms.ValidationError('Invalid nominee')
         try:
@@ -82,7 +82,7 @@ class MultiplePositionNomineeField(forms.MultipleChoiceField, PositionNomineeFie
                 return nominee
             (position_id, nominee_id) = nominee.split('_')
             try:
-                position = Position.objects.get_by_nomcom(self.nomcom).opened().get(id=position_id)
+                position = Position.objects.get_by_nomcom(self.nomcom).filter(is_open=True).get(id=position_id)
             except Position.DoesNotExist:
                 raise forms.ValidationError('Invalid nominee')
             try:
@@ -356,7 +356,9 @@ class NominateForm(forms.ModelForm):
         self.fields['searched_email'].help_text = 'Search by name or email address. Click <a href="%s">here</a> if the search does not find the candidate you want to nominate.' % reverse(new_person_url_name,kwargs={'year':self.nomcom.year()})
         self.fields['nominator_email'].label = 'Nominator email'
         if self.nomcom:
-            self.fields['position'].queryset = Position.objects.get_by_nomcom(self.nomcom).opened()
+            self.fields['position'].queryset = Position.objects.get_by_nomcom(self.nomcom).filter(is_open=True)
+            if self.public:
+                self.fields['position'].queryset = self.fields['position'].queryset.filter(accepting_nominations=True)
             self.fields['qualifications'].help_text = self.nomcom.initial_text
 
         if not self.public:
@@ -454,7 +456,9 @@ class NominateNewPersonForm(forms.ModelForm):
 
         self.fields['nominator_email'].label = 'Nominator email'
         if self.nomcom:
-            self.fields['position'].queryset = Position.objects.get_by_nomcom(self.nomcom).opened()
+            self.fields['position'].queryset = Position.objects.get_by_nomcom(self.nomcom).filter(is_open=True)
+            if self.public:
+                self.fields['position'].queryset = self.fields['position'].queryset.filter(accepting_nominations=True)  
             self.fields['qualifications'].help_text = self.nomcom.initial_text
 
         if not self.public:
@@ -680,7 +684,7 @@ class PositionForm(forms.ModelForm):
 
     class Meta:
         model = Position
-        fields = ('name', 'is_open')
+        fields = ('name', 'is_open', 'accepting_nominations', 'accepting_feedback')
 
     def __init__(self, *args, **kwargs):
         self.nomcom = kwargs.pop('nomcom', None)
@@ -766,7 +770,7 @@ class MutableFeedbackForm(forms.ModelForm):
                                                                   widget=forms.SelectMultiple(attrs={'class':'nominee_multi_select','size':'12'}),
                                                                   help_text='Hold down "Control", or "Command" on a Mac, to select more than one.')
         else:
-            self.fields['position'] = forms.ModelChoiceField(queryset=Position.objects.get_by_nomcom(self.nomcom).opened(), label="Position")
+            self.fields['position'] = forms.ModelChoiceField(queryset=Position.objects.get_by_nomcom(self.nomcom).filter(is_open=True), label="Position")
             self.fields['searched_email'] = SearchableEmailField(only_users=False,help_text="Try to find the candidate you are classifying with this field first. Only use the name and email fields below if this search does not find the candidate.",label="Candidate",required=False)
             self.fields['candidate_name'] = forms.CharField(label="Candidate name",help_text="Only fill in this name field if the search doesn't find the person you are classifying",required=False)
             self.fields['candidate_email'] = forms.EmailField(label="Candidate email",help_text="Only fill in this email field if the search doesn't find the person you are classifying",required=False)
@@ -829,7 +833,6 @@ class MutableFeedbackForm(forms.ModelForm):
                 feedback.nominees.add(nominee)
                 feedback.positions.add(position)
         return feedback
-
 
 FullFeedbackFormSet = forms.modelformset_factory(
         model=Feedback,

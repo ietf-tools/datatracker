@@ -68,14 +68,6 @@ class PositionQuerySet(QuerySet):
     def get_by_nomcom(self, nomcom):
         return self.filter(nomcom=nomcom)
 
-    def opened(self):
-        """ only opened positions """
-        return self.filter(is_open=True)
-
-    def closed(self):
-        """ only closed positions """
-        return self.filter(is_open=False)
-
 
 class PositionManager(models.Manager, MixinManager):
     def get_queryset(self):
