@@ -21,6 +21,16 @@
       <div class="panel-body">
       {% for position in group.list %}
       <h4>{{ position.name }}</h4>
+      {% if group.grouper %}
+        <dl class="dl-horizontal">
+          <dt>Accepting</dt>
+          <dd>
+            {% if position.accepting_nominations %}Nominations{% endif %}
+            {% if position.accepting_nominations and position.accepting_feedback %}and{% endif %}
+            {% if position.accepting_feedback %}Feedback{% endif %}
+          </dd>
+        </dl>
+      {% endif %}
       <dl class="dl-horizontal">
         <dt>Templates</dt>
         <dd>

@@ -130,7 +130,9 @@ def nomcom_test_data():
     for name in POSITIONS:
         position, created = Position.objects.get_or_create(nomcom=nomcom,
                                                            name=name,
-                                                           is_open=True)
+                                                           is_open=True,
+                                                           accepting_nominations=True,
+                                                           accepting_feedback=True)
 
     ChangeStateGroupEvent.objects.get_or_create(group=group,
                                                 type="changed_state",

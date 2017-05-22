@@ -24,7 +24,7 @@ class NomineePositionAdmin(admin.ModelAdmin):
 
 
 class PositionAdmin(admin.ModelAdmin):
-    list_display = ('name', 'nomcom', 'is_open')
+    list_display = ('name', 'nomcom', 'is_open', 'accepting_nominations', 'accepting_feedback')
     list_filter = ('nomcom',)
 
 

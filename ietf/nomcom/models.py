@@ -163,7 +163,9 @@ class Position(models.Model):
     name = models.CharField(verbose_name='Name', max_length=255, help_text='This short description will appear on the Nomination and Feedback pages. Be as descriptive as necessary. Past examples: "Transport AD", "IAB Member"')
     requirement = models.ForeignKey(DBTemplate, related_name='requirement', null=True, editable=False)
     questionnaire = models.ForeignKey(DBTemplate, related_name='questionnaire', null=True, editable=False)
-    is_open = models.BooleanField(verbose_name='Is open', default=False)
+    is_open = models.BooleanField(verbose_name='Is open', default=False, help_text="Set is_open when the nomcom is working on a position. Clear it when an appointment is confirmed.")
+    accepting_nominations = models.BooleanField(verbose_name='Is accepting nominations', default=False)
+    accepting_feedback = models.BooleanField(verbose_name='Is accepting feedback', default=False)
 
     objects = PositionManager()
 

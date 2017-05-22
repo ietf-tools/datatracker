@@ -42,6 +42,8 @@ class PositionResource(ModelResource):
             "id": ALL,
             "name": ALL,
             "is_open": ALL,
+            "accepting_nominations": ALL,
+            "accepting_feedback": ALL,
             "nomcom": ALL_WITH_RELATIONS,
             "requirement": ALL_WITH_RELATIONS,
             "questionnaire": ALL_WITH_RELATIONS,

@@ -128,6 +128,8 @@ class PositionFactory(factory.DjangoModelFactory):
 
     name = factory.Faker('sentence',nb_words=5)
     is_open = True
+    accepting_nominations = True
+    accepting_feedback = True
 
 class NomineeFactory(factory.DjangoModelFactory):
     class Meta:

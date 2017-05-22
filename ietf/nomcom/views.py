@@ -173,6 +173,7 @@ def private_index(request, year):
     if selected_state == questionnaire_state:
         nominee_positions = [np for np in nominee_positions if np.questionnaires]
 
+    # TODO- just build this dict using open Positions: see #2254
     stats = all_nominee_positions.values('position__name', 'position__id').annotate(total=Count('position'))
     states = list(NomineePositionStateName.objects.values('slug', 'name')) + [{'slug': questionnaire_state, 'name': u'Questionnaire'}]
     positions = set([ n.position for n in all_nominee_positions.order_by('position__name') ])
@@ -421,7 +422,10 @@ def feedback(request, year, public):
             nominee = get_object_or_404(Nominee, id=selected_nominee)
             position = get_object_or_404(Position, id=selected_position)
 
-    positions = Position.objects.get_by_nomcom(nomcom=nomcom).opened()
+    if public:
+        positions = Position.objects.get_by_nomcom(nomcom=nomcom).filter(is_open=True,accepting_feedback=True)
+    else:
+        positions = Position.objects.get_by_nomcom(nomcom=nomcom).filter(is_open=True)
 
     user_comments = Feedback.objects.filter(nomcom=nomcom,
                                             type='comment',
@@ -441,6 +445,18 @@ def feedback(request, year, public):
                 'nomcom': nomcom,
                 'year': year,
                 'selected': 'feedback',
+                'counts' : counts,
+                'base_template': base_template
+            })
+
+    if public and position and not (position.is_open and position.accepting_feedback):
+            messages.warning(request, "This Nomcom is not currently accepting feedback for "+position.name)
+            return render(request, 'nomcom/feedback.html', {
+                'form': None,
+                'nomcom': nomcom,
+                'year': year,
+                'selected': 'feedback',
+                'positions': positions,
                 'counts' : counts,
                 'base_template': base_template
             })
