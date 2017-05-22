@@ -1,3 +1,14 @@
+id2xml (1.0.0rc1) ietf; urgency=low
+
+  * Tweaked the help text and the manpage generation.
+
+  * Updated MANIFEST and Makefile
+
+  * Added some missing files, updated the acceptable diffs in test/ok/.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  22 May 2017 22:38:41 +0200
+
+
 id2xml (1.0.0-rc1) ietf; urgency=low
 
   * Improved the debug trace facilities with --start-trace on a text match,
