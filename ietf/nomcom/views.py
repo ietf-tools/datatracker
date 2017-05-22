@@ -10,7 +10,6 @@ from django.urls import reverse
 from django.http import Http404, HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
-from django.db.models import Count
 from django.forms.models import modelformset_factory, inlineformset_factory
 
 
@@ -173,8 +172,8 @@ def private_index(request, year):
     if selected_state == questionnaire_state:
         nominee_positions = [np for np in nominee_positions if np.questionnaires]
 
-    # TODO- just build this dict using open Positions: see #2254
-    stats = all_nominee_positions.values('position__name', 'position__id').annotate(total=Count('position'))
+    positions = Position.objects.get_by_nomcom(nomcom=nomcom)
+    stats = [{'position__name':p.name,'position__id':p.pk} for p in positions]
     states = list(NomineePositionStateName.objects.values('slug', 'name')) + [{'slug': questionnaire_state, 'name': u'Questionnaire'}]
     positions = set([ n.position for n in all_nominee_positions.order_by('position__name') ])
     for s in stats:
@@ -184,6 +183,7 @@ def private_index(request, year):
             else:
                 s[state['slug']] = all_nominee_positions.filter(position__name=s['position__name'],
                                                                 state=state['slug']).count()
+        s['total'] = all_nominee_positions.filter(position__name=s['position__name']).count()
 
     return render(request, 'nomcom/private_index.html',
                               {'nomcom': nomcom,
