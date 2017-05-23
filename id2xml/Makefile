@@ -11,12 +11,17 @@ testfiles= \
 	draft-ietf-netmod-revised-datastores-02.txt		\
 	draft-ietf-ospf-encapsulation-cap-02.txt		\
 	draft-ietf-perc-dtls-tunnel-01.txt			\
+	draft-ietf-sipcore-name-addr-guidance-01.txt		\
 	draft-ietf-v6ops-rfc7084-bis-01.txt			\
+	draft-jones-cose-rsa-03.txt				\
 	draft-miek-test.txt					\
+	draft-nottingham-rfc5988bis-05.txt			\
 	draft-sparks-genarea-review-tracker-03.txt		\
 	rfc5661.txt						\
 	rfc7629.txt						\
-	rfc7842.txt
+	rfc7842.txt						\
+#	draft-ietf-curdle-cms-ecdh-new-curves-07.txt		\
+
 
 textfiles= $(addprefix test/in/, $(testfiles))
 resfiles = $(addprefix test/out/, $(testfiles))

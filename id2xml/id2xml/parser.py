@@ -381,17 +381,17 @@ def strip_pagebreaks(text):
         return page, newpage
     for lineno, line in enumerate(lines):
         line = line.rstrip()
-        match = re.search("(  +)(\S.*\S)(  +)\[?[Pp]age [0-9ivx]+\]?[ \t\f]*$", line, re.I)
-        if match:
-            mid = match.group(2)
-            if not short_title and not mid.startswith('Expires'):
-                short_title = mid
-            page, newpage = endpage(page, newpage, line)
-            continue
-        if re.search("\f", line, re.I):
-            page, newpage = begpage(page, newpage)
-            continue
         if lineno > 25:
+            match = re.search("(  +)(\S.*\S)(  +)\[?[Pp]age [0-9ivx]+\]?[ \t\f]*$", line, re.I)
+            if match:
+                mid = match.group(2)
+                if not short_title and not mid.startswith('Expires'):
+                    short_title = mid
+                page, newpage = endpage(page, newpage, line)
+                continue
+            if re.search("\f", line, re.I):
+                page, newpage = begpage(page, newpage)
+                continue
             regex = "^(Internet.Draft|RFC \d+)(  +)(\S.*\S)(  +)(Jan|Feb|Mar|March|Apr|April|May|Jun|June|Jul|July|Aug|Sep|Oct|Nov|Dec)[a-z]+ (19[89][0-9]|20[0-9][0-9]) *$"
             match = re.search(regex, line, re.I)
             if match:
@@ -401,54 +401,56 @@ def strip_pagebreaks(text):
                 #debug.show('short_title')
                 page, newpage = begpage(page, newpage, line)
                 continue
-        if lineno > 25 and re.search(".{58,}(Jan|Feb|Mar|March|Apr|April|May|Jun|June|Jul|July|Aug|Sep|Oct|Nov|Dec)[a-z]+ (19[89][0-9]|20[0-9][0-9]) *$", line, re.I):
-            page, newpage = begpage(page, newpage, line)
-            continue
-        if re.search("^ *Internet.Draft.+[12][0-9][0-9][0-9] *$", line, re.I):
-            page, newpage = begpage(page, newpage, line)
-            continue
-#        if re.search("^ *Internet.Draft  +", line, re.I):
-#            newpage = True
-#            continue
-        if re.search("^ *Draft.+[12][0-9][0-9][0-9] *$", line, re.I):
-            page, newpage = begpage(page, newpage, line)
-            continue
-        if re.search("^RFC[ -]?[0-9]+.*( +)[12][0-9][0-9][0-9]$", line, re.I):
-            page, newpage = begpage(page, newpage, line)
-            continue
-        if re.search("^RFC[ -]?[0-9]+.*(  +)[12][0-9][0-9][0-9]$", line, re.I):
-            page, newpage = begpage(page, newpage, line)
-            continue
-        if re.search("^draft-[-a-z0-9_.]+.*[0-9][0-9][0-9][0-9]$", line, re.I):
-            page, newpage = endpage(page, newpage, line)
-            continue
-        if newpage and re.search("^ *draft-[-a-z0-9_.]+ *$", line, re.I):
-            page, newpage = begpage(page, newpage, line)
-            continue
-        if re.search("^[^ \t]+", line):
-            sentence = True
-        if re.search("[^ \t]", line):
-            if newpage:
-                if sentence:
-                    stripped += [ Line(lineno-1, "") ]
-            else:
-                if blankcount:
-                    stripped += [ Line(lineno-1, "") ]
-            blankcount = 0
-            sentence = False
-            newpage = False
-        if re.search("[.:+]\)?$", line):    # line ends with a period; don't join with next page para
-            sentence = True
-        if re.search("^[A-Z0-9][0-9]*\.", line): # line starts with a section number; don't join with next page para
-            sentence = True
-        if re.search("^ +[o*+-]  ", line): # line starts with a list bullet; don't join with next page para
-            sentence = True
-        if re.search("^ +(E[Mm]ail): ", line): # line starts with an address component; don't join with next page para
-            sentence = True
-        if re.search("^[ \t]*$", line):
-            blankcount += 1
-            page += [ line ]
-            continue
+            if re.search(".{58,}(Jan|Feb|Mar|March|Apr|April|May|Jun|June|Jul|July|Aug|Sep|Oct|Nov|Dec)[a-z]+ (19[89][0-9]|20[0-9][0-9]) *$", line, re.I):
+                page, newpage = begpage(page, newpage, line)
+                continue
+            if re.search("^ *Internet.Draft.+[12][0-9][0-9][0-9] *$", line, re.I):
+                page, newpage = begpage(page, newpage, line)
+                continue
+    #        if re.search("^ *Internet.Draft  +", line, re.I):
+    #            newpage = True
+    #            continue
+            if re.search("^ *Draft.+[12][0-9][0-9][0-9] *$", line, re.I):
+                page, newpage = begpage(page, newpage, line)
+                continue
+            if re.search("^RFC[ -]?[0-9]+.*( +)[12][0-9][0-9][0-9]$", line, re.I):
+                page, newpage = begpage(page, newpage, line)
+                continue
+            if re.search("^RFC[ -]?[0-9]+.*(  +)[12][0-9][0-9][0-9]$", line, re.I):
+                page, newpage = begpage(page, newpage, line)
+                continue
+            if re.search("^draft-[-a-z0-9_.]+.*[0-9][0-9][0-9][0-9]$", line, re.I):
+                page, newpage = endpage(page, newpage, line)
+                continue
+            if newpage and re.search("^ *draft-[-a-z0-9_.]+ *$", line, re.I):
+                page, newpage = begpage(page, newpage, line)
+                continue
+            if re.search("^[^ \t]+", line):
+                sentence = True
+            if re.search("[^ \t]", line):
+                if newpage:
+                    if sentence:
+                        stripped += [ Line(lineno-1, "") ]
+                else:
+                    if blankcount:
+                        stripped += [ Line(lineno-1, "") ]
+                blankcount = 0
+                sentence = False
+                newpage = False
+            if re.search("[.:+]\)?$", line):    # line ends with a period; don't join with next page para
+                sentence = True
+            if re.search("^[A-Z0-9][0-9]*\.", line): # line starts with a section number; don't join with next page para
+                sentence = True
+            if re.search("^ +[o*+-]  ", line): # line starts with a list bullet; don't join with next page para
+                sentence = True
+            if re.search("^ +(E[Mm]ail): ", line): # line starts with an address component; don't join with next page para
+                sentence = True
+            if re.search("^ +(Table|Figure)( +\d+)?: ", line): # line starts with Table or Figure label; don't join with next page para
+                sentence = True
+            if re.search("^[ \t]*$", line):
+                blankcount += 1
+                page += [ line ]
+                continue
         page += [ line ]
         stripped += [ Line(lineno, line) ]
     page, newpage = begpage(page, newpage)
@@ -480,13 +482,13 @@ def split_on_large_whitespace(line):
             bestp = pos
             bestc = count
     # 
-    if bestp == 0 or bestp == len(line.rstrip()):
+    if bestc < 2 or bestp == 0 or bestp == len(line.rstrip()):
         rwhite = len(line)-len(line.rstrip())
         lwhite = len(line)-len(line.lstrip())
-        if abs(rwhite-lwhite) < min(rwhite, lwhite):
+        if abs(rwhite-lwhite) < max(2, min(rwhite, lwhite)):
             center = line.strip()
     if not center:
-        left, right = line[:bestp].strip(), line[bestp:].strip()
+        left, right = line[:bestp].rstrip(), line[bestp:].strip()
     return left, center, right
 
 def ind(line):
@@ -1008,6 +1010,7 @@ class DraftParser():
             sys.exit(1)
 
     def parse_to_xml(self, **kwargs):
+        # fix some bloopers
         self.lines, self.short_title = strip_pagebreaks(self.raw.expandtabs())
         self.l = 0
         self.p = None
@@ -1169,6 +1172,8 @@ class DraftParser():
         #
         self.skip_blank_lines()
         while True:
+            self.dshow('self.l')
+            self.dshow('self.lines[self.l]')
             line, p = self.get_line()
             if line.txt.strip() == "":
                 if lines_title and lines_name and found_rightleft:
@@ -1183,15 +1188,18 @@ class DraftParser():
                 padded = (line.txt + ' '*pad_len)[:pad_len]
             left, center, right = split_on_large_whitespace(padded)
             if left.lower() in section_names['front']:
+                self.dsay('found section name, breaking off')
                 self.push_line(line, p)
                 break
             if center:
+                self.dsay('found centered line: %s' % (center, ))
                 if 'draft-' in center and not ' ' in center:
                     lines_name = Line(line.num, center.strip("[]<>"))
                     assert lines_name[1].startswith('draft-')
                 else:
                     lines_title.append(Line(line.num, center))
             else:
+                self.dsay('found left/right line: %s | %s' % (left, right))
                 found_rightleft = True
                 lines_left.append(Line(line.num, left))
                 lines_right.append(Line(line.num, right))
@@ -1328,133 +1336,231 @@ class DraftParser():
         - expiration note if draft
         - maybe ISSN number if rfc
         """
-        workgroup = stream = series_number = rfc_number = status = expires = None
-        obsoletes = []
-        updates = []
-        # Get workgroup or stream
-        submission_types = {
-            'Network Working Group':                    None,
-            'Internet Engineering Task Force (IETF)':   'IETF',
-            'Internet Architecture Board (IAB)':        'IAB',
-            'Internet Research Task Force (IRTF)':      'IRTF',
-            'Independent Submission':                   'independent',
-        }
-        line = lines.pop(0) if lines else Line(None, "")
-        if line.txt in submission_types.keys():
-            stream = submission_types[line.txt]
-            if self.is_draft and stream != None:
-                self.warn(line.num, "The input document is named '%s' but has an RFC stream type:\n  '%'" % (self.name, line.txt))
-        elif self.is_draft and line.txt == 'Internet-Draft':
-            # no explicit workgroup.  remember line, and move on
-            workgroup = ""
-            lines = [line]+lines
-        else:
-            workgroup = line.txt
-            stream = None
-            if not self.is_draft:
+        class Result(object):
+            workgroup=None
+            stream=None
+            series_number=None
+            rfc_number=None
+            obsoletes=[]
+            updates=[]
+            status=None
+            expires=None
+        res = Result()
+
+        @dtrace
+        def get_stream(self, lines, res, entries):
+            # Get workgroup or stream
+            submission_types = {
+                'Network Working Group':                    None,
+                'Internet Engineering Task Force (IETF)':   'IETF',
+                'Internet Architecture Board (IAB)':        'IAB',
+                'Internet Research Task Force (IRTF)':      'IRTF',
+                'Independent Submission':                   'independent',
+            }
+            line = lines.pop(0) if lines else Line(None, "")
+            self.dshow('line')
+            if line.txt in submission_types.keys():
+                res.stream = submission_types[line.txt]
+                if self.is_draft and res.stream != None:
+                    self.warn(line.num, "The input document is named '%s' but has an RFC stream type:\n  '%'" % (self.name, line.txt))
+            elif self.is_draft:
+                # check all the possible top left keywords:
+                for k in entries:
+                    regex = entries[k]['regex']
+                    if regex and re.search(regex, line.txt):
+                        # no explicit workgroup.  remember line, and move on
+                        res.workgroup = ""
+                        lines.insert(0, line)
+                        self.dsay("pushing '%s'" % line.txt)
+                        break
+                else:
+                    res.workgroup = line.txt
+                    res.stream = None
+            else:
                 self.warn(line.num, "Unrecognized stream indicator in document top left: '%s'" % line.txt)
                 
-        # get internet-draft or RFC number
-        line = lines.pop(0) if lines else Line(None, "")
-        if self.is_draft and not line.txt == 'Internet-Draft':
-            self.warn(line.num, "Expected to see 'Internet-Draft', found '%s'" % line.txt)
-        if self.is_rfc:
-            rfc_string = 'Request for Comments:'
-            if not line.txt.startswith(rfc_string):
-                self.warn(line.num, "Expected to see '%s ...', found '%s'" % (rfc_string, line.txt))
-                rfc_number = "XXXX"
-            else:
-                rfc_number = line.txt.split()[3]
-                if not rfc_number.isdigit():
-                    self.warn(line.num, "Expected a numeric RFC number, found '%s'" % rfc_number)
+        @dtrace
+        def get_label(self, lines, res):
+            # get internet-draft or RFC number
+            line = lines.pop(0) if lines else Line(None, "")
+            self.dshow('line')
+            if self.is_draft and not line.txt == 'Internet-Draft':
+                self.warn(line.num, "Expected to see 'Internet-Draft', found '%s'" % line.txt)
+                lines.insert(0, line)
+                self.dsay("pushing '%s'" % line.txt)
+            elif self.is_rfc:
+                rfc_string = 'Request for Comments:'
+                if not line.txt.startswith(rfc_string):
+                    self.warn(line.num, "Expected to see '%s ...', found '%s'" % (rfc_string, line.txt))
+                    res.rfc_number = "XXXX"
+                    lines.insert(0, line)
+                    self.dsay("pushing '%s'" % line.txt)
+                else:
+                    res.rfc_number = line.txt.split()[3]
+                    if not res.rfc_number.isdigit():
+                        self.warn(line.num, "Expected a numeric RFC number, found '%s'" % res.rfc_number)
             
-        # maybe get series name and number
-        line = lines.pop(0) if lines else Line(None, "")
-        series_names = {
-            'STD:': 'std',
-            'BCP:': 'bcp',
-            'FYI:': 'fyi',
-        }
-        if self.is_rfc:
-            w = line.txt.split()[0]
-            if w in series_names:
-                series_number = line.txt.split(None, 1)[-1]
+        @dtrace
+        def get_series(self, lines, res):
+            # maybe get series name and number
+            series_names = {
+                'STD:': 'std',
+                'BCP:': 'bcp',
+                'FYI:': 'fyi',
+            }
+            if self.is_rfc:
                 line = lines.pop(0) if lines else Line(None, "")
+                self.dshow('line')
+                w = line.txt.split()[0]
+                if w in series_names:
+                    res.series_number = line.txt.split(None, 1)[-1]
+                else:
+                    lines.insert(0, line)
+                    self.dsay("pushing '%s'" % line.txt)
 
-        # maybe obsoletes and/or updates note
-        while True:
-            if not line or line.txt.strip() == '':
-                break
-            w = line.txt.lower().split()[0].rstrip(':')
-            W = w.capitalize()
-            if w in ['obsoletes', 'updates']:
-                if not line.txt.startswith('%s:' % W):
-                    self.warn(line, "Expected the %s notice to start with '%s:', found '%s'" % (w, W, line.txt))
-                if self.is_draft and not '(if approved)' in line.txt:
-                    self.warn(line.num, "Expected the %s notice to end with '(if approved)', found '%s'" % (w, line.txt))
-                numbers = line.txt.split()[1:]
-                while True:
+        @dtrace
+        def get_modifies(self, lines, res):
+            # maybe obsoletes and/or updates note
+            self.dsay('Looking for Obsoletes: and Updates:')
+            while True:
+                line = lines.pop(0) if lines else Line(None, "")
+                if line.txt.strip() == '':
+                    break
+                w = line.txt.lower().split()[0].rstrip(':')
+                W = w.capitalize()
+                if w in ['obsoletes', 'updates']:
+                    if not line.txt.startswith('%s:' % W):
+                        self.warn(line, "Expected the %s notice to start with '%s:', found '%s'" % (w, W, line.txt))
+                    # get continuation lines
+                    clause = line.txt
+                    self.dshow('clause')
+                    while True:
+                        line = lines.pop(0) if lines else Line(None, '')
+                        self.dshow('line')
+                        # 3 spaces here is arbitraty; this should maybe be ' '*min([len('obsoletes'), len('updates')]) or just ' '
+                        if line.txt.startswith('   '):
+                            clause += ' '+line.txt.strip()
+                        else:
+                            lines.insert(0, line)
+                            self.dsay("pushing '%s'" % line.txt)
+                            break
+                    if self.is_draft and not '(if approved)' in clause:
+                        self.warn(line.num, "Expected the %s notice to end with '(if approved)', found '%s'" % (w, clause))
+                    clause = clause.replace('(if approved)', '')
+                    numbers = clause.split()[1:]
                     num_list = [ n for n in numbers if n.isdigit() ]
                     if w == 'obsoletes':
-                        obsoletes += num_list
+                        res.obsoletes = num_list
                     if w == 'updates':
-                        updates += num_list
-                    line = lines.pop(0) if lines else Line(None, "")
-                    # 3 spaces here is arbitraty; this should maybe be ' '*min([len('obsoletes'), len('updates')]) or just ' '
-                    if line.txt.startswith('   '):
-                        numbers = line.txt.split()
+                        res.updates += num_list
+                else:
+                    break
+            lines.insert(0, line)
+            self.dsay("pushing '%s'" % line.txt)
+
+        @dtrace
+        def get_category(self, lines, res):
+            # maybe intended status or category
+            category_names = {
+                'Standards Track':          'std',
+                'Best Current Practice':    'bcp',
+                'Experimental':             'exp',
+                'Informational':            'info',
+                'Historic':                 'historic',
+            }
+            line = lines.pop(0) if lines else Line(None, '')
+            self.dshow('line')
+            if self.is_draft:
+                if line.txt.startswith('Intended status: '):
+                    status_text = line.txt.split(None, 2)[-1].strip()
+                    if not status_text in category_names:
+                        self.warn(line, "Expected a recognized status name, found '%s'" % (line.txt, ))
                     else:
-                        break
+                        res.status = category_names[status_text]
+                else:
+                    self.warn(line, "Expected 'Intended status: ', found '%s'" % (line.txt, ))
+                    lines.insert(0, line)
+                    self.dsay("pushing '%s'" % line.txt)
             else:
+                if line.txt.startswith('Category: '):
+                    status_text = line.txt.split(None, 1)[-1].strip()
+                    if not status_text in category_names:
+                        self.warn(line, "Expected a recognized category, found '%s'" % (line.txt, ))
+                    else:
+                        res.status = category_names[status_text]
+                else:
+                    self.warn(line, "Expected 'Category: ', found '%s'" % (line.txt, ))
+                    lines.insert(0, line)
+                    self.dsay("pushing '%s'" % line.txt)
+
+        @dtrace
+        def get_expiration(self, lines, res):
+            # maybe expiration date
+            if self.is_draft:
+                line = lines.pop(0) if lines else Line(None, '')
+                self.dshow('line')
+                if line.txt.startswith('Expires: '):
+                    try:
+                        res.expires = parse_date(line.txt.split(None, 1)[-1])
+                    except RuntimeError as e:
+                        self.warn(line.num, e)
+                    line = lines.pop(0) if lines else Line(None, "")
+                    self.dshow('line')
+                else:
+                    self.warn(line.num, "Expected an expiration date, found '%s'" % (line.txt,))
+
+        @dtrace
+        def get_issn(self, lines, res):
+            if self.is_rfc and lines[0].txt:
+                line = lines.pop(0) if lines else Line(None, '')
+                self.dshow('line')
+                if line.txt.strip() == 'ISSN: 2070-1721':
+                    pass
+                else:
+                    self.warn(line.num, "Expected an ISSN number, found '%s'" % (line.txt, ))
+
+        entries = {
+            'stream':   dict(order=0, needed=True, function=get_stream,     regex=None ),
+            'label':    dict(order=1, needed=True, function=get_label,      regex=r"^(Internet-Draft|Request for Comments: )" ),
+            'series':   dict(order=2, needed=False,function=get_series,     regex=r"^(STF|BCP|FYI): " ),
+            'modifies': dict(order=3, needed=False,function=get_modifies,   regex=r"^(Updates|Obsoletes)" ),
+            'category': dict(order=4, needed=True, function=get_category,   regex=r"^(Intended status|Category)" ),
+            'expires':  dict(order=5, needed=True, function=get_expiration, regex=r"^Expires" ), 
+            'issn':     dict(order=6, needed=True, function=get_issn,       regex=r"^ISSN: " ), 
+        }
+        if self.is_rfc:
+            entries['expires']['needed'] = False
+        if self.is_draft:
+            entries['issn']['needed'] = False
+        # There's no regex for 'stream', so we need to handle that before we loop:
+        get_stream(self, lines, res, entries)
+        entries['stream']['needed'] = False
+        while any([ v['needed'] for v in entries.values() ]):
+            next = lines[0]
+            self.dshow('next')
+            for k in entries:
+                v = entries[k]
+                regex = v['regex']
+                if regex and re.search(regex, next.txt):
+                    v['function'](self, lines, res)
+                    v['needed'] = False
+                    break
+            else:
+                self.dsay(' - no regex match, breaking loop')
+                break
+            if not lines:
+                self.dsay(' - no more lines, breaking loop')
                 break
 
-        # maybe intended status or category
-        category_names = {
-            'Standards Track':          'std',
-            'Best Current Practice':    'bcp',
-            'Experimental':             'exp',
-            'Informational':            'info',
-            'Historic':                 'historic',
-        }
-        if self.is_draft:
-            if line.txt.startswith('Intended status: '):
-                status_text = line.txt.split(None, 2)[-1].strip()
-                if not status_text in category_names:
-                    self.warn(line, "Expected a recognized status name, found '%s'" % (w, line.txt))
-                else:
-                    status = category_names[status_text]
-                line = lines.pop(0) if lines else Line(None, "")
-        else:
-            if line.txt.startswith('Category: '):
-                status_text = line.txt.split(None, 1)[-1].strip()
-                if not status_text in category_names:
-                    self.warn(line, "Expected a recognized category, found '%s'" % (w, line.txt))
-                else:
-                    status = category_names[status_text]
-                line = lines.pop(0) if lines else Line(None, "")
-
-        # maybe expiration date
-        if self.is_draft:
-            if line.txt.startswith('Expires: '):
-                try:
-                    expires = parse_date(line.txt.split(None, 1)[-1])
-                except RuntimeError as e:
-                    self.warn(line.num, e)
-                line = lines.pop(0) if lines else Line(None, "")
-            else:
-                self.warn(line.num, "Expected an expiration date, found '%s'" % (line.txt,))
-
-        if self.is_rfc and line.txt:
-            if line.txt.strip() == 'ISSN: 2070-1721':
-                pass
-            else:
-                self.warn(line.num, "Expected an ISSN number, found '%s'" % (line.txt, ))
+        for k in entries:
+            if not entries[k]['needed'] == False:
+                self.warn(self.lines[self.l].num, "Expected a %s indication top left, but found none" % k)
 
         for line in lines:
             if line.txt.strip():
                 self.warn(line.num, "Did not expect any more top left text, found '%s'" % (line.txt, ))
 
-        return workgroup, stream, series_number, rfc_number, obsoletes, updates, status, expires
+        return res.workgroup, res.stream, res.series_number, res.rfc_number, res.obsoletes, res.updates, res.status, res.expires
 
     @dtrace
     def parse_top_right(self, lines):
