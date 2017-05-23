@@ -1,0 +1,130 @@
+28c28
+<    The issues list can be found at https://github.com/mnot/I-D/labels/
+---
+>    The issues list can be found at <https://github.com/mnot/I-D/labels/>
+32c32
+<    https://mnot.github.io/I-D/rfc5988bis/ .
+---
+>    <https://mnot.github.io/I-D/rfc5988bis/> .
+34,35c34,35
+<    Recent changes are listed at https://github.com/mnot/I-D/commits/gh-
+<    pages/rfc5988bis .
+---
+>    Recent changes are listed at <https://github.com/mnot/I-D/commits/
+>    gh-> pages/rfc5988bis .
+220c220
+<    https://www.iana.org/assignments/link-relations/ .  Registration
+---
+>    <https://www.iana.org/assignments/link-relations/> .  Registration
+401d400
+< 
+449d447
+< 
+499a498
+> 
+501c500
+<    navigation path.
+---
+>          navigation path.
+553,557c552,554
+<    Applicable protocol: http
+<    Status: standard
+<    Author/change controller:
+<        IETF  (iesg@ietf.org)
+<        Internet Engineering Task Force
+---
+>        Applicable protocol: http Status: standard Author/change
+>        controller: IETF (iesg@ietf.org) Internet Engineering Task Force
+> 
+589d585
+< 
+592,594c588,592
+<    All registry data documents MUST include Simplified BSD License text
+<    as described in Section 4.e of the Trust Legal Provisions
+<    (<http://trustee.ietf.org/license-info>).
+---
+> 
+>       All registry data documents MUST include Simplified BSD License
+>       text
+>          as described in Section 4.e of the Trust Legal Provisions
+>          (<http://trustee.ietf.org/license-info>).
+871a870
+> 
+891,894c890,892
+<        13.  Let "star_param_names" be the set of "param_name"s in the
+<             ("param_name", "param_value") tuples of "link_parameters"
+<             where the last character of "param_name" is an asterisk
+<             ("*").
+---
+>    1.  Let "star_param_names" be the set of "param_name"s in the
+>        ("param_name", "param_value") tuples of "link_parameters" where
+>        the last character of "param_name" is an asterisk ("*").
+896c894
+<        14.  For each "star_param_name" in "star_param_names":
+---
+>    2.  For each "star_param_name" in "star_param_names":
+898,899c896,897
+<             1.  Let "base_param_name" be "star_param_name" with the last
+<                 character removed.
+---
+>        1.  Let "base_param_name" be "star_param_name" with the last
+>            character removed.
+901,907c899,904
+<             2.  If the implementation does not choose to support an
+<                 internationalised form of a parameter named
+<                 "base_param_name" for any reason (including, but not
+<                 limited to, it being prohibited by the parameter's
+<                 specification), remove all tuples from "link_parameters"
+<                 whose first member is "star_param_name" and skip to the
+<                 next "star_param_name".
+---
+>        2.  If the implementation does not choose to support an
+>            internationalised form of a parameter named "base_param_name"
+>            for any reason (including, but not limited to, it being
+>            prohibited by the parameter's specification), remove all
+>            tuples from "link_parameters" whose first member is
+>            "star_param_name" and skip to the next "star_param_name".
+909,910c906,907
+<             3.  Remove all tuples from "link_parameters" whose first
+<                 member is "base_param_name".
+---
+>        3.  Remove all tuples from "link_parameters" whose first member
+>            is "base_param_name".
+912,914c909,910
+<             4.  Change the first member of all tuples in
+<                 "link_parameters" whose first member is
+<                 "star_param_name" to "base_param_name".
+---
+>        4.  Change the first member of all tuples in "link_parameters"
+>            whose first member is "star_param_name" to "base_param_name".
+916c912
+<        15.  For each "relation_type" in "relation_types":
+---
+>    3.  For each "relation_type" in "relation_types":
+918c914
+<             1.  Case-normalise "relation_type" to lowercase.
+---
+>        1.  Case-normalise "relation_type" to lowercase.
+920,922c916,918
+<             2.  Append a link object to "links" with the target
+<                 "target", relation type of "relation_type", context of
+<                 "context", and target attributes "target_attributes".
+---
+>        2.  Append a link object to "links" with the target "target",
+>            relation type of "relation_type", context of "context", and
+>            target attributes "target_attributes".
+924c920
+<    4.  Return "links".
+---
+>            1.  Return "links".
+956,958c952,953
+<       applications."
+<    o  Clarified the cardinality of target attributes (generically and
+<       for "type").
+---
+>       applications." o Clarified the cardinality of target attributes
+>       (generically and for "type").
+984c979
+<    EMail: mnot@mnot.net
+---
+>    Email: mnot@mnot.net
