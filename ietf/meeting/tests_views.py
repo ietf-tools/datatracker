@@ -1509,7 +1509,16 @@ class MaterialsTests(TestCase):
         self.assertEqual(r.status_code, 302)
         bs_doc = Document.objects.get(pk=bs_doc.pk)
         self.assertEqual(bs_doc.rev,'01')
-         
+    
+    def test_upload_bluesheets_chair_access(self):
+        make_meeting_test_data()
+        mars = Group.objects.get(acronym='mars')
+        session=SessionFactory(meeting__type_id='ietf',group=mars)
+        url = urlreverse('ietf.meeting.views.upload_session_bluesheets',kwargs={'num':session.meeting.number,'session_id':session.id})
+        self.client.login(username="marschairman", password="marschairman+password")
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 403)
+
     def test_upload_bluesheets_interim(self):
         session=SessionFactory(meeting__type_id='interim')
         url = urlreverse('ietf.meeting.views.upload_session_bluesheets',kwargs={'num':session.meeting.number,'session_id':session.id})
@@ -1525,6 +1534,18 @@ class MaterialsTests(TestCase):
         self.assertEqual(r.status_code, 302)
         bs_doc = session.sessionpresentation_set.filter(document__type_id='bluesheets').first().document
         self.assertEqual(bs_doc.rev,'00')
+
+    def test_upload_bluesheets_interim_chair_access(self):
+        make_meeting_test_data()
+        mars = Group.objects.get(acronym='mars')
+        session=SessionFactory(meeting__type_id='interim',group=mars)
+        url = urlreverse('ietf.meeting.views.upload_session_bluesheets',kwargs={'num':session.meeting.number,'session_id':session.id})
+        self.client.login(username="marschairman", password="marschairman+password")
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertTrue('Upload' in unicode(q("title")))
+        
 
     def test_upload_minutes_agenda(self):
         for doctype in ('minutes','agenda'):
