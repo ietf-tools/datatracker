@@ -12,10 +12,26 @@
 .btn-group-vertical .btn .badge {
     float:right;
     margin-top: 0.15em;
+    margin-right: 0.15em;
 }
+.btn-group-vertical .btn .photo {
+    display: inline-block;
+    min-width: 15px;
+    float:right;
+}
+.feedbackphoto {
+    display: inline-block;
+    float:right;
+    margin-bottom: 0.15em;
+    margin-left: 0.15em;
+}
+
 @-moz-document url-prefix() {
   .btn-group-vertical .btn .badge {
      margin-top: -1.3em;  
+  }
+  .btn-group-vertical .btn .photo {
+     margin-top: -1.5em;  
   }
 }
 
@@ -46,6 +62,13 @@
                 <a class="btn btn-default btn-xs" {% if nomcom.group.state_id != 'conclude' %}href="?nominee={{np.nominee.id}}&position={{ np.position.id}}"{% endif %}>
 	          {{ np.nominee.name }}
                   {% with count=counts|lookup:np.position.id|lookup:np.nominee.id %}
+                    {% if nomcom.show_nominee_pictures %}
+                      {% if np.nominee.person.photo_thumb %}
+                        <span class="photo"><img src="{{np.nominee.person.photo_thumb.url}}" width=15 height=15/></span>
+                      {% else %}
+                        <span class="photo">&nbsp;</span>
+                      {% endif %}
+                    {% endif %}
                     <span class="badge" 
                           title="{% if count %}{{count}} earlier comment{{count|pluralize}} from you {% else %}You have not yet provided feedback {% endif %} on {{np.nominee.email.address}} as {{np.position}}">
                       {{ count | default:"no feedback" }}
@@ -70,7 +93,10 @@
         {% if form %}
           <h3>Provide feedback
               {% if form.position %}
-                  about {{form.nominee.email.person.name}} ({{form.nominee.email.address}}) for the {{form.position.name}} position.</p>
+                  about {{form.nominee.email.person.name}} ({{form.nominee.email.address}}) for the {{form.position.name}} position.
+                {% if nomcom.show_nominee_pictures and form.nominee.email.person.photo_thumb %}
+                  <span class="feedbackphoto"><img src="{{form.nominee.email.person.photo_thumb.url}}" width=100 /></span>
+                {% endif %}
               {% endif %}
           </h3>
           <p>This feedback will only be available to <a href="{% url 'ietf.nomcom.views.year_index' year=year %}">NomCom {{year}}</a>.

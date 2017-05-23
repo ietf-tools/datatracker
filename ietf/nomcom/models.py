@@ -46,6 +46,8 @@ class NomCom(models.Model):
                                                                blank=True, null=True)
     initial_text = models.TextField(verbose_name='Help text for nomination form',
                                     blank=True)
+    show_nominee_pictures = models.BooleanField(verbose_name='Show nominee pictures', default=True,
+                                                help_text='Display pictures of each nominee (if available) on the feedback pages')
 
     class Meta:
         verbose_name_plural = 'NomComs'
