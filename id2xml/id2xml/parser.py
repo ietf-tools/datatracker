@@ -13,7 +13,23 @@ DESCRIPTION
   well formatted (i.e., conforms to the text format produced by xml2rfc)
   and tries to generate a reasonably appropriate .xml file following the
   format accepted by xml2rfc, defined in RFC 7749 and its predecessors/
-  successors
+  successors.
+
+  When using id2xml on manually formatted drafts there are sometimes
+  issues which cannot be readily judged by software. In such cases,
+  manual adjustment of the input text may be the best approach to
+  getting acceptable XML output.
+
+  In particular, malformed references may be hard to decipher, despite
+  many different patterns being attempted when trying to parse the
+  reference. As an example that would require manual fixup of the input,
+  here's a reference which this program won't handle (there are no
+  quotes around the title, series info occurs before the title, parts
+  are separated by colon or periods, rather than commas):
+
+    [AES] National Institute of Standards and Technology. FIPS Pub
+          197: Advanced Encryption Standard (AES). 26 November 2001.  
+  
 
 OPTIONS
 ...
@@ -137,17 +153,29 @@ def run():
     group.add_argument('DRAFT', nargs='*',                              help="text format draft(s) to be converted to xml")
     group.add_argument('-2', '--schema-v2', dest='schema', action='store_const', const='v2',
                                                                         help="output v2 (RFC 7749) schema")
-    group.add_argument('-3', '--schema-v3', dest='schema', action='store_const', const='v3',
-                                                                        help="output v3 (RFC 7991) schema")
+#    group.add_argument('-3', '--schema-v3', dest='schema', action='store_const', const='v3',
+#                                                                        help="output v3 (RFC 7991) schema")
     group.add_argument('-d', '--debug', action='store_true',            help="turn on debugging")
     group.add_argument('-h', '--help', action='help',                   help="show this help message and exit")
     group.add_argument('-o', '--output-file', metavar='FILE',           help="set the output file name")
     group.add_argument('-p', '--output-path', metavar="DIR",            help="set the output directory name")
     group.add_argument('-q', '--quiet', action='store_true',            help="be more quiet")
     group.add_argument('-s', '--strip-only', action='store_true',       help="don't convert, only strip headers and footers")
-    group.add_argument('--start-trace', metavar='REGEX', default=None,  help="start debug tracing on matching line")
-    group.add_argument('--stop-trace', metavar='REGEX', default='^$',   help="stop debug tracing on matching line")
-    group.add_argument('--trace', type=commalist, metavar='METHODS',    help="a comma-separated list of methods to trace")
+    group.add_argument('--trace-start-regex', metavar='REGEX', default=None,
+                                                                        help="start debug tracing on matching line")
+#                                                                        help=argparse.SUPPRESS)
+    group.add_argument('--trace-stop-regex',  metavar='REGEX', default='^$',
+                                                                        help="stop debug tracing on matching line")
+#                                                                        help=argparse.SUPPRESS)
+    group.add_argument('--trace-start-line', type=int, metavar='NUMBER', default=None,
+                                                                        help="start debug tracing on matching line")
+#                                                                        help=argparse.SUPPRESS)
+    group.add_argument('--trace-stop-line', type=int, metavar='NUMBER', default=None,
+                                                                        help="stop debug tracing on matching line")
+#                                                                        help=argparse.SUPPRESS)
+    group.add_argument('--trace-methods', type=commalist, metavar='METHODS',
+                                                                        help="a comma-separated list of methods to trace")
+#                                                                        help=argparse.SUPPRESS)
     group.add_argument('-v', '--version', action='store_true',          help="output version information, then exit")
     group.add_argument('-V', '--verbose', action='store_true',          help="be (slightly) more verbose")
     group.set_defaults(schema='v2')
@@ -276,6 +304,10 @@ for part in section_names:
 one_ref_re = r"(([0-9A-Z-]|I-?D.)[0-9A-Za-z-]*( [0-9A-Z-]+)?|(IEEE|ieee)[A-Za-z0-9.-]+|(ITU ?|ITU-T ?|G\\.)[A-Za-z0-9.-]+)";
 ref_ref_re =  r"\[{ref}(, *{ref})*\]".format(ref=one_ref_re)
 # 
+day_re =        r'(?:[1-9]|0[1-9]|1[0-9]|2[0-9]|30|31)'
+month_re =      r'(?:Jan(\.|uary)?|Feb(\.|ruary)?|March|April|May|June|July|Aug(\.|ust)?|Sep(\.|tember)?|Oct(\.|ober)?|Nov(\.|ember)?|Dec(\.|ember)?)'
+uri_re =        r'^<?\s*(?P<target>(http|https|ftp)://[^>\s]+)\s*>?$'
+
 # Elements of a reference item
 ref_anchor_re = r'\[(?P<anchor>[^]]+)\]'
 ref_name_re =   r'[-\' 0-9\w]+, (?:\w-?\w?\.)+(?:, Ed\.)?'
@@ -285,12 +317,9 @@ ref_auth_re =   r'(?P<authors>({name})(, {name})*(,? and {last})?)'.format(name=
 ref_title_re =  r'(?P<title>.+)'
 ref_series_one =r'(?:(?:(?:RFC|STD|BCP|FYI|DOI|Internet-Draft) [^,]+|draft-[a-z0-9-]+)(?: \(work in progress\))?)'
 ref_series_re = r'(?P<series>{item}(?:, {item})*)'.format(item=ref_series_one)
-ref_docname_re= r'(?P<docname>[^,]+(, pp\.? \d+(-\d+)?)?)'
-day_re =        r'(?:[1-9]|0[1-9]|1[0-9]|2[0-9]|30|31)'
-month_re =      r'(?:Jan(uary)?|Feb(ruary)?|March|April|May|June|July|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)'
-date_re =       r'(?P<date>({day} )?({month} )?[12]\d\d\d)'.format(day=day_re, month=month_re)
-ref_url_re =    r'< ?(?P<target>(http|https|ftp)://[^ >]+)>'
-uri_re =        r'^<?\s*(?P<target>(http|https|ftp)://[^>\s]+)\s*>?$'
+ref_docname_re= r'(?P<docname>[^,]+(, [Vv ]ol\.? [^\s,]+)?(, pp\.? \d+(-\d+)?)?)'
+ref_date_re =   r'(?P<date>({day} )?({month} )?[12]\d\d\d)'.format(day=day_re, month=month_re)
+ref_url_re =    r'<? ?(?P<target>(http|https|ftp)://[^ >]+[^. >])>?'
 #
 chunks = dict(
     anchor  = ref_anchor_re,
@@ -299,7 +328,7 @@ chunks = dict(
     title   = ref_title_re,
     series  = ref_series_re,
     docname = ref_docname_re,
-    date    = date_re,
+    date    = ref_date_re,
     url     = ref_url_re,
 )
 
@@ -311,10 +340,13 @@ reference_patterns = [
     r'{anchor}  *{organiz}, "{title}", {docname}, {date}(, {url})?\.'.format(**chunks),
     r'{anchor}  *{authors}, "{title}", {date}(, {url})?\.'.format(**chunks),
     r'{anchor}  *{organiz}, "{title}", {date}(, {url})?\.'.format(**chunks),
+    r'{anchor}  *{authors}, "{title}", {date}, Work.in.progress\.'.format(**chunks),
     r'{anchor}  *{organiz}, "{title}", {url}\.'.format(**chunks),
     r'{anchor}  *"{title}", Work in Progress ?, {date}(, {url})?\.'.format(**chunks),
+    r'{anchor}  *"{title}", {docname}, {date}(, {url})?\.'.format(**chunks),
     r'{anchor}  *"{title}", Work in Progress ?, {url}\.'.format(**chunks),
     r'{anchor}  *"{title}", {url}\.'.format(**chunks),
+    r'{anchor}  *{url}\.'.format(**chunks),
 ## Lines commented out below are for debugging, when the full regex doesn't match (is buggy).
 #    r'{anchor}  *{authors}, "{title}", {series}, {date}(, {url})?'.format(**chunks),
 #    r'{anchor}  *{organiz}, "{title}", {docname}, {date}'.format(**chunks),
@@ -381,17 +413,17 @@ def strip_pagebreaks(text):
         return page, newpage
     for lineno, line in enumerate(lines):
         line = line.rstrip()
+        match = re.search("(  +)(\S.*\S)(  +)\[?[Pp]age [0-9ivx]+\]?[ \t\f]*$", line, re.I)
+        if match:
+            mid = match.group(2)
+            if not short_title and not mid.startswith('Expires'):
+                short_title = mid
+            page, newpage = endpage(page, newpage, line)
+            continue
+        if re.search("\f", line, re.I):
+            page, newpage = begpage(page, newpage)
+            continue
         if lineno > 25:
-            match = re.search("(  +)(\S.*\S)(  +)\[?[Pp]age [0-9ivx]+\]?[ \t\f]*$", line, re.I)
-            if match:
-                mid = match.group(2)
-                if not short_title and not mid.startswith('Expires'):
-                    short_title = mid
-                page, newpage = endpage(page, newpage, line)
-                continue
-            if re.search("\f", line, re.I):
-                page, newpage = begpage(page, newpage)
-                continue
             regex = "^(Internet.Draft|RFC \d+)(  +)(\S.*\S)(  +)(Jan|Feb|Mar|March|Apr|April|May|Jun|June|Jul|July|Aug|Sep|Oct|Nov|Dec)[a-z]+ (19[89][0-9]|20[0-9][0-9]) *$"
             match = re.search(regex, line, re.I)
             if match:
@@ -401,56 +433,56 @@ def strip_pagebreaks(text):
                 #debug.show('short_title')
                 page, newpage = begpage(page, newpage, line)
                 continue
-            if re.search(".{58,}(Jan|Feb|Mar|March|Apr|April|May|Jun|June|Jul|July|Aug|Sep|Oct|Nov|Dec)[a-z]+ (19[89][0-9]|20[0-9][0-9]) *$", line, re.I):
-                page, newpage = begpage(page, newpage, line)
-                continue
-            if re.search("^ *Internet.Draft.+[12][0-9][0-9][0-9] *$", line, re.I):
-                page, newpage = begpage(page, newpage, line)
-                continue
-    #        if re.search("^ *Internet.Draft  +", line, re.I):
-    #            newpage = True
-    #            continue
-            if re.search("^ *Draft.+[12][0-9][0-9][0-9] *$", line, re.I):
-                page, newpage = begpage(page, newpage, line)
-                continue
-            if re.search("^RFC[ -]?[0-9]+.*( +)[12][0-9][0-9][0-9]$", line, re.I):
-                page, newpage = begpage(page, newpage, line)
-                continue
-            if re.search("^RFC[ -]?[0-9]+.*(  +)[12][0-9][0-9][0-9]$", line, re.I):
-                page, newpage = begpage(page, newpage, line)
-                continue
-            if re.search("^draft-[-a-z0-9_.]+.*[0-9][0-9][0-9][0-9]$", line, re.I):
-                page, newpage = endpage(page, newpage, line)
-                continue
-            if newpage and re.search("^ *draft-[-a-z0-9_.]+ *$", line, re.I):
-                page, newpage = begpage(page, newpage, line)
-                continue
-            if re.search("^[^ \t]+", line):
-                sentence = True
-            if re.search("[^ \t]", line):
-                if newpage:
-                    if sentence:
-                        stripped += [ Line(lineno-1, "") ]
-                else:
-                    if blankcount:
-                        stripped += [ Line(lineno-1, "") ]
-                blankcount = 0
-                sentence = False
-                newpage = False
-            if re.search("[.:+]\)?$", line):    # line ends with a period; don't join with next page para
-                sentence = True
-            if re.search("^[A-Z0-9][0-9]*\.", line): # line starts with a section number; don't join with next page para
-                sentence = True
-            if re.search("^ +[o*+-]  ", line): # line starts with a list bullet; don't join with next page para
-                sentence = True
-            if re.search("^ +(E[Mm]ail): ", line): # line starts with an address component; don't join with next page para
-                sentence = True
-            if re.search("^ +(Table|Figure)( +\d+)?: ", line): # line starts with Table or Figure label; don't join with next page para
-                sentence = True
-            if re.search("^[ \t]*$", line):
-                blankcount += 1
-                page += [ line ]
-                continue
+        if lineno > 25 and re.search(".{58,}(Jan|Feb|Mar|March|Apr|April|May|Jun|June|Jul|July|Aug|Sep|Oct|Nov|Dec)[a-z]+ (19[89][0-9]|20[0-9][0-9]) *$", line, re.I):
+            page, newpage = begpage(page, newpage, line)
+            continue
+        if lineno > 25 and re.search("^ *Internet.Draft.+[12][0-9][0-9][0-9] *$", line, re.I):
+            page, newpage = begpage(page, newpage, line)
+            continue
+#        if re.search("^ *Internet.Draft  +", line, re.I):
+#            newpage = True
+#            continue
+        if re.search("^ *Draft.+[12][0-9][0-9][0-9] *$", line, re.I):
+            page, newpage = begpage(page, newpage, line)
+            continue
+        if re.search("^RFC[ -]?[0-9]+.*( +)[12][0-9][0-9][0-9]$", line, re.I):
+            page, newpage = begpage(page, newpage, line)
+            continue
+        if re.search("^RFC[ -]?[0-9]+.*(  +)[12][0-9][0-9][0-9]$", line, re.I):
+            page, newpage = begpage(page, newpage, line)
+            continue
+        if re.search("^draft-[-a-z0-9_.]+.*[0-9][0-9][0-9][0-9]$", line, re.I):
+            page, newpage = endpage(page, newpage, line)
+            continue
+        if newpage and re.search("^ *draft-[-a-z0-9_.]+ *$", line, re.I):
+            page, newpage = begpage(page, newpage, line)
+            continue
+        if re.search("^[^ \t]+", line):
+            sentence = True
+        if re.search("[^ \t]", line):
+            if newpage:
+                if sentence:
+                    stripped += [ Line(lineno-1, "") ]
+            else:
+                if blankcount:
+                    stripped += [ Line(lineno-1, "") ]
+            blankcount = 0
+            sentence = False
+            newpage = False
+        if re.search("[.:+]\)?$", line):    # line ends with a period; don't join with next page para
+            sentence = True
+        if re.search("^[A-Z0-9][0-9]*\.", line): # line starts with a section number; don't join with next page para
+            sentence = True
+        if re.search("^ +[o*+-]  ", line): # line starts with a list bullet; don't join with next page para
+            sentence = True
+        if re.search("^ +(E[Mm]ail): ", line): # line starts with an address component; don't join with next page para
+            sentence = True
+        if re.search("^ +(Table|Figure)( +\d+)?: ", line): # line starts with Table or Figure label; don't join with next page para
+            sentence = True
+        if re.search("^[ \t]*$", line):
+            blankcount += 1
+            page += [ line ]
+            continue
         page += [ line ]
         stripped += [ Line(lineno, line) ]
     page, newpage = begpage(page, newpage)
@@ -733,12 +765,14 @@ def table_borders(para):
     borders.sort()
     return borders
 
+#@debug.trace
 def normalize_list_block(block):
     "Join and split items as needed, to produce one item per list item."
-    assert type(block) is list and type(block[0]) is list
+    #debug.pprint('block')
+    assert type(block) is list and all([type(b) is list for b in block]) and all([ type(l) is Line for b in block for l in b ])
     orig = copy.deepcopy(block)
     items = []
-    widow = []
+    widow = []                          # candidate for merge with following blocks
     #debug.pprint('0, block')
     for b in block:
         s = strip(b)
@@ -778,30 +812,44 @@ def normalize_list_block(block):
     assert block == orig
     return items
 
+#@debug.trace
 def split_list_block(block):
     "Split a block if it contains a transition to a lower indentation level"
+    #debug.pprint('block')
+    assert type(block) is list and type(block[0]) is Line
     orig = copy.deepcopy(block)
     i = []
     items = []
-    prev = 0
+    iprev = 0
+    mprev = 0
+    sprev = 0
     for line in block:
-        this = ind(line)
-        if line.txt.strip() and this < prev:
+        ithis = ind(line)
+        sthis, mthis, __ = guess_list_style(line)
+        if line.txt.strip() and ithis < iprev:
             items.append(i)
             i = [ line ]
+#         elif line.txt.strip() and iprev and ithis > iprev and sthis != sprev:
+#             items.append(i)
+#             i = [ line ]
         else:
             i.append(line)
-        prev = this
+        iprev = ithis
+        sprev = sthis
+        mprev = mthis
     if i:
         items.append(i)
     assert block == orig
     return items
 
+#@debug.trace
 def normalize_sublists(block):
     """
     If a list block seems to contain a sublist, split that out and
     replace it with one sublist block.
     """
+    #debug.pprint('block')
+    assert type(block) is list and all([type(b) is list for b in block]) and all([ type(l) is Line for b in block for l in b ])
     orig = copy.deepcopy(block)
     sub = []
     items = []
@@ -828,6 +876,7 @@ def normalize_sublists(block):
 #@debug.trace
 def guess_list_style(line, slice=None):
     list_styles = [
+        # Check these in order:
         ('numbers', r'^[1-9][0-9.]*\.$'),
         ('letters', r'^[a-z][a-z.]*\.$'),
         ('symbols', r'^[o*+-]$'),
@@ -845,6 +894,10 @@ def guess_list_style(line, slice=None):
             e = text.find('  ', b)+2
         marker = text[b:e].rstrip()
         text =   text[e:]
+    elif re.search(r'^[1-9a-z]\. ', strp):
+        marker, text = strp.split(None, 1)
+    elif re.search(r'^[o*+-] \S', strp):
+        marker, text = strp.split(None, 1)
     else:
         marker = strp
         text = ''
@@ -889,12 +942,14 @@ class Stack(deque):
 def dtrace(fn):
     # From http://paulbutler.org/archives/python-debugging-with-decorators,
     # substantially modified
-    """Decorator to print information about a function
-    call for use while debugging.
-    Prints function name, arguments, and call number
-    when the function is called. Prints this information
-    again along with the return value when the function
-    returns.
+    """
+    Decorator to print information about a method call for use while
+    debugging.  Prints method name, arguments, and call number when
+    the function is called. Prints this information again along with the
+    return value when the method returns.
+
+    This implementation expects a 'self' argument, so won't do the right
+    thing for most functions.
     """
     from decorator import decorator
     import traceback as tb
@@ -908,7 +963,7 @@ def dtrace(fn):
         return s
     def wrap(fn, self, *params,**kwargs):
         call = wrap.callcount = wrap.callcount + 1
-        if self.options.debug and (self.options.trace_all or fn.__name__ in self.options.trace):
+        if self.options.debug and (self.options.trace_all or fn.__name__ in self.options.trace_methods):
             indent = ' ' * self.options.logindent[0]
             filename, lineno, caller, code = tb.extract_stack()[-3]
             fc = "%s(%s)" % (fn.__name__, ', '.join(
@@ -972,14 +1027,14 @@ class DraftParser():
 
     def dsay(self, s):
         if self.options.debug:
-            if self.options.trace_all or self.funcname in self.options.trace:
+            if self.options.trace_all or self.funcname in self.options.trace_methods:
                 frame, filename, lineno, funcname, lines, lineindex = inspect.stack()[1]
                 indent = ' ' * self.options.logindent[0]
                 sys.stderr.write("%s%s(%s): %s\n" % (indent, funcname, lineno, s))
 
     def dshow(self, name):
         if self.options.debug:
-            if self.options.trace_all or self.funcname in self.options.trace:
+            if self.options.trace_all or self.funcname in self.options.trace_methods:
                 frame, filename, lineno, funcname, lines, lineindex = inspect.stack()[1]
                 value = eval(name, frame.f_globals, frame.f_locals)
                 indent = ' ' * self.options.logindent[0]
@@ -987,7 +1042,7 @@ class DraftParser():
 
     def dpprint(self, name):
         if self.options.debug:
-            if self.options.trace_all or self.funcname in self.options.trace:
+            if self.options.trace_all or self.funcname in self.options.trace_methods:
                 frame, filename, lineno, funcname, lines, lineindex = inspect.stack()[1]
                 value = eval(name, frame.f_globals, frame.f_locals)
                 indent = ' ' * self.options.logindent[0]
@@ -1231,19 +1286,26 @@ class DraftParser():
             line = Line(line.num, line.txt[self.p:])
             self.p = None
         if self.options.debug:
-            if self.options.start_trace and not self.options.trace_all:
-                if line and re.search(self.options.start_trace, line.txt.strip()) != None:
+            if self.options.trace_start_regex and not self.options.trace_all:
+                if line and re.search(self.options.trace_start_regex, line.txt.strip()) != None:
+                    self.options.trace_all = True
+            if self.options.trace_start_line and not self.options.trace_all:
+                if line and line.num == self.options.trace_start_line:
                     self.options.trace_all = True
             if self.options.trace_all:
-                if line and re.search(self.options.start_trace, line.txt.strip()) != None:
+                if line and (line.num == self.options.trace_start_line
+                             or (self.options.trace_start_regex
+                                 and re.search(self.options.trace_start_regex, line.txt.strip())) != None):
                     # reset the tail count on every new ocurrence of the start pattern
                     self.options.trace_tail = -1
+                #
                 if self.options.trace_tail > 0:
                     self.options.trace_tail -= 1
                 elif self.options.trace_tail == 0:
                     self.options.trace_tail -= 1
                     self.options.trace_all = False
-                elif line and re.search(self.options.stop_trace, line.txt.strip()) != None:
+                elif (line and self.options.trace_stop_line == line.num
+                      or line and re.search(self.options.trace_stop_regex, line.txt.strip()) != None):
                     self.options.trace_tail = self.options.trailing_trace_lines
 
         self.dshow('line')
@@ -2112,8 +2174,6 @@ class DraftParser():
                 element = self.make_table(block, label)
             elif tag == 'figure':
                 element = self.make_figure(block, label)
-            self.dpprint('block')
-            self.dshow('tag')
         return element
 
     @dtrace
