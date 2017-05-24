@@ -2423,6 +2423,12 @@ class DraftParser():
         assert block != []
         #
         saved_pi = {}
+        def set_subcompact(list, item):
+            last = item[-1]
+            k, v = ('subcompact', 'yes' if last.txt.strip() != '' else 'no')
+            if not k in saved_pi:
+                saved_pi[k] = self.pi[k]
+            self.set_pi(list, k, v)
         #
         items = self.normalize_list_block(block)
         #debug.pprint('items')
@@ -2442,14 +2448,13 @@ class DraftParser():
             list.append(t)
         else:
             t = None
+            item = items[0]
+            first = item[0]
+            if not type(first) is type([]):
+                set_subcompact(list, item)
             for i, item in enumerate(items):
                 self.dpprint('item')
-                if type(item) == PI:
-                    k, v = item
-                    if not k in saved_pi:
-                        saved_pi[k] = self.pi[k]
-                    self.set_pi(list, k, v)
-                elif type(item[0]) == type([]):                # check for sublist
+                if type(item[0]) is type([]):                # check for sublist
                     self.dsay('sublist')
                     assert t is not None
                     line = item[0][0]
@@ -2656,7 +2661,7 @@ class DraftParser():
                             item.append(line)
                         elif ind > ind0:
                             if style in ['numbers', 'letters', 'symbols', ]:
-                                self.warn(line, "Found unexpected sublist to a compact list: '%s'" % (line.txt, ))
+                                self.warn(line.num, "Found unexpected sublist to a compact list: '%s'" % (line.txt, ))
                                 if item:
                                     items.append(item)
                                     item = []
@@ -2664,13 +2669,13 @@ class DraftParser():
                             else:
                                 item.append(line)
                         elif ind == ind0 and style != style0:
-                            self.warn(line, "Found unexpected list style change: expected style %s, found '%s'" % (style0, line.txt))
+                            self.warn(line.num, "Found unexpected list style change: expected style %s, found '%s'" % (style0, line.txt))
                             if item:
                                 items.append(item)
                                 item = []
                             item.append(line)
                         else:
-                            self.warn(line, "Found unexpected inentation change: worked on '%s', found '%s'" % (line0.txt, line.txt))
+                            self.warn(line.num, "Found unexpected inentation change: worked on '%s', found '%s'" % (line0.txt, line.txt))
                             if item:
                                 items.append(item)
                                 item = []
