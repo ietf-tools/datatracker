@@ -166,36 +166,17 @@ class NewSessionForm(forms.Form):
         
         return cleaned_data
 
-class NonSessionEditForm(forms.Form):
-    name = forms.CharField(help_text='Name that appears on the agenda')
-    short = forms.CharField(max_length=32,label='Short Name',help_text='Enter an abbreviated session name (used for material file names)')
-    location = forms.ModelChoiceField(queryset=Room.objects)
-    group = forms.ModelChoiceField(
-        queryset=Group.objects.filter(type__in=['ietf','team'],state='active'),
-        help_text='''Select a group to associate with this session.  For example:<br>
-                     Tutorials = Education,<br>
-                     Code Sprint = Tools Team,<br>
-                     Technical Plenary = IAB,<br>
-                     Administrative Plenary = IAOC or IESG''',empty_label=None)
-    
-    def __init__(self,*args,**kwargs):
-        meeting = kwargs.pop('meeting')
-        self.session = kwargs.pop('session')
-        super(NonSessionEditForm, self).__init__(*args,**kwargs)
-        self.fields['location'].queryset = Room.objects.filter(meeting=meeting)
-    
-    def clean_group(self):
-        group = self.cleaned_data['group']
-        if self.session.group != group and self.session.materials.all():
-            raise forms.ValidationError("ERROR: can't change group after materials have been uploaded")
-        return group
-        
 class TimeSlotForm(forms.Form):
     day = forms.ChoiceField(choices=DAYS_CHOICES)
     time = forms.TimeField()
     duration = ietf.utils.fields.DurationField()
     name = forms.CharField(help_text='Name that appears on the agenda')
     
+    def __init__(self,*args,**kwargs):
+        super(TimeSlotForm, self).__init__(*args,**kwargs)
+        self.fields["time"].widget.attrs["placeholder"] = "HH:MM"
+        self.fields["duration"].widget.attrs["placeholder"] = "HH:MM"
+
     def clean_duration(self):
         '''Limit to HH:MM format'''
         duration = self.data['duration']
@@ -208,14 +189,21 @@ class NonSessionForm(TimeSlotForm):
     type = forms.ModelChoiceField(queryset=TimeSlotTypeName.objects.filter(used=True).exclude(slug__in=('session',)),empty_label=None)
     group = forms.ModelChoiceField(
         queryset=Group.objects.filter(type__in=['ietf','team'],state='active'),
-        help_text='Required for Session types: other, plenary',
+        help_text='''Select a group to associate with this session.  For example:<br>
+                     Tutorials = Education,<br>
+                     Code Sprint = Tools Team,<br>
+                     Plenary = IETF''',
         required=False)
+    location = forms.ModelChoiceField(queryset=Room.objects, required=False)
     show_location = forms.BooleanField(required=False)
 
     def __init__(self,*args,**kwargs):
+        if 'meeting' in kwargs:
+            self.meeting = kwargs.pop('meeting')
+        if 'session' in kwargs:
+            self.session = kwargs.pop('session')
         super(NonSessionForm, self).__init__(*args,**kwargs)
-        self.fields["time"].widget.attrs["placeholder"] = "HH:MM"
-        self.fields["duration"].widget.attrs["placeholder"] = "HH:MM"
+        self.fields['location'].queryset = Room.objects.filter(meeting=self.meeting)
 
     def clean(self):
         super(NonSessionForm, self).clean()
@@ -225,13 +213,19 @@ class NonSessionForm(TimeSlotForm):
         group = cleaned_data['group']
         type = cleaned_data['type']
         short = cleaned_data['short']
-        if type.slug in ('other','plenary') and not group:
+        if type.slug in ('other','plenary','lead') and not group:
             raise forms.ValidationError('ERROR: a group selection is required')
-        if type.slug in ('other','plenary') and not short:
+        if type.slug in ('other','plenary','lead') and not short:
             raise forms.ValidationError('ERROR: a short name is required')
             
         return cleaned_data
-        
+    
+    def clean_group(self):
+        group = self.cleaned_data['group']
+        if hasattr(self, 'session') and self.session.group != group and self.session.materials.all():
+            raise forms.ValidationError("ERROR: can't change group after materials have been uploaded")
+        return group
+
 class UploadBlueSheetForm(forms.Form):
     file = forms.FileField(help_text='example: bluesheets-84-ancp-01.pdf')
     
