@@ -245,6 +245,7 @@ ns={
 }
 
 Line = namedtuple('Line', ['num', 'txt'])
+PI   = namedtuple("PI", ['keyword', 'value'])
 
 boilerplate = BaseRfcWriter.boilerplate
 approvers = BaseRfcWriter.approvers
@@ -252,7 +253,7 @@ approvers = BaseRfcWriter.approvers
 #status_of_memo = "Status of This Memo"
 appendix_prefix = "^Appendix:? "
 #
-code_re = r'(?m)(^\s*[A-Za-z][A-Za-z0-9_-]*\s*=(\s*\S|\s*$)|{ *$|^ *}|::=|//\s|\s//|\s/\*|/\*\s)'
+code_re = r'(?m)(^\s*[A-Za-z][A-Za-z0-9_-]*\s*=(\s*\S|\s*$)|{ *$|^ *}|::=|//\s|\s//|\s/\*|/\*\s|[^-]--([^-]|$))'
 #
 
 section_names = {
@@ -376,11 +377,11 @@ def wrap(s):
 
     lines = s.split('\n')
     wrapped = []
-    # Preserve any indent (after the general indent)
+    # Preserve any indentation (after the general indentation)
     for line in lines:
         prev_indent = '   '
         indent_match = re.search('^(\W+)', line)
-        # Change the existing wrap indent to the original one
+        # Change the existing wrap indentation to the original one
         if (indent_match):
             prev_indent = indent_match.group(0)
         wrapped.append(textwrap.fill(line, width=cols, subsequent_indent=prev_indent))
@@ -523,7 +524,7 @@ def split_on_large_whitespace(line):
         left, right = line[:bestp].rstrip(), line[bestp:].strip()
     return left, center, right
 
-def ind(line):
+def indentation(line):
     return len(line.txt) - len(line.txt.lstrip())
 
 def is_section_start(line, numlist=None, part=None):
@@ -742,14 +743,14 @@ def count_lines(text, width):
     return count
 
 def indentation_levels(para):
-    indent = []
+    ind = []
     for line in strip(para):
         if len(line.txt):
-            i = ind(line)
-            if not i in indent:
-                indent.append(i)
-    indent.sort()
-    return indent
+            i = indentation(line)
+            if not i in ind:
+                ind.append(i)
+    ind.sort()
+    return ind
 
 def table_borders(para):
     symbols = ['-','=','|','+',]
@@ -764,133 +765,25 @@ def table_borders(para):
                 borders.append(l)
     borders.sort()
     return borders
-
-#@debug.trace
-def normalize_list_block(block):
-    "Join and split items as needed, to produce one item per list item."
-    #debug.pprint('block')
-    assert type(block) is list and all([type(b) is list for b in block]) and all([ type(l) is Line for b in block for l in b ])
-    orig = copy.deepcopy(block)
-    items = []
-    widow = []                          # candidate for merge with following blocks
-    #debug.pprint('0, block')
-    for b in block:
-        s = strip(b)
-        #debug.pprint('b')
-        #debug.pprint('s')
-        if widow:
-            iw = ind(widow[0])
-            sw, mw, __ = guess_list_style(widow[0])
-            ib = ind(s[0])
-            sb, mb, __ = guess_list_style(s[0])
-            if ib > iw:
-                if sb in [None, 'hanging']:
-                    widow += b
-                    items.append(widow)
-                    widow = []
-                else:
-                    items.append(widow)
-                    widow = []
-                    items.append(b)
-            elif ib == iw:
-                items.append(widow)
-                widow = copy.copy(b)
-            else:
-                items.append(widow)
-                widow = []
-                items.append(b)
-        else:
-            if len(s) == 1:
-                widow = copy.copy(b)
-            else:
-                items += split_list_block(b)
-    if widow:
-        items.append(widow)
-    #debug.pprint('1, items')
-    items = normalize_sublists(items)
-    #debug.pprint('2, items')
-    assert block == orig
-    return items
-
-#@debug.trace
-def split_list_block(block):
-    "Split a block if it contains a transition to a lower indentation level"
-    #debug.pprint('block')
-    assert type(block) is list and type(block[0]) is Line
-    orig = copy.deepcopy(block)
-    i = []
-    items = []
-    iprev = 0
-    mprev = 0
-    sprev = 0
-    for line in block:
-        ithis = ind(line)
-        sthis, mthis, __ = guess_list_style(line)
-        if line.txt.strip() and ithis < iprev:
-            items.append(i)
-            i = [ line ]
-#         elif line.txt.strip() and iprev and ithis > iprev and sthis != sprev:
-#             items.append(i)
-#             i = [ line ]
-        else:
-            i.append(line)
-        iprev = ithis
-        sprev = sthis
-        mprev = mthis
-    if i:
-        items.append(i)
-    assert block == orig
-    return items
-
-#@debug.trace
-def normalize_sublists(block):
-    """
-    If a list block seems to contain a sublist, split that out and
-    replace it with one sublist block.
-    """
-    #debug.pprint('block')
-    assert type(block) is list and all([type(b) is list for b in block]) and all([ type(l) is Line for b in block for l in b ])
-    orig = copy.deepcopy(block)
-    sub = []
-    items = []
-    line = block[0][0]
-    style, marker, __ = guess_list_style(line)
-    indent = ind(line)
-    for b in block:
-        line = b[0]
-        i = ind(line)
-        s, m, __ = guess_list_style(line)
-        if i == indent and s == style:
-            if sub:
-                items.append(sub)
-                sub = []
-            items.append(b)
-        else:
-            sub.append(b)
-    if sub:
-        items.append(sub)
-        sub = []
-    assert block == orig
-    return items
-
 #@debug.trace
 def guess_list_style(line, slice=None):
     list_styles = [
         # Check these in order:
-        ('numbers', r'^[1-9][0-9.]*\.$'),
-        ('letters', r'^[a-z][a-z.]*\.$'),
+        ('numbers', r'^[1-9][0-9]?\.$'),
+        ('letters', r'^[a-z]\.$'),
         ('symbols', r'^[o*+-]$'),
         ('hanging', r'\S.+'),
         ('empty',   r'^$'),
     ]
     text = line.txt
     strp = text.strip()
+    ind = indentation(line)
     if (   re.search('^\S+  ', strp)        # doublespace after one nonspace chunk
         or re.search('^.+[^.]  ', strp)):   # doublespace after arbitrary characters, but no period before spaces
         if slice:
             b, e = slice
         else:
-            b = ind(line)
+            b = ind
             e = text.find('  ', b)+2
         marker = text[b:e].rstrip()
         text =   text[e:]
@@ -906,7 +799,7 @@ def guess_list_style(line, slice=None):
         if re.search(regex, marker):
             style = name
             break
-    return style, marker, text
+    return style, marker, ind, text
 
 
 def unindent(text, amount):
@@ -995,16 +888,18 @@ class DraftParser():
     schema = None
     funcname = None
     entities = []
+    pi = {}
+    #
     _identify_paragraph_cache = {}
 
-    rfc_pi_defaults = [
-        'strict="yes"',
-        'compact="yes"',
-        'subcompact="no"',
+    rfc_pi_defaults = {
+        'strict': 'yes',
+        'compact': 'yes',
+        'subcompact': 'no',
         # we start out with symrefs="no", then change the setting to
         # "yes" if we find a non-numeric reference anchor:
-        'symrefs="no"',
-    ]
+        'symrefs': 'no',
+    }
 
     def __init__(self, name, text, options):
         self.options = options
@@ -1064,6 +959,15 @@ class DraftParser():
             self.emit(msg)
             sys.exit(1)
 
+    def set_pi(self, e, k, v):
+        if not k in self.pi or self.pi[k] != v:
+            self.pi[k] = v
+            pi = ProcessingInstruction('rfc', text='%s="%s"'%(k,v))
+            e.append(pi)
+            return pi
+        else:
+            return None
+            
     def parse_to_xml(self, **kwargs):
         # fix some bloopers
         self.lines, self.short_title = strip_pagebreaks(self.raw.expandtabs())
@@ -1084,10 +988,9 @@ class DraftParser():
 
         # Default PI settings (at least some which differes from the xml2rfc
         # defaults)
-        for item in self.rfc_pi_defaults:
-            pi = ProcessingInstruction('rfc', item)
-            self.root.append(pi)
-            if 'symrefs' in item:
+        for k,v in self.rfc_pi_defaults.items():
+            pi = self.set_pi(self.root, k, v)
+            if k == 'symrefs':
                 self.symrefs_pi = pi
 
         # Parse the document
@@ -1212,8 +1115,7 @@ class DraftParser():
         line = self.skip_blank_lines()
         if line.txt == 'Table of Contents':
             self.section(['Table'], tag='toc', part='front')
-            self.root.append(ProcessingInstruction('rfc', text='toc="yes"'))
-
+            self.set_pi(self.root, 'toc', 'yes')
         return front
 
     @dtrace
@@ -1616,7 +1518,7 @@ class DraftParser():
 
         for k in entries:
             if not entries[k]['needed'] == False:
-                self.warn(self.lines[self.l].num, "Expected a %s indication top left, but found none" % k)
+                self.warn(self.lines[self.l].num, "Expected a %s indication top left, found none" % k)
 
         for line in lines:
             if line.txt.strip():
@@ -1802,7 +1704,7 @@ class DraftParser():
         if line and (line.txt.startswith("Author's Address") or  line.txt.startswith("Authors' Addresses")):
             self.skip(line.txt)
         else:
-            self.err(line.num, "Expected an Authors' Addresses section, but found '%s'" % (line.txt, ))
+            self.err(line.num, "Expected an Authors' Addresses section, found '%s'" % (line.txt, ))
             return
         while True:
             # Fullname (Role)
@@ -1892,7 +1794,7 @@ class DraftParser():
     def read_author_name(self):
         line, p = self.get_line()
         if line is None:
-            self.err(self.lines[-1].num, "Expected an author's name, but found end of file")
+            self.err(self.lines[-1].num, "Expected an author's name, found end of file")
         name = line.txt.strip()
         item = match_name(name, self.authors)
         if item:
@@ -2007,7 +1909,7 @@ class DraftParser():
                 if next.txt.strip() == '':
                     self.push_line(next, p)
                     break
-                if ind(next) == titleindent:
+                if indentation(next) == titleindent:
                     title += ' ' + next.txt.strip()
                 else:
                     self.err(next.num, "Unexpected indentation: Expected a title continuation line with indentation %s, but got '%s'" % (titleindent, next.txt))
@@ -2074,12 +1976,12 @@ class DraftParser():
         # Collect related sections with embedded blank lines, like lists
         tag = None
         element = None
-        indentation = None
+        ind = None
         while True:
             # collect one block worth of text
             para = self.get_para()
             line = para[0]
-            this_ind = ind(line)
+            this_ind = indentation(line)
             first = line.txt.strip()
             this_tag, text, linecount = self.identify_paragraph(para, part)
             #if not this_tag in ['t', 'figure', 'texttable', 'list', ]:
@@ -2105,7 +2007,7 @@ class DraftParser():
                     block.append(para)
                     break
                 elif first.startswith(unexpected):
-                    self.warn(para[0].num, "Unexpected title: expected '%s ...', but found '%s'.  This looks like a %s that has been entered as a %s.  The generated XML will need adjustment." % (expected, first, tag, othertag))
+                    self.warn(para[0].num, "Unexpected title: expected '%s ...', found '%s'.  This looks like a %s that has been entered as a %s.  The generated XML will need adjustment." % (expected, first, tag, othertag))
                     self.push_para(para)
                     break
                 elif linecount == 1 and (tag=='figure' or len(block) == 1) and not '  ' in first:
@@ -2114,7 +2016,7 @@ class DraftParser():
                     self.dsay('Tag changed; push back para and break')
                     self.push_para(para)
                     break
-            elif tag=='list' and this_tag=='t' and indentation and this_ind > indentation:
+            elif tag=='list' and this_tag=='t' and ind and this_ind > ind:
                 this_tag = 'list'
             elif tag and this_tag != tag:
                 self.dsay('Tag changed; push back para and break')
@@ -2123,8 +2025,8 @@ class DraftParser():
             block.append(para)
             if not tag:
                 tag = this_tag
-            if not indentation:
-                indentation = this_ind
+            if not ind:
+                ind = this_ind
             # break here unless this is a type with embedded blank lines:
             if not this_tag in ['figure', 'texttable', 'list', ]:
                 self.dsay('Break for "%s"' % this_tag)
@@ -2142,7 +2044,7 @@ class DraftParser():
             text = '\n'+para2text(flat)
             if tag == 'list':
                 for b in block:
-                    if re.search(code_re, b[0].txt):
+                    if re.search(code_re, para2text(b)):
                         # in vocabulary v3 this will be 'sourcecode'
                         tag = 'figure'
                         block = [ flat ]
@@ -2156,10 +2058,10 @@ class DraftParser():
                 else:
                     label = None
             if tag == 't':
-                indentation = ind(para[0])
-                if indentation != 3:
+                ind = indentation(para[0])
+                if ind != 3:
                     t = self.element('t', text)
-                    l = self.element('list', style='hanging', hangIndent=str(indentation-3))
+                    l = self.element('list', style='hanging', hangIndent=str(ind-3))
                     l.append(t)
                     element = self.element('t')
                     element.append(l)
@@ -2339,7 +2241,7 @@ class DraftParser():
                         or (linecount == 1 and line.txt.strip()[:2] in ['o ', '* ', '+ ', '- ', ]) 
                         or (linecount == 1 and re.search('^[0-9a-z][ivx]*\. ', line.txt.strip()))
                         #or (linecount == 1 and not ' ' in line.txt.strip())
-                        or (linecount == 1 and (  ind(next) > ind(para[0]) ))
+                        or (linecount == 1 and (  indentation(next) > indentation(para[0]) ))
                         or ('  ' in line.txt.strip() and not '.  ' in line.txt.strip())
                         ):
                         self.dsay('... list (for some reason)')
@@ -2448,7 +2350,7 @@ class DraftParser():
         columns = None
         for line in paragraph:
             if border in line.txt:
-                indent = line.txt.find(border)
+                ind = line.txt.find(border)
                 sep = '+' if '+' in border else ' '
                 if sep == '+':
                     columns = line.txt.split(sep)[1:-1]
@@ -2456,10 +2358,10 @@ class DraftParser():
                     columns = border.split(sep)
                 break
         if not columns:
-            self.err(first_line.num, "Malformed table, expected table to start with a border, but found '%s'"%(first_line.txt, ))
+            self.err(first_line.num, "Malformed table, expected table to start with a border, found '%s'"%(first_line.txt, ))
         colwidth = [ len(c)+1 for c in columns ]
-        colpos = [ indent ]
-        pos = indent
+        colpos = [ ind ]
+        pos = ind
         for w in colwidth:
             pos += w
             colpos.append(pos)
@@ -2518,11 +2420,15 @@ class DraftParser():
         #indents = indentation_levels(flatten(block))
         #debug.show('len(indents)')
         #if len(indents) > 2:
-        items = normalize_list_block(block)
-        self.dpprint('items')
+        assert block != []
+        #
+        saved_pi = {}
+        #
+        items = self.normalize_list_block(block)
         #debug.pprint('items')
         indents = indentation_levels(flatten(block))
         list = self.element('list', style='empty')
+        # Handle temporary processing instruction settings
         #
         item = items[0]
         self.dpprint('indentation_levels(item)')
@@ -2538,30 +2444,34 @@ class DraftParser():
             t = None
             for i, item in enumerate(items):
                 self.dpprint('item')
-                # check for sublist
-                if type(item[0]) == type([]):
+                if type(item) == PI:
+                    k, v = item
+                    if not k in saved_pi:
+                        saved_pi[k] = self.pi[k]
+                    self.set_pi(list, k, v)
+                elif type(item[0]) == type([]):                # check for sublist
                     self.dsay('sublist')
                     assert t is not None
                     line = item[0][0]
-                    t.append(self.make_list(item, ind(line)))
+                    t.append(self.make_list(item, indentation(line)))
                     t.tail = '\n'
                 else:
                     self.dsay('list item')
                     line = item[0]
-                    indent = indentation_levels(item)
-                    style, marker, rest = guess_list_style(line)
+                    indents = indentation_levels(item)
+                    style, marker, ind, rest = guess_list_style(line)
                     self.dshow('style')
                     self.dshow('marker')
                     self.dshow('rest')
                     if style and i == 0:
                         list.set('style', style)
-                        if style == 'hanging' and len(indent) > 1:
-                            list.set('hangIndent', str(indent[1] - indent[0]))
+                        if style == 'hanging' and len(indents) > 1:
+                            list.set('hangIndent', str(indents[1] - indents[0]))
                     t = self.element('t', )
                     t.tail = '\n'
                     if style == 'hanging':
                         self.dsay('hanging')
-                        if indent[0] == indents[0]:
+                        if indents[0] == indents[0]:
                             self.dsay('same indentation')
                             t.set('hangText', marker)
                             blank_lines = '1' if len(item)>1 and item[1].txt.strip()=='' else '0'
@@ -2582,7 +2492,202 @@ class DraftParser():
                     t.text = text
                     self.dshow('t.text')
                     list.append(t)
+            for k,v in saved_pi.items():
+                self.set_pi(list, k, v)
         return list
+
+    @dtrace
+    def normalize_list_block(self, block):
+        "Join and split items as needed, to produce one item per list item."
+        #debug.pprint('block')
+        assert type(block) is list and all([type(b) is list for b in block]) and all([ type(l) is Line for b in block for l in b ])
+        orig = copy.deepcopy(block)
+        items = []
+        widow = []                          # candidate for merge with following blocks
+        #debug.pprint('0, block')
+        for b in block:
+            s = strip(b)
+            #debug.pprint('b')
+            #debug.pprint('s')
+            if widow:
+                sw, mw, iw, __ = guess_list_style(widow[0])
+                sb, mb, ib, __ = guess_list_style(s[0])
+                if ib > iw:
+                    if sb in [None, 'hanging']:
+                        widow += b
+                        items.append(widow)
+                        widow = []
+                    else:
+                        items.append(widow)
+                        widow = []
+                        items.append(b)
+                elif ib == iw:
+                    items.append(widow)
+                    widow = copy.copy(b)
+                else:
+                    items.append(widow)
+                    widow = []
+                    items.append(b)
+            else:
+                if len(s) == 1:
+                    widow = copy.copy(b)
+                else:
+                    items += self.split_at_sublist_end(b)
+        if widow:
+            items.append(widow)
+        items = self.normalize_sublists(items)
+        items = self.split_compact_lists(items)
+        assert block == orig
+        return items
+
+    @dtrace
+    def split_at_sublist_end(self, block):
+        "Split a block if it contains a transition to a lower indentation level"
+        #debug.pprint('block')
+        assert type(block) is list and type(block[0]) is Line
+        orig = copy.deepcopy(block)
+        item = []
+        items = []
+        i0 = 0
+        m0 = 0
+        s0 = 0
+        for line in block:
+            s, m, i, __ = guess_list_style(line)
+            if line.txt.strip() and i < i0:
+                items.append(item)
+                item = [ line ]
+    #         elif line.txt.strip() and i0 and i > i0 and s != s0:
+    #             items.append(item)
+    #             item = [ line ]
+            else:
+                item.append(line)
+            i0 = i
+            s0 = s
+            m0 = m
+        if item:
+            items.append(item)
+        assert block == orig
+        return items
+
+    @dtrace
+    def normalize_sublists(self, block):
+        """
+        If a list block seems to contain a sublist, split that out and
+        replace it with one sublist block.
+        """
+        #debug.pprint('block')
+        assert type(block) is list and all([type(b) is list for b in block]) and all([ type(l) is Line for b in block for l in b ])
+        orig = copy.deepcopy(block)
+        sub = []
+        items = []
+        line = block[0][0]
+        style, marker, ind, __ = guess_list_style(line)
+        # first, separate out blocks with different indentations
+        for b in block:
+            line = b[0]
+            s, m, i, __ = guess_list_style(line)
+            if i == ind and s == style:
+                if sub:
+                    items.append(sub)
+                    sub = []
+                items.append(b)
+            else:
+                sub.append(b)
+        if sub:
+            items.append(sub)
+            sub = []
+        #
+        temp = copy.deepcopy(items)
+        items = []
+        # then see if a block contains a sublist, and split that off
+        for b in temp:
+            #debug.pprint('b')
+            if isinstance(b[0], list):
+                items.append(b)
+                continue
+            indents = indentation_levels(b)
+            if len(indents) > 1:
+                s0, m0, i0, __ = guess_list_style(b[0])
+                for i, l in enumerate(b):
+                    if indentation(l) != indents[0]:
+                        s1, m1, i1, __ = guess_list_style(l)
+                        break
+                if s1 in ['numbers', 'letters', 'symbols', ]:
+                    #debug.show('i, l')
+                    #debug.show('s1, m1')
+                    items.append(b[:i])
+                    items.append([ b[i:] ])
+                else:
+                    items.append(b[:])
+            else:
+                items.append(b[:])
+        if orig != temp:
+            self.dpprint('orig')
+            self.dpprint('temp')
+        if temp != items:
+            self.dpprint('temp')
+            self.dpprint('items')
+        assert block == orig
+        return items
+
+    @dtrace
+    def split_compact_lists(self, block):
+        items = []
+        #debug.pprint('block')
+        orig = copy.deepcopy(block)
+        for b in block:
+            if type(b[0]) is list:
+                items.append(self.split_compact_lists(b))
+            else:
+                assert type(b[0]) == Line
+                item = []
+                line0 = b[0]
+                style0, mark0, ind0, __ = guess_list_style(line0)
+                if style0 in ['numbers', 'letters', 'symbols', ]:
+                    for line in b:
+                        if line.txt.strip() == '':
+                            item.append(line)
+                            continue
+                        style, mark, ind, __ = guess_list_style(line)
+                        if ind == ind0 and style == style0:
+                            if item:
+                                items.append(item)
+                                item = []
+                            item.append(line)
+                        elif ind > ind0:
+                            if style in ['numbers', 'letters', 'symbols', ]:
+                                self.warn(line, "Found unexpected sublist to a compact list: '%s'" % (line.txt, ))
+                                if item:
+                                    items.append(item)
+                                    item = []
+                                item.append(line)
+                            else:
+                                item.append(line)
+                        elif ind == ind0 and style != style0:
+                            self.warn(line, "Found unexpected list style change: expected style %s, found '%s'" % (style0, line.txt))
+                            if item:
+                                items.append(item)
+                                item = []
+                            item.append(line)
+                        else:
+                            self.warn(line, "Found unexpected inentation change: worked on '%s', found '%s'" % (line0.txt, line.txt))
+                            if item:
+                                items.append(item)
+                                item = []
+                            item.append(line)
+                    if item:
+                        items.append(item)
+                        item = []
+                else:
+                    items.append(b)
+        assert block == orig
+        if items != block:
+            self.dsay('** items changed **')
+            #debug.pprint('block')
+            self.dpprint('items')
+        return items
+
+
 
 
 
@@ -2841,6 +2946,7 @@ class DraftParser():
         for anchor in self.reference_list:
             if anchor and not re.search('^ref-\d+$', anchor):
                 symrefs = "yes"
+        self.pi['symrefs'] = symrefs
         pi = ProcessingInstruction('rfc', 'symrefs="%s"'%symrefs)
         self.root.replace(self.symrefs_pi, pi)
 
