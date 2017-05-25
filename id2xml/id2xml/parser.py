@@ -185,6 +185,9 @@ def run():
     # ----------------------------------------------------------------------
     # The program itself    
 
+    if hasattr(globals(), 'debug'):
+        debug.debug = options.debug
+
     if options.version:
         print(program, __version__)
         sys.exit(0)
@@ -253,7 +256,8 @@ approvers = BaseRfcWriter.approvers
 #status_of_memo = "Status of This Memo"
 appendix_prefix = "^Appendix:? "
 #
-code_re = r'(?m)(^\s*[A-Za-z][A-Za-z0-9_-]*\s*=(\s*\S|\s*$)|{ *$|^ *}|::=|//\s|\s//|\s/\*|/\*\s|[^-]--([^-]|$))'
+code_re = (r'(?m)(^\s*[A-Za-z][A-Za-z0-9_-]*\s*=(\s*\S|\s*$)|{ *$|^ *}|::=|'
+            '//\s|\s//|\s/\*|/\*\s|[^-]--([^-]|$)|</[a-z0-9:-]+>|\S+\s*=\s*\S+.*;$)')
 #
 
 section_names = {
@@ -428,10 +432,7 @@ def strip_pagebreaks(text):
             regex = "^(Internet.Draft|RFC \d+)(  +)(\S.*\S)(  +)(Jan|Feb|Mar|March|Apr|April|May|Jun|June|Jul|July|Aug|Sep|Oct|Nov|Dec)[a-z]+ (19[89][0-9]|20[0-9][0-9]) *$"
             match = re.search(regex, line, re.I)
             if match:
-                #debug.show('line')
-                #debug.show('match')
                 short_title = match.group(3)
-                #debug.show('short_title')
                 page, newpage = begpage(page, newpage, line)
                 continue
         if lineno > 25 and re.search(".{58,}(Jan|Feb|Mar|March|Apr|April|May|Jun|June|Jul|July|Aug|Sep|Oct|Nov|Dec)[a-z]+ (19[89][0-9]|20[0-9][0-9]) *$", line, re.I):
@@ -482,6 +483,8 @@ def strip_pagebreaks(text):
             sentence = True
         if re.search("^[ \t]*$", line):
             blankcount += 1
+            if blankcount > 7:
+                sentence = True
             page += [ line ]
             continue
         page += [ line ]
@@ -2017,12 +2020,17 @@ class DraftParser():
                     self.push_para(para)
                     break
             elif tag=='list' and this_tag=='t' and ind and this_ind > ind:
+                self.dsay('new t para in list')
+                block[-1] += para
+                para = None
                 this_tag = 'list'
             elif tag and this_tag != tag:
                 self.dsay('Tag changed; push back para and break')
                 self.push_para(para)
                 break
-            block.append(para)
+            if para:
+                block.append(para)
+            #
             if not tag:
                 tag = this_tag
             if not ind:
@@ -2430,6 +2438,35 @@ class DraftParser():
                 saved_pi[k] = self.pi[k]
             self.set_pi(list, k, v)
         #
+        @dtrace
+        def make_list_item_text(self, item):
+            """
+            Split a list of lines on blank lines, and build a sequence of
+            <vspace/> elements to generate blank lines where needed.
+            """
+            self.dshow('item')
+            para = []
+            paras = []
+            for line in item:
+                if line.txt.strip() == '':
+                    paras.append(para)
+                    para = [ ]
+                else:
+                    para.append(line)
+            paras.append(para)
+            self.dshow('paras')
+            text = para2text(paras.pop(0)) if paras else ''
+            self.dshow('text')
+            elements = []
+            if paras and paras[-1] == []:
+                paras.pop()
+            for para in paras:
+                vspace = self.element('vspace', blankLines="1")
+                vspace.tail = para2text(para)
+                self.dshow('vspace.tail')
+                elements.append(vspace)
+            return text, elements
+        #
         items = self.normalize_list_block(block)
         #debug.pprint('items')
         indents = indentation_levels(flatten(block))
@@ -2476,20 +2513,32 @@ class DraftParser():
                             self.dsay('same indentation')
                             t = self.element('t', rest)
                             t.set('hangText', marker)
-                            blank_lines = '1' if len(item)>1 and item[1].txt.strip()=='' else '0'
-                            vspace = self.element('vspace', blankLines=blank_lines)
-                            vspace.tail = para2text(item[1:])
+                            vspace = self.element('vspace', blankLines="0")
                             t.append(vspace)
+                            #
+                            if len(item) > 1:
+                                text, elements = make_list_item_text(self, item[1:])
+                                vspace.tail = text
+                                for e in elements:
+                                    t.append(e)
                             list.append(t)
                         else:
-                            t = self.element('t', para2text(item))
+                            text, elements = make_list_item_text(self, item)
+                            t = self.element('t', text)
+                            for e in elements:
+                                t.append(e)
                             list.append(t)
                     elif style == None:
-                        t = self.element('t', para2text(item))
+                        text, elements = make_list_item_text(self, item)
+                        t = self.element('t', text)
+                        for e in elements:
+                            t.append(e)
                         list.append(t)
                     else:
-                        text = '\n'.join( [ tt for tt in [ rest ]+[ l.txt for l in item[1:]] if tt] )                        
+                        text, elements = make_list_item_text(self, [ Line(item[0].num, rest) ]+item[1:])
                         t = self.element('t', text)
+                        for e in elements:
+                            t.append(e)
                         list.append(t)
             for k,v in saved_pi.items():
                 self.set_pi(list, k, v)
