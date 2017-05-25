@@ -1,44 +1,4 @@
-127c127
-<       1.   L2TPv3 over IP [RFC3931] : Type code=1;
----
->       1.  L2TPv3 over IP [RFC3931] : Type code=1;
-129c129
-<       2.   GRE [RFC2784] : Type code=2;
----
->       2.  GRE [RFC2784] : Type code=2;
-131c131
-<       3.   Transmit tunnel endpoint [RFC5566] : Type code=3;
----
->       3.  Transmit tunnel endpoint [RFC5566] : Type code=3;
-133c133
-<       4.   IPsec in Tunnel-mode [RFC5566] : Type code=4;
----
->       4.  IPsec in Tunnel-mode [RFC5566] : Type code=4;
-135,136c135,136
-<       5.   IP in IP tunnel with IPsec Transport Mode [RFC5566] : Type
-<            code=5;
----
->       5.  IP in IP tunnel with IPsec Transport Mode [RFC5566] : Type
->           code=5;
-138,139c138,139
-<       6.   MPLS-in-IP tunnel with IPsec Transport Mode [RFC5566] : Type
-<            code=6;
----
->       6.  MPLS-in-IP tunnel with IPsec Transport Mode [RFC5566] : Type
->           code=6;
-141c141
-<       7.   IP in IP [RFC2003] [RFC4213]: Type code=7;
----
->       7.  IP in IP [RFC2003] [RFC4213]: Type code=7;
-143c143
-<       8.   VXLAN [RFC7348] : Type code=8;
----
->       8.  VXLAN [RFC7348] : Type code=8;
-145c145
-<       9.   NVGRE [RFC7637] : Type code=9;
----
->       9.  NVGRE [RFC7637] : Type code=9;
-158d157
+160d159
 < 
 174,181c173,180
 <                            +-----------------------------------+

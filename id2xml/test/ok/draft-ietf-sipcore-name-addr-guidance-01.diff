@@ -1,10 +1,10 @@
-7,9c7
+4,6c4
 < Updates: 3261, 3325, 3515, 3892, 4508,                      May 10, 2017
 <          5002, 5318, 5360, 5502 (if
 <          approved)
 ---
 > Updates: 5502 (if approved)                                 May 10, 2017
-82,84c80,82
+78,80c76,78
 <       Even if the "display-name" is empty, the "name-addr" form
 <       MUST be used if the "addr-spec" contains a comma, question
 <       mark, or semicolon.
@@ -12,13 +12,13 @@
 >       Even if the "display-name" is empty, the "name-addr" form MUST be
 >       used if the "addr-spec" contains a comma, question mark, or
 >       semicolon.
-128,129c126,127
+124,125c122,123
 <      angle brackets, any semicolon-delimited parameters are
 <      header-parameters, not URI parameters.
 ---
 >      angle brackets, any semicolon-delimited parameters are header-
 >      parameters, not URI parameters.
-133,142c131,141
+129,138c127,137
 <     When constructing the value of any SIP header field whose grammar
 <     allows choosing between name-addr and addr-spec, such as those
 <     that use the form '(name-addr / addr-spec)', the "addr-spec" form
@@ -41,13 +41,13 @@
 >         be contained within angle brackets (< and >).  If the URI is not
 >         enclosed in angle brackets, any semicolon-delimited parameters
 >         are header-parameters, not URI parameters.
-144,145c143,144
+140,141c139,140
 <     The header fields defined in this specification that allow this
 <     choice are "To", "From", "Contact",  and "Reply-To".
 ---
 >      The header fields defined in this specification that allow this
 >         choice are "To", "From", "Contact", and "Reply-To".
-159,161c158,160
+155,157c154,156
 <      constructing header field values. As specified in RFCxxxx,
 <      the "addr-spec" form MUST NOT be used if its value would contain
 <      a comma, semicolon, or question mark.

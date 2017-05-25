@@ -1,57 +1,55 @@
-111,112c111,112
+111,112c111
 <     <front>
 <        <title>Writing I-Ds and RFCs using Pandoc v2</title>
 ---
 >     <front> <title>Writing I-Ds and RFCs using Pandoc v2</title>
-> 
-116c116,117
+116c115
 <        &pandocMiddle;
 ---
 >     &pandocMiddle;
-> 
-131,133c132,133
-< 
+132,133c131,132
 <    2.  back.pdc - holds appendices and references;
 <    3.  template.xml (probably a fairly static file).
 ---
 >    2.  back.pdc - holds appendices and references; 3.  template.xml
 >    (probably a fairly static file).
-236,237c236,237
+236,237c235,236
 <    it is _just_ Pandoc.  The best introduction to the Pandoc style is
 <    given in this README from Pandoc itself [7].
 ---
 >       it is _just_ Pandoc.  The best introduction to the Pandoc style is
 >       given in this README from Pandoc itself [7].
-316,318c316,317
+316c315
 <    i.    Item one;
-< 
-<    ii.   Item two.
 ---
 >    a.  Item one;
->    b.  Item two.
-362,366c361,362
+318c317
+<    ii.   Item two.
+---
+>        ii.  Item two.
+362,365c361,362
 <    :   Explanation one
 <    More stuff, because item is difficult to explain.
 <    * item1
 <    * item2
-< 
 ---
 >       : Explanation one More stuff, because item is difficult to
 >       explain.  * item1 * item2
-369c365
+369,370c366
 <    :   Explanation two
+< 
 ---
 >       : Explanation two
-415d410
-< 
-472c467
+472c468
 <      Table: A caption describing the table.
 ---
 >       Table: A caption describing the table.
-474c469
+474c470
 <       Figure 3: A caption describing the figure describing the table.
 ---
 >        Figure 3: A caption describing the figure describing the table.
+510d505
+< 
 586,602d580
 < 11.3.  URIs
 < 
@@ -70,41 +68,39 @@
 < 
 <    [8] http://miek.nl
 < 
-661d638
-< 
-694,696c671
+694,696c672
 <    1.  More
 < 
 <        Item to explain:  Explanation ...
 ---
 >    1.  More Item to explain: Explanation ...
-716c691
+716c692
 <    4.  Final item.
 ---
 >    1.  Final item.
-730c705
+730c706
 <    i.    Item 1
 ---
 >    a.  Item 1
-732c707
+732c708
 <    ii.   Item 2
 ---
->    b.  Item 2
-787,789c762
+>        ii.  Item 2
+787,789c763
 <    3.  Third item
 < 
 <        A paragraph that comes first
 ---
 >    1.  Third item A paragraph that comes first
-791c764
+791c765
 <        A.  But what do you know
 ---
 >        A. But what do you know
-793c766
+793c767
 <        B.  This is another list
 ---
 >        B. This is another list
-797,803c770,777
+797,803c771,778
 <                   +--------+-------+---------+----------+
 <                   |  Right | Left  |  Center | Default  |
 <                   +--------+-------+---------+----------+
@@ -121,7 +117,7 @@
 >                     | 1     | 1    | 1      | 1       |
 >                     |       |      |        |         |
 >                     +-------+------+--------+---------+
-807,816c781,795
+807,816c782,796
 <    +-----------+-----------+---------------+---------------------------+
 <    |  Centered | Default   | Right Aligned | Left Aligned              |
 <    |   Header  | Aligned   |               |                           |
@@ -148,7 +144,7 @@
 >    |               |               |              | rows.              |
 >    |               |               |              |                    |
 >    +---------------+---------------+--------------+--------------------+
-821,826c800,806
+821,826c801,807
 <           +---------------+---------------+--------------------+
 <           | Fruit         | Price         | Advantages         |
 <           +---------------+---------------+--------------------+
@@ -163,15 +159,15 @@
 >                   | Oranges | $2.10 | cures scurvy     |
 >                   |         |       |                  |
 >                   +---------+-------+------------------+
-863c843
+863c844
 <    Figure 4: This is the caption, with text in `typewriter`. Which isnt
 ---
 >    Figure 3: This is the caption, with text in `typewriter`. Which isnt
-872c852
+872c853
 <                      Figure 5: A non centered figure.
 ---
 >                      Figure 4: A non centered figure.
-886,894c866,868
+886,894c867,869
 <    L
 <       list
 <          default markers  18

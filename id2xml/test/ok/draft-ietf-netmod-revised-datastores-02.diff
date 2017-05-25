@@ -4,11 +4,7 @@
 ---
 >    [RFC7952]  Lhotka, L., "Defining and Using Metadata with YANG",
 >               RFC 7952, DOI 10.17487/RFC7952, August 2016,
-1192c1192
-<      <hostname or:origin="or:dynamic">bar</hostname>
----
->        <hostname or:origin="or:dynamic">bar</hostname>
-1407,1412c1407,1413
+1407,1412c1407,1412
 <      <interfaces>
 <        <interface>
 <          <name>et-0/0/0</name>
@@ -21,9 +17,8 @@
 >         interface</description>
 > 
 >         </interface>
-> 
 >       </interfaces>
-1423,1429c1424,1431
+1423,1429c1423,1429
 <      <interfaces origin="or:intended">
 <        <interface origin="or:intended">
 <          <name origin="or:intended">et-0/0/0</name>
@@ -38,9 +33,8 @@
 >         interface</description> <mtu origin="or:system">1500</mtu>
 > 
 >         </interface>
-> 
 >       </interfaces>
-1456,1462c1458,1466
+1456,1462c1456,1463
 <      <interfaces origin="or:intended">
 <        <interface origin="or:intended">
 <          <name origin="or:intended">lo0</name>
@@ -56,5 +50,4 @@
 >         origin="or:system">127.0.0.1</ipv4-address>
 > 
 >         </interface>
-> 
 >       </interfaces>

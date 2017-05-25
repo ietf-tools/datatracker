@@ -1,33 +1,4 @@
-430,432c430
-<    o  Protocol version
-<    o  Message type identifier
-<    o  The message body
----
->    o  Protocol version o Message type identifier o The message body
-470a469
-> 
-485,486c484,485
-<    o  version: indicates the version of this protocol (0x00).
-<    o  protection_profiles: The list of two-octet SRTP protection profile
----
->    o  version: indicates the version of this protocol (0x00).  o
->       protection_profiles: The list of two-octet SRTP protection profile
-514a514
-> 
-517,518c517,519
-<    o  mki: Master key identifier [RFC3711].
-<    o  client_write_SRTP_master_key: The value of the SRTP master key
----
-> 
->    o  mki: Master key identifier [RFC3711].  o
->       client_write_SRTP_master_key: The value of the SRTP master key
-519a521
-> 
-521a524
-> 
-523a527
-> 
-568,573c572
+568,573c568,574
 <             message_type: 0x01
 <                   length: 0x0007
 <        SupportedProfiles:
@@ -36,13 +7,13 @@
 <                                 0x0009000A (value)
 ---
 >             message_type: 0x01 length: 0x0007
-574a574,578
+> 
 >             SupportedProfiles:
 >                            version: 0x00
 > 
 >                            protection_profiles:  0x0004 (length)
 >                                                  0x0009000A (value)
-591,595c595,600
+591,595c592,597
 <              |   0x01  | Supported SRTP Protection Profiles |
 <              |   0x02  | Unsupported Version                |
 <              |   0x03  | Media Keys                         |
@@ -55,9 +26,7 @@
 >              | 0x04    | Tunneled DTLS                      |
 >              | 0x05    | Endpoint Disconnect                |
 >              |         |                                    |
-621a627
-> 
-699c705
+699c701
 <    Cisco Systems, Inc.
 ---
 >    Cisco Systems
