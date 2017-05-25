@@ -1157,11 +1157,14 @@ def add_session_drafts(request, session_id, num):
 class UploadBlueSheetForm(forms.Form):
     file = forms.FileField(label='Bluesheet scan to upload')
 
-@role_required('Secretariat')
+@role_required('Area Director', 'Secretariat', 'IRTF Chair', 'WG Chair')
 def upload_session_bluesheets(request, session_id, num):
     # num is redundant, but we're dragging it along an artifact of where we are in the current URL structure
     session = get_object_or_404(Session,pk=session_id)
 
+    if session.meeting.type.slug == 'ietf' and not has_role(request.user, 'Secretariat'):
+        return HttpResponseForbidden('Restricted to role Secretariat')
+        
     session_number = None
     sessions = get_sessions(session.meeting.number,session.group.acronym)
     if len(sessions) > 1:

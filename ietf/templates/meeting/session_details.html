@@ -71,7 +71,7 @@
             <a class="btn btn-default pull-right" href="{% url 'ietf.meeting.views.upload_session_minutes' session_id=session.pk num=session.meeting.number %}">Upload Minutes</a>
           {% endif %}
         {% endif %}
-        {% if user|has_role:"Secretariat" and not session.type_counter.bluesheets %}
+        {% if user|has_role:"Secretariat" and not session.type_counter.bluesheets or meeting.type.slug == 'interim' and can_manage_materials and not session.type_counter.bluesheets %}
           <a class="btn btn-default pull-right" href="{% url 'ietf.meeting.views.upload_session_bluesheets' session_id=session.pk num=session.meeting.number %}">Upload Bluesheets</a>
         {% endif %}
       </div>
