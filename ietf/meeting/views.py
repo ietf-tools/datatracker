@@ -928,7 +928,7 @@ def json_agenda(request, num=None ):
     meeting = get_meeting(num)
 
     sessions = []
-    room_names = set()
+    locations = set()
     parent_acronyms = set()
     assignments = meeting.agenda.assignments.exclude(session__type__in=['lead','offagenda','break','reg'])
     # Update the assignments with historic information, i.e., valid at the
@@ -960,7 +960,7 @@ def json_agenda(request, num=None ):
         sessdict['start'] = asgn.timeslot.utc_start_time().strftime("%Y-%m-%dT%H:%M:%SZ")
         sessdict['duration'] = str(asgn.timeslot.duration)
         sessdict['location'] = asgn.room_name
-        room_names.add(asgn.room_name) 
+        locations.add(asgn.timeslot.location)
         if asgn.session.agenda():
             sessdict['agenda'] = asgn.session.agenda().href()
 
@@ -994,7 +994,7 @@ def json_agenda(request, num=None ):
         sessions.append(sessdict)
 
     rooms = []
-    for room in meeting.room_set.filter(name__in=room_names):
+    for room in locations:
         roomdict = dict()
         roomdict['id'] = room.pk
         roomdict['objtype'] = 'location'
