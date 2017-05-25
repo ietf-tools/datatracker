@@ -1,462 +1,15 @@
-106c106,109
-<    o  Improved access and good performance on the Internet
----
->    o  Improved access and good performance on the Internet The protocol
->       is designed to transit firewalls easily, perform well where
->       latency is high and bandwidth is low, and scale to very large
->       numbers of clients per server.
-108,114c111,112
-<       The protocol is designed to transit firewalls easily, perform well
-<       where latency is high and bandwidth is low, and scale to very
-<       large numbers of clients per server.
-< 
-<    o  Strong security with negotiation built into the protocol
-< 
-<       The protocol builds on the work of the ONCRPC working group in
----
->    o  Strong security with negotiation built into the protocol The
->       protocol builds on the work of the ONCRPC working group in
-120,129c118,125
-<    o  Good cross-platform interoperability
-< 
-<       The protocol features a file system model that provides a useful,
-<       common set of features that does not unduly favor one file system
-<       or operating system over another.
-< 
-<    o  Designed for protocol extensions
-< 
-<       The protocol is designed to accept standard extensions within a
-<       framework that enables and encourages backward compatibility.
----
->    o  Good cross-platform interoperability The protocol features a file
->       system model that provides a useful, common set of features that
->       does not unduly favor one file system or operating system over
->       another.
-> 
->    o  Designed for protocol extensions The protocol is designed to
->       accept standard extensions within a framework that enables and
->       encourages backward compatibility.
-168,170c164,166
-<       entity that maintains a set of locks on behalf of one or more
-<       applications.  This client is responsible for crash or failure
-<       recovery for those locks it manages.
----
->          entity that maintains a set of locks on behalf of one or more
->          applications.  This client is responsible for crash or failure
->          recovery for those locks it manages.
-173,174c169,170
-<       connection and multiple clients may exist on the same network
-<       node.
----
->          connection and multiple clients may exist on the same network
->          node.
-236c232
-<       server include:
----
->          server include:
-238,240c234,236
-<       1.  Media commit of data; that is, the modified data has been
-<           successfully written to the disk media, for example, the disk
-<           platter.
----
->          1.  Media commit of data; that is, the modified data has been
->              successfully written to the disk media, for example, the
->              disk platter.
-242,243c238,239
-<       2.  An immediate reply disk drive with battery-backed, on-drive
-<           intermediate storage or uninterruptible power system (UPS).
----
->          2.  An immediate reply disk drive with battery-backed, on-drive
->              intermediate storage or uninterruptible power system (UPS).
-245,246c241,242
-<       3.  Server commit of data with battery-backed intermediate storage
-<           and recovery software.
----
->          3.  Server commit of data with battery-backed intermediate
->              storage and recovery software.
-248,249c244,245
-<       4.  Cache commit with uninterruptible power system (UPS) and
-<           recovery software.
----
->          4.  Cache commit with uninterruptible power system (UPS) and
->              recovery software.
-660,661c656,658
+660,661c660,662
 <         service@hostname
 <    For NFS, the "service" element is
 ---
 >       service@hostname
 > 
 >       For NFS, the "service" element is
-987d983
-< 
-1267a1264
+1324a1326
 > 
-1275,1278c1272,1274
-<    1.   Procedures are not added or deleted.
-< 
-<         To maintain the general RPC model, NFSv4 minor versions will not
-<         add to or delete procedures from the NFS program.
----
->    1.   Procedures are not added or deleted.  To maintain the general
->         RPC model, NFSv4 minor versions will not add to or delete
->         procedures from the NFS program.
-1284c1280
-<         procedures does not affect the RPC model.
----
->            procedures does not affect the RPC model.
-1286,1299c1282,1297
-<         *  Minor versions may append attributes to the bitmap4 that
-<            represents sets of attributes and to the fattr4 that
-<            represents sets of attribute values.
-< 
-<            This allows for the expansion of the attribute model to allow
-<            for future growth or adaptation.
-< 
-<         *  Minor version X must append any new attributes after the last
-<            documented attribute.
-< 
-<            Since attribute results are specified as an opaque array of
-<            per-attribute, XDR-encoded results, the complexity of adding
-<            new attributes in the midst of the current definitions would
-<            be too burdensome.
----
->            +  Minor versions may append attributes to the bitmap4 that
->               represents sets of attributes and to the fattr4 that
->               represents sets of attribute values.
+1889a1892
 > 
->               This allows for the expansion of the attribute model to
->               allow
->                  for future growth or adaptation.
-> 
->            +  Minor version X must append any new attributes after the
->               last documented attribute.
-> 
->               Since attribute results are specified as an opaque array
->               of
->                  per-attribute, XDR-encoded results, the complexity of
->                  adding new attributes in the midst of the current
->                  definitions would be too burdensome.
-1305,1307c1303,1306
-<         for a single operation is too burdensome.  New operations should
-<         be added instead of modifying existing structures for a minor
-<         version.
----
-> 
->            for a single operation is too burdensome.  New operations
->            should be added instead of modifying existing structures for
->            a minor version.
-1310d1308
-<         version:
-1312,1322c1310,1323
-<         *  adding bits to flag fields, such as new attributes to
-<            GETATTR's bitmap4 data type, and providing corresponding
-<            variants of opaque arrays, such as a notify4 used together
-<            with such bitmaps
-< 
-<         *  adding bits to existing attributes like ACLs that have flag
-<            words
-< 
-<         *  extending enumerated types (including NFS4ERR_*) with new
-<            values
-<         *  adding cases to a switched union
----
->            version:
-> 
->            +  adding bits to flag fields, such as new attributes to
->               GETATTR's bitmap4 data type, and providing corresponding
->               variants of opaque arrays, such as a notify4 used together
->               with such bitmaps
-> 
->            +  adding bits to existing attributes like ACLs that have
->               flag words
-> 
->            +  extending enumerated types (including NFS4ERR_*) with new
->               values
-> 
->            +  adding cases to a switched union
-1327,1330c1328,1330
-<    5.   Minor versions must not delete operations.
-< 
-<         This prevents the potential reuse of a particular operation
-<         "slot" in a future minor version.
----
->    5.   Minor versions must not delete operations.  This prevents the
->         potential reuse of a particular operation "slot" in a future
->         minor version.
-1337d1336
-< 
-1365,1369c1364,1368
-<         forces the use of implementation experience before designating a
-<         feature as REQUIRED.  On the other hand, some classes of
-<         features are infrastructural and have broad effects.  Allowing
-<         infrastructural features to be RECOMMENDED or OPTIONAL
-<         complicates implementation of the minor version.
----
->            forces the use of implementation experience before
->            designating a feature as REQUIRED.  On the other hand, some
->            classes of features are infrastructural and have broad
->            effects.  Allowing infrastructural features to be RECOMMENDED
->            or OPTIONAL complicates implementation of the minor version.
-1885a1885
-> 
-1899,1902c1899,1903
-<       it is not required to do so.  It can invoke CREATE_SESSION on the
-<       connection.  This will result in client ID trunking as described
-<       below.  It can also decide to drop the connection if it does not
-<       choose to use trunking.
----
-> 
->          it is not required to do so.  It can invoke CREATE_SESSION on
->          the connection.  This will result in client ID trunking as
->          described below.  It can also decide to drop the connection if
->          it does not choose to use trunking.
-1914,1918c1915,1920
-<       CREATE_SESSION on each connection, using the same client ID that
-<       was returned in eir_clientid.  These invocations create two
-<       sessions and also associate each connection with its respective
-<       session.  The client is free to decline to use client ID trunking
-<       by simply dropping the connection at this point.
----
->          CREATE_SESSION on each connection, using the same client ID
->          that was returned in eir_clientid.  These invocations create
->          two sessions and also associate each connection with its
->          respective session.  The client is free to decline to use
->          client ID trunking by simply dropping the connection at this
->          point.
-1921,1922c1923,1924
-<       sessions associated with that same client ID.  This requires the
-<       server to coordinate state across sessions.
----
->          sessions associated with that same client ID.  This requires
->          the server to coordinate state across sessions.
-1953,1958c1955,1960
-<       BIND_CONN_TO_SESSION operation, see Section 18.34), if the client
-<       specified SP4_SSV state protection for the BIND_CONN_TO_SESSION
-<       operation, the client MUST send the BIND_CONN_TO_SESSION with
-<       RPCSEC_GSS protection, using integrity or privacy, and an
-<       RPCSEC_GSS handle created with the GSS SSV mechanism
-<       (Section 2.10.9).
----
->          BIND_CONN_TO_SESSION operation, see Section 18.34), if the
->          client specified SP4_SSV state protection for the
->          BIND_CONN_TO_SESSION operation, the client MUST send the
->          BIND_CONN_TO_SESSION with RPCSEC_GSS protection, using
->          integrity or privacy, and an RPCSEC_GSS handle created with the
->          GSS SSV mechanism (Section 2.10.9).
-1961,1968c1963,1971
-<       session of a wrong server, the server will either reject the
-<       attempt because it is not aware of the session identifier of the
-<       BIND_CONN_TO_SESSION arguments, or it will reject the attempt
-<       because the RPCSEC_GSS authentication fails.  Even if the server
-<       mistakenly or maliciously accepts the connection association
-<       attempt, the RPCSEC_GSS verifier it computes in the response will
-<       not be verified by the client, so the client will know it cannot
-<       use the connection for trunking the specified session.
----
->          session of a wrong server, the server will either reject the
->          attempt because it is not aware of the session identifier of
->          the BIND_CONN_TO_SESSION arguments, or it will reject the
->          attempt because the RPCSEC_GSS authentication fails.  Even if
->          the server mistakenly or maliciously accepts the connection
->          association attempt, the RPCSEC_GSS verifier it computes in the
->          response will not be verified by the client, so the client will
->          know it cannot use the connection for trunking the specified
->          session.
-1971,1975c1974,1978
-<       BIND_CONN_TO_SESSION operation will use RPCSEC_GSS integrity or
-<       privacy, using the same credential that was used when the client
-<       ID was created.  Mutual authentication via RPCSEC_GSS assures the
-<       client that the connection is associated with the correct session
-<       of the correct server.
----
->          BIND_CONN_TO_SESSION operation will use RPCSEC_GSS integrity or
->          privacy, using the same credential that was used when the
->          client ID was created.  Mutual authentication via RPCSEC_GSS
->          assures the client that the connection is associated with the
->          correct session of the correct server.
-1989,2003c1992,2007
-<       When the client sends EXCHANGE_ID, it specifies SP4_SSV
-<       protection.  The first EXCHANGE_ID the client sends always has to
-<       be confirmed by a CREATE_SESSION call.  The client then sends
-<       SET_SSV.  Later, the client sends EXCHANGE_ID to a second
-<       destination network address different from the one the first
-<       EXCHANGE_ID was sent to.  The client checks that each EXCHANGE_ID
-<       reply has the same eir_clientid, eir_server_owner.so_major_id, and
-<       eir_server_scope.  If so, the client verifies the claim by sending
-<       a CREATE_SESSION operation to the second destination address,
-<       protected with RPCSEC_GSS integrity using an RPCSEC_GSS handle
-<       returned by the second EXCHANGE_ID.  If the server accepts the
-<       CREATE_SESSION request, and if the client verifies the RPCSEC_GSS
-<       verifier and integrity codes, then the client has proof the second
-<       server knows the SSV, and thus the two servers are cooperating for
-<       the purposes of specifying server scope and client ID trunking.
----
->          When the client sends EXCHANGE_ID, it specifies SP4_SSV
->          protection.  The first EXCHANGE_ID the client sends always has
->          to be confirmed by a CREATE_SESSION call.  The client then
->          sends SET_SSV.  Later, the client sends EXCHANGE_ID to a second
->          destination network address different from the one the first
->          EXCHANGE_ID was sent to.  The client checks that each
->          EXCHANGE_ID reply has the same eir_clientid,
->          eir_server_owner.so_major_id, and eir_server_scope.  If so, the
->          client verifies the claim by sending a CREATE_SESSION operation
->          to the second destination address, protected with RPCSEC_GSS
->          integrity using an RPCSEC_GSS handle returned by the second
->          EXCHANGE_ID.  If the server accepts the CREATE_SESSION request,
->          and if the client verifies the RPCSEC_GSS verifier and
->          integrity codes, then the client has proof the second server
->          knows the SSV, and thus the two servers are cooperating for the
->          purposes of specifying server scope and client ID trunking.
-2239,2253c2243,2258
-<       highest_slotid argument to a Sequence operation, i.e. the
-<       requester continues to ignore the target highest_slotid in the
-<       response to a Sequence operation, and continues to set its
-<       highest_slotid argument to be higher than the target
-<       highest_slotid.  This can be considered particularly egregious
-<       behavior when the replier knows there are no outstanding requests
-<       with slot IDs higher than its target highest_slotid.  When faced
-<       with such intransigence, the replier is free to take more forceful
-<       action, and MAY reply with a new enforced highest_slotid that is
-<       less than its previous enforced highest_slotid.  Thereafter, if
-<       the requester continues to send requests with a highest_slotid
-<       that is greater than the replier's new enforced highest_slotid,
-<       the server MAY return NFS4ERR_BAD_HIGH_SLOT, unless the slot ID in
-<       the request is greater than the new enforced highest_slotid and
-<       the request is a retry.
----
->          highest_slotid argument to a Sequence operation, i.e. the
->          requester continues to ignore the target highest_slotid in the
->          response to a Sequence operation, and continues to set its
->          highest_slotid argument to be higher than the target
->          highest_slotid.  This can be considered particularly egregious
->          behavior when the replier knows there are no outstanding
->          requests with slot IDs higher than its target highest_slotid.
->          When faced with such intransigence, the replier is free to take
->          more forceful action, and MAY reply with a new enforced
->          highest_slotid that is less than its previous enforced
->          highest_slotid.  Thereafter, if the requester continues to send
->          requests with a highest_slotid that is greater than the
->          replier's new enforced highest_slotid, the server MAY return
->          NFS4ERR_BAD_HIGH_SLOT, unless the slot ID in the request is
->          greater than the new enforced highest_slotid and the request is
->          a retry.
-2256,2257c2261,2262
-<       requester sends a request with a highest_slotid less than or equal
-<       to the replier's new enforced highest_slotid.
----
->          requester sends a request with a highest_slotid less than or
->          equal to the replier's new enforced highest_slotid.
-2260,2270c2265,2276
-<       non-retry requests that have a slot ID that exceeds the replier's
-<       highest_slotid.  Once the replier has forcibly lowered the
-<       enforced highest_slotid, the requester is only allowed to send
-<       retries on slots that exceed the replier's highest_slotid.  If a
-<       request is received with a slot ID that is higher than the new
-<       enforced highest_slotid, and the sequence ID is one higher than
-<       what is in the slot's reply cache, then the server can both retire
-<       the slot and return NFS4ERR_BADSLOT (however, the server MUST NOT
-<       do one and not the other).  The reason it is safe to retire the
-<       slot is because by using the next sequence ID, the requester is
-<       indicating it has received the previous reply for the slot.
----
->          non-retry requests that have a slot ID that exceeds the
->          replier's highest_slotid.  Once the replier has forcibly
->          lowered the enforced highest_slotid, the requester is only
->          allowed to send retries on slots that exceed the replier's
->          highest_slotid.  If a request is received with a slot ID that
->          is higher than the new enforced highest_slotid, and the
->          sequence ID is one higher than what is in the slot's reply
->          cache, then the server can both retire the slot and return
->          NFS4ERR_BADSLOT (however, the server MUST NOT do one and not
->          the other).  The reason it is safe to retire the slot is
->          because by using the next sequence ID, the requester is
->          indicating it has received the previous reply for the slot.
-3010,3012c3016,3019
-<       use, and establish a new SSV for the client ID.  The client will
-<       be unable to delete the old client ID, and will let the lease on
-<       the old client ID expire.
----
-> 
->          use, and establish a new SSV for the client ID.  The client
->          will be unable to delete the old client ID, and will let the
->          lease on the old client ID expire.
-3015,3019c3022,3027
-<       using Bob's RPCSEC_GSS context, Eve can use the new session via
-<       the legitimate client, but she cannot disrupt Bob.  Moreover,
-<       because the client SHOULD have modified the SSV due to Eve using
-<       the new session, Bob cannot get revenge on Eve by associating a
-<       rogue connection with the session.
----
-> 
->          using Bob's RPCSEC_GSS context, Eve can use the new session via
->          the legitimate client, but she cannot disrupt Bob.  Moreover,
->          because the client SHOULD have modified the SSV due to Eve
->          using the new session, Bob cannot get revenge on Eve by
->          associating a rogue connection with the session.
-3022,3048c3030,3057
-<       hijacked the old session?  When the client detects that a new
-<       principal, Bob, wants to use the session, it SHOULD have sent a
-<       SET_SSV, which leads to the following sub-scenarios:
-< 
-<       *  Let us suppose that from the rogue connection, Eve sent a
-<          SET_SSV with the same slot ID and sequence ID that the
-<          legitimate client later uses.  The server will assume the
-<          SET_SSV sent with Bob's credentials is a retry, and return to
-<          the legitimate client the reply it sent Eve.  However, unless
-<          Eve can correctly guess the SSV the legitimate client will use,
-<          the digest verification checks in the SET_SSV response will
-<          fail.  That is an indication to the client that the session has
-<          apparently been hijacked.
-< 
-<       *  Alternatively, Eve sent a SET_SSV with a different slot ID than
-<          the legitimate client uses for its SET_SSV.  Then the digest
-<          verification of the SET_SSV sent with Bob's credentials fails
-<          on the server, and the error returned to the client makes it
-<          apparent that the session has been hijacked.
-< 
-<       *  Alternatively, Eve sent an operation other than SET_SSV, but
-<          with the same slot ID and sequence that the legitimate client
-<          uses for its SET_SSV.  The server returns to the legitimate
-<          client the response it sent Eve.  The client sees that the
-<          response is not at all what it expects.  The client assumes
-<          either session hijacking or a server bug, and either way
-<          destroys the old session.
----
->          hijacked the old session?  When the client detects that a new
->          principal, Bob, wants to use the session, it SHOULD have sent a
->          SET_SSV, which leads to the following sub-scenarios:
-> 
->          +  Let us suppose that from the rogue connection, Eve sent a
->             SET_SSV with the same slot ID and sequence ID that the
->             legitimate client later uses.  The server will assume the
->             SET_SSV sent with Bob's credentials is a retry, and return
->             to the legitimate client the reply it sent Eve.  However,
->             unless Eve can correctly guess the SSV the legitimate client
->             will use, the digest verification checks in the SET_SSV
->             response will fail.  That is an indication to the client
->             that the session has apparently been hijacked.
-> 
->          +  Alternatively, Eve sent a SET_SSV with a different slot ID
->             than the legitimate client uses for its SET_SSV.  Then the
->             digest verification of the SET_SSV sent with Bob's
->             credentials fails on the server, and the error returned to
->             the client makes it apparent that the session has been
->             hijacked.
-> 
->          +  Alternatively, Eve sent an operation other than SET_SSV, but
->             with the same slot ID and sequence that the legitimate
->             client uses for its SET_SSV.  The server returns to the
->             legitimate client the response it sent Eve.  The client sees
->             that the response is not at all what it expects.  The client
->             assumes either session hijacking or a server bug, and either
->             way destroys the old session.
-3719,3720c3728,3729
-<    const NFS4_MAXFILELEN           = 0xffffffffffffffff;
-<    const NFS4_MAXFILEOFF           = 0xfffffffffffffffe;
----
->    const NFS4_MAXFILELEN  = 0xffffffffffffffff;
->       const NFS4_MAXFILEOFF = 0xfffffffffffffffe;
-3751,3822c3760,3832
+3757,3828c3760,3832
 <    +---------------+---------------------------------------------------+
 <    | Data Type     | Definition                                        |
 <    +---------------+---------------------------------------------------+
@@ -603,7 +156,7 @@
 >    |               | NFS4_VERIFIER_SIZE is defined as 8.              |
 >    |               |                                                  |
 >    +---------------+--------------------------------------------------+
-4185,4211c4195,4230
+4191,4217c4195,4230
 <    +-------------------------+---+---------+---------------------------+
 <    | name                    | # | Data    | Description               |
 <    |                         |   | Type    |                           |
@@ -668,13 +221,13 @@
 >    |                         |    |          | through the MDS.        |
 >    |                         |    |          |                         |
 >    +-------------------------+----+----------+-------------------------+
-4418,4419c4437,4438
+4424,4425c4437,4438
 <    [volatile bit = 1 | server boot time | slot | generation number]
 <    o  slot is an index in the server volatile filehandle table
 ---
 >    [volatile bit = 1 | server boot time | slot | generation number] o
 >    slot is an index in the server volatile filehandle table
-4507,4513c4526,4533
+4513,4519c4526,4533
 <         +----------+-----------+---------------------------------+
 <         | LOOKUP   | "foo"     | ; look up file                  |
 <         | GETATTR  | attrbits  |                                 |
@@ -691,20 +244,29 @@
 >    +---------------+--------------+------------------------------------+
 >    |               |              |                                    |
 >    +---------------+--------------+------------------------------------+
-4654,4656c4674
-<    o  The per-server attribute is:
-< 
+4662c4676
 <          lease_time
 ---
->    o  The per-server attribute is: lease_time
-4659c4677
+>       lease_time
+4665,4673c4679,4685
 <          supported_attrs, suppattr_exclcreat, fh_expire_type,
+<          link_support, symlink_support, unique_handles, aclsupport,
+<          cansettime, case_insensitive, case_preserving,
+<          chown_restricted, files_avail, files_free, files_total,
+<          fs_locations, homogeneous, maxfilesize, maxname, maxread,
+<          maxwrite, no_trunc, space_avail, space_free, space_total,
+<          time_delta, change_policy, fs_status, fs_layout_type,
+<          fs_locations_info, fs_charset_cap
+< 
 ---
->       supported_attrs, suppattr_exclcreat, fh_expire_type,
-4667,4678c4685,4693
-< 
-<    o  The per-file system object attributes are:
-< 
+>       supported_attrs, suppattr_exclcreat, fh_expire_type, link_support,
+>       symlink_support, unique_handles, aclsupport, cansettime,
+>       case_insensitive, case_preserving, chown_restricted, files_avail,
+>       files_free, files_total, fs_locations, homogeneous, maxfilesize,
+>       maxname, maxread, maxwrite, no_trunc, space_avail, space_free,
+>       space_total, time_delta, change_policy, fs_status, fs_layout_type,
+>       fs_locations_info, fs_charset_cap
+4676,4684c4688,4695
 <          type, change, size, named_attr, fsid, rdattr_error, filehandle,
 <          acl, archive, fileid, hidden, maxlink, mimetype, mode,
 <          numlinks, owner, owner_group, rawdev, space_used, system,
@@ -715,63 +277,62 @@
 <          retention_set, retentevt_get, retentevt_set, retention_hold,
 <          mode_set_masked
 ---
->    o  The per-file system object attributes are: type, change, size,
->       named_attr, fsid, rdattr_error, filehandle, acl, archive, fileid,
->       hidden, maxlink, mimetype, mode, numlinks, owner, owner_group,
->       rawdev, space_used, system, time_access, time_backup, time_create,
->       time_metadata, time_modify, mounted_on_fileid, dir_notif_delay,
->       dirent_notif_delay, dacl, sacl, layout_type, layout_hint,
->       layout_blksize, layout_alignment, mdsthreshold, retention_get,
->       retention_set, retentevt_get, retentevt_set, retention_hold,
->       mode_set_masked
-4730a4746
+>       type, change, size, named_attr, fsid, rdattr_error, filehandle,
+>       acl, archive, fileid, hidden, maxlink, mimetype, mode, numlinks,
+>       owner, owner_group, rawdev, space_used, system, time_access,
+>       time_backup, time_create, time_metadata, time_modify,
+>       mounted_on_fileid, dir_notif_delay, dirent_notif_delay, dacl,
+>       sacl, layout_type, layout_hint, layout_blksize, layout_alignment,
+>       mdsthreshold, retention_get, retention_set, retentevt_get,
+>       retentevt_set, retention_hold, mode_set_masked
+4736a4748
 >      |                    |    |            |     |                  |
-4733c4749
+4739c4751
 <                                   Table 2
 ---
 >                                   Table 1
-4768c4784
+4774c4786
 <    | layout_hint        | 63 | layouthint4    |   W | Section 5.12.4   |
 ---
 >    | layout_hint        | 63 | layouthint4    | W   | Section 5.12.4   |
-4778c4794
+4784c4796
 <    | mode_set_masked    | 74 | mode_masked4   |   W | Section 6.2.5    |
 ---
 >    | mode_set_masked    | 74 | mode_masked4   | W   | Section 6.2.5    |
-4789c4805
+4795c4807
 <    | retentevt_set      | 72 | retention_set4 |   W | Section 5.13.4   |
 ---
 >    | retentevt_set      | 72 | retention_set4 | W   | Section 5.13.4   |
-4792c4808
+4798c4810
 <    | retention_set      | 70 | retention_set4 |   W | Section 5.13.2   |
 ---
 >    | retention_set      | 70 | retention_set4 | W   | Section 5.13.2   |
-4800c4816
+4806c4818
 <    | time_access_set    | 48 | settime4       |   W | Section 5.8.2.38 |
 ---
 >    | time_access_set    | 48 | settime4       | W   | Section 5.8.2.38 |
-4806c4822,4823
+4812c4824,4825
 <    | time_modify_set    | 54 | settime4       |   W | Section 5.8.2.44 |
 ---
 >    | time_modify_set    | 54 | settime4       | W   | Section 5.8.2.44 |
 >    |                    |    |                |     |                  |
-4809c4826
+4815c4828
 <                                   Table 3
 ---
 >                                   Table 2
-4811c4828
+4817c4830
 <    * fs_locations_info4
 ---
 >    o  fs_locations_info4
-5652c5669
+5658c5671
 <    typedef uint32_t        acetype4;
 ---
 >    typedef uint32_t  acetype4;
-5656c5673
+5662c5675
 <    typedef uint32_t        acemask4;
 ---
 >    typedef uint32_t  acemask4;
-5728,5758c5745,5776
+5734,5764c5747,5778
 <    +------------------------------+--------------+---------------------+
 <    | Value                        | Abbreviation | Description         |
 <    +------------------------------+--------------+---------------------+
@@ -836,86 +397,156 @@
 >    |                              |              | acemask4.          |
 >    |                              |              |                    |
 >    +------------------------------+--------------+--------------------+
-5816d5833
+5780d5793
 < 
-5834c5851
-<       Discussion:
----
->          Discussion:
-5861c5878
-<       Discussion:
----
->          Discussion:
-5876c5893
-<       Discussion:
----
->          Discussion:
-5895c5912
-<       Discussion:
----
->          Discussion:
-5909,5911c5926,5927
-< 
-<          RENAME
-<       Discussion:
----
->       RENAME
->          Discussion:
-5937c5953
-<       Discussion:
----
->          Discussion:
-5952c5968,5969
+5838c5851
 <          READ
 ---
 >       READ
->       OPEN
-5954,5956c5971
+5840c5853
 <          OPEN
+---
+>       OPEN
+5853c5866
+<          READDIR
+---
+>       READDIR
+5863c5876
+<          WRITE
+---
+>       WRITE
+5865c5878
+<          OPEN
+---
+>       OPEN
+5867c5880
+<          SETATTR of size
+---
+>       SETATTR of size
+5877c5890
+<          CREATE
+---
+>       CREATE
+5879c5892
+<          LINK
+---
+>       LINK
+5881c5894
+<          OPEN
+---
+>       OPEN
+5883c5896
+<          RENAME
+---
+>       RENAME
+5898c5911
+<          WRITE
+---
+>       WRITE
+5900c5913
+<          OPEN
+---
+>       OPEN
+5902c5915
+<          SETATTR of size
+---
+>       SETATTR of size
+5914d5926
 < 
+5917c5929
+<          CREATE
+---
+>       CREATE
+5919c5931
+<          RENAME
+---
+>       RENAME
+5931c5943
+<          OPENATTR
+---
+>       OPENATTR
+5945c5957
+<          OPENATTR
+---
+>       OPENATTR
+5962c5974
+<          READ
+---
+>       READ
+5964c5976
+<          OPEN
+---
+>       OPEN
+5966c5978
 <          REMOVE
 ---
 >       REMOVE
-5997c6012
-<       Discussion:
+6005c6017
+<          LOOKUP
 ---
->          Discussion:
-6026c6041
-<       Discussion:
+>       LOOKUP
+6028c6040
+<          GETATTR of file system object attributes
 ---
->          Discussion:
-6042,6043c6057
-< 
-<       Discussion:
----
->          Discussion:
-6057c6071
-<       Discussion:
----
->          Discussion:
-6070c6084
-<       Discussion:
----
->          Discussion:
-6082c6096
-<       Discussion:
----
->          Discussion:
-6096,6097c6110,6111
+>       GETATTR of file system object attributes
+6030c6042
 <          VERIFY
-<       Discussion:
 ---
 >       VERIFY
->          Discussion:
-6117c6131
-<       Discussion:
+6032c6044
+<          NVERIFY
 ---
->          Discussion:
-6129c6143
-<       Discussion:
+>       NVERIFY
+6034c6046
+<          READDIR
 ---
->          Discussion:
-6233,6236c6247,6250
+>       READDIR
+6049c6061
+<          SETATTR of time_access_set, time_backup,
+---
+>       SETATTR of time_access_set, time_backup,
+6051c6063
+<          time_create, time_modify_set, mimetype, hidden, system
+---
+>       time_create, time_modify_set, mimetype, hidden, system
+6065c6077
+<          SETATTR of retention_set, retentevt_set.
+---
+>       SETATTR of retention_set, retentevt_set.
+6078c6090
+<          SETATTR of retention_hold.
+---
+>       SETATTR of retention_hold.
+6090,6091c6102
+<          REMOVE
+< 
+---
+>       REMOVE
+6102c6113
+<          GETATTR of acl, dacl, or sacl
+---
+>       GETATTR of acl, dacl, or sacl
+6104c6115
+<          NVERIFY
+---
+>       NVERIFY
+6106c6117
+<          VERIFY
+---
+>       VERIFY
+6116c6127
+<          SETATTR of acl and mode
+---
+>       SETATTR of acl and mode
+6126c6137
+<          SETATTR of owner and owner_group
+---
+>       SETATTR of owner and owner_group
+6138c6149
+<          NONE
+---
+>       NONE
+6244,6247c6255,6258
 <       added to each new directory created.
 <       If this flag is set in an ACE in an ACL attribute to be set on a
 <       non-directory file system object, the operation attempting to set
@@ -925,181 +556,21 @@
 >       ACE in an ACL attribute to be set on a non-directory file system
 >       object, the operation attempting to set the ACL SHOULD fail with
 >       NFS4ERR_ATTRNOTSUPP.
-6253,6255c6267,6269
-<       ACE4_DIRECTORY_INHERIT_ACE nor ACE4_FILE_INHERIT_ACE is present,
-<       then an operation attempting to set such an attribute SHOULD fail
-<       with NFS4ERR_ATTRNOTSUPP.
----
->          ACE4_DIRECTORY_INHERIT_ACE nor ACE4_FILE_INHERIT_ACE is
->          present, then an operation attempting to set such an attribute
->          SHOULD fail with NFS4ERR_ATTRNOTSUPP.
-6278,6280c6292,6294
-<       even when they return NFS4_OK.  For the purposes of AUDIT and
-<       ALARM, we consider an ACCESS operation to be a "failure" if it
-<       fails to return a bit that was requested and supported.
----
->          even when they return NFS4_OK.  For the purposes of AUDIT and
->          ALARM, we consider an ACCESS operation to be a "failure" if it
->          fails to return a bit that was requested and supported.
-6324a6339
+6335a6347
 >    |               |                                                  |
-6327c6342
+6338c6350
 <                                   Table 4
 ---
 >                                   Table 3
-6645,6674c6660,6684
-<    1.  If just the mode is given in the call:
-< 
-<        In this case, inheritance SHOULD take place, but the mode MUST be
-<        applied to the inherited ACL as described in Section 6.4.1.1,
-<        thereby modifying the ACL.
-< 
-<    2.  If just the ACL is given in the call:
-< 
-<        In this case, inheritance SHOULD NOT take place, and the ACL as
-<        defined in the CREATE or OPEN will be set without modification,
-<        and the mode modified as in Section 6.4.1.2.
-< 
-<    3.  If both mode and ACL are given in the call:
-< 
-<        In this case, inheritance SHOULD NOT take place, and both
-<        attributes will be set as described in Section 6.4.1.3.
-< 
-<    4.  If neither mode nor ACL is given in the call:
-< 
-<        In the case where an object is being created without any initial
-<        attributes at all, e.g., an OPEN operation with an opentype4 of
-<        OPEN4_CREATE and a createmode4 of EXCLUSIVE4, inheritance SHOULD
-<        NOT take place (note that EXCLUSIVE4_1 is a better choice of
-<        createmode4, since it does permit initial attributes).  Instead,
-<        the server SHOULD set permissions to deny all access to the newly
-<        created object.  It is expected that the appropriate client will
-<        set the desired attributes in a subsequent SETATTR operation, and
-<        the server SHOULD allow that operation to succeed, regardless of
-<        what permissions the object is created with.  For example, an
-<        empty ACL denies all permissions, but the server should allow the
----
->    1.  If just the mode is given in the call: In this case, inheritance
->        SHOULD take place, but the mode MUST be applied to the inherited
->        ACL as described in Section 6.4.1.1, thereby modifying the ACL.
-> 
->    2.  If just the ACL is given in the call: In this case, inheritance
->        SHOULD NOT take place, and the ACL as defined in the CREATE or
->        OPEN will be set without modification, and the mode modified as
->        in Section 6.4.1.2.
-> 
->    3.  If both mode and ACL are given in the call: In this case,
->        inheritance SHOULD NOT take place, and both attributes will be
->        set as described in Section 6.4.1.3.
-> 
->    4.  If neither mode nor ACL is given in the call: In the case where
->        an object is being created without any initial attributes at all,
->        e.g., an OPEN operation with an opentype4 of OPEN4_CREATE and a
->        createmode4 of EXCLUSIVE4, inheritance SHOULD NOT take place
->        (note that EXCLUSIVE4_1 is a better choice of createmode4, since
->        it does permit initial attributes).  Instead, the server SHOULD
->        set permissions to deny all access to the newly created object.
->        It is expected that the appropriate client will set the desired
->        attributes in a subsequent SETATTR operation, and the server
->        SHOULD allow that operation to succeed, regardless of what
->        permissions the object is created with.  For example, an empty
->        ACL denies all permissions, but the server should allow the
-6679,6686c6689,6696
-<        modifications to the ACL will happen.  The mode attribute, if
-<        supported, MUST be as computed in Section 6.3.2, with the
-<        MODE4_SUID, MODE4_SGID, and MODE4_SVTX bits clear.  If no
-<        inheritable ACEs exist on the parent directory, the rules for
-<        creating acl, dacl, or sacl attributes are implementation
-<        defined.  If either the dacl or sacl attribute is supported, then
-<        the ACL4_DEFAULTED flag SHOULD be set on the newly created
-<        attributes.
----
->           modifications to the ACL will happen.  The mode attribute, if
->           supported, MUST be as computed in Section 6.3.2, with the
->           MODE4_SUID, MODE4_SGID, and MODE4_SVTX bits clear.  If no
->           inheritable ACEs exist on the parent directory, the rules for
->           creating acl, dacl, or sacl attributes are implementation
->           defined.  If either the dacl or sacl attribute is supported,
->           then the ACL4_DEFAULTED flag SHOULD be set on the newly
->           created attributes.
-7108,7121c7118,7128
-<    o  Stateids may represent opens of files.
-< 
-<       Each stateid in this case represents the OPEN state for a given
-<       client ID/open-owner/filehandle triple.  Such stateids are subject
-<       to change (with consequent incrementing of the stateid's seqid) in
-<       response to OPENs that result in upgrade and OPEN_DOWNGRADE
-<       operations.
-< 
-<    o  Stateids may represent sets of byte-range locks.
-< 
-<       All locks held on a particular file by a particular owner and
-<       gotten under the aegis of a particular open file are associated
-<       with a single stateid with the seqid being incremented whenever
-<       LOCK and LOCKU operations affect that set of locks.
----
->    o  Stateids may represent opens of files.  Each stateid in this case
->       represents the OPEN state for a given client ID/open-owner/
->       filehandle triple.  Such stateids are subject to change (with
->       consequent incrementing of the stateid's seqid) in response to
->       OPENs that result in upgrade and OPEN_DOWNGRADE operations.
-> 
->    o  Stateids may represent sets of byte-range locks.  All locks held
->       on a particular file by a particular owner and gotten under the
->       aegis of a particular open file are associated with a single
->       stateid with the seqid being incremented whenever LOCK and LOCKU
->       operations affect that set of locks.
-7130c7137
-<       particular filehandle.
----
->          particular filehandle.
-7137c7144
-<       particular directory filehandle.
----
->          particular directory filehandle.
-7147,7150c7154,7157
-<       client for a particular filehandle with a given layout type.  The
-<       seqid is updated as the layouts of that set of byte-ranges change,
-<       via layout stateid changing operations such as LAYOUTGET and
-<       LAYOUTRETURN.
----
->          client for a particular filehandle with a given layout type.
->          The seqid is updated as the layouts of that set of byte-ranges
->          change, via layout stateid changing operations such as
->          LAYOUTGET and LAYOUTRETURN.
-7173a7181
-> 
-7539,7548c7547,7556
-<       errors or it MUST ensure that, despite transport-level
-<       retransmission intervals that exceed the lease_time, a SEQUENCE
-<       operation is sent that renews the lease before expiration.  The
-<       client can achieve this by associating a new connection with the
-<       session, and sending a SEQUENCE operation on it.  However, if the
-<       attempt to establish a new connection is delayed for some reason
-<       (e.g., exponential backoff of the connection establishment
-<       packets), the client will have to abort the connection
-<       establishment attempt before the lease expires, and attempt to
-<       reconnect.
----
->          errors or it MUST ensure that, despite transport-level
->          retransmission intervals that exceed the lease_time, a SEQUENCE
->          operation is sent that renews the lease before expiration.  The
->          client can achieve this by associating a new connection with
->          the session, and sending a SEQUENCE operation on it.  However,
->          if the attempt to establish a new connection is delayed for
->          some reason (e.g., exponential backoff of the connection
->          establishment packets), the client will have to abort the
->          connection establishment attempt before the lease expires, and
->          attempt to reconnect.
-8004c8012
+8018c8030
 <    1.   Client A acquires one or more locks.
 ---
 >    1.  Client A acquires one or more locks.
-8006c8014
+8020c8032
 <    2.   Server restarts.
 ---
 >    2.  Server restarts.
-8008,8010c8016,8018
+8022,8024c8034,8036
 <    3.   Client A and server experience mutual network partition, such
 <         that client A is unable to reclaim all of its locks within the
 <         grace period.
@@ -1107,250 +578,118 @@
 >    3.  Client A and server experience mutual network partition, such
 >        that client A is unable to reclaim all of its locks within the
 >        grace period.
-8012,8013c8020,8021
+8026,8027c8038,8039
 <    4.   Server's reclaim grace period ends.  Client A has either no
 <         locks or an incomplete set of locks known to the server.
 ---
 >    4.  Server's reclaim grace period ends.  Client A has either no locks
 >        or an incomplete set of locks known to the server.
-8015,8016c8023,8024
+8029,8030c8041,8042
 <    5.   Client B acquires a lock that would have conflicted with a lock
 <         of client A that was not reclaimed.
 ---
 >    5.  Client B acquires a lock that would have conflicted with a lock
 >        of client A that was not reclaimed.
-8018c8026
+8032c8044
 <    6.   Client B releases the lock.
 ---
 >    6.  Client B releases the lock.
-8020c8028
+8034c8046
 <    7.   Server restarts a second time.
 ---
 >    7.  Server restarts a second time.
-8022c8030
+8036c8048
 <    8.   Network partition between client A and server heals.
 ---
 >    8.  Network partition between client A and server heals.
-8024,8025c8032,8033
+8038,8039c8050,8051
 <    9.   Client A connects to new server instance and finds out about
 <         server restart.
 ---
 >    9.  Client A connects to new server instance and finds out about
 >        server restart.
-8102,8104c8110,8113
-<        there is unrecoverable damage or corruption to the information in
-<        stable storage, then for all clients and/or locks that may be
-<        affected, the server MUST return NFS4ERR_NO_GRACE.
----
+8172a8185
 > 
->           there is unrecoverable damage or corruption to the information
->           in stable storage, then for all clients and/or locks that may
->           be affected, the server MUST return NFS4ERR_NO_GRACE.
-8635,8637c8644,8646
-<    const OPEN4_SHARE_ACCESS_READ   = 0x00000001;
-<    const OPEN4_SHARE_ACCESS_WRITE  = 0x00000002;
-<    const OPEN4_SHARE_ACCESS_BOTH   = 0x00000003;
----
->    const OPEN4_SHARE_ACCESS_READ  = 0x00000001;
->       const OPEN4_SHARE_ACCESS_WRITE = 0x00000002; const
->       OPEN4_SHARE_ACCESS_BOTH = 0x00000003;
-9098,9108c9107,9117
-<       modifications, some client implementors may be tempted to use the
-<       time_modify attribute and not the change attribute to validate
-<       cached data, so that metadata changes do not spuriously invalidate
-<       clean data.  The implementor is cautioned in this approach.  The
-<       change attribute is guaranteed to change for each update to the
-<       file, whereas time_modify is guaranteed to change only at the
-<       granularity of the time_delta attribute.  Use by the client's data
-<       cache validation logic of time_modify and not change runs the risk
-<       of the client incorrectly marking stale data as valid.  Thus, any
-<       cache validation approach by the client MUST include the use of
-<       the change attribute.
----
->          modifications, some client implementors may be tempted to use
->          the time_modify attribute and not the change attribute to
->          validate cached data, so that metadata changes do not
->          spuriously invalidate clean data.  The implementor is cautioned
->          in this approach.  The change attribute is guaranteed to change
->          for each update to the file, whereas time_modify is guaranteed
->          to change only at the granularity of the time_delta attribute.
->          Use by the client's data cache validation logic of time_modify
->          and not change runs the risk of the client incorrectly marking
->          stale data as valid.  Thus, any cache validation approach by
->          the client MUST include the use of the change attribute.
-9599d9607
-< 
-9631,9635c9639,9648
-<    Whether a RENAME of a directory in the path leading to the file
-<    results in recall of an OPEN delegation depends on the semantics of
-<    the server's file system.  If that file system denies such RENAMEs
-<    when a file is open, the recall must be performed to determine
-<    whether the file in question is, in fact, open.
----
+10800a10814
 > 
->    o
+11086a11101
 > 
->    o
-> 
->    o
-> 
->    o
-> 
->    o
-10782a10796
-> 
-11541c11555
+11561c11576
 <    -  Current fh is root of pseudo-fs.
 ---
 >    o  Current fh is root of pseudo-fs.
-11545c11559
+11565c11580
 <    -  Just for completeness.  Normally, clients will know the fsid of
 ---
 >    o  Just for completeness.  Normally, clients will know the fsid of
-11553c11567
+11573c11588
 <    -  Get current fsid to see where file system boundaries are.  The
 ---
 >    o  Get current fsid to see where file system boundaries are.  The
-11559c11573
+11579c11594
 <    -  Current fh is for /this and is within pseudo-fs.
 ---
 >    o  Current fh is for /this and is within pseudo-fs.
-11563c11577
+11583c11598
 <    -  Current fh is for /this/is and is within pseudo-fs.
 ---
 >    o  Current fh is for /this/is and is within pseudo-fs.
-11567c11581
+11587c11602
 <    -  Get current fsid to see where file system boundaries are.  The
 ---
 >    o  Get current fsid to see where file system boundaries are.  The
-11573c11587
+11593c11608
 <    -  Current fh is for /this/is and is within pseudo-fs.
 ---
 >    o  Current fh is for /this/is and is within pseudo-fs.
-11577c11591
+11597c11612
 <    -  Current fh is for /this/is/the and is within pseudo-fs.
 ---
 >    o  Current fh is for /this/is/the and is within pseudo-fs.
-11581c11595
+11601c11616
 <    -  Get current fsid to see where file system boundaries are.  The
 ---
 >    o  Get current fsid to see where file system boundaries are.  The
-11587c11601
+11607c11622
 <    -  Current fh is for /this/is/the and is within pseudo-fs.
 ---
 >    o  Current fh is for /this/is/the and is within pseudo-fs.
-11590,11591c11604
+11610,11611c11625
 < 
 <    -  Current fh is for /this/is/the/path and is within a new, absent
 ---
 >    o  Current fh is for /this/is/the/path and is within a new, absent
-11594c11607
+11614c11628
 <    -  The client will never see the value of that fh.
 ---
 >    o  The client will never see the value of that fh.
-11598c11611
+11618c11632
 <    -  We are getting the fsid to know where the file system boundaries
 ---
 >    o  We are getting the fsid to know where the file system boundaries
-11606c11619
+11626c11640
 <    -  In this particular case, we are pretty sure anyway that what has
 ---
 >    o  In this particular case, we are pretty sure anyway that what has
-11618c11631
+11638c11652
 <    -  We are fetching fs_locations_info because the fact that we got an
 ---
 >    o  We are fetching fs_locations_info because the fact that we got an
-11626c11639
+11646c11660
 <    -  Fails because current fh is in an absent file system at the start
 ---
 >    o  Fails because current fh is in an absent file system at the start
-11755a11769
+11775a11790
 > 
-12192,12197c12206,12211
-<       system, a client might choose to transfer immediately to another
-<       replica, or it may reference the current file system and only
-<       transition when a migration event occurs.  Similarly, when this
-<       flag appears as a replica in the referral, clients would likely
-<       avoid being referred to this instance whenever there is another
-<       choice.
----
->          system, a client might choose to transfer immediately to
->          another replica, or it may reference the current file system
->          and only transition when a migration event occurs.  Similarly,
->          when this flag appears as a replica in the referral, clients
->          would likely avoid being referred to this instance whenever
->          there is another choice.
-12211,12219c12225,12233
-<       existing files with which it has continuing connection (it is free
-<       to simply forget cached filehandles).  If the client remembers the
-<       directory filehandle associated with each open file, it may
-<       proceed upward using LOOKUPP to find the new file system
-<       boundaries.  Note that in the event of a referral, there will not
-<       be any such files and so these actions will not be performed.
-<       Instead, a reference to a portion of the original file system now
-<       split off into other file systems will encounter an fsid change
-<       and possibly a further referral.
----
->          existing files with which it has continuing connection (it is
->          free to simply forget cached filehandles).  If the client
->          remembers the directory filehandle associated with each open
->          file, it may proceed upward using LOOKUPP to find the new file
->          system boundaries.  Note that in the event of a referral, there
->          will not be any such files and so these actions will not be
->          performed.  Instead, a reference to a portion of the original
->          file system now split off into other file systems will
->          encounter an fsid change and possibly a further referral.
-12222,12234c12236,12249
-<       into two, it can prevent the disruption of running applications by
-<       presenting the two file systems as a single one until a convenient
-<       point to recognize the transition, such as a restart.  This would
-<       require a mapping from the server's fsids to fsids as seen by the
-<       client, but this is already necessary for other reasons.  As noted
-<       above, existing fileids within the two descendant file systems
-<       will not conflict.  Providing non-conflicting fileids for newly
-<       created files on the split file systems is the responsibility of
-<       the server (or servers working in concert).  The server can encode
-<       filehandles such that filehandles generated before the split event
-<       can be discerned from those generated after the split, allowing
-<       the server to determine when the need for emulating two file
-<       systems as one is over.
----
->          into two, it can prevent the disruption of running applications
->          by presenting the two file systems as a single one until a
->          convenient point to recognize the transition, such as a
->          restart.  This would require a mapping from the server's fsids
->          to fsids as seen by the client, but this is already necessary
->          for other reasons.  As noted above, existing fileids within the
->          two descendant file systems will not conflict.  Providing non-
->          conflicting fileids for newly created files on the split file
->          systems is the responsibility of the server (or servers working
->          in concert).  The server can encode filehandles such that
->          filehandles generated before the split event can be discerned
->          from those generated after the split, allowing the server to
->          determine when the need for emulating two file systems as one
->          is over.
-12237,12239c12252,12254
-<       of referral, it would generally be of little interest to the
-<       client, since the client is not expected to have information
-<       regarding the current contents of the absent file system.
----
->          of referral, it would generally be of little interest to the
->          client, since the client is not expected to have information
->          regarding the current contents of the absent file system.
-13247a13263
-> 
-13628c13644,13645
-<        returns NFS4ERR_RETURNCONFLICT.
----
-> 
->           returns NFS4ERR_RETURNCONFLICT.
-13668,13669c13685,13686
+12037d12051
+< 
+13692,13693c13706,13707
 <    returned from CREATE_SESSION of the i'th session.  The reason for "-
 <    1" is to allow for the required SEQUENCE operation.  The server MAY
 ---
 >    returned from CREATE_SESSION of the i'th session.  The reason for
 >    "-1" is to allow for the required SEQUENCE operation.  The server MAY
-14145,14147c14162,14164
+14171,14173c14185,14187
 <    should examine the layout specification, such as the NFSv4.1/
 <    file-based layout (Section 13) of this document, the blocks layout
 <    [41], and objects layout [40].
@@ -1358,129 +697,43 @@
 >    should examine the layout specification, such as the NFSv4.1/ file-
 >    based layout (Section 13) of this document, the blocks layout [41],
 >    and objects layout [40].
-14206,14207c14223,14224
+14232,14233c14246,14247
 <    client ID, the server SHOULD return with (EXCHGID4_FLAG_USE_PNFS_MDS
 <    | EXCHGID4_FLAG_USE_PNFS_DS) set.
 ---
 >    client ID, the server SHOULD return with
 >    (EXCHGID4_FLAG_USE_PNFS_MDS | EXCHGID4_FLAG_USE_PNFS_DS) set.
-14308a14326
+14335a14350
 > 
-14332,14336c14350,14354
-<    const NFL4_UFLG_DENSE           = 0x00000001;
-<    const NFL4_UFLG_COMMIT_THRU_MDS = 0x00000002;
-<    const NFL4_UFLG_STRIPE_UNIT_SIZE_MASK
-<                                    = 0xFFFFFFC0;
-< 
----
->                                    const NFL4_UFLG_DENSE = 0x00000001;
->                                    const NFL4_UFLG_COMMIT_THRU_MDS =
->                                    0x00000002; const
->                                    NFL4_UFLG_STRIPE_UNIT_SIZE_MASK =
->                                    0xFFFFFFC0;
-14432d14449
-< 
-14458,14460c14475,14478
-<        to convert the client's logical I/O offset to an offset on the
-<        file on the data server corresponding to the stripe unit number
-<        (see Section 13.4.4).
----
-> 
->           to convert the client's logical I/O offset to an offset on the
->           file on the data server corresponding to the stripe unit
->           number (see Section 13.4.4).
-14463,14465c14481,14484
-<        For example, via the LAYOUTGET operation, a client might request
-<        a layout starting at offset 1000 of a file that has its striping
-<        pattern start at offset zero.
----
-> 
->           For example, via the LAYOUTGET operation, a client might
->           request a layout starting at offset 1000 of a file that has
->           its striping pattern start at offset zero.
-14487c14506
+14514c14529
 <           See the discussion on sparse packing in Section 13.4.4.
 ---
 >              See the discussion on sparse packing in Section 13.4.4.
-14505,14509c14524,14529
-<           by the presence of multiple objects of data type layout4
-<           (either returned in one or multiple LAYOUTGET operations), and
-<           a data server is the target of a unit of one pattern and
-<           another unit of another pattern, then each reference to each
-<           data server MUST use a different filehandle.
----
-> 
->              by the presence of multiple objects of data type layout4
->              (either returned in one or multiple LAYOUTGET operations),
->              and a data server is the target of a unit of one pattern
->              and another unit of another pattern, then each reference to
->              each data server MUST use a different filehandle.
-14636a14657
+14665a14681
 >                     |     |            |              |
-14690c14711,14712
-<    Suppose the striping index array is:
----
-> 
->       Suppose the striping index array is:
-14752a14775
+14782a14799
 >                     |     |            |              |
-15026,15037c15049,15061
-<       maintain the current NFSv4.1 commit and recovery model, the data
-<       servers MUST return a common writeverf verifier in all WRITE
-<       responses for a given file layout, and the metadata server's
-<       COMMIT implementation must return the same writeverf.  The value
-<       of the writeverf verifier MUST be changed at the metadata server
-<       or any data server that is referenced in the layout, whenever
-<       there is a server event that can possibly lead to loss of
-<       uncommitted data.  The scope of the verifier can be for a file or
-<       for the entire pNFS server.  It might be more difficult for the
-<       server to maintain the verifier at the file level, but the benefit
-<       is that only events that impact a given file will require recovery
-<       action.
----
-> 
->          maintain the current NFSv4.1 commit and recovery model, the
->          data servers MUST return a common writeverf verifier in all
->          WRITE responses for a given file layout, and the metadata
->          server's COMMIT implementation must return the same writeverf.
->          The value of the writeverf verifier MUST be changed at the
->          metadata server or any data server that is referenced in the
->          layout, whenever there is a server event that can possibly lead
->          to loss of uncommitted data.  The scope of the verifier can be
->          for a file or for the entire pNFS server.  It might be more
->          difficult for the server to maintain the verifier at the file
->          level, but the benefit is that only events that impact a given
->          file will require recovery action.
-15486d15509
-< 
-15590c15613
-<    const FSCHARSET_CAP4_ALLOWS_ONLY_UTF8   = 0x2;
----
->       const FSCHARSET_CAP4_ALLOWS_ONLY_UTF8 = 0x2;
-15592c15615
+15622c15639
 <    typedef uint32_t        fs_charset_cap4;
 ---
 >    typedef uint32_t  fs_charset_cap4;
-15752a15776
+15783a15801
 >     |                                   |        |                   |
-15755c15779
+15786c15804
 <                                   Table 5
 ---
 >                                   Table 4
-16567,16569c16591,16592
-<    o  The invalid operation: ILLEGAL.
-< 
+16601c16619
 <               Valid Error Returns for Each Protocol Operation
 ---
->    o  The invalid operation: ILLEGAL.  Valid Error Returns for Each
->       Protocol Operation
-17262a17286
+>       Valid Error Returns for Each Protocol Operation
+17294a17313
 >    |                      |                                            |
-17265c17289
+17297c17316
 <                                   Table 6
 ---
 >                                   Table 5
-17276,17397c17300
+17308,17429c17327,17449
 <    +-------------------------+-----------------------------------------+
 <    | Callback Operation      | Errors                                  |
 <    +-------------------------+-----------------------------------------+
@@ -1605,9 +858,6 @@
 <    +-------------------------+-----------------------------------------+
 ---
 >    +-------------------------+----------------------------------------+
-17399c17302,17425
-<                                   Table 7
----
 >    | Callback Operation      | Errors                                 |
 >    +-------------------------+----------------------------------------+
 >    | CB_GETATTR              | NFS4ERR_BADHANDLE, NFS4ERR_BADXDR,     |
@@ -1730,22 +980,23 @@
 >    |                         | NFS4ERR_TOO_MANY_OPS                   |
 >    |                         |                                        |
 >    +-------------------------+----------------------------------------+
-> 
+17431c17451
+<                                   Table 7
+---
 >                                   Table 6
-17999a18026
+18031a18052
 >    |                                   |                               |
-18002c18029
+18034c18055
 <                                   Table 8
 ---
 >                                   Table 7
-18118,18120c18145,18146
+18151,18152c18172,18173
 <     case OP_OPEN_DOWNGRADE:
 <                            OPEN_DOWNGRADE4args opopen_downgrade;
-< 
 ---
 >       case OP_OPEN_DOWNGRADE:
 >                              OPEN_DOWNGRADE4args opopen_downgrade;
-18155,18194c18181,18219
+18189,18228c18210,18250
 <     case OP_BIND_CONN_TO_SESSION:
 <                            BIND_CONN_TO_SESSION4args
 <                            opbind_conn_to_session;
@@ -1788,6 +1039,7 @@
 <                                    opreclaim_complete;
 ---
 >       case OP_BIND_CONN_TO_SESSION:
+> 
 >                              BIND_CONN_TO_SESSION4args
 >                              opbind_conn_to_session;
 > 
@@ -1798,6 +1050,7 @@
 > 
 >       case OP_DESTROY_SESSION:
 >                              DESTROY_SESSION4args opdestroy_session;
+> 
 >       case OP_FREE_STATEID:  FREE_STATEID4args opfree_stateid;
 > 
 >       case OP_GET_DIR_DELEGATION:
@@ -1826,151 +1079,126 @@
 > 
 >       case OP_RECLAIM_COMPLETE:
 >                              RECLAIM_COMPLETE4args opreclaim_complete;
-18229,18232c18254,18255
+18263,18265c18285,18286
 <     case OP_OPEN_DOWNGRADE:
 <                            OPEN_DOWNGRADE4res
 <                                    opopen_downgrade;
-< 
 ---
 >       case OP_OPEN_DOWNGRADE:
 >                              OPEN_DOWNGRADE4res opopen_downgrade;
-18264,18266c18287,18288
+18298,18304c18319,18320
 <     case OP_BACKCHANNEL_CTL:
 <                            BACKCHANNEL_CTL4res
 <                                    opbackchannel_ctl;
----
->       case OP_BACKCHANNEL_CTL:
->                              BACKCHANNEL_CTL4res opbackchannel_ctl;
-18268,18270c18290,18292
+< 
 <     case OP_BIND_CONN_TO_SESSION:
 <                            BIND_CONN_TO_SESSION4res
 <                                     opbind_conn_to_session;
 ---
+>       case OP_BACKCHANNEL_CTL:
+>                              BACKCHANNEL_CTL4res opbackchannel_ctl;
+18306c18322,18324
+<     case OP_EXCHANGE_ID:   EXCHANGE_ID4res opexchange_id;
+---
 >       case OP_BIND_CONN_TO_SESSION:
 >                              BIND_CONN_TO_SESSION4res
 >                              opbind_conn_to_session;
-18272c18294
-<     case OP_EXCHANGE_ID:   EXCHANGE_ID4res opexchange_id;
----
->       case OP_EXCHANGE_ID:   EXCHANGE_ID4res opexchange_id;
-18274,18276c18296,18297
+18308,18310c18326
 <     case OP_CREATE_SESSION:
 <                            CREATE_SESSION4res
 <                                    opcreate_session;
 ---
->       case OP_CREATE_SESSION:
->                              CREATE_SESSION4res opcreate_session;
-18278,18282c18299
+>       case OP_EXCHANGE_ID:   EXCHANGE_ID4res opexchange_id;
+18312,18314c18328,18329
 <     case OP_DESTROY_SESSION:
 <                            DESTROY_SESSION4res
 <                                    opdestroy_session;
+---
+>       case OP_CREATE_SESSION:
+>                              CREATE_SESSION4res opcreate_session;
+18316,18317c18331,18334
 <     case OP_FREE_STATEID:  FREE_STATEID4res
 <                                    opfree_stateid;
 ---
 >       case OP_DESTROY_SESSION:
-18284,18286c18301,18303
+>                              DESTROY_SESSION4res opdestroy_session;
+>       case OP_FREE_STATEID:  FREE_STATEID4res
+>                              opfree_stateid;
+18319,18321c18336,18338
 <     case OP_GET_DIR_DELEGATION:
 <                            GET_DIR_DELEGATION4res
 <                                    opget_dir_delegation;
 ---
->                              DESTROY_SESSION4res opdestroy_session; case
->                              OP_FREE_STATEID: FREE_STATEID4res
->                              opfree_stateid;
-18288,18289c18305,18307
-<     case OP_GETDEVICEINFO: GETDEVICEINFO4res
-<                                    opgetdeviceinfo;
----
 >       case OP_GET_DIR_DELEGATION:
 >                              GET_DIR_DELEGATION4res
 >                              opget_dir_delegation;
-18291,18292c18309,18310
-<     case OP_GETDEVICELIST: GETDEVICELIST4res
-<                                    opgetdevicelist;
+18323,18324c18340,18341
+<     case OP_GETDEVICEINFO: GETDEVICEINFO4res
+<                                    opgetdeviceinfo;
 ---
 >       case OP_GETDEVICEINFO: GETDEVICEINFO4res
 >                              opgetdeviceinfo;
-18294,18296c18312,18313
-<     case OP_LAYOUTCOMMIT:  LAYOUTCOMMIT4res oplayoutcommit;
-<     case OP_LAYOUTGET:     LAYOUTGET4res oplayoutget;
-<     case OP_LAYOUTRETURN:  LAYOUTRETURN4res oplayoutreturn;
+18326,18327c18343,18344
+<     case OP_GETDEVICELIST: GETDEVICELIST4res
+<                                    opgetdevicelist;
 ---
 >       case OP_GETDEVICELIST: GETDEVICELIST4res
 >                              opgetdevicelist;
-18298,18300c18315,18318
-<     case OP_SECINFO_NO_NAME:
-<                            SECINFO_NO_NAME4res
-<                                    opsecinfo_no_name;
+18329,18331c18346,18349
+<     case OP_LAYOUTCOMMIT:  LAYOUTCOMMIT4res oplayoutcommit;
+<     case OP_LAYOUTGET:     LAYOUTGET4res oplayoutget;
+<     case OP_LAYOUTRETURN:  LAYOUTRETURN4res oplayoutreturn;
 ---
 >       case OP_LAYOUTCOMMIT:  LAYOUTCOMMIT4res oplayoutcommit;
 >                              case OP_LAYOUTGET: LAYOUTGET4res
 >                              oplayoutget; case OP_LAYOUTRETURN:
 >                              LAYOUTRETURN4res oplayoutreturn;
-18302,18304c18320,18321
-<     case OP_SEQUENCE:      SEQUENCE4res opsequence;
-<     case OP_SET_SSV:       SET_SSV4res opset_ssv;
-<     case OP_TEST_STATEID:  TEST_STATEID4res optest_stateid;
+18333,18335c18351,18352
+<     case OP_SECINFO_NO_NAME:
+<                            SECINFO_NO_NAME4res
+<                                    opsecinfo_no_name;
 ---
 >       case OP_SECINFO_NO_NAME:
 >                              SECINFO_NO_NAME4res opsecinfo_no_name;
-18306,18308c18323,18326
-<     case OP_WANT_DELEGATION:
-<                            WANT_DELEGATION4res
-<                                    opwant_delegation;
+18337,18339c18354,18357
+<     case OP_SEQUENCE:      SEQUENCE4res opsequence;
+<     case OP_SET_SSV:       SET_SSV4res opset_ssv;
+<     case OP_TEST_STATEID:  TEST_STATEID4res optest_stateid;
 ---
 >       case OP_SEQUENCE:      SEQUENCE4res opsequence;
 >                              case OP_SET_SSV: SET_SSV4res opset_ssv;
 >                              case OP_TEST_STATEID: TEST_STATEID4res
 >                              optest_stateid;
-18310c18328,18329
-<     case OP_DESTROY_CLIENTID:
+18341,18343c18359,18360
+<     case OP_WANT_DELEGATION:
+<                            WANT_DELEGATION4res
+<                                    opwant_delegation;
 ---
 >       case OP_WANT_DELEGATION:
 >                              WANT_DELEGATION4res opwant_delegation;
-18312,18313c18331
+18345c18362
+<     case OP_DESTROY_CLIENTID:
+---
+>       case OP_DESTROY_CLIENTID:
+18347,18348c18364
 <                            DESTROY_CLIENTID4res
 <                                    opdestroy_clientid;
 ---
->       case OP_DESTROY_CLIENTID:
-18315,18317c18333,18336
+>                              DESTROY_CLIENTID4res opdestroy_clientid;
+18350,18352c18366,18367
 <     case OP_RECLAIM_COMPLETE:
 <                            RECLAIM_COMPLETE4res
 <                                    opreclaim_complete;
 ---
->                              DESTROY_CLIENTID4res opdestroy_clientid;
-> 
 >       case OP_RECLAIM_COMPLETE:
 >                              RECLAIM_COMPLETE4res opreclaim_complete;
-18419,18424c18438,18442
-<                                  Figure 2
-<    In this example, the PUTFH (Section 18.19) operation explicitly sets
-<    the current filehandle value while the result of each LOOKUP
-<    operation sets the current filehandle value to the resultant file
-<    system object.  Also, the client is able to insert GETATTR operations
-<    using the current filehandle as an argument.
----
->       Figure 2: In this example, the PUTFH (Section 18.19) operation
->    explicitly sets the current filehandle value while the result of each
->     LOOKUP operation sets the current filehandle value to the resultant
->       file system object.  Also, the client is able to insert GETATTR
->           operations using the current filehandle as an argument.
-18495,18496c18513,18514
+18532,18533c18547,18548
 <    operation.  This allows the client to explicitly surround a single
 <    I/O operation with a lock and its appropriate stateid to guarantee
 ---
 >    operation.  This allows the client to explicitly surround a single I/
 >    O operation with a lock and its appropriate stateid to guarantee
-18514,18518c18532,18535
-<                                  Figure 5
-<    The final example shows a disallowed use of the current stateid.  The
-<    client is attempting to implicitly pass an anonymous special stateid,
-<    (0,0), to the READ operation.  The server MUST return
-<    NFS4ERR_BAD_STATEID in the reply to the READ operation.
----
->      Figure 5: The final example shows a disallowed use of the current
->     stateid.  The client is attempting to implicitly pass an anonymous
->       special stateid, (0,0), to the READ operation.  The server MUST
->       return NFS4ERR_BAD_STATEID in the reply to the READ operation.
-18535,18550c18552,18568
+18573,18588c18588,18604
 <    +------------------------------+------------------------------------+
 <    | Error                        | Notes                              |
 <    +------------------------------+------------------------------------+
@@ -2005,15 +1233,16 @@
 >     | NFS4ERR_REQ_TOO_BIG          |                                  |
 >     |                              |                                  |
 >     +------------------------------+----------------------------------+
-18552c18570
+18590c18606
 <                                   Table 9
 ---
 >                                   Table 8
-18609c18627
+18647c18663,18664
 <    DDELG  Directory Delegations
 ---
->       DDELG Directory Delegations Operations
-18611,18677c18629,18745
+>       DDELG Directory Delegations
+>       Operations
+18649,18715c18666,18782
 <                                 Operations
 < 
 <    +----------------------+------------+--------------+----------------+
@@ -2199,8 +1428,7 @@
 >    |                      |              |                | 18.32      |
 >    |                      |              |                |            |
 >    +----------------------+--------------+----------------+------------+
-18680,18707c18748,18787
-< 
+18719,18745c18786,18825
 <    +-------------------------+-----------+-------------+---------------+
 <    | Operation               | REQ, REC, | Feature     | Definition    |
 <    |                         | OPT, or   | (REQ, REC,  |               |
@@ -2269,7 +1497,7 @@
 >    |                         |            | (REQ)         |            |
 >    |                         |            |               |            |
 >    +-------------------------+------------+---------------+------------+
-19963,19969c20043,20044
+20003,20009c20083,20084
 <          PUTFH  (directory filehandle)
 <          LOOKUP "pub"
 <          GETFH
@@ -2280,13 +1508,11 @@
 ---
 >       PUTFH  (directory filehandle)
 >          LOOKUP "pub" GETFH LOOKUP "foo" GETFH LOOKUP "bar" GETFH
-20298a20374
-> 
-20344d20419
+20338d20412
 < 
-20383d20457
+20387d20460
 < 
-20501,20513c20575,20588
+20546,20558c20619,20632
 <    +----------------+-----------+---------------+----------------------+
 <    | Persistent     | Server    | Server        | Client Allowed       |
 <    | Reply Cache    | Supports  | REQUIRED      |                      |
@@ -2315,216 +1541,97 @@
 >    | yes               | yes            | GUARDED4     | GUARDED4      |
 >    |                   |                |              |               |
 >    +-------------------+----------------+--------------+---------------+
-20515c20590
+20560c20634
 <                                  Table 10
 ---
 >                                   Table 9
-20599a20675
+20644a20719
 >    |                      |                                            |
-20707,20709c20783
+20752,20754c20827
 <    OPEN4_SHARE_ACCESS_WANT_WRITE_DELEG
 <    OPEN4_SHARE_ACCESS_WANT_ANY_DELEG
 < 
 ---
 >    OPEN4_SHARE_ACCESS_WANT_WRITE_DELEG OPEN4_SHARE_ACCESS_WANT_ANY_DELEG
-21466a21541
-> 
-21514a21590
-> 
-22154,22156c22230,22234
-<       to reconstruct the parent of the original filehandle and the
-<       component name of the original filehandle.  The introduction in
-<       NFSv4.1 of SECINFO_NO_NAME obviates the need for reconstruction.
----
-> 
->          to reconstruct the parent of the original filehandle and the
->          component name of the original filehandle.  The introduction in
->          NFSv4.1 of SECINFO_NO_NAME obviates the need for
->          reconstruction.
-22433,22434c22511,22513
+22482,22483c22555,22557
 <    Valid combinations of the fields stable in the request and committed
 <                                in the reply.
 ---
 >       Valid combinations of the fields stable in the request and
 >       committed
 >                                   in the reply.
-22441a22521
+22490a22565
 >             |            |                                   |
-22444c22524
+22493c22568
 <                                  Table 11
 ---
 >                                  Table 10
-22640,22641c22720,22721
+22689,22690c22764,22765
 <     channel_dir_from_client4
 <                    bctsa_dir;
 ---
 >       channel_dir_from_client4
 >                      bctsa_dir;
-22657,22658c22737,22738
+22706,22707c22781,22782
 <     channel_dir_from_server4
 <                    bctsr_dir;
 ---
 >       channel_dir_from_server4
 >                      bctsr_dir;
-22774,22775c22854,22855
-<    const EXCHGID4_FLAG_SUPP_MOVED_REFER    = 0x00000001;
-<    const EXCHGID4_FLAG_SUPP_MOVED_MIGR     = 0x00000002;
----
->    const EXCHGID4_FLAG_SUPP_MOVED_REFER  = 0x00000001;
->       const EXCHGID4_FLAG_SUPP_MOVED_MIGR = 0x00000002;
-22782d22861
-< 
-22931,22933c23010,23013
+22982,22984c23057,23062
 <       These properties may be updated by subsequent EXCHANGE_ID requests
 <       on confirmed client IDs though the server MAY refuse to change
 <       them.
 ---
 >          These properties may be updated by subsequent EXCHANGE_ID
 >          requests
->             on confirmed client IDs though the server MAY refuse to
->             change them.
-22950,22951c23030,23031
+> 
+>          on confirmed client IDs though the server MAY refuse to change
+> 
+>          them.
+23001,23002c23079,23081
 <       Once the client ID is confirmed, these properties cannot be
 <       updated by subsequent EXCHANGE_ID requests.
 ---
 >          Once the client ID is confirmed, these properties cannot be
->             updated by subsequent EXCHANGE_ID requests.
-22972,22997c23052,23077
-<          length of the key of the encryption algorithm ("key length"),
-<          the length of the output of hash algorithm ("hash length"), and
-<          the length of the SSV ("SSV length").
-< 
-<          +  key length MUST be <= hash length.  This is because the keys
-<             used for the encryption algorithm are actually subkeys
-<             derived from the SSV, and the derivation is via the hash
-<             algorithm.  The selection of an encryption algorithm with a
-<             key length that exceeded the length of the output of the
-<             hash algorithm would require padding, and thus weaken the
-<             use of the encryption algorithm.
-< 
-<          +  hash length SHOULD be <= SSV length.  This is because the
-<             SSV is a key used to derive subkeys via an HMAC, and it is
-<             recommended that the key used as input to an HMAC be at
-<             least as long as the length of the HMAC's hash algorithm's
-<             output (see Section 3 of RFC2104 [11]).
-< 
-<          +  key length SHOULD be <= SSV length.  This is a transitive
-<             result of the above two invariants.
-< 
-<          +  key length SHOULD be >= hash length / 2.  This is because
-<             the subkey derivation is via an HMAC and it is recommended
-<             that if the HMAC has to be truncated, it should not be
-<             truncated to less than half the hash length (see Section 4
-<             of RFC2104 [11]).
----
->             length of the key of the encryption algorithm ("key
->             length"), the length of the output of hash algorithm ("hash
->             length"), and the length of the SSV ("SSV length").
 > 
->             -  key length MUST be <= hash length.  This is because the
->                keys used for the encryption algorithm are actually
->                subkeys derived from the SSV, and the derivation is via
->                the hash algorithm.  The selection of an encryption
->                algorithm with a key length that exceeded the length of
->                the output of the hash algorithm would require padding,
->                and thus weaken the use of the encryption algorithm.
-> 
->             -  hash length SHOULD be <= SSV length.  This is because the
->                SSV is a key used to derive subkeys via an HMAC, and it
->                is recommended that the key used as input to an HMAC be
->                at least as long as the length of the HMAC's hash
->                algorithm's output (see Section 3 of RFC2104 [11]).
-> 
->             -  key length SHOULD be <= SSV length.  This is a transitive
->                result of the above two invariants.
-> 
->             -  key length SHOULD be >= hash length / 2.  This is because
->                the subkey derivation is via an HMAC and it is
->                recommended that if the HMAC has to be truncated, it
->                should not be truncated to less than half the hash length
->                (see Section 4 of RFC2104 [11]).
-23127,23132c23207,23213
-<       with the client ID is unexpired, a subsequent EXCHANGE_ID
-<       operation that uses the same eia_clientowner.co_owner as the first
-<       EXCHANGE_ID MUST also use the same machine credential as the first
-<       EXCHANGE_ID.  The server returns the same client ID for the
-<       subsequent EXCHANGE_ID as that returned from the first
-<       EXCHANGE_ID.
----
-> 
->          with the client ID is unexpired, a subsequent EXCHANGE_ID
->          operation that uses the same eia_clientowner.co_owner as the
->          first EXCHANGE_ID MUST also use the same machine credential as
->          the first EXCHANGE_ID.  The server returns the same client ID
->          for the subsequent EXCHANGE_ID as that returned from the first
->          EXCHANGE_ID.
-23252a23334
-> 
-23263,23269c23345,23352
-<       to a server sharing the same eir_server_owner.so_major_id, the
-<       RPCSEC_GSS handles returned in spi_handles can only be used on
-<       connections connected to a server that returns the same the
-<       eir_server_owner.so_major_id and eir_server_owner.so_minor_id on
-<       each connection.  It is permissible for the client to set
-<       ssp_num_gss_handles to zero; the client can create more handles
-<       with another EXCHANGE_ID call.
----
-> 
->          to a server sharing the same eir_server_owner.so_major_id, the
->          RPCSEC_GSS handles returned in spi_handles can only be used on
->          connections connected to a server that returns the same the
->          eir_server_owner.so_major_id and eir_server_owner.so_minor_id
->          on each connection.  It is permissible for the client to set
->          ssp_num_gss_handles to zero; the client can create more handles
->          with another EXCHANGE_ID call.
-23272,23273c23355,23356
-<       context, there are security considerations specific to this
-<       situation discussed in Section 2.10.10.
----
->          context, there are security considerations specific to this
->          situation discussed in Section 2.10.10.
-23276,23278c23359,23361
-<       RPCSEC_GSS handle in spi_handle MUST be the same as the seq_window
-<       of the RPCSEC_GSS handle used for the credential of the RPC
-<       request that the EXCHANGE_ID request was sent with.
----
->          RPCSEC_GSS handle in spi_handle MUST be the same as the
->          seq_window of the RPCSEC_GSS handle used for the credential of
->          the RPC request that the EXCHANGE_ID request was sent with.
-23286a23370
+>          updated by subsequent EXCHANGE_ID requests.
+23337a23417
 >    |                   |                      |                        |
-23289c23373
+23340,23341c23420
 <                                  Table 12
+< 
 ---
 >                                  Table 11
-23320,23334c23404,23405
-<    1.  co_ownerid
-< 
+23373,23374c23452,23453
 <           The client identifier string, from the eia_clientowner
 <           structure of the EXCHANGE_ID4args structure.
-< 
-<    2.  co_verifier:
-< 
+---
+>        The client identifier string, from the eia_clientowner structure
+>        of the EXCHANGE_ID4args structure.
+23378,23380c23457,23459
 <           A client-specific value used to indicate incarnations (where a
 <           client restart represents a new incarnation), from the
 <           eia_clientowner structure of the EXCHANGE_ID4args structure.
-< 
-<    3.  principal:
-< 
+---
+>        A client-specific value used to indicate incarnations (where a
+>        client restart represents a new incarnation), from the
+>        eia_clientowner structure of the EXCHANGE_ID4args structure.
+23384,23385c23463,23464
 <           The principal that was defined in the RPC header's credential
 <           and/or verifier at the time the client record was established.
 ---
->    1.  co_ownerid The client identifier string, from the eia_clientowner
->        structure of the EXCHANGE_ID4args structure.
-23336,23350c23407,23426
-<    4.  client ID:
-< 
+>        The principal that was defined in the RPC header's credential
+>        and/or verifier at the time the client record was established.
+23389,23391c23468,23470
 <           The shorthand client identifier, generated by the server and
 <           returned via the eir_clientid field in the EXCHANGE_ID4resok
 <           structure.
-< 
-<    5.  confirmed:
-< 
+---
+>        The shorthand client identifier, generated by the server and
+>        returned via the eir_clientid field in the EXCHANGE_ID4resok
+>        structure.
+23395,23401c23474,23479
 <           A private field on the server indicating whether or not a
 <           client record has been confirmed.  A client record is
 <           confirmed if there has been a successful CREATE_SESSION
@@ -2533,71 +1640,73 @@
 <           unconfirmed record that is not confirmed within a lease period
 <           SHOULD be removed.
 ---
->    2.  co_verifier: A client-specific value used to indicate
->        incarnations (where a client restart represents a new
->        incarnation), from the eia_clientowner structure of the
->        EXCHANGE_ID4args structure.
-> 
->    3.  principal: The principal that was defined in the RPC header's
->        credential and/or verifier at the time the client record was
->        established.
-> 
->    4.  client ID: The shorthand client identifier, generated by the
->        server and returned via the eir_clientid field in the
->        EXCHANGE_ID4resok structure.
-> 
->    5.  confirmed: A private field on the server indicating whether or
->        not a client record has been confirmed.  A client record is
->        confirmed if there has been a successful CREATE_SESSION operation
->        to confirm it.  Otherwise, it is unconfirmed.  An unconfirmed
->        record is established by an EXCHANGE_ID call.  Any unconfirmed
->        record that is not confirmed within a lease period SHOULD be
->        removed.
-23414c23490,23495
-<    1.  New Owner ID
----
->    1.  New Owner ID If the server has no client records with
->        eia_clientowner.co_ownerid matching ownerid_arg, and
->        EXCHGID4_FLAG_UPD_CONFIRMED_REC_A is not set in the EXCHANGE_ID,
->        then a new shorthand client ID (let us call it clientid_ret) is
->        generated, and the following unconfirmed record is added to the
->        server's state.
-23416,23423c23497
+>        A private field on the server indicating whether or not a client
+>        record has been confirmed.  A client record is confirmed if there
+>        has been a successful CREATE_SESSION operation to confirm it.
+>        Otherwise, it is unconfirmed.  An unconfirmed record is
+>        established by an EXCHANGE_ID call.  Any unconfirmed record that
+>        is not confirmed within a lease period SHOULD be removed.
+23467,23472c23545,23550
 <           If the server has no client records with
 <           eia_clientowner.co_ownerid matching ownerid_arg, and
 <           EXCHGID4_FLAG_UPD_CONFIRMED_REC_A is not set in the
 <           EXCHANGE_ID, then a new shorthand client ID (let us call it
 <           clientid_ret) is generated, and the following unconfirmed
 <           record is added to the server's state.
-< 
+---
+>        If the server has no client records with
+>        eia_clientowner.co_ownerid matching ownerid_arg, and
+>        EXCHGID4_FLAG_UPD_CONFIRMED_REC_A is not set in the EXCHANGE_ID,
+>        then a new shorthand client ID (let us call it clientid_ret) is
+>        generated, and the following unconfirmed record is added to the
+>        server's state.
+23474,23475c23552,23553
 <           { ownerid_arg, verifier_arg, principal_arg, clientid_ret,
+<           unconfirmed }
 ---
 >        { ownerid_arg, verifier_arg, principal_arg, clientid_ret,
-23426c23500
+>        unconfirmed }
+23477c23555
 <           Subsequently, the server returns clientid_ret.
 ---
 >        Subsequently, the server returns clientid_ret.
-23430c23504
+23481,23497c23559,23575
 <           If the server has the following confirmed record, and the
----
->        If the server has the following confirmed record, and the
-23436c23510
+<           request does not have EXCHGID4_FLAG_UPD_CONFIRMED_REC_A set,
+<           then the request is the result of a retried request due to a
+<           faulty router or lost connection, or the client is trying to
+<           determine if it can perform trunking.
+< 
 <           { ownerid_arg, verifier_arg, principal_arg, clientid_ret,
----
->        { ownerid_arg, verifier_arg, principal_arg, clientid_ret,
-23439c23513
+<           confirmed }
+< 
 <           Since the record has been confirmed, the client must have
+<           received the server's reply from the initial EXCHANGE_ID
+<           request.  Since the server has a confirmed record, and since
+<           EXCHGID4_FLAG_UPD_CONFIRMED_REC_A is not set, with the
+<           possible exception of eir_server_owner.so_minor_id, the server
+<           returns the same result it did when the client ID's properties
+<           were last updated (or if never updated, the result when the
+<           client ID was created).  The confirmed record is unchanged.
 ---
+>        If the server has the following confirmed record, and the request
+>        does not have EXCHGID4_FLAG_UPD_CONFIRMED_REC_A set, then the
+>        request is the result of a retried request due to a faulty router
+>        or lost connection, or the client is trying to determine if it
+>        can perform trunking.
+> 
+>        { ownerid_arg, verifier_arg, principal_arg, clientid_ret,
+>        confirmed }
+> 
 >        Since the record has been confirmed, the client must have
-23448c23522,23526
-<    3.  Client Collision
----
->    3.  Client Collision If EXCHGID4_FLAG_UPD_CONFIRMED_REC_A is not set,
->        and if the server has the following confirmed record, then this
->        request is likely the result of a chance collision between the
->        values of the eia_clientowner.co_ownerid subfield of
->        EXCHANGE_ID4args for two different clients.
-23450,23456c23528
+>        received the server's reply from the initial EXCHANGE_ID request.
+>        Since the server has a confirmed record, and since
+>        EXCHGID4_FLAG_UPD_CONFIRMED_REC_A is not set, with the possible
+>        exception of eir_server_owner.so_minor_id, the server returns the
+>        same result it did when the client ID's properties were last
+>        updated (or if never updated, the result when the client ID was
+>        created).  The confirmed record is unchanged.
+23501,23528c23579,23605
 <           If EXCHGID4_FLAG_UPD_CONFIRMED_REC_A is not set, and if the
 <           server has the following confirmed record, then this request
 <           is likely the result of a chance collision between the values
@@ -2605,241 +1714,304 @@
 <           for two different clients.
 < 
 <           { ownerid_arg, *, old_principal_arg, old_clientid_ret,
----
->        { ownerid_arg, *, old_principal_arg, old_clientid_ret,
-23459c23531
+<           confirmed }
+< 
 <           If there is currently no state associated with
----
->        If there is currently no state associated with
-23467c23539
-<           { ownerid_arg, verifier_arg, principal_arg, clientid_ret,
----
->        { ownerid_arg, verifier_arg, principal_arg, clientid_ret,
-23470c23542
-<           Subsequently, the server returns clientid_ret.
----
->        Subsequently, the server returns clientid_ret.
-23472c23544
-<           If old_clientid_ret has an unexpired lease with state, then no
----
->        If old_clientid_ret has an unexpired lease with state, then no
-23497,23499c23569,23570
+<           old_clientid_ret, or if there is state but the lease has
+<           expired, then this case is effectively equivalent to the New
+<           Owner ID case of Paragraph 1.  The confirmed record is
+<           deleted, the old_clientid_ret and its lock state are deleted,
+<           a new shorthand client ID is generated, and the following
+<           unconfirmed record is added to the server's state.
+< 
 <           { ownerid_arg, verifier_arg, principal_arg, clientid_ret,
 <           unconfirmed }
-<    5.  Client Restart
----
->        { ownerid_arg, verifier_arg, principal_arg, clientid_ret,
->           unconfirmed } 5.  Client Restart
-23546c23617
-<    6.  Update
----
->    5.  Update
-23548c23619
-<           If EXCHGID4_FLAG_UPD_CONFIRMED_REC_A is set, and the server
----
->        If EXCHGID4_FLAG_UPD_CONFIRMED_REC_A is set, and the server
-23552c23623
-<           { ownerid_arg, verifier_arg, principal_arg, clientid_ret,
----
->        { ownerid_arg, verifier_arg, principal_arg, clientid_ret,
-23555c23626
-<           Since the record has been confirmed, the client must have
----
->        Since the record has been confirmed, the client must have
-23560,23572c23631,23639
-<    7.  Update but No Confirmed Record
 < 
+<           Subsequently, the server returns clientid_ret.
+< 
+<           If old_clientid_ret has an unexpired lease with state, then no
+<           state of old_clientid_ret is changed or deleted.  The server
+<           returns NFS4ERR_CLID_INUSE to indicate that the client should
+<           retry with a different value for the
+<           eia_clientowner.co_ownerid subfield of EXCHANGE_ID4args.  The
+<           client record is not changed.
+---
+>        If EXCHGID4_FLAG_UPD_CONFIRMED_REC_A is not set, and if the
+>        server has the following confirmed record, then this request is
+>        likely the result of a chance collision between the values of the
+>        eia_clientowner.co_ownerid subfield of EXCHANGE_ID4args for two
+>        different clients.
+> 
+>        { ownerid_arg, *, old_principal_arg, old_clientid_ret, confirmed
+>        }
+> 
+>        If there is currently no state associated with old_clientid_ret,
+>        or if there is state but the lease has expired, then this case is
+>        effectively equivalent to the New Owner ID case of Paragraph 1.
+>        The confirmed record is deleted, the old_clientid_ret and its
+>        lock state are deleted, a new shorthand client ID is generated,
+>        and the following unconfirmed record is added to the server's
+>        state.
+> 
+>        { ownerid_arg, verifier_arg, principal_arg, clientid_ret,
+>        unconfirmed }
+> 
+>        Subsequently, the server returns clientid_ret.
+> 
+>        If old_clientid_ret has an unexpired lease with state, then no
+>        state of old_clientid_ret is changed or deleted.  The server
+>        returns NFS4ERR_CLID_INUSE to indicate that the client should
+>        retry with a different value for the eia_clientowner.co_ownerid
+>        subfield of EXCHANGE_ID4args.  The client record is not changed.
+23532,23546c23609,23622
+<           If the EXCHGID4_FLAG_UPD_CONFIRMED_REC_A flag is not set, and
+<           the server has the following unconfirmed record, then the
+<           client is attempting EXCHANGE_ID again on an unconfirmed
+<           client ID, perhaps due to a retry, a client restart before
+<           client ID confirmation (i.e., before CREATE_SESSION was
+<           called), or some other reason.
+< 
+<           { ownerid_arg, *, *, old_clientid_ret, unconfirmed }
+< 
+<           It is possible that the properties of old_clientid_ret are
+<           different than those specified in the current EXCHANGE_ID.
+<           Whether or not the properties are being updated, to eliminate
+<           ambiguity, the server deletes the unconfirmed record,
+<           generates a new client ID (clientid_ret), and establishes the
+<           following unconfirmed record:
+---
+>        If the EXCHGID4_FLAG_UPD_CONFIRMED_REC_A flag is not set, and the
+>        server has the following unconfirmed record, then the client is
+>        attempting EXCHANGE_ID again on an unconfirmed client ID, perhaps
+>        due to a retry, a client restart before client ID confirmation
+>        (i.e., before CREATE_SESSION was called), or some other reason.
+> 
+>        { ownerid_arg, *, *, old_clientid_ret, unconfirmed }
+> 
+>        It is possible that the properties of old_clientid_ret are
+>        different than those specified in the current EXCHANGE_ID.
+>        Whether or not the properties are being updated, to eliminate
+>        ambiguity, the server deletes the unconfirmed record, generates a
+>        new client ID (clientid_ret), and establishes the following
+>        unconfirmed record:
+23548,23549c23624,23625
+<           { ownerid_arg, verifier_arg, principal_arg, clientid_ret,
+<           unconfirmed }
+---
+>        { ownerid_arg, verifier_arg, principal_arg, clientid_ret,
+>        unconfirmed }
+23553,23596c23629,23670
+<           If EXCHGID4_FLAG_UPD_CONFIRMED_REC_A is not set, and if the
+<           server has the following confirmed client record, then this
+<           request is likely from a previously confirmed client that has
+<           restarted.
+< 
+<           { ownerid_arg, old_verifier_arg, principal_arg,
+<           old_clientid_ret, confirmed }
+< 
+<           Since the previous incarnation of the same client will no
+<           longer be making requests, once the new client ID is confirmed
+<           by CREATE_SESSION, byte-range locks and share reservations
+<           should be released immediately rather than forcing the new
+<           incarnation to wait for the lease time on the previous
+<           incarnation to expire.  Furthermore, session state should be
+<           removed since if the client had maintained that information
+<           across restart, this request would not have been sent.  If the
+<           server supports neither the CLAIM_DELEGATE_PREV nor
+<           CLAIM_DELEG_PREV_FH claim types, associated delegations should
+<           be purged as well; otherwise, delegations are retained and
+<           recovery proceeds according to Section 10.2.1.
+< 
+<           After processing, clientid_ret is returned to the client and
+<           this client record is added:
+< 
+<           { ownerid_arg, verifier_arg, principal_arg, clientid_ret,
+<           unconfirmed }
+< 
+<           The previously described confirmed record continues to exist,
+<           and thus the same ownerid_arg exists in both a confirmed and
+<           unconfirmed state at the same time.  The number of states can
+<           collapse to one once the server receives an applicable
+<           CREATE_SESSION or EXCHANGE_ID.
+< 
+<           +  If the server subsequently receives a successful
+<              CREATE_SESSION that confirms clientid_ret, then the server
+<              atomically destroys the confirmed record and makes the
+<              unconfirmed record confirmed as described in
+<              Section 18.36.4.
+< 
+<           +  If the server instead subsequently receives an EXCHANGE_ID
+<              with the client owner equal to ownerid_arg, one strategy is
+<              to simply delete the unconfirmed record, and process the
+<              EXCHANGE_ID as described in the entirety of
+<              Section 18.35.4.
+---
+>        If EXCHGID4_FLAG_UPD_CONFIRMED_REC_A is not set, and if the
+>        server has the following confirmed client record, then this
+>        request is likely from a previously confirmed client that has
+>        restarted.
+> 
+>        { ownerid_arg, old_verifier_arg, principal_arg, old_clientid_ret,
+>        confirmed }
+> 
+>        Since the previous incarnation of the same client will no longer
+>        be making requests, once the new client ID is confirmed by
+>        CREATE_SESSION, byte-range locks and share reservations should be
+>        released immediately rather than forcing the new incarnation to
+>        wait for the lease time on the previous incarnation to expire.
+>        Furthermore, session state should be removed since if the client
+>        had maintained that information across restart, this request
+>        would not have been sent.  If the server supports neither the
+>        CLAIM_DELEGATE_PREV nor CLAIM_DELEG_PREV_FH claim types,
+>        associated delegations should be purged as well; otherwise,
+>        delegations are retained and recovery proceeds according to
+>        Section 10.2.1.
+> 
+>        After processing, clientid_ret is returned to the client and this
+>        client record is added:
+> 
+>        { ownerid_arg, verifier_arg, principal_arg, clientid_ret,
+>        unconfirmed }
+> 
+>        The previously described confirmed record continues to exist, and
+>        thus the same ownerid_arg exists in both a confirmed and
+>        unconfirmed state at the same time.  The number of states can
+>        collapse to one once the server receives an applicable
+>        CREATE_SESSION or EXCHANGE_ID.
+> 
+>        *  If the server subsequently receives a successful
+>           CREATE_SESSION that confirms clientid_ret, then the server
+>           atomically destroys the confirmed record and makes the
+>           unconfirmed record confirmed as described in Section 18.36.4.
+> 
+>        *  If the server instead subsequently receives an EXCHANGE_ID
+>           with the client owner equal to ownerid_arg, one strategy is to
+>           simply delete the unconfirmed record, and process the
+>           EXCHANGE_ID as described in the entirety of Section 18.35.4.
+23600,23610c23674,23684
+<           If EXCHGID4_FLAG_UPD_CONFIRMED_REC_A is set, and the server
+<           has the following confirmed record, then this request is an
+<           attempt at an update.
+< 
+<           { ownerid_arg, verifier_arg, principal_arg, clientid_ret,
+<           confirmed }
+< 
+<           Since the record has been confirmed, the client must have
+<           received the server's reply from the initial EXCHANGE_ID
+<           request.  The server allows the update, and the client record
+<           is left intact.
+---
+>        If EXCHGID4_FLAG_UPD_CONFIRMED_REC_A is set, and the server has
+>        the following confirmed record, then this request is an attempt
+>        at an update.
+> 
+>        { ownerid_arg, verifier_arg, principal_arg, clientid_ret,
+>        confirmed }
+> 
+>        Since the record has been confirmed, the client must have
+>        received the server's reply from the initial EXCHANGE_ID request.
+>        The server allows the update, and the client record is left
+>        intact.
+23614,23617c23688,23690
 <           If EXCHGID4_FLAG_UPD_CONFIRMED_REC_A is set, and the server
 <           has no confirmed record corresponding ownerid_arg, then the
 <           server returns NFS4ERR_NOENT and leaves any unconfirmed record
 <           intact.
-< 
-<    8.  Update but Wrong Verifier
-< 
+---
+>        If EXCHGID4_FLAG_UPD_CONFIRMED_REC_A is set, and the server has
+>        no confirmed record corresponding ownerid_arg, then the server
+>        returns NFS4ERR_NOENT and leaves any unconfirmed record intact.
+23621,23629c23694,23701
 <           If EXCHGID4_FLAG_UPD_CONFIRMED_REC_A is set, and the server
 <           has the following confirmed record, then this request is an
 <           illegal attempt at an update, perhaps because of a retry from
 <           a previous client incarnation.
----
->    6.  Update but No Confirmed Record If
->        EXCHGID4_FLAG_UPD_CONFIRMED_REC_A is set, and the server has no
->        confirmed record corresponding ownerid_arg, then the server
->        returns NFS4ERR_NOENT and leaves any unconfirmed record intact.
-> 
->    7.  Update but Wrong Verifier If EXCHGID4_FLAG_UPD_CONFIRMED_REC_A is
->        set, and the server has the following confirmed record, then this
->        request is an illegal attempt at an update, perhaps because of a
->        retry from a previous client incarnation.
-23574c23641
+< 
 <           { ownerid_arg, old_verifier_arg, *, clientid_ret, confirmed }
----
->        { ownerid_arg, old_verifier_arg, *, clientid_ret, confirmed }
-23576c23643
+< 
 <           The server returns NFS4ERR_NOT_SAME and leaves the client
+<           record intact.
 ---
->        The server returns NFS4ERR_NOT_SAME and leaves the client
-23579c23646
-<    9.  Update but Wrong Principal
----
->    8.  Update but Wrong Principal
-23581c23648
+>        If EXCHGID4_FLAG_UPD_CONFIRMED_REC_A is set, and the server has
+>        the following confirmed record, then this request is an illegal
+>        attempt at an update, perhaps because of a retry from a previous
+>        client incarnation.
+> 
+>        { ownerid_arg, old_verifier_arg, *, clientid_ret, confirmed }
+>        The server returns NFS4ERR_NOT_SAME and leaves the client record
+>        intact.
+23633,23635c23705,23707
 <           If EXCHGID4_FLAG_UPD_CONFIRMED_REC_A is set, and the server
+<           has the following confirmed record, then this request is an
+<           illegal attempt at an update by an unauthorized principal.
 ---
->        If EXCHGID4_FLAG_UPD_CONFIRMED_REC_A is set, and the server
-23585c23652
+>        If EXCHGID4_FLAG_UPD_CONFIRMED_REC_A is set, and the server has
+>        the following confirmed record, then this request is an illegal
+>        attempt at an update by an unauthorized principal.
+23637,23638c23709,23710
 <           { ownerid_arg, verifier_arg, old_principal_arg, clientid_ret,
+<           confirmed }
 ---
 >        { ownerid_arg, verifier_arg, old_principal_arg, clientid_ret,
-23588c23655
+>        confirmed }
+23640,23641c23712,23713
 <           The server returns NFS4ERR_PERM and leaves the client record
+<           intact.
 ---
 >        The server returns NFS4ERR_PERM and leaves the client record
-23629c23696
-<            uint32_t                csr_flags;
----
->       uint32_t  csr_flags;
-23703,23705c23770,23773
-<          in Section 12.5.2 it SHOULD support
-<          CREATE_SESSION4_FLAG_PERSIST if it supports the layout_hint
-<          (Section 5.12.4) attribute.
----
-> 
->             in Section 12.5.2 it SHOULD support
->             CREATE_SESSION4_FLAG_PERSIST if it supports the layout_hint
->             (Section 5.12.4) attribute.
-23759,23769c23827,23838
-<          be sent.  This size represents the XDR encoded size of the
-<          request, including the RPC headers (including security flavor
-<          credentials and verifiers) but excludes any RPC transport
+>        intact.
+23815,23818c23887,23890
 <          framing headers.  Imagine a request coming over a non-RDMA
 <          TCP/IP connection, and that it has a single Record Marking
 <          header preceding it.  The maximum allowable count encoded in
 <          the header will be ca_maxrequestsize.  If a requester sends a
-<          request that exceeds ca_maxrequestsize, the error
-<          NFS4ERR_REQ_TOO_BIG will be returned per the description in
-<          Section 2.10.6.4.  For each channel, the server MAY decrease
-<          this value but MUST NOT increase it.
 ---
-> 
->             be sent.  This size represents the XDR encoded size of the
->             request, including the RPC headers (including security
->             flavor credentials and verifiers) but excludes any RPC
->             transport framing headers.  Imagine a request coming over a
->             non-RDMA TCP/IP connection, and that it has a single Record
->             Marking header preceding it.  The maximum allowable count
->             encoded in the header will be ca_maxrequestsize.  If a
->             requester sends a request that exceeds ca_maxrequestsize,
->             the error NFS4ERR_REQ_TOO_BIG will be returned per the
->             description in Section 2.10.6.4.  For each channel, the
->             server MAY decrease this value but MUST NOT increase it.
-23859,23863c23928,23933
-<       of values of data type gsshandle4_t.  The data type gsshandle4_t
-<       represents an RPCSEC_GSS handle, and is precisely the same as the
-<       data type of the "handle" field of the rpc_gss_init_res data type
+>          framing headers.  Imagine a request coming over a non-RDMA TCP/
+>          IP connection, and that it has a single Record Marking header
+>          preceding it.  The maximum allowable count encoded in the
+>          header will be ca_maxrequestsize.  If a requester sends a
+23916,23917c23988,23989
 <       defined in Section 5.2.3.1, "Context Creation Response -
 <       Successful Acceptance", of [4].
 ---
-> 
->          of values of data type gsshandle4_t.  The data type
->          gsshandle4_t represents an RPCSEC_GSS handle, and is precisely
->          the same as the data type of the "handle" field of the
->          rpc_gss_init_res data type defined in Section 5.2.3.1, "Context
->          Creation Response -Successful Acceptance", of [4].
-23866,23880c23936,23952
-<       handle the server returned to the client (either in the handle
-<       field of data type rpc_gss_init_res or as one of the elements of
-<       the spi_handles field returned in the reply to EXCHANGE_ID) when
-<       the RPCSEC_GSS context was created on the server.  The second
-<       handle, gcbp_handle_from_client, is the back handle to which the
-<       client will map the RPCSEC_GSS context.  The server can
-<       immediately use the value of gcbp_handle_from_client in the
-<       RPCSEC_GSS credential in callback RPCs.  That is, the value in
-<       gcbp_handle_from_client can be used as the value of the field
-<       "handle" in data type rpc_gss_cred_t (see Section 5, "Elements of
+>       defined in Section 5.2.3.1, "Context Creation Response -Successful
+>       Acceptance", of
+23930,23934c24002
 <       the RPCSEC_GSS Security Protocol", of [4]) in callback RPCs.  The
 <       server MUST use the RPCSEC_GSS security service specified in
 <       gcbp_service, i.e., it MUST set the "service" field of the
 <       rpc_gss_cred_t data type in RPCSEC_GSS credential to the value of
 <       gcbp_service (see Section 5.3.1, "RPC Request Header", of [4]).
 ---
-> 
->          handle the server returned to the client (either in the handle
->          field of data type rpc_gss_init_res or as one of the elements
->          of the spi_handles field returned in the reply to EXCHANGE_ID)
->          when the RPCSEC_GSS context was created on the server.  The
->          second handle, gcbp_handle_from_client, is the back handle to
->          which the client will map the RPCSEC_GSS context.  The server
->          can immediately use the value of gcbp_handle_from_client in the
->          RPCSEC_GSS credential in callback RPCs.  That is, the value in
->          gcbp_handle_from_client can be used as the value of the field
->          "handle" in data type rpc_gss_cred_t (see Section 5, "Elements
->          of the RPCSEC_GSS Security Protocol", of [4]) in callback RPCs.
->          The server MUST use the RPCSEC_GSS security service specified
->          in gcbp_service, i.e., it MUST set the "service" field of the
->          rpc_gss_cred_t data type in RPCSEC_GSS credential to the value
->          of gcbp_service (see Section 5.3.1, "RPC Request Header", of
->          [4]).
-23883,23884c23955,23956
-<       does not exist on the server, the server will return
-<       NFS4ERR_NOENT.
----
->          does not exist on the server, the server will return
->          NFS4ERR_NOENT.
-23887,23891c23959,23964
-<       contexts MUST share the same GSS context and MUST have the same
+>       the RPCSEC_GSS Security Protocol", of
+23942,23945c24010
 <       seq_window (see Section 5.2.3.1 of RFC2203 [4]).  The fore and
 <       back RPCSEC_GSS context state are independent of each other as far
 <       as the RPCSEC_GSS sequence number (see the seq_num field in the
 <       rpc_gss_cred_t data type of Sections 5 and 5.3.1 of [4]).
 ---
-> 
->          contexts MUST share the same GSS context and MUST have the same
->          seq_window (see Section 5.2.3.1 of RFC2203 [4]).  The fore and
->          back RPCSEC_GSS context state are independent of each other as
->          far as the RPCSEC_GSS sequence number (see the seq_num field in
->          the rpc_gss_cred_t data type of Sections 5 and 5.3.1 of [4]).
-23894,23896c23967,23969
-<       Section 2.10.9), then because each SSV RPCSEC_GSS handle shares a
-<       common SSV GSS context, there are security considerations specific
+>       seq_window (see Section 5.2.3.1 of RFC2203
+23950c24015,24023
 <       to this situation discussed in Section 2.10.10.
 ---
->          Section 2.10.9), then because each SSV RPCSEC_GSS handle shares
->          a common SSV GSS context, there are security considerations
->          specific to this situation discussed in Section 2.10.10.
-24198d24270
+>       to this situation discussed in Section 2.10.10.[4].[4]) in
+>       callback RPCs.  The server MUST use the RPCSEC_GSS security
+>       service specified in gcbp_service, i.e., it MUST set the "service"
+>       field of the rpc_gss_cred_t data type in RPCSEC_GSS credential to
+>       the value of gcbp_service (see Section 5.3.1, "RPC Request
+>       Header", of [4]).[4]).  The fore and back RPCSEC_GSS context state
+>       are independent of each other as far as the RPCSEC_GSS sequence
+>       number (see the seq_num field in the rpc_gss_cred_t data type of
+>       Sections 5 and 5.3.1 of [4]).
+24280d24352
 < 
-24480,24484c24552,24558
-<       the client assumes the server is faulty and recovers by sending an
-<       EXCHANGE_ID operation.  If GETDEVICEINFO indicates that the device
-<       ID does exist, then while the server is faulty for sending an
-<       erroneous device ID deletion notification, the degree to which it
-<       is faulty does not require the client to create a new client ID.
----
-> 
->          the client assumes the server is faulty and recovers by sending
->          an EXCHANGE_ID operation.  If GETDEVICEINFO indicates that the
->          device ID does exist, then while the server is faulty for
->          sending an erroneous device ID deletion notification, the
->          degree to which it is faulty does not require the client to
->          create a new client ID.
-24487,24490c24561,24565
-<       no harm is done.  The client should mark the device ID as deleted,
-<       and when GETDEVICEINFO or GETDEVICELIST results are received that
-<       indicate that the device ID has been in fact deleted, the device
-<       ID should be removed from the client's cache.
----
->          no harm is done.  The client should mark the device ID as
->          deleted, and when GETDEVICEINFO or GETDEVICELIST results are
->          received that indicate that the device ID has been in fact
->          deleted, the device ID should be removed from the client's
->          cache.
-24835c24910,24912
+24892c24964,24966
 <      NFS4_UINT64_MAX; a_off = loga_offset; a_minlen = loga_minlength.
 ---
 > 
 >          NFS4_UINT64_MAX; a_off = loga_offset; a_minlen =
 >          loga_minlength.
-25115,25120c25192,25197
+25173,25178c25247,25252
 <    o  This strategy is as above, but the client is not using buffered
 <       I/O, and instead all internal I/O requests are sent directly to
 <       the server.  The LAYOUTGET request has loga_offset equal to 10000
@@ -2853,11 +2025,26 @@
 >       loga_minlength set to 50000.  The value of loga_length is set to
 >       the length of the file.  The metadata server is free to return a
 >       layout that fully overlaps the requested range, with a starting
-26279a26357
+26340a26415
 > 
-26320d26397
-< 
-26407a26485,26501
+26470,26485c26545,26561
+<    +------------------------------+------------------------------------+
+<    | Error                        | Notes                              |
+<    +------------------------------+------------------------------------+
+<    | NFS4ERR_BADCHAR              | The tag argument has a character   |
+<    |                              | the replier does not support.      |
+<    | NFS4ERR_BADXDR               |                                    |
+<    | NFS4ERR_DELAY                |                                    |
+<    | NFS4ERR_INVAL                | The tag argument is not in UTF-8   |
+<    |                              | encoding.                          |
+<    | NFS4ERR_MINOR_VERS_MISMATCH  |                                    |
+<    | NFS4ERR_SERVERFAULT          |                                    |
+<    | NFS4ERR_TOO_MANY_OPS         |                                    |
+<    | NFS4ERR_REP_TOO_BIG          |                                    |
+<    | NFS4ERR_REP_TOO_BIG_TO_CACHE |                                    |
+<    | NFS4ERR_REQ_TOO_BIG          |                                    |
+<    +------------------------------+------------------------------------+
+---
 >     +------------------------------+----------------------------------+
 >     | Error                        | Notes                            |
 >     +------------------------------+----------------------------------+
@@ -2875,68 +2062,39 @@
 >     | NFS4ERR_REQ_TOO_BIG          |                                  |
 >     |                              |                                  |
 >     +------------------------------+----------------------------------+
-26409,26426c26503
-<    +------------------------------+------------------------------------+
-<    | Error                        | Notes                              |
-<    +------------------------------+------------------------------------+
-<    | NFS4ERR_BADCHAR              | The tag argument has a character   |
-<    |                              | the replier does not support.      |
-<    | NFS4ERR_BADXDR               |                                    |
-<    | NFS4ERR_DELAY                |                                    |
-<    | NFS4ERR_INVAL                | The tag argument is not in UTF-8   |
-<    |                              | encoding.                          |
-<    | NFS4ERR_MINOR_VERS_MISMATCH  |                                    |
-<    | NFS4ERR_SERVERFAULT          |                                    |
-<    | NFS4ERR_TOO_MANY_OPS         |                                    |
-<    | NFS4ERR_REP_TOO_BIG          |                                    |
-<    | NFS4ERR_REP_TOO_BIG_TO_CACHE |                                    |
-<    | NFS4ERR_REQ_TOO_BIG          |                                    |
-<    +------------------------------+------------------------------------+
-< 
+26487c26563
 <                                  Table 15
 ---
 >                                  Table 12
-26585,26587c26662,26664
-<       client does not hold layouts for the file or if the client does
-<       not have any overlapping layouts for the specification in the
-<       layout recall.
----
->          client does not hold layouts for the file or if the client does
->          not have any overlapping layouts for the specification in the
->          layout recall.
-26603,26604c26680,26681
-<       client does not hold layouts and does not have valid deviceid
-<       mappings.
----
->          client does not hold layouts and does not have valid deviceid
->          mappings.
-26737d26813
+26800d26875
 < 
-26976d27051
-< 
-27419,27420c27494,27495
+27484,27485c27559,27560
 <       the new device-ID-to-device-address mappings before sending new
 <       I/O requests to the storage devices addressed by the device ID.
 ---
 >       the new device-ID-to-device-address mappings before sending new I/
 >       O requests to the storage devices addressed by the device ID.
-27436,27439c27511,27514
+27501,27504c27576,27583
 <       The notification is encoded in a value of data type
 <       notify_deviceid_delete4.  After a server deletes a device ID, it
 <       MUST NOT reuse that device ID for the same layout type until the
 <       client ID is deleted.
 ---
 >          The notification is encoded in a value of data type
->             notify_deviceid_delete4.  After a server deletes a device
->             ID, it MUST NOT reuse that device ID for the same layout
->             type until the client ID is deleted.
-27670a27746
+> 
+>          notify_deviceid_delete4.  After a server deletes a device ID,
+>             it
+> 
+>          MUST NOT reuse that device ID for the same layout type until
+>          the
+>          client ID is deleted.
+27735a27815
 >    |                         |       |         |     |                |
-27673c27749
+27738c27818
 <            Table 16: Initial Device ID Notification Assignments
 ---
 >            Table 13: Initial Device ID Notification Assignments
-27737,27755c27813,27832
+27802,27820c27882,27901
 <    +-------------------------------+-------+--------+-----+------------+
 <    | Recallable Object Type Name   | Value | RFC    | How | Minor      |
 <    |                               |       |        |     | Versions   |
@@ -2977,41 +2135,41 @@
 >    |                               |        | 5661 |      |            |
 >    |                               |        |      |      |            |
 >    +-------------------------------+--------+------+------+------------+
-27757c27834
+27822c27903
 <            Table 17: Initial Recallable Object Type Assignments
 ---
 >            Table 14: Initial Recallable Object Type Assignments
-27817a27895
+27882a27964
 >     |                       |       |          |     |                |
-27820c27898
+27885c27967
 <                  Table 18: Initial Layout Type Assignments
 ---
 >                  Table 15: Initial Layout Type Assignments
-27963a28042
+28028a28111
 >          |                        |          |                  |
-27966c28045
+28031c28114
 <                  Table 19: Initial List of Path Variables
 ---
 >                  Table 16: Initial List of Path Variables
-28051,28052c28130,28131
+28116,28117c28199,28200
 <    [1]   Bradner, S., "Key words for use in RFCs to Indicate Requirement
 <          Levels", BCP 14, RFC 2119, March 1997.
 ---
 >    [1]        Bradner, S., "Key words for use in RFCs to Indicate
 >               Requirement Levels", BCP 14, RFC 2119, March 1997.
-28054,28055c28133,28134
+28119,28120c28202,28203
 <    [2]   Eisler, M., Ed., "XDR: External Data Representation Standard",
 <          STD 67, RFC 4506, May 2006.
 ---
 >    [2]        Eisler, M., Ed., "XDR: External Data Representation
 >               Standard", STD 67, RFC 4506, May 2006.
-28057,28058c28136,28137
+28122,28123c28205,28206
 <    [3]   Thurlow, R., "RPC: Remote Procedure Call Protocol Specification
 <          Version 2", RFC 5531, May 2009.
 ---
 >    [3]        Thurlow, R., "RPC: Remote Procedure Call Protocol
 >               Specification Version 2", RFC 5531, May 2009.
-28060,28167c28139,28252
+28125,28232c28208,28321
 <    [4]   Eisler, M., Chiu, A., and L. Ling, "RPCSEC_GSS Protocol
 <          Specification", RFC 2203, September 1997.
 < 
@@ -3235,7 +2393,7 @@
 >               "Cryptographic Algorithm Object Registration", URL
 >               http://csrc.nist.gov/groups/ST/crypto_apps_infra/csor/
 >               algorithms.html, November 2007.
-28171,28173c28256,28258
+28236,28238c28325,28327
 <    [30]  Shepler, S., Callaghan, B., Robinson, D., Thurlow, R., Beame,
 <          C., Eisler, M., and D. Noveck, "Network File System (NFS)
 <          version 4 Protocol", RFC 3530, April 2003.
@@ -3243,19 +2401,19 @@
 >    [30]       Shepler, S., Callaghan, B., Robinson, D., Thurlow, R.,
 >               Beame, C., Eisler, M., and D. Noveck, "Network File System
 >               (NFS) version 4 Protocol", RFC 3530, April 2003.
-28175,28176c28260,28261
+28240,28241c28329,28330
 <    [31]  Callaghan, B., Pawlowski, B., and P. Staubach, "NFS Version 3
 <          Protocol Specification", RFC 1813, June 1995.
 ---
 >    [31]       Callaghan, B., Pawlowski, B., and P. Staubach, "NFS
 >               Version 3 Protocol Specification", RFC 1813, June 1995.
-28178,28179c28263,28264
+28243,28244c28332,28333
 <    [32]  Eisler, M., "LIPKEY - A Low Infrastructure Public Key Mechanism
 <          Using SPKM", RFC 2847, June 2000.
 ---
 >    [32]       Eisler, M., "LIPKEY - A Low Infrastructure Public Key
 >               Mechanism Using SPKM", RFC 2847, June 2000.
-28181,28183c28266,28268
+28246,28248c28335,28337
 <    [33]  Eisler, M., "NFS Version 2 and Version 3 Security Issues and
 <          the NFS Protocol's Use of RPCSEC_GSS and Kerberos V5",
 <          RFC 2623, June 1999.
@@ -3263,87 +2421,87 @@
 >    [33]       Eisler, M., "NFS Version 2 and Version 3 Security Issues
 >               and the NFS Protocol's Use of RPCSEC_GSS and Kerberos V5",
 >               RFC 2623, June 1999.
-28185,28186c28270,28272
+28250,28251c28339,28341
 <    [34]  Juszczak, C., "Improving the Performance and Correctness of an
 <          NFS Server", USENIX Conference Proceedings, June 1990.
 ---
 >    [34]       Juszczak, C., "Improving the Performance and Correctness
 >               of an NFS Server", USENIX Conference Proceedings, June
 >               1990.
-28188,28189c28274,28275
+28253,28254c28343,28344
 <    [35]  Reynolds, J., Ed., "Assigned Numbers: RFC 1700 is Replaced by
 <          an On-line Database", RFC 3232, January 2002.
 ---
 >    [35]       Reynolds, J., Ed., "Assigned Numbers: RFC 1700 is Replaced
 >               by an On-line Database", RFC 3232, January 2002.
-28191,28192c28277,28278
+28256,28257c28346,28347
 <    [36]  Srinivasan, R., "Binding Protocols for ONC RPC Version 2",
 <          RFC 1833, August 1995.
 ---
 >    [36]       Srinivasan, R., "Binding Protocols for ONC RPC Version 2",
 >               RFC 1833, August 1995.
-28194,28195c28280,28281
+28259,28260c28349,28350
 <    [37]  Werme, R., "RPC XID Issues", USENIX Conference Proceedings,
 <          February 1996.
 ---
 >    [37]       Werme, R., "RPC XID Issues", USENIX Conference
 >               Proceedings, February 1996.
-28197,28198c28283,28284
+28262,28263c28352,28353
 <    [38]  Nowicki, B., "NFS: Network File System Protocol specification",
 <          RFC 1094, March 1989.
 ---
 >    [38]       Nowicki, B., "NFS: Network File System Protocol
 >               specification", RFC 1094, March 1989.
-28200,28201c28286,28288
+28265,28266c28355,28357
 <    [39]  Bhide, A., Elnozahy, E., and S. Morgan, "A Highly Available
 <          Network Server", USENIX Conference Proceedings, January 1991.
 ---
 >    [39]       Bhide, A., Elnozahy, E., and S. Morgan, "A Highly
 >               Available Network Server", USENIX Conference Proceedings,
 >               January 1991.
-28203,28204c28290,28291
+28268,28269c28359,28360
 <    [40]  Halevy, B., Welch, B., and J. Zelenka, "Object-Based Parallel
 <          NFS (pNFS) Operations", RFC 5664, January 2010.
 ---
 >    [40]       Halevy, B., Welch, B., and J. Zelenka, "Object-Based
 >               Parallel NFS (pNFS) Operations", RFC 5664, January 2010.
-28206,28207c28293,28294
+28271,28272c28362,28363
 <    [41]  Black, D., Glasgow, J., and S. Fridella, "Parallel NFS (pNFS)
 <          Block/Volume Layout", RFC 5663, January 2010.
 ---
 >    [41]       Black, D., Glasgow, J., and S. Fridella, "Parallel NFS
 >               (pNFS) Block/Volume Layout", RFC 5663, January 2010.
-28209,28210c28296,28297
+28274,28275c28365,28366
 <    [42]  Callaghan, B., "WebNFS Client Specification", RFC 2054,
 <          October 1996.
 ---
 >    [42]       Callaghan, B., "WebNFS Client Specification", RFC 2054,
 >               October 1996.
-28212,28213c28299,28300
+28277,28278c28368,28369
 <    [43]  Callaghan, B., "WebNFS Server Specification", RFC 2055,
 <          October 1996.
 ---
 >    [43]       Callaghan, B., "WebNFS Server Specification", RFC 2055,
 >               October 1996.
-28215,28216c28302,28303
+28280,28281c28371,28372
 <    [44]  IESG, "IESG Processing of RFC Errata for the IETF Stream",
 <          July 2008.
 ---
 >    [44]       IESG, "IESG Processing of RFC Errata for the IETF Stream",
 >               July 2008.
-28218,28219c28305,28306
+28283,28284c28374,28375
 <    [45]  Shepler, S., "NFS Version 4 Design Considerations", RFC 2624,
 <          June 1999.
 ---
 >    [45]       Shepler, S., "NFS Version 4 Design Considerations",
 >               RFC 2624, June 1999.
-28221,28222c28308,28309
+28286,28287c28377,28378
 <    [46]  The Open Group, "Protocols for Interworking: XNFS, Version 3W,
 <          ISBN 1-85912-184-5", February 1998.
 ---
 >    [46]       The Open Group, "Protocols for Interworking: XNFS, Version
 >               3W, ISBN 1-85912-184-5", February 1998.
-28224,28226c28311,28313
+28289,28291c28380,28382
 <    [47]  Floyd, S. and V. Jacobson, "The Synchronization of Periodic
 <          Routing Messages", IEEE/ACM Transactions on Networking 2(2),
 <          pp. 122-136, April 1994.
@@ -3351,7 +2509,7 @@
 >    [47]       Floyd, S. and V. Jacobson, "The Synchronization of
 >               Periodic Routing Messages", IEEE/ACM Transactions on
 >               Networking 2(2), pp. 122-136, April 1994.
-28228,28230c28315,28317
+28293,28295c28384,28386
 <    [48]  Satran, J., Meth, K., Sapuntzakis, C., Chadalapaka, M., and E.
 <          Zeidner, "Internet Small Computer Systems Interface (iSCSI)",
 <          RFC 3720, April 2004.
@@ -3359,13 +2517,13 @@
 >    [48]       Satran, J., Meth, K., Sapuntzakis, C., Chadalapaka, M.,
 >               and E. Zeidner, "Internet Small Computer Systems Interface
 >               (iSCSI)", RFC 3720, April 2004.
-28232,28233c28319,28320
+28297,28298c28388,28389
 <    [49]  Snively, R., "Fibre Channel Protocol for SCSI, 2nd Version
 <          (FCP-2)", ANSI/INCITS 350-2003, Oct 2003.
 ---
 >    [49]       Snively, R., "Fibre Channel Protocol for SCSI, 2nd Version
 >               (FCP-2)", ANSI/INCITS 350-2003, Oct 2003.
-28235,28237c28322,28324
+28300,28302c28391,28393
 <    [50]  Weber, R., "Object-Based Storage Device Commands (OSD)", ANSI/
 <          INCITS 400-2004, July 2004,
 <          <http://www.t10.org/ftp/t10/drafts/osd/osd-r10.pdf>.
@@ -3373,7 +2531,7 @@
 >    [50]       Weber, R., "Object-Based Storage Device Commands (OSD)",
 >               ANSI/INCITS 400-2004, July 2004,
 >               <http://www.t10.org/ftp/t10/drafts/osd/osd-r10.pdf>.
-28239,28241c28326,28329
+28304,28306c28395,28398
 <    [51]  Carns, P., Ligon III, W., Ross, R., and R. Thakur, "PVFS: A
 <          Parallel File System for Linux Clusters.", Proceedings of the
 <          4th Annual Linux Showcase and Conference, 2000.
@@ -3382,48 +2540,46 @@
 >               A Parallel File System for Linux Clusters.",
 >               Proceedings of the 4th Annual Linux Showcase and
 >               Conference, 2000.
-28243,28244c28331,28332
+28308,28309c28400,28401
 <    [52]  The Open Group, "The Open Group Base Specifications Issue 6,
 <          IEEE Std 1003.1, 2004 Edition", 2004.
 ---
 >    [52]       The Open Group, "The Open Group Base Specifications Issue
 >               6, IEEE Std 1003.1, 2004 Edition", 2004.
-28246c28334
+28311c28403
 <    [53]  Callaghan, B., "NFS URL Scheme", RFC 2224, October 1997.
 ---
 >    [53]       Callaghan, B., "NFS URL Scheme", RFC 2224, October 1997.
-28248,28249c28336,28337
+28313,28314c28405,28406
 <    [54]  Chiu, A., Eisler, M., and B. Callaghan, "Security Negotiation
 <          for WebNFS", RFC 2755, January 2000.
 ---
 >    [54]       Chiu, A., Eisler, M., and B. Callaghan, "Security
 >               Negotiation for WebNFS", RFC 2755, January 2000.
-28251,28252c28339,28341
+28316,28317c28408,28410
 <    [55]  Narten, T. and H. Alvestrand, "Guidelines for Writing an IANA
 <          Considerations Section in RFCs", BCP 26, RFC 5226, May 2008.
 ---
 >    [55]       Narten, T. and H. Alvestrand, "Guidelines for Writing an
 >               IANA Considerations Section in RFCs", BCP 26, RFC 5226,
 >               May 2008.
-28280c28369
+28345c28438
 <    parallel I/O. Garth Gibson and Peter Corbett started the pNFS effort
 ---
 >    parallel I/O.  Garth Gibson and Peter Corbett started the pNFS effort
-28360c28449
+28425c28518
 <    Finkelstein, Jason Goldschmidt, Vijay K. Gurbani, Sergey Klyushin,
 ---
 >    Finkelstein, Jason Goldschmidt, Vijay K.  Gurbani, Sergey Klyushin,
-28366d28454
-< 
-28374c28462
+28439c28532
 <    EMail: shepler@storspeed.com
 ---
 >    Email: shepler@storspeed.com
-28383c28471
+28448c28541
 <    EMail: mike@eisler.com
 ---
 >    Email: mike@eisler.com
-28393c28481
+28458c28551
 <    EMail: dnoveck@netapp.com
 ---
 >    Email: dnoveck@netapp.com

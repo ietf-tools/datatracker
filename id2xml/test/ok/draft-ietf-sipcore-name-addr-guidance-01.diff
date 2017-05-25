@@ -18,7 +18,7 @@
 ---
 >      angle brackets, any semicolon-delimited parameters are header-
 >      parameters, not URI parameters.
-129,138c127,137
+129,138c127,136
 <     When constructing the value of any SIP header field whose grammar
 <     allows choosing between name-addr and addr-spec, such as those
 <     that use the form '(name-addr / addr-spec)', the "addr-spec" form
@@ -37,17 +37,16 @@
 >      question mark.
 > 
 >      When a URI appears in such a header field, any URI parameters MUST
-> 
->         be contained within angle brackets (< and >).  If the URI is not
->         enclosed in angle brackets, any semicolon-delimited parameters
->         are header-parameters, not URI parameters.
-140,141c139,140
+>      be contained within angle brackets (< and >).  If the URI is not
+>      enclosed in angle brackets, any semicolon-delimited parameters are
+>      header-parameters, not URI parameters.
+140,141c138,139
 <     The header fields defined in this specification that allow this
 <     choice are "To", "From", "Contact",  and "Reply-To".
 ---
 >      The header fields defined in this specification that allow this
->         choice are "To", "From", "Contact", and "Reply-To".
-155,157c154,156
+>      choice are "To", "From", "Contact", and "Reply-To".
+155,157c153,155
 <      constructing header field values. As specified in RFCxxxx,
 <      the "addr-spec" form MUST NOT be used if its value would contain
 <      a comma, semicolon, or question mark.

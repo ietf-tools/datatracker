@@ -28,31 +28,26 @@
 <       -  Assign at maximum one new review per month
 ---
 >       *  Assign at maximum one new review per month
-343,345c341,342
+343c341
 <       -  Assign at maximum one new review per two months
-< 
-<          Assign at maximum one new review per quarter
 ---
->       *  Assign at maximum one new review per two months Assign at
->          maximum one new review per quarter
-350c347
+>       *  Assign at maximum one new review per two months
+350c348
 <       -  A hiatus must have a start date.  It may have an end date, or
 ---
 >       *  A hiatus must have a start date.  It may have an end date, or
-353c350
+353c351
 <       -  During a hiatus, the reviewer will not be included in the
 ---
 >       *  During a hiatus, the reviewer will not be included in the
-358c355
+358c356
 <       -  During a "soft" hiatus, the reviewer must not be assigned new
 ---
 >       *  During a "soft" hiatus, the reviewer must not be assigned new
-362c359
+362c360
 <       -  During a "hard" hiatus, the reviewer must not be assigned any
 ---
 >       *  During a "hard" hiatus, the reviewer must not be assigned any
-404a402
-> 
 433c431
 <       -  The current workflow, where the reviewer sends email to the
 ---
@@ -151,3 +146,5 @@
 <               "YANG Doctors", Work in Progress , April 2015,
 ---
 >               "YANG Doctors", April 2015,
+693d688
+< 

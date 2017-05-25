@@ -1,33 +1,24 @@
-111,112c111
-<     <front>
-<        <title>Writing I-Ds and RFCs using Pandoc v2</title>
----
->     <front> <title>Writing I-Ds and RFCs using Pandoc v2</title>
-116c115
-<        &pandocMiddle;
----
->     &pandocMiddle;
-132,133c131,132
+132,133c132,133
 <    2.  back.pdc - holds appendices and references;
 <    3.  template.xml (probably a fairly static file).
 ---
 >    2.  back.pdc - holds appendices and references; 3.  template.xml
 >    (probably a fairly static file).
-236,237c235,236
+236,237c236,237
 <    it is _just_ Pandoc.  The best introduction to the Pandoc style is
 <    given in this README from Pandoc itself [7].
 ---
 >       it is _just_ Pandoc.  The best introduction to the Pandoc style is
 >       given in this README from Pandoc itself [7].
-316c315
+316c316
 <    i.    Item one;
 ---
 >    a.  Item one;
-318c317
+318c318
 <    ii.   Item two.
 ---
 >        ii.  Item two.
-362,365c361,362
+362,365c362,363
 <    :   Explanation one
 <    More stuff, because item is difficult to explain.
 <    * item1
@@ -35,22 +26,21 @@
 ---
 >       : Explanation one More stuff, because item is difficult to
 >       explain.  * item1 * item2
-369,370c366
+369c367
 <    :   Explanation two
-< 
 ---
 >       : Explanation two
-472c468
+472c470
 <      Table: A caption describing the table.
 ---
 >       Table: A caption describing the table.
-474c470
+474c472
 <       Figure 3: A caption describing the figure describing the table.
 ---
 >        Figure 3: A caption describing the figure describing the table.
-510d505
+511d508
 < 
-586,602d580
+587,603d583
 < 11.3.  URIs
 < 
 <    [1] http://xml.resource.org/experimental
@@ -68,39 +58,29 @@
 < 
 <    [8] http://miek.nl
 < 
-694,696c672
-<    1.  More
-< 
+697c677
 <        Item to explain:  Explanation ...
 ---
->    1.  More Item to explain: Explanation ...
-716c692
+>        Item to explain: Explanation ...
+717c697
 <    4.  Final item.
 ---
 >    1.  Final item.
-730c706
+731c711
 <    i.    Item 1
 ---
 >    a.  Item 1
-732c708
+733c713
 <    ii.   Item 2
 ---
 >        ii.  Item 2
-787,789c763
-<    3.  Third item
+762d741
 < 
-<        A paragraph that comes first
+788c767
+<    3.  Third item
 ---
->    1.  Third item A paragraph that comes first
-791c765
-<        A.  But what do you know
----
->        A. But what do you know
-793c767
-<        B.  This is another list
----
->        B. This is another list
-797,803c771,778
+>    1.  Third item
+798,804c777,784
 <                   +--------+-------+---------+----------+
 <                   |  Right | Left  |  Center | Default  |
 <                   +--------+-------+---------+----------+
@@ -117,7 +97,7 @@
 >                     | 1     | 1    | 1      | 1       |
 >                     |       |      |        |         |
 >                     +-------+------+--------+---------+
-807,816c782,796
+808,817c788,802
 <    +-----------+-----------+---------------+---------------------------+
 <    |  Centered | Default   | Right Aligned | Left Aligned              |
 <    |   Header  | Aligned   |               |                           |
@@ -144,7 +124,7 @@
 >    |               |               |              | rows.              |
 >    |               |               |              |                    |
 >    +---------------+---------------+--------------+--------------------+
-821,826c801,807
+822,827c807,813
 <           +---------------+---------------+--------------------+
 <           | Fruit         | Price         | Advantages         |
 <           +---------------+---------------+--------------------+
@@ -159,15 +139,30 @@
 >                   | Oranges | $2.10 | cures scurvy     |
 >                   |         |       |                  |
 >                   +---------+-------+------------------+
-863c844
+833,838c819,825
+<           +---------------+---------------+--------------------+
+<           | Fruit         | Price         | Advantages         |
+<           +---------------+---------------+--------------------+
+<           | Bananas       | $1.34         | built-in wrapper   |
+<           | Oranges       | $2.10         | cures scurvy       |
+<           +---------------+---------------+--------------------+
+---
+>                   +---------+-------+------------------+
+>                   | Fruit   | Price | Advantages       |
+>                   +---------+-------+------------------+
+>                   | Bananas | $1.34 | built-in wrapper |
+>                   | Oranges | $2.10 | cures scurvy     |
+>                   |         |       |                  |
+>                   +---------+-------+------------------+
+865c852
 <    Figure 4: This is the caption, with text in `typewriter`. Which isnt
 ---
 >    Figure 3: This is the caption, with text in `typewriter`. Which isnt
-872c853
+874c861
 <                      Figure 5: A non centered figure.
 ---
 >                      Figure 4: A non centered figure.
-886,894c867,869
+888,896c875,877
 <    L
 <       list
 <          default markers  18

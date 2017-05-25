@@ -18,9 +18,7 @@
 >    <https://www.iana.org/assignments/link-relations/> .  Registration
 397d396
 < 
-445d443
-< 
-549,553c547,548
+549,553c548,549
 <    Applicable protocol: http
 <    Status: standard
 <    Author/change controller:
@@ -29,18 +27,11 @@
 ---
 >        Applicable protocol: http Status: standard Author/change
 >        controller: IETF (iesg@ietf.org) Internet Engineering Task Force
-588,590c583,586
-<    All registry data documents MUST include Simplified BSD License text
-<    as described in Section 4.e of the Trust Legal Provisions
-<    (<http://trustee.ietf.org/license-info>).
----
->       All registry data documents MUST include Simplified BSD License
->       text
->          as described in Section 4.e of the Trust Legal Provisions
->          (<http://trustee.ietf.org/license-info>).
-867a864
+588d583
+< 
+868a864
 > 
-887,890c884,886
+888,891c884,886
 <        13.  Let "star_param_names" be the set of "param_name"s in the
 <             ("param_name", "param_value") tuples of "link_parameters"
 <             where the last character of "param_name" is an asterisk
@@ -49,17 +40,17 @@
 >    1.  Let "star_param_names" be the set of "param_name"s in the
 >        ("param_name", "param_value") tuples of "link_parameters" where
 >        the last character of "param_name" is an asterisk ("*").
-892c888
+893c888
 <        14.  For each "star_param_name" in "star_param_names":
 ---
 >    2.  For each "star_param_name" in "star_param_names":
-894,895c890,891
+895,896c890,891
 <             1.  Let "base_param_name" be "star_param_name" with the last
 <                 character removed.
 ---
 >        1.  Let "base_param_name" be "star_param_name" with the last
 >            character removed.
-897,903c893,898
+898,904c893,898
 <             2.  If the implementation does not choose to support an
 <                 internationalised form of a parameter named
 <                 "base_param_name" for any reason (including, but not
@@ -74,28 +65,28 @@
 >            prohibited by the parameter's specification), remove all
 >            tuples from "link_parameters" whose first member is
 >            "star_param_name" and skip to the next "star_param_name".
-905,906c900,901
+906,907c900,901
 <             3.  Remove all tuples from "link_parameters" whose first
 <                 member is "base_param_name".
 ---
 >        3.  Remove all tuples from "link_parameters" whose first member
 >            is "base_param_name".
-908,910c903,904
+909,911c903,904
 <             4.  Change the first member of all tuples in
 <                 "link_parameters" whose first member is
 <                 "star_param_name" to "base_param_name".
 ---
 >        4.  Change the first member of all tuples in "link_parameters"
 >            whose first member is "star_param_name" to "base_param_name".
-912c906
+913c906
 <        15.  For each "relation_type" in "relation_types":
 ---
 >    3.  For each "relation_type" in "relation_types":
-914c908
+915c908
 <             1.  Case-normalise "relation_type" to lowercase.
 ---
 >        1.  Case-normalise "relation_type" to lowercase.
-916,918c910,912
+917,919c910,912
 <             2.  Append a link object to "links" with the target
 <                 "target", relation type of "relation_type", context of
 <                 "context", and target attributes "target_attributes".
@@ -103,13 +94,13 @@
 >        2.  Append a link object to "links" with the target "target",
 >            relation type of "relation_type", context of "context", and
 >            target attributes "target_attributes".
-920c914
+921c914
 <    4.  Return "links".
 ---
 >            1.  Return "links".
-952a947
+953a947
 > 
-980c975
+981c975
 <    EMail: mnot@mnot.net
 ---
 >    Email: mnot@mnot.net

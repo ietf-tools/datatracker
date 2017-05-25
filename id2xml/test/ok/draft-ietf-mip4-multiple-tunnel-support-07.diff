@@ -1,6 +1,4 @@
-115d114
-< 
-162,169c161,168
+163,170c163,170
 <    +-------+----------------------+------------------------------------+
 <    | Flow  | CoA/Tunnel/BID       | Negotiated Flow Policy             |
 <    | Id    |                      |                                    |
@@ -18,68 +16,53 @@
 >        | 3.      | CoA-3/Tunnel-3/BID-3 | All SSH Flows over CDMA |
 >        |         |                      |                         |
 >        +---------+----------------------+-------------------------+
-228a228
+229a230
 > 
-273d272
+361d361
 < 
-319d317
-< 
-386a385
+388a389
 >    |         |       |                                                 |
-389c388
+391c392
 <                  Table 2: Action Rules for the Traffic Selector
 ---
 >               Table 2: Action Rules for the Traffic Selector
-410d408
-< 
-453,454c451,452
+455,456c456,457
 <       agent MUST register this care-of address as one of the many
 <       care-of addresses through which the mobile node's home address is
 ---
 >       agent MUST register this care-of address as one of the many care-
 >       of addresses through which the mobile node's home address is
-593c591,592
-<       that the multipath support is enabled.
----
-> 
->          that the multipath support is enabled.
-596c595
-<       support is disabled.
----
->          support is disabled.
-608c607
+610c611
 <       Messages", at < http://www.iana.org/assignments/mobileip-numbers/
 ---
 >       Messages", at <http://www.iana.org/assignments/mobileip-numbers/
-619c618
+621c622
 <       Messages", at < http://www.iana.org/assignments/mobileip-numbers/
 ---
 >       Messages", at <http://www.iana.org/assignments/mobileip-numbers/
-645a645
-> 
-686,687c686,687
+688,689c689,690
 <               "Traffic Selectors for Flow Bindings", RFC 6088,
 <               January 2011.
 ---
 >               "Traffic Selectors for Flow Bindings", RFC 6088, January
 >               2011.
-702c702
+704c705
 <    EMail: sgundave@cisco.com
 ---
 >    Email: sgundave@cisco.com
-710c710
+712c713
 <    EMail: kleung@cisco.com
 ---
 >    Email: kleung@cisco.com
-715c715
+717c718
 <    EMail: tsirtsis@qualcomm.com
 ---
 >    Email: tsirtsis@qualcomm.com
-720c720
+722c723
 <    EMail: hesham@elevatemobile.com
 ---
 >    Email: hesham@elevatemobile.com
-729c729
+731c732
 <    EMail: alexandru.petrescu@cea.fr
 ---
 >    Email: alexandru.petrescu@cea.fr
