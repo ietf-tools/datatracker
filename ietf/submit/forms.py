@@ -181,13 +181,13 @@ class SubmissionUploadForm(forms.Form):
                 author_info = self.xmlroot.findall('front/author')
                 for author in author_info:
                     author_dict = dict(
-                        company = author.findtext('organization'),
-                        last_name = author.attrib.get('surname'),
-                        full_name = author.attrib.get('fullname'),
-                        email = author.findtext('address/email'),
+                        company = author.findtext('organization').strip(),
+                        last_name = author.attrib.get('surname').strip(),
+                        full_name = author.attrib.get('fullname').strip(),
+                        email = author.findtext('address/email').strip(),
                     )
                     self.author_list.append(author_dict)
-                    line = "%(full_name)s <%(email)s>" % author_dict
+                    line = email.utils.formataddr((author_dict['full_name'], author_dict['email']))
                     self.authors.append(line)
             except forms.ValidationError:
                 raise

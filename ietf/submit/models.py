@@ -1,5 +1,5 @@
-import re
 import datetime
+import email
 
 from django.db import models
 import jsonfield
@@ -15,12 +15,12 @@ from ietf.utils.accesstoken import generate_random_key, generate_access_token
 
 
 def parse_email_line(line):
-    """Split line on the form 'Some Name <email@example.com>'"""
-    m = re.match("([^<]+) <([^>]+)>$", line)
-    if m:
-        return dict(name=m.group(1), email=m.group(2))
-    else:
-        return dict(name=line, email="")
+    """
+    Split email address into name and email like
+    email.utils.parseaddr() but return a dictionary
+    """
+    name, addr = email.utils.parseaddr(line) if '@' in line else (line, '')
+    return dict(name=name, email=addr)
 
 class Submission(models.Model):
     state = models.ForeignKey(DraftSubmissionStateName)
