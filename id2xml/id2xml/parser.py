@@ -94,11 +94,11 @@ def run():
     # Parse config file
     # default values
     conf = {
-        'logindent':    [4],
-        'trace':        [],
-        'trace_all':    False,
+        'logindent':        [4],
+        'trace_methods':    [],
+        'trace_all':        False,
         'trailing_trace_lines':  10,
-        'trace_tail':   -1,
+        'trace_tail':       -1,
         }
     for p in ['.', os.environ.get('HOME','.'), '/etc/', ]:
         rcpath = Path(p)
@@ -2443,7 +2443,6 @@ class DraftParser():
             list.set('hangIndent', str(indents[0]-base_indentation))
             list.text = '\n'
             t = self.element('t')
-            t.tail = '\n'
             t.append(self.make_list(block, base_indentation=indents[0]))
             list.append(t)
         else:
@@ -2459,44 +2458,39 @@ class DraftParser():
                     assert t is not None
                     line = item[0][0]
                     t.append(self.make_list(item, indentation(line)))
-                    t.tail = '\n'
                 else:
                     self.dsay('list item')
                     line = item[0]
-                    indents = indentation_levels(item)
+                    item_indents = indentation_levels(item)
                     style, marker, ind, rest = guess_list_style(line)
                     self.dshow('style')
                     self.dshow('marker')
                     self.dshow('rest')
                     if style and i == 0:
                         list.set('style', style)
-                        if style == 'hanging' and len(indents) > 1:
-                            list.set('hangIndent', str(indents[1] - indents[0]))
-                    t = self.element('t', )
-                    t.tail = '\n'
+                        if style == 'hanging' and len(item_indents) > 1:
+                            list.set('hangIndent', str(item_indents[1] - item_indents[0]))
                     if style == 'hanging':
                         self.dsay('hanging')
-                        if indents[0] == indents[0]:
+                        if item_indents[0] == indents[0]:
                             self.dsay('same indentation')
+                            t = self.element('t', rest)
                             t.set('hangText', marker)
                             blank_lines = '1' if len(item)>1 and item[1].txt.strip()=='' else '0'
                             vspace = self.element('vspace', blankLines=blank_lines)
                             vspace.tail = para2text(item[1:])
                             t.append(vspace)
-                            text = rest
+                            list.append(t)
                         else:
-                            text = para2text(item)
-#                             alt = '\n'.join( [ tt for tt in [marker, rest ]+[ l.txt for l in item[1:]] if tt] )
-#                             if text != alt:
-#                                 debug.show('alt')
-#                                 debug.show('text')
+                            t = self.element('t', para2text(item))
+                            list.append(t)
                     elif style == None:
-                        text = para2text(item)
+                        t = self.element('t', para2text(item))
+                        list.append(t)
                     else:
                         text = '\n'.join( [ tt for tt in [ rest ]+[ l.txt for l in item[1:]] if tt] )                        
-                    t.text = text
-                    self.dshow('t.text')
-                    list.append(t)
+                        t = self.element('t', text)
+                        list.append(t)
             for k,v in saved_pi.items():
                 self.set_pi(list, k, v)
         return list
