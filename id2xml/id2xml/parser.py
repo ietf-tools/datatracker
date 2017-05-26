@@ -62,6 +62,7 @@ from collections import namedtuple, deque
 from lxml.etree import Element, ElementTree, ProcessingInstruction, CDATA
 from lxml.builder import E
 from __init__ import __version__
+import cProfile
 
 try:
     import debug
@@ -338,20 +339,20 @@ chunks = dict(
 )
 
 reference_patterns = [
-    r'{anchor}  *{authors}, "{title}", {series}, {date}(, {url})?\.'.format(**chunks),
-    r'{anchor}  *{authors}, "{title}", {series}, {date}, Work.in.progress\.'.format(**chunks),
-    r'{anchor}  *{authors}, "{title}", {date}(, {url})?\.'.format(**chunks),
-    r'{anchor}  *{authors}, "{title}", {docname}, {date}(, {url})?\.'.format(**chunks),
-    r'{anchor}  *{organiz}, "{title}", {docname}, {date}(, {url})?\.'.format(**chunks),
-    r'{anchor}  *{authors}, "{title}", {date}(, {url})?\.'.format(**chunks),
-    r'{anchor}  *{organiz}, "{title}", {date}(, {url})?\.'.format(**chunks),
-    r'{anchor}  *{authors}, "{title}", {date}, Work.in.progress\.'.format(**chunks),
-    r'{anchor}  *{organiz}, "{title}", {url}\.'.format(**chunks),
-    r'{anchor}  *"{title}", Work in Progress ?, {date}(, {url})?\.'.format(**chunks),
-    r'{anchor}  *"{title}", {docname}, {date}(, {url})?\.'.format(**chunks),
-    r'{anchor}  *"{title}", Work in Progress ?, {url}\.'.format(**chunks),
-    r'{anchor}  *"{title}", {url}\.'.format(**chunks),
-    r'{anchor}  *{url}\.'.format(**chunks),
+    re.compile(r'{anchor}  *{authors}, "{title}", {series}, {date}(, {url})?\.'.format(**chunks)),
+    re.compile(r'{anchor}  *{authors}, "{title}", {series}, {date}, Work.in.progress\.'.format(**chunks)),
+    re.compile(r'{anchor}  *{authors}, "{title}", {date}(, {url})?\.'.format(**chunks)),
+    re.compile(r'{anchor}  *{authors}, "{title}", {docname}, {date}(, {url})?\.'.format(**chunks)),
+    re.compile(r'{anchor}  *{organiz}, "{title}", {docname}, {date}(, {url})?\.'.format(**chunks)),
+    re.compile(r'{anchor}  *{authors}, "{title}", {date}(, {url})?\.'.format(**chunks)),
+    re.compile(r'{anchor}  *{organiz}, "{title}", {date}(, {url})?\.'.format(**chunks)),
+    re.compile(r'{anchor}  *{authors}, "{title}", {date}, Work.in.progress\.'.format(**chunks)),
+    re.compile(r'{anchor}  *{organiz}, "{title}", {url}\.'.format(**chunks)),
+    re.compile(r'{anchor}  *"{title}", Work in Progress ?, {date}(, {url})?\.'.format(**chunks)),
+    re.compile(r'{anchor}  *"{title}", {docname}, {date}(, {url})?\.'.format(**chunks)),
+    re.compile(r'{anchor}  *"{title}", Work in Progress ?, {url}\.'.format(**chunks)),
+    re.compile(r'{anchor}  *"{title}", {url}\.'.format(**chunks)),
+    re.compile(r'{anchor}  *{url}\.'.format(**chunks)),
 ## Lines commented out below are for debugging, when the full regex doesn't match (is buggy).
 #    r'{anchor}  *{authors}, "{title}", {series}, {date}(, {url})?'.format(**chunks),
 #    r'{anchor}  *{organiz}, "{title}", {docname}, {date}'.format(**chunks),
@@ -572,7 +573,7 @@ def flatten(listoflists):
     return [ l for sublist in listoflists for l in sublist if not l is list ]
 
 def strip(para):
-    para = copy.deepcopy(para)
+    para = para[:]
     while para and para[0].txt.strip() == '':
         del para[0]
     while para and para[-1].txt.strip() == '':
@@ -2549,7 +2550,8 @@ class DraftParser():
         "Join and split items as needed, to produce one item per list item."
         #debug.pprint('block')
         assert type(block) is list and all([type(b) is list for b in block]) and all([ type(l) is Line for b in block for l in b ])
-        orig = copy.deepcopy(block)
+        if self.options.debug:
+            orig = copy.deepcopy(block)
         items = []
         widow = []                          # candidate for merge with following blocks
         #debug.pprint('0, block')
@@ -2585,7 +2587,8 @@ class DraftParser():
             items.append(widow)
         items = self.normalize_sublists(items)
         items = self.split_compact_lists(items)
-        assert block == orig
+        if self.options.debug:
+            assert block == orig
         return items
 
     @dtrace
@@ -2593,7 +2596,8 @@ class DraftParser():
         "Split a block if it contains a transition to a lower indentation level"
         #debug.pprint('block')
         assert type(block) is list and type(block[0]) is Line
-        orig = copy.deepcopy(block)
+        if self.options.debug:
+            orig = copy.deepcopy(block)
         item = []
         items = []
         i0 = 0
@@ -2614,7 +2618,8 @@ class DraftParser():
             m0 = m
         if item:
             items.append(item)
-        assert block == orig
+        if self.options.debug:
+            assert block == orig
         return items
 
     @dtrace
@@ -2625,7 +2630,8 @@ class DraftParser():
         """
         #debug.pprint('block')
         assert type(block) is list and all([type(b) is list for b in block]) and all([ type(l) is Line for b in block for l in b ])
-        orig = copy.deepcopy(block)
+        if self.options.debug:
+            orig = copy.deepcopy(block)
         sub = []
         items = []
         line = block[0][0]
@@ -2669,20 +2675,22 @@ class DraftParser():
                     items.append(b[:])
             else:
                 items.append(b[:])
-        if orig != temp:
-            self.dpprint('orig')
-            self.dpprint('temp')
+#        if self.options.debug and orig != temp:
+#            self.dpprint('orig')
+#            self.dpprint('temp')
         if temp != items:
             self.dpprint('temp')
             self.dpprint('items')
-        assert block == orig
+        if self.options.debug:
+            assert block == orig
         return items
 
     @dtrace
     def split_compact_lists(self, block):
         items = []
         #debug.pprint('block')
-        orig = copy.deepcopy(block)
+        if self.options.debug:
+            orig = copy.deepcopy(block)
         for b in block:
             if type(b[0]) is list:
                 items.append(self.split_compact_lists(b))
@@ -2728,11 +2736,12 @@ class DraftParser():
                         item = []
                 else:
                     items.append(b)
-        assert block == orig
         if items != block:
             self.dsay('** items changed **')
             #debug.pprint('block')
             self.dpprint('items')
+        if self.options.debug:
+            assert block == orig
         return items
 
 
