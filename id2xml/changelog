@@ -1,4 +1,52 @@
-id2xml (1.0.0rc1) ietf; urgency=low
+id2xml (1.0.0rc3) ietf; urgency=low
+
+  This release reduces the diff between the text input file and the
+  text file resulting from the generated xml even more.  The average
+  number of lines in the input which is rendered differently in the
+  output is now below 3%.
+
+  From the changelog:
+
+  * Committed updated (smaller) diff files for test baseline
+
+  * Added more alternatives to the code recognition regex, for xml tags and
+    C statements
+
+  * Refined the header/footer stripping a bit, to not join text broken across
+    pages into one paragraph when there are too many intervening blank lines, 
+    or when the last line is a table or figure label.
+
+  * Added handling of blank lines in list items, by inserting <vspace> as
+    needed
+
+  * Added isertion of subcompact PIs for compact list.  Fixed some warning 
+    message issues.
+
+  * Added another comment delimiter to the code regex, and applied it to
+    whole text blocks, not only to their first line.
+
+  * Moved list block normalisation functions into the DraftParser class, and
+    added recognition of compact lists.  Also some refactoring.
+
+  * Added more descriptive manpage text, and tweaked the making of the
+    manpage.
+
+  * Added switches for trace start and stop on line number, and renamed the
+    trace-related switches.
+
+  * Refined guess_list_style().
+
+  * Added code to recognise 'centered' titles when they span the whole line
+
+  * Rewrote the code which parses the top left column of the titlepage to not
+    assume any ordering of the lines, but permit them to occur in almost any
+    order.  The only exception is that if there's a working group string, it
+    must occur first, as it has no recognizable keyword to identify it.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  26 May 2017 00:01:40 +0200
+
+
+id2xml (1.0.0rc2) ietf; urgency=low
 
   * Tweaked the help text and the manpage generation.
 
