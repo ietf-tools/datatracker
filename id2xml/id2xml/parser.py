@@ -165,7 +165,7 @@ def run():
     group.add_argument('--trace-start-regex', metavar='REGEX', default=None,
                                                                         help="start debug tracing on matching line")
 #                                                                        help=argparse.SUPPRESS)
-    group.add_argument('--trace-stop-regex',  metavar='REGEX', default='^$',
+    group.add_argument('--trace-stop-regex',  metavar='REGEX', default='',
                                                                         help="stop debug tracing on matching line")
 #                                                                        help=argparse.SUPPRESS)
     group.add_argument('--trace-start-line', type=int, metavar='NUMBER', default=None,
@@ -200,6 +200,10 @@ def run():
         output_suffix = '.raw'
     else:
         output_suffix = '.xml'
+
+    if ( ( options.trace_start_regex or options.trace_start_line )
+        and not (options.trace_stop_regex or options.trace_stop_line )):
+        die("If you set a trace start condition, you must also set a trace stop condition")
 
     for file in options.DRAFT:
         try:
@@ -257,8 +261,8 @@ approvers = BaseRfcWriter.approvers
 #status_of_memo = "Status of This Memo"
 appendix_prefix = "^Appendix:? "
 #
-code_re = (r'(?m)(^\s*[A-Za-z][A-Za-z0-9_-]*\s*=(\s*\S|\s*$)|{ *$|^ *}|::=|'
-            '//\s|\s//|\s/\*|/\*\s|[^-]--([^-]|$)|</[a-z0-9:-]+>|\S+\s*=\s*\S+.*;$)')
+code_re = (r'(?m)(^\s*[A-Za-z][A-Za-z0-9_-]*\s*=(\s*\S|\s*$)|[{}] *$|^ *[{}]|::=|'
+            '//\s|\s//|\s/\*|/\*\s|</[a-z0-9:-]+>|\S+\s*=\s*\S+.*;$)')
 #
 
 section_names = {
@@ -482,6 +486,8 @@ def strip_pagebreaks(text):
             sentence = True
         if re.search("^ +(Table|Figure)( +\d+)?: ", line): # line starts with Table or Figure label; don't join with next page para
             sentence = True
+        if len(line) < 50:              # line is too short; don't join with next page para
+            sentence = True
         if re.search("^[ \t]*$", line):
             blankcount += 1
             if blankcount > 7:
@@ -569,8 +575,15 @@ def slugify(s):
     s = re.sub(r'[-\s/]', '-', s)
     return s
 
-def flatten(listoflists):
-    return [ l for sublist in listoflists for l in sublist if not l is list ]
+def flatten(l):
+    def flatgen(l):
+        for i in l:
+            if not type(i) is list:
+                yield i
+            else:
+                for j in flatten(i):
+                    yield j
+    return list(flatgen(l))
 
 def strip(para):
     para = para[:]
@@ -869,12 +882,12 @@ def dtrace(fn):
             ))
             sys.stderr.write("%s* %s [#%s] From %s(%s)\n" % (indent, fc, call, caller, lineno))
             #
-            self.prevfunc = self.funcname
+            prevfunc = self.funcname
             self.funcname = fn.__name__
             self.options.logindent[0] += 2
             ret = fn(self, *params,**kwargs)
             self.options.logindent[0] -= 2
-            self.funcname = self.prevfunc
+            self.funcname = prevfunc
             #
             sys.stderr.write("%s  %s [#%s] ==> %s\n" % (indent, fc, call, fix(repr(ret))))
         else:
@@ -903,6 +916,7 @@ class DraftParser():
         # we start out with symrefs="no", then change the setting to
         # "yes" if we find a non-numeric reference anchor:
         'symrefs': 'no',
+        'text-list-symbols': '        ',
     }
 
     def __init__(self, name, text, options):
@@ -963,6 +977,20 @@ class DraftParser():
             self.emit(msg)
             sys.exit(1)
 
+    @dtrace
+    def get_tabstop(self, line):
+        """
+        Disregarding leading whitespace, return the start column
+        of any text which follows more than one space, relative
+        to the left margin at column 3.
+        """
+        match = re.search(r'^(\s*\S+(\s\S+)*\s\s+)(\S.*)$', line.txt)
+        if match:
+            # return co
+            return max(2, len(match.group(1)) - 3)
+        else:
+            self.warn(line.num, "Expected a line with tabstop, found '%s'" % (line.txt, ))
+
     def set_pi(self, e, k, v):
         if not k in self.pi or self.pi[k] != v:
             self.pi[k] = v
@@ -972,6 +1000,15 @@ class DraftParser():
         else:
             return None
             
+    @dtrace
+    def set_symbols_pi(self, symbol, level):
+        if self.pi['text-list-symbols'][level] == ' ':
+            assert len(symbol) == 1
+            symlist = list(self.pi['text-list-symbols'])
+            symlist[level] = symbol
+            self.pi['text-list-symbols'] = ''.join(symlist)
+        return self.pi['text-list-symbols']
+
     def parse_to_xml(self, **kwargs):
         # fix some bloopers
         self.lines, self.short_title = strip_pagebreaks(self.raw.expandtabs())
@@ -996,6 +1033,9 @@ class DraftParser():
             pi = self.set_pi(self.root, k, v)
             if k == 'symrefs':
                 self.symrefs_pi = pi
+            elif k == 'text-list-symbols':
+                self.symbols_pi = pi
+
 
         # Parse the document
         doc = self.document()
@@ -1211,7 +1251,8 @@ class DraftParser():
                     self.options.trace_tail -= 1
                     self.options.trace_all = False
                 elif (line and self.options.trace_stop_line == line.num
-                      or line and re.search(self.options.trace_stop_regex, line.txt.strip()) != None):
+                      or (line and self.options.trace_stop_regex
+                          and re.search(self.options.trace_stop_regex, line.txt.strip()) != None)):
                     self.options.trace_tail = self.options.trailing_trace_lines
 
         self.dshow('line')
@@ -1634,9 +1675,16 @@ class DraftParser():
         else:
             self.skip('Status of This Memo')
         if self.is_rfc:
-            assert stream
-            assert rfc_number
-            assert category
+            if not stream:
+                self.err(line.num,
+                        "Cannot parse 'Status of This Memo' without knowing the appropriate stream.  "
+                        "To process an old rfc without stream info and up-to-date Status of Memo "
+                        "section, please manually edit the text file to show the correct stream "
+                        "and status text, then run it through this program again.")
+            if not rfc_number:
+                self.err(line.num, "Cannot parse 'Status of This Memo' without an RFC number.")
+            if not category:
+                self.err(line.num, "Cannot parse 'Status of This Memo' without the correct category information.")
             consensus = None
             # Status of memo paragraph 1
             self.skip(boilerplate['status'][category].get('p1', ""))
@@ -2249,13 +2297,14 @@ class DraftParser():
                         len(indents) > 1
                         or (linecount == 1 and line.txt.strip()[:2] in ['o ', '* ', '+ ', '- ', ]) 
                         or (linecount == 1 and re.search('^[0-9a-z][ivx]*\. ', line.txt.strip()))
-                        #or (linecount == 1 and not ' ' in line.txt.strip())
-                        or (linecount == 1 and (  indentation(next) > indentation(para[0]) ))
+                        or (indentation(next) > indentation(para[0]) and linecount == 1)
                         or ('  ' in line.txt.strip() and not '.  ' in line.txt.strip())
                         ):
                         self.dsay('... list (for some reason)')
                         tag = 'list'
                     else:
+                        if (linecount > 1 and '  ' in line.txt.strip() and not '.  ' in line.txt.strip()):
+                            self.warn(line.num, "Not marking this as a list: '%s'" % (line.txt, ))
                         # try to differentiate between plain text and code/figure, based on
                         # ratio between character count and line count
                         if linecount == 1:
@@ -2421,7 +2470,7 @@ class DraftParser():
         return texttable
 
     @dtrace
-    def make_list(self, block, base_indentation=3):
+    def make_list(self, block, base_indentation=3, level=0):
         #list[style, hangIndent, counter] : t+
         # style = (numbers|letters|symbols|hanging|empty|format:...)
         # t[hangText] 
@@ -2478,10 +2527,11 @@ class DraftParser():
         self.dpprint('indentation_levels(item)')
         if indents[0] > base_indentation: # and (len(item) == 1 or len(indentation_levels(item)) > 2):
             # handle extra indentation by adding an extra level of <t/><list/>
+            self.dsay('list wrapper for indentation')
             list.set('hangIndent', str(indents[0]-base_indentation))
             list.text = '\n'
             t = self.element('t')
-            t.append(self.make_list(block, base_indentation=indents[0]))
+            t.append(self.make_list(block, base_indentation=indents[0], level=level+1))
             list.append(t)
         else:
             t = None
@@ -2495,9 +2545,15 @@ class DraftParser():
                     self.dsay('sublist')
                     assert t is not None
                     line = item[0][0]
-                    t.append(self.make_list(item, indentation(line)))
+                    t.append(self.make_list(item, base_indentation=indentation(line), level=level+1))
                 else:
                     self.dsay('list item')
+                    self.dshow('len(items)>(i+1)')
+                    if len(items)>(i+1):
+                        self.dshow('items[i+1]')
+                        self.dshow('type(items[i+1][0])')
+                    next = flatten(items[i+1]) if len(items)>(i+1) else None
+                    next_indent = indentation(next[0]) if next else None
                     line = item[0]
                     item_indents = indentation_levels(item)
                     style, marker, ind, rest = guess_list_style(line)
@@ -2505,9 +2561,23 @@ class DraftParser():
                     self.dshow('marker')
                     self.dshow('rest')
                     if style and i == 0:
+                        self.dpprint('item_indents')
                         list.set('style', style)
-                        if style == 'hanging' and len(item_indents) > 1:
-                            list.set('hangIndent', str(item_indents[1] - item_indents[0]))
+                        if style == 'hanging':
+                            if len(item_indents) > 1:
+                                hang_indent = item_indents[1] - item_indents[0]
+                            elif next and len(strip(item)) == 1:
+                                hang_indent = next_indent - item_indents[0]
+                            elif '  ' in line.txt.strip() and not '.  ' in line.txt and not '?  ' in line.txt:
+                                hang_indent = self.get_tabstop(line)
+                            else:
+                                hang_indent = 0
+                            if hang_indent == 0:
+                                # work around bug in xml2rfc:
+                                hang_indent = -1
+                            list.set('hangIndent', str(hang_indent))
+                        elif style == 'symbols':
+                            self.set_symbols_pi(marker, level)
                     if style == 'hanging':
                         self.dsay('hanging')
                         if item_indents[0] == indents[0]:
@@ -2971,7 +3041,8 @@ class DraftParser():
 
     def postprocess(self):
         self.add_text_refs()
-        self.set_symref_pi()
+        self.update_symrefs_pi()
+        self.update_symbols_pi()
 
     def add_text_refs(self):
         """
@@ -2993,10 +3064,12 @@ class DraftParser():
                 tmp = self.parse_text(vspace.tail)
                 vspace.tail = tmp.text
                 t = vspace.getparent()
+                i = t.index(vspace)
                 for child in tmp:
-                    t.append(child)
+                    t.insert(i+1, child)
+                    i += 1
 
-    def set_symref_pi(self):
+    def update_symrefs_pi(self):
         if not hasattr(self, 'reference_list'):
             self.err(0, "Internal error: set_symref_pi() called without reference_list having been set")
         symrefs = "no"
@@ -3006,6 +3079,21 @@ class DraftParser():
         self.pi['symrefs'] = symrefs
         pi = ProcessingInstruction('rfc', 'symrefs="%s"'%symrefs)
         self.root.replace(self.symrefs_pi, pi)
+
+    def update_symbols_pi(self):
+        symbols = list(self.pi['text-list-symbols'].rstrip())
+        for s in "o*+-":
+            if not s in symbols:
+                if ' ' in symbols:
+                    for i, sym in enumerate(symbols):
+                        if sym == ' ':
+                            symbols[i] = s
+                            break
+                else:
+                    symbols.append(s)
+        self.pi['text-list-symbols'] = ''.join(symbols)
+        pi = ProcessingInstruction('rfc', 'text-list-symbols="%s"'%self.pi['text-list-symbols'])
+        self.root.replace(self.symbols_pi, pi)
 
 if __name__ == '__main__':
     run()
