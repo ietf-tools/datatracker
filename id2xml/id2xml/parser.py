@@ -79,6 +79,13 @@ _prolog, _middle, _epilog = __doc__.split('...')
 
 # ----------------------------------------------------------------------
 
+class Options(object):
+    def __init__(self, **kwargs):
+        for k,v in kwargs.items():
+            if not k.startswith('__'):
+                setattr(self, k, v)
+    pass
+
 # ----------------------------------------------------------------------
 #
 # This is the entrypoint which is invoked from command-line scripts:
@@ -108,12 +115,6 @@ def run():
             if rcfn.exists():
                 execfile(str(rcfn), conf)
                 break
-    class Options(object):
-        def __init__(self, **kwargs):
-            for k,v in kwargs.items():
-                if not k.startswith('__'):
-                    setattr(self, k, v)
-        pass
     options = Options(**conf)
 
     # ----------------------------------------------------------------------
@@ -846,19 +847,6 @@ def match_boilerplate(bp, txt):
         debug.pprint('txt')
         return False
 
-class Stack(deque):
-    def __init__(self, text):
-        sep = r'(\s+|[][<>\'"])'
-        tokens = re.split(sep, text)
-        super(Stack, self).__init__(tokens)
-    def pop(self):
-        try:
-            return super(Stack, self).popleft()
-        except IndexError:
-            return None
-    def push(self, x):
-        return super(Stack, self).appendleft(x)
-
 def dtrace(fn):
     # From http://paulbutler.org/archives/python-debugging-with-decorators,
     # substantially modified
@@ -890,7 +878,7 @@ def dtrace(fn):
                 [fix(repr(a)) for a in params] +
                 ["%s = %s" % (a, fix(repr(b))) for a,b in kwargs.items()]
             ))
-            sys.stderr.write("%s* %s [#%s] From %s(%s)\n" % (indent, fc, call, caller, lineno))
+            sys.stderr.write("%s* %s [#%s] From %s(%s) L%s\n" % (indent, fc, call, caller, lineno, self.l))
             #
             prevfunc = self.funcname
             self.funcname = fn.__name__
@@ -907,41 +895,23 @@ def dtrace(fn):
     wrap.callcount = 0
     return decorator(wrap, fn)
 
-class DraftParser():
 
-    text = None
-    root = None
-    name = None
-    schema = None
+class Stack(deque):
+    def __init__(self, text):
+        sep = r'(\s+|[][<>\'"])'
+        tokens = re.split(sep, text)
+        super(Stack, self).__init__(tokens)
+    def pop(self):
+        try:
+            return super(Stack, self).popleft()
+        except IndexError:
+            return None
+    def push(self, x):
+        return super(Stack, self).appendleft(x)
+
+class Base(object):
+    options = Options(debug=False, trace_all=False, trace_methods=[])
     funcname = None
-    entities = []
-    pi = {}
-    #
-    _identify_paragraph_cache = {}
-
-    rfc_pi_defaults = {
-        'strict': 'yes',
-        'compact': 'yes',
-        'subcompact': 'no',
-        # we start out with symrefs="no", then change the setting to
-        # "yes" if we find a non-numeric reference anchor:
-        'symrefs': 'no',
-        'text-list-symbols': '        ',
-    }
-
-    def __init__(self, name, text, options):
-        self.options = options
-        self.name = name
-        self.is_draft = name.startswith('draft-')
-        self.is_rfc = name.lower().startswith('rfc')
-        if not (self.is_draft or self.is_rfc):
-            self.err(0, "Expected the input document name to start with either 'draft-' or 'rfc'")
-        assert type(text) is six.text_type # unicode in 2.x, str in 3.x.  
-        self.raw = text
-        schema_file = os.path.join(os.path.dirname(__file__), 'data', self.options.schema+'.rng')
-        self.schema = ElementTree(file=schema_file)
-        self.rfc_attr = self.schema.xpath("/x:grammar/x:define/x:element[@name='rfc']//x:attribute", namespaces=ns)
-        self.rfc_attr_defaults = dict( (a.get('name'), a.get("{%s}defaultValue"%ns['a'], None)) for a in self.rfc_attr )
 
     def emit(self, msg):
         sys.stderr.write(wrap(msg))
@@ -986,6 +956,215 @@ class DraftParser():
         else:
             self.emit(msg)
             sys.exit(1)
+
+class TextParser(Base):
+    """
+    This class parses plain text, nothing else.  Any lists or figures must
+    have been split off before using this parser.  Plain text handled here
+    can contain strings which can be converted to eref elements (urls) and
+    xref elements ([REFERENCE] or Section X.y or combinations thereof).
+    """
+
+    quotes = {
+        '"': '"',
+        "'": "'",
+    }
+    angles = {
+        '<': '>',
+    }
+    squares = {
+        '[': ']'
+    }
+    endq = dict( (k,v) for (k,v) in quotes.items()+angles.items()+squares.items() )
+    #
+    prev = None
+    
+    def __init__(self, docparser, text):
+        self.docparser = docparser
+        self.stack = Stack(text)
+        # These are for dtrace and friends:
+        self.options = docparser.options
+        self.l = docparser.l
+
+    @dtrace
+    def pop(self):
+        tok = self.stack.pop()
+        if tok and tok[0] == '\n':
+            tok = self.nl()
+        self.prev = tok
+        return tok
+
+    @dtrace
+    def push(self, tok):
+        return self.stack.appendleft(tok)
+
+    @dtrace
+    def eat(expected):
+        pass
+
+    @dtrace
+    def nl(self):
+        "Found a newline.  Process following whitespace and return an appropriate token."
+        self.dshow('self.prev')
+        while True:
+            tok = self.stack.pop()
+            if tok is None:
+                break
+            if tok.strip() != '':
+                self.stack.push(tok)
+                break
+        tok = '' if self.prev and re.search(r'\w[-/]$', self.prev) else ' '
+        return tok
+
+    @dtrace
+    def get_quoted(self, tok):
+        """
+        Get quoted or bracketed string. Does not handle nested instances.
+        """
+        chunk = tok
+        qbeg = tok
+        qend = self.endq[tok]
+        while True:
+            tok = self.pop()
+            if tok is None:
+                break
+            elif tok and tok[0] == '\n':
+                tok = self.nl()
+            elif tok == qbeg and not tok in self.quotes:
+                tok = self.get_quoted(tok)
+            chunk += tok
+            if tok == qend:
+                break
+        return chunk
+
+    @dtrace
+    def get_section_quot(self, tok):
+        return tok
+
+        chunk = tok
+        chunk += self.pop()
+        tok = self.pop()
+        chunk += tok
+        self.docparser.dshow('tok')
+        if re.match('[0-9.]+', tok):
+            num = tok
+            tok = self.pop()
+            self.docparser.dshow('tok')
+            chunk += tok            # whitespace
+            tok = self.pop()
+            self.docparser.dshow('tok')
+            if tok == 'of':
+                pass
+            else:
+                self.push(tok)
+                tok = self.docparser.element('xref', target='section-%s'%num)
+        else:
+            tok = chunk+tok
+        return tok
+
+
+
+    @dtrace
+    def parse_text(self):
+        "A sequence of text, xref, and eref elements."
+        chunks = []
+        while True:
+            tok = self.pop()
+            if tok is None:
+                break
+            if tok in self.quotes:
+                tok = self.get_quoted(tok)
+            elif tok == 'Section':
+                # handle Section N.n (of RFCxxxx)
+                tok = self.get_section_quot(tok)
+            elif tok in self.squares:
+                tok = self.get_quoted(tok)
+                ref = tok[1:-1]
+                if ref.isdigit():
+                    target = "ref-%s" % ref
+                else:
+                    target = ref
+                if target in self.docparser.reference_list:
+                    tok = self.docparser.element('xref', target=target)
+            elif tok in self.angles:
+                tok = self.get_quoted(tok)
+                match = re.search(uri_re, tok)
+                if match:
+                    target= match.group('target')
+                    tok = self.docparser.element('eref', target=target)
+            elif re.search(uri_re, tok):
+                uri = tok
+                tok = self.pop()
+                if tok == '':
+                    tok = self.pop()
+                    uri += tok
+                else:
+                    self.push(tok)
+                self.dshow('uri')
+                match = re.search(uri_re, uri)
+                target= match.group('target')
+                tok = self.docparser.element('eref', target=target)
+            elif tok == '\n':
+                tok = self.nl()
+            chunks.append(tok)
+        t = self.docparser.element('t')
+        if chunks:
+            e = None
+            text = []
+            for chunk in chunks:
+                if isinstance(chunk, six.string_types):
+                        text.append(chunk)
+                else:
+                    if e is None:
+                        t.text = ''.join(text)
+                    else:
+                        e.tail = ''.join(text)
+                    text = []
+                    e = chunk
+                    t.append(e)
+            if text:
+                if e is None:
+                    t.text = ''.join(text)
+                else:
+                    e.tail = ''.join(text)
+        self.docparser.dshow('t.text')
+        return t
+
+
+class DraftParser(Base):
+
+    text = None
+    root = None
+    name = None
+    schema = None
+    entities = []
+    pi = {}
+    #
+    _identify_paragraph_cache = {}
+
+    rfc_pi_defaults = {
+        'strict': 'yes',
+        'compact': 'yes',
+        'subcompact': 'no',
+        # we start out with symrefs="no", then change the setting to
+        # "yes" if we find a non-numeric reference anchor:
+        'symrefs': 'no',
+        'text-list-symbols': '        ',
+    }
+
+    def __init__(self, name, text, options):
+        self.options = options
+        self.name = name
+        self.is_draft = name.startswith('draft-')
+        self.is_rfc = name.lower().startswith('rfc')
+        if not (self.is_draft or self.is_rfc):
+            self.err(0, "Expected the input document name to start with either 'draft-' or 'rfc'")
+        assert type(text) is six.text_type # unicode in 2.x, str in 3.x.  
+        self.raw = text
+        schema_file = os.path.join(os.path.dirname(__file__), 'data', self.options.schema+'.rng')
+        self.schema = ElementTree(file=schema_file)
+        self.rfc_attr = self.schema.xpath("/x:grammar/x:define/x:element[@name='rfc']//x:attribute", namespaces=ns)
+        self.rfc_attr_defaults = dict( (a.get('name'), a.get("{%s}defaultValue"%ns['a'], None)) for a in self.rfc_attr )
 
     @dtrace
     def get_tabstop(self, line):
@@ -2152,110 +2331,6 @@ class DraftParser():
         return element
 
     @dtrace
-    def parse_text(self, text):
-        "A sequence of text, xref, and eref elements."
-        quotes = {
-            '"': '"',
-            "'": "'",
-        }
-        angles = {
-            '<': '>',
-        }
-        squares = {
-            '[': ']'
-        }
-        endq = dict( (k,v) for (k,v) in quotes.items()+angles.items()+squares.items() )
-        # ----
-        def get_quoted(stack, tok):
-            """
-            Get quoted or bracketed string. Does not handle nested instances.
-            """
-            chunk = tok
-            qbeg = tok
-            qend = endq[tok]
-            prev = ''
-            while True:
-                tok = stack.pop()
-                if tok is None:
-                    break
-                elif tok and tok[0] == '\n':
-                    tok = nl(stack, prev)
-                elif tok == qbeg and not tok in quotes:
-                    tok = get_quoted(stack, tok)
-                chunk += tok
-                if tok == qend:
-                    break
-                prev = tok
-            return chunk
-        def nl(stack, prev):
-            "Found a newline.  Process following whitespace and return an appropriate token."
-            lastchar = prev[-1] if prev else ''
-            while True:
-                tok = stack.pop()
-                if tok is None:
-                    break
-                if tok.strip() != '':
-                    stack.push(tok)
-                    break
-            tok = '' if lastchar in ['-', '/', ] else ' '
-            return tok
-        # ----
-        stack = Stack(text)
-        chunks = []
-        prev = ""
-        while True:
-            tok = stack.pop()
-            if tok is None:
-                break
-            if tok in quotes:
-                tok = get_quoted(stack, tok)
-            elif tok in squares:
-                tok = get_quoted(stack, tok)
-                ref = tok[1:-1]
-                if ref.isdigit():
-                    target = "ref-%s" % ref
-                else:
-                    target = ref
-                if target in self.reference_list:
-                    tok = self.element('xref', target=target)
-            elif tok in angles:
-                tok = get_quoted(stack, tok)
-                match = re.search(uri_re, tok)
-                if match:
-                    target= match.group('target')
-                    tok = self.element('eref', target=target)
-            elif re.search(uri_re, tok):
-                match = re.search(uri_re, tok)
-                target= match.group('target')
-                tok = self.element('eref', target=target)
-            elif tok == '\n':
-                tok = nl(stack, prev)
-            chunks.append(tok)
-            prev = tok
-        t = self.element('t')
-        if chunks:
-            e = None
-            text = []
-            for chunk in chunks:
-                if isinstance(chunk, six.string_types):
-                        text.append(chunk)
-                else:
-                    if e is None:
-                        t.text = ''.join(text)
-                    else:
-                        e.tail = ''.join(text)
-                    text = []
-                    e = chunk
-                    t.append(e)
-            if text:
-                if e is None:
-                    t.text = ''.join(text)
-                else:
-                    e.tail = ''.join(text)
-        self.dshow('t.text')
-        return t
-
-    @dtrace
     def identify_paragraph(self, para, part):
         tag = None
         text = None
@@ -3068,7 +3143,7 @@ class DraftParser():
         self.reference_list = [ r.get('anchor') for r  in self.root.findall('.//reference') ]
         for old in self.root.findall('.//t'):
             if old.text:
-                new = self.parse_text(old.text)
+                new = TextParser(self, old.text).parse_text()
                 for key in old.keys():
                     value = old.get(key)
                     new.set(key, value)
@@ -3077,7 +3152,7 @@ class DraftParser():
                 old.getparent().replace(old, new)
         for vspace in self.root.findall('.//vspace'):
             if vspace.tail:
-                tmp = self.parse_text(vspace.tail)
+                tmp = TextParser(self, vspace.tail).parse_text()
                 vspace.tail = tmp.text
                 t = vspace.getparent()
                 i = t.index(vspace)
