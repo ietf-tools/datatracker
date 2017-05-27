@@ -60,9 +60,9 @@ from pyterminalsize import get_terminal_size
 from xml2rfc.writers.base import BaseRfcWriter
 from collections import namedtuple, deque
 from lxml.etree import Element, ElementTree, ProcessingInstruction, CDATA
-from lxml.builder import E
+
 from __init__ import __version__
-import cProfile
+
 
 try:
     import debug
@@ -107,6 +107,8 @@ def run():
         'trace_all':        False,
         'trailing_trace_lines':  10,
         'trace_tail':       -1,
+#        'rfc_url':          'https://tools.ietf.org/html/rfc{number}#{fragment}',
+#        'draft_url':        'https://tools.ietf.org/html/{draft}#{fragment}',
         }
     for p in ['.', os.environ.get('HOME','.'), '/etc/', ]:
         rcpath = Path(p)
@@ -861,7 +863,7 @@ def dtrace(fn):
     """
     from decorator import decorator
     import traceback as tb
-    import time
+
     def fix(s,n=64):
         import re
         s = re.sub(r'\\t', ' ', s)
@@ -994,13 +996,24 @@ class TextParser(Base):
         self.prev = tok
         return tok
 
+    def drop(self, n):
+        for i in range(n):
+            self.stack.pop()
+
     @dtrace
     def push(self, tok):
         return self.stack.appendleft(tok)
 
-    @dtrace
-    def eat(expected):
-        pass
+    def peek(self, n):
+        chunks = []
+        for i in range(n):
+            try:
+                chunks.append(self.stack[i])
+            except IndexError:
+                break
+        # get rid of empty chunks (but keep whitespace)
+        chunks = [ c for c in chunks if c ]
+        return chunks
 
     @dtrace
     def nl(self):
@@ -1038,31 +1051,72 @@ class TextParser(Base):
         return chunk
 
     @dtrace
-    def get_section_quot(self, tok):
-        return tok
-
-        chunk = tok
-        chunk += self.pop()
-        tok = self.pop()
-        chunk += tok
-        self.docparser.dshow('tok')
-        if re.match('[0-9.]+', tok):
-            num = tok
-            tok = self.pop()
-            self.docparser.dshow('tok')
-            chunk += tok            # whitespace
-            tok = self.pop()
-            self.docparser.dshow('tok')
-            if tok == 'of':
-                pass
-            else:
-                self.push(tok)
-                tok = self.docparser.element('xref', target='section-%s'%num)
+    def get_section_quotation(self):
+        parts = self.peek(3)
+        self.dshow('parts')
+        if not len(parts) == 3:
+            return self.pop()
+        keyword, space, number = parts
+        self.dshow('number')
+        if not re.search('^[0-9.]+$', number):
+            return self.pop()
         else:
-            tok = chunk+tok
-        return tok
+            section = number.rstrip('.')
+            target = 'section-%s'%section
+            self.dshow('target')
+            # check if this is a section of something else
+            parts = self.peek(3+6)
+            # see if we have [' ', 'of', ' ', 'RFCnnnn', ]
+            # or maybe  [' ', 'of', ' ', '[', 'RFCnnnn', ']', ]
+            if parts and len(parts)>=7 and parts[4] == 'of' and not parts[5] == 'this':
+                # It would have been nice to insert erefs here, but xml2rfc
+                # don't provide the option of rendering an eref only with
+                # the given text, without a '[1]' type URIs section
+                # citation string.
+                return self.pop()
 
-
+                #self.dpprint('parts')
+                #if parts[6].startswith('RFC'):
+                #    doc = parts[6].lower()
+                #    number = doc[3:]
+                #    if not number.isdigit():
+                #        return self.pop()
+                #    target=self.options.rfc_url.format(number=number, fragment=target)
+                #    text = ''.join(parts[:6])
+                #    self.drop(6)
+                #    return self.docparser.element('eref', text, target=target)
+                #elif parts[6].startswith('draft-'):
+                #    doc = parts[6].lower()
+                #    target=self.options.draft_url.format(draft=doc, fragment=target)
+                #    text = ''.join(parts[:6])
+                #    self.drop(6)
+                #    return self.docparser.element('eref', text, target=target)
+                #elif parts[6] == '[' and parts[7].startswith('RFC'):
+                #    doc = parts[7].lower()
+                #    number = doc[3:]
+                #    if not number.isdigit():
+                #        return self.pop()
+                #    target=self.options.rfc_url.format(number=number, fragment=target)
+                #    text = ''.join(parts[:3])
+                #    self.drop(3)
+                #    return self.docparser.element('eref', text, target=target)
+                #elif parts[6] == '[' and parts[7].startswith('draft-'):
+                #    doc = parts[7].lower()
+                #    target=self.options.draft_url.format(draft=doc, fragment=target)
+                #    text = ''.join(parts[:3])
+                #    self.drop(3)
+                #    return self.docparser.element('eref', text, target=target)
+                #else:
+                #    return self.pop()
+            else:
+                if target in self.docparser.section_anchors:
+                    self.drop(3)
+                    if number != section:
+                        assert number.startswith(section)
+                        self.stack.push(number[len(section):]) # trailing punctuation
+                    return self.docparser.element('xref', target=target)
+                else:
+                    return self.pop()
 
     @dtrace
     def parse_text(self):
@@ -1075,8 +1129,9 @@ class TextParser(Base):
             if tok in self.quotes:
                 tok = self.get_quoted(tok)
             elif tok == 'Section':
+                self.push(tok)
                 # handle Section N.n (of RFCxxxx)
-                tok = self.get_section_quot(tok)
+                tok = self.get_section_quotation()
             elif tok in self.squares:
                 tok = self.get_quoted(tok)
                 ref = tok[1:-1]
@@ -1084,7 +1139,7 @@ class TextParser(Base):
                     target = "ref-%s" % ref
                 else:
                     target = ref
-                if target in self.docparser.reference_list:
+                if target in self.docparser.reference_anchors:
                     tok = self.docparser.element('xref', target=target)
             elif tok in self.angles:
                 tok = self.get_quoted(tok)
@@ -1915,11 +1970,10 @@ class DraftParser(Base):
         else:
             text = self.next_text()
             if text:
-                ipr_date = None
                 for part, d in [ ('ipr_200902_status', '200902'), ('ipr_200811_status', '200811'), ]:
                     bp = boilerplate[part]
                     if match_boilerplate(bp, text):
-                        ipr_date = d
+
                         self.skip(bp)
                         break
             for text in boilerplate['status']['draft']:
@@ -1928,7 +1982,7 @@ class DraftParser(Base):
             bp = boilerplate['draft_expire'][:-3]
             if match_boilerplate(bp, text):
                 expires = text[len(bp):-1]
-                exp_date = parse_date(expires)
+                parse_date(expires)
                 self.skip(boilerplate['draft_expire'] % expires)
 
     @dtrace
@@ -2164,7 +2218,7 @@ class DraftParser(Base):
             if tag == 'section':
                 section.set('title', title)
                 if number:
-                    section.set('anchor', 'section-%s'%number)
+                    section.set('anchor', 'section-%s'%number.rstrip('.'))
                 else:
                     section.set('numbered', 'no')
                     section.set('anchor', '%s'%slugify(title))                    
@@ -2334,7 +2388,7 @@ class DraftParser(Base):
     def identify_paragraph(self, para, part):
         tag = None
         text = None
-        sratio = None
+
         linecount = 0
         if para and para[0].txt:
             line = para[0]
@@ -2762,8 +2816,6 @@ class DraftParser(Base):
         item = []
         items = []
         i0 = 0
-        m0 = 0
-        s0 = 0
         for line in block:
             s, m, i, __ = guess_list_style(line)
             if line.txt.strip() and i < i0:
@@ -2775,8 +2827,6 @@ class DraftParser(Base):
             else:
                 item.append(line)
             i0 = i
-            s0 = s
-            m0 = m
         if item:
             items.append(item)
         if self.options.debug:
@@ -3140,7 +3190,8 @@ class DraftParser(Base):
         Iterate through all <t> elements, and if they have .text, process
         that to generate a new <t> element with <xref>s and <eref>s.
         """
-        self.reference_list = [ r.get('anchor') for r  in self.root.findall('.//reference') ]
+        self.reference_anchors = [ r.get('anchor') for r  in self.root.findall('.//reference') ]
+        self.section_anchors = [ r.get('anchor') for r  in self.root.findall('.//section') ]
         for old in self.root.findall('.//t'):
             if old.text:
                 new = TextParser(self, old.text).parse_text()
@@ -3161,10 +3212,10 @@ class DraftParser(Base):
                     i += 1
 
     def update_symrefs_pi(self):
-        if not hasattr(self, 'reference_list'):
-            self.err(0, "Internal error: set_symref_pi() called without reference_list having been set")
+        if not hasattr(self, 'reference_anchors'):
+            self.err(0, "Internal error: set_symref_pi() called without reference_anchors having been set")
         symrefs = "no"
-        for anchor in self.reference_list:
+        for anchor in self.reference_anchors:
             if anchor and not re.search('^ref-\d+$', anchor):
                 symrefs = "yes"
         self.pi['symrefs'] = symrefs
