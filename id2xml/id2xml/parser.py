@@ -396,6 +396,16 @@ def wrap(s):
         wrapped.append(textwrap.fill(line, width=cols, subsequent_indent=prev_indent))
     return '\n'.join(wrapped)
 
+def space(s):
+    if s is None or type(s) is lxml.etree.CDATA:
+        return s
+    nlt = '\n\t'
+    if not s.startswith(nlt):
+        s = nlt + s.lstrip()
+    if not s.endswith(nlt):
+        s = s.rstrip() + nlt
+    return s
+
 def strip_pagebreaks(text):
     "Strip ID/RFC-style headers and footers from the given text"
     short_title = None
@@ -995,6 +1005,7 @@ class DraftParser():
         if not k in self.pi or self.pi[k] != v:
             self.pi[k] = v
             pi = ProcessingInstruction('rfc', text='%s="%s"'%(k,v))
+            pi.tail = '\n\t'
             e.append(pi)
             return pi
         else:
@@ -1069,9 +1080,14 @@ class DraftParser():
 
     @dtrace
     def element(self, tag, *args, **kwargs):
-        "A wrapper method which lets us hook in debug output"
+        "A wrapper method which lets us hook in debug output and massage it a bit."
         e = Element(tag, **kwargs)
-        e.tail = '\n\t'
+        if tag in ['front', 'middle', 'back', 'section', 'author', 't', ]:
+            e.tail = '\n\n\t'
+        else:
+            e.tail = '\n\t'
+        if tag in ['xml', 'front', 'middle', 'back', 'section', 'author', 'abstract', ]:
+            e.text = '\n\t'
         if args:
             assert len(args) == 1
             text = args[0]
@@ -1133,15 +1149,15 @@ class DraftParser():
             for key in author_attributes:
                 if key in item:
                     author[key] = item[key]
-            e = E.author(**author)
+            e = self.element('author', **author)
             if 'organization' in item:
-                e.append(E.organization(item.get('organization')))
+                e.append(self.element('organization', item.get('organization')))
             front.append(e)
         #
-        front.append(E.date(**date))
+        front.append(self.element('date', **date))
         #
         if workgroup:
-            front.append(E.workgroup(workgroup))
+            front.append(self.element('workgroup', workgroup))
         #
         abstract = self.section(numlist=["Abstract"], tag='abstract', part='front')
         if not abstract is None:
@@ -2512,7 +2528,7 @@ class DraftParser():
                 paras.pop()
             for para in paras:
                 vspace = self.element('vspace', blankLines="1")
-                vspace.tail = para2text(para)
+                vspace.tail = space(para2text(para))
                 self.dshow('vspace.tail')
                 elements.append(vspace)
             return text, elements
@@ -2529,7 +2545,7 @@ class DraftParser():
             # handle extra indentation by adding an extra level of <t/><list/>
             self.dsay('list wrapper for indentation')
             list.set('hangIndent', str(indents[0]-base_indentation))
-            list.text = '\n'
+            list.text = '\n\t'
             t = self.element('t')
             t.append(self.make_list(block, base_indentation=indents[0], level=level+1))
             list.append(t)
@@ -2582,14 +2598,14 @@ class DraftParser():
                         self.dsay('hanging')
                         if item_indents[0] == indents[0]:
                             self.dsay('same indentation')
-                            t = self.element('t', rest)
+                            t = self.element('t', space(rest))
                             t.set('hangText', marker)
                             vspace = self.element('vspace', blankLines="0")
                             t.append(vspace)
                             #
                             if len(item) > 1:
                                 text, elements = make_list_item_text(self, item[1:])
-                                vspace.tail = text
+                                vspace.tail = space(text)
                                 for e in elements:
                                     t.append(e)
                             list.append(t)
