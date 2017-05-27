@@ -59,7 +59,7 @@ import textwrap
 from pyterminalsize import get_terminal_size
 from xml2rfc.writers.base import BaseRfcWriter
 from collections import namedtuple, deque
-from lxml.etree import Element, ElementTree, ProcessingInstruction, CDATA
+from lxml.etree import Element, ElementTree, ProcessingInstruction, CDATA, Entity
 
 from __init__ import __version__
 
@@ -1195,6 +1195,8 @@ class DraftParser(Base):
     pi = {}
     #
     _identify_paragraph_cache = {}
+    section_anchors = []
+    reference_anchors = []
 
     rfc_pi_defaults = {
         'strict': 'yes',
@@ -1319,7 +1321,7 @@ class DraftParser(Base):
             e.tail = '\n\n\t'
         else:
             e.tail = '\n\t'
-        if tag in ['xml', 'front', 'middle', 'back', 'section', 'author', 'abstract', ]:
+        if tag in ['xml', 'front', 'middle', 'back', 'section', 'author', 'abstract', 'references', ]:
             e.text = '\n\t'
         if args:
             assert len(args) == 1
@@ -2217,10 +2219,12 @@ class DraftParser(Base):
             if tag == 'section':
                 section.set('title', title)
                 if number:
-                    section.set('anchor', 'section-%s'%number.rstrip('.'))
+                    anchor = 'section-%s'%number.rstrip('.')
                 else:
+                    anchor = '%s'%slugify(title)
                     section.set('numbered', 'no')
-                    section.set('anchor', '%s'%slugify(title))                    
+                section.set('anchor', anchor)
+                self.section_anchors.append(anchor)
         else:
             if number.lower() in section_name_start['all']:
                 self.push_line(line, p)
@@ -3030,25 +3034,29 @@ class DraftParser(Base):
             refs.append(references)
             # a series of reference entries
             while True:
-                ref = self.reference()
+                ref, entity = self.reference()
                 if ref is None:
                     break
-                references.append(ref)
+                if entity is None:
+                    references.append(ref)
+                else:
+                    references.append(entity)
             return refs
         return None
 
     @dtrace
     def reference(self):
+        entity = None
         line = self.skip_blank_lines()
         if is_section_start(line, part='back'):
-            return None
+            return None, None
         reference = self.element('reference')
         front = self.element('front')
         reference.append(front)
         para = self.get_para()
         line = para[0]
         if not para:
-            return None
+            return None, None
         text = para2str(para)
         self.dshow('text')
         faild = None
@@ -3068,6 +3076,7 @@ class DraftParser(Base):
                         anchor = "ref-%s" % anchor
                         refinfo['anchor'] = anchor
                     reference.set('anchor', anchor)
+                    self.reference_anchors.append(anchor)
                 target = refinfo.get('target')
                 if target:
                     reference.set('target', target)
@@ -3131,6 +3140,7 @@ class DraftParser(Base):
                 if 'series' in refinfo:
                     series  = refinfo.get('series')
                     if series:
+                        ename = None
                         for item in re.findall(ref_series_one, series):
                             self.dshow('item')
                             parts = item.split(None, 1)                            
@@ -3149,11 +3159,29 @@ class DraftParser(Base):
                             e = self.element('seriesInfo', name=name, value=value)
                             reference.append(e)
                             if name == 'RFC':
-                                self.entities.append({'name': refinfo.get('anchor'),
-                                    'url': 'https://xml.ietf.org/public/rfc/bibxml/reference.RFC.%s.xml'%value, })
+                                anchor = refinfo.get('anchor')
+                                ename  = 'RFC%04d'%int(value)
+                                if anchor == ename:
+                                    entity = Entity(ename)
+                                    entity.tail = '\n\t'
+                                self.entities.append({'name': ename,
+                                    'url': 'https://xml2rfc.tools.ietf.org/public/rfc/bibxml/reference.RFC.%04d.xml'%int(value), })
                             if name == 'Internet-Draft':
-                                self.entities.append({'name': refinfo.get('anchor'),
-                                    'url': 'https://xml.ietf.org/public/rfc/bibxml3/reference.I-D.%s.xml'%value, })
+                                anchor = refinfo.get('anchor')
+                                if (   anchor == 'I-D.%s'%value
+                                    or anchor == 'I-D.%s'%value[len('draft-'):]
+                                    or anchor == 'I-D.%s'%value[:-3]
+                                    or anchor == 'I-D.%s'%value[len('draft-'):-3] ):
+                                    ename = anchor
+                                else: 
+                                    ename = 'I-D.%s'%value[len('draft-'):]
+                                    if ename[-3] == '-' and ename[-2:].isdigit():
+                                        ename = ename[:-3]
+                                if anchor == ename:
+                                    entity = Entity(ename)
+                                    entity.tail = '\n\t'
+                                self.entities.append({'name': ename,
+                                    'url': 'https://xml2rfc.tools.ietf.org/public/rfc/bibxml3/reference.I-D.%s.xml'%value, })
                             reference.append(e)
                 elif 'docname' in refinfo:
                     docname = refinfo.get('docname')
@@ -3168,12 +3196,12 @@ class DraftParser(Base):
         else:
             if not line or is_section_start(line, part='back'):
                 self.push_para(para)
-                return None
+                return None, None
             else:
                 self.warn(line.num, "Failed parsing a reference:\n%s" % para2text(para))
-                return reference
+                return reference, entity
 
-        return reference
+        return reference, entity
 
     # ------------------------------------------------------------------------
     # postprocess
@@ -3189,7 +3217,6 @@ class DraftParser(Base):
         Iterate through all <t> elements, and if they have .text, process
         that to generate a new <t> element with <xref>s and <eref>s.
         """
-        self.reference_anchors = [ r.get('anchor') for r  in self.root.findall('.//reference') ]
         self.section_anchors = [ r.get('anchor') for r  in self.root.findall('.//section') ]
         for old in self.root.findall('.//t'):
             if old.text:
