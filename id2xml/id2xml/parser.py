@@ -990,6 +990,7 @@ class TextParser(Base):
 
     @dtrace
     def pop(self):
+        "Almost the same as self.stack.pop(), but hides '\n'."
         tok = self.stack.pop()
         if tok and tok[0] == '\n':
             tok = self.nl()
@@ -1041,8 +1042,6 @@ class TextParser(Base):
             tok = self.pop()
             if tok is None:
                 break
-            elif tok and tok[0] == '\n':
-                tok = self.nl()
             elif tok == qbeg and not tok in self.quotes:
                 tok = self.get_quoted(tok)
             chunk += tok
@@ -1055,11 +1054,11 @@ class TextParser(Base):
         parts = self.peek(3)
         self.dshow('parts')
         if not len(parts) == 3:
-            return self.pop()
+            return self.stack.pop()
         keyword, space, number = parts
         self.dshow('number')
         if not re.search('^[0-9.]+$', number):
-            return self.pop()
+            return self.stack.pop()
         else:
             section = number.rstrip('.')
             target = 'section-%s'%section
@@ -1073,14 +1072,14 @@ class TextParser(Base):
                 # don't provide the option of rendering an eref only with
                 # the given text, without a '[1]' type URIs section
                 # citation string.
-                return self.pop()
+                return self.stack.pop()
 
                 #self.dpprint('parts')
                 #if parts[6].startswith('RFC'):
                 #    doc = parts[6].lower()
                 #    number = doc[3:]
                 #    if not number.isdigit():
-                #        return self.pop()
+                #        return self.stack.pop()
                 #    target=self.options.rfc_url.format(number=number, fragment=target)
                 #    text = ''.join(parts[:6])
                 #    self.drop(6)
@@ -1095,7 +1094,7 @@ class TextParser(Base):
                 #    doc = parts[7].lower()
                 #    number = doc[3:]
                 #    if not number.isdigit():
-                #        return self.pop()
+                #        return self.stack.pop()
                 #    target=self.options.rfc_url.format(number=number, fragment=target)
                 #    text = ''.join(parts[:3])
                 #    self.drop(3)
@@ -1107,7 +1106,7 @@ class TextParser(Base):
                 #    self.drop(3)
                 #    return self.docparser.element('eref', text, target=target)
                 #else:
-                #    return self.pop()
+                #    return self.stack.pop()
             else:
                 if target in self.docparser.section_anchors:
                     self.drop(3)
@@ -1116,14 +1115,14 @@ class TextParser(Base):
                         self.stack.push(number[len(section):]) # trailing punctuation
                     return self.docparser.element('xref', target=target)
                 else:
-                    return self.pop()
+                    return self.stack.pop()
 
     @dtrace
     def parse_text(self):
         "A sequence of text, xref, and eref elements."
         chunks = []
         while True:
-            tok = self.pop()
+            tok = self.stack.pop()
             if tok is None:
                 break
             if tok in self.quotes:
