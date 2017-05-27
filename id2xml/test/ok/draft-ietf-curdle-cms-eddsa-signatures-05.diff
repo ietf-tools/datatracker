@@ -15,18 +15,20 @@
 <    This Internet-Draft will expire on 11 October 2017.
 ---
 >    This Internet-Draft will expire on October 13, 2017.
-105,106c106
+46a48
+> 
+105,106c107
 <    conventions for encoding the public key are defined in
 <    [CURDLE-PKIX].
 ---
 >    conventions for encoding the public key are defined in [CURDLE-PKIX].
-192,193c192,193
+193,194c194,195
 <    signing with Ed448, the digestAlgorithm SHOULD include
 <    id-shake256-len, and if present, the algorithm parameters field MUST
 ---
 >    signing with Ed448, the digestAlgorithm SHOULD include id-
 >    shake256-len, and if present, the algorithm parameters field MUST
-213,215c213,215
+214,216c215,217
 <    The SignerInfo signatureAlgorithm field MUST contain either
 <    id-Ed25519 or id-Ed448, depending on the elliptic curve that was used
 <    by the signer.  The algorithm parameters field MUST be absent.
@@ -34,7 +36,9 @@
 >    The SignerInfo signatureAlgorithm field MUST contain either id-
 >    Ed25519 or id-Ed448, depending on the elliptic curve that was used by
 >    the signer.  The algorithm parameters field MUST be absent.
-242,244c242,244
+232a234
+> 
+243,245c245,247
 <    The SignerInfo signatureAlgorithm field MUST contain either
 <    id-Ed25519 or id-Ed448, depending on the elliptic curve that was used
 <    by the signer.  The algorithm parameters field MUST be absent.
@@ -42,23 +46,25 @@
 >    The SignerInfo signatureAlgorithm field MUST contain either id-
 >    Ed25519 or id-Ed448, depending on the elliptic curve that was used by
 >    the signer.  The algorithm parameters field MUST be absent.
-297c297,299
+280a283
+> 
+299c302,304
 < 8.  Normative References
 ---
 > 8.  References
 > 
 > 8.1.  Normative References
-303c305
+305c310
 <               Josefsson, S., and J. Schaad, "Algorithm Identifiers for
 ---
 >               Josefsson, S. and J. Schaad, "Algorithm Identifiers for
-306,307c308,309
+308,309c313,314
 <               draft-ietf-curdle-pkix-02, 31 October 2016,
 <               Work-in-progress.
 ---
 >               draft-ietf-curdle-pkix-02 (work in progress), 31 October
 >               2016.
-313,315c315,317
+315,317c320,322
 <               Department of Commerce, "Secure Hash Standard", Federal
 <               Information Processing Standard (FIPS) 180-3, October
 <               2008.
@@ -66,22 +72,22 @@
 >               Department of Commerce, "Secure Hash Standard",
 >               Federal Information Processing Standard (FIPS) 180-3,
 >               October 2008.
-322c324,325
+324c329,330
 <    [STDWORDS] Bradner, S., "Key words for use in RFCs to Indicate
 ---
 >    [STDWORDS]
 >               Bradner, S., "Key words for use in RFCs to Indicate
-326,327c329,330
+328,329c334,335
 <               One (ASN.1): Specification of basic notation", ITU-T
 <               Recommendation X.680, 2015.
 ---
 >               One (ASN.1): Specification of basic notation",
 >               ITU-T Recommendation X.680, 2015.
-334c337
+336c342
 < 9.  Informative References
 ---
 > 8.2.  Informative References
-345c348
+347c353
 <    918 Spring Knoll Drive
 ---
 >    Vigil Security

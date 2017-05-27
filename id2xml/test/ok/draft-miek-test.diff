@@ -1,24 +1,18 @@
-132,133c132,133
-<    2.  back.pdc - holds appendices and references;
-<    3.  template.xml (probably a fairly static file).
----
->    2.  back.pdc - holds appendices and references; 3.  template.xml
->    (probably a fairly static file).
-236,237c236,237
+237,238c237,238
 <    it is _just_ Pandoc.  The best introduction to the Pandoc style is
 <    given in this README from Pandoc itself [7].
 ---
->       it is _just_ Pandoc.  The best introduction to the Pandoc style is
->       given in this README from Pandoc itself [7].
-316c316
+>   it is _just_ Pandoc.  The best introduction to the Pandoc style is
+>   given in this README from Pandoc itself [7].
+317c317
 <    i.    Item one;
 ---
 >    a.  Item one;
-318c318
+319c319
 <    ii.   Item two.
 ---
 >        ii.  Item two.
-362,365c362,363
+363,366c363,364
 <    :   Explanation one
 <    More stuff, because item is difficult to explain.
 <    * item1
@@ -26,21 +20,19 @@
 ---
 >       : Explanation one More stuff, because item is difficult to
 >       explain.  * item1 * item2
-369c367
+370c368
 <    :   Explanation two
 ---
 >       : Explanation two
-472c470
+473c471
 <      Table: A caption describing the table.
 ---
 >       Table: A caption describing the table.
-474c472
+475c473
 <       Figure 3: A caption describing the figure describing the table.
 ---
 >        Figure 3: A caption describing the figure describing the table.
-511d508
-< 
-587,603d583
+589,606d586
 < 11.3.  URIs
 < 
 <    [1] http://xml.resource.org/experimental
@@ -48,6 +40,7 @@
 <    [2] http://pypi.python.org/pypi/xml2rfc/
 < 
 <    [3] http://daringfireball.net/projects/markdown/
+< 
 <    [4] http://johnmacfarlane.net/pandoc/
 < 
 <    [5] https://github.com/miekg/pandoc2rfc
@@ -58,29 +51,31 @@
 < 
 <    [8] http://miek.nl
 < 
-697c677
+672c652
+<       Multiple paragraphs in such a list.
+---
+>   Multiple paragraphs in such a list.
+700c680
 <        Item to explain:  Explanation ...
 ---
 >        Item to explain: Explanation ...
-717c697
+702c682
+<        Item to explain:  Another explanation ...
+---
+>        Item to explain:      Another explanation ...
+720c700
 <    4.  Final item.
 ---
 >    1.  Final item.
-731c711
+734c714
 <    i.    Item 1
 ---
 >    a.  Item 1
-733c713
+736c716
 <    ii.   Item 2
 ---
 >        ii.  Item 2
-762d741
-< 
-788c767
-<    3.  Third item
----
->    1.  Third item
-798,804c777,784
+803,809c783,790
 <                   +--------+-------+---------+----------+
 <                   |  Right | Left  |  Center | Default  |
 <                   +--------+-------+---------+----------+
@@ -97,7 +92,7 @@
 >                     | 1     | 1    | 1      | 1       |
 >                     |       |      |        |         |
 >                     +-------+------+--------+---------+
-808,817c788,802
+813,822c794,808
 <    +-----------+-----------+---------------+---------------------------+
 <    |  Centered | Default   | Right Aligned | Left Aligned              |
 <    |   Header  | Aligned   |               |                           |
@@ -124,7 +119,7 @@
 >    |               |               |              | rows.              |
 >    |               |               |              |                    |
 >    +---------------+---------------+--------------+--------------------+
-822,827c807,813
+827,832c813,819
 <           +---------------+---------------+--------------------+
 <           | Fruit         | Price         | Advantages         |
 <           +---------------+---------------+--------------------+
@@ -139,7 +134,7 @@
 >                   | Oranges | $2.10 | cures scurvy     |
 >                   |         |       |                  |
 >                   +---------+-------+------------------+
-833,838c819,825
+838,843c825,831
 <           +---------------+---------------+--------------------+
 <           | Fruit         | Price         | Advantages         |
 <           +---------------+---------------+--------------------+
@@ -154,15 +149,15 @@
 >                   | Oranges | $2.10 | cures scurvy     |
 >                   |         |       |                  |
 >                   +---------+-------+------------------+
-865c852
+870c858
 <    Figure 4: This is the caption, with text in `typewriter`. Which isnt
 ---
 >    Figure 3: This is the caption, with text in `typewriter`. Which isnt
-874c861
+879c867
 <                      Figure 5: A non centered figure.
 ---
 >                      Figure 4: A non centered figure.
-888,896c875,877
+893,901c881,883
 <    L
 <       list
 <          default markers  18

@@ -1,23 +1,3 @@
-66c66
-<       o  Expanded Addressing Capabilities
----
->       *  Expanded Addressing Capabilities
-76c76
-<       o  Header Format Simplification
----
->       *  Header Format Simplification
-82c82
-<       o  Improved Support for Extensions and Options
----
->       *  Improved Support for Extensions and Options
-89c89
-<       o  Flow Labeling Capability
----
->       *  Flow Labeling Capability
-95c95
-<       o  Authentication and Privacy Capabilities
----
->       *  Authentication and Privacy Capabilities
 118c118
 <    node         a device that implements IPv6.
 ---
@@ -27,7 +7,7 @@
 <                 addressed to itself.  [See Note below].
 ---
 >    router  a node that forwards IPv6 packets not explicitly
->       addressed to itself.  [See Note below].
+>   addressed to itself.  [See Note below].
 123c123
 <    host         any node that is not a router.  [See Note below].
 ---
@@ -35,7 +15,7 @@
 188c188
 <       Version             4-bit Internet Protocol version number = 6.
 ---
->       Version  4-bit Internet Protocol version number = 6.
+>       Version                4-bit Internet Protocol version number = 6.
 190c190
 <       Traffic Class       8-bit traffic class field.  See section 7.
 ---
@@ -44,58 +24,45 @@
 <       Flow Label          20-bit flow label.  See section 6.
 ---
 >       Flow Label 20-bit flow label.  See section 6.
-328,338c328,335
-<       Hop-by-Hop Options header
-<       Destination Options header (note 1)
-<       Routing header
-<       Fragment header
-<       Authentication header (note 2)
-<       Encapsulating Security Payload header (note 2)
-<       Destination Options header (note 3)
-<       upper-layer header
-<       note 1: for options to be processed by the first destination that
-<               appears in the IPv6 Destination Address field plus
-<               subsequent destinations listed in the Routing header.
----
->               Hop-by-Hop Options header Destination Options header (note
->               1) Routing header Fragment header Authentication header
->               (note 2) Encapsulating Security Payload header (note 2)
->               Destination Options header (note 3) upper-layer header
->               note 1: for options to be processed by the first
->               destination that appears in the IPv6 Destination Address
->               field plus subsequent destinations listed in the Routing
->               header.
-340a338
+197a198
 > 
-344a343
+338a340
 > 
-378c377
+342a345
+> 
+346a350
+> 
+380c384
 <       Option Type         8-bit identifier of the type of option.
 ---
 >       Option Type  8-bit identifier of the type of option.
-380,381c379,380
+382,383c386,387
 <       Opt Data Len        8-bit unsigned integer.  Length of the Option
 <                           Data field of this option, in octets.
 ---
 >       Opt Data Len  8-bit unsigned integer.  Length of the Option
->          Data field of this option, in octets.
-383,384c382,383
+>      Data field of this option, in octets.
+385,386c389,390
 <       Option Data         Variable-length field.  Option-Type-specific
 <                           data.
 ---
 >       Option Data  Variable-length field.  Option-Type-specific
->          data.
-439,440c438,439
+>      data.
+441,442c445,446
 <       8n+2 means any 8-octet offset from the start of the header, plus 2
 <            octets.
 ---
 >            8n+2 means any 8-octet offset from the start of the header,
 >            plus 2 octets.
-606c605
+610c614
 <       Identification      32 bits.  See description below.
 ---
 >       Identification 32 bits.  See description below.
-679,682c678,683
+624c628
+<       *  "recently" means within the maximum likely lifetime of a
+---
+>       o  "recently" means within the maximum likely lifetime of a
+683,686c687,692
 <    +------------------+---------+-------------------+----------+
 <    |  Per-Fragment    |Fragment | Ext & Upper-Layer |  first   |
 <    |    Headers       | Header  |   Headers         | fragment |
@@ -107,11 +74,11 @@
 >    +------------------+--------------+-------------------+-------------+
 >    |                  |              |                   |             |
 >    +------------------+--------------+-------------------+-------------+
-747c748
+752c758
 <       (3) The fragment itself.
 ---
 >          (3) The fragment itself.
-789,794c790,795
+794,799c800,805
 <             FL.first =  length of fragment following Fragment header of
 <                         first fragment packet.
 <             FO.last  =  Fragment Offset field of Fragment header of last
@@ -125,112 +92,17 @@
 >                   fragment packet.
 >       FL.last     = length of fragment following Fragment header of
 >                   last fragment packet.
-925c926
-<       o  If the desired action is for the destination node to discard
----
->       *  If the desired action is for the destination node to discard
-935c936
-<       o  If any other action is desired, the information must be encoded
----
->       *  If any other action is desired, the information must be encoded
-1097c1098
-<       o  If the IPv6 packet contains a Routing header, the Destination
----
->       *  If the IPv6 packet contains a Routing header, the Destination
-1104c1105
-<       o  The Next Header value in the pseudo-header identifies the
----
->       *  The Next Header value in the pseudo-header identifies the
-1110c1111
-<       o  The Upper-Layer Packet Length in the pseudo-header is the
----
->       *  The Upper-Layer Packet Length in the pseudo-header is the
-1121c1122
-<       o  Unlike IPv4, the default behavior when UDP packets are
----
->       *  Unlike IPv4, the default behavior when UDP packets are
-1130c1131
-<       o  As an exception to the default behaviour, protocols that use
----
->       *  As an exception to the default behaviour, protocols that use
-1183c1184
-<       o  Response packets that do not carry Routing headers.
----
->       *  Response packets that do not carry Routing headers.
-1185c1186
-<       o  Response packets that carry Routing headers that were NOT
----
->       *  Response packets that carry Routing headers that were NOT
-1190c1191
-<       o  Response packets that carry Routing headers that were derived
----
->       *  Response packets that carry Routing headers that were derived
-1200c1201
-<       o  Internet Protocol Version 6 (IPv6) Parameters [IANA-6P]
----
->       *  Internet Protocol Version 6 (IPv6) Parameters [IANA-6P]
-1202c1203
-<       o  Assigned Internet Protocol Numbers [IANA-PN]
----
->       *  Assigned Internet Protocol Numbers [IANA-PN]
-1204c1205
-<       o  ONC RPC Network Identifiers (netids) [IANA-NI]
----
->       *  ONC RPC Network Identifiers (netids) [IANA-NI]
-1206c1207
-<       o  Technical requirements for authoritative name servers [IANA-NS]
----
->       *  Technical requirements for authoritative name servers [IANA-NS]
-1208c1209
-<       o  Network Layer Protocol Identifiers (NLPIDs) of Interest
----
->       *  Network Layer Protocol Identifiers (NLPIDs) of Interest
-1211c1212
-<       o  Protocol Registries [IANA-PR]
----
->       *  Protocol Registries [IANA-PR]
-1213c1214
-<       o  Structure of Management Information (SMI) Numbers (MIB Module
----
->       *  Structure of Management Information (SMI) Numbers (MIB Module
-1224c1225
-<       o  Eavesdropping, On-path elements can observe the whole packet
----
->       *  Eavesdropping, On-path elements can observe the whole packet
-1226c1227
-<       o  Replay, where attacker records a sequence of packets off of the
----
->       *  Replay, where attacker records a sequence of packets off of the
-1229c1230
-<       o  Packet insertion, where the attacker forges a packet with some
----
->       *  Packet insertion, where the attacker forges a packet with some
-1231c1232
-<       o  Packet deletion, where the attacker remove a packet from the
----
->       *  Packet deletion, where the attacker remove a packet from the
-1233c1234
-<       o  Packet modification, where the attacker removes a packet from
----
->       *  Packet modification, where the attacker removes a packet from
-1235c1236,1237
-<       o  Man in the Middle attacks, where the attacker subverts the
----
+880a887
 > 
->       *  Man in the Middle attacks, where the attacker subverts the
-1238c1240
-<       o  Denial of Service Attacks, where the attacker sends large
----
->       *  Denial of Service Attacks, where the attacker sends large
-1275c1277
-<       o  Revised the text to handle the case of fragments that are whole
----
->       *  Revised the text to handle the case of fragments that are whole
-1284c1286
-<       o  Changed the text to require that IPv6 nodes must not create
----
->       *  Changed the text to require that IPv6 nodes must not create
-1293,1295c1295,1297
+926a934
+> 
+1112a1121
+> 
+1159a1169
+> 
+1292a1303
+> 
+1299,1301c1310,1312
 <       0  Revised the text to require that all headers through the first
 <          Upper-Layer Header are in the first fragment.  See [RFC6946]
 <          for more information.
@@ -238,141 +110,121 @@
 >             0 Revised the text to require that all headers through the
 >             first Upper-Layer Header are in the first fragment.  See
 >             [RFC6946] for more information.
-1297c1299
-<       o  Removed the paragraph in Section 5 that required including a
----
->       *  Removed the paragraph in Section 5 that required including a
-1302c1304
-<       o  Incorporated the updates from [RFC5095] and [RFC5871] to remove
----
->       *  Incorporated the updates from [RFC5095] and [RFC5871] to remove
-1331,1332c1333,1334
+1337,1338c1348,1349
 <    [RFC0791]  Postel, J., "Internet Protocol", STD 5, RFC 791, DOI
 <               10.17487/RFC0791, September 1981,
 ---
 >    [RFC0791]  Postel, J., "Internet Protocol", STD 5, RFC 791,
 >               DOI 10.17487/RFC0791, September 1981,
-1337,1338c1339,1340
+1343,1344c1354,1355
 <               Field) in the IPv4 and IPv6 Headers", RFC 2474, DOI
 <               10.17487/RFC2474, December 1998,
 ---
 >               Field) in the IPv4 and IPv6 Headers", RFC 2474,
 >               DOI 10.17487/RFC2474, December 1998,
-1342,1343c1344,1345
+1348,1349c1359,1360
 <               of Explicit Congestion Notification (ECN) to IP", RFC
 <               3168, DOI 10.17487/RFC3168, September 2001,
 ---
 >               of Explicit Congestion Notification (ECN) to IP",
 >               RFC 3168, DOI 10.17487/RFC3168, September 2001,
-1352,1353c1354,1355
+1358,1359c1369,1370
 <               Protocol Version 6 (IPv6) Specification", RFC 4443, DOI
 <               10.17487/RFC4443, March 2006,
 ---
 >               Protocol Version 6 (IPv6) Specification", RFC 4443,
 >               DOI 10.17487/RFC4443, March 2006,
-1357,1358c1359,1360
+1363,1364c1374,1375
 <               "IPv6 Flow Label Specification", RFC 6437, DOI 10.17487/
 <               RFC6437, November 2011,
 ---
 >               "IPv6 Flow Label Specification", RFC 6437,
 >               DOI 10.17487/RFC6437, November 2011,
-1372c1374
+1378c1389
 <               Module Registrations)", < http://www.iana.org/assignments/
 ---
 >               Module Registrations)", <http://www.iana.org/assignments/
-1395,1396c1397,1398
+1401,1402c1412,1413
 <    [RFC1661]  Simpson, W., Ed., "The Point-to-Point Protocol (PPP)", STD
 <               51, RFC 1661, DOI 10.17487/RFC1661, July 1994,
 ---
 >    [RFC1661]  Simpson, W., Ed., "The Point-to-Point Protocol (PPP)",
 >               STD 51, RFC 1661, DOI 10.17487/RFC1661, July 1994,
-1411,1412c1413,1414
+1417,1418c1428,1429
 <    [RFC4302]  Kent, S., "IP Authentication Header", RFC 4302, DOI
 <               10.17487/RFC4302, December 2005,
 ---
 >    [RFC4302]  Kent, S., "IP Authentication Header", RFC 4302,
 >               DOI 10.17487/RFC4302, December 2005,
-1415,1416c1417,1418
+1421,1422c1432,1433
 <    [RFC4303]  Kent, S., "IP Encapsulating Security Payload (ESP)", RFC
 <               4303, DOI 10.17487/RFC4303, December 2005,
 ---
 >    [RFC4303]  Kent, S., "IP Encapsulating Security Payload (ESP)",
 >               RFC 4303, DOI 10.17487/RFC4303, December 2005,
-1420,1421c1422,1423
+1426,1427c1437,1438
 <               of Type 0 Routing Headers in IPv6", RFC 5095, DOI
 <               10.17487/RFC5095, December 2007,
 ---
 >               of Type 0 Routing Headers in IPv6", RFC 5095,
 >               DOI 10.17487/RFC5095, December 2007,
-1437,1438c1439,1440
+1443,1444c1454,1455
 <    [RFC6946]  Gont, F., "Processing of IPv6 "Atomic" Fragments", RFC
 <               6946, DOI 10.17487/RFC6946, May 2013,
 ---
 >    [RFC6946]  Gont, F., "Processing of IPv6 "Atomic" Fragments",
 >               RFC 6946, DOI 10.17487/RFC6946, May 2013,
-1442,1443c1444,1445
+1448,1449c1459,1460
 <               of IPv6 Extension Headers", RFC 7045, DOI 10.17487/
 <               RFC7045, December 2013,
 ---
 >               of IPv6 Extension Headers", RFC 7045,
 >               DOI 10.17487/RFC7045, December 2013,
-1447,1448c1449,1450
+1453,1454c1464,1465
 <               Oversized IPv6 Header Chains", RFC 7112, DOI 10.17487/
 <               RFC7112, January 2014,
 ---
 >               Oversized IPv6 Header Chains", RFC 7112,
 >               DOI 10.17487/RFC7112, January 2014,
-1465,1466c1467,1468
+1471,1472c1482,1483
 <               Atomic Fragments Considered Harmful", RFC 8021, DOI
 <               10.17487/RFC8021, January 2017,
 ---
 >               Atomic Fragments Considered Harmful", RFC 8021,
 >               DOI 10.17487/RFC8021, January 2017,
-1476c1478
-<       o  One desirable feature is that any multi-octet fields within the
----
->       *  One desirable feature is that any multi-octet fields within the
-1482c1484
-<       o  Another desirable feature is that the Hop-by-Hop or Destination
----
->       *  Another desirable feature is that the Hop-by-Hop or Destination
-1487c1489
-<       o  It may be assumed that, when either of the option-bearing
----
->       *  It may be assumed that, when either of the option-bearing
-1632c1634
+1639c1650
 <       -  Revised the text to handle the case of fragments that are whole
 ---
->       *  Revised the text to handle the case of fragments that are whole
-1640c1642
+>       o  Revised the text to handle the case of fragments that are whole
+1647c1658
 <       -  Changed the text to require that IPv6 nodes must not create
 ---
->       *  Changed the text to require that IPv6 nodes must not create
-1648c1650
+>       o  Changed the text to require that IPv6 nodes must not create
+1655c1666
 <       -  Revised the text to require that all headers through the first
 ---
->       *  Revised the text to require that all headers through the first
-1653c1655
+>       o  Revised the text to require that all headers through the first
+1660c1671
 <       -  Added text to Fragment Header process on handling exact
 ---
->       *  Added text to Fragment Header process on handling exact
-1656c1658
+>       o  Added text to Fragment Header process on handling exact
+1663c1674
 <       -  Updated the Fragmentation header text to correct the inclusion
 ---
->       *  Updated the Fragmentation header text to correct the inclusion
-1659c1661
+>       o  Updated the Fragmentation header text to correct the inclusion
+1666c1677
 <       -  Change terminology in Fragment header section from
 ---
->       *  Change terminology in Fragment header section from
-1662c1664
+>       o  Change terminology in Fragment header section from
+1669c1680
 <       -  Removed the paragraph in Section 5 that required including a
 ---
->       *  Removed the paragraph in Section 5 that required including a
-1666c1668
+>       o  Removed the paragraph in Section 5 that required including a
+1673c1684
 <       -  Changed the text to clarify MTU restriction and 8-byte
 ---
->       *  Changed the text to clarify MTU restriction and 8-byte
-1703,1712c1705,1713
+>       o  Changed the text to clarify MTU restriction and 8-byte
+1710,1719c1721,1729
 <          Errata ID: 2541: This errata notes that RFC2460 didn't update
 <          RFC2205 when the length of the Flow Label was changed from 24
 <          to 20 bits from RFC1883.  This issue was resolved in RFC6437
@@ -393,13 +245,13 @@
 >       Errata ID: 4279: This errata noted that the specification doesn't
 >       handle the case of a forwarding node receiving a packet with a
 >       zero Hop Limit.  This is fixed in Section 3 of this draft.
-1714,1715c1715,1716
+1721,1722c1731,1732
 <          Errata ID: 2843: This errata is marked rejected.  No change was
 <          made.
 ---
 >       Errata ID: 2843: This errata is marked rejected.  No change was
 >       made.
-1728,1732c1729,1733
+1735,1739c1745,1749
 <       11)  In Section 4.5 added clarification noting that some fields in
 <            the IPv6 header may also vary across the fragments being
 <            reassembled and that other specifications may provide
@@ -410,11 +262,8 @@
 >       the IPv6 header may also vary across the fragments being
 >       reassembled and that other specifications may provide additional
 >       instructions for how they should be reassembled.  For example,
->       Section 5.3 of
-1880a1882,1883
->       [RFC3168].
-> 
-1892,1906c1895,1908
+>       Section 5.3 of [RFC3168].
+1899,1913c1909,1922
 <               RFC6564: Added new Section 4.8 that describe
 <               recommendations for defining new Extension headers and
 <               options
@@ -445,7 +294,7 @@
 >            first Upper-Layer Header are in the first fragment.  This
 >            changed the text describing how packets are fragmented and
 >            reassembled and added a new error case.
-1937,1947c1939,1949
+1944,1954c1953,1963
 <               Errata ID: 2541: This errata notes that RFC2460 didn't
 <               update RFC2205 when the length of the Flow Label was
 <               changed from 24 to 20 bits from RFC1883.  This issue was
@@ -469,7 +318,7 @@
 >            packet with a zero Hop Limit.  This is fixed in Section 3 of
 >            this draft.  Note: No change was made regarding host
 >            behaviour.
-1949,1950c1951,1952
+1956,1957c1965,1966
 <               Errata ID: 2843: This errata is marked rejected.  No
 <               change is required.
 ---

@@ -1,13 +1,22 @@
-148,149c148
-<    FW:  Firewall
-< 
+145c145
+<       management system throughout this document
 ---
->       FW: Firewall
-312c311
+>   management system throughout this document
+160c160
+<       [I-D.ietf-i2nsf-problem-and-use-cases]
+---
+>   [I-D.ietf-i2nsf-problem-and-use-cases]
+314c314
 <    b.  Policy management with an explicit management system for control
 ---
 >    a.  Policy management with an explicit management system for control
-366d364
-< 
-704a703
+467a468
+> 
+561a563
+> 
+609a612
+> 
+656a660
+> 
+752a757
 > 

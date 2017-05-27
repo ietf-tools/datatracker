@@ -1,15 +1,74 @@
-660,661c660,662
-<         service@hostname
-<    For NFS, the "service" element is
----
->       service@hostname
+48a49
 > 
->       For NFS, the "service" element is
-1324a1326
+282a284
 > 
-1889a1892
+284a287
 > 
-3757,3828c3760,3832
+378a382
+> 
+570a575
+> 
+660a666
+> 
+898a905
+> 
+992a1000
+> 
+1324a1333
+> 
+1661a1671
+> 
+1707a1718
+> 
+1755a1767
+> 
+1801a1814
+> 
+1849a1863
+> 
+1889a1904
+> 
+1895a1911
+> 
+1897a1914
+> 
+1941a1959
+> 
+1988a2007
+> 
+2083a2103
+> 
+2177a2198
+> 
+2225a2247
+> 
+2271a2294
+> 
+2417a2441
+> 
+2465a2490
+> 
+2513a2539
+> 
+2658a2685
+> 
+2705a2733
+> 
+2889a2918
+> 
+3174a3204
+> 
+3218a3249
+> 
+3270a3302
+> 
+3317a3350
+> 
+3409a3443
+> 
+3600a3635
+> 
+3757,3788c3792,3826
 <    +---------------+---------------------------------------------------+
 <    | Data Type     | Definition                                        |
 <    +---------------+---------------------------------------------------+
@@ -42,121 +101,51 @@
 <    | offset4       | typedef uint64_t offset4;                         |
 <    |               | Various offset designations (READ, WRITE, LOCK,   |
 <    |               | COMMIT).                                          |
-<    | qop4          | typedef uint32_t qop4;                            |
-<    |               | Quality of protection designation in SECINFO.     |
-<    | sec_oid4      | typedef opaque sec_oid4<>;                        |
-<    |               | Security Object Identifier.  The sec_oid4 data    |
-<    |               | type is not really opaque.  Instead, it contains  |
-<    |               | an ASN.1 OBJECT IDENTIFIER as used by GSS-API in  |
-<    |               | the mech_type argument to GSS_Init_sec_context.   |
-<    |               | See [7] for details.                              |
-<    | sequenceid4   | typedef uint32_t sequenceid4;                     |
-<    |               | Sequence number used for various session          |
-<    |               | operations (EXCHANGE_ID, CREATE_SESSION,          |
-<    |               | SEQUENCE, CB_SEQUENCE).                           |
-<    | seqid4        | typedef uint32_t seqid4;                          |
-<    |               | Sequence identifier used for locking.             |
-<    | sessionid4    | typedef opaque sessionid4[NFS4_SESSIONID_SIZE];   |
-<    |               | Session identifier.                               |
-<    | slotid4       | typedef uint32_t slotid4;                         |
-<    |               | Sequencing artifact for various session           |
-<    |               | operations (SEQUENCE, CB_SEQUENCE).               |
-<    | utf8string    | typedef opaque utf8string<>;                      |
-<    |               | UTF-8 encoding for strings.                       |
-<    | utf8str_cis   | typedef utf8string utf8str_cis;                   |
-<    |               | Case-insensitive UTF-8 string.                    |
-<    | utf8str_cs    | typedef utf8string utf8str_cs;                    |
-<    |               | Case-sensitive UTF-8 string.                      |
-<    | utf8str_mixed | typedef utf8string utf8str_mixed;                 |
-<    |               | UTF-8 strings with a case-sensitive prefix and a  |
-<    |               | case-insensitive suffix.                          |
-<    | component4    | typedef utf8str_cs component4;                    |
-<    |               | Represents pathname components.                   |
-<    | linktext4     | typedef utf8str_cs linktext4;                     |
-<    |               | Symbolic link contents ("symbolic link" is        |
-<    |               | defined in an Open Group [14] standard).          |
-<    | pathname4     | typedef component4 pathname4<>;                   |
-<    |               | Represents pathname for fs_locations.             |
-<    | verifier4     | typedef opaque verifier4[NFS4_VERIFIER_SIZE];     |
-<    |               | Verifier used for various operations (COMMIT,     |
-<    |               | CREATE, EXCHANGE_ID, OPEN, READDIR, WRITE)        |
-<    |               | NFS4_VERIFIER_SIZE is defined as 8.               |
-<    +---------------+---------------------------------------------------+
 ---
->    +---------------+--------------------------------------------------+
->    | Data Type     | Definition                                       |
->    +---------------+--------------------------------------------------+
->    | int32_t       | typedef int int32_t;                             |
->    | uint32_t      | typedef unsigned int uint32_t;                   |
->    | int64_t       | typedef hyper int64_t;                           |
->    | uint64_t      | typedef unsigned hyper uint64_t;                 |
->    | attrlist4     | typedef opaque attrlist4<>;                      |
->    |               | Used for file/directory attributes.              |
->    | bitmap4       | typedef uint32_t bitmap4<>;                      |
->    |               | Used in attribute array encoding.                |
->    | changeid4     | typedef uint64_t changeid4;                      |
->    |               | Used in the definition of change_info4.          |
->    | clientid4     | typedef uint64_t clientid4;                      |
->    |               | Shorthand reference to client identification.    |
->    | count4        | typedef uint32_t count4;                         |
->    |               | Various count parameters (READ, WRITE, COMMIT).  |
->    | length4       | typedef uint64_t length4;                        |
->    |               | The length of a byte-range within a file.        |
->    | mode4         | typedef uint32_t mode4;                          |
->    |               | Mode attribute data type.                        |
->    | nfs_cookie4   | typedef uint64_t nfs_cookie4;                    |
->    |               | Opaque cookie value for READDIR.                 |
->    | nfs_fh4       | typedef opaque nfs_fh4<NFS4_FHSIZE>;             |
->    |               | Filehandle definition.                           |
->    | nfs_ftype4    | enum nfs_ftype4;                                 |
->    |               | Various defined file types.                      |
->    | nfsstat4      | enum nfsstat4;                                   |
->    |               | Return value for operations.                     |
->    | offset4       | typedef uint64_t offset4;                        |
->    |               | Various offset designations (READ, WRITE, LOCK,  |
->    |               | COMMIT).                                         |
->    | qop4          | typedef uint32_t qop4;                           |
->    |               | Quality of protection designation in SECINFO.    |
->    | sec_oid4      | typedef opaque sec_oid4<>;                       |
->    |               | Security Object Identifier.  The sec_oid4 data   |
->    |               | type is not really opaque.  Instead, it contains |
->    |               | an ASN.1 OBJECT IDENTIFIER as used by GSS-API in |
->    |               | the mech_type argument to GSS_Init_sec_context.  |
->    |               | See [7] for details.                             |
->    | sequenceid4   | typedef uint32_t sequenceid4;                    |
->    |               | Sequence number used for various session         |
->    |               | operations (EXCHANGE_ID, CREATE_SESSION,         |
->    |               | SEQUENCE, CB_SEQUENCE).                          |
->    | seqid4        | typedef uint32_t seqid4;                         |
->    |               | Sequence identifier used for locking.            |
->    | sessionid4    | typedef opaque sessionid4[NFS4_SESSIONID_SIZE];  |
->    |               | Session identifier.                              |
->    | slotid4       | typedef uint32_t slotid4;                        |
->    |               | Sequencing artifact for various session          |
->    |               | operations (SEQUENCE, CB_SEQUENCE).              |
->    | utf8string    | typedef opaque utf8string<>;                     |
->    |               | UTF-8 encoding for strings.                      |
->    | utf8str_cis   | typedef utf8string utf8str_cis;                  |
->    |               | Case-insensitive UTF-8 string.                   |
->    | utf8str_cs    | typedef utf8string utf8str_cs;                   |
->    |               | Case-sensitive UTF-8 string.                     |
->    | utf8str_mixed | typedef utf8string utf8str_mixed;                |
->    |               | UTF-8 strings with a case-sensitive prefix and a |
->    |               | case-insensitive suffix.                         |
->    | component4    | typedef utf8str_cs component4;                   |
->    |               | Represents pathname components.                  |
->    | linktext4     | typedef utf8str_cs linktext4;                    |
->    |               | Symbolic link contents ("symbolic link" is       |
->    |               | defined in an Open Group [14] standard).         |
->    | pathname4     | typedef component4 pathname4<>;                  |
->    |               | Represents pathname for fs_locations.            |
->    | verifier4     | typedef opaque verifier4[NFS4_VERIFIER_SIZE];    |
->    |               | Verifier used for various operations (COMMIT,    |
->    |               | CREATE, EXCHANGE_ID, OPEN, READDIR, WRITE)       |
->    |               | NFS4_VERIFIER_SIZE is defined as 8.              |
->    |               |                                                  |
->    +---------------+--------------------------------------------------+
-4191,4217c4195,4230
+>      +-------------+-------------------------------------------------+
+>      | Data Type   | Definition                                      |
+>      +-------------+-------------------------------------------------+
+>      | int32_t     | typedef int int32_t;                            |
+>      | uint32_t    | typedef unsigned int uint32_t;                  |
+>      | int64_t     | typedef hyper int64_t;                          |
+>      | uint64_t    | typedef unsigned hyper uint64_t;                |
+>      | attrlist4   | typedef opaque attrlist4<>;                     |
+>      |             | Used for file/directory attributes.             |
+>      | bitmap4     | typedef uint32_t bitmap4<>;                     |
+>      |             | Used in attribute array encoding.               |
+>      | changeid4   | typedef uint64_t changeid4;                     |
+>      |             | Used in the definition of change_info4.         |
+>      | clientid4   | typedef uint64_t clientid4;                     |
+>      |             | Shorthand reference to client identification.   |
+>      | count4      | typedef uint32_t count4;                        |
+>      |             | Various count parameters (READ, WRITE, COMMIT). |
+>      | length4     | typedef uint64_t length4;                       |
+>      |             | The length of a byte-range within a file.       |
+>      | mode4       | typedef uint32_t mode4;                         |
+>      |             | Mode attribute data type.                       |
+>      | nfs_cookie4 | typedef uint64_t nfs_cookie4;                   |
+>      |             | Opaque cookie value for READDIR.                |
+>      | nfs_fh4     | typedef opaque nfs_fh4<NFS4_FHSIZE>;            |
+>      |             | Filehandle definition.                          |
+>      | nfs_ftype4  | enum nfs_ftype4;                                |
+>      |             | Various defined file types.                     |
+>      | nfsstat4    | enum nfsstat4;                                  |
+>      |             | Return value for operations.                    |
+>      | offset4     | typedef uint64_t offset4;                       |
+>      |             | Various offset designations (READ, WRITE, LOCK, |
+>      |             | COMMIT).                                        |
+>      |             |                                                 |
+>      +-------------+-------------------------------------------------+
+> 
+4021a4060
+> 
+4069a4109
+> 
+4115a4156
+> 
+4162a4204
+> 
+4191,4217c4233,4268
 <    +-------------------------+---+---------+---------------------------+
 <    | name                    | # | Data    | Description               |
 <    |                         |   | Type    |                           |
@@ -221,13 +210,17 @@
 >    |                         |    |          | through the MDS.        |
 >    |                         |    |          |                         |
 >    +-------------------------+----+----------+-------------------------+
-4424,4425c4437,4438
-<    [volatile bit = 1 | server boot time | slot | generation number]
-<    o  slot is an index in the server volatile filehandle table
----
->    [volatile bit = 1 | server boot time | slot | generation number] o
->    slot is an index in the server volatile filehandle table
-4513,4519c4526,4533
+4277a4329
+> 
+4325a4378
+> 
+4333a4387
+> 
+4424a4479
+> 
+4466a4522
+> 
+4513,4519c4569,4576
 <         +----------+-----------+---------------------------------+
 <         | LOOKUP   | "foo"     | ; look up file                  |
 <         | GETATTR  | attrbits  |                                 |
@@ -244,11 +237,18 @@
 >    +---------------+--------------+------------------------------------+
 >    |               |              |                                    |
 >    +---------------+--------------+------------------------------------+
-4662c4676
+4559a4617
+> 
+4568a4627
+> 
+4653a4713
+> 
+4662c4722,4723
 <          lease_time
 ---
 >       lease_time
-4665,4673c4679,4685
+> 
+4665,4672c4726,4732
 <          supported_attrs, suppattr_exclcreat, fh_expire_type,
 <          link_support, symlink_support, unique_handles, aclsupport,
 <          cansettime, case_insensitive, case_preserving,
@@ -257,7 +257,6 @@
 <          maxwrite, no_trunc, space_avail, space_free, space_total,
 <          time_delta, change_policy, fs_status, fs_layout_type,
 <          fs_locations_info, fs_charset_cap
-< 
 ---
 >       supported_attrs, suppattr_exclcreat, fh_expire_type, link_support,
 >       symlink_support, unique_handles, aclsupport, cansettime,
@@ -266,7 +265,7 @@
 >       maxname, maxread, maxwrite, no_trunc, space_avail, space_free,
 >       space_total, time_delta, change_policy, fs_status, fs_layout_type,
 >       fs_locations_info, fs_charset_cap
-4676,4684c4688,4695
+4676,4684c4736,4743
 <          type, change, size, named_attr, fsid, rdattr_error, filehandle,
 <          acl, archive, fileid, hidden, maxlink, mimetype, mode,
 <          numlinks, owner, owner_group, rawdev, space_used, system,
@@ -285,54 +284,47 @@
 >       sacl, layout_type, layout_hint, layout_blksize, layout_alignment,
 >       mdsthreshold, retention_get, retention_set, retentevt_get,
 >       retentevt_set, retention_hold, mode_set_masked
-4736a4748
+4736a4796
 >      |                    |    |            |     |                  |
-4739c4751
+4739c4799
 <                                   Table 2
 ---
 >                                   Table 1
-4774c4786
+4749a4810
+> 
+4774c4835
 <    | layout_hint        | 63 | layouthint4    |   W | Section 5.12.4   |
 ---
 >    | layout_hint        | 63 | layouthint4    | W   | Section 5.12.4   |
-4784c4796
+4784c4845
 <    | mode_set_masked    | 74 | mode_masked4   |   W | Section 6.2.5    |
 ---
 >    | mode_set_masked    | 74 | mode_masked4   | W   | Section 6.2.5    |
-4795c4807
-<    | retentevt_set      | 72 | retention_set4 |   W | Section 5.13.4   |
----
->    | retentevt_set      | 72 | retention_set4 | W   | Section 5.13.4   |
-4798c4810
-<    | retention_set      | 70 | retention_set4 |   W | Section 5.13.2   |
----
->    | retention_set      | 70 | retention_set4 | W   | Section 5.13.2   |
-4806c4818
-<    | time_access_set    | 48 | settime4       |   W | Section 5.8.2.38 |
----
->    | time_access_set    | 48 | settime4       | W   | Section 5.8.2.38 |
-4812c4824,4825
-<    | time_modify_set    | 54 | settime4       |   W | Section 5.8.2.44 |
----
->    | time_modify_set    | 54 | settime4       | W   | Section 5.8.2.44 |
+4794a4856,4858
 >    |                    |    |                |     |                  |
-4815c4828
-<                                   Table 3
----
->                                   Table 2
-4817c4830
+>    +--------------------+----+----------------+-----+------------------+
+> 
+4817c4881
 <    * fs_locations_info4
 ---
 >    o  fs_locations_info4
-5658c5671
-<    typedef uint32_t        acetype4;
----
->    typedef uint32_t  acetype4;
-5662c5675
-<    typedef uint32_t        acemask4;
----
->    typedef uint32_t  acemask4;
-5734,5764c5747,5778
+5075a5140
+> 
+5304a5370
+> 
+5401a5468
+> 
+5496a5564
+> 
+5503a5572
+> 
+5588a5658
+> 
+5684a5755
+> 
+5690a5762
+> 
+5734,5764c5806,5837
 <    +------------------------------+--------------+---------------------+
 <    | Value                        | Abbreviation | Description         |
 <    +------------------------------+--------------+---------------------+
@@ -397,156 +389,177 @@
 >    |                              |              | acemask4.          |
 >    |                              |              |                    |
 >    +------------------------------+--------------+--------------------+
-5780d5793
-< 
-5838c5851
+5838c5911
 <          READ
 ---
 >       READ
-5840c5853
+5840c5913
 <          OPEN
 ---
 >       OPEN
-5853c5866
+5853c5926
 <          READDIR
 ---
 >       READDIR
-5863c5876
+5863c5936
 <          WRITE
 ---
 >       WRITE
-5865c5878
+5865c5938
 <          OPEN
 ---
 >       OPEN
-5867c5880
+5867c5940
 <          SETATTR of size
 ---
 >       SETATTR of size
-5877c5890
+5877c5950
 <          CREATE
 ---
 >       CREATE
-5879c5892
+5879c5952
 <          LINK
 ---
 >       LINK
-5881c5894
+5881c5954
 <          OPEN
 ---
 >       OPEN
-5883c5896
+5883c5956
 <          RENAME
 ---
 >       RENAME
-5898c5911
+5898c5971
 <          WRITE
 ---
 >       WRITE
-5900c5913
+5900c5973
 <          OPEN
 ---
 >       OPEN
-5902c5915
+5902c5975
 <          SETATTR of size
 ---
 >       SETATTR of size
-5914d5926
-< 
-5917c5929
+5909a5983
+> 
+5917c5991
 <          CREATE
 ---
 >       CREATE
-5919c5931
+5919c5993
 <          RENAME
 ---
 >       RENAME
-5931c5943
+5931c6005
 <          OPENATTR
 ---
 >       OPENATTR
-5945c5957
+5945c6019
 <          OPENATTR
 ---
 >       OPENATTR
-5962c5974
+5951a6026
+> 
+5962c6037,6039
 <          READ
 ---
 >       READ
-5964c5976
+> 
+>       OPEN
+5964c6041
 <          OPEN
 ---
->       OPEN
-5966c5978
+>       REMOVE
+5966c6043
 <          REMOVE
 ---
->       REMOVE
-6005c6017
+>       RENAME
+5968,5969c6045
+<          RENAME
+<          LINK
+---
+>       LINK
+5971c6047
+<          CREATE
+---
+>       CREATE
+6005c6081
 <          LOOKUP
 ---
 >       LOOKUP
-6028c6040
+6015,6016c6091,6093
+<          REMOVE
+<          RENAME
+---
+>       REMOVE
+> 
+>       RENAME
+6028c6105
 <          GETATTR of file system object attributes
 ---
 >       GETATTR of file system object attributes
-6030c6042
+6030c6107
 <          VERIFY
 ---
 >       VERIFY
-6032c6044
+6032c6109
 <          NVERIFY
 ---
 >       NVERIFY
-6034c6046
+6034c6111
 <          READDIR
 ---
 >       READDIR
-6049c6061
+6049c6126
 <          SETATTR of time_access_set, time_backup,
 ---
 >       SETATTR of time_access_set, time_backup,
-6051c6063
+6051c6128
 <          time_create, time_modify_set, mimetype, hidden, system
 ---
 >       time_create, time_modify_set, mimetype, hidden, system
-6065c6077
+6065c6142
 <          SETATTR of retention_set, retentevt_set.
 ---
 >       SETATTR of retention_set, retentevt_set.
-6078c6090
+6078c6155
 <          SETATTR of retention_hold.
 ---
 >       SETATTR of retention_hold.
-6090,6091c6102
+6090c6167
 <          REMOVE
-< 
 ---
 >       REMOVE
-6102c6113
+6102c6179
 <          GETATTR of acl, dacl, or sacl
 ---
 >       GETATTR of acl, dacl, or sacl
-6104c6115
+6104c6181
 <          NVERIFY
 ---
 >       NVERIFY
-6106c6117
+6106c6183
 <          VERIFY
 ---
 >       VERIFY
-6116c6127
+6116c6193
 <          SETATTR of acl and mode
 ---
 >       SETATTR of acl and mode
-6126c6137
+6126c6203
 <          SETATTR of owner and owner_group
 ---
 >       SETATTR of owner and owner_group
-6138c6149
+6138c6215
 <          NONE
 ---
 >       NONE
-6244,6247c6255,6258
+6155a6233
+> 
+6167a6246
+> 
+6244,6247c6323,6326
 <       added to each new directory created.
 <       If this flag is set in an ACE in an ACL attribute to be set on a
 <       non-directory file system object, the operation attempting to set
@@ -556,21 +569,73 @@
 >       ACE in an ACL attribute to be set on a non-directory file system
 >       object, the operation attempting to set the ACL SHOULD fail with
 >       NFS4ERR_ATTRNOTSUPP.
-6335a6347
+6259a6339
+> 
+6335a6416
 >    |               |                                                  |
-6338c6350
+6338c6419
 <                                   Table 4
 ---
->                                   Table 3
-8018c8030
+>                                   Table 2
+6482a6564
+> 
+6540a6623
+> 
+6636a6720
+> 
+6684a6769
+> 
+6768a6854
+> 
+6777a6864
+> 
+6863a6951
+> 
+6871a6960
+> 
+6919a7009
+> 
+7063a7154
+> 
+7095a7187
+> 
+7109a7202
+> 
+7156a7250
+> 
+7204a7299
+> 
+7251a7347
+> 
+7299a7396
+> 
+7493a7591
+> 
+7541a7640
+> 
+7663a7763
+> 
+7733a7834
+> 
+7780a7882
+> 
+7897a8000
+> 
+7923a8027
+> 
+7945a8050
+> 
+7970a8076
+> 
+8018c8124
 <    1.   Client A acquires one or more locks.
 ---
 >    1.  Client A acquires one or more locks.
-8020c8032
+8020c8126
 <    2.   Server restarts.
 ---
 >    2.  Server restarts.
-8022,8024c8034,8036
+8022,8024c8128,8130
 <    3.   Client A and server experience mutual network partition, such
 <         that client A is unable to reclaim all of its locks within the
 <         grace period.
@@ -578,118 +643,314 @@
 >    3.  Client A and server experience mutual network partition, such
 >        that client A is unable to reclaim all of its locks within the
 >        grace period.
-8026,8027c8038,8039
+8026,8027c8132,8133
 <    4.   Server's reclaim grace period ends.  Client A has either no
 <         locks or an incomplete set of locks known to the server.
 ---
 >    4.  Server's reclaim grace period ends.  Client A has either no locks
 >        or an incomplete set of locks known to the server.
-8029,8030c8041,8042
+8029,8030c8135,8136
 <    5.   Client B acquires a lock that would have conflicted with a lock
 <         of client A that was not reclaimed.
 ---
 >    5.  Client B acquires a lock that would have conflicted with a lock
 >        of client A that was not reclaimed.
-8032c8044
+8032c8138
 <    6.   Client B releases the lock.
 ---
 >    6.  Client B releases the lock.
-8034c8046
+8034c8140
 <    7.   Server restarts a second time.
 ---
 >    7.  Server restarts a second time.
-8036c8048
+8036c8142
 <    8.   Network partition between client A and server heals.
 ---
 >    8.  Network partition between client A and server heals.
-8038,8039c8050,8051
+8038,8039c8144,8145
 <    9.   Client A connects to new server instance and finds out about
 <         server restart.
 ---
 >    9.  Client A connects to new server instance and finds out about
 >        server restart.
-8172a8185
+8066a8173
 > 
-10800a10814
+8132a8240
 > 
-11086a11101
+8161a8270
 > 
-11561c11576
+8226a8336
+> 
+8302a8413
+> 
+8350a8462
+> 
+8369a8482
+> 
+8444a8558
+> 
+8466a8581
+> 
+8514a8630
+> 
+8561a8678
+> 
+8583a8701
+> 
+8609a8728
+> 
+8678a8798
+> 
+8705a8826
+> 
+8725a8847
+> 
+8821a8944
+> 
+8941a9065
+> 
+8989a9114
+> 
+9011a9137
+> 
+9059a9186
+> 
+9107a9235
+> 
+9130a9259
+> 
+9178a9308
+> 
+9201a9332
+> 
+9226a9358
+> 
+9247a9380
+> 
+9274a9408
+> 
+9294a9429
+> 
+9322a9458
+> 
+9341a9478
+> 
+9389a9527
+> 
+9413a9552
+> 
+9436a9576
+> 
+9484a9625
+> 
+9580a9722
+> 
+9693a9836
+> 
+9740a9884
+> 
+9770a9915
+> 
+9833a9979
+> 
+9865a10012
+> 
+9961a10109
+> 
+9974a10123
+> 
+10022a10172
+> 
+10055a10206
+> 
+10117a10269
+> 
+10150a10303
+> 
+10245a10399
+> 
+10293a10448
+> 
+10389a10545
+> 
+10483a10640
+> 
+10530a10688
+> 
+10578a10737
+> 
+10625a10785
+> 
+10673a10834
+> 
+10724a10886
+> 
+10767a10930
+> 
+10772a10936
+> 
+10814a10979
+> 
+10819a10985
+> 
+10861a11028
+> 
+10909a11077
+> 
+10962a11131
+> 
+11000a11170
+> 
+11048a11219
+> 
+11096a11268
+> 
+11143a11316
+> 
+11240a11414
+> 
+11250a11425
+> 
+11287a11463
+> 
+11433a11610
+> 
+11561c11738
 <    -  Current fh is root of pseudo-fs.
 ---
->    o  Current fh is root of pseudo-fs.
-11565c11580
+>    *  Current fh is root of pseudo-fs.
+11565c11742
 <    -  Just for completeness.  Normally, clients will know the fsid of
 ---
->    o  Just for completeness.  Normally, clients will know the fsid of
-11573c11588
+>    *  Just for completeness.  Normally, clients will know the fsid of
+11573c11750
 <    -  Get current fsid to see where file system boundaries are.  The
 ---
->    o  Get current fsid to see where file system boundaries are.  The
-11579c11594
+>    *  Get current fsid to see where file system boundaries are.  The
+11579c11756
 <    -  Current fh is for /this and is within pseudo-fs.
 ---
->    o  Current fh is for /this and is within pseudo-fs.
-11583c11598
+>    *  Current fh is for /this and is within pseudo-fs.
+11583c11760
 <    -  Current fh is for /this/is and is within pseudo-fs.
 ---
->    o  Current fh is for /this/is and is within pseudo-fs.
-11587c11602
+>    *  Current fh is for /this/is and is within pseudo-fs.
+11587c11764
 <    -  Get current fsid to see where file system boundaries are.  The
 ---
->    o  Get current fsid to see where file system boundaries are.  The
-11593c11608
+>    *  Get current fsid to see where file system boundaries are.  The
+11593c11770
 <    -  Current fh is for /this/is and is within pseudo-fs.
 ---
->    o  Current fh is for /this/is and is within pseudo-fs.
-11597c11612
+>    *  Current fh is for /this/is and is within pseudo-fs.
+11597c11774
 <    -  Current fh is for /this/is/the and is within pseudo-fs.
 ---
->    o  Current fh is for /this/is/the and is within pseudo-fs.
-11601c11616
+>    *  Current fh is for /this/is/the and is within pseudo-fs.
+11601c11778
 <    -  Get current fsid to see where file system boundaries are.  The
 ---
->    o  Get current fsid to see where file system boundaries are.  The
-11607c11622
+>    *  Get current fsid to see where file system boundaries are.  The
+11607c11784
 <    -  Current fh is for /this/is/the and is within pseudo-fs.
 ---
->    o  Current fh is for /this/is/the and is within pseudo-fs.
-11610,11611c11625
-< 
+>    *  Current fh is for /this/is/the and is within pseudo-fs.
+11611c11788
 <    -  Current fh is for /this/is/the/path and is within a new, absent
 ---
->    o  Current fh is for /this/is/the/path and is within a new, absent
-11614c11628
+>    *  Current fh is for /this/is/the/path and is within a new, absent
+11614c11791
 <    -  The client will never see the value of that fh.
 ---
->    o  The client will never see the value of that fh.
-11618c11632
+>    *  The client will never see the value of that fh.
+11618c11795
 <    -  We are getting the fsid to know where the file system boundaries
 ---
->    o  We are getting the fsid to know where the file system boundaries
-11626c11640
+>    *  We are getting the fsid to know where the file system boundaries
+11626c11803
 <    -  In this particular case, we are pretty sure anyway that what has
 ---
->    o  In this particular case, we are pretty sure anyway that what has
-11638c11652
+>    *  In this particular case, we are pretty sure anyway that what has
+11632a11810
+> 
+11638c11816
 <    -  We are fetching fs_locations_info because the fact that we got an
 ---
->    o  We are fetching fs_locations_info because the fact that we got an
-11646c11660
+>    *  We are fetching fs_locations_info because the fact that we got an
+11646c11824
 <    -  Fails because current fh is in an absent file system at the start
 ---
->    o  Fails because current fh is in an absent file system at the start
-11775a11790
+>    *  Fails because current fh is in an absent file system at the start
+11775a11954
 > 
-12037d12051
-< 
-13692,13693c13706,13707
+11821a12001
+> 
+12003a12184
+> 
+12051a12233
+> 
+12099a12282
+> 
+12177a12361
+> 
+12193a12378
+> 
+12225a12411
+> 
+12239a12426
+> 
+12273a12461
+> 
+12286a12475
+> 
+12334a12524
+> 
+12381a12572
+> 
+12467a12659
+> 
+12475a12668
+> 
+12515a12709
+> 
+12563a12758
+> 
+12610a12806
+> 
+12743a12940
+> 
+13029a13227
+> 
+13076a13275
+> 
+13405a13605
+> 
+13501a13702
+> 
+13549a13751
+> 
+13597a13800
+> 
+13645a13849
+> 
+13692,13693c13896,13898
 <    returned from CREATE_SESSION of the i'th session.  The reason for "-
 <    1" is to allow for the required SEQUENCE operation.  The server MAY
 ---
 >    returned from CREATE_SESSION of the i'th session.  The reason for
 >    "-1" is to allow for the required SEQUENCE operation.  The server MAY
-14171,14173c14185,14187
+> 
+13741a13947
+> 
+13789a13996
+> 
+13979a14187
+> 
+14027a14236
+> 
+14123a14333
+> 
+14171,14173c14381,14383
 <    should examine the layout specification, such as the NFSv4.1/
 <    file-based layout (Section 13) of this document, the blocks layout
 <    [41], and objects layout [40].
@@ -697,43 +958,252 @@
 >    should examine the layout specification, such as the NFSv4.1/ file-
 >    based layout (Section 13) of this document, the blocks layout [41],
 >    and objects layout [40].
-14232,14233c14246,14247
+14218a14429
+> 
+14232,14233c14443,14444
 <    client ID, the server SHOULD return with (EXCHGID4_FLAG_USE_PNFS_MDS
 <    | EXCHGID4_FLAG_USE_PNFS_DS) set.
 ---
 >    client ID, the server SHOULD return with
 >    (EXCHGID4_FLAG_USE_PNFS_MDS | EXCHGID4_FLAG_USE_PNFS_DS) set.
-14335a14350
+14313a14525
 > 
-14514c14529
+14335a14548
+> 
+14404a14618
+> 
+14495a14710
+> 
+14514c14729
 <           See the discussion on sparse packing in Section 13.4.4.
 ---
 >              See the discussion on sparse packing in Section 13.4.4.
-14665a14681
+14665a14881
 >                     |     |            |              |
-14782a14799
+14782a14999
 >                     |     |            |              |
-15622c15639
-<    typedef uint32_t        fs_charset_cap4;
+14812a15030
+> 
+14860a15079
+> 
+14878a15098
+> 
+14907a15128
+> 
+14925a15147
+> 
+14955a15178
+> 
+14972a15196
+> 
+15020a15245
+> 
+15049a15275
+> 
+15116a15343
+> 
+15164a15392
+> 
+15191a15420
+> 
+15260a15490
+> 
+15308a15539
+> 
+15356a15588
+> 
+15603a15836
+> 
+15678,15698c15911,15934
+<     +-----------------------------------+--------+-------------------+
+<     | Error                             | Number | Description       |
+<     +-----------------------------------+--------+-------------------+
+<     | NFS4_OK                           | 0      | Section 15.1.3.1  |
+<     | NFS4ERR_ACCESS                    | 13     | Section 15.1.6.1  |
+<     | NFS4ERR_ATTRNOTSUPP               | 10032  | Section 15.1.15.1 |
+<     | NFS4ERR_ADMIN_REVOKED             | 10047  | Section 15.1.5.1  |
+<     | NFS4ERR_BACK_CHAN_BUSY            | 10057  | Section 15.1.12.1 |
+<     | NFS4ERR_BADCHAR                   | 10040  | Section 15.1.7.1  |
+<     | NFS4ERR_BADHANDLE                 | 10001  | Section 15.1.2.1  |
+<     | NFS4ERR_BADIOMODE                 | 10049  | Section 15.1.10.1 |
+<     | NFS4ERR_BADLAYOUT                 | 10050  | Section 15.1.10.2 |
+<     | NFS4ERR_BADNAME                   | 10041  | Section 15.1.7.2  |
+<     | NFS4ERR_BADOWNER                  | 10039  | Section 15.1.15.2 |
+<     | NFS4ERR_BADSESSION                | 10052  | Section 15.1.11.1 |
+<     | NFS4ERR_BADSLOT                   | 10053  | Section 15.1.11.2 |
+<     | NFS4ERR_BADTYPE                   | 10007  | Section 15.1.4.1  |
+<     | NFS4ERR_BADXDR                    | 10036  | Section 15.1.1.1  |
+<     | NFS4ERR_BAD_COOKIE                | 10003  | Section 15.1.1.2  |
+<     | NFS4ERR_BAD_HIGH_SLOT             | 10077  | Section 15.1.11.3 |
+<     | NFS4ERR_BAD_RANGE                 | 10042  | Section 15.1.8.1  |
 ---
->    typedef uint32_t  fs_charset_cap4;
-15783a15801
->     |                                   |        |                   |
-15786c15804
-<                                   Table 5
----
->                                   Table 4
-16601c16619
+>           +------------------------+--------+-------------------+
+>           | Error                  | Number | Description       |
+>           +------------------------+--------+-------------------+
+>           | NFS4_OK                | 0      | Section 15.1.3.1  |
+>           | NFS4ERR_ACCESS         | 13     | Section 15.1.6.1  |
+>           | NFS4ERR_ATTRNOTSUPP    | 10032  | Section 15.1.15.1 |
+>           | NFS4ERR_ADMIN_REVOKED  | 10047  | Section 15.1.5.1  |
+>           | NFS4ERR_BACK_CHAN_BUSY | 10057  | Section 15.1.12.1 |
+>           | NFS4ERR_BADCHAR        | 10040  | Section 15.1.7.1  |
+>           | NFS4ERR_BADHANDLE      | 10001  | Section 15.1.2.1  |
+>           | NFS4ERR_BADIOMODE      | 10049  | Section 15.1.10.1 |
+>           | NFS4ERR_BADLAYOUT      | 10050  | Section 15.1.10.2 |
+>           | NFS4ERR_BADNAME        | 10041  | Section 15.1.7.2  |
+>           | NFS4ERR_BADOWNER       | 10039  | Section 15.1.15.2 |
+>           | NFS4ERR_BADSESSION     | 10052  | Section 15.1.11.1 |
+>           | NFS4ERR_BADSLOT        | 10053  | Section 15.1.11.2 |
+>           | NFS4ERR_BADTYPE        | 10007  | Section 15.1.4.1  |
+>           | NFS4ERR_BADXDR         | 10036  | Section 15.1.1.1  |
+>           | NFS4ERR_BAD_COOKIE     | 10003  | Section 15.1.1.2  |
+>           | NFS4ERR_BAD_HIGH_SLOT  | 10077  | Section 15.1.11.3 |
+>           | NFS4ERR_BAD_RANGE      | 10042  | Section 15.1.8.1  |
+>           |                        |        |                   |
+>           +------------------------+--------+-------------------+
+> 
+15722a15959
+> 
+15746a15984
+> 
+15769a16008
+> 
+16095a16335
+> 
+16187a16428
+> 
+16297a16539
+> 
+16424a16667
+> 
+16484a16728
+> 
+16601c16845,16894
 <               Valid Error Returns for Each Protocol Operation
 ---
 >       Valid Error Returns for Each Protocol Operation
-17294a17313
->    |                      |                                            |
-17297c17316
-<                                   Table 6
----
->                                   Table 5
-17308,17429c17327,17449
+> 
+>    +----------------------+-------------------------------------------+
+>    | Operation            | Errors                                    |
+>    +----------------------+-------------------------------------------+
+>    | ACCESS               | NFS4ERR_ACCESS, NFS4ERR_BADXDR,           |
+>    |                      | NFS4ERR_DEADSESSION, NFS4ERR_DELAY,       |
+>    |                      | NFS4ERR_FHEXPIRED, NFS4ERR_INVAL,         |
+>    |                      | NFS4ERR_IO, NFS4ERR_MOVED,                |
+>    |                      | NFS4ERR_NOFILEHANDLE,                     |
+>    |                      | NFS4ERR_OP_NOT_IN_SESSION,                |
+>    |                      | NFS4ERR_REP_TOO_BIG,                      |
+>    |                      | NFS4ERR_REP_TOO_BIG_TO_CACHE,             |
+>    |                      | NFS4ERR_REQ_TOO_BIG,                      |
+>    |                      | NFS4ERR_RETRY_UNCACHED_REP,               |
+>    |                      | NFS4ERR_SERVERFAULT, NFS4ERR_STALE,       |
+>    |                      | NFS4ERR_TOO_MANY_OPS                      |
+>    | BACKCHANNEL_CTL      | NFS4ERR_BADXDR, NFS4ERR_DEADSESSION,      |
+>    |                      | NFS4ERR_DELAY, NFS4ERR_INVAL,             |
+>    |                      | NFS4ERR_NOENT, NFS4ERR_OP_NOT_IN_SESSION, |
+>    |                      | NFS4ERR_REP_TOO_BIG,                      |
+>    |                      | NFS4ERR_REP_TOO_BIG_TO_CACHE,             |
+>    |                      | NFS4ERR_REQ_TOO_BIG,                      |
+>    |                      | NFS4ERR_RETRY_UNCACHED_REP,               |
+>    |                      | NFS4ERR_TOO_MANY_OPS                      |
+>    | BIND_CONN_TO_SESSION | NFS4ERR_BADSESSION, NFS4ERR_BADXDR,       |
+>    |                      | NFS4ERR_BAD_SESSION_DIGEST,               |
+>    |                      | NFS4ERR_DEADSESSION, NFS4ERR_DELAY,       |
+>    |                      | NFS4ERR_INVAL, NFS4ERR_NOT_ONLY_OP,       |
+>    |                      | NFS4ERR_REP_TOO_BIG,                      |
+>    |                      | NFS4ERR_REP_TOO_BIG_TO_CACHE,             |
+>    |                      | NFS4ERR_REQ_TOO_BIG,                      |
+>    |                      | NFS4ERR_RETRY_UNCACHED_REP,               |
+>    |                      | NFS4ERR_SERVERFAULT, NFS4ERR_TOO_MANY_OPS |
+>    | CLOSE                | NFS4ERR_ADMIN_REVOKED, NFS4ERR_BADXDR,    |
+>    |                      | NFS4ERR_BAD_STATEID, NFS4ERR_DEADSESSION, |
+>    |                      | NFS4ERR_DELAY, NFS4ERR_EXPIRED,           |
+>    |                      | NFS4ERR_FHEXPIRED, NFS4ERR_LOCKS_HELD,    |
+>    |                      | NFS4ERR_MOVED, NFS4ERR_NOFILEHANDLE,      |
+>    |                      | NFS4ERR_OLD_STATEID,                      |
+>    |                      | NFS4ERR_OP_NOT_IN_SESSION,                |
+>    |                      | NFS4ERR_REP_TOO_BIG,                      |
+>    |                      | NFS4ERR_REP_TOO_BIG_TO_CACHE,             |
+>    |                      | NFS4ERR_REQ_TOO_BIG,                      |
+>    |                      | NFS4ERR_RETRY_UNCACHED_REP,               |
+>    |                      | NFS4ERR_SERVERFAULT, NFS4ERR_STALE,       |
+>    |                      | NFS4ERR_TOO_MANY_OPS, NFS4ERR_WRONG_CRED  |
+>    | COMMIT               | NFS4ERR_ACCESS, NFS4ERR_BADXDR,           |
+>    |                      |                                           |
+>    +----------------------+-------------------------------------------+
+16603,16648d16895
+<    +----------------------+--------------------------------------------+
+<    | Operation            | Errors                                     |
+<    +----------------------+--------------------------------------------+
+<    | ACCESS               | NFS4ERR_ACCESS, NFS4ERR_BADXDR,            |
+<    |                      | NFS4ERR_DEADSESSION, NFS4ERR_DELAY,        |
+<    |                      | NFS4ERR_FHEXPIRED, NFS4ERR_INVAL,          |
+<    |                      | NFS4ERR_IO, NFS4ERR_MOVED,                 |
+<    |                      | NFS4ERR_NOFILEHANDLE,                      |
+<    |                      | NFS4ERR_OP_NOT_IN_SESSION,                 |
+<    |                      | NFS4ERR_REP_TOO_BIG,                       |
+<    |                      | NFS4ERR_REP_TOO_BIG_TO_CACHE,              |
+<    |                      | NFS4ERR_REQ_TOO_BIG,                       |
+<    |                      | NFS4ERR_RETRY_UNCACHED_REP,                |
+<    |                      | NFS4ERR_SERVERFAULT, NFS4ERR_STALE,        |
+<    |                      | NFS4ERR_TOO_MANY_OPS                       |
+<    | BACKCHANNEL_CTL      | NFS4ERR_BADXDR, NFS4ERR_DEADSESSION,       |
+<    |                      | NFS4ERR_DELAY, NFS4ERR_INVAL,              |
+<    |                      | NFS4ERR_NOENT, NFS4ERR_OP_NOT_IN_SESSION,  |
+<    |                      | NFS4ERR_REP_TOO_BIG,                       |
+<    |                      | NFS4ERR_REP_TOO_BIG_TO_CACHE,              |
+<    |                      | NFS4ERR_REQ_TOO_BIG,                       |
+<    |                      | NFS4ERR_RETRY_UNCACHED_REP,                |
+<    |                      | NFS4ERR_TOO_MANY_OPS                       |
+<    | BIND_CONN_TO_SESSION | NFS4ERR_BADSESSION, NFS4ERR_BADXDR,        |
+<    |                      | NFS4ERR_BAD_SESSION_DIGEST,                |
+<    |                      | NFS4ERR_DEADSESSION, NFS4ERR_DELAY,        |
+<    |                      | NFS4ERR_INVAL, NFS4ERR_NOT_ONLY_OP,        |
+<    |                      | NFS4ERR_REP_TOO_BIG,                       |
+<    |                      | NFS4ERR_REP_TOO_BIG_TO_CACHE,              |
+<    |                      | NFS4ERR_REQ_TOO_BIG,                       |
+<    |                      | NFS4ERR_RETRY_UNCACHED_REP,                |
+<    |                      | NFS4ERR_SERVERFAULT, NFS4ERR_TOO_MANY_OPS  |
+<    | CLOSE                | NFS4ERR_ADMIN_REVOKED, NFS4ERR_BADXDR,     |
+<    |                      | NFS4ERR_BAD_STATEID, NFS4ERR_DEADSESSION,  |
+<    |                      | NFS4ERR_DELAY, NFS4ERR_EXPIRED,            |
+<    |                      | NFS4ERR_FHEXPIRED, NFS4ERR_LOCKS_HELD,     |
+<    |                      | NFS4ERR_MOVED, NFS4ERR_NOFILEHANDLE,       |
+<    |                      | NFS4ERR_OLD_STATEID,                       |
+<    |                      | NFS4ERR_OP_NOT_IN_SESSION,                 |
+<    |                      | NFS4ERR_REP_TOO_BIG,                       |
+<    |                      | NFS4ERR_REP_TOO_BIG_TO_CACHE,              |
+<    |                      | NFS4ERR_REQ_TOO_BIG,                       |
+<    |                      | NFS4ERR_RETRY_UNCACHED_REP,                |
+<    |                      | NFS4ERR_SERVERFAULT, NFS4ERR_STALE,        |
+<    |                      | NFS4ERR_TOO_MANY_OPS, NFS4ERR_WRONG_CRED   |
+<    | COMMIT               | NFS4ERR_ACCESS, NFS4ERR_BADXDR,            |
+16696a16944
+> 
+16744a16993
+> 
+16792a17042
+> 
+16840a17091
+> 
+16888a17140
+> 
+16936a17189
+> 
+16984a17238
+> 
+17032a17287
+> 
+17080a17336
+> 
+17128a17385
+> 
+17176a17434
+> 
+17224a17483
+> 
+17272a17532
+> 
+17308,17320c17568,17583
 <    +-------------------------+-----------------------------------------+
 <    | Callback Operation      | Errors                                  |
 <    +-------------------------+-----------------------------------------+
@@ -747,256 +1217,155 @@
 <    |                         | NFS4ERR_SERVERFAULT,                    |
 <    |                         | NFS4ERR_TOO_MANY_OPS,                   |
 <    | CB_ILLEGAL              | NFS4ERR_BADXDR, NFS4ERR_OP_ILLEGAL      |
-<    | CB_LAYOUTRECALL         | NFS4ERR_BADHANDLE, NFS4ERR_BADIOMODE,   |
-<    |                         | NFS4ERR_BADXDR, NFS4ERR_BAD_STATEID,    |
-<    |                         | NFS4ERR_DELAY, NFS4ERR_INVAL,           |
-<    |                         | NFS4ERR_NOMATCHING_LAYOUT,              |
-<    |                         | NFS4ERR_NOTSUPP,                        |
-<    |                         | NFS4ERR_OP_NOT_IN_SESSION,              |
-<    |                         | NFS4ERR_REP_TOO_BIG,                    |
-<    |                         | NFS4ERR_REP_TOO_BIG_TO_CACHE,           |
-<    |                         | NFS4ERR_REQ_TOO_BIG,                    |
-<    |                         | NFS4ERR_RETRY_UNCACHED_REP,             |
-<    |                         | NFS4ERR_TOO_MANY_OPS,                   |
-<    |                         | NFS4ERR_UNKNOWN_LAYOUTTYPE,             |
-<    |                         | NFS4ERR_WRONG_TYPE                      |
-<    | CB_NOTIFY               | NFS4ERR_BADHANDLE, NFS4ERR_BADXDR,      |
-<    |                         | NFS4ERR_BAD_STATEID, NFS4ERR_DELAY,     |
-<    |                         | NFS4ERR_INVAL, NFS4ERR_NOTSUPP,         |
-<    |                         | NFS4ERR_OP_NOT_IN_SESSION,              |
-<    |                         | NFS4ERR_REP_TOO_BIG,                    |
-<    |                         | NFS4ERR_REP_TOO_BIG_TO_CACHE,           |
-<    |                         | NFS4ERR_REQ_TOO_BIG,                    |
-<    |                         | NFS4ERR_RETRY_UNCACHED_REP,             |
-<    |                         | NFS4ERR_SERVERFAULT,                    |
-<    |                         | NFS4ERR_TOO_MANY_OPS                    |
-<    | CB_NOTIFY_DEVICEID      | NFS4ERR_BADXDR, NFS4ERR_DELAY,          |
-<    |                         | NFS4ERR_INVAL, NFS4ERR_NOTSUPP,         |
-<    |                         | NFS4ERR_OP_NOT_IN_SESSION,              |
-<    |                         | NFS4ERR_REP_TOO_BIG,                    |
-<    |                         | NFS4ERR_REP_TOO_BIG_TO_CACHE,           |
-<    |                         | NFS4ERR_REQ_TOO_BIG,                    |
-<    |                         | NFS4ERR_RETRY_UNCACHED_REP,             |
-<    |                         | NFS4ERR_SERVERFAULT,                    |
-<    |                         | NFS4ERR_TOO_MANY_OPS                    |
-<    | CB_NOTIFY_LOCK          | NFS4ERR_BADHANDLE, NFS4ERR_BADXDR,      |
-<    |                         | NFS4ERR_BAD_STATEID, NFS4ERR_DELAY,     |
-<    |                         | NFS4ERR_NOTSUPP,                        |
-<    |                         | NFS4ERR_OP_NOT_IN_SESSION,              |
-<    |                         | NFS4ERR_REP_TOO_BIG,                    |
-<    |                         | NFS4ERR_REP_TOO_BIG_TO_CACHE,           |
-<    |                         | NFS4ERR_REQ_TOO_BIG,                    |
-<    |                         | NFS4ERR_RETRY_UNCACHED_REP,             |
-<    |                         | NFS4ERR_SERVERFAULT,                    |
-<    |                         | NFS4ERR_TOO_MANY_OPS                    |
-<    | CB_PUSH_DELEG           | NFS4ERR_BADHANDLE, NFS4ERR_BADXDR,      |
-<    |                         | NFS4ERR_DELAY, NFS4ERR_INVAL,           |
-<    |                         | NFS4ERR_NOTSUPP,                        |
-<    |                         | NFS4ERR_OP_NOT_IN_SESSION,              |
-<    |                         | NFS4ERR_REJECT_DELEG,                   |
-<    |                         | NFS4ERR_REP_TOO_BIG,                    |
-<    |                         | NFS4ERR_REP_TOO_BIG_TO_CACHE,           |
-<    |                         | NFS4ERR_REQ_TOO_BIG,                    |
-<    |                         | NFS4ERR_RETRY_UNCACHED_REP,             |
-<    |                         | NFS4ERR_SERVERFAULT,                    |
-<    |                         | NFS4ERR_TOO_MANY_OPS,                   |
-<    |                         | NFS4ERR_WRONG_TYPE                      |
-<    | CB_RECALL               | NFS4ERR_BADHANDLE, NFS4ERR_BADXDR,      |
-<    |                         | NFS4ERR_BAD_STATEID, NFS4ERR_DELAY,     |
-<    |                         | NFS4ERR_OP_NOT_IN_SESSION,              |
-<    |                         | NFS4ERR_REP_TOO_BIG,                    |
-<    |                         | NFS4ERR_REP_TOO_BIG_TO_CACHE,           |
-<    |                         | NFS4ERR_REQ_TOO_BIG,                    |
-<    |                         | NFS4ERR_RETRY_UNCACHED_REP,             |
-<    |                         | NFS4ERR_SERVERFAULT,                    |
-<    |                         | NFS4ERR_TOO_MANY_OPS                    |
-<    | CB_RECALL_ANY           | NFS4ERR_BADXDR, NFS4ERR_DELAY,          |
-<    |                         | NFS4ERR_INVAL,                          |
-<    |                         | NFS4ERR_OP_NOT_IN_SESSION,              |
-<    |                         | NFS4ERR_REP_TOO_BIG,                    |
-<    |                         | NFS4ERR_REP_TOO_BIG_TO_CACHE,           |
-<    |                         | NFS4ERR_REQ_TOO_BIG,                    |
-<    |                         | NFS4ERR_RETRY_UNCACHED_REP,             |
-<    |                         | NFS4ERR_TOO_MANY_OPS                    |
-<    | CB_RECALLABLE_OBJ_AVAIL | NFS4ERR_BADXDR, NFS4ERR_DELAY,          |
-<    |                         | NFS4ERR_INVAL, NFS4ERR_NOTSUPP,         |
-<    |                         | NFS4ERR_OP_NOT_IN_SESSION,              |
-<    |                         | NFS4ERR_REP_TOO_BIG,                    |
-<    |                         | NFS4ERR_REP_TOO_BIG_TO_CACHE,           |
-<    |                         | NFS4ERR_REQ_TOO_BIG,                    |
-<    |                         | NFS4ERR_RETRY_UNCACHED_REP,             |
-<    |                         | NFS4ERR_SERVERFAULT,                    |
-<    |                         | NFS4ERR_TOO_MANY_OPS                    |
-<    | CB_RECALL_SLOT          | NFS4ERR_BADXDR, NFS4ERR_BAD_HIGH_SLOT,  |
-<    |                         | NFS4ERR_DELAY,                          |
-<    |                         | NFS4ERR_OP_NOT_IN_SESSION,              |
-<    |                         | NFS4ERR_REP_TOO_BIG,                    |
-<    |                         | NFS4ERR_REP_TOO_BIG_TO_CACHE,           |
-<    |                         | NFS4ERR_REQ_TOO_BIG,                    |
-<    |                         | NFS4ERR_RETRY_UNCACHED_REP,             |
-<    |                         | NFS4ERR_TOO_MANY_OPS                    |
-<    | CB_SEQUENCE             | NFS4ERR_BADSESSION, NFS4ERR_BADSLOT,    |
-<    |                         | NFS4ERR_BADXDR, NFS4ERR_BAD_HIGH_SLOT,  |
-<    |                         | NFS4ERR_CONN_NOT_BOUND_TO_SESSION,      |
-<    |                         | NFS4ERR_DELAY, NFS4ERR_REP_TOO_BIG,     |
-<    |                         | NFS4ERR_REP_TOO_BIG_TO_CACHE,           |
-<    |                         | NFS4ERR_REQ_TOO_BIG,                    |
-<    |                         | NFS4ERR_RETRY_UNCACHED_REP,             |
-<    |                         | NFS4ERR_SEQUENCE_POS,                   |
-<    |                         | NFS4ERR_SEQ_FALSE_RETRY,                |
-<    |                         | NFS4ERR_SEQ_MISORDERED,                 |
-<    |                         | NFS4ERR_TOO_MANY_OPS                    |
-<    | CB_WANTS_CANCELLED      | NFS4ERR_BADXDR, NFS4ERR_DELAY,          |
-<    |                         | NFS4ERR_NOTSUPP,                        |
-<    |                         | NFS4ERR_OP_NOT_IN_SESSION,              |
-<    |                         | NFS4ERR_REP_TOO_BIG,                    |
-<    |                         | NFS4ERR_REP_TOO_BIG_TO_CACHE,           |
-<    |                         | NFS4ERR_REQ_TOO_BIG,                    |
-<    |                         | NFS4ERR_RETRY_UNCACHED_REP,             |
-<    |                         | NFS4ERR_SERVERFAULT,                    |
-<    |                         | NFS4ERR_TOO_MANY_OPS                    |
-<    +-------------------------+-----------------------------------------+
 ---
->    +-------------------------+----------------------------------------+
->    | Callback Operation      | Errors                                 |
->    +-------------------------+----------------------------------------+
->    | CB_GETATTR              | NFS4ERR_BADHANDLE, NFS4ERR_BADXDR,     |
->    |                         | NFS4ERR_DELAY, NFS4ERR_INVAL,          |
->    |                         | NFS4ERR_OP_NOT_IN_SESSION,             |
->    |                         | NFS4ERR_REP_TOO_BIG,                   |
->    |                         | NFS4ERR_REP_TOO_BIG_TO_CACHE,          |
->    |                         | NFS4ERR_REQ_TOO_BIG,                   |
->    |                         | NFS4ERR_RETRY_UNCACHED_REP,            |
->    |                         | NFS4ERR_SERVERFAULT,                   |
->    |                         | NFS4ERR_TOO_MANY_OPS,                  |
->    | CB_ILLEGAL              | NFS4ERR_BADXDR, NFS4ERR_OP_ILLEGAL     |
->    | CB_LAYOUTRECALL         | NFS4ERR_BADHANDLE, NFS4ERR_BADIOMODE,  |
->    |                         | NFS4ERR_BADXDR, NFS4ERR_BAD_STATEID,   |
->    |                         | NFS4ERR_DELAY, NFS4ERR_INVAL,          |
->    |                         | NFS4ERR_NOMATCHING_LAYOUT,             |
->    |                         | NFS4ERR_NOTSUPP,                       |
->    |                         | NFS4ERR_OP_NOT_IN_SESSION,             |
->    |                         | NFS4ERR_REP_TOO_BIG,                   |
->    |                         | NFS4ERR_REP_TOO_BIG_TO_CACHE,          |
->    |                         | NFS4ERR_REQ_TOO_BIG,                   |
->    |                         | NFS4ERR_RETRY_UNCACHED_REP,            |
->    |                         | NFS4ERR_TOO_MANY_OPS,                  |
->    |                         | NFS4ERR_UNKNOWN_LAYOUTTYPE,            |
->    |                         | NFS4ERR_WRONG_TYPE                     |
->    | CB_NOTIFY               | NFS4ERR_BADHANDLE, NFS4ERR_BADXDR,     |
->    |                         | NFS4ERR_BAD_STATEID, NFS4ERR_DELAY,    |
->    |                         | NFS4ERR_INVAL, NFS4ERR_NOTSUPP,        |
->    |                         | NFS4ERR_OP_NOT_IN_SESSION,             |
->    |                         | NFS4ERR_REP_TOO_BIG,                   |
->    |                         | NFS4ERR_REP_TOO_BIG_TO_CACHE,          |
->    |                         | NFS4ERR_REQ_TOO_BIG,                   |
->    |                         | NFS4ERR_RETRY_UNCACHED_REP,            |
->    |                         | NFS4ERR_SERVERFAULT,                   |
->    |                         | NFS4ERR_TOO_MANY_OPS                   |
->    | CB_NOTIFY_DEVICEID      | NFS4ERR_BADXDR, NFS4ERR_DELAY,         |
->    |                         | NFS4ERR_INVAL, NFS4ERR_NOTSUPP,        |
->    |                         | NFS4ERR_OP_NOT_IN_SESSION,             |
->    |                         | NFS4ERR_REP_TOO_BIG,                   |
->    |                         | NFS4ERR_REP_TOO_BIG_TO_CACHE,          |
->    |                         | NFS4ERR_REQ_TOO_BIG,                   |
->    |                         | NFS4ERR_RETRY_UNCACHED_REP,            |
->    |                         | NFS4ERR_SERVERFAULT,                   |
->    |                         | NFS4ERR_TOO_MANY_OPS                   |
->    | CB_NOTIFY_LOCK          | NFS4ERR_BADHANDLE, NFS4ERR_BADXDR,     |
->    |                         | NFS4ERR_BAD_STATEID, NFS4ERR_DELAY,    |
->    |                         | NFS4ERR_NOTSUPP,                       |
->    |                         | NFS4ERR_OP_NOT_IN_SESSION,             |
->    |                         | NFS4ERR_REP_TOO_BIG,                   |
->    |                         | NFS4ERR_REP_TOO_BIG_TO_CACHE,          |
->    |                         | NFS4ERR_REQ_TOO_BIG,                   |
->    |                         | NFS4ERR_RETRY_UNCACHED_REP,            |
->    |                         | NFS4ERR_SERVERFAULT,                   |
->    |                         | NFS4ERR_TOO_MANY_OPS                   |
->    | CB_PUSH_DELEG           | NFS4ERR_BADHANDLE, NFS4ERR_BADXDR,     |
->    |                         | NFS4ERR_DELAY, NFS4ERR_INVAL,          |
->    |                         | NFS4ERR_NOTSUPP,                       |
->    |                         | NFS4ERR_OP_NOT_IN_SESSION,             |
->    |                         | NFS4ERR_REJECT_DELEG,                  |
->    |                         | NFS4ERR_REP_TOO_BIG,                   |
->    |                         | NFS4ERR_REP_TOO_BIG_TO_CACHE,          |
->    |                         | NFS4ERR_REQ_TOO_BIG,                   |
->    |                         | NFS4ERR_RETRY_UNCACHED_REP,            |
->    |                         | NFS4ERR_SERVERFAULT,                   |
->    |                         | NFS4ERR_TOO_MANY_OPS,                  |
->    |                         | NFS4ERR_WRONG_TYPE                     |
->    | CB_RECALL               | NFS4ERR_BADHANDLE, NFS4ERR_BADXDR,     |
->    |                         | NFS4ERR_BAD_STATEID, NFS4ERR_DELAY,    |
->    |                         | NFS4ERR_OP_NOT_IN_SESSION,             |
->    |                         | NFS4ERR_REP_TOO_BIG,                   |
->    |                         | NFS4ERR_REP_TOO_BIG_TO_CACHE,          |
->    |                         | NFS4ERR_REQ_TOO_BIG,                   |
->    |                         | NFS4ERR_RETRY_UNCACHED_REP,            |
->    |                         | NFS4ERR_SERVERFAULT,                   |
->    |                         | NFS4ERR_TOO_MANY_OPS                   |
->    | CB_RECALL_ANY           | NFS4ERR_BADXDR, NFS4ERR_DELAY,         |
->    |                         | NFS4ERR_INVAL,                         |
->    |                         | NFS4ERR_OP_NOT_IN_SESSION,             |
->    |                         | NFS4ERR_REP_TOO_BIG,                   |
->    |                         | NFS4ERR_REP_TOO_BIG_TO_CACHE,          |
->    |                         | NFS4ERR_REQ_TOO_BIG,                   |
->    |                         | NFS4ERR_RETRY_UNCACHED_REP,            |
->    |                         | NFS4ERR_TOO_MANY_OPS                   |
->    | CB_RECALLABLE_OBJ_AVAIL | NFS4ERR_BADXDR, NFS4ERR_DELAY,         |
->    |                         | NFS4ERR_INVAL, NFS4ERR_NOTSUPP,        |
->    |                         | NFS4ERR_OP_NOT_IN_SESSION,             |
->    |                         | NFS4ERR_REP_TOO_BIG,                   |
->    |                         | NFS4ERR_REP_TOO_BIG_TO_CACHE,          |
->    |                         | NFS4ERR_REQ_TOO_BIG,                   |
->    |                         | NFS4ERR_RETRY_UNCACHED_REP,            |
->    |                         | NFS4ERR_SERVERFAULT,                   |
->    |                         | NFS4ERR_TOO_MANY_OPS                   |
->    | CB_RECALL_SLOT          | NFS4ERR_BADXDR, NFS4ERR_BAD_HIGH_SLOT, |
->    |                         | NFS4ERR_DELAY,                         |
->    |                         | NFS4ERR_OP_NOT_IN_SESSION,             |
->    |                         | NFS4ERR_REP_TOO_BIG,                   |
->    |                         | NFS4ERR_REP_TOO_BIG_TO_CACHE,          |
->    |                         | NFS4ERR_REQ_TOO_BIG,                   |
->    |                         | NFS4ERR_RETRY_UNCACHED_REP,            |
->    |                         | NFS4ERR_TOO_MANY_OPS                   |
->    | CB_SEQUENCE             | NFS4ERR_BADSESSION, NFS4ERR_BADSLOT,   |
->    |                         | NFS4ERR_BADXDR, NFS4ERR_BAD_HIGH_SLOT, |
->    |                         | NFS4ERR_CONN_NOT_BOUND_TO_SESSION,     |
->    |                         | NFS4ERR_DELAY, NFS4ERR_REP_TOO_BIG,    |
->    |                         | NFS4ERR_REP_TOO_BIG_TO_CACHE,          |
->    |                         | NFS4ERR_REQ_TOO_BIG,                   |
->    |                         | NFS4ERR_RETRY_UNCACHED_REP,            |
->    |                         | NFS4ERR_SEQUENCE_POS,                  |
->    |                         | NFS4ERR_SEQ_FALSE_RETRY,               |
->    |                         | NFS4ERR_SEQ_MISORDERED,                |
->    |                         | NFS4ERR_TOO_MANY_OPS                   |
->    | CB_WANTS_CANCELLED      | NFS4ERR_BADXDR, NFS4ERR_DELAY,         |
->    |                         | NFS4ERR_NOTSUPP,                       |
->    |                         | NFS4ERR_OP_NOT_IN_SESSION,             |
->    |                         | NFS4ERR_REP_TOO_BIG,                   |
->    |                         | NFS4ERR_REP_TOO_BIG_TO_CACHE,          |
->    |                         | NFS4ERR_REQ_TOO_BIG,                   |
->    |                         | NFS4ERR_RETRY_UNCACHED_REP,            |
->    |                         | NFS4ERR_SERVERFAULT,                   |
->    |                         | NFS4ERR_TOO_MANY_OPS                   |
->    |                         |                                        |
->    +-------------------------+----------------------------------------+
-17431c17451
-<                                   Table 7
+>         +--------------------+------------------------------------+
+>         | Callback Operation | Errors                             |
+>         +--------------------+------------------------------------+
+>         | CB_GETATTR         | NFS4ERR_BADHANDLE, NFS4ERR_BADXDR, |
+>         |                    | NFS4ERR_DELAY, NFS4ERR_INVAL,      |
+>         |                    | NFS4ERR_OP_NOT_IN_SESSION,         |
+>         |                    | NFS4ERR_REP_TOO_BIG,               |
+>         |                    | NFS4ERR_REP_TOO_BIG_TO_CACHE,      |
+>         |                    | NFS4ERR_REQ_TOO_BIG,               |
+>         |                    | NFS4ERR_RETRY_UNCACHED_REP,        |
+>         |                    | NFS4ERR_SERVERFAULT,               |
+>         |                    | NFS4ERR_TOO_MANY_OPS,              |
+>         | CB_ILLEGAL         | NFS4ERR_BADXDR, NFS4ERR_OP_ILLEGAL |
+>         |                    |                                    |
+>         +--------------------+------------------------------------+
+> 
+17352a17616
+> 
+17368a17633
+> 
+17399a17665
+> 
+17416a17683
+> 
+17435,17464c17702,17734
+<    +-----------------------------------+-------------------------------+
+<    | Error                             | Operations                    |
+<    +-----------------------------------+-------------------------------+
+<    | NFS4ERR_ACCESS                    | ACCESS, COMMIT, CREATE,       |
+<    |                                   | GETATTR, GET_DIR_DELEGATION,  |
+<    |                                   | LAYOUTCOMMIT, LAYOUTGET,      |
+<    |                                   | LINK, LOCK, LOCKT, LOCKU,     |
+<    |                                   | LOOKUP, LOOKUPP, NVERIFY,     |
+<    |                                   | OPEN, OPENATTR, READ,         |
+<    |                                   | READDIR, READLINK, REMOVE,    |
+<    |                                   | RENAME, SECINFO,              |
+<    |                                   | SECINFO_NO_NAME, SETATTR,     |
+<    |                                   | VERIFY, WRITE                 |
+<    | NFS4ERR_ADMIN_REVOKED             | CLOSE, DELEGRETURN,           |
+<    |                                   | LAYOUTCOMMIT, LAYOUTGET,      |
+<    |                                   | LAYOUTRETURN, LOCK, LOCKU,    |
+<    |                                   | OPEN, OPEN_DOWNGRADE, READ,   |
+<    |                                   | SETATTR, WRITE                |
+<    | NFS4ERR_ATTRNOTSUPP               | CREATE, LAYOUTCOMMIT,         |
+<    |                                   | NVERIFY, OPEN, SETATTR,       |
+<    |                                   | VERIFY                        |
+<    | NFS4ERR_BACK_CHAN_BUSY            | DESTROY_SESSION               |
+<    | NFS4ERR_BADCHAR                   | CREATE, EXCHANGE_ID, LINK,    |
+<    |                                   | LOOKUP, NVERIFY, OPEN,        |
+<    |                                   | REMOVE, RENAME, SECINFO,      |
+<    |                                   | SETATTR, VERIFY               |
+<    | NFS4ERR_BADHANDLE                 | CB_GETATTR, CB_LAYOUTRECALL,  |
+<    |                                   | CB_NOTIFY, CB_NOTIFY_LOCK,    |
+<    |                                   | CB_PUSH_DELEG, CB_RECALL,     |
+<    |                                   | PUTFH                         |
 ---
->                                   Table 6
-18031a18052
->    |                                   |                               |
-18034c18055
-<                                   Table 8
----
->                                   Table 7
-18151,18152c18172,18173
+>          +------------------------+------------------------------+
+>          | Error                  | Operations                   |
+>          +------------------------+------------------------------+
+>          | NFS4ERR_ACCESS         | ACCESS, COMMIT, CREATE,      |
+>          |                        | GETATTR, GET_DIR_DELEGATION, |
+>          |                        | LAYOUTCOMMIT, LAYOUTGET,     |
+>          |                        | LINK, LOCK, LOCKT, LOCKU,    |
+>          |                        | LOOKUP, LOOKUPP, NVERIFY,    |
+>          |                        | OPEN, OPENATTR, READ,        |
+>          |                        | READDIR, READLINK, REMOVE,   |
+>          |                        | RENAME, SECINFO,             |
+>          |                        | SECINFO_NO_NAME, SETATTR,    |
+>          |                        | VERIFY, WRITE                |
+>          | NFS4ERR_ADMIN_REVOKED  | CLOSE, DELEGRETURN,          |
+>          |                        | LAYOUTCOMMIT, LAYOUTGET,     |
+>          |                        | LAYOUTRETURN, LOCK, LOCKU,   |
+>          |                        | OPEN, OPEN_DOWNGRADE, READ,  |
+>          |                        | SETATTR, WRITE               |
+>          | NFS4ERR_ATTRNOTSUPP    | CREATE, LAYOUTCOMMIT,        |
+>          |                        | NVERIFY, OPEN, SETATTR,      |
+>          |                        | VERIFY                       |
+>          | NFS4ERR_BACK_CHAN_BUSY | DESTROY_SESSION              |
+>          | NFS4ERR_BADCHAR        | CREATE, EXCHANGE_ID, LINK,   |
+>          |                        | LOOKUP, NVERIFY, OPEN,       |
+>          |                        | REMOVE, RENAME, SECINFO,     |
+>          |                        | SETATTR, VERIFY              |
+>          | NFS4ERR_BADHANDLE      | CB_GETATTR, CB_LAYOUTRECALL, |
+>          |                        | CB_NOTIFY, CB_NOTIFY_LOCK,   |
+>          |                        | CB_PUSH_DELEG, CB_RECALL,    |
+>          |                        | PUTFH                        |
+>          |                        |                              |
+>          +------------------------+------------------------------+
+> 
+17479a17750
+> 
+17512a17784
+> 
+17526a17799
+> 
+17560a17834
+> 
+17573a17848
+> 
+17608a17884
+> 
+17620a17897
+> 
+17656a17934
+> 
+17667a17946
+> 
+17704a17984
+> 
+17714a17995
+> 
+17752a18034
+> 
+17761a18044
+> 
+17800a18084
+> 
+17808a18093
+> 
+17848a18134
+> 
+17855a18142
+> 
+17896a18184
+> 
+17902a18191
+> 
+17944a18234
+> 
+17949a18240
+> 
+17992a18284
+> 
+17996a18289
+> 
+18087a18381
+> 
+18088a18383
+> 
+18136a18432
+> 
+18151,18152c18447,18448
 <     case OP_OPEN_DOWNGRADE:
 <                            OPEN_DOWNGRADE4args opopen_downgrade;
 ---
 >       case OP_OPEN_DOWNGRADE:
 >                              OPEN_DOWNGRADE4args opopen_downgrade;
-18189,18228c18210,18250
+18189,18228c18485,18524
 <     case OP_BIND_CONN_TO_SESSION:
 <                            BIND_CONN_TO_SESSION4args
 <                            opbind_conn_to_session;
@@ -1039,7 +1408,6 @@
 <                                    opreclaim_complete;
 ---
 >       case OP_BIND_CONN_TO_SESSION:
-> 
 >                              BIND_CONN_TO_SESSION4args
 >                              opbind_conn_to_session;
 > 
@@ -1079,52 +1447,59 @@
 > 
 >       case OP_RECLAIM_COMPLETE:
 >                              RECLAIM_COMPLETE4args opreclaim_complete;
-18263,18265c18285,18286
+18263,18265c18559,18560
 <     case OP_OPEN_DOWNGRADE:
 <                            OPEN_DOWNGRADE4res
 <                                    opopen_downgrade;
 ---
 >       case OP_OPEN_DOWNGRADE:
 >                              OPEN_DOWNGRADE4res opopen_downgrade;
-18298,18304c18319,18320
+18267,18268c18562,18563
+<     case OP_PUTFH:         PUTFH4res opputfh;
+<     case OP_PUTPUBFH:      PUTPUBFH4res opputpubfh;
+---
+>       case OP_PUTFH:         PUTFH4res opputfh;
+>                              case OP_PUTPUBFH: PUTPUBFH4res opputpubfh;
+18299,18301c18594,18595
 <     case OP_BACKCHANNEL_CTL:
 <                            BACKCHANNEL_CTL4res
 <                                    opbackchannel_ctl;
-< 
+---
+>       case OP_BACKCHANNEL_CTL:
+>                              BACKCHANNEL_CTL4res opbackchannel_ctl;
+18303,18305c18597,18599
 <     case OP_BIND_CONN_TO_SESSION:
 <                            BIND_CONN_TO_SESSION4res
 <                                     opbind_conn_to_session;
 ---
->       case OP_BACKCHANNEL_CTL:
->                              BACKCHANNEL_CTL4res opbackchannel_ctl;
-18306c18322,18324
-<     case OP_EXCHANGE_ID:   EXCHANGE_ID4res opexchange_id;
----
 >       case OP_BIND_CONN_TO_SESSION:
 >                              BIND_CONN_TO_SESSION4res
 >                              opbind_conn_to_session;
-18308,18310c18326
+18307c18601
+<     case OP_EXCHANGE_ID:   EXCHANGE_ID4res opexchange_id;
+---
+>       case OP_EXCHANGE_ID:   EXCHANGE_ID4res opexchange_id;
+18309,18311c18603,18604
 <     case OP_CREATE_SESSION:
 <                            CREATE_SESSION4res
 <                                    opcreate_session;
 ---
->       case OP_EXCHANGE_ID:   EXCHANGE_ID4res opexchange_id;
-18312,18314c18328,18329
+>       case OP_CREATE_SESSION:
+>                              CREATE_SESSION4res opcreate_session;
+18313,18315c18606,18607
 <     case OP_DESTROY_SESSION:
 <                            DESTROY_SESSION4res
 <                                    opdestroy_session;
 ---
->       case OP_CREATE_SESSION:
->                              CREATE_SESSION4res opcreate_session;
-18316,18317c18331,18334
+>       case OP_DESTROY_SESSION:
+>                              DESTROY_SESSION4res opdestroy_session;
+18317,18318c18609,18610
 <     case OP_FREE_STATEID:  FREE_STATEID4res
 <                                    opfree_stateid;
 ---
->       case OP_DESTROY_SESSION:
->                              DESTROY_SESSION4res opdestroy_session;
 >       case OP_FREE_STATEID:  FREE_STATEID4res
 >                              opfree_stateid;
-18319,18321c18336,18338
+18320,18322c18612,18614
 <     case OP_GET_DIR_DELEGATION:
 <                            GET_DIR_DELEGATION4res
 <                                    opget_dir_delegation;
@@ -1132,19 +1507,19 @@
 >       case OP_GET_DIR_DELEGATION:
 >                              GET_DIR_DELEGATION4res
 >                              opget_dir_delegation;
-18323,18324c18340,18341
+18324,18325c18616,18617
 <     case OP_GETDEVICEINFO: GETDEVICEINFO4res
 <                                    opgetdeviceinfo;
 ---
 >       case OP_GETDEVICEINFO: GETDEVICEINFO4res
 >                              opgetdeviceinfo;
-18326,18327c18343,18344
+18327,18328c18619,18620
 <     case OP_GETDEVICELIST: GETDEVICELIST4res
 <                                    opgetdevicelist;
 ---
 >       case OP_GETDEVICELIST: GETDEVICELIST4res
 >                              opgetdevicelist;
-18329,18331c18346,18349
+18330,18332c18622,18625
 <     case OP_LAYOUTCOMMIT:  LAYOUTCOMMIT4res oplayoutcommit;
 <     case OP_LAYOUTGET:     LAYOUTGET4res oplayoutget;
 <     case OP_LAYOUTRETURN:  LAYOUTRETURN4res oplayoutreturn;
@@ -1153,14 +1528,14 @@
 >                              case OP_LAYOUTGET: LAYOUTGET4res
 >                              oplayoutget; case OP_LAYOUTRETURN:
 >                              LAYOUTRETURN4res oplayoutreturn;
-18333,18335c18351,18352
+18334,18336c18627,18628
 <     case OP_SECINFO_NO_NAME:
 <                            SECINFO_NO_NAME4res
 <                                    opsecinfo_no_name;
 ---
 >       case OP_SECINFO_NO_NAME:
 >                              SECINFO_NO_NAME4res opsecinfo_no_name;
-18337,18339c18354,18357
+18338,18340c18630,18633
 <     case OP_SEQUENCE:      SEQUENCE4res opsequence;
 <     case OP_SET_SSV:       SET_SSV4res opset_ssv;
 <     case OP_TEST_STATEID:  TEST_STATEID4res optest_stateid;
@@ -1169,36 +1544,38 @@
 >                              case OP_SET_SSV: SET_SSV4res opset_ssv;
 >                              case OP_TEST_STATEID: TEST_STATEID4res
 >                              optest_stateid;
-18341,18343c18359,18360
+18342,18344c18635,18636
 <     case OP_WANT_DELEGATION:
 <                            WANT_DELEGATION4res
 <                                    opwant_delegation;
 ---
 >       case OP_WANT_DELEGATION:
 >                              WANT_DELEGATION4res opwant_delegation;
-18345c18362
+18346c18638
 <     case OP_DESTROY_CLIENTID:
 ---
 >       case OP_DESTROY_CLIENTID:
-18347,18348c18364
+18348,18349c18640
 <                            DESTROY_CLIENTID4res
 <                                    opdestroy_clientid;
 ---
 >                              DESTROY_CLIENTID4res opdestroy_clientid;
-18350,18352c18366,18367
+18351,18353c18642,18643
 <     case OP_RECLAIM_COMPLETE:
 <                            RECLAIM_COMPLETE4res
 <                                    opreclaim_complete;
 ---
 >       case OP_RECLAIM_COMPLETE:
 >                              RECLAIM_COMPLETE4res opreclaim_complete;
-18532,18533c18547,18548
+18459a18750
+> 
+18533,18534c18824,18825
 <    operation.  This allows the client to explicitly surround a single
 <    I/O operation with a lock and its appropriate stateid to guarantee
 ---
 >    operation.  This allows the client to explicitly surround a single I/
 >    O operation with a lock and its appropriate stateid to guarantee
-18573,18588c18588,18604
+18574,18589c18865,18881
 <    +------------------------------+------------------------------------+
 <    | Error                        | Notes                              |
 <    +------------------------------+------------------------------------+
@@ -1233,84 +1610,17 @@
 >     | NFS4ERR_REQ_TOO_BIG          |                                  |
 >     |                              |                                  |
 >     +------------------------------+----------------------------------+
-18590c18606
+18591c18883
 <                                   Table 9
 ---
->                                   Table 8
-18647c18663,18664
-<    DDELG  Directory Delegations
----
->       DDELG Directory Delegations
->       Operations
-18649,18715c18666,18782
+>                                   Table 3
+18647a18940
+> 
+18650c18943,19026
 <                                 Operations
-< 
-<    +----------------------+------------+--------------+----------------+
-<    | Operation            | REQ, REC,  | Feature      | Definition     |
-<    |                      | OPT, or    | (REQ, REC,   |                |
-<    |                      | MNI        | or OPT)      |                |
-<    +----------------------+------------+--------------+----------------+
-<    | ACCESS               | REQ        |              | Section 18.1   |
-<    | BACKCHANNEL_CTL      | REQ        |              | Section 18.33  |
-<    | BIND_CONN_TO_SESSION | REQ        |              | Section 18.34  |
-<    | CLOSE                | REQ        |              | Section 18.2   |
-<    | COMMIT               | REQ        |              | Section 18.3   |
-<    | CREATE               | REQ        |              | Section 18.4   |
-<    | CREATE_SESSION       | REQ        |              | Section 18.36  |
-<    | DELEGPURGE           | OPT        | FDELG (REQ)  | Section 18.5   |
-<    | DELEGRETURN          | OPT        | FDELG,       | Section 18.6   |
-<    |                      |            | DDELG, pNFS  |                |
-<    |                      |            | (REQ)        |                |
-<    | DESTROY_CLIENTID     | REQ        |              | Section 18.50  |
-<    | DESTROY_SESSION      | REQ        |              | Section 18.37  |
-<    | EXCHANGE_ID          | REQ        |              | Section 18.35  |
-<    | FREE_STATEID         | REQ        |              | Section 18.38  |
-<    | GETATTR              | REQ        |              | Section 18.7   |
-<    | GETDEVICEINFO        | OPT        | pNFS (REQ)   | Section 18.40  |
-<    | GETDEVICELIST        | OPT        | pNFS (OPT)   | Section 18.41  |
-<    | GETFH                | REQ        |              | Section 18.8   |
-<    | GET_DIR_DELEGATION   | OPT        | DDELG (REQ)  | Section 18.39  |
-<    | LAYOUTCOMMIT         | OPT        | pNFS (REQ)   | Section 18.42  |
-<    | LAYOUTGET            | OPT        | pNFS (REQ)   | Section 18.43  |
-<    | LAYOUTRETURN         | OPT        | pNFS (REQ)   | Section 18.44  |
-<    | LINK                 | OPT        |              | Section 18.9   |
-<    | LOCK                 | REQ        |              | Section 18.10  |
-<    | LOCKT                | REQ        |              | Section 18.11  |
-<    | LOCKU                | REQ        |              | Section 18.12  |
-<    | LOOKUP               | REQ        |              | Section 18.13  |
-<    | LOOKUPP              | REQ        |              | Section 18.14  |
-<    | NVERIFY              | REQ        |              | Section 18.15  |
-<    | OPEN                 | REQ        |              | Section 18.16  |
-<    | OPENATTR             | OPT        |              | Section 18.17  |
-<    | OPEN_CONFIRM         | MNI        |              | N/A            |
-<    | OPEN_DOWNGRADE       | REQ        |              | Section 18.18  |
-<    | PUTFH                | REQ        |              | Section 18.19  |
-<    | PUTPUBFH             | REQ        |              | Section 18.20  |
-<    | PUTROOTFH            | REQ        |              | Section 18.21  |
-<    | READ                 | REQ        |              | Section 18.22  |
-<    | READDIR              | REQ        |              | Section 18.23  |
-<    | READLINK             | OPT        |              | Section 18.24  |
-<    | RECLAIM_COMPLETE     | REQ        |              | Section 18.51  |
-<    | RELEASE_LOCKOWNER    | MNI        |              | N/A            |
-<    | REMOVE               | REQ        |              | Section 18.25  |
-<    | RENAME               | REQ        |              | Section 18.26  |
-<    | RENEW                | MNI        |              | N/A            |
-<    | RESTOREFH            | REQ        |              | Section 18.27  |
-<    | SAVEFH               | REQ        |              | Section 18.28  |
-<    | SECINFO              | REQ        |              | Section 18.29  |
-<    | SECINFO_NO_NAME      | REC        | pNFS file    | Section 18.45, |
-<    |                      |            | layout (REQ) | Section 13.12  |
-<    | SEQUENCE             | REQ        |              | Section 18.46  |
-<    | SETATTR              | REQ        |              | Section 18.30  |
-<    | SETCLIENTID          | MNI        |              | N/A            |
-<    | SETCLIENTID_CONFIRM  | MNI        |              | N/A            |
-<    | SET_SSV              | REQ        |              | Section 18.47  |
-<    | TEST_STATEID         | REQ        |              | Section 18.48  |
-<    | VERIFY               | REQ        |              | Section 18.31  |
-<    | WANT_DELEGATION      | OPT        | FDELG (OPT)  | Section 18.49  |
-<    | WRITE                | REQ        |              | Section 18.32  |
-<    +----------------------+------------+--------------+----------------+
 ---
+>   Operations
+> 
 >    +----------------------+--------------+----------------+------------+
 >    | Operation            | REQ, REC,    | Feature (REQ,  | Definition |
 >    |                      | OPT, or MNI  | REC, or OPT)   |            |
@@ -1355,6 +1665,7 @@
 >    |                      |              |                | 18.39      |
 >    | LAYOUTCOMMIT         | OPT          | pNFS (REQ)     | Section    |
 >    |                      |              |                | 18.42      |
+> 
 >    | LAYOUTGET            | OPT          | pNFS (REQ)     | Section    |
 >    |                      |              |                | 18.43      |
 >    | LAYOUTRETURN         | OPT          | pNFS (REQ)     | Section    |
@@ -1390,45 +1701,54 @@
 >    |                      |              |                | 18.22      |
 >    | READDIR              | REQ          |                | Section    |
 >    |                      |              |                | 18.23      |
->    | READLINK             | OPT          |                | Section    |
->    |                      |              |                | 18.24      |
->    | RECLAIM_COMPLETE     | REQ          |                | Section    |
->    |                      |              |                | 18.51      |
->    | RELEASE_LOCKOWNER    | MNI          |                | N/A        |
->    | REMOVE               | REQ          |                | Section    |
->    |                      |              |                | 18.25      |
->    | RENAME               | REQ          |                | Section    |
->    |                      |              |                | 18.26      |
->    | RENEW                | MNI          |                | N/A        |
->    | RESTOREFH            | REQ          |                | Section    |
->    |                      |              |                | 18.27      |
->    | SAVEFH               | REQ          |                | Section    |
->    |                      |              |                | 18.28      |
->    | SECINFO              | REQ          |                | Section    |
->    |                      |              |                | 18.29      |
->    | SECINFO_NO_NAME      | REC          | pNFS file      | Section    |
->    |                      |              |                | 18.45,     |
->    |                      |              | layout (REQ)   | Section    |
->    |                      |              |                | 13.12      |
->    | SEQUENCE             | REQ          |                | Section    |
->    |                      |              |                | 18.46      |
->    | SETATTR              | REQ          |                | Section    |
->    |                      |              |                | 18.30      |
->    | SETCLIENTID          | MNI          |                | N/A        |
->    | SETCLIENTID_CONFIRM  | MNI          |                | N/A        |
->    | SET_SSV              | REQ          |                | Section    |
->    |                      |              |                | 18.47      |
->    | TEST_STATEID         | REQ          |                | Section    |
->    |                      |              |                | 18.48      |
->    | VERIFY               | REQ          |                | Section    |
->    |                      |              |                | 18.31      |
->    | WANT_DELEGATION      | OPT          | FDELG (OPT)    | Section    |
->    |                      |              |                | 18.49      |
->    | WRITE                | REQ          |                | Section    |
->    |                      |              |                | 18.32      |
 >    |                      |              |                |            |
 >    +----------------------+--------------+----------------+------------+
-18719,18745c18786,18825
+18652,18695d19027
+<    +----------------------+------------+--------------+----------------+
+<    | Operation            | REQ, REC,  | Feature      | Definition     |
+<    |                      | OPT, or    | (REQ, REC,   |                |
+<    |                      | MNI        | or OPT)      |                |
+<    +----------------------+------------+--------------+----------------+
+<    | ACCESS               | REQ        |              | Section 18.1   |
+<    | BACKCHANNEL_CTL      | REQ        |              | Section 18.33  |
+<    | BIND_CONN_TO_SESSION | REQ        |              | Section 18.34  |
+<    | CLOSE                | REQ        |              | Section 18.2   |
+<    | COMMIT               | REQ        |              | Section 18.3   |
+<    | CREATE               | REQ        |              | Section 18.4   |
+<    | CREATE_SESSION       | REQ        |              | Section 18.36  |
+<    | DELEGPURGE           | OPT        | FDELG (REQ)  | Section 18.5   |
+<    | DELEGRETURN          | OPT        | FDELG,       | Section 18.6   |
+<    |                      |            | DDELG, pNFS  |                |
+<    |                      |            | (REQ)        |                |
+<    | DESTROY_CLIENTID     | REQ        |              | Section 18.50  |
+<    | DESTROY_SESSION      | REQ        |              | Section 18.37  |
+<    | EXCHANGE_ID          | REQ        |              | Section 18.35  |
+<    | FREE_STATEID         | REQ        |              | Section 18.38  |
+<    | GETATTR              | REQ        |              | Section 18.7   |
+<    | GETDEVICEINFO        | OPT        | pNFS (REQ)   | Section 18.40  |
+<    | GETDEVICELIST        | OPT        | pNFS (OPT)   | Section 18.41  |
+<    | GETFH                | REQ        |              | Section 18.8   |
+<    | GET_DIR_DELEGATION   | OPT        | DDELG (REQ)  | Section 18.39  |
+<    | LAYOUTCOMMIT         | OPT        | pNFS (REQ)   | Section 18.42  |
+<    | LAYOUTGET            | OPT        | pNFS (REQ)   | Section 18.43  |
+<    | LAYOUTRETURN         | OPT        | pNFS (REQ)   | Section 18.44  |
+<    | LINK                 | OPT        |              | Section 18.9   |
+<    | LOCK                 | REQ        |              | Section 18.10  |
+<    | LOCKT                | REQ        |              | Section 18.11  |
+<    | LOCKU                | REQ        |              | Section 18.12  |
+<    | LOOKUP               | REQ        |              | Section 18.13  |
+<    | LOOKUPP              | REQ        |              | Section 18.14  |
+<    | NVERIFY              | REQ        |              | Section 18.15  |
+<    | OPEN                 | REQ        |              | Section 18.16  |
+<    | OPENATTR             | OPT        |              | Section 18.17  |
+<    | OPEN_CONFIRM         | MNI        |              | N/A            |
+<    | OPEN_DOWNGRADE       | REQ        |              | Section 18.18  |
+<    | PUTFH                | REQ        |              | Section 18.19  |
+<    | PUTPUBFH             | REQ        |              | Section 18.20  |
+<    | PUTROOTFH            | REQ        |              | Section 18.21  |
+<    | READ                 | REQ        |              | Section 18.22  |
+<    | READDIR              | REQ        |              | Section 18.23  |
+18720,18746c19052,19091
 <    +-------------------------+-----------+-------------+---------------+
 <    | Operation               | REQ, REC, | Feature     | Definition    |
 <    |                         | OPT, or   | (REQ, REC,  |               |
@@ -1497,7 +1817,41 @@
 >    |                         |            | (REQ)         |            |
 >    |                         |            |               |            |
 >    +-------------------------+------------+---------------+------------+
-20003,20009c20083,20084
+18814c19159
+<       directory objects).
+---
+>   directory objects).
+18817c19162
+<       directory entries.
+---
+>   directory entries.
+18847a19193
+> 
+18860a19207
+> 
+18894a19242
+> 
+18956a19305
+> 
+18990a19340
+> 
+19127a19478
+> 
+19138a19490
+> 
+19174a19527
+> 
+19264a19618
+> 
+19277a19632
+> 
+19542a19898
+> 
+19815a20172
+> 
+19958a20316
+> 
+20004,20010c20362,20365
 <          PUTFH  (directory filehandle)
 <          LOOKUP "pub"
 <          GETFH
@@ -1506,13 +1860,25 @@
 <          LOOKUP "bar"
 <          GETFH
 ---
->       PUTFH  (directory filehandle)
->          LOOKUP "pub" GETFH LOOKUP "foo" GETFH LOOKUP "bar" GETFH
-20338d20412
-< 
-20387d20460
-< 
-20546,20558c20619,20632
+>       PUTFH        (directory filehandle)
+> 
+>                    LOOKUP "pub" GETFH LOOKUP "foo" GETFH LOOKUP "bar"
+>                    GETFH
+20195a20551
+> 
+20212a20569
+> 
+20242a20600
+> 
+20290a20649
+> 
+20349a20709
+> 
+20475a20836
+> 
+20535a20897
+> 
+20547,20559c20909,20922
 <    +----------------+-----------+---------------+----------------------+
 <    | Persistent     | Server    | Server        | Client Allowed       |
 <    | Reply Cache    | Supports  | REQUIRED      |                      |
@@ -1541,75 +1907,146 @@
 >    | yes               | yes            | GUARDED4     | GUARDED4      |
 >    |                   |                |              |               |
 >    +-------------------+----------------+--------------+---------------+
-20560c20634
+20561c20924
 <                                  Table 10
 ---
->                                   Table 9
-20644a20719
+>                                   Table 4
+20645a21009
 >    |                      |                                            |
-20752,20754c20827
-<    OPEN4_SHARE_ACCESS_WANT_WRITE_DELEG
-<    OPEN4_SHARE_ACCESS_WANT_ANY_DELEG
-< 
----
->    OPEN4_SHARE_ACCESS_WANT_WRITE_DELEG OPEN4_SHARE_ACCESS_WANT_ANY_DELEG
-22482,22483c22555,22557
+20658a21023
+> 
+20702a21068
+> 
+20706a21073
+> 
+20753a21121
+> 
+20796a21165
+> 
+20844a21214
+> 
+20847a21218
+> 
+20890a21262
+> 
+20982a21355
+> 
+21034a21408
+> 
+21125a21500
+> 
+21172a21548
+> 
+21306a21683
+> 
+21401a21779
+> 
+21449a21828
+> 
+21527a21907
+> 
+21630a22011
+> 
+21677a22059
+> 
+21710a22093
+> 
+21725a22109
+> 
+21896a22281
+> 
+21914a22300
+> 
+21943a22330
+> 
+22278a22666
+> 
+22464a22853
+> 
+22483,22484c22872,22874
 <    Valid combinations of the fields stable in the request and committed
 <                                in the reply.
 ---
 >       Valid combinations of the fields stable in the request and
 >       committed
 >                                   in the reply.
-22490a22565
+22491a22882
 >             |            |                                   |
-22493c22568
+22494c22885
 <                                  Table 11
 ---
->                                  Table 10
-22689,22690c22764,22765
+>                                   Table 5
+22510a22902
+> 
+22558a22951
+> 
+22605a22999
+> 
+22690,22691c23084,23085
 <     channel_dir_from_client4
 <                    bctsa_dir;
 ---
 >       channel_dir_from_client4
 >                      bctsa_dir;
-22706,22707c22781,22782
+22707,22708c23101,23102
 <     channel_dir_from_server4
 <                    bctsr_dir;
 ---
 >       channel_dir_from_server4
 >                      bctsr_dir;
-22982,22984c23057,23062
+22837a23232
+> 
+22919a23315
+> 
+22983,22985c23379,23383
 <       These properties may be updated by subsequent EXCHANGE_ID requests
 <       on confirmed client IDs though the server MAY refuse to change
 <       them.
 ---
 >          These properties may be updated by subsequent EXCHANGE_ID
 >          requests
-> 
 >          on confirmed client IDs though the server MAY refuse to change
 > 
 >          them.
-23001,23002c23079,23081
+23002,23003c23400,23401
 <       Once the client ID is confirmed, these properties cannot be
 <       updated by subsequent EXCHANGE_ID requests.
 ---
 >          Once the client ID is confirmed, these properties cannot be
-> 
 >          updated by subsequent EXCHANGE_ID requests.
-23337a23417
+23013a23412
+> 
+23075a23475
+> 
+23123a23524
+> 
+23153a23555
+> 
+23171a23574
+> 
+23200a23604
+> 
+23219a23624
+> 
+23247a23653
+> 
+23266a23673
+> 
+23291a23699
+> 
+23338a23747
 >    |                   |                      |                        |
-23340,23341c23420
+23341c23750
 <                                  Table 12
-< 
 ---
->                                  Table 11
-23373,23374c23452,23453
+>                                   Table 6
+23374,23375c23783,23784
 <           The client identifier string, from the eia_clientowner
 <           structure of the EXCHANGE_ID4args structure.
 ---
 >        The client identifier string, from the eia_clientowner structure
 >        of the EXCHANGE_ID4args structure.
-23378,23380c23457,23459
+23379,23381c23788,23790
 <           A client-specific value used to indicate incarnations (where a
 <           client restart represents a new incarnation), from the
 <           eia_clientowner structure of the EXCHANGE_ID4args structure.
@@ -1617,13 +2054,13 @@
 >        A client-specific value used to indicate incarnations (where a
 >        client restart represents a new incarnation), from the
 >        eia_clientowner structure of the EXCHANGE_ID4args structure.
-23384,23385c23463,23464
+23385,23386c23794,23795
 <           The principal that was defined in the RPC header's credential
 <           and/or verifier at the time the client record was established.
 ---
 >        The principal that was defined in the RPC header's credential
 >        and/or verifier at the time the client record was established.
-23389,23391c23468,23470
+23390,23392c23799,23801
 <           The shorthand client identifier, generated by the server and
 <           returned via the eir_clientid field in the EXCHANGE_ID4resok
 <           structure.
@@ -1631,7 +2068,7 @@
 >        The shorthand client identifier, generated by the server and
 >        returned via the eir_clientid field in the EXCHANGE_ID4resok
 >        structure.
-23395,23401c23474,23479
+23396,23402c23805,23810
 <           A private field on the server indicating whether or not a
 <           client record has been confirmed.  A client record is
 <           confirmed if there has been a successful CREATE_SESSION
@@ -1646,7 +2083,7 @@
 >        Otherwise, it is unconfirmed.  An unconfirmed record is
 >        established by an EXCHANGE_ID call.  Any unconfirmed record that
 >        is not confirmed within a lease period SHOULD be removed.
-23467,23472c23545,23550
+23468,23473c23876,23881
 <           If the server has no client records with
 <           eia_clientowner.co_ownerid matching ownerid_arg, and
 <           EXCHGID4_FLAG_UPD_CONFIRMED_REC_A is not set in the
@@ -1660,180 +2097,74 @@
 >        then a new shorthand client ID (let us call it clientid_ret) is
 >        generated, and the following unconfirmed record is added to the
 >        server's state.
-23474,23475c23552,23553
-<           { ownerid_arg, verifier_arg, principal_arg, clientid_ret,
-<           unconfirmed }
+23480c23888
+<    2.  Non-Update on Existing Client ID
 ---
->        { ownerid_arg, verifier_arg, principal_arg, clientid_ret,
->        unconfirmed }
-23477c23555
-<           Subsequently, the server returns clientid_ret.
----
->        Subsequently, the server returns clientid_ret.
-23481,23497c23559,23575
+>    1.  Non-Update on Existing Client ID
+23482,23486c23890,23894
 <           If the server has the following confirmed record, and the
 <           request does not have EXCHGID4_FLAG_UPD_CONFIRMED_REC_A set,
 <           then the request is the result of a retried request due to a
 <           faulty router or lost connection, or the client is trying to
 <           determine if it can perform trunking.
-< 
-<           { ownerid_arg, verifier_arg, principal_arg, clientid_ret,
-<           confirmed }
-< 
-<           Since the record has been confirmed, the client must have
-<           received the server's reply from the initial EXCHANGE_ID
-<           request.  Since the server has a confirmed record, and since
-<           EXCHGID4_FLAG_UPD_CONFIRMED_REC_A is not set, with the
-<           possible exception of eir_server_owner.so_minor_id, the server
-<           returns the same result it did when the client ID's properties
-<           were last updated (or if never updated, the result when the
-<           client ID was created).  The confirmed record is unchanged.
 ---
 >        If the server has the following confirmed record, and the request
 >        does not have EXCHGID4_FLAG_UPD_CONFIRMED_REC_A set, then the
 >        request is the result of a retried request due to a faulty router
 >        or lost connection, or the client is trying to determine if it
 >        can perform trunking.
-> 
->        { ownerid_arg, verifier_arg, principal_arg, clientid_ret,
->        confirmed }
-> 
->        Since the record has been confirmed, the client must have
->        received the server's reply from the initial EXCHANGE_ID request.
->        Since the server has a confirmed record, and since
->        EXCHGID4_FLAG_UPD_CONFIRMED_REC_A is not set, with the possible
->        exception of eir_server_owner.so_minor_id, the server returns the
->        same result it did when the client ID's properties were last
->        updated (or if never updated, the result when the client ID was
->        created).  The confirmed record is unchanged.
-23501,23528c23579,23605
+23500c23908
+<    3.  Client Collision
+---
+>    1.  Client Collision
+23502,23506c23910,23914
 <           If EXCHGID4_FLAG_UPD_CONFIRMED_REC_A is not set, and if the
 <           server has the following confirmed record, then this request
 <           is likely the result of a chance collision between the values
 <           of the eia_clientowner.co_ownerid subfield of EXCHANGE_ID4args
 <           for two different clients.
-< 
-<           { ownerid_arg, *, old_principal_arg, old_clientid_ret,
-<           confirmed }
-< 
-<           If there is currently no state associated with
-<           old_clientid_ret, or if there is state but the lease has
-<           expired, then this case is effectively equivalent to the New
-<           Owner ID case of Paragraph 1.  The confirmed record is
-<           deleted, the old_clientid_ret and its lock state are deleted,
-<           a new shorthand client ID is generated, and the following
-<           unconfirmed record is added to the server's state.
-< 
-<           { ownerid_arg, verifier_arg, principal_arg, clientid_ret,
-<           unconfirmed }
-< 
-<           Subsequently, the server returns clientid_ret.
-< 
-<           If old_clientid_ret has an unexpired lease with state, then no
-<           state of old_clientid_ret is changed or deleted.  The server
-<           returns NFS4ERR_CLID_INUSE to indicate that the client should
-<           retry with a different value for the
-<           eia_clientowner.co_ownerid subfield of EXCHANGE_ID4args.  The
-<           client record is not changed.
 ---
 >        If EXCHGID4_FLAG_UPD_CONFIRMED_REC_A is not set, and if the
 >        server has the following confirmed record, then this request is
 >        likely the result of a chance collision between the values of the
 >        eia_clientowner.co_ownerid subfield of EXCHANGE_ID4args for two
 >        different clients.
+23515a23924
 > 
->        { ownerid_arg, *, old_principal_arg, old_clientid_ret, confirmed
->        }
-> 
->        If there is currently no state associated with old_clientid_ret,
->        or if there is state but the lease has expired, then this case is
->        effectively equivalent to the New Owner ID case of Paragraph 1.
->        The confirmed record is deleted, the old_clientid_ret and its
->        lock state are deleted, a new shorthand client ID is generated,
->        and the following unconfirmed record is added to the server's
->        state.
-> 
->        { ownerid_arg, verifier_arg, principal_arg, clientid_ret,
->        unconfirmed }
-> 
->        Subsequently, the server returns clientid_ret.
-> 
->        If old_clientid_ret has an unexpired lease with state, then no
->        state of old_clientid_ret is changed or deleted.  The server
->        returns NFS4ERR_CLID_INUSE to indicate that the client should
->        retry with a different value for the eia_clientowner.co_ownerid
->        subfield of EXCHANGE_ID4args.  The client record is not changed.
-23532,23546c23609,23622
+23531c23940
+<    4.  Replacement of Unconfirmed Record
+---
+>    1.  Replacement of Unconfirmed Record
+23533,23538c23942,23946
 <           If the EXCHGID4_FLAG_UPD_CONFIRMED_REC_A flag is not set, and
 <           the server has the following unconfirmed record, then the
 <           client is attempting EXCHANGE_ID again on an unconfirmed
 <           client ID, perhaps due to a retry, a client restart before
 <           client ID confirmation (i.e., before CREATE_SESSION was
 <           called), or some other reason.
-< 
-<           { ownerid_arg, *, *, old_clientid_ret, unconfirmed }
-< 
-<           It is possible that the properties of old_clientid_ret are
-<           different than those specified in the current EXCHANGE_ID.
-<           Whether or not the properties are being updated, to eliminate
-<           ambiguity, the server deletes the unconfirmed record,
-<           generates a new client ID (clientid_ret), and establishes the
-<           following unconfirmed record:
 ---
 >        If the EXCHGID4_FLAG_UPD_CONFIRMED_REC_A flag is not set, and the
 >        server has the following unconfirmed record, then the client is
 >        attempting EXCHANGE_ID again on an unconfirmed client ID, perhaps
 >        due to a retry, a client restart before client ID confirmation
 >        (i.e., before CREATE_SESSION was called), or some other reason.
-> 
->        { ownerid_arg, *, *, old_clientid_ret, unconfirmed }
-> 
->        It is possible that the properties of old_clientid_ret are
->        different than those specified in the current EXCHANGE_ID.
->        Whether or not the properties are being updated, to eliminate
->        ambiguity, the server deletes the unconfirmed record, generates a
->        new client ID (clientid_ret), and establishes the following
->        unconfirmed record:
-23548,23549c23624,23625
-<           { ownerid_arg, verifier_arg, principal_arg, clientid_ret,
-<           unconfirmed }
+23552c23960
+<    5.  Client Restart
 ---
->        { ownerid_arg, verifier_arg, principal_arg, clientid_ret,
->        unconfirmed }
-23553,23596c23629,23670
+>    1.  Client Restart
+23554,23557c23962,23965
 <           If EXCHGID4_FLAG_UPD_CONFIRMED_REC_A is not set, and if the
 <           server has the following confirmed client record, then this
 <           request is likely from a previously confirmed client that has
 <           restarted.
-< 
-<           { ownerid_arg, old_verifier_arg, principal_arg,
-<           old_clientid_ret, confirmed }
-< 
-<           Since the previous incarnation of the same client will no
-<           longer be making requests, once the new client ID is confirmed
-<           by CREATE_SESSION, byte-range locks and share reservations
-<           should be released immediately rather than forcing the new
-<           incarnation to wait for the lease time on the previous
-<           incarnation to expire.  Furthermore, session state should be
-<           removed since if the client had maintained that information
-<           across restart, this request would not have been sent.  If the
-<           server supports neither the CLAIM_DELEGATE_PREV nor
-<           CLAIM_DELEG_PREV_FH claim types, associated delegations should
-<           be purged as well; otherwise, delegations are retained and
-<           recovery proceeds according to Section 10.2.1.
-< 
-<           After processing, clientid_ret is returned to the client and
-<           this client record is added:
-< 
-<           { ownerid_arg, verifier_arg, principal_arg, clientid_ret,
-<           unconfirmed }
-< 
-<           The previously described confirmed record continues to exist,
-<           and thus the same ownerid_arg exists in both a confirmed and
-<           unconfirmed state at the same time.  The number of states can
-<           collapse to one once the server receives an applicable
-<           CREATE_SESSION or EXCHANGE_ID.
-< 
+---
+>        If EXCHGID4_FLAG_UPD_CONFIRMED_REC_A is not set, and if the
+>        server has the following confirmed client record, then this
+>        request is likely from a previously confirmed client that has
+>        restarted.
+23564a23973
+> 
+23587,23597c23996,24004
 <           +  If the server subsequently receives a successful
 <              CREATE_SESSION that confirms clientid_ret, then the server
 <              atomically destroys the confirmed record and makes the
@@ -1846,101 +2177,51 @@
 <              EXCHANGE_ID as described in the entirety of
 <              Section 18.35.4.
 ---
->        If EXCHGID4_FLAG_UPD_CONFIRMED_REC_A is not set, and if the
->        server has the following confirmed client record, then this
->        request is likely from a previously confirmed client that has
->        restarted.
+>    o  If the server subsequently receives a successful CREATE_SESSION
+>       that confirms clientid_ret, then the server atomically destroys
+>       the confirmed record and makes the unconfirmed record confirmed as
+>       described in Section 18.36.4.
 > 
->        { ownerid_arg, old_verifier_arg, principal_arg, old_clientid_ret,
->        confirmed }
-> 
->        Since the previous incarnation of the same client will no longer
->        be making requests, once the new client ID is confirmed by
->        CREATE_SESSION, byte-range locks and share reservations should be
->        released immediately rather than forcing the new incarnation to
->        wait for the lease time on the previous incarnation to expire.
->        Furthermore, session state should be removed since if the client
->        had maintained that information across restart, this request
->        would not have been sent.  If the server supports neither the
->        CLAIM_DELEGATE_PREV nor CLAIM_DELEG_PREV_FH claim types,
->        associated delegations should be purged as well; otherwise,
->        delegations are retained and recovery proceeds according to
->        Section 10.2.1.
-> 
->        After processing, clientid_ret is returned to the client and this
->        client record is added:
-> 
->        { ownerid_arg, verifier_arg, principal_arg, clientid_ret,
->        unconfirmed }
-> 
->        The previously described confirmed record continues to exist, and
->        thus the same ownerid_arg exists in both a confirmed and
->        unconfirmed state at the same time.  The number of states can
->        collapse to one once the server receives an applicable
->        CREATE_SESSION or EXCHANGE_ID.
-> 
->        *  If the server subsequently receives a successful
->           CREATE_SESSION that confirms clientid_ret, then the server
->           atomically destroys the confirmed record and makes the
->           unconfirmed record confirmed as described in Section 18.36.4.
-> 
->        *  If the server instead subsequently receives an EXCHANGE_ID
->           with the client owner equal to ownerid_arg, one strategy is to
->           simply delete the unconfirmed record, and process the
->           EXCHANGE_ID as described in the entirety of Section 18.35.4.
-23600,23610c23674,23684
-<           If EXCHGID4_FLAG_UPD_CONFIRMED_REC_A is set, and the server
-<           has the following confirmed record, then this request is an
-<           attempt at an update.
-< 
-<           { ownerid_arg, verifier_arg, principal_arg, clientid_ret,
-<           confirmed }
-< 
-<           Since the record has been confirmed, the client must have
-<           received the server's reply from the initial EXCHANGE_ID
-<           request.  The server allows the update, and the client record
-<           is left intact.
+>    o  If the server instead subsequently receives an EXCHANGE_ID with
+>       the client owner equal to ownerid_arg, one strategy is to simply
+>       delete the unconfirmed record, and process the EXCHANGE_ID as
+>       described in the entirety of Section 18.35.4.
+23599c24006
+<    6.  Update
 ---
->        If EXCHGID4_FLAG_UPD_CONFIRMED_REC_A is set, and the server has
->        the following confirmed record, then this request is an attempt
->        at an update.
-> 
->        { ownerid_arg, verifier_arg, principal_arg, clientid_ret,
->        confirmed }
-> 
->        Since the record has been confirmed, the client must have
->        received the server's reply from the initial EXCHANGE_ID request.
->        The server allows the update, and the client record is left
->        intact.
-23614,23617c23688,23690
+>       1.  Update
+23613c24020
+<    7.  Update but No Confirmed Record
+---
+>    1.  Update but No Confirmed Record
+23615,23625c24022,24031
 <           If EXCHGID4_FLAG_UPD_CONFIRMED_REC_A is set, and the server
 <           has no confirmed record corresponding ownerid_arg, then the
 <           server returns NFS4ERR_NOENT and leaves any unconfirmed record
 <           intact.
----
->        If EXCHGID4_FLAG_UPD_CONFIRMED_REC_A is set, and the server has
->        no confirmed record corresponding ownerid_arg, then the server
->        returns NFS4ERR_NOENT and leaves any unconfirmed record intact.
-23621,23629c23694,23701
+< 
+<    8.  Update but Wrong Verifier
+< 
 <           If EXCHGID4_FLAG_UPD_CONFIRMED_REC_A is set, and the server
 <           has the following confirmed record, then this request is an
 <           illegal attempt at an update, perhaps because of a retry from
 <           a previous client incarnation.
-< 
-<           { ownerid_arg, old_verifier_arg, *, clientid_ret, confirmed }
-< 
-<           The server returns NFS4ERR_NOT_SAME and leaves the client
-<           record intact.
 ---
+>        If EXCHGID4_FLAG_UPD_CONFIRMED_REC_A is set, and the server has
+>        no confirmed record corresponding ownerid_arg, then the server
+>        returns NFS4ERR_NOENT and leaves any unconfirmed record intact.
+> 
+>    2.  Update but Wrong Verifier
+> 
 >        If EXCHGID4_FLAG_UPD_CONFIRMED_REC_A is set, and the server has
 >        the following confirmed record, then this request is an illegal
 >        attempt at an update, perhaps because of a retry from a previous
 >        client incarnation.
-> 
->        { ownerid_arg, old_verifier_arg, *, clientid_ret, confirmed }
->        The server returns NFS4ERR_NOT_SAME and leaves the client record
->        intact.
-23633,23635c23705,23707
+23632c24038
+<    9.  Update but Wrong Principal
+---
+>    1.  Update but Wrong Principal
+23634,23636c24040,24042
 <           If EXCHGID4_FLAG_UPD_CONFIRMED_REC_A is set, and the server
 <           has the following confirmed record, then this request is an
 <           illegal attempt at an update by an unauthorized principal.
@@ -1948,19 +2229,11 @@
 >        If EXCHGID4_FLAG_UPD_CONFIRMED_REC_A is set, and the server has
 >        the following confirmed record, then this request is an illegal
 >        attempt at an update by an unauthorized principal.
-23637,23638c23709,23710
-<           { ownerid_arg, verifier_arg, old_principal_arg, clientid_ret,
-<           confirmed }
----
->        { ownerid_arg, verifier_arg, old_principal_arg, clientid_ret,
->        confirmed }
-23640,23641c23712,23713
-<           The server returns NFS4ERR_PERM and leaves the client record
-<           intact.
----
->        The server returns NFS4ERR_PERM and leaves the client record
->        intact.
-23815,23818c23887,23890
+23781a24188
+> 
+23783a24191
+> 
+23816,23819c24224,24227
 <          framing headers.  Imagine a request coming over a non-RDMA
 <          TCP/IP connection, and that it has a single Record Marking
 <          header preceding it.  The maximum allowable count encoded in
@@ -1970,48 +2243,79 @@
 >          IP connection, and that it has a single Record Marking header
 >          preceding it.  The maximum allowable count encoded in the
 >          header will be ca_maxrequestsize.  If a requester sends a
-23916,23917c23988,23989
+23829a24238
+> 
+23917,23918c24326,24328
 <       defined in Section 5.2.3.1, "Context Creation Response -
 <       Successful Acceptance", of [4].
 ---
+> 
 >       defined in Section 5.2.3.1, "Context Creation Response -Successful
->       Acceptance", of
-23930,23934c24002
-<       the RPCSEC_GSS Security Protocol", of [4]) in callback RPCs.  The
-<       server MUST use the RPCSEC_GSS security service specified in
-<       gcbp_service, i.e., it MUST set the "service" field of the
-<       rpc_gss_cred_t data type in RPCSEC_GSS credential to the value of
-<       gcbp_service (see Section 5.3.1, "RPC Request Header", of [4]).
+>       Acceptance", of [4].
+23924a24335
+> 
+24010a24422
+> 
+24046,24047c24458,24459
+<              If the server has the following unconfirmed record, then
+<              this is the expected confirmation of an unconfirmed record.
 ---
->       the RPCSEC_GSS Security Protocol", of
-23942,23945c24010
-<       seq_window (see Section 5.2.3.1 of RFC2203 [4]).  The fore and
-<       back RPCSEC_GSS context state are independent of each other as far
-<       as the RPCSEC_GSS sequence number (see the seq_num field in the
-<       rpc_gss_cred_t data type of Sections 5 and 5.3.1 of [4]).
+>           If the server has the following unconfirmed record, then this
+>           is the expected confirmation of an unconfirmed record.
+24069c24481
+<        *  Unsuccessful Confirmation
 ---
->       seq_window (see Section 5.2.3.1 of RFC2203
-23950c24015,24023
-<       to this situation discussed in Section 2.10.10.
+>       *  Unsuccessful Confirmation
+24071,24074c24483,24486
+<              If the server has the following record, then the client has
+<              changed principals after the previous EXCHANGE_ID request,
+<              or there has been a chance collision between shorthand
+<              client identifiers.
 ---
->       to this situation discussed in Section 2.10.10.[4].[4]) in
->       callback RPCs.  The server MUST use the RPCSEC_GSS security
->       service specified in gcbp_service, i.e., it MUST set the "service"
->       field of the rpc_gss_cred_t data type in RPCSEC_GSS credential to
->       the value of gcbp_service (see Section 5.3.1, "RPC Request
->       Header", of [4]).[4]).  The fore and back RPCSEC_GSS context state
->       are independent of each other as far as the RPCSEC_GSS sequence
->       number (see the seq_num field in the rpc_gss_cred_t data type of
->       Sections 5 and 5.3.1 of [4]).
-24280d24352
-< 
-24892c24964,24966
+>          If the server has the following record, then the client has
+>          changed principals after the previous EXCHANGE_ID request, or
+>          there has been a chance collision between shorthand client
+>          identifiers.
+24082c24494
+<    4.  Session creation.  The server confirmed the client ID, either in
+---
+>    1.  Session creation.  The server confirmed the client ID, either in
+24195a24608
+> 
+24209a24623
+> 
+24241a24656
+> 
+24337a24753
+> 
+24376a24793
+> 
+24519a24937
+> 
+24601a25020
+> 
+24695a25115
+> 
+24743a25164
+> 
+24790a25212
+> 
+24892,24893c25314,25316
+<          Acceptable layouts based on loga_minlength.  Note: u64m =
 <      NFS4_UINT64_MAX; a_off = loga_offset; a_minlen = loga_minlength.
 ---
+>         Acceptable layouts based on loga_minlength.  Note: u64m =
 > 
->          NFS4_UINT64_MAX; a_off = loga_offset; a_minlen =
->          loga_minlength.
-25173,25178c25247,25252
+>         NFS4_UINT64_MAX; a_off = loga_offset; a_minlen = loga_minlength.
+24931a25355
+> 
+25026a25451
+> 
+25070a25496
+> 
+25166a25593
+> 
+25174,25179c25601,25606
 <    o  This strategy is as above, but the client is not using buffered
 <       I/O, and instead all internal I/O requests are sent directly to
 <       the server.  The LAYOUTGET request has loga_offset equal to 10000
@@ -2025,9 +2329,94 @@
 >       loga_minlength set to 50000.  The value of loga_length is set to
 >       the length of the file.  The metadata server is free to return a
 >       layout that fully overlaps the requested range, with a starting
-26340a26415
+25309a25737
 > 
-26470,26485c26545,26561
+25334a25763
+> 
+25356a25786
+> 
+25381a25812
+> 
+25477a25909
+> 
+25570a26003
+> 
+25586a26020
+> 
+25617a26052
+> 
+25665a26101
+> 
+25712a26149
+> 
+25853a26291
+> 
+25868a26307
+> 
+26064a26504
+> 
+26341a26782
+> 
+26364a26806
+> 
+26383c26825
+<     case OP_CB_NOTIFY:     CB_NOTIFY4res   opcbnotify;
+---
+>       case OP_CB_NOTIFY:  CB_NOTIFY4res opcbnotify;
+26385,26386c26827,26828
+<     case OP_CB_PUSH_DELEG: CB_PUSH_DELEG4res
+<                                            opcbpush_deleg;
+---
+>       case OP_CB_PUSH_DELEG: CB_PUSH_DELEG4res
+>      opcbpush_deleg;
+26388,26389c26830,26831
+<     case OP_CB_RECALL_ANY: CB_RECALL_ANY4res
+<                                            opcbrecall_any;
+---
+>       case OP_CB_RECALL_ANY: CB_RECALL_ANY4res
+>      opcbrecall_any;
+26391,26393c26833,26834
+<     case OP_CB_RECALLABLE_OBJ_AVAIL:
+<                            CB_RECALLABLE_OBJ_AVAIL4res
+<                                    opcbrecallable_obj_avail;
+---
+>       case OP_CB_RECALLABLE_OBJ_AVAIL:
+>      CB_RECALLABLE_OBJ_AVAIL4res opcbrecallable_obj_avail;
+26395,26397c26836,26837
+<     case OP_CB_RECALL_SLOT:
+<                            CB_RECALL_SLOT4res
+<                                            opcbrecall_slot;
+---
+>       case OP_CB_RECALL_SLOT:
+>      CB_RECALL_SLOT4res opcbrecall_slot;
+26399c26839
+<     case OP_CB_SEQUENCE:   CB_SEQUENCE4res opcbsequence;
+---
+>       case OP_CB_SEQUENCE:  CB_SEQUENCE4res opcbsequence;
+26401,26403c26841,26842
+<     case OP_CB_WANTS_CANCELLED:
+<                            CB_WANTS_CANCELLED4res
+<                                    opcbwants_cancelled;
+---
+>       case OP_CB_WANTS_CANCELLED:
+>      CB_WANTS_CANCELLED4res opcbwants_cancelled;
+26405,26407c26844,26848
+<     case OP_CB_NOTIFY_LOCK:
+<                            CB_NOTIFY_LOCK4res
+<                                            opcbnotify_lock;
+---
+>       case OP_CB_NOTIFY_LOCK:
+>      CB_NOTIFY_LOCK4res opcbnotify_lock;
+> 
+>       case OP_CB_NOTIFY_DEVICEID:
+>      CB_NOTIFY_DEVICEID4res opcbnotify_deviceid;
+26409,26411d26849
+<     case OP_CB_NOTIFY_DEVICEID:
+<                            CB_NOTIFY_DEVICEID4res
+<                                            opcbnotify_deviceid;
+26439a26878
+> 
+26471,26486c26910,26926
 <    +------------------------------+------------------------------------+
 <    | Error                        | Notes                              |
 <    +------------------------------+------------------------------------+
@@ -2062,39 +2451,65 @@
 >     | NFS4ERR_REQ_TOO_BIG          |                                  |
 >     |                              |                                  |
 >     +------------------------------+----------------------------------+
-26487c26563
+26488c26928
 <                                  Table 15
 ---
->                                  Table 12
-26800d26875
-< 
-27484,27485c27559,27560
+>                                   Table 7
+26641a27082
+> 
+26748a27190
+> 
+26796a27239
+> 
+26828a27272
+> 
+26843a27288
+> 
+26891a27337
+> 
+26939a27386
+> 
+27079a27527
+> 
+27253a27702
+> 
+27306a27756
+> 
+27349a27800
+> 
+27485,27486c27936,27937
 <       the new device-ID-to-device-address mappings before sending new
 <       I/O requests to the storage devices addressed by the device ID.
 ---
 >       the new device-ID-to-device-address mappings before sending new I/
 >       O requests to the storage devices addressed by the device ID.
-27501,27504c27576,27583
+27491a27943
+> 
+27502,27505c27954,27959
 <       The notification is encoded in a value of data type
 <       notify_deviceid_delete4.  After a server deletes a device ID, it
 <       MUST NOT reuse that device ID for the same layout type until the
 <       client ID is deleted.
 ---
 >          The notification is encoded in a value of data type
-> 
 >          notify_deviceid_delete4.  After a server deletes a device ID,
->             it
-> 
+>         it
 >          MUST NOT reuse that device ID for the same layout type until
 >          the
 >          client ID is deleted.
-27735a27815
+27535a27990
+> 
+27583a28039
+> 
+27736a28193
 >    |                         |       |         |     |                |
-27738c27818
+27739c28196
 <            Table 16: Initial Device ID Notification Assignments
 ---
->            Table 13: Initial Device ID Notification Assignments
-27802,27820c27882,27901
+>             Table 8: Initial Device ID Notification Assignments
+27774a28232
+> 
+27803,27821c28261,28280
 <    +-------------------------------+-------+--------+-----+------------+
 <    | Recallable Object Type Name   | Value | RFC    | How | Minor      |
 <    |                               |       |        |     | Versions   |
@@ -2135,41 +2550,45 @@
 >    |                               |        | 5661 |      |            |
 >    |                               |        |      |      |            |
 >    +-------------------------------+--------+------+------+------------+
-27822c27903
+27823c28282
 <            Table 17: Initial Recallable Object Type Assignments
 ---
->            Table 14: Initial Recallable Object Type Assignments
-27882a27964
+>             Table 9: Initial Recallable Object Type Assignments
+27849a28309
+> 
+27883a28344
 >     |                       |       |          |     |                |
-27885c27967
+27886c28347
 <                  Table 18: Initial Layout Type Assignments
 ---
->                  Table 15: Initial Layout Type Assignments
-28028a28111
+>                  Table 10: Initial Layout Type Assignments
+27989a28451
+> 
+28029a28492
 >          |                        |          |                  |
-28031c28114
+28032c28495
 <                  Table 19: Initial List of Path Variables
 ---
->                  Table 16: Initial List of Path Variables
-28116,28117c28199,28200
+>                  Table 11: Initial List of Path Variables
+28117,28118c28580,28581
 <    [1]   Bradner, S., "Key words for use in RFCs to Indicate Requirement
 <          Levels", BCP 14, RFC 2119, March 1997.
 ---
 >    [1]        Bradner, S., "Key words for use in RFCs to Indicate
 >               Requirement Levels", BCP 14, RFC 2119, March 1997.
-28119,28120c28202,28203
+28120,28121c28583,28584
 <    [2]   Eisler, M., Ed., "XDR: External Data Representation Standard",
 <          STD 67, RFC 4506, May 2006.
 ---
 >    [2]        Eisler, M., Ed., "XDR: External Data Representation
 >               Standard", STD 67, RFC 4506, May 2006.
-28122,28123c28205,28206
+28123,28124c28586,28587
 <    [3]   Thurlow, R., "RPC: Remote Procedure Call Protocol Specification
 <          Version 2", RFC 5531, May 2009.
 ---
 >    [3]        Thurlow, R., "RPC: Remote Procedure Call Protocol
 >               Specification Version 2", RFC 5531, May 2009.
-28125,28232c28208,28321
+28126,28233c28589,28702
 <    [4]   Eisler, M., Chiu, A., and L. Ling, "RPCSEC_GSS Protocol
 <          Specification", RFC 2203, September 1997.
 < 
@@ -2393,7 +2812,7 @@
 >               "Cryptographic Algorithm Object Registration", URL
 >               http://csrc.nist.gov/groups/ST/crypto_apps_infra/csor/
 >               algorithms.html, November 2007.
-28236,28238c28325,28327
+28237,28239c28706,28708
 <    [30]  Shepler, S., Callaghan, B., Robinson, D., Thurlow, R., Beame,
 <          C., Eisler, M., and D. Noveck, "Network File System (NFS)
 <          version 4 Protocol", RFC 3530, April 2003.
@@ -2401,19 +2820,19 @@
 >    [30]       Shepler, S., Callaghan, B., Robinson, D., Thurlow, R.,
 >               Beame, C., Eisler, M., and D. Noveck, "Network File System
 >               (NFS) version 4 Protocol", RFC 3530, April 2003.
-28240,28241c28329,28330
+28241,28242c28710,28711
 <    [31]  Callaghan, B., Pawlowski, B., and P. Staubach, "NFS Version 3
 <          Protocol Specification", RFC 1813, June 1995.
 ---
 >    [31]       Callaghan, B., Pawlowski, B., and P. Staubach, "NFS
 >               Version 3 Protocol Specification", RFC 1813, June 1995.
-28243,28244c28332,28333
+28244,28245c28713,28714
 <    [32]  Eisler, M., "LIPKEY - A Low Infrastructure Public Key Mechanism
 <          Using SPKM", RFC 2847, June 2000.
 ---
 >    [32]       Eisler, M., "LIPKEY - A Low Infrastructure Public Key
 >               Mechanism Using SPKM", RFC 2847, June 2000.
-28246,28248c28335,28337
+28247,28249c28716,28718
 <    [33]  Eisler, M., "NFS Version 2 and Version 3 Security Issues and
 <          the NFS Protocol's Use of RPCSEC_GSS and Kerberos V5",
 <          RFC 2623, June 1999.
@@ -2421,87 +2840,87 @@
 >    [33]       Eisler, M., "NFS Version 2 and Version 3 Security Issues
 >               and the NFS Protocol's Use of RPCSEC_GSS and Kerberos V5",
 >               RFC 2623, June 1999.
-28250,28251c28339,28341
+28251,28252c28720,28722
 <    [34]  Juszczak, C., "Improving the Performance and Correctness of an
 <          NFS Server", USENIX Conference Proceedings, June 1990.
 ---
 >    [34]       Juszczak, C., "Improving the Performance and Correctness
 >               of an NFS Server", USENIX Conference Proceedings, June
 >               1990.
-28253,28254c28343,28344
+28254,28255c28724,28725
 <    [35]  Reynolds, J., Ed., "Assigned Numbers: RFC 1700 is Replaced by
 <          an On-line Database", RFC 3232, January 2002.
 ---
 >    [35]       Reynolds, J., Ed., "Assigned Numbers: RFC 1700 is Replaced
 >               by an On-line Database", RFC 3232, January 2002.
-28256,28257c28346,28347
+28257,28258c28727,28728
 <    [36]  Srinivasan, R., "Binding Protocols for ONC RPC Version 2",
 <          RFC 1833, August 1995.
 ---
 >    [36]       Srinivasan, R., "Binding Protocols for ONC RPC Version 2",
 >               RFC 1833, August 1995.
-28259,28260c28349,28350
+28260,28261c28730,28731
 <    [37]  Werme, R., "RPC XID Issues", USENIX Conference Proceedings,
 <          February 1996.
 ---
 >    [37]       Werme, R., "RPC XID Issues", USENIX Conference
 >               Proceedings, February 1996.
-28262,28263c28352,28353
+28263,28264c28733,28734
 <    [38]  Nowicki, B., "NFS: Network File System Protocol specification",
 <          RFC 1094, March 1989.
 ---
 >    [38]       Nowicki, B., "NFS: Network File System Protocol
 >               specification", RFC 1094, March 1989.
-28265,28266c28355,28357
+28266,28267c28736,28738
 <    [39]  Bhide, A., Elnozahy, E., and S. Morgan, "A Highly Available
 <          Network Server", USENIX Conference Proceedings, January 1991.
 ---
 >    [39]       Bhide, A., Elnozahy, E., and S. Morgan, "A Highly
 >               Available Network Server", USENIX Conference Proceedings,
 >               January 1991.
-28268,28269c28359,28360
+28269,28270c28740,28741
 <    [40]  Halevy, B., Welch, B., and J. Zelenka, "Object-Based Parallel
 <          NFS (pNFS) Operations", RFC 5664, January 2010.
 ---
 >    [40]       Halevy, B., Welch, B., and J. Zelenka, "Object-Based
 >               Parallel NFS (pNFS) Operations", RFC 5664, January 2010.
-28271,28272c28362,28363
+28272,28273c28743,28744
 <    [41]  Black, D., Glasgow, J., and S. Fridella, "Parallel NFS (pNFS)
 <          Block/Volume Layout", RFC 5663, January 2010.
 ---
 >    [41]       Black, D., Glasgow, J., and S. Fridella, "Parallel NFS
 >               (pNFS) Block/Volume Layout", RFC 5663, January 2010.
-28274,28275c28365,28366
+28275,28276c28746,28747
 <    [42]  Callaghan, B., "WebNFS Client Specification", RFC 2054,
 <          October 1996.
 ---
 >    [42]       Callaghan, B., "WebNFS Client Specification", RFC 2054,
 >               October 1996.
-28277,28278c28368,28369
+28278,28279c28749,28750
 <    [43]  Callaghan, B., "WebNFS Server Specification", RFC 2055,
 <          October 1996.
 ---
 >    [43]       Callaghan, B., "WebNFS Server Specification", RFC 2055,
 >               October 1996.
-28280,28281c28371,28372
+28281,28282c28752,28753
 <    [44]  IESG, "IESG Processing of RFC Errata for the IETF Stream",
 <          July 2008.
 ---
 >    [44]       IESG, "IESG Processing of RFC Errata for the IETF Stream",
 >               July 2008.
-28283,28284c28374,28375
+28284,28285c28755,28756
 <    [45]  Shepler, S., "NFS Version 4 Design Considerations", RFC 2624,
 <          June 1999.
 ---
 >    [45]       Shepler, S., "NFS Version 4 Design Considerations",
 >               RFC 2624, June 1999.
-28286,28287c28377,28378
+28287,28288c28758,28759
 <    [46]  The Open Group, "Protocols for Interworking: XNFS, Version 3W,
 <          ISBN 1-85912-184-5", February 1998.
 ---
 >    [46]       The Open Group, "Protocols for Interworking: XNFS, Version
 >               3W, ISBN 1-85912-184-5", February 1998.
-28289,28291c28380,28382
+28290,28292c28761,28763
 <    [47]  Floyd, S. and V. Jacobson, "The Synchronization of Periodic
 <          Routing Messages", IEEE/ACM Transactions on Networking 2(2),
 <          pp. 122-136, April 1994.
@@ -2509,7 +2928,7 @@
 >    [47]       Floyd, S. and V. Jacobson, "The Synchronization of
 >               Periodic Routing Messages", IEEE/ACM Transactions on
 >               Networking 2(2), pp. 122-136, April 1994.
-28293,28295c28384,28386
+28294,28296c28765,28767
 <    [48]  Satran, J., Meth, K., Sapuntzakis, C., Chadalapaka, M., and E.
 <          Zeidner, "Internet Small Computer Systems Interface (iSCSI)",
 <          RFC 3720, April 2004.
@@ -2517,13 +2936,13 @@
 >    [48]       Satran, J., Meth, K., Sapuntzakis, C., Chadalapaka, M.,
 >               and E. Zeidner, "Internet Small Computer Systems Interface
 >               (iSCSI)", RFC 3720, April 2004.
-28297,28298c28388,28389
+28298,28299c28769,28770
 <    [49]  Snively, R., "Fibre Channel Protocol for SCSI, 2nd Version
 <          (FCP-2)", ANSI/INCITS 350-2003, Oct 2003.
 ---
 >    [49]       Snively, R., "Fibre Channel Protocol for SCSI, 2nd Version
 >               (FCP-2)", ANSI/INCITS 350-2003, Oct 2003.
-28300,28302c28391,28393
+28301,28303c28772,28774
 <    [50]  Weber, R., "Object-Based Storage Device Commands (OSD)", ANSI/
 <          INCITS 400-2004, July 2004,
 <          <http://www.t10.org/ftp/t10/drafts/osd/osd-r10.pdf>.
@@ -2531,7 +2950,7 @@
 >    [50]       Weber, R., "Object-Based Storage Device Commands (OSD)",
 >               ANSI/INCITS 400-2004, July 2004,
 >               <http://www.t10.org/ftp/t10/drafts/osd/osd-r10.pdf>.
-28304,28306c28395,28398
+28305,28307c28776,28779
 <    [51]  Carns, P., Ligon III, W., Ross, R., and R. Thakur, "PVFS: A
 <          Parallel File System for Linux Clusters.", Proceedings of the
 <          4th Annual Linux Showcase and Conference, 2000.
@@ -2540,46 +2959,46 @@
 >               A Parallel File System for Linux Clusters.",
 >               Proceedings of the 4th Annual Linux Showcase and
 >               Conference, 2000.
-28308,28309c28400,28401
+28309,28310c28781,28782
 <    [52]  The Open Group, "The Open Group Base Specifications Issue 6,
 <          IEEE Std 1003.1, 2004 Edition", 2004.
 ---
 >    [52]       The Open Group, "The Open Group Base Specifications Issue
 >               6, IEEE Std 1003.1, 2004 Edition", 2004.
-28311c28403
+28312c28784
 <    [53]  Callaghan, B., "NFS URL Scheme", RFC 2224, October 1997.
 ---
 >    [53]       Callaghan, B., "NFS URL Scheme", RFC 2224, October 1997.
-28313,28314c28405,28406
+28314,28315c28786,28787
 <    [54]  Chiu, A., Eisler, M., and B. Callaghan, "Security Negotiation
 <          for WebNFS", RFC 2755, January 2000.
 ---
 >    [54]       Chiu, A., Eisler, M., and B. Callaghan, "Security
 >               Negotiation for WebNFS", RFC 2755, January 2000.
-28316,28317c28408,28410
+28317,28318c28789,28791
 <    [55]  Narten, T. and H. Alvestrand, "Guidelines for Writing an IANA
 <          Considerations Section in RFCs", BCP 26, RFC 5226, May 2008.
 ---
 >    [55]       Narten, T. and H. Alvestrand, "Guidelines for Writing an
 >               IANA Considerations Section in RFCs", BCP 26, RFC 5226,
 >               May 2008.
-28345c28438
+28346c28819
 <    parallel I/O. Garth Gibson and Peter Corbett started the pNFS effort
 ---
 >    parallel I/O.  Garth Gibson and Peter Corbett started the pNFS effort
-28425c28518
+28426c28899
 <    Finkelstein, Jason Goldschmidt, Vijay K. Gurbani, Sergey Klyushin,
 ---
 >    Finkelstein, Jason Goldschmidt, Vijay K.  Gurbani, Sergey Klyushin,
-28439c28532
+28440c28913
 <    EMail: shepler@storspeed.com
 ---
 >    Email: shepler@storspeed.com
-28448c28541
+28449c28922
 <    EMail: mike@eisler.com
 ---
 >    Email: mike@eisler.com
-28458c28551
+28459c28932
 <    EMail: dnoveck@netapp.com
 ---
 >    Email: dnoveck@netapp.com

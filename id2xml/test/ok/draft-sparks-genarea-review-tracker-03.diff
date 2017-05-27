@@ -1,4 +1,4 @@
-98,106c98,104
+100,108c100,106
 <                   +--------------+---------------------+
 <                   | Gen-ART      | [Gen-ART] [RFC6385] |
 <                   | Secdir       | [Secdir]            |
@@ -16,135 +16,47 @@
 >    +-----------------------------+-------------------------------------+
 >    |                             |                                     |
 >    +-----------------------------+-------------------------------------+
-337c335
-<       -  Assign at maximum one new review per week
----
->       *  Assign at maximum one new review per week
-339c337
-<       -  Assign at maximum one new review per fortnight
----
->       *  Assign at maximum one new review per fortnight
-341c339
-<       -  Assign at maximum one new review per month
----
->       *  Assign at maximum one new review per month
-343c341
-<       -  Assign at maximum one new review per two months
----
->       *  Assign at maximum one new review per two months
-350c348
-<       -  A hiatus must have a start date.  It may have an end date, or
----
->       *  A hiatus must have a start date.  It may have an end date, or
-353c351
-<       -  During a hiatus, the reviewer will not be included in the
----
->       *  During a hiatus, the reviewer will not be included in the
-358c356
-<       -  During a "soft" hiatus, the reviewer must not be assigned new
----
->       *  During a "soft" hiatus, the reviewer must not be assigned new
-362c360
-<       -  During a "hard" hiatus, the reviewer must not be assigned any
----
->       *  During a "hard" hiatus, the reviewer must not be assigned any
-433c431
-<       -  The current workflow, where the reviewer sends email to the
----
->       *  The current workflow, where the reviewer sends email to the
-440c438
-<       -  The tool should allow the reviewer to enter the review into the
----
->       *  The tool should allow the reviewer to enter the review into the
-446c444
-<       -  The tool could also allow the reviewer to submit the review to
----
->       *  The tool could also allow the reviewer to submit the review to
-476c474
-<       -  How many reviews have been completed
----
->       *  How many reviews have been completed
-478c476
-<       -  How many reviews are in progress
----
->       *  How many reviews are in progress
-480c478
-<       -  How many in progress reviews are late
----
->       *  How many in progress reviews are late
-482c480
-<       -  How many completed reviews were late
----
->       *  How many completed reviews were late
-484c482
-<       -  How many reviews were not completed at all
----
->       *  How many reviews were not completed at all
-486c484
-<       -  Average time to complete reviews (from assignment to
----
->       *  Average time to complete reviews (from assignment to
-493c491
-<       -  Total counts of reviews in each review state (done, rejected,
----
->       *  Total counts of reviews in each review state (done, rejected,
-496c494
-<       -  Total counts of completed reviews by result (ready, ready with
----
->       *  Total counts of completed reviews by result (ready, ready with
-509c507
-<       -  The secretariat and ADs can see any statistic.
----
->       *  The secretariat and ADs can see any statistic.
-511c509
-<       -  A team secretary can see any statistics for that team.
----
->       *  A team secretary can see any statistics for that team.
-513c511
-<       -  A reviewer can see any team aggregate statistics, or their own
----
->       *  A reviewer can see any team aggregate statistics, or their own
-639c637
+646c644
 <    [AppsDir]  "Applications Directorate", Work in Progress , April 2015,
 ---
 >    [AppsDir]  "Applications Directorate", April 2015,
-644,646c642,643
+651,653c649,650
 <               "Area Review Team Tool - Active Tickets", Work in Progress
 <               , April 2015, <https://wiki.tools.ietf.org/tools/art/trac/
 <               report/1>.
 ---
 >               "Area Review Team Tool - Active Tickets", April 2015,
 >               <https://wiki.tools.ietf.org/tools/art/trac/report/1>.
-648,649c645
+655,656c652
 <    [Gen-ART]  "General Area Review Team Guidelines", Work in Progress ,
 <               April 2015,
 ---
 >    [Gen-ART]  "General Area Review Team Guidelines", April 2015,
-653c649
+660c656
 <               "MIB Doctors", Work in Progress , April 2015,
 ---
 >               "MIB Doctors", April 2015,
-656c652
+663c659
 <    [OPS-dir]  "OPS Directorate", Work in Progress , April 2015,
 ---
 >    [OPS-dir]  "OPS Directorate", April 2015,
-661,662c657,658
+668,669c664,665
 <               "General Area Review Team (Gen-ART) Experiences", RFC
 <               6385, DOI 10.17487/RFC6385, October 2011,
 ---
 >               "General Area Review Team (Gen-ART) Experiences",
 >               RFC 6385, DOI 10.17487/RFC6385, October 2011,
-665c661
+672c668
 <    [RTG-dir]  "Routing Directorate", Work in Progress , April 2015,
 ---
 >    [RTG-dir]  "Routing Directorate", April 2015,
-668c664
+675c671
 <    [Secdir]   "Security Directorate", Work in Progress , April 2015,
 ---
 >    [Secdir]   "Security Directorate", April 2015,
-673c669
+680c676
 <               "YANG Doctors", Work in Progress , April 2015,
 ---
 >               "YANG Doctors", April 2015,
-693d688
-< 
+748a745
+> 

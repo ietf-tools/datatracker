@@ -1,7 +1,9 @@
-24c24
+24,25c24,25
 <    The issues list can be found at https://github.com/mnot/I-D/labels/
+<    rfc5988bis .
 ---
->    The issues list can be found at <https://github.com/mnot/I-D/labels/>
+>    The issues list can be found at <https://github.com/mnot/I-D/labels/
+>    rfc5988bis> .
 28c28
 <    https://mnot.github.io/I-D/rfc5988bis/ .
 ---
@@ -10,15 +12,13 @@
 <    Recent changes are listed at https://github.com/mnot/I-D/commits/gh-
 <    pages/rfc5988bis .
 ---
->    Recent changes are listed at <https://github.com/mnot/I-D/commits/
->    gh-> pages/rfc5988bis .
-216c216
+>    Recent changes are listed at <https://github.com/mnot/I-D/commits/gh-
+>    pages/rfc5988bis> .
+217c217
 <    https://www.iana.org/assignments/link-relations/ .  Registration
 ---
 >    <https://www.iana.org/assignments/link-relations/> .  Registration
-397d396
-< 
-549,553c548,549
+554,558c554,555
 <    Applicable protocol: http
 <    Status: standard
 <    Author/change controller:
@@ -27,11 +27,13 @@
 ---
 >        Applicable protocol: http Status: standard Author/change
 >        controller: IETF (iesg@ietf.org) Internet Engineering Task Force
-588d583
-< 
-868a864
+731a729
 > 
-888,891c884,886
+825a824
+> 
+873a873
+> 
+893,896c893,895
 <        13.  Let "star_param_names" be the set of "param_name"s in the
 <             ("param_name", "param_value") tuples of "link_parameters"
 <             where the last character of "param_name" is an asterisk
@@ -40,17 +42,17 @@
 >    1.  Let "star_param_names" be the set of "param_name"s in the
 >        ("param_name", "param_value") tuples of "link_parameters" where
 >        the last character of "param_name" is an asterisk ("*").
-893c888
+898c897
 <        14.  For each "star_param_name" in "star_param_names":
 ---
 >    2.  For each "star_param_name" in "star_param_names":
-895,896c890,891
+900,901c899,900
 <             1.  Let "base_param_name" be "star_param_name" with the last
 <                 character removed.
 ---
 >        1.  Let "base_param_name" be "star_param_name" with the last
 >            character removed.
-898,904c893,898
+903,909c902,907
 <             2.  If the implementation does not choose to support an
 <                 internationalised form of a parameter named
 <                 "base_param_name" for any reason (including, but not
@@ -65,28 +67,28 @@
 >            prohibited by the parameter's specification), remove all
 >            tuples from "link_parameters" whose first member is
 >            "star_param_name" and skip to the next "star_param_name".
-906,907c900,901
+911,912c909,910
 <             3.  Remove all tuples from "link_parameters" whose first
 <                 member is "base_param_name".
 ---
 >        3.  Remove all tuples from "link_parameters" whose first member
 >            is "base_param_name".
-909,911c903,904
+914,916c912,913
 <             4.  Change the first member of all tuples in
 <                 "link_parameters" whose first member is
 <                 "star_param_name" to "base_param_name".
 ---
 >        4.  Change the first member of all tuples in "link_parameters"
 >            whose first member is "star_param_name" to "base_param_name".
-913c906
+918c915
 <        15.  For each "relation_type" in "relation_types":
 ---
 >    3.  For each "relation_type" in "relation_types":
-915c908
+920c917
 <             1.  Case-normalise "relation_type" to lowercase.
 ---
 >        1.  Case-normalise "relation_type" to lowercase.
-917,919c910,912
+922,924c919,921
 <             2.  Append a link object to "links" with the target
 <                 "target", relation type of "relation_type", context of
 <                 "context", and target attributes "target_attributes".
@@ -94,13 +96,11 @@
 >        2.  Append a link object to "links" with the target "target",
 >            relation type of "relation_type", context of "context", and
 >            target attributes "target_attributes".
-921c914
+926c923
 <    4.  Return "links".
 ---
 >            1.  Return "links".
-953a947
-> 
-981c975
+987c984
 <    EMail: mnot@mnot.net
 ---
 >    Email: mnot@mnot.net
