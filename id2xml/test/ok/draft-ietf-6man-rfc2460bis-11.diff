@@ -24,45 +24,43 @@
 <       Flow Label          20-bit flow label.  See section 6.
 ---
 >       Flow Label 20-bit flow label.  See section 6.
-197a198
+338a339
 > 
-338a340
+342a344
 > 
-342a345
+346a349
 > 
-346a350
-> 
-380c384
+380c383
 <       Option Type         8-bit identifier of the type of option.
 ---
 >       Option Type  8-bit identifier of the type of option.
-382,383c386,387
+382,383c385,386
 <       Opt Data Len        8-bit unsigned integer.  Length of the Option
 <                           Data field of this option, in octets.
 ---
 >       Opt Data Len  8-bit unsigned integer.  Length of the Option
 >      Data field of this option, in octets.
-385,386c389,390
+385,386c388,389
 <       Option Data         Variable-length field.  Option-Type-specific
 <                           data.
 ---
 >       Option Data  Variable-length field.  Option-Type-specific
 >      data.
-441,442c445,446
+441,442c444,445
 <       8n+2 means any 8-octet offset from the start of the header, plus 2
 <            octets.
 ---
 >            8n+2 means any 8-octet offset from the start of the header,
 >            plus 2 octets.
-610c614
+610c613
 <       Identification      32 bits.  See description below.
 ---
 >       Identification 32 bits.  See description below.
-624c628
+624c627
 <       *  "recently" means within the maximum likely lifetime of a
 ---
 >       o  "recently" means within the maximum likely lifetime of a
-683,686c687,692
+683,686c686,691
 <    +------------------+---------+-------------------+----------+
 <    |  Per-Fragment    |Fragment | Ext & Upper-Layer |  first   |
 <    |    Headers       | Header  |   Headers         | fragment |
@@ -74,11 +72,11 @@
 >    +------------------+--------------+-------------------+-------------+
 >    |                  |              |                   |             |
 >    +------------------+--------------+-------------------+-------------+
-752c758
+752c757
 <       (3) The fragment itself.
 ---
 >          (3) The fragment itself.
-794,799c800,805
+794,799c799,804
 <             FL.first =  length of fragment following Fragment header of
 <                         first fragment packet.
 <             FO.last  =  Fragment Offset field of Fragment header of last
@@ -92,17 +90,17 @@
 >                   fragment packet.
 >       FL.last     = length of fragment following Fragment header of
 >                   last fragment packet.
-880a887
+880a886
 > 
-926a934
+926a933
 > 
-1112a1121
+1112a1120
 > 
-1159a1169
+1159a1168
 > 
-1292a1303
+1292a1302
 > 
-1299,1301c1310,1312
+1299,1301c1309,1311
 <       0  Revised the text to require that all headers through the first
 <          Upper-Layer Header are in the first fragment.  See [RFC6946]
 <          for more information.
@@ -110,121 +108,121 @@
 >             0 Revised the text to require that all headers through the
 >             first Upper-Layer Header are in the first fragment.  See
 >             [RFC6946] for more information.
-1337,1338c1348,1349
+1337,1338c1347,1348
 <    [RFC0791]  Postel, J., "Internet Protocol", STD 5, RFC 791, DOI
 <               10.17487/RFC0791, September 1981,
 ---
 >    [RFC0791]  Postel, J., "Internet Protocol", STD 5, RFC 791,
 >               DOI 10.17487/RFC0791, September 1981,
-1343,1344c1354,1355
+1343,1344c1353,1354
 <               Field) in the IPv4 and IPv6 Headers", RFC 2474, DOI
 <               10.17487/RFC2474, December 1998,
 ---
 >               Field) in the IPv4 and IPv6 Headers", RFC 2474,
 >               DOI 10.17487/RFC2474, December 1998,
-1348,1349c1359,1360
+1348,1349c1358,1359
 <               of Explicit Congestion Notification (ECN) to IP", RFC
 <               3168, DOI 10.17487/RFC3168, September 2001,
 ---
 >               of Explicit Congestion Notification (ECN) to IP",
 >               RFC 3168, DOI 10.17487/RFC3168, September 2001,
-1358,1359c1369,1370
+1358,1359c1368,1369
 <               Protocol Version 6 (IPv6) Specification", RFC 4443, DOI
 <               10.17487/RFC4443, March 2006,
 ---
 >               Protocol Version 6 (IPv6) Specification", RFC 4443,
 >               DOI 10.17487/RFC4443, March 2006,
-1363,1364c1374,1375
+1363,1364c1373,1374
 <               "IPv6 Flow Label Specification", RFC 6437, DOI 10.17487/
 <               RFC6437, November 2011,
 ---
 >               "IPv6 Flow Label Specification", RFC 6437,
 >               DOI 10.17487/RFC6437, November 2011,
-1378c1389
+1378c1388
 <               Module Registrations)", < http://www.iana.org/assignments/
 ---
 >               Module Registrations)", <http://www.iana.org/assignments/
-1401,1402c1412,1413
+1401,1402c1411,1412
 <    [RFC1661]  Simpson, W., Ed., "The Point-to-Point Protocol (PPP)", STD
 <               51, RFC 1661, DOI 10.17487/RFC1661, July 1994,
 ---
 >    [RFC1661]  Simpson, W., Ed., "The Point-to-Point Protocol (PPP)",
 >               STD 51, RFC 1661, DOI 10.17487/RFC1661, July 1994,
-1417,1418c1428,1429
+1417,1418c1427,1428
 <    [RFC4302]  Kent, S., "IP Authentication Header", RFC 4302, DOI
 <               10.17487/RFC4302, December 2005,
 ---
 >    [RFC4302]  Kent, S., "IP Authentication Header", RFC 4302,
 >               DOI 10.17487/RFC4302, December 2005,
-1421,1422c1432,1433
+1421,1422c1431,1432
 <    [RFC4303]  Kent, S., "IP Encapsulating Security Payload (ESP)", RFC
 <               4303, DOI 10.17487/RFC4303, December 2005,
 ---
 >    [RFC4303]  Kent, S., "IP Encapsulating Security Payload (ESP)",
 >               RFC 4303, DOI 10.17487/RFC4303, December 2005,
-1426,1427c1437,1438
+1426,1427c1436,1437
 <               of Type 0 Routing Headers in IPv6", RFC 5095, DOI
 <               10.17487/RFC5095, December 2007,
 ---
 >               of Type 0 Routing Headers in IPv6", RFC 5095,
 >               DOI 10.17487/RFC5095, December 2007,
-1443,1444c1454,1455
+1443,1444c1453,1454
 <    [RFC6946]  Gont, F., "Processing of IPv6 "Atomic" Fragments", RFC
 <               6946, DOI 10.17487/RFC6946, May 2013,
 ---
 >    [RFC6946]  Gont, F., "Processing of IPv6 "Atomic" Fragments",
 >               RFC 6946, DOI 10.17487/RFC6946, May 2013,
-1448,1449c1459,1460
+1448,1449c1458,1459
 <               of IPv6 Extension Headers", RFC 7045, DOI 10.17487/
 <               RFC7045, December 2013,
 ---
 >               of IPv6 Extension Headers", RFC 7045,
 >               DOI 10.17487/RFC7045, December 2013,
-1453,1454c1464,1465
+1453,1454c1463,1464
 <               Oversized IPv6 Header Chains", RFC 7112, DOI 10.17487/
 <               RFC7112, January 2014,
 ---
 >               Oversized IPv6 Header Chains", RFC 7112,
 >               DOI 10.17487/RFC7112, January 2014,
-1471,1472c1482,1483
+1471,1472c1481,1482
 <               Atomic Fragments Considered Harmful", RFC 8021, DOI
 <               10.17487/RFC8021, January 2017,
 ---
 >               Atomic Fragments Considered Harmful", RFC 8021,
 >               DOI 10.17487/RFC8021, January 2017,
-1639c1650
+1639c1649
 <       -  Revised the text to handle the case of fragments that are whole
 ---
 >       o  Revised the text to handle the case of fragments that are whole
-1647c1658
+1647c1657
 <       -  Changed the text to require that IPv6 nodes must not create
 ---
 >       o  Changed the text to require that IPv6 nodes must not create
-1655c1666
+1655c1665
 <       -  Revised the text to require that all headers through the first
 ---
 >       o  Revised the text to require that all headers through the first
-1660c1671
+1660c1670
 <       -  Added text to Fragment Header process on handling exact
 ---
 >       o  Added text to Fragment Header process on handling exact
-1663c1674
+1663c1673
 <       -  Updated the Fragmentation header text to correct the inclusion
 ---
 >       o  Updated the Fragmentation header text to correct the inclusion
-1666c1677
+1666c1676
 <       -  Change terminology in Fragment header section from
 ---
 >       o  Change terminology in Fragment header section from
-1669c1680
+1669c1679
 <       -  Removed the paragraph in Section 5 that required including a
 ---
 >       o  Removed the paragraph in Section 5 that required including a
-1673c1684
+1673c1683
 <       -  Changed the text to clarify MTU restriction and 8-byte
 ---
 >       o  Changed the text to clarify MTU restriction and 8-byte
-1710,1719c1721,1729
+1710,1719c1720,1728
 <          Errata ID: 2541: This errata notes that RFC2460 didn't update
 <          RFC2205 when the length of the Flow Label was changed from 24
 <          to 20 bits from RFC1883.  This issue was resolved in RFC6437
@@ -245,13 +243,13 @@
 >       Errata ID: 4279: This errata noted that the specification doesn't
 >       handle the case of a forwarding node receiving a packet with a
 >       zero Hop Limit.  This is fixed in Section 3 of this draft.
-1721,1722c1731,1732
+1721,1722c1730,1731
 <          Errata ID: 2843: This errata is marked rejected.  No change was
 <          made.
 ---
 >       Errata ID: 2843: This errata is marked rejected.  No change was
 >       made.
-1735,1739c1745,1749
+1735,1739c1744,1748
 <       11)  In Section 4.5 added clarification noting that some fields in
 <            the IPv6 header may also vary across the fragments being
 <            reassembled and that other specifications may provide
@@ -263,7 +261,7 @@
 >       reassembled and that other specifications may provide additional
 >       instructions for how they should be reassembled.  For example,
 >       Section 5.3 of [RFC3168].
-1899,1913c1909,1922
+1899,1913c1908,1921
 <               RFC6564: Added new Section 4.8 that describe
 <               recommendations for defining new Extension headers and
 <               options
@@ -294,7 +292,7 @@
 >            first Upper-Layer Header are in the first fragment.  This
 >            changed the text describing how packets are fragmented and
 >            reassembled and added a new error case.
-1944,1954c1953,1963
+1944,1954c1952,1962
 <               Errata ID: 2541: This errata notes that RFC2460 didn't
 <               update RFC2205 when the length of the Flow Label was
 <               changed from 24 to 20 bits from RFC1883.  This issue was
@@ -318,7 +316,7 @@
 >            packet with a zero Hop Limit.  This is fixed in Section 3 of
 >            this draft.  Note: No change was made regarding host
 >            behaviour.
-1956,1957c1965,1966
+1956,1957c1964,1965
 <               Errata ID: 2843: This errata is marked rejected.  No
 <               change is required.
 ---

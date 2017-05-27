@@ -1,9 +1,7 @@
-24,25c24,25
+24c24
 <    The issues list can be found at https://github.com/mnot/I-D/labels/
-<    rfc5988bis .
 ---
->    The issues list can be found at <https://github.com/mnot/I-D/labels/
->    rfc5988bis> .
+>    The issues list can be found at <https://github.com/mnot/I-D/labels/>
 28c28
 <    https://mnot.github.io/I-D/rfc5988bis/ .
 ---
@@ -12,8 +10,8 @@
 <    Recent changes are listed at https://github.com/mnot/I-D/commits/gh-
 <    pages/rfc5988bis .
 ---
->    Recent changes are listed at <https://github.com/mnot/I-D/commits/gh-
->    pages/rfc5988bis> .
+>    Recent changes are listed at <https://github.com/mnot/I-D/commits/
+>    gh-> pages/rfc5988bis .
 217c217
 <    https://www.iana.org/assignments/link-relations/ .  Registration
 ---

@@ -87,7 +87,13 @@
 < 9.  Informative References
 ---
 > 8.2.  Informative References
-347c353
+342c348,350
+<               (SHA and SHA-based HMAC and HKDF)", RFC 6234, May 2011.
+---
+>               (SHA and SHA-based HMAC and HKDF)", RFC 6234,
+>               DOI 10.17487/RFC6234, May 2011,
+>               <http://www.rfc-editor.org/info/rfc6234>.
+347c355
 <    918 Spring Knoll Drive
 ---
 >    Vigil Security

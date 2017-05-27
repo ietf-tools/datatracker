@@ -32,7 +32,15 @@
 <       Figure 3: A caption describing the figure describing the table.
 ---
 >        Figure 3: A caption describing the figure describing the table.
-589,606d586
+584c582,584
+<               Requirement Levels", BCP 14, RFC 2119, March 1997.
+---
+>               Requirement Levels", BCP 14, RFC 2119,
+>               DOI 10.17487/RFC2119, March 1997,
+>               <http://www.rfc-editor.org/info/rfc2119>.
+587,605c587,588
+<               RFC 4641, September 2006.
+< 
 < 11.3.  URIs
 < 
 <    [1] http://xml.resource.org/experimental
@@ -50,32 +58,34 @@
 <    [7] http://johnmacfarlane.net/pandoc/README.html
 < 
 <    [8] http://miek.nl
-< 
-672c652
+---
+>               RFC 4641, DOI 10.17487/RFC4641, September 2006,
+>               <http://www.rfc-editor.org/info/rfc4641>.
+672c655
 <       Multiple paragraphs in such a list.
 ---
 >   Multiple paragraphs in such a list.
-700c680
+700c683
 <        Item to explain:  Explanation ...
 ---
 >        Item to explain: Explanation ...
-702c682
+702c685
 <        Item to explain:  Another explanation ...
 ---
 >        Item to explain:      Another explanation ...
-720c700
+720c703
 <    4.  Final item.
 ---
 >    1.  Final item.
-734c714
+734c717
 <    i.    Item 1
 ---
 >    a.  Item 1
-736c716
+736c719
 <    ii.   Item 2
 ---
 >        ii.  Item 2
-803,809c783,790
+803,809c786,793
 <                   +--------+-------+---------+----------+
 <                   |  Right | Left  |  Center | Default  |
 <                   +--------+-------+---------+----------+
@@ -92,7 +102,7 @@
 >                     | 1     | 1    | 1      | 1       |
 >                     |       |      |        |         |
 >                     +-------+------+--------+---------+
-813,822c794,808
+813,822c797,811
 <    +-----------+-----------+---------------+---------------------------+
 <    |  Centered | Default   | Right Aligned | Left Aligned              |
 <    |   Header  | Aligned   |               |                           |
@@ -119,7 +129,7 @@
 >    |               |               |              | rows.              |
 >    |               |               |              |                    |
 >    +---------------+---------------+--------------+--------------------+
-827,832c813,819
+827,832c816,822
 <           +---------------+---------------+--------------------+
 <           | Fruit         | Price         | Advantages         |
 <           +---------------+---------------+--------------------+
@@ -134,7 +144,7 @@
 >                   | Oranges | $2.10 | cures scurvy     |
 >                   |         |       |                  |
 >                   +---------+-------+------------------+
-838,843c825,831
+838,843c828,834
 <           +---------------+---------------+--------------------+
 <           | Fruit         | Price         | Advantages         |
 <           +---------------+---------------+--------------------+
@@ -149,15 +159,15 @@
 >                   | Oranges | $2.10 | cures scurvy     |
 >                   |         |       |                  |
 >                   +---------+-------+------------------+
-870c858
+870c861
 <    Figure 4: This is the caption, with text in `typewriter`. Which isnt
 ---
 >    Figure 3: This is the caption, with text in `typewriter`. Which isnt
-879c867
+879c870
 <                      Figure 5: A non centered figure.
 ---
 >                      Figure 4: A non centered figure.
-893,901c881,883
+893,901c884,886
 <    L
 <       list
 <          default markers  18

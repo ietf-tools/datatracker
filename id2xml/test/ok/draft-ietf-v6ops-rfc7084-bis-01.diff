@@ -1,4 +1,12 @@
-800,807c800,807
+592a593
+> 
+638a640
+> 
+732a735
+> 
+779a783
+> 
+800,807c804,811
 <    services and incentives for the deployment of IPv6.  It also
 <    de-couples IPv6 deployment in the service provider network from the
 <    rest of the Internet, making incremental deployment easier.  Dual-
@@ -16,23 +24,25 @@
 >    (IPv4-in-IPv6) and Network Address Translation (NAT).  It is expected
 >    that DS-Lite traffic is forwarded over the CE router's native IPv6
 >    WAN interface, and not encapsulated in another tunnel.
-809,810c809,810
+809,810c813,814
 <    The IPv6 CE router SHOULD implement DS-Lite functionality.  If
 <    DS-Lite is supported, it MUST be implemented according to [RFC6333].
 ---
 >    The IPv6 CE router SHOULD implement DS-Lite functionality.  If DS-
 >    Lite is supported, it MUST be implemented according to [RFC6333].
-1322,1323c1322,1323
+1020a1025
+> 
+1322,1323c1327,1328
 <    [TR-069]   Broadband Forum, "CPE WAN Management Protocol", TR-069
 <               Amendment 4, July 2011,
 ---
 >    [TR-069]   Broadband Forum, "CPE WAN Management Protocol",
 >               TR-069 Amendment 4, July 2011,
-1327c1327
+1327c1332
 <               UPnP Forum, , "InternetGatewayDevice:2 Device Template
 ---
 >               UPnP Forum,, "InternetGatewayDevice:2 Device Template
-1339c1339
+1339c1344
 <    EMail: jordi.palet@consulintel.es
 ---
 >    Email: jordi.palet@consulintel.es
