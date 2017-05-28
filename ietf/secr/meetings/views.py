@@ -15,13 +15,14 @@ from django.utils.functional import curry
 
 from ietf.ietfauth.utils import role_required
 from ietf.utils.mail import send_mail
+from ietf.meeting.forms import duration_string
 from ietf.meeting.helpers import get_meeting, make_materials_directories
 from ietf.meeting.models import Meeting, Session, Room, TimeSlot, SchedTimeSessAssignment, Schedule
 from ietf.group.models import Group, GroupEvent
 from ietf.person.models import Person
 from ietf.secr.meetings.blue_sheets import create_blue_sheets
 from ietf.secr.meetings.forms import ( BaseMeetingRoomFormSet, MeetingModelForm, MeetingSelectForm,
-    MeetingRoomForm, NewSessionForm, NonSessionEditForm, NonSessionForm, TimeSlotForm,
+    MeetingRoomForm, NewSessionForm, NonSessionForm, TimeSlotForm,
     UploadBlueSheetForm, get_next_slot )
 from ietf.secr.proceedings.views import build_choices
 from ietf.secr.proceedings.utils import handle_upload_file
@@ -459,23 +460,20 @@ def non_session(request, meeting_id, schedule_name):
     slots = slots.order_by('-type__name','time')
     
     if request.method == 'POST':
-        form = NonSessionForm(request.POST)
+        form = NonSessionForm(request.POST, meeting=meeting)
         if form.is_valid():
-            day = form.cleaned_data['day']
-            time = form.cleaned_data['time']
+            time = get_timeslot_time(form, meeting)
             name = form.cleaned_data['name']
             short = form.cleaned_data['short']
             type = form.cleaned_data['type']
             group = form.cleaned_data['group']
             duration = form.cleaned_data['duration']
-            t = meeting.date + datetime.timedelta(days=int(day))
-            new_time = datetime.datetime(t.year,t.month,t.day,time.hour,time.minute)
 
             # create TimeSlot object
             timeslot = TimeSlot.objects.create(type=type,
                                                meeting=meeting,
                                                name=name,
-                                               time=new_time,
+                                               time=time,
                                                duration=duration,
                                                show_location=form.cleaned_data['show_location'])
 
@@ -501,7 +499,7 @@ def non_session(request, meeting_id, schedule_name):
             messages.success(request, 'Non-Sessions updated successfully')
             return redirect('ietf.secr.meetings.views.non_session', meeting_id=meeting_id, schedule_name=schedule_name)
     else:
-        form = NonSessionForm(initial={'show_location':True})
+        form = NonSessionForm(initial={'show_location':True}, meeting=meeting)
 
     if TimeSlot.objects.filter(meeting=meeting,type='other',location__isnull=True):
         messages.warning(request, 'There are non-session items which do not have a room assigned')
@@ -552,14 +550,22 @@ def non_session_edit(request, meeting_id, schedule_name, slot_id):
         if button_text == 'Cancel':
             return redirect('ietf.secr.meetings.views.non_session', meeting_id=meeting_id, schedule_name=schedule_name)
 
-        form = NonSessionEditForm(request.POST,meeting=meeting, session=session)
+        form = NonSessionForm(request.POST,meeting=meeting,session=session)
         if form.is_valid():
             location = form.cleaned_data['location']
             group = form.cleaned_data['group']
             name = form.cleaned_data['name']
             short = form.cleaned_data['short']
+            duration = form.cleaned_data['duration']
+            slot_type = form.cleaned_data['type']
+            show_location = form.cleaned_data['show_location']
+            time = get_timeslot_time(form, meeting)
             slot.location = location
             slot.name = name
+            slot.time = time
+            slot.duration = duration
+            slot.type = slot_type
+            slot.show_location = show_location
             slot.save()
             # save group to session object
             session.group = group
@@ -573,11 +579,17 @@ def non_session_edit(request, meeting_id, schedule_name, slot_id):
     else:
         # we need to pass the session to the form in order to disallow changing
         # of group after materials have been uploaded
+        delta = slot.time.date() - meeting.date
         initial = {'location':slot.location,
                    'group':session.group,
                    'name':session.name,
-                   'short':session.short}
-        form = NonSessionEditForm(meeting=meeting,session=session,initial=initial)
+                   'short':session.short,
+                   'day':delta.days,
+                   'time':slot.time.strftime('%H:%M'),
+                   'duration':duration_string(slot.duration),
+                   'show_location':slot.show_location,
+                   'type':slot.type}
+        form = NonSessionForm(initial=initial, meeting=meeting, session=session)
 
     return render(request, 'meetings/non_session_edit.html', {
         'meeting': meeting,
@@ -889,25 +901,21 @@ def times(request, meeting_id, schedule_name):
     if request.method == 'POST':
         form = TimeSlotForm(request.POST)
         if form.is_valid():
-            day = form.cleaned_data['day']
-            time = form.cleaned_data['time']
+            time = get_timeslot_time(form, meeting)
             duration = form.cleaned_data['duration']
             name = form.cleaned_data['name']
 
-            t = meeting.date + datetime.timedelta(days=int(day))
-            new_time = datetime.datetime(t.year,t.month,t.day,time.hour,time.minute)
-
             # don't allow creation of timeslots with same start time as existing timeslots
             # assert False, (new_time, time_seen)
-            if new_time in time_seen:
-                messages.error(request, 'There is already a timeslot for %s.  To change you must delete the old one first.' % new_time.strftime('%a %H:%M'))
+            if time in time_seen:
+                messages.error(request, 'There is already a timeslot for %s.  To change you must delete the old one first.' % time.strftime('%a %H:%M'))
                 return redirect('ietf.secr.meetings.views.times', meeting_id=meeting_id,schedule_name=schedule_name)
 
             for room in meeting.room_set.all():
                 TimeSlot.objects.create(type_id='session',
                                         meeting=meeting,
                                         name=name,
-                                        time=new_time,
+                                        time=time,
                                         location=room,
                                         duration=duration)
 
@@ -923,6 +931,14 @@ def times(request, meeting_id, schedule_name):
         'schedule': schedule,
         'times': times},
     )
+
+def get_timeslot_time(form, meeting):
+    '''Returns datetime calculated from day and time form fields'''
+    time = form.cleaned_data['time']
+    day = form.cleaned_data['day']
+
+    date = meeting.date + datetime.timedelta(days=int(day))
+    return datetime.datetime(date.year,date.month,date.day,time.hour,time.minute)
 
 @role_required('Secretariat')
 def times_edit(request, meeting_id, schedule_name, time):
@@ -944,15 +960,12 @@ def times_edit(request, meeting_id, schedule_name, time):
         form = TimeSlotForm(request.POST)
         if form.is_valid():
             day = form.cleaned_data['day']
-            time = form.cleaned_data['time']
+            time = get_timeslot_time(form, meeting)
             duration = form.cleaned_data['duration']
             name = form.cleaned_data['name']
             
-            t = meeting.date + datetime.timedelta(days=int(day))
-            new_time = datetime.datetime(t.year,t.month,t.day,time.hour,time.minute)
-            
             for timeslot in timeslots:
-                timeslot.time = new_time
+                timeslot.time = time
                 timeslot.duration = duration
                 timeslot.name = name
                 timeslot.save()
