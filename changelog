@@ -1,3 +1,78 @@
+ietfdb (6.52.0) ietf; urgency=medium
+
+  **Nomcom page improvements, and more**	
+
+  This release adds nomcom and secretariat functionality, and improves the
+  machine-readable json export of agenda information for the IETFers app.
+
+  The nomcom chair now has the ability to open and close nominations,
+  feedback, and nomcom processing for a position separately.  It has been made
+  easier to add new positions to be filled out of the regular schedule, and
+  the nomcom chair now can enable display of nominee photos on the feedback
+  pages.  An issue with statistics calculation on the internal nomcom pages
+  has been fixed, as well as some other annoyances.
+
+  The secretariat now has full edit capability also for non-session meetings,
+  chairs can now upload bluesheets for interim meetings, and the json export
+  of agenda information now has better information about session presentation
+  materials.
+
+  As usual, a few bugs have been fixed, too, improving author information
+  extraction from uploaded .xml files, and more:
+
+  * Merged in [13418] from rcross@amsl.com:
+    Add full edit capability for non-sessions.  Fixes #2235.   
+
+  * Merged in [13417] from rjsparks@nostrum.com:
+    Minor tweak to instructions for removing nomcom positions.  
+
+  * Merged in [13413] from rjsparks@nostrum.com:
+    Allow nomcoms to configure the feedback page to show nominee pictures. 
+    Fixes #2252. , 
+
+  * Merged in [13412] from rcross@amsl.com:
+    Allow chairs to upload bluesheets for interim meetings.  Fixes #2165.   
+
+  * Fixed a bug for /meeting/*/agenda.json where multiple entries for a 
+    room name could occur, even if only one of them were referenced by sessions.
+
+  * Added stripping of leading and trailing whitespace from submission data 
+    (including email addresses) gleaned from submitted xml.  Changed email line 
+    parsing to use email.utils.parseaddr() instead of a regex which only would 
+    handle unwuoted names (and possibly not utf-8 names) correctly.
+
+  * Merged in [13409] from rjsparks@nostrum.com:
+    Add some help for the nomcom chair for when new positions are needed 
+    later in a nomcom cycle. Fixes #2253.  
+
+  * Merged in [13400] from rjsparks@nostrum.com:
+    Correctly calculate statistics on the nomcom private index page. Fixes 
+    #2254.  
+
+  * Merged in [13399] from rjsparks@nostrum.com:
+    Make it possible to close nominations without closing feedback. Fixes 
+    #2255.  
+
+  * Merged in [13390] from rjsparks@nostrum.com:
+    Avoid confusing messages saying a key has not been entered when it has. 
+    Fixes #2250.  
+
+  * Merged in [13388] from rjsparks@nostrum.com:
+    Update the feedback count badge when new feedback is provided. Fixes 
+    #2260.  
+
+  * Merged in [13383] from rjsparks@nostrum.com:
+    Don't double-escape when showing feedback. Fixes #2297.  
+
+  * Added more information about session presentations to the agenda.json 
+    output, on request from pusateri@bangj.com.
+
+  * Added raw_id_fields on DocumentAuthorAdmin to speed up form loading, 
+    and added SessionPresentationAdmin to the meeting admin.py
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  29 May 2017 23:21:29 +0000
+
+
 ietfdb (6.51.0) ietf; urgency=medium
 
   **Improved RFC Author Information**
