@@ -38,6 +38,7 @@ NOMINEE_ACCEPT_REMINDER_TEMPLATE = 'email/nomination_accept_reminder.txt'
 NOMINEE_QUESTIONNAIRE_REMINDER_TEMPLATE = 'email/questionnaire_reminder.txt'
 NOMINATION_RECEIPT_TEMPLATE = 'email/nomination_receipt.txt'
 FEEDBACK_RECEIPT_TEMPLATE = 'email/feedback_receipt.txt'
+DESCRIPTION_TEMPLATE = 'topic/description'
 
 DEFAULT_NOMCOM_TEMPLATES = [HOME_TEMPLATE,
                             INEXISTENT_PERSON_TEMPLATE,
@@ -133,6 +134,16 @@ def initialize_requirements_for_position(position):
             type_id=template.type_id,
             content=template.content)
 
+def initialize_description_for_topic(topic):
+    description_path = MAIN_NOMCOM_TEMPLATE_PATH + DESCRIPTION_TEMPLATE
+    template = DBTemplate.objects.get(path=description_path)
+    return DBTemplate.objects.create(
+            group=topic.nomcom.group,
+            title=template.title + ' [%s]' % topic.subject,
+            path='/nomcom/' + topic.nomcom.group.acronym + '/topic/' + str(topic.id) + '/' + DESCRIPTION_TEMPLATE,
+            variables=template.variables,
+            type_id=template.type_id,
+            content=template.content)
 
 def delete_nomcom_templates(nomcom):
     nomcom_template_path = '/nomcom/' + nomcom.group.acronym

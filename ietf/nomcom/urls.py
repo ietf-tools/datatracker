@@ -19,6 +19,7 @@ urlpatterns = [
     url(r'^(?P<year>\d{4})/private/view-feedback/unrelated/$', views.view_feedback_unrelated),
     url(r'^(?P<year>\d{4})/private/view-feedback/pending/$', views.view_feedback_pending),
     url(r'^(?P<year>\d{4})/private/view-feedback/nominee/(?P<nominee_id>\d+)$', views.view_feedback_nominee),
+    url(r'^(?P<year>\d{4})/private/view-feedback/topic/(?P<topic_id>\d+)$', views.view_feedback_topic),
     url(r'^(?P<year>\d{4})/private/edit/nominee/(?P<nominee_id>\d+)$', views.edit_nominee),
     url(r'^(?P<year>\d{4})/private/merge-nominee/?$', views.private_merge_nominee),
     url(r'^(?P<year>\d{4})/private/merge-person/?$', views.private_merge_person),
@@ -31,6 +32,10 @@ urlpatterns = [
     url(r'^(?P<year>\d{4})/private/chair/position/add/$', views.edit_position),
     url(r'^(?P<year>\d{4})/private/chair/position/(?P<position_id>\d+)/$', views.edit_position),
     url(r'^(?P<year>\d{4})/private/chair/position/(?P<position_id>\d+)/remove/$', views.remove_position),
+    url(r'^(?P<year>\d{4})/private/chair/topic/$', views.list_topics),
+    url(r'^(?P<year>\d{4})/private/chair/topic/add/$', views.edit_topic),
+    url(r'^(?P<year>\d{4})/private/chair/topic/(?P<topic_id>\d+)/$', views.edit_topic),
+    url(r'^(?P<year>\d{4})/private/chair/topic/(?P<topic_id>\d+)/remove/$', views.remove_topic),
 
     url(r'^(?P<year>\d{4})/$', views.year_index),
     url(r'^(?P<year>\d{4})/requirements/$', views.requirements),

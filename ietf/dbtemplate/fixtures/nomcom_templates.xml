@@ -172,4 +172,14 @@ The questionaire is repeated below for your convenience.
 --------</field>
         <field to="group.group" name="group" rel="ManyToOneRel"><None></None></field>
     </object>
+    <object pk="12" model="dbtemplate.dbtemplate">
+      <field type="CharField" name="path">/nomcom/defaults/topic/description</field>
+      <field type="CharField" name="title">Description of Topic</field>
+      <field type="TextField" name="variables">$topic: Topic'</field>
+      <field to="name.dbtemplatetypename" name="type" rel="ManyToOneRel">rst</field>
+      <field type="TextField" name="content">This is a description of the topic "$topic"
+
+Describe the topic and add any information/instructions for the responder here.
+</field>
+    </object>
 </django-objects>

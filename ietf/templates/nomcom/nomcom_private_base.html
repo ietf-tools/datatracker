@@ -40,6 +40,7 @@
             <li {% if selected == "edit_nomcom" %}class="active"{% endif %}><a href="{% url 'ietf.nomcom.views.edit_nomcom' year %}">Edit Settings</a></li>
             <li {% if selected == "edit_templates" %}class="active"{% endif %}><a href="{% url 'ietf.nomcom.views.list_templates' year %}">Edit Pages</a></li>
             <li {% if selected == "edit_positions" %}class="active"{% endif %}><a href="{% url 'ietf.nomcom.views.list_positions' year %}">Edit Positions</a></li>
+            <li {% if selected == "edit_topics" %}class="active"{% endif %}><a href="{% url 'ietf.nomcom.views.list_topics' year %}">Edit Topics</a></li>
             {% if nomcom.group.state_id == 'active' %}
             <li {% if selected == "edit_members" %}class="active"{% endif %}><a href="{% url 'ietf.nomcom.forms.EditMembersFormPreview' year %}">Edit Members</a></li>
             {% endif %}

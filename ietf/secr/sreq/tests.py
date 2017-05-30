@@ -77,6 +77,9 @@ class SubmitRequestCase(TestCase):
         group = Group.objects.get(acronym='ames')
         ad = group.parent.role_set.filter(name='ad').first().person
         resource = ResourceAssociation.objects.first()
+        # Bit of a test data hack - the fixture now has no used resources to pick from
+        resource.name.used=True
+        resource.name.save()
         url = reverse('ietf.secr.sreq.views.new',kwargs={'acronym':group.acronym})
         confirm_url = reverse('ietf.secr.sreq.views.confirm',kwargs={'acronym':group.acronym})
         len_before = len(outbox)
