@@ -176,7 +176,7 @@ DEV="$(printf %d.%d.%d.dev0 $MAJOR $MINOR $NEXT)"
 
 #cd $DIR ??
 note "Checking that changelog information is available ..."
-changes=$( sed -n "/^$PROJ ($VER.*)/,/^ -- /p" changelog )
+changes=$( sed -n "/^$PROJ ($VER)/,/^ -- /p" changelog )
 [ "$changes" ] || die "No changelog information for $VER found"
 note "$changes"
 
