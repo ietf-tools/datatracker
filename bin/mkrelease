@@ -227,10 +227,6 @@ $do ietf/manage.py makemigrations | tee /dev/stderr | grep -q "^No changes detec
 note "Making sure all migrations have been run ..."
 $do ietf/manage.py migrate
 
-note "Saving the current list of tables (for later use)"
-$do ietf/manage.py dbshell <<< "show tables;" | tail -n +2 | jq -R -s "split(\"\n\") | {\"$VER\":.}" | jq -s 'add' - table-list.json | $do update table-list.json
-$do svn commit table-list.json -m "List of tables at the time of release $VER"
-
 note "Running the tests suite and writing release coverage data ..."
 $do ietf/manage.py test --settings=ietf.settings_releasetest --save-version-coverage=$VER
 
