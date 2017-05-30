@@ -1,3 +1,62 @@
+id2xml (1.0.0) ietf; urgency=medium
+
+  The number of lines in the corpus of test documents now show a percentage
+  of lines which differ from the original input file to the text file generated
+  from id2xml's xml file of just over 2%, and in some cases the generated
+  text is an improvement over the original text.  The tool should now be
+  functionally complete for vocabulary v2 output, so this seems like a good
+  time for a 1.0.0 release.
+
+  Changes since 1.0.0rc3:
+
+  * Split the functionality up into separate run.py, parser.py and utils.py
+    files, and adjusted Makefile and MANIFEST accordingly.
+
+  * Entries in the <references/> sections are now entity references for drafts
+    and RFCs, instead of inserting the reference xml as generated from the
+    input document.
+
+  * There's a slight refactoring of how the reference_anchors and
+    section_anchors lists are generated.
+
+  * Added xref elements for Section N.nn strings which reference document
+    sections.
+
+  * There has been multiple rounds of refactoring, to clean up and organise
+    the code better.
+
+  * The generated xml has also been cleaned up, to avoid long lines and
+    tags bunched up on the same line.  It's still not super pretty, but
+    should be readable.
+
+  * Added a check on coupled debug trace switches, where setting a trace start
+    option also requires that a trace stop option be set.
+
+  * The regular expression which identifies code has been further refined.
+
+  * Refined the header stripping to not join pararaphs where the first part
+    has a short line.
+
+  * Added more cases where list hangIndent is derived and set.
+
+  * Added modification of the text-list-symbols PI in order to better match
+    the source.  Since this is a global setting, it can't handle inconsistent
+    bullet styles in a document (for instance created with hangText="*" ...).
+
+  * Improved the error message for missing stream information when attempting
+    to process older RFCs
+
+  * Fixed a bug in the handling of the xml tree for xrefs found in text
+    interspersed with vspace elements.
+
+  * Code optimisations.
+
+  * Added the last two changelog sections to the release information shown onl
+    PyPi.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  30 May 2017 17:04:10 +0000
+
+
 id2xml (1.0.0rc3) ietf; urgency=low
 
   This release reduces the diff between the text input file and the
