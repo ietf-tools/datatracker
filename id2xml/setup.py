@@ -143,7 +143,7 @@ setup(
     # installed, specify them here.  If using Python 2.6 or less, then these
     # have to be included in MANIFEST.in as well.
     package_data={
-        'id2xml': ['data/*', 'id2xml.1.gz', 'debug.py' ],
+        'id2xml': ['data/*', 'id2xml.1.gz', 'debug.py', 'utils.py', 'run.py' ],
     },
 
     # Although 'package_data' is the preferred approach, in some case you may
@@ -157,7 +157,7 @@ setup(
     # pip to create the appropriate form of executable for the target platform.
     entry_points={
         'console_scripts': [
-            'id2xml=id2xml.parser:run',
+            'id2xml=id2xml.run:run',
         ],
     },
 

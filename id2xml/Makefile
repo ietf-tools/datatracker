@@ -21,7 +21,8 @@ testfiles= \
 	rfc7629.txt						\
 	rfc7842.txt						\
 	draft-ietf-curdle-cms-ecdh-new-curves-07.txt		\
-#
+# draft-ietf-curdle-cms-ecdh-new-curves-07.txt is a modified copy, with
+# some reference fixes
 
 textfiles= $(addprefix test/in/, $(testfiles))
 resfiles = $(addprefix test/out/, $(testfiles))
@@ -30,11 +31,11 @@ origxml  = $(addsuffix .xml, $(basename $(okfiles)))
 xmlfiles = $(addsuffix .xml, $(basename $(resfiles)))
 diffiles = $(addsuffix .diff, $(basename $(resfiles)))
 tests    = $(addsuffix .test, $(basename $(resfiles)))
-
+pyfiles  = $(wildcard  id2xml/*.py)
 
 all: install upload
 
-%.1: id2xml/parser.py id2xml/__init__.py Makefile
+%.1: id2xml/run.py id2xml/__init__.py Makefile
 	id2xml -h | sed -e 's/^  -/\n  -/'			\
                   | sed -e '/^  -/N;s/\n         */  /'         \
 		  | txt2man -s1 -r'RFC Format Tools' -t $< > $@
@@ -50,7 +51,7 @@ pyflakes:
 install: id2xml/id2xml.1.gz
 	python setup.py -q install
 
-env/bin/id2xml:	id2xml/parser.py
+env/bin/id2xml:	$(pyfiles) setup.py
 	python setup.py -q install
 
 
@@ -82,7 +83,8 @@ test/out/%.test:	test/ok/%.diff test/out/%.diff
 	@oklen=`grep '^<' $(word 1,$^) | wc -l`; outlen=`grep '^<' $(word 2,$^) | wc -l`;	\
 	totlen=`wc -l < test/in/$(basename $(@F)).txt`;			\
 	ratio=$$(( outlen * 100 / totlen ));				\
-	printf "Changed now/ok: %-48s %2s%%  %4s /%4s\n" $(basename $(@F)) $$ratio $$outlen $$oklen ; \
+	if [ $$oklen -gt $$outlen ]; then gain=-$$(( oklen - outlen )); else gain=''; fi; \
+	printf "Changed now/ok: %-48s %2s%%  %4s /%4s %4s\n" $(basename $(@F)) $$ratio $$outlen $$oklen $$gain; \
 	test $$oklen -ge $$outlen || echo "								  *** failed ***"
 #	test $$oklen -ge $$outlen || { diff -y $^ | less; }
 
@@ -99,16 +101,16 @@ test/out/%.diff:	test/in/%.raw test/out/%.raw
 test/out/%.txt:	test/out/%.xml
 	xml2rfc $< -o $@
 
-test/out/%.xml:	test/in/%.txt id2xml/parser.py
+test/out/%.xml:	test/in/%.txt $(pyfiles)
 	@echo ""
 	id2xml $< -o $@
 
 # ------------------------------------------------------------------------
 
-dist/id2xml-$(version).tar.gz: MANIFEST.in setup.py id2xml/*
+dist/id2xml-$(version).tar.gz: MANIFEST.in setup.py $(pyfiles)
 	python setup.py -q sdist
 
-dist/id2xml-$(version)-py27-none-any.whl: MANIFEST.in setup.py id2xml/*
+dist/id2xml-$(version)-py27-none-any.whl: MANIFEST.in setup.py $(pyfiles)
 	python setup.py -q bdist_wheel --python-tag py27
 
 dist/%.asc: dist/%
