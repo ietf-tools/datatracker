@@ -54,7 +54,7 @@ id2xml (1.0.0) ietf; urgency=medium
   * Added the last two changelog sections to the release information shown onl
     PyPi.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  30 May 2017 17:04:10 +0000
+ -- Henrik Levkowetz <henrik@levkowetz.com>  30 May 2017 17:04:44 +0000
 
 
 id2xml (1.0.0rc3) ietf; urgency=low
