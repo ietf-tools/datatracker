@@ -1,0 +1,97 @@
+49d48
+< 
+67a67
+> 
+164,171c164,171
+<    +-------+----------------------+------------------------------------+
+<    | Flow  | CoA/Tunnel/BID       | Negotiated Flow Policy             |
+<    | Id    |                      |                                    |
+<    +-------+----------------------+------------------------------------+
+<    | 1.    | CoA-1/Tunnel-1/BID-1 | All SIP Flows over WiFI            |
+<    | 2.    | CoA-2/Tunnel-2/BID-2 | All HTTP Flows over LTE            |
+<    | 3.    | CoA-3/Tunnel-3/BID-3 | All SSH Flows over CDMA            |
+<    +-------+----------------------+------------------------------------+
+---
+>        +---------+----------------------+-------------------------+
+>        | Flow Id | CoA/Tunnel/BID       | Negotiated Flow Policy  |
+>        +---------+----------------------+-------------------------+
+>        | 1.      | CoA-1/Tunnel-1/BID-1 | All SIP Flows over WiFI |
+>        | 2.      | CoA-2/Tunnel-2/BID-2 | All HTTP Flows over LTE |
+>        | 3.      | CoA-3/Tunnel-3/BID-3 | All SSH Flows over CDMA |
+>        |         |                      |                         |
+>        +---------+----------------------+-------------------------+
+271a272
+> 
+315a317
+> 
+390a393
+>    |         |       |                                                 |
+393c396
+<                  Table 2: Action Rules for the Traffic Selector
+---
+>               Table 2: Action Rules for the Traffic Selector
+448a452
+> 
+496a501
+> 
+614c619
+<       Messages", at < http://www.iana.org/assignments/mobileip-numbers/
+---
+>       Messages", at <http://www.iana.org/assignments/mobileip-numbers/
+625c630
+<       Messages", at < http://www.iana.org/assignments/mobileip-numbers/
+---
+>       Messages", at <http://www.iana.org/assignments/mobileip-numbers/
+684,690c689,700
+<               Requirement Levels", BCP 14, RFC 2119, March 1997.
+< 
+<    [RFC5213]  Gundavelli, S., Leung, K., Devarapalli, V., Chowdhury, K.,
+<               and B. Patil, "Proxy Mobile IPv6", RFC 5213, August 2008.
+< 
+<    [RFC5944]  Perkins, C., "IP Mobility Support for IPv4, Revised",
+<               RFC 5944, November 2010.
+---
+>               Requirement Levels", BCP 14, RFC 2119,
+>               DOI 10.17487/RFC2119, March 1997,
+>               <http://www.rfc-editor.org/info/rfc2119>.
+> 
+>    [RFC5213]  Gundavelli, S., Ed., Leung, K., Devarapalli, V.,
+>               Chowdhury, K., and B. Patil, "Proxy Mobile IPv6",
+>               RFC 5213, DOI 10.17487/RFC5213, August 2008,
+>               <http://www.rfc-editor.org/info/rfc5213>.
+> 
+>    [RFC5944]  Perkins, C., Ed., "IP Mobility Support for IPv4, Revised",
+>               RFC 5944, DOI 10.17487/RFC5944, November 2010,
+>               <http://www.rfc-editor.org/info/rfc5944>.
+694c704,705
+<               January 2011.
+---
+>               DOI 10.17487/RFC6088, January 2011,
+>               <http://www.rfc-editor.org/info/rfc6088>.
+698,699c709,711
+<    [RFC3753]  Manner, J. and M. Kojo, "Mobility Related Terminology",
+<               RFC 3753, June 2004.
+---
+>    [RFC3753]  Manner, J., Ed. and M. Kojo, Ed., "Mobility Related
+>               Terminology", RFC 3753, DOI 10.17487/RFC3753, June 2004,
+>               <http://www.rfc-editor.org/info/rfc3753>.
+709c721
+<    EMail: sgundave@cisco.com
+---
+>    Email: sgundave@cisco.com
+717c729
+<    EMail: kleung@cisco.com
+---
+>    Email: kleung@cisco.com
+722c734
+<    EMail: tsirtsis@qualcomm.com
+---
+>    Email: tsirtsis@qualcomm.com
+727c739
+<    EMail: hesham@elevatemobile.com
+---
+>    Email: hesham@elevatemobile.com
+736c748
+<    EMail: alexandru.petrescu@cea.fr
+---
+>    Email: alexandru.petrescu@cea.fr

@@ -1,0 +1,26 @@
+70a71
+> 
+172,173c173,174
+<              Figure 1: Mobile Node (MN) with Multiple Tunnels
+<                           to the Home Agent (HA)
+---
+>     Figure 1: Mobile Node (MN) with Multiple Tunnels to the Home Agent
+>                                    (HA)
+337a339
+> 
+424c426
+<    |  Action | Value | Description                                     |
+---
+>    | Action  | Value | Description                                     |
+426c428
+<    |  DROP   |   0   | Drop matching packets. A filter rule            |
+---
+>    | DROP    | 0     | Drop matching packets. A filter rule            |
+431,432c433,434
+<    +---------+-------+-------------------------------------------------+
+<    | FORWARD |   1   | Forward matching packets to the first BID in the|
+---
+>    | FORWARD | 1     | Forward matching packets to the first BID in    |
+>    |         |       | the                                             |
+436a439
+>    |         |       |                                                 |

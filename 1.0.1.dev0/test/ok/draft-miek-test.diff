@@ -1,0 +1,183 @@
+237,238c237,238
+<    it is _just_ Pandoc.  The best introduction to the Pandoc style is
+<    given in this README from Pandoc itself [7].
+---
+>   it is _just_ Pandoc.  The best introduction to the Pandoc style is
+>   given in this README from Pandoc itself [7].
+317c317
+<    i.    Item one;
+---
+>    a.  Item one;
+319c319
+<    ii.   Item two.
+---
+>        ii.  Item two.
+363,366c363,364
+<    :   Explanation one
+<    More stuff, because item is difficult to explain.
+<    * item1
+<    * item2
+---
+>       : Explanation one More stuff, because item is difficult to
+>       explain.  * item1 * item2
+370c368
+<    :   Explanation two
+---
+>       : Explanation two
+473c471
+<      Table: A caption describing the table.
+---
+>       Table: A caption describing the table.
+475c473
+<       Figure 3: A caption describing the figure describing the table.
+---
+>        Figure 3: A caption describing the figure describing the table.
+584c582,584
+<               Requirement Levels", BCP 14, RFC 2119, March 1997.
+---
+>               Requirement Levels", BCP 14, RFC 2119,
+>               DOI 10.17487/RFC2119, March 1997,
+>               <http://www.rfc-editor.org/info/rfc2119>.
+587,605c587,588
+<               RFC 4641, September 2006.
+< 
+< 11.3.  URIs
+< 
+<    [1] http://xml.resource.org/experimental
+< 
+<    [2] http://pypi.python.org/pypi/xml2rfc/
+< 
+<    [3] http://daringfireball.net/projects/markdown/
+< 
+<    [4] http://johnmacfarlane.net/pandoc/
+< 
+<    [5] https://github.com/miekg/pandoc2rfc
+< 
+<    [6] http://johnmacfarlane.net/pandoc/README.html
+< 
+<    [7] http://johnmacfarlane.net/pandoc/README.html
+< 
+<    [8] http://miek.nl
+---
+>               RFC 4641, DOI 10.17487/RFC4641, September 2006,
+>               <http://www.rfc-editor.org/info/rfc4641>.
+672c655
+<       Multiple paragraphs in such a list.
+---
+>   Multiple paragraphs in such a list.
+700c683
+<        Item to explain:  Explanation ...
+---
+>        Item to explain: Explanation ...
+702c685
+<        Item to explain:  Another explanation ...
+---
+>        Item to explain:      Another explanation ...
+720c703
+<    4.  Final item.
+---
+>    1.  Final item.
+734c717
+<    i.    Item 1
+---
+>    a.  Item 1
+736c719
+<    ii.   Item 2
+---
+>        ii.  Item 2
+803,809c786,793
+<                   +--------+-------+---------+----------+
+<                   |  Right | Left  |  Center | Default  |
+<                   +--------+-------+---------+----------+
+<                   |     12 | 12    |    12   | 12       |
+<                   |    123 | 123   |   123   | 123      |
+<                   |      1 | 1     |    1    | 1        |
+<                   +--------+-------+---------+----------+
+---
+>                     +-------+------+--------+---------+
+>                     | Right | Left | Center | Default |
+>                     +-------+------+--------+---------+
+>                     | 12    | 12   | 12     | 12      |
+>                     | 123   | 123  | 123    | 123     |
+>                     | 1     | 1    | 1      | 1       |
+>                     |       |      |        |         |
+>                     +-------+------+--------+---------+
+813,822c797,811
+<    +-----------+-----------+---------------+---------------------------+
+<    |  Centered | Default   | Right Aligned | Left Aligned              |
+<    |   Header  | Aligned   |               |                           |
+<    +-----------+-----------+---------------+---------------------------+
+<    |   First   | row       |          12.0 | Example of a row that     |
+<    |           |           |               | spans multiple lines.     |
+<    |   Second  | row       |           5.0 | Here's another one. Note  |
+<    |           |           |               | the blank line between    |
+<    |           |           |               | rows.                     |
+<    +-----------+-----------+---------------+---------------------------+
+---
+>    +---------------+---------------+--------------+--------------------+
+>    | Centered      | Default       | Right        | Left Aligned       |
+>    | Header        | Aligned       | Aligned      |                    |
+>    +---------------+---------------+--------------+--------------------+
+>    | First         | row           | 12.0         | Example of a row   |
+>    |               |               |              | that               |
+>    |               |               |              | spans multiple     |
+>    |               |               |              | lines.             |
+>    | Second        | row           | 5.0          | Here's another     |
+>    |               |               |              | one. Note          |
+>    |               |               |              | the blank line     |
+>    |               |               |              | between            |
+>    |               |               |              | rows.              |
+>    |               |               |              |                    |
+>    +---------------+---------------+--------------+--------------------+
+827,832c816,822
+<           +---------------+---------------+--------------------+
+<           | Fruit         | Price         | Advantages         |
+<           +---------------+---------------+--------------------+
+<           | Bananas       | $1.34         | built-in wrapper   |
+<           | Oranges       | $2.10         | cures scurvy       |
+<           +---------------+---------------+--------------------+
+---
+>                   +---------+-------+------------------+
+>                   | Fruit   | Price | Advantages       |
+>                   +---------+-------+------------------+
+>                   | Bananas | $1.34 | built-in wrapper |
+>                   | Oranges | $2.10 | cures scurvy     |
+>                   |         |       |                  |
+>                   +---------+-------+------------------+
+838,843c828,834
+<           +---------------+---------------+--------------------+
+<           | Fruit         | Price         | Advantages         |
+<           +---------------+---------------+--------------------+
+<           | Bananas       | $1.34         | built-in wrapper   |
+<           | Oranges       | $2.10         | cures scurvy       |
+<           +---------------+---------------+--------------------+
+---
+>                   +---------+-------+------------------+
+>                   | Fruit   | Price | Advantages       |
+>                   +---------+-------+------------------+
+>                   | Bananas | $1.34 | built-in wrapper |
+>                   | Oranges | $2.10 | cures scurvy     |
+>                   |         |       |                  |
+>                   +---------+-------+------------------+
+870c861
+<    Figure 4: This is the caption, with text in `typewriter`. Which isnt
+---
+>    Figure 3: This is the caption, with text in `typewriter`. Which isnt
+879c870
+<                      Figure 5: A non centered figure.
+---
+>                      Figure 4: A non centered figure.
+893,901c884,886
+<    L
+<       list
+<          default markers  18
+<          Uppercase Letters  18
+< 
+<    T
+<       table
+<          grid  20
+<          simple  19
+---
+>       L list default markers 18 Uppercase Letters 18
+> 
+>       T table grid 20 simple 19
