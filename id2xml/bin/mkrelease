@@ -203,7 +203,7 @@ note "Verifying there's no uncommitted changes ..."
 $do svn st | grep "^[AMGRD] " && die "There seems to be uncommitted changes in this working copy"
 
 note "Updating the version info in $VERFILE and making sure'\$Rev\$' is Ok ..."
-$do sed -i -r -e "/^__version__/s/\"[.0-9]+(dev[0-9]+)?\"/\"$VER\"/" \
+$do sed -i -r -e "/^__version__/s/\"[.0-9]+((dev|rc)[0-9]+)?\"/\"$VER\"/" \
 	  -e "/^__rev__/s/\".*\"/\"\$Rev:\$\"/" \
 	$VERFILE
 
@@ -215,7 +215,7 @@ $do make install
 $do make dist
 
 note "Uploading distribution files"
-$d make upload
+$do make upload
 
 note "Creating new tag '$TAGS/$VER' from $SRC ..."
 $do svn cp $REPO/$SRC $REPO/$TAGS/$VER -m "Creating new tag '$TAGS/$VER' from $SRC"
