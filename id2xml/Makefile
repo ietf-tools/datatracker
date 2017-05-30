@@ -1,5 +1,5 @@
 
-version := $(shell python id2xml/parser.py --version | awk '{print $$2}' )
+version := $(shell python id2xml/run.py --version | awk '{print $$2}' )
 
 testfiles= \
 	draft-baba-iot-problems-03.txt				\
@@ -85,7 +85,7 @@ test/out/%.test:	test/ok/%.diff test/out/%.diff
 	ratio=$$(( outlen * 100 / totlen ));				\
 	if [ $$oklen -gt $$outlen ]; then gain=-$$(( oklen - outlen )); else gain=''; fi; \
 	printf "Changed now/ok: %-48s %2s%%  %4s /%4s %4s\n" $(basename $(@F)) $$ratio $$outlen $$oklen $$gain; \
-	test $$oklen -ge $$outlen || echo "								  *** failed ***"
+
 #	test $$oklen -ge $$outlen || { diff -y $^ | less; }
 
 
@@ -122,4 +122,4 @@ bdist_wheel:	dist/id2xml-$(version)-py27-none-any.whl	dist/id2xml-$(version)-py2
 dist:	test sdist # bdist_wheel
 
 upload:	install test dist
-	twine upload dist/id2xml-$(version)* -r pypi
+	twine upload dist/id2xml-$(version)[.-]* -r pypi
