@@ -763,12 +763,22 @@ def document_bibtex(request, name, rev=None):
                 doc = h
                 break
 
+    if doc.is_rfc():
+        # This needs to be replaced with a lookup, as the mapping may change
+        # over time.  Probably by updating ietf/sync/rfceditor.py to add the
+        # as a DocAlias, and use a method on Document to retrieve it.
+        doi = "10.17487/RFC%04d" % int(doc.rfc_number())
+    else:
+        doi = None
+
     return render(request, "doc/document_bibtex.bib",
                               dict(doc=doc,
                                    replaced_by=replaced_by,
                                    published=published,
                                    rfc=rfc,
-                                   latest_revision=latest_revision),
+                                   latest_revision=latest_revision,
+                                   doi=doi,
+                               ),
                               content_type="text/plain; charset=utf-8",
                           )
 

@@ -843,7 +843,7 @@ class DocTestCase(TestCase):
         entry = bibtexparser.loads(r.content).get_entry_dict()["rfc6020"]
         self.assertEqual(entry['series'],   u'Request for Comments')
         self.assertEqual(entry['number'],   u'6020')
-        self.assertEqual(entry['doi'],      u'10.17487/rfc6020')
+        self.assertEqual(entry['doi'],      u'10.17487/RFC6020')
         self.assertEqual(entry['year'],     u'2010')
         self.assertEqual(entry['month'],    u'oct')
         #
@@ -863,7 +863,7 @@ class DocTestCase(TestCase):
         entry = bibtexparser.loads(r.content).get_entry_dict()['rfc1149']
         self.assertEqual(entry['series'],   u'Request for Comments')
         self.assertEqual(entry['number'],   u'1149')
-        self.assertEqual(entry['doi'],      u'10.17487/rfc1149')
+        self.assertEqual(entry['doi'],      u'10.17487/RFC1149')
         self.assertEqual(entry['year'],     u'1990')
         self.assertEqual(entry['month'],    u'apr')
         self.assertEqual(entry['day'],      u'1')

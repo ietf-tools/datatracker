@@ -13,7 +13,7 @@
 	number =	{{ doc.rfc_number }},
 	howpublished =	{% templatetag openbrace %}RFC {{ doc.rfc_number }}{% if doc.doc.intended_std_level %} ({{ doc.intended_std_level }}){% endif %}{% templatetag closebrace %},
 	publisher =	{RFC Editor},
-	doi =		{% templatetag openbrace %}10.17487/rfc{{ doc.rfc_number }}{% templatetag closebrace %},
+	doi =		{% templatetag openbrace %}{{ doi }}{% templatetag closebrace %},
 	url =		{https://rfc-editor.org/rfc/rfc{{ doc.rfc_number }}.txt},{% else %}
 {% if published %}%% You should probably cite rfc{{ latest_revision.doc.rfc_number }} instead of this I-D.{% else %}{% if replaced_by %}%% You should probably cite {{replaced_by|join:" or "}} instead of this I-D.{% else %}
 {% if doc.rev != latest_revision.rev %}%% You should probably cite {{latest_revision.doc.name}}-{{latest_revision.rev}} instead of this revision.{%endif%}{% endif %}{% endif %}
