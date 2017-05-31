@@ -15,7 +15,7 @@ def insert_initial_formal_language_names(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('name', '0019_formallanguagename'),
+        ('name', '0020_formallanguagename'),
     ]
 
     operations = [

@@ -7,7 +7,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('name', '0020_add_formlang_names'),
+        ('name', '0021_add_formlang_names'),
         ('submit', '0018_fix_more_bad_submission_docevents'),
     ]
 

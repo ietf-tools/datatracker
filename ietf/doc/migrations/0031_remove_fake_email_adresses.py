@@ -48,7 +48,7 @@ def fix_invalid_emails(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('doc', '0026_author_revamp_and_extra_attributes'),
+        ('doc', '0030_author_revamp_and_extra_attributes'),
         ('person', '0014_auto_20160613_0751'),
         ('group', '0009_auto_20150930_0758'),
     ]

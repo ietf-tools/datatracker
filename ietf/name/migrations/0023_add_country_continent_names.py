@@ -267,7 +267,7 @@ def insert_initial_country_continent_names(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('name', '0021_continentname_countryname'),
+        ('name', '0022_continentname_countryname'),
     ]
 
     operations = [

@@ -7,8 +7,8 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('name', '0019_formallanguagename'),
-        ('doc', '0025_auto_20170307_0146'),
+        ('name', '0020_formallanguagename'),
+        ('doc', '0029_update_rfc_authors'),
     ]
 
     operations = [

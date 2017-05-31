@@ -13,6 +13,11 @@ from ietf.utils.test_data  import make_test_data, make_downref_test_data
 from ietf.utils.test_utils import login_testing_unauthorized, unicontent
 
 class Downref(TestCase):
+
+    def setUp(self):
+        make_test_data()
+        make_downref_test_data()
+
     def test_downref_registry(self):
         url = urlreverse('ietf.doc.views_downref.downref_registry')
 
@@ -103,7 +108,3 @@ class Downref(TestCase):
         self.assertTrue(RelatedDocument.objects.filter(source=draft, target=rfc, relationship_id='downref-approval'))
         self.assertEqual(draft.docevent_set.count(), draft_de_count_before + 1)
         self.assertEqual(rfc.document.docevent_set.count(), rfc_de_count_before + 1)
-
-    def setUp(self):
-        make_test_data()
-        make_downref_test_data()
