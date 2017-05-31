@@ -214,13 +214,17 @@ def get_meeting_registration_data(meeting):
     """"Retrieve registration attendee data and summary statistics.  Returns number
     of Registration records created."""
     num_created = 0
+    num_processed = 0
     response = requests.get(settings.REGISTRATION_ATTENDEES_BASE_URL + meeting.number)
     if response.status_code == 200:
         decoded = []
         try:
             decoded = response.json()
         except ValueError:
-            pass
+            if response.content.strip() == 'Invalid meeting':
+                pass
+            else:
+                raise RuntimeError("Could not decode response from registrations API: '%s...'" % (response.content[:64], ))
 
         for registration in decoded:
             object, created = MeetingRegistration.objects.get_or_create(
@@ -228,10 +232,16 @@ def get_meeting_registration_data(meeting):
                 first_name=registration['FirstName'],
                 last_name=registration['LastName'],
                 affiliation=registration['Company'],
-                country_code=registration['Country'])
+                country_code=registration['Country'],
+                email=registration['Email'],
+            )
             if created:
                 num_created += 1
-    return num_created
+            num_processed += 1
+    else:
+        raise RuntimeError("Bad response from registrations API: %s, '%s'" % (response.status_code, response.content))
+    num_total = MeetingRegistration.objects.filter(meeting_id=meeting.pk).count()
+    return num_created, num_processed, num_total
     
             
     

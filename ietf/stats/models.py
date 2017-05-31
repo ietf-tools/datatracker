@@ -50,6 +50,7 @@ class MeetingRegistration(models.Model):
     affiliation = models.CharField(blank=True, max_length=255)
     country_code = models.CharField(max_length=2)        # ISO 3166
     person = models.ForeignKey(Person, blank=True, null=True)
+    email =  models.EmailField(blank=True, null=True)
     
     def __unicode__(self):
         return u"{} {}".format(self.first_name, self.last_name)

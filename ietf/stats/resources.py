@@ -63,6 +63,7 @@ class MeetingRegistrationResource(ModelResource):
             "last_name": ALL,
             "affiliation": ALL,
             "country_code": ALL,
+            "email": ALL,
             "person": ALL_WITH_RELATIONS
         }
 api.stats.register(MeetingRegistrationResource())

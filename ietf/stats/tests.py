@@ -102,9 +102,9 @@ class StatisticsTests(TestCase):
         # create some data for the statistics
         make_test_data()
         meeting = MeetingFactory(type_id='ietf', date=datetime.date.today(), number="96")
-        MeetingRegistration.objects.create(first_name='John', last_name='Smith', country_code='US', meeting=meeting)
+        MeetingRegistration.objects.create(first_name='John', last_name='Smith', country_code='US', email="john.smith@example.us", meeting=meeting)
         CountryAlias.objects.get_or_create(alias="US", country=CountryName.objects.get(slug="US"))
-        MeetingRegistration.objects.create(first_name='Jaume', last_name='Guillaume', country_code='FR', meeting=meeting)
+        MeetingRegistration.objects.create(first_name='Jaume', last_name='Guillaume', country_code='FR', email="jaume.guillaume@example.fr", meeting=meeting)
         CountryAlias.objects.get_or_create(alias="FR", country=CountryName.objects.get(slug="FR"))
 
         # check redirect
@@ -193,7 +193,7 @@ class StatisticsTests(TestCase):
     def test_get_meeting_registration_data(self, mock_get):
         response = Response()
         response.status_code = 200
-        response._content = '[{"LastName":"Smith","FirstName":"John","Company":"ABC","Country":"US"}]'
+        response._content = '[{"LastName":"Smith","FirstName":"John","Company":"ABC","Country":"US","Email":"john.doe@example.us"}]'
         mock_get.return_value = response
         meeting = MeetingFactory(type_id='ietf', date=datetime.date(2016,7,14), number="96")
         get_meeting_registration_data(meeting)

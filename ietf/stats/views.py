@@ -1,8 +1,10 @@
+import os
+import calendar
 import datetime
+import email.utils
 import itertools
 import json
-import calendar
-import os
+
 from collections import defaultdict
 
 from django.shortcuts import render
@@ -780,6 +782,9 @@ def meeting_stats(request, num=None, stats_type=None):
             if alias.alias.isupper()
         }
 
+    def reg_name(r):
+        return email.utils.formataddr(((r.first_name + u" " + r.last_name).strip(), r.email))
+
     if meeting and any(stats_type == t[0] for t in possible_stats_types):
         registrations = MeetingRegistration.objects.filter(meeting=meeting)
 
@@ -794,7 +799,7 @@ def meeting_stats(request, num=None, stats_type=None):
             eu_countries = set(CountryName.objects.filter(in_eu=True))
 
             for r in registrations:
-                name = (r.first_name + " " + r.last_name).strip()
+                name = reg_name(r)
                 c = country_mapping.get(r.country_code)
                 bins[c.name if c else ""].add(name)
 
@@ -831,7 +836,7 @@ def meeting_stats(request, num=None, stats_type=None):
             country_mapping = get_country_mapping(registrations)
 
             for r in registrations:
-                name = (r.first_name + " " + r.last_name).strip()
+                name = reg_name(r)
                 c = country_mapping.get(r.country_code)
                 bins[c.continent.name if c else ""].add(name)
 
@@ -853,16 +858,16 @@ def meeting_stats(request, num=None, stats_type=None):
     elif not meeting and any(stats_type == t[0] for t in possible_stats_types):
         template_name = "overview"
 
-        registrations = MeetingRegistration.objects.filter(meeting__type="ietf")
+        registrations = MeetingRegistration.objects.filter(meeting__type="ietf").select_related('meeting')
 
         if stats_type == "overview":
             stats_title = "Number of registrations per meeting"
 
             bins = defaultdict(set)
 
-            for first_name, last_name, meeting_number in registrations.values_list("first_name", "last_name", "meeting__number"):
-                meeting_number = int(meeting_number)
-                name = (first_name + " " + last_name).strip()
+            for r in registrations:
+                meeting_number = int(r.meeting.number)
+                name = reg_name(r)
 
                 bins[meeting_number].add(name)
 
@@ -891,10 +896,10 @@ def meeting_stats(request, num=None, stats_type=None):
 
             bins = defaultdict(set)
 
-            for first_name, last_name, country_code, meeting_number in registrations.values_list("first_name", "last_name", "country_code", "meeting__number"):
-                meeting_number = int(meeting_number)
-                name = (first_name + " " + last_name).strip()
-                c = country_mapping.get(country_code)
+            for r in registrations:
+                meeting_number = int(r.meeting.number)
+                name = reg_name(r)
+                c = country_mapping.get(r.country_code)
 
                 if c:
                     bins[(meeting_number, c.name)].add(name)
@@ -911,10 +916,10 @@ def meeting_stats(request, num=None, stats_type=None):
 
             bins = defaultdict(set)
 
-            for first_name, last_name, country_code, meeting_number in registrations.values_list("first_name", "last_name", "country_code", "meeting__number"):
-                meeting_number = int(meeting_number)
-                name = (first_name + " " + last_name).strip()
-                c = country_mapping.get(country_code)
+            for r in registrations:
+                meeting_number = int(r.meeting.number)
+                name = reg_name(r)
+                c = country_mapping.get(r.country_code)
 
                 if c:
                     bins[(meeting_number, c.continent.name)].add(name)

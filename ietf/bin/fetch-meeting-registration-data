@@ -39,8 +39,8 @@ else:
     sys.exit(1)
 
 for meeting in meetings:
-    total = get_meeting_registration_data(meeting)
-    msg = "Fetched data for meeting {}: {} registrations added".format(meeting.number, total)
+    added, processed, total = get_meeting_registration_data(meeting)
+    msg = "Fetched data for meeting {}: {} processed, {} added, {} in table".format(meeting.number, processed, added, total)
     if sys.stdout.isatty():
         print(msg) # make debugging a bit easier
     else:
