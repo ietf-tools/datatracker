@@ -280,7 +280,7 @@ class MeetingTests(TestCase):
         r = self.client.get(urlreverse("ietf.meeting.views.materials", kwargs=dict(num=meeting.number)))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
-        row = q('#content td div:contains("%s")' % str(session.group.acronym)).closest("tr")
+        row = q('#content #%s' % str(session.group.acronym)).closest("tr")
         self.assertTrue(row.find('a:contains("Agenda")'))
         self.assertTrue(row.find('a:contains("Minutes")'))
         self.assertTrue(row.find('a:contains("Slideshow")'))
@@ -970,7 +970,7 @@ class InterimTests(TestCase):
                 'session_set-INITIAL_FORMS':0}
 
         r = self.client.post(urlreverse("ietf.meeting.views.interim_request"),data)
-        
+
         self.assertRedirects(r,urlreverse('ietf.meeting.views.upcoming'))
         meeting = Meeting.objects.order_by('id').last()
         self.assertEqual(meeting.type_id,'interim')

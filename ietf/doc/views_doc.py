@@ -56,7 +56,6 @@ from ietf.group.models import Role
 from ietf.group.utils import can_manage_group_type, can_manage_materials
 from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream, user_is_person, role_required
 from ietf.name.models import StreamName, BallotPositionName
-from ietf.person.models import Email
 from ietf.utils.history import find_history_active_at
 from ietf.doc.forms import TelechatForm, NotifyForm
 from ietf.doc.mails import email_comment
@@ -167,7 +166,7 @@ def document_main(request, name, rev=None):
 
         can_edit_replaces = has_role(request.user, ("Area Director", "Secretariat", "IRTF Chair", "WG Chair", "RG Chair", "WG Secretary", "RG Secretary"))
 
-        is_author = unicode(request.user) in set([email.address for email in doc.authors.all()])
+        is_author = request.user.is_authenticated() and doc.documentauthor_set.filter(person__user=request.user).exists()
         can_view_possibly_replaces = can_edit_replaces or is_author
 
         rfc_number = name[3:] if name.startswith("") else None
@@ -984,11 +983,11 @@ def document_json(request, name, rev=None):
     data["intended_std_level"] = extract_name(doc.intended_std_level)
     data["std_level"] = extract_name(doc.std_level)
     data["authors"] = [
-        dict(name=e.person.name,
-             email=e.address,
-             affiliation=e.person.affiliation)
-        for e in Email.objects.filter(documentauthor__document=doc).select_related("person").order_by("documentauthor__order")
-        ]
+        dict(name=author.person.name,
+             email=author.email.address,
+             affiliation=author.affiliation)
+        for author in doc.documentauthor_set.all().select_related("person", "email").order_by("order")
+    ]
     data["shepherd"] = doc.shepherd.formatted_email() if doc.shepherd else None
     data["ad"] = doc.ad.role_email("ad").formatted_email() if doc.ad else None
 

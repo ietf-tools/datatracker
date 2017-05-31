@@ -6,6 +6,8 @@ from django import forms
 from django.db.models import Q
 from django.forms import BaseInlineFormSet
 
+import debug                            # pyflakes:ignore
+
 from ietf.doc.models import Document, DocAlias, State, NewRevisionDocEvent
 from ietf.doc.utils import get_document_content
 from ietf.group.models import Group
@@ -84,7 +86,7 @@ class InterimSessionInlineFormSet(BaseInlineFormSet):
             dates.sort()
             last_date = dates[0]
             for date in dates[1:]:
-                if last_date.day + 1 != date.day:
+                if date - last_date != datetime.timedelta(days=1):
                     raise forms.ValidationError('For Multi-Day meetings, days must be consecutive')
                 last_date = date
 

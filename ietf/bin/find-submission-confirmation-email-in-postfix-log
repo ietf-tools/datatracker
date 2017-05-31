@@ -66,7 +66,7 @@ if "<" in from_email:
 
 submission = Submission.objects.filter(name=draft).latest('submission_date')
 document = Document.objects.get(name=draft)
-emails = [ author.address for author in document.authors.all() ]
+emails = [ author.email.address for author in document.documentauthor_set.all() if author.email ]
 
 timestrings = []
 for file in [ Path(settings.INTERNET_DRAFT_PATH) / ("%s-%s.txt"%(draft, submission.rev)),

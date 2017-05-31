@@ -572,13 +572,13 @@
           <h4>Authors</h4>
           <p>
             {% for author in doc.documentauthor_set.all %}
-              {% if not author.author.invalid_address %}
+              {% if author.email %}
                 <span class="fa fa-envelope-o"></span>
-                <a href="mailto:{{ author.author.address }}">
+                <a href="mailto:{{ author.email.address }}">
 	      {% endif %}
-	      {{ author.author.person }}
-	      {% if not author.author.invalid_address %}
-	        ({{ author.author.address }})</a>
+              {{ author.person }}
+              {% if author.email %}
+                ({{ author.email.address }})</a>
               {% endif %}
               {% if not forloop.last %}<br>{% endif %}
             {% endfor %}

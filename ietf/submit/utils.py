@@ -47,7 +47,7 @@ def validate_submission(submission):
     if not submission.abstract:
         errors['abstract'] = 'Abstract is empty or was not found'
 
-    if not submission.authors_parsed():
+    if not submission.authors:
         errors['authors'] = 'No authors found'
 
     # revision
@@ -130,7 +130,7 @@ def docevent_from_submission(request, submission, desc, who=None):
     else:
         submitter_parsed = submission.submitter_parsed()
         if submitter_parsed["name"] and submitter_parsed["email"]:
-            by = ensure_person_email_info_exists(submitter_parsed["name"], submitter_parsed["email"]).person
+            by, _ = ensure_person_email_info_exists(submitter_parsed["name"], submitter_parsed["email"])
         else:
             by = system
 
@@ -184,7 +184,7 @@ def post_submission(request, submission, approvedDesc):
     system = Person.objects.get(name="(System)")
     submitter_parsed = submission.submitter_parsed()
     if submitter_parsed["name"] and submitter_parsed["email"]:
-        submitter = ensure_person_email_info_exists(submitter_parsed["name"], submitter_parsed["email"]).person
+        submitter, _ = ensure_person_email_info_exists(submitter_parsed["name"], submitter_parsed["email"])
         submitter_info = u'%s <%s>' % (submitter_parsed["name"], submitter_parsed["email"])
     else:
         submitter = system
@@ -257,6 +257,8 @@ def post_submission(request, submission, approvedDesc):
     draft.set_state(State.objects.get(used=True, type="draft", slug="active"))
 
     update_authors(draft, submission)
+
+    draft.formal_languages = submission.formal_languages.all()
 
     trouble = rebuild_reference_relations(draft, filename=os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.txt' % (submission.name, submission.rev)))
     if trouble:
@@ -344,10 +346,9 @@ def update_replaces_from_submission(request, submission, draft):
         if rdoc == draft:
             continue
 
-        # TODO - I think the .exists() is in the wrong place below....
         if (is_secretariat
             or (draft.group in is_chair_of and (rdoc.group.type_id == "individ" or rdoc.group in is_chair_of))
-            or (submitter_email and rdoc.authors.filter(address__iexact=submitter_email)).exists()):
+            or (submitter_email and rdoc.documentauthor_set.filter(email__address__iexact=submitter_email).exists())):
             approved.append(r)
         else:
             if r not in existing_suggested:
@@ -434,24 +435,27 @@ def ensure_person_email_info_exists(name, email):
             email.time = datetime.datetime.now()
         email.save()
 
-    return email
+    return person, email
 
 def update_authors(draft, submission):
-    authors = []
-    for order, author in enumerate(submission.authors_parsed()):
-        email = ensure_person_email_info_exists(author["name"], author["email"])
+    persons = []
+    for order, author in enumerate(submission.authors):
+        person, email = ensure_person_email_info_exists(author["name"], author.get("email"))
 
-        a = DocumentAuthor.objects.filter(document=draft, author=email).first()
+        a = DocumentAuthor.objects.filter(document=draft, person=person).first()
         if not a:
-            a = DocumentAuthor(document=draft, author=email)
+            a = DocumentAuthor(document=draft, person=person)
 
+        a.email = email
+        a.affiliation = author.get("affiliation") or ""
+        a.country = author.get("country") or ""
         a.order = order
         a.save()
-        log.assertion('a.author_id != "none"')
+        log.assertion('a.email_id != "none"')
 
-        authors.append(email)
+        persons.append(person)
 
-    draft.documentauthor_set.exclude(author__in=authors).delete()
+    draft.documentauthor_set.exclude(person__in=persons).delete()
 
 def cancel_submission(submission):
     submission.state = DraftSubmissionStateName.objects.get(slug="cancel")

@@ -190,6 +190,11 @@ def rfcnospace(string):
     else:
         return string
 
+@register.filter
+def prettystdname(string):
+    from ietf.doc.utils import prettify_std_name
+    return prettify_std_name(unicode(string or ""))
+
 @register.filter(name='rfcurl')
 def rfclink(string):
     """

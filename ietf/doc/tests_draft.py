@@ -377,7 +377,10 @@ class EditInfoTests(TestCase):
 
         DocumentAuthor.objects.create(
             document=draft,
-            author=Email.objects.get(address="aread@ietf.org"),
+            person=Person.objects.get(email__address="aread@ietf.org"),
+            email=Email.objects.get(address="aread@ietf.org"),
+            country="US",
+            affiliation="",
             order=1
             )
         
@@ -1348,7 +1351,9 @@ class ChangeReplacesTests(TestCase):
             expires=datetime.datetime.now() + datetime.timedelta(days=settings.INTERNET_DRAFT_DAYS_TO_EXPIRE),
             group=mars_wg,
         )
-        self.basea.documentauthor_set.create(author=Email.objects.create(address="basea_author@example.com"),order=1)
+        p = Person.objects.create(address="basea_author")
+        e = Email.objects.create(address="basea_author@example.com", person=p)
+        self.basea.documentauthor_set.create(person=p, email=e, order=1)
 
         self.baseb = Document.objects.create(
             name="draft-test-base-b",
@@ -1359,7 +1364,9 @@ class ChangeReplacesTests(TestCase):
             expires=datetime.datetime.now() - datetime.timedelta(days = 365 - settings.INTERNET_DRAFT_DAYS_TO_EXPIRE),
             group=mars_wg,
         )
-        self.baseb.documentauthor_set.create(author=Email.objects.create(address="baseb_author@example.com"),order=1)
+        p = Person.objects.create(name="baseb_author")
+        e = Email.objects.create(address="baseb_author@example.com", person=p)
+        self.baseb.documentauthor_set.create(person=p, email=e, order=1)
 
         self.replacea = Document.objects.create(
             name="draft-test-replace-a",
@@ -1370,7 +1377,9 @@ class ChangeReplacesTests(TestCase):
             expires=datetime.datetime.now() + datetime.timedelta(days = settings.INTERNET_DRAFT_DAYS_TO_EXPIRE),
             group=mars_wg,
         )
-        self.replacea.documentauthor_set.create(author=Email.objects.create(address="replacea_author@example.com"),order=1)
+        p = Person.objects.create(name="replacea_author")
+        e = Email.objects.create(address="replacea_author@example.com", person=p)
+        self.replacea.documentauthor_set.create(person=p, email=e, order=1)
  
         self.replaceboth = Document.objects.create(
             name="draft-test-replace-both",
@@ -1381,7 +1390,9 @@ class ChangeReplacesTests(TestCase):
             expires=datetime.datetime.now() + datetime.timedelta(days = settings.INTERNET_DRAFT_DAYS_TO_EXPIRE),
             group=mars_wg,
         )
-        self.replaceboth.documentauthor_set.create(author=Email.objects.create(address="replaceboth_author@example.com"),order=1)
+        p = Person.objects.create(name="replaceboth_author")
+        e = Email.objects.create(address="replaceboth_author@example.com", person=p)
+        self.replaceboth.documentauthor_set.create(person=p, email=e, order=1)
  
         self.basea.set_state(State.objects.get(used=True, type="draft", slug="active"))
         self.baseb.set_state(State.objects.get(used=True, type="draft", slug="expired"))

@@ -397,6 +397,7 @@ INSTALLED_APPS = (
     'ietf.redirects',
     'ietf.release',
     'ietf.review',
+    'ietf.stats',
     'ietf.submit',
     'ietf.sync',
     'ietf.utils',
@@ -488,6 +489,7 @@ TEST_CODE_COVERAGE_EXCLUDE = [
     "ietf/utils/test_runner.py",
     "name/generate_fixtures.py",
     "review/import_from_review_tool.py",
+    "stats/backfill_data.py",
 ]
 
 # These are filename globs.  They are used by test_parse_templates() and
@@ -556,6 +558,8 @@ INTERNET_DRAFT_ARCHIVE_DIR = '/a/www/www6s/draft-archive'
 INTERNET_ALL_DRAFTS_ARCHIVE_DIR = '/a/www/www6s/archive/id'
 MEETING_RECORDINGS_DIR = '/a/www/audio'
 
+DOCUMENT_FORMAT_BLACKLIST = ["tar", "dtd", "p7s"]
+
 # Mailing list info URL for lists hosted on the IETF servers
 MAILING_LIST_INFO_URL = "https://www.ietf.org/mailman/listinfo/%(list_addr)s"
 MAILING_LIST_ARCHIVE_URL = "https://mailarchive.ietf.org"
@@ -617,6 +621,8 @@ IPR_EMAIL_FROM = 'ietf-ipr@ietf.org'
 AUDIO_IMPORT_EMAIL = ['agenda@ietf.org','ietf@meetecho.com']
 IANA_EVAL_EMAIL = "drafts-eval@icann.org"
 SESSION_REQUEST_FROM_EMAIL = 'IETF Meeting Session Request Tool <session-request@ietf.org>' 
+
+SECRETARIAT_TICKET_EMAIL = "ietf-action@ietf.org"
 
 # Put real password in settings_local.py
 IANA_SYNC_PASSWORD = "secret"

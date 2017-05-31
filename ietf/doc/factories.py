@@ -46,8 +46,8 @@ class DocumentFactory(factory.DjangoModelFactory):
     def authors(obj, create, extracted, **kwargs): # pylint: disable=no-self-argument
         if create and extracted:
             order = 0
-            for email in extracted:
-                DocumentAuthor.objects.create(document=obj, author=email, order=order)
+            for person in extracted:
+                DocumentAuthor.objects.create(document=obj, person=person, order=order)
                 order += 1
 
     @classmethod

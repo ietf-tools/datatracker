@@ -54,6 +54,10 @@ def initials(name):
     initials = u" ".join([ n[0]+'.' for n in given.split() ])
     return initials
 
+def plain_name(name):
+    prefix, first, middle, last, suffix = name_parts(name)
+    return u" ".join([first, last])
+
 if __name__ == "__main__":
     import sys
     name = u" ".join(sys.argv[1:])

@@ -22,7 +22,7 @@ To approve the draft, go to this URL (note: you need to login to be able to appr
 
 
   Authors:
-{% for author in submission.authors_parsed %}    {{ author.name }}{% if author.email %} <{{ author.email }}>{% endif%}
+{% for author in submission.authors %}    {{ author.name }}{% if author.email %} <{{ author.email }}>{% endif%}
 {% endfor %}
 {% endautoescape %}
 
