@@ -328,7 +328,8 @@ def document_stats(request, stats_type=None):
                     continue
 
                 basename, ext = t
-                if any(ext.lower().endswith(blacklisted_ext.lower()) for blacklisted_ext in settings.DOCUMENT_FORMAT_BLACKLIST):
+                ext = ext.lower()
+                if not any(ext==whitelisted_ext for whitelisted_ext in settings.DOCUMENT_FORMAT_WHITELIST):
                     continue
 
                 canonical_name = doc_names_with_missing_types.get(basename)
