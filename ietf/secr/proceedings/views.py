@@ -16,15 +16,12 @@ from ietf.secr.utils.decorators import sec_only
 from ietf.secr.utils.group import get_my_groups
 from ietf.secr.utils.meeting import get_timeslot, get_proceedings_url
 from ietf.doc.models import Document, DocEvent
-from ietf.group.models import Group
 from ietf.person.models import Person
 from ietf.ietfauth.utils import has_role, role_required
-from ietf.meeting.models import Meeting, Session, TimeSlot
+from ietf.meeting.models import Meeting, Session
 
 from ietf.secr.proceedings.forms import RecordingForm, RecordingEditForm 
-from ietf.secr.proceedings.proc_utils import ( gen_acknowledgement, gen_agenda, gen_areas,
-    gen_attendees, gen_group_pages, gen_index, gen_irtf, gen_overview, gen_plenaries,
-    gen_progress, gen_research, gen_training, create_proceedings, create_recording )
+from ietf.secr.proceedings.proc_utils import (create_recording)
 
 # -------------------------------------------------
 # Globals 
@@ -139,59 +136,10 @@ def parsedate(d):
     This function takes a date object and returns a tuple of year,month,day
     '''
     return (d.strftime('%Y'),d.strftime('%m'),d.strftime('%d'))
-        
-
-# -------------------------------------------------
-# AJAX Functions
-# -------------------------------------------------
-@sec_only
-def ajax_generate_proceedings(request, meeting_num):
-    '''
-    Ajax function which takes a meeting number and generates the proceedings
-    pages for the meeting.  It returns a snippet of HTML that gets placed in the
-    Secretariat Only section of the select page.
-    '''
-    meeting = get_object_or_404(Meeting, number=meeting_num)
-    areas = Group.objects.filter(type='area',state='active').order_by('name')
-    others = TimeSlot.objects.filter(sessionassignments__schedule=meeting.agenda,type='other').order_by('time')
-    extras = get_extras(meeting)
-    context = {'meeting':meeting,
-               'areas':areas,
-               'others':others,
-               'extras':extras,
-               'request':request}
-    proceedings_url = get_proceedings_url(meeting)
-
-    # the acknowledgement page can be edited manually so only produce if it doesn't already exist
-    path = os.path.join(settings.SECR_PROCEEDINGS_DIR,meeting.number,'acknowledgement.html')
-    if not os.path.exists(path):
-        gen_acknowledgement(context)
-    gen_overview(context)
-    gen_progress(context)
-    gen_agenda(context)
-    gen_attendees(context)
-    gen_index(context)
-    gen_areas(context)
-    gen_plenaries(context)
-    gen_training(context)
-    gen_irtf(context)
-    gen_research(context)
-    gen_group_pages(context)
-
-    # get the time proceedings were generated
-    path = os.path.join(settings.SECR_PROCEEDINGS_DIR,meeting.number,'index.html')
-    last_run = datetime.datetime.fromtimestamp(os.path.getmtime(path))
-
-    return render(request, 'includes/proceedings_functions.html',{
-        'meeting':meeting,
-        'last_run':last_run,
-        'proceedings_url':proceedings_url},
-    )
 
 # --------------------------------------------------
 # STANDARD VIEW FUNCTIONS
 # --------------------------------------------------
-
 
 @role_required(*AUTHORIZED_ROLES)
 def main(request):
@@ -270,17 +218,6 @@ def process_pdfs(request, meeting_num):
     return HttpResponseRedirect(url)
 
 @role_required('Secretariat')
-def progress_report(request, meeting_num):
-    '''
-    This function generates the proceedings progress report for use at the Plenary.
-    '''
-    meeting = get_object_or_404(Meeting, number=meeting_num)
-    gen_progress({'meeting':meeting},final=False)
-
-    url = reverse('ietf.secr.proceedings.views.select', kwargs={'meeting_num':meeting_num})
-    return HttpResponseRedirect(url)
-
-@role_required('Secretariat')
 def recording(request, meeting_num):
     '''
     Enter Session recording info.  Creates Document and associates it with Session.
@@ -302,9 +239,6 @@ def recording(request, meeting_num):
                 return redirect('ietf.secr.proceedings.views.recording', meeting_num=meeting_num)
             else:
                 create_recording(session,external_url)
-            
-            # rebuild proceedings
-            create_proceedings(meeting,session.group)
             
             messages.success(request,'Recording added')
             return redirect('ietf.secr.proceedings.views.recording', meeting_num=meeting_num)
@@ -345,7 +279,6 @@ def recording_edit(request, meeting_num, name):
             )
             recording.save_with_history([e])
 
-            create_proceedings(meeting,recording.group)
             messages.success(request,'Recording saved')
             return redirect('ietf.secr.proceedings.views.recording', meeting_num=meeting_num)
     else:
