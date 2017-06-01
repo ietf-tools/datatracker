@@ -775,10 +775,10 @@ def meeting_stats(request, num=None, stats_type=None):
     bin_size = 1
     eu_countries = None
 
-    def get_country_mapping(registrations):
+    def get_country_mapping(attendees):
         return {
             alias.alias: alias.country
-            for alias in CountryAlias.objects.filter(alias__in=set(r.country_code for r in registrations)).select_related("country", "country__continent")
+            for alias in CountryAlias.objects.filter(alias__in=set(r.country_code for r in attendees)).select_related("country", "country__continent")
             if alias.alias.isupper()
         }
 
@@ -786,19 +786,19 @@ def meeting_stats(request, num=None, stats_type=None):
         return email.utils.formataddr(((r.first_name + u" " + r.last_name).strip(), r.email))
 
     if meeting and any(stats_type == t[0] for t in possible_stats_types):
-        registrations = MeetingRegistration.objects.filter(meeting=meeting)
+        attendees = MeetingRegistration.objects.filter(meeting=meeting)
 
         if stats_type == "country":
-            stats_title = "Number of registrations for {} {} per country".format(meeting.type.name, meeting.number)
+            stats_title = "Number of attendees for {} {} per country".format(meeting.type.name, meeting.number)
 
             bins = defaultdict(set)
 
-            country_mapping = get_country_mapping(registrations)
+            country_mapping = get_country_mapping(attendees)
 
             eu_name = "EU"
             eu_countries = set(CountryName.objects.filter(in_eu=True))
 
-            for r in registrations:
+            for r in attendees:
                 name = reg_name(r)
                 c = country_mapping.get(r.country_code)
                 bins[c.name if c else ""].add(name)
@@ -807,11 +807,11 @@ def meeting_stats(request, num=None, stats_type=None):
                     bins[eu_name].add(name)
 
             prune_unknown_bin_with_known(bins)
-            total_registrations = count_bins(bins)
+            total_attendees = count_bins(bins)
 
             series_data = []
             for country, names in sorted(bins.iteritems(), key=lambda t: t[0].lower()):
-                percentage = len(names) * 100.0 / (total_registrations or 1)
+                percentage = len(names) * 100.0 / (total_attendees or 1)
                 if country:
                     series_data.append((country, len(names)))
                 table_data.append((country, percentage, names))
@@ -829,23 +829,23 @@ def meeting_stats(request, num=None, stats_type=None):
             chart_data.append({ "data": series_data })
 
         elif stats_type == "continent":
-            stats_title = "Number of registrations for {} {} per continent".format(meeting.type.name, meeting.number)
+            stats_title = "Number of attendees for {} {} per continent".format(meeting.type.name, meeting.number)
 
             bins = defaultdict(set)
 
-            country_mapping = get_country_mapping(registrations)
+            country_mapping = get_country_mapping(attendees)
 
-            for r in registrations:
+            for r in attendees:
                 name = reg_name(r)
                 c = country_mapping.get(r.country_code)
                 bins[c.continent.name if c else ""].add(name)
 
             prune_unknown_bin_with_known(bins)
-            total_registrations = count_bins(bins)
+            total_attendees = count_bins(bins)
 
             series_data = []
             for continent, names in sorted(bins.iteritems(), key=lambda t: t[0].lower()):
-                percentage = len(names) * 100.0 / (total_registrations or 1)
+                percentage = len(names) * 100.0 / (total_attendees or 1)
                 if continent:
                     series_data.append((continent, len(names)))
                 table_data.append((continent, percentage, names))
@@ -858,14 +858,14 @@ def meeting_stats(request, num=None, stats_type=None):
     elif not meeting and any(stats_type == t[0] for t in possible_stats_types):
         template_name = "overview"
 
-        registrations = MeetingRegistration.objects.filter(meeting__type="ietf").select_related('meeting')
+        attendees = MeetingRegistration.objects.filter(meeting__type="ietf").select_related('meeting')
 
         if stats_type == "overview":
-            stats_title = "Number of registrations per meeting"
+            stats_title = "Number of attendees per meeting"
 
             bins = defaultdict(set)
 
-            for r in registrations:
+            for r in attendees:
                 meeting_number = int(r.meeting.number)
                 name = reg_name(r)
 
@@ -883,20 +883,20 @@ def meeting_stats(request, num=None, stats_type=None):
             series_data.sort(key=lambda t: t[0])
             table_data.sort(key=lambda t: t[0], reverse=True)
 
-            chart_data.append({ "name": "Registrations", "data": series_data })
+            chart_data.append({ "name": "Attendees", "data": series_data })
 
 
         elif stats_type == "country":
-            stats_title = "Number of registrations per country across meetings"
+            stats_title = "Number of attendees per country across meetings"
 
-            country_mapping = get_country_mapping(registrations)
+            country_mapping = get_country_mapping(attendees)
 
             eu_name = "EU"
             eu_countries = set(CountryName.objects.filter(in_eu=True))
 
             bins = defaultdict(set)
 
-            for r in registrations:
+            for r in attendees:
                 meeting_number = int(r.meeting.number)
                 name = reg_name(r)
                 c = country_mapping.get(r.country_code)
@@ -910,13 +910,13 @@ def meeting_stats(request, num=None, stats_type=None):
 
 
         elif stats_type == "continent":
-            stats_title = "Number of registrations per country across meetings"
+            stats_title = "Number of attendees per continent across meetings"
 
-            country_mapping = get_country_mapping(registrations)
+            country_mapping = get_country_mapping(attendees)
 
             bins = defaultdict(set)
 
-            for r in registrations:
+            for r in attendees:
                 meeting_number = int(r.meeting.number)
                 name = reg_name(r)
                 c = country_mapping.get(r.country_code)

@@ -34,7 +34,7 @@ class StatisticsTests(TestCase):
             rev=draft.rev,
             words=4000,
             draft=draft,
-            file_types="txt",
+            file_types=".txt",
             state_id="posted",
         )
 
