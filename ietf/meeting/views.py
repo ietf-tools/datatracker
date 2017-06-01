@@ -960,7 +960,8 @@ def json_agenda(request, num=None ):
         sessdict['start'] = asgn.timeslot.utc_start_time().strftime("%Y-%m-%dT%H:%M:%SZ")
         sessdict['duration'] = str(asgn.timeslot.duration)
         sessdict['location'] = asgn.room_name
-        locations.add(asgn.timeslot.location)
+        if asgn.timeslot.location:      # Some socials have an assignment but no location
+            locations.add(asgn.timeslot.location)
         if asgn.session.agenda():
             sessdict['agenda'] = asgn.session.agenda().href()
 
