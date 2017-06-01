@@ -3,16 +3,19 @@ proc_utils.py
 
 This module contains all the functions for generating static proceedings pages
 '''
-from urllib2 import urlopen
 import datetime
 import glob
+import httplib2
 import os
 import re
 import shutil
 import subprocess
+import urllib2
+from urllib import urlencode
 
 import debug        # pyflakes:ignore
 
+from apiclient.discovery import build
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpRequest
@@ -34,10 +37,84 @@ from ietf.utils.log import log
 from ietf.utils.mail import send_mail
 
 AUDIO_FILE_RE = re.compile(r'ietf(?P<number>[\d]+)-(?P<room>.*)-(?P<time>[\d]{8}-[\d]{4})')
+VIDEO_TITLE_RE = re.compile(r'IETF(?P<number>\d{2})-(?P<name>.*)-(?P<date>\d{8})-(?P<time>\d{4})')
 
 # -------------------------------------------------
-# Helper Functions
+# Recording Functions
 # -------------------------------------------------
+
+def import_youtube_video_urls(meeting, http=httplib2.Http()):
+    '''Create Document and set external_url for session videos'''
+    youtube = build(settings.YOUTUBE_API_SERVICE_NAME, settings.YOUTUBE_API_VERSION,
+        developerKey=settings.YOUTUBE_API_KEY, http=http)
+    playlistid = get_youtube_playlistid(youtube, 'IETF' + meeting.number)
+    if playlistid is None:
+        return None
+    for video in get_youtube_videos(youtube, playlistid):
+        match = VIDEO_TITLE_RE.match(video['title'])
+        if match:
+            session = _get_session(**match.groupdict())
+            if session:
+                url = video['url']
+                get_or_create_recording_document(url,session)
+
+def get_youtube_playlistid(youtube, title, http=httplib2.Http()):
+    '''Returns the youtube playlistId matching title string, a string'''
+    request = youtube.search().list(
+        q=title,
+        part='id,snippet',
+        channelId=settings.YOUTUBE_IETF_CHANNEL_ID,
+        type='playlist',
+        maxResults=1
+    )
+    search_response = request.execute(http=http)
+
+    try:
+        playlistid = search_response['items'][0]['id']['playlistId']
+    except (KeyError, IndexError):
+        return None
+    return playlistid
+
+def get_youtube_videos(youtube, playlistid, http=httplib2.Http()):
+    '''Returns list of dictionaries with title, urls keys'''
+    videos = []
+    kwargs = dict(part="snippet",playlistId=playlistid,maxResults=50)
+    playlistitems = youtube.playlistItems()
+    request = playlistitems.list(**kwargs)
+    # handle pagination
+    while request is not None:
+        playlistitems_doc = request.execute(http=http)
+        videos.extend(_get_urls_from_json(playlistitems_doc))
+        request = playlistitems.list_next(request, playlistitems_doc)
+    return videos
+
+def _get_session(number,name,date,time):
+    '''Lookup session using data from video title'''
+    meeting = Meeting.objects.get(number=number)
+    schedule = meeting.agenda
+    timeslot_time = datetime.datetime.strptime(date + time,'%Y%m%d%H%M')
+    try:
+        assignment = SchedTimeSessAssignment.objects.get(
+            schedule = schedule,
+            session__group__acronym = name.lower(),
+            timeslot__time = timeslot_time,
+        )
+    except (SchedTimeSessAssignment.DoesNotExist, SchedTimeSessAssignment.MultipleObjectsReturned):
+        return None
+
+    return assignment.session
+
+def _get_urls_from_json(doc):
+    '''Returns list of dictonary titel,url from search results'''
+    urls = []
+    for item in doc['items']:
+        title = item['snippet']['title']
+        #params = dict(v=item['snippet']['resourceId']['videoId'], list=item['snippet']['playlistId'])
+        params = [('v',item['snippet']['resourceId']['videoId']), ('list',item['snippet']['playlistId'])]
+        url = settings.YOUTUBE_BASE_URL + '?' + urlencode(params)
+        urls.append(dict(title=title, url=url))
+    return urls
+
 def import_audio_files(meeting):
     '''
     Checks for audio files and creates corresponding materials (docs) for the Session
@@ -58,20 +135,9 @@ def import_audio_files(meeting):
                 ).exclude(session__agenda_note__icontains='canceled').order_by('timeslot__time')
             if not sessionassignments:
                 continue
-            doc = get_or_create_recording_document(filename,sessionassignments[0].session)
-            for sessionassignment in sessionassignments:
-                session = sessionassignment.session
-                if doc not in session.materials.all():
-                    # add document to session
-                    presentation = SessionPresentation.objects.create(
-                        session=session,
-                        document=doc,
-                        rev=doc.rev)
-                    session.sessionpresentation_set.add(presentation)
-                    if not doc.docalias_set.filter(name__startswith='recording-{}-{}'.format(meeting.number,session.group.acronym)):
-                        sequence = get_next_sequence(session.group,session.meeting,'recording')
-                        name = 'recording-{}-{}-{}'.format(session.meeting.number,session.group.acronym,sequence)
-                        doc.docalias_set.create(name=name)
+            url = settings.IETF_AUDIO_URL + 'ietf{}/{}'.format(meeting.number, filename)
+            doc = get_or_create_recording_document(url,sessionassignments[0].session)
+            attach_recording(doc, [ x.session for x in sessionassignments ])
         else:
             # use for reconciliation email
             unmatched_files.append(filename)
@@ -98,20 +164,30 @@ def get_timeslot_for_filename(filename):
         except (ObjectDoesNotExist, KeyError):
             return None
 
+def attach_recording(doc, sessions):
+    '''Associate recording document with sessions'''
+    for session in sessions:
+        if doc not in session.materials.all():
+            # add document to session
+            presentation = SessionPresentation.objects.create(
+                session=session,
+                document=doc,
+                rev=doc.rev)
+            session.sessionpresentation_set.add(presentation)
+            if not doc.docalias_set.filter(name__startswith='recording-{}-{}'.format(session.meeting.number,session.group.acronym)):
+                sequence = get_next_sequence(session.group,session.meeting,'recording')
+                name = 'recording-{}-{}-{}'.format(session.meeting.number,session.group.acronym,sequence)
+                doc.docalias_set.create(name=name)
+
 def normalize_room_name(name):
     '''Returns room name converted to be used as portion of filename'''
     return name.lower().replace(' ','').replace('/','_')
 
-def get_or_create_recording_document(filename,session):
-    meeting = session.meeting
-    url = settings.IETF_AUDIO_URL + 'ietf{}/{}'.format(meeting.number, filename)
+def get_or_create_recording_document(url,session):
     try:
-        doc = Document.objects.get(external_url=url)
-        return doc
+        return Document.objects.get(external_url=url)
     except ObjectDoesNotExist:
-        pass
-    return create_recording(session,url)
-
+        return create_recording(session,url)
 
 def create_recording(session,url):
     '''
@@ -181,6 +257,10 @@ def mycomp(timeslot):
     except AttributeError:
         key = None
     return key
+
+# -------------------------------------------------
+# End Recording Functions
+# -------------------------------------------------
 
 def get_progress_stats(sdate,edate):
     '''
@@ -489,7 +569,7 @@ def gen_agenda(context):
 
     # get the text agenda from datatracker
     url = 'https://datatracker.ietf.org/meeting/%s/agenda.txt' % meeting.number
-    text = urlopen(url).read()
+    text = urllib2.urlopen(url).read()
     path = os.path.join(settings.SECR_PROCEEDINGS_DIR,meeting.number,'agenda.txt')
     write_html(path,text)
 

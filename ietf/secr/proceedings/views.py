@@ -289,7 +289,8 @@ def recording(request, meeting_num):
     session.
     '''
     meeting = get_object_or_404(Meeting, number=meeting_num)
-    sessions = meeting.session_set.filter(type__in=('session','plenary','other'),status='sched').order_by('group__acronym')
+    assignments = meeting.agenda.assignments.exclude(session__type__in=('reg','break')).order_by('session__group__acronym')
+    sessions = [ x.session for x in assignments ]
     
     if request.method == 'POST':
         form = RecordingForm(request.POST,meeting=meeting)

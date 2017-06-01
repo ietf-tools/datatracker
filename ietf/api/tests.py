@@ -2,6 +2,7 @@ import os
 import sys
 import json
 from importlib import import_module
+from mock import patch
 
 from django.apps import apps
 from django.test import Client
@@ -23,7 +24,8 @@ OMITTED_APPS = (
 )
 
 class CustomApiTestCase(TestCase):
-    def test_notify_meeting_import_audio_files(self):
+    @patch('ietf.secr.proceedings.proc_utils.import_youtube_video_urls')
+    def test_notify_meeting_import_audio_files(self, mock_import):
         meeting = make_meeting_test_data()
         client = Client(Accept='application/json')
         # try invalid method GET
