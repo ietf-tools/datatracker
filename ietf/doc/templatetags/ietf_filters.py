@@ -17,6 +17,7 @@ from django.utils.html import escape
 from django.template.defaultfilters import truncatewords_html, linebreaksbr, stringfilter, striptags, urlize
 from django.utils.safestring import mark_safe, SafeData
 from django.utils.html import strip_tags
+from django.utils.text import wrap
 
 register = template.Library()
 
@@ -312,6 +313,19 @@ def wrap_text(text, width=72):
         filled += [ line.rstrip() ]
         prev_indent = indent
     return "\n".join(filled)
+
+@register.filter
+def wrap_text_if_unwrapped(text, width=72, max_tolerated_line_length=100):
+    text = re.sub(" *\r\n", "\n", text) # get rid of DOS line endings
+    text = re.sub(" *\r", "\n", text)   # get rid of MAC line endings
+
+    contains_long_lines = any(" " in l and len(l) > max_tolerated_line_length
+                              for l in text.split("\n"))
+
+    if contains_long_lines:
+        return wrap(text, width)
+    else:
+        return text
 
 @register.filter(name="compress_empty_lines")
 def compress_empty_lines(text):

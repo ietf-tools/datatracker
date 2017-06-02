@@ -660,7 +660,7 @@ class ReviewTests(TestCase):
             "state": ReviewRequestStateName.objects.get(slug="part-completed").pk,
             "reviewed_rev": review_req.doc.rev,
             "review_submission": "enter",
-            "review_content": "This is a review\nwith two lines",
+            "review_content": "This is a review with a somewhat long line spanning over 80 characters to test word wrapping\nand another line",
         })
         self.assertEqual(r.status_code, 302)
 
@@ -694,7 +694,7 @@ class ReviewTests(TestCase):
             "state": ReviewRequestStateName.objects.get(slug="completed").pk,
             "reviewed_rev": review_req.doc.rev,
             "review_submission": "enter",
-            "review_content": "This is another review\nwith\nthree lines",
+            "review_content": "This is another review with a really, really, really, really, really, really, really, really, really, really long line",
         })
         self.assertEqual(r.status_code, 302)
 
