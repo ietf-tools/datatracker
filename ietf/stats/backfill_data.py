@@ -49,6 +49,7 @@ for doc in docs_qs.prefetch_related("docalias_set", "formal_languages", "documen
         continue
 
     with open(path, 'r') as f:
+        print "\nProcessing %s" % doc.name
         d = Draft(f.read(), path)
 
         updated = False
