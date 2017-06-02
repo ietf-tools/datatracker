@@ -2,11 +2,19 @@
 from django.urls import reverse
 from ietf.utils.test_utils import TestCase
 from ietf.group.models import Group
+from ietf.secr.groups.forms import get_parent_group_choices
+from ietf.group.factories import GroupFactory
 from ietf.person.models import Person
 from ietf.utils.test_data import make_test_data
 import debug                            # pyflakes:ignore
 
 class GroupsTest(TestCase):
+    def test_get_parent_group_choices(self):
+        make_test_data()
+        choices = get_parent_group_choices()
+        area = Group.objects.filter(type='area',state='active').first()
+        self.assertEqual(choices[0][1][0][0],area.id)
+
     # ------- Test Search -------- #
     def test_search(self):
         "Test Search"
@@ -99,6 +107,26 @@ class GroupsTest(TestCase):
                      'state':group.state_id,
                      'parent':area.id,
                      'ad':ad.id,
+                     'groupurl_set-TOTAL_FORMS':'2',
+                     'groupurl_set-INITIAL_FORMS':'0',
+                     'submit':'Save'}
+        self.client.login(username="secretary", password="secretary+password")
+        response = self.client.post(url,post_data,follow=True)
+        self.assertRedirects(response, target)
+        self.failUnless('changed successfully' in response.content)
+
+    def test_edit_non_wg_group(self):
+        make_test_data()
+        parent_sdo = GroupFactory.create(type_id='sdo',state_id='active')
+        child_sdo = GroupFactory.create(type_id='sdo',state_id='active',parent=parent_sdo)
+        url = reverse('ietf.secr.groups.views.edit', kwargs={'acronym':child_sdo.acronym})
+        target = reverse('ietf.secr.groups.views.view', kwargs={'acronym':child_sdo.acronym})
+        post_data = {'acronym':child_sdo.acronym,
+                     'name':'New Name',
+                     'type':'sdo',
+                     'state':child_sdo.state_id,
+                     'parent':parent_sdo.id,
+                     'ad':'',
                      'groupurl_set-TOTAL_FORMS':'2',
                      'groupurl_set-INITIAL_FORMS':'0',
                      'submit':'Save'}

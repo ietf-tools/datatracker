@@ -1,7 +1,7 @@
 import re
 
 from django import forms
-from django.db.models import Q
+from django.db.models import Count
 
 from ietf.group.models import Group, GroupMilestone, Role
 from ietf.name.models import GroupStateName, GroupTypeName, RoleName
@@ -32,6 +32,13 @@ def get_person(name):
     except (Person.ObjectDoesNoExist, Person.MultipleObjectsReturned):
         return None
     return person
+
+def get_parent_group_choices():
+    area_choices = [(g.id, g.name) for g in Group.objects.filter(type='area',state='active')]
+    other_parents = Group.objects.annotate(children=Count('group')).filter(children__gt=0).order_by('name').exclude(type='area')
+    other_choices = [(g.id, g.name) for g in other_parents]
+    choices = (('Working Group Areas',area_choices),('Other',other_choices))
+    return choices
 
 # ---------------------------------------------
 # Forms
@@ -66,7 +73,7 @@ class GroupMilestoneForm(forms.ModelForm):
 
 class GroupModelForm(forms.ModelForm):
     type = forms.ModelChoiceField(queryset=GroupTypeName.objects.all(),empty_label=None)
-    parent = forms.ModelChoiceField(queryset=Group.objects.filter(Q(type='area',state='active')|Q(acronym='irtf')),required=False)
+    parent = forms.ModelChoiceField(queryset=Group.objects.all(),required=False)
     ad = forms.ModelChoiceField(queryset=Person.objects.filter(role__name='ad',role__group__state='active',role__group__type='area'),required=False)
     state = forms.ModelChoiceField(queryset=GroupStateName.objects.exclude(slug__in=('dormant','unknown')),empty_label=None)
     liaison_contacts = forms.CharField(max_length=255,required=False,label='Default Liaison Contacts')
@@ -82,8 +89,9 @@ class GroupModelForm(forms.ModelForm):
         self.fields['list_archive'].label = 'List Archive'
         self.fields['ad'].label = 'Area Director'
         self.fields['comments'].widget.attrs['rows'] = 3
-        self.fields['parent'].label = 'Area'
-        
+        self.fields['parent'].label = 'Area / Parent'
+        self.fields['parent'].choices = get_parent_group_choices()
+
         if self.instance.pk:
             lsgc = self.instance.liaisonstatementgroupcontacts_set.first() # there can only be one
             if lsgc:
