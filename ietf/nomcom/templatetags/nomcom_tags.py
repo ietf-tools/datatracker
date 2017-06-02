@@ -8,7 +8,7 @@ from django.utils.safestring import mark_safe
 
 import debug           # pyflakes:ignore
 
-from ietf.doc.templatetags.ietf_filters import wrap_text
+from ietf.utils.text import wordwrap
 from ietf.nomcom.utils import get_nomcom_by_year, retrieve_nomcom_private_key
 from ietf.person.models import Person
 from ietf.utils.log import log
@@ -71,4 +71,4 @@ def decrypt(string, request, year, plain=False):
 
     if not plain:
         return force_escape(linebreaksbr(out))
-    return mark_safe(wrap_text(force_escape(out)))
+    return mark_safe(wordwrap(force_escape(out)))

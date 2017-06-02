@@ -1,4 +1,4 @@
-{% filter wordwrap:73 %}
+{% load ietf_filters %}{% filter wordwrap:78 %}
 Dear {{ person.plain_name }},
 
 We have noticed that there are two records in the IETF Datatracker for a person named "{{ person.plain_name }}".  These records have been merged.

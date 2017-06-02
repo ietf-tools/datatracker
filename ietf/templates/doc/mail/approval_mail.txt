@@ -3,7 +3,7 @@ To: {{ to }}{% if cc %}
 Cc: {{ cc }}{% endif %}
 Subject: {{ action_type }} Action: '{{ doc.title|clean_whitespace }}' to {{ doc|std_level_prompt }} ({{ doc.filename_with_rev }})
 
-{% filter wordwrap:73 %}The IESG has approved the following document{{ docs|pluralize }}:{% for d in docs %}
+{% filter wordwrap:78 %}The IESG has approved the following document{{ docs|pluralize }}:{% for d in docs %}
 - '{{ d.filled_title }}'
   ({{ d.filename_with_rev }}) as {{ d|std_level_prompt }}{% endfor %}
 

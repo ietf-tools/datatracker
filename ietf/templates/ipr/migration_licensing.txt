@@ -24,8 +24,8 @@ specification, is as follows(select one licensing declaration option only):
     None selected.
 {% endif %}
 
-{% if extra %}{{ extra|safe|wordwrap:80|indent }}
+{% if extra %}{{ extra|safe|wordwrap:76|indent }}
 
 {% endif %}Licensing information, comments, notes or URL for further information:
 
-{{ info|safe|wordwrap:80|indent }}
+{{ info|safe|wordwrap:76|indent }}

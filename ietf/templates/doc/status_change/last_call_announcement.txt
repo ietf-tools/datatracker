@@ -5,7 +5,7 @@ Reply-To: ietf@ietf.org
 Sender: <iesg-secretary@ietf.org>
 Subject: Last Call: {{ doc.title|clean_whitespace }}
 
-{% filter wordwrap:73 %}
+{% filter wordwrap:78 %}
 The IESG has received a request from {{ requester }} to make the following status changes:
 {%for change in changes %}
 - {{ change }}

@@ -4,11 +4,11 @@ import re
 
 
 from django.utils.html import strip_tags
-from django.utils.text import wrap
 from django.conf import settings
 from django.urls import reverse as urlreverse
 
 from ietf.utils.mail import send_mail, send_mail_text
+from ietf.utils.text import wordwrap
 from ietf.mailtrigger.utils import gather_address_lists
 
 def email_admin_re_charter(request, group, subject, text, mailtrigger):
@@ -39,7 +39,7 @@ def email_milestones_changed(request, group, changes, states):
         if re.search("Added .* for review, due",text):
             subject = u"Review Required - " + subject
 
-        text = wrap(strip_tags(text), 70)
+        text = wordwrap(strip_tags(text), 78)
         text += "\n\n"
         text += u"URL: %s" % (settings.IDTRACKER_BASE_URL + group.about_url())
 

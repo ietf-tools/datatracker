@@ -6,17 +6,19 @@ import os
 import types
 from email.utils import parseaddr
 
-import debug                            # pyflakes:ignore
-
-from ietf.doc.models import ConsensusDocEvent
-from ietf.doc.utils import get_document_content
-from ietf.utils.text import fill
 from django import template
 from django.conf import settings
 from django.utils.html import escape
 from django.template.defaultfilters import truncatewords_html, linebreaksbr, stringfilter, striptags, urlize
 from django.utils.safestring import mark_safe, SafeData
 from django.utils.html import strip_tags
+
+import debug                            # pyflakes:ignore
+
+from ietf.doc.models import ConsensusDocEvent
+from ietf.doc.utils import get_document_content
+from ietf.utils.text import wordwrap, fill, wrap_text_if_unwrapped
+
 
 register = template.Library()
 
@@ -254,64 +256,9 @@ def truncate_ellipsis(text, arg):
 def split(text, splitter=None):
     return text.split(splitter)
 
-@register.filter(name="wrap_long_lines")
-def wrap_long_lines(text, width=72):
-    """Wraps long lines without loosing the formatting and indentation
-       of short lines"""
-    if not isinstance(text, (types.StringType,types.UnicodeType)):
-        return text
-    text = re.sub(" *\r\n", "\n", text) # get rid of DOS line endings
-    text = re.sub(" *\r", "\n", text)   # get rid of MAC line endings
-    text = re.sub("( *\n){3,}", "\n\n", text) # get rid of excessive vertical whitespace
-    lines = text.split("\n")
-    filled = []
-    wrapped = False
-    for line in lines:
-        if wrapped and line.strip() != "":
-            line = filled[-1] + " " + line
-            filled = filled[:-1]
-        else:
-            wrapped = False
-        while (len(line) > 80) and (" " in line[:80]):
-            wrapped = True
-            breakpoint = line.rfind(" ",0,80)
-            filled += [ line[:breakpoint] ]
-            line = line[breakpoint+1:]
-        filled += [ line.rstrip() ]
-    return "\n".join(filled)
+register.filter("maybewordwrap", stringfilter(wrap_text_if_unwrapped))
 
-@register.filter(name="wrap_text")
-def wrap_text(text, width=72):
-    """Wraps long lines without loosing the formatting and indentation
-       of short lines"""
-    if not isinstance(text, (types.StringType,types.UnicodeType)):
-        return text
-    text = re.sub(" *\r\n", "\n", text) # get rid of DOS line endings
-    text = re.sub(" *\r", "\n", text)   # get rid of MAC line endings
-    text = re.sub("( *\n){3,}", "\n\n", text) # get rid of excessive vertical whitespace
-    lines = text.split("\n")
-    filled = []
-    wrapped = False
-    prev_indent = None
-    for line in lines:
-        line = line.expandtabs()
-        indent = " " * (len(line) - len(line.lstrip()))
-        if wrapped and line.strip() != "" and indent == prev_indent:
-            line = filled[-1] + " " + line.lstrip()
-            filled = filled[:-1]
-        else:
-            wrapped = False
-        while (len(line) > width) and (" " in line[:width]):
-            linelength = len(line)
-            wrapped = True
-            breakpoint = line.rfind(" ",0,width)
-            filled += [ line[:breakpoint] ]
-            line = indent + line[breakpoint+1:]
-            if len(line) >= linelength:
-                break
-        filled += [ line.rstrip() ]
-        prev_indent = indent
-    return "\n".join(filled)
+register.filter("wordwrap", stringfilter(wordwrap))
 
 @register.filter(name="compress_empty_lines")
 def compress_empty_lines(text):

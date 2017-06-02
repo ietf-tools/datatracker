@@ -34,7 +34,7 @@ from django.utils.html import escape
 import string
 import re
 
-from ietf.utils.text import fill
+from ietf.utils.text import wordwrap
 
 def markup(content, split=True, width=None):
     # normalize line endings to LF only
@@ -55,9 +55,9 @@ def markup(content, split=True, width=None):
     # remove runs of blank lines
     content = re.sub("\n\n\n+", "\n\n", content)
 
-    # maybe fill.  This must be done before the escaping below.
+    # maybe wordwrap.  This must be done before the escaping below.
     if width:
-        content = fill(content, width)
+        content = wordwrap(content, width)
 
     # expand tabs + escape 
     content = escape(content.expandtabs())
@@ -88,9 +88,9 @@ def markup_unicode(content, split=True, width=None, container_classes=None):
     # remove runs of blank lines
     content = re.sub("\n\n\n+", "\n\n", content)
 
-    # maybe fill.  This must be done before the escaping below.
+    # maybe wordwrap.  This must be done before the escaping below.
     if width:
-        content = fill(content, width)
+        content = wordwrap(content, width)
 
     # expand tabs + escape 
     content_to_show = escape(content.expandtabs())

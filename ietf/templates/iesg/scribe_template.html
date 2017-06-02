@@ -71,13 +71,13 @@ Some parts Copyright (c) 2009 The IETF Trust, all rights reserved.
             {% if p.pos and p.discuss %}
               <li>
                 <a name="{{ doc.name }}+{{ p.ad.plain_name|slugify }}+discuss">{{ p.ad.plain_name }}: Discuss [{{ p.discuss_time }}]</a>:
-                <br><pre>{{ p.discuss|wrap_text:80 }}</pre>
+                <br><pre>{{ p.discuss|wordwrap:80 }}</pre>
               </li>
             {% endif %}
             {% if p.pos and p.comment %}
               <li>
                 <a name="{{ doc.name }}+{{ p.ad.plain_name|slugify }}+comment">{{ p.ad.plain_name }}: Comment [{{ p.comment_time }}]</a>:
-                <br><pre>{{ p.comment|wrap_text:80 }}</pre>
+                <br><pre>{{ p.comment|wordwrap:80 }}</pre>
               </li>
             {% endif %}{% endfor %}
           </ul>

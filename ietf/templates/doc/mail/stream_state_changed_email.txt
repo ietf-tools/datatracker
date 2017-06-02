@@ -1,4 +1,4 @@
-{% autoescape off %}{% filter wordwrap:73 %}
+{% load ietf_filters %}{% autoescape off %}{% filter wordwrap:78 %}
 The {{ state_type.label }} of {{ doc }} has been changed to "{{ new_state.name }}"{% if prev_state %} from "{{ prev_state.name }}"{% endif %} by {{ by }}:
 
 {{ url }}

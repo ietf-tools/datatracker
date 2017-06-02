@@ -1,9 +1,9 @@
-{% load mail_filters %}{% autoescape off %}From: The IESG <iesg-secretary@ietf.org>
+{% load ietf_filters %}{% load mail_filters %}{% autoescape off %}From: The IESG <iesg-secretary@ietf.org>
 To: {{ to }}
 Cc: {{ cc }}
 Subject: Results of IETF-conflict review for {{conflictdoc.canonical_name}}-{{conflictdoc.rev}}
 
-{% filter wordwrap:73 %}The IESG has completed a review of {{conflictdoc.canonical_name}}-{{conflictdoc.rev}} consistent with RFC5742.
+{% filter wordwrap:78 %}The IESG has completed a review of {{conflictdoc.canonical_name}}-{{conflictdoc.rev}} consistent with RFC5742.
 
 {% if review.get_state_slug == 'appr-reqnopub-pend' %}
 The IESG recommends that '{{ conflictdoc.title }}' {{ conflictdoc.file_tag|safe }} NOT be published as {{ conflictdoc|std_level_prompt_with_article }}.

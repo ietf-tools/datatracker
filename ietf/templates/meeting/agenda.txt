@@ -2,7 +2,7 @@
 
 {% filter center:72 %} Agenda of the {{ schedule.meeting.number|ordinal }} IETF Meeting {% endfilter %}
 {% if schedule.meeting.agenda_note %}
-{% filter center:72 %}{{ schedule.meeting.agenda_note|striptags|wrap_text:72|safe }}{% endfilter %}
+{% filter center:72 %}{{ schedule.meeting.agenda_note|striptags|wordwrap:72|safe }}{% endfilter %}
 {% endif %}
 {% filter center:72 %}{{ schedule.meeting.date|date:"F j" }}-{% if schedule.meeting.date.month != schedule.meeting.end_date.month %}{{ schedule.meeting.end_date|date:"F " }}{% endif %}{{ schedule.meeting.end_date|date:"j, Y" }}{% endfilter %}
 {% filter center:72 %}Updated {{ updated|date:"Y-m-d H:i:s T" }}{% endfilter %}

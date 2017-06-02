@@ -42,7 +42,7 @@ IESG Note
 
 IANA Note
 {% if iana %}
-  {% load ietf_filters %}{% filter wordwrap:"68"|indent:2 %}{{ iana }}{% endfilter %}
+  {% load ietf_filters %}{% filter wordwrap:"76"|indent:2 %}{{ iana }}{% endfilter %}
 {% endif %}
   (Insert IANA Note here or remove section)
 {% endautoescape%}

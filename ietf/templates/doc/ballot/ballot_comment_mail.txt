@@ -1,4 +1,4 @@
-{% autoescape off %}{{ ad }} has entered the following ballot position for
+{% load ietf_filters %}{% autoescape off %}{{ ad }} has entered the following ballot position for
 {{ doc.name }}-{{ doc.rev }}: {{ pos.name }}
 
 When responding, please keep the subject line intact and reply to all
@@ -21,13 +21,13 @@ There are no remarks associated with this position.
 {{ blocking_name }}:
 ----------------------------------------------------------------------
 
-{{ discuss|safe|wordwrap:73 }}
+{{ discuss|safe|maybewordwrap:80 }}
 
 
 {% endif %}{% if comment %}----------------------------------------------------------------------
 COMMENT:
 ----------------------------------------------------------------------
 
-{{ comment|safe|wordwrap:73 }}
+{{ comment|safe|maybewordwrap:80 }}
 {% endif %}
 {% endautoescape %}

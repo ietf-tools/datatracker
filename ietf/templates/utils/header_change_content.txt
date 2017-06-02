@@ -1,4 +1,4 @@
-{% filter wordwrap:73 %}
+{% load ietf_filters %}{% filter wordwrap:78 %}
 We will soon be changing the header fields used in IETF Last Call messages sent to the IETF Announce mailing list.
 
 This message is to to inform you of the change and allow you to test that you are properly receiving messages using the new header fields.

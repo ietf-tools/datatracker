@@ -1,4 +1,4 @@
-{% autoescape off %}{% filter wordwrap:73 %}
+{% load ietf_filters %}{% autoescape off %}{% filter wordwrap:78 %}
 The tags on {{ doc }} have been changed by {{ by }}:
 {{ url }}
 

@@ -1,4 +1,4 @@
-{% autoescape off %}{% filter wordwrap:73 %}
+{% load ietf_filters %}{% autoescape off %}{% filter wordwrap:78 %}
 The {{ doc.group.acronym|upper }} {{ doc.group.type_id|upper }} has placed {{ doc }} in state 
 {{ new_state|default:'"None"'}} (entered by {{by}})
 

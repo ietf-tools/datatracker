@@ -5,7 +5,7 @@ Reply-To: ietf@ietf.org
 Sender: <iesg-secretary@ietf.org>
 Subject: Last Call: {{ doc.file_tag }} ({{ doc.title|clean_whitespace }}) to {{ doc|std_level_prompt }}
 
-{% filter wordwrap:73 %}
+{% filter wordwrap:78 %}
 The IESG has received a request from {{ group }} to consider the following document{{ docs|pluralize }}:{% for d in docs %}
 - '{{ d.filled_title }}'
   {{ d.file_tag }} as {{ d|std_level_prompt }}{% endfor %}

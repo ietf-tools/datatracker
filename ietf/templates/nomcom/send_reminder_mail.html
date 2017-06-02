@@ -13,7 +13,7 @@
 
   {% if nomcom.group.state_id == 'active' %}
     <p>The message that will be sent is as follows:</p>
-    <pre>{{ mail_template.content|wrap_text:80 }}</pre>
+    <pre>{{ mail_template.content|wordwrap:80 }}</pre>
 
     {% if mail_template %}
       <p>

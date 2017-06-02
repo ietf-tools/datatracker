@@ -1,10 +1,10 @@
-{% autoescape off %}
+{% load ietf_filters %}{% autoescape off %}
 {{ review_req.type.name }} review of: {{ review_req.doc.name }} ({% if review_req.requested_rev %}rev. {{ review_req.requested_rev }}{% else %}no specific version{% endif %})
 Deadline: {{ review_req.deadline|date:"Y-m-d" }}{% if review_req.requested_by %}
 Requested by: {{ review_req.requested_by.plain_name }}{% endif %}
 
 {{ review_req_url }}
 
-{{ msg|wordwrap:72 }}
+{{ msg|maybewordwrap:78 }}
 
 {% endautoescape %}

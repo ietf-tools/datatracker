@@ -1,4 +1,4 @@
-{% load ietf_filters %}{% autoescape off %}{% filter wrap_long_lines %}{{ charter_text }}{% endfilter %}
+{% load ietf_filters %}{% autoescape off %}{% filter maybewordwrap %}{{ charter_text }}{% endfilter %}
 
 Milestones
 
