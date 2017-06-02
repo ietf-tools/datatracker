@@ -7,14 +7,14 @@ import json
 
 from collections import defaultdict
 
-from django.shortcuts import render
-from django.contrib.auth.decorators import login_required
-from django.urls import reverse as urlreverse
-from django.http import HttpResponseRedirect, HttpResponseForbidden
-from django.db.models import Count, Q
-from django.utils.safestring import mark_safe
 from django.conf import settings
-from django.shortcuts import get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.db.models import Count, Q
+from django.http import HttpResponseRedirect, HttpResponseForbidden
+from django.shortcuts import get_object_or_404, render
+from django.urls import reverse as urlreverse
+from django.utils.safestring import mark_safe
+from django.views.decorators.cache import cache_page
 
 import dateutil.relativedelta
 
@@ -125,6 +125,7 @@ def add_labeled_top_series_from_bins(chart_data, bins, limit):
             "name": label
         })
 
+@cache_page(24*60*60)
 def document_stats(request, stats_type=None):
     def build_document_stats_url(stats_type_override=Ellipsis, get_overrides={}):
         kwargs = {
@@ -725,6 +726,7 @@ def document_stats(request, stats_type=None):
     })
 
 
+@cache_page(24*60*60)
 def known_countries_list(request, stats_type=None, acronym=None):
     countries = CountryName.objects.prefetch_related("countryalias_set")
     for c in countries:
@@ -737,6 +739,7 @@ def known_countries_list(request, stats_type=None, acronym=None):
         "ticket_email_address": settings.SECRETARIAT_TICKET_EMAIL,
     })
 
+@cache_page(24*60*60)
 def meeting_stats(request, num=None, stats_type=None):
     meeting = None
     if num is not None:
