@@ -11,7 +11,7 @@ from django.template.defaultfilters import linebreaks
 from ietf.nomcom.fields import EncryptedTextField
 from ietf.person.models import Person,Email
 from ietf.group.models import Group
-from ietf.name.models import NomineePositionStateName, FeedbackTypeName
+from ietf.name.models import NomineePositionStateName, FeedbackTypeName, TopicAudienceName
 from ietf.dbtemplate.models import DBTemplate
 
 from ietf.nomcom.managers import NomineePositionManager, NomineeManager, \
@@ -19,6 +19,7 @@ from ietf.nomcom.managers import NomineePositionManager, NomineeManager, \
 from ietf.nomcom.utils import (initialize_templates_for_group,
                                initialize_questionnaire_for_position,
                                initialize_requirements_for_position,
+                               initialize_description_for_topic,
                                delete_nomcom_templates)
 
 from ietf.utils.storage import NoLocationMigrationFileSystemStorage
@@ -206,12 +207,41 @@ class Position(models.Model):
             rendered = linebreaks(rendered)
         return rendered
 
+class Topic(models.Model):
+    nomcom = models.ForeignKey('NomCom')
+    subject = models.CharField(verbose_name='Name', max_length=255, help_text='This short description will appear on the Feedback pages.')
+    description = models.ForeignKey(DBTemplate, related_name='description', null=True, editable=False)
+    accepting_feedback = models.BooleanField(verbose_name='Is accepting feedback', default=False)
+    audience = models.ForeignKey(TopicAudienceName)
+
+    class Meta:
+        verbose_name_plural = 'Topics'
+
+    def __unicode__(self):
+        return self.subject
+
+    def save(self, *args, **kwargs):
+        created = not self.id
+        super(Topic, self).save(*args, **kwargs)
+        changed = False
+        if created and self.id and not self.description_id:
+            self.description = initialize_description_for_topic(self)
+            changed = True
+        if changed:
+            self.save()
+
+    def get_description(self):
+        rendered = render_to_string(self.description.path, {'topic': self})
+        if self.description.type_id=='plain':
+            rendered = linebreaks(rendered)
+        return rendered
 
 class Feedback(models.Model):
     nomcom = models.ForeignKey('NomCom')
     author = models.EmailField(verbose_name='Author', blank=True)
     positions = models.ManyToManyField('Position', blank=True)
     nominees = models.ManyToManyField('Nominee', blank=True)
+    topics = models.ManyToManyField('Topic', blank=True)
     subject = models.TextField(verbose_name='Subject', blank=True)
     comments = EncryptedTextField(verbose_name='Comments')
     type = models.ForeignKey(FeedbackTypeName, blank=True, null=True)
@@ -230,3 +260,9 @@ class FeedbackLastSeen(models.Model):
     reviewer = models.ForeignKey(Person)
     nominee = models.ForeignKey(Nominee)
     time = models.DateTimeField(auto_now=True)
+
+class TopicFeedbackLastSeen(models.Model):
+    reviewer = models.ForeignKey(Person)
+    topic = models.ForeignKey(Topic)
+    time = models.DateTimeField(auto_now=True)
+    

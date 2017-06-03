@@ -8,7 +8,7 @@ from tastypie.cache import SimpleCache
 from ietf import api
 
 from ietf.nomcom.models import (NomCom, Position, Nominee, ReminderDates, NomineePosition,
-    Feedback, Nomination, FeedbackLastSeen )
+    Feedback, Nomination, FeedbackLastSeen, Topic, TopicFeedbackLastSeen, )
 
 from ietf.group.resources import GroupResource
 class NomComResource(ModelResource):
@@ -170,3 +170,43 @@ class FeedbackLastSeenResource(ModelResource):
             "nominee": ALL_WITH_RELATIONS,
         }
 api.nomcom.register(FeedbackLastSeenResource())
+
+
+from ietf.name.resources import TopicAudienceNameResource
+from ietf.dbtemplate.resources import DBTemplateResource
+class TopicResource(ModelResource):
+    nomcom           = ToOneField(NomComResource, 'nomcom')
+    description      = ToOneField(DBTemplateResource, 'description', null=True)
+    audience         = ToOneField(TopicAudienceNameResource, 'audience')
+    class Meta:
+        queryset = Topic.objects.all()
+        serializer = api.Serializer()
+        cache = SimpleCache()
+        #resource_name = 'topic'
+        filtering = { 
+            "id": ALL,
+            "subject": ALL,
+            "accepting_feedback": ALL,
+            "nomcom": ALL_WITH_RELATIONS,
+            "description": ALL_WITH_RELATIONS,
+            "audience": ALL_WITH_RELATIONS,
+        }
+api.nomcom.register(TopicResource())
+
+
+from ietf.person.resources import PersonResource
+class TopicFeedbackLastSeenResource(ModelResource):
+    reviewer         = ToOneField(PersonResource, 'reviewer')
+    topic            = ToOneField(TopicResource, 'topic')
+    class Meta:
+        queryset = TopicFeedbackLastSeen.objects.all()
+        serializer = api.Serializer()
+        cache = SimpleCache()
+        #resource_name = 'topicfeedbacklastseen'
+        filtering = { 
+            "id": ALL,
+            "time": ALL,
+            "reviewer": ALL_WITH_RELATIONS,
+            "topic": ALL_WITH_RELATIONS,
+        }
+api.nomcom.register(TopicFeedbackLastSeenResource())

@@ -97,4 +97,5 @@ class ReviewResultName(NameModel):
     """Almost ready, Has issues, Has nits, Not Ready,
     On the right track, Ready, Ready with issues,
     Ready with nits, Serious Issues"""
-
+class TopicAudienceName(NameModel):
+    """General, Nominee, Nomcom Member"""

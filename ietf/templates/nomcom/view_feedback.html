@@ -27,7 +27,7 @@
         <thead>
           <tr>
             <th class="col-sm-9">Nominee</th>
-            {% for ft in feedback_types %}
+            {% for ft in nominee_feedback_types %}
               <th class="col-sm-1 text-center">{{ ft.name }}</th>
             {% endfor %}
           </tr>
@@ -52,6 +52,38 @@
      </div>
     </div>
   {% endfor %}
+
+  <h2>Feedback related to topics</h2>
+
+    <div class="panel panel-default">
+     <div class="panel-body">
+      <table class="table table-condensed table-striped">
+        <thead>
+          <tr>
+            <th class="col-sm-9">Topic</th>
+            {% for ft in topic_feedback_types %}
+              <th class="col-sm-1 text-center">{{ ft.name }}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for fb_dict in topics_feedback %}
+            <tr>
+              <td>
+    	        <a href="{% url 'ietf.nomcom.views.view_feedback_topic' year=year topic_id=fb_dict.topic.id %}">{{ fb_dict.topic.subject }}</a>
+              </td>
+              {% for fbtype_name, fbtype_count, fbtype_newflag in fb_dict.feedback %}
+                <td class="text-right">
+                   {% if fbtype_newflag %}<span class="label label-success">New</span>{% endif %}
+                   {{ fbtype_count }}
+                </td>
+              {% endfor %}
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+     </div>
+    </div>
 
   {% if independent_feedback_types %}
     <h2>Feedback not related to Nominees</h2>

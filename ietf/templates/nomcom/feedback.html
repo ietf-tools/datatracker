@@ -87,18 +87,35 @@
           the badge, for more information about this
           nominee.
         </p>
+
+        <h3>Topics</h3>
+        <div class="btn-group-vertical form-group">
+          {% for t in topics %}
+            <a class="btn btn-default btn-xs" {% if nomcom.group.state_id != 'conclude' %}href="?topic={{t.id}}"{% endif %}> 
+              {{t.subject}} 
+              {% with count=topic_counts|lookup:t.id %}
+                <span class="badge" 
+                      title="{% if count %}{{count}} earlier comment{{count|pluralize}} from you {% else %}You have not yet provided feedback {% endif %} on {{t.subject}}">
+                  {{ count | default:"no feedback" }}
+                </span>&nbsp;
+              {% endwith %}
+            </a>
+          {% endfor %}
+        </div>
       </div>
 
       <div class="col-sm-8 col-sm-pull-4">
         {% if form %}
-          <h3>Provide feedback
-              {% if form.position %}
-                  about {{form.nominee.email.person.name}} ({{form.nominee.email.address}}) for the {{form.position.name}} position.
-                {% if nomcom.show_nominee_pictures and form.nominee.email.person.photo_thumb %}
-                  <span class="feedbackphoto"><img src="{{form.nominee.email.person.photo_thumb.url}}" width=100 /></span>
-                {% endif %}
-              {% endif %}
-          </h3>
+          {% if form.position %}
+            <h3> Provide feedback about {{form.nominee.email.person.name}} ({{form.nominee.email.address}}) for the {{form.position.name}} position.
+            {% if nomcom.show_nominee_pictures and form.nominee.email.person.photo_thumb %}
+              <span class="feedbackphoto"><img src="{{form.nominee.email.person.photo_thumb.url}}" width=100 /></span>
+            {% endif %}
+            </h3>
+          {% elif form.topic %}
+            <h3 >Provide feedback about "{{form.topic.subject}}"</h3>
+            <div>A description of this topic is at the end of the page.</div>
+          {% endif %}
           <p>This feedback will only be available to <a href="{% url 'ietf.nomcom.views.year_index' year=year %}">NomCom {{year}}</a>.
              You may have the feedback mailed back to you by selecting the option below.</p>
 
@@ -108,8 +125,14 @@
             {% buttons %}
               <input class="btn btn-primary" type="submit" value="Save" name="save">
             {% endbuttons %}
-        </form>
+          </form>
+          {% if form.topic %}
+          <div class="panel panel-default">
+            <div class="panel-heading">Description: {{form.topic.subject}}</div>
+            <div class="panel-body">{{form.topic.get_description|safe}}</div>
+          </div>
         {% endif %}
+      {% endif %}
       </div>
     </div>
   {% endif %}

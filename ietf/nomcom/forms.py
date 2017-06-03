@@ -12,7 +12,7 @@ from ietf.group.models import Group, Role
 from ietf.ietfauth.utils import role_required
 from ietf.name.models import RoleName, FeedbackTypeName, NomineePositionStateName
 from ietf.nomcom.models import ( NomCom, Nomination, Nominee, NomineePosition,
-                                 Position, Feedback, ReminderDates )
+                                 Position, Feedback, ReminderDates, Topic )
 from ietf.nomcom.utils import (NOMINATION_RECEIPT_TEMPLATE, FEEDBACK_RECEIPT_TEMPLATE,
                                get_user_email, validate_private_key, validate_public_key,
                                make_nomineeposition, make_nomineeposition_for_newperson,
@@ -565,6 +565,7 @@ class FeedbackForm(forms.ModelForm):
         self.public = kwargs.pop('public', None)
         self.position = kwargs.pop('position', None)
         self.nominee = kwargs.pop('nominee', None)
+        self.topic = kwargs.pop('topic', None)
 
         super(FeedbackForm, self).__init__(*args, **kwargs)
 
@@ -583,10 +584,11 @@ class FeedbackForm(forms.ModelForm):
 
 
     def clean(self):
-        if not NomineePosition.objects.accepted().filter(nominee=self.nominee,
-                                                    position=self.position):
-            msg = "There isn't a accepted nomination for %s on the %s position" % (self.nominee, self.position)
-            self._errors["comments"] = self.error_class([msg])
+        if self.nominee and self.position:
+            if not NomineePosition.objects.accepted().filter(nominee=self.nominee,
+                                                        position=self.position):
+                msg = "There isn't a accepted nomination for %s on the %s position" % (self.nominee, self.position)
+                self._errors["comments"] = self.error_class([msg])
         return self.cleaned_data
 
     def save(self, commit=True):
@@ -611,8 +613,11 @@ class FeedbackForm(forms.ModelForm):
         feedback.user = self.user
         feedback.type = FeedbackTypeName.objects.get(slug='comment')
         feedback.save()
-        feedback.positions.add(self.position)
-        feedback.nominees.add(self.nominee)
+        if self.nominee and self.position:
+            feedback.positions.add(self.position)
+            feedback.nominees.add(self.nominee)
+        if self.topic:
+            feedback.topics.add(self.topic)
 
         # send receipt email to feedback author
         if confirmation:
@@ -620,10 +625,14 @@ class FeedbackForm(forms.ModelForm):
                 subject = "NomCom comment confirmation"
                 from_email = settings.NOMCOM_FROM_EMAIL
                 (to_email, cc) = gather_address_lists('nomcom_comment_receipt_requested',commenter=author.address)
-                context = {'nominee': self.nominee.email.person.name,
-                           'comments': comments,
-                           'position': self.position.name}
+                if self.nominee and self.position:
+                    about = '%s for the position of\n%s'%(self.nominee.email.person.name, self.position.name)
+                elif self.topic:
+                    about = self.topic.subject
+                context = {'about': about,
+                           'comments': comments, }
                 path = nomcom_template_path + FEEDBACK_RECEIPT_TEMPLATE
+                # TODO - make the thing above more generic
                 send_mail(None, to_email, from_email, subject, path, context, cc=cc)
 
     class Meta:
@@ -694,6 +703,19 @@ class PositionForm(forms.ModelForm):
         self.instance.nomcom = self.nomcom
         super(PositionForm, self).save(*args, **kwargs)
 
+class TopicForm(forms.ModelForm):
+
+    class Meta:
+        model = Topic
+        fields = ('subject', 'accepting_feedback','audience')
+
+    def __init__(self, *args, **kwargs):
+        self.nomcom = kwargs.pop('nomcom', None)
+        super(TopicForm, self).__init__(*args, **kwargs)
+
+    def save(self, *args, **kwargs):
+        self.instance.nomcom = self.nomcom
+        super(TopicForm, self).save(*args, **kwargs)
 
 class PrivateKeyForm(forms.Form):
 
@@ -766,9 +788,13 @@ class MutableFeedbackForm(forms.ModelForm):
 
         if self.feedback_type.slug != 'nomina':
             self.fields['nominee'] = MultiplePositionNomineeField(nomcom=self.nomcom,
-                                                                  required=True,
                                                                   widget=forms.SelectMultiple(attrs={'class':'nominee_multi_select','size':'12'}),
+                                                                  required= self.feedback_type.slug != 'comment',
                                                                   help_text='Hold down "Control", or "Command" on a Mac, to select more than one.')
+            if self.feedback_type.slug == 'comment':
+                self.fields['topic'] = forms.ModelMultipleChoiceField(queryset=self.nomcom.topic_set.all(),
+                                                                      help_text='Hold down "Control" or "Command" on a Mac, to select more than one.',
+                                                                      required=False,)
         else:
             self.fields['position'] = forms.ModelChoiceField(queryset=Position.objects.get_by_nomcom(self.nomcom).filter(is_open=True), label="Position")
             self.fields['searched_email'] = SearchableEmailField(only_users=False,help_text="Try to find the candidate you are classifying with this field first. Only use the name and email fields below if this search does not find the candidate.",label="Candidate",required=False)
@@ -793,6 +819,11 @@ class MutableFeedbackForm(forms.ModelForm):
                 raise forms.ValidationError("You must identify either an existing person (by searching with the candidate field) and leave the name and email fields blank, or leave the search field blank and provide both a name and email address.")
             if candidate_email and Email.objects.filter(address=candidate_email).exists():
                 raise forms.ValidationError("%s already exists in the datatracker. Please search within the candidate field to find it and leave both the name and email fields blank." % candidate_email)
+        elif self.feedback_type.slug == 'comment':
+            nominees = self.cleaned_data.get('nominee')
+            topics = self.cleaned_data.get('topic')
+            if not (nominees or topics):
+                raise forms.ValidationError("You must choose at least one Nominee or Topic to associate with this comment")
         return cleaned_data
 
     def save(self, commit=True):
@@ -832,6 +863,9 @@ class MutableFeedbackForm(forms.ModelForm):
             for (position, nominee) in self.cleaned_data['nominee']:
                 feedback.nominees.add(nominee)
                 feedback.positions.add(position)
+            if self.instance.type.slug=='comment':
+                for topic in self.cleaned_data['topic']:
+                    feedback.topics.add(topic)
         return feedback
 
 FullFeedbackFormSet = forms.modelformset_factory(

@@ -14,7 +14,8 @@ from ietf.name.models import (TimeSlotTypeName, GroupStateName, DocTagName, Inte
     ConstraintName, MeetingTypeName, DocRelationshipName, RoomResourceName, IprLicenseTypeName,
     LiaisonStatementTagName, FeedbackTypeName, LiaisonStatementState, StreamName,
     BallotPositionName, DBTemplateTypeName, NomineePositionStateName,
-    ReviewRequestStateName, ReviewTypeName, ReviewResultName)
+    ReviewRequestStateName, ReviewTypeName, ReviewResultName,
+    TopicAudienceName, )
 
 
 class TimeSlotTypeNameResource(ModelResource):
@@ -455,4 +456,18 @@ class ReviewResultNameResource(ModelResource):
             "order": ALL,
         }
 api.name.register(ReviewResultNameResource())
+
+class TopicAudienceNameResource(ModelResource):
+    class Meta:
+        cache = SimpleCache()
+        queryset = TopicAudienceName.objects.all()
+        #resource_name = 'topicaudiencename'
+        filtering = { 
+            "slug": ALL,
+            "name": ALL,
+            "desc": ALL,
+            "used": ALL,
+            "order": ALL,
+        }
+api.name.register(TopicAudienceNameResource())
 

@@ -2787,6 +2787,7 @@
       ],
       "desc": "Recipients when an interim meeting is announced",
       "to": [
+        "group_stream_announce",
         "ietf_announce"
       ]
     },
@@ -2813,6 +2814,7 @@
       ],
       "desc": "Recipients when an interim meeting is cancelled",
       "to": [
+        "group_stream_announce",
         "ietf_announce"
       ]
     },
@@ -6184,17 +6186,27 @@
       "desc": "Experimental room setup (boardroom and classroom) subject to availability",
       "name": "Boardroom Layout",
       "order": 0,
-      "used": true
+      "used": false
     },
     "model": "name.roomresourcename",
     "pk": "boardroom"
   },
   {
     "fields": {
+      "desc": "Flipchars",
+      "name": "Flipcharts",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.roomresourcename",
+    "pk": "flipcharts"
+  },
+  {
+    "fields": {
       "desc": "The room will have a meetecho wrangler",
       "name": "Meetecho Support",
       "order": 0,
-      "used": true
+      "used": false
     },
     "model": "name.roomresourcename",
     "pk": "meetecho"
@@ -6204,7 +6216,7 @@
       "desc": "The room will have a second computer projector",
       "name": "second LCD projector",
       "order": 0,
-      "used": true
+      "used": false
     },
     "model": "name.roomresourcename",
     "pk": "proj2"
@@ -6214,10 +6226,20 @@
       "desc": "The room will have a computer projector",
       "name": "LCD projector",
       "order": 0,
-      "used": true
+      "used": false
     },
     "model": "name.roomresourcename",
     "pk": "project"
+  },
+  {
+    "fields": {
+      "desc": "Experimental Room Setup (U-Shape and classroom, subject to availability)",
+      "name": "Experimental Room Setup (U-Shape and classroom)",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.roomresourcename",
+    "pk": "u-shape"
   },
   {
     "fields": {
@@ -6538,5 +6560,35 @@
     },
     "model": "name.timeslottypename",
     "pk": "unavail"
+  },
+  {
+    "fields": {
+      "desc": "Anyone who can log in",
+      "name": "General",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.topicaudiencename",
+    "pk": "general"
+  },
+  {
+    "fields": {
+      "desc": "Members of this nomcom",
+      "name": "Nomcom Members",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.topicaudiencename",
+    "pk": "nomcom"
+  },
+  {
+    "fields": {
+      "desc": "Anyone who has accepted a Nomination for an open position",
+      "name": "Nominees",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.topicaudiencename",
+    "pk": "nominees"
   }
 ]

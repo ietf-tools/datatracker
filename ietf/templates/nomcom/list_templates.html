@@ -19,16 +19,24 @@
 
 
   <h2>Defined templates for positions</h2>
-  {% if positions %}
-    {% for position in positions %}
+    {% for position in nomcom.position_set.all %}
       <h3>{{ position.name }}</h3>
       <ul>
         {% for template in position.get_templates %}
           <li><a href="{% url 'ietf.nomcom.views.edit_template' year template.id %}">{{ template }}</a></li>
         {% endfor %}
       </ul>
-    {% endfor %}
-  {% else %}
+    {% empty %}
     <p>There are no positions defined.</p>
-  {% endif %}
+    {% endfor %}
+
+  <h2>Defined templates for topics</h2>
+    {% for topic in nomcom.topic_set.all %}
+      <h3>{{ topic.subject }}</h3>
+      <ul>
+          <li><a href="{% url 'ietf.nomcom.views.edit_template' year topic.description.id %}">{{ topic.description }}</a></li>
+      </ul>
+    {% empty %}
+    <p>There are no topics defined.</p>
+    {% endfor %}
 {% endblock nomcom_content %}
