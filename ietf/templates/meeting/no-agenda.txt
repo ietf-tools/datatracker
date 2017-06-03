@@ -9,7 +9,7 @@
 {% filter center:72 %}IETF agendas are subject to change, up to and during the meeting.{% endfilter %}
 
 
-{% filter center:72 %}There is no Agenda available yet.{% endfilter %}
+{% filter center:72 %}There is no agenda available yet.{% endfilter %}
 
 
 {% endautoescape %}

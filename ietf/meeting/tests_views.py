@@ -74,8 +74,13 @@ class MeetingTests(TestCase):
         meeting = make_meeting_test_data()
         session = Session.objects.filter(meeting=meeting, group__acronym="mars").first()
         slot = TimeSlot.objects.get(sessionassignments__session=session,sessionassignments__schedule=meeting.agenda)
-
+        #
         self.write_materials_files(meeting, session)
+        #
+        future_year = datetime.date.today().year+1
+        future_num =  (future_year-1984)*3            # valid for the mid-year meeting
+        future_meeting = Meeting.objects.create(date=datetime.date(future_year, 7, 22), number=future_num, type_id='ietf',
+                                city="Panama City", country="PA", time_zone='America/Panama')
 
         # utc
         time_interval = "%s-%s" % (slot.utc_start_time().strftime("%H:%M").lstrip("0"), (slot.utc_start_time() + slot.duration).strftime("%H:%M").lstrip("0"))
@@ -110,6 +115,12 @@ class MeetingTests(TestCase):
         self.assertTrue(any([session.materials.filter(type='slides').exclude(states__type__slug='slides',states__slug='deleted').first().title in x.text for x in q('tr div.modal-body ul a')]))
         self.assertFalse(any([session.materials.filter(type='slides',states__type__slug='slides',states__slug='deleted').first().title in x.text for x in q('tr div.modal-body ul a')]))
 
+        # future meeting, no agenda
+        r = self.client.get(urlreverse("ietf.meeting.views.agenda", kwargs=dict(num=future_meeting.number)))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, u"There is no agenda available yet.")
+        self.assertTemplateUsed(r, 'meeting/no-agenda.html')
+
         # text
         # the rest of the results don't have as nicely formatted times
         time_interval = time_interval.replace(":", "")
@@ -127,6 +138,12 @@ class MeetingTests(TestCase):
         r = self.client.get(urlreverse("ietf.meeting.views.agenda", kwargs=dict(num=meeting.number,name=meeting.unofficial_schedule.name,owner=meeting.unofficial_schedule.owner.email())))
         self.assertEqual(r.status_code, 200)
         self.assertTrue('not the official schedule' in unicontent(r))
+
+        # future meeting, no agenda
+        r = self.client.get(urlreverse("ietf.meeting.views.agenda", kwargs=dict(num=future_meeting.number, ext=".txt")))
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "There is no agenda available yet.")
+        self.assertTemplateUsed(r, 'meeting/no-agenda.txt')
 
         # CSV
         r = self.client.get(urlreverse("ietf.meeting.views.agenda", kwargs=dict(num=meeting.number, ext=".csv")))
