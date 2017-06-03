@@ -733,6 +733,11 @@ SECR_PPT2PDF_COMMAND = ['/usr/bin/soffice','--headless','--convert-to','pdf','--
 REGISTRATION_ATTENDEES_BASE_URL = 'https://ietf.org/registration/attendees/'
 NEW_PROCEEDINGS_START = 95
 USE_ETAGS=True
+YOUTUBE_API_KEY = ''
+YOUTUBE_API_SERVICE_NAME = 'youtube'
+YOUTUBE_API_VERSION = 'v3'
+YOUTUBE_BASE_URL = 'https://www.youtube.com/watch'
+YOUTUBE_IETF_CHANNEL_ID = 'UC8dtK9njBLdFnBahHFp0eZQ'
 
 PRODUCTION_TIMEZONE = "America/Los_Angeles"
 

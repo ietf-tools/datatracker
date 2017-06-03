@@ -80,13 +80,14 @@ class InterimSessionInlineFormSet(BaseInlineFormSet):
                 if date:
                     dates.append(date)
             if len(dates) < 2:
-                return
+                return self.cleaned_data
             dates.sort()
             last_date = dates[0]
             for date in dates[1:]:
                 if date - last_date != datetime.timedelta(days=1):
                     raise forms.ValidationError('For Multi-Day meetings, days must be consecutive')
                 last_date = date
+        return self.cleaned_data
 
 class InterimMeetingModelForm(forms.ModelForm):
     group = GroupModelChoiceField(queryset=Group.objects.filter(type__in=('wg', 'rg'), state__in=('active', 'proposed', 'bof')).order_by('acronym'), required=False)
