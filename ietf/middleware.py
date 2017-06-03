@@ -1,9 +1,10 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
 from django.db import connection
+from django.db.utils import OperationalError
 from django.shortcuts import render
 from django.http import HttpResponsePermanentRedirect
-from ietf.utils.log import log
+from ietf.utils.log import log, exception_components
 from ietf.utils.mail import log_smtp_exception
 import re
 import smtplib
@@ -29,6 +30,20 @@ class SMTPExceptionMiddleware(object):
             (extype, value, tb) = log_smtp_exception(exception)
 	    return render(request, 'email_failed.html',
                           {'exception': extype, 'args': value, 'traceback': "".join(tb)} )
+	return None
+
+class Utf8ExceptionMiddleware(object):
+    def __init__(self, get_response):
+        self.get_response = get_response
+    def __call__(self, request):
+        return self.get_response(request)
+    def process_exception(self, request, exception):
+	if isinstance(exception, OperationalError):
+            extype, value, tb = exception_components(exception)
+            if value[0] == 1366:
+                log("Database 4-byte utf8 exception: %s: %s" % (extype, value))
+                return render(request, 'utf8_4byte_failed.html',
+                              {'exception': extype, 'args': value, 'traceback': "".join(tb)} )
 	return None
 
 def redirect_trailing_period_middleware(get_response):

@@ -1,8 +1,10 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
+import sys
 import logging
 import inspect
 import os.path
+import traceback
 
 try:
     import syslog
@@ -49,9 +51,15 @@ def log(msg):
         file, line, where = "/<UNKNOWN>", 0, ""
     logfunc("ietf%s(%d)%s: %s" % (file, line, where, msg))
 
-
-
 logger = logging.getLogger('django')
+
+
+
+def exception_components(e):
+    extype = sys.exc_info()[0]
+    value = sys.exc_info()[1]
+    tb = traceback.format_tb(sys.exc_info()[2])
+    return (extype, value, tb)
 
 def build_traceback(stack):
     """
