@@ -10,15 +10,17 @@ int main( void )
     setvbuf(stdout, NULL, _IONBF, 0);
     setvbuf(stderr, NULL, _IONBF, 0);
 
-    c = getchar();
+    c = fgetc(stdin);
     while(c != EOF)
     {
 	if (c == '.') count++;
-	putchar(c);
+	fputc(c, stdout);
+	fflush(stdout);
 	if ( count % 76 == 0) {
 	    fprintf(stderr, "%4d", count);
+	    fflush(stderr);
 	}
-	c = getchar();
+	c = fgetc(stdin);
     }
     return 0;
 }
