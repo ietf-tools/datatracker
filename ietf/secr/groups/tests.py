@@ -26,7 +26,7 @@ class GroupsTest(TestCase):
         response = self.client.post(url,post_data,follow=True)
         #assert False, response.content
         self.assertEqual(response.status_code, 200)
-        self.failUnless(group.acronym in response.content)
+        self.assertTrue(group.acronym in response.content)
 
     # ------- Test Add -------- #
     def test_add_button(self):
@@ -47,7 +47,7 @@ class GroupsTest(TestCase):
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.post(url,post_data)
         self.assertEqual(response.status_code, 200)
-        self.failUnless('This field is required' in response.content)
+        self.assertTrue('This field is required' in response.content)
 
     def test_add_group_dupe(self):
         make_test_data()
@@ -66,7 +66,7 @@ class GroupsTest(TestCase):
         response = self.client.post(url,post_data)
         #print response.content
         self.assertEqual(response.status_code, 200)
-        self.failUnless('Group with this Acronym already exists' in response.content)
+        self.assertTrue('Group with this Acronym already exists' in response.content)
 
     def test_add_group_success(self):
         make_test_data()
@@ -113,7 +113,7 @@ class GroupsTest(TestCase):
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.post(url,post_data,follow=True)
         self.assertRedirects(response, target)
-        self.failUnless('changed successfully' in response.content)
+        self.assertTrue('changed successfully' in response.content)
 
     def test_edit_non_wg_group(self):
         make_test_data()
@@ -133,7 +133,7 @@ class GroupsTest(TestCase):
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.post(url,post_data,follow=True)
         self.assertRedirects(response, target)
-        self.failUnless('changed successfully' in response.content)
+        self.assertTrue('changed successfully' in response.content)
 
     # ------- Test People -------- #
     def test_people_delete(self):
@@ -145,7 +145,7 @@ class GroupsTest(TestCase):
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.get(url,follow=True)
         self.assertRedirects(response, target)
-        self.failUnless('deleted successfully' in response.content)
+        self.assertTrue('deleted successfully' in response.content)
 
     def test_people_add(self):
         make_test_data()
@@ -160,4 +160,4 @@ class GroupsTest(TestCase):
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.post(url,post_data,follow=True)
         self.assertRedirects(response, url)
-        self.failUnless('added successfully' in response.content)
+        self.assertTrue('added successfully' in response.content)

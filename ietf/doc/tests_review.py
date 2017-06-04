@@ -716,7 +716,7 @@ class ReviewTests(TestCase):
         # than 80.
         body = outbox[2].get_payload(decode=True).decode("utf-8")
         self.assertIn('really, really, really', body)
-        self.assertTrue(not any( len(line) > 80 for line in body.splitlines() ))
+        self.assertTrue(all( len(line) <= 80 for line in body.splitlines() ))
 
 
     def test_revise_review_enter_content(self):

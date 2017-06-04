@@ -33,7 +33,7 @@ class SecrRolesMainTestCase(TestCase):
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.get(url,follow=True)
         self.assertRedirects(response, target)
-        self.failUnless('deleted successfully' in response.content)
+        self.assertTrue('deleted successfully' in response.content)
 
     def test_roles_add(self):
         make_test_data()
@@ -50,7 +50,7 @@ class SecrRolesMainTestCase(TestCase):
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.post(url,post_data,follow=True)
         self.assertRedirects(response, target)
-        self.failUnless('added successfully' in response.content)
+        self.assertTrue('added successfully' in response.content)
 
     def test_roles_add_no_group(self):
         make_test_data()
@@ -65,4 +65,4 @@ class SecrRolesMainTestCase(TestCase):
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.post(url,post_data,follow=True)
         self.assertEqual(response.status_code, 200)
-        self.failUnless('You must select a group' in response.content)
+        self.assertTrue('You must select a group' in response.content)
