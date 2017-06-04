@@ -11,14 +11,14 @@ from django.urls import reverse
 
 from ietf.doc.models import Document
 from ietf.group.models import Group
-from ietf.meeting.factories import SessionFactory
 from ietf.meeting.models import Session, TimeSlot, SchedTimeSessAssignment
 from ietf.meeting.test_data import make_meeting_test_data
 from ietf.name.models import SessionStatusName
 from ietf.utils.test_data import make_test_data
 from ietf.utils.test_utils import TestCase
 from ietf.utils.mail import outbox
-from ietf.secr.proceedings.proc_utils import (create_proceedings, import_audio_files,
+
+from ietf.secr.proceedings.proc_utils import (import_audio_files,
     get_timeslot_for_filename, normalize_room_name, send_audio_import_warning,
     get_or_create_recording_document, create_recording, get_next_sequence,
     get_youtube_playlistid, get_youtube_videos, import_youtube_video_urls,
@@ -241,24 +241,3 @@ class RecordingTestCase(TestCase):
         send_audio_import_warning(['recording-43-badroom-20000101-0800.mp3'])
         self.assertEqual(len(outbox), length_before + 1)
         self.assertTrue('Audio file import' in outbox[-1]['Subject'])
-
-class OldProceedingsTestCase(TestCase):
-    ''' Ensure coverage of fragments of old proceedings generation until those are removed ''' 
-    def setUp(self):
-        self.session = SessionFactory(meeting__type_id='ietf')
-        self.proceedings_dir = self.tempdir('proceedings')
-
-        # This unintuitive bit is a consequence of the surprising implementation of meeting.get_materials_path
-        self.saved_agenda_path = settings.AGENDA_PATH
-        settings.AGENDA_PATH= self.proceedings_dir
-
-        target_path = self.session.meeting.get_materials_path()
-        if not os.path.exists(target_path):
-            os.makedirs(target_path)
-
-    def tearDown(self):
-        shutil.rmtree(self.proceedings_dir)
-        settings.AGENDA_PATH = self.saved_agenda_path
-
-    def test_old_generate(self):
-        create_proceedings(self.session.meeting,self.session.group,is_final=True)

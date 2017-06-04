@@ -6,10 +6,8 @@ from ietf.secr.proceedings import views
 
 urlpatterns = [
     url(r'^$', views.main),
-    url(r'^ajax/generate-proceedings/(?P<meeting_num>\d{1,3})/$', views.ajax_generate_proceedings),
     # special offline URL for testing proceedings build
     url(r'^process-pdfs/(?P<meeting_num>\d{1,3})/$', views.process_pdfs),
-    url(r'^progress-report/(?P<meeting_num>\d{1,3})/$', views.progress_report),
     url(r'^(?P<meeting_num>\d{1,3})/$', views.select),
     url(r'^(?P<meeting_num>\d{1,3})/recording/$', views.recording),
     url(r'^(?P<meeting_num>\d{1,3})/recording/edit/(?P<name>[A-Za-z0-9_\-\+]+)$', views.recording_edit),
