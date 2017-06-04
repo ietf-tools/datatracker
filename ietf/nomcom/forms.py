@@ -6,6 +6,7 @@ from django.utils.decorators import method_decorator
 from django.shortcuts import render
 from django.urls import reverse
 from django.utils.html import mark_safe
+from django.forms.widgets import FileInput
 
 from ietf.dbtemplate.forms import DBTemplateForm
 from ietf.group.models import Group, Role
@@ -205,13 +206,14 @@ class EditNomcomForm(forms.ModelForm):
             if self.instance.public_key:
                 help_text = "The nomcom already has a public key. Previous data will remain encrypted with the old key"
             else:
-                help_text = "The nomcom has not a public key yet"
+                help_text = "The nomcom does not have a public key yet"
             self.fields['public_key'].help_text = help_text
 
     class Meta:
         model = NomCom
         fields = ('public_key', 'initial_text', 'show_nominee_pictures',
                   'send_questionnaire', 'reminder_interval')
+        widgets = {'public_key':FileInput, }
 
     def clean_public_key(self):
         public_key = self.cleaned_data.get('public_key', None)
