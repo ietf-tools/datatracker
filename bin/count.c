@@ -13,7 +13,7 @@ int main( void )
     c = fgetc(stdin);
     while(c != EOF)
     {
-	if (c == '.') count++;
+	if (c=='.' || c=='E' || c=='F') count++;
 	fputc(c, stdout);
 	fflush(stdout);
 	if ( count % 76 == 0) {
