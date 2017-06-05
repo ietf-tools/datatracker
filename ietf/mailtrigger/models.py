@@ -181,7 +181,7 @@ class Recipient(models.Model):
         addrs = []
         if 'submission' in kwargs:
             submission = kwargs['submission']
-            addrs.extend(["%s <%s>" % (author["name"], author["email"]) for author in submission.authors if author.get("email")])
+            addrs.extend([ email.utils.formataddr((author["name"], author["email"])) for author in submission.authors if author.get("email")])
         return addrs
 
     def gather_submission_group_chairs(self, **kwargs):

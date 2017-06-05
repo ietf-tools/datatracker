@@ -243,7 +243,11 @@ class Email(models.Model):
             return self.address
 
     def name_and_email(self):
-        "Returns name and email, e.g.: u'Ano Nymous <ano@nymous.org>' "
+        """
+        Returns name and email, e.g.: u'Ano Nymous <ano@nymous.org>'
+        Is intended for display use, not in email context.
+        Use self.formatted_email() for that.
+        """
         if self.person:
             return u"%s <%s>" % (self.person.plain_name(), self.address)
         else:

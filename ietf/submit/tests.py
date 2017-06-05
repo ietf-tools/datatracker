@@ -153,7 +153,7 @@ class SubmitTests(TestCase):
 
         if r.status_code == 302:
             submission = Submission.objects.get(name=name)
-            self.assertEqual(submission.submitter, u"%s <%s>" % (submitter_name, submitter_email))
+            self.assertEqual(submission.submitter, email.utils.formataddr((submitter_name, submitter_email)))
             self.assertEqual(submission.replaces, ",".join(d.name for d in DocAlias.objects.filter(pk__in=replaces.split(",") if replaces else [])))
 
         return r
@@ -1464,6 +1464,6 @@ Subject: test
 
         if r.status_code == 302:
             submission = Submission.objects.get(name=name)
-            self.assertEqual(submission.submitter, u"%s <%s>" % (submitter_name, submitter_email))
+            self.assertEqual(submission.submitter, email.utils.formataddr((submitter_name, submitter_email)))
 
         return r
