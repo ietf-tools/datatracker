@@ -54,7 +54,7 @@
     </tr>
   </thead>
   <tbody>
-    {% for formal_language, percentage, names in table_data %}
+    {% for formal_language, percentage, count, names in table_data %}
       <tr>
         <td>{{ formal_language }}</td>
         <td>{{ percentage|floatformat:2 }}%</td>

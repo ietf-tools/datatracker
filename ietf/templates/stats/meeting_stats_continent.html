@@ -53,7 +53,7 @@
     </tr>
   </thead>
   <tbody>
-    {% for continent, percentage, names in table_data %}
+    {% for continent, percentage, count, names in table_data %}
       <tr>
         <td>{{ continent|default:"(unknown)" }}</td>
         <td>{{ percentage|floatformat:2 }}%</td>

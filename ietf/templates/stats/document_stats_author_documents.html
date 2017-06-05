@@ -59,7 +59,7 @@
     </tr>
   </thead>
   <tbody>
-    {% for document_count, percentage, names in table_data %}
+    {% for document_count, percentage, count, names in table_data %}
       <tr>
         <td>{{ document_count }}</td>
         <td>{{ percentage|floatformat:2 }}%</td>

@@ -58,7 +58,7 @@
     </tr>
   </thead>
   <tbody>
-    {% for citations, percentage, names in table_data %}
+    {% for citations, percentage, count, names in table_data %}
       <tr>
         <td>{{ citations }}</td>
         <td>{{ percentage|floatformat:2 }}%</td>

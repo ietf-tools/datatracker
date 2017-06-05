@@ -53,7 +53,7 @@
     </tr>
   </thead>
   <tbody>
-    {% for country, percentage, names in table_data %}
+    {% for country, percentage, count, names in table_data %}
       <tr>
         <td>{{ country|default:"(unknown)" }}</td>
         <td>{{ percentage|floatformat:2 }}%</td>

@@ -65,7 +65,7 @@
       </tr>
     </thead>
     <tbody>
-      {% for meeting_number, label, url, names in table_data %}
+      {% for meeting_number, label, url, count, names in table_data %}
         <tr>
           <td><a href="{{ url }}">{{ label }}</a></td>
           <td>{% include "stats/includes/number_with_details_cell.html" %}</td>

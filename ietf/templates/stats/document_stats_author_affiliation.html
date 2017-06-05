@@ -53,7 +53,7 @@
     </tr>
   </thead>
   <tbody>
-    {% for affiliation, percentage, names in table_data %}
+    {% for affiliation, percentage, count, names in table_data %}
       <tr>
         <td>{{ affiliation|default:"(unknown)" }}</td>
         <td>{{ percentage|floatformat:2 }}%</td>

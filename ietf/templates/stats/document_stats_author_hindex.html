@@ -58,7 +58,7 @@
     </tr>
   </thead>
   <tbody>
-    {% for h_index, percentage, names in table_data %}
+    {% for h_index, percentage, count, names in table_data %}
       <tr>
         <td>{{ h_index }}</td>
         <td>{{ percentage|floatformat:2 }}%</td>
