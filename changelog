@@ -74,7 +74,7 @@ ietfdb (6.53.0) ietf; urgency=medium
     ways of cleaning out extra local tables (see bin/drop-new-tables for a 
     starting point)
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  05 Jun 2017 12:26:51 +0000
+ -- Henrik Levkowetz <henrik@levkowetz.com>  05 Jun 2017 13:41:48 +0000
 
 ietfdb (6.52.0) ietf; urgency=medium
 
