@@ -1,6 +1,12 @@
 #!/usr/bin/env python
 
-import sys, os, argparse
+from __future__ import print_function, unicode_literals
+
+import sys
+import os
+import os.path
+import argparse
+import time
 
 basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 sys.path = [ basedir ] + sys.path
@@ -14,6 +20,8 @@ import django
 django.setup()
 
 from django.conf import settings
+
+import debug                            # pyflakes:ignore
 
 from ietf.doc.models import Document
 from ietf.name.models import FormalLanguageName
@@ -33,6 +41,31 @@ docs_qs = Document.objects.filter(type="draft")
 if args.document:
     docs_qs = docs_qs.filter(docalias__name=args.document)
 
+ts = time.strftime("%Y-%m-%d_%H:%M%z")
+logfile = open('backfill-authorstats-%s.log'%ts, 'w')
+print("Writing log to %s" % os.path.abspath(logfile.name))
+
+def say(msg):
+    msg = msg.encode('utf8')
+    sys.stderr.write(msg)
+    sys.stderr.write('\n')
+    logfile.write(msg)
+    logfile.write('\n')
+
+def unicode(text):
+    if text is None:
+        return text
+    # order matters here:
+    for encoding in ['ascii', 'utf8', 'latin1', ]:
+        try:
+            utext = text.decode(encoding) 
+            if encoding == 'latin1':
+                say("Warning: falling back to latin1 decoding for %s" % utext)
+            return utext
+        except UnicodeDecodeError:
+            pass
+
+start = time.time()
 for doc in docs_qs.prefetch_related("docalias_set", "formal_languages", "documentauthor_set", "documentauthor_set__person", "documentauthor_set__person__alias_set"):
     canonical_name = doc.name
     for n in doc.docalias_set.all():
@@ -45,11 +78,12 @@ for doc in docs_qs.prefetch_related("docalias_set", "formal_languages", "documen
         path = os.path.join(settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR, canonical_name + "-" + doc.rev + ".txt")
 
     if not os.path.exists(path):
-        print "skipping", doc.name, "no txt file found at", path
+        say("Skipping %s, no txt file found at %s" % (doc.name, path))
         continue
 
     with open(path, 'r') as f:
-        print "\nProcessing %s" % doc.name
+        say("\nProcessing %s" % doc.name)
+        sys.stdout.flush()
         d = Draft(f.read(), path)
 
         updated = False
@@ -92,6 +126,7 @@ for doc in docs_qs.prefetch_related("docalias_set", "formal_languages", "documen
             # it's an extra author - skip those extra authors
             seen = set()
             for full, _, _, _, _, email, country, company in d.get_author_list():
+                full, email, country, company = [ unicode(s) for s in [full, email, country, company, ] ]
                 if email in seen:
                     continue
                 seen.add(email)
@@ -103,11 +138,11 @@ for doc in docs_qs.prefetch_related("docalias_set", "formal_languages", "documen
                     old_author = old_authors_by_name.get(full)
 
                 if not old_author:
-                    print "UNKNOWN AUTHOR", doc.name, full, email, country, company
+                    say("UNKNOWN AUTHOR: %s, %s, %s, %s, %s" % (doc.name, full, email, country, company))
                     continue
 
                 if old_author.affiliation != company:
-                    print "new affiliation", canonical_name, "[", full, "]", old_author.affiliation, "->", company
+                    say("new affiliation: %s [ %s <%s> ] %s -> %s" % (canonical_name, full, email, old_author.affiliation, company))
                     old_author.affiliation = company
                     old_author.save(update_fields=["affiliation"])
                     updated = True
@@ -115,13 +150,8 @@ for doc in docs_qs.prefetch_related("docalias_set", "formal_languages", "documen
                 if country is None:
                     country = ""
 
-                try:
-                    country = country.decode("utf-8")
-                except UnicodeDecodeError:
-                    country = country.decode("latin-1")
-
                 if old_author.country != country:
-                    print "new country", canonical_name ,"[", full, email, "]", old_author.country.encode("utf-8"), "->", country.encode("utf-8")
+                    say("new country: %s [ %s <%s> ] %s -> %s" % (canonical_name , full, email, old_author.country, country))
                     old_author.country = country
                     old_author.save(update_fields=["country"])
                     updated = True
@@ -132,5 +162,14 @@ for doc in docs_qs.prefetch_related("docalias_set", "formal_languages", "documen
             updated = True
 
         if updated:
-            print "updated", canonical_name
+            say("updated: %s" % canonical_name)
+
+stop = time.time()
+dur = stop-start
+sec = dur%60
+min = dur//60
+say("Processing time %d:%02d" % (min, sec))
+
+print("\n\nWrote log to %s" % os.path.abspath(logfile.name))
+logfile.close()
 
