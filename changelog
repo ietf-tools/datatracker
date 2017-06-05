@@ -1,3 +1,81 @@
+ietfdb (6.53.0) ietf; urgency=medium
+
+  **Nomcom features, YouTube import, Better text wrapping in emails**
+
+  This release provides the ability for NomComs to collect feedback on
+  arbitrary topics, and fixes some warts on the nomcom pages.  It adds
+  automated import of session recording data from YouTube, and a number of
+  other secretariat tool refinements.  Review team pages now show both date of
+  assignment and deadline, and reviews sent in email should not be mangled by
+  unnecesary line wrapping any more.  There are also a some internal
+  improvements.  From the commit log:
+
+  * Merged in [13503] from rjsparks@nostrum.com:
+    Added usernames to the email sent to the secretariat when a possible 
+    duplicate person has been detected. Fixes #2307.  
+
+  * Merged in [13501] from rjsparks@nostrum.com:
+    Used a simpler widget for the public key file when editing a nomcom to
+    remove confusion between clearing keys and clearing the form control.
+    Fixes #2299.  
+
+  * Merged in [13500] from rjsparks@nostrum.com:
+    Provide assigned dates on review team reviewers page. Fixes #2304.
+    Related to #2305.  
+
+  * Changed all instances of the deprecated self.failUnless() unittest method 
+    to self.assertTrue().
+
+  * Merged in [13499] from rcross@amsl.com:
+    Add non WG Area choices to Parent field of secretariat groups edit form.
+    Fixes #1344.  
+
+  * Improved review linebreaking tests, based on [13495] from olau@iola.dk.
+
+  * Merged in [13492] from rcross@amsl.com:
+    Removed old proceedings generation code.  Fixes #2234.   
+
+  * Merged in [13485] from rcross@amsl.com:
+    Added import of YouTube session videos, using the YouTube Data API.
+    Fixes #2249.
+
+  * Added a middleware exception handler for the case of people submitting 
+    unicode outside the Basic Multilingual Plane, which cannot currently be 
+    saved to the database.
+
+  * Added a test for no-agenda templates being used for future meetings 
+    without agenda. Aligned the wording in the txt and html templates.
+
+  * Merged in [13474] from rjsparks@nostrum.com:
+    Allow the nomcom to collect feedback on arbitrary topics. Fixes #2256 
+    and #1846.  
+
+  * Eliminated several variations on word wrapping, keeping only what used to
+    be wrap_text(), but renamed as ietf.utils.text.wordwrap().  This performs
+    better than django.utils.text.wrap() when there are indented text parts.
+    Replaced django's default wordwrap filter with one calling
+    ietf.utils.text.wordwrap in all templates.  Changed to triggered wrapping
+    in some cases, with the maybewordwrap filter, which triggers on lines
+    longer than 100 characters.  This fixes the issue with undesired wrapping
+    of reviews.
+
+  * Fixed a date arithmetic bug.
+
+  * xml2rfc 2.6.0 does not have parser parameters which are compatible with 
+    our usage.  Will be fixed in 2.6.1.  Disallow 2.6.0.
+
+  * Added a guard against trying to list locations which are None in 
+    agenda.json (there are socials with a timeslot but no location)
+
+  * Fixed the DOI information for doc/rfc*/bibtex/ temporarily; for a 
+    better fix we need to import the DOI values in ietf/sync/rfceditor.py
+
+  * Removed the table-list.json file and support for it; there are better 
+    ways of cleaning out extra local tables (see bin/drop-new-tables for a 
+    starting point)
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  05 Jun 2017 12:26:51 +0000
+
 ietfdb (6.52.0) ietf; urgency=medium
 
   **Nomcom page improvements, and more**	
