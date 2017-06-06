@@ -280,7 +280,7 @@ def change_stream(request, name):
 
 @jsonapi
 def doc_ajax_internet_draft(request):
-    log.unreachable()                   # 6.46.2
+    log.unreachable("07 Mar 2017")
     if request.method != 'GET' or not request.GET.has_key('term'):
         return { 'success' : False, 'error' : 'No term submitted or not GET' }
     q = request.GET.get('term')

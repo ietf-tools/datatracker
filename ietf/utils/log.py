@@ -106,12 +106,12 @@ def assertion(statement):
                     extra[key] = frame.f_locals[key]
             logger.error("Assertion '%s' failed.", statement, exc_info=(AssertionError, statement, tb), extra=extra)
 
-def unreachable():
+def unreachable(date="(unknown)"):
     "Raises an assertion or sends traceback to admins if executed."
     stack = inspect.stack()[1:]
     frame = stack[0][0]
     if settings.DEBUG is True or settings.SERVER_MODE == 'test':
-        raise AssertionError("Arrived at code in %s() which was marked unreachable." % frame.f_code.co_name)
+        raise AssertionError("Arrived at code in %s() which was marked unreachable on %s." % (frame.f_code.co_name, date))
     else:
         # build a simulated traceback object
         tb = build_traceback(stack)
@@ -120,5 +120,6 @@ def unreachable():
         for key in [ 'request', 'status_code', ]:
             if key in frame.f_locals:
                 extra[key] = frame.f_locals[key]
-        logger.error("Arrived at code in %s() which was marked unreachable.", frame.f_code.co_name, exc_info=(AssertionError, frame.f_code.co_name, tb), extra=extra)
+        logger.error("Arrived at code in %s() which was marked unreachable on %s." % (frame.f_code.co_name, date),
+                        exc_info=(AssertionError, frame.f_code.co_name, tb), extra=extra)
     

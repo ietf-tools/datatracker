@@ -532,7 +532,7 @@ class TimeSlot(models.Model):
     rooms.
     """
     def create_concurrent_timeslots(self):
-        log.unreachable()
+        log.unreachable("28 Feb 2017")
         rooms = self.meeting.room_set.all()
         self.room = rooms[0]
 	self.save()
@@ -678,7 +678,7 @@ class Schedule(models.Model):
 
     @property
     def group_mapping(self):
-        log.unreachable()
+        log.unreachable("28 Feb 2017")
         assignments,sessions,total,scheduled = self.group_session_mapping
         return assignments
 
@@ -690,7 +690,7 @@ class Schedule(models.Model):
 
     # calculate badness of entire schedule
     def calc_badness(self):
-        log.unreachable()
+        log.unreachable("28 Feb 2017")
         # now calculate badness
         assignments = self.group_mapping
         return self.calc_badness1(assignments)
@@ -740,7 +740,7 @@ class SchedTimeSessAssignment(models.Model):
 
     @property
     def area(self):
-        log.unreachable()
+        log.unreachable("28 Feb 2017")
         if not self.session or not self.session.group:
             return ""
         if self.session.group.type_id == "irtf":
@@ -753,7 +753,7 @@ class SchedTimeSessAssignment(models.Model):
 
     @property
     def slottype(self):
-        log.unreachable()
+        log.unreachable("28 Feb 2017")
         if self.timeslot and self.timeslot.type:
             return self.timeslot.type.slug
         else:
@@ -854,7 +854,7 @@ class Constraint(models.Model):
             return u"%s " % (self.person)
 
     def status(self):
-        log.unreachable()
+        log.unreachable("28 Feb 2017")
         if self.active_status is not None:
             return self.active_status
         else:
@@ -1075,7 +1075,7 @@ class Session(models.Model):
         return self.timeslotassignment_for_agenda(self.meeting.agenda)
 
     def unique_constraints(self):
-        log.unreachable()
+        log.unreachable("28 Feb 2017")
         global constraint_cache_uses, constraint_cache_initials
         constraint_cache_uses += 1
         # this cache keeps the automatic placer from visiting the database continuously

@@ -270,7 +270,7 @@ class RoomForm(ModelForm):
 
 @role_required('Secretariat')
 def edit_roomurl(request, num, roomid):
-    log.unreachable()                   # 6.46.2
+    log.unreachable("07 Mar 2017")
     meeting = get_meeting(num)
 
     try:

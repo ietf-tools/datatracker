@@ -170,7 +170,7 @@ def send_mail_subj(request, to, frm, stemplate, template, context, *args, **kwar
     Send an email message, exactly as send_mail(), but the
     subject field is a template.
     '''
-    unreachable()                       # 03 Mar 2017
+    unreachable("03 Mar 2017")
     subject = render_to_string(stemplate, context ).replace("\n"," ").strip()
     return send_mail(request, to, frm, subject, template, context, *args, **kwargs)
 
