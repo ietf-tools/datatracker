@@ -398,6 +398,7 @@ INSTALLED_APPS = (
     'ietf.redirects',
     'ietf.release',
     'ietf.review',
+    'ietf.stats',
     'ietf.submit',
     'ietf.sync',
     'ietf.utils',
@@ -487,8 +488,9 @@ TEST_CODE_COVERAGE_EXCLUDE = [
     "ietf/settings*",
     "ietf/utils/templatetags/debug_filters.py",
     "ietf/utils/test_runner.py",
-    "name/generate_fixtures.py",
-    "review/import_from_review_tool.py",
+    "ietf/name/generate_fixtures.py",
+    "ietf/review/import_from_review_tool.py",
+    "ietf/stats/backfill_data.py",
 ]
 
 # These are filename globs.  They are used by test_parse_templates() and
@@ -557,6 +559,8 @@ INTERNET_DRAFT_ARCHIVE_DIR = '/a/www/www6s/draft-archive'
 INTERNET_ALL_DRAFTS_ARCHIVE_DIR = '/a/www/www6s/archive/id'
 MEETING_RECORDINGS_DIR = '/a/www/audio'
 
+DOCUMENT_FORMAT_WHITELIST = ["txt", "ps", "pdf", "xml", "html", ]
+
 # Mailing list info URL for lists hosted on the IETF servers
 MAILING_LIST_INFO_URL = "https://www.ietf.org/mailman/listinfo/%(list_addr)s"
 MAILING_LIST_ARCHIVE_URL = "https://mailarchive.ietf.org"
@@ -618,6 +622,8 @@ IPR_EMAIL_FROM = 'ietf-ipr@ietf.org'
 AUDIO_IMPORT_EMAIL = ['agenda@ietf.org','ietf@meetecho.com']
 IANA_EVAL_EMAIL = "drafts-eval@icann.org"
 SESSION_REQUEST_FROM_EMAIL = 'IETF Meeting Session Request Tool <session-request@ietf.org>' 
+
+SECRETARIAT_TICKET_EMAIL = "ietf-action@ietf.org"
 
 # Put real password in settings_local.py
 IANA_SYNC_PASSWORD = "secret"
@@ -882,6 +888,8 @@ ACCOUNT_REQUEST_EMAIL = 'account-request@ietf.org'
 SILENCED_SYSTEM_CHECKS = [
     "fields.W342",  # Setting unique=True on a ForeignKey has the same effect as using a OneToOneField.
 ]
+
+STATS_NAMES_LIMIT = 25
 
 # Put the production SECRET_KEY in settings_local.py, and also any other
 # sensitive or site-specific changes.  DO NOT commit settings_local.py to svn.

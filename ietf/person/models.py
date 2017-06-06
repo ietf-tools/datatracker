@@ -16,7 +16,7 @@ from django.utils.text import slugify
 
 import debug                            # pyflakes:ignore
 
-from ietf.person.name import name_parts, initials
+from ietf.person.name import name_parts, initials, plain_name
 from ietf.utils.mail import send_mail_preformatted
 from ietf.utils.storage import NoLocationMigrationFileSystemStorage
 from ietf.utils.mail import formataddr
@@ -51,8 +51,7 @@ class PersonInfo(models.Model):
             return (first and first[0]+"." or "")+(middle or "")+" "+last+(suffix and " "+suffix or "")
     def plain_name(self):
         if not hasattr(self, '_cached_plain_name'):
-            prefix, first, middle, last, suffix = name_parts(self.name)
-            self._cached_plain_name = u" ".join([first, last])
+            self._cached_plain_name = plain_name(self.name)
         return self._cached_plain_name
     def ascii_name(self):
         if not hasattr(self, '_cached_ascii_name'):
@@ -137,18 +136,18 @@ class PersonInfo(models.Model):
 
     def has_drafts(self):
         from ietf.doc.models import Document
-        return Document.objects.filter(authors__person=self, type='draft').exists()
+        return Document.objects.filter(documentauthor__person=self, type='draft').exists()
     def rfcs(self):
         from ietf.doc.models import Document
-        rfcs = list(Document.objects.filter(authors__person=self, type='draft', states__slug='rfc'))
+        rfcs = list(Document.objects.filter(documentauthor__person=self, type='draft', states__slug='rfc'))
         rfcs.sort(key=lambda d: d.canonical_name() )
         return rfcs
     def active_drafts(self):
         from ietf.doc.models import Document
-        return Document.objects.filter(authors__person=self, type='draft', states__slug='active').order_by('-time')
+        return Document.objects.filter(documentauthor__person=self, type='draft', states__slug='active').order_by('-time')
     def expired_drafts(self):
         from ietf.doc.models import Document
-        return Document.objects.filter(authors__person=self, type='draft', states__slug__in=['repl', 'expired', 'auth-rm', 'ietf-rm']).order_by('-time')
+        return Document.objects.filter(documentauthor__person=self, type='draft', states__slug__in=['repl', 'expired', 'auth-rm', 'ietf-rm']).order_by('-time')
 
     class Meta:
         abstract = True
@@ -244,7 +243,11 @@ class Email(models.Model):
             return self.address
 
     def name_and_email(self):
-        "Returns name and email, e.g.: u'Ano Nymous <ano@nymous.org>' "
+        """
+        Returns name and email, e.g.: u'Ano Nymous <ano@nymous.org>'
+        Is intended for display use, not in email context.
+        Use self.formatted_email() for that.
+        """
         if self.person:
             return u"%s <%s>" % (self.person.plain_name(), self.address)
         else:
@@ -260,15 +263,11 @@ class Email(models.Model):
         else:
             return self.address
 
-    def invalid_address(self):
-        # we have some legacy authors with unknown email addresses
-        return self.address.startswith("unknown-email") and "@" not in self.address
-
     def email_address(self):
         """Get valid, current email address; in practise, for active,
         non-invalid addresses it is just the address field. In other
         cases, we default to person's email address."""
-        if self.invalid_address() or not self.active:
+        if not self.active:
             if self.person:
                 return self.person.email_address()
             return

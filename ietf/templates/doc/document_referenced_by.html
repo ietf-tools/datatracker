@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
-{% load origin staticfiles %}
+{% load origin staticfiles ietf_filters %}
 
 {% block pagehead %}
 <link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
@@ -44,8 +44,8 @@
         {% with ref.source.canonical_name as name %}
           <tr>
             <td>
-	      <a href="{% url 'ietf.doc.views_doc.document_main' name=name %}">{{name}}</a>
-	      {% if ref.target.name != alias_name %}
+              <a href="{% url 'ietf.doc.views_doc.document_main' name=name %}">{{ name|prettystdname }}</a>
+              {% if ref.target.name != alias_name %}
 	        <br><span class="label label-info">As {{ref.target.name}}</span>
 	      {% endif %}
             </td>

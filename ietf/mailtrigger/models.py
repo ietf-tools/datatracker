@@ -6,7 +6,6 @@ from django.template import Template, Context
 from email.utils import parseaddr
 from ietf.utils.mail import formataddr
 
-
 import debug                            # pyflakes:ignore
 
 from ietf.group.models import Role
@@ -178,10 +177,14 @@ class Recipient(models.Model):
         return addrs
 
     def gather_submission_authors(self, **kwargs):
+        """
+        Returns a list of name and email, e.g.: [ 'Ano Nymous <ano@nymous.org>' ]
+        Is intended for display use, not in email context.
+        """
         addrs = []
         if 'submission' in kwargs:
             submission = kwargs['submission']
-            addrs.extend(["%s <%s>" % (author["name"], author["email"]) for author in submission.authors_parsed() if author["email"]]) 
+            addrs.extend(["%s <%s>" % (author["name"], author["email"]) for author in submission.authors if author.get("email")])
         return addrs
 
     def gather_submission_group_chairs(self, **kwargs):
@@ -203,10 +206,14 @@ class Recipient(models.Model):
             submission = kwargs['submission']
             doc=submission.existing_document()
             if doc:
-                old_authors = [i.author.formatted_email() for i in doc.documentauthor_set.all() if not i.author.invalid_address()]
-                new_authors = [ formataddr((author["name"], author["email"])) for author in submission.authors_parsed() if author["email"]]
-                addrs.extend(old_authors)
-                if doc.group and set(old_authors)!=set(new_authors):
+                old_authors = [ author for author in doc.documentauthor_set.all() if author.email ]
+
+                addrs.extend([ author.formatted_email() for author in old_authors])
+
+                old_author_email_set = set(author.email.address for author in old_authors)
+                new_author_email_set = set(author["email"] for author in submission.authors if author.get("email"))
+
+                if doc.group and old_author_email_set != new_author_email_set:
                     if doc.group.type_id in ['wg','rg','ag']:
                         addrs.extend(Recipient.objects.get(slug='group_chairs').gather(**{'group':doc.group}))
                     elif doc.group.type_id in ['area']:
@@ -216,8 +223,8 @@ class Recipient(models.Model):
                     if doc.stream_id and doc.stream_id not in ['ietf']:
                         addrs.extend(Recipient.objects.get(slug='stream_managers').gather(**{'streams':[doc.stream_id]}))
             else:
-                addrs.extend([formataddr((author["name"], author["email"])) for author in submission.authors_parsed() if author["email"]])
-                if submission.submitter_parsed()["email"]: 
+                addrs.extend([formataddr((author["name"], author["email"])) for author in submission.authors if author.get("email")])
+                if submission.submitter_parsed()["email"]:
                     addrs.append(submission.submitter)
         return addrs
 

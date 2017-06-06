@@ -15,7 +15,7 @@ from ietf.name.models import (TimeSlotTypeName, GroupStateName, DocTagName, Inte
     LiaisonStatementTagName, FeedbackTypeName, LiaisonStatementState, StreamName,
     BallotPositionName, DBTemplateTypeName, NomineePositionStateName,
     ReviewRequestStateName, ReviewTypeName, ReviewResultName,
-    TopicAudienceName, )
+    TopicAudienceName, FormalLanguageName, ContinentName, CountryName)
 
 
 class TimeSlotTypeNameResource(ModelResource):
@@ -470,4 +470,52 @@ class TopicAudienceNameResource(ModelResource):
             "order": ALL,
         }
 api.name.register(TopicAudienceNameResource())
+
+class FormalLanguageNameResource(ModelResource):
+    class Meta:
+        queryset = FormalLanguageName.objects.all()
+        serializer = api.Serializer()
+        cache = SimpleCache()
+        #resource_name = 'formallanguagename'
+        filtering = { 
+            "slug": ALL,
+            "name": ALL,
+            "desc": ALL,
+            "used": ALL,
+            "order": ALL,
+        }
+api.name.register(FormalLanguageNameResource())
+
+class ContinentNameResource(ModelResource):
+    class Meta:
+        queryset = ContinentName.objects.all()
+        serializer = api.Serializer()
+        cache = SimpleCache()
+        #resource_name = 'continentname'
+        filtering = { 
+            "slug": ALL,
+            "name": ALL,
+            "desc": ALL,
+            "used": ALL,
+            "order": ALL,
+        }
+api.name.register(ContinentNameResource())
+
+class CountryNameResource(ModelResource):
+    continent        = ToOneField(ContinentNameResource, 'continent')
+    class Meta:
+        queryset = CountryName.objects.all()
+        serializer = api.Serializer()
+        cache = SimpleCache()
+        #resource_name = 'countryname'
+        filtering = { 
+            "slug": ALL,
+            "name": ALL,
+            "desc": ALL,
+            "used": ALL,
+            "order": ALL,
+            "in_eu": ALL,
+            "continent": ALL_WITH_RELATIONS,
+        }
+api.name.register(CountryNameResource())
 

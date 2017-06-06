@@ -265,11 +265,11 @@ class CoverageTest(TestCase):
             if self.runner.run_full_test_suite:
                 # Permit 0.02% variation in results -- otherwise small code changes become a pain
                 fudge_factor = 0.0002
+                self.assertLessEqual(len(test_missing), len(master_missing),
+                    msg = "New %s without test coverage since %s: %s" % (test, latest_coverage_version, list(set(test_missing) - set(master_missing))))
                 self.assertGreaterEqual(test_coverage, master_coverage - fudge_factor,
                     msg = "The %s coverage percentage is now lower (%.2f%%) than for version %s (%.2f%%)" %
                         ( test, test_coverage*100, latest_coverage_version, master_coverage*100, ))
-                self.assertLessEqual(len(test_missing), len(master_missing),
-                    msg = "New %s without test coverage since %s: %s" % (test, latest_coverage_version, list(set(test_missing) - set(master_missing))))
 
     def template_coverage_test(self):
         global loaded_templates

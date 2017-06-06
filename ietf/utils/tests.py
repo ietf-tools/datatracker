@@ -168,7 +168,7 @@ class TemplateChecksTestCase(TestCase):
             Check that an URLNode's callback is in callbacks.
             """
             cb = node.view_name.token.strip("\"'")
-            if cb in callbacks:
+            if cb in callbacks or cb.startswith("admin:"):
                 return []
             else:
                 return [ (origin, cb), ]

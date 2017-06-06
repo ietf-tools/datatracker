@@ -61,8 +61,10 @@ Internet-Draft                Testing Tests                   %(month)s %(year)s
 Table of Contents
 
    1.  Introduction  . . . . . . . . . . . . . . . . . . . . . . . .   2
-   2.  Security Considerations . . . . . . . . . . . . . . . . . . .   2
-   3.  IANA Considerations . . . . . . . . . . . . . . . . . . . . .   2
+   2.  Yang  . . . . . . . . . . . . . . . . . . . . . . . . . . . .   2
+   3.  JSON example  . . . . . . . . . . . . . . . . . . . . . . . .   2
+   4.  Security Considerations . . . . . . . . . . . . . . . . . . .   2
+   5.  IANA Considerations . . . . . . . . . . . . . . . . . . . . .   2
    Author's Address  . . . . . . . . . . . . . . . . . . . . . . . .   2
 
 1. Introduction
@@ -169,11 +171,19 @@ Table of Contents
 
    <CODE ENDS>
 
-3. Security Considerations
+3. JSON example
+
+   The JSON object should look like this:
+
+   {
+       "test": 1234
+   }
+
+4. Security Considerations
 
    There are none.
 
-4.  IANA Considerations
+5.  IANA Considerations
 
    No new registrations for IANA.
 

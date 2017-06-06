@@ -14,6 +14,7 @@ from ietf.group.colors import fg_group_colors, bg_group_colors
 from ietf.name.models import GroupStateName, GroupTypeName, DocTagName, GroupMilestoneStateName, RoleName
 from ietf.person.models import Email, Person
 from ietf.utils.mail import formataddr
+from ietf.utils.log import unreachable
 
 
 class GroupInfo(models.Model):
@@ -278,7 +279,12 @@ class Role(models.Model):
         return u"%s is %s in %s" % (self.person.plain_name(), self.name.name, self.group.acronym or self.group.name)
 
     def name_and_email(self):
-        "Returns name and email, e.g.: u'Ano Nymous <ano@nymous.org>' "
+        """
+        Returns name and email, e.g.: u'Ano Nymous <ano@nymous.org>'
+        Is intended for display use, not in email context.
+        Use self.formatted_email() for that.
+        """
+        unreachable()
         if self.person:
             return u"%s <%s>" % (self.person.plain_name(), self.email.address)
         else:

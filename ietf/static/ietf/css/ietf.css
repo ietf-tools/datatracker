@@ -580,6 +580,15 @@ table.simple-table td:last-child {
   width: 7em;
 }
 
+.document-stats .popover .element {
+  padding-left: 1em;
+  text-indent: -1em;
+}
+
+.document-stats #chart {
+  height: 25em;
+}
+
 .stats-time-graph {
   height: 15em;
 }

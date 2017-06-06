@@ -10,7 +10,7 @@ from ietf.doc.models import Document
 from ietf.person.models import Person
 from ietf.group.models import Group
 from ietf.message.models import Message
-from ietf.name.models import DraftSubmissionStateName
+from ietf.name.models import DraftSubmissionStateName, FormalLanguageName
 from ietf.utils.accesstoken import generate_random_key, generate_access_token
 
 
@@ -36,7 +36,10 @@ class Submission(models.Model):
     abstract = models.TextField(blank=True)
     rev = models.CharField(max_length=3, blank=True)
     pages = models.IntegerField(null=True, blank=True)
-    authors = models.TextField(blank=True, help_text="List of author names and emails, one author per line, e.g. \"John Doe &lt;john@example.org&gt;\".")
+    words = models.IntegerField(null=True, blank=True)
+    formal_languages = models.ManyToManyField(FormalLanguageName, blank=True, help_text="Formal languages used in document")
+
+    authors = jsonfield.JSONField(default=list, help_text="List of authors with name, email, affiliation and country.")
     note = models.TextField(blank=True)
     replaces = models.CharField(max_length=1000, blank=True)
 
@@ -52,20 +55,6 @@ class Submission(models.Model):
 
     def __unicode__(self):
         return u"%s-%s" % (self.name, self.rev)
-
-    def authors_parsed(self):
-        if not hasattr(self, '_cached_authors_parsed'):
-            from ietf.submit.utils import ensure_person_email_info_exists
-            res = []
-            for line in self.authors.replace("\r", "").split("\n"):
-                line = line.strip()
-                if line:
-                    parsed = parse_email_line(line)
-                    if not parsed["email"]:
-                        parsed["email"] = ensure_person_email_info_exists(**parsed).address
-                    res.append(parsed)
-            self._cached_authors_parsed = res
-        return self._cached_authors_parsed
 
     def submitter_parsed(self):
         return parse_email_line(self.submitter)

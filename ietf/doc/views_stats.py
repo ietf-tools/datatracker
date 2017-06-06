@@ -171,7 +171,7 @@ def chart_data_person_drafts(request, id):
     if not person:
         data = []
     else:
-        data = model_to_timeline_data(DocEvent, doc__authors__person=person, type='new_revision')
+        data = model_to_timeline_data(DocEvent, doc__documentauthor__person=person, type='new_revision')
     return JsonResponse(data, safe=False)
     
 

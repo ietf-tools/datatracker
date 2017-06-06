@@ -87,7 +87,7 @@ class SearchTests(TestCase):
         self.assertTrue(draft.title in unicontent(r))
 
         # find by author
-        r = self.client.get(base_url + "?activedrafts=on&by=author&author=%s" % draft.authors.all()[0].person.name_parts()[1])
+        r = self.client.get(base_url + "?activedrafts=on&by=author&author=%s" % draft.documentauthor_set.first().person.name_parts()[1])
         self.assertEqual(r.status_code, 200)
         self.assertTrue(draft.title in unicontent(r))
 
@@ -1237,7 +1237,7 @@ class ChartTests(ResourceTestCaseMixin, TestCase):
         person = PersonFactory.create()
         DocumentFactory.create(
             states=[('draft','active')],
-            authors=[person.email(), ],
+            authors=[person, ],
         )
 
         conf_url = urlreverse('ietf.doc.views_stats.chart_conf_person_drafts', kwargs=dict(id=person.id))

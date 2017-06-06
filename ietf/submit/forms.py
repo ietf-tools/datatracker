@@ -5,6 +5,7 @@ import email
 import pytz
 import xml2rfc
 import tempfile
+from email.utils import formataddr
 from unidecode import unidecode
 
 from django import forms
@@ -21,6 +22,7 @@ from ietf.doc.fields import SearchableDocAliasesField
 from ietf.ipr.mail import utc_from_string
 from ietf.meeting.models import Meeting
 from ietf.message.models import Message
+from ietf.name.models import FormalLanguageName
 from ietf.submit.models import Submission, Preapproval
 from ietf.submit.utils import validate_submission_rev, validate_submission_document_date
 from ietf.submit.parsers.pdf_parser import PDFParser
@@ -28,7 +30,6 @@ from ietf.submit.parsers.plain_parser import PlainParser
 from ietf.submit.parsers.ps_parser import PSParser
 from ietf.submit.parsers.xml_parser import XMLParser
 from ietf.utils.draft import Draft
-
 
 class SubmissionUploadForm(forms.Form):
     txt = forms.FileField(label=u'.txt format', required=False)
@@ -177,18 +178,14 @@ class SubmissionUploadForm(forms.Form):
                 self.abstract = self.xmlroot.findtext('front/abstract').strip()
                 if type(self.abstract) is unicode:
                     self.abstract = unidecode(self.abstract)
-                self.author_list = []
                 author_info = self.xmlroot.findall('front/author')
                 for author in author_info:
-                    author_dict = dict(
-                        company = author.findtext('organization').strip(),
-                        last_name = author.attrib.get('surname').strip(),
-                        full_name = author.attrib.get('fullname').strip(),
-                        email = author.findtext('address/email').strip(),
-                    )
-                    self.author_list.append(author_dict)
-                    line = email.utils.formataddr((author_dict['full_name'], author_dict['email']))
-                    self.authors.append(line)
+                    self.authors.append({
+                        "name": author.attrib.get('fullname').strip(),
+                        "email": author.findtext('address/email').strip(),
+                        "affiliation": author.findtext('organization').strip(),
+                        "country": author.findtext('address/postal/country').strip(),
+                    })
             except forms.ValidationError:
                 raise
             except Exception as e:
@@ -324,18 +321,12 @@ class SubmissionUploadForm(forms.Form):
                 return None
 
 class NameEmailForm(forms.Form):
-    """For validating supplied submitter and author information."""
     name = forms.CharField(required=True)
-    email = forms.EmailField(label=u'Email address')
-
-    #Fields for secretariat only
-    approvals_received = forms.BooleanField(label=u'Approvals received', required=False, initial=False)
+    email = forms.EmailField(label=u'Email address', required=True)
 
     def __init__(self, *args, **kwargs):
-        email_required = kwargs.pop("email_required", True)
         super(NameEmailForm, self).__init__(*args, **kwargs)
 
-        self.fields["email"].required = email_required
         self.fields["name"].widget.attrs["class"] = "name"
         self.fields["email"].widget.attrs["class"] = "email"
 
@@ -345,11 +336,23 @@ class NameEmailForm(forms.Form):
     def clean_email(self):
         return self.cleaned_data["email"].replace("\n", "").replace("\r", "").replace("<", "").replace(">", "").strip()
 
+class AuthorForm(NameEmailForm):
+    affiliation = forms.CharField(max_length=100, required=False)
+    country = forms.CharField(max_length=255, required=False)
+
+    def __init__(self, *args, **kwargs):
+        super(AuthorForm, self).__init__(*args, **kwargs)
+        self.fields["email"].required = False
+
+class SubmitterForm(NameEmailForm):
+    #Fields for secretariat only
+    approvals_received = forms.BooleanField(label=u'Approvals received', required=False, initial=False)
+
     def cleaned_line(self):
         line = self.cleaned_data["name"]
         email = self.cleaned_data.get("email")
         if email:
-            line += u" <%s>" % email
+            line = formataddr((line, email))
         return line
 
 class ReplacesForm(forms.Form):
@@ -376,13 +379,14 @@ class EditSubmissionForm(forms.ModelForm):
     rev = forms.CharField(label=u'Revision', max_length=2, required=True)
     document_date = forms.DateField(required=True)
     pages = forms.IntegerField(required=True)
+    formal_languages = forms.ModelMultipleChoiceField(queryset=FormalLanguageName.objects.filter(used=True), widget=forms.CheckboxSelectMultiple, required=False)
     abstract = forms.CharField(widget=forms.Textarea, required=True, strip=False)
 
     note = forms.CharField(label=mark_safe(u'Comment to the Secretariat'), widget=forms.Textarea, required=False, strip=False)
 
     class Meta:
         model = Submission
-        fields = ['title', 'rev', 'document_date', 'pages', 'abstract', 'note']
+        fields = ['title', 'rev', 'document_date', 'pages', 'formal_languages', 'abstract', 'note']
 
     def clean_rev(self):
         rev = self.cleaned_data["rev"]

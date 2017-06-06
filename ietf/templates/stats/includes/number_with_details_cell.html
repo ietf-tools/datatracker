@@ -1,0 +1,8 @@
+{% if content_limit and count <= content_limit %}
+  {% for n in names %}
+    {{ n }}<br>
+  {% endfor %}
+{% else %}
+  {# <a class="popover-details" href="" data-elements="{% for n in names|slice:":20" %}{{ n }}{% if not forloop.last %}|{% endif %}{% endfor %}" data-sliced="{% if count > 20 %}1{% endif %}">{{ count }}</a>  #}
+  {{ count }}
+{% endif %}

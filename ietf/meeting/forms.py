@@ -6,6 +6,8 @@ from django import forms
 from django.db.models import Q
 from django.forms import BaseInlineFormSet
 
+import debug                            # pyflakes:ignore
+
 from ietf.doc.models import Document, DocAlias, State, NewRevisionDocEvent
 from ietf.doc.utils import get_document_content
 from ietf.group.models import Group

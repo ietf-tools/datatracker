@@ -90,7 +90,7 @@ def docs_matching_community_list_rule(rule):
     elif rule.rule_type.startswith("state_"):
         return docs.filter(states=rule.state)
     elif rule.rule_type in ["author", "author_rfc"]:
-        return docs.filter(states=rule.state, documentauthor__author__person=rule.person)
+        return docs.filter(states=rule.state, documentauthor__person=rule.person)
     elif rule.rule_type == "ad":
         return docs.filter(states=rule.state, ad=rule.person)
     elif rule.rule_type == "shepherd":
@@ -123,7 +123,7 @@ def community_list_rules_matching_doc(doc):
     rules |= SearchRule.objects.filter(
         rule_type__in=["author", "author_rfc"],
         state__in=states,
-        person__in=list(Person.objects.filter(email__documentauthor__document=doc)),
+        person__in=list(Person.objects.filter(documentauthor__document=doc)),
     )
 
     if doc.ad_id:

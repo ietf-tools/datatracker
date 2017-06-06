@@ -1,24 +1,965 @@
-import datetime, itertools, json, calendar
-
-from django.shortcuts import render
-from django.contrib.auth.decorators import login_required
-from django.urls import reverse as urlreverse
-from django.http import HttpResponseRedirect, HttpResponseForbidden
-
+import os
+import calendar
+import datetime
+import email.utils
+import itertools
+import json
 import dateutil.relativedelta
+from collections import defaultdict
+
+from django.conf import settings
+from django.contrib.auth.decorators import login_required
+from django.core.cache import cache
+from django.db.models import Count, Q
+from django.http import HttpResponseRedirect, HttpResponseForbidden
+from django.shortcuts import get_object_or_404, render
+from django.urls import reverse as urlreverse
+from django.utils.safestring import mark_safe
+
+import debug                            # pyflakes:ignore
 
 from ietf.review.utils import (extract_review_request_data,
                                aggregate_raw_review_request_stats,
                                ReviewRequestData,
                                compute_review_request_stats,
                                sum_raw_review_request_aggregations)
+from ietf.submit.models import Submission
 from ietf.group.models import Role, Group
 from ietf.person.models import Person
-from ietf.name.models import ReviewRequestStateName, ReviewResultName
+from ietf.name.models import ReviewRequestStateName, ReviewResultName, CountryName, DocRelationshipName
+from ietf.person.name import plain_name
+from ietf.doc.models import DocAlias, Document, State, DocEvent
+from ietf.meeting.models import Meeting
+from ietf.stats.models import MeetingRegistration, CountryAlias
+from ietf.stats.utils import get_aliased_affiliations, get_aliased_countries, compute_hirsch_index
 from ietf.ietfauth.utils import has_role
+from ietf.utils.log import log
 
 def stats_index(request):
     return render(request, "stats/index.html")
+
+def generate_query_string(query_dict, overrides):
+    query_part = u""
+
+    if query_dict or overrides:
+        d = query_dict.copy()
+        for k, v in overrides.iteritems():
+            if type(v) in (list, tuple):
+                if not v:
+                    if k in d:
+                        del d[k]
+                else:
+                    d.setlist(k, v)
+            else:
+                if v is None or v == u"":
+                    if k in d:
+                        del d[k]
+                else:
+                    d[k] = v
+
+        if d:
+            query_part = u"?" + d.urlencode()
+
+    return query_part
+
+def get_choice(request, get_parameter, possible_choices, multiple=False):
+    # the statistics are built with links to make navigation faster,
+    # so we don't really have a form in most cases, so just use this
+    # helper instead to select between the choices
+    values = request.GET.getlist(get_parameter)
+    found = [t[0] for t in possible_choices if t[0] in values]
+
+    if multiple:
+        return found
+    else:
+        if found:
+            return found[0]
+        else:
+            return None
+
+def add_url_to_choices(choices, url_builder):
+    return [ (slug, label, url_builder(slug)) for slug, label in choices]
+
+def put_into_bin(value, bin_size):
+    if value is None:
+        return (value, value)
+
+    v = (value // bin_size) * bin_size
+    return (v, "{} - {}".format(v, v + bin_size - 1))
+
+def prune_unknown_bin_with_known(bins):
+    # remove from the unknown bin all authors within the
+    # named/known bins
+    all_known = { n for b, names in bins.iteritems() if b for n in names }
+    bins[""] = [name for name in bins[""] if name not in all_known]
+    if not bins[""]:
+        del bins[""]
+
+def count_bins(bins):
+    return len({ n for b, names in bins.iteritems() if b for n in names })
+
+def add_labeled_top_series_from_bins(chart_data, bins, limit):
+    """Take bins on the form (x, label): [name1, name2, ...], figure out
+    how many there are per label, take the overall top ones and put
+    them into sorted series like [(x1, len(names1)), (x2, len(names2)), ...]."""
+    aggregated_bins = defaultdict(set)
+    xs = set()
+    for (x, label), names in bins.iteritems():
+        xs.add(x)
+        aggregated_bins[label].update(names)
+
+    xs = list(sorted(xs))
+
+    sorted_bins = sorted(aggregated_bins.iteritems(), key=lambda t: len(t[1]), reverse=True)
+    top = [ label for label, names in list(sorted_bins)[:limit]]
+
+    for label in top:
+        series_data = []
+
+        for x in xs:
+            names = bins.get((x, label), set())
+
+            series_data.append((x, len(names)))
+
+        chart_data.append({
+            "data": series_data,
+            "name": label
+        })
+
+def document_stats(request, stats_type=None):
+    def build_document_stats_url(stats_type_override=Ellipsis, get_overrides={}):
+        kwargs = {
+            "stats_type": stats_type if stats_type_override is Ellipsis else stats_type_override,
+        }
+
+        return urlreverse(document_stats, kwargs={ k: v for k, v in kwargs.iteritems() if v is not None }) + generate_query_string(request.GET, get_overrides)
+
+    cache_key = ("stats:document:%s:%s" % (stats_type, request.META.get('QUERY_STRING','')))
+    data = cache.get(cache_key)
+    if not data:
+        names_limit = settings.STATS_NAMES_LIMIT
+        # statistics types
+        possible_document_stats_types = add_url_to_choices([
+            ("authors", "Number of authors"),
+            ("pages", "Pages"),
+            ("words", "Words"),
+            ("format", "Format"),
+            ("formlang", "Formal languages"),
+        ], lambda slug: build_document_stats_url(stats_type_override=slug))
+
+        possible_author_stats_types = add_url_to_choices([
+            ("author/documents", "Number of documents"),
+            ("author/affiliation", "Affiliation"),
+            ("author/country", "Country"),
+            ("author/continent", "Continent"),
+            ("author/citations", "Citations"),
+            ("author/hindex", "h-index"),
+        ], lambda slug: build_document_stats_url(stats_type_override=slug))
+
+        possible_yearly_stats_types = add_url_to_choices([
+            ("yearly/affiliation", "Affiliation"),
+            ("yearly/country", "Country"),
+            ("yearly/continent", "Continent"),
+        ], lambda slug: build_document_stats_url(stats_type_override=slug))
+
+
+        if not stats_type:
+            return HttpResponseRedirect(build_document_stats_url(stats_type_override=possible_document_stats_types[0][0]))
+
+
+        possible_document_types = add_url_to_choices([
+            ("", "All"),
+            ("rfc", "RFCs"),
+            ("draft", "Drafts"),
+        ], lambda slug: build_document_stats_url(get_overrides={ "type": slug }))
+
+        document_type = get_choice(request, "type", possible_document_types) or ""
+
+
+        possible_time_choices = add_url_to_choices([
+            ("", "All time"),
+            ("5y", "Past 5 years"),
+        ], lambda slug: build_document_stats_url(get_overrides={ "time": slug }))
+
+        time_choice = request.GET.get("time") or ""
+
+        from_time = None
+        if "y" in time_choice:
+            try:
+                y = int(time_choice.rstrip("y"))
+                from_time = datetime.datetime.today() - dateutil.relativedelta.relativedelta(years=y)
+            except ValueError:
+                pass
+
+        chart_data = []
+        table_data = []
+        stats_title = ""
+        template_name = stats_type.replace("/", "_")
+        bin_size = 1
+        alias_data = []
+        eu_countries = None
+
+
+        if any(stats_type == t[0] for t in possible_document_stats_types):
+            # filter documents
+            docalias_filters = Q(document__type="draft")
+
+            rfc_state = State.objects.get(type="draft", slug="rfc")
+            if document_type == "rfc":
+                docalias_filters &= Q(document__states=rfc_state)
+            elif document_type == "draft":
+                docalias_filters &= ~Q(document__states=rfc_state)
+
+            if from_time:
+                # this is actually faster than joining in the database,
+                # despite the round-trip back and forth
+                docs_within_time_constraint = list(Document.objects.filter(
+                    type="draft",
+                    docevent__time__gte=from_time,
+                    docevent__type__in=["published_rfc", "new_revision"],
+                ).values_list("pk"))
+
+                docalias_filters &= Q(document__in=docs_within_time_constraint)
+
+            docalias_qs = DocAlias.objects.filter(docalias_filters)
+
+            if document_type == "rfc":
+                doc_label = "RFC"
+            elif document_type == "draft":
+                doc_label = "draft"
+            else:
+                doc_label = "document"
+
+            total_docs = docalias_qs.values_list("document").distinct().count()
+
+            def generate_canonical_names(docalias_qs):
+                for doc_id, ts in itertools.groupby(docalias_qs.order_by("document"), lambda t: t[0]):
+                    chosen = None
+                    for t in ts:
+                        if chosen is None:
+                            chosen = t
+                        else:
+                            if t[1].startswith("rfc"):
+                                chosen = t
+                            elif t[1].startswith("draft") and not chosen[1].startswith("rfc"):
+                                chosen = t
+
+                    yield chosen
+
+            if stats_type == "authors":
+                stats_title = "Number of authors for each {}".format(doc_label)
+
+                bins = defaultdict(set)
+
+                for name, canonical_name, author_count in generate_canonical_names(docalias_qs.values_list("document", "name").annotate(Count("document__documentauthor"))):
+                    bins[author_count].add(canonical_name)
+
+                series_data = []
+                for author_count, names in sorted(bins.iteritems(), key=lambda t: t[0]):
+                    percentage = len(names) * 100.0 / (total_docs or 1)
+                    series_data.append((author_count, percentage))
+                    table_data.append((author_count, percentage, len(names), list(names)[:names_limit]))
+
+                chart_data.append({ "data": series_data })
+
+            elif stats_type == "pages":
+                stats_title = "Number of pages for each {}".format(doc_label)
+
+                bins = defaultdict(set)
+
+                for name, canonical_name, pages in generate_canonical_names(docalias_qs.values_list("document", "name", "document__pages")):
+                    bins[pages].add(canonical_name)
+
+                series_data = []
+                for pages, names in sorted(bins.iteritems(), key=lambda t: t[0]):
+                    percentage = len(names) * 100.0 / (total_docs or 1)
+                    if pages is not None:
+                        series_data.append((pages, len(names)))
+                        table_data.append((pages, percentage, len(names), list(names)[:names_limit]))
+
+                chart_data.append({ "data": series_data })
+
+            elif stats_type == "words":
+                stats_title = "Number of words for each {}".format(doc_label)
+
+                bin_size = 500
+
+                bins = defaultdict(set)
+
+                for name, canonical_name, words in generate_canonical_names(docalias_qs.values_list("document", "name", "document__words")):
+                    bins[put_into_bin(words, bin_size)].add(canonical_name)
+
+                series_data = []
+                for (value, words), names in sorted(bins.iteritems(), key=lambda t: t[0][0]):
+                    percentage = len(names) * 100.0 / (total_docs or 1)
+                    if words is not None:
+                        series_data.append((value, len(names)))
+
+                    table_data.append((words, percentage, len(names), list(names)[:names_limit]))
+
+                chart_data.append({ "data": series_data })
+
+            elif stats_type == "format":
+                stats_title = "Submission formats for each {}".format(doc_label)
+
+                bins = defaultdict(set)
+
+                # on new documents, we should have a Submission row with the file types
+                submission_types = {}
+
+                for doc_name, file_types in Submission.objects.values_list("draft", "file_types").order_by("submission_date", "id"):
+                    submission_types[doc_name] = file_types
+
+                doc_names_with_missing_types = {}
+                for doc_name, canonical_name, rev in generate_canonical_names(docalias_qs.values_list("document", "name", "document__rev")):
+                    types = submission_types.get(doc_name)
+                    if types:
+                        for dot_ext in types.split(","):
+                            bins[dot_ext.lstrip(".").upper()].add(canonical_name)
+
+                    else:
+
+                        if canonical_name.startswith("rfc"):
+                            filename = canonical_name
+                        else:
+                            filename = canonical_name + "-" + rev
+
+                        doc_names_with_missing_types[filename] = canonical_name
+
+                # look up the remaining documents on disk
+                for filename in itertools.chain(os.listdir(settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR), os.listdir(settings.RFC_PATH)):
+                    t = filename.split(".", 1)
+                    if len(t) != 2:
+                        continue
+
+                    basename, ext = t
+                    ext = ext.lower()
+                    if not any(ext==whitelisted_ext for whitelisted_ext in settings.DOCUMENT_FORMAT_WHITELIST):
+                        continue
+
+                    canonical_name = doc_names_with_missing_types.get(basename)
+
+                    if canonical_name:
+                        bins[ext.upper()].add(canonical_name)
+
+                series_data = []
+                for fmt, names in sorted(bins.iteritems(), key=lambda t: t[0]):
+                    percentage = len(names) * 100.0 / (total_docs or 1)
+                    series_data.append((fmt, len(names)))
+
+                    table_data.append((fmt, percentage, len(names), list(names)[:names_limit]))
+
+                chart_data.append({ "data": series_data })
+
+            elif stats_type == "formlang":
+                stats_title = "Formal languages used for each {}".format(doc_label)
+
+                bins = defaultdict(set)
+
+                for name, canonical_name, formal_language_name in generate_canonical_names(docalias_qs.values_list("document", "name", "document__formal_languages__name")):
+                    bins[formal_language_name].add(canonical_name)
+
+                series_data = []
+                for formal_language, names in sorted(bins.iteritems(), key=lambda t: t[0]):
+                    percentage = len(names) * 100.0 / (total_docs or 1)
+                    if formal_language is not None:
+                        series_data.append((formal_language, len(names)))
+                        table_data.append((formal_language, percentage, len(names), list(names)[:names_limit]))
+
+                chart_data.append({ "data": series_data })
+
+        elif any(stats_type == t[0] for t in possible_author_stats_types):
+            person_filters = Q(documentauthor__document__type="draft")
+
+            # filter persons
+            rfc_state = State.objects.get(type="draft", slug="rfc")
+            if document_type == "rfc":
+                person_filters &= Q(documentauthor__document__states=rfc_state)
+            elif document_type == "draft":
+                person_filters &= ~Q(documentauthor__document__states=rfc_state)
+
+            if from_time:
+                # this is actually faster than joining in the database,
+                # despite the round-trip back and forth
+                docs_within_time_constraint = set(Document.objects.filter(
+                    type="draft",
+                    docevent__time__gte=from_time,
+                    docevent__type__in=["published_rfc", "new_revision"],
+                ).values_list("pk"))
+
+                person_filters &= Q(documentauthor__document__in=docs_within_time_constraint)
+
+            person_qs = Person.objects.filter(person_filters)
+
+            if document_type == "rfc":
+                doc_label = "RFC"
+            elif document_type == "draft":
+                doc_label = "draft"
+            else:
+                doc_label = "document"
+
+            if stats_type == "author/documents":
+                stats_title = "Number of {}s per author".format(doc_label)
+
+                bins = defaultdict(set)
+
+                person_qs = Person.objects.filter(person_filters)
+
+                for name, document_count in person_qs.values_list("name").annotate(Count("documentauthor")):
+                    bins[document_count].add(name)
+
+                total_persons = count_bins(bins)
+
+                series_data = []
+                for document_count, names in sorted(bins.iteritems(), key=lambda t: t[0]):
+                    percentage = len(names) * 100.0 / (total_persons or 1)
+                    series_data.append((document_count, percentage))
+                    plain_names = [ plain_name(n) for n in names ]
+                    table_data.append((document_count, percentage, len(plain_names), list(plain_names)[:names_limit]))
+
+                chart_data.append({ "data": series_data })
+
+            elif stats_type == "author/affiliation":
+                stats_title = "Number of {} authors per affiliation".format(doc_label)
+
+                bins = defaultdict(set)
+
+                person_qs = Person.objects.filter(person_filters)
+
+                # Since people don't write the affiliation names in the
+                # same way, and we don't want to go back and edit them
+                # either, we transform them here.
+
+                name_affiliation_set = {
+                    (name, affiliation)
+                    for name, affiliation in person_qs.values_list("name", "documentauthor__affiliation")
+                }
+
+                aliases = get_aliased_affiliations(affiliation for _, affiliation in name_affiliation_set)
+
+                for name, affiliation in name_affiliation_set:
+                    bins[aliases.get(affiliation, affiliation)].add(name)
+
+                prune_unknown_bin_with_known(bins)
+                total_persons = count_bins(bins)
+
+                series_data = []
+                for affiliation, names in sorted(bins.iteritems(), key=lambda t: t[0].lower()):
+                    percentage = len(names) * 100.0 / (total_persons or 1)
+                    if affiliation:
+                        series_data.append((affiliation, len(names)))
+                    plain_names = [ plain_name(n) for n in names ]
+                    table_data.append((affiliation, percentage, len(plain_names), list(plain_names)[:names_limit]))
+
+                series_data.sort(key=lambda t: t[1], reverse=True)
+                series_data = series_data[:30]
+
+                chart_data.append({ "data": series_data })
+
+                for alias, name in sorted(aliases.iteritems(), key=lambda t: t[1]):
+                    alias_data.append((name, alias))
+
+            elif stats_type == "author/country":
+                stats_title = "Number of {} authors per country".format(doc_label)
+
+                bins = defaultdict(set)
+
+                person_qs = Person.objects.filter(person_filters)
+
+                # Since people don't write the country names in the
+                # same way, and we don't want to go back and edit them
+                # either, we transform them here.
+
+                name_country_set = {
+                    (name, country)
+                    for name, country in person_qs.values_list("name", "documentauthor__country")
+                }
+
+                aliases = get_aliased_countries(country for _, country in name_country_set)
+
+                countries = { c.name: c for c in CountryName.objects.all() }
+                eu_name = "EU"
+                eu_countries = { c for c in countries.itervalues() if c.in_eu }
+
+                for name, country in name_country_set:
+                    country_name = aliases.get(country, country)
+                    bins[country_name].add(name)
+
+                    c = countries.get(country_name)
+                    if c and c.in_eu:
+                        bins[eu_name].add(name)
+
+                prune_unknown_bin_with_known(bins)
+                total_persons = count_bins(bins)
+
+                series_data = []
+                for country, names in sorted(bins.iteritems(), key=lambda t: t[0].lower()):
+                    percentage = len(names) * 100.0 / (total_persons or 1)
+                    if country:
+                        series_data.append((country, len(names)))
+                    plain_names = [ plain_name(n) for n in names ]
+                    table_data.append((country, percentage, len(plain_names), list(plain_names)[:names_limit]))
+
+                series_data.sort(key=lambda t: t[1], reverse=True)
+                series_data = series_data[:30]
+
+                chart_data.append({ "data": series_data })
+
+                for alias, country_name in aliases.iteritems():
+                    alias_data.append((country_name, alias, countries.get(country_name)))
+
+                alias_data.sort()
+
+            elif stats_type == "author/continent":
+                stats_title = "Number of {} authors per continent".format(doc_label)
+
+                bins = defaultdict(set)
+
+                person_qs = Person.objects.filter(person_filters)
+
+                name_country_set = {
+                    (name, country)
+                    for name, country in person_qs.values_list("name", "documentauthor__country")
+                }
+
+                aliases = get_aliased_countries(country for _, country in name_country_set)
+
+                country_to_continent = dict(CountryName.objects.values_list("name", "continent__name"))
+
+                for name, country in name_country_set:
+                    country_name = aliases.get(country, country)
+                    continent_name = country_to_continent.get(country_name, "")
+                    bins[continent_name].add(name)
+
+                prune_unknown_bin_with_known(bins)
+                total_persons = count_bins(bins)
+
+                series_data = []
+                for continent, names in sorted(bins.iteritems(), key=lambda t: t[0].lower()):
+                    percentage = len(names) * 100.0 / (total_persons or 1)
+                    if continent:
+                        series_data.append((continent, len(names)))
+                    plain_names = [ plain_name(n) for n in names ]
+                    table_data.append((continent, percentage, len(plain_names), list(plain_names)[:names_limit]))
+
+                series_data.sort(key=lambda t: t[1], reverse=True)
+
+                chart_data.append({ "data": series_data })
+
+            elif stats_type == "author/citations":
+                stats_title = "Number of citations of {}s written by author".format(doc_label)
+
+                bins = defaultdict(set)
+
+                cite_relationships = list(DocRelationshipName.objects.filter(slug__in=['refnorm', 'refinfo', 'refunk', 'refold']))
+                person_filters &= Q(documentauthor__document__docalias__relateddocument__relationship__in=cite_relationships)
+
+                person_qs = Person.objects.filter(person_filters)
+
+                for name, citations in person_qs.values_list("name").annotate(Count("documentauthor__document__docalias__relateddocument")):
+                    bins[citations].add(name)
+
+                total_persons = count_bins(bins)
+
+                series_data = []
+                for citations, names in sorted(bins.iteritems(), key=lambda t: t[0], reverse=True):
+                    percentage = len(names) * 100.0 / (total_persons or 1)
+                    series_data.append((citations, percentage))
+                    plain_names = [ plain_name(n) for n in names ]
+                    table_data.append((citations, percentage, len(plain_names), list(plain_names)[:names_limit]))
+
+                chart_data.append({ "data": sorted(series_data, key=lambda t: t[0]) })
+
+            elif stats_type == "author/hindex":
+                stats_title = "h-index for {}s written by author".format(doc_label)
+
+                bins = defaultdict(set)
+
+                cite_relationships = list(DocRelationshipName.objects.filter(slug__in=['refnorm', 'refinfo', 'refunk', 'refold']))
+                person_filters &= Q(documentauthor__document__docalias__relateddocument__relationship__in=cite_relationships)
+
+                person_qs = Person.objects.filter(person_filters)
+
+                values = person_qs.values_list("name", "documentauthor__document").annotate(Count("documentauthor__document__docalias__relateddocument"))
+                for name, ts in itertools.groupby(values.order_by("name"), key=lambda t: t[0]):
+                    h_index = compute_hirsch_index([citations for _, document, citations in ts])
+                    bins[h_index].add(name)
+
+                total_persons = count_bins(bins)
+
+                series_data = []
+                for citations, names in sorted(bins.iteritems(), key=lambda t: t[0], reverse=True):
+                    percentage = len(names) * 100.0 / (total_persons or 1)
+                    series_data.append((citations, percentage))
+                    plain_names = [ plain_name(n) for n in names ]
+                    table_data.append((citations, percentage, len(plain_names), list(plain_names)[:names_limit]))
+
+                chart_data.append({ "data": sorted(series_data, key=lambda t: t[0]) })
+
+        elif any(stats_type == t[0] for t in possible_yearly_stats_types):
+
+            person_filters = Q(documentauthor__document__type="draft")
+
+            # filter persons
+            rfc_state = State.objects.get(type="draft", slug="rfc")
+            if document_type == "rfc":
+                person_filters &= Q(documentauthor__document__states=rfc_state)
+            elif document_type == "draft":
+                person_filters &= ~Q(documentauthor__document__states=rfc_state)
+
+            doc_years = defaultdict(set)
+
+            docevent_qs = DocEvent.objects.filter(
+                doc__type="draft",
+                type__in=["published_rfc", "new_revision"],
+            ).values_list("doc", "time").order_by("doc")
+
+            for doc, time in docevent_qs.iterator():
+                doc_years[doc].add(time.year)
+
+            person_qs = Person.objects.filter(person_filters)
+
+            if document_type == "rfc":
+                doc_label = "RFC"
+            elif document_type == "draft":
+                doc_label = "draft"
+            else:
+                doc_label = "document"
+
+            template_name = "yearly"
+
+            years_from = from_time.year if from_time else 1
+            years_to = datetime.date.today().year - 1
+
+
+            if stats_type == "yearly/affiliation":
+                stats_title = "Number of {} authors per affiliation over the years".format(doc_label)
+
+                person_qs = Person.objects.filter(person_filters)
+
+                name_affiliation_doc_set = {
+                    (name, affiliation, doc)
+                    for name, affiliation, doc in person_qs.values_list("name", "documentauthor__affiliation", "documentauthor__document")
+                }
+
+                aliases = get_aliased_affiliations(affiliation for _, affiliation, _ in name_affiliation_doc_set)
+
+                bins = defaultdict(set)
+                for name, affiliation, doc in name_affiliation_doc_set:
+                    a = aliases.get(affiliation, affiliation)
+                    if a:
+                        for year in doc_years.get(doc):
+                            if years_from <= year <= years_to:
+                                bins[(year, a)].add(name)
+
+                add_labeled_top_series_from_bins(chart_data, bins, limit=8)
+
+            elif stats_type == "yearly/country":
+                stats_title = "Number of {} authors per country over the years".format(doc_label)
+
+                person_qs = Person.objects.filter(person_filters)
+
+                name_country_doc_set = {
+                    (name, country, doc)
+                    for name, country, doc in person_qs.values_list("name", "documentauthor__country", "documentauthor__document")
+                }
+
+                aliases = get_aliased_countries(country for _, country, _ in name_country_doc_set)
+
+                countries = { c.name: c for c in CountryName.objects.all() }
+                eu_name = "EU"
+                eu_countries = { c for c in countries.itervalues() if c.in_eu }
+
+                bins = defaultdict(set)
+
+                for name, country, doc in name_country_doc_set:
+                    country_name = aliases.get(country, country)
+                    c = countries.get(country_name)
+
+                    if country_name:
+                        for year in doc_years.get(doc):
+                            if years_from <= year <= years_to:
+                                bins[(year, country_name)].add(name)
+
+                                if c and c.in_eu:
+                                    bins[(year, eu_name)].add(name)
+
+                add_labeled_top_series_from_bins(chart_data, bins, limit=8)
+
+
+            elif stats_type == "yearly/continent":
+                stats_title = "Number of {} authors per continent".format(doc_label)
+
+                person_qs = Person.objects.filter(person_filters)
+
+                name_country_doc_set = {
+                    (name, country, doc)
+                    for name, country, doc in person_qs.values_list("name", "documentauthor__country", "documentauthor__document")
+                }
+
+                aliases = get_aliased_countries(country for _, country, _ in name_country_doc_set)
+
+                country_to_continent = dict(CountryName.objects.values_list("name", "continent__name"))
+
+                bins = defaultdict(set)
+
+                for name, country, doc in name_country_doc_set:
+                    country_name = aliases.get(country, country)
+                    continent_name = country_to_continent.get(country_name, "")
+
+                    if continent_name:
+                        for year in doc_years.get(doc):
+                            if years_from <= year <= years_to:
+                                bins[(year, continent_name)].add(name)
+
+                add_labeled_top_series_from_bins(chart_data, bins, limit=8)
+
+        data = {
+            "chart_data": mark_safe(json.dumps(chart_data)),
+            "table_data": table_data,
+            "stats_title": stats_title,
+            "possible_document_stats_types": possible_document_stats_types,
+            "possible_author_stats_types": possible_author_stats_types,
+            "possible_yearly_stats_types": possible_yearly_stats_types,
+            "stats_type": stats_type,
+            "possible_document_types": possible_document_types,
+            "document_type": document_type,
+            "possible_time_choices": possible_time_choices,
+            "time_choice": time_choice,
+            "doc_label": doc_label,
+            "bin_size": bin_size,
+            "show_aliases_url": build_document_stats_url(get_overrides={ "showaliases": "1" }),
+            "hide_aliases_url": build_document_stats_url(get_overrides={ "showaliases": None }),
+            "alias_data": alias_data,
+            "eu_countries": sorted(eu_countries or [], key=lambda c: c.name),
+            "content_template": "stats/document_stats_{}.html".format(template_name),
+        }
+        log("Cache miss for '%s'.  Data size: %sk" % (cache_key, len(str(data))/1000))
+        cache.set(cache_key, data, 24*60*60)
+    return render(request, "stats/document_stats.html", data)
+
+def known_countries_list(request, stats_type=None, acronym=None):
+    countries = CountryName.objects.prefetch_related("countryalias_set")
+    for c in countries:
+        # the sorting is a bit of a hack - it puts the ISO code first
+        # since it was added in a migration
+        c.aliases = sorted(c.countryalias_set.all(), key=lambda a: a.pk)
+
+    return render(request, "stats/known_countries_list.html", {
+        "countries": countries,
+        "ticket_email_address": settings.SECRETARIAT_TICKET_EMAIL,
+    })
+
+def meeting_stats(request, num=None, stats_type=None):
+    meeting = None
+    if num is not None:
+        meeting = get_object_or_404(Meeting, number=num, type="ietf")
+
+    def build_meeting_stats_url(number=None, stats_type_override=Ellipsis, get_overrides={}):
+        kwargs = {
+            "stats_type": stats_type if stats_type_override is Ellipsis else stats_type_override,
+        }
+
+        if number is not None:
+            kwargs["num"] = number
+
+        return urlreverse(meeting_stats, kwargs={ k: v for k, v in kwargs.iteritems() if v is not None }) + generate_query_string(request.GET, get_overrides)
+
+    cache_key = "stats:meeting:%s:%s:%s" % (num, stats_type, request.META.get('QUERY_STRING',''))
+    data = cache.get(cache_key)
+    if not data:
+        names_limit = settings.STATS_NAMES_LIMIT
+        # statistics types
+        if meeting:
+            possible_stats_types = add_url_to_choices([
+                ("country", "Country"),
+                ("continent", "Continent"),
+            ], lambda slug: build_meeting_stats_url(number=meeting.number, stats_type_override=slug))
+        else:
+            possible_stats_types = add_url_to_choices([
+                ("overview", "Overview"),
+                ("country", "Country"),
+                ("continent", "Continent"),
+            ], lambda slug: build_meeting_stats_url(number=None, stats_type_override=slug))
+
+        if not stats_type:
+            return HttpResponseRedirect(build_meeting_stats_url(number=num, stats_type_override=possible_stats_types[0][0]))
+
+        chart_data = []
+        piechart_data = []
+        table_data = []
+        stats_title = ""
+        template_name = stats_type
+        bin_size = 1
+        eu_countries = None
+
+        def get_country_mapping(attendees):
+            return {
+                alias.alias: alias.country
+                for alias in CountryAlias.objects.filter(alias__in=set(r.country_code for r in attendees)).select_related("country", "country__continent")
+                if alias.alias.isupper()
+            }
+
+        def reg_name(r):
+            return email.utils.formataddr(((r.first_name + u" " + r.last_name).strip(), r.email))
+
+        if meeting and any(stats_type == t[0] for t in possible_stats_types):
+            attendees = MeetingRegistration.objects.filter(meeting=meeting)
+
+            if stats_type == "country":
+                stats_title = "Number of attendees for {} {} per country".format(meeting.type.name, meeting.number)
+
+                bins = defaultdict(set)
+
+                country_mapping = get_country_mapping(attendees)
+
+                eu_name = "EU"
+                eu_countries = set(CountryName.objects.filter(in_eu=True))
+
+                for r in attendees:
+                    name = reg_name(r)
+                    c = country_mapping.get(r.country_code)
+                    bins[c.name if c else ""].add(name)
+
+                    if c and c.in_eu:
+                        bins[eu_name].add(name)
+
+                prune_unknown_bin_with_known(bins)
+                total_attendees = count_bins(bins)
+
+                series_data = []
+                for country, names in sorted(bins.iteritems(), key=lambda t: t[0].lower()):
+                    percentage = len(names) * 100.0 / (total_attendees or 1)
+                    if country:
+                        series_data.append((country, len(names)))
+                    table_data.append((country, percentage, len(names), list(names)[:names_limit]))
+
+                    if country and country != eu_name:
+                        piechart_data.append({ "name": country, "y": percentage })
+
+                series_data.sort(key=lambda t: t[1], reverse=True)
+                series_data = series_data[:20]
+
+                piechart_data.sort(key=lambda d: d["y"], reverse=True)
+                pie_cut_off = 8
+                piechart_data = piechart_data[:pie_cut_off] + [{ "name": "Other", "y": sum(d["y"] for d in piechart_data[pie_cut_off:])}]
+
+                chart_data.append({ "data": series_data })
+
+            elif stats_type == "continent":
+                stats_title = "Number of attendees for {} {} per continent".format(meeting.type.name, meeting.number)
+
+                bins = defaultdict(set)
+
+                country_mapping = get_country_mapping(attendees)
+
+                for r in attendees:
+                    name = reg_name(r)
+                    c = country_mapping.get(r.country_code)
+                    bins[c.continent.name if c else ""].add(name)
+
+                prune_unknown_bin_with_known(bins)
+                total_attendees = count_bins(bins)
+
+                series_data = []
+                for continent, names in sorted(bins.iteritems(), key=lambda t: t[0].lower()):
+                    percentage = len(names) * 100.0 / (total_attendees or 1)
+                    if continent:
+                        series_data.append((continent, len(names)))
+                    table_data.append((continent, percentage, len(names), list(names)[:names_limit]))
+
+                series_data.sort(key=lambda t: t[1], reverse=True)
+
+                chart_data.append({ "data": series_data })
+
+
+        elif not meeting and any(stats_type == t[0] for t in possible_stats_types):
+            template_name = "overview"
+
+            attendees = MeetingRegistration.objects.filter(meeting__type="ietf").select_related('meeting')
+
+            if stats_type == "overview":
+                stats_title = "Number of attendees per meeting"
+
+                bins = defaultdict(set)
+
+                for r in attendees:
+                    meeting_number = int(r.meeting.number)
+                    name = reg_name(r)
+
+                    bins[meeting_number].add(name)
+
+                meeting_cities = dict(Meeting.objects.filter(number__in=bins.iterkeys()).values_list("number", "city"))
+
+                series_data = []
+                for meeting_number, names in sorted(bins.iteritems()):
+                    series_data.append((meeting_number, len(names)))
+                    url = build_meeting_stats_url(number=meeting_number, stats_type_override="country")
+                    label = "IETF {} - {}".format(meeting_number, meeting_cities.get(str(meeting_number), ""))
+                    table_data.append((meeting_number, label, url, len(names), list(names)[:names_limit]))
+
+                series_data.sort(key=lambda t: t[0])
+                table_data.sort(key=lambda t: t[0], reverse=True)
+
+                chart_data.append({ "name": "Attendees", "data": series_data })
+
+
+            elif stats_type == "country":
+                stats_title = "Number of attendees per country across meetings"
+
+                country_mapping = get_country_mapping(attendees)
+
+                eu_name = "EU"
+                eu_countries = set(CountryName.objects.filter(in_eu=True))
+
+                bins = defaultdict(set)
+
+                for r in attendees:
+                    meeting_number = int(r.meeting.number)
+                    name = reg_name(r)
+                    c = country_mapping.get(r.country_code)
+
+                    if c:
+                        bins[(meeting_number, c.name)].add(name)
+                        if c.in_eu:
+                            bins[(meeting_number, eu_name)].add(name)
+
+                add_labeled_top_series_from_bins(chart_data, bins, limit=8)
+
+
+            elif stats_type == "continent":
+                stats_title = "Number of attendees per continent across meetings"
+
+                country_mapping = get_country_mapping(attendees)
+
+                bins = defaultdict(set)
+
+                for r in attendees:
+                    meeting_number = int(r.meeting.number)
+                    name = reg_name(r)
+                    c = country_mapping.get(r.country_code)
+
+                    if c:
+                        bins[(meeting_number, c.continent.name)].add(name)
+
+                add_labeled_top_series_from_bins(chart_data, bins, limit=8)
+        data = {
+            "chart_data": mark_safe(json.dumps(chart_data)),
+            "piechart_data": mark_safe(json.dumps(piechart_data)),
+            "table_data": table_data,
+            "stats_title": stats_title,
+            "possible_stats_types": possible_stats_types,
+            "stats_type": stats_type,
+            "bin_size": bin_size,
+            "meeting": meeting,
+            "eu_countries": sorted(eu_countries or [], key=lambda c: c.name),
+            "content_template": "stats/meeting_stats_{}.html".format(template_name),
+        }
+        log("Cache miss for '%s'.  Data size: %sk" % (cache_key, len(str(data))/1000))
+        cache.set(cache_key, data, 24*60*60)
+    #
+    return render(request, "stats/meeting_stats.html", data)
+
 
 @login_required
 def review_stats(request, stats_type=None, acronym=None):
@@ -39,41 +980,7 @@ def review_stats(request, stats_type=None, acronym=None):
         if acr:
             kwargs["acronym"] = acr
 
-        base_url = urlreverse(review_stats, kwargs=kwargs)
-        query_part = u""
-
-        if request.GET or get_overrides:
-            d = request.GET.copy()
-            for k, v in get_overrides.iteritems():
-                if type(v) in (list, tuple):
-                    if not v:
-                        if k in d:
-                            del d[k]
-                    else:
-                        d.setlist(k, v)
-                else:
-                    if v is None or v == u"":
-                        if k in d:
-                            del d[k]
-                    else:
-                        d[k] = v
-
-            if d:
-                query_part = u"?" + d.urlencode()
-            
-        return base_url + query_part
-
-    def get_choice(get_parameter, possible_choices, multiple=False):
-        values = request.GET.getlist(get_parameter)
-        found = [t[0] for t in possible_choices if t[0] in values]
-
-        if multiple:
-            return found
-        else:
-            if found:
-                return found[0]
-            else:
-                return None
+        return urlreverse(review_stats, kwargs=kwargs) + generate_query_string(request.GET, get_overrides)
 
     # which overview - team or reviewer
     if acronym:
@@ -91,21 +998,19 @@ def review_stats(request, stats_type=None, acronym=None):
     if level == "team":
         possible_stats_types.append(("time", "Changes over time"))
 
-    possible_stats_types = [ (slug, label, build_review_stats_url(stats_type_override=slug))
-                             for slug, label in possible_stats_types ]
+    possible_stats_types = add_url_to_choices(possible_stats_types,
+                                              lambda slug: build_review_stats_url(stats_type_override=slug))
 
     if not stats_type:
         return HttpResponseRedirect(build_review_stats_url(stats_type_override=possible_stats_types[0][0]))
 
     # what to count
-    possible_count_choices = [
+    possible_count_choices = add_url_to_choices([
         ("", "Review requests"),
         ("pages", "Reviewed pages"),
-    ]
+    ], lambda slug: build_review_stats_url(get_overrides={ "count": slug }))
 
-    possible_count_choices = [ (slug, label, build_review_stats_url(get_overrides={ "count": slug })) for slug, label in possible_count_choices ]
-
-    count = get_choice("count", possible_count_choices) or ""
+    count = get_choice(request, "count", possible_count_choices) or ""
 
     # time range
     def parse_date(s):
@@ -190,7 +1095,7 @@ def review_stats(request, stats_type=None, acronym=None):
 
     if stats_type == "time":
         possible_teams = [(t.acronym, t.acronym) for t in teams]
-        selected_teams = get_choice("team", possible_teams, multiple=True)
+        selected_teams = get_choice(request, "team", possible_teams, multiple=True)
 
         def add_if_exists_else_subtract(element, l):
             if element in l:
@@ -198,9 +1103,12 @@ def review_stats(request, stats_type=None, acronym=None):
             else:
                 return l + [element]
 
-        possible_teams = [(slug, label, build_review_stats_url(get_overrides={
-            "team": add_if_exists_else_subtract(slug, selected_teams)
-        })) for slug, label in possible_teams]
+        possible_teams = add_url_to_choices(
+            possible_teams,
+            lambda slug: build_review_stats_url(get_overrides={
+                "team": add_if_exists_else_subtract(slug, selected_teams)
+            })
+        )
         query_teams = [t for t in query_teams if t.acronym in selected_teams]
 
         extracted_data = extract_review_request_data(query_teams, query_reviewers, from_time, to_time)
@@ -232,33 +1140,28 @@ def review_stats(request, stats_type=None, acronym=None):
 
         # choice
 
-        possible_completion_types = [
+        possible_completion_types = add_url_to_choices([
             ("completed_in_time", "Completed in time"),
             ("completed_late", "Completed late"),
             ("not_completed", "Not completed"),
             ("average_assignment_to_closure_days", "Avg. compl. days"),
-        ]
+        ], lambda slug: build_review_stats_url(get_overrides={ "completion": slug, "result": None, "state": None }))
 
-        possible_completion_types = [
-            (slug, label, build_review_stats_url(get_overrides={ "completion": slug, "result": None, "state": None }))
-            for slug, label in possible_completion_types
-        ]
+        selected_completion_type = get_choice(request, "completion", possible_completion_types)
 
-        selected_completion_type = get_choice("completion", possible_completion_types)
+        possible_results = add_url_to_choices(
+            [(r.slug, r.name) for r in results],
+            lambda slug: build_review_stats_url(get_overrides={ "completion": None, "result": slug, "state": None })
+        )
 
-        possible_results = [
-            (r.slug, r.name, build_review_stats_url(get_overrides={ "completion": None, "result": r.slug, "state": None }))
-            for r in results
-        ]
-
-        selected_result = get_choice("result", possible_results)
+        selected_result = get_choice(request, "result", possible_results)
         
-        possible_states = [
-            (s.slug, s.name, build_review_stats_url(get_overrides={ "completion": None, "result": None, "state": s.slug }))
-            for s in states
-        ]
+        possible_states = add_url_to_choices(
+            [(s.slug, s.name) for s in states],
+            lambda slug: build_review_stats_url(get_overrides={ "completion": None, "result": None, "state": slug })
+        )
 
-        selected_state = get_choice("state", possible_states)
+        selected_state = get_choice(request, "state", possible_states)
 
         if not selected_completion_type and not selected_result and not selected_state:
             selected_completion_type = "completed_in_time"

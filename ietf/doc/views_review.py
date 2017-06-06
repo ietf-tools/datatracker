@@ -567,7 +567,7 @@ def complete_review(request, name, request_id):
             else:
                 author_email = request.user.person.email()
                 frm =  request.user.person.formatted_email()
-            author, created = DocumentAuthor.objects.get_or_create(document=review, author=author_email)
+            author, created = DocumentAuthor.objects.get_or_create(document=review, email=author_email, person=request.user.person)
 
             if need_to_email_review:
                 # email the review
