@@ -6,7 +6,6 @@ from django.template import Template, Context
 from email.utils import parseaddr
 from ietf.utils.mail import formataddr
 
-
 import debug                            # pyflakes:ignore
 
 from ietf.group.models import Role
@@ -178,10 +177,14 @@ class Recipient(models.Model):
         return addrs
 
     def gather_submission_authors(self, **kwargs):
+        """
+        Returns a list of name and email, e.g.: [ 'Ano Nymous <ano@nymous.org>' ]
+        Is intended for display use, not in email context.
+        """
         addrs = []
         if 'submission' in kwargs:
             submission = kwargs['submission']
-            addrs.extend([ email.utils.formataddr((author["name"], author["email"])) for author in submission.authors if author.get("email")])
+            addrs.extend(["%s <%s>" % (author["name"], author["email"]) for author in submission.authors if author.get("email")])
         return addrs
 
     def gather_submission_group_chairs(self, **kwargs):

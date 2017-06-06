@@ -487,9 +487,9 @@ TEST_CODE_COVERAGE_EXCLUDE = [
     "ietf/settings*",
     "ietf/utils/templatetags/debug_filters.py",
     "ietf/utils/test_runner.py",
-    "name/generate_fixtures.py",
-    "review/import_from_review_tool.py",
-    "stats/backfill_data.py",
+    "ietf/name/generate_fixtures.py",
+    "ietf/review/import_from_review_tool.py",
+    "ietf/stats/backfill_data.py",
 ]
 
 # These are filename globs.  They are used by test_parse_templates() and

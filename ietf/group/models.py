@@ -14,6 +14,7 @@ from ietf.group.colors import fg_group_colors, bg_group_colors
 from ietf.name.models import GroupStateName, GroupTypeName, DocTagName, GroupMilestoneStateName, RoleName
 from ietf.person.models import Email, Person
 from ietf.utils.mail import formataddr
+from ietf.utils.log import unreachable
 
 
 class GroupInfo(models.Model):

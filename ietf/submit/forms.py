@@ -5,6 +5,7 @@ import email
 import pytz
 import xml2rfc
 import tempfile
+from email.utils import formataddr
 from unidecode import unidecode
 
 from django import forms
@@ -351,7 +352,7 @@ class SubmitterForm(NameEmailForm):
         line = self.cleaned_data["name"]
         email = self.cleaned_data.get("email")
         if email:
-            line += u" <%s>" % email
+            line = formataddr((line, email))
         return line
 
 class ReplacesForm(forms.Form):
