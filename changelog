@@ -1,3 +1,32 @@
+ietfdb (6.54.0) ietf; urgency=medium
+
+  **Author and Meeting Statistics**
+
+  This release provides the author and meeting statistics described by
+  RFC7760: "Statement of Work for Extensions to the IETF Datatracker for
+  Author Statistics".
+
+  "The enhancements to the IETF Datatracker shall provide statistics and
+  graphs about documents, document authors, author affiliation, author
+  country, and author continent."
+
+  "The statistics should also include trends relating to IETF meeting
+  attendees, which the current tools do not track."
+
+  The statistics are available from the top menu under Other >> Statistics,
+  or by following links from https://tracker.tools.ietf.org/stats/ .
+
+  This work has been done under contract by olau@iola.dk, with caching to
+  speed up page load by henrik@levkowetz.com.
+
+  Full commits log are available at:
+  https://trac.tools.ietf.org/tools/ietfdb/log/branch/iola/author-stats-r12628
+  https://trac.tools.ietf.org/tools/ietfdb/log/branch/iola/author-stats-r13145
+  https://trac.tools.ietf.org/tools/ietfdb/log/personal/henrik/6.52.1-authorstats
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  06 Jun 2017 20:50:15 +0000
+
+
 ietfdb (6.53.1) ietf; urgency=medium
 
   This is a small patch release to clear the board for the upcoming
