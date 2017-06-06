@@ -1,3 +1,20 @@
+ietfdb (6.53.1) ietf; urgency=medium
+
+  This is a small patch release to clear the board for the upcoming
+  authorstats merge.
+
+  * Fixed a bug in wordwrap() where an URL (or any word) longer than width 
+    could prevent line breaking in following text.
+
+  * Merged in [13532] from rjsparks@nostrum.com:
+    Add an expertise field to reviewer settings. Fixes #2308. , 
+
+  * Added dates to unreachable() calls, to make it easier to decide when to 
+    remove marked code.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  06 Jun 2017 17:40:15 +0000
+
+
 ietfdb (6.53.0) ietf; urgency=medium
 
   **Nomcom features, YouTube import, Better text wrapping in emails**
