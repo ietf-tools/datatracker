@@ -88,20 +88,20 @@ def wordwrap(text, width=80):
     return "\n".join(filled)
 
 
-def alternative_wrap(text, width=80):
-    # From http://blog.belgoat.com/python-textwrap-wrap-your-text-to-terminal-size/
-    textLines = text.split('\n')
-    wrapped_lines = []
-    # Preserve any indent (after the general indent)
-    for line in textLines:
-        preservedIndent = ''
-        existIndent = re.search(r'^(\W+)', line)
-        # Change the existing wrap indent to the original one
-        if (existIndent):
-            preservedIndent = existIndent.groups()[0]
-        wrapped_lines.append(textwrap.fill(line, width=width, subsequent_indent=preservedIndent))
-    text = '\n'.join(wrapped_lines)
-    return text
+# def alternative_wrap(text, width=80):
+#     # From http://blog.belgoat.com/python-textwrap-wrap-your-text-to-terminal-size/
+#     textLines = text.split('\n')
+#     wrapped_lines = []
+#     # Preserve any indent (after the general indent)
+#     for line in textLines:
+#         preservedIndent = ''
+#         existIndent = re.search(r'^(\W+)', line)
+#         # Change the existing wrap indent to the original one
+#         if (existIndent):
+#             preservedIndent = existIndent.groups()[0]
+#         wrapped_lines.append(textwrap.fill(line, width=width, subsequent_indent=preservedIndent))
+#     text = '\n'.join(wrapped_lines)
+#     return text
 
 def wrap_text_if_unwrapped(text, width=80, max_tolerated_line_length=100):
     text = re.sub(" *\r\n", "\n", text) # get rid of DOS line endings 
