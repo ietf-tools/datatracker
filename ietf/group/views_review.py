@@ -446,7 +446,7 @@ def email_open_review_assignments(request, acronym, group_type=None):
 class ReviewerSettingsForm(forms.ModelForm):
     class Meta:
         model = ReviewerSettings
-        fields = ['min_interval', 'filter_re', 'skip_next', 'remind_days_before_deadline']
+        fields = ['min_interval', 'filter_re', 'skip_next', 'remind_days_before_deadline','expertise']
 
     def __init__(self, *args, **kwargs):
        exclude_fields = kwargs.pop('exclude_fields', [])

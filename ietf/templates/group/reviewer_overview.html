@@ -39,7 +39,7 @@
               {% elif person.busy %}class="busy"
               {% elif person.settings.skip_next %}class="skip-next"
               {% endif %}>
-            <td>{% if person.settings_url %}<a href="{{ person.settings_url }}">{% endif %}{{ person }}{% if person.settings_url %}</a>{% endif %}</td>
+            <td>{% if person.settings_url %}<a href="{{ person.settings_url }}" title="{{person.settings.expertise}}">{% endif %}{{ person }}{% if person.settings_url %}</a>{% endif %}</td>
             <td>
               <table class="simple-table">
                 {% for req_pk, doc_name, reviewed_rev, assigned_time, deadline, state, assignment_to_closure_days in person.latest_reqs %}

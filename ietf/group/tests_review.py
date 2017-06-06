@@ -374,7 +374,8 @@ class ReviewTests(TestCase):
             "action": "change_settings",
             "min_interval": "7",
             "filter_re": "test-[regexp]",
-            "remind_days_before_deadline": "6"
+            "remind_days_before_deadline": "6",
+            "expertise": "Some expertise",
         })
         self.assertEqual(r.status_code, 302)
         settings = ReviewerSettings.objects.get(person=reviewer, team=review_req.team)
@@ -382,6 +383,7 @@ class ReviewTests(TestCase):
         self.assertEqual(settings.filter_re, "test-[regexp]")
         self.assertEqual(settings.skip_next, 0)
         self.assertEqual(settings.remind_days_before_deadline, 6)
+        self.assertEqual(settings.expertise, "Some expertise")
         self.assertEqual(len(outbox), 1)
         self.assertTrue("reviewer availability" in outbox[0]["subject"].lower())
         msg_content = outbox[0].get_payload(decode=True).decode("utf-8").lower()
