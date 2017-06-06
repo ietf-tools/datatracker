@@ -65,17 +65,20 @@ def wordwrap(text, width=80):
     wrapped = False
     prev_indent = None
     for line in lines:
-        line = line.expandtabs()
+        line = line.expandtabs().rstrip()
         indent = " " * (len(line) - len(line.lstrip()))
+        ind = len(indent)
         if wrapped and line.strip() != "" and indent == prev_indent:
             line = filled[-1] + " " + line.lstrip()
             filled = filled[:-1]
         else:
             wrapped = False
-        while (len(line) > width) and (" " in line[:width]):
+        while (len(line) > width) and (" " in line[ind:]):
             linelength = len(line)
             wrapped = True
-            breakpoint = line.rfind(" ",0,width)
+            breakpoint = line.rfind(" ",ind,width)
+            if breakpoint == -1:
+                breakpoint = line.find(" ", ind)
             filled += [ line[:breakpoint] ]
             line = indent + line[breakpoint+1:]
             if len(line) >= linelength:
@@ -85,20 +88,20 @@ def wordwrap(text, width=80):
     return "\n".join(filled)
 
 
-# def alternative_wrap(text, width=80):
-#     # From http://blog.belgoat.com/python-textwrap-wrap-your-text-to-terminal-size/
-#     textLines = text.split('\n')
-#     wrapped_lines = []
-#     # Preserve any indent (after the general indent)
-#     for line in textLines:
-#         preservedIndent = ''
-#         existIndent = re.search(r'^(\W+)', line)
-#         # Change the existing wrap indent to the original one
-#         if (existIndent):
-#             preservedIndent = existIndent.groups()[0]
-#         wrapped_lines.append(textwrap.fill(line, width=width, subsequent_indent=preservedIndent))
-#     text = '\n'.join(wrapped_lines)
-#     return text
+def alternative_wrap(text, width=80):
+    # From http://blog.belgoat.com/python-textwrap-wrap-your-text-to-terminal-size/
+    textLines = text.split('\n')
+    wrapped_lines = []
+    # Preserve any indent (after the general indent)
+    for line in textLines:
+        preservedIndent = ''
+        existIndent = re.search(r'^(\W+)', line)
+        # Change the existing wrap indent to the original one
+        if (existIndent):
+            preservedIndent = existIndent.groups()[0]
+        wrapped_lines.append(textwrap.fill(line, width=width, subsequent_indent=preservedIndent))
+    text = '\n'.join(wrapped_lines)
+    return text
 
 def wrap_text_if_unwrapped(text, width=80, max_tolerated_line_length=100):
     text = re.sub(" *\r\n", "\n", text) # get rid of DOS line endings 
