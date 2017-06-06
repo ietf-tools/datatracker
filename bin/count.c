@@ -13,10 +13,10 @@ int main( void )
     c = fgetc(stdin);
     while(c != EOF)
     {
-	if (c=='.' || c=='E' || c=='F') count++;
+	if (c=='.' || c=='E' || c=='F' || c=='s') count++; else count=0;
 	fputc(c, stdout);
 	fflush(stdout);
-	if ( count % 76 == 0) {
+	if (count && count % 76 == 0) {
 	    fprintf(stderr, "%4d", count);
 	    fflush(stderr);
 	}
