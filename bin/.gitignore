@@ -2,6 +2,7 @@
 /activate.csh
 /activate.fish
 /activate_this.py
+/count
 /coverage
 /coverage-2.7
 /coverage2
@@ -20,6 +21,7 @@
 /iptest*
 /ipy*
 /json2xml
+/Makefile
 /painter.py
 /pilconvert.py
 /pildriver.py
