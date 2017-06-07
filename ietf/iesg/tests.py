@@ -409,6 +409,16 @@ class IESGAgendaTests(TestCase):
         self.assertTrue("Included" in [l for l in lines if d1_filename in l][0])
         self.assertTrue("Not found" in [l for l in lines if d2_filename in l][0])
 
+    def test_admin_change(self):
+        draft = Document.objects.get(name="draft-ietf-mars-test")
+        today = datetime.date.today()
+        telechat_date = TelechatDate.objects.get(date=draft.telechat_date())
+        url = urlreverse('admin:iesg_telechatdate_change', args=(telechat_date.id,))
+        self.client.login(username="secretary", password="secretary+password")
+        r = self.client.post(url, {'date':today.strftime('%Y-%m-%d')})
+        self.assertRedirects(r, urlreverse('admin:iesg_telechatdate_changelist'))
+        self.assertEqual(draft.telechat_date(),today)
+
 class RescheduleOnAgendaTests(TestCase):
     def test_reschedule(self):
         draft = make_test_data()
@@ -457,4 +467,3 @@ class RescheduleOnAgendaTests(TestCase):
         self.assertEqual(draft.latest_event(TelechatDocEvent, "scheduled_for_telechat").telechat_date, d)
         self.assertTrue(not draft.latest_event(TelechatDocEvent, "scheduled_for_telechat").returning_item)
         self.assertEqual(draft.docevent_set.count(), events_before + 1)
-
