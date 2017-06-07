@@ -7,8 +7,6 @@ Updated: $Date$
 Planned work in rough order
 ===========================
 
-* Merge in the authorstats work
-
 * Use the htmlization lib to improve the rendering of draft text in the
   datatracker's /doc/draft-foo-bar/ pages.
 

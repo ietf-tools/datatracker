@@ -3,7 +3,6 @@ import base64
 import datetime
 import os
 import xml2rfc
-import optparse
 
 from django.conf import settings
 from django.contrib import messages
@@ -63,7 +62,7 @@ def upload_submission(request):
                     if not form.cleaned_data['txt']:
                         file_name['txt'] = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.txt' % (form.filename, form.revision))
                         try:
-                            pagedwriter = xml2rfc.PaginatedTextRfcWriter(form.xmltree, options=optparse.Values(defaults=dict(quiet=True, verbose=False, utf8=False)))
+                            pagedwriter = xml2rfc.PaginatedTextRfcWriter(form.xmltree, quiet=True)
                             pagedwriter.write(file_name['txt'])
                         except Exception as e:
                             raise ValidationError("Error from xml2rfc: %s" % e)
