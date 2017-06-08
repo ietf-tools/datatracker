@@ -16,6 +16,11 @@ ietfdb (6.54.0) ietf; urgency=medium
   The statistics are available from the top menu under Other >> Statistics,
   or by following links from https://tracker.tools.ietf.org/stats/ .
 
+  As part of the release, there will be a one-time backfill extraction of
+  author information about country, affiliation etc. from drafts; this
+  is expected to take about 1 to 2 hours.  Statistics information will be
+  incomplete until the backfill script has finished running.
+
   This work has been done under contract by olau@iola.dk, with caching to
   speed up page load by henrik@levkowetz.com.
 
@@ -24,7 +29,7 @@ ietfdb (6.54.0) ietf; urgency=medium
   https://trac.tools.ietf.org/tools/ietfdb/log/branch/iola/author-stats-r13145
   https://trac.tools.ietf.org/tools/ietfdb/log/personal/henrik/6.52.1-authorstats
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  06 Jun 2017 20:50:15 +0000
+ -- Henrik Levkowetz <henrik@levkowetz.com>  08 Jun 2017 11:16:57 +0000
 
 
 ietfdb (6.53.1) ietf; urgency=medium
