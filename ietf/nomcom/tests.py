@@ -4,7 +4,6 @@ import datetime
 import shutil
 import urlparse
 from pyquery import PyQuery
-import StringIO
 
 from django.db import IntegrityError
 from django.db.models import Max
@@ -22,8 +21,6 @@ from ietf.person.models import Email, Person
 from ietf.group.models import Group
 from ietf.message.models import Message
 
-from ietf.person.utils import merge_persons
-
 from ietf.nomcom.test_data import nomcom_test_data, generate_cert, check_comments, \
                                   COMMUNITY_USER, CHAIR_USER, \
                                   MEMBER_USER, SECRETARIAT_USER, EMAIL_DOMAIN, NOMCOM_YEAR
@@ -37,7 +34,7 @@ from ietf.nomcom.management.commands.send_reminders import Command, is_time_to_s
 from ietf.nomcom.factories import NomComFactory, FeedbackFactory, TopicFactory, \
                                   nomcom_kwargs_for_year, provide_private_key_to_test_client, \
                                   key
-from ietf.person.factories import PersonFactory, EmailFactory, UserFactory
+from ietf.person.factories import PersonFactory, EmailFactory
 from ietf.dbtemplate.factories import DBTemplateFactory
 from ietf.dbtemplate.models import DBTemplate
 
@@ -1777,34 +1774,6 @@ class NoPublicKeyTests(TestCase):
         # No questionnaire responses
         self.do_common_work(reverse('ietf.nomcom.views.private_questionnaire',kwargs={'year':self.nc.year()}),False)
 
-class MergePersonTests(TestCase):
-    def setUp(self):
-        build_test_public_keys_dir(self)
-        self.nc = NomComFactory(**nomcom_kwargs_for_year())
-        self.author = PersonFactory.create().email_set.first().address
-        self.nominee1, self.nominee2 = self.nc.nominee_set.all()[:2]
-        self.person1, self.person2 = self.nominee1.person, self.nominee2.person
-        self.position = self.nc.position_set.first()
-        for nominee in [self.nominee1, self.nominee2]:
-            f = FeedbackFactory.create(author=self.author,nomcom=self.nc,type_id='nomina')
-            f.positions.add(self.position)
-            f.nominees.add(nominee)
-        UserFactory(is_superuser=True)
-
-    def tearDown(self):
-        clean_test_public_keys_dir(self)
-
-    def test_merge_person(self):
-        person1, person2 = [nominee.person for nominee in self.nc.nominee_set.all()[:2]]
-        stream = StringIO.StringIO() 
-        
-        self.assertEqual(self.nc.nominee_set.count(),4)
-        self.assertEqual(self.nominee1.feedback_set.count(),1) 
-        self.assertEqual(self.nominee2.feedback_set.count(),1) 
-        merge_persons(person1,person2,stream)
-        self.assertEqual(self.nc.nominee_set.count(),3)
-        self.assertEqual(self.nc.nominee_set.get(pk=self.nominee2.pk).feedback_set.count(),2)
-        self.assertFalse(self.nc.nominee_set.filter(pk=self.nominee1.pk).exists())
         
 class AcceptingTests(TestCase):
     def setUp(self):

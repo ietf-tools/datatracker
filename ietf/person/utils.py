@@ -1,54 +1,121 @@
-from __future__ import unicode_literals
+from __future__ import unicode_literals, print_function
+import datetime
+import os
 import pprint 
+import sys
+import syslog
 
 from django.contrib import admin
 from django.contrib.auth.models import User
 from ietf.person.models import Person
+from ietf.utils.mail import send_mail
 
-def merge_persons(source,target,stream):
+def merge_persons(source, target, file=sys.stdout, verbose=False):
+    changes = []
+
+    # write log
+    syslog.openlog(os.path.basename(__file__), syslog.LOG_PID, syslog.LOG_USER)
+    syslog.syslog("Merging person records {} => {}".format(source.pk,target.pk))
     
-    # merge emails
-    for email in source.email_set.all():
-        print >>stream, "Merging email: {}".format(email.address)
-        email.person = target
+    # handle primary emails
+    for email in get_extra_primary(source,target):
+        email.primary = False
         email.save()
+        changes.append('EMAIL ACTION: {} no longer marked as primary'.format(email.address))
+
+    changes.append(handle_users(source,target))
+    #merge_nominees(source, target)
+    move_related_objects(source, target, file=file, verbose=verbose)
+    dedupe_aliases(target)
+
+    # copy other attributes
+    for field in ('ascii','ascii_short','address','affiliation'):
+        if getattr(source,field) and not getattr(target,field):
+            setattr(target,field,getattr(source,field))
+            target.save()
+
+    # check for any remaining relationships and exit if more found
+    objs = [source]
+    opts = Person._meta
+    user = User.objects.filter(is_superuser=True).first()
+    admin_site = admin.site
+    using = 'default'
+    deletable_objects = admin.utils.get_deleted_objects(
+        objs, opts, user, admin_site, using)
+    deletable_objects_summary = deletable_objects[1]
+    if len(deletable_objects_summary) > 1:    # should only inlcude one object (Person)
+        print("Not Deleting Person: {}({})".format(source.ascii,source.pk), file=file)
+        print("Related objects remain:", file=file)
+        pprint.pprint(deletable_objects[1], stream=file)
+        success = False
+    else:
+        success = True
+        print("Deleting Person: {}({})".format(source.ascii,source.pk), file=file)
+        source.delete()
     
-    # merge aliases
-    target_aliases = [ a.name for a in target.alias_set.all() ]
-    for alias in source.alias_set.all():
-        if alias.name in target_aliases:
+    return success, changes
+
+def get_extra_primary(source,target):
+    '''
+    Inspect email addresses and return list of those that should no longer be primary
+    '''
+    if source.email_set.filter(primary=True) and target.email_set.filter(primary=True):
+        return source.email_set.filter(primary=True)
+    else:
+        return []
+
+def handle_users(source,target,check_only=False):
+    '''
+    Deletes extra Users.  Retains target user.  If check_only == True, just return a string
+    describing action, otherwise perform user changes and return string.
+    '''
+    if not (source.user or target.user):
+        return "DATATRACKER LOGIN ACTION: none (no login defined)"
+    if not source.user and target.user:
+        return "DATATRACKER LOGIN ACTION: retaining login {}".format(target.user)
+    if source.user and not target.user:
+        message = "DATATRACKER LOGIN ACTION: retaining login {}".format(source.user)
+        if not check_only:
+            target.user = source.user
+            source.user = None
+            source.save()
+            target.save()
+        return message
+    if source.user and target.user:
+        message = "DATATRACKER LOGIN ACTION: retaining login: {}, removing login: {}".format(target.user,source.user)
+        if not check_only:
+            syslog.syslog('merge-person-records: deleting user {}'.format(source.user.username))
+            # user = source.user
+            source.user = None
+            source.save()
+            #user.delete()
+        return message
+
+def move_related_objects(source, target, file, verbose=False):
+    '''Find all related objects and migrate'''
+    related_objects = [  f for f in source._meta.get_fields()
+        if (f.one_to_many or f.one_to_one)
+        and f.auto_created and not f.concrete ]
+    for related_object in related_objects:
+        accessor = related_object.get_accessor_name()
+        field_name = related_object.field.name
+        queryset = getattr(source, accessor).all()
+        if verbose:
+            print("Merging {}:{}".format(accessor,queryset.count()),file=file)
+        kwargs = { field_name:target }
+        queryset.update(**kwargs)
+
+def dedupe_aliases(person):
+    '''Check person for duplicate aliases and purge'''
+    seen = []
+    for alias in person.alias_set.all():
+        if alias.name in seen:
             alias.delete()
         else:
-            print >>stream, "Merging alias: {}".format(alias.name)
-            alias.person = target
-            alias.save()
-    
-    # merge DocEvents
-    for docevent in source.docevent_set.all():
-        docevent.by = target
-        docevent.save()
-        
-    # merge SubmissionEvents
-    for subevent in source.submissionevent_set.all():
-        subevent.by = target
-        subevent.save()
-    
-    # merge Messages
-    for message in source.message_set.all():
-        message.by = target
-        message.save()
-    
-    # merge Constraints
-    for constraint in source.constraint_set.all():
-        constraint.person = target
-        constraint.save()
-    
-    # merge Roles
-    for role in source.role_set.all():
-        role.person = target
-        role.save()
-    
-    # merge Nominees
+            seen.append(alias.name)
+
+def merge_nominees(source, target):
+    '''Move nominees and feedback to target'''
     for nominee in source.nominee_set.all():
         target_nominee = target.nominee_set.get(nomcom=nominee.nomcom)
         if not target_nominee:
@@ -68,22 +135,27 @@ def merge_persons(source,target,stream):
                 np.nominee=target_nominee
                 np.save()
         nominee.delete()
-    
-    # check for any remaining relationships and delete if none
-    objs = [source]
-    opts = Person._meta
-    user = User.objects.filter(is_superuser=True).first()
-    admin_site = admin.site
-    using = 'default'
 
-    deletable_objects, model_count, perms_needed, protected = (
-        admin.utils.get_deleted_objects(objs, opts, user, admin_site, using) )
-        
-    if len(deletable_objects) > 1:
-        print >>stream, "Not Deleting Person: {}({})".format(source.ascii,source.pk)
-        print >>stream, "Related objects remain:"
-        pprint.pprint(deletable_objects[1],stream=stream)
-    
-    else:
-        print >>stream, "Deleting Person: {}({})".format(source.ascii,source.pk)
-        source.delete()
+def send_merge_notification(person,changes):
+    '''
+    Send an email to the merge target (Person) notifying them of the changes
+    '''
+    send_mail(request = None,
+              to       = person.email_address(),
+              frm      = "IETF Secretariat <ietf-secretariat@ietf.org>",
+              subject  = "IETF Datatracker records merged",
+              template = "utils/merge_person_records.txt",
+              context  = dict(person=person,changes='\n'.join(changes)),
+              extra    = {}
+             )
+
+def determine_merge_order(source,target):
+    '''
+    Determine merge order.  Select Person that has related User.  If both have Users
+    select one with most recent login
+    '''
+    if source.user and not target.user:
+        source,target = target,source   # swap merge order
+    if source.user and target.user:
+        source,target = sorted([source,target],key=lambda a: a.user.last_login if a.user.last_login else datetime.datetime.min)
+    return source,target

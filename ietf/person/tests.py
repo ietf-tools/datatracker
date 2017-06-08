@@ -1,15 +1,20 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+import datetime
 import json
 from pyquery import PyQuery
-
+from StringIO import StringIO
 from django.urls import reverse as urlreverse
 
 import debug                            # pyflakes:ignore
 
-from ietf.person.factories import EmailFactory,PersonFactory
-from ietf.person.models import Person
+#from ietf.nomcom.models import Nominee, NomCom
+#from ietf.nomcom.test_data import nomcom_test_data
+from ietf.person.factories import EmailFactory, PersonFactory
+from ietf.person.models import Person, Alias
+from ietf.person.utils import (merge_persons, determine_merge_order, send_merge_notification,
+    handle_users, get_extra_primary, dedupe_aliases, move_related_objects)
 from ietf.utils.test_data import make_test_data
 from ietf.utils.test_utils import TestCase
 from ietf.utils.mail import outbox, empty_outbox
@@ -78,3 +83,125 @@ class PersonTests(TestCase):
         Person.objects.create(name="Duplicate Test")
         Person.objects.create(name="Duplicate Test")
         self.assertTrue("possible duplicate" in outbox[0]["Subject"].lower())
+
+class PersonUtilsTests(TestCase):
+    def get_person_no_user(self):
+        person = PersonFactory()
+        person.user = None
+        person.save()
+        return person
+
+    def test_determine_merge_order(self):
+        p1 = self.get_person_no_user()
+        p2 = PersonFactory()
+        p3 = self.get_person_no_user()
+        p4 = PersonFactory()
+
+        # target has User
+        results = determine_merge_order(p1, p2)
+        self.assertEqual(results,(p1,p2))
+
+        # source has User
+        results = determine_merge_order(p2, p1)
+        self.assertEqual(results,(p1,p2))
+        
+        # neither have User
+        results = determine_merge_order(p1, p3)
+        self.assertEqual(results,(p1,p3))
+
+        # both have User
+        today = datetime.datetime.today()
+        p2.user.last_login = today
+        p2.user.save()
+        p4.user.last_login = today - datetime.timedelta(days=30)
+        p4.user.save()
+        results = determine_merge_order(p2, p4)
+        self.assertEqual(results,(p4,p2))
+
+    def test_send_merge_notification(self):
+        person = PersonFactory()
+        len_before = len(outbox)
+        send_merge_notification(person,['Record Merged'])
+        self.assertEqual(len(outbox),len_before+1)
+        self.assertTrue('IETF Datatracker records merged' in outbox[-1]['Subject'])
+
+    def test_handle_users(self):
+        source1 = self.get_person_no_user()
+        target1 = self.get_person_no_user()
+        source2 = self.get_person_no_user()
+        target2 = PersonFactory()
+        source3 = PersonFactory()
+        target3 = self.get_person_no_user()
+        source4 = PersonFactory()
+        target4 = PersonFactory()
+
+        # no Users
+        result = handle_users(source1, target1)
+        self.assertTrue('DATATRACKER LOGIN ACTION: none' in result)
+
+        # target user
+        result = handle_users(source2, target2)
+        self.assertTrue("DATATRACKER LOGIN ACTION: retaining login {}".format(target2.user) in result)
+
+        # source user
+        user = source3.user
+        result = handle_users(source3, target3)
+        self.assertTrue("DATATRACKER LOGIN ACTION: retaining login {}".format(user) in result)
+        self.assertTrue(target3.user == user)
+
+        # both have user
+        source_user = source4.user
+        target_user = target4.user
+        result = handle_users(source4, target4)
+        self.assertTrue("DATATRACKER LOGIN ACTION: retaining login: {}, removing login: {}".format(target_user,source_user) in result)
+        self.assertTrue(target4.user == target_user)
+        self.assertTrue(source4.user == None)
+
+    def test_get_extra_primary(self):
+        source = PersonFactory()
+        target = PersonFactory()
+        extra = get_extra_primary(source, target)
+        self.assertTrue(extra == list(source.email_set.filter(primary=True)))
+
+    def test_dedupe_aliases(self):
+        person = PersonFactory()
+        Alias.objects.create(person=person, name='Joe')
+        Alias.objects.create(person=person, name='Joe')
+        self.assertEqual(person.alias_set.filter(name='Joe').count(),2)
+        dedupe_aliases(person)
+        self.assertEqual(person.alias_set.filter(name='Joe').count(),1)
+      
+    """  
+    def test_merge_nominees(self):
+        nomcom_test_data()
+        nomcom = NomCom.objects.first()
+        source = PersonFactory()
+        source.nominee_set.create(nomcom=nomcom,email=source.email())
+        #source = Nominee.objects.first().email.person
+        target = PersonFactory()
+        print source
+        print source.nominee_set.all()
+        merge_nominees(source, target)
+        self.assertTrue(target.nominee_set.all())
+    """
+
+    def test_move_related_objects(self):
+        source = PersonFactory()
+        target = PersonFactory()
+        source_email = source.email_set.first()
+        source_alias = source.alias_set.first()
+        move_related_objects(source, target, file=StringIO())
+        self.assertTrue(source_email in target.email_set.all())
+        self.assertTrue(source_alias in target.alias_set.all())
+
+    def test_merge_persons(self):
+        source = PersonFactory()
+        target = PersonFactory()
+        source_id = source.pk
+        source_email = source.email_set.first()
+        source_alias = source.alias_set.first()
+        merge_persons(source, target, file=StringIO())
+        self.assertTrue(source_email in target.email_set.all())
+        self.assertTrue(source_alias in target.alias_set.all())
+        self.assertFalse(Person.objects.filter(id=source_id))
+
