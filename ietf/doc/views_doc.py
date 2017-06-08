@@ -992,9 +992,10 @@ def document_json(request, name, rev=None):
     data["state"] = extract_name(doc.get_state())
     data["intended_std_level"] = extract_name(doc.intended_std_level)
     data["std_level"] = extract_name(doc.std_level)
+    debug.pprint('list(doc.documentauthor_set.all().select_related("person", "email").order_by("order") )')
     data["authors"] = [
         dict(name=author.person.name,
-             email=author.email.address,
+             email=author.email.address if author.email else None,
              affiliation=author.affiliation)
         for author in doc.documentauthor_set.all().select_related("person", "email").order_by("order")
     ]
