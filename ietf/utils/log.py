@@ -55,10 +55,11 @@ logger = logging.getLogger('django')
 
 
 
-def exception_components(e):
-    extype = sys.exc_info()[0]
-    value = sys.exc_info()[1]
-    tb = traceback.format_tb(sys.exc_info()[2])
+def exc_parts():
+    info = sys.exc_info()
+    extype = info[0]
+    value = info[1]
+    tb = traceback.format_tb(info[2])
     return (extype, value, tb)
 
 def build_traceback(stack):

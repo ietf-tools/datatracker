@@ -4,7 +4,7 @@ from django.db import connection
 from django.db.utils import OperationalError
 from django.shortcuts import render
 from django.http import HttpResponsePermanentRedirect
-from ietf.utils.log import log, exception_components
+from ietf.utils.log import log, exc_parts
 from ietf.utils.mail import log_smtp_exception
 import re
 import smtplib
@@ -39,7 +39,7 @@ class Utf8ExceptionMiddleware(object):
         return self.get_response(request)
     def process_exception(self, request, exception):
 	if isinstance(exception, OperationalError):
-            extype, value, tb = exception_components(exception)
+            extype, value, tb = exc_parts()
             if value[0] == 1366:
                 log("Database 4-byte utf8 exception: %s: %s" % (extype, value))
                 return render(request, 'utf8_4byte_failed.html',
