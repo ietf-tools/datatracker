@@ -146,9 +146,12 @@ class SubmissionUploadForm(forms.Form):
                     for chunk in xml_file.chunks():
                         tf.write(chunk)
                 os.environ["XML_LIBRARY"] = settings.XML_LIBRARY
-                parser = xml2rfc.XmlRfcParser(tfn, quiet=True)
-                self.xmltree = parser.parse()
-                ok, errors = self.xmltree.validate()
+                try:
+                    parser = xml2rfc.XmlRfcParser(tfn, quiet=True)
+                    self.xmltree = parser.parse()
+                    ok, errors = self.xmltree.validate()
+                except Exception as exc:
+                    raise forms.ValidationError("An exception occurred when trying to process the XML file: %s" % exc)
                 if not ok:
                     # Each error has properties:
                     #
@@ -180,16 +183,18 @@ class SubmissionUploadForm(forms.Form):
                     self.abstract = unidecode(self.abstract)
                 author_info = self.xmlroot.findall('front/author')
                 for author in author_info:
-                    self.authors.append({
-                        "name": author.attrib.get('fullname').strip(),
-                        "email": author.findtext('address/email').strip(),
-                        "affiliation": author.findtext('organization').strip(),
-                        "country": author.findtext('address/postal/country').strip(),
-                    })
+                    info = {
+                        "name": author.attrib.get('fullname'),
+                        "email": author.findtext('address/email'),
+                        "affiliation": author.findtext('organization'),
+                        "country": author.findtext('address/postal/country'),
+                    }
+                    for item in info:
+                        if info[item]:
+                            info[item] = info[item].strip()
+                    self.authors.append(info)
             except forms.ValidationError:
                 raise
-            except Exception as e:
-                raise forms.ValidationError("An exception occurred when trying to process the XML file: %s" % e)
             finally:
                 os.close(tfh)
                 os.unlink(tfn)
