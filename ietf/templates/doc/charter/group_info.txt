@@ -37,5 +37,6 @@ Charter: {{ charter_url }}
 {{ charter_text }}
 
 Milestones:
-{% for milestone in milestones %}  {% if milestone.resolved %}{{ milestone.resolved }}    {% else %}{{ milestone.due|date:"M Y" }}{% endif %} - {{ milestone.desc|safe }}
+{% for milestone in milestones %}
+  {% if milestone.resolved %}{{ milestone.resolved }}    {% else %}{{ milestone.due|date:"M Y" }}{% endif %} - {{ milestone.desc|safe }}
 {% endfor %}
