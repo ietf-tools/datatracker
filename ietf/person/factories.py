@@ -42,9 +42,7 @@ class PersonFactory(factory.DjangoModelFactory):
     ascii = factory.LazyAttribute(lambda p: unicode(unidecode(p.name).strip()))
 
     class Params:
-        with_bio = factory.Trait(
-            biography = u"\n\n".join(fake.paragraphs()),
-        )
+        with_bio = factory.Trait(biography = u"\n\n".join(fake.paragraphs()))
 
     @factory.post_generation
     def default_aliases(obj, create, extracted, **kwargs): # pylint: disable=no-self-argument
