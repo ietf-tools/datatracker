@@ -20,7 +20,7 @@ from ietf.person.models import Person, Email
 from ietf.group.utils import setup_default_community_list_for_group
 from ietf.review.models import (ReviewRequest, ReviewerSettings, ReviewResultName, ReviewTypeName, ReviewTeamSettings )
 
-def create_person(group, role_name, name=None, username=None, email_address=None, password=None):
+def create_person(group, role_name, name=None, username=None, email_address=None, password=None, is_staff=False, is_superuser=False):
     """Add person/user/email and role."""
     if not name:
         name = group.acronym.capitalize() + " " + role_name.capitalize()
@@ -31,7 +31,7 @@ def create_person(group, role_name, name=None, username=None, email_address=None
     if not password:
         password = username + "+password"
 
-    user = User.objects.create(username=username)
+    user = User.objects.create(username=username,is_staff=is_staff,is_superuser=is_superuser)
     user.set_password(password)
     user.save()
     person = Person.objects.create(name=name, ascii=name, user=user)
@@ -69,7 +69,7 @@ def make_immutable_base_data():
     create_person(irtf, "chair")
 
     secretariat = create_group(name="IETF Secretariat", acronym="secretariat", type_id="ietf")
-    create_person(secretariat, "secr", name="Sec Retary", username="secretary")
+    create_person(secretariat, "secr", name="Sec Retary", username="secretary", is_staff=True, is_superuser=True)
 
     iab = create_group(name="Internet Architecture Board", acronym="iab", type_id="ietf", parent=ietf)
     create_person(iab, "chair")
