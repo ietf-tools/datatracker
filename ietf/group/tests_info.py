@@ -152,6 +152,10 @@ class GroupPagesTests(TestCase):
         q = PyQuery(r.content)
         self.assertEqual(len(q('#content a:contains("%s")' % group.acronym)), 1)
 
+        self.client.login(username="secretary", password="secretary+password")
+        r = self.client.get(url)
+        self.assertContains(r, "Charter new RG")
+
     def test_concluded_groups(self):
         draft = make_test_data()
         group = draft.group

@@ -92,17 +92,19 @@ def save_milestone_in_history(milestone):
 
     return h
 
-def can_manage_group_type(user, group):
-    if group.type_id == "rg":
+def can_manage_group_type(user, group, type_id=None):
+    if type_id is None:
+        type_id = group.type_id
+    if type_id == "rg":
         return has_role(user, ('IRTF Chair', 'Secretariat'))
-    elif group.type_id == "wg":
+    elif type_id == "wg":
         return has_role(user, ('Area Director', 'Secretariat'))
-    elif group.type_id == "team":
-        if group.is_decendant_of("ietf"):
+    elif type_id == "team":
+        if group and group.is_decendant_of("ietf"):
             return has_role(user, ('Area Director', 'Secretariat'))
-        elif group.is_decendant_of("irtf"):
+        elif group and group.is_decendant_of("irtf"):
             return has_role(user, ('IRTF Chair', 'Secretariat'))
-    elif group.type_id == "program":
+    elif type_id == "program":
         return has_role(user, ('IAB', 'Secretariat',))        
     return has_role(user, ('Secretariat'))
 
