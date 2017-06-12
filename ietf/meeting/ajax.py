@@ -205,6 +205,19 @@ def timeslot_updslot(request, meeting, slotid):
 
     slot.save()
 
+    # WORKAROUND: Right now, if there are sessions scheduled in this timeslot
+    # when it is marked unavailable (or any other value besides "session") they
+    # become unreachable from the editing screen. The session is listed in the
+    # "unscheduled" block incorrectly, and drag-dropping it onto the a new
+    # timeslot produces erroneous results. To avoid this, we will silently
+    # unschedule any sessions in the timeslot that has just been made
+    # unavailable.
+
+    if slot.type_id != 'session':
+        slot.sessionassignments.all().delete()
+
+    # ENDWORKAROUND
+
     # need to return the new object.
     dict1 = slot.json_dict(request.build_absolute_uri('/'))
     dict1['message'] = 'valid'
