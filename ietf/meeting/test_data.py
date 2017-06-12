@@ -50,9 +50,13 @@ def make_meeting_test_data(meeting=None):
     asname = RoomResourceName.objects.get(slug='audiostream')
     UrlResource.objects.create(name=asname, room=room, url='http://ietf{number}streaming.dnsalias.net/ietf/ietf{number}1.m3u'.format(number=meeting.number))
 
-    # another room
+    # other rooms
     breakfast_room = Room.objects.create(meeting=meeting, name="Breakfast Room", capacity=40)
     breakfast_room.session_types.add("lead")
+    break_room = Room.objects.create(meeting=meeting, name="Break Area", capacity=500)
+    break_room.session_types.add("break")
+    reg_room = Room.objects.create(meeting=meeting, name="Registration Area", capacity=500)
+    reg_room.session_types.add("reg")
 
     # slots
     session_date = meeting.date + datetime.timedelta(days=1)
@@ -65,6 +69,12 @@ def make_meeting_test_data(meeting=None):
     breakfast_slot = TimeSlot.objects.create(meeting=meeting, type_id="lead", location=breakfast_room,
                                     duration=datetime.timedelta(minutes=90),
                                     time=datetime.datetime.combine(session_date, datetime.time(7,0)))
+    reg_slot = TimeSlot.objects.create(meeting=meeting, type_id="reg", location=reg_room,
+                                       duration=datetime.timedelta(minutes=480),
+                                       time=datetime.datetime.combine(session_date, datetime.time(9,0)))
+    break_slot = TimeSlot.objects.create(meeting=meeting, type_id="break", location=break_room,
+                                         duration=datetime.timedelta(minutes=90),
+                                         time=datetime.datetime.combine(session_date, datetime.time(7,0)))
     # mars WG
     mars = Group.objects.get(acronym='mars')
     mars_session = Session.objects.create(meeting=meeting, group=mars,
@@ -90,6 +100,22 @@ def make_meeting_test_data(meeting=None):
                                           scheduled=datetime.datetime.now(),type_id="lead")
     SchedTimeSessAssignment.objects.create(timeslot=breakfast_slot, session=iesg_session, schedule=schedule)
     # No breakfast on unofficial schedule
+
+    # Registration
+    reg_session = Session.objects.create(meeting=meeting, group=Group.objects.get(acronym="secretariat"),
+                                         name="Registration", attendees=250,
+                                         requested_by=system_person, status_id="schedw",
+                                         requested_duration=datetime.timedelta(minutes=480),
+                                         scheduled=datetime.datetime.now(),type_id="reg")
+    SchedTimeSessAssignment.objects.create(timeslot=reg_slot, session=reg_session, schedule=schedule)
+    
+    # Break
+    break_session = Session.objects.create(meeting=meeting, group=Group.objects.get(acronym="secretariat"),
+                                           name="Morning Break", attendees=250,
+                                           requested_by=system_person, status_id="schedw",
+                                           requested_duration=datetime.timedelta(minutes=30),
+                                           scheduled=datetime.datetime.now(),type_id="break")
+    SchedTimeSessAssignment.objects.create(timeslot=break_slot, session=break_session, schedule=schedule)
 
     meeting.agenda = schedule
     meeting.save()

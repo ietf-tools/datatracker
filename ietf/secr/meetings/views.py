@@ -314,6 +314,9 @@ def add(request):
             meeting.session_request_lock_message = previous_meeting.session_request_lock_message
             meeting.save()
 
+            # copy special sessions from previous meeting
+            build_nonsession(meeting,schedule)
+            
             # Create Physical new meeting directory and subdirectories
             make_materials_directories(meeting)
 

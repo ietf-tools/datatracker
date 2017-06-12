@@ -137,7 +137,7 @@ class ApiTests(TestCase):
 
     def test_create_new_room(self):
         meeting = make_meeting_test_data()
-        timeslots_before = meeting.timeslot_set.count()
+        timeslots_before = meeting.timeslot_set.filter(type='session').count()
         url = urlreverse("ietf.meeting.ajax.timeslot_roomsurl", kwargs=dict(num=meeting.number))
 
         post_data = { "name": "new room", "capacity": "50" , "resources": [], "session_types":["session"]}
@@ -153,7 +153,7 @@ class ApiTests(TestCase):
         self.assertEqual(r.status_code, 302)
         self.assertTrue(meeting.room_set.filter(name="new room"))
 
-        timeslots_after = meeting.timeslot_set.count()
+        timeslots_after = meeting.timeslot_set.filter(type='session').count()
         # It's not clear that what that ajax function is doing is the right thing to do,
         # but it currently makes a new timeslot for any existing timeslot.
         # The condition tested below relies on the timeslots before this test all having different start and end times
