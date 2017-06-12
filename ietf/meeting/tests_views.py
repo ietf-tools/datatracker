@@ -777,7 +777,7 @@ class InterimTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.get('Content-Type'), "text/calendar")
-        self.assertEqual(r.content.count('UID'), 5)
+        self.assertEqual(r.content.count('UID'), 7)
         # check filtered output
         url = url + '?filters=mars'
         r = self.client.get(url)
