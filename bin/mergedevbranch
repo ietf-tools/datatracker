@@ -197,9 +197,6 @@ time { ietf/manage.py test --settings=settings_sqlitetest	\
 	|| die "Tests failed.\nThe commit script is ../cicmd/commit-${rev}-merge.sh"; } 3>&1 1>&2 2>&3 | bin/count
 echo ""
 
-read -p "Continue with email sending? [Y/n] "
-[ "$REPLY" = "Y" -o  "$REPLY" = "y" -o  "$REPLY" = "" ] || exit
-
 note "Sending email to changeset author: <$who>"
 mail -s "Merged datatracker branch personal/$branch@$rev to trunk" $who -c henrik@levkowetz.com <<-EOF
 Hi,
