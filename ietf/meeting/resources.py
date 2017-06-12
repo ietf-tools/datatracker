@@ -98,6 +98,7 @@ class FloorPlanResource(ModelResource):
         filtering = { 
             "id": ALL,
             "name": ALL,
+            "short": ALL,
             "time": ALL,
             "order": ALL,
             "image": ALL,

@@ -116,7 +116,7 @@ class ResourceAssociationAdmin(admin.ModelAdmin):
 admin.site.register(ResourceAssociation, ResourceAssociationAdmin)
 
 class FloorPlanAdmin(admin.ModelAdmin):
-    list_display = ['id', 'meeting', 'name', 'order', 'image', ]
+    list_display = ['id', 'meeting', 'name', 'short', 'order', 'image', ]
     raw_id_fields = ['meeting', ]
 admin.site.register(FloorPlan, FloorPlanAdmin)
 

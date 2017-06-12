@@ -120,9 +120,11 @@ div.anchor-target { z-index: 0; }
 .panel-title { font-size: 14px }
 
 /* A new type of Bootstrap label and panel*/
-.label-blank { color: #555; background-color: #eee; }
+.label-blank { color: #555; background-color: #eee; font-size: 0.9em; line-height: 0.9; padding: 0.2em 0.6em; }
+.label.label-wide { margin-left: 1em; margin-right: 1em; }
 .panel-blank { color: #555; }
 .panel-blank > .panel-heading { background-color: #eee; }
+
 
 /* Required form field labels - 2217 = &lowast;  */
 label.required:after { content: "\2217"; color: #a94442; font-weight: bold; }

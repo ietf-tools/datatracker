@@ -112,6 +112,7 @@ class FloorPlanFactory(factory.DjangoModelFactory):
         model = FloorPlan
 
     name = factory.Sequence(lambda n: u'Venue Floor %d' % n)
+    short = factory.Sequence(lambda n: u'%d' % n)
     meeting = factory.SubFactory(MeetingFactory)
     order = factory.Sequence(lambda n: n)
     image = factory.LazyAttribute(
