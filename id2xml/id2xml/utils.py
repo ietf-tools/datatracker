@@ -8,6 +8,12 @@ import textwrap
 from pyterminalsize import get_terminal_size
 from collections import namedtuple
 
+try:
+    import debug
+    debug.debug = True
+except ImportError:
+    pass
+
 Line = namedtuple('Line', ['num', 'txt'])
 
 class Options(object):
@@ -61,7 +67,7 @@ def strip_pagebreaks(text):
         return page, newpage
     for lineno, line in enumerate(lines):
         line = line.rstrip()
-        match = re.search("(  +)(\S.*\S)(  +)\[?[Pp]age [0-9ivx]+\]?[ \t\f]*$", line, re.I)
+        match = re.search("(  *)(\S.*\S)(  +)\[?[Pp]age [0-9ivx]+\]?[ \t\f]*$", line, re.I)
         if match:
             mid = match.group(2)
             if not short_title and not mid.startswith('Expires'):
@@ -72,7 +78,7 @@ def strip_pagebreaks(text):
             page, newpage = begpage(page, newpage)
             continue
         if lineno > 25:
-            regex = "^(Internet.Draft|RFC \d+)(  +)(\S.*\S)(  +)(Jan|Feb|Mar|March|Apr|April|May|Jun|June|Jul|July|Aug|Sep|Oct|Nov|Dec)[a-z]+ (19[89][0-9]|20[0-9][0-9]) *$"
+            regex = "^(INTERNET.DRAFT|Internet.Draft|RFC \d+)(  +)(\S.*\S)(  +)(Jan|Feb|Mar|March|Apr|April|May|Jun|June|Jul|July|Aug|Sep|Oct|Nov|Dec)[a-z]+ (19[89][0-9]|20[0-9][0-9]) *$"
             match = re.search(regex, line, re.I)
             if match:
                 short_title = match.group(3)
@@ -82,6 +88,9 @@ def strip_pagebreaks(text):
             page, newpage = begpage(page, newpage, line)
             continue
         if lineno > 25 and re.search("^ *Internet.Draft.+[12][0-9][0-9][0-9] *$", line, re.I):
+            page, newpage = begpage(page, newpage, line)
+            continue
+        if lineno > 25 and re.search("^ *(Internet.Draft|INTERNET.DRAFT)( {16,}).*$", line, re.I):
             page, newpage = begpage(page, newpage, line)
             continue
 #        if re.search("^ *Internet.Draft  +", line, re.I):

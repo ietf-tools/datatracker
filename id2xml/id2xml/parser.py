@@ -512,8 +512,6 @@ def match_boilerplate(bp, txt):
     if txt.startswith(bp):
         return True
     else:
-        debug.pprint('bp')
-        debug.pprint('txt')
         return False
 
 def dtrace(fn):
@@ -925,7 +923,7 @@ class DraftParser(Base):
     def parse_to_xml(self, **kwargs):
         # fix some bloopers
         self.lines, self.short_title = strip_pagebreaks(self.raw.expandtabs())
-        self.l = 0
+        self.l = -1
         self.p = None
 
         # Set up the <rfc/> element as root
@@ -1073,7 +1071,9 @@ class DraftParser(Base):
             front.append(note)
         #
         self.read_status_of_memo(workgroup, stream, rfc_number, category, date)
-        self.read_copyright(date)
+        line = self.skip_blank_lines()
+        if re.search('Copyright Notice', line.txt.strip()):
+            self.read_copyright(date)
 
         line = self.skip_blank_lines()
         if line.txt == 'Table of Contents':
@@ -1312,7 +1312,7 @@ class DraftParser(Base):
             # get internet-draft or RFC number
             line = lines.pop(0) if lines else Line(None, "")
             self.dshow('line')
-            if self.is_draft and not line.txt == 'Internet-Draft':
+            if self.is_draft and not line.txt.lower() == 'internet-draft':
                 self.warn(line.num, "Expected to see 'Internet-Draft', found '%s'" % line.txt)
                 lines.insert(0, line)
                 self.dsay("pushing '%s'" % line.txt)
@@ -1391,6 +1391,11 @@ class DraftParser(Base):
             # maybe intended status or category
             category_names = {
                 'Standards Track':          'std',
+                'Standard Track':           'std',
+                'Proposed Standard':        'std',
+                'Draft Standard':           'std',
+                'Internet Standard':        'std',
+                'Standard Track':           'std',
                 'Best Current Practice':    'bcp',
                 'Experimental':             'exp',
                 'Informational':            'info',
@@ -1399,7 +1404,7 @@ class DraftParser(Base):
             line = lines.pop(0) if lines else Line(None, '')
             self.dshow('line')
             if self.is_draft:
-                if line.txt.startswith('Intended status: '):
+                if line.txt.lower().startswith('intended status: '):
                     status_text = line.txt.split(None, 2)[-1].strip()
                     if not status_text in category_names:
                         self.warn(line.num, "Expected a recognized status name, found '%s'" % (line.txt, ))
@@ -1448,13 +1453,14 @@ class DraftParser(Base):
                     self.warn(line.num, "Expected an ISSN number, found '%s'" % (line.txt, ))
 
         entries = {
-            'stream':   dict(order=0, needed=True, function=get_stream,     regex=None ),
-            'label':    dict(order=1, needed=True, function=get_label,      regex=r"^(Internet-Draft|Request for Comments: )" ),
-            'series':   dict(order=2, needed=False,function=get_series,     regex=r"^(STF|BCP|FYI): " ),
-            'modifies': dict(order=3, needed=False,function=get_modifies,   regex=r"^(Updates|Obsoletes)" ),
-            'category': dict(order=4, needed=True, function=get_category,   regex=r"^(Intended status|Category)" ),
-            'expires':  dict(order=5, needed=True, function=get_expiration, regex=r"^Expires" ), 
-            'issn':     dict(order=6, needed=True, function=get_issn,       regex=r"^ISSN: " ), 
+            'stream':   dict(order=0, needed=True, function=get_stream,     regex=None, help='' ),
+            'label':    dict(order=1, needed=True, function=get_label,      regex=r"(?i)^(Internet-Draft|Request for Comments: )",
+                        help='such as Internet-Draft or Request for Comments'),
+            'series':   dict(order=2, needed=False,function=get_series,     regex=r"^(STF|BCP|FYI): ", help='' ),
+            'modifies': dict(order=3, needed=False,function=get_modifies,   regex=r"^(Updates|Obsoletes)", help='' ),
+            'category': dict(order=4, needed=True, function=get_category,   regex=r"^(Intended [Ss]tatus|Category)", help='' ),
+            'expires':  dict(order=5, needed=True, function=get_expiration, regex=r"^Expires", help='' ), 
+            'issn':     dict(order=6, needed=True, function=get_issn,       regex=r"^ISSN: ", help='' ), 
         }
         if self.is_rfc:
             entries['expires']['needed'] = False
@@ -1482,7 +1488,10 @@ class DraftParser(Base):
 
         for k in entries:
             if not entries[k]['needed'] == False:
-                self.warn(self.lines[self.l].num, "Expected a %s indication top left, found none" % k)
+                if k[0] in 'aeiou':
+                    self.warn(self.lines[self.l].num, "Expected an %s indication top left, found none" % k)
+                else:
+                    self.warn(self.lines[self.l].num, "Expected a %s indication top left, found none" % k)
 
         for line in lines:
             if line.txt.strip():
@@ -1671,6 +1680,7 @@ class DraftParser(Base):
     @dtrace
     def read_authors_addresses(self):
         line = self.skip_blank_lines()
+        first = line
         if line and (line.txt.startswith("Author's Address") or  line.txt.startswith("Authors' Addresses")):
             self.skip(line.txt)
         else:
@@ -1702,6 +1712,10 @@ class DraftParser(Base):
         #
         for author in self.authors:
             auth = self.root.find(".//author[@surname='{surname}'][@initials='{initials}']".format(**author))
+            if auth is None:
+                self.warn(self.l, "This author is listed in the %s section, but was not found "
+                                  " on the first page: %s"%(first.txt, author['fullname']))
+                continue
             auth.set('fullname', author['fullname'])
             addr = self.element('address')
             auth.append(addr)
@@ -1766,7 +1780,16 @@ class DraftParser(Base):
         if line is None:
             self.err(self.lines[-1].num, "Expected an author's name, found end of file")
         name = line.txt.strip()
+        self.dpprint('self.authors')
         item = match_name(name, self.authors)
+        if not item:
+            item = {'fullname': name, }
+            parts = name.split()
+            item['surname'] = parts[-1]
+            if len(parts) > 1:
+                item['initials'] = ' '.join([ '%s.'%n[0] for n in parts[:-1] ])
+            self.dpprint('item')
+            self.authors.append(item)
         if item:
             item['fullname'] = name.replace(' (editor)','')
         return item
