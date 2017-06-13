@@ -138,8 +138,9 @@ reference_patterns = [
     re.compile(r'{anchor}  *{authors}, "{title}", {date}, Work.in.progress\.'.format(**chunks)),
     re.compile(r'{anchor}  *{organiz}, "{title}", {url}\.'.format(**chunks)),
     re.compile(r'{anchor}  *"{title}", Work in Progress ?, {date}(, {url})?\.'.format(**chunks)),
-    re.compile(r'{anchor}  *"{title}", {docname}, {date}(, {url})?\.'.format(**chunks)),
     re.compile(r'{anchor}  *"{title}", Work in Progress ?, {url}\.'.format(**chunks)),
+    re.compile(r'{anchor}  *"{title}", {docname}, {date}(, {url})?\.'.format(**chunks)),
+    re.compile(r'{anchor}  *"{title}", {date}, {url}\.'.format(**chunks)),
     re.compile(r'{anchor}  *"{title}", {url}\.'.format(**chunks)),
     re.compile(r'{anchor}  *{url}\.'.format(**chunks)),
 ## Lines commented out below are for debugging, when the full regex doesn't match (is buggy).
@@ -961,6 +962,7 @@ class DraftParser(Base):
                     doctype += '<!ENTITY {name} SYSTEM "{url}">\n'.format(**entity)
                 doctype += ']'
             doctype +='>'
+
             return lxml.etree.tostring(
                 doc,
                 xml_declaration=True,
