@@ -2275,9 +2275,10 @@ class DraftParser(Base):
                 continue
             txt = line.txt.replace('|', ' ')
             columns = colsplit(colpos, txt)
-            for t in columns:
-                c = self.element('c', t)
-                texttable.append(c)
+            if any( t for t in columns ):
+                for t in columns:
+                    c = self.element('c', t)
+                    texttable.append(c)
         if block:
             text = para2text(block.pop())
             postamble = self.element('postamble', text)
