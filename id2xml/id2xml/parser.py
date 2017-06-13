@@ -567,7 +567,7 @@ def dtrace(fn):
 
 class Stack(deque):
     def __init__(self, text):
-        sep = r'(\s+|[][<>\'"])'
+        sep = r'(\s+|[][<>(),;\'"])'
         tokens = re.split(sep, text)
         super(Stack, self).__init__(tokens)
     def pop(self):
@@ -636,7 +636,6 @@ class TextParser(Base):
 
     quotes = {
         '"': '"',
-        "'": "'",
     }
     angles = {
         '<': '>',
