@@ -90,9 +90,12 @@ for part in section_name_start:
     for i in range(len(section_name_start[part])):
         section_name_start[part][i] = section_name_start[part][i].split()[0]
 
-section_start_re = {}
-for part in section_names:
-    section_start_re[part] = r"^((appendix:? )?[a-z0-9]+\.([0-9]+(\.[0-9]+)*\.?)? |%s)" % ('|'.join(section_names[part]))
+section_start_re = {
+    'front':    r'^%s'%('|'.join(section_names['front'])),
+    'middle':   r"^([0-9]+\.([0-9]+(\.[0-9]+)*\.?) |%s)" % ('|'.join(section_names['middle'])),
+    'refs':     r"^([0-9]+\.([0-9]+(\.[0-9]+)*\.?)? +(%s))" % ('|'.join(section_names['refs'])),
+    'back':     r'^([A-Za-z](\.[0-9]+)*\.?|%s)' % ('|'.join(section_names['back'])),
+}
 
 # ----------------------------------------------------------------------
 #
@@ -1770,9 +1773,10 @@ class DraftParser(Base):
         if not line:
             return True
         text = line.txt
-        match = re.search(appendix_prefix, text)
-        if match:
-            text = text[len(match.group(0)):]
+        if part == 'back':
+            match = re.search(appendix_prefix, text)
+            if match:
+                text = text[len(match.group(0)):]
         return re.search('^%s([. ]|$)'%'.'.join(numlist), text) if numlist else re.search(section_start_re[part], text.lower()) != None
 
     @dtrace
@@ -2708,7 +2712,7 @@ class DraftParser(Base):
         refs = []
         # peek at the first nonblank line
         line, p = self.get_text_line()
-        if not self.is_section_start(line, numlist, part='back'):
+        if not self.is_section_start(line, numlist, part='refs'):
             self.push_line(line, p)
             return None
         #
@@ -2718,7 +2722,7 @@ class DraftParser(Base):
             return None
         # peek at the next nonblank line
         line = self.skip_blank_lines()
-        if self.is_section_start(line, part='back'):
+        if self.is_section_start(line, part='refs'):
             num = 1
             while True:
                 sublist = numlist + [ str(num) ]
@@ -2747,7 +2751,7 @@ class DraftParser(Base):
     def reference(self):
         entity = None
         line = self.skip_blank_lines()
-        if self.is_section_start(line, part='back'):
+        if self.is_section_start(line, part='refs') or self.is_section_start(line, part='back'):
             return None, None
         reference = self.element('reference')
         front = self.element('front')
