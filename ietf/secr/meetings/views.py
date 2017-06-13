@@ -725,7 +725,7 @@ def schedule(request, meeting_id, schedule_name, acronym):
         timeslot = get_timeslot(s, schedule=schedule)
 
         if timeslot:
-            d['room'] = timeslot.location.id
+            d['room'] = timeslot.location.id if timeslot.location else None
             d['day'] = timeslot.time.isoweekday() % 7 + 1     # adjust to django week_day
             d['time'] = timeslot.time.strftime('%H%M')
         else:
