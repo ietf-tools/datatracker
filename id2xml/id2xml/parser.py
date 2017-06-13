@@ -1358,7 +1358,7 @@ class DraftParser(Base):
                 W = w.capitalize()
                 if w in ['obsoletes', 'updates']:
                     if not line.txt.startswith('%s:' % W):
-                        self.warn(line, "Expected the %s notice to start with '%s:', found '%s'" % (w, W, line.txt))
+                        self.warn(line.num, "Expected the %s notice to start with '%s:', found '%s'" % (w, W, line.txt))
                     # get continuation lines
                     clause = line.txt
                     self.dshow('clause')
@@ -1402,22 +1402,22 @@ class DraftParser(Base):
                 if line.txt.startswith('Intended status: '):
                     status_text = line.txt.split(None, 2)[-1].strip()
                     if not status_text in category_names:
-                        self.warn(line, "Expected a recognized status name, found '%s'" % (line.txt, ))
+                        self.warn(line.num, "Expected a recognized status name, found '%s'" % (line.txt, ))
                     else:
                         res.status = category_names[status_text]
                 else:
-                    self.warn(line, "Expected 'Intended status: ', found '%s'" % (line.txt, ))
+                    self.warn(line.num, "Expected 'Intended status: ', found '%s'" % (line.txt, ))
                     lines.insert(0, line)
                     self.dsay("pushing '%s'" % line.txt)
             else:
                 if line.txt.startswith('Category: '):
                     status_text = line.txt.split(None, 1)[-1].strip()
                     if not status_text in category_names:
-                        self.warn(line, "Expected a recognized category, found '%s'" % (line.txt, ))
+                        self.warn(line.num, "Expected a recognized category, found '%s'" % (line.txt, ))
                     else:
                         res.status = category_names[status_text]
                 else:
-                    self.warn(line, "Expected 'Category: ', found '%s'" % (line.txt, ))
+                    self.warn(line.num, "Expected 'Category: ', found '%s'" % (line.txt, ))
                     lines.insert(0, line)
                     self.dsay("pushing '%s'" % line.txt)
 
