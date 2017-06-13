@@ -93,7 +93,7 @@ for part in section_name_start:
 section_start_re = {
     'front':    r'^%s'%('|'.join(section_names['front'])),
     'middle':   r"^([0-9]+\.([0-9]+(\.[0-9]+)*\.?) |%s)" % ('|'.join(section_names['middle'])),
-    'refs':     r"^([0-9]+\.([0-9]+(\.[0-9]+)*\.?)? +(%s))" % ('|'.join(section_names['refs'])),
+    'refs':     r"^(([0-9]+\.([0-9]+(\.[0-9]+)*\.?)? +)?(%s))" % ('|'.join(section_names['refs'])),
     'back':     r'^([A-Za-z](\.[0-9]+)*\.?|%s)' % ('|'.join(section_names['back'])),
 }
 
@@ -113,7 +113,7 @@ ref_last_re =   r'(?:\w-?\w?\.)+ [-\' 0-9\w]+(?:, Ed\.)?'
 ref_org_re =   r'(?P<organization>[-/\w]+(?: [-/\w,.]+)*(, )?)'
 ref_auth_re =   r'(?P<authors>({name})(, {name})*(,? and {last})?)'.format(name=ref_name_re, last=ref_last_re)
 ref_title_re =  r'(?P<title>.+)'
-ref_series_one =r'(?:(?:(?:RFC|STD|BCP|FYI|DOI|Internet-Draft) [^,]+|draft-[a-z0-9-]+)(?: \(work in progress\))?)'
+ref_series_one =r'(?:(?:(?:RFC|STD|BCP|FYI|DOI|Internet-Draft) [^,]+|draft-[a-z0-9-]+)(?: \(work in progress\)|, work in progress)?)'
 ref_series_re = r'(?P<series>{item}(?:, {item})*)'.format(item=ref_series_one)
 ref_docname_re= r'(?P<docname>[^,]+(, [Vv ]ol\.? [^\s,]+)?(, pp\.? \d+(-\d+)?)?)'
 ref_date_re =   r'(?P<date>({day} )?({month} )?[12]\d\d\d)'.format(day=day_re, month=month_re)
@@ -131,21 +131,22 @@ chunks = dict(
 )
 
 reference_patterns = [
-    re.compile(r'{anchor}  *{authors}, "{title}", {series}, {date}(, {url})?\.'.format(**chunks)),
-    re.compile(r'{anchor}  *{authors}, "{title}", {series}, {date}, Work.in.progress\.'.format(**chunks)),
-    re.compile(r'{anchor}  *{authors}, "{title}", {date}(, {url})?\.'.format(**chunks)),
-    re.compile(r'{anchor}  *{authors}, "{title}", {docname}, {date}(, {url})?\.'.format(**chunks)),
-    re.compile(r'{anchor}  *{organiz}, "{title}", {docname}, {date}(, {url})?\.'.format(**chunks)),
-    re.compile(r'{anchor}  *{authors}, "{title}", {date}(, {url})?\.'.format(**chunks)),
-    re.compile(r'{anchor}  *{organiz}, "{title}", {date}(, {url})?\.'.format(**chunks)),
-    re.compile(r'{anchor}  *{authors}, "{title}", {date}, Work.in.progress\.'.format(**chunks)),
-    re.compile(r'{anchor}  *{organiz}, "{title}", {url}\.'.format(**chunks)),
-    re.compile(r'{anchor}  *"{title}", Work in Progress ?, {date}(, {url})?\.'.format(**chunks)),
-    re.compile(r'{anchor}  *"{title}", Work in Progress ?, {url}\.'.format(**chunks)),
-    re.compile(r'{anchor}  *"{title}", {docname}, {date}(, {url})?\.'.format(**chunks)),
-    re.compile(r'{anchor}  *"{title}", {date}, {url}\.'.format(**chunks)),
-    re.compile(r'{anchor}  *"{title}", {url}\.'.format(**chunks)),
-    re.compile(r'{anchor}  *{url}\.'.format(**chunks)),
+    re.compile(r'{anchor}  *{authors}, "{title}", {series}, {date}(, {url})?(\.|$)'.format(**chunks)),
+    re.compile(r'{anchor}  *{authors}, "{title}", {series}(, {url})?(\.|$)'.format(**chunks)),
+    re.compile(r'{anchor}  *{authors}, "{title}", {series}, {date}, Work.in.progress(\.|$)'.format(**chunks)),
+    re.compile(r'{anchor}  *{authors}, "{title}", {date}(, {url})?(\.|$)'.format(**chunks)),
+    re.compile(r'{anchor}  *{authors}, "{title}", {docname}, {date}(, {url})?(\.|$)'.format(**chunks)),
+    re.compile(r'{anchor}  *{organiz}, "{title}", {docname}, {date}(, {url})?(\.|$)'.format(**chunks)),
+    re.compile(r'{anchor}  *{authors}, "{title}", {date}(, {url})?(\.|$)'.format(**chunks)),
+    re.compile(r'{anchor}  *{organiz}, "{title}", {date}(, {url})?(\.|$)'.format(**chunks)),
+    re.compile(r'{anchor}  *{authors}, "{title}", {date}, Work.in.progress(\.|$)'.format(**chunks)),
+    re.compile(r'{anchor}  *{organiz}, "{title}", {url}(\.|$)'.format(**chunks)),
+    re.compile(r'{anchor}  *"{title}", Work in Progress ?, {date}(, {url})?(\.|$)'.format(**chunks)),
+    re.compile(r'{anchor}  *"{title}", Work in Progress ?, {url}(\.|$)'.format(**chunks)),
+    re.compile(r'{anchor}  *"{title}", {docname}, {date}(, {url})?(\.|$)'.format(**chunks)),
+    re.compile(r'{anchor}  *"{title}", {date}, {url}(\.|$)'.format(**chunks)),
+    re.compile(r'{anchor}  *"{title}", {url}(\.|$)'.format(**chunks)),
+    re.compile(r'{anchor}  *{url}(\.|$)'.format(**chunks)),
 ## Lines commented out below are for debugging, when the full regex doesn't match (is buggy).
 #    r'{anchor}  *{authors}, "{title}", {series}, {date}(, {url})?'.format(**chunks),
 #    r'{anchor}  *{organiz}, "{title}", {docname}, {date}'.format(**chunks),
@@ -529,8 +530,8 @@ def dtrace(fn):
         if len(s) > n+3:
             s = s[:n]+"..."
         return s
-    def wrap(fn, self, *params,**kwargs):
-        call = wrap.callcount = wrap.callcount + 1
+    def dtrace(fn, self, *params,**kwargs):
+        call = dtrace.callcount = dtrace.callcount + 1
         if self.options.debug and (self.options.trace_all or fn.__name__ in self.options.trace_methods):
             indent = ' ' * self.options.logindent[0]
             filename, lineno, caller, code = tb.extract_stack()[-3]
@@ -552,8 +553,8 @@ def dtrace(fn):
             ret = fn(self, *params,**kwargs)
 
         return ret
-    wrap.callcount = 0
-    return decorator(wrap, fn)
+    dtrace.callcount = 0
+    return decorator(dtrace, fn)
 
 
 class Stack(deque):
@@ -1777,7 +1778,7 @@ class DraftParser(Base):
             match = re.search(appendix_prefix, text)
             if match:
                 text = text[len(match.group(0)):]
-        return re.search('^%s([. ]|$)'%'.'.join(numlist), text) if numlist else re.search(section_start_re[part], text.lower()) != None
+        return re.search('^%s([. ]|$)'%'.'.join(numlist), text) != None if numlist else re.search(section_start_re[part], text.lower()) != None
 
     @dtrace
     def read_author_name(self):
@@ -1944,6 +1945,8 @@ class DraftParser(Base):
             num += 1
             sublist = numlist + [ str(num) ]
             line, p = self.get_text_line()
+            if not line:
+                break
             if self.is_section_start(line, sublist, part):
                 self.push_line(line, p)
                 subsection = self.section(sublist, level+1, appendix=appendix, part=part)
@@ -1980,6 +1983,8 @@ class DraftParser(Base):
         while True:
             # collect one block worth of text
             para = self.get_para()
+            if not para:
+                return None
             line = para[0]
             this_ind = indentation(line)
             first = line.txt.strip()
@@ -2140,7 +2145,7 @@ class DraftParser(Base):
                         len(indents) > 1
                         or (linecount == 1 and line.txt.strip()[:2] in ['o ', '* ', '+ ', '- ', ]) 
                         or (linecount == 1 and re.search('^[0-9a-z][ivx]*\. ', line.txt.strip()))
-                        or (indentation(next) > indentation(para[0]) and linecount == 1)
+                        or (next and indentation(next) > indentation(para[0]) and linecount == 1)
                         or ('  ' in line.txt.strip() and not '.  ' in line.txt.strip())
                         ):
                         self.dsay('... list (for some reason)')
@@ -2671,40 +2676,46 @@ class DraftParser(Base):
     @dtrace
     def back(self):
         back = self.element('back')
-        while True:
-            references = self.references([ str(self.section_number) ])
-            if references is None:
-                break
-            for refs in references:
-                back.append(refs)
-            self.section_number += 1
-        # maybe read the eref section
-        line = self.skip_blank_lines()
-        parts = line.txt.split()
-        if len(parts)>1 and parts[1] == 'URIs':
-            section = self.section([str(self.section_number-1), str(len(refs)+1)], part='back')
-        #
-        num = ord('A')
-        while True:
-            line = self.skip_blank_lines()
-            section = self.section(numlist=[ chr(num) ], appendix=True, part='back')
-            if section is None:
-                break
-            back.append(section)
-            num += 1
-        #
-        while True:
-            # other sections
-            line = self.skip_blank_lines()
-            word = line.txt.split()[0]
-            if word in ['Acknowledgments', 'Acknowledgements', 'Contributors', 'Index', ]:
-                section = self.section([word], part='back')
-                back.append(section)
-            else:
-                break
-        #
-        self.read_authors_addresses()
 
+        num = ord('A')
+        prev = None
+        while True:
+            line = self.skip_blank_lines()
+            if not line:
+                break
+            if line == prev:
+                # we didn't process this and following lines on the previous round, so bail out
+                self.err(line.num, "Expected a back section, found '%s'" % (line.txt))
+            if self.is_section_start(line, part='refs'):
+                self.dsay('Reference section: %s' % line.txt)
+                while True:
+                    references = self.references([ str(self.section_number) ])
+                    if references is None:
+                        break
+                    for refs in references:
+                        back.append(refs)
+                    self.section_number += 1
+            elif self.is_section_start(line, part='back'):
+                self.dsay('Back section: %s' % line.txt)
+                word = line.txt.split()[0]
+                if line.txt.strip().lower().startswith('author'):
+                    self.dsay("Authors' Addresses")
+                    self.read_authors_addresses()
+                elif word.lower() == 'appendix':
+                    self.dsay("Appendix")
+                    section = self.section(numlist=[ chr(num) ], appendix=True, part='back')
+                    if not section is None:
+                        back.append(section)
+                        num += 1
+                else:
+                    self.dsay('Section: %s'%word)
+                    section = self.section([word], part='back')
+                    if not section is None:
+                        back.append(section)
+            else:
+                self.warn(line.num, "Expected a back section, found '%s'" % (line.txt))
+                break
+            prev = line
         return back
 
     @dtrace
@@ -2712,12 +2723,12 @@ class DraftParser(Base):
         refs = []
         # peek at the first nonblank line
         line, p = self.get_text_line()
-        if not self.is_section_start(line, numlist, part='refs'):
+        if self.is_section_start(line, numlist, part='refs') is None:
             self.push_line(line, p)
             return None
         #
         number, title = parse_section_start(line, numlist, level, appendix=False)
-        if not title in ['References', 'Normative References', 'Informative References', 'Informational References', 'Normative', 'Informative',]:
+        if not title in ['References', 'Normative References', 'Informative References', 'Informational References', 'Normative', 'Informative', 'URIs', ]:
             self.push_line(line, p)
             return None
         # peek at the next nonblank line
