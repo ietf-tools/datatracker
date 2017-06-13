@@ -1,7 +1,7 @@
 from django.contrib import messages
 from django.urls import reverse
 from django.http import HttpResponseRedirect
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 
 from ietf.group.models import Group, Role
 from ietf.group.utils import save_group_in_history
@@ -53,14 +53,15 @@ def delete_role(request, acronym, id):
     role = get_object_or_404(Role, id=id)
     group = get_object_or_404(Group, acronym=acronym)
 
-    # save group
-    save_group_in_history(role.group)
-                
-    role.delete()
-    
-    messages.success(request, 'The entry was deleted successfully')
-    url = reverse('ietf.secr.roles.views.main') + '?group=%s' % group.acronym
-    return HttpResponseRedirect(url)
+    if request.method == 'POST' and request.POST['post'] == 'yes':
+        # save group
+        save_group_in_history(group)
+
+        role.delete()
+        messages.success(request, 'The entry was deleted successfully')
+        return redirect('ietf.secr.roles.views.main')
+
+    return render(request, 'confirm_delete.html', {'object': role})
 
 @role_required('Secretariat')
 def main(request):
