@@ -22,6 +22,7 @@ testfiles= \
 	rfc7842.txt						\
 	draft-ietf-curdle-cms-ecdh-new-curves-07.txt		\
 	draft-ietf-sidr-bgpsec-protocol-23mod.txt		\
+	draft-ietf-trill-directory-assist-mechanisms-12mod.txt	\
 # draft-ietf-curdle-cms-ecdh-new-curves-07.txt is a modified copy, with
 # some reference fixes
 
