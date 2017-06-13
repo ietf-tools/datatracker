@@ -217,16 +217,6 @@ def split_on_large_whitespace(line):
 def indentation(line):
     return len(line.txt) - len(line.txt.lstrip())
 
-def is_section_start(line, numlist=None, part=None):
-    assert part != None
-    if not line:
-        return True
-    text = line.txt
-    match = re.search(appendix_prefix, text)
-    if match:
-        text = text[len(match.group(0)):]
-    return re.search('^%s([. ]|$)'%'.'.join(numlist), text) if numlist else re.search(section_start_re[part], text.lower()) != None
-
 def parse_section_start(line, numlist, level, appendix):
     text = line.txt
     if appendix:
@@ -1697,7 +1687,7 @@ class DraftParser(Base):
             # [URI: uri]
             #
             line = self.skip_blank_lines()
-            if not line or is_section_start(line, part='back'):
+            if not line or self.is_section_start(line, part='back'):
                 break
             #
             item = self.read_author_name()
@@ -1773,6 +1763,17 @@ class DraftParser(Base):
                 else:
                     fail(line, expect, text)
         return True
+
+    @dtrace
+    def is_section_start(self, line, numlist=None, part=None):
+        assert part != None
+        if not line:
+            return True
+        text = line.txt
+        match = re.search(appendix_prefix, text)
+        if match:
+            text = text[len(match.group(0)):]
+        return re.search('^%s([. ]|$)'%'.'.join(numlist), text) if numlist else re.search(section_start_re[part], text.lower()) != None
 
     @dtrace
     def read_author_name(self):
@@ -1888,7 +1889,7 @@ class DraftParser(Base):
             return None
         # Expect the start of a section: section number and title
         number, title = parse_section_start(line, numlist, level, appendix)
-        if is_section_start(line, numlist, part):
+        if self.is_section_start(line, numlist, part):
             if len(numlist) == 1 and title.lower() in section_names['refs']:
                 self.push_line(line, p)
                 return None
@@ -1939,7 +1940,7 @@ class DraftParser(Base):
             num += 1
             sublist = numlist + [ str(num) ]
             line, p = self.get_text_line()
-            if is_section_start(line, sublist, part):
+            if self.is_section_start(line, sublist, part):
                 self.push_line(line, p)
                 subsection = self.section(sublist, level+1, appendix=appendix, part=part)
                 if subsection is None:
@@ -2102,7 +2103,7 @@ class DraftParser(Base):
             #   - full      like headers + frame + vertical borders
             #   - all       like full + horizontal between data cells
             # * plain text, <t>
-            if is_section_start(line, part=part):
+            if self.is_section_start(line, part=part):
                 self.dsay('... section')
                 tag = 'section'
             elif not line.txt.startswith('   '):
@@ -2707,7 +2708,7 @@ class DraftParser(Base):
         refs = []
         # peek at the first nonblank line
         line, p = self.get_text_line()
-        if not is_section_start(line, numlist, part='back'):
+        if not self.is_section_start(line, numlist, part='back'):
             self.push_line(line, p)
             return None
         #
@@ -2717,7 +2718,7 @@ class DraftParser(Base):
             return None
         # peek at the next nonblank line
         line = self.skip_blank_lines()
-        if is_section_start(line, part='back'):
+        if self.is_section_start(line, part='back'):
             num = 1
             while True:
                 sublist = numlist + [ str(num) ]
@@ -2746,7 +2747,7 @@ class DraftParser(Base):
     def reference(self):
         entity = None
         line = self.skip_blank_lines()
-        if is_section_start(line, part='back'):
+        if self.is_section_start(line, part='back'):
             return None, None
         reference = self.element('reference')
         front = self.element('front')
@@ -2892,7 +2893,7 @@ class DraftParser(Base):
             else:
                 faild = regex
         else:
-            if not line or is_section_start(line, part='back'):
+            if not line or self.is_section_start(line, part='back'):
                 self.push_para(para)
                 return None, None
             else:
