@@ -1,12 +1,11 @@
-
-INTERNET-DRAFT                                           Donald Eastlake
-Intended status: Proposed Standard                          Linda Dunbar
-                                                                  Huawei
-                                                           Radia Perlman
+INTERNET-DRAFT                                               D. Eastlake
+Intended status: Proposed Standard                             L. Dunbar
+Expires: September 1, 2017					  Huawei
+                                                              R. Perlman
                                                                      EMC
-                                                               Yizhou Li
+                                                                   Y. Li
                                                                   Huawei
-Expires: September 1, 2017                                 March 2, 2017
+							   March 2, 2017
 
 
                 TRILL: Edge Directory Assist Mechanisms
@@ -2789,52 +2788,52 @@ INTERNET-DRAFT                       TRILL: Directory Service Mechanisms
 
 Normative References
 
-   [RFC826] - Plummer, D., "An Ethernet Address Resolution Protocol",
+   [RFC826]  Plummer, D., "An Ethernet Address Resolution Protocol",
          RFC 826, November 1982.
 
-   [RFC903] - Finlayson, R., Mann, T., Mogul, J., and M. Theimer, "A
+   [RFC903]  Finlayson, R., Mann, T., Mogul, J., and M. Theimer, "A
          Reverse Address Resolution Protocol", STD 38, RFC 903, June
-         1984
+         1984.
 
-   [RFC2119] - Bradner, S., "Key words for use in RFCs to Indicate
+   [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
          Requirement Levels", BCP 14, RFC 2119, March 1997
 
-   [RFC3971] - Arkko, J., Ed., Kempf, J., Zill, B., and P. Nikander,
+   [RFC3971]  Arkko, J., Ed., Kempf, J., Zill, B., and P. Nikander,
          "SEcure Neighbor Discovery (SEND)", RFC 3971, March 2005.
 
-   [RFC4861] - Narten, T., Nordmark, E., Simpson, W., and H. Soliman,
+   [RFC4861]  Narten, T., Nordmark, E., Simpson, W., and H. Soliman,
          "Neighbor Discovery for IP version 6 (IPv6)", RFC 4861,
          September 2007.
 
-   [RFC5304] Li, T. and R. Atkinson, "IS-IS Cryptographic
+   [RFC5304]  Li, T. and R. Atkinson, "IS-IS Cryptographic
          Authentication", RFC 5304, October 2008.
 
-   [RFC5310] - Bhatia, M., Manral, V., Li, T., Atkinson, R., White, R.,
+   [RFC5310]  Bhatia, M., Manral, V., Li, T., Atkinson, R., White, R.,
          and M. Fanto, "IS-IS Generic Cryptographic Authentication", RFC
          5310, February 2009.
 
-   [RFC6165] - Banerjee, A. and D. Ward, "Extensions to IS-IS for
+   [RFC6165]  Banerjee, A. and D. Ward, "Extensions to IS-IS for
          Layer-2 Systems", RFC 6165, April 2011.
 
-   [RFC6325] - Perlman, R., Eastlake 3rd, D., Dutt, D., Gai, S., and A.
+   [RFC6325]  Perlman, R., Eastlake 3rd, D., Dutt, D., Gai, S., and A.
          Ghanwani, "Routing Bridges (RBridges): Base Protocol
          Specification", RFC 6325, July 2011.
 
-   [RFC7042] - Eastlake 3rd, D. and J. Abley, "IANA Considerations and
+   [RFC7042]  Eastlake 3rd, D. and J. Abley, "IANA Considerations and
          IETF Protocol and Documentation Usage for IEEE 802 Parameters",
          BCP 141, RFC 7042, October 2013.
 
-   [RFC7172] - Eastlake 3rd, D., Zhang, M., Agarwal, P., Perlman, R.,
+   [RFC7172]  Eastlake 3rd, D., Zhang, M., Agarwal, P., Perlman, R.,
          and D. Dutt, "Transparent Interconnection of Lots of Links
          (TRILL): Fine-Grained Labeling", RFC 7172, May 2014,
          <http://www.rfc-editor.org/info/rfc7172>.
 
-   [RFC7176] - Eastlake 3rd, D., Senevirathne, T., Ghanwani, A., Dutt,
+   [RFC7176]  Eastlake 3rd, D., Senevirathne, T., Ghanwani, A., Dutt,
          D., and A. Banerjee, "Transparent Interconnection of Lots of
          Links (TRILL) Use of IS-IS", RFC 7176, May 2014,
          <http://www.rfc-editor.org/info/rfc7176>.
 
-   [RFC7177] - Eastlake 3rd, D., Perlman, R., Ghanwani, A., Yang, H.,
+   [RFC7177]  Eastlake 3rd, D., Perlman, R., Ghanwani, A., Yang, H.,
          and V. Manral, "Transparent Interconnection of Lots of Links
          (TRILL): Adjacency", RFC 7177, DOI 10.17487/RFC7177, May 2014,
 
@@ -2846,33 +2845,33 @@ INTERNET-DRAFT                       TRILL: Directory Service Mechanisms
 
          <http://www.rfc-editor.org/info/rfc7177>.
 
-   [RFC7178] - Eastlake 3rd, D., Manral, V., Li, Y., Aldrin, S., and D.
+   [RFC7178]  Eastlake 3rd, D., Manral, V., Li, Y., Aldrin, S., and D.
          Ward, "Transparent Interconnection of Lots of Links (TRILL):
          RBridge Channel Support", RFC 7178, May 2014, <http://www.rfc-
          editor.org/info/rfc7178>.
 
-   [RFC7356] - Ginsberg, L., Previdi, S., and Y. Yang, "IS-IS Flooding
+   [RFC7356]  Ginsberg, L., Previdi, S., and Y. Yang, "IS-IS Flooding
          Scope Link State PDUs (LSPs)", RFC 7356, DOI 10.17487/RFC7356,
          September 2014, <http://www.rfc-editor.org/info/rfc7356>.
 
-   [RFC7357] - Zhai, H., Hu, F., Perlman, R., Eastlake 3rd, D., and O.
+   [RFC7357]  Zhai, H., Hu, F., Perlman, R., Eastlake 3rd, D., and O.
          Stokes, "Transparent Interconnection of Lots of Links (TRILL):
          End Station Address Distribution Information (ESADI) Protocol",
          RFC 7357, September 2014, <http://www.rfc-
          editor.org/info/rfc7357>.
 
-   [RFC7780] - Eastlake 3rd, D., Zhang, M., Perlman, R., Banerjee, A.,
+   [RFC7780]  Eastlake 3rd, D., Zhang, M., Perlman, R., Banerjee, A.,
          Ghanwani, A., and S. Gupta, "Transparent Interconnection of
          Lots of Links (TRILL): Clarifications, Corrections, and
          Updates", RFC 7780, DOI 10.17487/RFC7780, February 2016,
          <http://www.rfc-editor.org/info/rfc7780>.
 
-   [RFC7961] - Eastlake 3rd, D. and L. Yizhou, "Transparent
+   [RFC7961]  Eastlake 3rd, D. and L. Yizhou, "Transparent
          Interconnection of Lots of Links (TRILL): Interface Addresses
          APPsub-TLV", RFC 7961, DOI 10.17487/RFC7961, August 2016,
          <http://www.rfc-editor.org/info/rfc7961>.
 
-   [rfc6439bis] - D. Eastlake, Y. Li, M. Umair, A. Banerjee, and F. Hu,
+   [rfc6439bis]  Eastlake, D., Li, Y., Umair, M., Banerjee, A., and F. Hu,
          "Routing Bridges (RBridges): Appointed Forwarders", draft-ietf-
          trill-rfc6439bis, work in progress.
 
@@ -2880,20 +2879,20 @@ INTERNET-DRAFT                       TRILL: Directory Service Mechanisms
 
 Informational References
 
-   [RFC7067] - Dunbar, L., Eastlake 3rd, D., Perlman, R., and I.
+   [RFC7067]  Dunbar, L., Eastlake 3rd, D., Perlman, R., and I.
          Gashinsky, "Directory Assistance Problem and High-Level Design
          Proposal", RFC 7067, November 2013.
 
-   [RFC7978] - Eastlake 3rd, D., Umair, M., and Y. Li, "Transparent
+   [RFC7978]  Eastlake 3rd, D., Umair, M., and Y. Li, "Transparent
          Interconnection of Lots of Links (TRILL): RBridge Channel
          Header Extension", RFC 7978, DOI 10.17487/RFC7978, September
          2016, <http://www.rfc-editor.org/info/rfc7978>.
 
-   [ARPND] - Y. Li, D. Eastlake, L. Dunbar, R. Perlman, I. Gashinsky,
+   [ARPND]  Li, Y., Eastlake, D., Dunbar, L., Perlman, R., and I. Gashinsky,
          "TRILL: ARP/ND Optimization", draft-ietf-trill-arp-
          optimization, work in progress.
 
-   [DirAsstEncap] L. Dunbar, D. Eastlake, R. Perlman, I. Gashingksy,
+   [DirAsstEncap]  Dunbar, L., Eastlake, D., Perlman, R., and I. Gashingksy,
 
 
 D. Eastlake, et al                                             [Page 51]
@@ -2904,12 +2903,12 @@ INTERNET-DRAFT                       TRILL: Directory Service Mechanisms
          "Directory Assisted TRILL Encapsulation", draft-ietf-trill-
          directory-assisted-encap, work in progress.
 
-   [SmartEN] R. Perlman, F. Hu, D. Eastlake, K. Krupakaran, T. Liao,
+   [SmartEN]  Perlman, R., Hu, F., Eastlake, D., Krupakaran, K., and T. Liao,
          "TRILL Smart Endnodes", draft-ietf-trill-smart-endnodes",
          draft-ietf-trill-smart-endnodes, work in progress.
 
-   [X.233] - ITU-T Recommendation X.233: Protocol for providing the
-         connectionless-mode network service: Protocol specification,
+   [X.233]  "ITU-T Recommendation X.233: Protocol for providing the
+         connectionless-mode network service: Protocol specification",
          International Telecommunications Union, August 1997
 
 
