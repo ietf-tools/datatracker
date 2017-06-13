@@ -133,8 +133,10 @@ def strip_pagebreaks(text):
             sentence = True
         if re.search("^ +(Table|Figure)( +\d+)?: ", line): # line starts with Table or Figure label; don't join with next page para
             sentence = True
-        if len(line) < 50:              # line is too short; don't join with next page para
+        if line.strip() and len(line) < 50:              # line is too short; don't join with next page para
             sentence = True
+        if line.rstrip() and line.rstrip()[-1] == ',':
+            sentence = False
         if re.search("^[ \t]*$", line):
             blankcount += 1
             if blankcount > 7:
