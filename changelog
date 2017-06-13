@@ -1,3 +1,78 @@
+ietfdb (6.54.1) ietf; urgency=medium
+
+  **Bugfixes.  Floor indicators on the agenda**
+
+  This is a bugfix release, with a number of smaller fixes.  It also
+  introduces floor indicators on the IETF meeting agenda page.  From the
+  commit log:
+
+  * Added a guard against trying to get the room ID from a timeslot without 
+    location in the secretariat schedule view.
+
+  * Merged in [13588] from rcross@amsl.com:
+    Initialize Empty-Schedule with special sessions from previous meeting on
+    creation.  Fixes issue #1500.
+
+  * Merged in [13586] from rjsparks@nostrum.com:
+    Workaround for an issue with the schedule editor by ensuring no sessions
+    remain scheduled in a room whose purpose has changed to something other
+    than holding sessions (such as becoming unavailable).  
+
+  * A first go at adding floor labels to the agenda pages.  The placement 
+    of the labels are complicated by available whitespace beeing in different 
+    horizontal positions for different types of lines.  Adding another column 
+    will push the session title out of the screen on small devices.
+
+  * Fixed a bug with missing operations on the /group/chartering/ 'Chartering
+    or re-chartering' page, so that not only operations on groups in a
+    chartering state is shown, but also the options to start chartering.
+    Fixes issue #2312.
+
+  * Merged in [13575] from rcross@amsl.com:
+    Create new script ietf/bin/set_admin_permissions to configure Django Admin
+    group permissions.  Fixes #2008.  
+
+  * Merged in [13567] from rcross@amsl.com:
+    Refactor ietf/bin/merge-person-records to facilitate testing.  Add tests.
+    Fixes #2162.  
+
+  * Merged in [13554] from rcross@amsl.com:
+    Several widgets in session request form require javascript.  Prevent usage
+    of page without javascript. Fixes #1767.  
+
+  * Merged in [13559] from rcross@amsl.com:
+    When changing a TelechatDate in the admin interface, retain all document
+    associations.  Fixes #1349.  
+
+  * Added a test to the test suite which checks if there are interleaved 
+    schema and data migrations that have not been released yet.  Having split 
+    migrations, first all schema and then all data, will permit doing 2 
+    sequential releases; but if the data and schema migrations are interleaved 
+    (beyond this) it is problematic to arrange for release without ending up 
+    with a prolonged period when running code and table structure is out of 
+    sync (while the normally more time-consuming data migrations run).
+
+  * Narrowed a too wide try/except region in order to give more correct error
+    messages on failed conversion of submitted xml drafts .  Changed the the
+    strip() application to happen only on extracted author elements that
+    actually have content.  Fixes an inability to upload xml-only drafts with
+    missing author country information.
+
+  * Fixed another place where None author email needed an extra guard.
+
+  * Added blank lines between milestones, so they don't get run together if 
+    they are long enough to cause line wrapping.  Fixes issue #2311.
+
+  * Fixed a problem with a formset, they don't have self.cleaned_data, so 
+    cannot return it.  Fixes issue #2310.
+
+  * Fixed a place where a missing document author email address could cause 
+    a server 500.  There may be additional places needing attention, now that 
+    we're not inserting dummy addresses.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  13 Jun 2017 10:33:08 +0000
+
+
 ietfdb (6.54.0) ietf; urgency=medium
 
   **Author and Meeting Statistics**
