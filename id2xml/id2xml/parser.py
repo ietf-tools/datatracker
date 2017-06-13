@@ -245,8 +245,9 @@ def clean_name(txt):
 
 def slugify(s):
     s = s.strip().lower()
-    s = re.sub(r'[^\w\s/-]', '', s)
-    s = re.sub(r'[-\s/]', '-', s)
+    s = re.sub(r'[^\w\s./-]', '', s)
+    s = re.sub(r'[-\s/]+', '-', s)
+    s = s.strip('-')
     return s
 
 def flatten(l):
@@ -719,7 +720,7 @@ class TextParser(Base):
             return self.stack.pop()
         else:
             section = number.rstrip('.')
-            target = 'section-%s'%section
+            target = 'section-%s'%slugify(section)
             self.dshow('target')
             # check if this is a section of something else
             parts = self.peek(3+6)
@@ -1916,7 +1917,7 @@ class DraftParser(Base):
             if tag == 'section':
                 section.set('title', title)
                 if number:
-                    anchor = 'section-%s'%number.rstrip('.')
+                    anchor = 'section-%s'%slugify(number.rstrip('.'))
                 else:
                     anchor = '%s'%slugify(title)
                     section.set('numbered', 'no')
@@ -2857,15 +2858,17 @@ class DraftParser(Base):
                         ename = None
                         for item in re.findall(ref_series_one, series):
                             self.dshow('item')
-                            parts = item.split(None, 1)                            
+                            parts = item.split(None, 1)
                             if len(parts) == 1:
                                 if item.startswith('draft-'):
+                                    item = item.split(' ')[0].split(',')[0]
                                     name, value = 'Internet-Draft', item
                                 else:
                                     name, value = '(Unknown)', item
                             else:
                                 if item.startswith('draft-'):
-                                    name, value = 'Internet-Draft', parts[0]
+                                    item = parts[0].split(' ')[0].split(',')[0]
+                                    name, value = 'Internet-Draft', item
                                 else:
                                     name, value = parts
                             self.dshow('name')
