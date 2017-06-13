@@ -861,6 +861,7 @@ class DraftParser(Base):
     pi = {}
     #
     _identify_paragraph_cache = {}
+    figure_and_table_anchors = {}
     section_anchors = []
     reference_anchors = []
 
@@ -1979,7 +1980,7 @@ class DraftParser(Base):
                     break
                 elif first.startswith(unexpected):
                     self.warn(para[0].num, "Unexpected title: expected '%s ...', found '%s'.  This looks like a %s that has been entered as a %s.  The generated XML will need adjustment." % (expected, first, tag, othertag))
-                    self.push_para(para)
+                    block.append(para)
                     break
                 elif linecount == 1 and (tag=='figure' or len(block) == 1) and not '  ' in first:
                     this_tag = tag
@@ -2028,8 +2029,7 @@ class DraftParser(Base):
                         break
             if tag in ['figure', 'texttable']:
                 label = para2str(block[-1])
-                expected = tag2label[tag]
-                if label.startswith(expected):
+                if label.startswith(tag2label['figure']) or label.startswith(tag2label['texttable']):
                     block.pop()
                 else:
                     label = None
@@ -2159,15 +2159,19 @@ class DraftParser(Base):
     @dtrace
     def make_figure(self, block, title):
         figure = self.element('figure')
-        if title and title.startswith('Figure'):
+        if title and (title.startswith('Figure') or title.startswith('Table')):
             parts = title.split(None, 2)
             if len(parts) > 1:
                 num = parts[1]
                 num = num.replace(':','')
-                figure.set('anchor', 'figure-%s'%num)
+                ref = "%s-%s"%(parts[0].lower(),num)
+                anchor = "ref-%s"%ref
             if len(parts) > 2:
                 title = parts[2]
                 figure.set('title', title)
+                anchor = "ref-%s"%slugify(title)
+            figure.set('anchor', anchor)
+            self.figure_and_table_anchors[ref] = anchor
         text = para2text(flatten(block))
         artwork = self.element('artwork', CDATA('\n'+unindent(text, 3)+'\n'))
         figure.append(artwork)
@@ -2240,16 +2244,19 @@ class DraftParser(Base):
             colpos.append(pos)
         # --- Process the table, generate xml elements ---
         texttable = self.element('texttable')
-        if title:
-            if title.startswith('Table'):
-                parts = title.split(None, 2)
-                if len(parts) > 1:
-                    num = parts[1]
-                    num = num.replace(':','')
-                    texttable.set('anchor', 'table-%s'%num)
-                if len(parts) > 2:
-                    title = parts[2]
-                    texttable.set('title', title)
+        if title and (title.startswith('Table') or title.startswith('Figure')):
+            parts = title.split(None, 2)
+            if len(parts) > 1:
+                num = parts[1]
+                num = num.replace(':','')
+                ref = "%s-%s"%(parts[0].lower(),num)
+                anchor = "ref-%s"%ref
+            if len(parts) > 2:
+                title = parts[2]
+                texttable.set('title', title)
+                anchor = "ref-%s"%slugify(title)
+            texttable.set('anchor', anchor)
+            self.figure_and_table_anchors[ref] = anchor
         texttable.set('style', style)
         # skip top border
         line = paragraph.pop(0)
