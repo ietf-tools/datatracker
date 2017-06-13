@@ -1,3 +1,32 @@
+id2xml (1.0.1) ietf; urgency=medium
+
+  This is a bugfix release which addressess a number of issues raised by the
+  RFC Editor staff.
+
+  * Fixed a bug in line reading, which could cause the first line of a 
+    document to be skipped.  Added recognition of additional Standards Track 
+    status indications, such as 'Proposed Standard', etc.  Fixed a grammar 
+    issue.  Fixed an issue with mismatched authors on the first page and 
+    Author's Addresses section.  Refined the header/footer stripping to deal 
+    with additional variations of header/footer lines.
+
+  * Fixed a number of places where warn() was called with a line object was 
+    used instead of the line number.
+
+  * Changed to using the supplied figure or texttable label to set the 
+    title attribute also when rendering the figure as texttable or texttable as 
+    figure.
+
+  * Refined the tokenizer for the text parser in order to correctly handle 
+    things like (Section N.N).
+
+  * Eliminated trailing blank cells in texttables.
+
+  * Added RFC-Editor staff to the release notification list.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  13 Jun 2017 19:33:46 +0200
+
+
 id2xml (1.0.0) ietf; urgency=medium
 
   The number of lines in the corpus of test documents now show a percentage
