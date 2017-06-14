@@ -15,14 +15,13 @@ testfiles= \
 	draft-ietf-v6ops-rfc7084-bis-01.txt			\
 	draft-jones-cose-rsa-03.txt				\
 	draft-miek-test.txt					\
-	draft-nottingham-rfc5988bis-05.txt			\
 	draft-sparks-genarea-review-tracker-03.txt		\
 	rfc5661.txt						\
 	rfc7629.txt						\
 	rfc7842.txt						\
 	draft-ietf-curdle-cms-ecdh-new-curves-07.txt		\
 	draft-ietf-sidr-bgpsec-protocol-23mod.txt		\
-	draft-ietf-trill-directory-assist-mechanisms-12mod.txt	\
+	draft-ietf-trill-directory-assist-mechanisms-12a.txt	\
 # draft-ietf-curdle-cms-ecdh-new-curves-07.txt is a modified copy, with
 # some reference fixes
 
@@ -87,7 +86,7 @@ test/out/%.test:	test/ok/%.diff test/out/%.diff
 	ratio=$$(( outlen * 100 / totlen ));				\
 	if [ $$oklen -gt $$outlen ]; then gain=-$$(( oklen - outlen )); else gain=''; fi; \
 	printf "Changed now/ok: %-48s %2s%%  %4s /%4s %4s\n" $(basename $(@F)) $$ratio $$outlen $$oklen $$gain; \
-
+	test $$oklen -ge $$outlen || { echo "								  *** failed ***"; }	\
 #	test $$oklen -ge $$outlen || { diff -y $^ | less; }
 
 

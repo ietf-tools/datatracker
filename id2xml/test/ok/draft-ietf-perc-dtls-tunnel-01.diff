@@ -1,4 +1,4 @@
-571,576c571,577
+568,573c568,574
 <             message_type: 0x01
 <                   length: 0x0007
 <        SupportedProfiles:
@@ -13,9 +13,7 @@
 > 
 >                            protection_profiles:  0x0004 (length)
 >                                                  0x0009000A (value)
-587a589
-> 
-594,598c596,601
+591,595c592,596
 <              |   0x01  | Supported SRTP Protection Profiles |
 <              |   0x02  | Unsupported Version                |
 <              |   0x03  | Media Keys                         |
@@ -27,8 +25,7 @@
 >              | 0x03    | Media Keys                         |
 >              | 0x04    | Tunneled DTLS                      |
 >              | 0x05    | Endpoint Disconnect                |
->              |         |                                    |
-702c705
+699c700
 <    Cisco Systems, Inc.
 ---
 >    Cisco Systems
