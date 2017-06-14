@@ -865,6 +865,7 @@ class DraftParser(Base):
         # we start out with symrefs="no", then change the setting to
         # "yes" if we find a non-numeric reference anchor:
         'symrefs': 'no',
+        'sortrefs': 'no',
         'text-list-symbols': '        ',
     }
 
@@ -939,6 +940,8 @@ class DraftParser(Base):
             pi = self.set_pi(self.root, k, v)
             if k == 'symrefs':
                 self.symrefs_pi = pi
+            elif k == 'sortrefs':
+                self.sortrefs_pi = pi
             elif k == 'text-list-symbols':
                 self.symbols_pi = pi
 
@@ -2927,6 +2930,7 @@ class DraftParser(Base):
     def postprocess(self):
         self.add_text_refs()
         self.update_symrefs_pi()
+        self.update_sortrefs_pi()
         self.update_symbols_pi()
 
     def add_text_refs(self):
@@ -2963,7 +2967,23 @@ class DraftParser(Base):
                 symrefs = "yes"
         self.pi['symrefs'] = symrefs
         pi = ProcessingInstruction('rfc', 'symrefs="%s"'%symrefs)
+        pi.tail = '\n\t'
         self.root.replace(self.symrefs_pi, pi)
+
+    def update_sortrefs_pi(self):
+        if not hasattr(self, 'reference_anchors'):
+            self.err(0, "Internal error: set_symref_pi() called without reference_anchors having been set")
+        sortrefs = "yes"
+        prev = None
+        for anchor in self.reference_anchors:
+            if prev and anchor.startswith('RFC') and len(anchor) > 6 and anchor < prev:
+                sortrefs = "no"
+                break
+            prev = anchor
+        self.pi['sortrefs'] = sortrefs
+        pi = ProcessingInstruction('rfc', 'sortrefs="%s"'%sortrefs)
+        pi.tail = '\n\t'
+        self.root.replace(self.sortrefs_pi, pi)
 
     def update_symbols_pi(self):
         symbols = list(self.pi['text-list-symbols'].rstrip())
@@ -2978,4 +2998,5 @@ class DraftParser(Base):
                     symbols.append(s)
         self.pi['text-list-symbols'] = ''.join(symbols)
         pi = ProcessingInstruction('rfc', 'text-list-symbols="%s"'%self.pi['text-list-symbols'])
+        pi.tail = '\n\t'
         self.root.replace(self.symbols_pi, pi)
