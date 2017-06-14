@@ -1,7 +1,10 @@
 id2xml (1.0.1) ietf; urgency=medium
 
   This is a bugfix release which addressess a number of issues raised by the
-  RFC Editor staff.
+  RFC Editor staff, and a few issues found during testing.
+
+  * Added generation of a sortrefs PI which matches the original's RFC
+    references being sorted or not.
 
   * Tweaked the slugifier, and applied it to section-* anchors, to ensure 
     they are valid.  Fixed an issue causing trailing commas in entity names.
@@ -35,7 +38,7 @@ id2xml (1.0.1) ietf; urgency=medium
 
   * Added RFC-Editor staff to the release notification list.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  14 Jun 2017 11:56:14 +0000
+ -- Henrik Levkowetz <henrik@levkowetz.com>  14 Jun 2017 12:22:54 +0000
 
 
 id2xml (1.0.0) ietf; urgency=medium
