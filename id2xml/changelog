@@ -35,7 +35,7 @@ id2xml (1.0.1) ietf; urgency=medium
 
   * Added RFC-Editor staff to the release notification list.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  13 Jun 2017 19:33:46 +0200
+ -- Henrik Levkowetz <henrik@levkowetz.com>  14 Jun 2017 11:56:14 +0000
 
 
 id2xml (1.0.0) ietf; urgency=medium
