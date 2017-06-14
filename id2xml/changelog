@@ -3,6 +3,17 @@ id2xml (1.0.1) ietf; urgency=medium
   This is a bugfix release which addressess a number of issues raised by the
   RFC Editor staff.
 
+  * Tweaked the slugifier, and applied it to section-* anchors, to ensure 
+    they are valid.  Fixed an issue causing trailing commas in entity names.
+
+  * Rewrote the handling of back matter to permit the various back sections 
+    to occur in any order.  Added yet another way to say 'work in progress' in 
+    references; added new reference patterns and removed the expectation that 
+    references will have a terminating period; did some minor code clean-up.
+
+  * Refined the header and footer stripping to consider end-of-line commas,
+    and to require short lines triggering paragraph breaks to contain text.
+
   * Fixed a bug in line reading, which could cause the first line of a 
     document to be skipped.  Added recognition of additional Standards Track 
     status indications, such as 'Proposed Standard', etc.  Fixed a grammar 
