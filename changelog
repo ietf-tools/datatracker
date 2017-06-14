@@ -1,9 +1,9 @@
 ietfdb (6.54.1) ietf; urgency=medium
 
-  **Bugfixes.  Floor indicators on the agenda**
+  **Bugfixes, floor indications on the agenda**
 
   This is a bugfix release, with a number of smaller fixes.  It also
-  introduces floor indicators on the IETF meeting agenda page.  From the
+  introduces floor indications on the IETF meeting agenda page.  From the
   commit log:
 
   * Added a guard against trying to get the room ID from a timeslot without 
