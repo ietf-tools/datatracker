@@ -212,24 +212,25 @@ class DraftYangChecker(object):
             message += "%s: %s:\n%s\n" % (cmd_version, cmd_template, out+"No validation errors\n" if code == 0 else err)
 
             # yanglint
-            cmd_template = settings.SUBMIT_YANGLINT_COMMAND
-            command = cmd_template.split()[0]
-            cmd_version = VersionInfo.objects.get(command=command).version
-            cmd = cmd_template.format(model=path, rfclib=settings.SUBMIT_YANG_RFC_MODEL_DIR, draftlib=settings.SUBMIT_YANG_DRAFT_MODEL_DIR)
-            code, out, err = pipe(cmd)
-            if code > 0:
-                error_lines = err.splitlines()
-                for line in error_lines:
-                    if line.strip():
-                        try:
-                            if 'err : ' in line:
-                                errors += 1
-                            if 'warn: ' in line:
-                                warnings += 1
-                        except ValueError:
-                            pass
-            #passed = passed and code == 0 # For the submission tool.  Yang checks always pass
-            message += "%s: %s:\n%s\n" % (cmd_version, cmd_template, out+"No validation errors\n" if code == 0 else err)
+            if settings.SUBMIT_YANGLINT_COMMAND:
+                cmd_template = settings.SUBMIT_YANGLINT_COMMAND
+                command = cmd_template.split()[0]
+                cmd_version = VersionInfo.objects.get(command=command).version
+                cmd = cmd_template.format(model=path, rfclib=settings.SUBMIT_YANG_RFC_MODEL_DIR, draftlib=settings.SUBMIT_YANG_DRAFT_MODEL_DIR)
+                code, out, err = pipe(cmd)
+                if code > 0:
+                    error_lines = err.splitlines()
+                    for line in error_lines:
+                        if line.strip():
+                            try:
+                                if 'err : ' in line:
+                                    errors += 1
+                                if 'warn: ' in line:
+                                    warnings += 1
+                            except ValueError:
+                                pass
+                #passed = passed and code == 0 # For the submission tool.  Yang checks always pass
+                message += "%s: %s:\n%s\n" % (cmd_version, cmd_template, out+"No validation errors\n" if code == 0 else err)
 
             if errors==0 and warnings==0:
                 dest = os.path.join(settings.SUBMIT_YANG_DRAFT_MODEL_DIR, model)
