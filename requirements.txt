@@ -33,7 +33,7 @@ MySQL-python>=1.2.5
 pathlib>=1.0
 pathlib2>=2.3.0
 Pillow>=3.0
-pyang>=1.6
+#pyang>=1.6			# Handled as an svn:externals component
 pyflakes>=0.8.1
 pyquery>=1.2.13,!=1.2.14	# Pyqyery 1.2.14 fails on some selectors or stacked selectors
 python-dateutil>=2.2
@@ -51,6 +51,6 @@ Trac>=1.0.10,<1.2
 Unidecode>=0.4.18
 #wsgiref>=0.1.2
 xml2rfc>=2.5.0,!=2.6.0
-xym>=0.1.2,!=0.3
+#xym>=0.1.2,!=0.3		# Handled as an svn:externals component
 #zxcvbn-python>=4.4.14		# Not needed until we do back-end password entropy validation
 
