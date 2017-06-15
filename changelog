@@ -1,3 +1,63 @@
+ietfdb (6.55.0) ietf; urgency=medium
+
+  This release updates and expands the Yang support in the datatracker.  In
+  addition to checking yang modules in submitted drafts using pyang, it now
+  also does a yanglint check.  The yang validation results are available by
+  clicking on the red or green yin/yang symbols which show for drafts that
+  contain yang models.
+
+  For drafts where one or more models were found at submission time, the pyang
+  and yanglint checks are re-run once per day, to catch newly arrived models
+  in the library directories (both rfc and draft models).
+
+  Additional details, from the commit log:
+
+  * Added a new yang checker, 'yanglint', to the existing Yang checker class,
+    in addition to the existing 'pyang' checker.
+
+  * Added modal overlay displays showing the yang check results every place
+    the yin/yang symbol is shown (red or green) to indicate the presencee and
+    result of yang checks.  Added a Yang Validation: line in the document
+    meta-information section on the document's page in the datatracker.
+
+  * Added the result of the xym extaction to the yang check results, to make
+    extration failures visible.
+
+  * Added the version of the used xym, pyang, and yanglint commands to the
+    check results.
+
+  * Added an action to move successfully extracted and validated modules to
+    the module library directories immediately on submission.
+
+  * Added the xym repository as an svn:external component, rather than listing
+    it in requirements.txt, as there has been delays of many months between
+    essential features appearing in the repository, and an actual release of
+    same.  We may get occasional buildbot failures if broken code is pulled in
+    from the repository, but better that than the functionality failure of
+    severely outdated componets.
+
+  * Added a new management command to re-run yang validation for active drafts
+    for which yang modules were found at submission time, in order to pick up
+    imported models which may have arrived in the model libraries after the
+    draft's submission.  Run daily from bin/daily.
+
+  * Added a table to hold version information for external commands.  The yang
+    checker output should include the version information of the used
+    checkers, but seems unnecessary to run each command with its --version
+    switch every time we check a module...
+
+  * Added a new management command to collect version information for external
+    commands on demand.  To be run daily from bin/daily.
+
+  * Added tests to verify that xym, pyang and yanglint information is
+    available on the submission confirmation page, and updated the yang module
+    contained in the test document to validate under both pyang and yanglint.
+
+  * Updated admin.py and resource.py files as needed.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  15 Jun 2017 13:18:06 -0700
+
+
 ietfdb (6.54.1) ietf; urgency=medium
 
   **Bugfixes, floor indications on the agenda**
