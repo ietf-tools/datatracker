@@ -44,7 +44,7 @@
       Your draft has <b>NOT</b> been verified to pass the submission checks.
     {% endif %}
   </p>
-  {% for check in submission.checks.all %}
+  {% for check in submission.latest_checks %}
     {% if check.errors %}
        <p class="alert alert-warning">
 	  The {{check.checker}} returned {{ check.errors }} error{{ check.errors|pluralize }}
@@ -58,7 +58,7 @@
     {% endif %}
   {% endfor %}
 
-  {% for check in submission.checks.all %}
+  {% for check in submission.latest_checks %}
     {% if check.passed != None %}
       <button class="btn btn-{% if check.passed %}{% if check.warnings %}warning{% elif check.errors %}warning{% else %}success{% endif %}{% else %}danger{% endif %}" data-toggle="modal" data-target="#check-{{check.pk}}">View {{ check.checker }}</button>
 
@@ -67,9 +67,9 @@
 	  <div class="modal-content">
 	    <div class="modal-header">
 	      <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-	      <h4 class="modal-title" id="nitslabel">{{ check.checker|title }} for {{ submission.name }}-{{ submission.rev }}</h4>
+	      <h4 class="modal-title" id="{{check.checker|slugify}}-label">{{ check.checker|title }} for {{ submission.name }}-{{ submission.rev }}</h4>
 	    </div>
-	    <div class="modal-body">
+	    <div class="modal-body" id="{{check.checker|slugify}}-message">
 	      <pre>{{ check.message }}</pre>
 	    </div>
 	    <div class="modal-footer">

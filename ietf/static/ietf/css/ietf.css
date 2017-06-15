@@ -865,3 +865,9 @@ blockquote {
 #debug-query-table .code .current {
   background-color: #ddd;
 }
+
+.checker-warning,
+.checker-success {
+  line-height: 1.0;
+  cursor: pointer;
+}

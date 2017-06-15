@@ -35,100 +35,91 @@
        <figure>
           <artwork>
              <![CDATA[
-<CODE BEGINS> file "ietf-mpls@2015-10-16.yang"
+<CODE BEGINS> file "ietf-yang-metadata@2016-08-05.yang"
 
-module ietf-mpls {
+module ietf-yang-metadata {
 
-  namespace "urn:ietf:params:xml:ns:yang:ietf-mpls";
+ namespace "urn:ietf:params:xml:ns:yang:ietf-yang-metadata";
 
-  prefix "mpls";
+ prefix "md";
 
-  import ietf-routing {
-    prefix "rt";
-  }
+ organization
+   "IETF NETMOD (NETCONF Data Modeling Language) Working Group";
 
-  import ietf-interfaces {
-    prefix "if";
-  }
+ contact
+   "WG Web:   <https://datatracker.ietf.org/wg/netmod/>
 
-  organization "TBD";
+    WG List:  <mailto:netmod@ietf.org>
 
-  contact "TBD";
+    WG Chair: Lou Berger
+              <mailto:lberger@labn.net>
 
-  description
-    "This YANG module defines the essential components for the
-     management of the MPLS subsystem.";
+    WG Chair: Kent Watsen
+              <mailto:kwatsen@juniper.net>
 
-  revision "2015-10-16" {
-    description
-      "Initial revision";
-    reference "RFC 3031: A YANG Data Model for base MPLS";
-  }
+    Editor:   Ladislav Lhotka
+              <mailto:lhotka@nic.cz>";
 
-  typedef mpls-label {
-    type uint32 {
-      range "0..1048575";
-    }
-    description
-      "The MPLS label range";
-  }
+ description
+   "This YANG module defines an 'extension' statement that allows
+    for defining metadata annotations.
 
-  typedef percent {
-    type uint16 {
-      range "0 .. 100";
-    }
-    description "Percentage";
-  }
+    Copyright (c) 2016 IETF Trust and the persons identified as
+    authors of the code.  All rights reserved.
 
-  grouping interface-mpls {
-    description "MPLS interface properties grouping";
-    leaf enabled {
-      type boolean;
-      description
-        "'true' if mpls encapsulation is enabled on the
-         interface. 'false' if mpls encapsulation is enabled
-         on the interface.";
-    }
-  }
+    Redistribution and use in source and binary forms, with or
+    without modification, is permitted pursuant to, and subject to
+    the license terms contained in, the Simplified BSD License set
+    forth in Section 4.c of the IETF Trust's Legal Provisions
+    Relating to IETF Documents
+    (http://trustee.ietf.org/license-info).
 
-  augment "/rt:routing/rt:routing-instance" {
-    description "MPLS augmentation.";
-    container mpls {
-      description
-        "MPLS container, to be used as an augmentation target node
-         other MPLS sub-features config, e.g. MPLS static LSP, MPLS
-         LDP LSPs, and Trafic Engineering MPLS LSP Tunnels, etc.";
+    This version of this YANG module is part of RFC 7952
+    (http://www.rfc-editor.org/info/rfc7952); see the RFC itself
+    for full legal notices.";
 
-      list interface {
-        key "name";
-        description "List of MPLS interfaces";
-        leaf name {
-          type if:interface-ref;
-          description
-            "The name of a configured MPLS interface";
-        }
-        container config {
-          description "Holds intended configuration";
-          uses interface-mpls;
-        }
-        container state {
-          config false;
-          description "Holds inuse configuration";
-          uses interface-mpls;
-        }
-      }
-    }
-  }
+ revision 2016-08-05 {
+   description
+     "Initial revision.";
+   reference
+     "RFC 7952: Defining and Using Metadata with YANG";
+ }
 
-  augment "/rt:routing-state/rt:routing-instance" {
-    description "MPLS augmentation.";
-    container mpls {
-      config false;
-      description
-        "MPLS container, to be used as an augmentation target node
-         other MPLS sub-features state";
-    }
-  }
+ extension annotation {
+   argument name;
+   description
+     "This extension allows for defining metadata annotations in
+      YANG modules.  The 'md:annotation' statement can appear only
+      at the top level of a YANG module or submodule, i.e., it
+      becomes a new alternative in the ABNF production rule for
+      'body-stmts' (Section 14 in RFC 7950).
+
+      The argument of the 'md:annotation' statement defines the name
+      of the annotation.  Syntactically, it is a YANG identifier as
+      defined in Section 6.2 of RFC 7950.
+
+      An annotation defined with this 'extension' statement inherits
+      the namespace and other context from the YANG module in which
+      it is defined.
+
+      The data type of the annotation value is specified in the same
+      way as for a leaf data node using the 'type' statement.
+
+      The semantics of the annotation and other documentation can be
+      specified using the following standard YANG substatements (all
+      are optional): 'description', 'if-feature', 'reference',
+      'status', and 'units'.
+
+      A server announces support for a particular annotation by
+      including the module in which the annotation is defined among
+      the advertised YANG modules, e.g., in a NETCONF <hello>
+      message or in the YANG library (RFC 7950).  The annotation can
+      then be attached to any instance of a data node defined in any
+      YANG module that is advertised by the server.
+
+      XML encoding and JSON encoding of annotations are defined in
+      RFC 7952.";
+ }
 }
 
 <CODE ENDS>

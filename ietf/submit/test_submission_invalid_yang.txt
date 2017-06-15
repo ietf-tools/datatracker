@@ -124,7 +124,7 @@ Table of Contents
      }
 
      extension annotation {
-       argument name;
+       argument name;;
        description
 	 "This extension allows for defining metadata annotations in
 	  YANG modules.  The 'md:annotation' statement can appear only

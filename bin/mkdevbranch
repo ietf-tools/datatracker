@@ -142,7 +142,7 @@ cd $progdir
 if [ "$who" ]; then
     mksvndir $who
     svn cp https://svn.tools.ietf.org/svn/tools/ietfdb/$source https://svn.tools.ietf.org/svn/tools/ietfdb/personal/$who/$target/ -m "New branch for $target"
-    say "New branch: ^/personal/$who/$target"
+    print "New branch: ^/personal/$who/$target"
 else
     [ "$num" ] || num=$( < /www/tools.ietf.org/meta/current-ietf-number.txt)
     for n in $(seq $((num-3)) $num); do

@@ -47,5 +47,8 @@ import ietf.mailtrigger.models
 objects += ietf.mailtrigger.models.Recipient.objects.all()
 objects += ietf.mailtrigger.models.MailTrigger.objects.all()
 
+import ietf.utils.models
+objects += ietf.utils.models.VersionInfo.objects.all()
+
 output("names", objects)
 

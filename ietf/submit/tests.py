@@ -24,6 +24,7 @@ from ietf.person.factories import UserFactory, PersonFactory
 from ietf.submit.models import Submission, Preapproval
 from ietf.submit.mail import add_submission_email, process_response_email
 from ietf.utils.mail import outbox, empty_outbox
+from ietf.utils.models import VersionInfo
 from ietf.utils.test_data import make_test_data
 from ietf.utils.test_utils import login_testing_unauthorized, unicontent, TestCase
 
@@ -68,17 +69,17 @@ class SubmitTests(TestCase):
         self.archive_dir = self.tempdir('submit-archive')
         settings.INTERNET_DRAFT_ARCHIVE_DIR = self.archive_dir
         
-        self.saved_yang_rfc_model_dir = settings.YANG_RFC_MODEL_DIR
+        self.saved_yang_rfc_model_dir = settings.SUBMIT_YANG_RFC_MODEL_DIR
         self.yang_rfc_model_dir = self.tempdir('yang-rfc-model')
-        settings.YANG_RFC_MODEL_DIR = self.yang_rfc_model_dir
+        settings.SUBMIT_YANG_RFC_MODEL_DIR = self.yang_rfc_model_dir
 
-        self.saved_yang_draft_model_dir = settings.YANG_DRAFT_MODEL_DIR
+        self.saved_yang_draft_model_dir = settings.SUBMIT_YANG_DRAFT_MODEL_DIR
         self.yang_draft_model_dir = self.tempdir('yang-draft-model')
-        settings.YANG_DRAFT_MODEL_DIR = self.yang_draft_model_dir
+        settings.SUBMIT_YANG_DRAFT_MODEL_DIR = self.yang_draft_model_dir
 
-        self.saved_yang_inval_model_dir = settings.YANG_INVAL_MODEL_DIR
+        self.saved_yang_inval_model_dir = settings.SUBMIT_YANG_INVAL_MODEL_DIR
         self.yang_inval_model_dir = self.tempdir('yang-inval-model')
-        settings.YANG_INVAL_MODEL_DIR = self.yang_inval_model_dir
+        settings.SUBMIT_YANG_INVAL_MODEL_DIR = self.yang_inval_model_dir
 
     def tearDown(self):
         shutil.rmtree(self.staging_dir)
@@ -91,9 +92,9 @@ class SubmitTests(TestCase):
         settings.INTERNET_DRAFT_PATH = self.saved_internet_draft_path
         settings.IDSUBMIT_REPOSITORY_PATH = self.saved_idsubmit_repository_path
         settings.INTERNET_DRAFT_ARCHIVE_DIR = self.saved_archive_dir
-        settings.YANG_RFC_MODEL_DIR = self.saved_yang_rfc_model_dir
-        settings.YANG_DRAFT_MODEL_DIR = self.saved_yang_draft_model_dir
-        settings.YANG_INVAL_MODEL_DIR = self.saved_yang_inval_model_dir
+        settings.SUBMIT_YANG_RFC_MODEL_DIR = self.saved_yang_rfc_model_dir
+        settings.SUBMIT_YANG_DRAFT_MODEL_DIR = self.saved_yang_draft_model_dir
+        settings.SUBMIT_YANG_INVAL_MODEL_DIR = self.saved_yang_inval_model_dir
 
 
     def do_submission(self, name, rev, group=None, formats=["txt",]):
@@ -220,6 +221,11 @@ class SubmitTests(TestCase):
 
         r = self.client.get(status_url)
         self.assertEqual(r.status_code, 200)
+
+        self.assertContains(r, 'xym')
+        self.assertContains(r, 'pyang')
+        self.assertContains(r, 'yanglint')
+
         q = PyQuery(r.content)
         approve_button = q('[type=submit]:contains("Approve")')
         self.assertEqual(len(approve_button), 1)
@@ -265,6 +271,15 @@ class SubmitTests(TestCase):
         self.assertTrue(sug_replaced_alias.name in unicode(outbox[-1]))
         self.assertTrue("ames-chairs@" in outbox[-1]["To"].lower())
         self.assertTrue("mars-chairs@" in outbox[-1]["To"].lower())
+
+        # fetch the document page
+        url = urlreverse('ietf.doc.views_doc.document_main', kwargs={'name':name})
+        r = self.client.get(url)
+        self.assertContains(r, name)
+        self.assertContains(r, 'Active Internet-Draft')
+        self.assertContains(r, 'mars WG')
+        self.assertContains(r, 'Yang Validation')
+        self.assertContains(r, 'WG Document')
 
     def test_submit_new_wg_txt(self):
         self.submit_new_wg(["txt"])
@@ -942,6 +957,38 @@ class SubmitTests(TestCase):
         m = q('p.alert-warning').text()
 
         self.assertIn('The idnits check returned 1 error', m)
+
+    def test_submit_invalid_yang(self):
+        make_test_data()
+
+        name = "draft-yang-testing-invalid"
+        rev = "00"
+        group = None
+
+        # get
+        url = urlreverse('ietf.submit.views.upload_submission')
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+
+        # submit
+        files = {"txt": submission_file(name, rev, group, "txt", "test_submission_invalid_yang.txt") }
+
+        r = self.client.post(url, files)
+        self.assertEqual(r.status_code, 302)
+        status_url = r["Location"]
+        r = self.client.get(status_url)
+        q = PyQuery(r.content)
+        #
+        self.assertContains(r, u'The yang validation returned 1 error')
+        #
+        m = q('#yang-validation-message').text()
+        for command in ['xym', 'pyang', 'yanglint']:
+            version = VersionInfo.objects.get(command=command).version
+            self.assertIn(version, m)
+        self.assertIn("draft-yang-testing-invalid-00.txt", m)
+        self.assertIn("error: syntax error: illegal keyword: ;", m)
+        self.assertIn("No validation errors", m)
 
 
 class ApprovalsTestCase(TestCase):

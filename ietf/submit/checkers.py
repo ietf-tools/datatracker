@@ -2,16 +2,19 @@
 
 import os
 import re
+import sys
 from xym import xym
 import shutil
 import tempfile
+import StringIO
 
 from django.conf import settings
 
 import debug                            # pyflakes:ignore
 
-from ietf.utils.pipe import pipe
 from ietf.utils.log import log
+from ietf.utils.models import VersionInfo
+from ietf.utils.pipe import pipe
 
 class DraftSubmissionChecker():
     name = ""
@@ -47,6 +50,9 @@ class DraftIdnitsChecker(object):
     # start using this when we provide more in the way of warnings during
     # submission checking:
     # symbol = '<span class="fa fa-check-square"></span>'
+    # symbol = u'<span class="large">\ua17d</span>' # Yi syllable 'nit'
+    # symbol = u'<span class="large">\ub2e1</span>' # Hangul syllable 'nit'
+
     symbol = ""
 
     def __init__(self, options=["--submitcheck", "--nitcount", ]):
@@ -123,39 +129,66 @@ class DraftYangChecker(object):
     def check_file_txt(self, path):
         name = os.path.basename(path)
         workdir = tempfile.mkdtemp()
-        errors = []
-        warnings = []
-        results = {}
+        errors = 0
+        warnings = 0
+        message = ""
+        results = []
+        passed = True                   # Used by the submission tool.  Yang checks always pass.
 
-        extractor = xym.YangModuleExtractor(path, workdir, strict=True, debug_level = 0)
+        extractor = xym.YangModuleExtractor(path, workdir, strict=True, strict_examples=False, debug_level=0)
         if not os.path.exists(path):
             return None, "%s: No such file or directory: '%s'"%(name.capitalize(), path), errors, warnings, results
         with open(path) as file:
+            out = ""
+            err = ""
+            code = 0
             try:
                 # This places the yang models as files in workdir
+                saved_stdout = sys.stdout
+                saved_stderr = sys.stderr
+                sys.stdout = StringIO.StringIO()
+                sys.stderr = StringIO.StringIO()
                 extractor.extract_yang_model(file.readlines())
+                out = sys.stdout.getvalue()
+                err = sys.stderr.getvalue()
+                sys.stdout = saved_stdout
+                sys.stderr = saved_stderr
                 model_list = extractor.get_extracted_models()
             except Exception as exc:
-                passed  = False
-                message = exc
-                errors  = [ (name, None, None, exc) ]
-                warnings = []
-                return passed, message, errors, warnings
+                code = 1
+                err = '\n'.join( [ m for m in [out, err, exc] if m ] )
+        if err:
+            code += 1
+        command = "xym"
+        cmd_version = VersionInfo.objects.get(command=command).version
+        message = "%s:\n%s\n\n" % (cmd_version, out.replace('\n\n','\n').strip() if code == 0 else err)
+
+        results.append({
+            "name": name,
+            "passed":  passed,
+            "message": message,
+            "warnings": 0,
+            "errors":  code,
+            "items": [],
+        })
 
         for model in model_list:
             path = os.path.join(workdir, model)
+            message = ""
             modpath = ':'.join([
                                 workdir,
-                                settings.YANG_RFC_MODEL_DIR,
-                                settings.YANG_DRAFT_MODEL_DIR,
-                                settings.YANG_INVAL_MODEL_DIR,
+                                settings.SUBMIT_YANG_RFC_MODEL_DIR,
+                                settings.SUBMIT_YANG_DRAFT_MODEL_DIR,
+                                settings.SUBMIT_YANG_INVAL_MODEL_DIR,
                             ])
             with open(path) as file:
                 text = file.readlines()
-            cmd = settings.IDSUBMIT_PYANG_COMMAND % {"modpath": modpath, "model": path, }
+            # pyang
+            cmd_template = settings.SUBMIT_PYANG_COMMAND
+            command = cmd_template.split()[0]
+            cmd_version = VersionInfo.objects.get(command=command).version
+            cmd = cmd_template.format(libs=modpath, model=path)
             code, out, err = pipe(cmd)
-            errors = 0
-            warnings = 0
             items = []
             if code > 0:
                 error_lines = err.splitlines()
@@ -175,26 +208,54 @@ class DraftYangChecker(object):
                                 warnings += 1
                         except ValueError:
                             pass
-            results[model] = {
-                "passed":  code == 0,
-                "message": out+"No validation errors\n" if code == 0 else err,
+            #passed = passed and code == 0 # For the submission tool.  Yang checks always pass
+            message += "%s: %s:\n%s\n" % (cmd_version, cmd_template, out+"No validation errors\n" if code == 0 else err)
+
+            # yanglint
+            cmd_template = settings.SUBMIT_YANGLINT_COMMAND
+            command = cmd_template.split()[0]
+            cmd_version = VersionInfo.objects.get(command=command).version
+            cmd = cmd_template.format(model=path, rfclib=settings.SUBMIT_YANG_RFC_MODEL_DIR, draftlib=settings.SUBMIT_YANG_DRAFT_MODEL_DIR)
+            code, out, err = pipe(cmd)
+            if code > 0:
+                error_lines = err.splitlines()
+                for line in error_lines:
+                    if line.strip():
+                        try:
+                            if 'err : ' in line:
+                                errors += 1
+                            if 'warn: ' in line:
+                                warnings += 1
+                        except ValueError:
+                            pass
+            #passed = passed and code == 0 # For the submission tool.  Yang checks always pass
+            message += "%s: %s:\n%s\n" % (cmd_version, cmd_template, out+"No validation errors\n" if code == 0 else err)
+
+            if errors==0 and warnings==0:
+                dest = os.path.join(settings.SUBMIT_YANG_DRAFT_MODEL_DIR, model)
+                shutil.move(path, dest)
+            else:
+                dest = os.path.join(settings.SUBMIT_YANG_INVAL_MODEL_DIR, model)
+                shutil.move(path, dest)
+
+            # summary result
+            results.append({
+                "name": model,
+                "passed":  passed,
+                "message": message,
                 "warnings": warnings,
                 "errors":  errors,
                 "items": items,
-            }
+            })
+
 
         shutil.rmtree(workdir)
 
-        ## For now, never fail because of failed yang validation.
-        if len(model_list):
-            passed = True
-        else:
-            passed = None
-        #passed  = all( res["passed"] for res in results.values() )
-        message = "\n\n".join([ "\n".join([model+':', res["message"]]) for model, res in results.items() ])
-        errors  = sum(res["errors"] for res in results.values() )
-        warnings  = sum(res["warnings"] for res in results.values() )
-        items  = [ e for res in results.values() for e in res["items"] ]
+        passed  = all( res["passed"] for res in results )
+        message = "\n".join([ "\n".join([res['name']+':', res["message"]]) for res in results ])
+        errors  = sum(res["errors"] for res in results )
+        warnings  = sum(res["warnings"] for res in results )
+        items  = [ e for res in results for e in res["items"] ]
 
         return passed, message, errors, warnings, items
 

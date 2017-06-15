@@ -76,15 +76,6 @@
 	  {% if latest_revision and latest_revision.time.date != doc.time.date %}
 	    (latest revision {{ latest_revision.time|date:"Y-m-d" }})
 	  {% endif %}
-	  {% for check in doc.submission.checks.all %}
-	     {% if check.passed != None and check.symbol.strip %}
-		 {% if check.errors or check.warnings %}
-		    <span class="checker-warning" title="Submission {{check.checker|title}} returned warnings or errors.">{{ check.symbol|safe }}</span>
-		 {% else %}
-		    <span class="checker-success" title="Submission {{check.checker|title}} passed">{{ check.symbol|safe }}</span>
-		 {% endif %}
-	      {% endif %}
-	  {% endfor %}
 	</td>
       </tr>
 
@@ -191,6 +182,27 @@
 	  {% endif %}
 	</td>
       </tr>
+
+      {% for check in doc.submission.latest_checks %}
+	{% if check.passed != None and check.symbol.strip %}
+	  <tr>
+	    <th></th>
+	    <th>{{ check.checker|title }}</th>
+	    <td class="edit"></td>
+	    <td>
+	      {% if check.errors or check.warnings %}
+		 <span class="checker-warning" data-toggle="modal" data-target="#check-{{check.pk}}" title="{{check.checker|title}} returned warnings or errors." >{{ check.symbol|safe }}</span>
+	      {% else %}
+		 <span class="checker-success" data-toggle="modal" data-target="#check-{{check.pk}}" title="{{check.checker|title}} passed">{{ check.symbol|safe }}</span>
+	      {% endif %}
+	      <a href="#" data-toggle="modal" data-target="#check-{{check.pk}}">
+		{{ check.errors }} errors, {{ check.warnings }} warnings.
+	      </a>
+	      {% include "doc/yang-check-modal-overlay.html" %}
+	    </td>
+	  </tr>
+	{% endif %}
+      {% endfor %}
 
       {% if review_requests or can_request_review %}
       <tr>
