@@ -1,3 +1,5 @@
+from django.contrib import admin
+from ietf.utils.models import VersionInfo
 
 def name(obj):
     if hasattr(obj, 'abbrev'):
@@ -45,3 +47,6 @@ def admin_link(field, label=None, ordering="", display=name, suffix=""):
     _link.admin_order_field = ordering
     return _link
 
+class VersionInfoAdmin(admin.ModelAdmin):
+    list_display = ['command', 'switch', 'version', 'time', ]
+admin.site.register(VersionInfo, VersionInfoAdmin)

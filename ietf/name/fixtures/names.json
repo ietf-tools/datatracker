@@ -9708,5 +9708,38 @@
     },
     "model": "name.topicaudiencename",
     "pk": "nominees"
+  },
+  {
+    "fields": {
+      "command": "xym",
+      "switch": "--version",
+      "time": "2017-06-15T06:24:58.869",
+      "used": true,
+      "version": "xym 0.3.2"
+    },
+    "model": "utils.versioninfo",
+    "pk": 1
+  },
+  {
+    "fields": {
+      "command": "pyang",
+      "switch": "--version",
+      "time": "2017-06-15T06:24:59.516",
+      "used": true,
+      "version": "pyang 1.7.2"
+    },
+    "model": "utils.versioninfo",
+    "pk": 2
+  },
+  {
+    "fields": {
+      "command": "yanglint",
+      "switch": "--version",
+      "time": "2017-06-15T06:24:59.531",
+      "used": true,
+      "version": "yanglint 0.12.183"
+    },
+    "model": "utils.versioninfo",
+    "pk": 3
   }
 ]

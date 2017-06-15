@@ -33,7 +33,7 @@ class SubmissionEventAdmin(admin.ModelAdmin):
 admin.site.register(SubmissionEvent, SubmissionEventAdmin)
 
 class SubmissionCheckAdmin(admin.ModelAdmin):
-    list_display = ['submission', 'time', 'checker', 'passed', 'errors', 'warnings', 'items']
+    list_display = ['submission', 'time', 'checker', 'passed', 'errors', 'warnings', 'message']
     raw_id_fields = ['submission']
     search_fields = ['submission__name']
 admin.site.register(SubmissionCheck, SubmissionCheckAdmin)

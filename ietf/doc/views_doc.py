@@ -1277,3 +1277,11 @@ def all_presentations(request, name):
         'in_progress': in_progress,
         'past' : past,
         })
+
+def document_checks(request, name):
+    doc = get_object_or_404(Document, docalias__name=name, type_id='draft')
+
+    checks = doc.submission.latest_checks()
+    debug.show('checks')
+
+    return render(request, 'doc/document_checks.html', {'doc': doc, 'checks': checks})

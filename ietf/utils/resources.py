@@ -8,7 +8,8 @@ from django.contrib.auth.models import User
 from django.contrib.contenttypes.models import ContentType
 
 from ietf import api
-from ietf.utils.models import DumpInfo
+from ietf.utils.models import DumpInfo, VersionInfo
+
 
 class UserResource(ModelResource):
     username = CharField()
@@ -17,12 +18,14 @@ class UserResource(ModelResource):
         queryset = User.objects.all()
         serializer = api.Serializer()
 
+
 class ContentTypeResource(ModelResource):
     username = CharField()
     class Meta:
         cache = SimpleCache()
         queryset = ContentType.objects.all()
         serializer = api.Serializer()
+
 
 class DumpInfoResource(ModelResource):
     class Meta:
@@ -36,3 +39,19 @@ class DumpInfoResource(ModelResource):
         }
 api.utils.register(DumpInfoResource())
 
+
+class VersionInfoResource(ModelResource):
+    class Meta:
+        queryset = VersionInfo.objects.all()
+        serializer = api.Serializer()
+        cache = SimpleCache()
+        #resource_name = 'versioninfo'
+        filtering = { 
+            "id": ALL,
+            "time": ALL,
+            "command": ALL,
+            "switch": ALL,
+            "version": ALL,
+            "used": ALL,
+        }
+api.utils.register(VersionInfoResource())

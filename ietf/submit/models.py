@@ -65,6 +65,10 @@ class Submission(models.Model):
     def existing_document(self):
         return Document.objects.filter(name=self.name).first()
 
+    def latest_checks(self):
+        checks = [ self.checks.filter(checker=c, passed__in=[True,False]).latest('time') for c in self.checks.values_list('checker', flat=True).distinct() ]
+        return checks
+        
 class SubmissionCheck(models.Model):
     time = models.DateTimeField(auto_now=True)
     submission = models.ForeignKey(Submission, related_name='checks')

@@ -660,11 +660,19 @@ IDSUBMIT_DEFAULT_CUTOFF_DAY_OFFSET_01 = 13
 IDSUBMIT_DEFAULT_CUTOFF_TIME_UTC = datetime.timedelta(hours=23, minutes=59, seconds=59)
 IDSUBMIT_DEFAULT_CUTOFF_WARNING_DAYS = datetime.timedelta(days=21)
 
+# 14 Jun 2017: New convention: prefix settings with the app name to which
+# they (mainly) belong.  So here, SUBMIT_, rather than IDSUBMIT_
+SUBMIT_YANG_RFC_MODEL_DIR = '/a/www/ietf-ftp/yang/rfcmod/'
+SUBMIT_YANG_DRAFT_MODEL_DIR = '/a/www/ietf-ftp/yang/draftmod/'
+SUBMIT_YANG_INVAL_MODEL_DIR = '/a/www/ietf-ftp/yang/invalmod/'
+
 IDSUBMIT_REPOSITORY_PATH = INTERNET_DRAFT_PATH
 IDSUBMIT_STAGING_PATH = '/a/www/www6s/staging/'
 IDSUBMIT_STAGING_URL = '//www.ietf.org/staging/'
 IDSUBMIT_IDNITS_BINARY = '/a/www/ietf-datatracker/scripts/idnits'
-IDSUBMIT_PYANG_COMMAND = 'pyang -p %(modpath)s --verbose --ietf  %(model)s'
+SUBMIT_PYANG_COMMAND = 'pyang --verbose --ietf -p {libs} {model}'
+SUBMIT_YANGLINT_COMMAND = 'yanglint --verbose -p {rfclib} -p {draftlib} {model}'
+SUBMIT_YANGLINT_COMMAND = None        # use the value above if you have yanglint installed
 
 IDSUBMIT_CHECKER_CLASSES = (
     "ietf.submit.checkers.DraftIdnitsChecker",
@@ -695,10 +703,6 @@ IDSUBMIT_MAX_DAILY_SAME_GROUP = 150
 IDSUBMIT_MAX_DAILY_SAME_GROUP_SIZE = 450 # in MB
 IDSUBMIT_MAX_DAILY_SUBMISSIONS = 1000
 IDSUBMIT_MAX_DAILY_SUBMISSIONS_SIZE = 2000 # in MB
-
-YANG_RFC_MODEL_DIR = '/a/www/ietf-ftp/yang/rfcmod/'
-YANG_DRAFT_MODEL_DIR = '/a/www/ietf-ftp/yang/draftmod/'
-YANG_INVAL_MODEL_DIR = '/a/www/ietf-ftp/yang/invalmod/'
 
 XML_LIBRARY = "/www/tools.ietf.org/tools/xml2rfc/web/public/rfc/"
 

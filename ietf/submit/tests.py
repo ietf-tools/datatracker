@@ -68,17 +68,17 @@ class SubmitTests(TestCase):
         self.archive_dir = self.tempdir('submit-archive')
         settings.INTERNET_DRAFT_ARCHIVE_DIR = self.archive_dir
         
-        self.saved_yang_rfc_model_dir = settings.YANG_RFC_MODEL_DIR
+        self.saved_yang_rfc_model_dir = settings.SUBMIT_YANG_RFC_MODEL_DIR
         self.yang_rfc_model_dir = self.tempdir('yang-rfc-model')
-        settings.YANG_RFC_MODEL_DIR = self.yang_rfc_model_dir
+        settings.SUBMIT_YANG_RFC_MODEL_DIR = self.yang_rfc_model_dir
 
-        self.saved_yang_draft_model_dir = settings.YANG_DRAFT_MODEL_DIR
+        self.saved_yang_draft_model_dir = settings.SUBMIT_YANG_DRAFT_MODEL_DIR
         self.yang_draft_model_dir = self.tempdir('yang-draft-model')
-        settings.YANG_DRAFT_MODEL_DIR = self.yang_draft_model_dir
+        settings.SUBMIT_YANG_DRAFT_MODEL_DIR = self.yang_draft_model_dir
 
-        self.saved_yang_inval_model_dir = settings.YANG_INVAL_MODEL_DIR
+        self.saved_yang_inval_model_dir = settings.SUBMIT_YANG_INVAL_MODEL_DIR
         self.yang_inval_model_dir = self.tempdir('yang-inval-model')
-        settings.YANG_INVAL_MODEL_DIR = self.yang_inval_model_dir
+        settings.SUBMIT_YANG_INVAL_MODEL_DIR = self.yang_inval_model_dir
 
     def tearDown(self):
         shutil.rmtree(self.staging_dir)
@@ -91,9 +91,9 @@ class SubmitTests(TestCase):
         settings.INTERNET_DRAFT_PATH = self.saved_internet_draft_path
         settings.IDSUBMIT_REPOSITORY_PATH = self.saved_idsubmit_repository_path
         settings.INTERNET_DRAFT_ARCHIVE_DIR = self.saved_archive_dir
-        settings.YANG_RFC_MODEL_DIR = self.saved_yang_rfc_model_dir
-        settings.YANG_DRAFT_MODEL_DIR = self.saved_yang_draft_model_dir
-        settings.YANG_INVAL_MODEL_DIR = self.saved_yang_inval_model_dir
+        settings.SUBMIT_YANG_RFC_MODEL_DIR = self.saved_yang_rfc_model_dir
+        settings.SUBMIT_YANG_DRAFT_MODEL_DIR = self.saved_yang_draft_model_dir
+        settings.SUBMIT_YANG_INVAL_MODEL_DIR = self.saved_yang_inval_model_dir
 
 
     def do_submission(self, name, rev, group=None, formats=["txt",]):
@@ -132,6 +132,8 @@ class SubmitTests(TestCase):
         self.assertEqual(author["email"], "author@example.com")
         self.assertEqual(author["affiliation"], "Test Centre Inc.")
         self.assertEqual(author["country"], "UK")
+
+        
 
         return status_url
 
@@ -220,6 +222,11 @@ class SubmitTests(TestCase):
 
         r = self.client.get(status_url)
         self.assertEqual(r.status_code, 200)
+
+        self.assertContains(r, 'xym')
+        self.assertContains(r, 'pyang')
+        self.assertContains(r, 'yanglint')
+
         q = PyQuery(r.content)
         approve_button = q('[type=submit]:contains("Approve")')
         self.assertEqual(len(approve_button), 1)

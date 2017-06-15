@@ -44,7 +44,7 @@
       Your draft has <b>NOT</b> been verified to pass the submission checks.
     {% endif %}
   </p>
-  {% for check in submission.checks.all %}
+  {% for check in submission.latest_checks %}
     {% if check.errors %}
        <p class="alert alert-warning">
 	  The {{check.checker}} returned {{ check.errors }} error{{ check.errors|pluralize }}
@@ -58,7 +58,7 @@
     {% endif %}
   {% endfor %}
 
-  {% for check in submission.checks.all %}
+  {% for check in submission.latest_checks %}
     {% if check.passed != None %}
       <button class="btn btn-{% if check.passed %}{% if check.warnings %}warning{% elif check.errors %}warning{% else %}success{% endif %}{% else %}danger{% endif %}" data-toggle="modal" data-target="#check-{{check.pk}}">View {{ check.checker }}</button>
 

@@ -533,3 +533,6 @@ def comma_separated_list(seq, end_word="and"):
 def role_names(roles):
     return list(set([ "%s %s" % (r.group.name, r.name.name) for r in roles ]))
 
+@register.filter()
+def zaptmp(s):
+    return re.sub(r'/tmp/tmp[^/]+/', '', s)
