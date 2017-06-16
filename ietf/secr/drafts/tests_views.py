@@ -154,3 +154,16 @@ class SecrDraftsTestCase(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
 
+    def test_author_delete(self):
+        draft = make_test_data()
+        author = draft.documentauthor_set.first()
+        id = author.id
+        url = urlreverse('ietf.secr.drafts.views.author_delete', kwargs={'id':draft.name, 'oid':id})
+        self.client.login(username="secretary", password="secretary+password")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        redirect_url = urlreverse('ietf.secr.drafts.views.authors', kwargs={'id':draft.name})
+        response = self.client.post(url, {'post':'yes'})
+        self.assertRedirects(response, redirect_url)
+        self.assertFalse(draft.documentauthor_set.filter(id=id))
+

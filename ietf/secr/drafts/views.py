@@ -542,9 +542,14 @@ def author_delete(request, id, oid):
     '''
     This view deletes the specified author from the draft
     '''
-    DocumentAuthor.objects.get(id=oid).delete()
-    messages.success(request, 'The author was deleted successfully')
-    return redirect('ietf.secr.drafts.views.authors', id=id)
+    author = DocumentAuthor.objects.get(id=oid)
+
+    if request.method == 'POST' and request.POST['post'] == 'yes':
+        author.delete()
+        messages.success(request, 'The author was deleted successfully')
+        return redirect('ietf.secr.drafts.views.authors', id=id)
+
+    return render(request, 'confirm_delete.html', {'object': author})
 
 @role_required('Secretariat')
 def authors(request, id):

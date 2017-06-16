@@ -18,6 +18,7 @@ from ietf.utils.mail import send_mail
 from ietf.meeting.forms import duration_string
 from ietf.meeting.helpers import get_meeting, make_materials_directories
 from ietf.meeting.models import Meeting, Session, Room, TimeSlot, SchedTimeSessAssignment, Schedule
+from ietf.name.models import SessionStatusName
 from ietf.group.models import Group, GroupEvent
 from ietf.person.models import Person
 from ietf.secr.meetings.blue_sheets import create_blue_sheets
@@ -517,26 +518,30 @@ def non_session(request, meeting_id, schedule_name):
 @role_required('Secretariat')
 def non_session_delete(request, meeting_id, schedule_name, slot_id):
     '''
-    This function deletes the non-session TimeSlot.  For "other" and "plenary" timeslot
-    types we need to delete the corresponding Session object as well.  Check for uploaded
+    This function deletes the non-session TimeSlot.  Check for uploaded
     material first.  SchedTimeSessAssignment objects get deleted as well.
     '''
-    meeting = get_object_or_404(Meeting, number=meeting_id)
-    # schedule = get_object_or_404(Schedule, meeting=meeting, name=schedule_name)
     slot = get_object_or_404(TimeSlot, id=slot_id)
-    if slot.type_id in ('other','plenary','lead'):
-        assignments = slot.sessionassignments.filter(schedule__meeting=meeting)
+    assert slot.type_id in ('other','plenary','lead', 'reg')
+
+    if request.method == 'POST' and request.POST['post'] == 'yes':
+        assignments = slot.sessionassignments.all()
         session_objects = [ x.session for x in assignments ]
+        
         for session in session_objects:
             if session.materials.exclude(states__slug='deleted'):
                 messages.error(request, 'Materials have already been uploaded for "%s".  You must delete those before deleting the timeslot.' % slot.name)
                 return redirect('ietf.secr.meetings.views.non_session', meeting_id=meeting_id, schedule_name=schedule_name)
-        else:
-            Session.objects.filter(pk__in=[ x.pk for x in session_objects ]).delete()
-    slot.delete()
+        
+        # delete high order assignments, then sessions and slots
+        assignments.delete()
+        Session.objects.filter(pk__in=[ x.pk for x in session_objects ]).delete()
+        slot.delete()
 
-    messages.success(request, 'Non-Session timeslot deleted successfully')
-    return redirect('ietf.secr.meetings.views.non_session', meeting_id=meeting_id, schedule_name=schedule_name)
+        messages.success(request, 'The entry was deleted successfully')
+        return redirect('ietf.secr.meetings.views.non_session', meeting_id=meeting_id, schedule_name=schedule_name)
+
+    return render(request, 'confirm_delete.html', {'object': slot})
 
 @role_required('Secretariat')
 def non_session_edit(request, meeting_id, schedule_name, slot_id):
@@ -1004,11 +1009,24 @@ def times_delete(request, meeting_id, schedule_name, time):
     
     parts = [ int(x) for x in time.split(':') ]
     dtime = datetime.datetime(*parts)
+    status = SessionStatusName.objects.get(slug='schedw')
 
-    TimeSlot.objects.filter(meeting=meeting,time=dtime).delete()
+    if request.method == 'POST' and request.POST['post'] == 'yes':
+        for slot in TimeSlot.objects.filter(meeting=meeting,time=dtime):
+            for assignment in slot.sessionassignments.all():
+                if assignment.session:
+                    session = assignment.session
+                    session.status = status
+                    session.save()
+                assignment.delete()
+            slot.delete()
+        messages.success(request, 'The entry was deleted successfully')
+        return redirect('ietf.secr.meetings.views.times', meeting_id=meeting_id,schedule_name=schedule_name)
 
-    messages.success(request, 'Timeslot deleted')
-    return redirect('ietf.secr.meetings.views.times', meeting_id=meeting_id,schedule_name=schedule_name)
+    return render(request, 'confirm_delete.html', {
+        'object': '%s timeslots' % dtime.strftime("%A %H:%M"),
+        'extra': 'Any sessions assigned to this timeslot will be unscheduled'
+    })
 
 @role_required('Secretariat')
 def unschedule(request, meeting_id, schedule_name, session_id):

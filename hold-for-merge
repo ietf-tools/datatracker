@@ -1,5 +1,6 @@
 # -*- conf-mode -*-
 
+/personal/rcross/6.54.2.dev0@13632	# resolved differently in [13653]
 /personal/lars/6.48.2.dev0@13124	# fails drag-and-drop test
 /branch/proceedings/6.29.1.dev0@11850	# Merged into /branch/proceedings/6.30.1.dev0, will be merged from there
 /branch/proceedings/6.29.1.dev0@11856	# Merged into /branch/proceedings/6.30.1.dev0, will be merged from there

@@ -190,14 +190,17 @@ def delete_role(request, acronym, id):
     """
     group = get_object_or_404(Group, acronym=acronym)
     role = get_object_or_404(Role, id=id)
+    
+    if request.method == 'POST' and request.POST['post'] == 'yes':
+        # save group
+        save_group_in_history(group)
 
-    # save group
-    save_group_in_history(group)
+        role.delete()
+        messages.success(request, 'The entry was deleted successfully')
+        return redirect('ietf.secr.groups.views.people', acronym=acronym)
 
-    role.delete()
+    return render(request, 'confirm_delete.html', {'object': role})
 
-    messages.success(request, 'The entry was deleted successfully')
-    return redirect('ietf.secr.groups.views.people', acronym=acronym)
 
 @role_required('Secretariat')
 def edit(request, acronym):

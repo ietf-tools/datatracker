@@ -28,13 +28,16 @@ class SecrRolesMainTestCase(TestCase):
         augment_data()
         group = Group.objects.filter(acronym='mars')[0]
         role = group.role_set.all()[0]
+        id = role.id
         url = reverse('ietf.secr.roles.views.delete_role', kwargs={'acronym':group.acronym,'id':role.id})
-        target = reverse('ietf.secr.roles.views.main') + '?group=%s' % group.acronym
+        target = reverse('ietf.secr.roles.views.main')
         self.client.login(username="secretary", password="secretary+password")
-        response = self.client.get(url,follow=True)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        response = self.client.post(url, {'post':'yes'})
         self.assertRedirects(response, target)
-        self.assertTrue('deleted successfully' in response.content)
-
+        self.assertFalse(group.role_set.filter(id=id))
+        
     def test_roles_add(self):
         make_test_data()
         augment_data()
