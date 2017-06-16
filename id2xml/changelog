@@ -1,3 +1,15 @@
+id2xml (1.0.2) ietf; urgency=medium
+
+  * Changed the handling of quotations of RFCs with numbers below 1000 to
+    always use zero-padded numbers, to match what the bibxml libraries use;
+    and to insert entity references for those, instead of in-place
+    <reference/> entries.  Fixes an issues reported by the RFC-Editor staff.
+
+  * Changed text-table identification to not try to handle one-row tables as
+    texttables.  Fixes an issues reported by the RFC-Editor staff.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  16 Jun 2017 20:43:11 +0200
+
 id2xml (1.0.1) ietf; urgency=medium
 
   This is a bugfix release which addressess a number of issues raised by the
@@ -24,8 +36,8 @@ id2xml (1.0.1) ietf; urgency=medium
     Author's Addresses section.  Refined the header/footer stripping to deal 
     with additional variations of header/footer lines.
 
-  * Fixed a number of places where warn() was called with a line object was 
-    used instead of the line number.
+  * Fixed a number of places where warn() was called with a line object
+    instead of the line number.
 
   * Changed to using the supplied figure or texttable label to set the 
     title attribute also when rendering the figure as texttable or texttable as 
