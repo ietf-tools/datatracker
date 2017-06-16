@@ -123,4 +123,4 @@ bdist_wheel:	dist/id2xml-$(version)-py27-none-any.whl	dist/id2xml-$(version)-py2
 dist:	test sdist # bdist_wheel
 
 upload:	install test dist
-	twine upload dist/id2xml-$(version)[.-]* -r pypi
+	twine upload dist/id2xml-$(version).tar.gz dist/id2xml-$(version).tar.gz.asc -r pypi
