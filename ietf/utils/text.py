@@ -57,6 +57,7 @@ def wordwrap(text, width=80):
        of short lines"""
     if not isinstance(text, (types.StringType,types.UnicodeType)):
         return text
+    width = int(width)                  # ensure we have an int, if this is used as a template filter
     text = re.sub(" *\r\n", "\n", text) # get rid of DOS line endings
     text = re.sub(" *\r", "\n", text)   # get rid of MAC line endings
     text = re.sub("( *\n){3,}", "\n\n", text) # get rid of excessive vertical whitespace
@@ -106,6 +107,9 @@ def wordwrap(text, width=80):
 def wrap_text_if_unwrapped(text, width=80, max_tolerated_line_length=100):
     text = re.sub(" *\r\n", "\n", text) # get rid of DOS line endings 
     text = re.sub(" *\r", "\n", text)   # get rid of MAC line endings 
+
+    width = int(width)                  # ensure we have an int, if this is used as a template filter
+    max_tolerated_line_length = int(max_tolerated_line_length)
 
     contains_long_lines = any(" " in l and len(l) > max_tolerated_line_length 
                               for l in text.split("\n")) 
