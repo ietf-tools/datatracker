@@ -228,7 +228,7 @@ note "Making sure all migrations have been run ..."
 $do ietf/manage.py migrate
 
 note "Running the tests suite and writing release coverage data ..."
-$do ietf/manage.py test --settings=ietf.settings_releasetest --save-version-coverage=$VER
+$do ietf/manage.py test --settings=ietf.settings_releasetest --save-version-coverage=$VER 3>&1 1>&2 2>&3 | bin/count
 
 note "Committing the release coverage data ..."
 $do svn commit release-coverage.json.gz -m "Code coverage data for release $VER"
