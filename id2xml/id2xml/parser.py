@@ -108,8 +108,8 @@ uri_re =        r'^<?\s*(?P<target>(http|https|ftp)://[^>\s]+)\s*>?$'
 
 # Elements of a reference item
 ref_anchor_re = r'\[(?P<anchor>[^]]+)\]'
-ref_name_re =   r'[-\' 0-9\w]+, (?:\w-?\w?\.)+(?:, Ed\.)?'
 ref_last_re =   r'(?:\w-?\w?\.)+ [-\' 0-9\w]+(?:, Ed\.)?'
+ref_name_re =   r'[-\' 0-9\w]+, (?:\w-?\w?\.)+(?:, Ed\.)?'
 ref_org_re =   r'(?P<organization>[-/\w]+(?: [-/\w,.]+)*(, )?)'
 ref_auth_re =   r'(?P<authors>({name})(, {name})*(,? and {last})?)'.format(name=ref_name_re, last=ref_last_re)
 ref_title_re =  r'(?P<title>.+)'
@@ -1720,6 +1720,13 @@ class DraftParser(Base):
                                   " on the first page: %s"%(first.txt, author['fullname']))
                 continue
             auth.set('fullname', author['fullname'])
+            full_org = author.get('organization').strip()
+            if full_org:
+                org  = auth.find("./organization")
+                abbrev = org.text
+                if full_org != abbrev:
+                    org.text = full_org
+                    org.set('abbrev', abbrev)
             addr = self.element('address')
             auth.append(addr)
             for key in ['postal', 'phone', 'facsimile', 'email', 'uri', ]:
@@ -1797,6 +1804,7 @@ class DraftParser(Base):
         name = line.txt.strip()
         self.dpprint('self.authors')
         item = match_name(name, self.authors)
+        self.dpprint('item')
         if not item:
             item = {'fullname': name, }
             parts = name.split()
@@ -1817,6 +1825,9 @@ class DraftParser(Base):
         text = line.txt.strip()
         if text == '':
             self.push_line(line, p)
+        else:
+            item['organization'] = text
+        return item
         
     @dtrace
     def maybe_author_address(self, item):
