@@ -74,7 +74,7 @@ setup(
     # https://packaging.python.org/en/latest/single_source_version.html
     version=id2xml.__version__,
 
-    description="Convert text format RFCs and Internet-Drafts to .xml format",
+    description="Convert text-format RFCs and Internet-Drafts to .xml format",
     long_description=long_description,
 
     # The project's main homepage.
@@ -93,7 +93,7 @@ setup(
         #   3 - Alpha
         #   4 - Beta
         #   5 - Production/Stable
-        'Development Status :: 4 - Beta',
+        'Development Status :: 5 - Production/Stable',
 
         # Indicate who your project is intended for
         'Intended Audience :: Other Audience',
@@ -161,6 +161,6 @@ setup(
         ],
     },
 
-    # We're reading templates from a package directory.
+    # We're reading schema files from a package directory.
     zip_safe = False,                   
 )
