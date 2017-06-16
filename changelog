@@ -1,5 +1,7 @@
 ietfdb (6.55.0) ietf; urgency=medium
 
+  **Improved Yang validation support**
+
   This release updates and expands the Yang support in the datatracker.  In
   addition to checking yang modules in submitted drafts using pyang, it now
   also does a yanglint check.  The yang validation results are available by
@@ -55,7 +57,7 @@ ietfdb (6.55.0) ietf; urgency=medium
 
   * Updated admin.py and resource.py files as needed.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  15 Jun 2017 13:18:06 -0700
+ -- Henrik Levkowetz <henrik@levkowetz.com>  16 Jun 2017 09:13:39 +0000
 
 
 ietfdb (6.54.1) ietf; urgency=medium
