@@ -250,6 +250,11 @@ def slugify(s):
     s = s.strip('-')
     return s
 
+def fixanchor(anchor):
+    if anchor[:3].lower() == 'rfc' and anchor[3:].isdigit():
+        anchor = 'RFC%04d' % int(anchor[3:])
+    return anchor
+
 def flatten(l):
     def flatgen(l):
         for i in l:
@@ -796,7 +801,7 @@ class TextParser(Base):
                 if ref.isdigit():
                     target = "ref-%s" % ref
                 else:
-                    target = ref
+                    target = fixanchor(ref)
                 if target in self.docparser.reference_anchors:
                     tok = self.docparser.element('xref', target=target)
             elif tok in self.angles:
@@ -2130,7 +2135,8 @@ class DraftParser(Base):
                 tag = 'code'
             else:
                 indents = indentation_levels(para)
-                border_set = set(table_borders(para))
+                borders = table_borders(para)
+                border_set = set(borders)
                 linecount = len(text.split('\n'))
                 sym_ratio = symbol_ratio(text)
                 if not '----' in text and (sym_ratio < 0.3 or (sym_ratio < 0.8 and linecount==1)):
@@ -2184,7 +2190,9 @@ class DraftParser(Base):
                     # righ align on the first column, but we ignore that)
                     tag = 'figure'
                 else:
-                    if len(border_set) == 2 and not '+-+-+' in text and line.txt.strip() in border_set:
+                    self.dpprint('borders')
+                    self.dpprint('border_set')
+                    if len(border_set) == 2 and len(borders) >= 4 and not '+-+-+' in text and line.txt.strip() in border_set:
                         self.dsay('... texttable (found start border)')
                         tag = 'texttable'
                     else:
@@ -2880,11 +2888,12 @@ class DraftParser(Base):
                             reference.append(e)
                             if name == 'RFC':
                                 anchor = refinfo.get('anchor')
-                                ename  = 'RFC%04d'%int(value)
-                                if anchor == ename:
-                                    entity = Entity(ename)
+                                e4name  = 'RFC%04d'%int(value)
+                                ename   = 'RFC%d'%int(value)
+                                if anchor in [ e4name, ename ]:
+                                    entity = Entity(e4name)
                                     entity.tail = '\n\t'
-                                self.entities.append({'name': ename,
+                                self.entities.append({'name': e4name,
                                     'url': 'https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.%04d.xml'%int(value), })
                             if name == 'Internet-Draft':
                                 anchor = refinfo.get('anchor')
