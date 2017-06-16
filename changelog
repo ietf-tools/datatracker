@@ -57,7 +57,7 @@ ietfdb (6.55.0) ietf; urgency=medium
 
   * Updated admin.py and resource.py files as needed.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  16 Jun 2017 09:13:39 +0000
+ -- Henrik Levkowetz <henrik@levkowetz.com>  16 Jun 2017 09:38:25 +0000
 
 
 ietfdb (6.54.1) ietf; urgency=medium
