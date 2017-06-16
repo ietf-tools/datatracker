@@ -1,0 +1,9 @@
+{# Copyright The IETF Trust 2015, All Rights Reserved #}{% load origin %}{% origin %}
+{# assumes group, form, needs_review, reviewer are in the context #}
+{% load bootstrap3 %}
+
+<div class="form-horizontal">
+  <input type="hidden" name="prefix" value="{{ form.prefix|default:"" }}"/>
+
+  {% bootstrap_form form layout='horizontal' %}
+</div>

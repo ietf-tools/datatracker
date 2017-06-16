@@ -1,0 +1,21 @@
+{% load humanize %}{% autoescape off %}{% load ietf_filters %}BEGIN:VCALENDAR
+VERSION:2.0
+METHOD:PUBLISH
+PRODID:-//IETF//datatracker.ietf.org ical upcoming//EN
+{{vtimezones}}{% for item in assignments %}BEGIN:VEVENT
+UID:ietf-{{item.session.meeting.number}}-{{item.timeslot.pk}}
+SUMMARY:{% if item.session.name %}{{item.session.name|ics_esc}}{% else %}{{item.session.group.acronym|lower}} - {{item.session.group.name}}{%endif%}
+{% if item.schedule.meeting.city %}LOCATION:{{item.schedule.meeting.city}},{{item.schedule.meeting.country}}
+{% endif %}STATUS:{{item.session.ical_status}}
+CLASS:PUBLIC
+DTSTART{% if item.schedule.meeting.time_zone %};TZID="{{item.schedule.meeting.time_zone}}"{%endif%}:{{ item.timeslot.time|date:"Ymd" }}T{{item.timeslot.time|date:"Hi"}}00
+DTEND{% if item.schedule.meeting.time_zone %};TZID="{{item.schedule.meeting.time_zone}}"{%endif%}:{{ item.timeslot.end_time|date:"Ymd" }}T{{item.timeslot.end_time|date:"Hi"}}00
+DTSTAMP:{{ item.timeslot.modified|date:"Ymd" }}T{{ item.timeslot.modified|date:"His" }}Z
+{% if item.session.agenda %}URL:{{item.session.agenda.get_absolute_url}}
+DESCRIPTION:{{item.timeslot.name|ics_esc}}\n{% if item.session.agenda_note %}
+ Note: {{item.session.agenda_note|ics_esc}}\n{% endif %}{% for material in item.session.materials.all %}
+ \n{{material.type}}{% if material.type.name != "Agenda" %}
+  ({{material.title|ics_esc}}){% endif %}:
+  {{material.get_absolute_url}}\n{% endfor %}
+{% endif %}END:VEVENT
+{% endfor %}END:VCALENDAR{% endautoescape %}

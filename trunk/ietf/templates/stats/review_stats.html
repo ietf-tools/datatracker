@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+
+{% load origin %}{% origin %}
+
+{% load ietf_filters staticfiles bootstrap3 %}
+
+{% block pagehead %}
+  <link rel="stylesheet" href="{% static 'bootstrap-datepicker/css/bootstrap-datepicker3.min.css' %}">
+{% endblock %}
+
+{% block content %}
+  {% origin %}
+
+  <h1>
+    {% block title %}
+      {% if level == "team" %}
+        Statistics for review teams
+      {% elif level == "reviewer" %}
+        Statistics for reviewers in {{ reviewers_for_team.name }}
+      {% endif %}
+    {% endblock %}
+  </h1>
+
+  {% if level == "reviewer" %}
+    <p><a href="{{ team_level_url }}">&laquo; Back to teams</a></p>
+  {% endif %}
+
+  <div class="stats-options well">
+    <div>
+      Show:
+      <div class="btn-group">
+        {% for slug, label, url in possible_stats_types %}
+          <a class="btn btn-default {% if slug == stats_type %}active{% endif %}" href="{{ url }}">{{ label }}</a>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div>
+      Count:
+      <div class="btn-group">
+        {% for slug, label, url in possible_count_choices %}
+          <a class="btn btn-default {% if slug == count %}active{% endif %}" href="{{ url }}">{{ label }}</a>
+        {% endfor %}
+      </div>
+    </div>
+
+    <form class="form-inline date-range">
+      Request time:
+      
+      <input class="form-control" type="text" name="from" value="{{ from_date }}" data-provide="datepicker" data-date-format="yyyy-mm-dd" data-date-autoclose="1" data-date-end-date="{{ today.isoformat }}" data-date-start-view="months">
+      -
+      <input class="form-control" type="text" name="to" value="{{ to_date }}" data-provide="datepicker" data-date-format="yyyy-mm-dd" data-date-autoclose="1" data-date-end-date="{{ today.isoformat }}" data-date-start-view="months">
+
+      {% for name, value in request.GET.iteritems %}
+        {% if name != "from" and name != "to" %}
+          <input type="hidden" name="{{ name }}" value="{{ value }}">
+        {% endif %}
+      {% endfor %}
+      <button class="btn btn-default" type="submit">Set</button>
+    </form>
+
+
+    {% if stats_type == "time" %}
+      <hr>
+
+      <div>
+        Team:
+        <div class="btn-group">
+          {% for slug, label, url in possible_teams %}
+            <a class="btn btn-default {% if slug in selected_teams %}active{% endif %}" href="{{ url }}">{{ label }}</a>
+          {% endfor %}
+        </div>
+      </div>
+
+      {% if selected_teams %}
+        <div>
+          Completion:
+          <div class="btn-group">
+            {% for slug, label, url in possible_completion_types %}
+              <a class="btn btn-default {% if slug == selected_completion_type %}active{% endif %}" href="{{ url }}">{{ label }}</a>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div>
+          Result:
+          <div class="btn-group">
+            {% for slug, label, url in possible_results %}
+              <a class="btn btn-default {% if slug == selected_result %}active{% endif %}" href="{{ url }}">{{ label }}</a>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div>
+          State:
+          <div class="btn-group">
+            {% for slug, label, url in possible_states %}
+              <a class="btn btn-default {% if slug == selected_state %}active{% endif %}" href="{{ url }}">{{ label }}</a>
+            {% endfor %}
+          </div>
+        </div>
+      {% endif %}
+      
+    {% endif %}
+
+  </div>
+
+  {% if stats_type == "completion" %}
+
+    <h3>Completion status and completion time</h3>
+
+    <table class="review-stats table">
+      <thead>
+        <th>
+          {% if level == "team" %}
+            Team
+          {% elif level == "reviewer" %}
+            Reviewer
+          {% endif %}
+        </th>
+        <th title="Requests that are currently requested or accepted by reviewer">Open in time</th>
+        <th title="Requests that are currently requested or accepted by reviewer and past the deadline">Open late</th>
+        <th title="Requests that have been completed partially or completely">Completed in time</th>
+        <th title="Requests that have been completed partially or completely past the deadline">Completed late</th>
+        <th title="Requests that are rejected by the reviewer, withdrawn, overtaken by events or with no response from reviewer">Not completed</th>
+        <th title="Average time between assignment and completion for completed reviews, in days">Avg. compl. days{% if count == "pages" %}/page{% endif %}</th>
+      </thead>
+      <tbody>
+        {% for row in data %}
+          <tr {% if row.obj == "Totals" %}class="totals"{% endif %}>
+            <td>{{ row.obj }}</td>
+            <td>{{ row.open_in_time }}</td>
+            <td>{{ row.open_late }}</td>
+            <td>{{ row.completed_in_time }}</td>
+            <td>{{ row.completed_late }}</td>
+            <td>{{ row.not_completed }}</td>
+            <td>
+              {% if row.average_assignment_to_closure_days != None %}
+                {{ row.average_assignment_to_closure_days|floatformat }}
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+  {% elif stats_type == "results" %}
+
+    <h3>Results of completed reviews</h3>
+
+    <table class="review-stats table">
+      <thead>
+        <th>
+          {% if level == "team" %}
+            Team
+          {% elif level == "reviewer" %}
+            Reviewer
+          {% endif %}
+        </th>
+        {% for r in results %}
+          <th>{{ r.name }}</th>
+        {% endfor %}
+      </thead>
+      <tbody>
+        {% for row in data %}
+          <tr {% if row.obj == "Totals" %}class="totals"{% endif %}>
+            <td>{{ row.obj }}</td>
+            {% for c in row.result_list %}
+              <td>{{ c }}</td>
+            {% endfor %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+  {% elif stats_type == "states" %}
+
+    <h3>Specific request states</h3>
+
+    <table class="review-stats table">
+      <thead>
+        <th>
+          {% if level == "team" %}
+            Team
+          {% elif level == "reviewer" %}
+            Reviewer
+          {% endif %}
+        </th>
+        {% for s in states %}
+          <th>{{ s.name }}</th>
+        {% endfor %}
+      </thead>
+      <tbody>
+        {% for row in data %}
+          <tr {% if row.obj == "Totals" %}class="totals"{% endif %}>
+            <td>{{ row.obj }}</td>
+            {% for c in row.state_list %}
+              <td>{{ c }}</td>
+            {% endfor %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+  {% elif stats_type == "time" and selected_teams %}
+
+    <h3>Counts per month</h3>
+
+    <div class="stats-time-graph"></div>
+
+    <script>
+     var timeSeriesData = {{ data|safe }};
+     var timeSeriesOptions = {
+         xaxis: {
+             mode: "time",
+             tickLength: 0
+         },
+         yaxis: {
+             tickDecimals: {% if selected_completion_type == "average_assignment_to_closure_days" %}null{% else %}0{% endif %}
+         },
+         series: {
+             color: "#3d22b3",
+             bars: {
+                 show: true,
+                 barWidth: 20 * 24 * 60 * 60 * 1000,
+                 align: "center",
+                 lineWidth: 1,
+                 fill: 0.6
+             }
+         }
+     };
+    </script>
+
+  {% endif %}
+
+  {% if stats_type != "time" %}
+    <p class="text-muted text-right">Note: {% if level == "team" %}teams{% elif level == "reviewer" %}reviewers{% endif %}
+      with no requests in the period are omitted.</p>
+  {% endif %}
+
+  {% if level == "team" and stats_type != "time" %}
+    <p>Statistics for individual reviewers:</p>
+
+    <div class="review-stats-teams">
+      {% for t in teams %}
+        <a href="{{ t.reviewer_stats_url }}">{{ t.name }}</a>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+{% endblock %}
+
+{% block js %}
+  <script src="{% static 'bootstrap-datepicker/js/bootstrap-datepicker.min.js' %}"></script>
+  {% if stats_type == "time" %}
+    <script src="{% static 'flot/jquery.flot.min.js' %}"></script>
+    <script src="{% static 'flot/jquery.flot.time.min.js' %}"></script>
+    <script src="{% static 'ietf/js/review-stats.js' %}"></script>
+  {% endif %}
+{% endblock %}

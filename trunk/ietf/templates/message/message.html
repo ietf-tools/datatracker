@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+{% load ietf_filters %}
+
+{% block title %}Announcement: {{ message.subject }} - {{ message.time|date:"F j, Y" }}{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <h1>Announcement<br>{{ message.subject }}<br><small>{{ message.time|date:"F j, Y" }}</small></h1>
+
+  <p>
+    <b>From:</b> {{ message.frm }}<br/>
+    <b>To:</b> {{ message.to }}<br/>
+    <b>Date:</b> {{ message.time|date:"F j, Y" }}<br/>
+    <b>Subject:</b> {{ message.subject }}
+  </p>
+
+  <pre>{{ message.body }}</pre>
+{% endblock %}

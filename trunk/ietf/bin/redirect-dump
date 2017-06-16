@@ -1,0 +1,9 @@
+#!/bin/sh
+#
+# Copyright The IETF Trust 2007, All Rights Reserved
+#
+#python manage.py dumpdata --format=xml redirects | xmllint --format -
+python manage.py dumpdata --format=xml redirects | sed -e 's/<\/*object/\
+  &/g' -e 's/<field/\
+    &/g' -e 's/<\/django-objects/\
+&/g'

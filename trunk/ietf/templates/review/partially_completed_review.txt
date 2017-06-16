@@ -1,0 +1,10 @@
+{% autoescape off %}Review was partially completed by {{ by }}.
+
+{% if new_review_req_url %}
+A new review request has been added for completing the review:
+
+{{ new_review_req_url }}
+{% else %}
+Found {{ existing_open_reqs|length }} open review request{{ existing_open_reqs|pluralize }} on the document so a new
+review request has not been added.
+{% endif %}{% endautoescape %}

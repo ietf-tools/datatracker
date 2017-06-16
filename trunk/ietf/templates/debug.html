@@ -1,0 +1,94 @@
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}{% origin %}
+{% if debug %}
+  {% if sql_debug %}
+    {% load debug_filters %}
+
+    <div id="debug">
+    <hr>
+      <p>
+	{{ sql_queries|length }} queries ({{ sql_queries|timesum }}s)
+	{% if sql_queries|length != 0 %}
+	  <a class="btn btn-default btn-xs"
+	     onclick="$('#debug-query-table').toggleClass('hide');">Show</a>
+	{% endif %}
+      </p>
+      <table class="table table-condensed tablesorter hide" id="debug-query-table">
+	<thead>
+	  <tr>
+	    <th data-header="sequence">#</th>
+	    <th data-header="query">SQL</th>
+	    <th data-header="count">Count</th>
+	    <th data-header="where">WHERE</th>
+	    <th data-header="loc">View/ Templ.</th>
+	    <th data-header="time">Time</th>
+	    <th data-header="acc">Acc.</th>
+	  </tr>
+	</thead>
+	<tbody>
+	  {% with sql_queries|annotate_sql_queries as sql_query_info %}
+	      {% for query in sql_query_info %}
+		<tr class="sql">
+		  <td>{{ forloop.counter }}</td>
+		  <td>{{ query.sql|expand_comma|escape }}</td>
+		  <td>{{ query.count }}</td>
+		  <td>{{ query.where }}</td>
+		  <td>
+		     {{ query.loc }}
+		     {% if query.origin %}
+		     <button type="button" class="btn btn-primary btn-xs" data-toggle="modal" data-target="#modal-{{forloop.counter}}" >Origin</button>
+		     {% endif %}
+		     <div class="modal fade" id="modal-{{forloop.counter}}" tabindex="-1" role="dialog" aria-labelledby="modal-title-{{forloop.counter}}">
+		       <div class="modal-dialog modal-max" role="document">
+			 <div class="modal-content">
+			   <div class="modal-header">
+			     <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+			     <h4 class="modal-title" id="modal-title-{{forloop.counter}}">QuerySet Origin for Query #{{forloop.counter}}</h4>
+			   </div>
+			   <div class="modal-body">
+			     <table class="table table-condensed">
+				<thead>
+				<tr>
+				  <th>File (line)</th>
+				  <th>Method</th>
+				  <th>Code</th>
+				</tr>
+				</thead>
+				<tbody>
+				{% if query.origin %}
+				{% for origin in query.origin %}
+				<tr class="origin">
+				   <td>{{ origin.1 }}({{ origin.2 }})</td>
+				   <td>{{ origin.6 }}()</td>
+				   <td class="code">
+				      {% for l in origin.4 %}
+				      <table>
+					 <tr><td class="{% if forloop.counter0 == origin.5 %} current{% endif %}">&nbsp;{{l}}</td></tr>
+				      </table>
+				      {% endfor %}
+				   </td>
+				</tr>
+				{% endfor %}
+				{% endif %}
+				</tbody>
+			     </table>
+			   </div>
+			   <div class="modal-footer">
+			     <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+			   </div>
+			 </div>
+		       </div>
+		     </div>
+		  </td>
+		  <td>{{ query.time }}</td>
+		  <td>{{ query.time_accum }}</td>
+		</tr>
+	      {% endfor %}
+	  {% endwith %}
+	</tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class='text-center text-muted small'>Add 'ietf.context_processors.sql_debug' to settings.TEMPLATE_CONTECT_PROCESSORS to turn on the SQL statement table</div>
+  {% endif %}
+{% endif %}

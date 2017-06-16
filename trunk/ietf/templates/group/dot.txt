@@ -1,0 +1,88 @@
+{% load mail_filters %}{% autoescape off %}
+digraph draftdeps {
+    graph [fontame=Helvetica];
+    node [fontname=Helvetica];
+    edge [fontname=Helvetica];
+    subgraph cluster_key {
+        graph [label=Key,
+            rankdir=LR,
+            margin=.5,
+            fontname=Helvetica
+        ];
+        subgraph key_a {
+            graph [rank=same];
+            key_colors [color=white,
+                fontcolor=black,
+                label="Colors in\nthis row"];
+            key_wgdoc [color="#0AFE47",
+                label="Product of\nthis group",
+                style=filled,
+                wg=this];
+            key_otherwgdoc [color="#9999FF",
+                label="Product of\nother group",
+                style=filled,
+                wg=blort];
+            key_individual [color="#FF800D",
+                label="Individual\nsubmission",
+                style=filled,
+                wg=individual];
+        }
+        subgraph key_b {
+            graph [rank=same];
+            key_shapes [color=white,
+                fontcolor=black,
+                label="Shapes in\nthis row"];
+            key_active [color="#9999FF",
+                label="Active\ndocument",
+                style=filled];
+            key_iesg [color="#9999FF",
+                label="IESG or\nRFC Queue",
+                shape=parallelogram,
+                style=filled];
+            key_rfc [color="#9999FF",
+                label="RFC\nPublished",
+                shape=box,
+                style=filled];
+            key_expired [color="#9999FF",
+                label="Expired!",
+                peripheries=3,
+                shape=house,
+                style=solid];
+            key_replaced [color="#9999FF",
+                label="Replaced",
+                peripheries=3,
+                shape=ellipse];
+        }
+        key_colors -> key_shapes [color=white,
+            fontcolor=black,
+            label="Line\ncolor\nreflects\nReference\ntype"];
+        key_wgdoc -> key_active [color=orange,
+            label="Orange link:\nUnsplit"];
+        key_otherwgdoc -> key_active [color=green,
+            label="Green link:\nInformative"];
+        key_individual -> key_iesg [color=blue,
+            label="Blue link:\nNormative"];
+        key_otherwgdoc -> key_expired [label="Black link:\nUnknown",
+            style=dashed];
+        key_wgdoc -> key_rfc [color=red,
+            label="Red link:\nDownref!",
+            arrowhead=normalnormal];
+        key_individual -> key_replaced [color=pink,
+            label="Pink link:\nReplaces",
+            style=dashed,
+            arrowhead=diamond];
+    }
+
+{% for node in nodes %}
+    {{ node.nodename }} [ status="{{ node.get_state.slug }}",
+                          wg="{{ node.group.acronym }}",{% for key,value in node.styles.items %}
+                          {{ key }}={{ value }},{% endfor %}
+                         ];
+{% endfor %}
+
+{% for edge in edges%}
+    {{ edge.sourcename }} -> {{ edge.targetname }} {% if edge.styles %}[ {% for key,value in edge.styles.items %}{{ key }}={{ value }}{% if not forloop.last %}, {% endif %}{% endfor %} ] {% endif %};{% endfor %}
+
+
+}
+{% endautoescape %}

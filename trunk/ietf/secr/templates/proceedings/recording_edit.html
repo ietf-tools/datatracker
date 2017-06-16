@@ -1,0 +1,38 @@
+{% extends "base_site.html" %}
+{% load staticfiles %}
+{% block title %}Edit Recording{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <script type="text/javascript" src="{% static 'secr/js/utils.js' %}"></script>
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }} 
+  {% if meeting.type_id == "interim" %}
+    &raquo; <a href="{% url 'ietf.secr.proceedings.views.main' %}">Proceedings</a>
+    &raquo; {{ meeting }}
+    &raquo; <a href="{% url 'ietf.secr.proceedings.views.recording' meeting_num=meeting.number %}">Recording</a>
+    &raquo; {{ recording.name }}
+  {% else %}
+    &raquo; <a href="{% url 'ietf.secr.proceedings.views.main' %}">Proceedings</a>
+    &raquo; <a href="{% url 'ietf.secr.proceedings.views.select' meeting_num=meeting.number %}">{{ meeting.number }}</a>
+    &raquo; <a href="{% url 'ietf.secr.proceedings.views.recording' meeting_num=meeting.number %}">Recording</a>
+    &raquo; {{ recording.name }}
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+
+<div class="module interim-container">
+    <h2>Recording Metadata for Group: {{ form.instance.group.acronym }} | Session: {{ form.instance.session_set.first.official_scheduledsession.timeslot.time }}</h2>
+         <p><h3>Edit Recording Metadata:</h3></p>
+         <form id="recording-form" action="" method="post">{% csrf_token %}
+           <table>
+             {{ form.as_table }}
+           </table>
+
+             {% include "includes/buttons_save_cancel.html" %}
+
+         </form>
+</div> <!-- module -->
+
+{% endblock %}

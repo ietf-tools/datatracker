@@ -1,0 +1,36 @@
+#!/usr/bin/env python
+from __future__ import print_function
+
+import os, sys
+import syslog
+
+# boilerplate
+basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+sys.path = [ basedir ] + sys.path
+os.environ["DJANGO_SETTINGS_MODULE"] = "ietf.settings"
+
+virtualenv_activation = os.path.join(basedir, "env", "bin", "activate_this.py")
+if os.path.exists(virtualenv_activation):
+    execfile(virtualenv_activation, dict(__file__=virtualenv_activation))
+
+syslog.openlog(os.path.basename(__file__), syslog.LOG_PID, syslog.LOG_USER)
+
+import django
+django.setup()
+
+from ietf.group.models import Role
+
+addresses = set()
+for role in Role.objects.filter(
+                    group__state__slug='active',
+                    group__type__in=['ag','area','dir','iab','ietf','irtf','nomcom','rg','team','wg',]):
+    #sys.stderr.write(str(role)+'\n')
+    for e in role.person.email_set.all():
+        if e.active and not e.address.startswith('unknown-email-'):
+            addresses.add(e.address)
+
+addresses = list(addresses)
+addresses.sort()
+for a in addresses:
+    print(a.encode('utf8'))
+        

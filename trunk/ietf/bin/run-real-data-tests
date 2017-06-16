@@ -1,0 +1,38 @@
+#!/usr/bin/env python
+#
+# Run some non-modifying tests on top of the real database, to
+# exercise the code with real data.
+#
+
+import os, subprocess, datetime
+
+base_dir = os.path.relpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+
+path = os.path.abspath(os.path.join(base_dir, ".."))
+if os.environ.get("PYTHONPATH"):
+    path += ":" + os.environ.get("PYTHONPATH")
+os.environ["PYTHONPATH"] = path
+
+
+
+def run_script(script, *args):
+    script_base = os.path.splitext(os.path.basename(script))[0]
+    script_path = os.path.join(base_dir, script)
+    output_path = os.path.join(base_dir, script_base)
+    arg_str = " " + " ".join(args) if args else ""
+    cmd_line = "%s%s > %s.output" % (script_path, arg_str, output_path)
+    print "Running %s" % cmd_line
+    before = datetime.datetime.now()
+    returncode = subprocess.call(cmd_line, shell=True)
+    print "  (took %.3f seconds)" % (datetime.datetime.now() - before).total_seconds()
+    return returncode
+
+# idindex
+run_script("idindex/generate_id_abstracts_txt.py")
+run_script("idindex/generate_id_index_txt.py")
+run_script("idindex/generate_all_id_txt.py")
+run_script("idindex/generate_all_id2_txt.py")
+
+# test crawler
+crawl_input = os.path.join(base_dir, "utils/crawlurls.txt")
+run_script("bin/test-crawl", "--urls %s" % crawl_input)

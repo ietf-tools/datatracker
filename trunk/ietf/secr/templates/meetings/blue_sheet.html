@@ -1,0 +1,49 @@
+{% extends "base_site.html" %}
+{% load staticfiles %}
+
+{% block title %}Meetings - Blue Sheet{% endblock %}
+
+{% block extrahead %}{{ block.super }}
+  <script type="text/javascript" src="{% static 'secr/js/utils.js' %}"></script>
+{% endblock %}
+
+{% block breadcrumbs %}{{ block.super }}
+  &raquo; <a href="../../">Meetings</a>
+  &raquo; <a href="../">{{ meeting.number }}</a>
+  &raquo; Blue Sheets
+{% endblock %}
+
+{% block content %}
+
+<div  class="module">
+  <h2>IETF {{ meeting.number }} - Blue Sheet</h2>
+  
+  <p>Use this to generate blue sheets for meeting sessions.</p>
+  <ul class="none">
+    <li>
+      <form style="display:inline" method="post" action="{% url "ietf.secr.meetings.views.blue_sheet_generate" meeting_id=meeting.number%}">{% csrf_token %}
+          <input type="submit" value="Generate Blue Sheets">
+      </form>
+      &nbsp;&nbsp;Last run:
+      {% if last_run %}
+        {{ last_run }}
+      {% else %}
+        Never
+      {% endif %}
+    </li>
+  </ul>
+  <p>Use this to download the blue sheets from the server.</p>
+  <ul class="none">
+    <li>
+      <button onclick="window.location='{{ url }}'">Download Blue Sheets</button>
+    </li>
+  </ul>
+
+  <hr />
+  <p>
+  Use the session details page for a group to upload scanned bluesheets. The session details pages for a group can be reached from the meeting's <a href="{% url 'ietf.meeting.views.materials' num=meeting.number %}">materials page</a>.
+  </p>
+</div> <!-- module -->
+
+{% endblock %}
+

@@ -1,0 +1,24 @@
+<html>
+  <head>
+    <style type="text/css">
+       p.comment {
+	   background-color: #cfc;
+	   border: solid black 1px;
+	   padding: 0.5em;
+       }
+    </style>
+  </head>
+  <body>
+    <div id="page_wrapper">
+      <p class="comment">
+	 This is a very simple html version of the JSON api, to make it easier to manually explore
+	 the API.<br/>
+	 To see the pure JSON version, add '?format=json' to the browser url, or access
+	 the API with the "Accept:" http header set to "Accept: application/json".
+      </p>
+      <section class="content">
+        {% block content %}{{data}}{% endblock %}
+      </section>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+{% load staticfiles bootstrap3 widget_tweaks %}
+
+{% block title %}Cancel Interim Meeting {% if meeting.session_set.first.status.slug != "sched" %}Request{% endif %}{% endblock %}
+
+{% block pagehead %}
+  <link rel="stylesheet" href="{% static 'select2/select2.css' %}">
+  <link rel="stylesheet" href="{% static 'select2-bootstrap-css/select2-bootstrap.min.css' %}">
+  <link rel="stylesheet" href="{% static 'bootstrap-datepicker/css/bootstrap-datepicker3.min.css' %}">
+{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <h1>Cancel Interim Meeting {% if meeting.session_set.first.status.slug != "sched" %}Request{% endif %}</h1>
+
+  <form id="interim-request-cancel-form" role="form" method="post" class="form-horizontal">
+    {% csrf_token %}
+    
+    {% bootstrap_form form layout='horizontal' %}
+
+    <div class="form-group"
+    {% buttons %}
+      <button type="submit" class="btn btn-primary">Submit</button>
+      <a class="btn btn-default pull-right" href="{% url 'ietf.meeting.views.interim_request_details' number=meeting.number %}">Back</a>
+    {% endbuttons %}
+    </div>
+    
+  </form>
+
+{% endblock %}
+
+{% block js %}
+  <script src="{% static 'bootstrap-datepicker/js/bootstrap-datepicker.min.js' %}"></script>
+  <script src="{% static 'select2/select2.min.js' %}"></script>
+  <script src="{% static 'ietf/js/meeting-interim-request.js' %}"></script>
+{% endblock %}

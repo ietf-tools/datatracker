@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+{% load staticfiles %}
+{% load ietf_filters %}
+{% load bootstrap3 %}
+
+{% block title %}IETF {{ meeting.number }} : Make {{schedule.owner}} / {{ schedule.name }} Official{% endblock %}
+
+{% block content %}
+  {% origin %}
+
+<h1>IETF {{meeting.number}}</h1>
+<h2>Make Schedule: {{schedule.owner}}/{{schedule.name}} Official
+
+<div>
+
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {# Null Form #}
+    {% buttons %}
+        <input class="btn btn-primary" type="submit" value="Make this schedule official" name="save">
+        <a href="{% url 'ietf.meeting.views.list_agendas' num=meeting.number %}" class="btn btn-default">Cancel</a>
+    {% endbuttons %}
+  </form>
+
+</div>
+
+{% endblock %}

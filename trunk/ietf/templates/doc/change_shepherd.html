@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+{% load staticfiles %}
+{% load bootstrap3 %}
+
+{% block title %}Change document shepherd for {{ doc.name }}-{{ doc.rev }}{% endblock %}
+
+{% block pagehead %}
+  <link rel="stylesheet" href="{% static 'select2/select2.css' %}">
+  <link rel="stylesheet" href="{% static 'select2-bootstrap-css/select2-bootstrap.min.css' %}">
+{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <h1>Change document shepherd<br><small>{{ doc.name }}-{{ doc.rev }}</small></h1>
+
+  <p>The shepherd needs to have a Datatracker account. A new account can be
+    <a href="{% url "ietf.ietfauth.views.create_account" %}">created here</a>.</p>
+
+    <form enctype="multipart/form-data" method="post">
+      {% csrf_token %}
+      {% bootstrap_form form %}
+
+      {% buttons %}
+        <button type="submit" class="btn btn-primary">Save</button>
+        <a class="btn btn-default pull-right" href="{% url "ietf.doc.views_doc.document_main" name=doc.name %}">Back</a>
+      {% endbuttons %}
+    </form>
+{% endblock %}
+
+{% block js %}
+  <script src="{% static 'select2/select2.min.js' %}"></script>
+  <script src="{% static 'ietf/js/select2-field.js' %}"></script>
+{% endblock %}

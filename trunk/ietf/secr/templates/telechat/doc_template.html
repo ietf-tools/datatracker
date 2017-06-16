@@ -1,0 +1,9 @@
+{% if section_docs %}
+  <ul class="doc-list">
+  {% for doc in section_docs %}
+    <li><a href="{% url 'ietf.secr.telechat.views.doc_detail' date=date name=doc.name %}">{{ doc.name }}</a></li>
+  {% endfor %}
+  </ul>
+{% else %}
+None
+{% endif %}

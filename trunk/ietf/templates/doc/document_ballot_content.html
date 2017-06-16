@@ -1,0 +1,104 @@
+{# Copyright The IETF Trust 2015, All Rights Reserved #}{% load origin %}{% origin %}
+{% load ietf_filters %}
+<div class="row">
+  <div class="col-md-2 hidden-sm hidden-xs">
+    {% for n, positions in position_groups %}
+      <h4><span class="label label-{{ n|pos_to_label }}"> {{ n.name }}</span></h4>
+      {% for p in positions|dictsort:"ad.last_name" %}
+        <div class="areadirector-name">
+          {% if p.old_ad %}<span class="text-muted">({% endif %}{% if p.comment or p.discuss %}<a href="#{{ p.ad.plain_name|slugify }}">{% endif %}{{ p.ad.plain_name }}{% if p.comment or p.discuss %}</a>{% endif %}{% if p.old_ad %})</span>{% endif %}
+        </div>
+      {% empty %}
+        (None)
+      {% endfor %}
+      <br>
+    {% endfor %}
+  </div>
+
+  <div class="col-md-10">
+    {% if all_ballots and all_ballots|length > 1 %}
+      <ul class="pagination pagination-sm">
+        <li class="disabled"><span><b>Ballots</b></span></li>
+        {% for b in all_ballots %}
+          <li {% if b == ballot %}class="active"{% endif %}>
+            <a href="{% url "ietf.doc.views_doc.document_ballot" name=doc.name ballot_id=b.pk %}">
+	      {{ b.ballot_type.name }} ({{ b.rev }})
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    {% if doc.type_id == "draft" or doc.type_id == "conflrev" or doc.type_id == "statchg" %}
+      {% if deferred %}
+        <p class="alert alert-danger">Ballot deferred by {{ deferred.by }} on {{ deferred.time|date:"Y-m-d" }}.</p>
+      {% endif %}
+    {% endif %}
+
+    {% if not ballot_open %}
+      <p class="alert alert-warning"><b>Note:</b> This ballot was opened for revision {{ ballot.rev }} and is now closed.</p>
+    {% else %}
+      <p class="alert alert-info"><b>Summary:</b> {{ summary }}</p>
+    {% endif %}
+
+    {% if ballot.ballot_type.question %}
+      <p class="well"><b>Ballot question:</b> "{{ ballot.ballot_type.question }}"</p>
+    {% endif %}
+
+    {% if editable and user|has_role:"Area Director,Secretariat" %}
+      {% if user|has_role:"Area Director" %}
+        <a class="btn btn-primary" href="{% url "ietf.doc.views_ballot.edit_position" name=doc.name ballot_id=ballot.pk %}">Edit position</a>
+      {% endif %}
+
+      {% if doc.type_id == "draft" or doc.type_id == "conflrev" or doc.type_id == "statchg" %}
+        {% if deferred %}
+          <a class="btn btn-default" href="{% url 'ietf.doc.views_ballot.undefer_ballot' name=doc.name %}">Undefer ballot</a>
+        {% else %}
+          {% if doc.telechat_date %}
+            <a class="btn btn-warning" href="{% url 'ietf.doc.views_ballot.defer_ballot' name=doc.name %}">Defer ballot</a>
+          {% endif %}
+        {% endif %}
+
+        {% if user|has_role:"Secretariat" %}
+          <a class="btn btn-danger" href="{% url 'ietf.doc.views_ballot.clear_ballot' name=doc.name %}">Clear ballot</a>
+        {% endif %}
+      {% endif %}
+    {% endif %}
+
+    {% for n, positions in position_groups %}
+      {% for p in positions|dictsort:"ad.last_name" %}
+        <h4 class="anchor-target" id="{{ p.ad.plain_name|slugify }}">
+          {% if p.old_ad %}<span class="text-muted">({% endif %}{{ p.ad.plain_name }}{% if p.old_ad %})</span>{% endif %}
+            <span class="pull-right">
+              {% if p.old_positions %}
+                <span class="text-muted small">(was {{ p.old_positions|join:", " }})</span>
+              {% endif %}
+              <span class="label label-{{ p.pos|pos_to_label }}">{{p.pos}}</span>
+              {% if user|has_role:"Secretariat" %}
+                <a href="{% url "ietf.doc.views_ballot.edit_position" name=doc.name ballot_id=ballot.pk %}?ad={{ p.ad.pk }}" title="Click to edit the position of {{ p.ad.plain_name }}" class="btn btn-default btn-xs">
+	          Edit</a>
+              {% endif %}
+            </span>
+        </h4>
+
+        {% if p.pos.blocking and p.discuss %}
+          <div class="panel panel-danger">
+            <div class="panel-heading">
+              <h5 class="panel-title"><b>{{ p.pos.name }}</b> ({{ p.discuss_time|date:"Y-m-d" }}{% if not p.for_current_revision %} for -{{ p.get_dochistory.rev}}{% endif %})</h5>
+            </div>
+            <div class="panel-body"><pre class="ballot pasted">{{ p.discuss|escape|urlize }}</pre></div>
+          </div>
+        {% endif %}
+
+        {% if p.comment %}
+          <div class="panel panel-{{ p.pos|pos_to_label }}">
+            <div class="panel-heading">
+              <h5 class="panel-title"><b>Comment</b> ({{ p.comment_time|date:"Y-m-d" }}{% if not p.for_current_revision %} for -{{ p.get_dochistory.rev}}{% endif %})</h5>
+            </div>
+            <div class="panel-body"><pre class="ballot pasted">{{ p.comment|escape|urlize }}</pre></div>
+          </div>
+        {% endif %}
+      {% endfor %}
+    {% endfor %}
+  </div>
+</div>

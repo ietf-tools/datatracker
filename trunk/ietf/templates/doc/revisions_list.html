@@ -1,0 +1,9 @@
+{# Copyright The IETF Trust 2015, All Rights Reserved #}{% load origin %}{% origin %}
+<ul class="pagination revlist">
+  <li class="disabled"><a><b>Versions</b></a></li>
+  {% for rev in revisions %}
+    <li {% if rev == doc.rev %}{% if rev == latest_rev %}class="active"{% else %}class="warning"{% endif %}{% endif %}>
+      <a href="{% url "ietf.doc.views_doc.document_main" name=doc.name %}{% if not forloop.last %}{{ rev }}/{% endif %}" {% if rev != "00" and rev != latest_rev %}rel="nofollow"{% endif %} >{{ rev }}</a>
+    </li>
+  {% endfor %}
+</ul>

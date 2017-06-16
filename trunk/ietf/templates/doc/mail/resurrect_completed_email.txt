@@ -1,0 +1,5 @@
+{% autoescape off %}As you requsted, the Internet Draft {{ doc.file_tag }}
+has been resurrected.
+
+Datatracker URL: {{ url }}
+{% endautoescape %}

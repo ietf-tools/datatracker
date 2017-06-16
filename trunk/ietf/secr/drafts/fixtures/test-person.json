@@ -1,0 +1,132 @@
+[
+  {
+    "pk": 111252,
+    "model": "person.person",
+    "fields": {
+      "name": "Ryan Cross",
+      "ascii_short": null,
+      "time": "2012-01-24 13:00:24",
+      "affiliation": "",
+      "user": 486,
+      "address": "",
+      "ascii": "Ryan Cross"
+    }
+  },
+  {
+    "pk": 105791,
+    "model": "person.person",
+    "fields": {
+      "name": "Cullen Jennings",
+      "ascii_short": null,
+      "time": "2012-01-24 13:00:23",
+      "affiliation": "Cisco Systems",
+      "user": 454,
+      "address": "",
+      "ascii": "Cullen Jennings"
+    }
+  },
+  {
+    "pk": 11843,
+    "model": "person.person",
+    "fields": {
+      "name": "Dr. Carsten Bormann",
+      "ascii_short": null,
+      "time": "2012-01-24 13:00:13",
+      "affiliation": "University Bremen TZI",
+      "user": 1128,
+      "address": "",
+      "ascii": "Dr. Carsten Bormann"
+    }
+  },
+  {
+    "pk": 106987,
+    "model": "person.person",
+    "fields": {
+      "name": "Brian Rosen",
+      "ascii_short": null,
+      "time": "2012-01-24 13:00:13",
+      "affiliation": "",
+      "user": 1016,
+      "address": "",
+      "ascii": "Brian Rosen"
+    }
+  },
+  {
+    "pk": 108123,
+    "model": "person.person",
+    "fields": {
+      "name": "Gabor Bajko",
+      "ascii_short": null,
+      "time": "2012-01-24 13:00:15",
+      "affiliation": "",
+      "user": 700,
+      "address": "",
+      "ascii": "Gabor Bajko"
+    }
+  },
+  {
+    "pk": 106526,
+    "model": "person.person",
+    "fields": {
+      "name": "Wojciech Dec",
+      "ascii_short": null,
+      "time": "2012-01-24 13:00:19",
+      "affiliation": "",
+      "user": 1395,
+      "address": "",
+      "ascii": "Wojciech Dec"
+    }
+  },
+  {
+    "pk": 105786,
+    "model": "person.person",
+    "fields": {
+      "name": "Matthew Bocci",
+      "ascii_short": null,
+      "time": "2012-01-24 13:00:16",
+      "affiliation": "",
+      "user": 483,
+      "address": "",
+      "ascii": "Matthew Bocci"
+    }
+  },
+  {
+    "pk": 2793,
+    "model": "person.person",
+    "fields": {
+      "name": "Robert M. Hinden",
+      "ascii_short": null,
+      "time": "2012-01-24 13:00:13",
+      "affiliation": "Nokia",
+      "user": 844,
+      "address": "",
+      "ascii": "Robert M. Hinden"
+    }
+  },
+  {
+    "pk": 106653,
+    "model": "person.person",
+    "fields": {
+      "name": "Brian Haberman",
+      "ascii_short": null,
+      "time": "2012-01-24 13:12:51",
+      "affiliation": "",
+      "user": null,
+      "address": "",
+      "ascii": "Brian Haberman"
+    }
+  },
+  {
+    "pk": 112453,
+    "model": "person.person",
+    "fields": {
+      "name": "Russel Housley",
+      "ascii_short": null,
+      "time": "2012-01-24 13:16:11",
+      "affiliation": "",
+      "user": null,
+      "address": "",
+      "ascii": "Russel Housley"
+    }
+  }
+]

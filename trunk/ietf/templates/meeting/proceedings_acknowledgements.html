@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin markup_tags %}
+
+{% block title %}IETF {{ meeting.number }} Proceedings {% endblock %}
+
+{% block content %}
+  {% origin %}
+  <h1><a href="{% url 'ietf.meeting.views.proceedings' num=meeting.number %}">IETF {{ meeting.number }} Proceedings</a></h1>
+  <h2>Acknowledgements</h2>
+  
+  {{ meeting.acknowledgements | apply_markup:"restructuredtext" }}
+
+{% endblock %}

@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+{% load staticfiles %}
+{% load ietf_filters %}
+{% load bootstrap3 %}
+
+{% block title %}Delete IETF {{ meeting.number }} Meeting Agenda: {{schedule.owner}} / {{ schedule.name }}{% endblock %}
+
+{% block content %}
+  {% origin %}
+
+<h1>Delete IETF {{meeting.number}} Schedule: {{schedule.owner}}/{{schedule.name}} </h1>
+
+<div>
+
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {# Null Form #}
+    {% buttons %}
+        <input class="btn btn-primary" type="submit" value="Delete schedule" name="save">
+        <a href="{% url 'ietf.meeting.views.list_agendas' num=meeting.number %}" class="btn btn-default">Cancel</a>
+    {% endbuttons %}
+  </form>
+
+</div>
+
+{% endblock %}

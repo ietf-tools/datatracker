@@ -1,0 +1,48 @@
+{% autoescape off %}{% load ietf_filters %}{{ group.name }} ({{group.acronym}})
+{{ group.name|dashify }}{{ group.acronym|dashify }}---
+
+ Charter
+ Last Modified: {{ group.time.date|date }}
+
+ Current Status: {{ group.state.name }}
+
+ Chair{{ group.chairs|pluralize }}:
+{% for chair in group.chairs %}     {{ chair.person.name }} <{{chair.email.address}}>
+{% endfor %}
+ {{ group.area.name}} Directors:
+{% for ad in group.area.ads %}     {{ ad.person.plain_name }} <{{ ad.email.address }}>
+{% endfor %}
+{% if group.areadirector %} {{ group.area.name }} Advisor:
+     {{ group.areadirector.person.plain_name }} <{{ group.areadirector.email.address }}>
+{% endif %}{% if group.techadvisors %}
+ Tech Advisor{{ group.techadvisors|pluralize }}:
+{% for techadvisor in group.techadvisors %}     {{ techadvisor.person.plain_name }} <{{ techadvisor.email.address }}>
+{% endfor %}{% endif %}{% if group.editors %}
+ Editor{{ group.editors|pluralize }}:
+{% for editor in group.editors %}     {{ editor.person.plain_name }} <{{ editor.email.address }}>
+{% endfor %}{% endif %}{% if group.secretaries %}
+ Secretar{{ group.secretaries|pluralize:"y,ies" }}:
+{% for secretary in group.secretaries %}     {{ secretary.person.plain_name }} <{{ secretary.email.address }}>
+{% endfor %}{% endif %}
+ Mailing Lists:
+     General Discussion: {{ group.list_email }}
+     To Subscribe:       {{ group.list_subscribe }}
+     Archive:            {{ group.list_archive }}
+
+Description of Working Group:
+
+  {{ group.charter_text|indent }}
+
+Goals and Milestones:
+{% for milestone in group.milestones %}  {% if milestone.resolved %}{{ milestone.resolved }}    {% else %}{{ milestone.due|date:"M Y" }}{% endif %} - {{ milestone.desc }}
+{% endfor %}
+Internet-Drafts:
+{% for alias in group.drafts %}  - {{ alias.document.title }} [{{ alias.name }}-{{ alias.document.rev }}] ({{ alias.document.pages }} pages)
+{% endfor %}
+{% if group.rfcs %}Requests for Comments:
+{% for alias in group.rfcs %}  {{ alias.name.upper }}: {{ alias.document.title}} ({{ alias.document.pages }} pages){% for r in alias.rel %}
+           * {{ r.action }} {{ r.target.name|upper }}{% endfor %}{% for r in alias.invrel %}
+           * {% if r.relationsship == "obs" %}{{ r.inverse_action|upper }}{% else %}{{ r.action }}{% endif %} {{ r.source.canonical_name|upper }}{% endfor %}
+{% endfor %}
+{% else %}No Requests for Comments{% endif %}
+{% endautoescape %}

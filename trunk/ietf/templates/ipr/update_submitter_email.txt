@@ -1,0 +1,27 @@
+To: {{ to_email }}
+From: IETF Secretariat <ietf-ipr@ietf.org>
+Subject: IPR update notification
+Reply-To: {{ reply_to }}
+
+Dear {{ to_name }}:
+
+We have just received a request to update the IPR disclosure(s) submitted by you:
+
+{% for ipr in iprs %}
+{{ ipr.title }} {{ ipr.get_absolute_url }}
+{% endfor %}
+
+The name and email address of the person who submitted the update to your IPR disclosure are:
+{{ new_ipr.submitter_name }}, {{ new_ipr.submitter_email }}.
+
+We will not post this update unless we receive positive confirmation from you that
+{{ new_ipr.submitter_name }} is authorized to update your disclosure.
+Please respond to this message to confirm.
+
+If we do not hear from you within 30 days, we will inform {{ new_ipr.submitter_name }}
+that we were not able to secure approval for posting and that we are therefore rejecting
+the update until we can be assured it is authorized.
+
+Thank you
+
+IETF Secretariat

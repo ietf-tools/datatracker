@@ -1,0 +1,142 @@
+#!/bin/bash
+
+# POST-COMMIT HOOK
+#
+# The post-commit hook is invoked after a commit.  Subversion runs
+# this hook by invoking a program (script, executable, binary, etc.)
+# named 'post-commit' (for which this file is a template) with the 
+# following ordered arguments:
+#
+#   [1] REPOS-PATH   (the path to this repository)
+#   [2] REV          (the number of the revision just committed)
+#
+# The default working directory for the invocation is undefined, so
+# the program should set one explicitly if it cares.
+#
+# Because the commit has already completed and cannot be undone,
+# the exit code of the hook program is ignored.  The hook program
+# can use the 'svnlook' utility to help it examine the
+# newly-committed tree.
+#
+# On a Unix system, the normal procedure is to have 'post-commit'
+# invoke other programs to do the real work, though it may do the
+# work itself too.
+#
+# Note that 'post-commit' must be executable by the user(s) who will
+# invoke it (typically the user httpd runs as), and that user must
+# have filesystem-level permission to access the repository.
+#
+# On a Windows system, you should name the hook program
+# 'post-commit.bat' or 'post-commit.exe',
+# but the basic idea is the same.
+# 
+# The hook program typically does not inherit the environment of
+# its parent process.  For example, a common problem is for the
+# PATH environment variable to not be set to its usual value, so
+# that subprograms fail to launch unless invoked via absolute path.
+# If you're having unexpected problems with a hook program, the
+# culprit may be unusual (or missing) environment variables.
+# 
+# Here is an example hook script, for a Unix /bin/sh interpreter.
+# For more examples and pre-written hooks, see those in
+# the Subversion repository at
+# http://svn.collab.net/repos/svn/trunk/tools/hook-scripts/ and
+# http://svn.collab.net/repos/svn/trunk/contrib/hook-scripts/
+
+# Log everything for debug, otherwise use explicit logging (further down)
+#[ "$LOGGING" ] || LOGGING=1 { exec $0 "$@" 2>&1 | logger -p local0.info -t "commit"; }
+
+logger -p local0.info -t "hook" "${0##*/} $*"
+
+repo="$1"
+rev="$2"
+
+# Settings
+program=${0##*/}
+progdir=${0%/*}
+thishost="$(/bin/hostname)"
+thishost="${thishost%%.*}"
+svnpath="/home/svn"
+trac="/www/tools.ietf.org/tools/ietfdb/"
+svn_url="https://svn.tools.ietf.org/svn/tools/ietfdb"
+trac_url="https://trac.tools.ietf.org/tools/ietfdb"
+
+# Do a local backup
+relpath=${repo#$svnpath/}
+bckpath="$svnpath/.backup/$thishost/$relpath"
+[ -d $bckpath ] || mkdir -p $bckpath
+/usr/bin/svn-fast-backup -q $repo $bckpath
+
+# Inform trac about a new changeset
+trac-admin $trac changeset added ietfdb $rev 
+
+committer=$(/usr/bin/svnlook author $repo -r $rev)
+comments=$(/usr/bin/svnlook log $repo -r $rev)
+files=$(/usr/bin/svnlook changed $repo -r $rev)
+
+dirs=$(/usr/bin/svnlook dirs-changed -r$rev $repo)
+logger -p local0.info -t "commit" "dirs '$dirs'"
+
+# Look for 'requirements.txt' above the committed change.  Looking only for
+# filechanges, not for dirchanges, filters out commits which are just tree
+# copies, such as when creating new dev branches for the code sprint.
+branch=$($progdir/svnfind --filechange --dirpath $repo $rev "requirements.txt")
+
+if [ -n "$branch" ]; then
+    # Update trac tickets
+    /usr/bin/python $progdir/trac-post-commit-hook -p "$trac" -r "$rev" 2>&1 | logger -t "svn post-commit" -p "user.error" -i 
+
+    # Notify buildbot
+    filenames=$(/usr/bin/svnlook changed $repo -r $rev | sed -r -e 's/^ *[^ ]+ +//' -e "s|$branch/||")
+    /usr/local/bin/buildbot sendchange							\
+	--master="zinfandel.tools.ietf.org:9989" --auth="ietfdb:BRiR6XcT7x3$"		\
+	--who="$committer" --repository="https://svn.tools.ietf.org/svn/tools/ietfdb/"	\
+	--vc=svn --branch="$branch" --revision=$rev --property=xproperty:xvalue		\
+	--revlink="https://trac.tools.ietf.org/tools/ietfdb/changeset/$rev"		\
+	--comments="$comments" $filenames > /dev/null
+
+fi
+
+
+# Log the commit
+logger -p local0.info -t "commit" "$relpath r$rev $committer"
+logger -p local0.info -t "commit" "branch: $branch"
+
+# Notify committers
+
+if [[ $comments =~ ready.(for|to).merge ]]; then
+	mail $(< $progdir/notify-email.txt) -s "[svnhook] Svn commit ready for merge: $relpath | $committer: ${comments:0:42}..." <<-EOF | logger -p local0.info -t "ready for merge email"
+
+	$committer has a commit ready for merge:
+	$relpath/$branch [$rev]:
+
+	$comments
+
+	Svn:  $svn_url/$branch
+	Trac: $trac_url/changeset/$rev/$branch
+
+	Files:
+
+	$files
+
+	EOF
+
+else
+
+	mail $(< $progdir/notify-email.txt) -s "[svnhook] Svn commit to $relpath | $committer: ${comments:0:42}..." <<-EOF | logger -p local0.info -t "commit email"
+
+	$committer has made a new SVN commit in
+	$relpath/$branch [$rev]:
+
+	$comments
+
+	Svn:  $svn_url/$branch
+	Trac: $trac_url/changeset/$rev/$branch
+
+	Files:
+
+	$files
+
+	EOF
+
+fi

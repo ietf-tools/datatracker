@@ -1,0 +1,26 @@
+{% extends "nomcom/nomcom_public_base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+
+{% block subtitle %} - Questionnaires {% endblock %}
+
+{% block nomcom_content %}
+  {% origin %}
+  <h2>Questionnaires</h2>
+
+  <ul class="nav nav-tabs" role="tablist">
+    {% for position in positions %}
+      <li {% if forloop.first %}class="active"{% endif %}>
+        <a data-toggle="tab" role="tab" href="#{{ position.name|slugify }}">{{ position.name }}</a>
+      </li>
+    {% endfor %}
+  </ul>
+
+  <div class="tab-content">
+    {% for position in positions %}
+      <div class="tab-pane {% if forloop.first %}active{% endif %}" id="{{ position.name|slugify }}">
+        {{ position.get_questionnaire|linebreaks}}
+      </div>
+    {% endfor %}
+  </div>
+{% endblock %}

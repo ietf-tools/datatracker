@@ -1,0 +1,62 @@
+{% extends "submit/submit_base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+{% load ietf_filters %}
+{% load bootstrap3 %}
+
+{% block title %}Upload{% endblock %}
+
+{% block submit_content %}
+  {% origin %}
+  {% if form.shutdown and user|has_role:"Secretariat" %}
+  <p class="bg-warning">WARNING: currently in draft submission blackout period</p>
+  {% endif %}
+  
+  {% if form.cutoff_warning %}
+    <div class="cutoff-warning">
+      {{ form.cutoff_warning|safe }}
+    </div>
+  {% endif %}
+
+  <p>This page is used to submit Internet-Drafts to the
+    Internet-Draft repository. The list of current Internet-Drafts can be
+    accessed at <a href="https://www.ietf.org/ietf/1id-abstracts.txt">https://www.ietf.org/ietf/1id-abstracts.txt</a></p>
+
+  <p>Internet-Drafts are working documents of the Internet Engineering
+    Task Force (IETF), its areas, and its working groups. Note that other
+    groups may also distribute working documents as Internet-Drafts.</p>
+
+  <p>Internet-Drafts are draft documents, and are valid for a maximum of
+    six months. They may be updated, replaced, or obsoleted by other
+    documents at any time.</p>
+
+  {% if not form.shutdown or user|has_role:"Secretariat" %}
+    <p>If you run into problems when submitting an Internet-Draft
+      using this and the following pages, you may alternatively submit
+      your draft by email to
+      <a href="mailto:internet-drafts@ietf.org">internet-drafts@ietf.org</a>.
+      However, be advised that manual processing always takes additional time.</p>
+
+    {% include "submit/problem-reports-footer.html" %}
+
+      <h2>Upload an Internet-Draft</h2>
+
+      <p>
+	 <i>Either a plain-text document or a valid .xml file which can be processed by the xml2rfc
+	 processor <b>must</b> be provided.<br/>
+	 If no .txt file is provided, one will be generated from the .xml file.<br/>
+	 Other file types are optional.</i>
+      </p>
+
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        {% bootstrap_form form %}
+
+        {% buttons %}
+          <input class="btn btn-primary" type="submit" value="Upload" name="upload">
+        {% endbuttons %}
+      </form>
+  {% endif %}
+
+{% endblock %}

@@ -1,0 +1,24 @@
+<h2>Additional Web Pages</h2>
+{{ awp_formset.management_form }}
+{{ awp_formset.non_form_errors }}
+
+{% for form in awp_formset.forms %}
+<div class="inline-related{% if forloop.last %} last-related{% endif %}">
+  <h3><b>Web Page:</b>&nbsp; #{{ forloop.counter }}
+    {% if awp_formset.can_delete %}<span class="delete">{{ form.DELETE }} Delete</span>{% endif %}
+  </h3>
+  {% if form.non_field_errors %}{{ form.non_field_errors }}{% endif %}
+  <table id="area-awp-table" class="full-width amstable">
+    <col width="150">
+    <tr>
+      <th>URL:</th>
+      <td>{{ form.url.errors }}{{ form.url }}</td>
+    </tr>
+    <tr>
+      <th>Name:</th>
+      <td>{{ form.name.errors }}{{ form.name }}</td>
+    </tr>
+    {{ form.id }}
+  </table>
+</div> <!-- inline-related -->
+{% endfor %}

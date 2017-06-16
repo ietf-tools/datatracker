@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+
+{% load bootstrap3 %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <h1>{{ title }}</h1>
+
+  <form class="change-title" method="post">
+    {% csrf_token %}
+
+    {% bootstrap_form form %}
+
+    {% buttons %}
+      <a class="btn btn-default pull-right" href="{% url "ietf.doc.views_doc.document_main" name=doc.name %}">Back</a>
+      <button class="btn btn-primary" type="submit">Save and (possibly) notify Secretariat</button>
+    {% endbuttons %}
+  </form>
+
+{% endblock %}

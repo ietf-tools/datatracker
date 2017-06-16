@@ -1,0 +1,45 @@
+#!/bin/bash
+
+# Nightly datatracker jobs.
+# 
+# This script is expected to be triggered by cron from
+# $DTDIR/etc/cron.d/datatracker which should be symlinked from
+# /etc/cron.d/
+
+# Run the hourly jobs first
+$DTDIR/bin/hourly
+
+# Datatracker directory
+DTDIR=/a/www/ietf-datatracker/web
+cd $DTDIR/
+
+logger -p user.info -t cron "Running $DTDIR/bin/daily"
+
+# Set up the virtual environment
+source $DTDIR/env/bin/activate
+
+
+# Update our information about the current version of some commands we use
+$DTDIR/ietf/manage.py update_external_command_info
+
+# Populate the yang repositories
+$DTDIR/ietf/manage.py populate_yang_model_dirs
+
+# Re-run yang checks on active documents
+$DTDIR/ietf/manage.py run_yang_model_checks
+
+# Expire internet drafts
+# Enable when removed from /a/www/ietf-datatracker/scripts/Cron-runner:
+$DTDIR/ietf/bin/expire-ids
+
+# Expire last calls
+# Enable when removed from /a/www/ietf-datatracker/scripts/Cron-runner:
+$DTDIR/ietf/bin/expire-last-calls
+
+# Run an extended version of the rfc editor update, to catch changes
+# with backdated timestamps
+# Enable when removed from /a/www/ietf-datatracker/scripts/Cron-runner:
+$DTDIR/ietf/bin/rfc-editor-index-updates -d 1969-01-01
+
+# Fetch meeting attendance data from ietf.org/registration/attendees
+$DTDIR/ietf/manage.py fetch_meeting_attendance --latest

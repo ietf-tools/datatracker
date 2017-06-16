@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin staticfiles %}
+
+{% block title %}Document Search{% endblock %}
+
+{% block pagehead %}
+<link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
+{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <div class="col-sm-11 col-md-11 col-lg-11">
+    <h1>Document Search</h1>
+  </div>
+  <div class="col-sm-1 col-md-1 col-lg-1 text-right">
+    <h1><a href="/doc/stats/newrevisiondocevent?{{queryargs}}" class="icon-link">&nbsp;<span class="small fa fa-bar-chart">&nbsp;</span></a></h1>
+  </div>
+  
+
+  {% include "doc/search/search_form.html" %}
+
+  {% if meta.searching %}
+    {% include "doc/search/search_results.html" %}
+  {% endif %}
+{% endblock content %}
+
+{% block js %}
+<script src="{% static "jquery.tablesorter/js/jquery.tablesorter.combined.min.js" %}"></script>
+{% endblock %}

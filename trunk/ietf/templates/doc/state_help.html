@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+{% load staticfiles %}
+{% block title %}{{ title }}{% endblock %}
+
+{% block pagehead %}
+<link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
+{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <h1>{{ title }}</h1>
+
+  {% if state_type.slug == "draft-iesg" %}
+    <p><a class="btn btn-default" href="{% static 'ietf/images/iesg-draft-state-diagram.png' %}">View diagram</a></p>
+  {% endif %}
+
+  <table class="table table-condensed table-striped tablesorter">
+    <thead>
+      <tr>
+        <th>State</th>
+        <th>Description</th>
+        {% if has_next_states %}<th>Next State</th>{% endif %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for state in states %}
+        <tr class="anchor-target" id="{{ state.slug|default:"idexists" }}">
+          <th>{{ state.name }}</th>
+          <td>{{ state.desc|safe|linebreaksbr }}</td>
+          {% if has_next_states %}
+            <td>
+	      {% for s in state.next_states.all %}
+	        {{ s.name }}<br/>
+	      {% endfor %}
+            </td>
+          {% endif %}
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% if tags %}
+    <h2>Tags</h2>
+
+    <table class="table table-condensed table-striped tablesorter">
+      <thead>
+        <tr>
+          <th>Tag</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for tag in tags %}
+          <tr class="anchor-target" id="{{ tag.slug }}">
+            <th>{{ tag.name }}</th>
+            <td>{{ tag.desc|linebreaksbr }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+
+{% endblock %}
+
+{% block js %}
+<script src="{% static "jquery.tablesorter/js/jquery.tablesorter.combined.min.js" %}"></script>
+{% endblock %}

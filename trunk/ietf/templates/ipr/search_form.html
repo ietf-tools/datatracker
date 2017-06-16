@@ -1,0 +1,116 @@
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load ietf_filters widget_tweaks bootstrap3 %}
+{% load origin %}{% origin %}
+
+<h1>IPR Search</h1>
+
+<form class="ipr-search clearfix">
+  {% if user|has_role:"Secretariat" %}
+    <div class="col-md-12">
+      <h2>State Filter</h2>
+
+      <div class="form-group">
+        {% bootstrap_label form.state.label label_for=form.state.id_for_label label_class="control-label" %}
+
+        {% render_field form.state %}
+      </div>
+    </div>
+  {% endif %}
+
+  <div class="col-md-6">
+    <h2>Document search</h2>
+
+    <div class="form-group">
+      {% bootstrap_label form.draft.label label_for=form.draft.id_for_label label_class="control-label" %}
+      <div class="input-group">
+        {% render_field form.draft class="form-control" placeholder="draft-..." %}
+        <span class="input-group-btn">
+          <button class="btn btn-primary" type="submit" name="submit" value="draft"><span class="fa fa-search"></span> Search</button>
+	</span>
+      </div>
+    </div>
+
+    <div class="form-group">
+      {% bootstrap_label form.rfc.label label_for=form.rfc.id_for_label label_class="control-label" %}
+      <div class="input-group">
+        {% render_field form.rfc class="form-control" placeholder="123..." %}
+        <span class="input-group-btn">
+          <button class="btn btn-primary" type="submit" name="submit" value="rfc"><span class="fa fa-search"></span> Search</button>
+	</span>
+      </div>
+    </div>
+
+    <div class="form-group">
+      {{ form.doctitle.label_tag }}
+      <div class="input-group">
+        {% render_field form.doctitle class="form-control" placeholder="protocol..." %}
+        <span class="input-group-btn">
+          <button class="btn btn-primary" type="submit" name="submit" value="doctitle"><span class="fa fa-search"></span> Search</button>
+	</span>
+      </div>
+    </div>
+
+    <div class="form-group">
+      {{ form.group.label_tag }}
+      <div class="row">
+	<div class="col-sm-8">
+          {% render_field form.group class="form-control" %}
+        </div>
+	<div class="col-sm-4">
+          <button class="btn btn-primary btn-block" type="submit" name="submit" value="group"><span class="fa fa-search"></span> Search</button>
+	</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+
+    <h2>IPR search</h2>
+
+    <div class="form-group">
+      {{ form.holder.label_tag }}
+      <div class="input-group">
+        {% render_field form.holder class="form-control" placeholder="John Doe..." %}
+        <span class="input-group-btn">
+          <button class="btn btn-primary" type="submit" name="submit" value="holder"><span class="fa fa-search"></span> Search</button>
+	</span>
+      </div>
+    </div>
+
+    <div class="form-group">
+      {{ form.iprtitle.label_tag }}
+      <div class="input-group">
+        {% render_field form.iprtitle class="form-control" placeholder="protocol..." %}
+        <span class="input-group-btn">
+          <button class="btn btn-primary" type="submit" name="submit" value="iprtitle"><span class="fa fa-search"></span> Search</button>
+	</span>
+      </div>
+    </div>
+
+    <div class="form-group">
+      {{ form.patent.label_tag }}
+      <div class="input-group">
+        {% render_field form.patent class="form-control" %}
+        <span class="input-group-btn">
+          <button class="btn btn-primary" type="submit" name="submit" value="patent"><span class="fa fa-search"></span> Search</button>
+	</span>
+      </div>
+      <div class="help-block">
+	 This search string must contain at least three characters, including
+	 at least one digit, and include punctuation marks. For best results,
+	 please enter the entire string, or as much of it as possible.
+      </div>
+    </div>
+  </div>
+  <div class="p col-lg-12 col-md-12 col-sm-12 col-xs-12">
+
+     The material posted as IPR disclosures should be viewed as originating	
+     from the source of that information, and any issue or question related	
+     to the material should be directed to the source rather than the	
+     IETF. There is no implied endorsement or agreement by the IETF, the	
+     IESG or any other IETF entities with any of the material.
+
+  </div>
+
+  <a class="btn btn-default pull-right" href="{% url "ietf.ipr.views.showlist" %}">Back</a>
+</form>

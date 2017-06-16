@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+
+{% load bootstrap3 %}
+
+{% block title %}Complete account creation{% endblock %}
+
+{% block content %}
+  {% origin %}
+
+    <h1>Account creation failed</h1>
+
+    <p>
+       Manual intervention is needed to enable account creation for you.
+       Please send an email to {{ account_request_email }}
+       and explain 1) the situation and 2) your need for an account,
+       in order to receive further assistance.
+    </p>
+
+{% endblock %}

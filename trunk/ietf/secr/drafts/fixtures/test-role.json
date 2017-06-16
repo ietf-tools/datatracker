@@ -1,0 +1,62 @@
+[
+  {
+    "pk": 1610,
+    "model": "group.role",
+    "fields": {
+      "person": 111252,
+      "group": 4,
+      "name": "secr",
+      "email": "rcross@amsl.com"
+    }
+  },
+  {
+    "pk": 1229,
+    "model": "group.role",
+    "fields": {
+      "person": 105791,
+      "group": 1358,
+      "name": "chair",
+      "email": "fluffy@cisco.com"
+    }
+  },
+  {
+    "pk": 1416,
+    "model": "group.role",
+    "fields": {
+      "person": 11843,
+      "group": 1774,
+      "name": "chair",
+      "email": "cabo@tzi.org"
+    }
+  },
+  {
+    "pk": 1515,
+    "model": "group.role",
+    "fields": {
+      "person": 106987,
+      "group": 1819,
+      "name": "chair",
+      "email": "br@brianrosen.net"
+    }
+  },
+  {
+    "pk": 1516,
+    "model": "group.role",
+    "fields": {
+      "person": 108123,
+      "group": 1819,
+      "name": "chair",
+      "email": "Gabor.Bajko@nokia.com"
+    }
+  },
+  {
+    "pk": 461,
+    "model": "group.role",
+    "fields": {
+      "person": 106526,
+      "group": 1693,
+      "name": "chair",
+      "email": "wdec@cisco.com"
+    }
+  }
+]

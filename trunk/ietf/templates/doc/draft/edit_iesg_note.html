@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+
+{% load bootstrap3 %}
+
+{% block title %}Edit IESG note for {{ doc.name }}{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <h1>Edit IESG note<br><small>{{ doc.name }}</small></h1>
+
+  <form method="post">
+    {% csrf_token %}
+    {% bootstrap_form form %}
+
+    {% buttons %}
+      <button type="submit" class="btn btn-primary">Save</button>
+      <a class="btn btn-default pull-right" href="{{ doc.get_absolute_url }}">Back</a>
+    {% endbuttons %}
+  </form>
+
+{% endblock %}

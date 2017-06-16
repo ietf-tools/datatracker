@@ -1,0 +1,224 @@
+[
+  {
+    "pk": 4,
+    "model": "group.group",
+    "fields": {
+      "charter": null,
+      "unused_states": [],
+      "ad": null,
+      "parent": null,
+      "list_email": "",
+      "acronym": "secretariat",
+      "comments": "",
+      "list_subscribe": "",
+      "state": "active",
+      "time": "2012-01-24 13:17:42",
+      "unused_tags": [],
+      "list_archive": "",
+      "type": "ietf",
+      "name": "IETF Secretariat"
+    }
+  },
+  {
+    "pk": 29,
+    "model": "group.group",
+    "fields": {
+      "charter": null,
+      "unused_states": [],
+      "ad": null,
+      "parent": null,
+      "list_email": "",
+      "acronym": "nomcom2011",
+      "comments": "",
+      "list_subscribe": "",
+      "state": "active",
+      "time": "2012-01-24 13:17:42",
+      "unused_tags": [],
+      "list_archive": "",
+      "type": "ietf",
+      "name": "IAB/IESG Nominating Committee 2011/2012"
+    }
+  },
+  {
+    "pk": 1008,
+    "model": "group.group",
+    "fields": {
+      "charter": null,
+      "unused_states": [],
+      "ad": null,
+      "parent": 2,
+      "list_email": "",
+      "acronym": "gen",
+      "comments": "",
+      "list_subscribe": "",
+      "state": "active",
+      "time": "2012-01-24 13:17:42",
+      "unused_tags": [],
+      "list_archive": "",
+      "type": "area",
+      "name": "General Area"
+    }
+  },
+  {
+    "pk": 1052,
+    "model": "group.group",
+    "fields": {
+      "charter": null,
+      "unused_states": [],
+      "ad": null,
+      "parent": 2,
+      "list_email": "",
+      "acronym": "int",
+      "comments": "",
+      "list_subscribe": "",
+      "state": "active",
+      "time": "2012-01-24 13:17:42",
+      "unused_tags": [],
+      "list_archive": "",
+      "type": "area",
+      "name": "Internet Area"
+    }
+  },
+  {
+    "pk": 934,
+    "model": "group.group",
+    "fields": {
+      "charter": null,
+      "unused_states": [],
+      "ad": null,
+      "parent": 2,
+      "list_email": "",
+      "acronym": "app",
+      "comments": "",
+      "list_subscribe": "",
+      "state": "active",
+      "time": "2012-01-24 13:17:42",
+      "unused_tags": [],
+      "list_archive": "",
+      "type": "area",
+      "name": "Applications Area"
+    }
+  },
+  {
+    "pk": 1789,
+    "model": "group.group",
+    "fields": {
+      "charter": "charter-ietf-core",
+      "unused_states": [],
+      "ad": 105907,
+      "parent": 934,
+      "list_email": "core@ietf.org",
+      "acronym": "core",
+      "comments": "",
+      "list_subscribe": "https://www.ietf.org/mailman/listinfo/core",
+      "state": "active",
+      "time": "2011-12-09 12:00:00",
+      "unused_tags": [],
+      "list_archive": "http://www.ietf.org/mail-archive/web/core/",
+      "type": "wg",
+      "name": "Constrained RESTful Environments"
+    }
+  },
+  {
+    "pk": 1819,
+    "model": "group.group",
+    "fields": {
+      "charter": "charter-ietf-paws",
+      "unused_states": [],
+      "ad": 105907,
+      "parent": 934,
+      "list_email": "paws@ietf.org",
+      "acronym": "paws",
+      "comments": "",
+      "list_subscribe": "https://www.ietf.org/mailman/listinfo/paws",
+      "state": "active",
+      "time": "2011-12-09 12:00:00",
+      "unused_tags": [],
+      "list_archive": "http://www.ietf.org/mail-archive/web/paws/",
+      "type": "wg",
+      "name": "Protocol to Access WS database"
+    }
+  },
+  {
+    "pk": 1693,
+    "model": "group.group",
+    "fields": {
+      "charter": "charter-ietf-ancp",
+      "unused_states": [],
+      "ad": 2348,
+      "parent": 1052,
+      "list_email": "ancp@ietf.org",
+      "acronym": "ancp",
+      "comments": "",
+      "list_subscribe": "ancp-request@ietf.org",
+      "state": "active",
+      "time": "2011-12-09 12:00:00",
+      "unused_tags": [],
+      "list_archive": "http://www.ietf.org/mail-archive/web/ancp/",
+      "type": "wg",
+      "name": "Access Node Control Protocol"
+    }
+  },
+  {
+    "pk": 1723,
+    "model": "group.group",
+    "fields": {
+      "charter": "charter-ietf-6man",
+      "unused_states": [],
+      "ad": 21072,
+      "parent": 1052,
+      "list_email": "ipv6@ietf.org",
+      "acronym": "6man",
+      "comments": "",
+      "list_subscribe": "https://www.ietf.org/mailman/listinfo/ipv6",
+      "state": "active",
+      "time": "2011-12-09 12:00:00",
+      "unused_tags": [],
+      "list_archive": "http://www.ietf.org/mail-archive/web/ipv6",
+      "type": "wg",
+      "name": "IPv6 Maintenance"
+    }
+  },
+  {
+    "pk": 1377,
+    "model": "group.group",
+    "fields": {
+      "charter": "charter-ietf-adsl",
+      "unused_states": [],
+      "ad": null,
+      "parent": 1052,
+      "list_email": "adsl@xlist.agcs.com",
+      "acronym": "adsl",
+      "comments": "",
+      "list_subscribe": "mgr@xlist.agcs.com",
+      "state": "conclude",
+      "time": "2011-12-09 12:00:00",
+      "unused_tags": [],
+      "list_archive": "",
+      "type": "wg",
+      "name": "Asymmetric Digital Subscriber Line"
+    }
+  },
+  {
+    "pk": 30,
+    "model": "group.group",
+    "fields": {
+      "charter": null,
+      "unused_states": [],
+      "ad": null,
+      "parent": 3,
+      "list_email": "",
+      "acronym": "asrg",
+      "comments": "",
+      "list_subscribe": "",
+      "state": "active",
+      "time": "2012-01-24 13:17:42",
+      "unused_tags": [],
+      "list_archive": "",
+      "type": "rg",
+      "name": "Anti-Spam Research Group"
+    }
+  }
+]
+
+

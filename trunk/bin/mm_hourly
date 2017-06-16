@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# Hourly datatracker jobs, run as mailman
+# 
+# This script is expected to be triggered by cron from
+# $DTDIR/etc/cron.d/datatracker which should be symlinked from
+# /etc/cron.d/
+
+DTDIR=/a/www/ietf-datatracker/web
+cd $DTDIR/
+
+# Set up the virtual environment
+source $DTDIR/bin/activate
+
+$DTDIR/ietf/manage.py import_mailman_listinfo

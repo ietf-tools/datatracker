@@ -1,0 +1,48 @@
+{% load ams_filters %}
+                       IETF Activity since last IETF Meeting
+                       {{ start_date }} to {{ end_date }}
+
+ 1) {{ action_events.count }} IESG Protocol and Document Actions this period
+{% for event in action_events %}
+    {{ event.doc.title }} ({{ event.doc.intended_std_level }})
+{% endfor %}
+
+ 2) {{ lc_events.count }} IESG Last Calls issued to the IETF this period
+{% for event in lc_events %}
+    {{ event.doc.title }}
+        {{ event.doc.file_tag|safe }}  ({{ event.doc.intended_std_level }})
+{% endfor %}
+
+ 3) {{ new_groups.count }} New Working Group(s) formed this period
+ {% for group in new_groups %}
+    {{ group }} ({{ group.acronym }})
+ {% endfor %}
+ 
+ 4) {{ concluded_groups.count }} Working Group(s) concluded this period
+ {% for group in concluded_groups %}
+    {{ group }} ({{ group.acronym }})
+ {% endfor %}
+ 
+ 5) {{ new_docs.count }} new or revised Internet-Drafts this period
+ 
+ (o - Revised Internet-Draft; + - New Internet-Draft)
+
+   WG          I-D Title              <Filename>
+ -------    ------------------------------------------
+ {% for doc in new_docs %}
+ ({{ doc.group.acronym|stringformat:"8s" }})  {% if doc.rev == "00" %}  +  {% else %}  o  {% endif %}{{ doc.title }}
+                   {{ doc.file_tag|safe }}
+ {% endfor %}
+ 
+ 6) {{ rfcs.count }} RFC(s) produced this period
+ 
+    S - Standard; PS - Proposed Standard; DS - Draft Standard;
+    B - Best Current Practices; E - Experimental; I - Informational
+
+ RFC    Stat    WG       Published         Title
+-------  -- ----------   ----------   -----------------------------------------
+{% for event in rfcs %}
+{{ event.doc.canonical_name|upper }}  {{ event.doc.intended_std_level.name|abbr_status|stringformat:"2s" }} ({{ event.doc.group.acronym|stringformat:"8s" }})   {{ event.time|date:"M d" }}       {{ event.doc.title }}
+{% endfor %}
+
+    {{ counts.std }} Standards Track;   {{ counts.bcp }} BCP;   {{ counts.exp }} Experimental;   {{ counts.inf }} Informational 

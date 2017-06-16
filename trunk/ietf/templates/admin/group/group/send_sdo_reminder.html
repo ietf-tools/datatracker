@@ -1,0 +1,46 @@
+{% extends "admin/base_site.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+
+{% load i18n admin_modify %}
+
+{% block title %}Send SDO reminders{% endblock %}
+
+{% block bodyclass %}change-form{% endblock %}
+
+{% block breadcrumbs %}{% if not is_popup %}
+  <div class="breadcrumbs">
+    <a href="../../../">{% trans "Home" %}</a> &rsaquo;
+    <a href="../../">{{ app_label|capfirst|escape }}</a> &rsaquo;
+    {% if has_change_permission %}<a href="../">{{ opts.verbose_name_plural|capfirst }}</a>{% else %}{{ opts.verbose_name_plural|capfirst }}{% endif %} &rsaquo; 
+    {% trans "Send reminder" %}
+  </div>
+{% endif %}{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <div id="content-main">
+    <h1>Send a reminder to {% if sdo %}{{ sdo }} SDO Liaison Manager{% else %}all SDO Liaison Managers{% endif %}</h1>
+
+    {% if output %}
+      <p>Reminder sent successfully. See the output of the command:</p>
+      <pre>
+        {{ output }}
+      </pre>
+
+    {% else %}
+
+      {% if sdo %}
+        <p>You can send a reminder to the {{ sdo }} SDO Liaison Manager to request an updated list of persons authorized to send liaison statements on behalf of {{ sdo }}</p>
+      {% else %}
+        <p>You can send a reminder to each SDO Liaison Manager to request an updated list of persons authorized to send liaison statements on behalf of the SDO.</p>
+
+        <p>By clicking the 'Send' button you will send a request to <b>all</b> the SDO Liaison Managers. In order to send the request to one SDO Liaison Manager go to the SDO edit page.</p>
+      {% endif %}
+
+      <form method="post">{% csrf_token %}
+        <input type="submit" name="send" value="Send reminder" />
+      </form>
+    {% endif %}
+  </div>
+{% endblock %}

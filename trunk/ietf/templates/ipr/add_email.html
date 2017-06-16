@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+
+{% load bootstrap3 %}
+
+{% block title %}Add email on {{ ipr.title }}{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <h1>Add email<br><small>{{ ipr }}</small></h1>
+
+  <p>The email will be added to the history trail of the disclosure.</p>
+
+  <form class="add-email" method="post">
+    {% csrf_token %}
+
+    {% bootstrap_form form %}
+    
+    {% buttons %}
+      <button type="submit" class="btn btn-primary">Add Email</button>
+      <a class="btn btn-default pull-right" href="{% url "ietf.ipr.views.history" id=ipr.id %}">Back</a>
+    {% endbuttons %}
+  </form>
+{% endblock %}

@@ -1,0 +1,23 @@
+  <h2>Activies Log</h2>
+    <div class="inline-related last-related">
+    <table class="full-width">
+      <thead>
+        <tr> 
+          <th>Date</th>
+          <th>Time</th>
+          <th>Action</th>
+          <th>Name</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for entry in activities %}
+           <tr class="{% cycle 'row1' 'row2' %}">
+             <td>{{ entry.act_date }}</td>
+             <td>{{ entry.act_time }}</td>
+             <td>{{ entry.activity }}</td>
+             <td>{{ entry.act_by }}</td>
+           </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div> <!-- inline-related -->

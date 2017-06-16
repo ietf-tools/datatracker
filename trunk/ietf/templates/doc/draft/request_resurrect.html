@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+
+{% load bootstrap3 %}
+
+{% block title %}Request resurrection for {{ doc }}{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <h1>Request resurrection<br><small>{{ doc }}</small></h1>
+
+  <p>Request resurrection of the Internet-Draft {{ doc.file_tag }}?</p>
+
+  <p>This will send a notification to the Secretariat to resurrect the I-D.</p>
+
+  <form method="post">
+    {% csrf_token %}
+
+    {% buttons %}
+      <button class="btn btn-primary" type="submit">Request resurrection</button>
+      <a class="btn btn-default pull-right" href="{{ back_url }}">Back</a>
+    {% endbuttons %}
+  </form>
+
+{% endblock %}

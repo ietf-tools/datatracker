@@ -1,0 +1,8 @@
+{% load ietf_filters %}{% autoescape off %}{% filter wordwrap:78 %}
+Reviewer availability of {{ reviewer }} in {{ team.acronym }} changed by {{ by }}.
+
+{{ msg }}
+
+{{ reviewer_overview_url }}
+
+{% endfilter %}{% endautoescape %}

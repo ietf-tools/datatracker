@@ -1,0 +1,257 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+
+{% load ietf_filters ipr_filters %}
+
+{% block title %}IPR Details - {{ ipr.title }}{% endblock %}
+
+{% block pagehead %}
+  <meta name="description" content="IPR disclosure #{{ipr.ipr_id}}: {{ ipr.title }} ({{ ipr.time|date:"Y" }})" />
+{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <div id="ipr-details">
+
+    <h1>IPR Details<br><small>{{ ipr.title }}</small></h1>
+
+    {% include "ipr/details_tabs.html" %}
+
+    <div class="buttonlist">
+      {% if ipr.state_id == 'posted' %}
+        <a class="btn btn-default" href="{% url "ietf.ipr.views.update" ipr.id %}" rel="nofollow">Update this IPR disclosure</a>
+      {% endif %}
+
+      {% if user|has_role:"Secretariat" %}
+        {# admin actions #}
+        {% if ipr.updates and ipr.state_id == 'pending' and not ipr.update_notified_date %}
+          <a class="btn btn-default" href="{% url 'ietf.ipr.views.notify' id=ipr.id type="update"%}" title="Notify the submitter of IPR that is being updated">Notify</a>
+        {% endif %}
+
+        {% if ipr.updates and ipr.state_id == 'pending' and ipr.update_notified_date or not ipr.updates and ipr.state_id == 'pending' %}
+          <a class="btn btn-default" href="{% url 'ietf.ipr.views.post' id=ipr.id %}"><span class="glyphicon glyphicon-ok" aria-hidden="true"></span> Post</a>
+        {% endif %}
+
+        <a class="btn btn-default" href="{% url 'ietf.ipr.views.email' id=ipr.id %}" title="Email submitter of this disclsoure"><span class="glyphicon glyphicon-envelope" aria-hidden="true"></span> Email</a>
+        <a class="btn btn-default" href="{% url 'ietf.ipr.views.edit' id=ipr.id %}">Edit</a>
+        <a class="btn btn-default" href="{% url 'ietf.ipr.views.state' id=ipr.id %}">Change State</a>
+      {% endif %}
+    </div>
+
+    {% if not ipr.compliant %}
+      <p class="alert alert-danger">This IPR disclosure does not comply with the formal requirements of Section 6,
+        "IPR Disclosures," of RFC 3979, "Intellectual Property Rights in IETF Technology."
+      </p>
+    {% endif %}
+
+    {% if ipr.has_legacy_event %}
+      <p>The text of the original IPR disclosure is available in the <a href="{% url "ietf.ipr.views.history" id=ipr.id %}">disclosure history</a>.</p>
+    {% endif %}
+
+    <div>
+      <strong>Submitted:</strong>
+      {{ ipr.time|date:"F j, Y" }}
+    </div>
+
+    <div>
+      {% if user|has_role:"Secretariat" %}
+        <strong>State:</strong>
+        {{ ipr.state }}
+      {% endif %}
+    </div>
+
+    
+    {% if ipr.state_id == 'posted' %}
+      <p class="help-block">Note: Updates to IPR disclosures must only be made by authorized
+        representatives of the original submitters. Updates will automatically
+        be forwarded to the current Patent Holder's Contact and to the Submitter
+        of the original IPR disclosure.</p>
+    {% endif %}
+
+    {% if updated_by_iprs %}
+      <h2>Updated by</h2>
+
+      {% for item in updated_by_iprs %}
+        <p>
+          This IPR disclosure has been updated by IPR disclosure ID #{{ item.source.id }},
+          "<a href="{% url "ietf.ipr.views.show" id=item.source.id %}">{{ item.source.title }}</a>".
+        </p>
+      {% endfor %}
+    {% endif %}
+
+    {% if updates_iprs %}
+      <h2>Updates</h2>
+
+      <dl class="dl-horizontal">
+        <dt>Updates</dt>
+        <dd>
+          {% for item in updates_iprs %}
+            <div>
+              IPR Disclosure ID #{{ item.target.id }},
+              {% if item.target.state.slug == "removed" %}
+                "{{ item.target.title }}" (which was removed at the request of the submitter)
+              {% else %}
+                "<a href="{% url "ietf.ipr.views.show" id=item.target.id %}">{{ item.target.title }}</a>"
+              {% endif %}
+            </div>
+          {% endfor %}
+      </dl>
+    {% endif %}
+
+    {% if user|has_role:"Secretariat" and ipr.update_notified_date %}
+      <div class="alert alert-info">This update was notified to the submitter of the IPR that is being updated on: {{ ipr.update_notified_date|date:"Y-m-d" }}</div>
+    {% endif %}
+
+    <div class="form-horizontal">
+
+      <h2>{% cycle 'I' 'II' 'III' 'IV' 'V' 'VI' 'VII' 'VIII' as section %}.
+        {% if ipr|to_class_name == "ThirdPartyIprDisclosure" %}Possible{% endif %}
+        Patent Holder/Applicant ("Patent Holder")</h2>
+
+        <dl class="dl-horizontal">
+          <dt>Holder legal name</dt>
+          <dd>{{ ipr.holder_legal_name }}</dd>
+        </dl>
+
+        {% if ipr.holder_contact_name or ipr.holder_contact_info %}
+          <h2>{% cycle section %}. Patent Holder's Contact for License Application</h2>
+
+          <dl class="dl-horizontal">
+            <dt>Holder contact name</dt>
+            <dd>{{ ipr.holder_contact_name }}</dd>
+
+            <dt>Holder contact email</dt>
+            <dd>{{ ipr.holder_contact_email }}</dd>
+
+            <dt>Holder contact info</dt>
+            <dd>{{ ipr.holder_contact_info|linebreaks }}</dd>
+          </dl>
+        {% endif %}
+
+        {% if ipr.ietfer_name or ipr.ietfer_contact_email or ipr.ietfer_contact_info %}
+          <h2>{% cycle section %}. Contact Information for the IETF Participant Whose Personal Belief Triggered this Disclosure</h2>
+
+          <dl class="dl-horizontal">
+            <dt>Name</dt>
+            <dd>{{ ipr.ietfer_name }}</dd>
+
+            <dt>Email</dt>
+            <dd>{{ ipr.ietfer_contact_email }}</dd>
+
+            <dt>Other info</dt>
+            <dd>{{ ipr.ietfer_contact_info|linebreaks }}</dd>
+          </dl>
+        {% endif %}
+
+        {% if ipr.iprdocrel_set.all or ipr.other_designations %}
+          <h2>{% cycle section %}. IETF Document or Other Contribution to Which this IPR Disclosure Relates</h2>
+
+          <dl class="dl-horizontal">
+            {% for iprdocrel in ipr.iprdocrel_set.all %}
+              <dt>{{ iprdocrel.doc_type }}</dt>
+              <dd>
+                <div>{{ iprdocrel.formatted_name }} ("{{ iprdocrel.document.document.title }}")</div>
+
+                {% if iprdocrel.revisions %}
+                  <div>Revisions: {{ iprdocrel.revisions }}</div>
+                {% endif %}
+
+                {% if iprdocrel.sections %}
+                  <div>Sections: {{ iprdocrel.sections }}</div>
+                {% endif %}
+              </dd>
+            {% endfor %}
+
+            {% if ipr.other_designations %}
+              <dt>Designations for Other Contributions</dt>
+              <dd>{{ ipr.other_designations }}</dd>
+            {% endif %}
+          </dl>
+        {% endif %}
+
+        {% if ipr.patent_info or ipr.has_patent_pending %}
+          <h2>{% cycle section %}. Disclosure of Patent Information <small>i.e., patents or patent applications required to be disclosed by Section 6 of RFC 3979</small></h2>
+
+          <p>A. For granted patents or published pending patent applications, please provide the following information:</p>
+
+          <dl class="dl-horizontal">
+            <dt>Patent, Serial, Publication, Registration, or Application/File number(s)</dt>
+            <dd>{{ ipr.patent_info|linebreaks }}</dd>
+          </dl>
+          
+          <p>B. Does this disclosure relate to an unpublished pending patent application?:</p>
+          
+          <dl class="dl-horizontal">
+            <dt>Has patent pending</dt>
+            <dd>{{ ipr.has_patent_pending|yesno:"Yes,No" }}</dd>
+          </dl>
+        {% endif %}
+
+        {% if ipr.licensing %}
+          <h2>{% cycle section %}. Licensing Declaration</h2>
+
+          <p>
+            The Patent Holder states that its position with respect
+            to licensing any patent claims contained in the patent(s) or patent
+            application(s) disclosed above that would necessarily be infringed by
+            implementation of the technology required by the relevant IETF specification
+            ("Necessary Patent Claims"), for the purpose of implementing such
+            specification, is as follows(select one licensing declaration option only):
+          </p>
+          
+	  {% if ipr.licensing.slug == "provided-later" %}
+	  <div>
+	     Possible licencing choices a), b), and c) when Licencing Declaration to be Provided Later:
+	     <ul style="list-style: none">
+		{% for desc in choices_abc %}
+		<li>{{ desc}}</li>
+		{% endfor %}
+	     </ul>
+	  </p>
+	  {% endif %}
+          <dl class="dl-horizontal">
+            <dt>Licensing</dt>
+            <dd>{% if ipr.licensing.slug == "provided-later" %}{{ ipr.licensing.desc|slice:"2:"|slice:":117" }}){% else %}{{ ipr.licensing.desc|slice:"2:" }}{% endif %}</dd>
+
+            <dt>Licensing information, comments, notes, or URL for further information</dt>
+            <dd>{{ ipr.licensing_comments|default:"(No information submitted)"|linebreaks }}</dd>
+          </dl>
+
+          <p>Note: The individual submitting this template represents and warrants
+            that he or she is authorized by the Patent Holder to agree to the
+            above-selected licensing declaration.</p>
+
+        {% elif ipr.statement %}
+          <h2>{% cycle section %}. Statement</h2>
+
+          <dl class="dl-horizontal">
+            <dt>Statement</dt>
+            <dd>{{ ipr.statement|linebreaks }}</dd>
+          </dl>
+        {% endif %}
+
+        <h2>{% cycle section %}. Contact Information of Submitter of this Form</h2>
+
+        <dl class="dl-horizontal">
+          <dt>Submitter name</dt>
+          <dd>{{ ipr.submitter_name }}</dd>
+
+          <dt>Submitter email</dt>
+          <dd>{{ ipr.submitter_email }}</dd>
+        </dl>
+
+        {% if ipr.notes %}
+          <h2>{% cycle section %}. Other Notes</h2>
+
+          <dl class="dl-horizontal">
+            <dt>Additional notes</dt>
+            <dd>{{ ipr.notes|linebreaks }}</dd>
+          </dl>
+        {% endif %}
+    </div>
+
+    <p class="help-block">Only those sections of the relevant entry form where the submitter provided information are displayed.</p>
+
+  </div>
+{% endblock content %}

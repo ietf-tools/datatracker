@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+
+{% load ietf_filters ipr_filters staticfiles %}
+
+{% block morecss %}
+<link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
+{% endblock %}
+
+{% block title %}History for IPR - {{ ipr.title }}{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <h1>History for IPR disclosure<br><small>{{ ipr.title }}</small></h1>
+
+  {% include "ipr/details_tabs.html" %}
+
+  {% if user|has_role:"Area Director,Secretariat,IANA,RFC Editor" %}
+    <p class="buttonlist">
+      <a class="btn btn-default" href="{% url 'ietf.ipr.views.add_comment' id=ipr.id %}" title="Add comment to history">Add comment</a>
+      <a class="btn btn-default" href="{% url 'ietf.ipr.views.add_email' id=ipr.id %}" title="Add email to history">Add email</a>
+    </p>
+  {% endif %}
+
+  <table class="table table-condensed table-striped history tablesorter">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Type</th>
+        <th>By</th>
+        <th>Text</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {% for e in events %}
+        <tr class="anchor-target" id="history-{{ e.pk }}">
+          <td class="text-nowrap">{{ e.time|date:"Y-m-d" }}</td>
+          <td>{{ e.type }}
+            {% if e.response_due and e.response_past_due %}
+              <span class="glyphicon glyphicon-exclamation-sign" title="Response overdue"></span>
+            {% endif %}
+          </td>
+          <td>{{ e.by }}</td>
+          {% if e.message %}
+            <td>{{ e.message|render_message_for_history|format_history_text:"100"|safe }}
+              {% if e.response_due %}
+                <br>Response Due: {{ e.response_due|date:"Y-m-d" }}
+              {% endif %}
+            </td>
+          {% else %}
+            <td>{{ e.desc|format_history_text }}</td>
+          {% endif %}
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock content %}
+
+{% block js %}
+<script src="{% static "jquery.tablesorter/js/jquery.tablesorter.combined.min.js" %}"></script>
+{% endblock %}

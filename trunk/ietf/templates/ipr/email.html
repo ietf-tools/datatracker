@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+{% load staticfiles %}
+{% load bootstrap3 %}
+
+{% block title %}Email submitter of {{ ipr.title }}{% endblock %}
+
+{% block pagehead %}
+  <link rel="stylesheet" href="{% static 'bootstrap-datepicker/css/bootstrap-datepicker3.min.css' %}">
+{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <h1>Email submitter<br><small>{{ ipr.title }}</small></h1>
+
+  <form method="post" class="show-required">
+    {% csrf_token %}
+
+    {% bootstrap_form form %}
+
+    {% buttons %}
+      <button type="submit" class="btn btn-primary">Send Email</button>
+      <a class="btn btn-default pull-right" href="{% url "ietf.ipr.views.history" id=ipr.id %}">Back</a>
+    {% endbuttons %}
+  </form>
+{% endblock %}
+
+{% block js %}
+  <script src="{% static 'bootstrap-datepicker/js/bootstrap-datepicker.min.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+
+{% load widget_tweaks bootstrap3 %}
+
+{% block title %}Profile for {{ user }}{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <h1>Profile for {{ user.username }}</h1>
+
+  <form class="form-horizontal" method="post">
+    {% csrf_token %}
+
+    {% bootstrap_form_errors person_form 'non_fields' %}
+
+    <div class="form-group">
+      <label class="col-sm-2 control-label">User name</label>
+      <div class="col-sm-10">
+        <p class="form-control-static">{{ user.username }}</p>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="col-sm-2 control-label">Password</label>
+      <div class="col-sm-10">
+	 <p class="form-control-static"><a href="{% url 'ietf.ietfauth.views.change_password' %}">Password change form</a></p>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="col-sm-2 control-label">Email addresses</label>
+      <div class="col-sm-10">
+        <div class="row">
+	  <div class="col-sm-5" id="emails">
+	    <table class="table table-condensed">
+	      <tr ><th>Primary</th><th>Active</th><th>Address</th></tr>
+	      {% for email in emails %}
+	      <tr >
+		 <td><input type="radio" name="primary_email" value="{{ email.pk }}" {% if email.primary %}checked{% endif %}></td>
+		 <td><input type="checkbox" name="active_emails" value="{{ email.pk }}" {% if email.active %}checked{% endif %}></td>
+		 <td>{{ email }}</td>
+	      </tr>
+	      {% endfor %}
+	    </table>
+	  </div>
+	  <div class="col-sm-7">
+	    <div class="help-block">Note: Email addresses cannot be deleted, only deactivated.</div>
+	  </div>
+        </div>
+      </div>
+    </div>
+
+    {% for f in new_email_forms %}
+      {% bootstrap_field f.new_email layout="horizontal" show_label=False %}
+    {% endfor %}
+    
+    <div class="form-group">
+      <div class="col-sm-offset-2 col-sm-10">
+        <div class="new-emails"></div>
+
+        <button class="btn btn-default btn-sm add-email">Add email address</button>
+      </div>
+    </div>
+
+    {% for role in roles %}
+      {% bootstrap_field role.email_form.email layout="horizontal" show_label=False %}
+    {% endfor %}
+
+    {% bootstrap_form person_form layout="horizontal" %}
+
+    <div class="form-group">
+      <div class="col-sm-offset-2 col-sm-10">
+        <button type="submit" class="btn btn-primary">Submit</button>
+      </div>
+    </div>
+  </form>
+{% endblock %}
+
+{% block js %}
+  <script>
+   $(document).ready(function() {
+       $("input[name=active_emails]").on("change keypress click", function () {
+           if (this.checked) {
+               $(this).parent().parent().addClass("text-success");;
+               $(this).parent().parent().removeClass("text-danger line-through");
+           } else {
+               $(this).parent().parent().addClass("text-danger line-through");
+               $(this).parent().parent().removeClass("text-success");
+           }
+       }).trigger("change");
+
+       $(".add-email").click(function(e) {
+           e.preventDefault();
+
+           var container = $(this).closest("form").find(".new-emails");
+
+           $('<input class="form-control" name="new_email" placeholder="Enter new email address...">').appendTo(container).focus();
+       })
+   });
+  </script>
+{% endblock %}
+

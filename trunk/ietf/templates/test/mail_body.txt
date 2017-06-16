@@ -1,0 +1,1 @@
+template {{ value }} rendered with a good {{ thing }}

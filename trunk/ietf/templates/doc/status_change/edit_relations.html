@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+{% load staticfiles %}
+{% load bootstrap3 %}
+
+{% block title %}Edit RFCs affected by status change{% endblock %}
+
+{% block content %}
+  {% origin %}
+
+  <h1>Edit RFCs affected by status change</h1>
+
+  <form method="post">
+    {% csrf_token %}
+
+    {% include "doc/status_change/edit_related_rows.html" %}
+
+    {% if form.non_field_errors %}
+      <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+    {% endif %}
+
+    {% buttons %}
+      <button type="submit" class="btn btn-primary">Save</button>
+      <a class="btn btn-default pull-right" href="{% url "ietf.doc.views_doc.document_main" name=doc.name %}">Back</a>
+    {% endbuttons %}
+  </form>
+{% endblock %}
+
+{% block js %}
+  <script src="{% static 'ietf/js/status-change-edit-relations.js' %}"></script>
+{% endblock %}
+

@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+{% load staticfiles %}
+{% load bootstrap3 %}
+{% load ietf_filters %}
+
+{% block title %}
+    Status updates
+{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <h1>
+    Status updates 
+  </h1>
+
+{% regroup wg_reports by group.parent as area_items %}
+{% for area_item in area_items %}
+<h2> {{area_item.grouper.acronym|upper}} 
+<small>{{area_item.grouper.name}}</small> </h2>
+<table class="table table-striped table-condensed">
+    {% for rpt in area_item.list %}
+     <tr>
+      <td>{{ rpt.group.acronym }} 
+            {% if rpt.group.state.slug != "active" %} 
+               <span class="label label-success">{{ rpt.group.state.slug|upper }}</span> 
+            {% endif %}
+           <br> {{rpt.time|date:"Y-m-d"}}</td>
+      <td><pre class="pasted">{{ rpt.desc|default:"(none)"|escape|urlize }}</pre></td>
+     </tr>
+    {% endfor %}
+</table>
+{% endfor %}
+
+<h2> IRTF <small>Internet Research Task Force</small> </h2>
+<table class="table table-striped table-condensed">
+{% for rpt in rg_reports %}
+  <tr>
+    <td>{{ rpt.group.acronym }} 
+           {% if rpt.group.state.slug != "active" %} 
+              <span class="label label-success">{{ rpt.group.state.slug|upper }}</span> 
+           {% endif %}
+          <br> {{rpt.time|date:"Y-m-d"}}</td>
+    <td><pre class="pasted">{{ rpt.desc|default:"(none)"|escape|urlize }}</pre></td>
+  </tr>
+{% endfor %}
+</table>
+
+{% endblock %}

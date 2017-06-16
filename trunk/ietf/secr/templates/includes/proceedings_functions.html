@@ -1,0 +1,13 @@
+
+          <p>Use this to process meeting materials files that have been converted to PDF and uploaded to the server.</p>
+          <ul class="none">
+            <li>
+              <button onclick="window.location='{% url 'ietf.secr.proceedings.views.process_pdfs' meeting_num=meeting.number %}'">Process PDFs</button>
+              &nbsp;&nbsp;<span class="{% if ppt_count > 0 %}alert{% endif %}">{{ ppt_count }} PowerPoint files waiting to be converted</span>
+            </li>
+          </ul>
+          <p>Use this to input session recording information.</p>
+          <ul class="none">
+            <li><button onclick="window.location='{% url 'ietf.secr.proceedings.views.recording' meeting_num=meeting.number %}'">Recordings</button>
+            </li>
+          </ul>

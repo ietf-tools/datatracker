@@ -1,0 +1,4 @@
+{% autoescape off %}The following liaison {{ days_msg }}. Plase take actions.
+
+{% include "liaisons/liaison_mail.txt" %}
+{% endautoescape %}

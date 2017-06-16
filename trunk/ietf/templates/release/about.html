@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+
+{% block title %}About the Datatracker{% endblock %}
+
+{% block content %}
+  {% origin %}
+<div class="col-sm-12">
+  <h1>About the IETF Datatracker</h1>
+   <p>
+
+      The IETF Datatracker is the primary day-to-day front-end to the IETF database for people
+      who work on IETF standards.  It contains data about the documents, working groups,
+      meetings, agendas, minutes, presentations, and more, of the IETF.
+
+   </p>
+   <p>
+
+      The primary public face of the IETF is at <a href="https://www.ietf.org/">www.ietf.org</a>.
+
+   </p>
+   <p>
+
+      All the Datatracker code is publicly avaliable from the
+      <a href="https://svn.tools.ietf.org/svn/tools/ietfdb">IETF tools SVN repository</a>.
+      Bug tickets and wiki notes are available from the 
+      <a href="https://trac.tools.ietf.org/tools/ietfdb">Issue Tracker</a>, and 
+      there are also <a href="/release">release notes</a> available since version 2.00.
+
+   </p>
+   <p>
+
+      Below you'll find a brief history of the datatracker development, in terms of the big
+      moments.  For the nitty-gritty week-to-week code changes, please check the release
+      notes or the commit log.
+
+   </p>
+
+  <h2>Version 6.x Work</h2>
+  <p>
+
+     Between the release of 6.0.0 in April 2015 and the <a href="/release/">latest release</a>
+     there has been numerous releases (75, as of 11 Feb 2017) which has extended the
+     functionality of the datatracker substantially.  The <a href="/release/#release-list">release list</a>
+     gives more information.
+
+  </p>
+
+  <h2>Version 6.0.0: Facelift using Bootstrap</h2>
+  <p>
+
+     During more than a year, from July 2013 to late 2014, <i>Lars Eggert</i> worked intensively
+     on a major facelift to the datatracker, porting the GUI to Bootstrap.  The work
+     took
+     <a href="https://trac.tools.ietf.org/tools/ietfdb/log/personal/lars?rev=8652&amp;stop_rev=5871&amp;limit=500">
+	287 separate commits
+     </a>, and comprised changes to 1016 different files.
+
+  </p>
+  <p>
+
+     This work has turned the IETF Datatracker website into a responsive website which
+     support use on a much larger variety of devices, from small mobile devices to desktops.
+
+  </p>
+  <p>
+
+     The work relies heavily on the capabilities of <a href="http://getbootstrap.com">
+     Bootstrap</a>, and continues to use the <a href="https://www.djangoproject.org/">Django</a>
+     framework which the datatracker has been build on since <a href="/release/2.00/">version
+     2.00</a>.  It also uses icons from <a href="">FontAwesome</a>, and functions from
+     <a href="https://django-bootstrap3.readthedocs.org/">django-bootstrap3</a>.
+
+  </p>
+  <p>
+
+     Additional
+     <a href="https://trac.tools.ietf.org/tools/ietfdb/log/branch/iola?rev=9116&amp;stop_rev=8520&amp;limit=200">
+	page conversion work
+     </a> has been done by <i>Ole Laursen</i>, with
+     <a href="https://trac.tools.ietf.org/tools/ietfdb/log/personal/henrik/facelift-r9116">
+	final style tweaks, bug-fixes and adaptations
+     </a>
+     by <i>Henrik Levkowetz</i>, giving it a distinct
+     <a href="http://www.colourlovers.com/palette/3702908/Key_West_Sunset">colour palette</a>
+     (with the addition of complementing green and red colours for success and error indications),
+     and a selection of fonts from
+     <a href="http://www.paratype.com/public/">ParaType</a>
+     (<a href="http://www.identifont.com/show?2G32">PT Serif</a> for body text,
+     <a href="http://www.identifont.com/show?2G2G">PT Sans Caption</a> for headers,
+     <a href="http://www.identifont.com/show?2G2F">PT Sans</a> for menus,
+     and PT Mono for monospaced documents).  (Even if PT Sans Caption was
+     created as a 'Caption' (6-8pt) <a href="http://en.wikipedia.org/wiki/Font#Optical_size">
+     optical size</a> font to go with PT Sans, it works well for headers when paired with PT Serif.)
+
+  </p>
+  <h2>Version 5.x Work</h2>
+  <p>
+
+     Between the release of 5.0.0 in January 2014 and the last release in the 5.x series in
+     April 2015, there were 42 releases containing bug fixes and features.  Worth mentioning
+     were 4 code sprint releases, added support for the secretariat's agenda scheduling work,
+     the addition of pages for <a href="/rg/">Research Groups</a> and <a
+     href="/group/edu">Teams</a>, a <a href="/api/v1/?format=json">JSON interface</a> to the
+     database for tool builders, improved <a href="/ipr/">IPR support</a>, a move to Django 1.7,
+     and many <a href="https://trac.tools.ietf.org/tools/ietfdb/wiki/Testing?version=13">
+     improvements in testing support</a>.
+
+  </p>
+
+  <h2>Version 5.0.0: Shim Removal</h2>
+
+     <div class="alert-info">
+	To be written.
+     </div>
+  
+  <h2>Version 4.00: New Database Schema</h2>
+
+     <div class="alert-info">
+	To be written.
+     </div>
+
+  <h2>Version 3.00: Django Port of the IESG Datatracker Pages</h2>
+
+     <div class="alert-info">
+	To be written.
+     </div>
+
+  <h2>Version 2.00: Django Port of the Public Datatracker Pages</h2>
+
+  <p>
+     This release was a complete re-write of the CGI/Perl-based IESG datatracker
+     in Python, using the Django framework.  It comprised about 8000 lines of
+     Python code, and 6000 lines of template code.  The work was done as a
+     skunkworks project by Bill Fenner and Henrik Levkowetz from mid-April
+     to mid-May 2007, and continued as an official project from then on.  The
+     aim was to eliminate numerous SQL injection insecurities in the current
+     code, and also provide a better framework on which to build future enhancements.
+     During the most intensive period, Bill and Henrik worked 10 hours per day
+     to get all public pages ported and released.  The release was deployed
+     in the early hours of 28 June 2007, and nobody noticed the change :-))
+  </p>
+
+  <h2>Version 1.0: Initial Perl/MySQL database and web-pages</h2>
+
+  <p>
+     The first version of the idtracker was commissioned by the IESG under <i>Harald
+     Alvestrand</i> in 2001, and the IESG started using it at the beginning of 2002.  It was
+     written by <i>Michael Lee</i> in Perl, with direct SQL statements.  It provided a
+     major improvement in visibility of the progress of drafts by the IESG.
+     The first <a href="https://www.ietf.org/proceedings/55/slides/plenary-6/plenary-6.ppt">
+     public presentation</a> of it and its capabilities was made 2002-11-20
+     in Atlanta by Thomas Narten.
+  </p>
+
+
+
+</div>
+{% endblock %}

@@ -1,0 +1,7 @@
+{% load ams_filters %}
+
+{{ login|smart_login }} {{ group.acronym }} working group, indicated that the {{ group.acronym }} working group does not plan to hold a session at IETF {{ meeting.number }}.
+
+This message was generated and sent by the IETF Meeting Session Request Tool.
+
+

@@ -1,0 +1,121 @@
+{% extends "nomcom/nomcom_private_base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+
+{% block subtitle %} - Administration {% endblock %}
+
+{% block nomcom_content %}
+  {% origin %}
+  <h2>Nomination status</h2>
+
+  <table class="table table-condensed table-striped">
+    <thead>
+      <tr>
+        <th>Position</th>
+        <th>Accepted</th>
+        <th>Declined</th>
+        <th>Pending</th>
+        <th>Questionnaire response</th>
+        <th>Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in stats %}
+        <tr>
+          <td>{{ item.position__name }}</td>
+          <td>{{ item.accepted }}</td>
+          <td>{{ item.declined }}</td>
+          <td>{{ item.pending }}</td>
+          <td>{{ item.questionnaire }}</td>
+          <td>{{ item.total }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h2>Nominees by position</h2>
+
+  <form class="form-inline" method="get">
+    <div class="form-group">
+      <label>State: </label>
+      <select class="form-control input-sm" name="state">
+        <option value="">All</option>
+        {% for state in states %}
+          <option value="{{ state.slug }}"
+	          {% if state.slug == selected_state %}selected="selected"{% endif%}>
+	          {{ state.name }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Position:</label>
+      <select class="form-control input-sm" name="position">
+        <option value="">All</option>
+        {% for position in positions %}
+          <option value="{{ position.id }}"
+	          {% if position.id == selected_position %}selected="selected"{% endif%}>
+	          {{ position.name }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <input class="btn btn-default" name="submit" value="Filter" type="submit">
+  </form>
+
+
+  {% if is_chair and nomcom.group.state_id == 'active' %}
+    <form class="form-inline" id="batch-action-form" method="post">{% csrf_token %}
+  {% endif %}
+
+  <table class="table table-condensed table-striped">
+    <thead>
+      <tr>
+	{% if is_chair and nomcom.group.state_id == 'active' %}<th colspan="2"><span class="fa fa-check"></span></th>{% endif %}
+	<th>Nominee</th>
+	<th>Position</th>
+	<th>State</th>
+	<th>Questionnaire response</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for np in nominee_positions %}
+        <tr>
+	  {% if is_chair and nomcom.group.state_id == 'active' %}
+	    <td><input class="batch-select" type="checkbox" value="{{ np.id }}" name="selected"></td>
+	    <td class="edit"><a class="btn btn-default btn-xs" href="{% url 'ietf.nomcom.views.edit_nominee' year np.nominee.id %}">Edit</a></td>
+	  {% endif %}
+
+	  <td>
+	    <a href="{% url 'ietf.nomcom.views.view_feedback_nominee' year=year nominee_id=np.nominee.id %}#comment">{{ np.nominee }}</a>
+	  </td>
+	  <td>{{ np.position.name }}</td>
+	  <td>{{ np.state }}</td>
+	  <td>{{ np.questionnaires|yesno:"Yes,No,No" }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% if is_chair %}
+
+    {% if nomcom.group.state_id == 'active' %}
+      <div class="form-group">
+        <label>Action:</label>
+        <select class="form-control" name="action">
+          <option value="" selected="selected">---------</option>
+          <option value="set_as_accepted">Set as accepted</option>
+          <option value="set_as_pending">Set as pending</option>
+          <option value="set_as_declined">Set as declined</option>
+        </select>
+      </div>
+
+      <button class="btn btn-warning"  type="submit" title="Run action">Apply</button>
+
+      </form>
+    {% endif %}
+  {% endif %}
+
+{% endblock %}

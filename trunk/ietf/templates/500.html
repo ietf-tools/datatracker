@@ -1,0 +1,25 @@
+{# Copyright The IETF Trust 2007, All Rights Reserved #}
+{% extends "base.html" %}
+{% load staticfiles %}
+{% block title %}500 Internal Server Error{% endblock %}
+{% block content %}
+
+  <img class="ietflogo" src="{% static 'ietf/images/ietflogo.png' %}" alt="IETF" style="width: 10em">
+
+  <h2>Internal Server Error.</h2>
+
+  <p class="error-text">
+    The server encountered an internal error and was unable to complete
+    your request. Either the server is overloaded or there was an
+    error in a script used to generate the requested page.  In case this
+    was an overload problem or other temporary error, you may want to
+    try again in a little while.
+  </p>
+  <p class="error-text">
+    A failure report with details about what happened has been sent to the
+    server administrators.  It would be helpful if you would file a bug
+    report with additional information at the
+    <a href="https://trac.tools.ietf.org/tools/ietfdb/newticket">IETF database issue tracker</a>, too.
+  </p>
+
+{% endblock %}

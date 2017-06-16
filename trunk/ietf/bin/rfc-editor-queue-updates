@@ -1,0 +1,39 @@
+#!/usr/bin/env python
+
+import os, sys, re, json, datetime
+import syslog
+
+# boilerplate
+basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+sys.path = [ basedir ] + sys.path
+os.environ["DJANGO_SETTINGS_MODULE"] = "ietf.settings"
+
+virtualenv_activation = os.path.join(basedir, "env", "bin", "activate_this.py")
+if os.path.exists(virtualenv_activation):
+    execfile(virtualenv_activation, dict(__file__=virtualenv_activation))
+
+syslog.openlog(os.path.basename(__file__), syslog.LOG_PID, syslog.LOG_USER)
+
+import django
+django.setup()
+
+from django.conf import settings
+from ietf.sync.rfceditor import *
+
+syslog.syslog("Updating RFC Editor queue states from %s" % settings.RFC_EDITOR_QUEUE_URL)
+
+response = fetch_queue_xml(settings.RFC_EDITOR_QUEUE_URL)
+drafts, warnings = parse_queue(response)
+for w in warnings:
+    syslog.syslog(u"WARNING: %s" % w)
+
+if len(drafts) < MIN_QUEUE_RESULTS:
+    syslog.syslog("Not enough results, only %s" % len(drafts))
+    sys.exit(1)
+
+changed, warnings = update_drafts_from_queue(drafts)
+for w in warnings:
+    syslog.syslog(u"WARNING: %s" % w)
+
+for c in changed:
+    syslog.syslog(u"Updated %s" % c)

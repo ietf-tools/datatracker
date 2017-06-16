@@ -1,0 +1,10 @@
+{% load ietf_filters %}{% load mail_filters %}{% autoescape off %}
+{% filter wordwrap:78 %}Secretary (Bcc'ed):
+
+{{ docname }} has been approved.
+
+{{ text }}
+
+{% endfilter %}
+
+{% endautoescape%}

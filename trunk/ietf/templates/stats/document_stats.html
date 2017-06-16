@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% load origin %}
+
+{% load ietf_filters staticfiles bootstrap3 %}
+
+{% block title %}{{ stats_title }}{% endblock %}
+
+{% block pagehead %}
+  <link rel="stylesheet" href="{% static 'bootstrap-datepicker/css/bootstrap-datepicker3.min.css' %}">
+{% endblock %}
+
+{% block content %}
+  {% origin %}
+
+  <h1>Draft/RFC statistics</h1>
+
+  <div class="stats-options well">
+    <div>
+      Documents:
+      
+      <div class="btn-group">
+        {% for slug, label, url in possible_document_stats_types %}
+          <a class="btn btn-default {% if slug == stats_type %}active{% endif %}" href="{{ url }}">{{ label }}</a>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div>
+      Authors:
+      
+      <div class="btn-group">
+        {% for slug, label, url in possible_author_stats_types %}
+          <a class="btn btn-default {% if slug == stats_type %}active{% endif %}" href="{{ url }}">{{ label }}</a>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div>
+      Yearly:
+      
+      <div class="btn-group">
+        {% for slug, label, url in possible_yearly_stats_types %}
+          <a class="btn btn-default {% if slug == stats_type %}active{% endif %}" href="{{ url }}">{{ label }}</a>
+        {% endfor %}
+      </div>
+    </div>
+
+    <h5>Options</h5>
+
+    <div>
+      Document type:
+      <div style="margin-right:3em;" class="btn-group">
+        {% for slug, label, url in possible_document_types %}
+          <a class="btn btn-default {% if slug == document_type %}active{% endif %}" href="{{ url }}">{{ label }}</a>
+        {% endfor %}
+      </div>
+
+      Time:
+      <div class="btn-group">
+        {% for slug, label, url in possible_time_choices %}
+          <a class="btn btn-default {% if slug == time_choice %}active{% endif %}" href="{{ url }}">{{ label }}</a>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="document-stats">
+    {% include content_template %}
+  </div>
+{% endblock %}
+
+{% block js %}
+  <script src="{% static 'highcharts/highcharts.js' %}"></script>
+  <script src="{% static 'highcharts/modules/exporting.js' %}"></script>
+  <script src="{% static 'highcharts/modules/offline-exporting.js' %}"></script>
+  <script src="{% static 'ietf/js/stats.js' %}"></script>
+{% endblock %}

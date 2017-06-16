@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+
+{% load ietf_filters staticfiles %}
+
+{% block title %}Intellectual property rights disclosures{% endblock %}
+
+{% block bodyAttrs %}data-spy="scroll" data-target="#affix"{% endblock %}
+
+{% block pagehead %}
+<link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
+{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <div class="row">
+    <div class="col-md-10">
+
+      <h1>Intellectual property rights disclosures</h1>
+
+      <div class="alert alert-info">
+        <p>
+
+	  This page provides a mechanism for filing disclosures about
+	  intellectual property rights (IPR) and for finding out what IPR
+	  disclosures have been filed.  The IETF intellectual property rights rules
+	  are defined in RFC 3979,
+	  <a href="https://www.ietf.org/rfc/rfc3979.txt">"Intellectual Property Rights
+	  in IETF Technology"</a>
+	  (updated by RFC4879,
+	  <a href="https://www.ietf.org/rfc/rfc4879.txt">"Clarification of the Third
+	  Party Disclosure Procedure in RFC 3979"</a>).
+
+        </p>
+        <p>
+
+	  The IETF takes no position regarding the validity or scope of any
+	  intellectual property rights or other rights that might be claimed
+	  to pertain to the implementation or use of the technology described
+	  in any IETF documents or the extent to which any license under such
+	  rights might or might not be available; nor does it represent that
+	  it has made any independent effort to identify any such rights.
+
+	</p>
+	<p>
+
+	  The material posted as IPR disclosures should be viewed as
+	  originating from the source of that information, and any issue or
+	  question related to the material should be directed to the source
+	  rather than the IETF. There is no implied endorsement or agreement
+	  by the IETF, the IESG or any other IETF entities with any of the
+	  material.
+
+        </p>
+      </div>
+
+      <p class="buttonlist">
+        <a class="btn btn-default" href="{% url "ietf.ipr.views.about" %}">Submit an IPR disclosure</a>
+        <a class="btn btn-default" href="{% url "ietf.ipr.views.search" %}">Search IPR disclosures</a>
+        {% if user|has_role:"Secretariat" %}
+          <a class="btn btn-default" href="{% url 'ietf.ipr.views.admin' state='pending' %}">Administrative View</a>
+        {% endif %}
+      </p>
+
+      <h2 class="anchor-target" id="generic">Generic IPR disclosures</h2>
+
+      {% include "ipr/ipr_table.html" with iprs=generic_disclosures %}
+
+      <h2 class="anchor-target" id="specific">Specific IPR disclosures</h2>
+
+      {% include "ipr/ipr_table.html" with iprs=specific_disclosures %}
+
+      <h2 class="anchor-target" id="notify">Specific third-party IPR disclosures</h2>
+
+      {% include "ipr/ipr_table.html" with iprs=thirdpty_disclosures %}
+
+    </div>
+
+    <div class="col-md-2 hidden-print bs-docs-sidebar" id="affix">
+      <ul class="nav nav-pills nav-stacked small" data-spy="affix">
+        <li><a href="#generic">Generic IPR disclosures</a></li>
+        <li><a href="#specific">Specific IPR disclosures</a></li>
+        <li><a href="#notify">Specific third-party IPR disclosures</a></li>
+      </ul>
+    </div>
+  </div>
+{% endblock %}
+
+{% block js %}
+<script src="{% static "jquery.tablesorter/js/jquery.tablesorter.combined.min.js" %}"></script>
+{% endblock %}
