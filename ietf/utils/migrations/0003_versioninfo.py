@@ -5,6 +5,35 @@ from __future__ import unicode_literals
 from django.db import migrations, models
 
 
+data = [
+  {
+      "command": "xym",
+      "switch": "--version",
+      "used": True,
+      "version": "xym 0.3.2"
+  },
+  {
+      "command": "pyang",
+      "switch": "--version",
+      "used": True,
+      "version": "pyang 1.7.2"
+  },
+  {
+      "command": "yanglint",
+      "switch": "--version",
+      "used": True,
+      "version": "yanglint 0.12.183"
+  }
+]
+
+def forwards(apps, schema_editor):
+    VersionInfo = apps.get_model('utils', 'VersionInfo')
+    for item in data:
+        VersionInfo.objects.create(**item)
+
+def backwards(apps, schema_editor):
+    pass
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -26,4 +55,5 @@ class Migration(migrations.Migration):
                 'verbose_name_plural': 'VersionInfo',
             },
         ),
+        migrations.RunPython(forwards, backwards),
     ]
