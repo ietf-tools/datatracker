@@ -1,5 +1,7 @@
 import re
 
+import debug                            # pyflakes:ignore
+
 def name_parts(name):
     prefix, first, middle, last, suffix = u"", u"", u"", u"", u""
 
@@ -28,11 +30,16 @@ def name_parts(name):
             suffix = parts[-1]
             parts = parts[:-1]
     if len(parts) > 2:
-        name = u" ".join(parts)
-        compound = re.search(r" (de|hadi|van|ver|von|el|le|st\.?) ", name.lower())
-        if compound:
-            pos = compound.start()
-            parts = name[:pos].split() + [name[pos+1:]]
+        # Check if we have a surname with nobiliary particle
+        full = u" ".join(parts)
+        if full.upper() == full:
+            full = full.lower()         # adjust case for all-uppercase input
+        # This is an incomplete list.  Adjust as needed to handle known ietf
+        # participant names correctly:
+        particle = re.search(r" (af|de|der|di|Di|du|el|hadi|st\.?|ten|ter|van|van der|Van|von|von der|Von|zu) ", full)
+        if particle:
+            pos = particle.start()
+            parts = full[:pos].split() + [full[pos+1:]]
     if len(parts) > 2:
         first = parts[0]
         last = parts[-1]
