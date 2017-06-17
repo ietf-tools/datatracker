@@ -30,7 +30,8 @@
           <ul class="list-unstyled">
             {% for ad in area.ads %}
               <li>
-	        {{ ad.person.plain_name }} (<a href="mailto:{{ ad.email.address }}">{{ ad.email.address }}</a>)
+		<a href="mailto:{{ ad.email.address }}"><span class="fa fa-envelope-o tiny"></span></a>
+		<a href="{% url 'ietf.person.views.profile' email_or_name=ad.person.name %}">{{ ad.person.plain_name }}</a>
 	        {% if ad.name == "pre-ad" %} (Incoming AD){% endif %}
               </li>
             {% endfor %}
@@ -62,12 +63,14 @@
 	        <tr>
 	          <td><a href="{% url "ietf.group.views.group_home" group_type=group.type_id acronym=group.acronym %}">{{ group.acronym }}</a></td>
 	          <td>
-		     <a href="mailto:{{ group.ad_role.email.address }}" title="{{ group.ad_role.person.plain_name }} &lt;{{ group.ad_role.email.address }}&gt;">{{ group.ad_role.person.plain_name.split.0 }}</a>
+		    <a href="mailto:{{ group.ad_role.email.address }}"><span class="fa fa-envelope-o tiny"></span></a>
+		    <a href="{% url 'ietf.person.views.profile' email_or_name=group.ad_role.person.name %}">{{ group.ad_role.person.plain_name.split.0 }}</a>
 	          </td>
 	          <td>{{ group.name }}</td>
 	          <td>
 	            {% for chair in group.chairs %}
-	              <a href="mailto:{{ chair.email.address }}">{{ chair.person.plain_name }}</a>{% if not forloop.last %}, {% endif %}
+		      <a href="{% url 'ietf.person.views.profile' email_or_name=chair.person.name %}">{{ chair.person.plain_name }}</a>
+		      <a href="mailto:{{ chair.email.address }}"><span class="fa fa-envelope-o tiny"></span></a>{% if not forloop.last %} , {% endif %}
                     {% endfor %}
                     {% if group.ad_out_of_area %}(Assigned AD: <a href="mailto:{{ group.ad_role.email.address }}">{{ group.ad_role.person.plain_name }}</a>){% endif %}
 	          </td>

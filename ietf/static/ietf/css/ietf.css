@@ -430,6 +430,10 @@ td.area-director div { border-bottom: solid #ccc 1px; }
 
 h1 small .pull-right { margin-top: 10.5px; }
 
+/* from bootstrap: .small {  font-size: 84%; } */
+
+.tiny { font-size: 70%; }
+
 .large {font-size: 120%;}
 .llarge {font-size: 144%;}
 .lllarge {font-size: 172.8%;}

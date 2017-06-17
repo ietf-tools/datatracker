@@ -13,7 +13,10 @@
   <h1>Active IRTF research groups</h1>
 
   <h2>IRTF chair</h2>
-  <p><a href="mailto:irtf-chair@irtf.org">{{ irtf.chair.person.plain_name }}</a></p>
+  <p>
+    <a href="mailto:{{ irtf.chair.email.address }}"><span class="fa fa-envelope-o tiny"></span></a>
+    <a href="{% url 'ietf.person.views.profile' email_or_name=irtf.chair.person.name %}">{{ irtf.chair.person.plain_name }}</a>
+  </p>
 
   <h2>Active research groups</h2>
     <a class="btn btn-default" href="{% url "ietf.group.views.all_status" %}">Status Reports</a>
@@ -32,7 +35,11 @@
         <tr>
           <td><a href="{% url "ietf.group.views.group_home" group_type=group.type_id acronym=group.acronym %}">{{ group.acronym }}</a></td>
           <td>{{ group.name }}</td>
-          <td>{% for chair in group.chairs %}<a href="mailto:{{ chair.email.address }}">{{ chair.person.plain_name }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}</td>
+          <td>
+	    {% for chair in group.chairs %}
+	      <a href="{% url 'ietf.person.views.profile' email_or_name=chair.person.name %}">{{ chair.person.plain_name }}</a>
+	      <a href="mailto:{{ chair.email.address }}"><span class="fa fa-envelope-o tiny"></span></a>{% if not forloop.last %} , {% endif %}
+	    {% endfor %}</td>
         </tr>
       {% endfor %}
     </tbody>

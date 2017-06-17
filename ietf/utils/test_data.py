@@ -99,10 +99,11 @@ def make_immutable_base_data():
 
     # second area
     opsarea = create_group(name="Operations", acronym="ops", type_id="area", parent=ietf)
-    create_person(opsarea, "ad")
+    ops_ad = create_person(opsarea, "ad")
     sops = create_group(name="Server Operations", acronym="sops", type_id="wg", parent=opsarea)
     create_person(sops, "chair", name="Sops Chairman", username="sopschairman")
     create_person(sops, "secr", name="Sops Secretary", username="sopssecretary")
+    Role.objects.create(name_id='ad', group=sops, person=ops_ad, email=ops_ad.email())
 
     # create a bunch of ads for swarm tests
     for i in range(1, 10):
