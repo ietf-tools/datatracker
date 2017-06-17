@@ -43,6 +43,7 @@ type_ietf_only_patterns = [
     url(r'^timeslots/edit$',                     views.edit_timeslots),
     url(r'^rooms$',                              ajax.timeslot_roomsurl),
     url(r'^room/(?P<roomid>\d+).json$',          ajax.timeslot_roomurl),
+    url(r'^room/(?P<roomid>\d+)(?:.html)?/?$',          views.edit_roomurl),
     url(r'^timeslots$',                          ajax.timeslot_slotsurl),
     url(r'^timeslots.json$',                     ajax.timeslot_slotsurl),
     url(r'^timeslot/(?P<slotid>\d+).json$',      ajax.timeslot_sloturl),
