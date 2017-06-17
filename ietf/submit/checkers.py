@@ -155,14 +155,17 @@ class DraftYangChecker(object):
                 sys.stderr = saved_stderr
                 model_list = extractor.get_extracted_models()
             except Exception as exc:
-                code = 1
-                err = '\n'.join( [ m for m in [out, err, exc] if m ] )
-        if err:
-            code += 1
+                log("Exception when running xym on %s: %s" % (name, exc))
+
+        if not model_list:
+            # Found no yang modules, don't deliver any YangChecker result
+            return None, "", 0, 0, []
+
         command = "xym"
         cmd_version = VersionInfo.objects.get(command=command).version
         message = "%s:\n%s\n\n" % (cmd_version, out.replace('\n\n','\n').strip() if code == 0 else err)
 
+        
         results.append({
             "name": name,
             "passed":  passed,
