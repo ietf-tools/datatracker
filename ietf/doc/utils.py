@@ -106,12 +106,15 @@ def can_adopt_draft(user, doc):
         return (doc.stream_id in (None, "irtf")
                 and doc.group.type_id == "individ")
 
+    roles = Role.objects.filter(name__in=("chair", "delegate", "secr"),
+                                group__type__in=("wg", "rg"),
+                                group__state="active",
+                                person__user=user)
+    role_groups = [ r.group for r in roles ]
+
     return (doc.stream_id in (None, "ietf", "irtf")
-            and doc.group.type_id == "individ"
-            and Role.objects.filter(name__in=("chair", "delegate", "secr"),
-                                    group__type__in=("wg", "rg"),
-                                    group__state="active",
-                                    person__user=user).exists())
+            and (doc.group.type_id == "individ" or doc.group in role_groups)
+            and roles.exists())
 
 def two_thirds_rule( recused=0 ):
     # For standards-track, need positions from 2/3 of the non-recused current IESG.
