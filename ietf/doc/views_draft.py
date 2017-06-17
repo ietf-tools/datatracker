@@ -35,8 +35,6 @@ from ietf.message.models import Message
 from ietf.name.models import IntendedStdLevelName, DocTagName, StreamName
 from ietf.person.fields import SearchableEmailField
 from ietf.person.models import Person, Email
-from ietf.secr.lib.template import jsonapi
-from ietf.utils import log
 from ietf.utils.mail import send_mail, send_mail_message
 from ietf.utils.textupload import get_cleaned_text_file_content
 from ietf.mailtrigger.utils import gather_address_lists
@@ -277,20 +275,6 @@ def change_stream(request, name):
                               dict(form=form,
                                    doc=doc,
                                    ))
-
-@jsonapi
-def doc_ajax_internet_draft(request):
-    log.unreachable("07 Mar 2017")
-    if request.method != 'GET' or not request.GET.has_key('term'):
-        return { 'success' : False, 'error' : 'No term submitted or not GET' }
-    q = request.GET.get('term')
-    results = DocAlias.objects.filter(name__icontains=q)
-    if (results.count() > 20):
-        results = results[:20]
-    elif results.count() == 0:
-        return { 'success' : False, 'error' : "No results" }
-    response = [dict(id=r.id, label=r.name) for r in results]
-    return response
 
 class ReplacesForm(forms.Form):
     replaces = SearchableDocAliasesField(required=False)

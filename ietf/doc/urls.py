@@ -92,7 +92,6 @@ urlpatterns = [
     url(r'^%(name)s/edit/submit-to-iesg/$' % settings.URL_REGEXPS, views_draft.to_iesg),
     url(r'^%(name)s/edit/resurrect/$' % settings.URL_REGEXPS, views_draft.resurrect),
     url(r'^%(name)s/edit/addcomment/$' % settings.URL_REGEXPS, views_doc.add_comment),
-    url(r'^ajax/internet_draft/?$', views_draft.doc_ajax_internet_draft),
 
     url(r'^%(name)s/edit/stream/$' % settings.URL_REGEXPS, views_draft.change_stream),
     url(r'^%(name)s/edit/replaces/$' % settings.URL_REGEXPS, views_draft.replaces),

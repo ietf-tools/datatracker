@@ -3,7 +3,6 @@
 import pytz
 import datetime
 from urlparse import urljoin
-import copy
 import os
 import re
 import string
@@ -24,7 +23,6 @@ from ietf.group.models import Group
 from ietf.group.utils import can_manage_materials
 from ietf.name.models import MeetingTypeName, TimeSlotTypeName, SessionStatusName, ConstraintName, RoomResourceName
 from ietf.person.models import Person
-from ietf.utils import log
 from ietf.utils.storage import NoLocationMigrationFileSystemStorage
 from ietf.utils.text import xslugify
 
@@ -528,24 +526,6 @@ class TimeSlot(models.Model):
         return "/meeting/%s/timeslot/%s.json" % (self.meeting.number, self.id)
 
     """
-    This routine takes the current timeslot, which is assumed to have no location,
-    and assigns a room, and then creates an identical timeslot for all of the other
-    rooms.
-    """
-    def create_concurrent_timeslots(self):
-        log.unreachable("28 Feb 2017")
-        rooms = self.meeting.room_set.all()
-        self.room = rooms[0]
-	self.save()
-        for room in rooms[1:]:
-            ts = copy.copy(self)
-            ts.id = None
-            ts.location = room
-            ts.save()
-
-        #self.meeting.create_all_timeslots()
-
-    """
     This routine deletes all timeslots which are in the same time as this slot.
     """
     def delete_concurrent_timeslots(self):
@@ -678,23 +658,10 @@ class Schedule(models.Model):
         return self.assignments.filter(session__isnull=False)
 
     @property
-    def group_mapping(self):
-        log.unreachable("28 Feb 2017")
-        assignments,sessions,total,scheduled = self.group_session_mapping
-        return assignments
-
-    @property
     def sessions_that_can_meet(self):
         if not hasattr(self, "_cached_sessions_that_can_meet"):
             self._cached_sessions_that_can_meet = self.meeting.sessions_that_can_meet.all()
         return self._cached_sessions_that_can_meet
-
-    # calculate badness of entire schedule
-    def calc_badness(self):
-        log.unreachable("28 Feb 2017")
-        # now calculate badness
-        assignments = self.group_mapping
-        return self.calc_badness1(assignments)
 
     def delete_schedule(self):
         self.assignments.all().delete()
@@ -738,27 +705,6 @@ class SchedTimeSessAssignment(models.Model):
             return self.schedule.assignments.filter(timeslot=s).first()
         else:
             return None
-
-    @property
-    def area(self):
-        log.unreachable("28 Feb 2017")
-        if not self.session or not self.session.group:
-            return ""
-        if self.session.group.type_id == "irtf":
-            return "irtf"
-        if self.timeslot.type_id == "plenary":
-            return "1plenary"
-        if not self.session.group.parent or not self.session.group.parent.type_id in ["area","irtf"]:
-            return ""
-        return self.session.group.parent.acronym
-
-    @property
-    def slottype(self):
-        log.unreachable("28 Feb 2017")
-        if self.timeslot and self.timeslot.type:
-            return self.timeslot.type.slug
-        else:
-            return ""
 
     def json_url(self):
         if not hasattr(self, '_cached_json_url'):
@@ -853,13 +799,6 @@ class Constraint(models.Model):
             return u"%s " % (self.target.acronym)
         elif not self.target and self.person:
             return u"%s " % (self.person)
-
-    def status(self):
-        log.unreachable("28 Feb 2017")
-        if self.active_status is not None:
-            return self.active_status
-        else:
-            return True
 
     def json_url(self):
         return "/meeting/%s/constraint/%s.json" % (self.meeting.number, self.id)
@@ -1074,25 +1013,6 @@ class Session(models.Model):
 
     def official_timeslotassignment(self):
         return self.timeslotassignment_for_agenda(self.meeting.agenda)
-
-    def unique_constraints(self):
-        log.unreachable("28 Feb 2017")
-        global constraint_cache_uses, constraint_cache_initials
-        constraint_cache_uses += 1
-        # this cache keeps the automatic placer from visiting the database continuously
-        if self.unique_constraints_dict is not None:
-            constraint_cache_initials += 1
-            return self.unique_constraints_dict
-        self.unique_constraints_dict = dict()
-        for constraint in self.constraints():
-            self.unique_constraints_dict[constraint.target] = constraint
-
-        for constraint in self.reverse_constraints():
-            # update the constraint if there is a previous one, and
-            # it is more important than what we had before
-            if not (constraint in self.unique_constraints_dict) or (self.unique_constraints_dict[constraint.source] < constraint):
-                self.unique_constraints_dict[constraint.source] = constraint
-        return self.unique_constraints_dict
 
     def constraints_dict(self, host_scheme):
         constraint_list = []

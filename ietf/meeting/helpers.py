@@ -17,7 +17,6 @@ from django.template.loader import render_to_string
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import Document
-from ietf.doc.utils import get_document_content
 from ietf.group.models import Group
 from ietf.ietfauth.utils import has_role, user_is_person
 from ietf.liaisons.utils import get_person_for_user
@@ -25,7 +24,6 @@ from ietf.mailtrigger.utils import gather_address_lists
 from ietf.person.models  import Person
 from ietf.meeting.models import Meeting, Schedule, TimeSlot, SchedTimeSessAssignment
 from ietf.utils.history import find_history_active_at, find_history_replacements_active_at
-from ietf.utils import log
 from ietf.utils.mail import send_mail
 from ietf.utils.pipe import pipe
 
@@ -427,46 +425,6 @@ def get_earliest_session_date(formset):
     return sorted([f.cleaned_data['date'] for f in formset.forms if f.cleaned_data.get('date')])[0]
 
 
-def get_interim_initial(meeting):
-    '''Returns a dictionary suitable to initialize a InterimRequestForm'''
-    log.unreachable("07 Mar 2017")
-    initial = {}
-    initial['group'] = meeting.session_set.first().group
-    if meeting.city:
-        initial['in_person'] = True
-    else:
-        initial['in_person'] = False
-    if meeting.session_set.count() > 1:
-        initial['meeting_type'] = 'multi-day'
-    else:
-        initial['meeting_type'] = 'single'
-    if meeting.session_set.first().status.slug == 'apprw':
-        initial['approved'] = False
-    else:
-        initial['approved'] = True
-    return initial
-
-
-def get_interim_session_initial(meeting):
-    '''Returns a list of dictionaries suitable to initialize a InterimSessionForm'''
-    log.unreachable("07 Mar 2017")
-    initials = []
-    for session in meeting.session_set.all():
-        initial = {}
-        initial['date'] = session.official_timeslotassignment().timeslot.time
-        initial['time'] = session.official_timeslotassignment().timeslot.time
-        initial['duration'] = session.requested_duration
-        initial['remote_instructions'] = session.remote_instructions
-        initial['agenda_note'] = session.agenda_note
-        doc = session.agenda()
-        if doc:
-            path = os.path.join(doc.get_file_path(), doc.filename_with_rev())
-            initial['agenda'] = get_document_content(os.path.basename(path), path, markup=False)
-        initials.append(initial)
-
-    return initials
-
-
 def is_meeting_approved(meeting):
     """Returns True if the meeting is approved"""
     if meeting.session_set.first().status.slug == 'apprw':
@@ -615,17 +573,6 @@ def send_interim_minutes_reminder(meeting):
               template,
               context,
               cc=cc_list)
-
-
-def check_interim_minutes():
-    """Finds interim meetings that occured 10 days ago, if they don't
-    have minutes send a reminder."""
-    log.unreachable("07 Mar 2017")
-    date = datetime.datetime.today() - datetime.timedelta(days=10)
-    meetings = Meeting.objects.filter(type='interim', session__status='sched', date=date)
-    for meeting in meetings:
-        if not meeting.session_set.first().minutes():
-            send_interim_minutes_reminder(meeting)
 
 
 def sessions_post_save(forms):
