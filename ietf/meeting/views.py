@@ -268,34 +268,6 @@ class RoomForm(ModelForm):
         model = Room
         exclude = ('meeting',)
 
-@role_required('Secretariat')
-def edit_roomurl(request, num, roomid):
-    log.unreachable("07 Mar 2017")
-    meeting = get_meeting(num)
-
-    try:
-        room = meeting.room_set.get(pk=roomid)
-    except Room.DoesNotExist:
-        raise Http404("No room %u for meeting %s" % (roomid, meeting.name))
-
-    if request.POST:
-        roomform = RoomForm(request.POST, instance=room)
-        new_room = roomform.save(commit=False)
-        new_room.meeting = meeting
-        new_room.save()
-        roomform.save_m2m()
-        return HttpResponseRedirect( reverse(edit_timeslots, args=[meeting.number]) )
-
-    roomform = RoomForm(instance=room)
-    meeting_base_url = request.build_absolute_uri(meeting.base_url())
-    site_base_url = request.build_absolute_uri('/')[:-1] # skip the trailing slash
-    return render(request, "meeting/room_edit.html",
-                                         {"meeting_base_url": meeting_base_url,
-                                          "site_base_url": site_base_url,
-                                          "editroom":  roomform,
-                                          "meeting":meeting,
-                                          "hide_menu": True,
-                                      })
 
 ##############################################################################
 #@role_required('Area Director','Secretariat')
