@@ -20,7 +20,7 @@ from ietf.dbtemplate.models import DBTemplate
 from ietf.person.models import Email, Person
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.utils.pipe import pipe
-from ietf.utils import unaccent
+from unidecode import unidecode
 from ietf.utils.mail import send_mail_text, send_mail
 from ietf.utils.log import log
 
@@ -365,7 +365,7 @@ def make_nomineeposition_for_newperson(nomcom, candidate_name, candidate_email, 
     # This is expected to fail if called with an existing email address
     email = Email.objects.create(address=candidate_email)
     person = Person.objects.create(name=candidate_name,
-                                   ascii=unaccent.asciify(candidate_name),
+                                   ascii=unidecode(candidate_name),
                                    address=candidate_email)
     email.person = person
     email.save()

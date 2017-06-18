@@ -203,7 +203,7 @@ class SubmissionUploadForm(forms.Form):
             # try to parse it
             txt_file = self.cleaned_data['txt']
             txt_file.seek(0)
-            self.parsed_draft = Draft(txt_file.read(), txt_file.name)
+            self.parsed_draft = Draft(txt_file.read().decode('utf8'), txt_file.name)
             self.filename = self.parsed_draft.filename
             self.revision = self.parsed_draft.revision
             self.title    = self.parsed_draft.get_title()

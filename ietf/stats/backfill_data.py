@@ -6,6 +6,7 @@ import sys
 import os
 import os.path
 import argparse
+import six
 import time
 
 basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
@@ -59,13 +60,14 @@ def unicode(text):
     for encoding in ['ascii', 'utf8', 'latin1', ]:
         try:
             utext = text.decode(encoding) 
-            if encoding == 'latin1':
-                say("Warning: falling back to latin1 decoding for %s" % utext)
+#             if encoding == 'latin1':
+#                 say("Warning: falling back to latin1 decoding for %s ..." % utext[:216]])
             return utext
         except UnicodeDecodeError:
             pass
 
 start = time.time()
+say("Running query for documents to process ...")
 for doc in docs_qs.prefetch_related("docalias_set", "formal_languages", "documentauthor_set", "documentauthor_set__person", "documentauthor_set__person__alias_set"):
     canonical_name = doc.name
     for n in doc.docalias_set.all():
@@ -81,10 +83,10 @@ for doc in docs_qs.prefetch_related("docalias_set", "formal_languages", "documen
         say("Skipping %s, no txt file found at %s" % (doc.name, path))
         continue
 
-    with open(path, 'r') as f:
+    with open(path, 'rb') as f:
         say("\nProcessing %s" % doc.name)
         sys.stdout.flush()
-        d = Draft(f.read(), path)
+        d = Draft(unicode(f.read()), path)
 
         updated = False
 
@@ -126,7 +128,11 @@ for doc in docs_qs.prefetch_related("docalias_set", "formal_languages", "documen
             # it's an extra author - skip those extra authors
             seen = set()
             for full, _, _, _, _, email, country, company in d.get_author_list():
-                full, email, country, company = [ unicode(s) for s in [full, email, country, company, ] ]
+                assert full is None or    isinstance(full,    six.text_type)
+                assert email is None or   isinstance(email,   six.text_type)
+                assert country is None or isinstance(country, six.text_type)
+                assert company is None or isinstance(company, six.text_type)
+                #full, email, country, company = [ unicode(s) for s in [full, email, country, company, ] ]
                 if email in seen:
                     continue
                 seen.add(email)

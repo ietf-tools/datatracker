@@ -108,7 +108,7 @@ def process_files(request,draft):
         file_type_list.append(extension)
         if extension == '.txt':
             txt_size = file.size
-            wrapper = Draft(file.read(),file.name)
+            wrapper = Draft(file.read().decode('utf8'),file.name)
         handle_uploaded_file(file)
     
     # create Submission record, leaved unsaved

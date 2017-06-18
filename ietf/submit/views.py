@@ -71,7 +71,7 @@ def upload_submission(request):
                     # be retrieved from the generated text file.  Provide a
                     # parsed draft object to get at that kind of information.
                     with open(file_name['txt']) as txt_file:
-                        form.parsed_draft = Draft(txt_file.read(), txt_file.name)
+                        form.parsed_draft = Draft(txt_file.read().decode('utf8'), txt_file.name)
 
                 else:
                     file_size = form.cleaned_data['txt'].size

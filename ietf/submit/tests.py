@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+
+
 import datetime
 import os
 import shutil
@@ -302,11 +304,11 @@ class SubmitTests(TestCase):
             draft.save_with_history([DocEvent.objects.create(doc=draft, rev=draft.rev, type="added_comment", by=Person.objects.get(user__username="secretary"), desc="Test")])
         if not change_authors:
             draft.documentauthor_set.all().delete()
-            author_person, author_email = ensure_person_email_info_exists('Author Name','author@example.com')
+            author_person, author_email = ensure_person_email_info_exists(u'Author Name',u'author@example.com')
             draft.documentauthor_set.create(person=author_person, email=author_email)
         else:
             # Make it such that one of the previous authors has an invalid email address
-            bogus_person, bogus_email = ensure_person_email_info_exists('Bogus Person',None)
+            bogus_person, bogus_email = ensure_person_email_info_exists(u'Bogus Person',None)
             DocumentAuthor.objects.create(document=draft, person=bogus_person, email=bogus_email, order=draft.documentauthor_set.latest('order').order+1)
 
         prev_author = draft.documentauthor_set.all()[0]

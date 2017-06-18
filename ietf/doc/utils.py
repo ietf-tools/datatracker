@@ -498,9 +498,10 @@ def rebuild_reference_relations(doc,filename=None):
             filename=os.path.join(settings.INTERNET_DRAFT_PATH,doc.filename_with_rev())
 
     try:
-       refs = draft.Draft(draft._gettext(filename), filename).get_refs()
+        with open(filename, 'rb') as file:
+            refs = draft.Draft(file.read().decode('utf8'), filename).get_refs()
     except IOError as e:
-       return { 'errors': ["%s :%s" %  (e.strerror, filename)] }
+        return { 'errors': ["%s :%s" %  (e.strerror, filename)] }
 
     doc.relateddocument_set.filter(relationship__slug__in=['refnorm','refinfo','refold','refunk']).delete()
 

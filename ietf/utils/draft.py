@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # -*- python -*-
-
+from __future__ import unicode_literals
 """
 NAME
 	%(program)s - Extract meta-information from an IETF draft.
@@ -37,8 +37,10 @@ import os
 import os.path
 import re
 import stat
+import six
 import sys
 import time
+
 
 version = "0.35"
 program = os.path.basename(sys.argv[0])
@@ -124,6 +126,7 @@ def acronym_match(s, l):
 class Draft():
 
     def __init__(self, text, source):
+        assert isinstance(text, six.text_type)
         self.source = source
         self.rawtext = text
 
@@ -1168,8 +1171,8 @@ def getmeta(fn):
         return
 
     timestamp = time.strftime("%Y-%m-%dT%H:%M:%S+00:00", time.gmtime(os.stat(filename)[stat.ST_MTIME]))
-    text = _gettext(filename)
-    draft = Draft(text, filename)
+    with open(filename, 'rb') as file:
+        draft = Draft(file.read().decode('utf8'), filename)
     #_debug("\n".join(draft.lines))
 
     fields["eventdate"] = timestamp

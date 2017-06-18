@@ -2,7 +2,7 @@
 
 import os
 import datetime
-import six
+import six                              # pyflakes:ignore
 from unidecode import unidecode
 
 from django.conf import settings
@@ -24,7 +24,6 @@ from ietf.community.utils import update_name_contains_indexes_with_new_doc
 from ietf.submit.mail import announce_to_lists, announce_new_version, announce_to_authors
 from ietf.submit.models import Submission, SubmissionEvent, Preapproval, DraftSubmissionStateName
 from ietf.utils import log
-from ietf.utils import unaccent
 from ietf.utils.mail import is_valid_email
 
 
@@ -401,10 +400,8 @@ def ensure_person_email_info_exists(name, email):
     if not person:
         person = Person()
         person.name = name
-        if isinstance(person.name, six.text_type):
-            person.ascii = unidecode(person.name).decode('ascii')
-        else:
-            person.ascii = unaccent.asciify(person.name).decode('ascii')
+        log.assertion('isinstance(person.name, six.text_type)')
+        person.ascii = unidecode(person.name).decode('ascii')
         person.save()
 
     # make sure we have an email address
