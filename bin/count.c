@@ -17,7 +17,7 @@ int main( void )
 	fputc(c, stdout);
 	fflush(stdout);
 	if (count && count % 76 == 0) {
-	    fprintf(stderr, "%4d", count);
+	    fprintf(stderr, "%4d\n", count);
 	    fflush(stderr);
 	}
 	c = fgetc(stdin);
