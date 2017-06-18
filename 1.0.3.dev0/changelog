@@ -1,0 +1,341 @@
+id2xml (1.0.2) ietf; urgency=medium
+
+  This is a bugfix release which addressess some additional issues raised by
+  the RFC Editor staff:
+
+  * Set the full organization name in the author element from the 
+    information in the authors' addresses section, and using what was found on 
+    the first page, if different, as the abbrev attribute.
+
+  * Changed the handling of quotations of RFCs with numbers below 1000 to
+    always use zero-padded numbers, to match what the bibxml libraries use;
+    and to insert entity references for those, instead of in-place
+    <reference/> entries.  Fixes an issues reported by the RFC-Editor staff.
+
+  * Changed text-table identification to not try to handle one-row tables as
+    texttables.  Fixes an issues reported by the RFC-Editor staff.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  18 Jun 2017 20:33:34 +0000
+
+id2xml (1.0.1) ietf; urgency=medium
+
+  This is a bugfix release which addressess a number of issues raised by the
+  RFC Editor staff, and a few issues found during testing.
+
+  * Added generation of a sortrefs PI which matches the original's RFC
+    references being sorted or not.
+
+  * Tweaked the slugifier, and applied it to section-* anchors, to ensure 
+    they are valid.  Fixed an issue causing trailing commas in entity names.
+
+  * Rewrote the handling of back matter to permit the various back sections 
+    to occur in any order.  Added yet another way to say 'work in progress' in 
+    references; added new reference patterns and removed the expectation that 
+    references will have a terminating period; did some minor code clean-up.
+
+  * Refined the header and footer stripping to consider end-of-line commas,
+    and to require short lines triggering paragraph breaks to contain text.
+
+  * Fixed a bug in line reading, which could cause the first line of a 
+    document to be skipped.  Added recognition of additional Standards Track 
+    status indications, such as 'Proposed Standard', etc.  Fixed a grammar 
+    issue.  Fixed an issue with mismatched authors on the first page and 
+    Author's Addresses section.  Refined the header/footer stripping to deal 
+    with additional variations of header/footer lines.
+
+  * Fixed a number of places where warn() was called with a line object
+    instead of the line number.
+
+  * Changed to using the supplied figure or texttable label to set the 
+    title attribute also when rendering the figure as texttable or texttable as 
+    figure.
+
+  * Refined the tokenizer for the text parser in order to correctly handle 
+    things like (Section N.N).
+
+  * Eliminated trailing blank cells in texttables.
+
+  * Added RFC-Editor staff to the release notification list.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  14 Jun 2017 12:22:54 +0000
+
+
+id2xml (1.0.0) ietf; urgency=medium
+
+  The number of lines in the corpus of test documents now show a percentage
+  of lines which differ from the original input file to the text file generated
+  from id2xml's xml file of just over 2%, and in some cases the generated
+  text is an improvement over the original text.  The tool should now be
+  functionally complete for vocabulary v2 output, so this seems like a good
+  time for a 1.0.0 release.
+
+  Changes since 1.0.0rc3:
+
+  * Split the functionality up into separate run.py, parser.py and utils.py
+    files, and adjusted Makefile and MANIFEST accordingly.
+
+  * Entries in the <references/> sections are now entity references for drafts
+    and RFCs, instead of inserting the reference xml as generated from the
+    input document.
+
+  * There's a slight refactoring of how the reference_anchors and
+    section_anchors lists are generated.
+
+  * Added xref elements for Section N.nn strings which reference document
+    sections.
+
+  * There has been multiple rounds of refactoring, to clean up and organise
+    the code better.
+
+  * The generated xml has also been cleaned up, to avoid long lines and
+    tags bunched up on the same line.  It's still not super pretty, but
+    should be readable.
+
+  * Added a check on coupled debug trace switches, where setting a trace start
+    option also requires that a trace stop option be set.
+
+  * The regular expression which identifies code has been further refined.
+
+  * Refined the header stripping to not join pararaphs where the first part
+    has a short line.
+
+  * Added more cases where list hangIndent is derived and set.
+
+  * Added modification of the text-list-symbols PI in order to better match
+    the source.  Since this is a global setting, it can't handle inconsistent
+    bullet styles in a document (for instance created with hangText="*" ...).
+
+  * Improved the error message for missing stream information when attempting
+    to process older RFCs
+
+  * Fixed a bug in the handling of the xml tree for xrefs found in text
+    interspersed with vspace elements.
+
+  * Code optimisations.
+
+  * Added the last two changelog sections to the release information shown onl
+    PyPi.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  30 May 2017 17:04:44 +0000
+
+
+id2xml (1.0.0rc3) ietf; urgency=low
+
+  This release reduces the diff between the text input file and the
+  text file resulting from the generated xml even more.  The average
+  number of lines in the input which is rendered differently in the
+  output is now below 3%.
+
+  From the changelog:
+
+  * Committed updated (smaller) diff files for test baseline
+
+  * Added more alternatives to the code recognition regex, for xml tags and
+    C statements
+
+  * Refined the header/footer stripping a bit, to not join text broken across
+    pages into one paragraph when there are too many intervening blank lines, 
+    or when the last line is a table or figure label.
+
+  * Added handling of blank lines in list items, by inserting <vspace> as
+    needed
+
+  * Added isertion of subcompact PIs for compact list.  Fixed some warning 
+    message issues.
+
+  * Added another comment delimiter to the code regex, and applied it to
+    whole text blocks, not only to their first line.
+
+  * Moved list block normalisation functions into the DraftParser class, and
+    added recognition of compact lists.  Also some refactoring.
+
+  * Added more descriptive manpage text, and tweaked the making of the
+    manpage.
+
+  * Added switches for trace start and stop on line number, and renamed the
+    trace-related switches.
+
+  * Refined guess_list_style().
+
+  * Added code to recognise 'centered' titles when they span the whole line
+
+  * Rewrote the code which parses the top left column of the titlepage to not
+    assume any ordering of the lines, but permit them to occur in almost any
+    order.  The only exception is that if there's a working group string, it
+    must occur first, as it has no recognizable keyword to identify it.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  26 May 2017 00:01:40 +0200
+
+
+id2xml (1.0.0rc2) ietf; urgency=low
+
+  * Tweaked the help text and the manpage generation.
+
+  * Updated MANIFEST and Makefile
+
+  * Added some missing files, updated the acceptable diffs in test/ok/.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  22 May 2017 22:38:41 +0200
+
+
+id2xml (1.0.0-rc1) ietf; urgency=low
+
+  * Improved the debug trace facilities with --start-trace on a text match,
+    --stop-trace on a text match, and --trace one or more function names
+
+  * Improved the code recognition regex, in order to handle more code and
+    constants fragments as figures.
+
+  * Added recognition and handling of <CODE BEGINS> and <CODE ENDS> marks
+
+  * Added recognition of reference text date strings containing days
+
+  * Added recognition of another usage of 'Work-in-progress' in references
+
+  * Modified list handling to recognise lists in additional formats, and to
+    use <vspace> to introduce line breaks and blank lines for some cases
+
+  * Added recognition of reference quotes within list text
+
+  * Added 2 new ways to recognize text which needs to be captured as figures
+    (based on recurring wide whitespace and on text not being paragraph filled)
+
+  * Added better handling of draft references for the purpose of generating
+    proper entity definitions in the doctype declaration
+
+  * Refined the test suite to show percentages of lines which deviate between
+    text master and the text generated from the generated xml, and to not
+    include differences in the ToC page numbers in the checked diff
+    linecounts.
+
+  * Added support for title abbreviation occuring in the footer, rather 
+    than the header.  Explicitly created a title abbreviation for long titles 
+    with no abbreviation available, rather than letting xml2rfc mangle the page 
+    header.
+
+  * Tweaked the setup to make the local debug.py available.
+
+  * Don't interpret 'Internet-Draft' at the top left of the first page as a 
+    workgroup name.  Test case added.
+
+  * Added list default style 'empty', based on an issue report from 
+    julian.reschke@gmx.de
+
+  * Added stripping of leading/trailing blanks from author name components 
+    (initials and surname), based on an issue report from julian.reschke@gmx.de
+
+  * Renamed the subversion branch to match the selected tool name.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  19 May 2017 20:32:32 +0200
+
+
+id2xml (0.9.3) ietf; urgency=low
+
+  * Added a mkrelease script.
+
+  * Tweaked the test summary. Corrected the revision number.
+
+  * Fixed some bugs in the manpage generation.  Updated the manifest and
+    cleaned up the repository content.  Bumped the version.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  15 May 2017 22:17:20 +0000
+
+id2xml (0.9.2) ietf; urgency=low
+
+  This pre-release fixes additional issues reported by rjsparks@nostrum.com
+  during initial testing.  From the changelog:
+
+  * Added makefile rules to make diff comparison tests between original and 
+    generated .txt files, and some baseline diffs.
+
+  * Tweaked script message formatting slightly
+
+  * Added some config default values.  Tweaked the command-line switches.  
+    Generalized the handling of recognized non-numbered section names, 
+    including some code refactoring and simplification.  Added recognition of 
+    additional reference formats in the reference sections.  Added debug output 
+    methods which can be selectively switched on or off, per parser entity 
+    function, from the command line; with some related refactoring of the 
+    options handling.
+
+  * Added support for .id2xmlrc config files.  Added support for 
+    symrefs='no'.  Fixed a bug which could cause a divide-by-zero error.  Added 
+    --debug and --quiet options.  Changed conversion error messages to only 
+    show traceback when --debug is set.  Added handling of Figure and Table 
+    titles that only number the figure/table, without providing a title text.
+
+  * Added some fixes for older documents, and documents with many authors.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  15 May 2017 00:22:56 +0200
+
+id2xml (0.9.1) ietf; urgency=low
+
+  This pre-release fixes some issues reported by rjsparks@nostrum.com
+  during initial testing, and by housley@vigilsec.com during text review:
+
+  * Fixed some issues found for draft-sparks-genarea-review-tracker-03.txt: 
+    Use of 'Work in Progress' annotation for non-draft references, code/figure 
+    text indented less than 3 spaces.
+
+  * Fixed a number of issues found for rfc7842: Use of None instead of 
+    blank string as null input to skip(); failed to accept spelling 
+    'acknowledgment', failed to set attribute 'numbered' to 'no' for back 
+    matter sections which were not numbered.
+
+  * Updated readme based on feedback from housley@vigilsec.com
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  10 May 2017 21:12:28 +0200
+
+id2xml (0.9.0) ietf; urgency=low
+
+  This is the first public release.  Recent changes:
+
+  * New readme text, more appropriate as pypi description.
+
+  * Increased the version number before pre-release, and added an upload: 
+    target to the makefile.
+
+  * Fixed an issue with identifying URIs sections, and tweaked the symbol 
+    ratio limit between figures and t/list items.
+
+  * Rearranged id2xml as a package instead of as a single-file module, in 
+    order to be able to enclose the v2 and v3 .rnc and .rng files (and possibly 
+    other data files in the future).  Added LICENCE, README and MANIFEST files. 
+
+  * Changed argument parsing to use argparse, and changed the Makefile to 
+    process the new help text into something txt2man can use to produce a 
+    manpage.
+
+  * Removed the local command-line script
+
+  * Moved the bulk of the command-line invocation code from id2xml to 
+    id2xml.run(), in order to support general setuptools script installation.  
+    Added recognition of 'URIs' sections generated from erefs.  Added a 
+    setup.py file and other supporting files to enable pip and setuptools 
+    installation.
+
+  * Added a guard against overwriting what could be the xml file.  Added 
+    wrapping of warning and error messages.
+
+  * Added -o (output file) and -p (output path) options to the invocation 
+    script, and tweaked the --help output.
+
+  * Fixed an issue with identification of sublists to lists, an issue with 
+    joining some URLs broken across lines, and an issue with wrong column 
+    settings when extracting table columns.
+
+  * Improved eref support, some refactoring.
+
+  * Added processing of erefs and xrefs to reference entries.
+
+  * Stable point: parsing front, back, and sections in place; generated xml 
+    produces text that matches original well when run through xml2rfc.  Major 
+    missing piece: parsing of text paragraphs to provide xref elements.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  09 May 2017 18:01:28 +0200
+
+id2xml (0.10)
+
+    * Project created
+
+ -- Henrik Levkowetz 2016-09-18 14:00:28 PDT
