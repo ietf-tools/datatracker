@@ -4,6 +4,7 @@
 # (by Chris Mulligan, http://chmullig.com/2009/12/python-unicode-ascii-ifier/)
  
 import unicodedata, sys
+from ietf.utils.log import unreachable
  
 class unaccented_map(dict):
 # Translation dictionary.  Translation entries are added to this dictionary as needed.
@@ -92,6 +93,7 @@ class unaccented_map(dict):
 map = unaccented_map()
  
 def asciify(input):
+        unreachable("18 Jun 2017")
 	try:
 		return input.encode('ascii')
 	except AttributeError:
@@ -102,14 +104,14 @@ def asciify(input):
 text = u"""
  
 ##Norwegian
-"Jo, når'n da ha gått ett stôck te, så kommer'n te e å,
-å i åa ä e ö."
+"Jo, når'n da ha gått ett støck te, så kommer'n te e å,
+å i åa æ e ø."
 "Vasa", sa'n.
-"Å i åa ä e ö", sa ja.
-"Men va i all ti ä dä ni säjer, a, o?", sa'n.
-"D'ä e å, vett ja", skrek ja, för ja ble rasen, "å i åa
-ä e ö, hörer han lite, d'ä e å, å i åa ä e ö."
-"A, o, ö", sa'n å dämmä geck'en.
+"Å i åa æ e ø", sa ja.
+"Men va i all ti æ dæ ni sæjer, a, o?", sa'n.
+"D'æ e å, vett ja", skrek ja, før ja ble rasen, "å i åa
+æ e ø, hører han lite, d'æ e å, å i åa æ e ø."
+"A, o, ø", sa'n å dæmmæ geck'en.
 Jo, den va nôe te dum den.
  
 (taken from the short story "Dumt fôlk" in Gustaf Fröding's
