@@ -36,7 +36,7 @@ def name_parts(name):
             full = full.lower()         # adjust case for all-uppercase input
         # This is an incomplete list.  Adjust as needed to handle known ietf
         # participant names correctly:
-        particle = re.search(r" (af|al|Al|de|der|di|Di|du|el|El|Hadi|Le|st\.?|ten|ter|van|van der|Van|von|von der|Von|zu) ", full)
+        particle = re.search(r" (af|al|Al|de|der|di|Di|du|el|El|Hadi|Le|st\.?|St\.?|ten|ter|van|van der|Van|von|von der|Von|zu) ", full)
         if particle:
             pos = particle.start()
             parts = full[:pos].split() + [full[pos+1:]]
