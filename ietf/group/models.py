@@ -94,7 +94,9 @@ class Group(GroupInfo):
 
     def is_decendant_of(self, sought_parent):
         p = self.parent
-        while ((p != None) and (p != self)):
+        seen = set()
+        while ((p != None) and (p != self) and (p not in seen)):
+            seen.add(p)
             if p.acronym == sought_parent:
                 return True
             p = p.parent

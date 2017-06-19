@@ -165,6 +165,20 @@ class GroupForm(forms.Form):
                     MAX_GROUP_DELEGATES, len(self.cleaned_data["delegates"]) - MAX_GROUP_DELEGATES))
         return self.cleaned_data["delegates"]
 
+    def clean_parent(self):
+        p = self.cleaned_data["parent"]
+        seen = set()
+        if self.group:
+            seen.add(self.group)
+        while p != None and p not in seen:
+            seen.add(p)
+            p = p.parent
+        if p is None:
+            return self.cleaned_data["parent"]
+        else:
+            raise forms.ValidationError("A group cannot be its own ancestor.  "
+                "Found that the group '%s' would end up being the ancestor of (%s)" % (p.acronym, ', '.join([g.acronym for g in seen])))
+        
     def clean(self):
         cleaned_data = super(GroupForm, self).clean()
         state = cleaned_data.get('state', None)
