@@ -63,8 +63,10 @@
 	        <tr>
 	          <td><a href="{% url "ietf.group.views.group_home" group_type=group.type_id acronym=group.acronym %}">{{ group.acronym }}</a></td>
 	          <td>
+		    {% if group.ad_role %}
 		    <a href="mailto:{{ group.ad_role.email.address }}"><span class="fa fa-envelope-o tiny"></span></a>
 		    <a href="{% url 'ietf.person.views.profile' email_or_name=group.ad_role.person.name %}">{{ group.ad_role.person.plain_name.split.0 }}</a>
+		    {% endif %}
 	          </td>
 	          <td>{{ group.name }}</td>
 	          <td>
