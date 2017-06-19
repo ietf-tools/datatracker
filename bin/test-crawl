@@ -352,6 +352,8 @@ if __name__ == "__main__":
 
         try:
             request_start = datetime.datetime.now()
+            if args.verbose:
+                sys.stderr.write(url+'\r')
             r = client.get(url, secure=True, follow=True)
             elapsed = datetime.datetime.now() - request_start
         except KeyboardInterrupt:
