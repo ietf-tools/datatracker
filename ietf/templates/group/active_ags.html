@@ -34,7 +34,7 @@
           </td>
           <td>
             {% for secretary in group.secretaries %}
-              <a href="{% url 'ietf.person.views.profile' email_or_name=secretary.personname %}">{{ secretary.person.plain_name }}
+              <a href="{% url 'ietf.person.views.profile' email_or_name=secretary.person.name %}">{{ secretary.person.plain_name }}
 	      </a><a href="mailto:{{ secretary.email.address }}"><span class="fa fa-envelope-o tiny"></span></a> {% if not forloop.last %}, {% endif %}
             {% endfor %}
           </td>
