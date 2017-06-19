@@ -147,7 +147,7 @@ class SubmissionUploadForm(forms.Form):
                         tf.write(chunk)
                 os.environ["XML_LIBRARY"] = settings.XML_LIBRARY
                 try:
-                    parser = xml2rfc.XmlRfcParser(tfn, quiet=True)
+                    parser = xml2rfc.XmlRfcParser(str(tfn), quiet=True)
                     self.xmltree = parser.parse()
                     ok, errors = self.xmltree.validate()
                 except Exception as exc:
