@@ -113,7 +113,7 @@ def can_adopt_draft(user, doc):
     role_groups = [ r.group for r in roles ]
 
     return (doc.stream_id in (None, "ietf", "irtf")
-            and (doc.group.type_id == "individ" or doc.group in role_groups)
+            and (doc.group.type_id == "individ" or (doc.group in role_groups and len(role_groups)>1))
             and roles.exists())
 
 def two_thirds_rule( recused=0 ):

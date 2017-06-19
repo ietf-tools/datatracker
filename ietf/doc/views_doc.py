@@ -321,7 +321,12 @@ def document_main(request, name, rev=None):
         actions = []
 
         if can_adopt_draft(request.user, doc) and not doc.get_state_slug() in ["rfc"] and not snapshot:
-            actions.append(("Manage Document Adoption in Group", urlreverse('ietf.doc.views_draft.adopt_draft', kwargs=dict(name=doc.name))))
+            if doc.group:
+                # already adopted in one group
+                button_text = "Change Document Adoption to other Group"
+            else:
+                button_text = "Manage Document Adoption in Group"
+            actions.append((button_text, urlreverse('ietf.doc.views_draft.adopt_draft', kwargs=dict(name=doc.name))))
 
         if doc.get_state_slug() == "expired" and not resurrected_by and can_edit and not snapshot:
             actions.append(("Request Resurrect", urlreverse('ietf.doc.views_draft.request_resurrect', kwargs=dict(name=doc.name))))

@@ -1,3 +1,40 @@
+ietfdb (6.55.1) ietf; urgency=medium
+
+  This is a bugfix release, with some smaller enhancements.  From the commit
+  log:
+
+  * Don't deliver spurious yang extraction errors for drafts where no yang 
+    modules were found.
+
+  * Replaced the use of unaccent.asciify(), which has similar functionality 
+    as unidecode.unidecode().  Changed the draft parser to work exclusively 
+    with unicode text, which both makes the removal of unaccent easier, and 
+    takes us closer to Py35 compatibility.  Adjusted callers of the draft 
+    parser to send in unicode.
+
+  * Removed code which has been marked as unreachable since February/March 
+    2017 and has not triggering any usage indications.
+
+  * Changed the display of people with roles on the various group pages to 
+    link to both their profile page and their email address.
+
+  * Improved the handling of surname particles, (prompted by failure to 
+    handle the name of Niels ten Oever correctly).
+
+  * Made changes to the can_adopt_draft() logic, to make it possible for a 
+    chair of multiple groups to correct the mistake if adoption was made for 
+    the wrong group.
+
+  * Merged in [13615] and [13627]from rcross@amsl.com:
+    Changed views that use GET requests to delete objects to use POST.
+    Fixes #1796.
+
+  * Make sure wordwrap() and friend works as intended if they are used as 
+    template filters and given string arguments.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  17 Jun 2017 14:16:17 -0700
+
+
 ietfdb (6.55.0) ietf; urgency=medium
 
   **Improved Yang validation support**
