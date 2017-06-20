@@ -66,7 +66,7 @@ class Submission(models.Model):
         return Document.objects.filter(name=self.name).first()
 
     def latest_checks(self):
-        checks = [ self.checks.filter(checker=c, passed__in=[True,False]).latest('time') for c in self.checks.values_list('checker', flat=True).distinct() ]
+        checks = [ self.checks.filter(checker=c).latest('time') for c in self.checks.values_list('checker', flat=True).distinct() ]
         return checks
         
 class SubmissionCheck(models.Model):
