@@ -19,8 +19,8 @@ class Command(BaseCommand):
     Populate the yang module repositories from drafts and RFCs.
 
     Extracts yang models from RFCs (found in settings.RFC_PATH and places
-    them in settings.YANG_RFC_MODEL_DIR, and from active drafts, placed in
-    settings.YANG_DRAFT_MODEL_DIR if valid and settings.YANG_INVAL_MODEL_DIR
+    them in settings.SUBMIT_YANG_RFC_MODEL_DIR, and from active drafts, placed in
+    settings.SUBMIT_YANG_DRAFT_MODEL_DIR if valid and settings.SUBMIT_YANG_INVAL_MODEL_DIR
     if not.
 
     """
@@ -95,7 +95,7 @@ class Command(BaseCommand):
 
         rfcdir = Path(settings.RFC_PATH)
 
-        moddir = Path(settings.YANG_RFC_MODEL_DIR)
+        moddir = Path(settings.SUBMIT_YANG_RFC_MODEL_DIR)
         if not moddir.exists():
             moddir.mkdir(parents=True)
 
@@ -131,7 +131,7 @@ class Command(BaseCommand):
 
         draftdir = Path(settings.INTERNET_DRAFT_PATH)
 
-        moddir = Path(settings.YANG_DRAFT_MODEL_DIR)
+        moddir = Path(settings.SUBMIT_YANG_DRAFT_MODEL_DIR)
         if not moddir.exists():
             moddir.mkdir(parents=True)
         print("Emptying %s ..." % moddir)
@@ -163,7 +163,7 @@ class Command(BaseCommand):
 
         # Extract invalid modules from drafts
         valdir = moddir
-        moddir = Path(settings.YANG_INVAL_MODEL_DIR)
+        moddir = Path(settings.SUBMIT_YANG_INVAL_MODEL_DIR)
         if not moddir.exists():
             moddir.mkdir(parents=True)
         print("Emptying %s ..." % moddir)
