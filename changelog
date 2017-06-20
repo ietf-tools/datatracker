@@ -6,6 +6,18 @@ ietfdb (6.55.1) ietf; urgency=medium
   * Don't deliver spurious yang extraction errors for drafts where no yang 
     modules were found.
 
+  * Added circular parent relationship detection and logging in the
+    Group.is_decendant_of() method, and form validation error on loop in the
+    group edit form data cleaning.
+
+  * Increased the test crawlers verbose output.
+
+  * Added a guard around rendering of group.ad_role, which isn't always set.
+
+  * Refined the appearance and wording of the 'Manage document's adoption' 
+    button, to make it possible for chairs to correct an adoption in the
+    wrong group.
+
   * Replaced the use of unaccent.asciify(), which has similar functionality 
     as unidecode.unidecode().  Changed the draft parser to work exclusively 
     with unicode text, which both makes the removal of unaccent easier, and 
@@ -32,7 +44,7 @@ ietfdb (6.55.1) ietf; urgency=medium
   * Make sure wordwrap() and friend works as intended if they are used as 
     template filters and given string arguments.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  17 Jun 2017 14:16:17 -0700
+ -- Henrik Levkowetz <henrik@levkowetz.com>  20 Jun 2017 13:43:31 +0000
 
 
 ietfdb (6.55.0) ietf; urgency=medium
