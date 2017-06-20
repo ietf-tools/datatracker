@@ -14,7 +14,7 @@ from ietf.group.colors import fg_group_colors, bg_group_colors
 from ietf.name.models import GroupStateName, GroupTypeName, DocTagName, GroupMilestoneStateName, RoleName
 from ietf.person.models import Email, Person
 from ietf.utils.mail import formataddr
-from ietf.utils.log import unreachable
+from ietf.utils import log
 
 
 class GroupInfo(models.Model):
@@ -93,13 +93,14 @@ class Group(GroupInfo):
         return user.is_authenticated and self.role_set.filter(name__in=role_names, person__user=user).exists()
 
     def is_decendant_of(self, sought_parent):
-        p = self.parent
-        seen = set()
-        while ((p != None) and (p != self) and (p not in seen)):
-            seen.add(p)
-            if p.acronym == sought_parent:
+        parent = self.parent
+        decendants = [ self, ]
+        while (parent != None) and (parent not in decendants):
+            decendants = [ parent ] + decendants
+            if parent.acronym == sought_parent:
                 return True
-            p = p.parent
+            parent = parent.parent
+        log.assertion('parent not in decendants')
         return False
 
     def get_chair(self):
@@ -286,7 +287,7 @@ class Role(models.Model):
         Is intended for display use, not in email context.
         Use self.formatted_email() for that.
         """
-        unreachable()
+        log.unreachable()
         if self.person:
             return u"%s <%s>" % (self.person.plain_name(), self.email.address)
         else:

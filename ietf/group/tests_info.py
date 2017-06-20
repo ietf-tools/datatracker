@@ -1319,6 +1319,8 @@ class GroupParentLoopTests(TestCase):
         signal.alarm(1)   # One second
         try:
             test2.is_decendant_of("ietf")
+        except AssertionError:
+            pass
         except Exception:
             raise
         finally:
