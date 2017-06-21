@@ -184,9 +184,9 @@ image=$(docker ps | grep "$REPO:$TAG" | awk '{ print $1 }')
 if [ "$image" ]; then
     if [ "$*" ]; then
         echo "Running 'cd ~/${parent#$HOME/}; $*'"
-	docker exec -u $WHO -t $image bash -c "cd ~/${parent#$HOME/}; $*"
+	docker exec -u "$WHO" -t $image bash -c "cd '~/${parent#$HOME/}'; $*"
     else
-	docker exec -u $WHO -ti $image bash
+	docker exec -u "$WHO" -ti $image bash
     fi
 else
     echo ""
@@ -194,35 +194,35 @@ else
 
     if [ -n "$DOWNLOAD" ]; then
 	(
-	    cd $(dirname $MYSQLDIR)
-	    wget -N $DBURL && tar xjf ietf_utf8.bin.tar.bz2 && chmod -R go+rwX mysql
+	    cd "$(dirname $MYSQLDIR)"
+	    wget -N "$DBURL" && tar xjf ietf_utf8.bin.tar.bz2 && chmod -R go+rwX mysql
 	)
 	[ -d "$MYSQLDIR" ] || die "The download seems to have failed; still no $MYSQLDIR.  Giving up."
     else
 	[ -d "$MYSQLDIR" ] || die "Expected $MYSQLDIR to exist, but it\ndidn't.  Use '$program -d' to download and unpack the database."
     fi
 
-    if ! docker images $REPO | grep -q $TAG; then
+    if ! docker images "$REPO" | grep -q "$TAG"; then
 	echo "Fetching docker image '$REPO:$TAG'"
-	if ! docker pull $REPO:$TAG; then
-	    docker pull $REPO:latest || die "Failed to pull down the '$REPO:latest' docker image"
-	    id=$(docker images $REPO | grep latest  | awk '{print $3}')
+	if ! docker pull "$REPO:$TAG"; then
+	    docker pull "$REPO:latest" || die "Failed to pull down the '$REPO:latest' docker image"
+	    id=$(docker images "$REPO" | grep latest  | awk '{print $3}')
 	    echo "Tagging $REPO:latest as $REPO:$TAG for use as environment for this branch."
-	    docker tag $id $REPO:$TAG
+	    docker tag $id "$REPO:$TAG"
 	fi
     fi
 
     echo -e "\nThe web interface for 'runserver' should appear on $URL\n"
     if [ -z "$MYSQLDIR" ]; then
-	docker run -ti -p $PORT:8000 -v $HOME:/home/$WHO                            \
-	    -e USER=$WHO -e DATADIR=${parent#$HOME/}/data -e CWD=${PWD#$HOME/}	\
-	    -e TAG=$TAG -e FILEDIR=${FILEDIR#$HOME}	\
-	    $REPO:$TAG "$@"
+	docker run -ti -p $PORT:8000 -v "$HOME:/home/$WHO"                              \
+	    -e USER="$WHO" -e DATADIR="${parent#$HOME/}/data" -e CWD="${PWD#$HOME/}"	\
+	    -e TAG="$TAG" -e FILEDIR=${FILEDIR#$HOME}	\
+	    "$REPO:$TAG" "$@"
     else
-	docker run -ti -p $PORT:8000 -v $HOME:/home/$WHO -v $MYSQLDIR:/var/lib/mysql\
-	    -e USER=$WHO -e DATADIR=${parent#$HOME/}/data -e CWD=${PWD#$HOME/}	\
-	    -e TAG=$TAG -e FILEDIR=${FILEDIR#$HOME}	\
-	    $REPO:$TAG "$@"
+	docker run -ti -p $PORT:8000 -v "$HOME:/home/$WHO" -v "$MYSQLDIR:/var/lib/mysql"\
+	    -e USER="$WHO" -e DATADIR="${parent#$HOME/}/data" -e CWD="${PWD#$HOME/}"	\
+	    -e TAG="$TAG" -e FILEDIR=${FILEDIR#$HOME}	\
+	    "$REPO:$TAG" "$@"
     fi
 
     echo ""

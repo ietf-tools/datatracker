@@ -65,6 +65,7 @@ RUN apt-get install -qy \
 	locales \
 	man \
 	openssh-client \
+	patch \
 	procps \
 	pv \
 	python \
@@ -106,6 +107,9 @@ RUN rm /etc/apt/sources.list.d/mysql-apt-config.list
 # Update the package defs, and install the desired mysql from the mysql repo
 RUN apt-get update
 RUN apt-get install -qy mysql-community-server libmysqlclient-dev
+
+# This is expected to exist by the mysql startup scripts:
+RUN touch /etc/mysql/debian.cnf
 # ------------------------------------------------------------------------------
 
 # Get rid of installation files we don't need in the image, to reduce size

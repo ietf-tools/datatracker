@@ -19,6 +19,8 @@ IDSUBMIT_IDNITS_BINARY = "/usr/local/bin/idnits"
 IDSUBMIT_REPOSITORY_PATH = "test/id/"
 IDSUBMIT_STAGING_PATH = "test/staging/"
 INTERNET_DRAFT_ARCHIVE_DIR = "test/archive/"
+INTERNET_ALL_DRAFTS_ARCHIVE_DIR = "test/archive/"
+RFC_PATH = "test/rfc/"
 
 AGENDA_PATH = 'test/data/proceedings/'
 
@@ -28,3 +30,16 @@ EMAIL_PORT=2025
 
 TRAC_WIKI_DIR_PATTERN = "test/wiki/%s"
 TRAC_SVN_DIR_PATTERN = "test/svn/%s"
+
+MEDIA_BASE_DIR = 'test'
+MEDIA_ROOT = MEDIA_BASE_DIR + '/media/'
+MEDIA_URL = '/media/'
+
+PHOTOS_DIRNAME = 'photo'
+PHOTOS_DIR = MEDIA_ROOT + PHOTOS_DIRNAME
+
+SUBMIT_YANG_RFC_MODEL_DIR = '/www/tools.ietf.org/yang/rfcmod/'
+SUBMIT_YANG_DRAFT_MODEL_DIR = '/www/tools.ietf.org/yang/draftmod/'
+SUBMIT_YANG_INVAL_MODEL_DIR = '/www/tools.ietf.org/yang/invalmod/'
+SUBMIT_YANGLINT_COMMAND = None
+
