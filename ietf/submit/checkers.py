@@ -1,4 +1,5 @@
 # Copyright The IETF Trust 2016, All Rights Reserved
+from __future__ import unicode_literals, print_function
 
 import os
 import re
@@ -124,11 +125,12 @@ class DraftIdnitsChecker(object):
 class DraftYangChecker(object):
 
     name = "yang validation"
-    symbol = u'<span class="large">\u262f</span>'
+    symbol = '<span class="large">\u262f</span>'
 
     def check_file_txt(self, path):
         name = os.path.basename(path)
         workdir = tempfile.mkdtemp()
+        model_name_re = r'^[A-Za-z_][A-Za-z0-9_.-]*(@\d\d\d\d-\d\d-\d\d)?\.yang$'
         errors = 0
         warnings = 0
         message = ""
@@ -161,11 +163,16 @@ class DraftYangChecker(object):
             # Found no yang modules, don't deliver any YangChecker result
             return None, "", 0, 0, []
 
+        for n in model_list:
+            if not re.search(model_name_re, n):
+                debug.debug = True
+                code += 1
+                err += "Error: Bad extracted model name: '%s'\n" % n
+
         command = "xym"
         cmd_version = VersionInfo.objects.get(command=command).version
         message = "%s:\n%s\n\n" % (cmd_version, out.replace('\n\n','\n').strip() if code == 0 else err)
 
-        
         results.append({
             "name": name,
             "passed":  passed,
