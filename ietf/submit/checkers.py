@@ -163,11 +163,11 @@ class DraftYangChecker(object):
             # Found no yang modules, don't deliver any YangChecker result
             return None, "", 0, 0, []
 
-        for n in model_list:
-            if not re.search(model_name_re, n):
+        for m in model_list:
+            if not re.search(model_name_re, m):
                 debug.debug = True
                 code += 1
-                err += "Error: Bad extracted model name: '%s'\n" % n
+                err += "Error: Bad extracted model name: '%s'\n" % m
 
         command = "xym"
         cmd_version = VersionInfo.objects.get(command=command).version
