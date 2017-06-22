@@ -7,6 +7,7 @@ import debug                            # pyflakes:ignore
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
+from django.core.exceptions import MultipleObjectsReturned
 
 sys.path.append(settings.MAILMAN_LIB_DIR)
 
@@ -31,12 +32,14 @@ def import_mailman_listinfo(verbosity=0):
         note("Could not import mailman modules -- skipping import of mailman list info")
         return
 
-    for name in Utils.list_names():
+    names = list(Utils.list_names())
+    names.sort()
+    for name in names:
         mlist = MailList.MailList(name, lock=False)
         note("List: %s" % mlist.internal_name())
         if mlist.advertised:
             description = mlist.description.decode('latin1')[:256]
-            list, created = List.objects.get_or_create(name=mlist.real_name, description=description, advertised=mlist.advertised)
+            mmlist, created = List.objects.get_or_create(name=mlist.real_name, description=description, advertised=mlist.advertised)
             # The following calls return lowercased addresses
             members = mlist.getRegularMemberKeys() + mlist.getDigestMemberKeys()
             members = [ m for m in members if mlist.getDeliveryStatus(m) == MemberAdaptor.ENABLED ]
@@ -45,18 +48,22 @@ def import_mailman_listinfo(verbosity=0):
                 if not addr in members:
                     note("  Removing subscription: %s" % (addr))
                     old = Subscribed.objects.get(email=addr)
-                    old.lists.remove(list)
+                    old.lists.remove(mmlist)
                     if old.lists.count() == 0:
                         note("    Removing address with no subscriptions: %s" % (addr))
                         old.delete()
             for addr in members:
                 if len(addr) > 64:
-                    sys.stderr.write("Email address subscribed to '%s' too long for table: <%s>" % (name, addr))
+                    sys.stderr.write("    **  Email address subscribed to '%s' too long for table: <%s>\n" % (name, addr))
                     continue
                 if not addr in known:
                     note("  Adding subscription: %s" % (addr))
-                    new, created = Subscribed.objects.get_or_create(email=addr)
-                    new.lists.add(list)
+                    try:
+                        new, created = Subscribed.objects.get_or_create(email=addr)
+                    except MultipleObjectsReturned as e:
+                        sys.stderr.write("    **  Error handling %s in %s: %s\n" % (addr, name, e))
+                        continue
+                    new.lists.add(mmlist)
     
 
 class Command(BaseCommand):
