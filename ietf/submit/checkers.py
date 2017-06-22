@@ -136,6 +136,7 @@ class DraftYangChecker(object):
         message = ""
         results = []
         passed = True                   # Used by the submission tool.  Yang checks always pass.
+        model_list = []
 
         extractor = xym.YangModuleExtractor(path, workdir, strict=True, strict_examples=False, debug_level=0)
         if not os.path.exists(path):
@@ -157,7 +158,9 @@ class DraftYangChecker(object):
                 sys.stderr = saved_stderr
                 model_list = extractor.get_extracted_models()
             except Exception as exc:
-                log("Exception when running xym on %s: %s" % (name, exc))
+                msg = "Exception when running xym on %s: %s" % (name, exc)
+                log(msg)
+                return None, msg, 0, 0, []
 
         if not model_list:
             # Found no yang modules, don't deliver any YangChecker result
