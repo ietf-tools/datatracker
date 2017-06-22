@@ -1,4 +1,4 @@
-
+# Copyright The IETF Trust 2007, All Rights Reserved
 
 # Portion Copyright (C) 2010 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
@@ -33,48 +33,101 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import os
-import itertools
 import re
-from tempfile import mkstemp
+import json
+import math
+import itertools
 import datetime
-from collections import OrderedDict
+from tempfile import mkstemp
+from collections import OrderedDict, defaultdict
 
-import debug              # pyflakes:ignore
-
-from django import forms
+from django.conf import settings
+from django.contrib.auth.decorators import login_required
+from django.db.models.aggregates import Max
+from django.http import HttpResponse, HttpResponseForbidden, Http404, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.template.loader import render_to_string
-from django.http import HttpResponse, Http404, HttpResponseRedirect
-from django.conf import settings
 from django.urls import reverse as urlreverse
-from django.views.decorators.cache import cache_page
-from django.db.models import Q
+from django.utils.html import escape
+from django.views.decorators.cache import cache_page, cache_control
 
-from ietf.doc.models import State, DocAlias, RelatedDocument
-from ietf.doc.utils import get_chartering_type
+import debug                            # pyflakes:ignore
+
+from ietf.community.models import CommunityList, EmailSubscription
+from ietf.community.utils import docs_tracked_by_community_list
+from ietf.doc.models import DocTagName, State, DocAlias, RelatedDocument, Document
 from ietf.doc.templatetags.ietf_filters import clean_whitespace
-from ietf.doc.utils_search import prepare_document_table
+from ietf.doc.utils import get_chartering_type, get_tags_for_stream_id
 from ietf.doc.utils_charter import charter_name_for_group
-from ietf.group.models import Group, Role, ChangeStateGroupEvent
-from ietf.name.models import GroupTypeName
+from ietf.doc.utils_search import prepare_document_table
+#
+from ietf.group.dot import make_dot
+from ietf.group.forms import (GroupForm, StatusUpdateForm, ConcludeGroupForm, StreamEditForm,
+                              ManageReviewRequestForm, EmailOpenAssignmentsForm, ReviewerSettingsForm,
+                              AddUnavailablePeriodForm, EndUnavailablePeriodForm, ReviewSecretarySettingsForm, )
+from ietf.group.mails import email_admin_re_charter, email_personnel_change
+from ietf.group.models import ( Group, Role, GroupEvent, GroupStateTransitions, GroupURL, ChangeStateGroupEvent )
 from ietf.group.utils import (get_charter_text, can_manage_group_type, 
                               milestone_reviewer_for_group_type, can_provide_status_update,
-                              can_manage_materials, get_group_or_404,
-                              construct_group_menu_context, get_group_materials)
-from ietf.group.views_edit import roles_for_group_type
-from ietf.community.utils import docs_tracked_by_community_list
-from ietf.community.models import CommunityList, EmailSubscription
-from ietf.utils.pipe import pipe
-from ietf.utils.textupload import get_cleaned_text_file_content
-from ietf.settings import MAILING_LIST_INFO_URL
-from ietf.mailtrigger.utils import gather_relevant_expansions
+                              can_manage_materials, 
+                              construct_group_menu_context, get_group_materials,
+                              save_group_in_history, can_manage_group, 
+                              get_group_or_404, setup_default_community_list_for_group, )                              
+#
 from ietf.ietfauth.utils import has_role
-from ietf.meeting.utils import group_sessions
+from ietf.mailtrigger.utils import gather_relevant_expansions
 from ietf.meeting.helpers import get_meeting
+from ietf.meeting.utils import group_sessions
+from ietf.name.models import GroupTypeName, StreamName
+from ietf.person.models import Email
+from ietf.review.models import ReviewRequest, ReviewerSettings, ReviewSecretarySettings
+from ietf.review.utils import (can_manage_review_requests_for_team,
+                               can_access_review_stats_for_team,
 
+                               extract_revision_ordered_review_requests_for_documents_and_replaced,
+                               assign_review_request_to_reviewer,
+                               close_review_request,
+
+                               suggested_review_requests_for_team,
+                               unavailable_periods_to_list,
+                               current_unavailable_periods_for_reviewers,
+                               email_reviewer_availability_change,
+                               reviewer_rotation_list,
+                               latest_review_requests_for_reviewers,
+                               augment_review_requests_with_events,
+                               get_default_filter_re,
+                               days_needed_to_fulfill_min_interval_for_reviewers,
+                              )
+from ietf.doc.models import LastCallDocEvent
+
+
+
+from ietf.name.models import ReviewRequestStateName
+from ietf.utils.mail import send_mail_text, parse_preformatted
+
+from ietf.ietfauth.utils import user_is_person
+from ietf.dbtemplate.models import DBTemplate
+from ietf.mailtrigger.utils import gather_address_lists
+from ietf.mailtrigger.models import Recipient
+from ietf.settings import MAILING_LIST_INFO_URL
+from ietf.utils.pipe import pipe
+from ietf.utils.text import strip_suffix
+
+
+
+# --- Helpers ----------------------------------------------------------
 
 def roles(group, role_name):
     return Role.objects.filter(group=group, name=role_name).select_related("email", "person")
+
+def roles_for_group_type(group_type):
+    roles = ["chair", "secr", "techadv", "delegate", ]
+    if group_type == "dir":
+        roles.append("reviewer")
+    return roles
+
+
+
 
 def fill_in_charter_info(group, include_drafts=False):
     group.areadirector = getattr(group.ad_role(),'email',None)
@@ -114,6 +167,50 @@ def fill_in_charter_info(group, include_drafts=False):
 def extract_last_name(role):
     return role.person.name_parts()[3]
 
+def fill_in_wg_roles(group):
+    def get_roles(slug, default):
+        for role_slug, label, roles in group.personnel:
+            if slug == role_slug:
+                return roles
+        return default
+
+    group.chairs = get_roles("chair", [])
+    ads = get_roles("ad", [])
+    group.areadirector = ads[0] if ads else None
+    group.techadvisors = get_roles("techadv", [])
+    group.editors = get_roles("editor", [])
+    group.secretaries = get_roles("secr", [])
+
+def fill_in_wg_drafts(group):
+    aliases = DocAlias.objects.filter(document__type="draft", document__group=group).select_related('document').order_by("name")
+    group.drafts = []
+    group.rfcs = []
+    for a in aliases:
+        if a.name.startswith("draft"):
+            group.drafts.append(a)
+        else:
+            group.rfcs.append(a)
+            a.rel = RelatedDocument.objects.filter(source=a.document,relationship_id__in=['obs','updates']).distinct()
+            a.invrel = RelatedDocument.objects.filter(target=a,relationship_id__in=['obs','updates']).distinct()
+
+
+def check_group_email_aliases():
+    pattern = re.compile('expand-(.*?)(-\w+)@.*? +(.*)$')
+    tot_count = 0
+    good_count = 0
+    with open(settings.GROUP_VIRTUAL_PATH,"r") as virtual_file:
+        for line in virtual_file.readlines():
+            m = pattern.match(line)
+            tot_count += 1
+            if m:
+                good_count += 1
+            if good_count > 50 and tot_count < 3*good_count:
+                return True
+    return False
+
+
+# --- View functions ---------------------------------------------------
+
 def wg_summary_area(request, group_type):
     if group_type != "wg":
         raise Http404
@@ -141,32 +238,6 @@ def wg_summary_acronym(request, group_type):
                   { 'areas': areas,
                     'groups': groups },
                   content_type='text/plain; charset=UTF-8')
-
-def fill_in_wg_roles(group):
-    def get_roles(slug, default):
-        for role_slug, label, roles in group.personnel:
-            if slug == role_slug:
-                return roles
-        return default
-
-    group.chairs = get_roles("chair", [])
-    ads = get_roles("ad", [])
-    group.areadirector = ads[0] if ads else None
-    group.techadvisors = get_roles("techadv", [])
-    group.editors = get_roles("editor", [])
-    group.secretaries = get_roles("secr", [])
-
-def fill_in_wg_drafts(group):
-    aliases = DocAlias.objects.filter(document__type="draft", document__group=group).select_related('document').order_by("name")
-    group.drafts = []
-    group.rfcs = []
-    for a in aliases:
-        if a.name.startswith("draft"):
-            group.drafts.append(a)
-        else:
-            group.rfcs.append(a)
-            a.rel = RelatedDocument.objects.filter(source=a.document,relationship_id__in=['obs','updates']).distinct()
-            a.invrel = RelatedDocument.objects.filter(target=a,relationship_id__in=['obs','updates']).distinct()
 
 @cache_page ( 60 * 60 )
 def wg_charters(request, group_type):
@@ -490,16 +561,6 @@ def group_about_status_meeting(request, acronym, num, group_type=None):
                   }
                  )
 
-class StatusUpdateForm(forms.Form):
-    content = forms.CharField(widget=forms.Textarea, label='Status update', help_text = 'Edit the status update', required=False, strip=False)
-    txt = forms.FileField(label='.txt format', help_text='Or upload a .txt file', required=False)
-
-    def clean_content(self):
-        return self.cleaned_data['content'].replace('\r','')
-
-    def clean_txt(self):
-        return get_cleaned_text_file_content(self.cleaned_data["txt"])
-
 def group_about_status_edit(request, acronym, group_type=None):
     group = get_group_or_404(acronym, group_type)
     if not can_provide_status_update(request.user, group):
@@ -537,20 +598,6 @@ def group_about_status_edit(request, acronym, group_type=None):
                     'group':group,
                   }
                  )
-
-def check_group_email_aliases():
-    pattern = re.compile('expand-(.*?)(-\w+)@.*? +(.*)$')
-    tot_count = 0
-    good_count = 0
-    with open(settings.GROUP_VIRTUAL_PATH,"r") as virtual_file:
-        for line in virtual_file.readlines():
-            m = pattern.match(line)
-            tot_count += 1
-            if m:
-                good_count += 1
-            if good_count > 50 and tot_count < 3*good_count:
-                return True
-    return False
 
 def get_group_email_aliases(acronym, group_type):
     if acronym:
@@ -608,123 +655,6 @@ def materials(request, acronym, group_type=None):
                       "doc_types": doc_types.items(),
                       "can_manage_materials": can_manage_materials(request.user, group)
                   }))
-
-def nodename(name):
-    return name.replace('-','_')
-
-class Edge(object):
-    def __init__(self,relateddocument):
-        self.relateddocument=relateddocument
-
-    def __hash__(self):
-        return hash("|".join([str(hash(nodename(self.relateddocument.source.name))),
-                             str(hash(nodename(self.relateddocument.target.document.name))),
-                             self.relateddocument.relationship.slug]))
-
-    def __eq__(self,other):
-        return self.__hash__() == other.__hash__()
-
-    def sourcename(self):
-        return nodename(self.relateddocument.source.name)
-
-    def targetname(self):
-        return nodename(self.relateddocument.target.document.name)
-
-    def styles(self):
-
-        # Note that the old style=dotted, color=red styling is never used
-
-        if self.relateddocument.is_downref():
-            return { 'color':'red','arrowhead':'normalnormal' }
-        else:
-            styles = { 'refnorm' : { 'color':'blue'   },
-                       'refinfo' : { 'color':'green'  },
-                       'refold'  : { 'color':'orange' },
-                       'refunk'  : { 'style':'dashed' },
-                       'replaces': { 'color':'pink', 'style':'dashed', 'arrowhead':'diamond' },
-                     }
-            return styles[self.relateddocument.relationship.slug]
-
-def get_node_styles(node,group):
-
-    styles=dict()
-
-    # Shape and style (note that old diamond shape is never used
-
-    styles['style'] = 'filled'
-
-    if node.get_state('draft').slug == 'rfc':
-       styles['shape'] = 'box'
-    elif node.get_state('draft-iesg') and not node.get_state('draft-iesg').slug in ['watching','dead']:
-       styles['shape'] = 'parallelogram'
-    elif node.get_state('draft').slug == 'expired':
-       styles['shape'] = 'house'
-       styles['style'] ='solid'
-       styles['peripheries'] = 3
-    elif node.get_state('draft').slug == 'repl':
-       styles['shape'] = 'ellipse'
-       styles['style'] ='solid'
-       styles['peripheries'] = 3
-    else:
-       pass # quieter form of styles['shape'] = 'ellipse'
-
-    # Color (note that the old 'Flat out red' is never used
-    if node.group.acronym == 'none':
-        styles['color'] = '"#FF800D"' # orangeish
-    elif node.group == group:
-        styles['color'] = '"#0AFE47"' # greenish
-    else:
-        styles['color'] = '"#9999FF"' # blueish
-
-    # Label
-    label = node.name
-    if label.startswith('draft-'):
-        if label.startswith('draft-ietf-'):
-            label=label[11:]
-        else:
-            label=label[6:]
-        try:
-            t=label.index('-')
-            label="%s\\n%s" % (label[:t],label[t+1:])
-        except:
-            pass
-    if node.group.acronym != 'none' and node.group != group:
-        label = "(%s) %s"%(node.group.acronym,label)
-    if node.get_state('draft').slug == 'rfc':
-        label = "%s\\n(%s)"%(label,node.canonical_name())
-    styles['label'] = '"%s"'%label
-
-    return styles
-
-def make_dot(group):
-
-    references = Q(source__group=group,source__type='draft',relationship__slug__startswith='ref')
-    both_rfcs  = Q(source__states__slug='rfc',target__document__states__slug='rfc')
-    inactive   = Q(source__states__slug__in=['expired','repl'])
-    attractor  = Q(target__name__in=['rfc5000','rfc5741'])
-    removed    = Q(source__states__slug__in=['auth-rm','ietf-rm'])
-    relations = RelatedDocument.objects.filter(references).exclude(both_rfcs).exclude(inactive).exclude(attractor).exclude(removed)
-
-    edges = set()
-    for x in relations:
-        target_state = x.target.document.get_state_slug('draft')
-        if target_state!='rfc' or x.is_downref():
-            edges.add(Edge(x))
-
-    replacements = RelatedDocument.objects.filter(relationship__slug='replaces',target__document__in=[x.relateddocument.target.document for x in edges])
-
-    for x in replacements:
-        edges.add(Edge(x))
-
-    nodes = set([x.relateddocument.source for x in edges]).union([x.relateddocument.target.document for x in edges])
-
-    for node in nodes:
-        node.nodename=nodename(node.name)
-        node.styles = get_node_styles(node,group)
-
-    return render_to_string('group/dot.txt',
-                             dict( nodes=nodes, edges=edges )
-                            )
 
 @cache_page(60 * 60)
 def dependencies(request, acronym, group_type=None, output_type="pdf"):
@@ -855,3 +785,984 @@ def group_photos(request, group_type=None, acronym=None):
                       'roles': roles,
                       'group':group }))
 
+
+
+## XXX Remove after testing
+# def get_or_create_initial_charter(group, group_type):
+#     charter_name = charter_name_for_group(group)
+# 
+#     try:
+#         charter = Document.objects.get(docalias__name=charter_name)
+#     except Document.DoesNotExist:
+#         charter = Document(
+#             name=charter_name,
+#             type_id="charter",
+#             title=group.name,
+#             group=group,
+#             abstract=group.name,
+#             rev="00-00",
+#         )
+#         charter.save()
+#         charter.set_state(State.objects.get(used=True, type="charter", slug="notrev"))
+# 
+#         # Create an alias as well
+#         DocAlias.objects.create(name=charter.name, document=charter)
+# 
+#     return charter
+# 
+# @login_required
+# def submit_initial_charter(request, group_type=None, acronym=None):
+# 
+#     # This needs refactoring.
+#     # The signature assumed you could have groups with the same name, but with different types, which we do not allow.
+#     # Consequently, this can be called with an existing group acronym and a type 
+#     # that doesn't match the existing group type. The code below essentially ignores the group_type argument.
+#     #
+#     # If possible, the use of get_or_create_initial_charter should be moved
+#     # directly into charter_submit, and this function should go away.
+# 
+#     if acronym==None:
+#         raise Http404
+# 
+#     group = get_object_or_404(Group, acronym=acronym)
+#     if not group.features.has_chartering_process:
+#         raise Http404
+# 
+#     # This is where we start ignoring the passed in group_type
+#     group_type = group.type_id
+# 
+#     if not can_manage_group(request.user, group):
+#         return HttpResponseForbidden("You don't have permission to access this view")
+# 
+#     if not group.charter:
+#         group.charter = get_or_create_initial_charter(group, group_type)
+#         group.save()
+# 
+#     return redirect('ietf.doc.views_charter.submit', name=group.charter.name, option="initcharter")
+
+@login_required
+def edit(request, group_type=None, acronym=None, action="edit", field=None):
+    """Edit or create a group, notifying parties as
+    necessary and logging changes as group events."""
+    def desc(attr, new, old):
+        entry = "%(attr)s changed to <b>%(new)s</b> from %(old)s"
+        if new_group:
+            entry = "%(attr)s changed to <b>%(new)s</b>"
+
+        return entry % dict(attr=attr, new=new, old=old)
+
+    def format_urls(urls, fs="\n"):
+        res = []
+        for u in urls:
+            if u.name:
+                res.append(u"%s (%s)" % (u.url, u.name))
+            else:
+                res.append(u.url)
+        return fs.join(res)
+
+    def diff(attr, name):
+        if field and attr != field:
+            return
+        v = getattr(group, attr)
+        if clean[attr] != v:
+            changes.append((attr, clean[attr], desc(name, clean[attr], v)))
+            setattr(group, attr, clean[attr])
+
+    if action == "edit":
+        new_group = False
+    elif action in ("create","charter"):
+        group = None
+        new_group = True
+    else:
+        raise Http404
+
+    if not new_group:
+        group = get_group_or_404(acronym, group_type)
+        if not group_type and group:
+            group_type = group.type_id
+        if not (can_manage_group(request.user, group)
+                or group.has_role(request.user, group.features.admin_roles)):
+            return HttpResponseForbidden("You don't have permission to access this view")
+
+    if request.method == 'POST':
+        form = GroupForm(request.POST, group=group, group_type=group_type, field=field)
+        if form.is_valid():
+            clean = form.cleaned_data
+            if new_group:
+                try:
+                    group = Group.objects.get(acronym=clean["acronym"])
+                    save_group_in_history(group)
+                    group.time = datetime.datetime.now()
+                    group.save()
+                except Group.DoesNotExist:
+                    group = Group.objects.create(name=clean["name"],
+                                              acronym=clean["acronym"],
+                                              type=GroupTypeName.objects.get(slug=group_type),
+                                              state=clean["state"]
+                                              )
+
+                    if group.features.has_documents:
+                        setup_default_community_list_for_group(group)
+
+                e = ChangeStateGroupEvent(group=group, type="changed_state")
+                e.time = group.time
+                e.by = request.user.person
+                e.state_id = clean["state"].slug
+                e.desc = "Group created in state %s" % clean["state"].name
+                e.save()
+            else:
+                save_group_in_history(group)
+
+
+## XXX Remove after testing
+#             if action == "charter" and not group.charter:  # make sure we have a charter
+#                 group.charter = get_or_create_initial_charter(group, group_type)
+
+            changes = []
+
+            # update the attributes, keeping track of what we're doing
+            diff('name', "Name")
+            diff('acronym', "Acronym")
+            diff('state', "State")
+            diff('parent', "IETF Area" if group.type=="wg" else "Group parent")
+            diff('list_email', "Mailing list email")
+            diff('list_subscribe', "Mailing list subscribe address")
+            diff('list_archive', "Mailing list archive")
+
+            personnel_change_text=""
+            changed_personnel = set()
+            # update roles
+            for attr, f in form.fields.iteritems():
+                if not (attr.endswith("_roles") or attr == "ad"):
+                    continue
+
+                slug = attr
+                slug = strip_suffix(slug, "_roles")
+
+                title = f.label
+
+                new = clean[attr]
+                if attr == 'ad':
+                    new = [ new.role_email('ad') ] if new else []
+                old = Email.objects.filter(role__group=group, role__name=slug).select_related("person")
+                if set(new) != set(old):
+                    changes.append((attr, new, desc(title,
+                                        ", ".join(x.get_name() for x in new),
+                                        ", ".join(x.get_name() for x in old))))
+                    group.role_set.filter(name=slug).delete()
+                    for e in new:
+                        Role.objects.get_or_create(name_id=slug, email=e, group=group, person=e.person)
+                    added = set(new) - set(old)
+                    deleted = set(old) - set(new)
+                    if added:
+                        change_text=title + ' added: ' + ", ".join(x.name_and_email() for x in added)
+                        personnel_change_text+=change_text+"\n"
+                    if deleted:
+                        change_text=title + ' deleted: ' + ", ".join(x.name_and_email() for x in deleted)
+                        personnel_change_text+=change_text+"\n"
+                    changed_personnel.update(set(old)^set(new))
+
+            if personnel_change_text!="":
+                email_personnel_change(request, group, personnel_change_text, changed_personnel)
+
+            # update urls
+            if 'urls' in clean:
+                new_urls = clean['urls']
+                old_urls = format_urls(group.groupurl_set.order_by('url'), ", ")
+                if ", ".join(sorted(new_urls)) != old_urls:
+                    changes.append(('urls', new_urls, desc('Urls', ", ".join(sorted(new_urls)), old_urls)))
+                    group.groupurl_set.all().delete()
+                    # Add new ones
+                    for u in new_urls:
+                        m = re.search('(?P<url>[\w\d:#@%/;$()~_?\+-=\\\.&]+)( \((?P<name>.+)\))?', u)
+                        if m:
+                            if m.group('name'):
+                                url = GroupURL(url=m.group('url'), name=m.group('name'), group=group)
+                            else:
+                                url = GroupURL(url=m.group('url'), name='', group=group)
+                            url.save()
+
+            group.time = datetime.datetime.now()
+
+            if changes and not new_group:
+                for attr, new, desc in changes:
+                    if attr == 'state':
+                        ChangeStateGroupEvent.objects.create(group=group, time=group.time, state=new, by=request.user.person, type="changed_state", desc=desc)
+                    else:
+                        GroupEvent.objects.create(group=group, time=group.time, by=request.user.person, type="info_changed", desc=desc)
+
+            group.save()
+
+            if action=="charter":
+                return redirect('ietf.doc.views_charter.submit', name=charter_name_for_group(group), option="initcharter")
+
+            return HttpResponseRedirect(group.about_url())
+    else: # form.is_valid()
+        if not new_group:
+            ad_role = group.ad_role()
+            init = dict(name=group.name,
+                        acronym=group.acronym,
+                        state=group.state,
+                        ad=ad_role and ad_role.person and ad_role.person.id,
+                        parent=group.parent.id if group.parent else None,
+                        list_email=group.list_email if group.list_email else None,
+                        list_subscribe=group.list_subscribe if group.list_subscribe else None,
+                        list_archive=group.list_archive if group.list_archive else None,
+                        urls=format_urls(group.groupurl_set.all()),
+                        )
+
+            for slug in roles_for_group_type(group_type):
+                init[slug + "_roles"] = Email.objects.filter(role__group=group, role__name=slug).order_by('role__person__name')
+        else:
+            init = dict(ad=request.user.person.id if group_type == "wg" and has_role(request.user, "Area Director") else None,
+                        )
+        form = GroupForm(initial=init, group=group, group_type=group_type, field=field)
+
+    return render(request, 'group/edit.html',
+                  dict(group=group,
+                       form=form,
+                       action=action))
+
+@login_required
+def conclude(request, acronym, group_type=None):
+    """Request the closing of group, prompting for instructions."""
+    group = get_group_or_404(acronym, group_type)
+
+    if not can_manage_group_type(request.user, group):
+        return HttpResponseForbidden("You don't have permission to access this view")
+
+    if request.method == 'POST':
+        form = ConcludeGroupForm(request.POST)
+        if form.is_valid():
+            instructions = form.cleaned_data['instructions']
+
+            email_admin_re_charter(request, group, "Request closing of group", instructions, 'group_closure_requested')
+
+            e = GroupEvent(group=group, by=request.user.person)
+            e.type = "requested_close"
+            e.desc = "Requested closing group"
+            e.save()
+
+            kwargs = {'acronym':group.acronym}
+            if group_type:
+                kwargs['group_type'] = group_type
+   
+            return redirect(group.features.about_page, **kwargs)
+    else:
+        form = ConcludeGroupForm()
+
+    return render(request, 'group/conclude.html', {
+        'form': form,
+        'group': group,
+        'group_type': group_type,
+    })
+
+@login_required
+def customize_workflow(request, group_type=None, acronym=None):
+    group = get_group_or_404(acronym, group_type)
+    if not group_type:
+        group_type = group.type_id
+    if not group.features.customize_workflow:
+        raise Http404
+
+    if not (can_manage_group(request.user, group)
+            or group.has_role(request.user, group.features.admin_roles)):
+        return HttpResponseForbidden("You don't have permission to access this view")
+
+    if group_type == "rg":
+        stream_id = "irtf"
+        MANDATORY_STATES = ('candidat', 'active', 'rfc-edit', 'pub', 'dead')
+    else:
+        stream_id = "ietf"
+        MANDATORY_STATES = ('c-adopt', 'wg-doc', 'sub-pub')
+
+    if request.method == 'POST':
+        action = request.POST.get("action")
+        if action == "setstateactive":
+            active = request.POST.get("active") == "1"
+            try:
+                state = State.objects.exclude(slug__in=MANDATORY_STATES).get(pk=request.POST.get("state"))
+            except State.DoesNotExist:
+                return HttpResponse("Invalid state %s" % request.POST.get("state"))
+
+            if active:
+                group.unused_states.remove(state)
+            else:
+                group.unused_states.add(state)
+
+            # redirect so the back button works correctly, otherwise
+            # repeated POSTs fills up the history
+            return redirect("ietf.group.views.customize_workflow", group_type=group.type_id, acronym=group.acronym)
+
+        if action == "setnextstates":
+            try:
+                state = State.objects.get(pk=request.POST.get("state"))
+            except State.DoesNotExist:
+                return HttpResponse("Invalid state %s" % request.POST.get("state"))
+
+            next_states = State.objects.filter(used=True, type='draft-stream-%s' % stream_id, pk__in=request.POST.getlist("next_states"))
+            unused = group.unused_states.all()
+            if set(next_states.exclude(pk__in=unused)) == set(state.next_states.exclude(pk__in=unused)):
+                # just use the default
+                group.groupstatetransitions_set.filter(state=state).delete()
+            else:
+                transitions, _ = GroupStateTransitions.objects.get_or_create(group=group, state=state)
+                transitions.next_states = next_states
+
+            return redirect("ietf.group.views.customize_workflow", group_type=group.type_id, acronym=group.acronym)
+
+        if action == "settagactive":
+            active = request.POST.get("active") == "1"
+            try:
+                tag = DocTagName.objects.get(pk=request.POST.get("tag"))
+            except DocTagName.DoesNotExist:
+                return HttpResponse("Invalid tag %s" % request.POST.get("tag"))
+
+            if active:
+                group.unused_tags.remove(tag)
+            else:
+                group.unused_tags.add(tag)
+
+            return redirect("ietf.group.views.customize_workflow", group_type=group.type_id, acronym=group.acronym)
+
+    # put some info for the template on tags and states
+    unused_tags = group.unused_tags.all().values_list('slug', flat=True)
+    tags = DocTagName.objects.filter(slug__in=get_tags_for_stream_id(stream_id))
+    for t in tags:
+        t.used = t.slug not in unused_tags
+
+    unused_states = group.unused_states.all().values_list('slug', flat=True)
+    states = State.objects.filter(used=True, type="draft-stream-%s" % stream_id)
+    transitions = dict((o.state, o) for o in group.groupstatetransitions_set.all())
+    for s in states:
+        s.used = s.slug not in unused_states
+        s.mandatory = s.slug in MANDATORY_STATES
+
+        default_n = s.next_states.all()
+        if s in transitions:
+            n = transitions[s].next_states.all()
+        else:
+            n = default_n
+
+        s.next_states_checkboxes = [(x in n, x in default_n, x) for x in states]
+        s.used_next_states = [x for x in n if x.slug not in unused_states]
+
+    return render(request, 'group/customize_workflow.html', {
+            'group': group,
+            'states': states,
+            'tags': tags,
+            })
+
+
+def streams(request):
+    streams = [ s.slug for s in StreamName.objects.all().exclude(slug__in=['ietf', 'legacy']) ]
+    streams = Group.objects.filter(acronym__in=streams)
+    return render(request, 'group/index.html', {'streams':streams})
+
+def stream_documents(request, acronym):
+    streams = [ s.slug for s in StreamName.objects.all().exclude(slug__in=['ietf', 'legacy']) ]
+    if not acronym in streams:
+        raise Http404("No such stream: %s" % acronym)
+    group = get_object_or_404(Group, acronym=acronym)
+    editable = has_role(request.user, "Secretariat") or group.has_role(request.user, "chair")
+    stream = StreamName.objects.get(slug=acronym)
+
+    qs = Document.objects.filter(states__type="draft", states__slug__in=["active", "rfc"], stream=acronym)
+    docs, meta = prepare_document_table(request, qs)
+    return render(request, 'group/stream_documents.html', {'stream':stream, 'docs':docs, 'meta':meta, 'editable':editable } )
+
+def stream_edit(request, acronym):
+    group = get_object_or_404(Group, acronym=acronym)
+
+    if not (has_role(request.user, "Secretariat") or group.has_role(request.user, "chair")):
+        return HttpResponseForbidden("You don't have permission to access this page.")
+
+    chairs = Email.objects.filter(role__group=group, role__name="chair").select_related("person")
+
+    if request.method == 'POST':
+        form = StreamEditForm(request.POST)
+
+        if form.is_valid():
+            save_group_in_history(group)
+
+            # update roles
+            attr, slug, title = ('delegates', 'delegate', "Delegates")
+
+            new = form.cleaned_data[attr]
+            old = Email.objects.filter(role__group=group, role__name=slug).select_related("person")
+            if set(new) != set(old):
+                desc = "%s changed to <b>%s</b> from %s" % (
+                    title, ", ".join(x.get_name() for x in new), ", ".join(x.get_name() for x in old))
+
+                GroupEvent.objects.create(group=group, by=request.user.person, type="info_changed", desc=desc)
+
+                group.role_set.filter(name=slug).delete()
+                for e in new:
+                    Role.objects.get_or_create(name_id=slug, email=e, group=group, person=e.person)
+
+            return redirect("ietf.group.views.streams")
+    else:
+        form = StreamEditForm(initial=dict(delegates=Email.objects.filter(role__group=group, role__name="delegate")))
+
+    return render(request, 'group/stream_edit.html',
+                    {
+                        'group': group,
+                        'chairs': chairs,
+                        'form': form,
+                    },
+                )
+
+
+def group_json(request, acronym):
+    group = get_object_or_404(Group, acronym=acronym)
+
+    return HttpResponse(json.dumps(group.json_dict(request.build_absolute_uri('/')),
+                                   sort_keys=True, indent=2),
+                        content_type="text/json")
+
+@cache_control(public=True, max_age=30*60)
+@cache_page(30 * 60)
+def group_menu_data(request):
+    groups = Group.objects.filter(state="active", type__in=("wg", "rg"), parent__state="active").order_by("acronym")
+
+    groups_by_parent = defaultdict(list)
+    for g in groups:
+        url = urlreverse("ietf.group.views.group_home", kwargs={ 'group_type': g.type_id, 'acronym': g.acronym })
+        groups_by_parent[g.parent_id].append({ 'acronym': g.acronym, 'name': escape(g.name), 'url': url })
+
+    return JsonResponse(groups_by_parent)
+
+
+# --- Review views -----------------------------------------------------
+
+def get_open_review_requests_for_team(team, assignment_status=None):
+    open_review_requests = ReviewRequest.objects.filter(
+        team=team,
+        state__in=("requested", "accepted")
+    ).prefetch_related(
+        "reviewer__person", "type", "state", "doc", "doc__states",
+    ).order_by("-time", "-id")
+
+    if assignment_status == "unassigned":
+        open_review_requests = suggested_review_requests_for_team(team) + list(open_review_requests.filter(reviewer=None))
+    elif assignment_status == "assigned":
+        open_review_requests = list(open_review_requests.exclude(reviewer=None))
+    else:
+        open_review_requests = suggested_review_requests_for_team(team) + list(open_review_requests)
+
+    today = datetime.date.today()
+    unavailable_periods = current_unavailable_periods_for_reviewers(team)
+    for r in open_review_requests:
+        if r.reviewer:
+            r.reviewer_unavailable = any(p.availability == "unavailable"
+                                         for p in unavailable_periods.get(r.reviewer.person_id, []))
+        r.due = max(0, (today - r.deadline).days)
+
+    return open_review_requests
+
+def review_requests(request, acronym, group_type=None):
+    group = get_group_or_404(acronym, group_type)
+    if not group.features.has_reviews:
+        raise Http404
+
+    assigned_review_requests = []
+    unassigned_review_requests = []
+
+    for r in get_open_review_requests_for_team(group):
+        if r.reviewer:
+            assigned_review_requests.append(r)
+        else:
+            unassigned_review_requests.append(r)
+
+    open_review_requests = [
+        ("Unassigned", unassigned_review_requests),
+        ("Assigned", assigned_review_requests),
+    ]
+
+    closed_review_requests = ReviewRequest.objects.filter(
+        team=group,
+    ).exclude(
+        state__in=("requested", "accepted")
+    ).prefetch_related("reviewer__person", "type", "state", "doc", "result").order_by("-time", "-id")
+
+    since_choices = [
+        (None, "1 month"),
+        ("3m", "3 months"),
+        ("6m", "6 months"),
+        ("1y", "1 year"),
+        ("2y", "2 years"),
+        ("all", "All"),
+    ]
+    since = request.GET.get("since", None)
+    if since not in [key for key, label in since_choices]:
+        since = None
+
+    if since != "all":
+        date_limit = {
+            None: datetime.timedelta(days=31),
+            "3m": datetime.timedelta(days=31 * 3),
+            "6m": datetime.timedelta(days=180),
+            "1y": datetime.timedelta(days=365),
+            "2y": datetime.timedelta(days=2 * 365),
+        }[since]
+
+        closed_review_requests = closed_review_requests.filter(time__gte=datetime.date.today() - date_limit)
+
+    return render(request, 'group/review_requests.html',
+                  construct_group_menu_context(request, group, "review requests", group_type, {
+                      "open_review_requests": open_review_requests,
+                      "closed_review_requests": closed_review_requests,
+                      "since_choices": since_choices,
+                      "since": since,
+                      "can_manage_review_requests": can_manage_review_requests_for_team(request.user, group),
+                      "can_access_stats": can_access_review_stats_for_team(request.user, group),
+                  }))
+
+def reviewer_overview(request, acronym, group_type=None):
+    group = get_group_or_404(acronym, group_type)
+    if not group.features.has_reviews:
+        raise Http404
+
+    can_manage = can_manage_review_requests_for_team(request.user, group)
+
+    reviewers = reviewer_rotation_list(group)
+
+    reviewer_settings = { s.person_id: s for s in ReviewerSettings.objects.filter(team=group) }
+    unavailable_periods = defaultdict(list)
+    for p in unavailable_periods_to_list().filter(team=group):
+        unavailable_periods[p.person_id].append(p)
+    reviewer_roles = { r.person_id: r for r in Role.objects.filter(group=group, name="reviewer").select_related("email") }
+
+    today = datetime.date.today()
+
+    req_data_for_reviewers = latest_review_requests_for_reviewers(group)
+    review_state_by_slug = { n.slug: n for n in ReviewRequestStateName.objects.all() }
+
+    days_needed = days_needed_to_fulfill_min_interval_for_reviewers(group)
+
+    for person in reviewers:
+        person.settings = reviewer_settings.get(person.pk) or ReviewerSettings(team=group, person=person)
+        person.settings_url = None
+        person.role = reviewer_roles.get(person.pk)
+        if person.role and (can_manage or user_is_person(request.user, person)):
+            kwargs = { "acronym": group.acronym, "reviewer_email": person.role.email.address }
+            if group_type:
+                kwargs["group_type"] = group_type
+            person.settings_url = urlreverse("ietf.group.views.change_reviewer_settings", kwargs=kwargs)
+        person.unavailable_periods = unavailable_periods.get(person.pk, [])
+        person.completely_unavailable = any(p.availability == "unavailable"
+                                       and (p.start_date is None or p.start_date <= today) and (p.end_date is None or today <= p.end_date)
+                                       for p in person.unavailable_periods)
+        person.busy = person.id in days_needed 
+        
+
+        MAX_CLOSED_REQS = 10
+        req_data = req_data_for_reviewers.get(person.pk, [])
+        open_reqs = sum(1 for d in req_data if d.state in ["requested", "accepted"])
+        latest_reqs = []
+        for d in req_data:
+            if d.state in ["requested", "accepted"] or len(latest_reqs) < MAX_CLOSED_REQS + open_reqs:
+                latest_reqs.append((d.req_pk, d.doc, d.reviewed_rev, d.assigned_time, d.deadline,
+                                    review_state_by_slug.get(d.state),
+                                    int(math.ceil(d.assignment_to_closure_days)) if d.assignment_to_closure_days is not None else None))
+        person.latest_reqs = latest_reqs
+
+    return render(request, 'group/reviewer_overview.html',
+                  construct_group_menu_context(request, group, "reviewers", group_type, {
+                      "reviewers": reviewers,
+                      "can_access_stats": can_access_review_stats_for_team(request.user, group)
+                  }))
+
+
+@login_required
+def manage_review_requests(request, acronym, group_type=None, assignment_status=None):
+    group = get_group_or_404(acronym, group_type)
+    if not group.features.has_reviews:
+        raise Http404
+
+    if not can_manage_review_requests_for_team(request.user, group):
+        return HttpResponseForbidden("You do not have permission to perform this action")
+
+    review_requests = get_open_review_requests_for_team(group, assignment_status=assignment_status)
+
+    document_requests = extract_revision_ordered_review_requests_for_documents_and_replaced(
+        ReviewRequest.objects.filter(state__in=("part-completed", "completed"), team=group).prefetch_related("result"),
+        set(r.doc_id for r in review_requests),
+    )
+
+    # we need a mutable query dict for resetting upon saving with
+    # conflicts
+    query_dict = request.POST.copy() if request.method == "POST" else None
+
+    for req in review_requests:
+        req.form = ManageReviewRequestForm(req, query_dict)
+
+        # add previous requests
+        l = []
+        for r in document_requests.get(req.doc_id, []):
+            # take all on the latest reviewed rev
+            if l and l[0].reviewed_rev:
+                if r.doc_id == l[0].doc_id and r.reviewed_rev:
+                    if int(r.reviewed_rev) > int(l[0].reviewed_rev):
+                        l = [r]
+                    elif int(r.reviewed_rev) == int(l[0].reviewed_rev):
+                        l.append(r)
+            else:
+                l = [r]
+
+        augment_review_requests_with_events(l)
+
+        req.latest_reqs = l
+
+    saving = False
+    newly_closed = newly_opened = newly_assigned = 0
+
+    if request.method == "POST":
+        form_action = request.POST.get("action", "")
+        saving = form_action.startswith("save")
+
+        # check for conflicts
+        review_requests_dict = { unicode(r.pk): r for r in review_requests }
+        posted_reqs = set(request.POST.getlist("reviewrequest", []))
+        current_reqs = set(review_requests_dict.iterkeys())
+
+        closed_reqs = posted_reqs - current_reqs
+        newly_closed = len(closed_reqs)
+
+        opened_reqs = current_reqs - posted_reqs
+        newly_opened = len(opened_reqs)
+        for r in opened_reqs:
+            review_requests_dict[r].form.add_error(None, "New request.")
+
+        for req in review_requests:
+            existing_reviewer = request.POST.get(req.form.prefix + "-existing_reviewer")
+            if existing_reviewer is None:
+                continue
+
+            if existing_reviewer != unicode(req.reviewer_id or ""):
+                msg = "Assignment was changed."
+                a = req.form["action"].value()
+                if a == "assign":
+                    msg += " Didn't assign reviewer."
+                elif a == "close":
+                    msg += " Didn't close request."
+                req.form.add_error(None, msg)
+                req.form.data[req.form.prefix + "-action"] = "" # cancel the action
+
+                newly_assigned += 1
+
+        form_results = []
+        for req in review_requests:
+            form_results.append(req.form.is_valid())
+
+        if saving and all(form_results) and not (newly_closed > 0 or newly_opened > 0 or newly_assigned > 0):
+            for review_req in review_requests:
+                action = review_req.form.cleaned_data.get("action")
+                if action == "assign":
+                    assign_review_request_to_reviewer(request, review_req, review_req.form.cleaned_data["reviewer"],review_req.form.cleaned_data["add_skip"])
+                elif action == "close":
+                    close_review_request(request, review_req, review_req.form.cleaned_data["close"])
+
+            kwargs = { "acronym": group.acronym }
+            if group_type:
+                kwargs["group_type"] = group_type
+
+            if form_action == "save-continue":
+                if assignment_status:
+                    kwargs["assignment_status"] = assignment_status
+                
+                return redirect(manage_review_requests, **kwargs)
+            else:
+                import ietf.group.views
+                return redirect(ietf.group.views.review_requests, **kwargs)
+
+    other_assignment_status = {
+        "unassigned": "assigned",
+        "assigned": "unassigned",
+    }.get(assignment_status)
+
+    return render(request, 'group/manage_review_requests.html', {
+        'group': group,
+        'review_requests': review_requests,
+        'newly_closed': newly_closed,
+        'newly_opened': newly_opened,
+        'newly_assigned': newly_assigned,
+        'saving': saving,
+        'assignment_status': assignment_status,
+        'other_assignment_status': other_assignment_status,
+    })
+
+@login_required
+def email_open_review_assignments(request, acronym, group_type=None):
+    group = get_group_or_404(acronym, group_type)
+    if not group.features.has_reviews:
+        raise Http404
+
+    if not can_manage_review_requests_for_team(request.user, group):
+        return HttpResponseForbidden("You do not have permission to perform this action")
+
+    review_requests = list(ReviewRequest.objects.filter(
+        team=group,
+        state__in=("requested", "accepted"),
+    ).exclude(
+        reviewer=None,
+    ).prefetch_related("reviewer", "type", "state", "doc").distinct().order_by("reviewer","-deadline"))
+
+    review_requests.sort(key=lambda r:r.reviewer.person.last_name()+r.reviewer.person.first_name())
+
+    for r in review_requests:
+        if r.doc.telechat_date():
+            r.section = 'For telechat %s' % r.doc.telechat_date().isoformat()
+            r.section_order='0'+r.section
+        elif r.type_id == 'early':
+            r.section = 'Early review requests:'
+            r.section_order='2'
+        else:
+            r.section = 'Last calls:'
+            r.section_order='1'
+        e = r.doc.latest_event(LastCallDocEvent, type="sent_last_call")
+        r.lastcall_ends = e and e.expires.date().isoformat()
+        r.earlier_review = ReviewRequest.objects.filter(doc=r.doc,reviewer__in=r.reviewer.person.email_set.all(),state="completed")
+        if r.earlier_review:
+            req_rev = r.requested_rev or r.doc.rev
+            earlier_review_rev = r.earlier_review.aggregate(Max('reviewed_rev'))['reviewed_rev__max']
+            if req_rev == earlier_review_rev:
+                r.earlier_review_mark = '**'
+            else:
+                r.earlier_review_mark = '*'
+
+    review_requests.sort(key=lambda r: r.section_order)
+
+    back_url = request.GET.get("next")
+    if not back_url:
+        kwargs = { "acronym": group.acronym }
+        if group_type:
+            kwargs["group_type"] = group_type
+
+        import ietf.group.views
+        back_url = urlreverse(ietf.group.views.review_requests, kwargs=kwargs)
+
+    if request.method == "POST" and request.POST.get("action") == "email":
+        form = EmailOpenAssignmentsForm(request.POST)
+        if form.is_valid():
+            send_mail_text(request, form.cleaned_data["to"], form.cleaned_data["frm"], form.cleaned_data["subject"], form.cleaned_data["body"],cc=form.cleaned_data["cc"],extra={"Reply-to":", ".join(form.cleaned_data["reply_to"])})
+            return HttpResponseRedirect(back_url)
+    else:
+        (to,cc) = gather_address_lists('review_assignments_summarized',group=group)
+        reply_to = Recipient.objects.get(slug='group_secretaries').gather(group=group)
+        frm = request.user.person.formatted_email()
+
+        templateqs = DBTemplate.objects.filter(path="/group/%s/email/open_assignments.txt" % group.acronym)
+        if templateqs.exists():
+            template = templateqs.first()
+        else:
+            template = DBTemplate.objects.get(path="/group/defaults/email/open_assignments.txt")
+
+        partial_msg = render_to_string(template.path, {
+            "review_requests": review_requests,
+            "rotation_list": reviewer_rotation_list(group)[:10],
+            "group" : group,
+        })
+        
+        (msg,_,_) = parse_preformatted(partial_msg)
+
+        body = msg.get_payload()
+        subject = msg['Subject']
+
+        form = EmailOpenAssignmentsForm(initial={
+            "to": ", ".join(to),
+            "cc": ", ".join(cc),
+            "reply_to": ", ".join(reply_to),
+            "frm": frm,
+            "subject": subject,
+            "body": body,
+        })
+
+    return render(request, 'group/email_open_review_assignments.html', {
+        'group': group,
+        'review_requests': review_requests,
+        'form': form,
+        'back_url': back_url,
+    })
+
+
+@login_required
+def change_reviewer_settings(request, acronym, reviewer_email, group_type=None):
+    group = get_group_or_404(acronym, group_type)
+    if not group.features.has_reviews:
+        raise Http404
+
+    reviewer_role = get_object_or_404(Role, name="reviewer", group=group, email=reviewer_email)
+    reviewer = reviewer_role.person
+
+    if not (user_is_person(request.user, reviewer)
+            or can_manage_review_requests_for_team(request.user, group)):
+        return HttpResponseForbidden("You do not have permission to perform this action")
+
+    exclude_fields = []
+    if not can_manage_review_requests_for_team(request.user, group):
+        exclude_fields.append('skip_next')
+
+    settings = ReviewerSettings.objects.filter(person=reviewer, team=group).first()
+    if not settings:
+        settings = ReviewerSettings(person=reviewer, team=group)
+        settings.filter_re = get_default_filter_re(reviewer)
+
+    back_url = request.GET.get("next")
+    if not back_url:
+        import ietf.group.views
+        kwargs = { "acronym": group.acronym}
+        if group_type:
+            kwargs["group_type"] = group_type
+        back_url = urlreverse(ietf.group.views.reviewer_overview, kwargs=kwargs)
+
+    # settings
+    if request.method == "POST" and request.POST.get("action") == "change_settings":
+        prev_min_interval = settings.get_min_interval_display()
+        prev_skip_next = settings.skip_next
+        settings_form = ReviewerSettingsForm(request.POST, instance=settings, exclude_fields=exclude_fields)
+        if settings_form.is_valid():
+            settings = settings_form.save()
+
+            changes = []
+            if settings.get_min_interval_display() != prev_min_interval:
+                changes.append("Frequency changed to \"{}\" from \"{}\".".format(settings.get_min_interval_display() or "Not specified", prev_min_interval or "Not specified"))
+            if settings.skip_next != prev_skip_next:
+                changes.append("Skip next assignments changed to {} from {}.".format(settings.skip_next, prev_skip_next))
+
+            if changes:
+                email_reviewer_availability_change(request, group, reviewer_role, "\n\n".join(changes), request.user.person)
+
+            return HttpResponseRedirect(back_url)
+    else:
+        settings_form = ReviewerSettingsForm(instance=settings,exclude_fields=exclude_fields)
+
+    # periods
+    unavailable_periods = unavailable_periods_to_list().filter(person=reviewer, team=group)
+
+    if request.method == "POST" and request.POST.get("action") == "add_period":
+        period_form = AddUnavailablePeriodForm(request.POST)
+        if period_form.is_valid():
+            period = period_form.save(commit=False)
+            period.team = group
+            period.person = reviewer
+            period.save()
+
+            today = datetime.date.today()
+
+            in_the_past = period.end_date and period.end_date < today
+
+            if not in_the_past:
+                msg = "Unavailable for review: {} - {} ({})".format(
+                    period.start_date.isoformat() if period.start_date else "indefinite",
+                    period.end_date.isoformat() if period.end_date else "indefinite",
+                    period.get_availability_display(),
+                )
+
+                if period.availability == "unavailable":
+                    # the secretary might need to reassign
+                    # assignments, so mention the current ones
+
+                    review_reqs = ReviewRequest.objects.filter(state__in=["requested", "accepted"], reviewer=reviewer_role.email, team=group)
+                    msg += "\n\n"
+
+                    if review_reqs:
+                        msg += "{} is currently assigned to review:".format(reviewer_role.person)
+                        for r in review_reqs:
+                            msg += "\n\n"
+                            msg += "{} (deadline: {})".format(r.doc_id, r.deadline.isoformat())
+                    else:
+                        msg += "{} does not have any assignments currently.".format(reviewer_role.person)
+
+                email_reviewer_availability_change(request, group, reviewer_role, msg, request.user.person)
+
+            return HttpResponseRedirect(request.get_full_path())
+    else:
+        period_form = AddUnavailablePeriodForm()
+
+    if request.method == "POST" and request.POST.get("action") == "delete_period":
+        period_id = request.POST.get("period_id")
+        if period_id is not None:
+            for period in unavailable_periods:
+                if str(period.pk) == period_id:
+                    period.delete()
+
+                    today = datetime.date.today()
+
+                    in_the_past = period.end_date and period.end_date < today
+
+                    if not in_the_past:
+                        msg = "Removed unavailable period: {} - {} ({})".format(
+                            period.start_date.isoformat() if period.start_date else "indefinite",
+                            period.end_date.isoformat() if period.end_date else "indefinite",
+                            period.get_availability_display(),
+                        )
+
+                        email_reviewer_availability_change(request, group, reviewer_role, msg, request.user.person)
+
+            return HttpResponseRedirect(request.get_full_path())
+
+    for p in unavailable_periods:
+        if not p.end_date:
+            p.end_form = EndUnavailablePeriodForm(p.start_date, request.POST if request.method == "POST" and request.POST.get("action") == "end_period" else None)
+
+    if request.method == "POST" and request.POST.get("action") == "end_period":
+        period_id = request.POST.get("period_id")
+        for period in unavailable_periods:
+            if str(period.pk) == period_id:
+                if not period.end_date and period.end_form.is_valid():
+                    period.end_date = period.end_form.cleaned_data["end_date"]
+                    period.save()
+
+                    msg = "Set end date of unavailable period: {} - {} ({})".format(
+                        period.start_date.isoformat() if period.start_date else "indefinite",
+                        period.end_date.isoformat() if period.end_date else "indefinite",
+                        period.get_availability_display(),
+                    )
+
+                    email_reviewer_availability_change(request, group, reviewer_role, msg, request.user.person)
+
+                    return HttpResponseRedirect(request.get_full_path())
+
+
+    return render(request, 'group/change_reviewer_settings.html', {
+        'group': group,
+        'reviewer_email': reviewer_email,
+        'back_url': back_url,
+        'settings_form': settings_form,
+        'period_form': period_form,
+        'unavailable_periods': unavailable_periods,
+    })
+
+
+@login_required
+def change_review_secretary_settings(request, acronym, group_type=None):
+    group = get_group_or_404(acronym, group_type)
+    if not group.features.has_reviews:
+        raise Http404
+    if not Role.objects.filter(name="secr", group=group, person__user=request.user).exists():
+        raise Http404
+
+    person = request.user.person
+
+    settings = (ReviewSecretarySettings.objects.filter(person=person, team=group).first()
+                or ReviewSecretarySettings(person=person, team=group))
+
+    import ietf.group.views
+    back_url = urlreverse(ietf.group.views.review_requests, kwargs={ "acronym": acronym, "group_type": group.type_id })
+
+    # settings
+    if request.method == "POST":
+        settings_form = ReviewSecretarySettingsForm(request.POST, instance=settings)
+        if settings_form.is_valid():
+            settings_form.save()
+            return HttpResponseRedirect(back_url)
+    else:
+        settings_form = ReviewSecretarySettingsForm(instance=settings)
+
+    return render(request, 'group/change_review_secretary_settings.html', {
+        'group': group,
+        'back_url': back_url,
+        'settings_form': settings_form,
+    })
+    

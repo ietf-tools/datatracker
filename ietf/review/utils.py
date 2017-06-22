@@ -407,7 +407,7 @@ def email_reviewer_availability_change(request, team, reviewer_role, msg, by):
 
     subject = "Reviewer availability of {} changed in {}".format(reviewer_role.person, team.acronym)
 
-    url = urlreverse("ietf.group.views_review.reviewer_overview", kwargs={ "group_type": team.type_id, "acronym": team.acronym })
+    url = urlreverse("ietf.group.views.reviewer_overview", kwargs={ "group_type": team.type_id, "acronym": team.acronym })
     url = request.build_absolute_uri(url)
     send_mail(request, to, None, subject, "review/reviewer_availability_changed.txt", {
         "reviewer_overview_url": url,
@@ -910,8 +910,8 @@ def email_secretary_reminder(review_request, secretary_role):
 
     subject = "Reminder: deadline for review of {} in {} is {}".format(review_request.doc_id, team.acronym, review_request.deadline.isoformat())
 
-    import ietf.group.views_review
-    settings_url = urlreverse(ietf.group.views_review.change_review_secretary_settings, kwargs={ "acronym": team.acronym, "group_type": team.type_id })
+    import ietf.group.views
+    settings_url = urlreverse(ietf.group.views.change_review_secretary_settings, kwargs={ "acronym": team.acronym, "group_type": team.type_id })
     import ietf.doc.views_review
     request_url = urlreverse(ietf.doc.views_review.review_request, kwargs={ "name": review_request.doc_id, "request_id": review_request.pk })
 

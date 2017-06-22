@@ -36,7 +36,7 @@ else:
 class StreamTests(TestCase):
     def test_streams(self):
         make_test_data()
-        r = self.client.get(urlreverse("ietf.group.views_stream.streams"))
+        r = self.client.get(urlreverse("ietf.group.views.streams"))
         self.assertEqual(r.status_code, 200)
         self.assertTrue("Independent Submission Editor" in unicontent(r))
 
@@ -45,7 +45,7 @@ class StreamTests(TestCase):
         draft.stream_id = "iab"
         draft.save_with_history([DocEvent.objects.create(doc=draft, rev=draft.rev, type="changed_stream", by=Person.objects.get(user__username="secretary"), desc="Test")])
 
-        r = self.client.get(urlreverse("ietf.group.views_stream.stream_documents", kwargs=dict(acronym="iab")))
+        r = self.client.get(urlreverse("ietf.group.views.stream_documents", kwargs=dict(acronym="iab")))
         self.assertEqual(r.status_code, 200)
         self.assertTrue(draft.name in unicontent(r))
 
@@ -54,7 +54,7 @@ class StreamTests(TestCase):
 
         stream_acronym = "ietf"
 
-        url = urlreverse("ietf.group.views_stream.stream_edit", kwargs=dict(acronym=stream_acronym))
+        url = urlreverse("ietf.group.views.stream_edit", kwargs=dict(acronym=stream_acronym))
         login_testing_unauthorized(self, "secretary", url)
 
         # get

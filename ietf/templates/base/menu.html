@@ -69,7 +69,7 @@
     {% if flavor == "top" %}<li class="divider hidden-xs"></li>{% endif %}
     <li {%if flavor == "top" %}class="dropdown-header hidden-xs"{% else %}class="nav-header"{% endif %}>Review Teams</li>
     {% for g in user|managed_review_groups %}
-      <li><a href="{% url "ietf.group.views_review.review_requests" g.acronym %}">{{ g.acronym }} reviews</a></li>
+      <li><a href="{% url "ietf.group.views.review_requests" g.acronym %}">{{ g.acronym }} reviews</a></li>
     {% endfor %}
   {% endif %}
 
@@ -79,9 +79,9 @@
   {% endif %}
   {% if flavor == "top" %}<li class="divider hidden-xs"></li>{% endif %}
   <li {%if flavor == "top" %}class="dropdown-header hidden-xs"{% else %}class="nav-header"{% endif %}>RFC streams</li>
-        <li><a href="{% url "ietf.group.views_stream.stream_documents" acronym="iab" %}">IAB</a></li>
-        <li><a href="{% url "ietf.group.views_stream.stream_documents" acronym="irtf" %}">IRTF</a></li>
-        <li><a href="{% url "ietf.group.views_stream.stream_documents" acronym="ise" %}">ISE</a></li>
+        <li><a href="{% url "ietf.group.views.stream_documents" acronym="iab" %}">IAB</a></li>
+        <li><a href="{% url "ietf.group.views.stream_documents" acronym="irtf" %}">IRTF</a></li>
+        <li><a href="{% url "ietf.group.views.stream_documents" acronym="ise" %}">ISE</a></li>
 
 {% if flavor == "top" %}</ul>{% endif %}
 

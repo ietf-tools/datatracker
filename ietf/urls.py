@@ -13,6 +13,7 @@ import debug                            # pyflakes:ignore
 
 from ietf import api
 from ietf.doc import views_search
+from ietf.group.urls import group_urls, grouptype_urls, stream_urls
 from ietf.help import views as help_views
 from ietf.ipr.sitemaps import IPRMap
 from ietf.liaisons.sitemaps import LiaisonMap
@@ -46,7 +47,7 @@ urlpatterns = [
     url(r'^drafts/', include('ietf.doc.redirect_drafts_urls')),
     url(r'^mailtrigger/',include('ietf.mailtrigger.urls')),
     url(r'^feed/', include('ietf.feed_urls')),
-    url(r'^group/', include('ietf.group.urls')),
+    url(r'^group/', include(group_urls)),
     url(r'^help/', include('ietf.help.urls')),
     url(r'^idtracker/', include('ietf.doc.redirect_idtracker_urls')),
     url(r'^iesg/', include('ietf.iesg.urls')),
@@ -61,11 +62,11 @@ urlpatterns = [
     url(r'^sitemap-(?P<section>.+).xml$', sitemap_views.sitemap, {'sitemaps': sitemaps}),
     url(r'^sitemap.xml$', sitemap_views.index, { 'sitemaps': sitemaps}),
     url(r'^stats/', include('ietf.stats.urls')),
-    url(r'^stream/', include('ietf.group.urls_stream')),
+    url(r'^stream/', include(stream_urls)),
     url(r'^submit/', include('ietf.submit.urls')),
     url(r'^sync/', include('ietf.sync.urls')),
     url(r'^templates/', include('ietf.dbtemplate.urls')),
-    url(r'^(?P<group_type>(wg|rg|ag|team|dir|area|program))/', include('ietf.group.urls_info')),
+    url(r'^(?P<group_type>(wg|rg|ag|team|dir|area|program))/', include(grouptype_urls)),
 
     # Redirects
     url(r'^(?P<path>public)/', include('ietf.redirects.urls')),

@@ -41,5 +41,5 @@ class GroupFeatures(object):
         if group in active_review_teams():
             self.has_reviews = True
             import ietf.group.views
-            self.default_tab = ietf.group.views_review.review_requests
+            self.default_tab = ietf.group.views.review_requests
 

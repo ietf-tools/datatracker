@@ -16,11 +16,11 @@
   <h1>Manage {{ assignment_status }} open review requests for {{ group.acronym }}</h1>
 
   <p>Other options:
-    <a href="{% url "ietf.group.views_review.review_requests" group_type=group.type_id acronym=group.acronym %}">All review requests</a>
-    - <a href="{% url "ietf.group.views_review.reviewer_overview" group_type=group.type_id acronym=group.acronym %}">Reviewers</a>
-    - <a href="{% url "ietf.group.views_review.email_open_review_assignments" group_type=group.type_id acronym=group.acronym  %}?next={{ request.get_full_path|urlencode }}">Email open assignments summary</a>
+    <a href="{% url "ietf.group.views.review_requests" group_type=group.type_id acronym=group.acronym %}">All review requests</a>
+    - <a href="{% url "ietf.group.views.reviewer_overview" group_type=group.type_id acronym=group.acronym %}">Reviewers</a>
+    - <a href="{% url "ietf.group.views.email_open_review_assignments" group_type=group.type_id acronym=group.acronym  %}?next={{ request.get_full_path|urlencode }}">Email open assignments summary</a>
     {% if other_assignment_status %}
-      - <a href="{% url "ietf.group.views_review.manage_review_requests" group_type=group.type_id acronym=group.acronym assignment_status=other_assignment_status %}">Manage {{ other_assignment_status }} reviews</a>
+      - <a href="{% url "ietf.group.views.manage_review_requests" group_type=group.type_id acronym=group.acronym assignment_status=other_assignment_status %}">Manage {{ other_assignment_status }} reviews</a>
     {% endif %}
   </p>
 
@@ -169,7 +169,7 @@
       {% endfor %}
 
       {% buttons %}
-      <a href="{% url "ietf.group.views_review.review_requests" group_type=group.type_id acronym=group.acronym %}" class="btn btn-default pull-right">Cancel</a>
+      <a href="{% url "ietf.group.views.review_requests" group_type=group.type_id acronym=group.acronym %}" class="btn btn-default pull-right">Cancel</a>
       <button class="btn btn-primary" type="submit" name="action" value="save">Save changes</button>
       <button class="btn btn-primary" type="submit" name="action" value="save-continue">Save and continue editing</button>
       <button class="btn btn-default" type="submit" name="action" value="refresh">Refresh (keeping changes)</button>

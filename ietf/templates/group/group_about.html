@@ -18,7 +18,7 @@
 	<th>Name</th>
 	<td class="edit">
 	  {% if can_edit_group %}
-	    <a class="btn btn-default btn-xs" href="{% url 'ietf.group.views_edit.edit' acronym=group.acronym field='name' %}">Edit</a>
+	    <a class="btn btn-default btn-xs" href="{% url 'ietf.group.views.edit' acronym=group.acronym field='name' %}">Edit</a>
 	  {% endif %}
 	</td>
 	<td>{{ group.name }}</td>
@@ -49,7 +49,7 @@
       <th>State</th> 
       <td class="edit">
 	  {% if can_edit_group %}
-	    <a class="btn btn-default btn-xs" href="{% url 'ietf.group.views_edit.edit' acronym=group.acronym field='state' %}">Edit</a>
+	    <a class="btn btn-default btn-xs" href="{% url 'ietf.group.views.edit' acronym=group.acronym field='state' %}">Edit</a>
 	  {% endif %}
       </td>
       <td> 
@@ -120,7 +120,7 @@
           <th>Additional URLs</th>
 	  <td class="edit">
 	    {% if can_edit_group %}
-	      <a class="btn btn-default btn-xs" href="{% url 'ietf.group.views_edit.edit' acronym=group.acronym field='urls' %}">Edit</a>
+	      <a class="btn btn-default btn-xs" href="{% url 'ietf.group.views.edit' acronym=group.acronym field='urls' %}">Edit</a>
 	    {% endif %}
 	  </td>
           <td>
@@ -144,7 +144,7 @@
 	  <th>{{ label }}</th>
 	  <td class="edit">
 	    {% if can_edit_group and slug in editable_roles %}
-	      <a class="btn btn-default btn-xs" href="{% url 'ietf.group.views_edit.edit' acronym=group.acronym field=slug %}">Edit</a>
+	      <a class="btn btn-default btn-xs" href="{% url 'ietf.group.views.edit' acronym=group.acronym field=slug %}">Edit</a>
 	    {% endif %}
 	  </td>
 	  <td>
@@ -167,7 +167,7 @@
 	 <th>Address</th>
 	 <td class="edit">
 	    {% if can_edit_group %}
-	      <a class="btn btn-default btn-xs" href="{% url 'ietf.group.views_edit.edit' acronym=group.acronym field='list_email' %}">Edit</a>
+	      <a class="btn btn-default btn-xs" href="{% url 'ietf.group.views.edit' acronym=group.acronym field='list_email' %}">Edit</a>
 	    {% endif %}
 	 </td>
 	 <td>{{ group.list_email|urlize }}</td>
@@ -177,7 +177,7 @@
 	 <th>To subscribe</th>
 	 <td class="edit">
 	    {% if can_edit_group %}
-	      <a class="btn btn-default btn-xs" href="{% url 'ietf.group.views_edit.edit' acronym=group.acronym field='list_subscribe' %}">Edit</a>
+	      <a class="btn btn-default btn-xs" href="{% url 'ietf.group.views.edit' acronym=group.acronym field='list_subscribe' %}">Edit</a>
 	    {% endif %}
 	 </td>
 	 <td>{{ group.list_subscribe|urlize }}</td>
@@ -187,7 +187,7 @@
 	 <th>Archive</th>
 	 <td class="edit">
 	    {% if can_edit_group %}
-	      <a class="btn btn-default btn-xs" href="{% url 'ietf.group.views_edit.edit' acronym=group.acronym field='list_archive' %}">Edit</a>
+	      <a class="btn btn-default btn-xs" href="{% url 'ietf.group.views.edit' acronym=group.acronym field='list_archive' %}">Edit</a>
 	    {% endif %}
 	 </td>
 	 <td>{{ group.list_archive|urlize }}</td>

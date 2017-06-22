@@ -8,6 +8,7 @@ import StringIO
 
 from pyquery import PyQuery
 from tempfile import NamedTemporaryFile
+
 import debug                            # pyflakes:ignore
 
 from django.conf import settings
@@ -317,7 +318,7 @@ class GroupPagesTests(TestCase):
                 self.assertTrue(group.acronym in unicontent(r))
                 self.assertTrue(group.description in unicontent(r))
     
-            for url in group_urlreverse_list(group, 'ietf.group.views_edit.edit'):
+            for url in group_urlreverse_list(group, 'ietf.group.views.edit'):
     
                 for username in can_edit[group.type_id]:
                     verify_can_edit_group(url, group, username)
@@ -432,7 +433,7 @@ class GroupEditTests(TestCase):
     def test_create(self):
         make_test_data()
 
-        url = urlreverse('ietf.group.views_edit.edit', kwargs=dict(group_type="wg", action="charter"))
+        url = urlreverse('ietf.group.views.edit', kwargs=dict(group_type="wg", action="charter"))
         login_testing_unauthorized(self, "secretary", url)
 
         num_wgs = len(Group.objects.filter(type="wg"))
@@ -491,7 +492,7 @@ class GroupEditTests(TestCase):
 
         make_test_data()
 
-        url = urlreverse('ietf.group.views_edit.edit', kwargs=dict(group_type="rg", action="charter"))
+        url = urlreverse('ietf.group.views.edit', kwargs=dict(group_type="rg", action="charter"))
         login_testing_unauthorized(self, "secretary", url)
 
         irtf = Group.objects.get(acronym='irtf')
@@ -516,7 +517,7 @@ class GroupEditTests(TestCase):
     def test_create_based_on_existing_bof(self):
         make_test_data()
 
-        url = urlreverse('ietf.group.views_edit.edit', kwargs=dict(group_type="wg", action="charter"))
+        url = urlreverse('ietf.group.views.edit', kwargs=dict(group_type="wg", action="charter"))
         login_testing_unauthorized(self, "secretary", url)
 
         group = Group.objects.get(acronym="mars")
@@ -551,7 +552,7 @@ class GroupEditTests(TestCase):
         make_test_data()
         group = Group.objects.get(acronym="mars")
 
-        url = urlreverse('ietf.group.views_edit.edit', kwargs=dict(group_type=group.type_id, acronym=group.acronym, action="edit"))
+        url = urlreverse('ietf.group.views.edit', kwargs=dict(group_type=group.type_id, acronym=group.acronym, action="edit"))
         login_testing_unauthorized(self, "secretary", url)
 
         # normal get
@@ -629,7 +630,7 @@ class GroupEditTests(TestCase):
         group = Group.objects.get(acronym="mars")
 
         # Edit name
-        url = urlreverse('ietf.group.views_edit.edit', kwargs=dict(acronym=group.acronym, action="edit", field="name"))
+        url = urlreverse('ietf.group.views.edit', kwargs=dict(acronym=group.acronym, action="edit", field="name"))
         login_testing_unauthorized(self, "secretary", url)
         # normal get
         r = self.client.get(url)
@@ -646,7 +647,7 @@ class GroupEditTests(TestCase):
 
 
         # Edit list email
-        url = urlreverse('ietf.group.views_edit.edit', kwargs=dict(group_type=group.type_id, acronym=group.acronym, action="edit", field="list_email"))
+        url = urlreverse('ietf.group.views.edit', kwargs=dict(group_type=group.type_id, acronym=group.acronym, action="edit", field="list_email"))
         # normal get
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
@@ -666,7 +667,7 @@ class GroupEditTests(TestCase):
         review_req = make_review_data(doc)
         group = review_req.team
 
-        url = urlreverse('ietf.group.views_edit.edit', kwargs=dict(group_type=group.type_id, acronym=group.acronym, action="edit"))
+        url = urlreverse('ietf.group.views.edit', kwargs=dict(group_type=group.type_id, acronym=group.acronym, action="edit"))
         login_testing_unauthorized(self, "secretary", url)
 
         # normal get
@@ -700,7 +701,7 @@ class GroupEditTests(TestCase):
 
         group = Group.objects.get(acronym="mars")
 
-        url = urlreverse('ietf.group.views_edit.conclude', kwargs=dict(group_type=group.type_id, acronym=group.acronym))
+        url = urlreverse('ietf.group.views.conclude', kwargs=dict(group_type=group.type_id, acronym=group.acronym))
         login_testing_unauthorized(self, "secretary", url)
 
         # normal get
@@ -1009,7 +1010,7 @@ class CustomizeWorkflowTests(TestCase):
 
         group = Group.objects.get(acronym="mars")
 
-        url = urlreverse('ietf.group.views_edit.customize_workflow', kwargs=dict(group_type=group.type_id, acronym=group.acronym))
+        url = urlreverse('ietf.group.views.customize_workflow', kwargs=dict(group_type=group.type_id, acronym=group.acronym))
         login_testing_unauthorized(self, "secretary", url)
 
         state = State.objects.get(used=True, type="draft-stream-ietf", slug="wg-lc")
@@ -1138,7 +1139,7 @@ class AjaxTests(TestCase):
     def test_group_menu_data(self):
         make_test_data()
 
-        r = self.client.get(urlreverse('ietf.group.views_ajax.group_menu_data'))
+        r = self.client.get(urlreverse('ietf.group.views.group_menu_data'))
         self.assertEqual(r.status_code, 200)
 
         parents = json.loads(r.content)

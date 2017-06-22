@@ -177,9 +177,9 @@ def construct_group_menu_context(request, group, selected, group_type, others):
     if group.features.has_materials and get_group_materials(group).exists():
         entries.append(("Materials", urlreverse("ietf.group.views.materials", kwargs=kwargs)))
     if group.features.has_reviews:
-        import ietf.group.views_review
-        entries.append(("Review requests", urlreverse(ietf.group.views_review.review_requests, kwargs=kwargs)))
-        entries.append(("Reviewers", urlreverse(ietf.group.views_review.reviewer_overview, kwargs=kwargs)))
+        import ietf.group.views
+        entries.append(("Review requests", urlreverse(ietf.group.views.review_requests, kwargs=kwargs)))
+        entries.append(("Reviewers", urlreverse(ietf.group.views.reviewer_overview, kwargs=kwargs)))
     if group.type_id in ('rg','wg','team'):
         entries.append(("Meetings", urlreverse("ietf.group.views.meetings", kwargs=kwargs)))
     entries.append(("History", urlreverse("ietf.group.views.history", kwargs=kwargs)))
@@ -214,23 +214,23 @@ def construct_group_menu_context(request, group, selected, group_type, others):
         actions.append((u"Upload material", urlreverse("ietf.doc.views_material.choose_material_type", kwargs=kwargs)))
 
     if group.features.has_reviews and can_manage_review_requests_for_team(request.user, group):
-        import ietf.group.views_review
-        actions.append((u"Manage unassigned reviews", urlreverse(ietf.group.views_review.manage_review_requests, kwargs=dict(assignment_status="unassigned", **kwargs))))
-        actions.append((u"Manage assigned reviews", urlreverse(ietf.group.views_review.manage_review_requests, kwargs=dict(assignment_status="assigned", **kwargs))))
+        import ietf.group.views
+        actions.append((u"Manage unassigned reviews", urlreverse(ietf.group.views.manage_review_requests, kwargs=dict(assignment_status="unassigned", **kwargs))))
+        actions.append((u"Manage assigned reviews", urlreverse(ietf.group.views.manage_review_requests, kwargs=dict(assignment_status="assigned", **kwargs))))
 
         if Role.objects.filter(name="secr", group=group, person__user=request.user).exists():
-            actions.append((u"Secretary settings", urlreverse(ietf.group.views_review.change_review_secretary_settings, kwargs=kwargs)))
+            actions.append((u"Secretary settings", urlreverse(ietf.group.views.change_review_secretary_settings, kwargs=kwargs)))
 
 
     if group.state_id != "conclude" and (is_admin or can_manage):
         can_edit_group = True
-        actions.append((u"Edit group", urlreverse("ietf.group.views_edit.edit", kwargs=dict(kwargs, action="edit"))))
+        actions.append((u"Edit group", urlreverse("ietf.group.views.edit", kwargs=dict(kwargs, action="edit"))))
 
     if group.features.customize_workflow and (is_admin or can_manage):
-        actions.append((u"Customize workflow", urlreverse("ietf.group.views_edit.customize_workflow", kwargs=kwargs)))
+        actions.append((u"Customize workflow", urlreverse("ietf.group.views.customize_workflow", kwargs=kwargs)))
 
     if group.state_id in ("active", "dormant") and not group.type_id in ["sdo", "rfcedtyp", "isoc", ] and can_manage:
-        actions.append((u"Request closing group", urlreverse("ietf.group.views_edit.conclude", kwargs=kwargs)))
+        actions.append((u"Request closing group", urlreverse("ietf.group.views.conclude", kwargs=kwargs)))
 
     d = {
         "group": group,
