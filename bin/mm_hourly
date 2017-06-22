@@ -10,6 +10,6 @@ DTDIR=/a/www/ietf-datatracker/web
 cd $DTDIR/
 
 # Set up the virtual environment
-source $DTDIR/bin/activate
+source $DTDIR/env/bin/activate
 
 $DTDIR/ietf/manage.py import_mailman_listinfo
