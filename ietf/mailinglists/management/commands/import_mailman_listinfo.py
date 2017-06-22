@@ -35,7 +35,8 @@ def import_mailman_listinfo(verbosity=0):
         mlist = MailList.MailList(name, lock=False)
         note("List: %s" % mlist.internal_name())
         if mlist.advertised:
-            list, created = List.objects.get_or_create(name=mlist.real_name, description=mlist.description, advertised=mlist.advertised)
+            description = mlist.description.decode('latin1')[:256]
+            list, created = List.objects.get_or_create(name=mlist.real_name, description=description, advertised=mlist.advertised)
             # The following calls return lowercased addresses
             members = mlist.getRegularMemberKeys() + mlist.getDigestMemberKeys()
             members = [ m for m in members if mlist.getDeliveryStatus(m) == MemberAdaptor.ENABLED ]
@@ -49,6 +50,9 @@ def import_mailman_listinfo(verbosity=0):
                         note("    Removing address with no subscriptions: %s" % (addr))
                         old.delete()
             for addr in members:
+                if len(addr) > 64:
+                    sys.stderr.write("Email address subscribed to '%s' too long for table: <%s>" % (name, addr))
+                    continue
                 if not addr in known:
                     note("  Adding subscription: %s" % (addr))
                     new, created = Subscribed.objects.get_or_create(email=addr)
