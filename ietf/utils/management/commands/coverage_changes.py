@@ -50,8 +50,8 @@ class Command(BaseCommand):
             help='Show absolute figures instead of changes from last release.')
 
 
-    diff_line_format = "%-58s  %8s  %8s\n"
-    list_line_format = "%-68s  %8s\n"
+    diff_line_format = "%8s  %8s  %-58s\n"
+    list_line_format = "%8s  %-68s\n"
     valid_sections = ['template', 'url', 'code']
 
     def read_coverage(self, filename, version=None):
@@ -109,9 +109,9 @@ class Command(BaseCommand):
                     else:
                         raise CommandError("The release coverage data has an unknown format ('%s'), quitting." % mformat)
                 if   lformat == 1:
-                    llines, lcov = None, lcoverage[key]
-                elif lformat == 2:
-                    llines, lcov = lcoverage[key]
+                    linfo, lcov = None, lcoverage[key]
+                elif lformat in [2, 4]:
+                    linfo, lcov = lcoverage[key]
                 else:
                     raise CommandError("The latest coverage data has an unknown format ('%s'), quitting." % lformat)
                     
@@ -124,10 +124,10 @@ class Command(BaseCommand):
                 if mcov != lcov:
                     if not header_written:
                         self.stdout.write(self.diff_line_format %
-                            ("\n%s"%section.capitalize(), mversion[:7], lversion[:7]))
-                        self.stdout.write(self.diff_line_format % ("-"*58, "-"*8, "-"*8))
+                            (mversion[:7], lversion[:7], "\n%s"%section.capitalize(), ))
+                        self.stdout.write(self.diff_line_format % ("-"*8, "-"*8, "-"*58))
                         header_written = True
-                    self.stdout.write(self.diff_line_format % (key, mval, lval))
+                    self.stdout.write(self.diff_line_format % (mval, lval, key, ))
             lkey_set = set(lkeys)
             rkey_set = set(mkeys)
             missing_key_set = rkey_set - lkey_set
@@ -156,9 +156,9 @@ class Command(BaseCommand):
 
             for key in keys:
                 if   lformat == 1:
-                    llines, lcov = None, lcoverage[key]
-                elif lformat == 2:
-                    llines, lcov = lcoverage[key]
+                    linfo, lcov = None, lcoverage[key]
+                elif lformat in [2, 4]:
+                    linfo, lcov = lcoverage[key]
                 else:
                     raise CommandError("The latest coverage data has an unknown format ('%s'), quitting." % lformat)
                     
@@ -168,10 +168,10 @@ class Command(BaseCommand):
                     lval = lcov
                 if not header_written:
                     self.stdout.write(self.list_line_format %
-                        ("\n%s"%section.capitalize(), lversion[:7]))
-                    self.stdout.write(self.list_line_format % ("-"*58, "-"*8, ))
+                        (lversion[:7], "\n%s"%section.capitalize(), ))
+                    self.stdout.write(self.list_line_format % ("-"*8, "-"*58, ))
                     header_written = True
-                self.stdout.write(self.list_line_format % (key, lval))
+                self.stdout.write(self.list_line_format % (lval, key))
 
     def handle(self, *args, **options):
 

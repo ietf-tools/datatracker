@@ -147,18 +147,28 @@ def get_url_patterns(module, apps=None):
             if re.search(pat, name):
                 return True
         return False
+    def append(res, p0, p1, item):
+        if p1.startswith("^"):
+            res.append((p0 + p1[1:], item))
+        else:
+            res.append((item.p0 + ".*" + p1, item))
     if not hasattr(module, 'urlpatterns'):
         return []
     res = []
     for item in module.urlpatterns:
-        if isinstance(item, RegexURLResolver) and not type(item.urlconf_module) is list:
-            if include(item.urlconf_module.__name__) and not exclude(item.regex.pattern):
-                subpatterns = get_url_patterns(item.urlconf_module)
-                for sub, subitem in subpatterns:
-                    if sub.startswith("^"):
-                        res.append((item.regex.pattern + sub[1:], subitem))
+        if isinstance(item, RegexURLResolver):
+            if type(item.urlconf_module) is list:
+                for subitem in item.urlconf_module:
+                    if isinstance(subitem, RegexURLResolver):
+                        res += get_url_patterns(subitem.urlconf_module)
                     else:
-                        res.append((item.regex.pattern + ".*" + sub, subitem))
+                        sub = subitem.regex.pattern
+                        append(res, item.regex.pattern, subitem.regex.pattern, subitem)
+            else:
+                if include(item.urlconf_module.__name__) and not exclude(item.regex.pattern):
+                    subpatterns = get_url_patterns(item.urlconf_module)
+                    for sub, subitem in subpatterns:
+                        append(res, item.regex.pattern, sub, subitem)
         else:
             res.append((item.regex.pattern, item))
     return res
@@ -287,6 +297,7 @@ class CoverageTest(TestCase):
             self.runner.coverage_data["template"] = {
                 "coverage": (1.0*len(covered)/len(all)) if len(all)>0 else float('nan'),
                 "covered":  dict( (k, k in covered) for k in all ),
+                "format": 1,
                 }
             self.report_test_result("template")
         else:
@@ -296,30 +307,32 @@ class CoverageTest(TestCase):
         if self.runner.check_coverage:
             import ietf.urls
             url_patterns = get_url_patterns(ietf.urls, self.runner.test_apps)
+            #debug.pprint('[ r for r,p in url_patterns]')
 
             # skip some patterns that we don't bother with
             def ignore_pattern(regex, pattern):
                 import django.views.static
                 return (regex in ("^_test500/$", "^accounts/testemail/$")
                         or regex.startswith("^admin/")
+                        or re.search('^api/v1/[^/]+/[^/]+/', regex)
                         or getattr(pattern.callback, "__name__", "") == "RedirectView"
                         or getattr(pattern.callback, "__name__", "") == "TemplateView"
                         or pattern.callback == django.views.static.serve)
 
-            patterns = [(regex, re.compile(regex, re.U)) for regex, pattern in url_patterns
-                        if not ignore_pattern(regex, pattern)]
-            all = [ regex for regex, compiled in patterns ]
+            patterns = [(regex, re.compile(regex, re.U), obj) for regex, obj in url_patterns
+                        if not ignore_pattern(regex, obj)]
 
             covered = set()
             for url in visited_urls:
-                for regex, compiled in patterns:
+                for regex, compiled, obj in patterns:
                     if regex not in covered and compiled.match(url[1:]): # strip leading /
                         covered.add(regex)
                         break
 
             self.runner.coverage_data["url"] = {
-                "coverage": 1.0*len(covered)/len(all),
-                "covered": dict( (k, k in covered) for k in all ),
+                "coverage": 1.0*len(covered)/len(patterns),
+                "covered": dict( (k, (o.lookup_str, k in covered)) for k,p,o in patterns ),
+                "format": 4,
                 }
 
             self.report_test_result("url")
@@ -475,7 +488,7 @@ class IetfTestRunner(DiscoverRunner):
                 "url": {
                     "coverage": 0.0, 
                     "covered": {},
-                    "format": 1,
+                    "format": 4,
                 },
                 "code": {
                     "coverage": 0.0, 

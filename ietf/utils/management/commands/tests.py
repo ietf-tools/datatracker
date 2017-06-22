@@ -89,9 +89,9 @@ class CoverageChangeTestCase(TestCase):
         os.unlink(latest)
 
         for l in [
-            r"admin/group/group/change_form.html                             False      True",
-            r"^api/v1/?$                                                      True     False",
-            r"^community/personal/$                                          False      True",
-            r"ietf/community/constants                                           -   50.0  %",
+            r"   False      True  admin/group/group/change_form.html                        ",
+            r"    True     False  ^api/v1/?$                                                ",
+            r"   False      True  ^community/personal/$                                     ",
+            r"       -   50.0  %  ietf/community/constants                                  ",
             ]:
             self.assertTrue(l in text, msg="Missing line in coverage_change output:\n'%s'\n"%l)
