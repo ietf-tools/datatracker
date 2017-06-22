@@ -7,12 +7,6 @@ Updated: $Date$
 Planned work in rough order
 ===========================
 
-* Use the htmlization lib to improve the rendering of draft text in the
-  datatracker's /doc/draft-foo-bar/ pages.
-
-* Revisit Yang module checks:  Capture output also for passed tests.
-  Add second checker.  Fix extraction problems.
-
 * Add a 'recent ballots' page (IESG request)
 
 * Add a simplified submission form which can be used by curl or wget to post
@@ -20,6 +14,9 @@ Planned work in rough order
 
 * Rework email sending so that all emails sent by the datatracker, except for
   logging and failure emails sent to ADMINS, are captured as a Message object.
+
+* Polish the htmlization pages, making the style identical with tools.ietf.org.
+  Do a public release of the htmlization lib.
 
 * Introduce an API for Meetecho to use to associate recordings with sessions
   (and perhaps automate making copies of those videos)
@@ -37,9 +34,12 @@ Planned work in rough order
 * Transition to Python 3.  This will make it easier to add add support for
   internationalsed email, and also other i18n enhancements.
 
+* Adde support for document shepherding reports, possibly re-using or
+  generalising some of the review plumbing.
+
 * Add support for internationalised email addresses according to RFC 6531
   when sending email (this is not supported by smtplib under Python 2.7,
-  so will need support code in the application until we migrate to Python 3.5)
+  so will need python 3.x).
 
 * Transition to PostgreSQL.  This will make it easier to start using
   timezone-aware timestamps throughout the code, which will make it easy
