@@ -134,6 +134,7 @@ class DraftYangChecker(object):
         message = ""
         results = []
         passed = True                   # Used by the submission tool.  Yang checks always pass.
+        model_list = []
 
         extractor = xym.YangModuleExtractor(path, workdir, strict=True, strict_examples=False, debug_level=0)
         if not os.path.exists(path):

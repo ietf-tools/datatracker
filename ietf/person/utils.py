@@ -7,6 +7,7 @@ import syslog
 
 from django.contrib import admin
 from django.contrib.auth.models import User
+from ietf.nomcom.models import Nominee
 from ietf.person.models import Person
 from ietf.utils.mail import send_mail
 
@@ -24,7 +25,7 @@ def merge_persons(source, target, file=sys.stdout, verbose=False):
         changes.append('EMAIL ACTION: {} no longer marked as primary'.format(email.address))
 
     changes.append(handle_users(source,target))
-    #merge_nominees(source, target)
+    merge_nominees(source, target)
     move_related_objects(source, target, file=file, verbose=verbose)
     dedupe_aliases(target)
 
@@ -84,11 +85,13 @@ def handle_users(source,target,check_only=False):
     if source.user and target.user:
         message = "DATATRACKER LOGIN ACTION: retaining login: {}, removing login: {}".format(target.user,source.user)
         if not check_only:
+            merge_users(source.user, target.user)
             syslog.syslog('merge-person-records: deleting user {}'.format(source.user.username))
-            # user = source.user
+            user = source.user
             source.user = None
             source.save()
-            #user.delete()
+            user.is_active = False
+            user.save()
         return message
 
 def move_related_objects(source, target, file, verbose=False):
@@ -105,6 +108,21 @@ def move_related_objects(source, target, file, verbose=False):
         kwargs = { field_name:target }
         queryset.update(**kwargs)
 
+def merge_users(source, target):
+    '''Move related objects from source user to target user'''
+    # handle community list
+    for communitylist in source.communitylist_set.all():
+        source.communitylist_set.remove(communitylist)
+        target.communitylist_set.add(communitylist)
+    # handle feedback
+    for feedback in source.feedback_set.all():
+        source.feedback_set.remove(feedback)
+        target.feedback_set.add(feedback)
+    # handle nominations
+    for nomination in source.nomination_set.all():
+        source.nomination_set.remove(nomination)
+        target.nomination_set.add(nomination)
+
 def dedupe_aliases(person):
     '''Check person for duplicate aliases and purge'''
     seen = []
@@ -117,8 +135,9 @@ def dedupe_aliases(person):
 def merge_nominees(source, target):
     '''Move nominees and feedback to target'''
     for nominee in source.nominee_set.all():
-        target_nominee = target.nominee_set.get(nomcom=nominee.nomcom)
-        if not target_nominee:
+        try:
+            target_nominee = target.nominee_set.get(nomcom=nominee.nomcom)
+        except Nominee.DoesNotExist:
             target_nominee = target.nominee_set.create(nomcom=nominee.nomcom, email=target.email())
         nominee.nomination_set.all().update(nominee=target_nominee)
         for fb in nominee.feedback_set.all():
