@@ -937,7 +937,6 @@ def json_agenda(request, num=None ):
         if asgn.session.agenda():
             sessdict['agenda'] = asgn.session.agenda().href()
 
-
         if asgn.session.minutes():
             sessdict['minutes'] = asgn.session.minutes().href()
         if asgn.session.slides():
@@ -1201,9 +1200,9 @@ class UploadMinutesForm(forms.Form):
     file = forms.FileField(label='Minutes file to upload. Note that you can only upload minutes in txt, html, or pdf formats.')
     apply_to_all = forms.BooleanField(label='Apply to all group sessions at this meeting',initial=True,required=False)
 
-    def __init__(self, num_sessions, *args, **kwargs):
+    def __init__(self, show_apply_to_all_checkbox, *args, **kwargs):
         super(UploadMinutesForm, self).__init__(*args, **kwargs)
-        if num_sessions<2:
+        if not show_apply_to_all_checkbox:
             self.fields.pop('apply_to_all')
 
     def clean_file(self):
@@ -1225,19 +1224,19 @@ def upload_session_minutes(request, session_id, num):
 
     session_number = None
     sessions = get_sessions(session.meeting.number,session.group.acronym)
-    num_sessions = len(sessions)
+    show_apply_to_all_checkbox = len(sessions) > 1 if session.type_id == 'session' else False
     if len(sessions) > 1:
        session_number = 1 + sessions.index(session)
 
     minutes_sp = session.sessionpresentation_set.filter(document__type='minutes').first()
     
     if request.method == 'POST':
-        form = UploadMinutesForm(num_sessions,request.POST,request.FILES)
+        form = UploadMinutesForm(show_apply_to_all_checkbox,request.POST,request.FILES)
         if form.is_valid():
             file = request.FILES['file']
             _, ext = os.path.splitext(file.name)
-            apply_to_all = True
-            if num_sessions > 1:
+            apply_to_all = session.type_id == 'session'
+            if show_apply_to_all_checkbox:
                 apply_to_all = form.cleaned_data['apply_to_all']
             if minutes_sp:
                 doc = minutes_sp.document
@@ -1281,7 +1280,7 @@ def upload_session_minutes(request, session_id, num):
             handle_upload_file(file, filename, session.meeting, 'minutes')
             return redirect('ietf.meeting.views.session_details',num=num,acronym=session.group.acronym)
     else: 
-        form = UploadMinutesForm(num_sessions)
+        form = UploadMinutesForm(show_apply_to_all_checkbox)
 
     return render(request, "meeting/upload_session_minutes.html", 
                   {'session': session,
@@ -1297,9 +1296,9 @@ class UploadAgendaForm(forms.Form):
     file = forms.FileField(label='Agenda file to upload. Note that you can only upload agendas in txt or html formats.')
     apply_to_all = forms.BooleanField(label='Apply to all group sessions at this meeting',initial=True,required=False)
 
-    def __init__(self, num_sessions, *args, **kwargs):
+    def __init__(self, show_apply_to_all_checkbox, *args, **kwargs):
         super(UploadAgendaForm, self).__init__(*args, **kwargs)
-        if num_sessions<2:
+        if not show_apply_to_all_checkbox:
             self.fields.pop('apply_to_all')
 
     def clean_file(self):
@@ -1321,19 +1320,19 @@ def upload_session_agenda(request, session_id, num):
 
     session_number = None
     sessions = get_sessions(session.meeting.number,session.group.acronym)
-    num_sessions = len(sessions)
+    show_apply_to_all_checkbox = len(sessions) > 1 if session.type_id == 'session' else False
     if len(sessions) > 1:
        session_number = 1 + sessions.index(session)
 
     agenda_sp = session.sessionpresentation_set.filter(document__type='agenda').first()
     
     if request.method == 'POST':
-        form = UploadAgendaForm(num_sessions,request.POST,request.FILES)
+        form = UploadAgendaForm(show_apply_to_all_checkbox,request.POST,request.FILES)
         if form.is_valid():
             file = request.FILES['file']
             _, ext = os.path.splitext(file.name)
-            apply_to_all = True
-            if num_sessions > 1:
+            apply_to_all = session.type_id == 'session'
+            if show_apply_to_all_checkbox:
                 apply_to_all = form.cleaned_data['apply_to_all']
             if agenda_sp:
                 doc = agenda_sp.document
@@ -1389,7 +1388,7 @@ def upload_session_agenda(request, session_id, num):
             handle_upload_file(file, filename, session.meeting, 'agenda')
             return redirect('ietf.meeting.views.session_details',num=num,acronym=session.group.acronym)
     else: 
-        form = UploadAgendaForm(num_sessions)
+        form = UploadAgendaForm(show_apply_to_all_checkbox, initial={'apply_to_all':session.type_id=='session'})
 
     return render(request, "meeting/upload_session_agenda.html", 
                   {'session': session,
@@ -1406,9 +1405,9 @@ class UploadSlidesForm(forms.Form):
     file = forms.FileField(label='Slides file to upload.')
     apply_to_all = forms.BooleanField(label='Apply to all group sessions at this meeting',initial=False,required=False)
 
-    def __init__(self, num_sessions, *args, **kwargs):
+    def __init__(self, show_apply_to_all_checkbox, *args, **kwargs):
         super(UploadSlidesForm, self).__init__(*args, **kwargs)
-        if num_sessions<2:
+        if not show_apply_to_all_checkbox:
             self.fields.pop('apply_to_all')
 
     def clean_file(self):
@@ -1429,7 +1428,7 @@ def upload_session_slides(request, session_id, num, name):
 
     session_number = None
     sessions = get_sessions(session.meeting.number,session.group.acronym)
-    num_sessions = len(sessions)
+    show_apply_to_all_checkbox = len(sessions) > 1 if session.type_id == 'session' else False
     if len(sessions) > 1:
        session_number = 1 + sessions.index(session)
 
@@ -1442,12 +1441,12 @@ def upload_session_slides(request, session_id, num, name):
         slides_sp = session.sessionpresentation_set.filter(document=slides).first()
     
     if request.method == 'POST':
-        form = UploadSlidesForm(num_sessions,request.POST,request.FILES)
+        form = UploadSlidesForm(show_apply_to_all_checkbox,request.POST,request.FILES)
         if form.is_valid():
             file = request.FILES['file']
             _, ext = os.path.splitext(file.name)
-            apply_to_all = True
-            if num_sessions > 1:
+            apply_to_all = session.type_id == 'session'
+            if show_apply_to_all_checkbox:
                 apply_to_all = form.cleaned_data['apply_to_all']
             if slides_sp:
                 doc = slides_sp.document
@@ -1504,7 +1503,7 @@ def upload_session_slides(request, session_id, num, name):
         initial = {}
         if slides:
             initial = {'title':slides.title}
-        form = UploadSlidesForm(num_sessions, initial=initial)
+        form = UploadSlidesForm(show_apply_to_all_checkbox, initial=initial)
 
     return render(request, "meeting/upload_session_slides.html", 
                   {'session': session,
