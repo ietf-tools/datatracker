@@ -156,7 +156,13 @@ class DraftYangChecker(object):
                 err = sys.stderr.getvalue()
                 sys.stdout = saved_stdout
                 sys.stderr = saved_stderr
-                model_list = extractor.get_extracted_models()
+                # signature change in xym:
+                if xym.__version__.startswith('0.3'):
+                    model_list = extractor.get_extracted_models()
+                elif xym.__version__.startswith('0.4'):
+                    model_list = extractor.get_extracted_models(force_revision=False)
+                else:
+                    raise ValueError("Unexpected version of xym found: %s" % xym.__version__)
             except Exception as exc:
                 msg = "Exception when running xym on %s: %s" % (name, exc)
                 log(msg)
