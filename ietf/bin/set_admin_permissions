@@ -62,6 +62,7 @@ def main():
              'iesg.add_telechatdate','iesg.change_telechatdate','iesg.delete_telechatdate',
              'mailinglists.add_list','mailinglists.change_list','mailinglists.delete_list',
              'meeting.add_floorplan','meeting.change_floorplan','meeting.delete_floorplan',
+             'meeting.add_meeting','meeting.change_meeting','meeting.delete_meeting',
              'meeting.add_room','meeting.change_room','meeting.delete_room',
              'meeting.add_urlresource','meeting.change_urlresource','meeting.delete_urlresource',
              'person.add_person','person.change_person','person.delete_person',
