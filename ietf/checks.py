@@ -112,7 +112,7 @@ def check_id_submission_directories(app_configs, **kwargs):
                 "in the settings file.  The setting is:\n"
                 "    %s = %s" % (s, p),
                 hint = ("Please either update the local settings to point at the correct directory,"
-                    "or if the setting is correct, create the directory."),
+                    "or if the setting is correct, create the indicated directory."),
                 id = "datatracker.E0006",
             ))
     return errors
@@ -136,6 +136,28 @@ def check_id_submission_files(app_configs, **kwargs):
                 id = "datatracker.E0007",
             ))
     return errors
+
+
+@checks.register('directories')
+def check_yang_model_directories(app_configs, **kwargs):
+    #
+    if already_ran():
+        return []
+    #
+    errors = []
+    for s in ("SUBMIT_YANG_RFC_MODEL_DIR", "SUBMIT_YANG_DRAFT_MODEL_DIR", "SUBMIT_YANG_INVAL_MODEL_DIR", ):
+        p = getattr(settings, s)
+        if not os.path.exists(p):
+            errors.append(checks.Critical(
+                "A directory used by the yang validation tools does not exist at the path\n"
+                "gvien in the settings file.  The setting is:\n"
+                "    %s = %s" % (s, p),
+                hint = ("Please either update your local settings to point at the correct directory,"
+                    "or if the setting is correct, create the indicated directory."),
+                id = "datatracker.E0006",
+            ))
+    return errors
+
 
 @checks.register('submission-checkers')
 def check_id_submission_checkers(app_configs, **kwargs):
@@ -199,7 +221,7 @@ def check_media_directories(app_configs, **kwargs):
                 "in the settings file.  The setting is:\n"
                 "    %s = %s" % (s, p),
                 hint = ("Please either update the local settings to point at the correct directory,"
-                    "or if the setting is correct, create the directory."),
+                    "or if the setting is correct, create the indicated directory."),
                 id = "datatracker.E0012",
             ))
     return errors
@@ -220,7 +242,7 @@ def check_proceedings_directories(app_configs, **kwargs):
                 "in the settings file.  The setting is:\n"
                 "    %s = %s" % (s, p),
                 hint = ("Please either update the local settings to point at the correct directory,"
-                    "or if the setting is correct, create the directory."),
+                    "or if the setting is correct, create the indicated directory."),
                 id = "datatracker.E0013",
             ))
     return errors
