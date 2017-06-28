@@ -157,12 +157,7 @@ class DraftYangChecker(object):
                 sys.stdout = saved_stdout
                 sys.stderr = saved_stderr
                 # signature change in xym:
-                if xym.__version__.startswith('0.3'):
-                    model_list = extractor.get_extracted_models()
-                elif xym.__version__.startswith('0.4'):
-                    model_list = extractor.get_extracted_models(force_revision=False)
-                else:
-                    raise ValueError("Unexpected version of xym found: %s" % xym.__version__)
+                model_list = extractor.get_extracted_models(False)
             except Exception as exc:
                 msg = "Exception when running xym on %s: %s" % (name, exc)
                 log(msg)
@@ -174,7 +169,6 @@ class DraftYangChecker(object):
 
         for m in model_list:
             if not re.search(model_name_re, m):
-                debug.debug = True
                 code += 1
                 err += "Error: Bad extracted model name: '%s'\n" % m
 
@@ -267,7 +261,6 @@ class DraftYangChecker(object):
                 "errors":  errors,
                 "items": items,
             })
-
 
         shutil.rmtree(workdir)
 
