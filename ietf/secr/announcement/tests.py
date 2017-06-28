@@ -4,9 +4,12 @@ from django.urls import reverse
 from pyquery import PyQuery
 
 from ietf.utils.test_utils import TestCase
+from ietf.group.models import Group
+from ietf.message.models import Message
+from ietf.nomcom.test_data import nomcom_test_data
 from ietf.person.models import Person
 from ietf.utils.test_data import make_test_data
-
+from ietf.utils.mail import outbox, empty_outbox
 
 SECR_USER='secretary'
 WG_USER=''
@@ -41,7 +44,6 @@ class SubmitAnnouncementCase(TestCase):
         make_test_data()
         url = reverse('ietf.secr.announcement.views.main')
         post_data = {'id_subject':''}
-        #self.client.login(username='rcross', password='rcross+password")
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.post(url,post_data)
         self.assertEqual(r.status_code, 200)
@@ -51,17 +53,26 @@ class SubmitAnnouncementCase(TestCase):
     def test_valid_submit(self):
         "Valid Submit"
         make_test_data()
-        #ietf.utils.mail.test_mode = True
+        nomcom_test_data()
+        empty_outbox()
         url = reverse('ietf.secr.announcement.views.main')
-        redirect = reverse('ietf.secr.announcement.views.confirm')
-        post_data = {'to':'Other...',
+        confirm_url = reverse('ietf.secr.announcement.views.confirm')
+        nomcom = Group.objects.get(type='nomcom')
+        post_data = {'nomcom': nomcom.pk,
+                     'to':'Other...',
                      'to_custom':'rcross@amsl.com',
                      'frm':'IETF Secretariat &lt;ietf-secretariat@ietf.org&gt;',
                      'subject':'Test Subject',
                      'body':'This is a test.'}
         self.client.login(username="secretary", password="secretary+password")
-        r = self.client.post(url,post_data,follow=True)
-        self.assertRedirects(r, redirect)
-	# good enough if we get to confirm page
-        #self.assertEqual(len(outbox), 1)
-        #self.assertTrue(len(outbox) > mailbox_before)
+        response = self.client.post(url,post_data)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue('Confirm Announcement' in response.content)
+        response = self.client.post(confirm_url,post_data,follow=True)
+        self.assertRedirects(response, url)
+        self.assertEqual(len(outbox),1)
+        self.assertEqual(outbox[0]['subject'],'Test Subject')
+        self.assertEqual(outbox[0]['to'],'<rcross@amsl.com>')
+        message = Message.objects.last()
+        self.assertEqual(message.subject,'Test Subject')
+        self.assertTrue(nomcom in message.related_groups.all())

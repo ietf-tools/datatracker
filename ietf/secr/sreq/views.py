@@ -3,7 +3,6 @@ import datetime
 from django.conf import settings
 from django.contrib import messages
 from django.db.models import Q
-from django.http import Http404
 from django.shortcuts import render, get_object_or_404, redirect
 
 import debug                            # pyflakes:ignore
@@ -224,28 +223,24 @@ def confirm(request, acronym):
     to confirm for submission.
     '''
     # FIXME: this should be using form.is_valid/form.cleaned_data - invalid input will make it crash
-    querydict = request.session.get('session_form',None)
-    if not querydict:
-        raise Http404
-    form = querydict.copy()
-    if 'resources' in form:
-        form['resources'] = [ ResourceAssociation.objects.get(pk=pk) for pk in form['resources'].split(',')]
-    if 'bethere' in form:
-        person_id_list = [ id for id in form['bethere'].split(',') if id ]
-        form['bethere'] = Person.objects.filter(pk__in=person_id_list)
+    form = SessionForm(request.POST, hidden=True)
+    form.is_valid()
     meeting = get_meeting()
     group = get_object_or_404(Group,acronym=acronym)
     login = request.user.person
 
-    if request.method == 'POST':
-        # clear http session data
-        del request.session['session_form']
+    session_data = form.data.copy()
+    if 'bethere' in session_data:
+        person_id_list = [ id for id in form.data['bethere'].split(',') if id ]
+        session_data['bethere'] = Person.objects.filter(pk__in=person_id_list)
+    session_data['resources'] = [ ResourceAssociation.objects.get(pk=pk) for pk in request.POST.getlist('resources') ]
+    
+    button_text = request.POST.get('submit', '')
+    if button_text == 'Cancel':
+        messages.success(request, 'Session Request has been canceled')
+        return redirect('ietf.secr.sreq.views.main')
 
-        button_text = request.POST.get('submit', '')
-        if button_text == 'Cancel':
-            messages.success(request, 'Session Request has been canceled')
-            return redirect('ietf.secr.sreq.views.main')
-
+    if request.method == 'POST' and button_text == 'Submit':
         # delete any existing session records with status = canceled or notmeet
         Session.objects.filter(group=group,meeting=meeting,status__in=('canceled','notmeet')).delete()
 
@@ -253,53 +248,50 @@ def confirm(request, acronym):
         count = 0
         # lenth_session2 and length_session3 fields might be disabled by javascript and so
         # wouldn't appear in form data
-        for duration in (form.get('length_session1',None),form.get('length_session2',None),form.get('length_session3',None)):
+        for duration in (form.data.get('length_session1',None),form.data.get('length_session2',None),form.data.get('length_session3',None)):
             count += 1
             if duration:
                 slug = 'apprw' if count == 3 else 'schedw'
                 new_session = Session(meeting=meeting,
                                       group=group,
-                                      attendees=form['attendees'],
+                                      attendees=form.data['attendees'],
                                       requested=datetime.datetime.now(),
                                       requested_by=login,
                                       requested_duration=datetime.timedelta(0,int(duration)),
-                                      comments=form['comments'],
+                                      comments=form.data['comments'],
                                       status=SessionStatusName.objects.get(slug=slug),
                                       type_id='session',
                                      )
                 session_save(new_session)
-                if 'resources' in form:
-                    new_session.resources = form['resources']
+                if 'resources' in form.data:
+                    new_session.resources = session_data['resources']
 
         # write constraint records
-        save_conflicts(group,meeting,form.get('conflict1',''),'conflict')
-        save_conflicts(group,meeting,form.get('conflict2',''),'conflic2')
-        save_conflicts(group,meeting,form.get('conflict3',''),'conflic3')
+        save_conflicts(group,meeting,form.data.get('conflict1',''),'conflict')
+        save_conflicts(group,meeting,form.data.get('conflict2',''),'conflic2')
+        save_conflicts(group,meeting,form.data.get('conflict3',''),'conflic3')
 
-        if 'bethere' in form:
+        if 'bethere' in form.data:
             bethere_cn = ConstraintName.objects.get(slug='bethere')
-            for p in form.get('bethere', []):
+            for p in session_data['bethere']:
                 Constraint.objects.create(name=bethere_cn, source=group, person=p, meeting=new_session.meeting)
-
-        # deprecated in new schema
-        # log activity
-        #add_session_activity(group,'New session was requested',meeting,user)
 
         # clear not meeting
         Session.objects.filter(group=group,meeting=meeting,status='notmeet').delete()
 
         # send notification
-        send_notification(group,meeting,login,form,'new')
+        send_notification(group,meeting,login,session_data,'new')
 
         status_text = 'IETF Agenda to be scheduled'
         messages.success(request, 'Your request has been sent to %s' % status_text)
         return redirect('ietf.secr.sreq.views.main')
 
-    # GET logic
+    # POST from request submission
     session_conflicts = session_conflicts_as_string(group, meeting)
 
     return render(request, 'sreq/confirm.html', {
-        'session': form,
+        'form': form,
+        'session': session_data,
         'group': group,
         'session_conflicts': session_conflicts},
     )
@@ -539,10 +531,7 @@ def new(request, acronym):
             if Session.objects.filter(group=group,meeting=meeting).exclude(status__in=('deleted','notmeet')):
                 messages.warning(request, 'Sessions for working group %s have already been requested once.' % group.acronym)
                 return redirect('ietf.secr.sreq.views.main')
-
-            # save in user session
-            request.session['session_form'] = form.data
-            return redirect('ietf.secr.sreq.views.confirm',acronym=acronym)
+            return confirm(request, acronym)
 
     # the "previous" querystring causes the form to be returned
     # pre-populated with data from last meeeting's session request

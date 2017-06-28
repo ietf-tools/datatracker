@@ -13,13 +13,6 @@ from ietf.group.models import Group, Role
 from ietf.meeting.models import Session
 from ietf.secr.utils.meeting import get_timeslot
 
-def clear_non_auth(session):
-    """
-    Clears non authentication related keys from the session object
-    """
-    for key in session.keys():
-        if not key.startswith('_auth'):
-            del session[key]
             
 def check_for_cancel(redirect_url):
     """
@@ -30,7 +23,6 @@ def check_for_cancel(redirect_url):
         @wraps(func)
         def inner(request, *args, **kwargs):
             if request.method == 'POST' and request.POST.get('submit',None) == 'Cancel':
-                clear_non_auth(request.session)
                 return HttpResponseRedirect(redirect_url)
             return func(request, *args, **kwargs)
         return inner

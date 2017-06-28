@@ -82,7 +82,7 @@
           <ul>
             <li><button {% if is_active %}{% else %}disabled="disabled"{% endif %}onclick="window.location='revision/'">New Revision</button></li>
             <li><button {% if is_expired %}{% else %}disabled="disabled"{% endif %}onclick="window.location='update/'">Update Expired</button></li>
-            <li><button {% if is_expired or is_withdrawn %}{% else %}disabled="disabled"{% endif %}onclick="window.location='resurrect/'">Resurrect</button></li>
+            <li><button {% if is_expired or is_withdrawn %}{% else %}disabled="disabled"{% endif %}onclick="window.location='{% url "ietf.secr.drafts.views.email" id=draft.name %}?action=resurrect'">Resurrect</button></li>
             <li><button {% if is_active or is_expired %}{% else %}disabled="disabled"{% endif %}onclick="window.location='replace/'">Replace</button></li>
             <li><button {% if is_active %}{% else %}disabled="disabled"{% endif %}onclick="window.location='extend/'">Extend Expiry</button></li>
             <li><button {% if is_active %}{% else %}disabled="disabled"{% endif %}onclick="window.location='withdraw/'">Withdraw</button></li>

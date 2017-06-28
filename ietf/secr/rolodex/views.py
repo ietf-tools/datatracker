@@ -2,8 +2,9 @@ from django.contrib import messages
 from django.contrib.auth.models import User
 from django.db import IntegrityError
 from django.forms.models import inlineformset_factory
-from django.http import HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404, redirect
+from django.utils.http import urlencode
+from django.urls import reverse
 
 from ietf.ietfauth.utils import role_required
 from ietf.person.models import Person, Email, Alias
@@ -35,13 +36,14 @@ def add(request):
     if request.method == 'POST':
         form = NameForm(request.POST)
         if form.is_valid():
-            request.session['post_data'] = request.POST
-            
             # search to see if contact already exists
             name = form.cleaned_data['name']
             results = Alias.objects.filter(name=name)
             if not results:
-                return HttpResponseRedirect('../add-proceed/')
+                params = dict(name=name)
+                url = reverse('ietf.secr.rolodex.views.add_proceed')
+                url = url + '?' + urlencode(params)
+                return redirect(url)
 
     else:
         form = NameForm()
@@ -67,16 +69,14 @@ def add_proceed(request):
     * form
 
     """
-    # if we get to this page from the add page, as expected, the session will have post_data.
-    if request.session['post_data']:
-        post_data = request.session['post_data']
+    if 'name' in request.GET:
+        name = request.GET.get('name')
+    elif 'name' in request.POST:
+        name = request.POST.get('name')
     else:
-        messages.error('ERROR: unable to save session data (enable cookies)') # pylint: disable=no-value-for-parameter
-        return redirect('ietf.secr.rolodex.views.add')
+        name = ''
 
-    name = post_data['name']
-
-    if request.method == 'POST':
+    if request.method == 'POST' and request.POST.get('submit') == 'Submit':
         form = NewPersonForm(request.POST)
         if form.is_valid():
             email = form.cleaned_data['email']

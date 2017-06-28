@@ -17,7 +17,7 @@
 
 <div class="module draft-container">
     <h2>Draft - Email</h2>
-    <form enctype="multipart/form-data" action="" method="post">{% csrf_token %}
+    <form enctype="multipart/form-data" action="{% url "ietf.secr.drafts.views.confirm" id=draft.name %}" method="post">{% csrf_token %}
       <table id="draft-email-table" class="full-width">
 	{{ form.as_table }}
       </table>

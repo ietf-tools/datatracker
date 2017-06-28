@@ -213,12 +213,30 @@ class EditModelForm(forms.ModelForm):
 
 class EmailForm(forms.Form):
     # max_lengths come from db limits, cc is not limited
+    action = forms.CharField(max_length=255, widget=forms.HiddenInput(), required=False)
+    expiration_date = forms.CharField(max_length=255, widget=forms.HiddenInput(), required=False)
+    withdraw_type = forms.CharField(max_length=255, widget=forms.HiddenInput(), required=False)
+    replaced = forms.CharField(max_length=255, widget=forms.HiddenInput(), required=False)
+    replaced_by = forms.CharField(max_length=255, widget=forms.HiddenInput(), required=False)
+    filename = forms.CharField(max_length=255, widget=forms.HiddenInput(), required=False)
     to = forms.CharField(max_length=255)
     cc = forms.CharField(required=False)
     subject = forms.CharField(max_length=255)
     body = forms.CharField(widget=forms.Textarea(), strip=False)
 
+    def __init__(self, *args, **kwargs):
+        if 'hidden' in kwargs:
+            self.hidden = kwargs.pop('hidden')
+        else:
+            self.hidden = False
+        super(EmailForm, self).__init__(*args, **kwargs)
+
+        if self.hidden:
+            for key in self.fields.keys():
+                self.fields[key].widget = forms.HiddenInput()
+
 class ExtendForm(forms.Form):
+    action = forms.CharField(max_length=255, widget=forms.HiddenInput(),initial='extend')
     expiration_date = forms.DateField()
 
 class ReplaceForm(forms.Form):
@@ -369,5 +387,5 @@ class UploadForm(forms.Form):
         return self.cleaned_data
 
 class WithdrawForm(forms.Form):
-    type = forms.CharField(widget=forms.Select(choices=WITHDRAW_CHOICES),help_text='Select which type of withdraw to perform.')
+    withdraw_type = forms.CharField(widget=forms.Select(choices=WITHDRAW_CHOICES),help_text='Select which type of withdraw to perform.')
 

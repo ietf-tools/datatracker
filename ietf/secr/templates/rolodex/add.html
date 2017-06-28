@@ -21,14 +21,17 @@
 <div class="module">
   <h2>Adding {{ name }} </h2>
 
-    {% include "includes/search_results_table.html" %}
+    <form id="rolodex-add-form" enctype="multipart/form-data" action="{% url "ietf.secr.rolodex.views.add_proceed" %}" method="post">{% csrf_token %}
+      <div>{{ form.as_p }}</div>
+      {% include "includes/search_results_table.html" %}
 
-    <div class="button-group">
-      <ul>
-        <li><button onclick="history.go(-1);return true">Back</button></li>
-        <li><button onclick="window.location='../add-proceed/'">Proceed</button></li>
-      </ul>
-    </div> <!-- button-group -->
+      <div class="button-group">
+        <ul>
+          <li><button onclick="history.go(-1);return true">Back</button></li>
+          <li><button type="submit" name="submit" value="Continue">Continue</button></li>
+        </ul>
+      </div> <!-- button-group -->
+    </form>
 </div> <!-- module -->
 
 {% else %}

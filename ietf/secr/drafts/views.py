@@ -2,12 +2,15 @@ import datetime
 import glob
 import os
 import shutil
+from dateutil.parser import parse
 
 from django.conf import settings
 from django.contrib import messages
 from django.db.models import Max
 from django.forms.formsets import formset_factory
 from django.shortcuts import render, get_object_or_404, redirect
+from django.urls import reverse
+from django.utils.http import urlencode
 
 from ietf.doc.models import Document, DocumentAuthor, DocAlias, DocRelationshipName, RelatedDocument, State
 from ietf.doc.models import DocEvent, NewRevisionDocEvent
@@ -21,9 +24,9 @@ from ietf.secr.drafts.forms import ( AddModelForm, AuthorForm, BaseRevisionModel
                                     EmailForm, ExtendForm, ReplaceForm, RevisionModelForm, RfcModelForm,
                                     RfcObsoletesForm, SearchForm, UploadForm, WithdrawForm )
 from ietf.secr.utils.ams_utils import get_base
-from ietf.secr.utils.decorators import clear_non_auth
 from ietf.secr.utils.document import get_rfc_num, get_start_date
 from ietf.submit.models import Submission, Preapproval, DraftSubmissionStateName, SubmissionEvent
+from ietf.submit.mail import announce_new_version, announce_to_lists, announce_to_authors
 from ietf.utils.draft import Draft
 
 
@@ -41,19 +44,21 @@ def archive_draft_files(filename):
         shutil.move(file,settings.INTERNET_DRAFT_ARCHIVE_DIR)
     return
 
-def get_action_details(draft, session):
+def get_action_details(draft, request):
     '''
-    This function takes a draft object and session object and returns a list of dictionaries
+    This function takes a draft object and request object and returns a list of dictionaries
     with keys: label, value to be used in displaying information on the confirmation
     page.
     '''
     result = []
-    if session['action'] == 'revision':
-        m = {'label':'New Revision','value':session['revision']}
+    data = request.POST
+    
+    if data['action'] == 'revision':
+        m = {'label':'New Revision','value':data['revision']}
         result.append(m)
     
-    if session['action'] == 'replace':
-        m = {'label':'Replaced By:','value':session['data']['replaced_by']}
+    if data['action'] == 'replace':
+        m = {'label':'Replaced By:','value':data['replaced_by']}
         result.append(m)
         
     return result
@@ -93,31 +98,28 @@ def process_files(request,draft):
     the files by calling handle_file_upload() and returns
     the basename, revision number and a list of file types.  Basename and revision
     are assumed to be the same for all because this is part of the validation process.
-    
-    It also creates the Submission record WITHOUT saving, and places it in the
-    session for saving in the final action step.
     '''
     files = request.FILES
     file = files[files.keys()[0]]
     filename = os.path.splitext(file.name)[0]
     revision = os.path.splitext(file.name)[0][-2:]
-    basename = get_base(filename)
     file_type_list = []
     for file in files.values():
         extension = os.path.splitext(file.name)[1]
         file_type_list.append(extension)
-        if extension == '.txt':
-            txt_size = file.size
-            wrapper = Draft(file.read().decode('utf8'),file.name)
         handle_uploaded_file(file)
     
-    # create Submission record, leaved unsaved
-    idsub = Submission(
-        name=basename,
+    return (filename,revision,file_type_list)
+
+def post_submission(request, draft):
+    with open(draft.get_file_name()) as file:
+        wrapper = Draft(file.read().decode('utf8'), file.name)
+    submission = Submission(
+        name=draft.name,
         title=draft.title,
-        rev=revision,
+        rev=draft.rev,
         pages=draft.pages,
-        file_size=txt_size,
+        file_size=os.path.getsize(draft.get_file_name()),
         document_date=wrapper.get_creation_date(),
         submission_date=datetime.date.today(),
         group_id=draft.group.id,
@@ -125,14 +127,8 @@ def process_files(request,draft):
         first_two_pages=''.join(wrapper.pages[:2]),
         state=DraftSubmissionStateName.objects.get(slug="posted"),
         abstract=draft.abstract,
-        file_types=','.join(file_type_list),
+        file_types=','.join(file_types_for_draft(draft)),
     )
-    request.session['idsub'] = idsub
-    
-    return (filename,revision,file_type_list)
-
-def post_submission(request):
-    submission = request.session['idsub']
     submission.save()
 
     SubmissionEvent.objects.create(
@@ -140,6 +136,18 @@ def post_submission(request):
         by=request.user.person,
         desc="Submitted and posted manually")
 
+    return submission
+
+def file_types_for_draft(draft):
+    '''Returns list of file extensions that exist for this draft'''
+    basename, ext = os.path.splitext(draft.get_file_name())
+    files = glob.glob(basename + '.*')
+    file_types = []
+    for filename in files:
+        base, ext = os.path.splitext(filename)
+        if ext:
+            file_types.append(ext)
+    return file_types
 
 def promote_files(draft, types):
     '''
@@ -160,7 +168,6 @@ moving files, etc.  Generally speaking the action buttons trigger a multi-page
 sequence where information may be gathered using a custom form, an email 
 may be produced and presented to the user to edit, and only then when confirmation
 is given will the action work take place.  That's when these functions are called.
-The details of the action are stored in request.session.
 '''
 
 def do_extend(draft, request):
@@ -178,19 +185,20 @@ def do_extend(draft, request):
         time=draft.time,
         desc='Extended expiry',
     )
-    draft.expires = request.session['data']['expiration_date']
+    draft.expires = parse(request.POST.get('expiration_date'))
     draft.save_with_history([e])
 
     # save scheduled announcement
-    announcement_from_form(request.session['email'],by=request.user.person)
+    form = EmailForm(request.POST)
+    announcement_from_form(form.data,by=request.user.person)
     
     return
 
 def do_replace(draft, request):
     'Perform document replace'
-    
-    replaced = request.session['data']['replaced']          # a DocAlias
-    replaced_by = request.session['data']['replaced_by']    # a Document
+
+    replaced = DocAlias.objects.get(name=request.POST.get('replaced'))          # a DocAlias
+    replaced_by = Document.objects.get(name=request.POST.get('replaced_by'))    # a Document
 
     # create relationship
     RelatedDocument.objects.create(source=replaced_by,
@@ -207,7 +215,7 @@ def do_replace(draft, request):
         doc=replaced_by,
         rev=replaced_by.rev,
         time=draft.time,
-        desc='This document now replaces <b>%s</b>' % request.session['data']['replaced'],
+        desc='This document now replaces <b>%s</b>' % replaced,
     )
 
     draft.save_with_history([e])
@@ -216,7 +224,8 @@ def do_replace(draft, request):
     archive_draft_files(replaced.document.name + '-' + replaced.document.rev)
 
     # send announcement
-    announcement_from_form(request.session['email'],by=request.user.person)
+    form = EmailForm(request.POST)
+    announcement_from_form(form.data,by=request.user.person)
 
     return
     
@@ -252,11 +261,12 @@ def do_resurrect(draft, request):
     draft.save_with_history([e])
 
     # send announcement
-    announcement_from_form(request.session['email'],by=request.user.person)
+    form = EmailForm(request.POST)
+    announcement_from_form(form.data,by=request.user.person)
     
     return
 
-def do_revision(draft, request):
+def do_revision(draft, request, filename, file_type_list):
     '''
     This function handles adding a new revision of an existing Internet-Draft.  
     Prerequisites: draft must be active
@@ -277,7 +287,7 @@ def do_revision(draft, request):
     archive_draft_files(draft.name + '-' + draft.rev)
     
     # save form data
-    form = BaseRevisionModelForm(request.session['data'],instance=draft)
+    form = BaseRevisionModelForm(request.POST,instance=draft)
     if form.is_valid():
         new_draft = form.save(commit=False)
     else:
@@ -285,7 +295,7 @@ def do_revision(draft, request):
         raise Exception('Problem with input data %s' % form.data)
 
     # set revision and expires
-    new_draft.rev = request.session['filename'][-2:]
+    new_draft.rev = filename[-2:]
     new_draft.expires = datetime.datetime.now() + datetime.timedelta(settings.INTERNET_DRAFT_DAYS_TO_EXPIRE)
 
     # create DocEvent
@@ -301,18 +311,18 @@ def do_revision(draft, request):
     handle_substate(new_draft)
     
     # move uploaded files to production directory
-    promote_files(new_draft, request.session['file_type'])
+    promote_files(new_draft, file_type_list)
     
     # save the submission record
-    post_submission(request)
+    submission = post_submission(request, new_draft)
 
-    # send announcement if we are in IESG process
-    if new_draft.get_state('draft-iesg'):
-        announcement_from_form(request.session['email'],by=request.user.person)
-
+    announce_to_lists(request, submission)
+    announce_new_version(request, submission, draft, '')
+    announce_to_authors(request, submission)
+        
     return
 
-def do_update(draft,request):
+def do_update(draft,request,filename,file_type_list):
     '''
      Actions
     - increment revision #
@@ -322,7 +332,7 @@ def do_update(draft,request):
     - change state to Active
     '''
     # save form data
-    form = BaseRevisionModelForm(request.session['data'],instance=draft)
+    form = BaseRevisionModelForm(request.POST,instance=draft)
     if form.is_valid():
         new_draft = form.save(commit=False)
     else:
@@ -331,7 +341,7 @@ def do_update(draft,request):
     handle_substate(new_draft)
     
     # update draft record
-    new_draft.rev = os.path.splitext(request.session['data']['filename'])[0][-2:]
+    new_draft.rev = os.path.splitext(filename)[0][-2:]
     new_draft.expires = datetime.datetime.now() + datetime.timedelta(settings.INTERNET_DRAFT_DAYS_TO_EXPIRE)
 
     new_draft.set_state(State.objects.get(type="draft", slug="active"))
@@ -347,13 +357,15 @@ def do_update(draft,request):
     new_draft.save_with_history([e])
 
     # move uploaded files to production directory
-    promote_files(new_draft, request.session['file_type'])
+    promote_files(new_draft, file_type_list)
     
     # save the submission record
-    post_submission(request)
+    post_submission(request, new_draft)
 
+def do_update_announce(draft, request):
     # send announcement
-    announcement_from_form(request.session['email'],by=request.user.person)
+    form = EmailForm(request.POST)
+    announcement_from_form(form.data,by=request.user.person)
     
     return
 
@@ -363,7 +375,7 @@ def do_withdraw(draft,request):
     - change state to withdrawn
     - TODO move file to archive
     '''
-    withdraw_type = request.session['data']['type']
+    withdraw_type = request.POST.get('withdraw_type')
 
     prev_state = draft.get_state("draft")
     new_state = None
@@ -382,7 +394,8 @@ def do_withdraw(draft,request):
         draft.save_with_history([e])
 
     # send announcement
-    announcement_from_form(request.session['email'],by=request.user.person)
+    form = EmailForm(request.POST)
+    announcement_from_form(form.data,by=request.user.person)
     
     return
 
@@ -421,8 +434,7 @@ def add(request):
 
     * form 
     '''
-    clear_non_auth(request.session)
-    
+
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
@@ -482,12 +494,13 @@ def add(request):
             promote_files(draft, file_type_list)
             
             # save the submission record
-            post_submission(request)
-    
-            request.session['action'] = 'add'
+            post_submission(request, draft)
             
             messages.success(request, 'New draft added successfully!')
-            return redirect('ietf.secr.drafts.views.authors', id=draft.name)
+            params = dict(action='add')
+            url = reverse('ietf.secr.drafts.views.authors', kwargs={'id':draft.pk})
+            url = url + '?' + urlencode(params)
+            return redirect(url)
 
     else:
         form = AddModelForm()
@@ -513,7 +526,7 @@ def announce(request, id):
     '''
     draft = get_object_or_404(Document, name=id)
 
-    email_form = EmailForm(get_email_initial(draft,type='new'))
+    email_form = EmailForm(get_email_initial(draft,action='new'))
                             
     announcement_from_form(email_form.data,
                            by=request.user.person,
@@ -566,16 +579,14 @@ def authors(request, id):
 
     '''
     draft = get_object_or_404(Document, name=id)
-    
+    action = request.GET.get('action')
+
     if request.method == 'POST':
         form = AuthorForm(request.POST)
         button_text = request.POST.get('submit', '') 
         if button_text == 'Done':
-            action = request.session.get('action','')
             if action == 'add':
-                del request.session['action']
                 return redirect('ietf.secr.drafts.views.announce', id=id)
-
             return redirect('ietf.secr.drafts.views.view', id=id)
 
         if form.is_valid():
@@ -604,22 +615,50 @@ def authors(request, id):
 
 @role_required('Secretariat')
 def confirm(request, id):
-    '''
-    This view displays changes that will be made and calls appropriate
-    function if the user elects to proceed.  If the user cancels then 
-    the session data is cleared and view page is returned.
-    '''
     draft = get_object_or_404(Document, name=id)
-    
+
     if request.method == 'POST':
         button_text = request.POST.get('submit', '')
         if button_text == 'Cancel':
-            # TODO do cancel functions from session (ie remove uploaded files?)
-            # clear session data
-            clear_non_auth(request.session)
             return redirect('ietf.secr.drafts.views.view', id=id)
 
-        action = request.session['action']
+        action = request.POST.get('action','')
+        form = EmailForm(request.POST)
+        if form.is_valid():
+            email = form.data
+            details = get_action_details(draft, request)
+            hidden_form = EmailForm(request.POST, hidden=True)
+
+            return render(request, 'drafts/confirm.html', {
+                'details': details,
+                'email': email,
+                'action': action,
+                'draft': draft,
+                'form': hidden_form},
+            )
+        else:
+            return render(request, 'drafts/email.html', {
+                'form': form,
+                'draft': draft,
+                'action': action},
+            )
+
+@role_required('Secretariat')
+def do_action(request, id):
+    '''
+    This view displays changes that will be made and calls appropriate
+    function if the user elects to proceed.  If the user cancels then 
+    the view page is returned.
+    '''
+    draft = get_object_or_404(Document, name=id)
+
+    if request.method == 'POST':
+        button_text = request.POST.get('submit', '')
+        if button_text == 'Cancel':
+            return redirect('ietf.secr.drafts.views.view', id=id)
+
+        action = request.POST.get('action')
+
         if action == 'revision':
             func = do_revision
         elif action == 'resurrect':
@@ -627,30 +666,16 @@ def confirm(request, id):
         elif action == 'replace':
             func = do_replace
         elif action == 'update':
-            func = do_update
+            func = do_update_announce
         elif action == 'extend':
             func = do_extend
         elif action == 'withdraw':
             func = do_withdraw
 
         func(draft,request)
-        
-        # clear session data
-        clear_non_auth(request.session)
     
         messages.success(request, '%s action performed successfully!' % action)
         return redirect('ietf.secr.drafts.views.view', id=id)
-
-    details = get_action_details(draft, request.session) 
-    email = request.session.get('email','')
-    action = request.session.get('action','')
-    
-    return render(request, 'drafts/confirm.html', {
-        'details': details,
-        'email': email,
-        'action': action,
-        'draft': draft},
-    )
 
 @role_required('Secretariat')
 def dates(request):
@@ -726,45 +751,25 @@ def email(request, id):
     '''
     This function displays the notification message and allows the
     user to make changes before continuing to confirmation page.
-    One exception is the "revision" action, save email data and go
-    directly to confirm page.
     '''
-
     draft = get_object_or_404(Document, name=id)
-    
-    if request.method == 'POST':
-        button_text = request.POST.get('submit', '')
-        if button_text == 'Cancel':
-            # clear session data
-            clear_non_auth(request.session)
-            return redirect('ietf.secr.drafts.views.view', id=id)
+    action = request.GET.get('action')
+    data = request.GET
 
-        form = EmailForm(request.POST)
-        if form.is_valid():
-            request.session['email'] = form.data
-            return redirect('ietf.secr.drafts.views.confirm', id=id)
-    else:
-        # the resurrect email body references the last revision number, handle
-        # exception if no last revision found
-        # if this exception was handled closer to the source it would be easier to debug
-        # other problems with get_email_initial
-        try:
-            form = EmailForm(initial=get_email_initial(
-                draft,
-                type=request.session['action'],
-                input=request.session.get('data', None)))
-        except Exception, e:
-            return render(request, 'drafts/error.html', { 'error': e},)
-        
-        # for "revision" action skip email page and go directly to confirm
-        if request.session['action'] == 'revision':
-            request.session['email'] = form.initial
-            return redirect('ietf.secr.drafts.views.confirm', id=id)
+    # the resurrect email body references the last revision number, handle
+    # exception if no last revision found
+    # if this exception was handled closer to the source it would be easier to debug
+    # other problems with get_email_initial
+    try:
+        form = EmailForm(initial=get_email_initial(draft,action=action,input=data))
+    except Exception, e:
+        return render(request, 'drafts/error.html', { 'error': e},)
 
     return render(request, 'drafts/email.html', {
         'form': form,
-        'draft': draft},
-    )
+        'draft': draft,
+        'action': action,
+    })
 
 @role_required('Secretariat')
 def extend(request, id):
@@ -785,9 +790,11 @@ def extend(request, id):
 
         form = ExtendForm(request.POST)
         if form.is_valid():
-            request.session['data'] = form.cleaned_data
-            request.session['action'] = 'extend'
-            return redirect('ietf.secr.drafts.views.email', id=id)
+            params = form.cleaned_data
+            params['action'] = 'extend'
+            url = reverse('ietf.secr.drafts.views.email', kwargs={'id':id})
+            url = url + '?' + urlencode(params)
+            return redirect(url)
 
     else:
         form = ExtendForm(initial={'revision_date':datetime.date.today().isoformat()})
@@ -906,9 +913,14 @@ def replace(request, id):
 
         form = ReplaceForm(request.POST, draft=draft)
         if form.is_valid():
-            request.session['data'] = form.cleaned_data
-            request.session['action'] = 'replace'
-            return redirect('ietf.secr.drafts.views.email', id=id)
+            #params = form.cleaned_data
+            params = {}
+            params['replaced'] = form.data['replaced']
+            params['replaced_by'] = form.data['replaced_by']
+            params['action'] = 'replace'
+            url = reverse('ietf.secr.drafts.views.email', kwargs={'id':id})
+            url = url + '?' + urlencode(params)
+            return redirect(url)
 
     else:
         form = ReplaceForm(draft=draft)
@@ -919,21 +931,10 @@ def replace(request, id):
     )
 
 @role_required('Secretariat')
-def resurrect(request, id):
-    '''
-    This view handles resurrection of an Internet-Draft
-    Prerequisites: draft must be expired 
-    Input: none 
-    '''
-    
-    request.session['action'] = 'resurrect'
-    return redirect('ietf.secr.drafts.views.email', id=id)
-
-@role_required('Secretariat')
 def revision(request, id):
     '''
-    This function presents the input form for the New Revision action.  If submitted
-    form is valid state is saved in the session and the email page is returned.
+    This function presents the input form for the New Revision action.
+    on POST, updates draft to new revision and sends notification.
     '''
 
     draft = get_object_or_404(Document, name=id)
@@ -949,14 +950,10 @@ def revision(request, id):
             # process files
             filename,revision,file_type_list = process_files(request,draft)
             
-            # save info in session and proceed to email page
-            request.session['data'] = form.cleaned_data
-            request.session['action'] = 'revision'
-            request.session['filename'] = filename
-            request.session['revision'] = revision
-            request.session['file_type'] = file_type_list
-            
-            return redirect('ietf.secr.drafts.views.email', id=id)
+            do_revision(draft, request, filename, file_type_list)
+
+            messages.success(request, 'New Revision successful!')
+            return redirect('ietf.secr.drafts.views.view', id=id)
 
     else:
         form = RevisionModelForm(instance=draft,initial={'revision_date':datetime.date.today().isoformat()})
@@ -983,7 +980,6 @@ def search(request):
 
     '''
     results = []
-    clear_non_auth(request.session)
     
     if request.method == 'POST':
         form = SearchForm(request.POST)
@@ -1019,7 +1015,6 @@ def search(request):
                 kwargs['docevent__time__lte'] = revision_date_end
             
             # perform query
-            #assert False, kwargs
             if kwargs:
                 qs = Document.objects.filter(**kwargs)
             else:
@@ -1061,14 +1056,13 @@ def update(request, id):
             # process files
             filename,revision,file_type_list = process_files(request,draft)
 
-            # save state in session and proceed to email page
-            request.session['data'] = form.data
-            request.session['action'] = 'update'
-            request.session['revision'] = revision
-            request.session['data']['filename'] = filename
-            request.session['file_type'] = file_type_list
-       
-            return redirect('ietf.secr.drafts.views.email', id=id)
+            do_update(draft, request, filename, file_type_list)
+
+            params = dict(action='update')
+            params['filename'] = filename
+            url = reverse('ietf.secr.drafts.views.email', kwargs={'id':id})
+            url = url + '?' + urlencode(params)
+            return redirect(url)
 
     else:
         form = RevisionModelForm(instance=draft,initial={'revision_date':datetime.date.today().isoformat()})
@@ -1094,7 +1088,6 @@ def view(request, id):
     * draft, area, id_tracker_state
     '''
     draft = get_object_or_404(Document, name=id)
-    #clear_non_auth(request.session)
 
     # TODO fix in Django 1.2
     # some boolean state variables for use in the view.html template to manage display
@@ -1157,11 +1150,11 @@ def withdraw(request, id):
 
         form = WithdrawForm(request.POST)
         if form.is_valid():
-            # save state in session and proceed to email page
-            request.session['data'] = form.data
-            request.session['action'] = 'withdraw'
-            
-            return redirect('ietf.secr.drafts.views.email', id=id)
+            params = form.cleaned_data
+            params['action'] = 'withdraw'
+            url = reverse('ietf.secr.drafts.views.email', kwargs={'id':id})
+            url = url + '?' + urlencode(params)
+            return redirect(url)
 
     else:
         form = WithdrawForm()

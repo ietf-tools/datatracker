@@ -170,7 +170,7 @@ def get_fullcc_list(draft):
 
     return ','.join(result_list) 
 
-def get_email_initial(draft, type=None, input=None):
+def get_email_initial(draft, action=None, input=None):
     """
     Takes a draft object, a string representing the email type:
     (extend,new,replace,resurrect,revision,update,withdraw) and
@@ -182,7 +182,6 @@ def get_email_initial(draft, type=None, input=None):
     It appears datatracker abbreviates the list with "et al".  Datatracker scheduled_announcement
     entries have "Action" in subject whereas this app uses "ACTION"
     """
-    # assert False, (draft, type, input)
     expiration_date = (datetime.date.today() + datetime.timedelta(185)).strftime('%B %d, %Y')
     new_revision = str(int(draft.rev)+1).zfill(2)
     new_filename = draft.name + '-' + new_revision + '.txt'
@@ -190,12 +189,15 @@ def get_email_initial(draft, type=None, input=None):
     data = {}
     data['cc'] = get_fullcc_list(draft)
     data['to'] = ''
-    if type == 'extend':
+    data['action'] = action
+
+    if action == 'extend':
         context = {'doc':curr_filename,'expire_date':input['expiration_date']}
         data['subject'] = 'Extension of Expiration Date for %s' % (curr_filename)
         data['body'] = render_to_string('drafts/message_extend.txt', context)
+        data['expiration_date'] = input['expiration_date']
 
-    elif type == 'new':
+    elif action == 'new':
         # if the ID belongs to a group other than "none" add line to message body
         if draft.group.type.slug == 'wg':
             wg_message = 'This draft is a work item of the %s Working Group of the IETF.' % draft.group.name
@@ -211,37 +213,43 @@ def get_email_initial(draft, type=None, input=None):
         data['subject'] = 'I-D ACTION:%s' % (curr_filename)
         data['body'] = render_to_string('drafts/message_new.txt', context)
 
-    elif type == 'replace':
+    elif action == 'replace':
         '''
         input['replaced'] is a DocAlias
         input['replaced_by'] is a Document
         '''
-        context = {'doc':input['replaced'].name,'replaced_by':input['replaced_by'].name}
-        data['subject'] = 'Replacement of %s with %s' % (input['replaced'].name,input['replaced_by'].name)
+        context = {'doc':input['replaced'],'replaced_by':input['replaced_by']}
+        data['subject'] = 'Replacement of %s with %s' % (input['replaced'],input['replaced_by'])
         data['body'] = render_to_string('drafts/message_replace.txt', context)
-
-    elif type == 'resurrect':
+        data['replaced'] = input['replaced']
+        data['replaced_by'] = input['replaced_by']
+        
+    elif action == 'resurrect':
         last_revision = get_last_revision(draft.name)
         last_filename = draft.name + '-' + last_revision + '.txt'
         context = {'doc':last_filename,'expire_date':expiration_date}
         data['subject'] = 'Resurrection of %s' % (last_filename)
         data['body'] = render_to_string('drafts/message_resurrect.txt', context)
+        data['action'] = action
 
-    elif type == 'revision':
+    elif action == 'revision':
         context = {'rev':new_revision,'doc':new_filename,'doc_base':new_filename[:-4]}
         data['to'] = get_revision_emails(draft)
         data['cc'] = ''
         data['subject'] = 'New Version Notification - %s' % (new_filename)
         data['body'] = render_to_string('drafts/message_revision.txt', context)
 
-    elif type == 'update':
+    elif action == 'update':
         context = {'doc':input['filename'],'expire_date':expiration_date}
         data['subject'] = 'Posting of %s' % (input['filename'])
         data['body'] = render_to_string('drafts/message_update.txt', context)
-
-    elif type == 'withdraw':
-        context = {'doc':curr_filename,'by':input['type']}
+        data['action'] = action
+        
+    elif action == 'withdraw':
+        context = {'doc':curr_filename,'by':input['withdraw_type']}
         data['subject'] = 'Withdrawl of %s' % (curr_filename)
         data['body'] = render_to_string('drafts/message_withdraw.txt', context)
+        data['action'] = action
+        data['withdraw_type'] = input['withdraw_type']
 
     return data

@@ -72,6 +72,10 @@ class SessionForm(forms.Form):
     bethere       = SearchablePersonsField(label="Must be present", required=False)
 
     def __init__(self, *args, **kwargs):
+        if 'hidden' in kwargs:
+            self.hidden = kwargs.pop('hidden')
+        else:
+            self.hidden = False
         super(SessionForm, self).__init__(*args, **kwargs)
         self.fields['num_session'].widget.attrs['onChange'] = "stat_ls(this.selectedIndex);"
         self.fields['length_session1'].widget.attrs['onClick'] = "if (check_num_session(1)) this.disabled=true;"
@@ -91,6 +95,11 @@ class SessionForm(forms.Form):
         if self.initial and 'length_session3' in self.initial:
             if self.initial['length_session3'] != '0' and self.initial['length_session3'] != None:
                 self.fields['third_session'].initial = True
+
+        if self.hidden:
+            for key in self.fields.keys():
+                self.fields[key].widget = forms.HiddenInput()
+            self.fields['resources'].widget = forms.MultipleHiddenInput()
 
     def clean_conflict1(self):
         conflict = self.cleaned_data['conflict1']

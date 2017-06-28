@@ -37,6 +37,8 @@ def log(msg):
     "Uses syslog by preference.  Logs the given calling point and message."
     if settings.SERVER_MODE == 'test':
         return
+    elif settings.DEBUG == True:
+        logfunc = debug.say
     if isinstance(msg, unicode):
         msg = msg.encode('unicode_escape')
     try:

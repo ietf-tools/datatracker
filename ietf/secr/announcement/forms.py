@@ -138,6 +138,10 @@ class AnnounceForm(forms.ModelForm):
         fields = ('nomcom', 'to','to_custom','frm','cc','bcc','reply_to','subject','body')
 
     def __init__(self, *args, **kwargs):
+        if 'hidden' in kwargs:
+            self.hidden = kwargs.pop('hidden')
+        else:
+            self.hidden = False
         user = kwargs.pop('user')
         person = user.person
         super(AnnounceForm, self).__init__(*args, **kwargs)
@@ -154,6 +158,10 @@ class AnnounceForm(forms.ModelForm):
         if not nomcom_roles and not secr_roles:
             self.fields['nomcom'].widget = forms.HiddenInput()
         self.initial['reply_to'] = 'ietf@ietf.org'
+        
+        if self.hidden:
+            for key in self.fields.keys():
+                self.fields[key].widget = forms.HiddenInput()
 
     def clean(self):
         super(AnnounceForm, self).clean()

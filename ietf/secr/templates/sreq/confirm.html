@@ -1,7 +1,7 @@
 {% extends "base_site.html" %}
 {% load staticfiles %}
 
-{% block title %}Sessions - View{% endblock %}
+{% block title %}Sessions - Confirm{% endblock %}
 
 {% block extrahead %}{{ block.super }}
   <script type="text/javascript" src="{% static 'secr/js/utils.js' %}"></script>
@@ -28,7 +28,8 @@
       <br>
     {% endif %}
     
-    <form action="" method="post">{% csrf_token %}
+    <form action="{% url "ietf.secr.sreq.views.confirm" acronym=group.acronym %}" method="post">{% csrf_token %}
+      {{ form }}
       {% include "includes/buttons_submit_cancel.html" %}
     </form>
 

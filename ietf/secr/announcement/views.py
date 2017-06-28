@@ -6,7 +6,7 @@ from django.shortcuts import render, redirect
 from ietf.group.models import Role
 from ietf.ietfauth.utils import has_role
 from ietf.secr.announcement.forms import AnnounceForm
-from ietf.secr.utils.decorators import check_for_cancel, clear_non_auth
+from ietf.secr.utils.decorators import check_for_cancel
 from ietf.utils.mail import send_mail_text
 
 # -------------------------------------------------
@@ -59,13 +59,18 @@ def main(request):
     form = AnnounceForm(request.POST or None,user=request.user)
 
     if form.is_valid():
-        # nomcom is a ModelChoice, store pk, not Group object
-        data = form.cleaned_data
-        if data['nomcom']:
-            data['nomcom'] = data['nomcom'].pk
-        request.session['data'] = data
+        # recast as hidden form for next page of process
+        form = AnnounceForm(request.POST, user=request.user, hidden=True)
+        if form.data['to'] == 'Other...':
+            to = form.data['to_custom']
+        else:
+            to = form.data['to']
 
-        return redirect('ietf.secr.announcement.views.confirm')
+        return render(request, 'announcement/confirm.html', {
+            'message': form.data,
+            'to': to,
+            'form': form},
+        )
 
     return render(request, 'announcement/main.html', { 'form': form} )
 
@@ -73,37 +78,26 @@ def main(request):
 @check_for_cancel('../')
 def confirm(request):
 
-    if request.session.get('data',None):
-        data = request.session['data']
-    else:
-        messages.error(request, 'No session data.  Your session may have expired or cookies are disallowed.')
-        return redirect('ietf.secr.announcement.views.main')
+    if not check_access(request.user):
+        return HttpResponseForbidden('Restricted to: Secretariat, IAD, or chair of IETF, IAB, RSOC, RSE, IAOC, ISOC, NomCom.')
 
     if request.method == 'POST':
-        form = AnnounceForm(data, user=request.user)
-        message = form.save(user=request.user,commit=True)
-        extra = {'Reply-To':message.reply_to}
-        send_mail_text(None,
-                       message.to,
-                       message.frm,
-                       message.subject,
-                       message.body,
-                       cc=message.cc,
-                       bcc=message.bcc,
-                       extra=extra)
+        form = AnnounceForm(request.POST, user=request.user)
+        if request.method == 'POST':
+            message = form.save(user=request.user,commit=True)
+            extra = {'Reply-To':message.reply_to}
+            send_mail_text(None,
+                           message.to,
+                           message.frm,
+                           message.subject,
+                           message.body,
+                           cc=message.cc,
+                           bcc=message.bcc,
+                           extra=extra)
 
-        # clear session
-        clear_non_auth(request.session)
+            messages.success(request, 'The announcement was sent.')
+            return redirect('ietf.secr.announcement.views.main')
 
-        messages.success(request, 'The announcement was sent.')
-        return redirect('ietf.secr.announcement.views.main')
 
-    if data['to'] == 'Other...':
-        to = ','.join(data['to_custom'])
-    else:
-        to = data['to']
 
-    return render(request, 'announcement/confirm.html', {
-        'message': data,
-        'to': to},
-    )
+

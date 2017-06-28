@@ -4,6 +4,7 @@ import debug                            # pyflakes:ignore
 
 from ietf.utils.test_utils import TestCase, unicontent
 from ietf.group.models import Group
+from ietf.meeting.helpers import get_meeting
 from ietf.meeting.models import Meeting, Session, ResourceAssociation
 from ietf.meeting.test_data import make_meeting_test_data
 from ietf.utils.mail import outbox, empty_outbox
@@ -44,16 +45,26 @@ class SessionRequestTestCase(TestCase):
 class SubmitRequestCase(TestCase):
     def test_submit_request(self):
         make_test_data()
+        meeting = get_meeting()
         group = Group.objects.get(acronym='mars')
+        session_count_before = Session.objects.filter(meeting=meeting, group=group).count()
         url = reverse('ietf.secr.sreq.views.new',kwargs={'acronym':group.acronym})
+        confirm_url = reverse('ietf.secr.sreq.views.confirm',kwargs={'acronym':group.acronym})
+        main_url = reverse('ietf.secr.sreq.views.main')
         post_data = {'num_session':'1',
                      'length_session1':'3600',
                      'attendees':'10',
                      'conflict1':'',
-                     'comments':'need projector'}
+                     'comments':'need projector',
+                     'submit': 'Continue'}
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.post(url,post_data)
-        self.assertRedirects(r, reverse('ietf.secr.sreq.views.confirm', kwargs={'acronym':group.acronym}))
+        self.assertEqual(r.status_code, 200)
+        post_data['submit'] = 'Submit'
+        r = self.client.post(confirm_url,post_data)
+        self.assertRedirects(r, main_url)
+        session_count_after = Session.objects.filter(meeting=meeting, group=group).count()
+        self.assertTrue(session_count_after == session_count_before + 1)
 
     def test_submit_request_invalid(self):
         make_test_data()
@@ -89,13 +100,17 @@ class SubmitRequestCase(TestCase):
                      'bethere':str(ad.pk),
                      'conflict1':'',
                      'comments':'',
-                     'resources': resource.pk}
+                     'resources': resource.pk,
+                     'submit': 'Continue'}
         self.client.login(username="ameschairman", password="ameschairman+password")
         # submit
         r = self.client.post(url,post_data)
-        self.assertRedirects(r, confirm_url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertTrue('Confirm' in unicode(q("title")))
         # confirm
-        r = self.client.post(confirm_url,{'submit':'Submit'})
+        post_data['submit'] = 'Submit'
+        r = self.client.post(confirm_url,post_data)
         self.assertRedirects(r, reverse('ietf.secr.sreq.views.main'))
         self.assertEqual(len(outbox),len_before+1)
         notification = outbox[-1]

@@ -52,16 +52,6 @@ class EditPersonForm(forms.ModelForm):
         else:
             return None
         
-    """
-    def save(self, force_insert=False, force_update=False, commit=True):
-        obj = super(EditPersonForm, self).save(commit=False)
-        user = self.cleaned_data['user']
-        self.user = User.objects.get(username=user)
-        
-        if commit:
-            obj.save()
-        return obj
-    """
 # ------------------------------------------------------
 # Forms for addition of new contacts
 # These sublcass the regular forms, with additional
@@ -100,9 +90,6 @@ class NewPersonForm(forms.ModelForm):
     class Meta:
         model = Person
         exclude = ('time','user')
-        
-    #def __init__(self, *args, **kwargs):
-    #    super(NewPersonForm, self).__init__(*args, **kwargs)
 
     def clean_email(self):
         email = self.cleaned_data['email']
