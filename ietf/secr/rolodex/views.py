@@ -7,6 +7,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 
 from ietf.ietfauth.utils import role_required
 from ietf.person.models import Person, Email, Alias
+from ietf.person.utils import merge_users
 from ietf.secr.rolodex.forms import EditPersonForm, EmailForm, NameForm, NewPersonForm, SearchForm
 
 
@@ -174,8 +175,15 @@ def edit(request, id):
             person_form.save()
             email_formset.save()
             
-            # add new names to alias
-            
+            if 'user' in person_form.changed_data and person_form.initial['user']:
+                try:
+                    source = User.objects.get(username=person_form.initial['user'])
+                    merge_users(source, person_form.cleaned_data['user'])
+                    source.is_active = False
+                    source.save()
+                except User.DoesNotExist:
+                    pass
+
             messages.success(request, 'The Rolodex entry was changed successfully')
             return redirect('ietf.secr.rolodex.views.view', id=id)
 

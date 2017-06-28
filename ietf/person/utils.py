@@ -67,7 +67,7 @@ def get_extra_primary(source,target):
 
 def handle_users(source,target,check_only=False):
     '''
-    Deletes extra Users.  Retains target user.  If check_only == True, just return a string
+    Deactivates extra Users.  Retains target user.  If check_only == True, just return a string
     describing action, otherwise perform user changes and return string.
     '''
     if not (source.user or target.user):
@@ -86,7 +86,7 @@ def handle_users(source,target,check_only=False):
         message = "DATATRACKER LOGIN ACTION: retaining login: {}, removing login: {}".format(target.user,source.user)
         if not check_only:
             merge_users(source.user, target.user)
-            syslog.syslog('merge-person-records: deleting user {}'.format(source.user.username))
+            syslog.syslog('merge-person-records: deactivating user {}'.format(source.user.username))
             user = source.user
             source.user = None
             source.save()
