@@ -1,7 +1,8 @@
 from django.urls import reverse
 
 from ietf.utils.test_utils import TestCase
-from ietf.person.models import Person
+from ietf.person.factories import PersonFactory, UserFactory
+from ietf.person.models import Person, User
 from ietf.utils.test_data import make_test_data
 
 
@@ -46,4 +47,35 @@ class RolodexTestCase(TestCase):
         person = Person.objects.get(name='Joe Smith')
         view_url = reverse('ietf.secr.rolodex.views.view', kwargs={'id':person.pk})
         self.assertRedirects(response, view_url)
-        
+
+    def test_edit_replace_user(self):
+        person = PersonFactory()
+        user = UserFactory()
+        url = reverse('ietf.secr.rolodex.views.edit', kwargs={'id':person.id})
+        redirect_url = reverse('ietf.secr.rolodex.views.view', kwargs={'id':person.id})
+        self.client.login(username="secretary", password="secretary+password")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        post_data = {
+            'name': person.name,
+            'ascii': person.ascii,
+            'ascii_short': person.ascii_short,
+            'affiliation': person.affiliation,
+            'address': person.address,
+            'user': user.username,
+            'email-0-person':person.pk,
+            'email-0-address': person.email_address,
+            'email-TOTAL_FORMS':1,
+            'email-INITIAL_FORMS':1,
+            'email-MIN_NUM_FORMS':0,
+            'email-MAX_NUM_FORMS':1000,
+            'submit': 'Submit',
+        }
+        original_user = person.user
+        person_id = person.pk
+        response = self.client.post(url, post_data, follow=True)
+        person = Person.objects.get(id=person_id)
+        original_user = User.objects.get(id=original_user.id)
+        self.assertRedirects(response, redirect_url)
+        self.assertEqual(person.user, user)
+        self.assertTrue(not original_user.is_active)
