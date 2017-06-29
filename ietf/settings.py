@@ -671,7 +671,7 @@ IDSUBMIT_STAGING_PATH = '/a/www/www6s/staging/'
 IDSUBMIT_STAGING_URL = '//www.ietf.org/staging/'
 IDSUBMIT_IDNITS_BINARY = '/a/www/ietf-datatracker/scripts/idnits'
 SUBMIT_PYANG_COMMAND = 'pyang --verbose --ietf -p {libs} {model}'
-SUBMIT_YANGLINT_COMMAND = 'yanglint --verbose -p {rfclib} -p {draftlib} {model}'
+SUBMIT_YANGLINT_COMMAND = 'yanglint --verbose -p {rfclib} -p {draftlib} -p {tmplib} {model}'
 SUBMIT_YANGLINT_COMMAND = None        # use the value above if you have yanglint installed
 
 IDSUBMIT_CHECKER_CLASSES = (
