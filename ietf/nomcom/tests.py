@@ -1992,3 +1992,33 @@ class TopicTests(TestCase):
         self.assertContains(response, "alert-success")
         self.assertNotContains(response, "feedbackform")
         self.assertEqual(topic.feedback_set.count(),1)
+
+    def testAudience(self):
+        for audience in ['nomcom','nominee']:
+            topic = TopicFactory(nomcom=self.nc,audience_id=audience)
+            feedback_url = reverse('ietf.nomcom.views.public_feedback',kwargs={'year':self.nc.year() })
+            login_testing_unauthorized(self, self.plain_person.user.username, feedback_url)
+            r = self.client.get(feedback_url)
+            self.assertEqual(r.status_code,200)
+            self.assertFalse(topic.subject in unicontent(r))
+            topic_url = feedback_url + '?topic=%d'%topic.pk
+            r = self.client.get(topic_url)
+            self.assertEqual(r.status_code,404)
+            r = self.client.post(topic_url, {'comments':'junk', 'confirmation':False})
+            self.assertEqual(r.status_code,404)
+
+            self.client.logout()
+            if audience == 'nomcom':
+                valid_user = self.nc.group.role_set.filter(name='member').first().person
+            else:
+                valid_user = self.nc.nominee_set.first().person
+            self.client.login(username=valid_user.user.username,password=valid_user.user.username+"+password")
+            r = self.client.get(feedback_url)
+            self.assertEqual(r.status_code,200)
+            self.assertTrue(topic.subject in unicontent(r))
+            r = self.client.get(topic_url)
+            self.assertEqual(r.status_code,200)
+            r = self.client.post(topic_url, {'comments':'junk', 'confirmation':False})
+            self.assertEqual(r.status_code,200)
+            self.assertEqual(topic.feedback_set.count(),1)
+            self.client.logout()

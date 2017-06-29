@@ -426,6 +426,10 @@ def feedback(request, year, public):
         selected_topic = request.GET.get('topic')
         if selected_topic:
             topic = get_object_or_404(Topic,id=selected_topic)
+            if topic.audience_id == 'nomcom' and not nomcom.group.has_role(request.user, ['chair','advisor','liaison','member']):
+                raise Http404()
+            if topic.audience_id == 'nominee' and not nomcom.nominee_set.filter(person=request.user.person).exists():
+                raise Http404()
 
     if public:
         positions = Position.objects.get_by_nomcom(nomcom=nomcom).filter(is_open=True,accepting_feedback=True)
@@ -433,6 +437,12 @@ def feedback(request, year, public):
     else:
         positions = Position.objects.get_by_nomcom(nomcom=nomcom).filter(is_open=True)
         topics = Topic.objects.filter(nomcom=nomcom)
+
+    if not nomcom.group.has_role(request.user, ['chair','advisor','liaison','member']):
+        topics = topics.exclude(audience_id='nomcom')
+    if not nomcom.nominee_set.filter(person=request.user.person).exists():
+        topics = topics.exclude(audience_id='nominee')
+    
 
     user_comments = Feedback.objects.filter(nomcom=nomcom,
                                             type='comment',

@@ -1,3 +1,67 @@
+ietfdb (6.55.2) ietf; urgency=medium
+
+  This release contains bugfixes and code refactoring:
+
+  * Modified the text shown on Chairs' 'Manage Document Adoption in Group' 
+    button and corrected the logic for which text to show.
+
+  * Merged in [13722] and [13712] from rcross@amsl.com:
+    Remove all use of request.session from secretariat apps.  Add tests for 
+    affected views.  Fixes #1455.
+
+  * Removed the copy of xym copied directly from repository -- the method 
+    call we use is too unstable at the moment.  Now requiring xym=='0.4'.
+
+  * Merged in [13628] from rcross@amsl.com:
+    Grant secretariat meeting__meeting admin permissions.   
+
+  * Added checks for the presence of yang module directories to the check 
+    framework.  Tweaked some text strings.
+
+  * Modified the yang checker to work with both versions 0.3.x and 0.4.x of 
+    xym (different signatures for get_extracted_models()).
+
+  * Removed the 'apply to all sessions' checkbox from the 
+    agenda/minutes/slides upload pages for non-session timeslots, such as 
+    plenaries etc. as it is rarely if ever correct to have it checked then.
+
+  * Additional tweaks to the mailman listinfo importer.
+
+  * Code reorganization, doing away with multiple urls_* and views_ files 
+    in ietf.group.  No intentional functionality changes.
+
+  * Made the import_mailman_listinfo management command somewhat more 
+    robust.
+
+  * Return a checker None result with exception message on xym exceptions.
+
+  * Changed the url coverage code to handle deeper chains of url includes, 
+    and to handle url includes through url lists in addition to url modules. 
+    Added information in the release coverage dictionaries about the view 
+    functions coupled to the urls.
+
+  * Fixed a wrong virtualenv path in bin/mm_hourly
+
+  * Updated PLAN
+
+  * Updated docker/settings_local.py with new needed settings.  Added a lot 
+    of quotes to docker/run in order to work better with paths containsing 
+    spaces.  Touched a file during setup to be more debian compatible.
+
+  * Variable naming tweak
+
+  * Catch bad module names in the Yang checker (they are not currently 
+    flagged by xym).
+
+  * Changed the implementation of Submission.latest_checks() to also return 
+    None checks, so it's possible to update a Passed due to no yang modules to 
+    a None (no modules to check).
+
+  * Corrected the settings names used in the yang extraction command.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  28 Jun 2017 10:43:38 -0700
+
+
 ietfdb (6.55.1) ietf; urgency=medium
 
   This is a bugfix release, with some smaller enhancements.  From the commit
