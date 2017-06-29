@@ -8,6 +8,8 @@ from django.contrib.auth.models import User
 from django.template.loader import render_to_string
 from django.template.defaultfilters import linebreaks
 
+import debug                            # pyflakes:ignore
+
 from ietf.nomcom.fields import EncryptedTextField
 from ietf.person.models import Person,Email
 from ietf.group.models import Group

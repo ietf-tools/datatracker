@@ -1,9 +1,9 @@
 import factory
 import random
 
-from ietf.nomcom.models import NomCom, Position, Feedback, Nominee, NomineePosition, Topic
+from ietf.nomcom.models import NomCom, Position, Feedback, Nominee, NomineePosition, Nomination, Topic
 from ietf.group.factories import GroupFactory
-from ietf.person.factories import PersonFactory
+from ietf.person.factories import PersonFactory, UserFactory
 
 import debug                            # pyflakes:ignore
 
@@ -147,7 +147,7 @@ class NomineeFactory(factory.DjangoModelFactory):
         model = Nominee
 
     nomcom = factory.SubFactory(NomComFactory)
-    person = factory.SubFactory(PersonFactory)   
+    person = factory.SubFactory(PersonFactory)
     email = factory.LazyAttribute(lambda obj: obj.person.email())
 
 class NomineePositionFactory(factory.DjangoModelFactory):
@@ -176,3 +176,17 @@ class TopicFactory(factory.DjangoModelFactory):
     accepting_feedback = True
     audience_id = 'general'
 
+class NominationFactory(factory.DjangoModelFactory):
+    class Meta:
+        model = Nomination
+
+    nominee = factory.SubFactory(NomineeFactory)
+    position = factory.SubFactory(NomineePositionFactory)
+    candidate_name = factory.LazyAttribute(lambda obj: obj.nominee.person.name)
+    candidate_email = factory.LazyAttribute(lambda obj: obj.nominee.person.email())
+    candidate_phone = factory.Faker('phone_number')
+    comments = factory.SubFactory(FeedbackFactory)
+    nominator_email = factory.LazyAttribute(lambda obj: obj.user.email)
+    user = factory.SubFactory(UserFactory)
+    share_nominator = False
+    

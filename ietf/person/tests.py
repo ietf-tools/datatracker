@@ -13,6 +13,7 @@ from ietf.community.models import CommunityList
 from ietf.group.models import Group
 from ietf.nomcom.models import NomCom
 from ietf.nomcom.test_data import nomcom_test_data
+from ietf.nomcom.factories import NomComFactory, NomineeFactory, NominationFactory, FeedbackFactory, PositionFactory
 from ietf.person.factories import EmailFactory, PersonFactory, UserFactory
 from ietf.person.models import Person, Alias
 from ietf.person.utils import (merge_persons, determine_merge_order, send_merge_notification,
@@ -206,9 +207,20 @@ class PersonUtilsTests(TestCase):
 
     def test_merge_users(self):
         make_test_data()
-        source = UserFactory()
+
+        person = PersonFactory()
+        source = person.user
         target = UserFactory()
         mars = Group.objects.get(acronym='mars')
         communitylist = CommunityList.objects.create(user=source, group=mars)
+        nomcom = NomComFactory()
+        position = PositionFactory(nomcom=nomcom)
+        nominee = NomineeFactory(nomcom=nomcom, person=mars.get_chair().person)
+        feedback = FeedbackFactory(user=source, author=person, nomcom=nomcom)
+        feedback.nominees.add(nominee)
+        nomination = NominationFactory(nominee=nominee, user=source, position=position, comments=feedback)
+
         merge_users(source, target)
-        self.assertTrue(communitylist in target.communitylist_set.all())
+        self.assertIn(communitylist, target.communitylist_set.all())
+        self.assertIn(feedback, target.feedback_set.all())
+        self.assertIn(nomination, target.nomination_set.all())        

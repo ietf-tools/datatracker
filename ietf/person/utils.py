@@ -7,6 +7,9 @@ import syslog
 
 from django.contrib import admin
 from django.contrib.auth.models import User
+
+import debug                            # pyflakes:ignore
+
 from ietf.nomcom.models import Nominee
 from ietf.person.models import Person
 from ietf.utils.mail import send_mail
@@ -116,12 +119,12 @@ def merge_users(source, target):
         target.communitylist_set.add(communitylist)
     # handle feedback
     for feedback in source.feedback_set.all():
-        source.feedback_set.remove(feedback)
-        target.feedback_set.add(feedback)
+        feedback.user = target
+        feedback.save()
     # handle nominations
     for nomination in source.nomination_set.all():
-        source.nomination_set.remove(nomination)
-        target.nomination_set.add(nomination)
+        nomination.user = target
+        nomination.save()
 
 def dedupe_aliases(person):
     '''Check person for duplicate aliases and purge'''
