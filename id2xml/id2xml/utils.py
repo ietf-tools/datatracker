@@ -39,7 +39,6 @@ def wrap(s):
         wrapped.append(textwrap.fill(line, width=cols, subsequent_indent=prev_indent))
     return '\n'.join(wrapped)
 
-
 def strip_pagebreaks(text):
     "Strip ID/RFC-style headers and footers from the given text"
     short_title = None
@@ -70,7 +69,7 @@ def strip_pagebreaks(text):
         match = re.search("(  *)(\S.*\S)(  +)\[?[Pp]age [0-9ivx]+\]?[ \t\f]*$", line, re.I)
         if match:
             mid = match.group(2)
-            if not short_title and not mid.startswith('Expires'):
+            if not short_title and not 'Expires' in mid:
                 short_title = mid
             page, newpage = endpage(page, newpage, line)
             continue
@@ -78,7 +77,7 @@ def strip_pagebreaks(text):
             page, newpage = begpage(page, newpage)
             continue
         if lineno > 25:
-            regex = "^(INTERNET.DRAFT|Internet.Draft|RFC \d+)(  +)(\S.*\S)(  +)(Jan|Feb|Mar|March|Apr|April|May|Jun|June|Jul|July|Aug|Sep|Oct|Nov|Dec)[a-z]+ (19[89][0-9]|20[0-9][0-9]) *$"
+            regex = "^(INTERNET.DRAFT|Internet.Draft|RFC \d+)(  +)(\S.*\S)(  +)(Jan|Feb|Mar|March|Apr|April|May|Jun|June|Jul|July|Aug|Sep|Oct|Nov|Dec)[a-z]*( \d\d?,)? (19[89][0-9]|20[0-9][0-9]) *$"
             match = re.search(regex, line, re.I)
             if match:
                 short_title = match.group(3)
