@@ -92,8 +92,8 @@ for part in section_name_start:
 
 section_start_re = {
     'front':    r'^%s'%('|'.join(section_names['front'])),
-    'middle':   r"^([0-9]+\.([0-9]+(\.[0-9]+)*\.?) |%s)" % ('|'.join(section_names['middle'])),
-    'refs':     r"^(([0-9]+\.([0-9]+(\.[0-9]+)*\.?)? +)?(%s))" % ('|'.join(section_names['refs'])),
+    'middle':   r"^([0-9]+ +|[0-9]+\.([0-9]+(\.[0-9]+)*\.?) |%s)" % ('|'.join(section_names['middle'])),
+    'refs':     r"^([0-9]+ +|([0-9]+\.([0-9]+(\.[0-9]+)*\.?)? +)?(%s))" % ('|'.join(section_names['refs'])),
     'back':     r'^([A-Za-z](\.[0-9]+)*\.?|%s)' % ('|'.join(section_names['back'])),
 }
 
