@@ -952,7 +952,11 @@ class DraftParser(Base):
 
 
         # Parse the document
-        doc = self.document()
+        try:
+            doc = self.document()
+        except Exception as e:
+            self.emit("\n%s(%s): Exception: %s" % (self.name, self.lines[self.l].num, e))
+            raise
 
         # Return the xml document (if any)
         if len(doc):
@@ -1707,7 +1711,6 @@ class DraftParser(Base):
             self.maybe_author_org(item)
             self.maybe_author_address(item)
             line, p = self.get_line()
-            assert not line or line.txt.strip() == ''
             while True:
                 found = self.maybe_address_detail(item)
                 if not found:
