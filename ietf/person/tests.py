@@ -9,12 +9,14 @@ from django.urls import reverse as urlreverse
 
 import debug                            # pyflakes:ignore
 
-#from ietf.nomcom.models import Nominee, NomCom
-#from ietf.nomcom.test_data import nomcom_test_data
-from ietf.person.factories import EmailFactory, PersonFactory
+from ietf.community.models import CommunityList
+from ietf.group.models import Group
+from ietf.nomcom.models import NomCom
+from ietf.nomcom.test_data import nomcom_test_data
+from ietf.person.factories import EmailFactory, PersonFactory, UserFactory
 from ietf.person.models import Person, Alias
 from ietf.person.utils import (merge_persons, determine_merge_order, send_merge_notification,
-    handle_users, get_extra_primary, dedupe_aliases, move_related_objects)
+    handle_users, get_extra_primary, dedupe_aliases, move_related_objects, merge_nominees, merge_users)
 from ietf.utils.test_data import make_test_data
 from ietf.utils.test_utils import TestCase
 from ietf.utils.mail import outbox, empty_outbox
@@ -171,19 +173,14 @@ class PersonUtilsTests(TestCase):
         dedupe_aliases(person)
         self.assertEqual(person.alias_set.filter(name='Joe').count(),1)
       
-    """  
     def test_merge_nominees(self):
         nomcom_test_data()
         nomcom = NomCom.objects.first()
         source = PersonFactory()
         source.nominee_set.create(nomcom=nomcom,email=source.email())
-        #source = Nominee.objects.first().email.person
         target = PersonFactory()
-        print source
-        print source.nominee_set.all()
         merge_nominees(source, target)
         self.assertTrue(target.nominee_set.all())
-    """
 
     def test_move_related_objects(self):
         source = PersonFactory()
@@ -200,8 +197,18 @@ class PersonUtilsTests(TestCase):
         source_id = source.pk
         source_email = source.email_set.first()
         source_alias = source.alias_set.first()
+        source_user = source.user
         merge_persons(source, target, file=StringIO())
         self.assertTrue(source_email in target.email_set.all())
         self.assertTrue(source_alias in target.alias_set.all())
         self.assertFalse(Person.objects.filter(id=source_id))
+        self.assertFalse(source_user.is_active)
 
+    def test_merge_users(self):
+        make_test_data()
+        source = UserFactory()
+        target = UserFactory()
+        mars = Group.objects.get(acronym='mars')
+        communitylist = CommunityList.objects.create(user=source, group=mars)
+        merge_users(source, target)
+        self.assertTrue(communitylist in target.communitylist_set.all())
