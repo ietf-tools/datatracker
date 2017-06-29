@@ -48,12 +48,9 @@ class RolodexTestCase(TestCase):
             'email-MAX_NUM_FORMS':1000,
             'submit': 'Submit',
         }
-        #print person.user
-        #self.assertTrue(False)
         original_user = person.user
         person_id = person.pk
         response = self.client.post(url, post_data, follow=True)
-        print response.content
         person = Person.objects.get(id=person_id)
         original_user = User.objects.get(id=original_user.id)
         self.assertRedirects(response, redirect_url)

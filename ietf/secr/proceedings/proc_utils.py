@@ -15,14 +15,11 @@ import debug        # pyflakes:ignore
 from apiclient.discovery import build
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
-from django.http import HttpRequest
-from django.shortcuts import render
 
 from ietf.doc.models import Document, DocAlias, DocEvent, NewRevisionDocEvent, State
 from ietf.group.models import Group
 from ietf.meeting.models import Meeting, SessionPresentation, TimeSlot, SchedTimeSessAssignment
 from ietf.person.models import Person
-from ietf.secr.proceedings.models import InterimMeeting    # proxy model
 from ietf.utils.log import log
 from ietf.utils.mail import send_mail
 
@@ -303,31 +300,6 @@ def get_progress_stats(sdate,edate):
         groupevent__time__lt=edate)
 
     return data
-
-def create_interim_directory():
-    '''
-    Create static Interim Meeting directory pages that will live in a different URL space than
-    the secretariat Django project
-    '''
-
-    # produce date sorted output
-    page = 'proceedings.html'
-    meetings = InterimMeeting.objects.filter(session__status='sched').order_by('-date')
-    response = render(HttpRequest(), 'proceedings/interim_directory.html',{'meetings': meetings})
-    path = os.path.join(settings.SECR_INTERIM_LISTING_DIR, page)
-    f = open(path,'w')
-    f.write(response.content)
-    f.close()
-
-    # produce group sorted output
-    page = 'proceedings-bygroup.html'
-    qs = InterimMeeting.objects.filter(session__status='sched')
-    meetings = sorted(qs, key=lambda a: a.group().acronym)
-    response = render(HttpRequest(), 'proceedings/interim_directory.html',{'meetings': meetings})
-    path = os.path.join(settings.SECR_INTERIM_LISTING_DIR, page)
-    f = open(path,'w')
-    f.write(response.content)
-    f.close()
 
 def is_powerpoint(doc):
     '''
