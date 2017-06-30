@@ -1,5 +1,7 @@
 from django.urls import reverse
 
+import debug                            # pyflakes:ignore
+
 from ietf.utils.test_utils import TestCase
 from ietf.person.factories import PersonFactory, UserFactory
 from ietf.person.models import Person, User
@@ -64,7 +66,7 @@ class RolodexTestCase(TestCase):
             'address': person.address,
             'user': user.username,
             'email-0-person':person.pk,
-            'email-0-address': person.email_address,
+            'email-0-address': person.email_address(),
             'email-TOTAL_FORMS':1,
             'email-INITIAL_FORMS':1,
             'email-MIN_NUM_FORMS':0,
