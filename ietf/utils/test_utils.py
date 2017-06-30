@@ -33,9 +33,11 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import os
+import re
 import html5lib
 import urllib2
 from unittest.util import strclass
+from bs4 import BeautifulSoup
 
 import django.test
 from django.conf import settings
@@ -65,6 +67,11 @@ def login_testing_unauthorized(test_case, username, url, password=None):
 def unicontent(r):
     "Return a HttpResponse object's content as unicode"
     return r.content.decode(r.charset)
+
+def textcontent(r):
+    text = BeautifulSoup(r.content, 'lxml').get_text()
+    text = re.sub('(\n\s+){2,}', '\n\n', text)
+    return text
 
 def reload_db_objects(*objects):
     """Rerequest the given arguments from the database so they're refreshed, to be used like
