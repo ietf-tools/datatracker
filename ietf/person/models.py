@@ -9,6 +9,7 @@ from urlparse import urljoin
 
 from django.conf import settings
 
+from django.core.validators import validate_email
 from django.db import models
 from django.contrib.auth.models import User
 from django.template.loader import render_to_string
@@ -224,7 +225,7 @@ class Alias(models.Model):
         verbose_name_plural = "Aliases"
 
 class Email(models.Model):
-    address = models.CharField(max_length=64, primary_key=True)
+    address = models.CharField(max_length=64, primary_key=True, validators=[validate_email])
     person = models.ForeignKey(Person, null=True)
     time = models.DateTimeField(auto_now_add=True)
     primary = models.BooleanField(default=False)
