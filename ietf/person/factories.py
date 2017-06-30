@@ -94,14 +94,30 @@ class AliasFactory(factory.DjangoModelFactory):
 
     name = factory.Faker('name')
 
+def fake_email_address(n):
+    address_field = [ f for f in Email._meta.fields if f.name == 'address'][0]
+    count = 0
+    while True:
+        address = '%s.%s_%d@%s' % (
+            slugify(unidecode(fake.first_name())),
+            slugify(unidecode(fake.last_name())),
+            n, fake.domain_name()
+        )
+        count += 1
+        if len(address) <= address_field.max_length:
+            break
+        if count >= 10:
+            raise RuntimeError("Failed generating a fake email address to fit in Email.address(max_length=%s)"%address_field.max_lenth)
+    return address
+
 class EmailFactory(factory.DjangoModelFactory):
     class Meta:
         model = Email
         django_get_or_create = ('address',)
 
-    address = factory.Sequence(lambda n:'%s.%s_%d@%s' % ( slugify(unidecode(fake.first_name())),
-                                    slugify(unidecode(fake.last_name())), n, fake.domain_name()))
+    address = factory.Sequence(fake_email_address)
     person = factory.SubFactory(PersonFactory)
 
     active = True
     primary = False
+
