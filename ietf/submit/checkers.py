@@ -157,7 +157,7 @@ class DraftYangChecker(object):
                 sys.stdout = saved_stdout
                 sys.stderr = saved_stderr
                 # signature change in xym:
-                model_list = extractor.get_extracted_models(False)
+                model_list = extractor.get_extracted_models(False, True)
             except Exception as exc:
                 msg = "Exception when running xym on %s: %s" % (name, exc)
                 log(msg)
