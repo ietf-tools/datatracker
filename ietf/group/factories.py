@@ -1,6 +1,8 @@
+import debug # pyflakes:ignore
 import factory
 
 from ietf.group.models import Group, Role, GroupEvent
+from ietf.review.factories import ReviewTeamSettingsFactory
 
 class GroupFactory(factory.DjangoModelFactory):
     class Meta:
@@ -8,6 +10,20 @@ class GroupFactory(factory.DjangoModelFactory):
 
     name = factory.Faker('sentence',nb_words=6)
     acronym = factory.Sequence(lambda n: 'acronym%d' %n)
+    state_id = 'active'
+
+class ReviewTeamFactory(factory.DjangoModelFactory):
+    class Meta:
+        model = Group
+
+    type_id = 'dir'
+    name = factory.Faker('sentence',nb_words=6)
+    acronym = factory.Sequence(lambda n: 'acronym%d' %n)
+    state_id = 'active'
+
+    @factory.post_generation
+    def settings(obj, create, extracted, **kwargs):
+        ReviewTeamSettingsFactory.create(group=obj,**kwargs)
 
 class RoleFactory(factory.DjangoModelFactory):
     class Meta:

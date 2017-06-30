@@ -1456,13 +1456,32 @@ def manage_review_requests(request, acronym, group_type=None, assignment_status=
             form_results.append(req.form.is_valid())
 
         if saving and all(form_results) and not (newly_closed > 0 or newly_opened > 0 or newly_assigned > 0):
-            for review_req in review_requests:
-                action = review_req.form.cleaned_data.get("action")
-                if action == "assign":
-                    assign_review_request_to_reviewer(request, review_req, review_req.form.cleaned_data["reviewer"],review_req.form.cleaned_data["add_skip"])
-                elif action == "close":
-                    close_review_request(request, review_req, review_req.form.cleaned_data["close"])
 
+            reqs_to_assign = []
+            for review_req in review_requests:
+                form_action = review_req.form.cleaned_data.get("action")
+                if form_action=="close":
+                    close_review_request(request, review_req, review_req.form.cleaned_data["close"])
+                elif form_action=="assign":
+                    reqs_to_assign.append(review_req)
+
+            assignments_by_person = dict()
+            for r in reqs_to_assign:
+                assignments_by_person[r.form.cleaned_data["reviewer"].person] = r
+            
+            # Make sure the any assignments to the person at the head
+            # of the rotation queue are processed first so that the queue
+            # rotates before any more assignments are processed
+            head_of_rotation = reviewer_rotation_list(group)[0]
+            while head_of_rotation in assignments_by_person:
+                review_req = assignments_by_person[head_of_rotation]
+                assign_review_request_to_reviewer(request, review_req, review_req.form.cleaned_data["reviewer"],review_req.form.cleaned_data["add_skip"])
+                reqs_to_assign.remove(review_req)
+                head_of_rotation = reviewer_rotation_list(group)[0]
+
+            for review_req in reqs_to_assign:
+                assign_review_request_to_reviewer(request, review_req, review_req.form.cleaned_data["reviewer"],review_req.form.cleaned_data["add_skip"])
+            
             kwargs = { "acronym": group.acronym }
             if group_type:
                 kwargs["group_type"] = group_type

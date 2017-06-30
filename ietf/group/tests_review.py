@@ -1,4 +1,5 @@
 import datetime
+import debug      # pyflakes:ignore
 
 from pyquery import PyQuery
 
@@ -15,12 +16,16 @@ from ietf.review.utils import (
     suggested_review_requests_for_team,
     review_requests_needing_reviewer_reminder, email_reviewer_reminder,
     review_requests_needing_secretary_reminder, email_secretary_reminder,
+    reviewer_rotation_list,
 )
 from ietf.name.models import ReviewTypeName, ReviewResultName, ReviewRequestStateName
 import ietf.group.views
 from ietf.utils.mail import outbox, empty_outbox
 from ietf.dbtemplate.factories import DBTemplateFactory
 from ietf.person.factories import PersonFactory
+from ietf.doc.factories import DocumentFactory
+from ietf.group.factories import RoleFactory, ReviewTeamFactory
+from ietf.review.factories import ReviewRequestFactory
 
 class ReviewTests(TestCase):
     def test_review_requests(self):
@@ -553,3 +558,37 @@ class ReviewTests(TestCase):
         self.assertEqual(len(outbox), 1)
         self.assertTrue(review_req.doc_id in outbox[0].get_payload(decode=True).decode("utf-8"))
 
+
+
+class BulkAssignmentTests(TestCase):
+
+    def test_rotation_queue_update(self):
+        group = ReviewTeamFactory.create()
+        empty_outbox()
+        reviewers = [RoleFactory.create(group=group,name_id='reviewer') for i in range(6)] # pyflakes:ignore
+        secretary = RoleFactory.create(group=group,name_id='secr')
+        docs = [DocumentFactory.create(type_id='draft',group=None) for i in range(4)]
+        requests = [ReviewRequestFactory(team=group,doc=docs[i]) for i in range(4)]
+        rot_list = reviewer_rotation_list(group)
+
+        expected_ending_head_of_rotation = rot_list[3]
+    
+        unassigned_url = urlreverse(ietf.group.views.manage_review_requests, kwargs={ 'acronym': group.acronym, 'group_type': group.type_id, "assignment_status": "unassigned" })
+
+        postdict = {}
+        postdict['reviewrequest'] = [r.id for r in requests]
+        # assignments that affect the first 3 reviewers in queue
+        for i in range(3):
+            postdict['r{}-existing_reviewer'.format(requests[i].pk)] = ''
+            postdict['r{}-action'.format(requests[i].pk)] = 'assign'
+            postdict['r{}-reviewer'.format(requests[i].pk)] = rot_list[i].email_address()
+        # and one out of order assignment
+        postdict['r{}-existing_reviewer'.format(requests[3].pk)] = ''
+        postdict['r{}-action'.format(requests[3].pk)] = 'assign'
+        postdict['r{}-reviewer'.format(requests[3].pk)] = rot_list[5].email_address()
+        postdict['action'] = 'save'
+        self.client.login(username=secretary.person.user.username,password=secretary.person.user.username+'+password')
+        r = self.client.post(unassigned_url, postdict)
+        self.assertEqual(r.status_code,302)
+        self.assertEqual(expected_ending_head_of_rotation,reviewer_rotation_list(group)[0])
+        self.assertEqual(len(outbox),4)

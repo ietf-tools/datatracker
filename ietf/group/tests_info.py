@@ -1269,8 +1269,12 @@ class StatusUpdateTests(TestCase):
         self.assertEqual(chair.group.latest_event(type='status_update').desc,'This came from a file.')
 
     def test_view_all_status_updates(self):
-        GroupEventFactory(type='status_update',desc='blah blah blah',group__type_id='wg')
-        GroupEventFactory(type='status_update',desc='blah blah blah',group__type_id='rg')
+        area = GroupFactory(type_id='area')
+        wg = GroupFactory(type_id='wg',parent=area)
+        irtf = GroupFactory(type_id='irtf')
+        rg = GroupFactory(type_id='rg',parent=irtf)
+        GroupEventFactory(type='status_update',desc='blah blah blah',group=wg)
+        GroupEventFactory(type='status_update',desc='blah blah blah',group=rg)
         url = urlreverse('ietf.group.views.all_status')
         response = self.client.get(url)
         self.assertEqual(response.status_code,200)
