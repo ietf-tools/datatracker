@@ -22,3 +22,7 @@
 <               Figure 6: Action Rules for the Traffic Selector
 ---
 >               Table 1: Action Rules for the Traffic Selector
+722c722
+<               IANA Considerations Section in RFCs", BCP 26, RFC 5226,
+---
+>               IANA Considerations Section in RFCs", RFC 5226,

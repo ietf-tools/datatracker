@@ -1282,87 +1282,78 @@
 ---
 >    Directory server.  This update Sequence number space is different
 >    from the Sequence number space used in a Query and the corresponding
-1299,1301c1345,1348
-<          +---+---+---+---+
-<          | F | P | N | R |
-<          +---+---+---+---+
----
->                              +---+---+---+---+
->                              | F | P | N | R |
->                              +---+---+---+---+
->                              +---+---+---+---+
-1310c1357
+1310c1356
 <    R: Reserved. MUST be sent as zero and ignored on receipt
 ---
 >    R: Reserved.  MUST be sent as zero and ignored on receipt
-1317c1364
+1317c1363
 < 3.3.2 Acknowledge Message Format
 ---
 > 3.3.2.  Acknowledge Message Format
-1321c1368
+1321c1367
 <    rate limiting. It is formatted as a Response Message but the Type is
 ---
 >    rate limiting.  It is formatted as a Response Message but the Type is
-1338c1385
+1338c1384
 < 3.4 Summary of Records Formats in Messages
 ---
 > 3.4.  Summary of Records Formats in Messages
-1342c1389
+1342c1388
 <    structures under different circumstances, as summarized below. The
 ---
 >    structures under different circumstances, as summarized below.  The
-1344c1391
+1344c1390
 <    below. "IA APPsub-TLV value" means the value part of the IA APPsub-
 ---
 >    below.  "IA APPsub-TLV value" means the value part of the IA APPsub-
-1366c1413
+1366c1412
 < 3.5 End Stations and Pull Directories
 ---
 > 3.5.  End Stations and Pull Directories
-1377c1424
+1377c1423
 <    specified in Section 3.5.3. In these cases, the edge RBridge(s) and
 ---
 >    specified in Section 3.5.3.  In these cases, the edge RBridge(s) and
-1379c1426
+1379c1425
 <    control information. This is accomplished with the TRILL ES-IS
 ---
 >    control information.  This is accomplished with the TRILL ES-IS
-1382c1429
+1382c1428
 < 3.5.1 Pull Directory Hosted on an End Station
 ---
 > 3.5.1.  Pull Directory Hosted on an End Station
-1385,1386c1432,1433
+1385,1386c1431,1432
 <    supported. In that case, one or more TRILL switches must act as
 <    indirect Pull Directory servers. That is, they host a Pull Directory
 ---
 >    supported.  In that case, one or more TRILL switches must act as
 >    indirect Pull Directory servers.  That is, they host a Pull Directory
-1392,1393c1439,1441
+1392,1393c1438,1440
 <    connected by the co-located Pull Directory client. (Direct connection
 <    means a connection not involving any intermediate TRILL switches.)
 ---
 >    connected by the co-located Pull Directory client.  (Direct
 >    connection means a connection not involving any intermediate TRILL
 >    switches.)
-1418c1466
+1418c1465
 <                  Figure 2. End Station Pull Directory Example
 ---
 >                Figure 2: End Station Pull Directory Example
-1428c1476
+1428c1475
 <    with point-to-point Ethernet links to RB1 and RB2). There could be
 ---
 >    with point-to-point Ethernet links to RB1 and RB2).  There could be
-1430,1431c1478,1479
+1430,1431c1477,1478
 <    servers. Furthermore, there could be one or more than two end
 <    stations with Pull Directory servers on them. Each TRILL switch
 ---
 >    servers.  Furthermore, there could be one or more than two end
 >    stations with Pull Directory servers on them.  Each TRILL switch
-1444c1492
+1444c1491
 <    based. When an indirect Pull Directory server receives Update
 ---
 >    based.  When an indirect Pull Directory server receives Update
-1454,1459c1502,1507
+1454,1459c1501,1506
 <    withdrawing the information. For this reason, indirect Pull Directory
 <    servers may wish to query multiple sources, if available, and cache
 <    multiple copies of returned information from those multiple sources.
@@ -1376,19 +1367,19 @@
 >    sources.  Then if one end station source becomes inaccessible or
 >    withdraws the information but the indirect Pull Directory server has
 >    the information from another source, it need not originate Updates.
-1461c1509
+1461c1508
 < 3.5.2 Use of Pull Directory by End Stations
 ---
 > 3.5.2.  Use of Pull Directory by End Stations
-1464c1512
+1464c1511
 <    and [SmartEN], may need to access directory information. How edge
 ---
 >    and [SmartEN], may need to access directory information.  How edge
-1475c1523
+1475c1522
 < 3.5.3 Native Pull Directory Messages
 ---
 > 3.5.3.  Native Pull Directory Messages
-1480,1484c1528,1533
+1480,1484c1527,1532
 <    inter-RBridge Pull Directory RBridge Channel messages. The Outer.VLAN
 <    ID used is the TRILL ES-IS Designated VLAN (see Section 5) on the
 <    link to the end station. Since there is no TRILL Header or inner Data
@@ -1401,19 +1392,19 @@
 >    inner Data Label for native RBridge Channel messages, that
 >    information is added to the Pull Directory message header as
 >    specified below.
-1507c1556
+1507c1555
 <    version. This Data Label appears in a native Query Message, to be
 ---
 >    version.  This Data Label appears in a native Query Message, to be
-1509c1558
+1509c1557
 <    Update to be reflected in an Acknowledge Message. Since the
 ---
 >    Update to be reflected in an Acknowledge Message.  Since the
-1513c1562
+1513c1561
 < 3.6 Pull Directory Message Errors
 ---
 > 3.6.  Pull Directory Message Errors
-1528,1536c1577,1585
+1528,1536c1576,1584
 <    any successful non-erroneous QUERY Records. If multiple QUERY Records
 <    in a Query Message have different errors, they MUST be reported in
 <    separate Response Messages. If multiple QUERY Records in a Query
@@ -1433,15 +1424,15 @@
 >    expanded by the Lifetime for which the server thinks the error might
 >    persist (usually 2**16-1 which indicates indefinitely) and with their
 >    Index inserted, as the RESPONSE Record or Records.
-1540c1589
+1540c1588
 <    acknowledgment of any non-erroneous RESPONSE Records. If multiple
 ---
 >    acknowledgment of any non-erroneous RESPONSE Records.  If multiple
-1542c1591
+1542c1590
 <    reported in separate Acknowledge Messages. If multiple RESPONSE
 ---
 >    reported in separate Acknowledge Messages.  If multiple RESPONSE
-1551,1553c1600,1602
+1551,1553c1599,1601
 <    Message level errors. Err values 128 through 254 are available for
 <    encoding QUERY or RESPONSE Record level errors. The SubErr field is
 <    available for providing more detail on errors. The meaning of a
@@ -1449,39 +1440,39 @@
 >    Message level errors.  Err values 128 through 254 are available for
 >    encoding QUERY or RESPONSE Record level errors.  The SubErr field is
 >    available for providing more detail on errors.  The meaning of a
-1556c1605
+1556c1604
 < 3.6.1 Error Codes
 ---
 > 3.6.1.  Error Codes
-1583c1632
+1583c1631
 < 3.6.2 Sub-Errors Under Error Codes 1 and 3
 ---
 > 3.6.2.  Sub-Errors Under Error Codes 1 and 3
-1596c1645
+1596c1644
 < 3.6.3 Sub-Errors Under Error Codes 128 and 131
 ---
 > 3.6.3.  Sub-Errors Under Error Codes 128 and 131
-1612c1661
+1612c1660
 < 3.7 Additional Pull Details
 ---
 > 3.7.  Additional Pull Details
-1622c1671
+1622c1670
 <    primary directory server. See discussion of primary to secondary
 ---
 >    primary directory server.  See discussion of primary to secondary
-1625c1674
+1625c1673
 < 3.8 The No Data Flag
 ---
 > 3.8.  The No Data Flag
-1631c1680
+1631c1679
 <    multi-destination traffic in those Data Labels. However, with Pull
 ---
 >    multi-destination traffic in those Data Labels.  However, with Pull
-1638c1687
+1638c1686
 <    Data" (NOD) bit to one (see Section 7.3). This means that data on a
 ---
 >    Data" (NOD) bit to one (see Section 7.3).  This means that data on a
-1652,1658c1701,1709
+1652,1658c1700,1708
 <    multi-destination traffic in some Data Labels would be a TRILL switch
 <    that does not offer end station service for any of the Data Labels
 <    for which it is serving as a directory and is either
@@ -1499,59 +1490,59 @@
 >    -  a Push Directory for one or more Data Labels where all of the
 >       ESADI traffic for those Data Labels will be handled by unicast
 >       ESADI [RFC7357].
-1666c1717
+1666c1716
 < 3.9 Pull Directory Service Configuration
 ---
 > 3.9.  Pull Directory Service Configuration
-1669c1720
+1669c1719
 <    available for controlling Pull Directory service behavior. In
 ---
 >    available for controlling Pull Directory service behavior.  In
-1672c1723
+1672c1722
 <    Directory query it causes. The default such mapping depends on the
 ---
 >    Directory query it causes.  The default such mapping depends on the
-1682c1733
+1682c1732
 <      DirRespMaxPriority    6               3.2.2.1         3
 ---
 >       DirRespMaxPriority      6 3.2.2.1 3
-1689c1740
+1689c1739
 <      DirAckMaxPriority     5               3.3.2           4
 ---
 >       DirAckMaxPriority       5 3.3.2 4
-1705c1756
+1705c1755
 < 4. Directory Use Strategies and Push-Pull Hybrids
 ---
 > 4.  Directory Use Strategies and Push-Pull Hybrids
-1709c1760
+1709c1759
 <    under all those Data Labels can be a challenge. This is especially
 ---
 >    under all those Data Labels can be a challenge.  This is especially
-1716c1767
+1716c1766
 <    Data Labels or addresses within a Data Label. It is the network
 ---
 >    Data Labels or addresses within a Data Label.  It is the network
-1724c1775
+1724c1774
 <    pushed down to the data center gateway routers. For hosts in other
 ---
 >    pushed down to the data center gateway routers.  For hosts in other
-1733c1784
+1733c1783
 <    few hosts in that Data Label. In that case, the address information
 ---
 >    few hosts in that Data Label.  In that case, the address information
-1739c1790
+1739c1789
 <    and Pull for others. In fact, different TRILL switches can even be
 ---
 >    and Pull for others.  In fact, different TRILL switches can even be
-1742c1793
+1742c1792
 <    Directory services are available for that Data Label. And there can
 ---
 >    Directory services are available for that Data Label.  And there can
-1746c1797
+1746c1796
 <    for making use of directory assistance. A few suggestions are given
 ---
 >    for making use of directory assistance.  A few suggestions are given
-1750,1759c1801,1811
+1750,1759c1800,1810
 < 	 information from a complete Push Directory server, there will be a
 < 	 period of time when it first comes up before the information it
 < 	 holds is complete.  Or, it could be that the only Push Directories
@@ -1574,7 +1565,7 @@
 >          for dealing with the situation where they do not have complete
 >          directory information.  Examples are to send a Pull Directory
 >          query or to revert to [RFC6325] behavior.
-1762,1774c1814,1827
+1762,1774c1813,1826
 < 	 seeking directory information, a choice needs to be made as to
 < 	 what to do if it does not already have the directory information
 < 	 it needs. In particular, it could (1) immediately flood the TRILL
@@ -1603,7 +1594,7 @@
 >          RECOMMENDED that its priority be derived from the priority of
 >          the frame X with the derived priority configurable and having
 >          the following defaults:
-1788,1791c1841,1845
+1788,1791c1840,1844
 < 	 NOTE: The odd looking numbers towards the bottom of the columns
 < 	 above are because priority 1 is lower than priority zero. That is
 < 	 to say, the values in the first column are in priority order. They
@@ -1614,35 +1605,35 @@
 >          is to say, the values in the first column are in priority
 >          order.  They will look more logical if you think of "0" as
 >          being "1 1/2".
-1798c1852
+1798c1851
 < 5. TRILL ES-IS
 ---
 > 5.  TRILL ES-IS
-1803c1857
+1803c1856
 <    stations on that link. Support of TRILL ES-IS is generally optional
 ---
 >    stations on that link.  Support of TRILL ES-IS is generally optional
-1805c1859
+1805c1858
 <    required to support certain features. As of the date of this
 ---
 >    required to support certain features.  As of the date of this
-1812c1866
+1812c1865
 <    uses. The advantages of TRILL ES-IS over simply making an "end
 ---
 >    uses.  The advantages of TRILL ES-IS over simply making an "end
-1821c1875
+1821c1874
 < 5.1 PDUs and System IDs
 ---
 > 5.1.  PDUs and System IDs
-1825c1879
+1825c1878
 <    address (see Section 7.6). This use of a different multicast address
 ---
 >    address (see Section 7.6).  This use of a different multicast address
-1830c1884
+1830c1883
 <    port MAC addresses in their place. This is convenient since MAC
 ---
 >    port MAC addresses in their place.  This is convenient since MAC
-1832,1835c1886,1889
+1832,1835c1885,1888
 <    System IDs. Logically TRILL IS-IS operates between the TRILL switches
 <    in a TRILL campus as identified by System ID while TRILL ES-IS
 <    operates between Ethernet ports on an Ethernet link (which may be a
@@ -1652,59 +1643,59 @@
 >    switches in a TRILL campus as identified by System ID while TRILL ES-
 >    IS operates between Ethernet ports on an Ethernet link (which may be
 >    a bridged LAN) as identified by MAC address [RFC6325].
-1841c1895
+1841c1894
 < 5.2 Adjacency, DRB Election, Hellos, TLVs, Etc.
 ---
 > 5.2.  Adjacency, DRB Election, Hellos, TLVs, Etc.
-1845c1899
+1845c1898
 <    The DRB specifies an ES-IS Designated VLAN for the link. This
 ---
 >    The DRB specifies an ES-IS Designated VLAN for the link.  This
-1861c1915
+1861c1914
 <    is received in TRILL ES-IS it is ignored. (The Appointed Forwarders
 ---
 >    is received in TRILL ES-IS it is ignored.  (The Appointed Forwarders
-1873c1927
+1873c1926
 <    sent as zero and ignored on receipt. In addition, the AF and TR flag
 ---
 >    sent as zero and ignored on receipt.  In addition, the AF and TR flag
-1877c1931
+1877c1930
 < 5.3 Link State
 ---
 > 5.3.  Link State
-1881c1935
+1881c1934
 <    [RFC7356]). In particular, the end station Ethernet ports supporting
 ---
 >    [RFC7356]).  In particular, the end station Ethernet ports supporting
-1884c1938
+1884c1937
 <    them). TLVs and sub-TLVs that would otherwise be sent in TRILL IS-IS
 ---
 >    them).  TLVs and sub-TLVs that would otherwise be sent in TRILL IS-IS
-1887c1941
+1887c1940
 < 6. Security Considerations
 ---
 > 6.  Security Considerations
-1891c1945
+1891c1944
 < 6.1 Directory Information Security
 ---
 > 6.1.  Directory Information Security
-1894c1948
+1894c1947
 <    threats including those below. Directory servers therefore need to
 ---
 >    threats including those below.  Directory servers therefore need to
-1910c1964
+1910c1963
 <    on. Parties authorized to modify directory data can violate
 ---
 >    on.  Parties authorized to modify directory data can violate
-1913c1967
+1913c1966
 < 6.2 Directory Confidentiality and Privacy
 ---
 > 6.2.  Directory Confidentiality and Privacy
-1916c1970
+1916c1969
 <    RBridges deal almost exclusively with MAC addresses. Use of
 ---
 >    RBridges deal almost exclusively with MAC addresses.  Use of
-1918,1921c1972,1975
+1918,1921c1971,1974
 <    actively with IP addresses as well. But RBridges in any case would be
 <    exposed to plain text ARP/ND/SEND/IP traffic and so can see all this
 <    addressing meta-data. So this more explicit dealing with IP addresses
@@ -1714,148 +1705,152 @@
 >    be exposed to plain text ARP/ND/SEND/IP traffic and so can see all
 >    this addressing meta-data.  So this more explicit dealing with IP
 >    addresses has little effect on the privacy of end station traffic.
-1926c1980
+1926c1979
 < 6.3 Directory Message Security Considerations
 ---
 > 6.3.  Directory Message Security Considerations
-1930,1931c1984,1985
+1930,1931c1983,1984
 <    the widely implemented and deployed IS-IS PDU security. This
 <    mechanism provides authentication and integrity protection. See
 ---
 >    the widely implemented and deployed IS-IS PDU security.  This
 >    mechanism provides authentication and integrity protection.  See
-1936c1990
+1936c1989
 <    RBridge or native RBridge Channel messages [RFC7178]. Such messages
 ---
 >    RBridge or native RBridge Channel messages [RFC7178].  Such messages
-1939c1993
+1939c1992
 <    protections. At the time of this RFC, these security mechanisms are
 ---
 >    protections.  At the time of this RFC, these security mechanisms are
-1942c1996
+1942c1995
 < 7. IANA Considerations
 ---
 > 7.  IANA Considerations
-1946c2000
+1946c1999
 < 7.1 ESADI-Parameter Data Extensions
 ---
 > 7.1.  ESADI-Parameter Data Extensions
-1963c2017
+1963c2016
 <    [RFC7357], by one byte as show below. Therefore [this document]
 ---
 >    [RFC7357], by one byte as show below.  Therefore [this document]
-1988,1989c2042,2043
+1988,1989c2041,2042
 <    Section 2.3. If the PushDirPriority field is not present (Length = 3)
 <    it is treated as if it were 0x3F. 0x3F is also the value used and
 ---
 >    Section 2.3.  If the PushDirPriority field is not present (Length =
 >    3) it is treated as if it were 0x3F. 0x3F is also the value used and
-1993c2047
+1993c2046
 < 7.2 RBridge Channel Protocol Numbers
 ---
 > 7.2.  RBridge Channel Protocol Numbers
-1998c2052
+1998c2051
 <    Description is "Pull Directory Services". Reference is [this
 ---
 >    Description is "Pull Directory Services".  Reference is [this
-2001c2055
+2001c2054
 < 7.3 The Pull Directory (PUL) and No Data (NOD) Bits
 ---
 > 7.3.  The Pull Directory (PUL) and No Data (NOD) Bits
-2006c2060
+2006c2059
 <    [RFC7176] to indicate Pull Directory server (PUL). This bit is to be
 ---
 >    [RFC7176] to indicate Pull Directory server (PUL).  This bit is to be
-2014c2068
+2014c2067
 <    indicate No Data (NOD, see Section 3.8). This bit is to be added,
 ---
 >    indicate No Data (NOD, see Section 3.8).  This bit is to be added,
-2022c2076
+2022c2075
 <       Registry:  Interested BLANs Flag Bits
 ---
 >       Registry:     Interested BLANs Flag Bits
-2036c2090
+2036c2089
 < 7.4 TRILL Pull Directory QTYPEs
 ---
 > 7.4.  TRILL Pull Directory QTYPEs
-2047c2101
+2047c2100
 < 7.5 Pull Directory Error Code Registries
 ---
 > 7.5.  Pull Directory Error Code Registries
-2055,2057c2109,2110
+2055,2057c2108,2109
 <       Name: TRILL Pull Directory Errors
 <       Registration Procedure: IETF Review
 <       Reference: [this document]
 ---
 >       Name: TRILL Pull Directory Errors Registration Procedure: IETF
 >       Review Reference: [this document]
-2063,2064c2116,2117
+2063,2064c2115,2116
 <          Registration Procedure: Expert Review
 <          Reference: [this document]
 ---
 >          Registration Procedure: Expert Review Reference: [this
 >          document]
-2070,2071c2123,2124
+2070,2071c2122,2123
 <          Registration Procedure: Expert Review
 <          Reference: [this document]
 ---
 >          Registration Procedure: Expert Review Reference: [this
 >          document]
-2075c2128
+2075c2127
 < 7.6 TRILL-ES-IS MAC Address
 ---
 > 7.6.  TRILL-ES-IS MAC Address
-2079,2080c2132,2135
+2079,2080c2131,2132
 <    IANA web page [value 01-80-C2-00-00-47 recommended]. Description is
 <    "TRILL-ES-IS". Reference is [this document].
 ---
 >    IANA web page [value 01-80-C2-00-00-47 recommended].  Description is
 >    "TRILL-ES-IS".  Reference is [this document].
-> 
-> 8.  References
-2082c2137
+2082c2134
 < Normative References
 ---
-> 8.1.  References
-2084,2085c2139,2140
+> 8.  References
+2084,2085c2136
 <    [RFC826]  Plummer, D., "An Ethernet Address Resolution Protocol",
 <          RFC 826, November 1982.
 ---
->    [RFC826]   Plummer, D., "An Ethernet Address Resolution Protocol",
->               RFC 826, November 1982.
-2087,2089c2142,2144
+> 8.1.  References
+2087,2089c2138,2147
 <    [RFC903]  Finlayson, R., Mann, T., Mogul, J., and M. Theimer, "A
 <          Reverse Address Resolution Protocol", STD 38, RFC 903, June
 <          1984.
 ---
->    [RFC903]   Finlayson, R., Mann, T., Mogul, J., and M. Theimer, "A
+>    [RFC0826]  Plummer, D., "Ethernet Address Resolution Protocol: Or
+>               Converting Network Protocol Addresses to 48.bit Ethernet
+>               Address for Transmission on Ethernet Hardware", STD 37,
+>               RFC 826, DOI 10.17487/RFC0826, November 1982,
+>               <http://www.rfc-editor.org/info/rfc826>.
+> 
+>    [RFC0903]  Finlayson, R., Mann, T., Mogul, J., and M. Theimer, "A
 >               Reverse Address Resolution Protocol", STD 38, RFC 903,
->               June 1984.
-2092c2147,2149
+>               DOI 10.17487/RFC0903, June 1984,
+>               <http://www.rfc-editor.org/info/rfc903>.
+2092c2150,2152
 <          Requirement Levels", BCP 14, RFC 2119, March 1997
 ---
 >               Requirement Levels", BCP 14, RFC 2119,
 >               DOI 10.17487/RFC2119, March 1997,
 >               <http://www.rfc-editor.org/info/rfc2119>.
-2095c2152,2154
+2095c2155,2157
 <          "SEcure Neighbor Discovery (SEND)", RFC 3971, March 2005.
 ---
 >               "SEcure Neighbor Discovery (SEND)", RFC 3971,
 >               DOI 10.17487/RFC3971, March 2005,
 >               <http://www.rfc-editor.org/info/rfc3971>.
-2098,2099c2157,2159
+2098,2099c2160,2162
 <          "Neighbor Discovery for IP version 6 (IPv6)", RFC 4861,
 <          September 2007.
 ---
 >               "Neighbor Discovery for IP version 6 (IPv6)", RFC 4861,
 >               DOI 10.17487/RFC4861, September 2007,
 >               <http://www.rfc-editor.org/info/rfc4861>.
-2102c2162,2163
+2102c2165,2166
 <          Authentication", RFC 5304, October 2008.
 ---
 >               Authentication", RFC 5304, DOI 10.17487/RFC5304, October
 >               2008, <http://www.rfc-editor.org/info/rfc5304>.
-2105,2109c2166,2172
+2105,2109c2169,2175
 <          and M. Fanto, "IS-IS Generic Cryptographic Authentication", RFC
 <          5310, February 2009.
 < 
@@ -1869,14 +1864,14 @@
 >    [RFC6165]  Banerjee, A. and D. Ward, "Extensions to IS-IS for Layer-2
 >               Systems", RFC 6165, DOI 10.17487/RFC6165, April 2011,
 >               <http://www.rfc-editor.org/info/rfc6165>.
-2112,2113c2175,2177
+2112,2113c2178,2180
 <          Ghanwani, "Routing Bridges (RBridges): Base Protocol
 <          Specification", RFC 6325, July 2011.
 ---
 >               Ghanwani, "Routing Bridges (RBridges): Base Protocol
 >               Specification", RFC 6325, DOI 10.17487/RFC6325, July 2011,
 >               <http://www.rfc-editor.org/info/rfc6325>.
-2116,2122c2180,2188
+2116,2122c2183,2191
 <          IETF Protocol and Documentation Usage for IEEE 802 Parameters",
 <          BCP 141, RFC 7042, October 2013.
 < 
@@ -1894,7 +1889,7 @@
 >               (TRILL): Fine-Grained Labeling", RFC 7172,
 >               DOI 10.17487/RFC7172, May 2014,
 >               <http://www.rfc-editor.org/info/rfc7172>.
-2125,2132c2191,2199
+2125,2132c2194,2202
 <          D., and A. Banerjee, "Transparent Interconnection of Lots of
 <          Links (TRILL) Use of IS-IS", RFC 7176, May 2014,
 <          <http://www.rfc-editor.org/info/rfc7176>.
@@ -1913,7 +1908,7 @@
 >               V. Manral, "Transparent Interconnection of Lots of Links
 >               (TRILL): Adjacency", RFC 7177, DOI 10.17487/RFC7177, May
 >               2014, <http://www.rfc-editor.org/info/rfc7177>.
-2135,2137c2202,2205
+2135,2137c2205,2208
 <          Ward, "Transparent Interconnection of Lots of Links (TRILL):
 <          RBridge Channel Support", RFC 7178, May 2014, <http://www.rfc-
 <          editor.org/info/rfc7178>.
@@ -1922,14 +1917,14 @@
 >               (TRILL): RBridge Channel Support", RFC 7178,
 >               DOI 10.17487/RFC7178, May 2014,
 >               <http://www.rfc-editor.org/info/rfc7178>.
-2140,2141c2208,2210
+2140,2141c2211,2213
 <          Scope Link State PDUs (LSPs)", RFC 7356, DOI 10.17487/RFC7356,
 <          September 2014, <http://www.rfc-editor.org/info/rfc7356>.
 ---
 >               Scope Link State PDUs (LSPs)", RFC 7356,
 >               DOI 10.17487/RFC7356, September 2014,
 >               <http://www.rfc-editor.org/info/rfc7356>.
-2144,2147c2213,2216
+2144,2147c2216,2219
 <          Stokes, "Transparent Interconnection of Lots of Links (TRILL):
 <          End Station Address Distribution Information (ESADI) Protocol",
 <          RFC 7357, September 2014, <http://www.rfc-
@@ -1939,7 +1934,7 @@
 >               (TRILL): End Station Address Distribution Information
 >               (ESADI) Protocol", RFC 7357, DOI 10.17487/RFC7357,
 >               September 2014, <http://www.rfc-editor.org/info/rfc7357>.
-2150,2153c2219,2222
+2150,2153c2222,2225
 <          Ghanwani, A., and S. Gupta, "Transparent Interconnection of
 <          Lots of Links (TRILL): Clarifications, Corrections, and
 <          Updates", RFC 7780, DOI 10.17487/RFC7780, February 2016,
@@ -1949,7 +1944,7 @@
 >               of Lots of Links (TRILL): Clarifications, Corrections, and
 >               Updates", RFC 7780, DOI 10.17487/RFC7780, February 2016,
 >               <http://www.rfc-editor.org/info/rfc7780>.
-2156,2162c2225,2232
+2156,2162c2228,2235
 <          Interconnection of Lots of Links (TRILL): Interface Addresses
 <          APPsub-TLV", RFC 7961, DOI 10.17487/RFC7961, August 2016,
 <          <http://www.rfc-editor.org/info/rfc7961>.
@@ -1966,18 +1961,18 @@
 >               Eastlake, D., Li, Y., Umair, M., Banerjee, A., and F. Hu,
 >               "Routing Bridges (RBridges): Appointed Forwarders", draft-
 >               ietf-trill-rfc6439bis (work in progress).
-2164c2234
+2164c2237
 < Informational References
 ---
 > 8.2.  References
-2167,2168c2237,2239
+2167,2168c2240,2242
 <          Gashinsky, "Directory Assistance Problem and High-Level Design
 <          Proposal", RFC 7067, November 2013.
 ---
 >               Gashinsky, "Directory Assistance Problem and High-Level
 >               Design Proposal", RFC 7067, DOI 10.17487/RFC7067, November
 >               2013, <http://www.rfc-editor.org/info/rfc7067>.
-2171,2189c2242,2263
+2171,2189c2245,2266
 <          Interconnection of Lots of Links (TRILL): RBridge Channel
 <          Header Extension", RFC 7978, DOI 10.17487/RFC7978, September
 <          2016, <http://www.rfc-editor.org/info/rfc7978>.
@@ -2020,11 +2015,11 @@
 >               connectionless-mode network service: Protocol
 >               specification", International Telecommunications Union,
 >               August 1997.
-2200c2274
+2200c2277
 <    The document was prepared in raw nroff. All macros used were defined
 ---
 >    The document was prepared in raw nroff.  All macros used were defined
-2202a2277,2307
+2202a2280,2310
 > Disclaimer, and Additional IPR Provisions
 > 
 >    Copyright (c) 2017 IETF Trust and the persons identified as the
@@ -2056,19 +2051,7 @@
 >    shall be null and void, whether published or posted by such
 >    Contributor, or included with or in such Contribution.
 > 
-2206c2311
-<    Huawei Technologies
----
->    Huawei
-2214c2319
-<    Huawei Technologies
----
->    Huawei
-2229c2334
-<    Huawei Technologies
----
->    Huawei
-2235,2266d2339
+2235,2266d2342
 < 
 < Copyright, Disclaimer, and Additional IPR Provisions
 < 
