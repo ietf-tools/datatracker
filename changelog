@@ -2,11 +2,50 @@ ietfdb (6.55.2) ietf; urgency=medium
 
   This release contains bugfixes and code refactoring:
 
-  * Modified the text shown on Chairs' 'Manage Document Adoption in Group' 
+
+  * Merged in [13731] from rjsparks@nostrum.com:
+    Reworked how review assigments are processed in order to ensure a 
+    team's queue rotates when it should. Fixes #2305.  
+
+  * Merged in [13727] from rcross@amsl.com:
+    Removed legacy external interim meeting listing.  Installed redirect to
+    /meeting/past.  Fixes #2166.  
+
+  * Upgraded xym to 0.4.2, with related changes in method calls.
+
+  * Fixed an issue with the test_edit_replace_user() test
+
+  * Added email address validation for the Email.address field, now that 
+    we're not putting dummy addresses in it.
+
+  * Tweaked the EmailFactory to not return email addresses longer than the
+    Email.address field.
+
+  * Added a utility function to show just the text content of the test client
+    response.
+
+  * Included the temporary yang model extraction directory in the list of
+    model librarires given to yanglint, in order to support drafts with models
+    referencing models in the same draft.  Fixes issue #2324.
+
+  * Merged in [13726] from rcross@amsl.com:
+    Updated the secr.rolodex app to deactivate old Users when replaced on edit.  
+    Fixes #2001.   
+
+  * Added more test objects in test_merge_users(), and fixed an issue with 
+    merge_users() uncovered by the added testing.
+
+  * Merged in [13718] from rcross@amsl.com:
+    Improved User merge handling in merge_persons().  Fixes #1900.   
+
+  * Merged in [13717] from rjsparks@nostrum.com:
+    Actually use the topic audience type in the feedback view. Fixes #2320. 
+
+  * Modified the text shown on Chairs' "Manage Document Adoption in Group"
     button and corrected the logic for which text to show.
 
   * Merged in [13722] and [13712] from rcross@amsl.com:
-    Remove all use of request.session from secretariat apps.  Add tests for 
+    Removed all use of request.session from secretariat apps.  Added tests for 
     affected views.  Fixes #1455.
 
   * Removed the copy of xym copied directly from repository -- the method 
@@ -59,7 +98,7 @@ ietfdb (6.55.2) ietf; urgency=medium
 
   * Corrected the settings names used in the yang extraction command.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  28 Jun 2017 10:43:38 -0700
+ -- Henrik Levkowetz <henrik@levkowetz.com>  01 Jul 2017 10:49:33 +0000
 
 
 ietfdb (6.55.1) ietf; urgency=medium
