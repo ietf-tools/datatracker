@@ -1,3 +1,23 @@
+id2xml (1.0.3) ietf; urgency=medium
+
+  This release tweaks some regular expressions and other items to improve
+  processing, based on feedback from the RFC Editor staff, but does not
+  provide any new functionality.
+
+  * Added recognition of series info of the form 'RFC1234' in addition to 
+    the form 'RFC 12334'.  Added recognition of 'Internet Draft' on the first 
+    page left column, in addition to 'Internet-Draft'.  Added some guidance to 
+    the reference parsing failure message.  Added another reference pattern.
+
+  * Tweaked the section number regexp.
+
+  * Added acceptance of day of month in footer line date.  This improves 
+    extraction of short title, too.
+
+  * Be more permissive regarding blank lines in the author address format.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  01 Jul 2017 21:34:21 +0000
+
 id2xml (1.0.2) ietf; urgency=medium
 
   This is a bugfix release which addressess some additional issues raised by
