@@ -113,9 +113,9 @@ ref_name_re =   r'[-\' 0-9\w]+, (?:\w-?\w?\.)+(?:, Ed\.)?'
 ref_org_re =   r'(?P<organization>[-/\w]+(?: [-/\w,.]+)*(, )?)'
 ref_auth_re =   r'(?P<authors>({name})(, {name})*(,? and {last})?)'.format(name=ref_name_re, last=ref_last_re)
 ref_title_re =  r'(?P<title>.+)'
-ref_series_one =r'(?:(?:(?:RFC|STD|BCP|FYI|DOI|Internet-Draft) [^,]+|draft-[a-z0-9-]+)(?: \(work in progress\)|, work in progress)?)'
+ref_series_one =r'(?:(?:(?:RFC ?|STD |BCP |FYI |DOI |Internet-Draft )[^,]+|draft-[a-z0-9-]+)(?: \(work in progress\)|, work in progress)?)'
 ref_series_re = r'(?P<series>{item}(?:, {item})*)'.format(item=ref_series_one)
-ref_docname_re= r'(?P<docname>[^,]+(, [Vv ]ol\.? [^\s,]+)?(, pp\.? \d+(-\d+)?)?)'
+ref_docname_re= r'(?P<docname>[^,]+(, [Vv]ol\.? [^,]+)?(, pp\.? \d+(-\d+)?)?)'
 ref_date_re =   r'(?P<date>({day} )?({month} )?[12]\d\d\d)'.format(day=day_re, month=month_re)
 ref_url_re =    r'<? ?(?P<target>(http|https|ftp)://[^ >]+[^. >])>?'
 #
@@ -141,6 +141,7 @@ reference_patterns = [
     re.compile(r'{anchor}  *{organiz}, "{title}", {date}(, {url})?(\.|$)'.format(**chunks)),
     re.compile(r'{anchor}  *{authors}, "{title}", {date}, Work.in.progress(\.|$)'.format(**chunks)),
     re.compile(r'{anchor}  *{organiz}, "{title}", {url}(\.|$)'.format(**chunks)),
+    re.compile(r'{anchor}  *{authors}, "{title}", {url}(\.|$)'.format(**chunks)),
     re.compile(r'{anchor}  *"{title}", Work in Progress ?, {date}(, {url})?(\.|$)'.format(**chunks)),
     re.compile(r'{anchor}  *"{title}", Work in Progress ?, {url}(\.|$)'.format(**chunks)),
     re.compile(r'{anchor}  *"{title}", {docname}, {date}(, {url})?(\.|$)'.format(**chunks)),
@@ -1319,7 +1320,7 @@ class DraftParser(Base):
             # get internet-draft or RFC number
             line = lines.pop(0) if lines else Line(None, "")
             self.dshow('line')
-            if self.is_draft and not line.txt.lower() == 'internet-draft':
+            if self.is_draft and not line.txt.lower() in ['internet-draft', 'internet draft',]:
                 self.warn(line.num, "Expected to see 'Internet-Draft', found '%s'" % line.txt)
                 lines.insert(0, line)
                 self.dsay("pushing '%s'" % line.txt)
@@ -1461,7 +1462,7 @@ class DraftParser(Base):
 
         entries = {
             'stream':   dict(order=0, needed=True, function=get_stream,     regex=None, help='' ),
-            'label':    dict(order=1, needed=True, function=get_label,      regex=r"(?i)^(Internet-Draft|Request for Comments: )",
+            'label':    dict(order=1, needed=True, function=get_label,      regex=r"(?i)^(Internet.Draft|Request for Comments: )",
                         help='such as Internet-Draft or Request for Comments'),
             'series':   dict(order=2, needed=False,function=get_series,     regex=r"^(STF|BCP|FYI): ", help='' ),
             'modifies': dict(order=3, needed=False,function=get_modifies,   regex=r"^(Updates|Obsoletes)", help='' ),
@@ -2886,8 +2887,11 @@ class DraftParser(Base):
                             parts = item.split(None, 1)
                             if len(parts) == 1:
                                 if item.startswith('draft-'):
-                                    item = item.split(' ')[0].split(',')[0]
+                                    item = item.split(',')[0]
                                     name, value = 'Internet-Draft', item
+                                elif item.startswith('RFC'):
+                                    item = item.split(',')[0]
+                                    name, value = 'RFC', item[3:]
                                 else:
                                     name, value = '(Unknown)', item
                             else:
@@ -2937,11 +2941,11 @@ class DraftParser(Base):
             else:
                 faild = regex
         else:
-            if not line or self.is_section_start(line, part='back'):
+            if (not line) or self.is_section_start(line, part='back'):
                 self.push_para(para)
                 return None, None
             else:
-                self.warn(line.num, "Failed parsing a reference:\n%s" % para2text(para))
+                self.warn(line.num, "Failed parsing a reference.  Are all elements separated by commas (not periods, not just spaces)?:\n%s" % para2text(para))
                 return reference, entity
 
         return reference, entity
