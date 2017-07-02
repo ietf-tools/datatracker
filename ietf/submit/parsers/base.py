@@ -76,7 +76,7 @@ class FileParser(object):
 
     def parse_file_type(self):
         self.fd.file.seek(0)
-        content = self.fd.file.read(4096)
+        content = self.fd.file.read()
         mimetype = magic.from_buffer(content, mime=True)
         if not mimetype in self.mimetypes:
             self.parsed_info.add_error(u'Expected an %s file of type "%s", found one of type "%s"' % (self.ext.upper(), '" or "'.join(self.mimetypes), mimetype))

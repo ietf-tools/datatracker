@@ -203,11 +203,18 @@ class SubmissionUploadForm(forms.Form):
             # try to parse it
             txt_file = self.cleaned_data['txt']
             txt_file.seek(0)
-            self.parsed_draft = Draft(txt_file.read().decode('utf8'), txt_file.name)
+            bytes = txt_file.read()
+            txt_file.seek(0)
+            try:
+                text = bytes.decode('utf8')
+            except UnicodeDecodeError as e:
+                raise forms.ValidationError('Failed decoding the uploaded file: "%s"' % str(e))
+            #
+            self.parsed_draft = Draft(text, txt_file.name)
             self.filename = self.parsed_draft.filename
             self.revision = self.parsed_draft.revision
             self.title    = self.parsed_draft.get_title()
-            txt_file.seek(0)
+
 
         if not self.filename:
             raise forms.ValidationError("Could not extract a valid draft name from the upload"
