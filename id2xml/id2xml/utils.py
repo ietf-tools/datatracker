@@ -5,9 +5,12 @@ from __future__ import print_function, unicode_literals, division
 
 import re
 import textwrap
-from pyterminalsize import get_terminal_size
 from collections import namedtuple
 
+try:
+    from pyterminalsize import get_terminal_size    
+except ImportError:
+    get_terminal_size = None
 try:
     import debug
     debug.debug = True
@@ -25,7 +28,8 @@ class Options(object):
 
 
 def wrap(s):
-    cols = min(120, get_terminal_size()[0])
+    termsize = get_terminal_size() if get_terminal_size else (80, 24)
+    cols = min(120, max(termsize[0], 60))
 
     lines = s.split('\n')
     wrapped = []
