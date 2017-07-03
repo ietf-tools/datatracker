@@ -499,6 +499,7 @@ TEST_TEMPLATE_IGNORE = [
     ".*",                             # dot-files
     "*~",                             # tilde temp-files
     "#*",                             # files beginning with a hashmark
+    "500.html"                        # isn't loaded by regular loader, but checked by test_500_page()
 ]
 
 TEST_COVERAGE_MASTER_FILE = os.path.join(BASE_DIR, "../release-coverage.json.gz")
