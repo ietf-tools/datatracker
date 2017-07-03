@@ -106,6 +106,8 @@ class Command(BaseCommand):
                         mlines, mcov = None, mcoverage[mkey]
                     elif mformat == 2:
                         mlines, mcov = mcoverage[mkey]
+                    elif mformat == 4:
+                        mlines, mcov = mcoverage[mkey]
                     else:
                         raise CommandError("The release coverage data has an unknown format ('%s'), quitting." % mformat)
                 if   lformat == 1:
