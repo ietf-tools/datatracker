@@ -94,7 +94,7 @@ class TastypieApiTestCase(ResourceTestCaseMixin, TestCase):
         client = Client(Accept='application/json')
         r = client.get("/api/v1")
         top = json.loads(r.content)
-        self._assertCallbackReturnsSameJSON("/api/v1", top)
+        #self._assertCallbackReturnsSameJSON("/api/v1", top)
         for name in self.apps:
             app_name = self.apps[name]
             app = import_module(app_name)
@@ -102,7 +102,7 @@ class TastypieApiTestCase(ResourceTestCaseMixin, TestCase):
             r = client.get(top[name]["list_endpoint"])
             self.assertValidJSONResponse(r)
             app_resources = json.loads(r.content)
-            self._assertCallbackReturnsSameJSON("/api/v1/%s/"%name, app_resources)
+            #self._assertCallbackReturnsSameJSON("/api/v1/%s/"%name, app_resources)
             #
             model_list = apps.get_app_config(name).get_models()
             for model in model_list:
