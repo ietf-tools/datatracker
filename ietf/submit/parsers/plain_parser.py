@@ -32,7 +32,10 @@ class PlainParser(FileParser):
             magic.magic_load(m.cookie, None)
             filetype = m.from_buffer(content)
         if not 'ascii' in filetype and not 'utf-8' in filetype:
-            self.parsed_info.add_error('A plain text ASCII document is required.  Found an unexpected encoding: "%s"' % filetype)
+            self.parsed_info.add_error('A plain text ASCII document is required.  '
+                'Found an unexpected encoding: "%s".  '
+                'You probably have one or more non-ascii characters in your file.'  % filetype
+            )
 
     def parse_name(self):
         self.fd.file.seek(0)
