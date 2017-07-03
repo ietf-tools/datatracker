@@ -8,6 +8,7 @@ from django.contrib.sitemaps import views as sitemap_views
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.views import static as static_view
 from django.views.generic import TemplateView
+from django.views.defaults import server_error
 
 import debug                            # pyflakes:ignore
 
@@ -19,6 +20,7 @@ from ietf.ipr.sitemaps import IPRMap
 from ietf.liaisons.sitemaps import LiaisonMap
 from ietf.meeting import views as meeting_views
 from ietf.utils.urls import url
+
 
 admin.autodiscover()
 api.autodiscover()
@@ -95,7 +97,7 @@ if settings.SERVER_MODE in ('development', 'test'):
     settings.DEBUG = True
     urlpatterns += staticfiles_urlpatterns()
     urlpatterns += [
-            url(r'^_test500/$', lambda x: None),
+            url(r'^_test500/$', server_error), #utils_views.exception),
             url(r'^environment/$', help_views.environment),
             ## maybe preserve some static legacy URLs ?
             url(r'^(?P<path>(?:images|css|js)/.*)$', static_view.serve, {'document_root': settings.STATIC_ROOT+'ietf/'}),
