@@ -18,6 +18,7 @@ from django.template import Context
 from django.template.defaulttags import URLNode
 from django.template.loader import get_template
 from django.templatetags.static import StaticNode
+from django.urls import reverse as urlreverse
 
 import debug                            # pyflakes:ignore
 
@@ -207,6 +208,10 @@ class TemplateChecksTestCase(TestCase):
         self.apply_template_test(check_that_static_tags_resolve, StaticNode, 'In %s: Could not find static file for "%s"', checked)
         settings.DEBUG = saved_debug
 
+    def test_500_page(self):
+        url = urlreverse('django.views.defaults.server_error')
+        r = self.client.get(url)        
+        self.assertTemplateUsed(r, '500.html')
 
 @skipIf(skip_wiki_glue_testing, skip_message)
 class TestWikiGlueManagementCommand(TestCase):
@@ -288,3 +293,5 @@ class TestWikiGlueManagementCommand(TestCase):
 #                 debug.show('url')
 #                 r = self.client.get(url)
 #                 self.assertEqual(r.status_code, 200)
+
+
