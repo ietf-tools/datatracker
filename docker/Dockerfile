@@ -31,10 +31,11 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update
 RUN apt-get install -qy apt-transport-https
 
-# Use backports, updates, and security updates; all over https
-RUN echo "deb https://deb.debian.org/debian/ jessie main contrib non-free"  > /etc/apt/sources.list
-RUN echo "deb https://deb.debian.org/debian/ jessie-backports main contrib non-free"  >> /etc/apt/sources.list
-RUN echo "deb https://deb.debian.org/debian/ jessie-updates main contrib non-free" >> /etc/apt/sources.list
+# Use backports, updates, and security updates; over https if possible
+RUN echo "deb https://deb.debian.org/debian jessie main contrib non-free"  > /etc/apt/sources.list
+RUN echo "deb https://deb.debian.org/debian jessie-backports main contrib non-free"  >> /etc/apt/sources.list
+RUN echo "deb https://deb.debian.org/debian jessie-updates main contrib non-free" >> /etc/apt/sources.list
+RUN echo "deb http://security.debian.org/debian-security jessie/updates main contrib non-free" >> /etc/apt/sources.list
 
 # Install needed packages
 #
