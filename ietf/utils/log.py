@@ -35,6 +35,7 @@ def getcaller():
 
 def log(msg):
     "Uses syslog by preference.  Logs the given calling point and message."
+    global logfunc
     if settings.SERVER_MODE == 'test':
         return
     elif settings.DEBUG == True:
