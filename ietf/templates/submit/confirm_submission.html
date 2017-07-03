@@ -2,6 +2,7 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
 
+
 {% block title %}Confirm submission of {{ submission.name }}{% endblock %}
 
 {% block submit_content %}
@@ -14,7 +15,7 @@
     {% else %}
       <p>The submission is not in a state where it can be confirmed.</p>
 
-      <p>Go to the <a href="{% url "ietf.submit.views.submission_status" submission_id=submission.pk %}">status page</a>
+      <p>Go to the <b><a href="{% url "ietf.submit.views.submission_status" submission_id=submission.pk %}">status page</a></b>
         to see what has happened to it.</p>
     {% endif %}
   {% else %}
@@ -27,6 +28,9 @@
         cancel the submission and try again.</p>
     {% else %}
       <p>Authorization key accepted.</p>
+
+      <p>Go to the <b><a href="{% url "ietf.submit.views.submission_status" submission_id=submission.pk %}">status page</a></b>
+        for submission details and links to the files which will be posted.</p>
 
       <p>Please press the button below to finish posting of
         <b>{{ submission.name }}-{{ submission.rev }}</b>.</p>
