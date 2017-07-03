@@ -171,6 +171,9 @@ class DraftYangChecker(object):
             if not re.search(model_name_re, m):
                 code += 1
                 err += "Error: Bad extracted model name: '%s'\n" % m
+        if len(set(model_list)) != len(model_list):
+            code += 1
+            err += "Error: Multiple models with the same name:\n  %s\n" % ("\n  ".join(model_list))
 
         command = "xym"
         cmd_version = VersionInfo.objects.get(command=command).version
@@ -185,7 +188,7 @@ class DraftYangChecker(object):
             "items": [],
         })
 
-        for model in model_list:
+        for model in set(model_list):
             path = os.path.join(workdir, model)
             message = ""
             modpath = ':'.join([
@@ -194,56 +197,61 @@ class DraftYangChecker(object):
                                 settings.SUBMIT_YANG_DRAFT_MODEL_DIR,
                                 settings.SUBMIT_YANG_INVAL_MODEL_DIR,
                             ])
-            with open(path) as file:
-                text = file.readlines()
-            # pyang
-            cmd_template = settings.SUBMIT_PYANG_COMMAND
-            command = cmd_template.split()[0]
-            cmd_version = VersionInfo.objects.get(command=command).version
-            cmd = cmd_template.format(libs=modpath, model=path)
-            code, out, err = pipe(cmd)
-            items = []
-            if code > 0:
-                error_lines = err.splitlines()
-                for line in error_lines:
-                    if line.strip():
-                        try:
-                            fn, lnum, msg = line.split(':', 2)
-                            lnum = int(lnum)
-                            if fn == model and (lnum-1) in range(len(text)):
-                                line = text[lnum-1].rstrip()
-                            else:
-                                line = None
-                            items.append((lnum, line, msg))
-                            if 'error: ' in msg:
-                                errors += 1
-                            if 'warning: ' in msg:
-                                warnings += 1
-                        except ValueError:
-                            pass
-            #passed = passed and code == 0 # For the submission tool.  Yang checks always pass
-            message += "%s: %s:\n%s\n" % (cmd_version, cmd_template, out+"No validation errors\n" if code == 0 else err)
-
-            # yanglint
-            if settings.SUBMIT_YANGLINT_COMMAND:
-                cmd_template = settings.SUBMIT_YANGLINT_COMMAND
+            if os.path.exists(path):
+                with open(path) as file:
+                    text = file.readlines()
+                # pyang
+                cmd_template = settings.SUBMIT_PYANG_COMMAND
                 command = cmd_template.split()[0]
                 cmd_version = VersionInfo.objects.get(command=command).version
-                cmd = cmd_template.format(model=path, rfclib=settings.SUBMIT_YANG_RFC_MODEL_DIR, draftlib=settings.SUBMIT_YANG_DRAFT_MODEL_DIR, tmplib=workdir)
+                cmd = cmd_template.format(libs=modpath, model=path)
                 code, out, err = pipe(cmd)
+                items = []
                 if code > 0:
                     error_lines = err.splitlines()
                     for line in error_lines:
                         if line.strip():
                             try:
-                                if 'err : ' in line:
+                                fn, lnum, msg = line.split(':', 2)
+                                lnum = int(lnum)
+                                if fn == model and (lnum-1) in range(len(text)):
+                                    line = text[lnum-1].rstrip()
+                                else:
+                                    line = None
+                                items.append((lnum, line, msg))
+                                if 'error: ' in msg:
                                     errors += 1
-                                if 'warn: ' in line:
+                                if 'warning: ' in msg:
                                     warnings += 1
                             except ValueError:
                                 pass
                 #passed = passed and code == 0 # For the submission tool.  Yang checks always pass
                 message += "%s: %s:\n%s\n" % (cmd_version, cmd_template, out+"No validation errors\n" if code == 0 else err)
+
+                # yanglint
+                if settings.SUBMIT_YANGLINT_COMMAND:
+                    cmd_template = settings.SUBMIT_YANGLINT_COMMAND
+                    command = cmd_template.split()[0]
+                    cmd_version = VersionInfo.objects.get(command=command).version
+                    cmd = cmd_template.format(model=path, rfclib=settings.SUBMIT_YANG_RFC_MODEL_DIR, draftlib=settings.SUBMIT_YANG_DRAFT_MODEL_DIR, tmplib=workdir)
+                    code, out, err = pipe(cmd)
+                    if code > 0:
+                        error_lines = err.splitlines()
+                        for line in error_lines:
+                            if line.strip():
+                                try:
+                                    if 'err : ' in line:
+                                        errors += 1
+                                    if 'warn: ' in line:
+                                        warnings += 1
+                                except ValueError:
+                                    pass
+                    #passed = passed and code == 0 # For the submission tool.  Yang checks always pass
+                    message += "%s: %s:\n%s\n" % (cmd_version, cmd_template, out+"No validation errors\n" if code == 0 else err)
+            else:
+                errors += 1
+                message += "No such file: %s\nPossible mismatch between extracted xym file name and returned module name?\n" % (path)
+                    
 
             if errors==0 and warnings==0:
                 dest = os.path.join(settings.SUBMIT_YANG_DRAFT_MODEL_DIR, model)
