@@ -234,3 +234,9 @@ class UploadBlueSheetForm(forms.Form):
         if not re.match(r'bluesheets-\d+',file.name):
             raise forms.ValidationError('Incorrect filename format')
         return file
+
+class SessionEditForm(forms.ModelForm):
+    class Meta:
+        model = Session
+        fields = ['agenda_note']
+

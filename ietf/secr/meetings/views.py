@@ -5,11 +5,10 @@ import time
 
 from django.conf import settings
 from django.contrib import messages
-from django.urls import reverse
 from django.db.models import Max
 from django.forms.formsets import formset_factory
 from django.forms.models import inlineformset_factory
-from django.http import HttpResponseRedirect, HttpResponse
+from django.http import HttpResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.utils.functional import curry
 
@@ -23,11 +22,9 @@ from ietf.group.models import Group, GroupEvent
 from ietf.person.models import Person
 from ietf.secr.meetings.blue_sheets import create_blue_sheets
 from ietf.secr.meetings.forms import ( BaseMeetingRoomFormSet, MeetingModelForm, MeetingSelectForm,
-    MeetingRoomForm, NewSessionForm, NonSessionForm, TimeSlotForm,
+    MeetingRoomForm, NewSessionForm, NonSessionForm, TimeSlotForm, SessionEditForm,
     UploadBlueSheetForm, get_next_slot )
-from ietf.secr.proceedings.views import build_choices
 from ietf.secr.proceedings.utils import handle_upload_file
-from ietf.secr.sreq.forms import GroupSelectForm
 from ietf.secr.sreq.views import get_initial_session
 from ietf.secr.utils.meeting import get_session, get_timeslot
 from ietf.mailtrigger.utils import gather_address_lists
@@ -834,50 +831,54 @@ def select(request, meeting_id, schedule_name):
         'meeting': meeting,
         'schedule': schedule},
     )
-    
+
 @role_required('Secretariat')
 def select_group(request, meeting_id, schedule_name):
     '''
-    In this view the user can select the group to schedule.  Only those groups that have
-    submitted session requests appear in the dropdowns.
-
-    NOTE: BOF list includes Proposed Working Group type, per Wanda
+    Select the scheduled session to edit.
     '''
     meeting = get_object_or_404(Meeting, number=meeting_id)
     schedule = get_object_or_404(Schedule, meeting=meeting, name=schedule_name)
-    
-    if request.method == 'POST':
-        group = request.POST.get('group',None)
-        if group:
-            redirect_url = reverse('ietf.secr.meetings.views.schedule', kwargs={'meeting_id':meeting_id,'acronym':group,'schedule_name':schedule_name})
-        else:
-            redirect_url = reverse('ietf.secr.meetings.views.select_group',kwargs={'meeting_id':meeting_id,'schedule_name':schedule_name})
-            messages.error(request, 'No group selected')
-
-        return HttpResponseRedirect(redirect_url)
-
-    # split groups into scheduled / unscheduled
-    scheduled_groups, unscheduled_groups = sort_groups(meeting,schedule)
-
-    # prep group form
-    wgs = filter(lambda a: a.type_id in ('wg','ag') and a.state_id=='active', unscheduled_groups)
-    group_form = GroupSelectForm(choices=build_choices(wgs))
-
-    # prep BOFs form
-    bofs = filter(lambda a: a.type_id=='wg' and a.state_id in ('bof','proposed'), unscheduled_groups)
-    bof_form = GroupSelectForm(choices=build_choices(bofs))
-
-    # prep IRTF form
-    irtfs = filter(lambda a: a.type_id=='rg' and a.state_id in ('active','proposed'), unscheduled_groups)
-    irtf_form = GroupSelectForm(choices=build_choices(irtfs))
+    assignments = schedule.assignments.filter(timeslot__type='session').order_by('session__group__acronym')
 
     return render(request, 'meetings/select_group.html', {
-        'group_form': group_form,
-        'bof_form': bof_form,
-        'irtf_form': irtf_form,
-        'scheduled_groups': scheduled_groups,
         'meeting': meeting,
-        'schedule': schedule},
+        'schedule': schedule,
+        'assignments': assignments},
+    )
+
+@role_required('Secretariat')
+def session_edit(request, meeting_id, schedule_name, session_id):
+    '''
+    Edit session details, cancel session
+    '''
+    meeting = get_object_or_404(Meeting, number=meeting_id)
+    schedule = get_object_or_404(Schedule, meeting=meeting, name=schedule_name)
+    session = get_object_or_404(Session, id=session_id)
+    assignment = SchedTimeSessAssignment.objects.get(schedule=schedule,session=session)
+
+    if request.method == 'POST':
+        form = SessionEditForm(request.POST, instance=session)
+        if form.is_valid():
+            button_text = request.POST.get('submit', '')
+            if button_text == 'Cancel':
+                session.status = SessionStatusName.objects.get(slug='canceled')
+                session.save()
+                messages.success(request, 'Session canceled')
+            else:
+                form.save()
+                messages.success(request, 'Session saved')
+            return redirect('ietf.secr.meetings.views.select_group', meeting_id=meeting_id,schedule_name=schedule_name)
+
+    else:
+        form = SessionEditForm(instance=session)
+
+    return render(request, 'meetings/session_edit.html', {
+        'meeting': meeting,
+        'schedule': schedule,
+        'session': session,
+        'timeslot': assignment.timeslot,
+        'form': form},
     )
 
 @role_required('Secretariat')

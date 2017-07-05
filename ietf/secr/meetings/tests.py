@@ -10,7 +10,7 @@ from django.conf import settings
 from django.urls import reverse
 
 from ietf.group.models import Group, GroupEvent
-from ietf.meeting.models import Meeting, Room, TimeSlot, SchedTimeSessAssignment
+from ietf.meeting.models import Meeting, Room, TimeSlot, SchedTimeSessAssignment, Session
 from ietf.meeting.test_data import make_meeting_test_data
 from ietf.person.models import Person
 from ietf.secr.meetings.forms import get_times
@@ -349,6 +349,23 @@ class SecrMeetingTestCase(TestCase):
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
+
+    def test_meetings_session_edit(self):
+        meeting = make_meeting_test_data()
+        session = Session.objects.filter(meeting=meeting,group__acronym='mars').first()
+        url = reverse('ietf.secr.meetings.views.session_edit', kwargs={'meeting_id':meeting.number,'schedule_name':meeting.agenda.name,'session_id':session.id})
+        redirect_url = reverse('ietf.secr.meetings.views.select_group', kwargs={'meeting_id':meeting.number,'schedule_name':meeting.agenda.name})
+        self.client.login(username="secretary", password="secretary+password")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        response = self.client.post(url, {'agenda_note':'TEST'})
+        self.assertRedirects(response, redirect_url)
+        session = Session.objects.get(id=session.id)
+        self.assertEqual(session.agenda_note, 'TEST')
+        response = self.client.post(url, {'agenda_note':'TEST','submit':'Cancel'})
+        self.assertRedirects(response, redirect_url)
+        session = Session.objects.get(id=session.id)
+        self.assertEqual(session.status.slug, 'canceled')
 
     # ----------------------
     # Unit Tests
