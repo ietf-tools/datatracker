@@ -17,45 +17,13 @@
 {% block content %}
 
 <div class="module">
-    <h2>IETF {{ meeting.number }} - Schedule Sessions</h2>
-      <p>The lists below contain those groups which have submitted a session request.  Select a
-      group to schedule sessions.  (Proposed Working Groups are in the BOFs list).</p>
-      <p>Select this link to <a href="https://datatracker.ietf.org/meeting/{{ meeting.number }}/agenda.html">View Agenda</a></p>
+    <h2>IETF {{ meeting.number }} - Scheduled Sessions</h2>
       
-      <div class="inline-related">
-        <form class="internal-form" action="" method="post">{% csrf_token %}
-          <label for="id_group">Working Groups</label></th>
-          {{ group_form.group }}
-          <input type="submit" name="submit" value="Select" />
-        </form>
-        <form class="internal-form" action="" method="post">{% csrf_token %}
-          <label for="id_group">BOFs</label>
-          {{ bof_form.group }}
-          <input type="submit" name="submit" value="Select" />
-        </form>
-        <form class="internal-form" action="" method="post">{% csrf_token %}
-          <label for="id_group">IRTF</label>
-          {{ irtf_form.group }}
-          <input type="submit" name="submit" value="Select" />
-        </form>
-        
-      <div class="button-group">
-       <ul>
-         <li><button onclick="window.location='../'">Back</button></li>
-       </ul>
-      </div> <!-- button-group -->
-      
-      </div><!-- inline-related-->
-      
-      <div class="inline-related">
-      <h2>Scheduled Sessions</h2>
         <ul id="id_scheduled_sessions">
-          {% for group in scheduled_groups %}
-            <li><a href="{% url "ietf.secr.meetings.views.schedule" meeting_id=meeting.number schedule_name=schedule.name acronym=group.acronym %}">{{ group.acronym }}</a></li>
+          {% for assignment in assignments %}
+            <li><a href="{% url "ietf.secr.meetings.views.session_edit" meeting_id=meeting.number schedule_name=schedule.name session_id=assignment.session.pk %}">{{ assignment.session.group.acronym }} - {{ assignment.timeslot.time|date:"D" }}</a></li>
           {% endfor %}
         </ul>
-      </div><!-- inline-related-->
-
      
 </div> <!-- module -->
 
