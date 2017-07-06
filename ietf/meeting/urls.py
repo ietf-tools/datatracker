@@ -59,6 +59,13 @@ type_ietf_only_patterns = [
     url(r'^json$',                               ajax.meeting_json),
 ]
 
+# This is a limited subset of the list above -- many of the views above won't work for interim meetings
+type_interim_patterns = [
+    url(r'^agenda/(?P<session>[A-Za-z0-9-]+)-drafts.pdf$', views.session_draft_pdf),
+    url(r'^agenda/(?P<session>[A-Za-z0-9-]+)-drafts.tgz$', views.session_draft_tarfile),
+    url(r'^agenda/(?P<session>[A-Za-z0-9-]+)/?$', views.session_agenda),
+]
+
 type_ietf_only_patterns_id_optional = [
     url(r'^agenda(?P<utc>-utc)?(?P<ext>.html)?/?$',     views.agenda),
     url(r'^agenda(?P<ext>.txt)$', views.agenda),
@@ -101,7 +108,7 @@ urlpatterns = [
     url(r'^upcoming/?$', views.upcoming),
     url(r'^upcoming.ics/?$', views.upcoming_ical),
     # Then patterns from more specific to less
-    url(r'^(?P<num>interim-[a-z0-9-]+)/', include(type_ietf_only_patterns)),
+    url(r'^(?P<num>interim-[a-z0-9-]+)/', include(type_interim_patterns)),
     url(r'^(?P<num>\d+)/requests.html$', RedirectView.as_view(url='/meeting/%(num)s/requests', permanent=True)),
     # The optionals have to go first of these two, otherwise the agenda/(owner)/(name)/ patterns match things they shouldn't
     url(r'^(?:(?P<num>\d+)/)?', include(type_ietf_only_patterns_id_optional)),
