@@ -156,6 +156,18 @@ class GroupPagesTests(TestCase):
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(url)
         self.assertContains(r, "Charter new RG")
+        self.assertContains(r, "Charter new WG")        
+
+        self.client.login(username="ad", password="ad+password")
+        r = self.client.get(url)
+        self.assertNotContains(r, "Charter new RG")
+        self.assertContains(r, "Charter new WG")
+
+        self.client.login(username="irtf-chair", password="irtf-chair+password")
+        r = self.client.get(url)
+        self.assertContains(r, "Charter new RG")
+        self.assertNotContains(r, "Charter new WG")
+
 
     def test_concluded_groups(self):
         draft = make_test_data()
