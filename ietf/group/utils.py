@@ -6,15 +6,15 @@ from django.urls import reverse as urlreverse
 
 import debug                            # pyflakes:ignore
 
-from ietf.group.models import Group, RoleHistory, Role
-from ietf.person.models import Email
-from ietf.utils.history import get_history_object_for, copy_many_to_many_for_history
-from ietf.ietfauth.utils import has_role
 from ietf.community.models import CommunityList, SearchRule
 from ietf.community.utils import reset_name_contains_index_for_rule, can_manage_community_list
 from ietf.doc.models import Document, State
+from ietf.group.models import Group, RoleHistory, Role
+from ietf.ietfauth.utils import has_role
+from ietf.person.models import Email
 from ietf.review.utils import can_manage_review_requests_for_team
-
+from ietf.utils import log
+from ietf.utils.history import get_history_object_for, copy_many_to_many_for_history
 
 def save_group_in_history(group):
     """This should be called before saving changes to a Group instance,
@@ -95,6 +95,7 @@ def save_milestone_in_history(milestone):
 def can_manage_group_type(user, group, type_id=None):
     if type_id is None:
         type_id = group.type_id
+    log.assertion("isinstance(type_id, (type(''), type(u'')))")
     if type_id == "rg":
         return has_role(user, ('IRTF Chair', 'Secretariat'))
     elif type_id == "wg":
