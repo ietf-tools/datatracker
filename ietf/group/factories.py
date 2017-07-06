@@ -11,6 +11,7 @@ class GroupFactory(factory.DjangoModelFactory):
     name = factory.Faker('sentence',nb_words=6)
     acronym = factory.Sequence(lambda n: 'acronym%d' %n)
     state_id = 'active'
+    type_id = 'wg'
 
 class ReviewTeamFactory(factory.DjangoModelFactory):
     class Meta:
