@@ -100,6 +100,7 @@ class DocumentResource(ModelResource):
     states           = ToManyField(StateResource, 'states', null=True)
     tags             = ToManyField(DocTagNameResource, 'tags', null=True)
     rfc              = CharField(attribute='rfc_number', null=True)
+    submissions      = ToManyField('ietf.submit.resources.SubmissionResource', 'submission_set', null=True)
     class Meta:
         cache = SimpleCache()
         queryset = Document.objects.all()
