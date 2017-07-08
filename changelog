@@ -1,17 +1,71 @@
 ietfdb (6.55.3) ietf; urgency=medium
 
+  Another bugfix release with some refactoring.  From the commit log:
+
+  * Added reverse relationships from drafts to submissions to submission 
+    checks to the Json API, to make it easier to find the yang checks for a 
+    given document.
+
+  * Reduced the number of non-functional URL patterns for interim meetings. 
+    Can easily be expanded as needed.
+
+  * Added test cases for ADs and IRTF Chair for the chartering buttons on 
+    /group/chartering.
+
+  * Make sure that test factory groups have a type.
+
+  * Limited the pyang and xym requirements to current major version; there's a
+    possibility of new API-incompatible versions with semantic versioned
+    numbers appearing.
+
+  * Call can_manage_group_type() with the right information.  Fixes an issue
+    with chartering buttons not being visible for ADs. Added a log assertion
+    for calls to can_manage_group_type.
+
+  * Merged in [13775] from rcross@amsl.com:
+    Refactor session edit page.  Add button to cancel a session, which sets 
+    the status.  Fixes #2296.   
+
+  * Set an url for the server_error page, for testing.
+
+  * Added the debian security updates to apt sources for the docker image.
+
+  * Added a check for duplicate Yang model names after xym extraction.  
+    This prevents running pyang and yanglint on one module, moving it to the 
+    module libs, and then failing to run the checks on a second module with the 
+    same name, because the file has been moved after the first check.
+
+  * Linked to the submission status page from the submission confirmation 
+    page, in case people want to look at the text or xml which will be posted
+    before confirming the submission
+
+  * Removed some test code which isn't useful with tastypie 0.14.0
+
+  * Updated template exclusion settings.
+
+  * Added the new format '4' to the list of recognized formats in the 
+    coverage_changes management command.
+
+  * Added a test to verify that we can load the 500 page template
+
+  * Tastypie 0.14.0 does not support the callback parameter as it did before; 
+    disable the tests for this as we don't use it anyway.
+
   * On request from a user, added information about running idnits before 
     submission upload to the upload form page.
 
-  * Fixed an issue with the scope of the logfunc variable in production.
+  * Fixed an issue with the scope of a server-mode-dependent variable when in
+    production mode.
 
-  * Tweaked the wording of the unexpected-encoding warning.
+  * Tweaked the wording of the unexpected-encoding warning on submission
+    upload.
 
-  * Check the whole draft submission text when checking mime type, and 
-    catch decoding errors and raise ValidationError when converting submission 
-    form txt file to unicode for Draft().
+  * Changed to check the whole draft submission text when checking mime type,
+    and catch decoding errors and raise ValidationError when converting
+    submission form txt file to unicode for Draft().
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  03 Jul 2017 07:12:43 -0700
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  08 Jul 2017 10:09:25 +0000
 
 
 ietfdb (6.55.2) ietf; urgency=medium
