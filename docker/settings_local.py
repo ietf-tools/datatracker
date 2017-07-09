@@ -38,8 +38,8 @@ MEDIA_URL = '/media/'
 PHOTOS_DIRNAME = 'photo'
 PHOTOS_DIR = MEDIA_ROOT + PHOTOS_DIRNAME
 
-SUBMIT_YANG_RFC_MODEL_DIR = '/www/tools.ietf.org/yang/rfcmod/'
-SUBMIT_YANG_DRAFT_MODEL_DIR = '/www/tools.ietf.org/yang/draftmod/'
-SUBMIT_YANG_INVAL_MODEL_DIR = '/www/tools.ietf.org/yang/invalmod/'
+SUBMIT_YANG_RFC_MODEL_DIR   = 'data/developers/ietf-ftp/yang/rfcmod/'
+SUBMIT_YANG_DRAFT_MODEL_DIR = 'data/developers/ietf-ftp/yang/draftmod/'
+SUBMIT_YANG_INVAL_MODEL_DIR = 'data/developers/ietf-ftp/yang/invalmod/'
 SUBMIT_YANGLINT_COMMAND = None
 

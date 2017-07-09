@@ -111,11 +111,14 @@ done
 for sub in					\
 	nomcom_keys/public_keys			\
 	developers/ietf-ftp			\
+	developers/ietf-ftp/charter		\
+	developers/ietf-ftp/conflict-reviews	\
 	developers/ietf-ftp/internet-drafts	\
 	developers/ietf-ftp/rfc			\
-	developers/ietf-ftp/charter		\
 	developers/ietf-ftp/status-changes	\
-	developers/ietf-ftp/conflict-reviews	\
+	developers/ietf-ftp/yang/draftmod	\
+	developers/ietf-ftp/yang/invalmod	\
+	developers/ietf-ftp/yang/rfcmod		\
 	developers/www6s			\
 	developers/www6s/staging		\
 	developers/www6s/wg-descriptions	\
