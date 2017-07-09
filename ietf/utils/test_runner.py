@@ -458,6 +458,7 @@ class IetfTestRunner(DiscoverRunner):
         #
         self.check_coverage = not skip_coverage
         self.save_version_coverage = save_version_coverage
+        self.html_report = html_report
         #
         self.root_dir = os.path.dirname(settings.BASE_DIR)
         self.coverage_file = os.path.join(self.root_dir, settings.TEST_COVERAGE_MASTER_FILE)
