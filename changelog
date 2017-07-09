@@ -136,7 +136,7 @@ ietfdb (6.55.2) ietf; urgency=medium
 
   * Additional tweaks to the mailman listinfo importer.
 
-  * Code reorganization, doing away with multiple urls_* and views_ files 
+  * Code reorganization, doing away with multiple urls_* and views_* files 
     in ietf.group.  No intentional functionality changes.
 
   * Made the import_mailman_listinfo management command somewhat more 
