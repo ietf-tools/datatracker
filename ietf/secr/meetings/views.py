@@ -238,6 +238,8 @@ def sort_groups(meeting,schedule=None):
     Similar to sreq.views.sort_groups
     Takes a Meeting object and returns a tuple scheduled_groups, unscheduled groups.
     '''
+    from ietf.utils import log
+    log.unreachable("2017-07-08")
     if not schedule:
         schedule = meeting.agenda
     scheduled_groups = []
@@ -266,6 +268,8 @@ def ajax_get_times(request, meeting_id, day):
     returns JSON format response: [{id:start_time, value:start_time-end_time},...]
     '''
     # TODO strip duplicates if there are any
+    from ietf.utils import log
+    log.unreachable("2017-07-08")
     results=[]
     room = Room.objects.filter(meeting__number=meeting_id)[0]
     slots = TimeSlot.objects.filter(meeting__number=meeting_id,time__week_day=day,location=room).order_by('time')
@@ -645,6 +649,8 @@ def remove_session(request, meeting_id, acronym):
     According to Wanda this option is used when people cancel, so the Session
     request should be deleted as well.
     '''
+    from ietf.utils import log
+    log.unreachable("2017-07-08")
     meeting = get_object_or_404(Meeting, number=meeting_id)
     group = get_object_or_404(Group, acronym=acronym)
     sessions = Session.objects.filter(meeting=meeting,group=group)
@@ -1034,6 +1040,8 @@ def unschedule(request, meeting_id, schedule_name, session_id):
     '''
     Unschedule given session object
     '''
+    from ietf.utils import log
+    log.unreachable("2017-07-08")
     meeting = get_object_or_404(Meeting, number=meeting_id)
     session = get_object_or_404(Session, id=session_id)
 

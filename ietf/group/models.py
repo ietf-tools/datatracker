@@ -287,7 +287,7 @@ class Role(models.Model):
         Is intended for display use, not in email context.
         Use self.formatted_email() for that.
         """
-        log.unreachable()
+        log.unreachable("2017-06-06")
         if self.person:
             return u"%s <%s>" % (self.person.plain_name(), self.email.address)
         else:

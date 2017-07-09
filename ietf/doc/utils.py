@@ -198,6 +198,8 @@ def close_open_ballots(doc, by):
 def augment_with_start_time(docs):
     """Add a started_time attribute to each document with the time of
     the first revision."""
+    from ietf.utils import log
+    log.unreachable("2017-07-08")
     docs = list(docs)
 
     docs_dict = {}

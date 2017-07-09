@@ -817,6 +817,8 @@ def makerfc(request, id):
 
     * draft 
     '''
+    from ietf.utils import log
+    log.unreachable("2017-07-08")
 
     draft = get_object_or_404(Document, name=id)
     
