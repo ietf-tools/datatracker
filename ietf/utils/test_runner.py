@@ -352,7 +352,7 @@ class CoverageTest(TestCase):
             for pattern in settings.TEST_CODE_COVERAGE_EXCLUDE_LINES:
                 checker.exclude(pattern)
             # Maybe output a html report
-            if self.runner.run_full_test_suite:
+            if self.runner.run_full_test_suite and self.runner.html_report:
                 checker.html_report(directory=settings.TEST_CODE_COVERAGE_REPORT_DIR)
             # In any case, build a dictionary with per-file data for this run
             reporter = CoverageReporter(checker, checker.config)
@@ -444,14 +444,17 @@ class IetfTestRunner(DiscoverRunner):
         parser.add_argument('--skip-coverage',
             action='store_true', dest='skip_coverage', default=False,
             help='Skip test coverage measurements for code, templates, and URLs. ' )
-        parser.add_argument('--save-version-coverage',
+        parser.add_argument('--save-version-coverage', metavar='RELEASE_VERSION',
             action='store', dest='save_version_coverage', default=False,
             help='Save test coverage data under the given version label')
         parser.add_argument('--save-testresult',
             action='store_true', dest='save_testresult', default=False,
             help='Save short test result data in %s/.testresult' % os.path.dirname(os.path.dirname(settings.BASE_DIR))),
+        parser.add_argument('--html-report',
+            action='store_true', default=False,
+            help='Generate a html code coverage report in %s' % settings.TEST_CODE_COVERAGE_REPORT_DIR)
 
-    def __init__(self, skip_coverage=False, save_version_coverage=None, **kwargs):
+    def __init__(self, skip_coverage=False, save_version_coverage=None, html_report=None, **kwargs):
         #
         self.check_coverage = not skip_coverage
         self.save_version_coverage = save_version_coverage
