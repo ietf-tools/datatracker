@@ -471,7 +471,7 @@ TEST_URL_COVERAGE_EXCLUDE = [
 ]
 
 # These are filename globs.  They are fed directly to the coverage code checker.
-TEST_CODE_COVERAGE_EXCLUDE = [
+TEST_CODE_COVERAGE_EXCLUDE_FILES = [
     "*/tests*",
     "*/admin.py",
     "*/migrations/*",
@@ -493,6 +493,15 @@ TEST_CODE_COVERAGE_EXCLUDE = [
     "ietf/stats/backfill_data.py",
 ]
 
+# These are code line regex patterns
+TEST_CODE_COVERAGE_EXCLUDE_LINES = [
+    "coverage: *ignore",
+    "debug\.",
+    "unreachable\([^)]*\)",
+    "if settings.DEBUG",
+    "if __name__ == .__main__.:",
+]
+
 # These are filename globs.  They are used by test_parse_templates() and
 # get_template_paths()
 TEST_TEMPLATE_IGNORE = [
@@ -508,7 +517,7 @@ TEST_COVERAGE_LATEST_FILE = os.path.join(BASE_DIR, "../latest-coverage.json")
 TEST_CODE_COVERAGE_CHECKER = None
 if SERVER_MODE != 'production':
     import coverage
-    TEST_CODE_COVERAGE_CHECKER = coverage.Coverage(source=[ BASE_DIR ], cover_pylib=False, omit=TEST_CODE_COVERAGE_EXCLUDE)
+    TEST_CODE_COVERAGE_CHECKER = coverage.Coverage(source=[ BASE_DIR ], cover_pylib=False, omit=TEST_CODE_COVERAGE_EXCLUDE_FILES)
 
 TEST_CODE_COVERAGE_REPORT_PATH = "coverage/"
 TEST_CODE_COVERAGE_REPORT_URL = os.path.join(STATIC_URL, TEST_CODE_COVERAGE_REPORT_PATH, "index.html")

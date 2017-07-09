@@ -347,8 +347,10 @@ class CoverageTest(TestCase):
             # Save to the .coverage file
             checker.save()
             # Apply the configured and requested omit and include data 
-            checker.config.from_args(ignore_errors=None, omit=settings.TEST_CODE_COVERAGE_EXCLUDE,
+            checker.config.from_args(ignore_errors=None, omit=settings.TEST_CODE_COVERAGE_EXCLUDE_FILES,
                 include=include, file=None)
+            for pattern in settings.TEST_CODE_COVERAGE_EXCLUDE_LINES:
+                checker.exclude(pattern)
             # Maybe output a html report
             if self.runner.run_full_test_suite:
                 checker.html_report(directory=settings.TEST_CODE_COVERAGE_REPORT_DIR)
