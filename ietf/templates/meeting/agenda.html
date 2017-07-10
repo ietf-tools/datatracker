@@ -209,11 +209,17 @@
 	            {% endif %}
 	          </td>
                   <td>
-	            {{item.timeslot.name}}
+		    {% if item.session.agenda %}
+		      <a href="{{ item.session.agenda.href }}">
+			{{item.timeslot.name}}
+		      </a>
+		    {% else %}
+		      {{item.timeslot.name}}
+		    {% endif %}
 
-                   {% if item.session.status.slug == 'canceled' %}
-                        <span class="label label-danger pull-right">CANCELLED</span>
-                   {% endif %}
+		    {% if item.session.status.slug == 'canceled' %}
+		      <span class="label label-danger pull-right">CANCELLED</span>
+		    {% endif %}
 
 	          </td>
 		  <td class="col-md-2">

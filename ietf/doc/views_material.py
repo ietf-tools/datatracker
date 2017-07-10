@@ -122,6 +122,7 @@ def edit_material(request, name=None, acronym=None, action=None, doc_type=None):
 
             prev_title = doc.title
             prev_state = doc.get_state()
+            prev_abstract = doc.abstract
 
             if "title" in form.cleaned_data:
                 doc.title = form.cleaned_data["title"]
@@ -155,6 +156,14 @@ def edit_material(request, name=None, acronym=None, action=None, doc_type=None):
                 e.desc = u"Changed title to <b>%s</b>" % doc.title
                 if prev_title:
                     e.desc += u" from %s" % prev_title
+                e.save()
+                events.append(e)
+
+            if prev_abstract != doc.abstract:
+                e = DocEvent(doc=doc, rev=doc.rev, by=request.user.person, type='changed_document')
+                e.desc = u"Changed abstract to <b>%s</b>" % doc.abstract
+                if prev_abstract:
+                    e.desc += u" from %s" % prev_abstract
                 e.save()
                 events.append(e)
 

@@ -54,7 +54,7 @@
       <td>{{ doc.title }}</td>
     </tr>
 
-    {% if doc.abstract %}
+    {% if doc.abstract or doc.type_id == 'slides' and can_manage_material and not snapshot %}
       <tr>
         <th>Abstract</th>
         <td class="edit">
