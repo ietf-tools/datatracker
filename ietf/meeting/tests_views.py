@@ -365,10 +365,12 @@ class MeetingTests(TestCase):
         q = PyQuery(response.content)
         self.assertEqual(1,len(q("#id_attendees tbody tr")))
 
-    def test_proceedings_overview(self):
+    @patch('urllib2.urlopen')
+    def test_proceedings_overview(self, mock_urlopen):
         '''Test proceedings IETF Overview page.
         Note: old meetings aren't supported so need to add a new meeting then test.
         '''
+        mock_urlopen.return_value = StringIO('[{"LastName":"Smith","FirstName":"John","Company":"ABC","Country":"US"}]')
         make_meeting_test_data()
         meeting = MeetingFactory(type_id='ietf', date=datetime.date(2016,7,14), number="96")
         finalize(meeting)
