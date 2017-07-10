@@ -24,6 +24,8 @@ Planned work in rough order
 * Revisit photo uploads: Add photo upload for people with roles.  Add
   photos to wg pages and group overview pages.
 
+* Adde 'Additional URLs' for documents, the same way we have them for groups.
+
 * Revisit floorplans: Add room coordinate input tool (javascript).
   Add NOC object annotation possibilities.  Add support for break areas
   on multiple floors (probably means modelling break areas the same way
