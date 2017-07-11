@@ -558,11 +558,13 @@ class Document(DocumentInfo):
                 if self.type_id == 'recording':
                     url = self.external_url
                 else:
-                    if self.type_id in ('agenda','minutes'):
-                        filename = os.path.splitext(self.external_url)[0]
+                    if self.type_id == 'agenda':
+                        url = urlreverse('ietf.meeting.views.session_agenda', kwargs={'num':meeting.number, 'session':session.group.acronym})
+                    elif self.type_id == 'minutes':
+                        url = urlreverse('ietf.meeting.views.session_minutes', kwargs={'num':meeting.number, 'session':session.group.acronym})
                     else:
                         filename = self.external_url
-                    url = urlreverse('ietf.meeting.views.session_agenda', kwargs={'num':meeting.number, 'session':session.group.acronym})
+                        url = '%sproceedings/%s/%s/%s' % (settings.IETF_HOST_URL,meeting.number,self.type_id,filename)
                 return url
         return urlreverse('ietf.doc.views_doc.document_main', kwargs={ 'name': name }, urlconf="ietf.urls")
 
