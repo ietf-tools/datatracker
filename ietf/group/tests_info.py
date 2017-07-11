@@ -1218,7 +1218,7 @@ class StatusUpdateTests(TestCase):
             self.assertEqual(response.status_code, 404)
             self.client.logout()
 
-        for type_id in GroupTypeName.objects.exclude(slug__in=('wg','rg','team')).values_list('slug',flat=True):
+        for type_id in GroupTypeName.objects.exclude(slug__in=('wg','rg','ag','team')).values_list('slug',flat=True):
             group = GroupFactory.create(type_id=type_id)
             for user in (None,User.objects.get(username='secretary')):
                 ensure_updates_dont_show(group,user)

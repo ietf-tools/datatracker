@@ -175,7 +175,7 @@ class Command(BaseCommand):
                 self.maybe_add_group_url(group, 'Issue tracker', settings.TRAC_ISSUE_URL_PATTERN % group.acronym)
                 # Use custom assets (if any) from the master setup
                 self.symlink_to_master_assets(group, env)
-                if group.type_id in ['wg', 'rg', ]:
+                if group.type_id in ['wg', 'rg', 'ag', ]:
                     self.add_wg_draft_states(group, env)
                 self.add_custom_wiki_pages(group, env)
                 self.add_default_wiki_pages(group, env)

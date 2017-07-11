@@ -107,7 +107,7 @@ def can_adopt_draft(user, doc):
                 and doc.group.type_id == "individ")
 
     roles = Role.objects.filter(name__in=("chair", "delegate", "secr"),
-                                group__type__in=("wg", "rg"),
+                                group__type__in=("wg", "rg", "ag", ),
                                 group__state="active",
                                 person__user=user)
     role_groups = [ r.group for r in roles ]

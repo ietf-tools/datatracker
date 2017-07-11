@@ -155,6 +155,7 @@ class GroupForm(forms.Form):
         if existing:
             raise forms.ValidationError("Acronym used for an existing group (%s)." % existing.name)
 
+        # TODO: Why is this limited to types wg and rg? We would want to be warned about _any_ old collision I think?
         old = GroupHistory.objects.filter(acronym__iexact=acronym, type__in=("wg", "rg"))
         if old:
             insert_confirm_field(label="Confirm reusing acronym %s" % old[0].acronym, initial=False)

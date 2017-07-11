@@ -767,7 +767,7 @@ def group_photos(request, group_type=None, acronym=None):
     group = get_object_or_404(Group, acronym=acronym)
     roles = sorted(Role.objects.filter(group__acronym=acronym),key=lambda x: x.name.name+x.person.last_name())
 
-    if   group.type_id in ['wg', 'rg', ]:
+    if   group.type_id in ['wg', 'rg', 'ag', ]:
         roles = reorder_roles(roles, ['chair', 'secr'])
     elif group.type_id in ['nomcom', ]:
         roles = reorder_roles(roles, ['chair', 'member', 'advisor', ])
