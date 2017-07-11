@@ -562,7 +562,7 @@ class Document(DocumentInfo):
                         filename = os.path.splitext(self.external_url)[0]
                     else:
                         filename = self.external_url
-                    url = '%sproceedings/%s/%s/%s' % (settings.IETF_HOST_URL,meeting.number,self.type_id,filename)
+                    url = urlreverse('ietf.meeting.views.session_agenda', kwargs={'num':meeting.number, 'session':session.group.acronym})
                 return url
         return urlreverse('ietf.doc.views_doc.document_main', kwargs={ 'name': name }, urlconf="ietf.urls")
 
