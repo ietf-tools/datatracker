@@ -3,6 +3,7 @@
 import datetime
 import logging
 import os
+import rfc2html
 
 from django.db import models
 from django.core import checks
@@ -22,7 +23,6 @@ from ietf.name.models import ( DocTypeName, DocTagName, StreamName, IntendedStdL
 from ietf.person.models import Email, Person
 from ietf.utils import log
 from ietf.utils.admin import admin_link
-from ietf.utils.rfcmarkup import markup
 from ietf.utils.validators import validate_no_control_chars
 from ietf.utils.mail import formataddr
 
@@ -449,7 +449,7 @@ class DocumentInfo(models.Model):
             if not html:
                 # The path here has to match the urlpattern for htmlized
                 # documents in order to produce correct intra-document links
-                html = markup(text, path=settings.HTMLIZER_URL_PREFIX)
+                html = rfc2html.markup(text, path=settings.HTMLIZER_URL_PREFIX)
                 if html:
                     cache.set(key, html, settings.HTMLIZER_CACHE_TIME)
         return html
