@@ -836,6 +836,7 @@ TRAC_SVN_DIR_PATTERN = "/a/svn/group/%s"
 TRAC_SVN_URL_PATTERN = "https://svn.ietf.org/svn/group/%s/"
 
 TRAC_CREATE_GROUP_TYPES = ['wg', 'rg', 'area', 'team', 'dir', 'ag', ]
+TRAC_CREATE_GROUP_STATES = ['bof', 'active', ]
 TRAC_CREATE_GROUP_ACRONYMS = ['iesg', 'iaoc', ]
 
 SVN_PACKAGES = [

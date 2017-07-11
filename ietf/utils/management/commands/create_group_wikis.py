@@ -294,7 +294,7 @@ class Command(BaseCommand):
         if not os.path.exists(os.path.dirname(self.svn_dir_pattern)):
             raise CommandError('The SVN base direcory specified for the SVN directories (%s) does not exist.' % os.path.dirname(self.svn_dir_pattern))
 
-        gfilter  = Q(type__slug__in=settings.TRAC_CREATE_GROUP_TYPES, state__slug='active')
+        gfilter  = Q(type__slug__in=settings.TRAC_CREATE_GROUP_TYPES, state__slug__in=settings.TRAC_CREATE_GROUP_STATES)
         gfilter |= Q(acronym__in=settings.TRAC_CREATE_GROUP_ACRONYMS)
 
         groups = Group.objects.filter(gfilter).order_by('acronym')
