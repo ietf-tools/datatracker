@@ -907,7 +907,7 @@ class Session(models.Model):
         return list(self.materials.filter(type='draft'))
 
     def all_meeting_sessions_for_group(self):
-        if self.group.type_id in ['wg','rg']:
+        if self.group.type_id in ['wg','rg','ag']:
             if not hasattr(self, "_all_meeting_sessions_for_group_cache"):
                 sessions = [s for s in self.meeting.session_set.filter(group=self.group,type=self.type) if s.official_timeslotassignment()]
                 self._all_meeting_sessions_for_group_cache = sorted(sessions, key = lambda x: x.official_timeslotassignment().timeslot.time)
