@@ -124,7 +124,7 @@ def can_manage_materials(user, group):
     return has_role(user, 'Secretariat') or group.has_role(user, ("chair", "delegate", "secr", "matman"))
 
 def can_provide_status_update(user, group):
-    if not group.type_id in ['wg','rg','team']:
+    if not group.type_id in ['wg','rg','ag','team']:
         return False
     return has_role(user, 'Secretariat') or group.has_role(user, ("chair", "delegate", "secr", "ad",))
 
@@ -181,7 +181,7 @@ def construct_group_menu_context(request, group, selected, group_type, others):
         import ietf.group.views
         entries.append(("Review requests", urlreverse(ietf.group.views.review_requests, kwargs=kwargs)))
         entries.append(("Reviewers", urlreverse(ietf.group.views.reviewer_overview, kwargs=kwargs)))
-    if group.type_id in ('rg','wg','team'):
+    if group.type_id in ('rg','wg','ag','team'):
         entries.append(("Meetings", urlreverse("ietf.group.views.meetings", kwargs=kwargs)))
     entries.append(("History", urlreverse("ietf.group.views.history", kwargs=kwargs)))
     entries.append(("Photos", urlreverse("ietf.group.views.group_photos", kwargs=kwargs)))

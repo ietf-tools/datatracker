@@ -235,7 +235,7 @@ class TestWikiGlueManagementCommand(TestCase):
     def test_wiki_create_output(self):
         make_test_data()
         groups = Group.objects.filter(
-                        type__slug__in=['wg','rg','area'],
+                        type__slug__in=['wg','rg','ag','area'],
                         state__slug='active'
                     ).order_by('acronym')
         out = StringIO()

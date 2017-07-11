@@ -16,6 +16,7 @@ class GroupFeatures(object):
     admin_roles = ["chair"]
 
     def __init__(self, group):
+        # TODO: should 'ag' be in this list
         if group.type_id in ("wg", "rg"):
             self.has_milestones = True
             self.has_chartering_process = True

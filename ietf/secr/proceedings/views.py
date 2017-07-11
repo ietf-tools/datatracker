@@ -105,6 +105,7 @@ def get_next_slide_num(session):
     if slides:
         # we need this special case for non wg/rg sessions because the name format is different
         # it should be changed to match the rest
+        # TODO - why isn't 'ag' in this list (also, is this function still used?)
         if session.group.type.slug not in ('wg','rg'):
             nums = [ s.name.split('-')[3] for s in slides ]
         else:

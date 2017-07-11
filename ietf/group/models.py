@@ -37,7 +37,7 @@ class GroupInfo(models.Model):
 
     def name_with_acronym(self):
         res = self.name
-        if self.type_id in ("wg", "rg", "area"):
+        if self.type_id in ("wg", "rg", "ag", "area"):
             res += " %s (%s)" % (self.type, self.acronym)
         return res
 
@@ -55,7 +55,7 @@ class GroupInfo(models.Model):
         # bridge gap between group-type prefixed URLs and /group/ ones
         from django.urls import reverse as urlreverse
         kwargs = { 'acronym': self.acronym }
-        if self.type_id in ("wg", "rg"):
+        if self.type_id in ("wg", "rg", "ag"):
             kwargs["group_type"] = self.type_id
         return urlreverse(self.features.about_page, kwargs=kwargs)
 

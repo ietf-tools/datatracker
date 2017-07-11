@@ -4,7 +4,7 @@ from ietf.group.models import Group
 from django.shortcuts import render
 
 def groups(request):
-    groups = Group.objects.filter(type__in=("wg", "rg"), list_archive__startswith='http').order_by("acronym")
+    groups = Group.objects.filter(type__in=("wg", "rg", "ag"), list_archive__startswith='http').order_by("acronym")
 
     return render(request, "mailinglists/group_archives.html", { "groups": groups } )
 

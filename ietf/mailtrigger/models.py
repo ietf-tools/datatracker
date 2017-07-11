@@ -60,7 +60,7 @@ class Recipient(models.Model):
         addrs = []
         if 'doc' in kwargs:
             doc=kwargs['doc']
-            if doc.group and doc.group.type.slug in ['wg','rg']:
+            if doc.group and doc.group.type.slug in ['wg','rg','ag',]:
                 addrs.append('%s-chairs@ietf.org'%doc.group.acronym)
         return addrs
 
@@ -68,7 +68,7 @@ class Recipient(models.Model):
         addrs = []
         if 'doc' in kwargs:
             doc=kwargs['doc']
-            if doc.group and doc.group.type.slug in ['wg','rg']:
+            if doc.group and doc.group.type.slug in ['wg','rg','ag',]:
                 addrs.extend(doc.group.role_set.filter(name='delegate').values_list('email__address',flat=True))
         return addrs
 
@@ -76,7 +76,7 @@ class Recipient(models.Model):
         addrs = []
         if 'doc' in kwargs:
             doc=kwargs['doc']
-            if doc.group.type.slug in ['wg','rg']:
+            if doc.group.type.slug in ['wg','rg','ag',]:
                 if doc.group.list_email:
                     addrs.append(doc.group.list_email)
         return addrs

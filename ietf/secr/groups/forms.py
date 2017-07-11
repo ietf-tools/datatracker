@@ -153,6 +153,7 @@ class RoleForm(forms.Form):
         self.group = kwargs.pop('group')
         super(RoleForm, self).__init__(*args,**kwargs)
         # this form is re-used in roles app, use different roles in select
+        # TODO: should 'ag' be excluded here as well?
         if self.group.type.slug not in ('wg','rg'):
             self.fields['name'].queryset = RoleName.objects.all()
         
