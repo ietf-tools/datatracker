@@ -1,3 +1,38 @@
+ietfdb (6.55.4) ietf; urgency=medium
+
+  * Replaced the local copy of the draft/rfc htmlization code with rfc2html 
+    as installed modeule.
+
+  * Added links to uploaded session agendas for sessions of type 'other',
+    such as for example Edu-team sessions.
+
+  * Added a slide abstract [Edit] button on slide document pages also for 
+    empty abstracts, to provide the ability to add abstracts.
+
+  * Added a mock of urllib2.urlopen for another test which uses 
+    finalize(meeting) in order to prevent external http accesses when running 
+    tests.
+
+  * Added another surname particle.
+
+  * Added a switch to control generation of the code coverage html report, 
+    which now defaults to false.  The report can be generated post-testing with 
+    "coverage html -d static/coverage/".
+
+  * Fixed an issue with the docker/settings_local settings for yang module 
+    directories.
+
+  * Fixed a docker/run current directory issue when invoked with a command 
+    to run.
+
+  * Added log.unreachable() calls to some functions believed to be unused.
+
+  * Added code coverage settings and configuration to ignore debug-related 
+    lines of code.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  11 Jul 2017 06:52:23 -0700
+
+
 ietfdb (6.55.3) ietf; urgency=medium
 
   Another bugfix release with some refactoring.  From the commit log:
