@@ -235,7 +235,7 @@ $do svn commit release-coverage.json.gz -m "Code coverage data for release $VER"
 
 if [ -d ../coverage ]; then
     cp .coverage ../coverage/$VER.coverage
-    rsync -a ietf/static/coverage/ ../coverage/$VER/
+    rsync -a static/coverage/ ../coverage/$VER/
 fi
 
 contributors=$(echo "$changes" | sed 's/\.[ \t\n]/ /'| tr -c "a-z0-9.@-" "\n" | sort | uniq | grep '@' | sed -r -e 's/^\.+//' -e 's/\.+$//' -e 's/^/-c /' || true)
