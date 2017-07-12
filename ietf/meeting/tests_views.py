@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import json
 import os
 import shutil
@@ -1520,7 +1522,7 @@ class MaterialsTests(TestCase):
         q = PyQuery(r.content)
         self.assertTrue('Upload' in unicode(q("title")))
         self.assertFalse(session.sessionpresentation_set.exists())
-        test_file = StringIO('this is some text for a test')
+        test_file = StringIO(b'%PDF-1.4\n%âãÏÓ\nthis is some text for a test')
         test_file.name = "not_really.pdf"
         r = self.client.post(url,dict(file=test_file))
         self.assertEqual(r.status_code, 302)
@@ -1530,7 +1532,7 @@ class MaterialsTests(TestCase):
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertTrue('Revise' in unicode(q("title")))
-        test_file = StringIO('this is some different text for a test')
+        test_file = StringIO('%PDF-1.4\n%âãÏÓ\nthis is some different text for a test')
         test_file.name = "also_not_really.pdf"
         r = self.client.post(url,dict(file=test_file))
         self.assertEqual(r.status_code, 302)
@@ -1555,7 +1557,7 @@ class MaterialsTests(TestCase):
         q = PyQuery(r.content)
         self.assertTrue('Upload' in unicode(q("title")))
         self.assertFalse(session.sessionpresentation_set.exists())
-        test_file = StringIO('this is some text for a test')
+        test_file = StringIO(b'%PDF-1.4\n%âãÏÓ\nthis is some text for a test')
         test_file.name = "not_really.pdf"
         r = self.client.post(url,dict(file=test_file))
         self.assertEqual(r.status_code, 302)
@@ -1610,6 +1612,13 @@ class MaterialsTests(TestCase):
             q = PyQuery(r.content)
             self.assertTrue(q('form .has-error'))
     
+            test_file = StringIO('<html><frameset><frame src="foo.html"></frame><frame src="bar.html"></frame></frameset></html>')
+            test_file.name = "not_really.html"
+            r = self.client.post(url,dict(file=test_file))
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            self.assertTrue(q('form .has-error'))
+
             test_file = StringIO('this is some text for a test')
             test_file.name = "not_really.txt"
             r = self.client.post(url,dict(file=test_file,apply_to_all=False))

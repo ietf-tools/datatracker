@@ -19,11 +19,11 @@ import debug                            # pyflakes:ignore
 from django import forms
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden, Http404
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse,reverse_lazy
 from django.db.models import Min, Max, Q
-from django.conf import settings
 from django.forms.models import modelform_factory, inlineformset_factory
 from django.forms import ModelForm
 from django.template import TemplateDoesNotExist
@@ -33,7 +33,7 @@ from django.views.decorators.cache import cache_page
 from django.utils.text import slugify
 from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt
 from django.views.generic import RedirectView
-from django.template.defaultfilters import filesizeformat
+
 
 from ietf.doc.fields import SearchableDocumentsField
 from ietf.doc.models import Document, State, DocEvent, NewRevisionDocEvent
@@ -64,6 +64,8 @@ from ietf.utils.mail import send_mail_message
 from ietf.utils.pipe import pipe
 from ietf.utils.pdf import pdf_pages
 from ietf.utils.text import xslugify
+from ietf.utils.textupload import ( validate_file_size, validate_mime_type,
+    validate_file_extension, validate_no_html_frame, )
 
 from .forms import (InterimMeetingModelForm, InterimAnnounceForm, InterimSessionModelForm,
     InterimCancelForm, InterimSessionInlineFormSet)
@@ -1132,6 +1134,12 @@ def add_session_drafts(request, session_id, num):
 class UploadBlueSheetForm(forms.Form):
     file = forms.FileField(label='Bluesheet scan to upload')
 
+    def clean_file(self):
+        file = self.cleaned_data['file']
+        validate_mime_type(file.read(), settings.MEETING_VALID_BLUESHEET_MIME_TYPES)
+        validate_file_extension(file.name, settings.MEETING_VALID_BLUESHEET_EXTENSIONS)
+        return file
+
 @role_required('Area Director', 'Secretariat', 'IRTF Chair', 'WG Chair')
 def upload_session_bluesheets(request, session_id, num):
     # num is redundant, but we're dragging it along an artifact of where we are in the current URL structure
@@ -1196,7 +1204,7 @@ def upload_session_bluesheets(request, session_id, num):
                    'form': form,
                   })
 
-VALID_MINUTES_EXTENSIONS = ('.txt','.html','.htm','.pdf')
+
 # FIXME: This form validation code (based on the secretariat upload code) only looks at filename extensions
 #        It should look at the contents of the files instead. 
 class UploadMinutesForm(forms.Form):
@@ -1210,10 +1218,12 @@ class UploadMinutesForm(forms.Form):
 
     def clean_file(self):
         file = self.cleaned_data['file']
-        if file._size > settings.SECR_MAX_UPLOAD_SIZE:
-            raise forms.ValidationError('Please keep filesize under %s. Requested upload size is %s' % (filesizeformat(settings.SECR_MAX_UPLOAD_SIZE),filesizeformat(file._size)))
-        if os.path.splitext(file.name)[1].lower() not in VALID_MINUTES_EXTENSIONS:
-            raise forms.ValidationError('Only these file types supported for minutes: %s' % ','.join(VALID_MINUTES_EXTENSIONS))
+        validate_file_size(file._size)
+        ext = validate_file_extension(file.name, settings.MEETING_VALID_MINUTES_EXTENSIONS)
+        content = file.read()
+        mime_type, encoding = validate_mime_type(content, settings.MEETING_VALID_MINUTES_MIME_TYPES)
+        if ext in ['.html', '.htm'] or mime_type in ['text/html', ]:
+            validate_no_html_frame(content)
         return file
 
 def upload_session_minutes(request, session_id, num):
@@ -1292,7 +1302,7 @@ def upload_session_minutes(request, session_id, num):
                    'form': form,
                   })
 
-VALID_AGENDA_EXTENSIONS = ('.txt','.html','.htm',)
+
 # FIXME: This form validation code (based on the secretariat upload code) only looks at filename extensions
 #        It should look at the contents of the files instead. 
 class UploadAgendaForm(forms.Form):
@@ -1306,10 +1316,12 @@ class UploadAgendaForm(forms.Form):
 
     def clean_file(self):
         file = self.cleaned_data['file']
-        if file._size > settings.SECR_MAX_UPLOAD_SIZE:
-            raise forms.ValidationError('Please keep filesize under %s. Requested upload size is %s' % (filesizeformat(settings.SECR_MAX_UPLOAD_SIZE),filesizeformat(file._size)))
-        if os.path.splitext(file.name)[1].lower() not in VALID_AGENDA_EXTENSIONS:
-            raise forms.ValidationError('Only these file types supported for agendas: %s' % ','.join(VALID_AGENDA_EXTENSIONS))
+        validate_file_size(file._size)
+        ext = validate_file_extension(file.name, settings.MEETING_VALID_AGENDA_EXTENSIONS)
+        content = file.read()
+        mime_type, encoding = validate_mime_type(content, settings.MEETING_VALID_AGENDA_MIME_TYPES)
+        if ext in ['.html', '.htm'] or mime_type in ['text/html', ]:
+            validate_no_html_frame(content)
         return file
 
 def upload_session_agenda(request, session_id, num):
@@ -1400,7 +1412,7 @@ def upload_session_agenda(request, session_id, num):
                    'form': form,
                   })
 
-VALID_SLIDE_EXTENSIONS = ('.doc','.docx','.pdf','.ppt','.pptx','.txt') # Note the removal of .zip
+
 # FIXME: This form validation code (based on the secretariat upload code) only looks at filename extensions
 #        It should look at the contents of the files instead. 
 class UploadSlidesForm(forms.Form):
@@ -1415,10 +1427,8 @@ class UploadSlidesForm(forms.Form):
 
     def clean_file(self):
         file = self.cleaned_data['file']
-        if file._size > settings.SECR_MAX_UPLOAD_SIZE:
-            raise forms.ValidationError('Please keep filesize under %s. Requested upload size is %s' % (filesizeformat(settings.SECR_MAX_UPLOAD_SIZE),filesizeformat(file._size)))
-        if os.path.splitext(file.name)[1].lower() not in VALID_SLIDE_EXTENSIONS:
-            raise forms.ValidationError('Only these file types supported for slides: %s' % ','.join(VALID_SLIDE_EXTENSIONS))
+        validate_file_size(file._size)
+        validate_file_extension(file.name, settings.MEETING_VALID_SLIDES_EXTENSIONS)
         return file
 
 def upload_session_slides(request, session_id, num, name):

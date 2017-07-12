@@ -1,6 +1,14 @@
 import re
+import os
+import magic
+from pyquery import PyQuery
 
+from django import forms
+from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.template.defaultfilters import filesizeformat
+
+import debug                            # pyflakes:ignore
 
 def get_cleaned_text_file_content(uploaded_file):
     """Read uploaded file, try to fix up encoding to UTF-8 and
@@ -46,3 +54,39 @@ def get_cleaned_text_file_content(uploaded_file):
     content = content.replace("\r\n", "\n").replace("\r", "\n")
 
     return content.encode("utf-8")
+
+def get_mime_type(content):
+    # try to fixup encoding
+    if hasattr(magic, "open"):
+        m = magic.open(magic.MAGIC_MIME)
+        m.load()
+        filetype = m.buffer(content)
+    else:
+        m = magic.Magic()
+        m.cookie = magic.magic_open(magic.MAGIC_NONE | magic.MAGIC_MIME | magic.MAGIC_MIME_ENCODING)
+        magic.magic_load(m.cookie, None)
+        filetype = m.from_buffer(content)
+        
+    return filetype.split('; ', 1)
+
+def validate_file_size(size):
+    if size > settings.SECR_MAX_UPLOAD_SIZE:
+        raise forms.ValidationError('Please keep filesize under %s. Requested upload size was %s' % (filesizeformat(settings.SECR_MAX_UPLOAD_SIZE), filesizeformat(size)))
+
+def validate_mime_type(content, valid):
+    mime_type, encoding = get_mime_type(content)
+    if not mime_type in valid:
+        raise forms.ValidationError('Found content with unexpected mime type: %s.  Expected one of %s.' %
+                                    (mime_type, ', '.join(valid) ))
+    return mime_type, encoding
+
+def validate_file_extension(name, valid):
+    name, ext = os.path.splitext(name)
+    if ext.lower() not in valid:
+        raise forms.ValidationError('Found an unexpected extension: %s.  Expected one of %s' % (ext, ','.join(valid)))
+    return ext
+
+def validate_no_html_frame(content):
+    q = PyQuery(content)
+    if q("frameset") or q("frame") or q("iframe"):
+        raise forms.ValidationError('Found content with html frames.  Please upload a file that does not use frames')
