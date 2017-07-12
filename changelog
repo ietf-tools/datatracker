@@ -1,5 +1,29 @@
 ietfdb (6.55.4) ietf; urgency=medium
 
+  * Added a test for interim meeting agenda and minutes urls.
+
+  * Did a bit of optimization of the /meeting/past/ view.
+
+  * Fixed a problem with loosing the outermost html element when massaging 
+    html agendas, which resulted in mangled agendas if that element was
+    <pre/>.
+
+  * Merged in [13832] from rjsparks@nostrum.com:
+    Treat Area Groups similar to Working Groups and Research Groups where it
+    makes sense to do so.
+
+  * Use a datatracker internal url for session agendas and minutes, to 
+    avoid X-Frame-Options SAMEORIGIN preventing agenda display in frames.
+
+  * django-bootstrap3 9.0.0 breaks compatibility with 8.x.y; disallow 9.0.0 
+    and higher till we can rewrite.
+
+  * Merged in [13830] from rjsparks@nostrum.com:
+    Show all the sessions for area groups in the proceedings. Fixes #2265.  
+    Should be patched into production. 
+
+  * Added wiki creation for groups in state 'bof'
+
   * Replaced the local copy of the draft/rfc htmlization code with rfc2html 
     as installed modeule.
 
