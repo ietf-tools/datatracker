@@ -27,6 +27,23 @@ def make_interim_meeting(group,date,status='sched'):
         timeslot=slot,
         session=session,
         schedule=session.meeting.agenda)
+    # agenda
+    doc = DocumentFactory.create(name='agenda-%s'%meeting.number, type_id='agenda', title="Agenda",
+        external_url="agenda-%s.txt"%meeting.number, group=group, rev='00', states=[('draft','active')])
+    pres = SessionPresentation.objects.create(session=session, document=doc, rev=doc.rev)
+    session.sessionpresentation_set.add(pres)
+    # minutes
+    doc = DocumentFactory.create(name='minutes-%s'%meeting.number, type_id='minutes', title="Minutes",
+        external_url="minutes-%s.txt"%meeting.number, group=group, rev='00', states=[('draft','active')])
+    pres = SessionPresentation.objects.create(session=session, document=doc, rev=doc.rev)
+    session.sessionpresentation_set.add(pres)
+    # slides
+    doc = DocumentFactory.create(name='slides-%s-1-active'%meeting.number, type_id='slides', title="Slideshow",
+        external_url="slides-%s.txt"%meeting.number, group=group, rev='00',
+        states=[('slides','active'), ('reuse_policy', 'single')])
+    pres = SessionPresentation.objects.create(session=session, document=doc, rev=doc.rev)
+    session.sessionpresentation_set.add(pres)
+    #
     return meeting
 
 def make_meeting_test_data(meeting=None):

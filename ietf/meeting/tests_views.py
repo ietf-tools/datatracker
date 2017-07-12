@@ -21,7 +21,7 @@ from ietf.meeting.helpers import can_approve_interim_request, can_view_interim_r
 from ietf.meeting.helpers import send_interim_approval_request
 from ietf.meeting.helpers import send_interim_cancellation_notice
 from ietf.meeting.helpers import send_interim_minutes_reminder
-from ietf.meeting.models import Session, TimeSlot, Meeting
+from ietf.meeting.models import Session, TimeSlot, Meeting, SessionPresentation
 from ietf.meeting.test_data import make_meeting_test_data, make_interim_meeting
 from ietf.meeting.utils import finalize
 from ietf.name.models import SessionStatusName
@@ -252,6 +252,18 @@ class MeetingTests(TestCase):
     def test_materials(self):
         meeting = make_meeting_test_data()
         session = Session.objects.filter(meeting=meeting, group__acronym="mars").first()
+        self.do_test_materials(meeting, session)
+
+    def test_interim_materials(self):
+        make_meeting_test_data()
+        group = Group.objects.get(acronym='mars')
+        date = datetime.datetime.today() - datetime.timedelta(days=10)
+        meeting = make_interim_meeting(group=group, date=date, status='sched')
+        session = meeting.session_set.first()
+
+        self.do_test_materials(meeting, session)
+
+    def do_test_materials(self, meeting, session):
 
         self.write_materials_files(meeting, session)
         
@@ -261,11 +273,6 @@ class MeetingTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertTrue("1. WG status" in unicontent(r))
 
-        # early materials page
-        r = self.client.get(urlreverse("ietf.meeting.views.current_materials"))
-        self.assertEqual(r.status_code, 302)
-        self.assertTrue(meeting.number in r["Location"])
-
         # session minutes
         r = self.client.get(urlreverse("ietf.meeting.views.session_minutes",
                                        kwargs=dict(num=meeting.number, session=session.group.acronym)))
@@ -273,38 +280,39 @@ class MeetingTests(TestCase):
         self.assertTrue("1. More work items underway" in unicontent(r))
 
         # test with explicit meeting number in url
-        r = self.client.get(urlreverse("ietf.meeting.views.materials", kwargs=dict(num=meeting.number)))
-        self.assertEqual(r.status_code, 200)
-        q = PyQuery(r.content)
-        row = q('#content #%s' % str(session.group.acronym)).closest("tr")
-        self.assertTrue(row.find('a:contains("Agenda")'))
-        self.assertTrue(row.find('a:contains("Minutes")'))
-        self.assertTrue(row.find('a:contains("Slideshow")'))
-        self.assertFalse(row.find("a:contains(\"Bad Slideshow\")"))
+        if meeting.number.isdigit():
+            r = self.client.get(urlreverse("ietf.meeting.views.materials", kwargs=dict(num=meeting.number)))
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            row = q('#content #%s' % str(session.group.acronym)).closest("tr")
+            self.assertTrue(row.find('a:contains("Agenda")'))
+            self.assertTrue(row.find('a:contains("Minutes")'))
+            self.assertTrue(row.find('a:contains("Slideshow")'))
+            self.assertFalse(row.find("a:contains(\"Bad Slideshow\")"))
 
-        # test with no meeting number in url
-        r = self.client.get(urlreverse("ietf.meeting.views.materials", kwargs=dict()))
-        self.assertEqual(r.status_code, 200)
-        q = PyQuery(r.content)
-        row = q('#content #%s' % str(session.group.acronym)).closest("tr")
-        self.assertTrue(row.find('a:contains("Agenda")'))
-        self.assertTrue(row.find('a:contains("Minutes")'))
-        self.assertTrue(row.find('a:contains("Slideshow")'))
-        self.assertFalse(row.find("a:contains(\"Bad Slideshow\")"))
+            # test with no meeting number in url
+            r = self.client.get(urlreverse("ietf.meeting.views.materials", kwargs=dict()))
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            row = q('#content #%s' % str(session.group.acronym)).closest("tr")
+            self.assertTrue(row.find('a:contains("Agenda")'))
+            self.assertTrue(row.find('a:contains("Minutes")'))
+            self.assertTrue(row.find('a:contains("Slideshow")'))
+            self.assertFalse(row.find("a:contains(\"Bad Slideshow\")"))
 
-        # test with a loggged-in wg chair
-        self.client.login(username="marschairman", password="marschairman+password")
-        r = self.client.get(urlreverse("ietf.meeting.views.materials", kwargs=dict(num=meeting.number)))
-        self.assertEqual(r.status_code, 200)
-        q = PyQuery(r.content)
-        row = q('#content #%s' % str(session.group.acronym)).closest("tr")
-        self.assertTrue(row.find('a:contains("Agenda")'))
-        self.assertTrue(row.find('a:contains("Minutes")'))
-        self.assertTrue(row.find('a:contains("Slideshow")'))
-        self.assertFalse(row.find("a:contains(\"Bad Slideshow\")"))
-        self.assertTrue(row.find('a:contains("Edit materials")'))
-        # FIXME: missing tests of .pdf/.tar generation (some code can
-        # probably be lifted from similar tests in iesg/tests.py)
+            # test with a loggged-in wg chair
+            self.client.login(username="marschairman", password="marschairman+password")
+            r = self.client.get(urlreverse("ietf.meeting.views.materials", kwargs=dict(num=meeting.number)))
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            row = q('#content #%s' % str(session.group.acronym)).closest("tr")
+            self.assertTrue(row.find('a:contains("Agenda")'))
+            self.assertTrue(row.find('a:contains("Minutes")'))
+            self.assertTrue(row.find('a:contains("Slideshow")'))
+            self.assertFalse(row.find("a:contains(\"Bad Slideshow\")"))
+            self.assertTrue(row.find('a:contains("Edit materials")'))
+            # FIXME: missing tests of .pdf/.tar generation (some code can
+            # probably be lifted from similar tests in iesg/tests.py)
 
     def test_materials_editable_groups(self):
         meeting = make_meeting_test_data()
