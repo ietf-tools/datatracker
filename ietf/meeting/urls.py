@@ -64,6 +64,7 @@ type_interim_patterns = [
     url(r'^agenda/(?P<session>[A-Za-z0-9-]+)-drafts.pdf$', views.session_draft_pdf),
     url(r'^agenda/(?P<session>[A-Za-z0-9-]+)-drafts.tgz$', views.session_draft_tarfile),
     url(r'^agenda/(?P<session>[A-Za-z0-9-]+)/?$', views.session_agenda),
+    url(r'^minutes/(?P<session>[A-Za-z0-9-]+)/?$', views.session_minutes),
 ]
 
 type_ietf_only_patterns_id_optional = [
