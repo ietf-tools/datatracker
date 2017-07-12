@@ -1923,8 +1923,12 @@ def interim_request_edit(request, number):
 def past(request):
     '''List of past meetings'''
     today = datetime.datetime.today()
-    meetings = Meeting.objects.filter(date__lte=today).exclude(
-        session__status__in=('apprw', 'scheda', 'canceledpa')).order_by('-date')
+    meetings = ( Meeting.objects.filter(date__lte=today)
+            .exclude(session__status__in=('apprw', 'scheda', 'canceledpa'))
+            .order_by('-date')
+            .select_related('type')
+            .prefetch_related('session_set__status','session_set__group',)
+        )
 
     # extract groups hierarchy for display filter
     seen = set()
