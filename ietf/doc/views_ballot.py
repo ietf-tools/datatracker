@@ -865,14 +865,15 @@ def make_last_call(request, name):
             e = add_state_change_event(doc, login, prev_state, new_state, prev_tags=prev_tags, new_tags=new_tags)
             if e:
                 events.append(e)
+            expiration_date = form.cleaned_data['last_call_expiration_date']
             e = LastCallDocEvent(doc=doc, rev=doc.rev, by=login)
             e.type = "sent_last_call"
-            e.desc = "The following Last Call announcement was sent out:<br><br>"
+            e.desc = "The following Last Call announcement was sent out (ends %s):<br><br>" % expiration_date
             e.desc += announcement
 
             if form.cleaned_data['last_call_sent_date'] != e.time.date():
                 e.time = datetime.datetime.combine(form.cleaned_data['last_call_sent_date'], e.time.time())
-            e.expires = form.cleaned_data['last_call_expiration_date']
+            e.expires = expiration_date
             e.save()
             events.append(e)
 
