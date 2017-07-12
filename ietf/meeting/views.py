@@ -617,7 +617,7 @@ def session_document(request, num, acronym, type="agenda"):
             d("head title").empty()
             d("head title").append(str(doc))
             d('meta[http-equiv]').remove()
-            content = "<!doctype html>" + d.html()
+            content = "<!doctype html>" + str(d)
         else:
             content = "<p>Unrecognized %s file '%s'</p>" % (type, doc.external_url)
             content = (html5_preamble % doc) + content + html5_postamble
