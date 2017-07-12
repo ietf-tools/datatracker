@@ -100,12 +100,15 @@ def materials(request, num=None):
     if settings.SERVER_MODE != 'production' and '_testoverride' in request.GET:
         pass
     elif now > cor_cut_off_date:
-        return render(request, "meeting/materials_upload_closed.html", {
-            'meeting_num': meeting.number,
-            'begin_date': begin_date,
-            'cut_off_date': cut_off_date,
-            'cor_cut_off_date': cor_cut_off_date
-        })
+        if meeting.number.isdigit() and int(meeting.number) > 96:
+            return redirect('ietf.meeting.views.proceedings', num=meeting.number)
+        else:
+            return render(request, "meeting/materials_upload_closed.html", {
+                'meeting_num': meeting.number,
+                'begin_date': begin_date,
+                'cut_off_date': cut_off_date,
+                'cor_cut_off_date': cor_cut_off_date
+            })
 
     past_cutoff_date = datetime.date.today() > meeting.get_submission_correction_date()
 
