@@ -247,7 +247,13 @@ class InterimSessionModelForm(forms.ModelForm):
         if self.instance.agenda():
             doc = self.instance.agenda()
             doc.rev = str(int(doc.rev) + 1).zfill(2)
-            doc.save()
+            e = NewRevisionDocEvent.objects.create(
+                type='new_revision',
+                by=self.user.person,
+                doc=doc,
+                rev=doc.rev,
+                desc='New revision available')
+            doc.save_with_history([e])
         else:
             filename = get_next_agenda_name(meeting=self.instance.meeting)
             doc = Document.objects.create(
