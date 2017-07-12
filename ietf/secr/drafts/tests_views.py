@@ -208,7 +208,8 @@ class SecrDraftsTestCase(TestCase):
         expires = datetime.datetime.now() + datetime.timedelta(settings.INTERNET_DRAFT_DAYS_TO_EXPIRE)
         self.assertTrue(draft.get_state_slug('draft') == 'active')
         self.assertEqual(draft.rev, '02')
-        self.assertEqual(draft.expires.replace(second=0,microsecond=0), expires.replace(second=0,microsecond=0))
+        expiration_discrepancy_seconds = abs((draft.expires - expires).total_seconds())
+        self.assertLess(expiration_discrepancy_seconds, 60)
 
     def test_view(self):
         draft = make_test_data()
