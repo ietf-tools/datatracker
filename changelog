@@ -1,11 +1,20 @@
 ietfdb (6.55.4) ietf; urgency=medium
 
+  * Modified a test to make it less sensitive to timing vagaries causing 
+    arbitrary failures.
+
+  * Added the last call end date to the first line of the last call 
+    announcement event description, on request from worley@ariadne.com.
+
+  * Fixed a place where doc.save() was called instead of 
+    doc.save_with_history().
+
   * Added a test for interim meeting agenda and minutes urls.
 
   * Did a bit of optimization of the /meeting/past/ view.
 
   * Fixed a problem with loosing the outermost html element when massaging 
-    html agendas, which resulted in mangled agendas if that element was
+    html agendas, which resulted in mangled agendas if that element was a
     <pre/>.
 
   * Merged in [13832] from rjsparks@nostrum.com:
