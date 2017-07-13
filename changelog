@@ -1,4 +1,20 @@
-ietfdb (6.55.4) ietf; urgency=medium
+ietfdb (6.56.0) ietf; urgency=medium
+
+  This release clears the table for the IETF 99 sprint.  It adds minor
+  improvements and bugfixes, such as better agenda and minutes upload
+  validation, more easily found draft last call end dates in document history,
+  added features for AGs (Area Groups) which are now treated more like WGs and
+  RGs, links to the session description for edu-team sessions and similar, and
+  internal code and test suite improvements:
+
+  * Added more validation of extension, mime type, etc. for uploaded 
+    meeting agendas and minutes.  Added '.md' (markdown) as an accepted file 
+    type.  Html with frames is now rejected.  Factored out validation code into 
+    separate functions.
+
+  * When proceedings have been finalized, redirect meeting/xx/materials to 
+    the finalized meeting/xx/proceedings page, instead of presenting an
+    interstitial page.
 
   * Modified a test to make it less sensitive to timing vagaries causing 
     arbitrary failures.
@@ -63,7 +79,7 @@ ietfdb (6.55.4) ietf; urgency=medium
   * Added code coverage settings and configuration to ignore debug-related 
     lines of code.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  11 Jul 2017 06:52:23 -0700
+ -- Henrik Levkowetz <henrik@levkowetz.com>  13 Jul 2017 12:41:10 +0000
 
 
 ietfdb (6.55.3) ietf; urgency=medium
