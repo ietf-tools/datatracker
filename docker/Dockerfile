@@ -105,9 +105,17 @@ RUN apt-get update
 RUN apt-get install -qy mysql-apt-config
 RUN rm /etc/apt/sources.list.d/mysql-apt-config.list
 
+# Get the key used to sign the libyang repo
+RUN wget -nv http://download.opensuse.org/repositories/home:liberouter/Debian_9.0/Release.key
+RUN apt-key add - < Release.key
+RUN rm Release.key
+
+# Add apt source entry for libyang
+RUN echo "deb http://download.opensuse.org/repositories/home:/liberouter/Debian_8.0/ /" >> /etc/apt/sources.list.d/libyang.list
+
 # Update the package defs, and install the desired mysql from the mysql repo
 RUN apt-get update
-RUN apt-get install -qy mysql-community-server libmysqlclient-dev
+RUN apt-get install -qy mysql-community-server libmysqlclient-dev libyang
 
 # This is expected to exist by the mysql startup scripts:
 RUN touch /etc/mysql/debian.cnf
