@@ -497,6 +497,7 @@ TEST_CODE_COVERAGE_EXCLUDE_FILES = [
 TEST_CODE_COVERAGE_EXCLUDE_LINES = [
     "coverage: *ignore",
     "debug\.",
+    "def .*debug"
     "unreachable\([^)]*\)",
     "if settings.DEBUG",
     "if __name__ == .__main__.:",
