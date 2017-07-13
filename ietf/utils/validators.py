@@ -2,11 +2,18 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 from __future__ import unicode_literals
 
+import os
 import re
+import magic
+from pyquery import PyQuery
 
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
+from django.template.defaultfilters import filesizeformat
 from django.utils.deconstruct import deconstructible
+
+import debug                            # pyflakes:ignore
 
 # Note that this is an instantiation of the regex validator, _not_ the
 # regex-string validator defined right below
@@ -46,3 +53,40 @@ class RegexStringValidator(object):
 
 validate_regular_expression_string = RegexStringValidator()
 
+def get_mime_type(content):
+    # try to fixup encoding
+    if hasattr(magic, "open"):
+        m = magic.open(magic.MAGIC_MIME)
+        m.load()
+        filetype = m.buffer(content)
+    else:
+        m = magic.Magic()
+        m.cookie = magic.magic_open(magic.MAGIC_NONE | magic.MAGIC_MIME | magic.MAGIC_MIME_ENCODING)
+        magic.magic_load(m.cookie, None)
+        filetype = m.from_buffer(content)
+        
+    return filetype.split('; ', 1)
+
+def validate_file_size(file):
+    if file._size > settings.SECR_MAX_UPLOAD_SIZE:
+        raise ValidationError('Please keep filesize under %s. Requested upload size was %s' % (filesizeformat(settings.SECR_MAX_UPLOAD_SIZE), filesizeformat(file._size)))
+
+def validate_mime_type(file, valid):
+    file.open()
+    mime_type, encoding = get_mime_type(file.read())
+    if not mime_type in valid:
+        raise ValidationError('Found content with unexpected mime type: %s.  Expected one of %s.' %
+                                    (mime_type, ', '.join(valid) ))
+    return mime_type, encoding
+
+def validate_file_extension(file, valid):
+    name, ext = os.path.splitext(file.name)
+    if ext.lower() not in valid:
+        raise ValidationError('Found an unexpected extension: %s.  Expected one of %s' % (ext, ','.join(valid)))
+    return ext
+
+def validate_no_html_frame(file):
+    file.open()
+    q = PyQuery(file.read())
+    if q("frameset") or q("frame") or q("iframe"):
+        raise ValidationError('Found content with html frames.  Please upload a file that does not use frames')

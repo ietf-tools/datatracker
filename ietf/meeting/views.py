@@ -64,7 +64,7 @@ from ietf.utils.mail import send_mail_message
 from ietf.utils.pipe import pipe
 from ietf.utils.pdf import pdf_pages
 from ietf.utils.text import xslugify
-from ietf.utils.textupload import ( validate_file_size, validate_mime_type,
+from ietf.utils.validators import ( validate_file_size, validate_mime_type,
     validate_file_extension, validate_no_html_frame, )
 
 from .forms import (InterimMeetingModelForm, InterimAnnounceForm, InterimSessionModelForm,
@@ -1136,8 +1136,8 @@ class UploadBlueSheetForm(forms.Form):
 
     def clean_file(self):
         file = self.cleaned_data['file']
-        validate_mime_type(file.read(), settings.MEETING_VALID_BLUESHEET_MIME_TYPES)
-        validate_file_extension(file.name, settings.MEETING_VALID_BLUESHEET_EXTENSIONS)
+        validate_mime_type(file, settings.MEETING_VALID_BLUESHEET_MIME_TYPES)
+        validate_file_extension(file, settings.MEETING_VALID_BLUESHEET_EXTENSIONS)
         return file
 
 @role_required('Area Director', 'Secretariat', 'IRTF Chair', 'WG Chair')
@@ -1218,12 +1218,11 @@ class UploadMinutesForm(forms.Form):
 
     def clean_file(self):
         file = self.cleaned_data['file']
-        validate_file_size(file._size)
-        ext = validate_file_extension(file.name, settings.MEETING_VALID_MINUTES_EXTENSIONS)
-        content = file.read()
-        mime_type, encoding = validate_mime_type(content, settings.MEETING_VALID_MINUTES_MIME_TYPES)
+        validate_file_size(file)
+        ext = validate_file_extension(file, settings.MEETING_VALID_MINUTES_EXTENSIONS)
+        mime_type, encoding = validate_mime_type(file, settings.MEETING_VALID_MINUTES_MIME_TYPES)
         if ext in ['.html', '.htm'] or mime_type in ['text/html', ]:
-            validate_no_html_frame(content)
+            validate_no_html_frame(file)
         return file
 
 def upload_session_minutes(request, session_id, num):
@@ -1316,12 +1315,11 @@ class UploadAgendaForm(forms.Form):
 
     def clean_file(self):
         file = self.cleaned_data['file']
-        validate_file_size(file._size)
-        ext = validate_file_extension(file.name, settings.MEETING_VALID_AGENDA_EXTENSIONS)
-        content = file.read()
-        mime_type, encoding = validate_mime_type(content, settings.MEETING_VALID_AGENDA_MIME_TYPES)
+        validate_file_size(file)
+        ext = validate_file_extension(file, settings.MEETING_VALID_AGENDA_EXTENSIONS)
+        mime_type, encoding = validate_mime_type(file, settings.MEETING_VALID_AGENDA_MIME_TYPES)
         if ext in ['.html', '.htm'] or mime_type in ['text/html', ]:
-            validate_no_html_frame(content)
+            validate_no_html_frame(file)
         return file
 
 def upload_session_agenda(request, session_id, num):
@@ -1427,8 +1425,8 @@ class UploadSlidesForm(forms.Form):
 
     def clean_file(self):
         file = self.cleaned_data['file']
-        validate_file_size(file._size)
-        validate_file_extension(file.name, settings.MEETING_VALID_SLIDES_EXTENSIONS)
+        validate_file_size(file)
+        validate_file_extension(file, settings.MEETING_VALID_SLIDES_EXTENSIONS)
         return file
 
 def upload_session_slides(request, session_id, num, name):
