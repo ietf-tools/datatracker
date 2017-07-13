@@ -15,6 +15,10 @@ Planned work in rough order
 * Rework email sending so that all emails sent by the datatracker, except for
   logging and failure emails sent to ADMINS, are captured as a Message object.
 
+* Add sanitization of uploaded html documents.
+
+* Upgrade html5lib to the latest release, the same for bleach which uses it.
+
 * Polish the htmlization pages, making the style identical with tools.ietf.org.
   Do a public release of the htmlization lib.
 
