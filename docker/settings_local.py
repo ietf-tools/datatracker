@@ -22,7 +22,7 @@ INTERNET_DRAFT_ARCHIVE_DIR = "test/archive/"
 INTERNET_ALL_DRAFTS_ARCHIVE_DIR = "test/archive/"
 RFC_PATH = "test/rfc/"
 
-AGENDA_PATH = 'test/data/proceedings/'
+AGENDA_PATH = 'data/developers/www6s/proceedings/'
 
 USING_DEBUG_EMAIL_SERVER=True
 EMAIL_HOST='localhost'
