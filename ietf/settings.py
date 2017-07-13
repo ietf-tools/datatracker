@@ -496,10 +496,10 @@ TEST_CODE_COVERAGE_EXCLUDE_FILES = [
 # These are code line regex patterns
 TEST_CODE_COVERAGE_EXCLUDE_LINES = [
     "coverage: *ignore",
-    "debug\.",
-    "def .*debug"
+    "debug",
     "unreachable\([^)]*\)",
     "if settings.DEBUG",
+    "if settings.TEST_CODE_COVERAGE_CHECKER",
     "if __name__ == .__main__.:",
 ]
 
