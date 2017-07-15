@@ -128,6 +128,13 @@ def materials(request, num=None):
     training  = sessions.filter(group__acronym__in=['edu','iaoc'], type_id__in=['session', 'other', ])
     iab       = sessions.filter(group__parent__acronym = 'iab')
 
+    for topic in [plenaries, ietf, training, irtf, iab]:
+        for event in topic:
+            date_list = []
+            for slide_event in event.all_meeting_slides(): date_list.append(slide_event.time)
+            for agenda_event in event.all_meeting_agendas(): date_list.append(agenda_event.time)
+            if date_list: setattr(event, 'last_update', sorted(date_list, reverse=True)[0])
+            
     return render(request, "meeting/materials.html", {
         'meeting_num': meeting.number,
         'plenaries': plenaries,

@@ -1,5 +1,6 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}{% load origin %}{% origin %}
 {% load ietf_filters proceedings_filters managed_groups %}
+{% load tz %}
 <tr>
   <td>
     {% comment %}
@@ -27,7 +28,7 @@
     <td>
       {% if session.all_meeting_agendas %}
         {% if session.all_meeting_agendas|length == 1 %}
-          <a href="{{ session.all_meeting_agendas.0|meeting_href:session.meeting }}">Agenda</a><br>
+          <a title="Last Update: {{ session.all_meeting_agendas.0.time|utc|date:"Y-m-d H:i:s" }} UTC" href="{{ session.all_meeting_agendas.0|meeting_href:session.meeting }}">Agenda</a><br>
         {% else %}
           {% for agenda in session.all_meeting_agendas %}
             <a href="{{agenda|meeting_href:session.meeting}}">Agenda {{agenda.sessionpresentation_set.first.session.official_timeslotassignment.timeslot.time|date:"D G:i"}}</a></br>
@@ -57,7 +58,7 @@
     <td>
       {% with session.all_meeting_slides as slides %}
         {% for slide in slides %}
-          <a href="{{ slide|meeting_href:session.meeting}}">{{ slide.title|clean_whitespace }}</a>
+          <a title="Last Update: {{ slide.time|utc|date:"Y-m-d H:i:s" }} UTC" href="{{ slide|meeting_href:session.meeting}}">{{ slide.title|clean_whitespace }}</a>
           <br>
         {% empty %}
           <span class="label label-warning">No slides</span>
@@ -67,12 +68,17 @@
     <td>
      {% with session.all_meeting_drafts as drafts %}
        {% for draft in drafts %}
-         <a href="{{ draft.href }}">{{ draft.name }}</a><br>
+         <a title="Last Update: {{ draft.time|utc|date:"Y-m-d H:i:s" }} UTC" href="{{ draft.href }}">{{ draft.name }}</a><br>
        {% empty %} 
          <span class="label label-warning">No drafts</span>
        {% endfor %}
      {% endwith %}
     </td>
+      <td>
+          {% if session.last_update %}
+              {{ session.last_update|utc|date:"Y-m-d" }}<br><small>{{ session.last_update|utc|date:"H:i:s" }} UTC</small>
+          {% endif %}
+      </td>
     {% if user|has_role:"Secretariat" or user|managed_groups %}
       <td> 
         <div>{% include "meeting/edit_materials_button.html" %}</div>
