@@ -90,14 +90,13 @@ def edit_material(request, name=None, acronym=None, action=None, doc_type=None):
 
         doc = None
         document_type = get_object_or_404(DocTypeName, slug=doc_type)
-        if document_type not in DocTypeName.objects.filter(slug__in=group.features.material_types):
-            raise Http404
     else:
         doc = get_object_or_404(Document, name=name)
         group = doc.group
         document_type = doc.type
-        if document_type not in DocTypeName.objects.filter(slug__in=group.features.material_types):
-            raise Http404
+
+    if document_type not in DocTypeName.objects.filter(slug__in=group.features.material_types) and document_type.slug not in ['minutes','agenda','bluesheets',]:
+        raise Http404
        
 
     if not can_manage_materials(request.user, group):
