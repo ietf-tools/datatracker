@@ -1269,16 +1269,25 @@ def upload_session_minutes(request, session_id, num):
                 else:
                     name = 'minutes-%s-%s' % (session.meeting.number, sess_time.strftime("%Y%m%d%H%M"))
                     title = 'Minutes %s: %s' % (session.meeting.number, sess_time.strftime("%a %H:%M"))
-                doc = Document.objects.create(
-                          name = name,
-                          type_id = 'minutes',
-                          title = title,
-                          group = session.group,
-                          rev = '00',
-                      )
+                if Document.objects.filter(name=name).exists():
+                    doc = Document.objects.get(name=name)
+                    doc.rev = '%02d' % (int(doc.rev)+1)
+                else:
+                    doc = Document.objects.create(
+                              name = name,
+                              type_id = 'minutes',
+                              title = title,
+                              group = session.group,
+                              rev = '00',
+                          )
+                    doc.docalias_set.create(name=doc.name)
                 doc.states.add(State.objects.get(type_id='minutes',slug='active'))
-                doc.docalias_set.create(name=doc.name)
-                session.sessionpresentation_set.create(document=doc,rev='00')
+                if session.sessionpresentation_set.filter(document=doc).exists():
+                    sp = session.sessionpresentation_set.get(document=doc)
+                    sp.rev = doc.rev
+                    sp.save()
+                else:
+                    session.sessionpresentation_set.create(document=doc,rev=doc.rev)
             if apply_to_all:
                 for other_session in sessions:
                     if other_session != session:
