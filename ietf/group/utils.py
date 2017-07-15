@@ -121,7 +121,7 @@ def milestone_reviewer_for_group_type(group_type):
         return "Area Director"
 
 def can_manage_materials(user, group):
-    return has_role(user, 'Secretariat') or group.has_role(user, ("chair", "delegate", "secr", "matman"))
+    return has_role(user, 'Secretariat') or group.has_role(user, ("chair", "delegate", "secr", "matman", "ad"))
 
 def can_provide_status_update(user, group):
     if not group.type_id in ['wg','rg','ag','team']:
