@@ -79,7 +79,7 @@ class IANASyncTests(TestCase):
         self.assertEqual(draft.get_state_slug("draft-iana-review"), "not-ok")
         self.assertEqual(draft.get_state_slug("draft-iana-action"), "waitrfc")
         e = draft.latest_event(StateDocEvent, type="changed_state", state_type="draft-iana-action")
-        self.assertEqual(e.desc, "IANA Action state changed to \"<b>Waiting on RFC Editor</b>\" from \"In Progress\"")
+        self.assertEqual(e.desc, "IANA Action state changed to <b>Waiting on RFC Editor</b> from In Progress")
 #        self.assertEqual(e.time, datetime.datetime(2011, 10, 9, 5, 0)) # check timezone handling
         self.assertEqual(len(outbox), 3 )
         for m in outbox:
