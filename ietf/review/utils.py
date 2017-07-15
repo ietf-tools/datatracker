@@ -504,7 +504,6 @@ def possibly_advance_next_reviewer_for_team(team, assigned_review_to_person_id, 
 def close_review_request(request, review_req, close_state):
     suggested_req = review_req.pk is None
 
-    prev_state = review_req.state
     review_req.state = close_state
     if close_state.slug == "no-review-version":
         review_req.reviewed_rev = review_req.requested_rev or review_req.doc.rev # save rev for later reference
@@ -522,12 +521,11 @@ def close_review_request(request, review_req, close_state):
             state=review_req.state,
         )
 
-        if prev_state.slug != "requested":
-            email_review_request_change(
-                request, review_req,
-                "Closed review request for {}: {}".format(review_req.doc.name, close_state.name),
-                "Review request has been closed by {}.".format(request.user.person),
-                by=request.user.person, notify_secretary=False, notify_reviewer=True, notify_requested_by=True)
+        email_review_request_change(
+            request, review_req,
+            "Closed review request for {}: {}".format(review_req.doc.name, close_state.name),
+            "Review request has been closed by {}.".format(request.user.person),
+            by=request.user.person, notify_secretary=False, notify_reviewer=True, notify_requested_by=True)
 
 def suggested_review_requests_for_team(team):
 
