@@ -8,6 +8,8 @@
   {% origin %}
   <h1>Assign reviewer<br><small>{{ review_req.doc.name }}</small></h1>
 
+  {% include "doc/review/request_info.html" %}
+
   <form method="post">
     {% csrf_token %}
 
