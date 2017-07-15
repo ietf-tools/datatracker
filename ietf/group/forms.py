@@ -34,7 +34,7 @@ def roles_for_group_type(group_type):
 # --- Forms ------------------------------------------------------------
 
 class StatusUpdateForm(forms.Form):
-    content = forms.CharField(widget=forms.Textarea, label='Status update', help_text = 'Edit the status update', required=False, strip=False)
+    content = forms.CharField(widget=forms.Textarea, label='Status update', help_text = "Enter the status update", required=False, strip=False)
     txt = forms.FileField(label='.txt format', help_text='Or upload a .txt file', required=False)
 
     def clean_content(self):
@@ -43,6 +43,13 @@ class StatusUpdateForm(forms.Form):
     def clean_txt(self):
         return get_cleaned_text_file_content(self.cleaned_data["txt"])
 
+    def clean(self):
+        if (self.cleaned_data['content'] and self.cleaned_data['content'].strip() and self.cleaned_data['txt']):
+	    raise forms.ValidationError("Cannot enter both text box and TXT file")
+	elif (self.cleaned_data['content'] and not self.cleaned_data['content'].strip() and not self.cleaned_data['txt']):
+            raise forms.ValidationError("NULL input is not a valid option")
+        elif (self.cleaned_data['txt'] and not self.cleaned_data['txt'].strip()) :
+	    raise forms.ValidationError("NULL TXT file input is not a valid option")
 
 class ConcludeGroupForm(forms.Form):
     instructions = forms.CharField(widget=forms.Textarea(attrs={'rows': 30}), required=True, strip=False)
