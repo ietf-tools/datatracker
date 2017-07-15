@@ -666,6 +666,11 @@ def session_draft_list(num, session):
         except Document.DoesNotExist:
             pass
 
+    for sp in SessionPresentation.objects.filter(session__meeting__number=num, session__group__acronym=session, document__type='draft'):
+        doc_name = sp.document.name + "-" + sp.document.rev
+        if doc_name not in result:
+            result.append(doc_name)
+
     return sorted(result)
 
 def session_draft_tarfile(request, num, session):
