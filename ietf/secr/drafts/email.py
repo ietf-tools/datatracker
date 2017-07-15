@@ -179,8 +179,7 @@ def get_email_initial(draft, action=None, input=None):
     The dictionary consists of to, cc, subject, body.
     
     NOTE: for type=new we are listing all authors in the message body to match legacy app.
-    It appears datatracker abbreviates the list with "et al".  Datatracker scheduled_announcement
-    entries have "Action" in subject whereas this app uses "ACTION"
+    It appears datatracker abbreviates the list with "et al".  
     """
     expiration_date = (datetime.date.today() + datetime.timedelta(185)).strftime('%B %d, %Y')
     new_revision = str(int(draft.rev)+1).zfill(2)
@@ -210,7 +209,7 @@ def get_email_initial(draft, action=None, input=None):
                    'timestamp':time.strftime("%Y-%m-%d%H%M%S", time.localtime())}
         data['to'] = 'i-d-announce@ietf.org'
         data['cc'] = draft.group.list_email
-        data['subject'] = 'I-D ACTION:%s' % (curr_filename)
+        data['subject'] = 'I-D Action: %s' % (curr_filename)
         data['body'] = render_to_string('drafts/message_new.txt', context)
 
     elif action == 'replace':
