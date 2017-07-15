@@ -49,7 +49,7 @@ def make_immutable_base_data():
     all tests in a run."""
 
     # telechat dates
-    t = datetime.date.today()
+    t = datetime.date.today() + datetime.timedelta(days=1)
     old = TelechatDate.objects.create(date=t - datetime.timedelta(days=14)).date        # pyflakes:ignore
     date1 = TelechatDate.objects.create(date=t).date                                    # pyflakes:ignore
     date2 = TelechatDate.objects.create(date=t + datetime.timedelta(days=14)).date      # pyflakes:ignore
