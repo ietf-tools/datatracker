@@ -85,6 +85,8 @@ REPO="ietf/datatracker-environment"
 TAG=$(basename $(svn info $parent | grep ^URL | awk '{print $2}'))
 DBURL=https://www.ietf.org/lib/dt/sprint/ietf_utf8.bin.tar.bz2
 WHO=$(whoami)
+WHOUID=$(id -u $WHO)
+WHOGID=$(id -g $WHO)
 
 if   [ "$(uname)" = "Linux" ]; then
     args=$(getopt -o "$shortopts" --long "$longopts" -n '$program' -- $SV "$@")
@@ -213,15 +215,16 @@ else
     fi
 
     echo -e "\nThe web interface for 'runserver' should appear on $URL\n"
+    echo -e "User $WHO ($WHOUID:$WHOGID)"
     if [ -z "$MYSQLDIR" ]; then
 	docker run -ti -p $PORT:8000 -v "$HOME:/home/$WHO"                              \
 	    -e USER="$WHO" -e DATADIR="${parent#$HOME/}/data" -e CWD="${PWD#$HOME/}"	\
-	    -e TAG="$TAG" -e FILEDIR=${FILEDIR#$HOME}	\
+	    -e TAG="$TAG" -e FILEDIR=${FILEDIR#$HOME} -e UID="$WHOUID" -e GID="$WHOGID"	\
 	    "$REPO:$TAG" "$@"
     else
 	docker run -ti -p $PORT:8000 -v "$HOME:/home/$WHO" -v "$MYSQLDIR:/var/lib/mysql"\
 	    -e USER="$WHO" -e DATADIR="${parent#$HOME/}/data" -e CWD="${PWD#$HOME/}"	\
-	    -e TAG="$TAG" -e FILEDIR=${FILEDIR#$HOME}	\
+	    -e TAG="$TAG" -e FILEDIR=${FILEDIR#$HOME} -e UID="$WHOUID" -e GID="$WHOGID"	\
 	    "$REPO:$TAG" "$@"
     fi
 

@@ -6,10 +6,19 @@ if [ ! "$USER" ]; then
     echo "Environment variable USER is not set -- will set USER='django'."
     USER="django"
 fi
+if [ ! "$UID" ]; then
+    echo "Environment variable UID is not set -- will set UID='1000'."
+    UID="1000"
+fi
+if [ ! "$GID" ]; then
+    echo "Environment variable GID is not set -- will set GID='1000'."
+    GID="1000"
+fi
 if [ ! "$TAG" ]; then
     echo "Environment variable TAG is not set -- will set TAG='datatracker'."
     TAG="datatracker"
 fi
+echo "User $USER ($UID:$GID)"
 
 echo "Checking if MySQL base data exists ..."
 if [ ! -d $MYSQLDIR/mysql ]; then
@@ -64,7 +73,7 @@ fi
 
 if ! id -u "$USER" &> /dev/null; then
     echo "Creating user '$USER' ..."
-    useradd -s /bin/bash -G staff,sudo $USER
+    useradd -s /bin/bash --groups staff,sudo --uid $UID --gid $GID $USER
     echo "$USER:$USER" | chpasswd
 fi
 
