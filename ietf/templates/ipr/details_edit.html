@@ -45,8 +45,8 @@
       respect to the licensing of its necessary patent claims. No actual
       license is implied by submission of this template.</p>
 
-    <p><b>Note:</b> According to Section 6.4.3 of
-      <a href="https://www.ietf.org/rfc/rfc3979.txt">RFC 3979</a>,
+    <p><b>Note:</b> According to Section 5.4.3 of
+      <a href="https://www.ietf.org/rfc/rfc8179.txt">RFC 8179</a>,
       "Intellectual Property Rights in IETF Technology," you
       are still required to file specific disclosures on IPR unless your
       generic disclosure satisfies certain conditions. Please see the
@@ -57,8 +57,8 @@
     If you wish to submit your IPR disclosure by e-mail, then please send
     it to <a href="mailto:ietf-ipr@ietf.org">ietf-ipr@ietf.org</a>.
     Submissions made by e-mail that do not comply with the formal
-    requirements of Section 6, "IPR Disclosures," of
-    <a href="https://www.ietf.org/rfc/rfc3979.txt">RFC 3979</a>,
+    requirements of Section 5, "IPR Disclosures," of
+    <a href="https://www.ietf.org/rfc/rfc8179.txt">RFC 8179</a>,
     "Intellectual Property Rights in IETF Technology",
     will be posted, but will be marked as "non-compliant".
   </p>
@@ -160,7 +160,7 @@
       {% endif %}
 
       <h2>{% cycle section %}. Disclosure of Patent Information{% if form.instance|to_class_name == "ThirdPartyIprDicslosure" %}, if known{% endif %}
-        <small>i.e., patents or patent applications required to be disclosed by Section 6 of RFC3979</small></h2>
+        <small>i.e., patents or patent applications required to be disclosed by Section 5 of RFC8179</small></h2>
 
       {% if form.patent_info %}
         <p>
@@ -200,8 +200,8 @@
           {% if form.instance|to_class_name == "GenericIprDisclosure" %}
             <p class="alert alert-info">
               <strong>Note</strong>: According to
-              <a href="https://www.ietf.org/rfc/rfc3979.txt?number=3979">RFC 3979</a>,
-              Section 6.4.3, unless you check the box
+              <a href="https://www.ietf.org/rfc/rfc8179.txt?">RFC 8179</a>,
+              Section 5.4.3, unless you check the box
               above, and choose either option a) or b), you must still file specific
               IPR disclosures as appropriate.
             </p>
