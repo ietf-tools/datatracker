@@ -1300,7 +1300,7 @@ def upload_session_minutes(request, session_id, num):
                         other_session.sessionpresentation_set.create(document=doc,rev=doc.rev)
             filename = '%s-%s%s'% ( doc.name, doc.rev, ext)
             doc.external_url = filename
-            e = NewRevisionDocEvent.objects.create(doc=doc, time=doc.time, by=request.user.person, type='new_revision', desc='New revision available: %s'%doc.rev, rev=doc.rev)
+            e = NewRevisionDocEvent.objects.create(doc=doc, by=request.user.person, type='new_revision', desc='New revision available: %s'%doc.rev, rev=doc.rev)
             doc.save_with_history([e])
             # The way this function builds the filename it will never trigger the file delete in handle_file_upload.
             handle_upload_file(file, filename, session.meeting, 'minutes')
@@ -1409,7 +1409,7 @@ def upload_session_agenda(request, session_id, num):
                         other_session.sessionpresentation_set.create(document=doc,rev=doc.rev)
             filename = '%s-%s%s'% ( doc.name, doc.rev, ext)
             doc.external_url = filename
-            e = NewRevisionDocEvent.objects.create(doc=doc,time=doc.time,by=request.user.person,type='new_revision',desc='New revision available: %s'%doc.rev,rev=doc.rev)
+            e = NewRevisionDocEvent.objects.create(doc=doc,by=request.user.person,type='new_revision',desc='New revision available: %s'%doc.rev,rev=doc.rev)
             doc.save_with_history([e])
             # The way this function builds the filename it will never trigger the file delete in handle_file_upload.
             handle_upload_file(file, filename, session.meeting, 'agenda')
@@ -1518,7 +1518,7 @@ def upload_session_slides(request, session_id, num, name):
                         other_session.sessionpresentation_set.create(document=doc,rev=doc.rev,order=max_order+1)
             filename = '%s-%s%s'% ( doc.name, doc.rev, ext)
             doc.external_url = filename
-            e = NewRevisionDocEvent.objects.create(doc=doc,time=doc.time,by=request.user.person,type='new_revision',desc='New revision available: %s'%doc.rev,rev=doc.rev)
+            e = NewRevisionDocEvent.objects.create(doc=doc,by=request.user.person,type='new_revision',desc='New revision available: %s'%doc.rev,rev=doc.rev)
             doc.save_with_history([e])
             # The way this function builds the filename it will never trigger the file delete in handle_file_upload.
             handle_upload_file(file, filename, session.meeting, 'slides')
