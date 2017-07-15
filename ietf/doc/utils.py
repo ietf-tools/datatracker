@@ -327,6 +327,9 @@ def get_document_content(key, filename, split=True, markup=True):
     else:
         return raw_content
 
+def tags_suffix(tags):
+    return (u"::" + u"::".join(t.name for t in tags)) if tags else u""
+
 def add_state_change_event(doc, by, prev_state, new_state, prev_tags=[], new_tags=[], timestamp=None):
     """Add doc event to explain that state change just happened."""
     if prev_state and new_state:
@@ -334,9 +337,6 @@ def add_state_change_event(doc, by, prev_state, new_state, prev_tags=[], new_tag
 
     if prev_state == new_state and set(prev_tags) == set(new_tags):
         return None
-
-    def tags_suffix(tags):
-        return (u"::" + u"::".join(t.name for t in tags)) if tags else u""
 
     e = StateDocEvent(doc=doc, rev=doc.rev, by=by)
     e.type = "changed_state"

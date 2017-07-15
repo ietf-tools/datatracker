@@ -24,7 +24,7 @@ from ietf.doc.mails import ( email_pulled_from_rfc_queue, email_resurrect_reques
 from ietf.doc.utils import ( add_state_change_event, can_adopt_draft,
     get_tags_for_stream_id, nice_consensus,
     update_reminder, update_telechat, make_notify_changed_event, get_initial_notify,
-    set_replaces_for_document, default_consensus )
+    set_replaces_for_document, default_consensus, tags_suffix, )
 from ietf.doc.lastcall import request_last_call
 from ietf.doc.fields import SearchableDocAliasesField
 from ietf.group.models import Group, Role
@@ -83,6 +83,7 @@ def change_state(request, name):
             tag = form.cleaned_data['substate']
             comment = form.cleaned_data['comment'].strip()
 
+            msg = ""
 
             # tag handling is a bit awkward since the UI still works
             # as if IESG tags are a substate
@@ -99,6 +100,10 @@ def change_state(request, name):
                 e = add_state_change_event(doc, login, prev_state, new_state,
                                            prev_tags=prev_tags, new_tags=new_tags)
 
+                msg += "%s changed:\n\nNew State: %s\n\n"%(e.state_type.label, new_state.name + tags_suffix(new_tags))
+                if prev_state:
+                    msg += "(The previous state was %s)\n\n"%(prev_state.name + tags_suffix(prev_tags))
+                
                 events.append(e)
 
                 if comment:
@@ -109,11 +114,11 @@ def change_state(request, name):
                     c.desc = comment
                     c.save()
 
+                    msg += c.desc + "\n"
+
                     events.append(c)
 
                 doc.save_with_history(events)
-
-                msg = u"\n".join(e.desc for e in events)
 
                 email_state_changed(request, doc, msg,'doc_state_edited')
                 
