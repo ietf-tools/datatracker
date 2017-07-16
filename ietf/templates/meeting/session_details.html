@@ -43,7 +43,7 @@
                 {% url 'ietf.doc.views_doc.document_main' name=pres.document.name as url %}
               {% endif %}
               <td>
-                <a href="{{pres.document.get_absolute_url}}">{{pres.document.title}}</a>
+                <a href="{{pres.document.href}}">{{pres.document.title}}</a>
                 <a href="{{url}}">({{ pres.document.name }}{% if pres.rev %}-{{ pres.rev }}{% endif %})</a>
               </td>
               {% if user|has_role:"Secretariat" or can_manage_materials %}
@@ -89,7 +89,7 @@
                 {% url 'ietf.doc.views_doc.document_main' name=pres.document.name as url %}
               {% endif %}
               <td>
-                <a href="{{pres.document.get_absolute_url}}">{{pres.document.title}} </a>
+                <a href="{{pres.document.href}}">{{pres.document.title}} </a>
                 <a href="{{url}}">({{ pres.document.name }}{% if pres.rev %}-{{ pres.rev }}{% endif %}) </a>
               </td>
               {% if can_manage_materials %}
