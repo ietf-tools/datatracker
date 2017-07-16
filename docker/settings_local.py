@@ -38,6 +38,8 @@ MEDIA_URL = '/media/'
 PHOTOS_DIRNAME = 'photo'
 PHOTOS_DIR = MEDIA_ROOT + PHOTOS_DIRNAME
 
+DOCUMENT_PATH_PATTERN = 'data/developers/ietf-ftp/{doc.type_id}/'
+
 SUBMIT_YANG_RFC_MODEL_DIR   = 'data/developers/ietf-ftp/yang/rfcmod/'
 SUBMIT_YANG_DRAFT_MODEL_DIR = 'data/developers/ietf-ftp/yang/draftmod/'
 SUBMIT_YANG_INVAL_MODEL_DIR = 'data/developers/ietf-ftp/yang/invalmod/'
