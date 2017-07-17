@@ -44,15 +44,17 @@
                   <th class="col-md-1">Group</th>
                   <th class="col-md-1">Agenda</th>
                   <th class="col-md-1">Minutes</th>
-                  <th class="col-md-5">Slides</th>
-                  <th class="col-md-2">Drafts</th>
-                  <th class="col-md-2">&nbsp;</th>
+                  <th class="col-md-3">Slides</th>
+                  <th class="col-md-4">Drafts</th>
+                  <th class="col-md-1">Updated</th>
+                  <th class="col-md-1">&nbsp;</th>
                 {% else %}
                   <th class="col-md-1">Group</th>
                   <th class="col-md-1">Agenda</th>
                   <th class="col-md-1">Minutes</th>
-                  <th class="col-md-6">Slides</th>
-                  <th class="col-md-3">Drafts</th>
+                  <th class="col-md-4">Slides</th>
+                  <th class="col-md-4">Drafts</th>
+                  <th class="col-md-1">Updated</th>
                 {% endif %}
 	      </tr>
 	    </thead>
@@ -76,15 +78,17 @@
                   <th class="col-md-1">Group</th>
                   <th class="col-md-1">Agenda</th>
                   <th class="col-md-1">Minutes</th>
-                  <th class="col-md-5">Slides</th>
-                  <th class="col-md-2">Drafts</th>
-                  <th class="col-md-2">&nbsp;</th>
+                  <th class="col-md-3">Slides</th>
+                  <th class="col-md-4">Drafts</th>
+                  <th class="col-md-1">Updated</th>
+                  <th class="col-md-1">&nbsp;</th>
                 {% else %}
                   <th class="col-md-1">Group</th>
                   <th class="col-md-1">Agenda</th>
                   <th class="col-md-1">Minutes</th>
-                  <th class="col-md-6">Slides</th>
-                  <th class="col-md-3">Drafts</th>
+                  <th class="col-md-4">Slides</th>
+                  <th class="col-md-4">Drafts</th>
+                  <th class="col-md-1">Updated</th>
                 {% endif %}
 	      </tr>
 	    </thead>
@@ -105,21 +109,23 @@
 	    <h2 class="anchor-target" id="training">Training</h2>
 	    <table class="table table-condensed table-striped tablesorter">
 	      <thead>
-		<tr>
-                {% if user|has_role:"Secretariat" or user|managed_groups %}
-                  <th class="col-md-1">Group</th>
-                  <th class="col-md-1">Agenda</th>
-                  <th class="col-md-1">Minutes</th>
-                  <th class="col-md-5">Slides</th>
-                  <th class="col-md-2">Drafts</th>
-                  <th class="col-md-2">&nbsp;</th>
-                {% else %}
-                  <th class="col-md-1">Group</th>
-                  <th class="col-md-1">Agenda</th>
-                  <th class="col-md-1">Minutes</th>
-                  <th class="col-md-6">Slides</th>
-                  <th class="col-md-3">Drafts</th>
-                {% endif %}
+                <tr>
+                  {% if user|has_role:"Secretariat" or user|managed_groups %}
+                    <th class="col-md-1">Group</th>
+                    <th class="col-md-1">Agenda</th>
+                    <th class="col-md-1">Minutes</th>
+                    <th class="col-md-3">Slides</th>
+                    <th class="col-md-4">Drafts</th>
+                    <th class="col-md-1">Updated</th>
+                    <th class="col-md-1">&nbsp;</th>
+                  {% else %}
+                    <th class="col-md-1">Group</th>
+                    <th class="col-md-1">Agenda</th>
+                    <th class="col-md-1">Minutes</th>
+                    <th class="col-md-4">Slides</th>
+                    <th class="col-md-4">Drafts</th>
+                    <th class="col-md-1">Updated</th>
+                  {% endif %}
 		</tr>
 	      </thead>
 
@@ -144,15 +150,17 @@
                   <th class="col-md-1">Group</th>
                   <th class="col-md-1">Agenda</th>
                   <th class="col-md-1">Minutes</th>
-                  <th class="col-md-5">Slides</th>
-                  <th class="col-md-2">Drafts</th>
-                  <th class="col-md-2">&nbsp;</th>
+                  <th class="col-md-3">Slides</th>
+                  <th class="col-md-4">Drafts</th>
+                  <th class="col-md-1">Updated</th>
+                  <th class="col-md-1">&nbsp;</th>
                 {% else %}
                   <th class="col-md-1">Group</th>
                   <th class="col-md-1">Agenda</th>
                   <th class="col-md-1">Minutes</th>
-                  <th class="col-md-6">Slides</th>
-                  <th class="col-md-3">Drafts</th>
+                  <th class="col-md-4">Slides</th>
+                  <th class="col-md-4">Drafts</th>
+                  <th class="col-md-1">Updated</th>
                 {% endif %}
 	      </tr>
 	    </thead>
@@ -177,15 +185,17 @@
                   <th class="col-md-1">Group</th>
                   <th class="col-md-1">Agenda</th>
                   <th class="col-md-1">Minutes</th>
-                  <th class="col-md-5">Slides</th>
-                  <th class="col-md-2">Drafts</th>
-                  <th class="col-md-2">&nbsp;</th>
+                  <th class="col-md-3">Slides</th>
+                  <th class="col-md-4">Drafts</th>
+                  <th class="col-md-1">Updated</th>
+                  <th class="col-md-1">&nbsp;</th>
                 {% else %}
                   <th class="col-md-1">Group</th>
                   <th class="col-md-1">Agenda</th>
                   <th class="col-md-1">Minutes</th>
-                  <th class="col-md-6">Slides</th>
-                  <th class="col-md-3">Drafts</th>
+                  <th class="col-md-4">Slides</th>
+                  <th class="col-md-4">Drafts</th>
+                  <th class="col-md-1">Updated</th>
                 {% endif %}
 	      </tr>
 	    </thead>
