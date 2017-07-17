@@ -103,7 +103,7 @@ def change_state(request, name, option=None):
                     e.time = group.time
                     e.by = by
                     e.state_id = group.state.slug
-                    e.desc = "Group state changed to %s from %s" % (group.state, oldstate)
+                    e.desc = "Group state changed to \"%s\" from \"%s\"" % (group.state, oldstate)
                     e.save()
 
                 else:
@@ -145,7 +145,7 @@ def change_state(request, name, option=None):
                     email_charter_internal_review(request,charter)
 
                 if message or charter_state.slug == "intrev" or charter_state.slug == "extrev":
-                    email_admin_re_charter(request, group, "Charter state changed to %s" % charter_state.name, message,'charter_state_edit_admin_needed')
+                    email_admin_re_charter(request, group, "Charter state changed to \"%s\"" % charter_state.name, message,'charter_state_edit_admin_needed')
 
                 # TODO - do we need a seperate set of recipients for state changes to charters vrs other kind of documents
                 email_state_changed(request, charter, "State changed to %s." % charter_state, 'doc_state_edited')
@@ -729,7 +729,7 @@ def approve(request, name):
 
         charter.save_with_history(events)
 
-        email_admin_re_charter(request, group, "Charter state changed to %s" % new_charter_state.name, change_description,'charter_state_edit_admin_needed')
+        email_admin_re_charter(request, group, "Charter state changed to \"%s\"" % new_charter_state.name, change_description,'charter_state_edit_admin_needed')
 
         # move milestones over
         milestones_to_delete = list(group.groupmilestone_set.filter(state__in=("active", "review")))
