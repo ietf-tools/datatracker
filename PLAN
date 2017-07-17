@@ -183,9 +183,8 @@ Notes
   - Consider using django-12factor to apply part of the 12-factor app
     philosophy: https://12factor.net/
 
+  - Clean up and normalise the use of canceled / cancelled.  User-visible
+    strings should already be all CANCELLED except when manually entered.
 
-
-
-  
 
 
