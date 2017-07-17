@@ -162,6 +162,7 @@ class SessionResource(ModelResource):
     status           = ToOneField(SessionStatusNameResource, 'status')
     materials        = ToManyField(DocumentResource, 'materials', null=True)
     resources        = ToManyField(ResourceAssociationResource, 'resources', null=True)
+    assignments      = ToManyField('ietf.meeting.resources.SchedTimeSessAssignmentResource', 'timeslotassignments', null=True)
     requested_duration = api.TimedeltaField('requested_duration')
     class Meta:
         cache = SimpleCache()
@@ -187,6 +188,7 @@ class SessionResource(ModelResource):
             "status": ALL_WITH_RELATIONS,
             "materials": ALL_WITH_RELATIONS,
             "resources": ALL_WITH_RELATIONS,
+            "assignments": ALL_WITH_RELATIONS,
         }
 api.meeting.register(SessionResource())
 
