@@ -973,6 +973,7 @@ def json_agenda(request, num=None ):
             rev_docevent = doc.latest_event(NewRevisionDocEvent,'new_revision')
             modified = max(modified, (rev_docevent and rev_docevent.time) or modified)
         sessdict['modified'] = modified
+        sessdict['status'] = asgn.session.status_id
         sessions.append(sessdict)
 
     rooms = []
