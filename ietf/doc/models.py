@@ -217,7 +217,10 @@ class DocumentInfo(models.Model):
                     # we need to do this because DocHistory items don't have
                     # any session_set entry:
                     doc = self.doc if isinstance(self, DocHistory) else self
-                    meeting = doc.session_set.first().meeting
+                    sess = doc.session_set.first()
+                    if not sess:
+                        return ""
+                    meeting = sess.meeting
                 info = dict(doc=self, meeting=meeting)
             else:
                 info = dict(doc=self)
