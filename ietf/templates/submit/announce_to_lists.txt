@@ -1,6 +1,6 @@
 {% autoescape off %}
 A New Internet-Draft is available from the on-line Internet-Drafts directories.
-{% if submission.group %}This draft is a work item of the {{ submission.group.name }}{% if group.type.name %} {{ group.type.name }}{% endif %} of the {% if group.type_id == "rg" %}IRTF{% else %}IETF{% endif %}.{% endif %}
+{% if submission.group %}This draft is a work item of the {{ submission.group.name }}{% if submission.group.type.name %} {{ submission.group.type.name }}{% endif %} of the {% if submission.group.type_id == "rg" %}IRTF{% else %}IETF{% endif %}.{% endif %}
 
         Title           : {{ submission.title }}
         Author{{ submission.authors|pluralize:" ,s" }}         : {% for author in submission.authors %}{{ author.name }}{% if not forloop.last %}
