@@ -5,6 +5,7 @@
 {% load ietf_filters staticfiles bootstrap3 %}
 
 {% block pagehead %}
+  <link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
   <link rel="stylesheet" href="{% static 'bootstrap-datepicker/css/bootstrap-datepicker3.min.css' %}">
 {% endblock %}
 
@@ -109,7 +110,7 @@
 
     <h3>Completion status and completion time</h3>
 
-    <table class="review-stats table">
+    <table class="review-stats table tablesorter">
       <thead>
         <th>
           {% if level == "team" %}
@@ -148,7 +149,7 @@
 
     <h3>Results of completed reviews</h3>
 
-    <table class="review-stats table">
+    <table class="review-stats table tablesorter">
       <thead>
         <th>
           {% if level == "team" %}
@@ -177,7 +178,7 @@
 
     <h3>Specific request states</h3>
 
-    <table class="review-stats table">
+    <table class="review-stats table tablesorter">
       <thead>
         <th>
           {% if level == "team" %}
@@ -251,6 +252,7 @@
 {% endblock %}
 
 {% block js %}
+  <script src="{% static "jquery.tablesorter/js/jquery.tablesorter.combined.min.js" %}"></script>
   <script src="{% static 'bootstrap-datepicker/js/bootstrap-datepicker.min.js' %}"></script>
   {% if stats_type == "time" %}
     <script src="{% static 'flot/jquery.flot.min.js' %}"></script>
