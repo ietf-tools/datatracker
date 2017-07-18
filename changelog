@@ -1,3 +1,93 @@
+ietfdb (6.57.0) ietf; urgency=medium
+
+  **IETF 99 code sprint**
+
+  * Changed etherpad links to not use the explicit 9000 port any more; it's 
+    not needed and may cause issues.
+
+  * Merged in [13916] from alireza.mohammadi@icann.org:
+    Better punctuation during state change by adding \" before and after
+    old and new state.  Fixes issue #1545.
+
+  * Merged in [13911] from kivinen@iki.fi:
+    Fixed sign in page so it will always scroll to top when page is loaded, 
+    so the sign in fields are visible.  
+
+  * Merged in [13908] from alireza.mohammadi@icann.org:
+    Added 'last updated' timestamps on meeting materials page
+    Added UTC time to the tooltip of Agenda and slides and an new column of 
+    Updated. Updated column present the latest time stamp for agenda and 
+    slides.  Fixes issue #1644.
+
+  * Added an 'assignments' m2m field to the API sssion resource.
+
+  * Added a guard for the case that slides might be removed from a session 
+    while agenda page construction is in flight.
+
+  * Added a session status field to the /meeting/agenda.json data, to make 
+    cancelled session info available to the IETFers app.
+
+  * Modified the meeting session materials template to use href(), in order 
+    to be able to point at the right materials for groups with multiple 
+    sessions with different materials.
+
+  * Merged in [13905] from david.i.allan@ericsson.com:
+    Made the status update forms deal better with clearing old status updates,
+    showing information about the clearing instead of inserting blank entries.
+    Fixes issue #2183.
+
+  * Merged in [13903] from rjsparks@nostrum.com:
+    Use a better timestamp for newrevisiondocevents when uploading agendas, 
+    minutes, and slides. Fixes #2039.  
+
+  * Merged in [13902] from rjsparks@nostrum.com:
+    Include drafts associated with sessions when building session pdf and 
+    tarballs. Fixes #2036.  
+
+  * Set docker-internal UID and GID to match the external values for the 
+    user.  Makes life easier when running docker under linux.
+
+  * Merged in [13900] from peter@akayla.com:
+    Allow ADs to manage meeting materials from the meeting/##/materials page.
+    Fixes #2213.  
+
+  * Merged in [13899] from rjsparks@nostrum.com:
+    Allow editing of title for agendas, minutes, and bluesheets documents. 
+    Fixes #2317.  
+
+  * Merged in [13897] from rjsparks@nostrum.com:
+    Send email to reviewer when request is closed with no response. 
+    Fixes issue #2176.  
+
+  * Merged in [13893] from housley@vigilsec.com:
+    Made the IPR pages reference the new IPR document, RFC 8179. 
+    Partial fix to #2309. 
+
+  * Merged in [13892] from mahoney@nostrum.com:
+    Made email subject 'I-D ACTION:<draft>' consistent with other 'I-D 
+    Action: <draft>' email subjects. Fixes #1519.  
+
+  * Merged in [13888] from rjsparks@nostrum.com:
+    Refined the 'state changed' email message per discussion on
+    tools-development. Fixes #2116.  
+
+  * Merged in [13887] from rjsparks@nostrum.com:
+    Allow minutes to be uploaded after previous minutes had been uploaded 
+    and removed from the session. Fixes #2286.  
+
+  * Changed the test telechat dates so that the first active telechat 
+    doesn't change to lie in the past if the tests are run across midnight.
+
+  * Merged in [13883] from rjsparks@nostrum.com:
+    Repaired missing table id, allowing slide reordering to be saved. 
+    Fixes #2327.  
+
+  * Set docker/settings_local.py to use yanglint, so the yanglint tests will
+    be run under docker.  Added libyang (with yanglint) to the Dockerfile.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  18 Jul 2017 03:50:50 -0700
+
+
 ietfdb (6.56.0) ietf; urgency=medium
 
   This release clears the table for the IETF 99 sprint.  It adds minor
