@@ -124,7 +124,8 @@ class ReviewTests(TestCase):
 
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(review_req.team.acronym.upper() in unicontent(r))
+        self.assertIn(review_req.team.acronym, unicontent(r))
+        self.assertIn(review_req.team.name, unicontent(r))
 
     def test_close_request(self):
         doc = make_test_data()
