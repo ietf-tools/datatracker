@@ -422,7 +422,7 @@ def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""
     # So that we're not producing misleading pages...
     
     meeting = meetings.first()
-    if not meetings.exists() or (meeting.number.isdigit() and meeting.number <= 64 and not meeting.agenda.assignments.exists()):
+    if not meetings.exists() or (meeting.number.isdigit() and int(meeting.number) <= 64 and not meeting.agenda.assignments.exists()):
         if ext == '.html':
             return HttpResponseRedirect( 'https://www.ietf.org/proceedings/%s' % num )
         else:
