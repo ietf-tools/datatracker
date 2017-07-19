@@ -2,6 +2,24 @@ ietfdb (6.57.0) ietf; urgency=medium
 
   **IETF 99 code sprint**
 
+  This release contains datatracker bugfixes and enhancements from the IETF-99
+  Code Sprint, which was very productive :-) The release brings in many useful
+  bugfixes and enhancements, as described below. Many thanks to everyone who
+  contributed!
+
+  * Made materials links on the ietf materials page visible to group
+    delegates.
+
+  * Fixed a bug in a meeting number comparison.
+
+  * Merged in [13919] from peter@akayla.com:
+    Print the group type and IRTF/IETF correctly in draft submission
+    announcements.  Fixes #2034.  
+
+  * Merged in [13918] from kivinen@iki.fi:
+    Unified the review request views to use same template, so they all
+    show same data, in same format.  
+
   * Changed etherpad links to not use the explicit 9000 port any more; it's 
     not needed and may cause issues.
 
@@ -19,7 +37,9 @@ ietfdb (6.57.0) ietf; urgency=medium
     Updated. Updated column present the latest time stamp for agenda and 
     slides.  Fixes issue #1644.
 
-  * Added an 'assignments' m2m field to the API sssion resource.
+  * Added an 'assignments' m2m field to the API sssion resource, in order to
+    make it easier to use the API to pull out meeting sessions for a given
+    meeting.
 
   * Added a guard for the case that slides might be removed from a session 
     while agenda page construction is in flight.
@@ -85,7 +105,7 @@ ietfdb (6.57.0) ietf; urgency=medium
   * Set docker/settings_local.py to use yanglint, so the yanglint tests will
     be run under docker.  Added libyang (with yanglint) to the Dockerfile.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  18 Jul 2017 03:50:50 -0700
+ -- Henrik Levkowetz <henrik@levkowetz.com>  19 Jul 2017 12:14:58 +0000
 
 
 ietfdb (6.56.0) ietf; urgency=medium
