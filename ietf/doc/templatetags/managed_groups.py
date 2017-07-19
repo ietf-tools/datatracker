@@ -17,9 +17,9 @@ def managed_groups(user):
     #     state__slug='active').select_related("type"))
 
     groups.extend(Group.objects.filter(
-        role__name__slug='chair',
+        role__name__slug__in=['chair', 'delegate', ], 
         role__person__user=user,
-        type__slug__in=('rg', 'wg', 'ag'),
+        type__slug__in=('rg', 'wg', 'ag', 'ietf'),
         state__slug__in=('active', 'bof')).select_related("type"))
 
     return groups
