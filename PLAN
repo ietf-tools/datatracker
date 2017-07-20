@@ -12,8 +12,12 @@ Planned work in rough order
 * Add a simplified submission form which can be used by curl or wget to post
   non-00 drafts.  
 
-* Rework email sending so that all emails sent by the datatracker, except for
-  logging and failure emails sent to ADMINS, are captured as a Message object.
+* Add 'Additional URLs' for documents, the same way we have them for groups.
+
+* Reworked UI and refactored backend for the scretariat meeting scheduling
+  tool.
+
+* Revisit the review tool, work through the accumulated tickets.
 
 * Add sanitization of uploaded html documents.
 
@@ -21,6 +25,9 @@ Planned work in rough order
 
 * Test suite improvements.  Reduce and seek to eliminate causes of differences
   in code coverage between runs in the same and in different environments.
+
+* Rework email sending so that all emails sent by the datatracker, except for
+  logging and failure emails sent to ADMINS, are captured as a Message object.
 
 * Polish the htmlization pages, making the style identical with tools.ietf.org.
   Do a public release of the htmlization lib.
@@ -30,8 +37,6 @@ Planned work in rough order
 
 * Revisit photo uploads: Add photo upload for people with roles.  Add
   photos to wg pages and group overview pages.
-
-* Adde 'Additional URLs' for documents, the same way we have them for groups.
 
 * Revisit floorplans: Add room coordinate input tool (javascript).
   Add NOC object annotation possibilities.  Add support for break areas
