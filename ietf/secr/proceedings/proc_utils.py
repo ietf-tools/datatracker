@@ -142,10 +142,13 @@ def get_timeslot_for_filename(filename):
             meeting = Meeting.objects.get(number=match.groupdict()['number'])
             room_mapping = {normalize_room_name(room.name): room.name for room in meeting.room_set.all()}
             time = datetime.datetime.strptime(match.groupdict()['time'],'%Y%m%d-%H%M')
-            return TimeSlot.objects.get(
+            slots = TimeSlot.objects.filter(
                 meeting=meeting,
                 location__name=room_mapping[match.groupdict()['room']],
-                time=time)
+                time=time,
+                sessionassignments__schedule=meeting.agenda,
+            ).distinct()
+            return slots.get()
         except (ObjectDoesNotExist, KeyError):
             return None
 
