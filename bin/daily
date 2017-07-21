@@ -42,4 +42,5 @@ $DTDIR/ietf/bin/expire-last-calls
 $DTDIR/ietf/bin/rfc-editor-index-updates -d 1969-01-01
 
 # Fetch meeting attendance data from ietf.org/registration/attendees
-$DTDIR/ietf/manage.py fetch_meeting_attendance --latest
+$DTDIR/ietf/manage.py fetch_meeting_attendance --latest 2
+
