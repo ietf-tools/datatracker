@@ -21,7 +21,7 @@ from ietf.dbtemplate.models import DBTemplate
 from ietf.doc.models import Document
 from ietf.group.models import Group
 from ietf.group.utils import can_manage_materials
-from ietf.name.models import MeetingTypeName, TimeSlotTypeName, SessionStatusName, ConstraintName, RoomResourceName
+from ietf.name.models import MeetingTypeName, TimeSlotTypeName, SessionStatusName, ConstraintName, RoomResourceName, ImportantDateName
 from ietf.person.models import Person
 from ietf.utils.storage import NoLocationMigrationFileSystemStorage
 from ietf.utils.text import xslugify
@@ -109,13 +109,25 @@ class Meeting(models.Model):
 
     def get_00_cutoff(self):
         start_date = datetime.datetime(year=self.date.year, month=self.date.month, day=self.date.day, tzinfo=pytz.utc)
-        cutoff_date = start_date - datetime.timedelta(days=self.idsubmit_cutoff_day_offset_00)
+        importantdate = self.importantdate_set.filter(name_id='idcutoff').first()
+        if not importantdate:
+            importantdate = self.importantdate_set.filter(name_id='00cutoff').first()
+        if importantdate:
+            cutoff_date = importantdate.date
+        else:
+            cutoff_date = start_date + datetime.timedelta(days=ImportantDateName.objects.get(slug='idcutoff').default_offset_days)
         cutoff_time = cutoff_date + self.idsubmit_cutoff_time_utc
         return cutoff_time
 
     def get_01_cutoff(self):
         start_date = datetime.datetime(year=self.date.year, month=self.date.month, day=self.date.day, tzinfo=pytz.utc)
-        cutoff_date = start_date - datetime.timedelta(days=self.idsubmit_cutoff_day_offset_01)
+        importantdate = self.importantdate_set.filter(name_id='idcutoff').first()
+        if not importantdate:
+            importantdate = self.importantdate_set.filter(name_id='01cutoff').first()
+        if importantdate:
+            cutoff_date = importantdate.date
+        else:
+            cutoff_date = start_date + datetime.timedelta(days=ImportantDateName.objects.get(slug='idcutoff').default_offset_days)
         cutoff_time = cutoff_date + self.idsubmit_cutoff_time_utc
         return cutoff_time
 
@@ -1100,3 +1112,10 @@ class Session(models.Model):
             self._agenda_file = "%s/agenda/%s" % (self.meeting.number, filename)
             
         return self._agenda_file
+
+class ImportantDate(models.Model):
+    meeting = models.ForeignKey(Meeting)
+    date = models.DateField()
+    name = models.ForeignKey(ImportantDateName)
+    class Meta:
+        ordering = ["-meeting","date", ]

@@ -22,7 +22,8 @@ from ietf.ietfauth.utils import has_role, user_is_person
 from ietf.liaisons.utils import get_person_for_user
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.person.models  import Person
-from ietf.meeting.models import Meeting, Schedule, TimeSlot, SchedTimeSessAssignment
+from ietf.meeting.models import Meeting, Schedule, TimeSlot, SchedTimeSessAssignment, ImportantDate
+from ietf.name.models import ImportantDateName
 from ietf.utils.history import find_history_active_at, find_history_replacements_active_at
 from ietf.utils.mail import send_mail
 from ietf.utils.pipe import pipe
@@ -127,6 +128,13 @@ def get_meeting(num=None,type_in=['ietf',]):
         return meetings.first()
     else:
         raise Http404("No such meeting found: %s" % num)
+
+def get_ietf_meeting(num=None):
+    if num:
+        meetings = Meeting.objects.filter(number=num)
+    else:
+        meetings = Meeting.objects.filter(type='ietf',date__gte=datetime.datetime.today()-datetime.timedelta(days=31)).order_by('date')
+    return meetings.first()
 
 def get_schedule(meeting, name=None):
     if name is None:
@@ -608,3 +616,9 @@ def update_interim_session_assignment(form):
             timeslot=slot,
             session=session,
             schedule=session.meeting.agenda)
+
+def populate_important_dates(meeting):
+    assert ImportantDate.objects.filter(meeting=meeting).exists() is False
+    assert meeting.type_id=='ietf'
+    for datename in ImportantDateName.objects.filter(used=True):
+        ImportantDate.objects.create(meeting=meeting,name=datename,date=meeting.date+datetime.timedelta(days=datename.default_offset_days))

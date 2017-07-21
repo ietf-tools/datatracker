@@ -15,7 +15,7 @@ from ietf.name.models import (TimeSlotTypeName, GroupStateName, DocTagName, Inte
     LiaisonStatementTagName, FeedbackTypeName, LiaisonStatementState, StreamName,
     BallotPositionName, DBTemplateTypeName, NomineePositionStateName,
     ReviewRequestStateName, ReviewTypeName, ReviewResultName,
-    TopicAudienceName, FormalLanguageName, ContinentName, CountryName)
+    TopicAudienceName, FormalLanguageName, ContinentName, CountryName, ImportantDateName)
 
 
 class TimeSlotTypeNameResource(ModelResource):
@@ -519,3 +519,20 @@ class CountryNameResource(ModelResource):
         }
 api.name.register(CountryNameResource())
 
+
+
+class ImportantDateNameResource(ModelResource):
+    class Meta:
+        queryset = ImportantDateName.objects.all()
+        serializer = api.Serializer()
+        cache = SimpleCache()
+        #resource_name = 'importantdatename'
+        filtering = { 
+            "slug": ALL,
+            "name": ALL,
+            "desc": ALL,
+            "used": ALL,
+            "order": ALL,
+            "default_offset_days": ALL,
+        }
+api.name.register(ImportantDateNameResource())
