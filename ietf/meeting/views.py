@@ -65,7 +65,7 @@ from ietf.utils.pipe import pipe
 from ietf.utils.pdf import pdf_pages
 from ietf.utils.text import xslugify
 from ietf.utils.validators import ( validate_file_size, validate_mime_type,
-    validate_file_extension, validate_no_html_frame, )
+    validate_file_extension, validate_no_html_frame, get_mime_type)
 
 from .forms import (InterimMeetingModelForm, InterimAnnounceForm, InterimSessionModelForm,
     InterimCancelForm, InterimSessionInlineFormSet)
@@ -153,6 +153,30 @@ def current_materials(request):
         return redirect(materials, meetings[0].number)
     else:
         raise Http404
+
+@cache_page(5 * 60)
+def materials_document(request, document, num=None, ):
+    if num is None:
+        num = get_meeting(num).number
+    if re.search('-[0-9][0-9]$', document):
+        name = document[:-3]
+    else:
+        name = document
+    doc = get_object_or_404(Document, name=name)
+    if not doc.meeting_related():
+        raise Http404("Not a meeting related document")
+    if not doc.session_set.filter(meeting__number=num).exists():
+        raise Http404("No such document for meeting %s" % num)
+    filename = doc.get_file_name()
+    basename = doc.get_base_name()
+    with open(filename, 'rb') as file:
+        bytes = file.read()
+    
+    mtype, chset = get_mime_type(bytes)
+    content_type = "%s; %s" % (mtype, chset)
+    response = HttpResponse(bytes, content_type=content_type)
+    response['Content-Disposition'] = 'inline; filename="%s"' % basename
+    return response
 
 @login_required
 def materials_editable_groups(request, num=None):
@@ -799,7 +823,7 @@ def week_view(request, num=None, name=None, owner=None):
                 item["room"] = a.timeslot.get_location()
 
             if a.session and a.session.agenda():
-                item["agenda"] = a.session.agenda().get_absolute_url()
+                item["agenda"] = a.session.agenda().href()
 
         items.append(item)
 

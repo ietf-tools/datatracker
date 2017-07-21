@@ -543,6 +543,7 @@ URL_REGEXPS = {
     "charter": r"(?P<name>charter-[-a-z0-9]+)",
     "date": r"(?P<date>\d{4}-\d{2}-\d{2})",
     "name": r"(?P<name>([A-Za-z0-9_+-]+?|%s))" % DRAFT_NAMES_WITH_DOT,
+    "document": r"(?P<document>[a-z][-a-z0-9]+)", # regular document names
     "rev": r"(?P<rev>[0-9]{1,2}(-[0-9]{2})?)",
     "owner": r"(?P<owner>[-A-Za-z0-9\'+._]+@[A-Za-z0-9-._]+)",
     "schedule_name": r"(?P<name>[A-Za-z0-9-:_]+)",
@@ -594,9 +595,9 @@ DOC_HREFS = {
 }
 
 MEETING_DOC_HREFS = {
-    "agenda": "https://www.ietf.org/proceedings/{meeting.number}/agenda/{doc.external_url}",
-    "minutes": "https://www.ietf.org/proceedings/{meeting.number}/minutes/{doc.external_url}",
-    "slides": "https://www.ietf.org/proceedings/{meeting.number}/slides/{doc.external_url}",
+    "agenda": "/meeting/{meeting.number}/materials/{doc.name}",
+    "minutes": "/meeting/{meeting.number}/materials/{doc.name}",
+    "slides": "/meeting/{meeting.number}/materials/{doc.name}",
     "recording": "{doc.external_url}",
     "bluesheets": "https://www.ietf.org/proceedings/{meeting.number}/bluesheets/{doc.external_url}",
 }

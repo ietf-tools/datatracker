@@ -183,6 +183,12 @@ class MeetingTests(TestCase):
         self.assertTrue(session.group.acronym in agenda_content)
         self.assertTrue(slot.location.name in agenda_content)
 
+        # document-specific urls
+        for doc in session.materials.exclude(states__slug='deleted'):
+            url = urlreverse('ietf.meeting.views.materials_document', kwargs=dict(num=meeting.number, document=doc.name))
+            r = self.client.get(url)
+            self.assertEqual(unicontent(r), doc.text())
+
     def test_agenda_current_audio(self):
         date = datetime.date.today()
         meeting = MeetingFactory(type_id='ietf', date=date )
