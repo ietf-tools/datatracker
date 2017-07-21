@@ -22,7 +22,7 @@ from ietf.group.models import Group, Role
 from ietf.meeting.helpers import can_approve_interim_request, can_view_interim_request
 from ietf.meeting.helpers import send_interim_approval_request
 from ietf.meeting.helpers import send_interim_cancellation_notice
-from ietf.meeting.helpers import send_interim_minutes_reminder
+from ietf.meeting.helpers import send_interim_minutes_reminder, populate_important_dates
 from ietf.meeting.models import Session, TimeSlot, Meeting
 from ietf.meeting.test_data import make_meeting_test_data, make_interim_meeting
 from ietf.meeting.utils import finalize
@@ -407,6 +407,14 @@ class MeetingTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertTrue("agenda" in unicontent(r))
         self.assertTrue(session.group.acronym in unicontent(r))
+
+    def test_important_dates(self):
+        meeting=MeetingFactory(type_id='ietf')
+        populate_important_dates(meeting)
+        url = urlreverse('ietf.meeting.views.important_dates',kwargs={'num':meeting.number})
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(str(meeting.importantdate_set.first().date) in unicontent(r))
 
 class EditTests(TestCase):
     def setUp(self):

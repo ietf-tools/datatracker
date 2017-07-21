@@ -9,7 +9,7 @@ from ietf import api
 
 from ietf.meeting.models import ( Meeting, ResourceAssociation, Constraint, Room, Schedule, Session,
                                 TimeSlot, SchedTimeSessAssignment, SessionPresentation, FloorPlan,
-                                UrlResource)
+                                UrlResource, ImportantDate )
 
 from ietf.name.resources import MeetingTypeNameResource
 class MeetingResource(ModelResource):
@@ -281,3 +281,21 @@ class UrlResourceResource(ModelResource):
         }
 api.meeting.register(UrlResourceResource())
 
+
+
+from ietf.name.resources import ImportantDateNameResource
+class ImportantDateResource(ModelResource):
+    meeting          = ToOneField(MeetingResource, 'meeting')
+    name             = ToOneField(ImportantDateNameResource, 'name')
+    class Meta:
+        queryset = ImportantDate.objects.all()
+        serializer = api.Serializer()
+        cache = SimpleCache()
+        #resource_name = 'importantdate'
+        filtering = { 
+            "id": ALL,
+            "date": ALL,
+            "meeting": ALL_WITH_RELATIONS,
+            "name": ALL_WITH_RELATIONS,
+        }
+api.meeting.register(ImportantDateResource())

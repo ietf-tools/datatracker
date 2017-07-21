@@ -15,7 +15,7 @@ from django.utils.functional import curry
 from ietf.ietfauth.utils import role_required
 from ietf.utils.mail import send_mail
 from ietf.meeting.forms import duration_string
-from ietf.meeting.helpers import get_meeting, make_materials_directories
+from ietf.meeting.helpers import get_meeting, make_materials_directories, populate_important_dates
 from ietf.meeting.models import Meeting, Session, Room, TimeSlot, SchedTimeSessAssignment, Schedule
 from ietf.name.models import SessionStatusName
 from ietf.group.models import Group, GroupEvent
@@ -315,6 +315,8 @@ def add(request):
             previous_meeting = get_meeting( int(meeting.number) - 1 )
             meeting.session_request_lock_message = previous_meeting.session_request_lock_message
             meeting.save()
+
+            populate_important_dates(meeting)
 
             # copy special sessions from previous meeting
             build_nonsession(meeting,schedule)

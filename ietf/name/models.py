@@ -108,3 +108,5 @@ class CountryName(NameModel):
     continent = models.ForeignKey(ContinentName)
     in_eu = models.BooleanField(verbose_name="In EU", default=False)
 
+class ImportantDateName(NameModel):
+    default_offset_days = models.SmallIntegerField()

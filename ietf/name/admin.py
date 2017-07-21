@@ -5,7 +5,7 @@ from ietf.name.models import (
     DBTemplateTypeName, DocRelationshipName,
     DocReminderTypeName, DocTagName, DocTypeName, DraftSubmissionStateName,
     FeedbackTypeName, FormalLanguageName, GroupMilestoneStateName, GroupStateName, GroupTypeName,
-    IntendedStdLevelName, IprDisclosureStateName, IprEventTypeName, IprLicenseTypeName,
+    ImportantDateName, IntendedStdLevelName, IprDisclosureStateName, IprEventTypeName, IprLicenseTypeName,
     LiaisonStatementEventTypeName, LiaisonStatementPurposeName, LiaisonStatementState,
     LiaisonStatementTagName, MeetingTypeName, NomineePositionStateName,
     ReviewRequestStateName, ReviewResultName, ReviewTypeName, RoleName, RoomResourceName,
@@ -39,6 +39,11 @@ class CountryNameAdmin(NameAdmin):
     list_filter = ["continent", "in_eu"]
     inlines = [CountryAliasInline]
 admin.site.register(CountryName, CountryNameAdmin)
+
+class ImportantDateNameAdmin(NameAdmin):
+    list_display = ["slug", "name", "desc", "used", "default_offset_days"]
+    ordering = ('-used','default_offset_days',)
+admin.site.register(ImportantDateName,ImportantDateNameAdmin)
 
 admin.site.register(BallotPositionName, NameAdmin)
 admin.site.register(ConstraintName, NameAdmin)

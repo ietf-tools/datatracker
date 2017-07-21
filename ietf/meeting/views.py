@@ -46,7 +46,7 @@ from ietf.meeting.helpers import build_all_agenda_slices, get_wg_name_list
 from ietf.meeting.helpers import get_all_assignments_from_schedule
 from ietf.meeting.helpers import get_modified_from_assignments
 from ietf.meeting.helpers import get_wg_list, find_ads_for_meeting
-from ietf.meeting.helpers import get_meeting, get_schedule, agenda_permissions, get_meetings
+from ietf.meeting.helpers import get_meeting, get_schedule, agenda_permissions, get_meetings, get_ietf_meeting
 from ietf.meeting.helpers import preprocess_assignments_for_agenda, read_agenda_file, read_session_file
 from ietf.meeting.helpers import convert_draft_to_pdf, get_earliest_session_date
 from ietf.meeting.helpers import can_view_interim_request, can_approve_interim_request
@@ -416,13 +416,13 @@ def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""
         ".csv": "text/csv; charset=%s"%settings.DEFAULT_CHARSET,
     }
 
-    meetings = get_meetings(num)
-
     # We do not have the appropriate data in the datatracker for IETF 64 and earlier.
     # So that we're not producing misleading pages...
     
-    meeting = meetings.first()
-    if not meetings.exists() or (meeting.number.isdigit() and int(meeting.number) <= 64 and not meeting.agenda.assignments.exists()):
+    assert num is None or num.isdigit()
+
+    meeting = get_ietf_meeting(num)
+    if not meeting or (meeting.number.isdigit() and int(meeting.number) <= 64 and not meeting.agenda.assignments.exists()):
         if ext == '.html':
             return HttpResponseRedirect( 'https://www.ietf.org/proceedings/%s' % num )
         else:
@@ -2202,4 +2202,19 @@ def api_import_recordings(request, number):
     else:
         return HttpResponse(status=405)
 
+def important_dates(request, num=None):
+    assert num is None or num.isdigit()
 
+    meeting = get_ietf_meeting(num)
+    if not meeting:
+        raise Http404
+    base_num = int(meeting.number)
+
+    meetings=[meeting]
+    for i in range(1,3):
+        future_meeting = get_ietf_meeting(base_num+i)
+        if future_meeting:
+            meetings.append(future_meeting)
+
+    context={'meetings':meetings}
+    return render(request, 'meeting/important-dates.html', context)

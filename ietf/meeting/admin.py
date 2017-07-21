@@ -2,7 +2,7 @@ from django.contrib import admin
 
 from ietf.meeting.models import (Meeting, Room, Session, TimeSlot, Constraint, Schedule,
     SchedTimeSessAssignment, ResourceAssociation, FloorPlan, UrlResource,
-    SessionPresentation)
+    SessionPresentation, ImportantDate, )
 
 
 class UrlResourceAdmin(admin.ModelAdmin):
@@ -125,3 +125,10 @@ class SessionPresentationAdmin(admin.ModelAdmin):
     list_filter = ['session__meeting', 'document__group__acronym', ]
     raw_id_fields = ['document', 'session', ]
 admin.site.register(SessionPresentation, SessionPresentationAdmin)
+
+class ImportantDateAdmin(admin.ModelAdmin):
+    model = ImportantDate
+    list_display = ['meeting', 'name', 'date']
+    ordering = ['-meeting__number','date',]
+
+admin.site.register(ImportantDate,ImportantDateAdmin)
