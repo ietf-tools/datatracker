@@ -20,20 +20,23 @@
 
   {% if session.status_id == 'canceled' %}
     {% if user|has_role:"Secretariat" or user|managed_groups %}
-      <td colspan="4"><span class="label label-danger">Session cancelled</span></td>
+      <td colspan="6"><span class="label label-danger">Session cancelled</span></td>
     {% else %}
-      <td colspan="3"><span class="label label-danger">Session cancelled</span></td>
+      <td colspan="5"><span class="label label-danger">Session cancelled</span></td>
     {% endif %}
   {% else %}
     <td>
       {% if session.all_meeting_agendas %}
-        {% if session.all_meeting_agendas|length == 1 %}
-          <a title="Last Update: {{ session.all_meeting_agendas.0.time|utc|date:"Y-m-d H:i:s" }} UTC" href="{{ session.all_meeting_agendas.0|meeting_href:session.meeting }}">Agenda</a><br>
-        {% else %}
-          {% for agenda in session.all_meeting_agendas %}
+        {% for agenda in session.all_meeting_agendas %}
+          {% if session.all_meeting_agendas|length == 1 %}
+	    {% if agenda.time > old %}
+	      <span class="small fa fa-bell-o" title="Last Update: {{ agenda.time|utc|date:"Y-m-d H:i:s" }}&nbsp;UTC" ></span>
+	    {% endif %}
+	    <a href="{{ session.all_meeting_agendas.0|meeting_href:session.meeting }}">Agenda</a><br>
+	  {% else %}
             <a href="{{agenda|meeting_href:session.meeting}}">Agenda {{agenda.sessionpresentation_set.first.session.official_timeslotassignment.timeslot.time|date:"D G:i"}}</a></br>
-          {% endfor %}
-        {% endif %}
+	  {% endif %}
+	{% endfor %}
       {% else %}
         {% if show_agenda == "True" %}
           <span class="label label-warning">No agenda</span>
@@ -58,7 +61,10 @@
     <td>
       {% with session.all_meeting_slides as slides %}
         {% for slide in slides %}
-          <a title="Last Update: {{ slide.time|utc|date:"Y-m-d H:i:s" }} UTC" href="{{ slide|meeting_href:session.meeting}}">{{ slide.title|clean_whitespace }}</a>
+	  {% if slide.time > old %}
+	    <span class="small fa fa-bell-o" title="Last Update: {{ slide.time|utc|date:"Y-m-d H:i:s" }}&nbsp;UTC" ></span>
+	  {% endif %}
+	  <a href="{{ slide|meeting_href:session.meeting}}">{{ slide.title|clean_whitespace }}</a>
           <br>
         {% empty %}
           <span class="label label-warning">No slides</span>
@@ -68,7 +74,10 @@
     <td>
      {% with session.all_meeting_drafts as drafts %}
        {% for draft in drafts %}
-         <a title="Last Update: {{ draft.time|utc|date:"Y-m-d H:i:s" }} UTC" href="{{ draft.href }}">{{ draft.name }}</a><br>
+         {% if draft.time > old %}
+	   <span class="small fa fa-bell-o" title="Last Update: {{ draft.time|utc|date:"Y-m-d H:i:s" }}&nbsp;UTC" ></span>
+	 {% endif %}
+	 <a href="{{ draft.href }}">{{ draft.name }}</a><br>
        {% empty %} 
          <span class="label label-warning">No drafts</span>
        {% endfor %}
@@ -76,7 +85,7 @@
     </td>
       <td>
           {% if session.last_update %}
-              {{ session.last_update|utc|date:"Y-m-d" }}<br><small>{{ session.last_update|utc|date:"H:i:s" }} UTC</small>
+              {{ session.last_update|utc|date:"Y-m-d" }}<br><small>{{ session.last_update|utc|date:"H:i:s" }}&nbsp;UTC</small>
           {% endif %}
       </td>
     {% if user|has_role:"Secretariat" or user|managed_groups %}

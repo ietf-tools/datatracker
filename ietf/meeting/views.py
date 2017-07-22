@@ -99,6 +99,7 @@ def materials(request, num=None):
     cut_off_date = meeting.get_submission_cut_off_date()
     cor_cut_off_date = meeting.get_submission_correction_date()
     now = datetime.date.today()
+    old = datetime.datetime.now() - datetime.timedelta(days=1)
     if settings.SERVER_MODE != 'production' and '_testoverride' in request.GET:
         pass
     elif now > cor_cut_off_date:
@@ -145,6 +146,7 @@ def materials(request, num=None):
         'cut_off_date': cut_off_date,
         'cor_cut_off_date': cor_cut_off_date,
         'submission_started': now > begin_date,
+        'old': old,
     })
 
 def current_materials(request):
