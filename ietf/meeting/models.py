@@ -25,6 +25,7 @@ from ietf.name.models import MeetingTypeName, TimeSlotTypeName, SessionStatusNam
 from ietf.person.models import Person
 from ietf.utils.storage import NoLocationMigrationFileSystemStorage
 from ietf.utils.text import xslugify
+from ietf.utils.timezone import date2datetime
 
 countries = pytz.country_names.items()
 countries.sort(lambda x,y: cmp(x[1], y[1]))
@@ -116,7 +117,7 @@ class Meeting(models.Model):
             cutoff_date = importantdate.date
         else:
             cutoff_date = start_date + datetime.timedelta(days=ImportantDateName.objects.get(slug='idcutoff').default_offset_days)
-        cutoff_time = cutoff_date + self.idsubmit_cutoff_time_utc
+        cutoff_time = date2datetime(cutoff_date) + self.idsubmit_cutoff_time_utc
         return cutoff_time
 
     def get_01_cutoff(self):
@@ -128,7 +129,7 @@ class Meeting(models.Model):
             cutoff_date = importantdate.date
         else:
             cutoff_date = start_date + datetime.timedelta(days=ImportantDateName.objects.get(slug='idcutoff').default_offset_days)
-        cutoff_time = cutoff_date + self.idsubmit_cutoff_time_utc
+        cutoff_time = date2datetime(cutoff_date) + self.idsubmit_cutoff_time_utc
         return cutoff_time
 
     def get_reopen_time(self):

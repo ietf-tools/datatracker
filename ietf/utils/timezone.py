@@ -34,4 +34,6 @@ def email_time_to_local_timezone(date_string):
 
     return utc_to_local_timezone(d)
 
-
+def date2datetime(date, tz=pytz.utc):
+    return datetime.datetime(*(date.timetuple()[:6]), tzinfo=tz)
+    
