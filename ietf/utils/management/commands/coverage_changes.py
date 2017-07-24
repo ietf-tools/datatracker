@@ -108,12 +108,16 @@ class Command(BaseCommand):
                         mlines, mcov = mcoverage[mkey]
                     elif mformat == 4:
                         mlines, mcov = mcoverage[mkey]
+                    elif mformat == 5:
+                        mlines, mcov, mmissnum, mmisslines = mcoverage[mkey]
                     else:
                         raise CommandError("The release coverage data has an unknown format ('%s'), quitting." % mformat)
                 if   lformat == 1:
                     linfo, lcov = None, lcoverage[key]
                 elif lformat in [2, 4]:
                     linfo, lcov = lcoverage[key]
+                elif lformat == 5:
+                    linfo, lcov, lmissnum, lmisslines = lcoverage[key]
                 else:
                     raise CommandError("The latest coverage data has an unknown format ('%s'), quitting." % lformat)
                     

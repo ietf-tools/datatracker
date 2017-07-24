@@ -236,12 +236,16 @@ class CoverageReporter(Reporter):
         self.find_file_reporters(None)
 
         total = Numbers()
-        result = {"coverage": 0.0, "covered": {}, "format": 2, }
+        result = {"coverage": 0.0, "covered": {}, "format": 5, }
         for fr in self.file_reporters:
             try:
                 analysis = self.coverage._analyze(fr)
                 nums = analysis.numbers
-                result["covered"][fr.relative_filename()] = (nums.n_statements, nums.pc_covered/100.0)
+                missing_nums = sorted(analysis.missing)
+                with open(analysis.filename) as file:
+                    lines = file.read().splitlines()
+                missing_lines = [ lines[l-1] for l in missing_nums ]
+                result["covered"][fr.relative_filename()] = (nums.n_statements, nums.pc_covered/100.0, missing_nums, missing_lines)
                 total += nums
             except KeyboardInterrupt:                   # pragma: not covered
                 raise
