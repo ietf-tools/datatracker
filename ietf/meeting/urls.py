@@ -50,8 +50,6 @@ type_ietf_only_patterns = [
     url(r'^agendas.json$',                       ajax.agenda_infosurl),
     url(r'^agenda/(?P<session>[A-Za-z0-9-]+)-drafts.pdf$', views.session_draft_pdf),
     url(r'^agenda/(?P<session>[A-Za-z0-9-]+)-drafts.tgz$', views.session_draft_tarfile),
-    url(r'^agenda/(?P<session>[A-Za-z0-9-]+)/?$', views.session_agenda),
-    url(r'^minutes/(?P<session>[A-Za-z0-9-]+)/?$', views.session_minutes),
     url(r'^sessions.json',                               ajax.sessions_json),
     url(r'^session/(?P<sessionid>\d+).json',             ajax.session_json),
     url(r'^session/(?P<sessionid>\d+)/constraints.json', ajax.session_constraints),
@@ -63,8 +61,7 @@ type_ietf_only_patterns = [
 type_interim_patterns = [
     url(r'^agenda/(?P<session>[A-Za-z0-9-]+)-drafts.pdf$', views.session_draft_pdf),
     url(r'^agenda/(?P<session>[A-Za-z0-9-]+)-drafts.tgz$', views.session_draft_tarfile),
-    url(r'^agenda/(?P<session>[A-Za-z0-9-]+)/?$', views.session_agenda),
-    url(r'^minutes/(?P<session>[A-Za-z0-9-]+)/?$', views.session_minutes),
+    url(r'^materials/%(document)s$' % settings.URL_REGEXPS, views.materials_document),
 ]
 
 type_ietf_only_patterns_id_optional = [

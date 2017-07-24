@@ -225,7 +225,10 @@ class DocumentInfo(models.Model):
             else:
                 info = dict(doc=self)
 
-            self._cached_href = format.format(**info)
+            href = format.format(**info)
+            if href.startswith('/'):
+                href = settings.IDTRACKER_BASE_URL + href
+            self._cached_href = href
         return self._cached_href
 
     def set_state(self, state):
@@ -346,13 +349,9 @@ class DocumentInfo(models.Model):
         return e != None and (e.text != "")
 
     def meeting_related(self):
-        answer = False
         if self.type_id in ("agenda","minutes","bluesheets","slides","recording"):
-            answer =  (self.name.split("-")[1] == "interim"
-                       or (self if isinstance(self, Document) else self.doc).session_set.exists())
-            if self.type_id in ("slides",):
-                answer =  answer and self.get_state_slug('reuse_policy')=='single'
-        return answer
+             return self.type_id != "slides" or self.get_state_slug('reuse_policy')=='single'
+        return False
 
     def relations_that(self, relationship):
         """Return the related-document objects that describe a given relationship targeting self."""
@@ -554,20 +553,15 @@ class Document(DocumentInfo):
         name = self.name
         if self.type_id == "draft" and self.get_state_slug() == "rfc":
             name = self.canonical_name()
-        elif self.type_id in ('slides','agenda','minutes','bluesheets','recording'):
+        elif self.type_id in ('slides','bluesheets','recording'):
             session = self.session_set.first()
             if session:
                 meeting = session.meeting
                 if self.type_id == 'recording':
                     url = self.external_url
                 else:
-                    if self.type_id == 'agenda':
-                        url = urlreverse('ietf.meeting.views.session_agenda', kwargs={'num':meeting.number, 'session':session.group.acronym})
-                    elif self.type_id == 'minutes':
-                        url = urlreverse('ietf.meeting.views.session_minutes', kwargs={'num':meeting.number, 'session':session.group.acronym})
-                    else:
-                        filename = self.external_url
-                        url = '%sproceedings/%s/%s/%s' % (settings.IETF_HOST_URL,meeting.number,self.type_id,filename)
+                    filename = self.external_url
+                    url = '%sproceedings/%s/%s/%s' % (settings.IETF_HOST_URL,meeting.number,self.type_id,filename)
                 return url
         return urlreverse('ietf.doc.views_doc.document_main', kwargs={ 'name': name }, urlconf="ietf.urls")
 

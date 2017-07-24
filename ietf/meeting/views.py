@@ -60,6 +60,7 @@ from ietf.meeting.utils import finalize
 from ietf.secr.proceedings.utils import handle_upload_file
 from ietf.secr.proceedings.proc_utils import (get_progress_stats, post_process, import_audio_files,
     import_youtube_video_urls)
+from ietf.utils import log
 from ietf.utils.mail import send_mail_message
 from ietf.utils.pipe import pipe
 from ietf.utils.pdf import pdf_pages
@@ -160,11 +161,7 @@ def current_materials(request):
 def materials_document(request, document, num=None, ):
     if num is None:
         num = get_meeting(num).number
-    if re.search('-[0-9][0-9]$', document):
-        name = document[:-3]
-    else:
-        name = document
-    doc = get_object_or_404(Document, name=name)
+    doc = get_object_or_404(Document, name=document)
     if not doc.meeting_related():
         raise Http404("Not a meeting related document")
     if not doc.session_set.filter(meeting__number=num).exists():
@@ -625,6 +622,7 @@ def agenda_by_type_ics(request,num=None,type=None):
     return render(request,"meeting/agenda.ics",{"schedule":schedule,"updated":updated,"assignments":assignments},content_type="text/calendar")
 
 def session_document(request, num, acronym, type="agenda"):
+    log.unreachable("2017-07-22")
     d = Document.objects.filter(type=type, session__meeting__number=num)
     if acronym == "plenaryt":
         d = d.filter(session__name__icontains="technical", session__slots__type="plenary")
@@ -665,9 +663,11 @@ def session_document(request, num, acronym, type="agenda"):
     raise Http404("No %s for the %s session of IETF %s is available" % (type, acronym, num))
 
 def session_agenda(request, num, session):
+    log.unreachable("2017-07-22")
     return session_document(request, num, acronym=session, type='agenda')
 
 def session_minutes(request, num, session):
+    log.unreachable("2017-07-22")
     return session_document(request, num, acronym=session, type='minutes')
 
 def session_draft_list(num, session):
@@ -1522,7 +1522,7 @@ def upload_session_slides(request, session_id, num, name):
                         name += '-%s' % (session.docname_token(),)
                 else:
                     name = 'slides-%s-%s' % (session.meeting.number, session.docname_token())
-                name = name + '-' + slugify(title)
+                name = name + '-' + slugify(title).replace('_', '-')
                 if Document.objects.filter(name=name).exists():
                    doc = Document.objects.get(name=name)
                    doc.rev = '%02d' % (int(doc.rev)+1)

@@ -72,7 +72,7 @@ class MeetingTests(TestCase):
                                   "This is a slideshow")
         
 
-    def test_agenda(self):
+    def test_meeting_agenda(self):
         meeting = make_meeting_test_data()
         session = Session.objects.filter(meeting=meeting, group__acronym="mars").first()
         slot = TimeSlot.objects.get(sessionassignments__session=session,sessionassignments__schedule=meeting.agenda)
@@ -171,8 +171,8 @@ class MeetingTests(TestCase):
         self.assertTrue("BEGIN:VTIMEZONE" in agenda_content)
         self.assertTrue("END:VTIMEZONE" in agenda_content)        
 
-        self.assertTrue(session.agenda().get_absolute_url() in unicontent(r))
-        self.assertTrue(session.materials.filter(type='slides').exclude(states__type__slug='slides',states__slug='deleted').first().get_absolute_url() in unicontent(r))
+        self.assertTrue(session.agenda().href() in unicontent(r))
+        self.assertTrue(session.materials.filter(type='slides').exclude(states__type__slug='slides',states__slug='deleted').first().href() in unicontent(r))
         # TODO - the ics view uses .all on a queryset in a view so it's showing the deleted slides.
         #self.assertFalse(session.materials.filter(type='slides',states__type__slug='slides',states__slug='deleted').first().get_absolute_url() in unicontent(r))
 
@@ -182,12 +182,6 @@ class MeetingTests(TestCase):
         agenda_content = r.content
         self.assertTrue(session.group.acronym in agenda_content)
         self.assertTrue(slot.location.name in agenda_content)
-
-        # document-specific urls
-        for doc in session.materials.exclude(states__slug='deleted'):
-            url = urlreverse('ietf.meeting.views.materials_document', kwargs=dict(num=meeting.number, document=doc.name))
-            r = self.client.get(url)
-            self.assertEqual(unicontent(r), doc.text())
 
     def test_agenda_current_audio(self):
         date = datetime.date.today()
@@ -276,14 +270,14 @@ class MeetingTests(TestCase):
         self.write_materials_files(meeting, session)
         
         # session agenda
-        r = self.client.get(urlreverse("ietf.meeting.views.session_agenda",
-                                       kwargs=dict(num=meeting.number, session=session.group.acronym)))
+        r = self.client.get(urlreverse("ietf.meeting.views.materials_document",
+                                       kwargs=dict(num=meeting.number, document=session.agenda())))
         self.assertEqual(r.status_code, 200)
         self.assertTrue("1. WG status" in unicontent(r))
 
         # session minutes
-        r = self.client.get(urlreverse("ietf.meeting.views.session_minutes",
-                                       kwargs=dict(num=meeting.number, session=session.group.acronym)))
+        r = self.client.get(urlreverse("ietf.meeting.views.materials_document",
+                                       kwargs=dict(num=meeting.number, document=session.minutes())))
         self.assertEqual(r.status_code, 200)
         self.assertTrue("1. More work items underway" in unicontent(r))
 
@@ -321,6 +315,12 @@ class MeetingTests(TestCase):
             self.assertTrue(row.find('a:contains("Edit materials")'))
             # FIXME: missing tests of .pdf/.tar generation (some code can
             # probably be lifted from similar tests in iesg/tests.py)
+
+            # document-specific urls
+            for doc in session.materials.exclude(states__slug='deleted'):
+                url = urlreverse('ietf.meeting.views.materials_document', kwargs=dict(num=meeting.number, document=doc.name))
+                r = self.client.get(url)
+                self.assertEqual(unicontent(r), doc.text())
 
     def test_materials_editable_groups(self):
         meeting = make_meeting_test_data()
