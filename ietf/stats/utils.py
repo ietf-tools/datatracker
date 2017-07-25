@@ -6,7 +6,8 @@ from django.conf import settings
 
 from ietf.stats.models import AffiliationAlias, AffiliationIgnoredEnding, CountryAlias, MeetingRegistration
 from ietf.name.models import CountryName
-from ietf.person.models import Person
+from ietf.person.models import Person, Email
+from ietf.utils import log
 from django.contrib.auth.models import User
 from unidecode import unidecode
 
@@ -236,7 +237,7 @@ def get_meeting_registration_data(meeting):
         # Create a DataTracker MeetingRegistration object
         for registration in decoded:
             person = None
-            obj, created = MeetingRegistration.objects.get_or_create(
+            object, created = MeetingRegistration.objects.get_or_create(
                 meeting_id=meeting.pk,
                 first_name=registration['FirstName'],
                 last_name=registration['LastName'],
@@ -247,24 +248,21 @@ def get_meeting_registration_data(meeting):
 
             # Add a Person object to MeetingRegistration object
             # if valid email is available
-            if not obj.person and "Email" in registration and '@' in registration["Email"]:\
+            if not object.person:
                 # If the person already exists do not try to create a new one
-                persons = Person.objects.filter(user__username=registration["Email"])
-                if len(persons) > 0:
-                    person = persons[0]
+                emails = Email.objects.filter(address=registration["Email"])
+                # there can only be on Email object with a unique email address (primary key)
+                if len(emails) == 1:
+                    person = emails[0].person
                 # Create a new Person object
                 else:
                     # ascii_name - convert from unicode if necessary
                     regname = "%s %s" % (registration["FirstName"], registration["LastName"])
                     # if there are any unicode characters decode the string to ascii
-                    if not all(ord(c) < 128 for c in regname):
-                        ascii_name = unidecode(regname).strip()
-                    # it is already ascii, no need to convert
-                    else:
-                        ascii_name = regname
+                    ascii_name = unidecode(regname).strip()
 
                     # Create a new user object if it does not exist already
-                    # if the user already exists do not try ot create a new one
+                    # if the user already exists do not try to create a new one
                     users = User.objects.filter(username=registration["Email"])
                     if len(users) > 0:
                         user = users[0]
@@ -276,10 +274,11 @@ def get_meeting_registration_data(meeting):
                             username=registration["Email"],
                             email=registration["Email"]
                         )
+                        user.save()
 
                     # Create the new Person object.
                     person = Person.objects.create(
-                        name=registration["Email"],
+                        name=regname,
                         ascii=ascii_name,
                         affiliation=registration["Company"],
                         user=user
@@ -287,8 +286,8 @@ def get_meeting_registration_data(meeting):
                     person.save()
 
                 # update the person object to an actual value
-                obj.person = person
-                obj.save()
+                object.person = person
+                object.save()
             
             if created:
                 num_created += 1
