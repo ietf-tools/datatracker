@@ -279,6 +279,9 @@ def flatten(l):
                     yield j
     return list(flatgen(l))
 
+def normalize_space(text):
+    return re.sub('\s+', ' ', text)
+
 def strip(para):
     para = para[:]
     while para and para[0].txt.strip() == '':
@@ -523,6 +526,8 @@ def unindent(text, amount):
     return '\n'.join(fixed)
 
 def match_boilerplate(bp, txt):
+    txt = normalize_space(txt)
+    bp = normalize_space(bp)
     if txt.startswith(bp):
         return True
     else:
@@ -1672,7 +1677,6 @@ class DraftParser(Base):
                 for part, d in [ ('ipr_200902_status', '200902'), ('ipr_200811_status', '200811'), ]:
                     bp = boilerplate[part]
                     if match_boilerplate(bp, text):
-
                         self.skip(bp)
                         break
             for text in boilerplate['status']['draft']:
@@ -1768,7 +1772,8 @@ class DraftParser(Base):
         l = len(text)
         text = text.lstrip()
         strip_count = l - len(text)
-        expect = expect.lstrip()
+        text = normalize_space(text)
+        expect = normalize_space(expect.lstrip())
         def fail(l, e, t):
             self.err(l.num, "Unexpected text: expected '%s', found '%s'" % (e, t))
         while True:
@@ -1791,6 +1796,7 @@ class DraftParser(Base):
                     l = len(text)
                     text = text.strip()
                     strip_count = l - len(text)
+                    text = normalize_space(text)
                     expect = expect[tl:].lstrip()
                 else:
                     fail(line, expect, text)
