@@ -24,16 +24,18 @@
 ---
 >    The IPv6 CE router SHOULD implement DS-Lite functionality.  If DS-
 >    Lite is supported, it MUST be implemented according to [RFC6333].
+1132,1133c1133,1134
+<               Protocol Version 6 (IPv6) Specification", RFC 4443,
+<               DOI 10.17487/RFC4443, March 2006,
+---
+>               Protocol Version 6 (IPv6) Specification", STD 89,
+>               RFC 4443, DOI 10.17487/RFC4443, March 2006,
 1316,1317c1317,1318
 <    [TR-069]   Broadband Forum, "CPE WAN Management Protocol", TR-069
 <               Amendment 4, July 2011,
 ---
 >    [TR-069]   Broadband Forum, "CPE WAN Management Protocol",
 >               TR-069 Amendment 4, July 2011,
-1321c1322
-<               UPnP Forum, , "InternetGatewayDevice:2 Device Template
----
->               UPnP Forum,, "InternetGatewayDevice:2 Device Template
 1333c1334
 <    EMail: jordi.palet@consulintel.es
 ---
