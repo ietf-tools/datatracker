@@ -213,7 +213,7 @@ class Alias(models.Model):
             if Alias.objects.filter(name=self.name).exclude(person=self.person).count() > 0 :
                 msg = render_to_string('person/mail/possible_duplicates.txt',
                                        dict(name=self.name,
-                                            persons=Person.objects.filter(alias__name=self.name),
+                                            persons=Person.objects.filter(alias__name=self.name).distinct(),
                                             settings=settings
                                             ))
                 send_mail_preformatted(None, msg)
