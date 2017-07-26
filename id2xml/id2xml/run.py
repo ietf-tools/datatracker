@@ -144,20 +144,24 @@ def run():
     group.add_argument('-p', '--output-path', metavar="DIR",            help="set the output directory name")
     group.add_argument('-q', '--quiet', action='store_true',            help="be more quiet")
     group.add_argument('-s', '--strip-only', action='store_true',       help="don't convert, only strip headers and footers")
+#     group.add_argument('-t', '--use-citation-tags', action='store_true',help="use the citation tags to genenerate reference entries "
+#                                                                              "for RFCs and Internet-Drafts if no series IDs can be "
+#                                                                              "found in the reference text, or if the reference text "
+#                                                                              "cannot be parsed.")
     group.add_argument('--trace-start-regex', metavar='REGEX', default=None,
-                                                                        help="start debug tracing on matching line")
+                                                                        help="start debug tracing on matching line; requires -d")
 #                                                                        help=argparse.SUPPRESS)
     group.add_argument('--trace-stop-regex',  metavar='REGEX', default='',
-                                                                        help="stop debug tracing on matching line")
+                                                                        help="stop debug tracing on matching line; requires -d")
 #                                                                        help=argparse.SUPPRESS)
     group.add_argument('--trace-start-line', type=int, metavar='NUMBER', default=None,
-                                                                        help="start debug tracing on matching line")
+                                                                        help="start debug tracing on matching line; requires -d")
 #                                                                        help=argparse.SUPPRESS)
     group.add_argument('--trace-stop-line', type=int, metavar='NUMBER', default=None,
-                                                                        help="stop debug tracing on matching line")
+                                                                        help="stop debug tracing on matching line; requires -d")
 #                                                                        help=argparse.SUPPRESS)
     group.add_argument('--trace-methods', type=commalist, metavar='METHODS',
-                                                                        help="a comma-separated list of methods to trace")
+                                                                        help="a comma-separated list of methods to trace; requires -d")
 #                                                                        help=argparse.SUPPRESS)
     group.add_argument('-v', '--version', action='store_true',          help="output version information, then exit")
     group.add_argument('-V', '--verbose', action='store_true',          help="be (slightly) more verbose")
