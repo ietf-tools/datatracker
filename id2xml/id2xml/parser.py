@@ -110,7 +110,7 @@ uri_re =        r'^<?\s*(?P<target>(http|https|ftp)://[^>\s]+)\s*>?$'
 ref_anchor_re = r'\[(?P<anchor>[^]]+)\]'
 ref_last_re =   r'(?:\w-?\w?\.)+ [-\' 0-9\w]+(?:, Ed\.)?'
 ref_name_re =   r'[-\' 0-9\w]+, (?:\w-?\w?\.)+(?:, Ed\.)?'
-ref_org_re =   r'(?P<organization>[-/\w]+(?: [-/\w,.]+)*(, )?)'
+ref_org_re =    r'(?P<organization>[-/\w]+(?:,? [-/\w.]+)*)'
 ref_auth_re =   r'(?P<authors>({name})(, {name})*(,? and {last})?)'.format(name=ref_name_re, last=ref_last_re)
 ref_title_re =  r'(?P<title>.+)'
 ref_series_one =r'(?:(?:(?:RFC ?|STD |BCP |FYI |DOI |Internet-Draft )[^,]+|draft-[a-z0-9-]+)(?: \(work in progress\)|, work in progress)?)'
@@ -119,7 +119,7 @@ ref_docname_re= r'(?P<docname>[^,]+(, [Vv]ol\.? [^,]+)?(, pp\.? \d+(-\d+)?)?)'
 ref_date_re =   r'(?P<date>({day} )?({month} )?[12]\d\d\d)'.format(day=day_re, month=month_re)
 ref_url_re =    r'<? ?(?P<target>(http|https|ftp)://[^ >]+[^. >])>?'
 #
-chunks = dict(
+reftext_chunks = dict(
     anchor  = ref_anchor_re,
     authors = ref_auth_re,
     organiz = ref_org_re,
@@ -131,35 +131,48 @@ chunks = dict(
 )
 
 reference_patterns = [
-    re.compile(r'{anchor}  *{authors}, "{title}", {series}, {date}(, {url})?(\.|$)'.format(**chunks)),
-    re.compile(r'{anchor}  *{authors}, "{title}", {series}(, {url})?(\.|$)'.format(**chunks)),
-    re.compile(r'{anchor}  *{authors}, "{title}", {series}, {date}, Work.in.progress(\.|$)'.format(**chunks)),
-    re.compile(r'{anchor}  *{authors}, "{title}", {date}(, {url})?(\.|$)'.format(**chunks)),
-    re.compile(r'{anchor}  *{authors}, "{title}", {docname}, {date}(, {url})?(\.|$)'.format(**chunks)),
-    re.compile(r'{anchor}  *{organiz}, "{title}", {docname}, {date}(, {url})?(\.|$)'.format(**chunks)),
-    re.compile(r'{anchor}  *{authors}, "{title}", {date}(, {url})?(\.|$)'.format(**chunks)),
-    re.compile(r'{anchor}  *{organiz}, "{title}", {date}(, {url})?(\.|$)'.format(**chunks)),
-    re.compile(r'{anchor}  *{authors}, "{title}", {date}, Work.in.progress(\.|$)'.format(**chunks)),
-    re.compile(r'{anchor}  *{organiz}, "{title}", {url}(\.|$)'.format(**chunks)),
-    re.compile(r'{anchor}  *{authors}, "{title}", {url}(\.|$)'.format(**chunks)),
-    re.compile(r'{anchor}  *"{title}", Work in Progress ?, {date}(, {url})?(\.|$)'.format(**chunks)),
-    re.compile(r'{anchor}  *"{title}", Work in Progress ?, {url}(\.|$)'.format(**chunks)),
-    re.compile(r'{anchor}  *"{title}", {docname}, {date}(, {url})?(\.|$)'.format(**chunks)),
-    re.compile(r'{anchor}  *"{title}", {date}, {url}(\.|$)'.format(**chunks)),
-    re.compile(r'{anchor}  *"{title}", {url}(\.|$)'.format(**chunks)),
-    re.compile(r'{anchor}  *{url}(\.|$)'.format(**chunks)),
+    re.compile(r'{anchor}  *{authors}, "{title}", {series}, {date}(, {url})?(\.|$)'.format(**reftext_chunks)),
+    re.compile(r'{anchor}  *{authors}, "{title}", {series}(, {url})?(\.|$)'.format(**reftext_chunks)),
+    re.compile(r'{anchor}  *{authors}, "{title}", {series}, {date}, Work.in.progress(\.|$)'.format(**reftext_chunks)),
+    re.compile(r'{anchor}  *{authors}, "{title}", {date}(, {url})?(\.|$)'.format(**reftext_chunks)),
+    re.compile(r'{anchor}  *{authors}, "{title}", {docname}, {date}(, {url})?(\.|$)'.format(**reftext_chunks)),
+    re.compile(r'{anchor}  *{organiz}, "{title}", {docname}, {date}(, {url})?(\.|$)'.format(**reftext_chunks)),
+    re.compile(r'{anchor}  *{authors}, "{title}", {date}(, {url})?(\.|$)'.format(**reftext_chunks)),
+    re.compile(r'{anchor}  *{organiz}, "{title}", {date}(, {url})?(\.|$)'.format(**reftext_chunks)),
+    re.compile(r'{anchor}  *{authors}, "{title}", {date}, Work.in.progress(\.|$)'.format(**reftext_chunks)),
+    re.compile(r'{anchor}  *{organiz}, "{title}", {url}(\.|$)'.format(**reftext_chunks)),
+    re.compile(r'{anchor}  *{authors}, "{title}", {url}(\.|$)'.format(**reftext_chunks)),
+    re.compile(r'{anchor}  *"{title}", Work in Progress ?, {date}(, {url})?(\.|$)'.format(**reftext_chunks)),
+    re.compile(r'{anchor}  *"{title}", Work in Progress ?, {url}(\.|$)'.format(**reftext_chunks)),
+    re.compile(r'{anchor}  *"{title}", {docname}, {date}(, {url})?(\.|$)'.format(**reftext_chunks)),
+    re.compile(r'{anchor}  *"{title}", {date}, {url}(\.|$)'.format(**reftext_chunks)),
+    re.compile(r'{anchor}  *"{title}", {url}(\.|$)'.format(**reftext_chunks)),
+    re.compile(r'{anchor}  *{url}(\.|$)'.format(**reftext_chunks)),
 ## Lines commented out below are for debugging, when the full regex doesn't match (is buggy).
-#    r'{anchor}  *{authors}, "{title}", {series}, {date}(, {url})?'.format(**chunks),
-#    r'{anchor}  *{organiz}, "{title}", {docname}, {date}'.format(**chunks),
-#    r'{anchor}  *{authors}, "{title}", {series}, {date}'.format(**chunks),
-#    r'{anchor}  *{organiz}, "{title}", {docname}'.format(**chunks),
-#    r'{anchor}  *{authors}, "{title}", {series}'.format(**chunks),
-#    r'{anchor}  *{organiz}, "{title}"'.format(**chunks),
-#    r'{anchor}  *{authors}, "{title}"'.format(**chunks),
-#    r'{anchor}  *{organiz},'.format(**chunks),
-#    r'{anchor}  *{authors}'.format(**chunks),
-#    r'{anchor}  *'.format(**chunks),
-#    r'{anchor}'.format(**chunks),
+#    r'{anchor}  *{authors}, "{title}", {series}, {date}(, {url})?'.format(**reftext_chunks),
+#    r'{anchor}  *{organiz}, "{title}", {docname}, {date}'.format(**reftext_chunks),
+#    r'{anchor}  *{authors}, "{title}", {series}, {date}'.format(**reftext_chunks),
+#    r'{anchor}  *{organiz}, "{title}", {docname}'.format(**reftext_chunks),
+#    r'{anchor}  *{authors}, "{title}", {series}'.format(**reftext_chunks),
+#    r'{anchor}  *{organiz}, "{title}"'.format(**reftext_chunks),
+#    r'{anchor}  *{authors}, "{title}"'.format(**reftext_chunks),
+#    r'{anchor}  *{organiz},'.format(**reftext_chunks),
+#    r'{anchor}  *{authors}'.format(**reftext_chunks),
+#    r'{anchor}  *'.format(**reftext_chunks),
+#    r'{anchor}'.format(**reftext_chunks),
+]
+
+# These are used to recognize references which might have bibxml entries.
+# No validation against the bibxml registries is done:
+bibxml_patterns = [
+    #( regex, numindex, series, urltemplate )
+    ('^RFC\d+$',                    3, 'RFC',   'https://xml2rfc.ietf.org/public/rfc/bibxml/reference.RFC.{value}.xml'),
+    ('^I-D\.[-a-z0-9]$',            0, 'I-D',   'https://xml2rfc.ietf.org/public/rfc/bibxml3/reference.{anchor}.xml'),
+    ('W3C\.[-A-Za-z0-9.]+$',        0, 'W3C',   'https://xml2rfc.ietf.org/public/rfc/bibxml4/reference.{anchor}.xml'),
+    ('3GPP\.[-A-Za-z0-9.]+$',       0, '3GPP',  'https://xml2rfc.ietf.org/public/rfc/bibxml5/reference.{anchor}.xml'),
+    ('SDO-3GPP\.[-A-Za-z0-9.]+$',   0, '3GPP',  'https://xml2rfc.ietf.org/public/rfc/bibxml5/reference.{anchor}.xml'),
+    ('IEEE\.[-A-Za-z0-9.]+$',       0, 'IEEE',  'https://xml2rfc.ietf.org/public/rfc/bibxml6/reference.{anchor}.xml'),
+    ('XSF.XEP-\d+$',                0, 'XSF',   'http://www.xmpp.org/extensions/refs/reference.{anchor}.xml'),
 ]
 
 address_details = {
@@ -2937,6 +2950,8 @@ class DraftParser(Base):
                         e = self.element('seriesInfo', name=name, value=value)
                         reference.append(e)
                 #
+                if entity is None:
+                    entity = self.maybe_entity_from_anchor(para)
                 break
             else:
                 faild = regex
@@ -2945,11 +2960,34 @@ class DraftParser(Base):
                 self.push_para(para)
                 return None, None
             else:
-                self.warn(line.num, "Failed parsing a reference.  Are all elements separated by commas (not periods, not just spaces)?:\n%s" % para2text(para))
-                return reference, entity
-
+                entity = self.maybe_entity_from_anchor(para)
+                if not entity:
+                    self.warn(line.num, "Failed parsing a reference.  Are all elements separated by commas (not periods, not just spaces)?:\n%s" % para2text(para))
         return reference, entity
 
+    def maybe_entity_from_anchor(self, para):
+        global reftext_chunks, bibxml_patterns
+        line = para[0]
+        text = para2str(para)
+        entity = None
+        match = re.search(r'{anchor} '.format(**reftext_chunks), text)
+        if match:
+            refinfo = match.groupdict()
+            anchor = refinfo.get('anchor')
+            for item in bibxml_patterns:
+                regex, start, series, url = item
+                m = re.search(regex, anchor)
+                if m:
+                    self.warn(line.num, "Failed parsing a reference.  Will use the anchor to insert an %s reference:\n%s" % (series, para2text(para)))
+                    value = anchor[start:]
+                    if series == 'RFC':
+                        value = '%04d'%int(value)
+                    entity = Entity(anchor)
+                    entity.tail = '\n\t'
+                    self.entities.append({'name': anchor, 'url': url.format(value=value, anchor=anchor), })
+                    break
+        return entity
+        
     # ------------------------------------------------------------------------
     # postprocess
     # ------------------------------------------------------------------------
