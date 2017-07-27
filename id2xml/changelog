@@ -1,3 +1,21 @@
+id2xml (1.1.0) ietf; urgency=medium
+
+  This release provides minor changes in response to feedback from the
+  RFC Editor staff.
+
+  * Added space normalization when checking / skipping boilerplate text.
+
+  * Added support for using reference anchors to identify references that 
+    may have bibxml entries, including W3C, IEEE and 3GPP references.  Tweaked 
+    the reference organization pattern.  Some refactoring.
+
+  * Tweaked the help text for trace switches.
+
+  * Removed the dependency on pyterminalsize, but will use it if installed.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  27 Jul 2017 12:42:01 +0000
+
+
 id2xml (1.0.3) ietf; urgency=medium
 
   This release tweaks some regular expressions and other items to improve
