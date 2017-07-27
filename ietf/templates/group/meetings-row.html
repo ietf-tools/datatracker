@@ -38,7 +38,11 @@
 	 <td class="text-center">{% if s.meeting.type.slug == 'ietf' %}{{s.time|date:"H:i"}}{% endif %}</td>
          <td>{% if s.agenda %}<a href="{{ s.agenda.get_absolute_url }}">Agenda</a>{% endif %}</td>
          <td>{% if s.minutes %}<a href="{{ s.minutes.get_absolute_url }}">Minutes</a>{% endif %}</td>
-         <td><a href="{% url 'ietf.meeting.views.session_details' num=s.meeting.number acronym=s.group.acronym %}">Materials</a></td>
+         <td>
+	   <a href="{% url 'ietf.meeting.views.session_details' num=s.meeting.number acronym=s.group.acronym %}">
+	     {% if can_edit %}Edit {% endif %}Materials
+	   </a>
+	 </td>
       {% endfor %}
       </tbody>
       </table>
