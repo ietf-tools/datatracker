@@ -202,7 +202,10 @@ class DocumentInfo(models.Model):
                     format = settings.DOC_HREFS[self.type_id]
             elif self.type_id in settings.DOC_HREFS:
                 self.is_meeting_related = False
-                format = settings.DOC_HREFS[self.type_id]
+                if self.is_rfc():
+                    format = settings.DOC_HREFS['rfc']
+                else:
+                    format = settings.DOC_HREFS[self.type_id]
             elif self.type_id in settings.MEETING_DOC_HREFS:
                 self.is_meeting_related = True
                 format = settings.MEETING_DOC_HREFS[self.type_id]
@@ -689,6 +692,10 @@ class Document(DocumentInfo):
                 else:
                     logger.error("Document self.is_rfc() is True but self.canonical_name() is %s" % n)
         return self._cached_rfc_number
+
+    @property
+    def rfcnum(self):
+        return self.rfc_number()
 
     def ipr(self,states=('posted','removed')):
         """Returns the IPR disclosures against this document (as a queryset over IprDocRel)."""

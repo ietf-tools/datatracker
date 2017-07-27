@@ -585,8 +585,9 @@ LIAISON_ATTACH_URL = 'https://www.ietf.org/lib/dt/documents/LIAISON/' # should e
 # Ideally, more of these would be local -- but since we don't support
 # versions right now, we'll point to external websites
 DOC_HREFS = {
-    "charter": "https://www.ietf.org/charter/{doc.name}-{doc.rev}.txt",
-    "draft": "https://www.ietf.org/archive/id/{doc.name}-{doc.rev}.txt",
+    "charter":  "https://www.ietf.org/charter/{doc.name}-{doc.rev}.txt",
+    "draft":    "https://www.ietf.org/archive/id/{doc.name}-{doc.rev}.txt",
+    "rfc":      "https://www.rfc-editor.org/rfc/rfc{doc.rfcnum}.txt",
     "slides": "https://www.ietf.org/slides/{doc.name}-{doc.rev}",
     "conflrev": "https://www.ietf.org/cr/{doc.name}-{doc.rev}.txt",
     "statchg": "https://www.ietf.org/sc/{doc.name}-{doc.rev}.txt",
