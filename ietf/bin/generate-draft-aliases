@@ -44,8 +44,10 @@ from django.conf import settings
 
 from ietf.doc.models import Document
 from ietf.group.utils import get_group_role_emails, get_group_ad_emails
-from ietf.utils.aliases import *
-import time
+from ietf.utils.aliases import dump_sublist
+from email.utils import parseaddr
+from ietf.utils.mail import formataddr
+
 
 def get_draft_ad_emails(draft):
     " Get AD email for the given draft, if any. "
@@ -100,6 +102,7 @@ def get_draft_notify_emails(draft):
         elif re.search(notify_email_alias_regex, e):
             pass
         else:
+            e = formataddr(parseaddr(e))
             l.append(e)
     # Alternative: if we don't want to do expansion, just this would be
     # perhaps better (MTA can do expansion too):
