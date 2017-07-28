@@ -9,8 +9,8 @@ from django.db import models
 from django.core import checks
 from django.core.cache import caches
 from django.core.exceptions import ValidationError
+from django.core.validators import URLValidator, RegexValidator
 from django.urls import reverse as urlreverse
-from django.core.validators import URLValidator
 from django.contrib.contenttypes.models import ContentType
 from django.conf import settings
 from django.utils.html import mark_safe
@@ -542,8 +542,15 @@ class DocumentAuthor(DocumentAuthorInfo):
     def __unicode__(self):
         return u"%s %s (%s)" % (self.document.name, self.person, self.order)
 
+
+validate_docname = RegexValidator(
+    r'^[-a-z0-9]+$',
+    "Provide a valid document name consisting of lowercase letters, numbers and hyphens.",
+    'invalid'
+)
+
 class Document(DocumentInfo):
-    name = models.CharField(max_length=255, primary_key=True)           # immutable
+    name = models.CharField(max_length=255, primary_key=True, validators=[validate_docname,])           # immutable
 
     def __unicode__(self):
         return self.name
