@@ -111,8 +111,7 @@ def get_wg_list(assignments):
     wg_name_list = get_wg_name_list(assignments)
     return Group.objects.filter(acronym__in = set(wg_name_list)).order_by('parent__acronym','acronym')
 
-
-def get_meetings(num=None,type_in=['ietf',]):
+def get_meeting(num=None,type_in=['ietf',]):
     meetings = Meeting.objects
     if type_in:
         meetings = meetings.filter(type__in=type_in)
@@ -120,10 +119,6 @@ def get_meetings(num=None,type_in=['ietf',]):
         meetings = meetings.order_by("-date")
     else:
         meetings = meetings.filter(number=num)
-    return meetings
-
-def get_meeting(num=None,type_in=['ietf',]):
-    meetings = get_meetings(num,type_in)
     if meetings.exists():
         return meetings.first()
     else:

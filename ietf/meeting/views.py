@@ -46,7 +46,7 @@ from ietf.meeting.helpers import build_all_agenda_slices, get_wg_name_list
 from ietf.meeting.helpers import get_all_assignments_from_schedule
 from ietf.meeting.helpers import get_modified_from_assignments
 from ietf.meeting.helpers import get_wg_list, find_ads_for_meeting
-from ietf.meeting.helpers import get_meeting, get_schedule, agenda_permissions, get_meetings, get_ietf_meeting
+from ietf.meeting.helpers import get_meeting, get_schedule, agenda_permissions, get_ietf_meeting
 from ietf.meeting.helpers import preprocess_assignments_for_agenda, read_agenda_file, read_session_file
 from ietf.meeting.helpers import convert_draft_to_pdf, get_earliest_session_date
 from ietf.meeting.helpers import can_view_interim_request, can_approve_interim_request
@@ -155,7 +155,7 @@ def current_materials(request):
     if meetings:
         return redirect(materials, meetings[0].number)
     else:
-        raise Http404
+        raise Http404('No such meeting')
 
 @cache_page(5 * 60)
 def materials_document(request, document, num=None, ):
@@ -2099,7 +2099,7 @@ def upcoming_ical(request):
     
 
 def floor_plan(request, num=None, floor=None, ):
-    meeting = get_meetings(num).first()
+    meeting = get_meeting(num)
     schedule = meeting.agenda
     floors = FloorPlan.objects.filter(meeting=meeting).order_by('order')
     if floor:
