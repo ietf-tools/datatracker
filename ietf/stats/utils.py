@@ -6,11 +6,6 @@ from django.conf import settings
 
 from ietf.stats.models import AffiliationAlias, AffiliationIgnoredEnding, CountryAlias, MeetingRegistration
 from ietf.name.models import CountryName
-from ietf.person.models import Person, Email
-from django.contrib.auth.models import User
-from unidecode import unidecode
-
-
 
 def compile_affiliation_ending_stripping_regexp():
     parts = []
@@ -231,11 +226,7 @@ def get_meeting_registration_data(meeting):
             else:
                 raise RuntimeError("Could not decode response from registrations API: '%s...'" % (response.content[:64], ))
 
-
-        # for each user identified in the Registration system
-        # Create a DataTracker MeetingRegistration object
         for registration in decoded:
-            person = None
             object, created = MeetingRegistration.objects.get_or_create(
                 meeting_id=meeting.pk,
                 first_name=registration['FirstName'],
@@ -244,50 +235,6 @@ def get_meeting_registration_data(meeting):
                 country_code=registration['Country'],
                 email=registration['Email'],
             )
-
-            # Add a Person object to MeetingRegistration object
-            # if valid email is available
-            if not object.person:
-                # If the person already exists do not try to create a new one
-                emails = Email.objects.filter(address=registration["Email"])
-                # there can only be on Email object with a unique email address (primary key)
-                if len(emails) == 1:
-                    person = emails[0].person
-                # Create a new Person object
-                else:
-                    # ascii_name - convert from unicode if necessary
-                    regname = "%s %s" % (registration["FirstName"], registration["LastName"])
-                    # if there are any unicode characters decode the string to ascii
-                    ascii_name = unidecode(regname).strip()
-
-                    # Create a new user object if it does not exist already
-                    # if the user already exists do not try to create a new one
-                    users = User.objects.filter(username=registration["Email"])
-                    if len(users) > 0:
-                        user = users[0]
-                    else:
-                        # Create a new user.
-                        user = User.objects.create(
-                            first_name=registration["FirstName"],
-                            last_name=registration["LastName"],
-                            username=registration["Email"],
-                            email=registration["Email"]
-                        )
-                        user.save()
-
-                    # Create the new Person object.
-                    person = Person.objects.create(
-                        name=regname,
-                        ascii=ascii_name,
-                        affiliation=registration["Company"],
-                        user=user
-                    )
-                    person.save()
-
-                # update the person object to an actual value
-                object.person = person
-                object.save()
-            
             if created:
                 num_created += 1
             num_processed += 1
