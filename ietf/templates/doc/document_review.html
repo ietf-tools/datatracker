@@ -12,6 +12,8 @@
 
   {% include "doc/revisions_list.html" %}
 
+  {% include "doc/review/request_info.html" %}
+
   <table class="table table-condensed">
     <thead id="message-row">
        <tr>
@@ -22,8 +24,6 @@
 	  {% endif %}  
        </tr>
     </thead>
-
-   {% include "doc/review/request_info.html" %}
     <tbody class="meta">
       {% if doc.get_state_slug != "active" %}
       <tr>
