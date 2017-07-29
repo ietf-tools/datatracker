@@ -8,6 +8,7 @@ import debug                            # pyflakes:ignore
 from ietf.person.models import Person
 from ietf.group.models import Group
 from ietf.doc.models import Document
+from ietf.name.models import RoleName
 
 class Message(models.Model):
     time = models.DateTimeField(default=datetime.datetime.now)
@@ -61,3 +62,16 @@ class SendQueue(models.Model):
 
     def __unicode__(self):
         return u"'%s' %s -> %s (sent at %s)" % (self.message.subject, self.message.frm, self.message.to, self.sent_at or "<not yet>")
+
+
+class AnnouncementFrom(models.Model):
+    name = models.ForeignKey(RoleName)
+    group = models.ForeignKey(Group)
+    address = models.EmailField()
+
+    def __unicode__(self):
+        return self.address
+
+    class Meta:
+        verbose_name_plural='Announcement From addresses'
+        

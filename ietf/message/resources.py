@@ -7,7 +7,7 @@ from tastypie.cache import SimpleCache
 
 from ietf import api
 
-from ietf.message.models import Message, SendQueue, MessageAttachment
+from ietf.message.models import Message, SendQueue, MessageAttachment, AnnouncementFrom
 from ietf.person.resources import PersonResource
 from ietf.group.resources import GroupResource
 from ietf.doc.resources import DocumentResource
@@ -76,3 +76,22 @@ class MessageAttachmentResource(ModelResource):
         }
 api.message.register(MessageAttachmentResource())
 
+
+
+from ietf.group.resources import GroupResource
+from ietf.name.resources import RoleNameResource
+class AnnouncementFromResource(ModelResource):
+    name             = ToOneField(RoleNameResource, 'name')
+    group            = ToOneField(GroupResource, 'group')
+    class Meta:
+        queryset = AnnouncementFrom.objects.all()
+        serializer = api.Serializer()
+        cache = SimpleCache()
+        #resource_name = 'announcementfrom'
+        filtering = { 
+            "id": ALL,
+            "address": ALL,
+            "name": ALL_WITH_RELATIONS,
+            "group": ALL_WITH_RELATIONS,
+        }
+api.message.register(AnnouncementFromResource())
