@@ -1,3 +1,4 @@
+
 import datetime
 
 from mock import patch
@@ -5,6 +6,7 @@ from pyquery import PyQuery
 from requests import Response
 
 from django.urls import reverse as urlreverse
+from django.contrib.auth.models import User
 
 from ietf.utils.test_data import make_test_data, make_review_data
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase, unicontent
@@ -199,3 +201,21 @@ class StatisticsTests(TestCase):
         get_meeting_registration_data(meeting)
         query = MeetingRegistration.objects.filter(first_name='John',last_name='Smith',country_code='US')
         self.assertTrue(query.count(), 1)
+        self.assertTrue(isinstance(query[0].person,Person))
+        
+    @patch('requests.get')
+    def test_get_meeting_registration_data_user_exists(self, mock_get):
+        response = Response()
+        response.status_code = 200
+        response._content = '[{"LastName":"Smith","FirstName":"John","Company":"ABC","Country":"US","Email":"john.doe@example.us"}]'
+        user = User.objects.create(username="john.doe@example.us")
+        user.save()
+        
+        mock_get.return_value = response
+        meeting = MeetingFactory(type_id='ietf', date=datetime.date(2016,7,14), number="96")
+        get_meeting_registration_data(meeting)
+        query = MeetingRegistration.objects.filter(first_name='John',last_name='Smith',country_code='US')
+        self.assertTrue(query.count(), 1)
+        self.assertTrue(isinstance(query[0].person, Person))                
+
+        
