@@ -1,3 +1,108 @@
+ietfdb (6.58.0) ietf; urgency=medium
+
+  **Important dates support, link cleanup and more**
+
+  This release is a collection of small features, bugfixes, and code cleanup.
+  It contains work from the later part of the IETF 99 week, and additional
+  work since then.
+
+  * Fixed a couple of html issues introduced in the previous release.
+
+  * Changed from get_meetings() to get_meeting() for
+    meeting.views.floor_plan(), in order to raise 404 on missing meetings.
+    This fixes a server 500 on /meeting/floor-plan/ for nonexistant meetings.
+
+  * Added a data migration to fix recent slides names containing underscores,
+    and changed the code which let underscores through.  Added a document name
+    validator to avoid new documents with unwanted characters in the name.
+
+  * Increased the minimum pyflakes version; at least 0.9.2 is needed to 
+    deal correctly with the global declaration list in meeting migration 0056.
+
+  * Tweaked the test crawler, fixing a bug and adding an url exception for
+    some redirected urls.
+
+  * Added support for mime-encoding of non-ascii name parts in document 
+    notify lists when generating draft email aliases.
+
+  * Pointed at the datatracker's document pages, instead of directly at the
+    document in question, for drafts and RFCs on a person's profile page.
+    This reverts to the functionality as originally implemented, but uses the
+    correct doc.get_absolute_url instead of doc.href() (which incorrectly did
+    the same as get_absolute_url in some cases until recently).  
+    Fixes issue #2340.
+
+  * Made Document.href() point at the rfc when doc.is_rfc().
+
+  * Made the materials links on a group's materials tab say 'Edit 
+    Materials' for people who can edit the group.  Fixes issue #2332.
+
+  * Merged in [13980] from rjsparks@nostrum.com:
+    Removed the Historic charter link that has 404ed for several months. The 
+    closest we have for the content it might have reached in the path is 
+    already linked out of the concluded working groups page. Fixes #2223.  
+
+  * Merged in [13978] from rjsparks@nostrum.com:
+    Query unique person objects when searching for duplicates based on 
+    aliases. Fixes #2263.  
+
+  * Removed the old admin styling; things have moved on to the point where it 
+    doesn't work well any more.  The new style requires more screen space,
+    but it seems we have to accept that now.
+
+  * Changed the menubar link to meeting materials to explicitly point at 
+    /meeting/materials/, not just /meeting/.
+
+  * Replaced some group-specific agenda and minutes urls with 
+    session-specific urls, and more consistently pointed to explicitly named 
+    meeting materials.  Related to commit [13964].
+
+  * Added a new release-coverage format which whould make it easier to show 
+    line-by-line code test coverage changes in the future.
+
+  * Fixed a time arithmetic issue in meeting cutoff-date methods.
+
+  * Changed the display of individual item update times on the materials 
+    overview page.  In practice, having a tooltip on every agenda, minutes, and 
+    slides link became intrusive and annoying.  Changed to display a bell if 
+    the update is within one day of now, and to display the time tooltip when 
+    hovering over the bell.  Also corrected the colspan numbers for cancelled 
+    sessions, for consistency.
+
+  * Added urls and views for individual meeting documents, in order to be able
+    to serve them directly from the datatracker, instead of taking them from
+    www.ietf.org through the CDN.  Adjusted the patterns used for href()
+    accordingly. This also avoids different-origin issues.  Shifted the url
+    for materials_editable_groups() to an URL more in line with what the page
+    links to.  Changed the iframe urls for the agenda week view to work for
+    groups with different agendas for different sessions by using href().
+
+  * Merged in [13958] from rjsparks@nostrum.com:
+    Tweak to the important dates page title.  
+
+  * Merged in [13957] from rjsparks@nostrum.com:
+    Moves Important Dates into the datatracker. Fixes #2338.  
+
+  * Merged in [13955] from kivinen@iki.fi:
+    Changed links to previous reviews go to the doc page of the last
+    result, not the review request page. The doc page will contain the
+    actual review, so it has all information that is needed. Fixes #2090. 
+
+  * Added the necessary switch argument for the registration importer's 
+    --latest switch in the daily cronjob file.
+
+  * Merged in [13934] from kivinen@iki.fi:
+    Added sorting for the review team statistics tables. Fixes #2330.
+
+  * Updated the PLAN file after the Tools Committee prioritisation meeting
+    during IETF 99.
+
+  * Changed get_timeslot_for_filename() to not blow up in the presence of 
+    duplicate timeslots.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  29 Jul 2017 05:12:14 -0700
+
+
 ietfdb (6.57.0) ietf; urgency=medium
 
   **IETF 99 code sprint**
