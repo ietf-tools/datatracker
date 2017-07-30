@@ -136,7 +136,7 @@ class Command(BaseCommand):
                         self.stdout.write(self.diff_line_format % ("-"*8, "-"*8, "-"*58))
                         header_written = True
                     self.stdout.write(self.diff_line_format % (mval, lval, key, ))
-                if mmisslines and lmisslines and set(lmissnum) != set(mmissnum) and options.get('verbosity',1) > 2:
+                if mmisslines and lmisslines and set(lmissnum) != set(mmissnum) and options.get('verbosity',1) > 1:
                     self.stdout.write('    ------------------------------------------------------------')
                     ln = 0
                     mn = 0
@@ -144,12 +144,12 @@ class Command(BaseCommand):
                     n = 0
                     for line in ndiff(mmisslines, lmisslines):
                         n = lmissnum[ln]
-                        prefix, text = line[:2], line[2:]
+                        prefix, text = line[:1], line[2:]
                         if mn<len(mmisslines) and text == mmisslines[mn]:
                             mn += 1
                         if ln<len(lmisslines) and text == lmisslines[ln]:
                             ln += 1
-                        if line[0] in ['+', '-']:
+                        if prefix in ['+', '-']:
                             if not n in [p, p+1]:
                                 self.stdout.write('\n')
                             self.stdout.write("%s" % (line, ))
