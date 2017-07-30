@@ -96,6 +96,8 @@ class Command(BaseCommand):
 
             for key in keys:
                 mkey = key
+                mmisslines = []
+                lmisslines = []
                 if not mkey in mcoverage:
                     if mkey.endswith(".py"):
                         mkey = mkey[:-3]
