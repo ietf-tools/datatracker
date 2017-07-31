@@ -6,9 +6,18 @@ ietfdb (6.58.0) ietf; urgency=medium
   It contains work from the later part of the IETF 99 week, and additional
   work since then.
 
+  * Merged in [13996] from rcross@amsl.com:
+    Moved Announcement 'From:' addresses out of code and into a database
+    table.  Fixes #1681.
+
+  * Added the ability to emit detailed line-by line changes in code coverage
+    to the coverage_changes management command.  Use verbosity 2 or higher.
+
+  * Added an admin model for the MeetingRegistration class.
+
   * Fixed a couple of html issues introduced in the previous release.
 
-  * Changed from get_meetings() to get_meeting() for
+  * Changed from using get_meetings() to get_meeting() in
     meeting.views.floor_plan(), in order to raise 404 on missing meetings.
     This fixes a server 500 on /meeting/floor-plan/ for nonexistant meetings.
 
@@ -28,8 +37,8 @@ ietfdb (6.58.0) ietf; urgency=medium
   * Pointed at the datatracker's document pages, instead of directly at the
     document in question, for drafts and RFCs on a person's profile page.
     This reverts to the functionality as originally implemented, but uses the
-    correct doc.get_absolute_url instead of doc.href() (which incorrectly did
-    the same as get_absolute_url in some cases until recently).  
+    correct doc.get_absolute_url() instead of doc.href() (which incorrectly did
+    the same as get_absolute_url() in some cases until recently).  
     Fixes issue #2340.
 
   * Made Document.href() point at the rfc when doc.is_rfc().
@@ -46,9 +55,9 @@ ietfdb (6.58.0) ietf; urgency=medium
     Query unique person objects when searching for duplicates based on 
     aliases. Fixes #2263.  
 
-  * Removed the old admin styling; things have moved on to the point where it 
-    doesn't work well any more.  The new style requires more screen space,
-    but it seems we have to accept that now.
+  * Removed the old Django admin styling; things have moved on to the point
+    where it doesn't work well any more.  The new Django admin style requires
+    more screen space, but it seems we have to accept that now.
 
   * Changed the menubar link to meeting materials to explicitly point at 
     /meeting/materials/, not just /meeting/.
@@ -57,9 +66,6 @@ ietfdb (6.58.0) ietf; urgency=medium
     session-specific urls, and more consistently pointed to explicitly named 
     meeting materials.  Related to commit [13964].
 
-  * Added a new release-coverage format which whould make it easier to show 
-    line-by-line code test coverage changes in the future.
-
   * Fixed a time arithmetic issue in meeting cutoff-date methods.
 
   * Changed the display of individual item update times on the materials 
@@ -67,7 +73,7 @@ ietfdb (6.58.0) ietf; urgency=medium
     slides link became intrusive and annoying.  Changed to display a bell if 
     the update is within one day of now, and to display the time tooltip when 
     hovering over the bell.  Also corrected the colspan numbers for cancelled 
-    sessions, for consistency.
+    sessions, for consistency in the look of the materials table.
 
   * Added urls and views for individual meeting documents, in order to be able
     to serve them directly from the datatracker, instead of taking them from
@@ -81,7 +87,7 @@ ietfdb (6.58.0) ietf; urgency=medium
     Tweak to the important dates page title.  
 
   * Merged in [13957] from rjsparks@nostrum.com:
-    Moves Important Dates into the datatracker. Fixes #2338.  
+    Moved Important Dates for Meetings into the datatracker. Fixes #2338.  
 
   * Merged in [13955] from kivinen@iki.fi:
     Changed links to previous reviews go to the doc page of the last
