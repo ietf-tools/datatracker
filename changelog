@@ -106,7 +106,7 @@ ietfdb (6.58.0) ietf; urgency=medium
   * Changed get_timeslot_for_filename() to not blow up in the presence of 
     duplicate timeslots.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  29 Jul 2017 05:12:14 -0700
+ -- Henrik Levkowetz <henrik@levkowetz.com>  31 Jul 2017 12:32:58 +0000
 
 
 ietfdb (6.57.0) ietf; urgency=medium
