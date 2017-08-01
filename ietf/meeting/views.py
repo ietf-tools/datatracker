@@ -168,6 +168,8 @@ def materials_document(request, document, num=None, ):
         raise Http404("No such document for meeting %s" % num)
     filename = doc.get_file_name()
     basename = doc.get_base_name()
+    if not os.path.exists(filename):
+        raise Http404("File not found: %s" % filename)
     with open(filename, 'rb') as file:
         bytes = file.read()
     
