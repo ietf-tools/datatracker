@@ -47,6 +47,13 @@ def admin_link(field, label=None, ordering="", display=name, suffix=""):
     _link.admin_order_field = ordering
     return _link
 
+from models import DumpInfo
+class DumpInfoAdmin(admin.ModelAdmin):
+    list_display = ['date', 'host', 'tz']
+    list_filter = ['date']
+admin.site.register(DumpInfo, DumpInfoAdmin)
+
 class VersionInfoAdmin(admin.ModelAdmin):
     list_display = ['command', 'switch', 'version', 'time', ]
 admin.site.register(VersionInfo, VersionInfoAdmin)
+

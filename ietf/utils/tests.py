@@ -2,16 +2,19 @@
 import os.path
 import types
 import shutil
-from StringIO import StringIO
-from pipe import pipe
-from unittest import skipIf
-from fnmatch import fnmatch
 
-from textwrap import dedent
-from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from fnmatch import fnmatch
+from importlib import import_module
+from pipe import pipe
+from StringIO import StringIO
+from textwrap import dedent
+from unittest import skipIf
 
+from django.apps import apps
+from django.contrib.auth.models import User
 from django.conf import settings
 from django.core.management import call_command
 from django.template import Context
@@ -268,6 +271,41 @@ class TestWikiGlueManagementCommand(TestCase):
         for page in settings.TRAC_WIKI_PAGES_TEMPLATES:
             self.assertIn("Adding page %s" % os.path.basename(page), command_output)
         self.assertIn("Indexing default repository", command_output)
+
+OMITTED_APPS = [
+    'ietf.secr.meetings',
+    'ietf.secr.proceedings',
+    'ietf.redirects',
+]
+
+class AdminTestCase(TestCase):
+    def __init__(self, *args, **kwargs):
+        self.apps = {}
+        for app_name in settings.INSTALLED_APPS:
+            if app_name.startswith('ietf') and not app_name in OMITTED_APPS:
+                app = import_module(app_name)
+                name = app_name.split('.',1)[-1]
+                models_path = os.path.join(os.path.dirname(app.__file__), "models.py")
+                if os.path.exists(models_path):
+                    self.apps[name] = app_name
+        super(AdminTestCase, self).__init__(*args, **kwargs)
+
+    def test_all_model_admins_exist(self):
+
+        User.objects.create_superuser('admin', 'admin@example.org', 'admin+password')
+        self.client.login(username='admin', password='admin+password')
+        rtop = self.client.get("/admin/")
+        self.assertContains(rtop, 'Django administration')
+        for name in self.apps:
+            app_name = self.apps[name]
+            self.assertContains(rtop, name)
+            app = import_module(app_name)
+            r = self.client.get('/admin/%s/'%name)
+            #
+            model_list = apps.get_app_config(name).get_models()
+            for model in model_list:
+                self.assertContains(r, model._meta.model_name,
+                    msg_prefix="There doesn't seem to be any admin API for model %s.models.%s"%(app.__name__,model.__name__,))
 
 ## One might think that the code below would work, but it doesn't ...
 

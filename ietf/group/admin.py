@@ -10,7 +10,9 @@ from django.utils.encoding import force_unicode
 from django.utils.html import escape
 from django.utils.translation import ugettext as _
 
-from ietf.group.models import Group, GroupHistory, GroupEvent, GroupURL, GroupMilestone, Role, RoleHistory, ChangeStateGroupEvent
+from ietf.group.models import (Group, GroupHistory, GroupEvent, GroupURL, GroupMilestone,
+    GroupMilestoneHistory, GroupStateTransitions, Role, RoleHistory, ChangeStateGroupEvent,
+    MilestoneGroupEvent, )
 
 class RoleInline(admin.TabularInline):
     model = Role
@@ -108,12 +110,23 @@ class GroupHistoryAdmin(admin.ModelAdmin):
 
 admin.site.register(GroupHistory, GroupHistoryAdmin)
 
+class GroupURLAdmin(admin.ModelAdmin):
+    list_display = [u'id', 'group', 'name', 'url']
+    raw_id_fields = ['group']
+    search_fields = ['name']
+admin.site.register(GroupURL, GroupURLAdmin)
+
 class GroupMilestoneAdmin(admin.ModelAdmin):
     list_display = ["group", "desc", "due", "resolved", "time"]
     search_fields = ["group__name", "group__acronym", "desc", "resolved"]
     raw_id_fields = ["group", "docs"]
-
 admin.site.register(GroupMilestone, GroupMilestoneAdmin)
+admin.site.register(GroupMilestoneHistory, GroupMilestoneAdmin)
+
+class GroupStateTransitionsAdmin(admin.ModelAdmin):
+    list_display = [u'id', 'group', 'state']
+    raw_id_fields = ['group', 'state']
+admin.site.register(GroupStateTransitions, GroupStateTransitionsAdmin)
 
 class RoleAdmin(admin.ModelAdmin):
     list_display = ["name", "person", "email", "group"]
@@ -136,3 +149,8 @@ class ChangeStateGroupEventAdmin(admin.ModelAdmin):
     search_fields = ["group__name", "group__acronym"]
 admin.site.register(ChangeStateGroupEvent, ChangeStateGroupEventAdmin)
 
+class MilestoneGroupEventAdmin(admin.ModelAdmin):
+    list_display = [u'id', 'group', 'time', 'type', 'by', 'desc', 'milestone']
+    list_filter = ['time']
+    raw_id_fields = ['group', 'by', 'milestone']
+admin.site.register(MilestoneGroupEvent, MilestoneGroupEventAdmin)

@@ -371,6 +371,7 @@ INSTALLED_APPS = (
     # External apps 
     'anora',
     'bootstrap3',
+    'django_admin_generator',
     'django_markup',
     'django_password_strength',
     'djangobwr',

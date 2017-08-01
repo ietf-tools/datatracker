@@ -1,7 +1,7 @@
 from django.contrib import admin
 
-from ietf.review.models import (ReviewerSettings, UnavailablePeriod, ReviewWish, NextReviewerInTeam,
-                                ReviewRequest, ReviewTeamSettings )
+from ietf.review.models import (ReviewerSettings, ReviewSecretarySettings, UnavailablePeriod,
+    ReviewWish, NextReviewerInTeam, ReviewRequest, ReviewTeamSettings )
 
 class ReviewerSettingsAdmin(admin.ModelAdmin):
     def acronym(self, obj):
@@ -13,6 +13,11 @@ class ReviewerSettingsAdmin(admin.ModelAdmin):
     raw_id_fields = ["team", "person"]
 
 admin.site.register(ReviewerSettings, ReviewerSettingsAdmin)
+
+class ReviewSecretarySettingsAdmin(admin.ModelAdmin):
+    list_display = [u'id', 'team', 'person', 'remind_days_before_deadline']
+    raw_id_fields = ['team', 'person']
+admin.site.register(ReviewSecretarySettings, ReviewSecretarySettingsAdmin)
 
 class UnavailablePeriodAdmin(admin.ModelAdmin):
     list_display = ["person", "team", "start_date", "end_date", "availability"]

@@ -1,15 +1,14 @@
 from django.contrib import admin
 
 from ietf.name.models import (
-    BallotPositionName, ConstraintName, ContinentName, CountryName,
-    DBTemplateTypeName, DocRelationshipName,
-    DocReminderTypeName, DocTagName, DocTypeName, DraftSubmissionStateName,
+    BallotPositionName, ConstraintName, ContinentName, CountryName, DBTemplateTypeName,
+    DocRelationshipName, DocReminderTypeName, DocTagName, DocTypeName, DraftSubmissionStateName,
     FeedbackTypeName, FormalLanguageName, GroupMilestoneStateName, GroupStateName, GroupTypeName,
-    ImportantDateName, IntendedStdLevelName, IprDisclosureStateName, IprEventTypeName, IprLicenseTypeName,
-    LiaisonStatementEventTypeName, LiaisonStatementPurposeName, LiaisonStatementState,
-    LiaisonStatementTagName, MeetingTypeName, NomineePositionStateName,
+    ImportantDateName, IntendedStdLevelName, IprDisclosureStateName, IprEventTypeName,
+    IprLicenseTypeName, LiaisonStatementEventTypeName, LiaisonStatementPurposeName,
+    LiaisonStatementState, LiaisonStatementTagName, MeetingTypeName, NomineePositionStateName,
     ReviewRequestStateName, ReviewResultName, ReviewTypeName, RoleName, RoomResourceName,
-    SessionStatusName, StdLevelName, StreamName, TimeSlotTypeName, )
+    SessionStatusName, StdLevelName, StreamName, TimeSlotTypeName, TopicAudienceName, )
 
 from ietf.stats.models import CountryAlias
 
@@ -75,4 +74,4 @@ admin.site.register(SessionStatusName, NameAdmin)
 admin.site.register(StdLevelName, NameAdmin)
 admin.site.register(StreamName, NameAdmin)
 admin.site.register(TimeSlotTypeName, NameAdmin)
-
+admin.site.register(TopicAudienceName, NameAdmin)

@@ -3,10 +3,12 @@ from django.utils.safestring import mark_safe
 from django.contrib import admin
 from django import forms
 
-from models import (StateType, State, DocAlias, DocumentAuthor, RelatedDocument,
-    Document, DocHistory, BallotType, DocEvent,  NewRevisionDocEvent, StateDocEvent,
-    ConsensusDocEvent, BallotDocEvent, WriteupDocEvent, LastCallDocEvent,
-    TelechatDocEvent, BallotPositionDocEvent)
+from models import (StateType, State, RelatedDocument, DocumentAuthor, Document, RelatedDocHistory,
+    DocHistoryAuthor, DocHistory, DocAlias, DocReminder, DocEvent, NewRevisionDocEvent,
+    StateDocEvent, ConsensusDocEvent, BallotType, BallotDocEvent, WriteupDocEvent, LastCallDocEvent,
+    TelechatDocEvent, BallotPositionDocEvent, ReviewRequestDocEvent, InitialReviewDocEvent,
+    AddedMessageEvent, SubmissionDocEvent, DeletedEvent, EditedAuthorsDocEvent, )
+
 
 from ietf.doc.utils import get_state_types
 
@@ -96,6 +98,12 @@ class DocumentForm(forms.ModelForm):
         fields = '__all__'
         model = Document
 
+class DocumentAuthorAdmin(admin.ModelAdmin):
+    list_display = ['id', 'document', 'person', 'email', 'affiliation', 'country', 'order']
+    search_fields = ['document__docalias__name', 'person__name', 'email__address', 'affiliation', 'country']
+    raw_id_fields = ["document", "person", "email"]
+admin.site.register(DocumentAuthor, DocumentAuthorAdmin)
+    
 class DocumentAdmin(admin.ModelAdmin):
     list_display = ['name', 'rev', 'group', 'pages', 'intended_std_level', 'author_list', 'time']
     search_fields = ['name']
@@ -136,12 +144,29 @@ class DocAliasAdmin(admin.ModelAdmin):
     raw_id_fields = ['document']
 admin.site.register(DocAlias, DocAliasAdmin)
 
+class DocReminderAdmin(admin.ModelAdmin):
+    list_display = ['id', 'event', 'type', 'due', 'active']
+    list_filter = ['type', 'due', 'active']
+    raw_id_fields = ['event']
+admin.site.register(DocReminder, DocReminderAdmin)
+
 class RelatedDocumentAdmin(admin.ModelAdmin):
     list_display = ['source', 'target', 'relationship', ]
     list_filter = ['relationship', ]
     search_fields = ['source__name', 'target__name', 'target__document__name', ]
     raw_id_fields = ['source', 'target', ]
 admin.site.register(RelatedDocument, RelatedDocumentAdmin)
+
+class RelatedDocHistoryAdmin(admin.ModelAdmin):
+    list_display = ['id', 'source', 'target', 'relationship']
+    list_filter = ['relationship']
+    raw_id_fields = ['source', 'target']
+admin.site.register(RelatedDocHistory, RelatedDocHistoryAdmin)
+
+class DocHistoryAuthorAdmin(admin.ModelAdmin):
+    list_display = ['id', 'person', 'email', 'affiliation', 'country', 'order', 'document']
+    raw_id_fields = ['person', 'email', 'document']
+admin.site.register(DocHistoryAuthor, DocHistoryAuthorAdmin)
 
 class BallotTypeAdmin(admin.ModelAdmin):
     list_display = ["slug", "doc_type", "name", "question"]
@@ -169,14 +194,20 @@ admin.site.register(BallotDocEvent, DocEventAdmin)
 admin.site.register(WriteupDocEvent, DocEventAdmin)
 admin.site.register(LastCallDocEvent, DocEventAdmin)
 admin.site.register(TelechatDocEvent, DocEventAdmin)
+admin.site.register(ReviewRequestDocEvent, DocEventAdmin)
+admin.site.register(InitialReviewDocEvent, DocEventAdmin)
+admin.site.register(AddedMessageEvent, DocEventAdmin)
+admin.site.register(SubmissionDocEvent, DocEventAdmin)
+admin.site.register(EditedAuthorsDocEvent, DocEventAdmin)
+
+
+class DeletedEventAdmin(admin.ModelAdmin):
+    list_display = [u'id', 'content_type', 'json', 'by', 'time']
+    list_filter = ['time']
+    raw_id_fields = ['content_type', 'by']
+admin.site.register(DeletedEvent, DeletedEventAdmin)
 
 class BallotPositionDocEventAdmin(DocEventAdmin):
     raw_id_fields = ["doc", "by", "ad", "ballot"]
 admin.site.register(BallotPositionDocEvent, BallotPositionDocEventAdmin)
-    
-class DocumentAuthorAdmin(admin.ModelAdmin):
-    list_display = ['id', 'document', 'person', 'email', 'affiliation', 'country', 'order']
-    search_fields = ['document__docalias__name', 'person__name', 'email__address', 'affiliation', 'country']
-    raw_id_fields = ["document", "person", "email"]
-admin.site.register(DocumentAuthor, DocumentAuthorAdmin)
     

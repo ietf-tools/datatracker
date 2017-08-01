@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 
-from ietf.person.models import Email, Alias, Person
+from ietf.person.models import Email, Alias, Person, PersonHistory
 from ietf.person.name import name_parts
 
 class EmailAdmin(admin.ModelAdmin):
@@ -32,3 +32,15 @@ class PersonAdmin(admin.ModelAdmin):
     inlines = [ EmailInline, AliasInline, ]
 #    actions = None
 admin.site.register(Person, PersonAdmin)
+
+class PersonHistoryAdmin(admin.ModelAdmin):
+    def plain_name(self, obj):
+        prefix, first, middle, last, suffix = name_parts(obj.name)
+        return "%s %s" % (first, last)
+    list_display = ['name', 'short', 'plain_name', 'time', 'user', 'person', ]
+    list_filter = ['time']
+    raw_id_fields = ['person', 'user']
+    search_fields = ['name', 'ascii']
+admin.site.register(PersonHistory, PersonHistoryAdmin)
+
+

@@ -28,6 +28,18 @@ class LiaisonStatementAdmin(admin.ModelAdmin):
         return '<br />'.join(['<a href="%s">%s</a>' % (reverse('admin:liaisons_liaisonstatement_change', None, (i.target.id, )), str(i.target)) for i in obj.source_of_set.select_related('target').all()])
     related_to.allow_tags = True
 
+class LiaisonStatementAttachmentAdmin(admin.ModelAdmin):
+    list_display = [u'id', 'statement', 'document', 'removed']
+    list_filter = ['removed']
+    raw_id_fields = ['statement', 'document']
+admin.site.register(LiaisonStatementAttachment, LiaisonStatementAttachmentAdmin)
+
+class RelatedLiaisonStatementAdmin(admin.ModelAdmin):
+    list_display = [u'id', 'source', 'target', 'relationship']
+    list_filter = ['relationship']
+    raw_id_fields = ['source', 'target']
+admin.site.register(RelatedLiaisonStatement, RelatedLiaisonStatementAdmin)
+
 class LiaisonStatementEventAdmin(admin.ModelAdmin):
     list_display = ["statement", "type", "by", "time"]
     search_fields = ["statement__title", "by__name"]

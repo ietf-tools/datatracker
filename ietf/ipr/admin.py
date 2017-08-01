@@ -4,7 +4,7 @@ from django.contrib import admin
 from ietf.name.models import DocRelationshipName
 from ietf.ipr.models import (IprDisclosureBase, IprDocRel, IprEvent,
     RelatedIpr, HolderIprDisclosure, ThirdPartyIprDisclosure, GenericIprDisclosure, 
-    NonDocSpecificIprDisclosure)
+    NonDocSpecificIprDisclosure, LegacyMigrationIprEvent)
 
 # ------------------------------------------------------
 # ModelAdmins
@@ -101,3 +101,9 @@ class IprEventAdmin(admin.ModelAdmin):
     search_fields = ["disclosure__title", "by__name"]
     raw_id_fields = ["disclosure", "by", "message", "in_reply_to"]
 admin.site.register(IprEvent, IprEventAdmin)
+
+class LegacyMigrationIprEventAdmin(admin.ModelAdmin):
+    list_display = [u'id', 'time', 'type', 'by', 'disclosure', 'desc', 'message', 'in_reply_to', 'response_due']
+    list_filter = ['time', 'type', 'response_due']
+    raw_id_fields = ['by', 'disclosure', 'message', 'in_reply_to']
+admin.site.register(LegacyMigrationIprEvent, LegacyMigrationIprEventAdmin)
