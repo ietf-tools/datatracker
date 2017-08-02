@@ -468,6 +468,10 @@ class IetfTestRunner(DiscoverRunner):
         self.coverage_file = os.path.join(self.root_dir, settings.TEST_COVERAGE_MASTER_FILE)
         super(IetfTestRunner, self).__init__(**kwargs)
         if self.parallel > 1:
+            if self.html_report == True:
+                sys.stderr.write("The switches --parallel and --html-report cannot be combined, "
+                                 "as the collection of test coverage data isn't currently threadsafe.")
+                sys.exit(1)
             self.check_coverage = False
 
     def setup_test_environment(self, **kwargs):
