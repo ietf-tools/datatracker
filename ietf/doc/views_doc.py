@@ -553,10 +553,7 @@ def document_main(request, name, rev=None):
         for g in globs:
             extension = os.path.splitext(g)[1]
             t = os.path.splitext(g)[1].lstrip(".")
-            url = doc.get_absolute_url() if doc.type_id=='bluesheets' else doc.href()
-            urlbase, urlext = os.path.splitext(url)
-            if not url.endswith("/") and not url.endswith(extension):
-                url = urlbase + extension
+            url = doc.href()
 
             if extension == ".txt":
                 content = get_document_content(basename, pathname + extension, split=False)
