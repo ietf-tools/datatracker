@@ -1,3 +1,17 @@
+id2xml (1.2.0) ietf; urgency=medium
+
+  This is a small feature release which adds some variations to the recognised
+  title of the copyright section.  There's also a small bugfix:
+
+  * Added recognition of additional variations on the title of the 
+    copyright section, based on common variations received from the RFC Editor.
+
+  * Fixed a bug in the handling of docname parts in reference text, when 
+    the docname cannot be split into series info.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  09 Aug 2017 18:52:16 +0000
+
+
 id2xml (1.1.0) ietf; urgency=medium
 
   This release provides minor changes in response to feedback from the
