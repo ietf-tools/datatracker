@@ -53,7 +53,13 @@ code_re = (r'(?m)(^\s*[A-Za-z][A-Za-z0-9_-]*\s*=(\s*\S|\s*$)|[{}] *$|^ *[{}]|::=
 section_names = {
     'front': [
         'abstract',
+        'copyright',
         'copyright notice',
+        'copyright notice and license',
+        'copyright and license notice',
+        'copyright, disclaimer, and additional ipr provisions',
+        'copyright and ipr provisions',
+        'copyright statement',
         'status of this memo',
         'table of contents',
     ],
@@ -1098,7 +1104,7 @@ class DraftParser(Base):
         #
         self.read_status_of_memo(workgroup, stream, rfc_number, category, date)
         line = self.skip_blank_lines()
-        if re.search('Copyright Notice', line.txt.strip()):
+        if re.search('Copyright', line.txt.strip()):
             self.read_copyright(date)
 
         line = self.skip_blank_lines()
@@ -1691,7 +1697,11 @@ class DraftParser(Base):
     @dtrace
     def read_copyright(self, date):
         assert date
-        self.skip('Copyright Notice')
+        line = self.skip_blank_lines()
+        if line.txt.strip().lower() in section_names['front']:
+            self.skip(line.txt)
+        else:
+            self.err(line.num, "Unrecognized copyright section title: '%s'" % line.txt)
         self.skip(boilerplate['base_copyright_header'] % date['year'])
         self.skip(boilerplate['base_copyright_body'])
         text = self.next_text()
