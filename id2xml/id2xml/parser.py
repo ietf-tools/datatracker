@@ -2952,9 +2952,11 @@ class DraftParser(Base):
                 elif 'docname' in refinfo:
                     docname = refinfo.get('docname')
                     if docname:
-                        name, value = docname.split(None, 1)
-                        e = self.element('seriesInfo', name=name, value=value)
-                        reference.append(e)
+                        parts = docname.split(None, 1)
+                        if len(parts) == 2:
+                            name, value = parts
+                            e = self.element('seriesInfo', name=name, value=value)
+                            reference.append(e)
                 #
                 if entity is None:
                     entity = self.maybe_entity_from_anchor(para)
