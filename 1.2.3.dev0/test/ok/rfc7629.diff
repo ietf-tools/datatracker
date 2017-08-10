@@ -1,0 +1,28 @@
+172,173c172,173
+<              Figure 1: Mobile Node (MN) with Multiple Tunnels
+<                           to the Home Agent (HA)
+---
+>     Figure 1: Mobile Node (MN) with Multiple Tunnels to the Home Agent
+>                                    (HA)
+424c424
+<    |  Action | Value | Description                                     |
+---
+>    | Action  | Value | Description                                     |
+426c426
+<    |  DROP   |   0   | Drop matching packets. A filter rule            |
+---
+>    | DROP    | 0     | Drop matching packets. A filter rule            |
+431,432c431,432
+<    +---------+-------+-------------------------------------------------+
+<    | FORWARD |   1   | Forward matching packets to the first BID in the|
+---
+>    | FORWARD | 1     | Forward matching packets to the first BID in    |
+>    |         |       | the                                             |
+439c439
+<               Figure 6: Action Rules for the Traffic Selector
+---
+>               Table 1: Action Rules for the Traffic Selector
+722c722
+<               IANA Considerations Section in RFCs", BCP 26, RFC 5226,
+---
+>               IANA Considerations Section in RFCs", RFC 5226,
