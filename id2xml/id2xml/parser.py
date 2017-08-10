@@ -2784,7 +2784,7 @@ class DraftParser(Base):
             return None
         #
         number, title = parse_section_start(line, numlist, level, appendix=False)
-        if not number.isdigit():
+        if not re.search('^[\d.]+$', number):
             number = ""
             title = line.txt.strip()
         if not title in ['References', 'Normative References', 'Informative References', 'Informational References', 'Normative', 'Informative', 'URIs', ]:
