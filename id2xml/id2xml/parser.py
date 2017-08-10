@@ -637,8 +637,11 @@ class Base(object):
                     sys.stderr.write("%s  %s\n"%(indent, line))
 
     def warn(self, lnum, text):
-        # compose message.  report 1-based line numbers, rather than 0-based.
-        msg = "\n%s(%s): Warning: %s" % (self.name, lnum+1, text)
+        if lnum:
+            # compose message.  report 1-based line numbers, rather than 0-based.
+            msg = "\n%s(%s): Warning: %s" % (self.name, lnum+1, text)
+        else:
+            msg = "\n%s: Warning: %s" % (self.name, text)
         self.emit(msg)
 
     def err(self, lnum, text):
@@ -980,6 +983,8 @@ class DraftParser(Base):
         try:
             doc = self.document()
         except Exception as e:
+            if self.l >= len(self.lines):
+                self.l = len(self.lines)-1
             self.emit("\n%s(%s): Exception: %s" % (self.name, self.lines[self.l].num, e))
             raise
 
@@ -3018,6 +3023,7 @@ class DraftParser(Base):
         self.update_symrefs_pi()
         self.update_sortrefs_pi()
         self.update_symbols_pi()
+        self.check_short_title()
 
     def add_text_refs(self):
         """
@@ -3086,3 +3092,13 @@ class DraftParser(Base):
         pi = ProcessingInstruction('rfc', 'text-list-symbols="%s"'%self.pi['text-list-symbols'])
         pi.tail = '\n\t'
         self.root.replace(self.symbols_pi, pi)
+
+    def check_short_title(self):
+        title = self.root.find("./front/title")
+        authors = self.root.findall("./front/author")
+        short = title.get('abbrev')
+        if short:
+            for author in authors:
+                surname = author.get('surname')
+                if surname and surname in short:
+                    self.warn(None, "An author name, '%s', occurs in the document short title: '%s'.  Please check that <title abbrev=... /> is set correctly." % (surname, short))
