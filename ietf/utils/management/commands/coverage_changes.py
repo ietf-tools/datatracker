@@ -145,7 +145,10 @@ class Command(BaseCommand):
                     p = -1
                     n = 0
                     for line in ndiff(mmisslines, lmisslines):
-                        n = lmissnum[ln]
+                        if ln < len(lmissnum):
+                            n = lmissnum[ln]
+                        else:
+                            n = mmissnum[mn]
                         prefix, text = line[:1], line[2:]
                         if mn<len(mmisslines) and text == mmisslines[mn]:
                             mn += 1
