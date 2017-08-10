@@ -13,7 +13,7 @@ from ietf.utils.test_utils import TestCase
 class ReleasePagesTest(TestCase):
 
     def test_release(self):
-        url = reverse('ietf.release.views.release')
+        url = reverse('ietf.release.views.release', kwargs={'version':'6.0.0'})
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
