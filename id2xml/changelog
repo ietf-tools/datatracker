@@ -2,7 +2,7 @@ id2xml (1.2.1) ietf; urgency=medium
 
   * Fixed a bug in the handling of unnumbered reference sections.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  10 Aug 2017 11:58:37 +0000
+ -- Henrik Levkowetz <henrik@levkowetz.com>  10 Aug 2017 11:59:24 +0000
 
 
 id2xml (1.2.0) ietf; urgency=medium
