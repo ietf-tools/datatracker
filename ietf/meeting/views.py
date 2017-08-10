@@ -1117,8 +1117,12 @@ def session_details(request, num, acronym ):
 
     can_manage = can_manage_materials(request.user, Group.objects.get(acronym=acronym))
 
+    scheduled_sessions=[s for s in sessions if s.status_id=='sched']
+    unscheduled_sessions = [s for s in sessions if s.status_id!='sched']
+
     return render(request, "meeting/session_details.html",
-                  { 'sessions':sessions ,
+                  { 'scheduled_sessions':scheduled_sessions ,
+                    'unscheduled_sessions':unscheduled_sessions , 
                     'meeting' :meeting ,
                     'acronym' :acronym,
                     'can_manage_materials' : can_manage,
