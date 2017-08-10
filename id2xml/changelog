@@ -1,3 +1,11 @@
+id2xml (1.2.2) ietf; urgency=medium
+
+  * Added a warning when an author name is seen in the document title 
+    abbreviation.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  10 Aug 2017 15:09:39 +0000
+
+
 id2xml (1.2.1) ietf; urgency=medium
 
   * Fixed a bug in the handling of unnumbered reference sections.
