@@ -10,12 +10,15 @@ from django.conf import settings
 
 import debug                            # pyflakes:ignore
 
+from ietf.doc.factories import DocumentFactory
 from ietf.doc.models import ( Document, DocAlias, DocReminder, DocumentAuthor, DocEvent,
     ConsensusDocEvent, LastCallDocEvent, RelatedDocument, State, TelechatDocEvent, 
     WriteupDocEvent, BallotDocEvent, DocRelationshipName)
 from ietf.doc.utils import get_tags_for_stream_id
 from ietf.name.models import StreamName, IntendedStdLevelName, DocTagName
+from ietf.group.factories import GroupFactory
 from ietf.group.models import Group
+from ietf.person.factories import PersonFactory
 from ietf.person.models import Person, Email
 from ietf.meeting.models import Meeting, MeetingTypeName
 from ietf.iesg.models import TelechatDate
@@ -1196,6 +1199,48 @@ class AdoptDraftTests(TestCase):
         self.assertTrue("mars-wg@" in outbox[-1]['To'])
 
         self.assertFalse(mars.list_email in draft.notify)
+
+    def test_right_state_choices_offered(self):
+        draft = DocumentFactory()
+        wg = GroupFactory(type_id='wg',state_id='active')
+        rg = GroupFactory(type_id='rg',state_id='active')
+        person = PersonFactory(user__username='person')
+
+        self.client.login(username='person',password='person+password')
+        url = urlreverse('ietf.doc.views_draft.adopt_draft', kwargs=dict(name=draft.name))
+
+        person.role_set.create(name_id='chair',group=wg,email=person.email())
+        r = self.client.get(url)
+        q = PyQuery(r.content)
+        self.assertTrue('(IETF)' in q('#id_newstate option').text())
+        self.assertFalse('(IRTF)' in q('#id_newstate option').text())
+
+        person.role_set.create(name_id='chair',group=Group.objects.get(acronym='irtf'),email=person.email())
+        r = self.client.get(url)
+        q = PyQuery(r.content)
+        self.assertTrue('(IETF)' in q('#id_newstate option').text())
+        self.assertTrue('(IRTF)' in q('#id_newstate option').text())
+
+        person.role_set.filter(group__acronym='irtf').delete()
+        person.role_set.create(name_id='chair',group=rg,email=person.email())
+        r = self.client.get(url)
+        q = PyQuery(r.content)
+        self.assertTrue('(IETF)' in q('#id_newstate option').text())
+        self.assertTrue('(IRTF)' in q('#id_newstate option').text())
+
+        person.role_set.filter(group=wg).delete()
+        r = self.client.get(url)
+        q = PyQuery(r.content)
+        self.assertFalse('(IETF)' in q('#id_newstate option').text())
+        self.assertTrue('(IRTF)' in q('#id_newstate option').text())
+
+        person.role_set.all().delete()
+        person.role_set.create(name_id='secr',group=Group.objects.get(acronym='secretariat'),email=person.email())
+        r = self.client.get(url)
+        q = PyQuery(r.content)
+        self.assertTrue('(IETF)' in q('#id_newstate option').text())
+        self.assertTrue('(IRTF)' in q('#id_newstate option').text())
+
 
 class ChangeStreamStateTests(TestCase):
     def test_set_tags(self):
