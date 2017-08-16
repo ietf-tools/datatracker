@@ -8,30 +8,58 @@
   {% origin %}
   <h2>Nomination status</h2>
 
-  <table class="table table-condensed table-striped">
+  <div class="table-responsive">
+  <table class="table table-condensed table-striped table-hover col-sm-10">
     <thead>
       <tr>
-        <th>Position</th>
-        <th>Accepted</th>
-        <th>Declined</th>
-        <th>Pending</th>
-        <th>Questionnaire response</th>
-        <th>Total</th>
+        <th class="col-sm-3">Position</th>
+        <th class="col-sm-1">Nominations</th>
+        <th class="col-sm-1">Unique Nominees</th>
+        <th class="col-sm-1">Accepted</th>
+        <th class="col-sm-1">Declined</th>
+        <th class="col-sm-1">Pending</th>
+        <th class="col-sm-1">Questionnaire responses</th>
+        <th class="col-sm-1">Comments</th>
       </tr>
     </thead>
     <tbody>
       {% for item in stats %}
         <tr>
           <td>{{ item.position__name }}</td>
+          <td>{{ item.nominations }}</td>
+          <td>{{ item.nominees }}</td>
           <td>{{ item.accepted }}</td>
           <td>{{ item.declined }}</td>
           <td>{{ item.pending }}</td>
           <td>{{ item.questionnaire }}</td>
-          <td>{{ item.total }}</td>
+          <td>{{ item.comments }}</td>
         </tr>
       {% endfor %}
     </tbody>
+    <tfoot>
+      <tr>
+        <th>Totals</th>
+        <th>{{ totals.nominations }}</th>
+        <th>{{ totals.nominees }}</th>
+        <th>{{ totals.accepted }}</th>
+        <th>{{ totals.declined }}</th>
+        <th>{{ totals.pending }}</th>
+        <th>{{ totals.questionnaire }}</th>
+        <th>{{ totals.comments }}</th>
+      </tr>
+      <tr>
+        <th>Unique Nominee Totals</th>
+        <th>-</th>
+        <th>{{ unique_totals.nominees }}</th>
+        <th>{{ unique_totals.accepted }}</th>
+        <th>{{ unique_totals.declined }}</th>
+        <th>{{ unique_totals.pending }}</th>
+        <th>-</th>
+        <th>-</th>
+      </tr>
+    </tfoot>
   </table>
+  </div>
 
   <h2>Nominees by position</h2>
 
@@ -66,11 +94,12 @@
   </form>
 
 
+  <div class="table-responsive">
   {% if is_chair and nomcom.group.state_id == 'active' %}
     <form class="form-inline" id="batch-action-form" method="post">{% csrf_token %}
   {% endif %}
 
-  <table class="table table-condensed table-striped">
+  <table class="table table-condensed table-striped table-hover">
     <thead>
       <tr>
 	{% if is_chair and nomcom.group.state_id == 'active' %}<th colspan="2"><span class="fa fa-check"></span></th>{% endif %}
@@ -117,5 +146,6 @@
       </form>
     {% endif %}
   {% endif %}
+  </div>
 
 {% endblock %}

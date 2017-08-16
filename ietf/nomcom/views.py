@@ -31,6 +31,7 @@ from ietf.nomcom.utils import (get_nomcom_by_year, store_nomcom_private_key,
                                get_hash_nominee_position, send_reminder_to_nominees,
                                HOME_TEMPLATE, NOMINEE_ACCEPT_REMINDER_TEMPLATE,NOMINEE_QUESTIONNAIRE_REMINDER_TEMPLATE)
 from ietf.ietfauth.utils import role_required
+from ietf.person.models import Person
 
 import debug                  # pyflakes:ignore
 
@@ -184,13 +185,33 @@ def private_index(request, year):
             else:
                 s[state['slug']] = all_nominee_positions.filter(position__name=s['position__name'],
                                                                 state=state['slug']).count()
-        s['total'] = all_nominee_positions.filter(position__name=s['position__name']).count()
+        s['nominations'] = Feedback.objects.filter(positions__id=s['position__id'], type='nomina').count()
+        s['nominees'] = all_nominee_positions.filter(position__name=s['position__name']).count()
+        s['comments'] = Feedback.objects.filter(positions__id=s['position__id'], type='comment').count()
+
+    totals = dict()
+    totals['nominations'] = Feedback.objects.filter(nomcom=nomcom, type='nomina').count()
+    totals['nominees'] = all_nominee_positions.count()
+    for state in states:
+        if state['slug'] == questionnaire_state:
+            totals[state['slug']] = Feedback.objects.filter(nomcom=nomcom, type='questio').count()
+        else:
+            totals[state['slug']] = all_nominee_positions.filter(state=state['slug']).count()
+    totals['comments'] = Feedback.objects.filter(nomcom=nomcom, type='comment').count()
+
+    unique_totals = dict()
+    unique_totals['nominees'] = Person.objects.filter(nominee__nomcom=nomcom).distinct().count()
+    for state in states:
+        if state['slug'] != questionnaire_state:
+            unique_totals[state['slug']] = len(set(all_nominee_positions.filter(state=state['slug']).values_list('nominee__person',flat=True)))
 
     return render(request, 'nomcom/private_index.html',
                               {'nomcom': nomcom,
                                'year': year,
                                'nominee_positions': nominee_positions,
                                'stats': stats,
+                               'totals': totals,
+                               'unique_totals': unique_totals,
                                'states': states,
                                'positions': positions,
                                'selected_state': selected_state,
