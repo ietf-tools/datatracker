@@ -175,7 +175,10 @@ def private_index(request, year):
         nominee_positions = [np for np in nominee_positions if np.questionnaires]
 
     positions = Position.objects.get_by_nomcom(nomcom=nomcom)
-    stats = [{'position__name':p.name,'position__id':p.pk} for p in positions]
+    stats = [ { 'position__name':p.name,
+                'position__id':p.pk,
+                'position': p,
+              } for p in positions]
     states = list(NomineePositionStateName.objects.values('slug', 'name')) + [{'slug': questionnaire_state, 'name': u'Questionnaire'}]
     positions = set([ n.position for n in all_nominee_positions.order_by('position__name') ])
     for s in stats:
@@ -198,6 +201,9 @@ def private_index(request, year):
         else:
             totals[state['slug']] = all_nominee_positions.filter(state=state['slug']).count()
     totals['comments'] = Feedback.objects.filter(nomcom=nomcom, type='comment').count()
+    totals['open'] = nomcom.position_set.filter(is_open=True).count()
+    totals['accepting_nominations'] = nomcom.position_set.filter(accepting_nominations=True).count()
+    totals['accepting_feedback'] = nomcom.position_set.filter(accepting_feedback=True).count()
 
     unique_totals = dict()
     unique_totals['nominees'] = Person.objects.filter(nominee__nomcom=nomcom).distinct().count()
