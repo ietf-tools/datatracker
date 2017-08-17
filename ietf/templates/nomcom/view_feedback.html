@@ -1,10 +1,14 @@
 {% extends "nomcom/nomcom_private_base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
-{% load origin %}
+{% load origin static %}
 
 {% load nomcom_tags %}
 
 {% block subtitle %} - View feedback {% endblock %}
+
+{% block pagehead %}
+  <link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
+{% endblock %}
 
 {% block nomcom_content %}
   {% origin %}
@@ -23,10 +27,12 @@
          {% endif %}
      </div>
      <div class="panel-body">
-      <table class="table table-condensed table-striped">
+      <table class="table table-condensed table-striped tablesorter">
         <thead>
           <tr>
-            <th class="col-sm-9">Nominee</th>
+            <th class="col-sm-1">First Name</th>
+            <th class="col-sm-1">Last Name</th>
+            <th class="col-sm-2">Email</th>
             {% for ft in nominee_feedback_types %}
               <th class="col-sm-1 text-center">{{ ft.name }}</th>
             {% endfor %}
@@ -36,8 +42,13 @@
           {% for fb_dict in staterank.list %}
             <tr>
               <td>
-    	        <a href="{% url 'ietf.nomcom.views.view_feedback_nominee' year=year nominee_id=fb_dict.nominee.id %}">{{ fb_dict.nominee.name }}</a>
-                <span class="hidden-xs">&lt;{{fb_dict.nominee.email.address}}&gt;</span>
+                <a href="{% url 'ietf.nomcom.views.view_feedback_nominee' year=year nominee_id=fb_dict.nominee.id %}">{{ fb_dict.nominee.person.first_name }}</a>
+              </td>
+              <td>
+                <a href="{% url 'ietf.nomcom.views.view_feedback_nominee' year=year nominee_id=fb_dict.nominee.id %}">{{ fb_dict.nominee.person.last_name }}</a>
+              </td>
+              <td>
+                <span class="hidden-xs">&lt;<a href="{% url 'ietf.nomcom.views.view_feedback_nominee' year=year nominee_id=fb_dict.nominee.id %}">{{ fb_dict.nominee.email.address }}</a>&gt;</span>
               </td>
               {% for fbtype_name, fbtype_count, fbtype_newflag in fb_dict.feedback %}
                 <td class="text-right">
@@ -70,7 +81,7 @@
           {% for fb_dict in topics_feedback %}
             <tr>
               <td>
-    	        <a href="{% url 'ietf.nomcom.views.view_feedback_topic' year=year topic_id=fb_dict.topic.id %}">{{ fb_dict.topic.subject }}</a>
+                <a href="{% url 'ietf.nomcom.views.view_feedback_topic' year=year topic_id=fb_dict.topic.id %}">{{ fb_dict.topic.subject }}</a>
               </td>
               {% for fbtype_name, fbtype_count, fbtype_newflag in fb_dict.feedback %}
                 <td class="text-right">
@@ -109,4 +120,8 @@
       </tbody>
     </table>
   {% endif %}
+{% endblock %}
+
+{% block js %}
+  <script src="{% static "jquery.tablesorter/js/jquery.tablesorter.combined.min.js" %}"></script>
 {% endblock %}
