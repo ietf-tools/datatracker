@@ -3,6 +3,7 @@
 import datetime
 
 from django import forms
+from django.db.models import Q
 from django.http import HttpResponseRedirect, HttpResponseForbidden, Http404
 from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
@@ -1213,17 +1214,22 @@ class AdoptDraftForm(forms.Form):
 
         super(AdoptDraftForm, self).__init__(*args, **kwargs)
 
+        state_types = set()
         if has_role(user, "Secretariat"):
-            state_choices = State.objects.filter(type__in=['draft-stream-ietf','draft-stream-irtf'], used=True).exclude(slug__in=settings.GROUP_STATES_WITH_EXTRA_PROCESSING)
-        elif has_role(user, "IRTF Chair"):
-            #The IRTF chair can adopt a draft into any RG
-            group_ids = list(Group.objects.filter(type="rg", state="active").values_list('id', flat=True))
-            group_ids.extend(list(Group.objects.filter(type="wg", state="active", role__person__user=user, role__name__in=("chair", "delegate", "secr")).values_list('id', flat=True)))
-            self.fields["group"].queryset = self.fields["group"].queryset.filter(id__in=group_ids).distinct()
-            state_choices = State.objects.filter(type='draft-stream-irtf', used=True).exclude(slug__in=settings.GROUP_STATES_WITH_EXTRA_PROCESSING)
-        else:
-            self.fields["group"].queryset = self.fields["group"].queryset.filter(role__person__user=user, role__name__in=("chair", "delegate", "secr")).distinct()
-            state_choices = State.objects.filter(type='draft-stream-ietf', used=True).exclude(slug__in=settings.GROUP_STATES_WITH_EXTRA_PROCESSING)
+            state_types.update(['draft-stream-ietf','draft-stream-irtf'])
+        else: 
+            if has_role(user, "IRTF Chair") or Group.objects.filter(type="rg", state="active", role__person__user=user, role__name__in=("chair", "delegate", "secr")).exists():
+                state_types.add('draft-stream-irtf')
+            if Group.objects.filter(type="wg", state="active", role__person__user=user, role__name__in=("chair", "delegate", "secr")).exists():
+                state_types.add('draft-stream-ietf')
+        state_choices = State.objects.filter(type__in=state_types, used=True).exclude(slug__in=settings.GROUP_STATES_WITH_EXTRA_PROCESSING)
+
+        if not has_role(user, "Secretariat"):
+            if has_role(user, "IRTF Chair"):
+                group_queryset = self.fields["group"].queryset.filter(Q(role__person__user=user, role__name__in=("chair", "delegate", "secr"))|Q(type="rg", state="active")).distinct()
+            else:
+                group_queryset = self.fields["group"].queryset.filter(role__person__user=user, role__name__in=("chair", "delegate", "secr")).distinct()
+            self.fields["group"].queryset = group_queryset
 
         self.fields['group'].choices = [(g.pk, '%s - %s' % (g.acronym, g.name)) for g in self.fields["group"].queryset]
         self.fields['newstate'].choices = [('','-- Pick a state --')]
