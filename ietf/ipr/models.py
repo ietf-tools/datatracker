@@ -102,7 +102,12 @@ class IprDisclosureBase(models.Model):
         for disc in unseen:
             disc_set.update(disc.recursively_updates(disc_set))
         return disc_set
-        
+
+    def is_thirdparty(self):
+        """Returns True if this disclosure is a Third Party disclosure"""
+        ipr = self.get_child() if self.__class__ is IprDisclosureBase else self
+        return ipr.__class__ is ThirdPartyIprDisclosure
+
 
 class HolderIprDisclosure(IprDisclosureBase):
     ietfer_name              = models.CharField(max_length=255, blank=True) # "Whose Personal Belief Triggered..."

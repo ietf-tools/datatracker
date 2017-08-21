@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{# Copyright The IETF Trust 2015, 2017. All Rights Reserved. #}
 {% load origin %}
 
 {% load ietf_filters ipr_filters %}
@@ -40,9 +40,13 @@
     </div>
 
     {% if not ipr.compliant %}
-      <p class="alert alert-danger">This IPR disclosure does not comply with the formal requirements of Section 5,
-        "IPR Disclosures," of <a href="https://www.ietf.org/rfc/rfc8179.txt">RFC 8179</a>, "Intellectual Property Rights in IETF Technology."
-      </p>
+      {% if in_force_ipr_rfc == 'RFC 8179' %}
+        <p class="alert alert-danger">This IPR disclosure does not comply with the formal requirements of Section 5,
+          "IPR Disclosures," of <a href="https://www.rfc-editor.org/rfc/rfc8179.txt">RFC 8179</a>, "Intellectual Property Rights in IETF Technology."</p>
+      {% else %}
+        <p class="alert alert-danger">This IPR disclosure does not comply with the formal requirements of Section 6,
+          "IPR Disclosures," of <a href="https://www.rfc-editor.org/rfc/rfc3979.txt">RFC 3979</a>, "Intellectual Property Rights in IETF Technology."</p>
+      {% endif %}
     {% endif %}
 
     {% if ipr.has_legacy_event %}
@@ -51,7 +55,7 @@
 
     <div>
       <strong>Submitted:</strong>
-      {{ ipr.time|date:"F j, Y" }}
+      {{ ipr.time|date:"F j, Y" }} under the rules in {{ in_force_ipr_rfc }}
     </div>
 
     <div>
@@ -171,7 +175,7 @@
         {% endif %}
 
         {% if ipr.patent_info or ipr.has_patent_pending %}
-          <h2>{% cycle section %}. Disclosure of Patent Information <small>i.e., patents or patent applications required to be disclosed by Section 6 of RFC 8179</small></h2>
+          <h2>{% cycle section %}. Disclosure of Patent Information <small>i.e., patents or patent applications required to be disclosed by {{ in_force_ipr_rfc }}</small></h2>
 
           <p>A. For granted patents or published pending patent applications, please provide the following information:</p>
 
