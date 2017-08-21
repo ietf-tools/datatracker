@@ -124,7 +124,7 @@
   <h2>{% if doc.meeting_related %}Meeting{% endif %} {{ doc.type.name }}<br><small>{{ doc.name }}</small></h2>
 
   {% if doc.rev and content != None %}
-    {{ content|fill:"80"|safe|linebreaksbr|keep_spacing|sanitize_html|safe }}
+    {{ content|wordwrap|safe|linebreaksbr|keep_spacing|sanitize_html|safe }}
   {% else %}
     <p>Not available as plain text.</p>
 
