@@ -9,16 +9,19 @@
   <h2>Nomination status</h2>
 
   <div class="table-responsive">
-  <table class="table table-condensed table-striped table-hover col-sm-10">
+  <table class="table table-condensed table-striped table-hover col-sm-12">
     <thead>
       <tr>
-        <th class="col-sm-3">Position</th>
+        <th class="col-sm-2">Position</th>
+        <th class="col-sm-1">Open</th>
+        <th class="col-sm-1">Accepting<br/>Nominations</th>
+        <th class="col-sm-1">Accepting<br/>Feedback</th>
         <th class="col-sm-1">Nominations</th>
         <th class="col-sm-1">Unique Nominees</th>
         <th class="col-sm-1">Accepted</th>
         <th class="col-sm-1">Declined</th>
         <th class="col-sm-1">Pending</th>
-        <th class="col-sm-1">Questionnaire responses</th>
+        <th class="col-sm-1">Questionnaire<br/>Responses</th>
         <th class="col-sm-1">Comments</th>
       </tr>
     </thead>
@@ -26,6 +29,9 @@
       {% for item in stats %}
         <tr>
           <td>{{ item.position__name }}</td>
+          <td>{{ item.position.is_open|yesno:"Yes,No,No" }}</td>
+          <td>{{ item.position.accepting_nominations|yesno:"Yes,No,No" }}</td>
+          <td>{{ item.position.accepting_feedback|yesno:"Yes,No,No" }}</td>
           <td>{{ item.nominations }}</td>
           <td>{{ item.nominees }}</td>
           <td>{{ item.accepted }}</td>
@@ -39,6 +45,9 @@
     <tfoot>
       <tr>
         <th>Totals</th>
+        <th>{{ totals.open }}</th>
+        <th>{{ totals.accepting_nominations }}</th>
+        <th>{{ totals.accepting_feedback }}</th>
         <th>{{ totals.nominations }}</th>
         <th>{{ totals.nominees }}</th>
         <th>{{ totals.accepted }}</th>
@@ -49,6 +58,9 @@
       </tr>
       <tr>
         <th>Unique Nominee Totals</th>
+        <th>-</th>
+        <th>-</th>
+        <th>-</th>
         <th>-</th>
         <th>{{ unique_totals.nominees }}</th>
         <th>{{ unique_totals.accepted }}</th>
