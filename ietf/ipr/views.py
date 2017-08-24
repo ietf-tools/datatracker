@@ -132,6 +132,44 @@ def set_disclosure_title(disclosure):
         title = title[:252] + "..."
     disclosure.title = title
 
+def ipr_rfc_number(disclosureDate, thirdPartyDisclosureFlag):
+    """Return the RFC as a string that was in force when the disclosure was made."""
+
+    # This works because the oldest IPR disclosure in the database was
+    # made on 1993-07-23, which is more than a year after RFC 1310.
+
+    # RFC publication date comes from the RFC Editor announcement
+    # TODO: These times are tzinfo=pytz.utc, but disclosure times are offset-naive
+    ipr_rfc_pub_datetime = {
+        1310 : datetime.datetime(1992,  3, 13,  0,  0),
+        1802 : datetime.datetime(1994,  3, 23,  0,  0),
+        2026 : datetime.datetime(1996, 10, 29,  0,  0),
+        3668 : datetime.datetime(2004,  2, 18,  0,  0),
+        3979 : datetime.datetime(2005,  3,  2,  2, 23),
+        4879 : datetime.datetime(2007,  4, 10, 18, 21),
+        8179 : datetime.datetime(2017,  5, 31, 23,  1),
+    }
+
+    if disclosureDate < ipr_rfc_pub_datetime[1310]:
+        rfcnum = "Error!"
+    elif disclosureDate < ipr_rfc_pub_datetime[1802]:
+        rfcnum = "RFC 1310"
+    elif disclosureDate < ipr_rfc_pub_datetime[2026]:
+        rfcnum = "RFC 1802"
+    elif disclosureDate < ipr_rfc_pub_datetime[3668]:
+        rfcnum = "RFC 2026"
+    elif disclosureDate < ipr_rfc_pub_datetime[3979]:
+        rfcnum = "RFC 3668"
+    elif disclosureDate < ipr_rfc_pub_datetime[8179]:
+        rfcnum = "RFC 3979"
+    else:
+        rfcnum = "RFC 8179"
+
+    if (thirdPartyDisclosureFlag) and (rfcnum == "RFC 3979") and \
+       (disclosureDate > ipr_rfc_pub_datetime[4879]):
+        rfcnum = rfcnum + " as updated by RFC 4879"
+
+    return rfcnum
 # ----------------------------------------------------------------
 # Ajax Views
 # ----------------------------------------------------------------
@@ -719,6 +757,7 @@ def show(request, id):
 
     return render(request, "ipr/details_view.html",  {
         'ipr': ipr,
+        'in_force_ipr_rfc': ipr_rfc_number(ipr.time, ipr.is_thirdparty),
         'tabs': get_details_tabs(ipr, 'Disclosure'),
         'choices_abc': [ i.desc for i in IprLicenseTypeName.objects.filter(slug__in=['no-license', 'royalty-free', 'reasonable', ]) ],
         'updates_iprs': ipr.relatedipr_source_set.all(),
