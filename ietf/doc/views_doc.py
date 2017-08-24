@@ -554,6 +554,9 @@ def document_main(request, name, rev=None):
             extension = os.path.splitext(g)[1]
             t = os.path.splitext(g)[1].lstrip(".")
             url = doc.href()
+            if not url.endswith("/") and not url.endswith(extension): 
+                urlbase, urlext = os.path.splitext(url) 
+                url = urlbase + extension 
 
             if extension == ".txt":
                 content = get_document_content(basename, pathname + extension, split=False)
