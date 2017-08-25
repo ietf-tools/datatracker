@@ -1,3 +1,66 @@
+ietfdb (6.59.0) ietf; urgency=medium
+
+  **Improved NomCom support.  IPR pages updated according to RFC 8179.**
+
+  This release introduces several improvements to the NomCom pages, based on
+  feedback from NomCom chairs.  The IPR pages and forms have been updated to
+  refer to the current IPR RFC: 8179.  There are improvements in document
+  adoption forms, session materials word-wrapping and linking, session
+  scheduling status, and improvements to the test infrastructure.
+
+  Details:
+
+  * Fixed a problem with missing extensions for external materials URLs, 
+    introduced in earlier doc.href() normalization work.
+
+  * Merged in [14062] from housley@vigilsec.com:
+    Show which RFC was in force when the IPR disclosure was submitted. 
+    Fixes #2309. 
+
+  * Merged in [14059] from rjsparks@nostrum.com:
+    Made the nomcom view-feedback table sortable. Fixes #2259.  
+
+  * Merged in [14058] from rjsparks@nostrum.com:
+    Further refinements to the nominee status table. Related to #2261.  
+
+  * Merged in [14057] from rjsparks@nostrum.com:
+    Improve the nominee status table to serve as a nomcom dashboard. Fixes 
+    #2261.  
+
+  * Merged in [14056] from rjsparks@nostrum.com:
+    Straightened out some DocHistory timestamps that did not align with the 
+    respective DocEvent timestamps. Fixes #1972.  
+
+  * Merged in [14055] from rjsparks@nostrum.com:
+    Improved what initial states are offered when the IRTF chair or RG 
+    personnel manage adoption of a document. Fixes #2319.  
+
+  * Use the wordwrap filter instead of the fill filter when displaying 
+    meeting minutes and similar, to avoid messing up the formatting.
+
+  * Merged in [14053] from rjsparks@nostrum.com:
+    Fixed typo in the meeting materials template that was causing minutes 
+    for groups that met more than once to not show.  
+
+  * Merged in [14035] from rjsparks@nostrum.com:
+    Make it more obvious which sessions are scheduled and which are not 
+    when viewing session details and managing materials. Fixes #2084.  
+
+  * Simplified and corrected some code which uses doc.href(), based on the 
+    recent updates to href().
+
+  * Merged in [14018] from rcross@amsl.com:
+    Add meeting_importantdate to Secretatriat admin permissions.   
+
+  * Added an error exit when the test runner is invoked with incompatible 
+    switches (--parallel and --html-report)
+
+  * Added a test to check for missing admin models, and added the admin 
+    models that were currently missing.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  25 Aug 2017 06:12:08 -0700
+
+
 ietfdb (6.58.0) ietf; urgency=medium
 
   **Important dates support, link cleanup and more**
