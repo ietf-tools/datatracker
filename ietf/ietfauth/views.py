@@ -278,6 +278,7 @@ def profile(request):
         'roles': roles,
         'emails': emails,
         'new_email_forms': new_email_forms,
+        'settings':settings,
     })
 
 def confirm_new_email(request, auth):
