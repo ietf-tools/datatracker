@@ -58,7 +58,7 @@ ietfdb (6.59.0) ietf; urgency=medium
   * Added a test to check for missing admin models, and added the admin 
     models that were currently missing.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  25 Aug 2017 06:12:08 -0700
+ -- Henrik Levkowetz <henrik@levkowetz.com>  28 Aug 2017 08:39:24 +0000
 
 
 ietfdb (6.58.0) ietf; urgency=medium
