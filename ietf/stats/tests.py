@@ -191,9 +191,10 @@ class StatisticsTests(TestCase):
 
     @patch('requests.get')
     def test_get_meeting_registration_data(self, mock_get):
+        '''Test function to get reg data.  Confirm leading/trailing spaces stripped'''
         response = Response()
         response.status_code = 200
-        response._content = '[{"LastName":"Smith","FirstName":"John","Company":"ABC","Country":"US","Email":"john.doe@example.us"}]'
+        response._content = '[{"LastName":"Smith ","FirstName":" John","Company":"ABC","Country":"US","Email":"john.doe@example.us"}]'
         mock_get.return_value = response
         meeting = MeetingFactory(type_id='ietf', date=datetime.date(2016,7,14), number="96")
         get_meeting_registration_data(meeting)
