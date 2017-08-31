@@ -125,10 +125,11 @@ def acronym_match(s, l):
 
 class Draft():
 
-    def __init__(self, text, source):
+    def __init__(self, text, source, name_from_source=False):
         assert isinstance(text, six.text_type)
         self.source = source
         self.rawtext = text
+        self.name_from_source = name_from_source
 
         text = re.sub(".\x08", "", text)    # Get rid of inkribbon backspace-emphasis
         text = text.replace("\r\n", "\n")   # Convert DOS to unix
@@ -164,8 +165,12 @@ class Draft():
     def _parse_draftname(self):
         draftname_regex = r"(draft-[a-z0-9-]*)-(\d\d)(\w|\.txt|\n|$)"
         draftname_match = re.search(draftname_regex, self.pages[0])
+        if not draftname_match and self.name_from_source:
+            draftname_match = re.search(draftname_regex, self.source)
         rfcnum_regex = r"(Re[qg]uests? [Ff]or Commm?ents?:? +|Request for Comments: RFC |RFC-|RFC )((# ?)?[0-9]+)( |,|\n|$)"
         rfcnum_match = re.search(rfcnum_regex, self.pages[0])
+        if not rfcnum_match and self.name_from_source:
+            rfcnum_match = re.search(rfcnum_regex, self.source)
         if draftname_match:
             return (draftname_match.group(1), draftname_match.group(2) )
         elif rfcnum_match:
@@ -286,6 +291,7 @@ class Draft():
             page += [ line ]
             stripped += [ line ]
         pages, page, newpage = begpage(pages, page, newpage)
+        _debug('pages: %s' % len(pages))
         return stripped, pages
 
     # ----------------------------------------------------------------------
@@ -1172,7 +1178,10 @@ def getmeta(fn):
 
     timestamp = time.strftime("%Y-%m-%dT%H:%M:%S+00:00", time.gmtime(os.stat(filename)[stat.ST_MTIME]))
     with open(filename, 'rb') as file:
-        draft = Draft(file.read().decode('utf8'), filename)
+        try:
+            draft = Draft(file.read().decode('utf8'), filename)
+        except UnicodeDecodeError:
+            draft = Draft(file.read().decode('latin1'), filename)
     #_debug("\n".join(draft.lines))
 
     fields["eventdate"] = timestamp
@@ -1363,5 +1372,8 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         raise
     except Exception, e:
-        _err(e)
+        if opt_debug:
+            raise
+        else:
+            _err(e)
 
