@@ -6,6 +6,10 @@ from django.conf import settings
 
 from ietf.stats.models import AffiliationAlias, AffiliationIgnoredEnding, CountryAlias, MeetingRegistration
 from ietf.name.models import CountryName
+from ietf.person.models import Person, Email, Alias
+from django.contrib.auth.models import User
+from unidecode import unidecode
+
 
 def compile_affiliation_ending_stripping_regexp():
     parts = []
@@ -226,15 +230,92 @@ def get_meeting_registration_data(meeting):
             else:
                 raise RuntimeError("Could not decode response from registrations API: '%s...'" % (response.content[:64], ))
 
+
+        # for each user identified in the Registration system
+        # Create a DataTracker MeetingRegistration object
         for registration in decoded:
+            person = None
+            # capture the stripped registration values for later use
+            first_name      = registration['FirstName'].strip()
+            last_name       = registration['LastName'].strip()
+            affiliation     = registration['Company'].strip()
+            country_code    = registration['Country'].strip()
+            address         = registration['Email'].strip()
             object, created = MeetingRegistration.objects.get_or_create(
                 meeting_id=meeting.pk,
-                first_name=registration['FirstName'].strip(),
-                last_name=registration['LastName'].strip(),
-                affiliation=registration['Company'].strip(),
-                country_code=registration['Country'].strip(),
-                email=registration['Email'].strip(),
+                first_name=first_name,
+                last_name=last_name,
+                affiliation=affiliation,
+                country_code=country_code,
+                email=address,
             )
+
+            # Add a Person object to MeetingRegistration object
+            # if valid email is available
+            if object and not object.person and address:
+                # If the person already exists do not try to create a new one
+                emails = Email.objects.filter(address=address)
+                # there can only be on Email object with a unique email address (primary key)
+                if emails.exists():
+                    person = emails.first().person
+                # Create a new Person object
+                else:
+                    # Normalize all-caps or all-lower entries.  Don't touch
+                    # others, there might be names properly spelled with
+                    # internal uppercase letters.
+                    if ( ( first_name == first_name.upper() or first_name == first_name.lower() )
+                        and ( last_name == last_name.upper() or last_name == last_name.lower() ) ):
+                            first_name = first_name.capitalize()
+                            last_name = last_name.capitalize()
+                    regname = "%s %s" % (first_name, last_name)
+                    # if there are any unicode characters decode the string to ascii
+                    ascii_name = unidecode(regname).strip()
+
+                    # Create a new user object if it does not exist already
+                    # if the user already exists do not try to create a new one
+                    users = User.objects.filter(username=address)
+                    if users.exists():
+                        user = users.first()
+                    else:
+                        # Create a new user.
+                        user = User.objects.create(
+                            first_name=first_name,
+                            last_name=last_name,
+                            username=address,
+                            email=address,
+                        )
+                        user.save()
+
+                    aliases = Alias.objects.filter(name=regname)
+                    if aliases.exists():
+                        person = aliases.first().person
+                    else:
+                        # Create the new Person object.
+                        person = Person.objects.create(
+                            name=regname,
+                            ascii=ascii_name,
+                            affiliation=affiliation,
+                            user=user,
+                        )
+                        person.save()
+
+                    # Create an associated Email address for this Person
+                    email = Email.objects.create(
+                        person=person,
+                        address=address,
+                    )
+
+                    # If this is the only email address, set primary to true.
+                    # If the person already existed (found through Alias) and
+                    # had email addresses, we don't do this.
+                    if Email.objects.filter(person=person).count() == 1:
+                        email.primary = True
+                        email.save()
+
+                # update the person object to an actual value
+                object.person = person
+                object.save()
+            
             if created:
                 num_created += 1
             num_processed += 1
@@ -242,7 +323,3 @@ def get_meeting_registration_data(meeting):
         raise RuntimeError("Bad response from registrations API: %s, '%s'" % (response.status_code, response.content))
     num_total = MeetingRegistration.objects.filter(meeting_id=meeting.pk).count()
     return num_created, num_processed, num_total
-    
-            
-    
-    
