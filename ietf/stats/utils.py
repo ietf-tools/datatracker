@@ -229,11 +229,11 @@ def get_meeting_registration_data(meeting):
         for registration in decoded:
             object, created = MeetingRegistration.objects.get_or_create(
                 meeting_id=meeting.pk,
-                first_name=registration['FirstName'],
-                last_name=registration['LastName'],
-                affiliation=registration['Company'],
-                country_code=registration['Country'],
-                email=registration['Email'],
+                first_name=registration['FirstName'].strip(),
+                last_name=registration['LastName'].strip(),
+                affiliation=registration['Company'].strip(),
+                country_code=registration['Country'].strip(),
+                email=registration['Email'].strip(),
             )
             if created:
                 num_created += 1
