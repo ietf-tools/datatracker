@@ -4,6 +4,8 @@
 
 {% load widget_tweaks bootstrap3 %}
 
+{% load person_filters %}
+
 {% block title %}Profile for {{ user }}{% endblock %}
 
 {% block content %}
@@ -26,6 +28,14 @@
       <label class="col-sm-2 control-label">Password</label>
       <div class="col-sm-10">
 	 <p class="form-control-static"><a href="{% url 'ietf.ietfauth.views.change_password' %}">Password change form</a></p>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="col-sm-2 control-label">Nomcom Eligible</label>
+      <div class="col-sm-1 form-control-static">{{person|is_nomcom_eligible|yesno:'Yes,No,No'}}</div>
+      <div class="col-sm-9">
+	   <p class="alert alert-info form-control-static ">This calculation is EXPERIMENTAL.<br/>If you believe it is incorrect, make sure you've added all the email addresses you've registered for IETF meetings with to the list below.<br/>If you've done so and the calculation is still incorrect, please send a note to <a href="{{settings.SECRETARIAT_TICKET_EMAIL}}">{{settings.SECRETARIAT_TICKET_EMAIL}}</a>.<br/>See <a href="{% url 'ietf.doc.views_doc.document_main' name='rfc3777' %}">RFC 3777</a> for eligibility requirements.</p>
       </div>
     </div>
 
