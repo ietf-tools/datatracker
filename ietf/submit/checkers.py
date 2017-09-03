@@ -207,7 +207,7 @@ class DraftYangChecker(object):
                 cmd = cmd_template.format(libs=modpath, model=path)
                 code, out, err = pipe(cmd)
                 items = []
-                if code > 0:
+                if code > 0 or len(err.strip()) > 0 :
                     error_lines = err.splitlines()
                     for line in error_lines:
                         if line.strip():
@@ -226,7 +226,7 @@ class DraftYangChecker(object):
                             except ValueError:
                                 pass
                 #passed = passed and code == 0 # For the submission tool.  Yang checks always pass
-                message += "%s: %s:\n%s\n" % (cmd_version, cmd_template, out+"No validation errors\n" if code == 0 else err)
+                message += "%s: %s:\n%s\n" % (cmd_version, cmd_template, out+"No validation errors\n" if (code == 0 and len(err) == 0) else out+err)
 
                 # yanglint
                 if settings.SUBMIT_YANGLINT_COMMAND:
@@ -235,7 +235,7 @@ class DraftYangChecker(object):
                     cmd_version = VersionInfo.objects.get(command=command).version
                     cmd = cmd_template.format(model=path, rfclib=settings.SUBMIT_YANG_RFC_MODEL_DIR, draftlib=settings.SUBMIT_YANG_DRAFT_MODEL_DIR, tmplib=workdir)
                     code, out, err = pipe(cmd)
-                    if code > 0:
+                    if code > 0 or len(err.strip()) > 0:
                         error_lines = err.splitlines()
                         for line in error_lines:
                             if line.strip():
@@ -247,7 +247,7 @@ class DraftYangChecker(object):
                                 except ValueError:
                                     pass
                     #passed = passed and code == 0 # For the submission tool.  Yang checks always pass
-                    message += "%s: %s:\n%s\n" % (cmd_version, cmd_template, out+"No validation errors\n" if code == 0 else err)
+                    message += "%s: %s:\n%s\n" % (cmd_version, cmd_template, out+"No validation errors\n" if (code == 0 and len(err) == 0) else out+err)
             else:
                 errors += 1
                 message += "No such file: %s\nPossible mismatch between extracted xym file name and returned module name?\n" % (path)
