@@ -1,3 +1,30 @@
+ietfdb (6.60.0) ietf; urgency=medium
+
+  **Show NomCom eligibility on account page**
+
+  This is a small feature release which adds person record creation during
+  meeting attendance data import, fixes a previous issue with the import, and
+  also uses the meeting attendence data to present NomCom eligibility
+  information on peoples' account edit page.  Details:
+
+  * Merged in ^/personal/sbirkholz/meeting_registration_more_fixes, which 
+    adds creation of missing person records when importing meeting registration 
+    data.  Tweaked the resulting code some.
+
+  * Merged in [14088] from rcross@amsl.com:
+    Strip whitespace from registration data during import.  Includes 
+    migration for existing data.  Fixes #2356.   
+
+  * Merged in [14086] from rjsparks@nostrum.com:
+    Show whether a person is nomcom eligible on their edit_profile page. 
+    Related to #2257 and #2323.  
+
+  * Added an option to ietf.utils.draft.Draft to pull document name from 
+    the source file name.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  03 Sep 2017 12:09:59 +0000
+
+
 ietfdb (6.59.0) ietf; urgency=medium
 
   **Improved NomCom support.  IPR pages updated according to RFC 8179.**
