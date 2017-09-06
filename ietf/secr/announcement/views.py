@@ -4,6 +4,7 @@ from django.http import HttpResponseForbidden
 from django.shortcuts import render, redirect
 
 from ietf.group.models import Role
+from ietf.message.models import AnnouncementFrom
 from ietf.ietfauth.utils import has_role
 from ietf.secr.announcement.forms import AnnounceForm
 from ietf.secr.utils.decorators import check_for_cancel
@@ -19,24 +20,18 @@ def check_access(user):
     '''
     if hasattr(user, "person"):
         person = user.person
-        groups_with_access = ("iab", "isoc", "isocbot", "rsoc", "ietf", "iaoc", "rse", "mentor","ietf-trust")
-        if Role.objects.filter(person=person,
-                               group__acronym__in=groups_with_access,
-                               name="chair") or has_role(user, ["Secretariat","IAD"]):
+        if has_role(user, "Secretariat"):
             return True
+        
+        for role in person.role_set.all():
+            if AnnouncementFrom.objects.filter(name=role.name,group=role.group):
+                return True
+
         if Role.objects.filter(name="chair",
                                group__acronym__startswith="nomcom",
                                group__state="active",
                                group__type="nomcom",
                                person=person):
-            return True
-        if Role.objects.filter(person=person,
-                               group__acronym='iab',
-                               name='execdir'):
-            return True
-        if Role.objects.filter(person=person,
-                               group__acronym='isoc',
-                               name='ceo'):
             return True
 
     return False
