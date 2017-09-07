@@ -65,6 +65,7 @@ if __name__ == '__main__':
     vfile.write(signature)
     vfile.write("%s anything\n" % settings.GROUP_VIRTUAL_DOMAIN)
 
+    # - Working groups -----------------------------------------
     wgs = Group.objects.filter(type='wg').all()
 
     # - status = Active
@@ -79,9 +80,11 @@ if __name__ == '__main__':
         dump_sublist(afile, vfile, name+'-ads',    ['ietf.org', ], settings.GROUP_VIRTUAL_DOMAIN, get_group_ad_emails(wg))
         dump_sublist(afile, vfile, name+'-chairs', ['ietf.org', ], settings.GROUP_VIRTUAL_DOMAIN, get_group_role_emails(wg, ['chair', 'secr']))
 
-    # - status = Active
+    # - Research groups -----------------------------------------
     rgs = Group.objects.filter(type='rg').all()
     debug.pprint('rgs')
+    
+    # - status = Active
     active_rgs = rgs.filter(state__in=ACTIVE_STATES)
     debug.pprint('active_rgs')
 
@@ -96,6 +99,22 @@ if __name__ == '__main__':
         #dump_sublist('%s%s' % (name, '-ads'), get_group_ad_emails, rg, True)
         dump_sublist(afile, vfile, name+'-chairs', ['ietf.org', 'irtf.org', ], settings.GROUP_VIRTUAL_DOMAIN, get_group_role_emails(rg, ['chair', 'secr']))
 
+    # - Directorates -----------------------------------------
+    directorates = Group.objects.filter(type='dir').all()
+
+    # - status = Active
+    active_directorates = directorates.filter(state__in=ACTIVE_STATES)
+
+    # - activity within last year? (use concluded_date)
+    inactive_recent_directorates = directorates.exclude(state__in=ACTIVE_STATES).filter(time__gte=show_since)
+    interesting_directorates = active_directorates | inactive_recent_directorates
+
+    for directorate in interesting_directorates.distinct().iterator():
+        name = directorate.acronym
+        dump_sublist(afile, vfile, name+'-ads',    ['ietf.org', ], settings.GROUP_VIRTUAL_DOMAIN, get_group_ad_emails(directorate))
+        dump_sublist(afile, vfile, name+'-chairs', ['ietf.org', ], settings.GROUP_VIRTUAL_DOMAIN, get_group_role_emails(directorate, ['chair', 'secr']))
+
+    # - Areas --------------------------------------------------
     # Additionally, for areaz, we should list -ads and -chairs
     # (for every chair in active groups within the area).
     areas = Group.objects.filter(type='area').all()
