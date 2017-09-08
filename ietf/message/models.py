@@ -67,7 +67,7 @@ class SendQueue(models.Model):
 class AnnouncementFrom(models.Model):
     name = models.ForeignKey(RoleName)
     group = models.ForeignKey(Group)
-    address = models.EmailField()
+    address = models.CharField(max_length=255)
 
     def __unicode__(self):
         return self.address
