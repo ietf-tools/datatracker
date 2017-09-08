@@ -10,7 +10,7 @@ Planned work in rough order
 * Add a 'recent ballots' page (IESG request)
 
 * Add a simplified submission form which can be used by curl or wget to post
-  non-00 drafts.  
+  drafts.
 
 * Add 'Additional URLs' for documents, the same way we have them for groups.
 
