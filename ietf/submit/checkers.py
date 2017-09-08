@@ -202,7 +202,7 @@ class DraftYangChecker(object):
                     text = file.readlines()
                 # pyang
                 cmd_template = settings.SUBMIT_PYANG_COMMAND
-                command = cmd_template.split()[0]
+                command = [ w for w in cmd_template.split() if not '=' in w ][0]
                 cmd_version = VersionInfo.objects.get(command=command).version
                 cmd = cmd_template.format(libs=modpath, model=path)
                 code, out, err = pipe(cmd)
@@ -231,7 +231,7 @@ class DraftYangChecker(object):
                 # yanglint
                 if settings.SUBMIT_YANGLINT_COMMAND:
                     cmd_template = settings.SUBMIT_YANGLINT_COMMAND
-                    command = cmd_template.split()[0]
+                    command = [ w for w in cmd_template.split() if not '=' in w ][0]
                     cmd_version = VersionInfo.objects.get(command=command).version
                     cmd = cmd_template.format(model=path, rfclib=settings.SUBMIT_YANG_RFC_MODEL_DIR, draftlib=settings.SUBMIT_YANG_DRAFT_MODEL_DIR, tmplib=workdir)
                     code, out, err = pipe(cmd)
