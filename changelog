@@ -1,3 +1,37 @@
+ietfdb (6.61.0) ietf; urgency=medium
+
+  This is a small feature release which adds directorate mail aliases,
+  annoncement tool refactoring, improved handling of Yang validation
+  messages and xml submission processing messages.  Details:
+
+  * Merged in [14106] from rcross@amsl.com:
+    Add support for directorates to generate-wg-aliases.  Fixes #2363.   
+
+  * Merged in [14104] from rcross@amsl.com:
+    Update secretariat admin permissions.  Change AnnouncementFrom.address 
+    to CharField because full emails, with real name, fail EmailField 
+    validation. Includes migration.  
+
+  * Merged in [14103] from rcross@amsl.com:
+    Change announcement tool access function to use data from 
+    AnnouncementFrom objects.  Fixes #2362.   
+
+  * Tweaked the submission checker shell invocation code to deal with 
+    command lines starting with environment variable settings.
+
+  * Changed the message shown when xml file parsing fails during draft 
+    submission to include the actual error message from the xml parser.  Fixes 
+    issue #2353.
+
+  * Fixed another issue with the meeting materials urls, related to the 
+    href() normalisation work.
+
+  * Changed the handling of yang validation otput to capture errors 
+    messages also when command the exit code is zero.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  11 Sep 2017 15:17:01 +0000
+
+
 ietfdb (6.60.0) ietf; urgency=medium
 
   **Show NomCom eligibility on account page**
