@@ -116,7 +116,7 @@ def get_meeting(num=None,type_in=['ietf',]):
     if type_in:
         meetings = meetings.filter(type__in=type_in)
     if num == None:
-        meetings = meetings.order_by("-date")
+        meetings = meetings.filter(date__gte=datetime.datetime.today()-datetime.timedelta(days=31)).order_by('date')
     else:
         meetings = meetings.filter(number=num)
     if meetings.exists():
