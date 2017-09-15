@@ -141,7 +141,7 @@ class Meeting(models.Model):
 
     @classmethod
     def get_current_meeting(cls, type="ietf"):
-        return cls.objects.all().filter(type=type).order_by('-date').first()
+        return cls.objects.filter(type=type, date__gte=datetime.datetime.today()-datetime.timedelta(days=7) ).order_by('date').first()
 
     @classmethod
     def get_first_cut_off(cls):
