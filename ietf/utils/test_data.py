@@ -4,9 +4,11 @@
 from __future__ import unicode_literals
 
 import datetime
+from unidecode import unidecode
 
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.utils.encoding import smart_text
 
 import debug                            # pyflakes:ignore
 
@@ -34,7 +36,7 @@ def create_person(group, role_name, name=None, username=None, email_address=None
     user = User.objects.create(username=username,is_staff=is_staff,is_superuser=is_superuser)
     user.set_password(password)
     user.save()
-    person = Person.objects.create(name=name, ascii=name, user=user)
+    person = Person.objects.create(name=name, ascii=unidecode(smart_text(name)), user=user)
     email = Email.objects.create(address=email_address, person=person)
     Role.objects.create(group=group, name_id=role_name, person=person, email=email)
     return person
