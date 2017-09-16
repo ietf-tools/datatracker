@@ -339,7 +339,7 @@ MIDDLEWARE = (
     'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.http.ConditionalGetMiddleware',
-    'ietf.middleware.sql_log_middleware',
+#    'ietf.middleware.sql_log_middleware',
     'ietf.middleware.SMTPExceptionMiddleware',
     'ietf.middleware.Utf8ExceptionMiddleware',
     'ietf.middleware.redirect_trailing_period_middleware',
