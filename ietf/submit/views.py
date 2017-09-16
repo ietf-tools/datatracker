@@ -1,16 +1,15 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 import base64
 import datetime
-import os
-import xml2rfc
 
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.auth.models import User
 from django.urls import reverse as urlreverse
-from django.core.validators import validate_email, ValidationError
+from django.core.validators import ValidationError
 from django.http import HttpResponseRedirect, Http404, HttpResponseForbidden, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from django.utils.module_loading import import_string
+from django.views.decorators.csrf import csrf_exempt
 
 import debug                            # pyflakes:ignore
 
@@ -20,20 +19,17 @@ from ietf.group.models import Group
 from ietf.ietfauth.utils import has_role, role_required
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.message.models import Message, MessageAttachment
-from ietf.name.models import FormalLanguageName
-from ietf.submit.forms import ( SubmissionUploadForm, AuthorForm, SubmitterForm, EditSubmissionForm,
-    PreapprovalForm, ReplacesForm, SubmissionEmailForm, MessageModelForm )
-from ietf.submit.mail import ( send_full_url, send_approval_request_to_group,
-    send_submission_confirmation, send_manual_post_request, add_submission_email, get_reply_to )
-from ietf.submit.models import (Submission, SubmissionCheck, Preapproval,
+from ietf.submit.forms import ( SubmissionManualUploadForm, SubmissionAutoUploadForm, AuthorForm,
+    SubmitterForm, EditSubmissionForm, PreapprovalForm, ReplacesForm, SubmissionEmailForm, MessageModelForm )
+from ietf.submit.mail import ( send_full_url, send_manual_post_request, add_submission_email, get_reply_to )
+from ietf.submit.models import (Submission, Preapproval,
     DraftSubmissionStateName, SubmissionEmailEvent )
 from ietf.submit.utils import ( approvable_submissions_for_user, preapprovals_for_user,
-    recently_approved_by_user, validate_submission, create_submission_event,
-    docevent_from_submission, post_submission, cancel_submission, rename_submission_files,
-    get_person_from_name_email )
+    recently_approved_by_user, validate_submission, create_submission_event, docevent_from_submission,
+    post_submission, cancel_submission, rename_submission_files, remove_submission_files, get_draft_meta,
+    get_submission, fill_in_submission, apply_checkers, send_confirmation_emails )
 from ietf.stats.utils import clean_country_name
-from ietf.utils.accesstoken import generate_random_key, generate_access_token
-from ietf.utils.draft import Draft
+from ietf.utils.accesstoken import generate_access_token
 from ietf.utils.log import log
 from ietf.utils.mail import send_mail_message
 
@@ -41,144 +37,20 @@ from ietf.utils.mail import send_mail_message
 def upload_submission(request):
     if request.method == 'POST':
         try:
-            form = SubmissionUploadForm(request, data=request.POST, files=request.FILES)
+            form = SubmissionManualUploadForm(request, data=request.POST, files=request.FILES)
             if form.is_valid():
-                authors = []
-                file_name = {}
-                abstract = None
-                file_size = None
-                for ext in form.fields.keys():
-                    f = form.cleaned_data[ext]
-                    if not f:
-                        continue
-                    
-                    name = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.%s' % (form.filename, form.revision, ext))
-                    file_name[ext] = name
-                    with open(name, 'wb+') as destination:
-                        for chunk in f.chunks():
-                            destination.write(chunk)
+                authors, abstract, file_name, file_size = get_draft_meta(form)
 
-                if form.cleaned_data['xml']:
-                    if not form.cleaned_data['txt']:
-                        file_name['txt'] = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.txt' % (form.filename, form.revision))
-                        try:
-                            pagedwriter = xml2rfc.PaginatedTextRfcWriter(form.xmltree, quiet=True)
-                            pagedwriter.write(file_name['txt'])
-                        except Exception as e:
-                            raise ValidationError("Error from xml2rfc: %s" % e)
-                        file_size = os.stat(file_name['txt']).st_size
-                    # Some meta-information, such as the page-count, can only
-                    # be retrieved from the generated text file.  Provide a
-                    # parsed draft object to get at that kind of information.
-                    with open(file_name['txt']) as txt_file:
-                        form.parsed_draft = Draft(txt_file.read().decode('utf8'), txt_file.name)
-
-                else:
-                    file_size = form.cleaned_data['txt'].size
-
-                if form.authors:
-                    authors = form.authors
-                else:
-                    # If we don't have an xml file, try to extract the
-                    # relevant information from the text file
-                    for author in form.parsed_draft.get_author_list():
-                        full_name, first_name, middle_initial, last_name, name_suffix, email, country, company = author
-
-                        name = full_name.replace("\n", "").replace("\r", "").replace("<", "").replace(">", "").strip()
-
-                        if email:
-                            try:
-                                validate_email(email)
-                            except ValidationError:
-                                email = ""
-
-                        def turn_into_unicode(s):
-                            if s is None:
-                                return u""
-
-                            if isinstance(s, unicode):
-                                return s
-                            else:
-                                try:
-                                    return s.decode("utf-8")
-                                except UnicodeDecodeError:
-                                    try:
-                                        return s.decode("latin-1")
-                                    except UnicodeDecodeError:
-                                        return ""
-
-                        name = turn_into_unicode(name)
-                        email = turn_into_unicode(email)
-                        company = turn_into_unicode(company)
-
-                        authors.append({
-                            "name": name,
-                            "email": email,
-                            "affiliation": company,
-                            "country": country
-                        })
-
-                if form.abstract:
-                    abstract = form.abstract
-                else:
-                    abstract = form.parsed_draft.get_abstract()
-
-                # See if there is a Submission in state waiting-for-draft
-                # for this revision.
-                # If so - we're going to update it otherwise we create a new object 
-
-                submissions = Submission.objects.filter(name=form.filename,
-                                                        rev=form.revision,
-                                                        state_id = "waiting-for-draft").distinct()
-
-                if not submissions:
-                    submission = Submission(name=form.filename, rev=form.revision, group=form.group)
-                elif len(submissions) == 1:
-                    submission = submissions[0]
-                else:
-                    raise Exception("Multiple submissions found waiting for upload")
-
+                submission = get_submission(form)
                 try:
-                    submission.state = DraftSubmissionStateName.objects.get(slug="uploaded")
-                    submission.remote_ip = form.remote_ip
-                    submission.title = form.title
-                    submission.abstract = abstract
-                    submission.pages = form.parsed_draft.get_pagecount()
-                    submission.words = form.parsed_draft.get_wordcount()
-                    submission.authors = authors
-                    submission.first_two_pages = ''.join(form.parsed_draft.pages[:2])
-                    submission.file_size = file_size
-                    submission.file_types = ','.join(form.file_types)
-                    submission.submission_date = datetime.date.today()
-                    submission.document_date = form.parsed_draft.get_creation_date()
-                    submission.replaces = ""
-
-                    submission.save()
-
-                    submission.formal_languages = FormalLanguageName.objects.filter(slug__in=form.parsed_draft.get_formal_languages())
-
+                    fill_in_submission(form, submission, authors, abstract, file_size)
                 except Exception as e:
+                    if submission:
+                        submission.delete()
                     log("Exception: %s\n" % e)
                     raise
 
-                # run submission checkers
-                def apply_check(submission, checker, method, fn):
-                    func = getattr(checker, method)
-                    passed, message, errors, warnings, items = func(fn)
-                    check = SubmissionCheck(submission=submission, checker=checker.name, passed=passed,
-                                            message=message, errors=errors, warnings=warnings, items=items,
-                                            symbol=checker.symbol)
-                    check.save()
-
-                for checker_path in settings.IDSUBMIT_CHECKER_CLASSES:
-                    checker_class = import_string(checker_path)
-                    checker = checker_class()
-                    # ordered list of methods to try
-                    for method in ("check_fragment_xml", "check_file_xml", "check_fragment_txt", "check_file_txt", ):
-                        ext = method[-3:]
-                        if hasattr(checker, method) and ext in file_name:
-                            apply_check(submission, checker, method, file_name[ext])
-                            break
+                apply_checkers(submission, file_name)
 
                 create_submission_event(request, submission, desc="Uploaded submission")
                 # Don't add an "Uploaded new revision doevent yet, in case of cancellation
@@ -186,21 +58,91 @@ def upload_submission(request):
                 return redirect("ietf.submit.views.submission_status", submission_id=submission.pk, access_token=submission.access_token())
         except IOError as e:
             if "read error" in str(e): # The server got an IOError when trying to read POST data
-                form = SubmissionUploadForm(request=request)
+                form = SubmissionManualUploadForm(request=request)
                 form._errors = {}
                 form._errors["__all__"] = form.error_class(["There was a failure receiving the complete form data -- please try again."])
             else:
                 raise
         except ValidationError as e:
-            form = SubmissionUploadForm(request=request)
+            form = SubmissionManualUploadForm(request=request)
             form._errors = {}
             form._errors["__all__"] = form.error_class(["There was a failure converting the xml file to text -- please verify that your xml file is valid.  (%s)" % e.message])
     else:
-        form = SubmissionUploadForm(request=request)
+        form = SubmissionManualUploadForm(request=request)
 
     return render(request, 'submit/upload_submission.html',
                               {'selected': 'index',
                                'form': form})
+
+@csrf_exempt
+def api_submit(request):
+    "Automated submission entrypoint"
+    submission = None
+    def err(code, text):
+        return HttpResponse(text, status=code, reason=text, content_type='text/plain')
+    if request.method == 'POST':
+        e = None
+        try:
+            form = SubmissionAutoUploadForm(request, data=request.POST, files=request.FILES)
+            if form.is_valid():
+                username = form.cleaned_data['user']
+                user = User.objects.filter(username=username)
+                if user.count() == 0:
+                    return err(404, "No such user: %s" % username)
+                if user.count() > 1:
+                    return err(500, "Multiple matching accounts for %s" % username)
+                user = user.first()
+                if not hasattr(user, 'person'):
+                    return err(404, "No person with username %s" % username)
+
+                authors, abstract, file_name, file_size = get_draft_meta(form)
+
+                submission = get_submission(form)
+                fill_in_submission(form, submission, authors, abstract, file_size)
+                apply_checkers(submission, file_name)
+
+                create_submission_event(request, submission, desc="Uploaded submission")
+
+                errors = validate_submission(submission)
+                if errors:
+                    raise ValidationError(errors)
+
+                errors = [ c.message for c in submission.checks.all() if not c.passed ]
+                if errors:
+                    raise ValidationError(errors)
+
+                if not user.username in [ a['email'] for a in authors ]:
+                    raise ValidationError('Submitter %s is not one of the document authors' % user.username)
+
+                submission.submitter = user.person.formatted_email()
+                docevent_from_submission(request, submission, desc="Uploaded new revision")
+
+                requires_group_approval = (submission.rev == '00' and submission.group and submission.group.type_id in ("wg", "rg", "ietf", "irtf", "iab", "iana", "rfcedtyp") and not Preapproval.objects.filter(name=submission.name).exists())
+                requires_prev_authors_approval = Document.objects.filter(name=submission.name)
+
+                sent_to, desc, docDesc = send_confirmation_emails(request, submission, requires_group_approval, requires_prev_authors_approval)
+                msg = u"Set submitter to \"%s\" and %s" % (submission.submitter, desc)
+                create_submission_event(request, submission, msg)
+                docevent_from_submission(request, submission, docDesc, who="(System)")
+
+                return HttpResponse(
+                    "Upload of %s OK, confirmation requests sent to:\n  %s" % (submission.name, ',\n  '.join(sent_to)),
+                    content_type="text/plain")
+            else:
+                raise ValidationError(form.errors)
+        except IOError as e:
+            return err(500, "IO Error: %s" % str(e))
+        except ValidationError as e:
+            return err(400, "Validation Error: %s" % str(e))
+        except Exception as e:
+            raise
+            return err(500, "Exception: %s" % str(e))            
+        finally:
+            if e and submission:
+                remove_submission_files(submission)
+                submission.delete()
+    else:
+        return err(405, "Method not allowed")
 
 def note_well(request):
     return render(request, 'submit/note_well.html', {'selected': 'notewell'})
@@ -252,6 +194,8 @@ def submission_status(request, submission_id, access_token=None):
             not key_matched
         and not is_secretariat
         and not submission.state_id in ("cancel", "posted") )
+
+    # Begin common code chunk
     addrs = gather_address_lists('sub_confirmation_requested',submission=submission)
     confirmation_list = addrs.to
     confirmation_list.extend(addrs.cc)
@@ -260,14 +204,9 @@ def submission_status(request, submission_id, access_token=None):
 
     requires_prev_authors_approval = Document.objects.filter(name=submission.name)
 
-    group_authors_changed = False
-    doc = submission.existing_document()
-    if doc and doc.group:
-        old_authors = [ author.person for author in doc.documentauthor_set.all() ]
-        new_authors = [ get_person_from_name_email(author["name"], author.get("email")) for author in submission.authors ]
-        group_authors_changed = set(old_authors)!=set(new_authors)
-
     message = None
+
+
 
     if submission.state_id == "cancel":
         message = ('error', 'This submission has been cancelled, modification is no longer possible.')
@@ -309,34 +248,7 @@ def submission_status(request, submission_id, access_token=None):
                     post_submission(request, submission, desc)
                     create_submission_event(request, submission, desc)
                 else:
-                    docevent_from_submission(request, submission, desc="Uploaded new revision")
-
-                    if requires_group_approval:
-                        submission.state = DraftSubmissionStateName.objects.get(slug="grp-appr")
-                        submission.save()
-    
-                        sent_to = send_approval_request_to_group(request, submission)
-    
-                        desc = "sent approval email to group chairs: %s" % u", ".join(sent_to)
-                        docDesc = u"Request for posting approval emailed to group chairs: %s" % u", ".join(sent_to)
-
-                    else:
-                        submission.auth_key = generate_random_key()
-                        if requires_prev_authors_approval:
-                            submission.state = DraftSubmissionStateName.objects.get(slug="aut-appr")
-                        else:
-                            submission.state = DraftSubmissionStateName.objects.get(slug="auth")
-                        submission.save()
-
-                        sent_to = send_submission_confirmation(request, submission, chair_notice=group_authors_changed)
-
-                        if submission.state_id == "aut-appr":
-                            desc = u"sent confirmation email to previous authors: %s" % u", ".join(sent_to)
-                            docDesc = "Request for posting confirmation emailed to previous authors: %s" % u", ".join(sent_to)
-                        else:
-                            desc = u"sent confirmation email to submitter and authors: %s" % u", ".join(sent_to)
-                            docDesc = "Request for posting confirmation emailed to submitter and authors: %s" % u", ".join(sent_to)
-    
+                    sent_to, desc, docDesc = send_confirmation_emails(request, submission, requires_group_approval, requires_prev_authors_approval)
                     msg = u"Set submitter to \"%s\", replaces to %s and %s" % (
                         submission.submitter,
                         ", ".join(prettify_std_name(r.name) for r in replaces) if replaces else "(none)",

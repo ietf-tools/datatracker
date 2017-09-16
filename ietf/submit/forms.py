@@ -31,14 +31,11 @@ from ietf.submit.parsers.ps_parser import PSParser
 from ietf.submit.parsers.xml_parser import XMLParser
 from ietf.utils.draft import Draft
 
-class SubmissionUploadForm(forms.Form):
-    txt = forms.FileField(label=u'.txt format', required=False)
-    xml = forms.FileField(label=u'.xml format', required=False)
-    pdf = forms.FileField(label=u'.pdf format', required=False)
-    ps  = forms.FileField(label=u'.ps format', required=False)
+class SubmissionBaseUploadForm(forms.Form):
+    xml = forms.FileField(label=u'.xml format', required=True)
 
     def __init__(self, request, *args, **kwargs):
-        super(SubmissionUploadForm, self).__init__(*args, **kwargs)
+        super(SubmissionBaseUploadForm, self).__init__(*args, **kwargs)
 
         self.remote_ip = request.META.get('REMOTE_ADDR', None)
 
@@ -56,6 +53,14 @@ class SubmissionUploadForm(forms.Form):
         self.authors = []
         self.parsed_draft = None
         self.file_types = []
+        # No code currently (14 Sep 2017) uses this class directly; it is
+        # only used through its subclasses.  The two assignments below are
+        # set to trigger an exception if it is used directly only to make
+        # sure that adequate consideration is made if it is decided to use it
+        # directly in the future.  Feel free to set these appropriately to
+        # avoid the exceptions in that case:
+        self.formats = None             # None will raise an exception in clean() if this isn't changed in a subclass
+        self.base_formats = None        # None will raise an exception in clean() if this isn't changed in a subclass
 
     def set_cutoff_warnings(self):
         now = datetime.datetime.now(pytz.utc)
@@ -96,6 +101,7 @@ class SubmissionUploadForm(forms.Form):
                 'The last submission time for the I-D submission was %s.<br/><br>'
                 'The I-D submission tool will be reopened after %s (IETF-meeting local time).' % (cutoff_01_str, reopen_str))
             self.shutdown = True
+
     def clean_file(self, field_name, parser_class):
         f = self.cleaned_data[field_name]
         if not f:
@@ -107,15 +113,6 @@ class SubmissionUploadForm(forms.Form):
 
         return f
 
-    def clean_txt(self):
-        return self.clean_file("txt", PlainParser)
-
-    def clean_pdf(self):
-        return self.clean_file("pdf", PDFParser)
-
-    def clean_ps(self):
-        return self.clean_file("ps",  PSParser)
-
     def clean_xml(self):
         return self.clean_file("xml", XMLParser)
 
@@ -123,13 +120,13 @@ class SubmissionUploadForm(forms.Form):
         if self.shutdown and not has_role(self.request.user, "Secretariat"):
             raise forms.ValidationError('The submission tool is currently shut down')
 
-        for ext in ['txt', 'pdf', 'xml', 'ps']:
+        for ext in self.formats:
             f = self.cleaned_data.get(ext, None)
             if not f:
                 continue
             self.file_types.append('.%s' % ext)
         if not ('.txt' in self.file_types or '.xml' in self.file_types):
-            raise forms.ValidationError('You must submit at least a valid .txt or a valid .xml file; didn\'t find either.')
+            raise forms.ValidationError('Unexpected submission file types; found %s, but %s is required' % (', '.join(self.file_types), ' or '.join(self.base_formats)))
 
         #debug.show('self.cleaned_data["xml"]')
         if self.cleaned_data.get('xml'):
@@ -168,6 +165,8 @@ class SubmissionUploadForm(forms.Form):
                         )
                 self.xmlroot = self.xmltree.getroot()
                 draftname = self.xmlroot.attrib.get('docName')
+                if draftname is None:
+                    raise forms.ValidationError("No docName attribute found in the xml root element")
                 revmatch = re.search("-[0-9][0-9]$", draftname)
                 if revmatch:
                     self.revision = draftname[-2:]
@@ -273,7 +272,7 @@ class SubmissionUploadForm(forms.Form):
                 settings.IDSUBMIT_MAX_DAILY_SUBMISSIONS, settings.IDSUBMIT_MAX_DAILY_SUBMISSIONS_SIZE,
             )
 
-        return super(SubmissionUploadForm, self).clean()
+        return super(SubmissionBaseUploadForm, self).clean()
 
     def check_submissions_tresholds(self, which, filter_kwargs, max_amount, max_size):
         submissions = Submission.objects.filter(**filter_kwargs)
@@ -331,6 +330,34 @@ class SubmissionUploadForm(forms.Form):
 
             else:
                 return None
+
+class SubmissionManualUploadForm(SubmissionBaseUploadForm):
+    xml = forms.FileField(label=u'.xml format', required=False) # xml field with required=False instead of True
+    txt = forms.FileField(label=u'.txt format', required=False)
+    pdf = forms.FileField(label=u'.pdf format', required=False)
+    ps  = forms.FileField(label=u'.ps format', required=False)
+
+    def __init__(self, request, *args, **kwargs):
+        super(SubmissionManualUploadForm, self).__init__(request, *args, **kwargs)
+        self.formats = ['txt', 'pdf', 'xml', 'ps', ]
+        self.base_formats = ['txt', 'xml', ]
+
+    def clean_txt(self):
+        return self.clean_file("txt", PlainParser)
+
+    def clean_pdf(self):
+        return self.clean_file("pdf", PDFParser)
+
+    def clean_ps(self):
+        return self.clean_file("ps",  PSParser)
+
+class SubmissionAutoUploadForm(SubmissionBaseUploadForm):
+    user = forms.EmailField(required=True)
+
+    def __init__(self, request, *args, **kwargs):
+        super(SubmissionAutoUploadForm, self).__init__(request, *args, **kwargs)
+        self.formats = ['xml', ]
+        self.base_formats = ['xml', ]
 
 class NameEmailForm(forms.Form):
     name = forms.CharField(required=True)

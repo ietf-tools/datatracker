@@ -2,7 +2,7 @@
 
 
 
-Network Working Group                                            A. Name
+Network Working Group                                            %(initials)s %(surname)s
 Internet-Draft                                          Test Centre Inc.
 Intended status: Informational                                %(month)s %(year)s
 Expires: %(expiration)s
@@ -180,13 +180,13 @@ Table of Contents
 
 Author's Address
 
-   Author Name
+   %(author)s
    Test Centre Inc.
    42 Some Road
    Some Where 12345
    UK
 
-   Email: author@example.com
+   Email: %(email)s
 
 
 

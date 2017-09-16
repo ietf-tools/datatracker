@@ -180,13 +180,13 @@ Table of Contents
 
 Author's Address
 
-   Author Name
+   %(author)s
    Test Centre Inc.
    42 Some Road
    Some Where 12345
    UK
 
-   Email: author@example.com
+   Email: %(email)s
 
 
 

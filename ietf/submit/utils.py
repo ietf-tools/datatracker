@@ -3,9 +3,12 @@
 import os
 import datetime
 import six                              # pyflakes:ignore
+import xml2rfc
 from unidecode import unidecode
 
 from django.conf import settings
+from django.core.validators import validate_email, ValidationError
+from django.utils.module_loading import import_string
 
 import debug                            # pyflakes:ignore
 
@@ -18,12 +21,15 @@ from ietf.doc.utils import set_replaces_for_document
 from ietf.doc.mails import send_review_possibly_replaces_request
 from ietf.group.models import Group
 from ietf.ietfauth.utils import has_role
-from ietf.name.models import StreamName
+from ietf.name.models import StreamName, FormalLanguageName
 from ietf.person.models import Person, Email
 from ietf.community.utils import update_name_contains_indexes_with_new_doc
-from ietf.submit.mail import announce_to_lists, announce_new_version, announce_to_authors
-from ietf.submit.models import Submission, SubmissionEvent, Preapproval, DraftSubmissionStateName
+from ietf.submit.mail import ( announce_to_lists, announce_new_version, announce_to_authors,
+    send_approval_request_to_group, send_submission_confirmation )
+from ietf.submit.models import Submission, SubmissionEvent, Preapproval, DraftSubmissionStateName, SubmissionCheck
 from ietf.utils import log
+from ietf.utils.accesstoken import generate_random_key
+from ietf.utils.draft import Draft
 from ietf.utils.mail import is_valid_email
 
 
@@ -461,16 +467,16 @@ def cancel_submission(submission):
     remove_submission_files(submission)
 
 def rename_submission_files(submission, prev_rev, new_rev):
-    from ietf.submit.forms import SubmissionUploadForm
-    for ext in SubmissionUploadForm.base_fields.keys():
+    from ietf.submit.forms import SubmissionManualUploadForm
+    for ext in SubmissionManualUploadForm.base_fields.keys():
         source = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.%s' % (submission.name, prev_rev, ext))
         dest = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.%s' % (submission.name, new_rev, ext))
         if os.path.exists(source):
             os.rename(source, dest)
 
 def move_files_to_repository(submission):
-    from ietf.submit.forms import SubmissionUploadForm
-    for ext in SubmissionUploadForm.base_fields.keys():
+    from ietf.submit.forms import SubmissionManualUploadForm
+    for ext in SubmissionManualUploadForm.base_fields.keys():
         source = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.%s' % (submission.name, submission.rev, ext))
         dest = os.path.join(settings.IDSUBMIT_REPOSITORY_PATH, '%s-%s.%s' % (submission.name, submission.rev, ext))
         if os.path.exists(source):
@@ -533,3 +539,184 @@ def expire_submission(submission, by):
     submission.save()
 
     SubmissionEvent.objects.create(submission=submission, by=by, desc="Cancelled expired submission")
+
+def get_draft_meta(form):
+    authors = []
+    file_name = {}
+    abstract = None
+    file_size = None
+    for ext in form.fields.keys():
+        if not ext in form.formats:
+            continue
+        f = form.cleaned_data[ext]
+        if not f:
+            continue
+
+        name = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.%s' % (form.filename, form.revision, ext))
+        file_name[ext] = name
+        with open(name, 'wb+') as destination:
+            for chunk in f.chunks():
+                destination.write(chunk)
+
+    if form.cleaned_data['xml']:
+        if not ('txt' in form.cleaned_data and form.cleaned_data['txt']):
+            file_name['txt'] = os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.txt' % (form.filename, form.revision))
+            try:
+                pagedwriter = xml2rfc.PaginatedTextRfcWriter(form.xmltree, quiet=True)
+                pagedwriter.write(file_name['txt'])
+            except Exception as e:
+                raise ValidationError("Error from xml2rfc: %s" % e)
+            file_size = os.stat(file_name['txt']).st_size
+        # Some meta-information, such as the page-count, can only
+        # be retrieved from the generated text file.  Provide a
+        # parsed draft object to get at that kind of information.
+        with open(file_name['txt']) as txt_file:
+            form.parsed_draft = Draft(txt_file.read().decode('utf8'), txt_file.name)
+
+    else:
+        file_size = form.cleaned_data['txt'].size
+
+    if form.authors:
+        authors = form.authors
+    else:
+        # If we don't have an xml file, try to extract the
+        # relevant information from the text file
+        for author in form.parsed_draft.get_author_list():
+            full_name, first_name, middle_initial, last_name, name_suffix, email, country, company = author
+
+            name = full_name.replace("\n", "").replace("\r", "").replace("<", "").replace(">", "").strip()
+
+            if email:
+                try:
+                    validate_email(email)
+                except ValidationError:
+                    email = ""
+
+            def turn_into_unicode(s):
+                if s is None:
+                    return u""
+
+                if isinstance(s, unicode):
+                    return s
+                else:
+                    try:
+                        return s.decode("utf-8")
+                    except UnicodeDecodeError:
+                        try:
+                            return s.decode("latin-1")
+                        except UnicodeDecodeError:
+                            return ""
+
+            name = turn_into_unicode(name)
+            email = turn_into_unicode(email)
+            company = turn_into_unicode(company)
+
+            authors.append({
+                "name": name,
+                "email": email,
+                "affiliation": company,
+                "country": country
+            })
+
+    if form.abstract:
+        abstract = form.abstract
+    else:
+        abstract = form.parsed_draft.get_abstract()
+
+    return authors, abstract, file_name, file_size
+
+
+def get_submission(form):
+    submissions = Submission.objects.filter(name=form.filename,
+                                            rev=form.revision,
+                                            state_id = "waiting-for-draft").distinct()
+    if not submissions:
+        submission = Submission(name=form.filename, rev=form.revision, group=form.group)
+    elif len(submissions) == 1:
+        submission = submissions.first()
+    else:
+        raise Exception("Multiple submissions found waiting for upload")
+    return submission
+
+
+def fill_in_submission(form, submission, authors, abstract, file_size):
+    # See if there is a Submission in state waiting-for-draft
+    # for this revision.
+    # If so - we're going to update it otherwise we create a new object 
+
+    submission.state = DraftSubmissionStateName.objects.get(slug="uploaded")
+    submission.remote_ip = form.remote_ip
+    submission.title = form.title
+    submission.abstract = abstract
+    submission.pages = form.parsed_draft.get_pagecount()
+    submission.words = form.parsed_draft.get_wordcount()
+    submission.authors = authors
+    submission.first_two_pages = ''.join(form.parsed_draft.pages[:2])
+    submission.file_size = file_size
+    submission.file_types = ','.join(form.file_types)
+    submission.submission_date = datetime.date.today()
+    submission.document_date = form.parsed_draft.get_creation_date()
+    submission.replaces = ""
+
+    submission.save()
+
+    submission.formal_languages = FormalLanguageName.objects.filter(slug__in=form.parsed_draft.get_formal_languages())
+
+def apply_checkers(submission, file_name):
+    # run submission checkers
+    def apply_check(submission, checker, method, fn):
+        func = getattr(checker, method)
+        passed, message, errors, warnings, items = func(fn)
+        check = SubmissionCheck(submission=submission, checker=checker.name, passed=passed,
+                                message=message, errors=errors, warnings=warnings, items=items,
+                                symbol=checker.symbol)
+        check.save()
+
+    for checker_path in settings.IDSUBMIT_CHECKER_CLASSES:
+        checker_class = import_string(checker_path)
+        checker = checker_class()
+        # ordered list of methods to try
+        for method in ("check_fragment_xml", "check_file_xml", "check_fragment_txt", "check_file_txt", ):
+            ext = method[-3:]
+            if hasattr(checker, method) and ext in file_name:
+                apply_check(submission, checker, method, file_name[ext])
+                break
+
+def send_confirmation_emails(request, submission, requires_group_approval, requires_prev_authors_approval):
+    docevent_from_submission(request, submission, desc="Uploaded new revision")
+
+    if requires_group_approval:
+        submission.state = DraftSubmissionStateName.objects.get(slug="grp-appr")
+        submission.save()
+
+        sent_to = send_approval_request_to_group(request, submission)
+
+        desc = "sent approval email to group chairs: %s" % u", ".join(sent_to)
+        docDesc = u"Request for posting approval emailed to group chairs: %s" % u", ".join(sent_to)
+
+    else:
+        group_authors_changed = False
+        doc = submission.existing_document()
+        if doc and doc.group:
+            old_authors = [ author.person for author in doc.documentauthor_set.all() ]
+            new_authors = [ get_person_from_name_email(author["name"], author.get("email")) for author in submission.authors ]
+            group_authors_changed = set(old_authors)!=set(new_authors)
+
+        submission.auth_key = generate_random_key()
+        if requires_prev_authors_approval:
+            submission.state = DraftSubmissionStateName.objects.get(slug="aut-appr")
+        else:
+            submission.state = DraftSubmissionStateName.objects.get(slug="auth")
+        submission.save()
+
+        sent_to = send_submission_confirmation(request, submission, chair_notice=group_authors_changed)
+
+        if submission.state_id == "aut-appr":
+            desc = u"sent confirmation email to previous authors: %s" % u", ".join(sent_to)
+            docDesc = "Request for posting confirmation emailed to previous authors: %s" % u", ".join(sent_to)
+        else:
+            desc = u"sent confirmation email to submitter and authors: %s" % u", ".join(sent_to)
+            docDesc = "Request for posting confirmation emailed to submitter and authors: %s" % u", ".join(sent_to)
+    return sent_to, desc, docDesc
+
+    

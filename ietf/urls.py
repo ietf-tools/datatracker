@@ -12,18 +12,15 @@ from django.views.defaults import server_error
 
 import debug                            # pyflakes:ignore
 
-from ietf import api
 from ietf.doc import views_search
 from ietf.group.urls import group_urls, grouptype_urls, stream_urls
 from ietf.help import views as help_views
 from ietf.ipr.sitemaps import IPRMap
 from ietf.liaisons.sitemaps import LiaisonMap
-from ietf.meeting import views as meeting_views
 from ietf.utils.urls import url
 
 
 admin.autodiscover()
-api.autodiscover()
 
 # sometimes, this code gets called more than once, which is an
 # that seems impossible to work around.
@@ -43,6 +40,7 @@ urlpatterns = [
     url(r'^admin/', include(admin.site.urls)),
     url(r'^admin/docs/', include('django.contrib.admindocs.urls')),
     url(r'^ann/', include('ietf.nomcom.redirect_ann_urls')),
+    url(r'^api/', include('ietf.api.urls')),
     url(r'^community/', include('ietf.community.urls')),
     url(r'^accounts/settings/', include('ietf.cookies.urls')),
     url(r'^doc/', include('ietf.doc.urls')),
@@ -75,20 +73,6 @@ urlpatterns = [
 
     # Google webmaster tools verification url
     url(r'^googlea30ad1dacffb5e5b.html', TemplateView.as_view(template_name='googlea30ad1dacffb5e5b.html')),
-]
-
-# Endpoints for Tastypie's REST API
-urlpatterns += [
-    url(r'^api/v1/?$', api.top_level),
-]
-for n,a in api._api_list:
-    urlpatterns += [
-        url(r'^api/v1/', include(a.urls)),
-    ]
-
-# Custom API endpoints
-urlpatterns += [
-    url(r'^api/notify/meeting/import_recordings/(?P<number>[a-z0-9-]+)/?$', meeting_views.api_import_recordings),
 ]
 
 # This is needed to serve files during testing

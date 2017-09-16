@@ -3,8 +3,8 @@
 <?rfc toc="yes"?>
 <rfc category="info" docName="%(name)s" ipr="trust200902">
   <front>
-    <title>Testing&nbsp;Tests</title>
-    <author fullname="Author Name" initials="A." surname="Name">
+    <title>%(title)s</title>
+    <author fullname="%(author)s" initials="%(initials)s" surname="%(surname)s">
       <organization>Test Centre Inc.</organization>
 
       <address>
@@ -13,7 +13,7 @@
           <city>Some Where 12345</city>
           <country>UK</country>
         </postal>
-        <email>author@example.com</email>
+        <email>%(email)s</email>
       </address>
     </author>
     <date month="%(month)s" year="%(year)s" />
