@@ -5,22 +5,29 @@ from django.template import Template, Context
 
 from email.utils import parseaddr
 from ietf.utils.mail import formataddr
+from ietf.person.models import Email
 
 import debug                            # pyflakes:ignore
 
 from ietf.group.models import Role
 
 def clean_duplicates(addrlist):
-    retval = set()
+    address_info = {}
     for a in addrlist:
         (name,addr) = parseaddr(a)
+        # This collapses duplicate addresses to one, using (arbitrarily) the
+        # name from the last one:
+        address_info[addr] = (name, a)
+    addresses = []
+    for addr, info in address_info.items():
+        name, a = info
         if (name,addr)==('',''):
-            retval.add(a)
+            addresses.append(a)
         elif name:
-            retval.add(formataddr((name,addr)))
+            addresses.append(formataddr((name,addr)))
         else:
-            retval.add(addr)
-    return list(retval) 
+            addresses.append(addr)
+    return addresses
 
 class MailTrigger(models.Model):
     slug = models.CharField(max_length=32, primary_key=True)
@@ -223,8 +230,13 @@ class Recipient(models.Model):
                     if doc.stream_id and doc.stream_id not in ['ietf']:
                         addrs.extend(Recipient.objects.get(slug='stream_managers').gather(**{'streams':[doc.stream_id]}))
             else:
-                addrs.extend([formataddr((author["name"], author["email"])) for author in submission.authors if author.get("email")])
-                if submission.submitter_parsed()["email"]:
+                # This is a bit roundabout, but we do it to get consistent and unicode-compliant
+                # email names for known persons, without relying on the name parsed from the
+                # draft (which might be ascii, also for persons with non-ascii names)
+                emails = [ Email.objects.filter(address=author['email']).first() or author for author in submission.authors if author.get('email') ]
+                addrs.extend([ e.formatted_email() if isinstance(e, Email) else formataddr((e["name"], e["email"])) for e in emails ] )
+                submitter_email = submission.submitter_parsed()["email"]
+                if submitter_email and not submitter_email in [ parseaddr(a)[1] for a in addrs ]:
                     addrs.append(submission.submitter)
         return addrs
 
