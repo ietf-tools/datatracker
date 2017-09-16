@@ -4,6 +4,7 @@ import datetime
 import logging
 import os
 import rfc2html
+import six
 
 from django.db import models
 from django.core import checks
@@ -383,7 +384,7 @@ class DocumentInfo(models.Model):
 
     def relations_that_doc(self, relationship):
         """Return the related-document objects that describe a given relationship from self to other documents."""
-        if isinstance(relationship, str):
+        if isinstance(relationship, six.string_types):
             relationship = [ relationship ]
         if isinstance(relationship, tuple):
             relationship = list(relationship)
