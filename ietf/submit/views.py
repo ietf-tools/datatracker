@@ -80,7 +80,10 @@ def api_submit(request):
     submission = None
     def err(code, text):
         return HttpResponse(text, status=code, reason=text, content_type='text/plain')
-    if request.method == 'POST':
+        
+    if request.method == 'GET':
+        return render(request, 'submit/api_submit_info.html')
+    elif request.method == 'POST':
         e = None
         try:
             form = SubmissionAutoUploadForm(request, data=request.POST, files=request.FILES)
@@ -107,7 +110,7 @@ def api_submit(request):
                 if errors:
                     raise ValidationError(errors)
 
-                errors = [ c.message for c in submission.checks.all() if not c.passed ]
+                errors = [ c.message for c in submission.checks.all() if c.passed==False ]
                 if errors:
                     raise ValidationError(errors)
 
