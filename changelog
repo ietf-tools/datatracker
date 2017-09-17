@@ -1,3 +1,55 @@
+ietfdb (6.62.0) ietf; urgency=medium
+
+  **API for submission automation**
+
+  This release introduces an API suitable for automation of draft submission,
+  as proposed by martin.thomson@gmail.com and encouraged by others.
+  Instructions are available at https://datatracker.ietf.org/api/submit.  The
+  interface accepts only xml uploads which can be processed on the server, and
+  requires the user to have a datatracker account. A successful submit still
+  requires the same email confirmation roundtrip as submissions done through
+  the regular submission tool.  The release also contains some bugfixes.
+
+  From the commit log:
+
+  * Added ietf.utils.text.unidecode_name() and replaced various uses of 
+    unidecode() with it, in order to normalize the generation of ascii versions 
+    of names, to avoid different practices in space stripping and space 
+    normalization in different parts of the code.
+
+  * Added submit API instructions and fixed a bug in error handling for the 
+    submission validity checkers.
+
+  * Added an API for draft submission, at /api/submit.  Added an urls.py file
+    under api/ to hold api urls, and moved those from ietf/urls.py.
+    Refactored out many parts of the regular submission forms and functions in
+    submit/forms.py and submit/views.py in order to re-use the appropriate
+    parts for the submission API.  Moved support functions to submit/utils.py.
+    Added a new validation errors for missing docName in xml-based
+    submissions.  Updated the submission test document templates to use insert
+    additional values.  Added failure and success test cases for automated API
+    submissions, and refactored some test utility functions.
+
+  * Tweaked Document.relations_that_doc() to accept unicode relationship 
+    strings, in order to let it be called from modules importing  
+    __future__.unicode_literals.
+
+  * Tweaked the test utility function create_person() to create ascii-only
+    .ascii fields, which it did not do before.
+
+  * Modified the mailtrigger clean_duplicates to reduce email address list 
+    entries with the same address but different names to one instance, and use 
+    consistent unicode names for authors if known.
+
+  * Fixed another place where updated logic is needed to get the current
+    meeting when we have multiple future meetings.  Fixes issue #2371.
+
+  * Updated meeting.helpers.get_meeting() to deal with multiple future 
+    meetings the same way get_ietf_meeting() does.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  17 Sep 2017 15:51:49 +0000
+
+
 ietfdb (6.61.0) ietf; urgency=medium
 
   This is a small feature release which adds directorate mail aliases,
