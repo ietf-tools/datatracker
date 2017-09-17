@@ -4,7 +4,6 @@
 from __future__ import unicode_literals
 
 import datetime
-from unidecode import unidecode
 
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -21,6 +20,8 @@ from ietf.name.models import StreamName, DocRelationshipName, RoomResourceName
 from ietf.person.models import Person, Email
 from ietf.group.utils import setup_default_community_list_for_group
 from ietf.review.models import (ReviewRequest, ReviewerSettings, ReviewResultName, ReviewTypeName, ReviewTeamSettings )
+from ietf.utils.text import unidecode_name
+
 
 def create_person(group, role_name, name=None, username=None, email_address=None, password=None, is_staff=False, is_superuser=False):
     """Add person/user/email and role."""
@@ -36,7 +37,7 @@ def create_person(group, role_name, name=None, username=None, email_address=None
     user = User.objects.create(username=username,is_staff=is_staff,is_superuser=is_superuser)
     user.set_password(password)
     user.save()
-    person = Person.objects.create(name=name, ascii=unidecode(smart_text(name)), user=user)
+    person = Person.objects.create(name=name, ascii=unidecode_name(smart_text(name)), user=user)
     email = Email.objects.create(address=email_address, person=person)
     Role.objects.create(group=group, name_id=role_name, person=person, email=email)
     return person

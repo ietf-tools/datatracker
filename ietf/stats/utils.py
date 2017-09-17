@@ -3,12 +3,12 @@ import requests
 from collections import defaultdict
 
 from django.conf import settings
+from django.contrib.auth.models import User
 
 from ietf.stats.models import AffiliationAlias, AffiliationIgnoredEnding, CountryAlias, MeetingRegistration
 from ietf.name.models import CountryName
 from ietf.person.models import Person, Email, Alias
-from django.contrib.auth.models import User
-from unidecode import unidecode
+from ietf.utils.text import unidecode_name
 
 
 def compile_affiliation_ending_stripping_regexp():
@@ -269,7 +269,7 @@ def get_meeting_registration_data(meeting):
                             last_name = last_name.capitalize()
                     regname = "%s %s" % (first_name, last_name)
                     # if there are any unicode characters decode the string to ascii
-                    ascii_name = unidecode(regname).strip()
+                    ascii_name = unidecode_name(regname)
 
                     # Create a new user object if it does not exist already
                     # if the user already exists do not try to create a new one

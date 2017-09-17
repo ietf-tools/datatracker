@@ -4,7 +4,6 @@ import os
 import datetime
 import six                              # pyflakes:ignore
 import xml2rfc
-from unidecode import unidecode
 
 from django.conf import settings
 from django.core.validators import validate_email, ValidationError
@@ -31,6 +30,7 @@ from ietf.utils import log
 from ietf.utils.accesstoken import generate_random_key
 from ietf.utils.draft import Draft
 from ietf.utils.mail import is_valid_email
+from ietf.utils.text import unidecode_name
 
 
 def validate_submission(submission):
@@ -407,7 +407,7 @@ def ensure_person_email_info_exists(name, email):
         person = Person()
         person.name = name
         log.assertion('isinstance(person.name, six.text_type)')
-        person.ascii = unidecode(person.name).decode('ascii')
+        person.ascii = unidecode_name(person.name).decode('ascii')
         person.save()
 
     # make sure we have an email address

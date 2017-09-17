@@ -4,7 +4,6 @@ import datetime
 import email.utils
 import email.header
 from hashids import Hashids
-from unidecode import unidecode
 from urlparse import urljoin
 
 from django.conf import settings
@@ -21,6 +20,7 @@ from ietf.person.name import name_parts, initials, plain_name
 from ietf.utils.mail import send_mail_preformatted
 from ietf.utils.storage import NoLocationMigrationFileSystemStorage
 from ietf.utils.mail import formataddr
+from ietf.utils.text import unidecode_name
 
 
 class PersonInfo(models.Model):
@@ -61,18 +61,18 @@ class PersonInfo(models.Model):
                 # we're validating the content of the ascii field, and have
                 # verified that the field is ascii clean in the database:
                 if not all(ord(c) < 128 for c in self.ascii):
-                    self._cached_ascii_name = unidecode(self.ascii).strip()
+                    self._cached_ascii_name = unidecode_name(self.ascii)
                 else:
                     self._cached_ascii_name = self.ascii
             else:
-                self._cached_ascii_name = unidecode(self.plain_name()).strip()
+                self._cached_ascii_name = unidecode_name(self.plain_name())
         return self._cached_ascii_name
     def plain_ascii(self):
         if not hasattr(self, '_cached_plain_ascii'):
             if self.ascii:
-                ascii = unidecode(self.ascii).strip()
+                ascii = unidecode_name(self.ascii)
             else:
-                ascii = unidecode(self.name).strip()
+                ascii = unidecode_name(self.name)
             prefix, first, middle, last, suffix = name_parts(ascii)
             self._cached_plain_ascii = u" ".join([first, last])
         return self._cached_plain_ascii

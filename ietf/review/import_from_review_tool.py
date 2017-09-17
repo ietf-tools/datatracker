@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import sys, os
+import argparse
 
 # boilerplate
 basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
@@ -24,8 +25,7 @@ from ietf.person.models import Person, Email, Alias
 from ietf.doc.models import Document, DocAlias, ReviewRequestDocEvent, NewRevisionDocEvent, DocTypeName, State
 from ietf.utils.text import strip_prefix, xslugify
 from ietf.review.utils import possibly_advance_next_reviewer_for_team
-import argparse
-from unidecode import unidecode
+from ietf.utils.text import unidecode_name
 
 parser = argparse.ArgumentParser()
 parser.add_argument("database", help="database must be included in settings")
@@ -92,7 +92,7 @@ with db_con.cursor() as c:
         if not email:
             person = Person.objects.filter(alias__name=row.name).first()
             if not person:
-                person, created = Person.objects.get_or_create(name=row.name, ascii=unidecode(row.name))
+                person, created = Person.objects.get_or_create(name=row.name, ascii=unidecode_name(row.name))
                 if created:
                     print "created person", unicode(person).encode("utf-8")
                 existing_aliases = set(Alias.objects.filter(person=person).values_list("name", flat=True))

@@ -1,9 +1,10 @@
 from __future__ import unicode_literals
 
 import re
-import unicodedata
 import textwrap
 import types
+import unicodedata
+import unidecode
 
 from django.utils.functional import allow_lazy
 from django.utils import six
@@ -125,3 +126,10 @@ def isascii(text):
     except UnicodeEncodeError:
         return False
         
+def unidecode_name(name):
+    """
+    unidecode() of cjk ideograms can produce strings which contain spaces.
+    Strip leading and trailing spaces, and reduce double-spaces to single.
+    """
+    return unidecode.unidecode(name).strip().replace('  ', ' ')
+    

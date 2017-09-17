@@ -13,6 +13,8 @@ from django.utils.text import slugify
 import debug                            # pyflakes:ignore
 
 from ietf.person.models import Person, Alias, Email
+from ietf.utils.text import unidecode_name
+
 
 fake = faker.Factory.create()
 
@@ -39,7 +41,7 @@ class PersonFactory(factory.DjangoModelFactory):
 
     user = factory.SubFactory(UserFactory)
     name = factory.LazyAttribute(lambda p: u'%s %s'%(p.user.first_name,p.user.last_name))
-    ascii = factory.LazyAttribute(lambda p: unicode(unidecode(p.name).strip()))
+    ascii = factory.LazyAttribute(lambda p: unicode(unidecode_name(p.name)))
 
     class Params:
         with_bio = factory.Trait(biography = u"\n\n".join(fake.paragraphs()))
