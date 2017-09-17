@@ -1560,9 +1560,7 @@ class ApiSubmitTests(TestCase):
         settings.INTERNET_DRAFT_ARCHIVE_DIR = self.saved_archive_dir
 
     def post_submission(self, rev, author=None, name=None, group=None, email=None, title=None, year=None):
-
         url = urlreverse('ietf.submit.views.api_submit')
-
         if author is None:
             author = PersonFactory()
         if name is None:
@@ -1570,19 +1568,22 @@ class ApiSubmitTests(TestCase):
             name = 'draft-%s-foo' % slug
         if email is None:
             email = author.user.username
-
         # submit
         data = {}
         data['xml'], author = submission_file(name, rev, group, 'xml', "test_submission.xml", author=author, email=email, title=title, year=year)
         data['user'] = email
-
         r = self.client.post(url, data)
-
         return r, author, name
+
+    def test_api_submit_info(self):
+        url = urlreverse('ietf.submit.views.api_submit')
+        r = self.client.get(url)
+        expected = "A simplified draft submission interface, intended for automation"
+        self.assertContains(r, expected, status_code=200)
 
     def test_api_submit_bad_method(self):
         url = urlreverse('ietf.submit.views.api_submit')
-        r = self.client.get(url)
+        r = self.client.put(url)
         self.assertEqual(r.status_code, 405)
 
     def test_api_submit_ok(self):
