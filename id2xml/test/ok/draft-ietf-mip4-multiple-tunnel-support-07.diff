@@ -25,17 +25,15 @@
 ---
 >       agent MUST register this care-of address as one of the many care-
 >       of addresses through which the mobile node's home address is
-607a607
-> 
-610c610
+610c609
 <       Messages", at < http://www.iana.org/assignments/mobileip-numbers/
 ---
 >       Messages", at <http://www.iana.org/assignments/mobileip-numbers/
-621c621
+621c620
 <       Messages", at < http://www.iana.org/assignments/mobileip-numbers/
 ---
 >       Messages", at <http://www.iana.org/assignments/mobileip-numbers/
-679,685c679,690
+679,685c678,689
 <               Requirement Levels", BCP 14, RFC 2119, March 1997.
 < 
 <    [RFC5213]  Gundavelli, S., Leung, K., Devarapalli, V., Chowdhury, K.,
@@ -46,45 +44,45 @@
 ---
 >               Requirement Levels", BCP 14, RFC 2119,
 >               DOI 10.17487/RFC2119, March 1997,
->               <http://www.rfc-editor.org/info/rfc2119>.
+>               <https://www.rfc-editor.org/info/rfc2119>.
 > 
 >    [RFC5213]  Gundavelli, S., Ed., Leung, K., Devarapalli, V.,
 >               Chowdhury, K., and B. Patil, "Proxy Mobile IPv6",
 >               RFC 5213, DOI 10.17487/RFC5213, August 2008,
->               <http://www.rfc-editor.org/info/rfc5213>.
+>               <https://www.rfc-editor.org/info/rfc5213>.
 > 
 >    [RFC5944]  Perkins, C., Ed., "IP Mobility Support for IPv4, Revised",
 >               RFC 5944, DOI 10.17487/RFC5944, November 2010,
->               <http://www.rfc-editor.org/info/rfc5944>.
-689c694,695
+>               <https://www.rfc-editor.org/info/rfc5944>.
+689c693,694
 <               January 2011.
 ---
 >               DOI 10.17487/RFC6088, January 2011,
->               <http://www.rfc-editor.org/info/rfc6088>.
-693,694c699,701
+>               <https://www.rfc-editor.org/info/rfc6088>.
+693,694c698,700
 <    [RFC3753]  Manner, J. and M. Kojo, "Mobility Related Terminology",
 <               RFC 3753, June 2004.
 ---
 >    [RFC3753]  Manner, J., Ed. and M. Kojo, Ed., "Mobility Related
 >               Terminology", RFC 3753, DOI 10.17487/RFC3753, June 2004,
->               <http://www.rfc-editor.org/info/rfc3753>.
-704c711
+>               <https://www.rfc-editor.org/info/rfc3753>.
+704c710
 <    EMail: sgundave@cisco.com
 ---
 >    Email: sgundave@cisco.com
-712c719
+712c718
 <    EMail: kleung@cisco.com
 ---
 >    Email: kleung@cisco.com
-717c724
+717c723
 <    EMail: tsirtsis@qualcomm.com
 ---
 >    Email: tsirtsis@qualcomm.com
-722c729
+722c728
 <    EMail: hesham@elevatemobile.com
 ---
 >    Email: hesham@elevatemobile.com
-731c738
+731c737
 <    EMail: alexandru.petrescu@cea.fr
 ---
 >    Email: alexandru.petrescu@cea.fr

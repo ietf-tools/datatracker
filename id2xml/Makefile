@@ -91,7 +91,7 @@ test/out/%.test:	test/ok/%.diff test/out/%.diff
 
 
 test/in/%.raw: test/in/%.txt
-	id2xml --strip-only $< -o - | sed -r -e '/[Tt]able [Oo]f [Cc]ontents?/,/^[0-9]+\./d' > $@
+	id2xml --strip-only $< -o - | sed -r -e '/[Tt]able [Oo]f [Cc]ontents?/,/^[0-9]+\./d' -e 's|<http://www.rfc-editor.org/|<https://www.rfc-editor.org/|' > $@
 
 test/out/%.raw: test/out/%.txt
 	id2xml --strip-only $< -o - | sed -r -e '/[Tt]able [Oo]f [Cc]ontents?/,/^[0-9]+\./d' > $@

@@ -143,12 +143,12 @@
 <               smi-numbers.xhtml#security-smime-0.
 ---
 >    [IANA-ALG]
->               , <https://www.iana.org/assignments/smi-numbers/smi-
->               numbers.xhtml#security-smime-3>.
+>               , <https://www.iana.org/assignments/smi-numbers/
+>               smi-numbers.xhtml#security-smime-3>.
 > 
 >    [IANA-MOD]
->               , <https://www.iana.org/assignments/smi-numbers/smi-
->               numbers.xhtml#security-smime-0>.
+>               , <https://www.iana.org/assignments/smi-numbers/
+>               smi-numbers.xhtml#security-smime-0>.
 607d614
 < 
 703d709

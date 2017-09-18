@@ -559,7 +559,7 @@
 >       ACE in an ACL attribute to be set on a non-directory file system
 >       object, the operation attempting to set the ACL SHOULD fail with
 >       NFS4ERR_ATTRNOTSUPP.
-6270a6286
+6254a6270
 > 
 6338c6354
 <                                   Table 4
@@ -611,79 +611,79 @@
 ---
 >    9.  Client A connects to new server instance and finds out about
 >        server restart.
-8172a8189
+11477a11494
 > 
-10800a10818
-> 
-11086a11105
-> 
-11561c11580
+11561c11578
 <    -  Current fh is root of pseudo-fs.
 ---
 >    *  Current fh is root of pseudo-fs.
-11565c11584
+11565c11582
 <    -  Just for completeness.  Normally, clients will know the fsid of
 ---
 >    *  Just for completeness.  Normally, clients will know the fsid of
-11573c11592
+11573c11590
 <    -  Get current fsid to see where file system boundaries are.  The
 ---
 >    *  Get current fsid to see where file system boundaries are.  The
-11579c11598
+11579c11596
 <    -  Current fh is for /this and is within pseudo-fs.
 ---
 >    *  Current fh is for /this and is within pseudo-fs.
-11583c11602
+11583c11600
 <    -  Current fh is for /this/is and is within pseudo-fs.
 ---
 >    *  Current fh is for /this/is and is within pseudo-fs.
-11587c11606
+11587c11604
 <    -  Get current fsid to see where file system boundaries are.  The
 ---
 >    *  Get current fsid to see where file system boundaries are.  The
-11593c11612
+11593c11610
 <    -  Current fh is for /this/is and is within pseudo-fs.
 ---
 >    *  Current fh is for /this/is and is within pseudo-fs.
-11597c11616
+11597c11614
 <    -  Current fh is for /this/is/the and is within pseudo-fs.
 ---
 >    *  Current fh is for /this/is/the and is within pseudo-fs.
-11601c11620
+11601c11618
 <    -  Get current fsid to see where file system boundaries are.  The
 ---
 >    *  Get current fsid to see where file system boundaries are.  The
-11607c11626
+11607c11624
 <    -  Current fh is for /this/is/the and is within pseudo-fs.
 ---
 >    *  Current fh is for /this/is/the and is within pseudo-fs.
-11611c11630
+11611c11628
 <    -  Current fh is for /this/is/the/path and is within a new, absent
 ---
 >    *  Current fh is for /this/is/the/path and is within a new, absent
-11614c11633
+11614c11631
 <    -  The client will never see the value of that fh.
 ---
 >    *  The client will never see the value of that fh.
-11618c11637
+11618c11635
 <    -  We are getting the fsid to know where the file system boundaries
 ---
 >    *  We are getting the fsid to know where the file system boundaries
-11626c11645
+11626c11643
 <    -  In this particular case, we are pretty sure anyway that what has
 ---
 >    *  In this particular case, we are pretty sure anyway that what has
-11638c11657
+11638c11655
 <    -  We are fetching fs_locations_info because the fact that we got an
 ---
 >    *  We are fetching fs_locations_info because the fact that we got an
-11646c11665
+11646c11663
 <    -  Fails because current fh is in an absent file system at the start
 ---
 >    *  Fails because current fh is in an absent file system at the start
-11775a11795
+11775a11793
 > 
-12515a12536
+12048a12067
+> 
+12515a12535
+> 
+12961a12982
 > 
 14171,14173c14192,14194
 <    should examine the layout specification, such as the NFSv4.1/
@@ -1683,13 +1683,11 @@
 >        likely the result of a chance collision between the values of the
 >        eia_clientowner.co_ownerid subfield of EXCHANGE_ID4args for two
 >        different clients.
-23527a23617
-> 
-23531c23621
+23531c23620
 <    4.  Replacement of Unconfirmed Record
 ---
 >    1.  Replacement of Unconfirmed Record
-23533,23538c23623,23627
+23533,23538c23622,23626
 <           If the EXCHGID4_FLAG_UPD_CONFIRMED_REC_A flag is not set, and
 <           the server has the following unconfirmed record, then the
 <           client is attempting EXCHANGE_ID again on an unconfirmed
@@ -1702,11 +1700,11 @@
 >        attempting EXCHANGE_ID again on an unconfirmed client ID, perhaps
 >        due to a retry, a client restart before client ID confirmation
 >        (i.e., before CREATE_SESSION was called), or some other reason.
-23552c23641
+23552c23640
 <    5.  Client Restart
 ---
 >    1.  Client Restart
-23554,23557c23643,23646
+23554,23557c23642,23645
 <           If EXCHGID4_FLAG_UPD_CONFIRMED_REC_A is not set, and if the
 <           server has the following confirmed client record, then this
 <           request is likely from a previously confirmed client that has
@@ -1716,7 +1714,7 @@
 >        server has the following confirmed client record, then this
 >        request is likely from a previously confirmed client that has
 >        restarted.
-23587,23597c23676,23684
+23587,23597c23675,23683
 <           +  If the server subsequently receives a successful
 <              CREATE_SESSION that confirms clientid_ret, then the server
 <              atomically destroys the confirmed record and makes the
@@ -1738,22 +1736,22 @@
 >       the client owner equal to ownerid_arg, one strategy is to simply
 >       delete the unconfirmed record, and process the EXCHANGE_ID as
 >       described in the entirety of Section 18.35.4.
-23599c23686
+23599c23685
 <    6.  Update
 ---
 >       1.  Update
-23613,23618c23700
+23613,23620c23699
 <    7.  Update but No Confirmed Record
 < 
 <           If EXCHGID4_FLAG_UPD_CONFIRMED_REC_A is set, and the server
 <           has no confirmed record corresponding ownerid_arg, then the
 <           server returns NFS4ERR_NOENT and leaves any unconfirmed record
 <           intact.
+< 
+<    8.  Update but Wrong Verifier
 ---
 >    1.  Update but No Confirmed Record
-23620,23625c23702,23711
-<    8.  Update but Wrong Verifier
-< 
+23622,23625c23701,23710
 <           If EXCHGID4_FLAG_UPD_CONFIRMED_REC_A is set, and the server
 <           has the following confirmed record, then this request is an
 <           illegal attempt at an update, perhaps because of a retry from
@@ -1769,8 +1767,6 @@
 >        the following confirmed record, then this request is an illegal
 >        attempt at an update, perhaps because of a retry from a previous
 >        client incarnation.
-23628d23713
-< 
 23632c23717
 <    9.  Update but Wrong Principal
 ---

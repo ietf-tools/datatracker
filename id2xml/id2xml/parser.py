@@ -890,6 +890,7 @@ class DraftParser(Base):
     figure_and_table_anchors = {}
     section_anchors = []
     reference_anchors = []
+    anchor_replacements = {}
 
     rfc_pi_defaults = {
         'strict': 'yes',
@@ -2421,7 +2422,7 @@ class DraftParser(Base):
                 else:
                     para.append(line)
             paras.append(para)
-            self.dshow('paras')
+            self.dpprint('paras')
             text = para2text(paras.pop(0)) if paras else ''
             self.dshow('text')
             elements = []
@@ -2978,6 +2979,8 @@ class DraftParser(Base):
                 #
                 if entity is None:
                     entity = self.maybe_entity_from_anchor(para)
+                if entity is None:
+                    entity = self.maybe_entity_from_draftname(para)
                 break
             else:
                 faild = regex
@@ -2987,10 +2990,13 @@ class DraftParser(Base):
                 return None, None
             else:
                 entity = self.maybe_entity_from_anchor(para)
-                if not entity:
+                if entity is None:
+                    entity = self.maybe_entity_from_draftname(para)
+                if entity is None:
                     self.warn(line.num, "Failed parsing a reference.  Are all elements separated by commas (not periods, not just spaces)?:\n%s" % para2text(para))
         return reference, entity
 
+    @dtrace
     def maybe_entity_from_anchor(self, para):
         global reftext_chunks, bibxml_patterns
         line = para[0]
@@ -2999,21 +3005,50 @@ class DraftParser(Base):
         match = re.search(r'{anchor} '.format(**reftext_chunks), text)
         if match:
             refinfo = match.groupdict()
+            self.dpprint('refinfo')
             anchor = refinfo.get('anchor')
             for item in bibxml_patterns:
                 regex, start, series, url = item
                 m = re.search(regex, anchor)
                 if m:
-                    self.warn(line.num, "Failed parsing a reference.  Will use the anchor to insert an %s reference:\n%s" % (series, para2text(para)))
+                    self.warn(line.num, "Failed parsing a reference.  Will use the anchor to insert an %s reference for:\n%s" % (series, para2text(para)))
                     value = anchor[start:]
                     if series == 'RFC':
                         value = '%04d'%int(value)
                     entity = Entity(anchor)
                     entity.tail = '\n\t'
                     self.entities.append({'name': anchor, 'url': url.format(value=value, anchor=anchor), })
+                    self.reference_anchors.append(anchor)
                     break
         return entity
         
+    @dtrace
+    def maybe_entity_from_draftname(self, para):
+        line = para[0]
+        text = para2str(para)
+        self.dshow('text')
+        entity = None
+        for item in bibxml_patterns:
+            regex, start, series, url = item
+            if series == 'I-D':
+                break
+        amatch = re.search(r'{anchor} '.format(**reftext_chunks), text)
+        self.dshow('amatch')
+        dmatch = re.search('\Wdraft-([a-z0-9-]+)\W', text)
+        self.dshow('dmatch')
+        if amatch and dmatch:
+            oldanchor = amatch.groupdict().get('anchor')
+            anchor = 'I-D.%s' % dmatch.group(1)
+            if anchor[-2:].isdigit() and anchor[-3] == '-':
+                anchor = anchor[:-3]
+            self.warn(line.num, "Failed parsing a reference.  Will use the draft name in the text to insert an Internet-Draft reference for:\n%s" % (para2text(para)))
+            entity = Entity(anchor)
+            entity.tail = '\n\t'
+            self.entities.append({'name': anchor, 'url': url.format(anchor=anchor), })
+            self.anchor_replacements[oldanchor] = anchor
+            self.reference_anchors.append(oldanchor)
+        return entity
+
     # ------------------------------------------------------------------------
     # postprocess
     # ------------------------------------------------------------------------
@@ -3024,6 +3059,8 @@ class DraftParser(Base):
         self.update_sortrefs_pi()
         self.update_symbols_pi()
         self.check_short_title()
+        self.replace_anchors()
+        self.reduce_vspace()
 
     def add_text_refs(self):
         """
@@ -3102,3 +3139,16 @@ class DraftParser(Base):
                 surname = author.get('surname')
                 if surname and surname in short:
                     self.warn(None, "An author name, '%s', occurs in the document short title: '%s'.  Please check that <title abbrev=... /> is set correctly." % (surname, short))
+
+    def replace_anchors(self):
+        for anchor, replacement in self.anchor_replacements.items():
+            for xref in self.root.findall(".//xref[@target='%s']" % anchor):
+                xref.set('target', replacement)
+
+    def reduce_vspace(self):
+        for vspace in self.root.findall('.//vspace'):
+            prev = vspace.getprevious()
+            if prev != None and prev.tag == 'vspace' and prev.tail.strip() == '':
+                parent = prev.getparent()
+                parent.remove(prev)
+                

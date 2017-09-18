@@ -15,18 +15,21 @@
 <    This Internet-Draft will expire on 11 October 2017.
 ---
 >    This Internet-Draft will expire on October 13, 2017.
-105,106c106
-<    conventions for encoding the public key are defined in
+106c107
 <    [CURDLE-PKIX].
 ---
->    conventions for encoding the public key are defined in [CURDLE-PKIX].
-192,193c192,193
+>    [I-D.ietf-curdle-pkix].
+110c111
+<    specified in [CURDLE-PKIX], and they are repeated here for
+---
+>    specified in [I-D.ietf-curdle-pkix], and they are repeated here for
+192,193c193,194
 <    signing with Ed448, the digestAlgorithm SHOULD include
 <    id-shake256-len, and if present, the algorithm parameters field MUST
 ---
 >    signing with Ed448, the digestAlgorithm SHOULD include id-
 >    shake256-len, and if present, the algorithm parameters field MUST
-213,215c213,215
+213,215c214,216
 <    The SignerInfo signatureAlgorithm field MUST contain either
 <    id-Ed25519 or id-Ed448, depending on the elliptic curve that was used
 <    by the signer.  The algorithm parameters field MUST be absent.
@@ -34,7 +37,7 @@
 >    The SignerInfo signatureAlgorithm field MUST contain either id-
 >    Ed25519 or id-Ed448, depending on the elliptic curve that was used by
 >    the signer.  The algorithm parameters field MUST be absent.
-242,244c242,244
+242,244c243,245
 <    The SignerInfo signatureAlgorithm field MUST contain either
 <    id-Ed25519 or id-Ed448, depending on the elliptic curve that was used
 <    by the signer.  The algorithm parameters field MUST be absent.
@@ -42,23 +45,21 @@
 >    The SignerInfo signatureAlgorithm field MUST contain either id-
 >    Ed25519 or id-Ed448, depending on the elliptic curve that was used by
 >    the signer.  The algorithm parameters field MUST be absent.
-297c297,299
+297c298,300
 < 8.  Normative References
 ---
 > 8.  References
 > 
 > 8.1.  Normative References
-303c305
+302,308d304
+<    [CURDLE-PKIX]
 <               Josefsson, S., and J. Schaad, "Algorithm Identifiers for
----
->               Josefsson, S. and J. Schaad, "Algorithm Identifiers for
-306,307c308,309
+<               Ed25519, Ed25519ph, Ed448, Ed448ph, X25519 and X448 for
+<               use in the Internet X.509 Public Key Infrastructure",
 <               draft-ietf-curdle-pkix-02, 31 October 2016,
 <               Work-in-progress.
----
->               draft-ietf-curdle-pkix-02 (work in progress), 31 October
->               2016.
-313,315c315,317
+< 
+313,315c309,311
 <               Department of Commerce, "Secure Hash Standard", Federal
 <               Information Processing Standard (FIPS) 180-3, October
 <               2008.
@@ -66,24 +67,31 @@
 >               Department of Commerce, "Secure Hash Standard",
 >               Federal Information Processing Standard (FIPS) 180-3,
 >               October 2008.
-322c324,325
+322c318,326
 <    [STDWORDS] Bradner, S., "Key words for use in RFCs to Indicate
 ---
+>    [I-D.ietf-curdle-pkix]
+>               Josefsson, S. and J. Schaad, "Algorithm Identifiers for
+>               Ed25519, Ed25519ph, Ed448, Ed448ph, X25519 and X448 for
+>               use in the Internet X.509 Public Key Infrastructure",
+>               draft-ietf-curdle-pkix-02 (work in progress), October
+>               2016.
+> 
 >    [STDWORDS]
 >               Bradner, S., "Key words for use in RFCs to Indicate
-326,327c329,330
+326,327c330,331
 <               One (ASN.1): Specification of basic notation", ITU-T
 <               Recommendation X.680, 2015.
 ---
 >               One (ASN.1): Specification of basic notation",
 >               ITU-T Recommendation X.680, 2015.
-334c337
+334c338
 < 9.  Informative References
 ---
 > 8.2.  Informative References
-340c343,345
+340c344,346
 <               (SHA and SHA-based HMAC and HKDF)", RFC 6234, May 2011.
 ---
 >               (SHA and SHA-based HMAC and HKDF)", RFC 6234,
 >               DOI 10.17487/RFC6234, May 2011,
->               <http://www.rfc-editor.org/info/rfc6234>.
+>               <https://www.rfc-editor.org/info/rfc6234>.
