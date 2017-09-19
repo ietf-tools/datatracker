@@ -591,4 +591,5 @@ class BulkAssignmentTests(TestCase):
         r = self.client.post(unassigned_url, postdict)
         self.assertEqual(r.status_code,302)
         self.assertEqual(expected_ending_head_of_rotation,reviewer_rotation_list(group)[0])
-        self.assertEqual(len(outbox),4)
+        self.assertMailboxContains(outbox, subject='Last Call assignment', text='Requested by', count=4)
+        
