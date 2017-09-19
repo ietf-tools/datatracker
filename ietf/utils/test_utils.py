@@ -35,7 +35,9 @@
 import os
 import re
 import html5lib
+import sys
 import urllib2
+
 from unittest.util import strclass
 from bs4 import BeautifulSoup
 
@@ -137,6 +139,30 @@ class TestCase(django.test.TestCase):
 
         self.assertEqual(response.status_code, 302)
         
+    def assertMailboxContains(self, mailbox, subject=None, text=None, count=None):
+        """
+        Asserts that the given mailbox contains *count* mails with the given
+        *subject* and body *text* (if not None).  At least one of subject,
+        text, and count must be different from None.  If count is None, the
+        filtered mailbox must be non-empty.
+        """
+        if subject is None and text is None and count is None:
+            raise self.failureException("No assertion made, both text and count is None")
+        mlist = mailbox
+        if subject:
+            mlist = [ m for m in mlist if subject in m["Subject"] ]
+        if text:
+            mlist = [ m for m in mlist if text in m.get_payload(decode=True) ]
+        if count and len(mlist) != count:
+            sys.stderr.write("Wrong count in assertMailboxContains().  The complete mailbox contains %s emails:\n\n" % len(mailbox))
+            for m in mailbox:
+                sys.stderr.write(m.as_string())
+                sys.stderr.write('\n\n')
+        if count:
+            self.assertEqual(len(mlist), count)
+        else:
+            self.assertGreater(len(mlist), 0)
+
     def __str__(self):
         return "%s (%s.%s)" % (self._testMethodName, strclass(self.__class__),self._testMethodName)
 
