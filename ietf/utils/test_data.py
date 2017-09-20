@@ -20,7 +20,7 @@ from ietf.name.models import StreamName, DocRelationshipName, RoomResourceName
 from ietf.person.models import Person, Email
 from ietf.group.utils import setup_default_community_list_for_group
 from ietf.review.models import (ReviewRequest, ReviewerSettings, ReviewResultName, ReviewTypeName, ReviewTeamSettings )
-from ietf.utils.text import unidecode_name
+from ietf.person.name import unidecode_name
 
 
 def create_person(group, role_name, name=None, username=None, email_address=None, password=None, is_staff=False, is_superuser=False):

@@ -1,6 +1,11 @@
 import re
+import unidecode
 
 import debug                            # pyflakes:ignore
+
+
+def name_particle_match(name):
+    return re.search(r" (af|al|Al|de|der|di|Di|du|el|El|Hadi|in 't|Le|st\.?|St\.?|ten|ter|van|van der|Van|von|von der|Von|zu) ", name)
 
 def name_parts(name):
     prefix, first, middle, last, suffix = u"", u"", u"", u"", u""
@@ -36,7 +41,7 @@ def name_parts(name):
             full = full.lower()         # adjust case for all-uppercase input
         # This is an incomplete list.  Adjust as needed to handle known ietf
         # participant names correctly:
-        particle = re.search(r" (af|al|Al|de|der|di|Di|du|el|El|Hadi|in 't|Le|st\.?|St\.?|ten|ter|van|van der|Van|von|von der|Von|zu) ", full)
+        particle = name_particle_match(full)
         if particle:
             pos = particle.start()
             parts = full[:pos].split() + [full[pos+1:]]
@@ -52,18 +57,62 @@ def name_parts(name):
     else:
         last = parts[0]
     return prefix, first, middle, last, suffix
-    
+
 def initials(name):
     prefix, first, middle, last, suffix = name_parts(name)
     given = first
     if middle:
         given += u" "+middle
-    initials = u" ".join([ n[0]+'.' for n in given.split() ])
+    # Don't use non-word characters as initials.
+    # Example: The Bulgarian transcribed name "'Rnest Balkanska" should not have an initial of "'".
+    given = re.sub('[^ .\w]', '', given)
+    initials = u" ".join([ n[0].upper()+'.' for n in given.split() ])
     return initials
 
 def plain_name(name):
     prefix, first, middle, last, suffix = name_parts(name)
     return u" ".join([first, last])
+
+def capfirst(s):
+    # Capitalize the first word character, skipping non-word characters and
+    # leaving following word characters untouched:
+    letters = list(s)
+    for i,l in enumerate(letters):
+        if l.isalpha():
+            letters[i] = l.capitalize()
+            break
+    return ''.join(letters)
+
+def unidecode_name(uname):
+    """
+    unidecode() of cjk ideograms can produce strings which contain spaces.
+    Strip leading and trailing spaces, and reduce double-spaces to single.
+
+    For some other ranges, unidecode returns all-lowercase names; fix these
+    up with capitalization.
+    """
+    # Fix double spacing
+    name = unidecode.unidecode(uname)
+    if name == uname:
+        return name
+    name = name.strip().replace('  ', ' ')
+    # Fix all-upper and all-lower names:
+    # Check for name particles -- don't capitalize those
+    m = name_particle_match(name)
+    particle = m.group(1) if m else None
+    # Get the name parts
+    prefix, first, middle, last, suffix = name_parts(name)
+    # Capitalize names
+    first = capfirst(first)
+    middle = ' '.join([ capfirst(p) for p in middle.split() ])
+    last   = ' '.join([ capfirst(p) for p in last.split() ])
+    # Restore the particle, if any
+    if particle and last.startswith(capfirst(particle)+' '):
+        last = ' '.join([ particle, last[len(particle)+1:] ])
+    # Recombine the parts
+    parts = prefix, first, middle, last, suffix
+    name = ' '.join([ p for p in parts if p and p.strip() != '' ])
+    return name
 
 if __name__ == "__main__":
     import sys

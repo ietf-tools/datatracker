@@ -1588,7 +1588,7 @@ class ApiSubmitTests(TestCase):
 
     def test_api_submit_ok(self):
         r, author, name = self.post_submission('00')
-        expected = "Upload of %s OK, confirmation requests sent to:\n  %s" % (name, author.formatted_email())
+        expected = "Upload of %s OK, confirmation requests sent to:\n  %s" % (name, author.formatted_email().replace('\n',''))
         self.assertContains(r, expected, status_code=200)
 
     def test_api_submit_no_user(self):

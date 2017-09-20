@@ -22,7 +22,7 @@ from ietf.mailtrigger.utils import gather_address_lists
 from ietf.utils.pipe import pipe
 from ietf.utils.mail import send_mail_text, send_mail
 from ietf.utils.log import log
-from ietf.utils.text import unidecode_name
+from ietf.person.name import unidecode_name
 
 import debug                            # pyflakes:ignore
 

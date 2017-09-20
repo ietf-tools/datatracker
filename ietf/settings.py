@@ -920,6 +920,9 @@ SILENCED_SYSTEM_CHECKS = [
 
 STATS_NAMES_LIMIT = 25
 
+UTILS_TEST_RANDOM_STATE_FILE = '.factoryboy_random_state'
+
+
 # Put the production SECRET_KEY in settings_local.py, and also any other
 # sensitive or site-specific changes.  DO NOT commit settings_local.py to svn.
 from settings_local import *            # pyflakes:ignore pylint: disable=wildcard-import

@@ -45,6 +45,7 @@ import datetime
 import codecs
 import gzip
 import unittest
+import factory.random
 from fnmatch import fnmatch
 
 from coverage.report import Reporter
@@ -557,6 +558,18 @@ class IetfTestRunner(DiscoverRunner):
 
         maybe_create_svn_symlinks(settings)
 
+        if os.path.exists(settings.UTILS_TEST_RANDOM_STATE_FILE):
+            print "     Loading factory-boy random state from .random-state"
+            with open(settings.UTILS_TEST_RANDOM_STATE_FILE) as f:
+                s = json.load(f)
+                s[1] = tuple(s[1])      # random.setstate() won't accept a list in lieus of a tuple
+                factory.random.set_random_state(s)
+        else:
+            print "     Saving factory-boy random state to .random-state"
+            with open(settings.UTILS_TEST_RANDOM_STATE_FILE, 'w') as f:
+                s = factory.random.get_random_state()
+                json.dump(s, f)
+
         super(IetfTestRunner, self).setup_test_environment(**kwargs)
 
     def teardown_test_environment(self, **kwargs):
@@ -682,5 +695,8 @@ class IetfTestRunner(DiscoverRunner):
                 """.replace("    ","") % (settings.TEST_COVERAGE_LATEST_FILE))
 
         save_test_results(failures, test_labels)
+
+        if not failures and os.path.exists(settings.UTILS_TEST_RANDOM_STATE_FILE):
+            os.unlink(settings.UTILS_TEST_RANDOM_STATE_FILE)
 
         return failures

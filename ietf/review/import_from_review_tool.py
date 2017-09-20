@@ -25,7 +25,7 @@ from ietf.person.models import Person, Email, Alias
 from ietf.doc.models import Document, DocAlias, ReviewRequestDocEvent, NewRevisionDocEvent, DocTypeName, State
 from ietf.utils.text import strip_prefix, xslugify
 from ietf.review.utils import possibly_advance_next_reviewer_for_team
-from ietf.utils.text import unidecode_name
+from ietf.person.name import unidecode_name
 
 parser = argparse.ArgumentParser()
 parser.add_argument("database", help="database must be included in settings")

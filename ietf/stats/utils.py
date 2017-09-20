@@ -8,7 +8,7 @@ from django.contrib.auth.models import User
 from ietf.stats.models import AffiliationAlias, AffiliationIgnoredEnding, CountryAlias, MeetingRegistration
 from ietf.name.models import CountryName
 from ietf.person.models import Person, Email, Alias
-from ietf.utils.text import unidecode_name
+from ietf.person.name import unidecode_name
 
 
 def compile_affiliation_ending_stripping_regexp():

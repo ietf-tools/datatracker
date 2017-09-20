@@ -13,20 +13,23 @@ from django.utils.text import slugify
 import debug                            # pyflakes:ignore
 
 from ietf.person.models import Person, Alias, Email
-from ietf.utils.text import unidecode_name
+from ietf.person.name import unidecode_name
 
 
 fake = faker.Factory.create()
+
+def random_faker():
+    return faker.Faker(random.sample(faker.config.AVAILABLE_LOCALES, 1)[0])
 
 class UserFactory(factory.DjangoModelFactory):
     class Meta:
         model = User
         django_get_or_create = ('username',)
-        exclude = ['locale', ]
+        exclude = ['faker', ]
 
-    locale = random.sample(faker.config.AVAILABLE_LOCALES, 1)[0]
-    first_name = factory.Faker('first_name', locale)
-    last_name = factory.Faker('last_name', locale)
+    faker = factory.LazyFunction(random_faker)
+    first_name = factory.LazyAttribute(lambda o: o.faker.first_name())
+    last_name = factory.LazyAttribute(lambda o: o.faker.last_name())
     email = factory.LazyAttributeSequence(lambda u, n: '%s.%s_%d@%s'%( slugify(unidecode(u.first_name)),
                                                 slugify(unidecode(u.last_name)), n, fake.domain_name()))
     username = factory.LazyAttribute(lambda u: u.email)

@@ -30,7 +30,7 @@ from ietf.utils import log
 from ietf.utils.accesstoken import generate_random_key
 from ietf.utils.draft import Draft
 from ietf.utils.mail import is_valid_email
-from ietf.utils.text import unidecode_name
+from ietf.person.name import unidecode_name
 
 
 def validate_submission(submission):

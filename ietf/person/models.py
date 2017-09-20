@@ -20,7 +20,7 @@ from ietf.person.name import name_parts, initials, plain_name
 from ietf.utils.mail import send_mail_preformatted
 from ietf.utils.storage import NoLocationMigrationFileSystemStorage
 from ietf.utils.mail import formataddr
-from ietf.utils.text import unidecode_name
+from ietf.person.name import unidecode_name
 
 
 class PersonInfo(models.Model):
