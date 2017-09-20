@@ -1,3 +1,46 @@
+ietfdb (6.62.1) ietf; urgency=medium
+
+  This is a bugfix release which also brings in a utility script to add
+  document object for some old drafts that are currently missing from
+  the database.  Details:
+
+  * Merged in [14138] from rjsparks@nostrum.com:
+    Added a script to process the id-archive and add Document objects for
+    drafts that are currently missing from the datatracker. Fixes #1316.  
+
+  * Moved unidecode_name from utils.text to person.name.
+
+  * Modified UserFactory to use a new locale for each new user, instead of the
+    same locale for a whole test run.  This (almost) ensures the exercise of
+    code to deal with non-ascii names, something which would not happen if a
+    locale with ascii names was chosen at the start of a run.
+
+  * Modified name.initials() to not use non-word characters as initials.
+
+  * Modified unidecode_name() to do more normalization, to conform to the
+    conventions used in internet-drafts.
+
+  * Added saving of the factory-boy random state in order to be able to re-run
+    a test suite with the same pseudo-random sequence as in a previous failed
+    run.
+
+  * Fixed an issue with email formatting in test_api_submit_ok().
+
+  * Modified the draft author extraction code to deal better with names with
+    embedded apostrophes.
+
+  * Refined a test case which could fail incorrectly when PersonFactory
+    produced multiple persons with the same name during a test run, using
+    TestCase.assertMailboxContains().
+
+  * Added a new TestCase assertion: assertMailboxContains(), to be able to
+    better express some test cases.
+
+  * Updated the PLAN
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  20 Sep 2017 21:12:32 +0000
+
+
 ietfdb (6.62.0) ietf; urgency=medium
 
   **API for submission automation**
