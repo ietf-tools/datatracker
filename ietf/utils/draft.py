@@ -575,7 +575,7 @@ class Draft():
 
             # permit insertion of middle names between first and last, and
             # add possible honorific and suffix information
-            authpat = r"(?:^| and )(?:%(hon)s ?)?([`']?%(first)s\S*( +[^ ]+)* +%(last)s)( *\(.*|,( [A-Z][-A-Za-z0-9]*)?| %(suffix)s| [A-Z][a-z]+)?" % {"hon":hon, "first":first, "last":last, "suffix":suffix,}
+            authpat = r"(?:^| and )(?:%(hon)s ?)?(['`]*%(first)s\S*( +[^ ]+)* +%(last)s)( *\(.*|,( [A-Z][-A-Za-z0-9]*)?| %(suffix)s| [A-Z][a-z]+)?" % {"hon":hon, "first":first, "last":last, "suffix":suffix,}
             return authpat
 
         authors = []
