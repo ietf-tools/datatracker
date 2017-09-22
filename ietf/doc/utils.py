@@ -195,29 +195,6 @@ def close_open_ballots(doc, by):
     for t in BallotType.objects.filter(doc_type=doc.type_id):
         close_ballot(doc, by, t.slug )
 
-def augment_with_start_time(docs):
-    """Add a started_time attribute to each document with the time of
-    the first revision."""
-    from ietf.utils import log
-    log.unreachable("2017-07-08")
-    docs = list(docs)
-
-    docs_dict = {}
-    for d in docs:
-        docs_dict[d.pk] = d
-        d.start_time = None
-
-    seen = set()
-
-    for e in DocEvent.objects.filter(type="new_revision", doc__in=docs).order_by('time'):
-        if e.doc_id in seen:
-            continue
-
-        docs_dict[e.doc_id].start_time = e.time
-        seen.add(e.doc_id)
-
-    return docs
-
 def get_chartering_type(doc):
     chartering = ""
     if doc.get_state_slug() not in ("notrev", "approved"):

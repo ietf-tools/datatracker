@@ -233,31 +233,6 @@ def send_notifications(meeting, groups, person):
         GroupEvent.objects.create(group=group,time=now,type='sent_notification',
                                   by=person,desc='sent scheduled notification for %s' % meeting)
 
-def sort_groups(meeting,schedule=None):
-    '''
-    Similar to sreq.views.sort_groups
-    Takes a Meeting object and returns a tuple scheduled_groups, unscheduled groups.
-    '''
-    from ietf.utils import log
-    log.unreachable("2017-07-08")
-    if not schedule:
-        schedule = meeting.agenda
-    scheduled_groups = []
-    unscheduled_groups = []
-    #sessions = Session.objects.filter(meeting=meeting,status__in=('schedw','apprw','appr','sched','notmeet','canceled'))
-    sessions = Session.objects.filter(meeting=meeting,status__in=('schedw','apprw','appr','sched','canceled'))
-    groups_with_sessions = [ s.group for s in sessions ]
-    gset = set(groups_with_sessions)
-    sorted_groups_with_sessions = sorted(gset, key = lambda instance: instance.acronym)
-    scheduled_sessions = SchedTimeSessAssignment.objects.filter(schedule=schedule,session__isnull=False)
-    groups_with_timeslots = [ x.session.group for x in scheduled_sessions ]
-    for group in sorted_groups_with_sessions:
-        if group in groups_with_timeslots:
-            scheduled_groups.append(group)
-        else:
-            unscheduled_groups.append(group)
-
-    return scheduled_groups, unscheduled_groups
 
 # -------------------------------------------------
 # AJAX Functions

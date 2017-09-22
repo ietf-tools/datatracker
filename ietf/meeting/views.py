@@ -10,7 +10,7 @@ from collections import OrderedDict, Counter
 import csv
 import json
 import pytz
-from pyquery import PyQuery
+
 from wsgiref.handlers import format_date_time
 from calendar import timegm
 
@@ -47,7 +47,7 @@ from ietf.meeting.helpers import get_all_assignments_from_schedule
 from ietf.meeting.helpers import get_modified_from_assignments
 from ietf.meeting.helpers import get_wg_list, find_ads_for_meeting
 from ietf.meeting.helpers import get_meeting, get_schedule, agenda_permissions, get_ietf_meeting
-from ietf.meeting.helpers import preprocess_assignments_for_agenda, read_agenda_file, read_session_file
+from ietf.meeting.helpers import preprocess_assignments_for_agenda, read_agenda_file
 from ietf.meeting.helpers import convert_draft_to_pdf, get_earliest_session_date
 from ietf.meeting.helpers import can_view_interim_request, can_approve_interim_request
 from ietf.meeting.helpers import can_edit_interim_request
@@ -60,7 +60,6 @@ from ietf.meeting.utils import finalize
 from ietf.secr.proceedings.utils import handle_upload_file
 from ietf.secr.proceedings.proc_utils import (get_progress_stats, post_process, import_audio_files,
     import_youtube_video_urls)
-from ietf.utils import log
 from ietf.utils.mail import send_mail_message
 from ietf.utils.pipe import pipe
 from ietf.utils.pdf import pdf_pages
@@ -622,55 +621,6 @@ def agenda_by_type_ics(request,num=None,type=None):
         assignments = assignments.filter(session__type__slug=type)
     updated = meeting.updated()
     return render(request,"meeting/agenda.ics",{"schedule":schedule,"updated":updated,"assignments":assignments},content_type="text/calendar")
-
-def session_document(request, num, acronym, type="agenda"):
-    log.unreachable("2017-07-22")
-    d = Document.objects.filter(type=type, session__meeting__number=num)
-    if acronym == "plenaryt":
-        d = d.filter(session__name__icontains="technical", session__slots__type="plenary")
-    elif acronym == "plenaryw":
-        d = d.filter(session__name__icontains="admin", session__slots__type="plenary")
-    else:
-        d = d.filter(session__group__acronym=acronym)
-
-    if d:
-        doc = d[0]
-        html5_preamble = "<!doctype html><html lang=en><head><meta charset=utf-8><title>%s</title></head><body>"
-        html5_postamble = "</body></html>"
-        content, path = read_session_file(type, num, doc)
-        _, ext = os.path.splitext(path)
-        ext = ext.lstrip(".").lower()
-
-        if not content:
-            content = "Could not read %s file '%s'" % (type, path)
-            return HttpResponse(content, content_type="text/plain; charset=%s"%settings.DEFAULT_CHARSET)
-
-        if ext == "txt":
-            return HttpResponse(content, content_type="text/plain; charset=%s"%settings.DEFAULT_CHARSET)
-        elif ext == "pdf":
-            return HttpResponse(content, content_type="application/pdf")
-        elif ext in ["html", "htm"]:
-            content=re.sub("(\r\n|\r)", "\n", content)
-            d = PyQuery(content)
-            d("head title").empty()
-            d("head title").append(str(doc))
-            d('meta[http-equiv]').remove()
-            content = "<!doctype html>" + str(d)
-        else:
-            content = "<p>Unrecognized %s file '%s'</p>" % (type, doc.external_url)
-            content = (html5_preamble % doc) + content + html5_postamble
-
-        return HttpResponse(content)
-
-    raise Http404("No %s for the %s session of IETF %s is available" % (type, acronym, num))
-
-def session_agenda(request, num, session):
-    log.unreachable("2017-07-22")
-    return session_document(request, num, acronym=session, type='agenda')
-
-def session_minutes(request, num, session):
-    log.unreachable("2017-07-22")
-    return session_document(request, num, acronym=session, type='minutes')
 
 def session_draft_list(num, session):
     try:
