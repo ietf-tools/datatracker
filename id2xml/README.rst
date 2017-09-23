@@ -9,15 +9,14 @@ id2xml may also be useful for Internet-Draft authors who wish to start working
 on a new version of an older draft or RFC, for which no xml2rfc-compatible XML
 source is available.
 
-Version 1.0.x can process the drafts specified in the development Statement of
+Version 1.x can process the drafts specified in the development Statement of
 Work to XML files acceptable to xml2rfc, and can also process a number of
 other test files to acceptable XML.  Missing is internal <xref/> links to
 figures and tables.
 
-The XML produced follows RFC 7749 [1]_ in version 1.x of the tool, and will
-follow RFC 7991 [2]_ in version 2.x, which will be released once support is
-available to process XML sources which follows the RFC 7991 vocabulary.
-
+The default XML produced follows RFC 7749 [1]_ in version 1.x of the tool.
+With version 1.3.0 of the tool, output according to RFC 7991 [2]_ is available
+by use of the '-3' switch.  
 
 .. [1] Reschke, J., "The "xml2rfc" Version 2 Vocabulary", RFC 7749, DOI
    10.17487/RFC7749, February 2016, <http://www.rfc-editor.org/info/rfc7749>.
