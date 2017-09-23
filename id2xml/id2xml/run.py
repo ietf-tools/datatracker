@@ -71,7 +71,7 @@ _prolog, _middle, _epilog = __doc__.split('...')
 
 def run():
     import sys, os, argparse
-    from pathlib import Path
+    from pathlib2 import Path
     global _prolog, _middle, _epilog
 
     program = os.path.basename(sys.argv[0])
