@@ -136,18 +136,14 @@ def run():
     group.add_argument('DRAFT', nargs='*',                              help="text format draft(s) to be converted to xml")
     group.add_argument('-2', '--schema-v2', dest='schema', action='store_const', const='v2',
                                                                         help="output v2 (RFC 7749) schema")
-#    group.add_argument('-3', '--schema-v3', dest='schema', action='store_const', const='v3',
-#                                                                        help="output v3 (RFC 7991) schema")
+    group.add_argument('-3', '--schema-v3', dest='schema', action='store_const', const='v3',
+                                                                        help="output v3 (RFC 7991) schema")
     group.add_argument('-d', '--debug', action='store_true',            help="turn on debugging")
     group.add_argument('-h', '--help', action='help',                   help="show this help message and exit")
     group.add_argument('-o', '--output-file', metavar='FILE',           help="set the output file name")
     group.add_argument('-p', '--output-path', metavar="DIR",            help="set the output directory name")
     group.add_argument('-q', '--quiet', action='store_true',            help="be more quiet")
     group.add_argument('-s', '--strip-only', action='store_true',       help="don't convert, only strip headers and footers")
-#     group.add_argument('-t', '--use-citation-tags', action='store_true',help="use the citation tags to genenerate reference entries "
-#                                                                              "for RFCs and Internet-Drafts if no series IDs can be "
-#                                                                              "found in the reference text, or if the reference text "
-#                                                                              "cannot be parsed.")
     group.add_argument('--trace-start-regex', metavar='REGEX', default=None,
                                                                         help="start debug tracing on matching line; requires -d")
 #                                                                        help=argparse.SUPPRESS)

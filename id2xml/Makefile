@@ -30,6 +30,7 @@ resfiles = $(addprefix test/out/, $(testfiles))
 okfiles  = $(addprefix test/ok/, $(testfiles))
 origxml  = $(addsuffix .xml, $(basename $(okfiles)))
 xmlfiles = $(addsuffix .xml, $(basename $(resfiles)))
+xml3files= $(addsuffix .v3.xml, $(basename $(resfiles)))
 diffiles = $(addsuffix .diff, $(basename $(resfiles)))
 tests    = $(addsuffix .test, $(basename $(resfiles)))
 pyfiles  = $(wildcard  id2xml/*.py)
@@ -64,7 +65,7 @@ env/bin/id2xml:	$(pyfiles) setup.py
 # ------------------------------------------------------------------------
 # test
 
-test:	env/bin/id2xml $(resfiles) $(diffiles) $(tests) 
+test:	env/bin/id2xml $(resfiles) $(xml3files) $(diffiles) $(tests) 
 
 infiles: $(textfiles)
 
@@ -105,6 +106,10 @@ test/out/%.txt:	test/out/%.xml
 test/out/%.xml:	test/in/%.txt $(pyfiles)
 	@echo ""
 	id2xml $< -o $@
+
+test/out/%.v3.xml:	test/in/%.txt $(pyfiles)
+	@echo ""
+	id2xml -3 $< -o $@
 
 # ------------------------------------------------------------------------
 

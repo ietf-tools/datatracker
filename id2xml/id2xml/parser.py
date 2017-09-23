@@ -17,6 +17,8 @@ import lxml
 import inspect
 import textwrap
 from xml2rfc.writers.base import BaseRfcWriter
+from xml2rfc.writers.v2v3 import V2v3XmlWriter
+from xml2rfc.parser import XmlRfc, AnnotatedElement
 from collections import deque
 from lxml.etree import Element, ElementTree, ProcessingInstruction, CDATA, Entity
 
@@ -912,7 +914,7 @@ class DraftParser(Base):
             self.err(0, "Expected the input document name to start with either 'draft-' or 'rfc'")
         assert type(text) is six.text_type # unicode in 2.x, str in 3.x.  
         self.raw = text
-        schema_file = os.path.join(os.path.dirname(__file__), 'data', self.options.schema+'.rng')
+        schema_file = os.path.join(os.path.dirname(__file__), 'data', 'v2.rng')
         self.schema = ElementTree(file=schema_file)
         self.rfc_attr = self.schema.xpath("/x:grammar/x:define/x:element[@name='rfc']//x:attribute", namespaces=ns)
         self.rfc_attr_defaults = dict( (a.get('name'), a.get("{%s}defaultValue"%ns['a'], None)) for a in self.rfc_attr )
@@ -1015,6 +1017,11 @@ class DraftParser(Base):
         self.root.append(self.middle())
         self.root.append(self.back())
         self.postprocess()
+        if self.options.schema == 'v3':
+            xmlrfc = XmlRfc(lxml.etree.ElementTree(self.root), None)
+            v3 = V2v3XmlWriter(xmlrfc)
+            v3.convert2to3()
+            self.root = v3.root
         return self.root
 
     @dtrace
