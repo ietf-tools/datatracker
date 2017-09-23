@@ -1,3 +1,23 @@
+id2xml (1.3.0) ietf; urgency=medium
+
+  This release adds a --schema-v3 switch, which will cause id2xml to generate
+  xml according to xml2rfc vocabulary vesion 3.  Earlier it was indicated that
+  this would be available with version 2.0.0 of id2xml, but the v3 generation
+  was accomplished with much less of a rewrite than anticipated, and the v2
+  output is still the default, so a major version bump seems inappropriate.
+
+  Details from the commit log:
+
+  * Changed a dependency from pathlib to the recommended replacement 
+    pathlib2, and added a version requirement to the xml2rfc dependency.
+
+  * Added support for id2xml conversion to xml2rfc vocabulary version 3 
+    format by using the v2v3 conversion component of xml2rfc.  This is invoked 
+    with a new switch: -3 / --schema-v3.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  23 Sep 2017 15:47:13 +0000
+
+
 id2xml (1.2.3) ietf; urgency=medium
 
   * Added support for using draft names in references to identify 
