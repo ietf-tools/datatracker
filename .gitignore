@@ -15,3 +15,8 @@
 .*.swp
 .DS_store
 # Simulated Subversion default ignores end here
+/env
+/build
+/dist
+/unix.tag
+/id2xml.egg-info
