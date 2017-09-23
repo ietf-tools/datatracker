@@ -1,3 +1,11 @@
+id2xml (1.2.3) ietf; urgency=medium
+
+  * Added support for using draft names in references to identify 
+    references that may have bibxml entries, and use those.  If found, update 
+    the xref targets in the document accordingly.  Updated baseline diffs.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  23 Sep 2017 12:27:53 +0000
+
 id2xml (1.2.2) ietf; urgency=medium
 
   * Added a warning when an author name is seen in the document title 
