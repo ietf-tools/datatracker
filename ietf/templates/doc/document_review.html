@@ -19,8 +19,10 @@
        <tr>
 	  {% if doc.rev != latest_rev %}
           <th colspan="4" class="alert-warning">The information below is for an old version of the document</th>
-	  {% else %}
+	  {% elif doc.get_state_slug != "active" or other_reviews %}
           <th colspan="4"></th>
+	  {% else %}
+
 	  {% endif %}  
        </tr>
     </thead>
