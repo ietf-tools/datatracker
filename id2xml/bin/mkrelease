@@ -255,7 +255,7 @@ Regards,
 	(via the mkrelease script)
 " > $progdir/../mail/release-mail-v$VER.txt
 
-cat $progdir/../mail/release-mail-v$VER.txt | $do mail -s "New $PROJ release: v$VER" housley@vigilsec.com rjs@nostrum.com henrik@levkowetz.com -c arusso@amsl.com -c rse@rfc-editor.org -c sginoza@amsl.com -c mferguson@amsl.com $contributors
+cat $progdir/../mail/release-mail-v$VER.txt | $do mail -s "New $PROJ release: v$VER" housley@vigilsec.com rjs@nostrum.com henrik@levkowetz.com -c arusso@amsl.com -c rse@rfc-editor.org -c sginoza@amsl.com -c mferguson@amsl.com -c glen@amls.com -c mlarson@amsl.com $contributors
 
 #$do toolsfeed control changelog /www/tools.ietf.org/tools/atomfeed.xml
 #$do toolpush /www/tools.ietf.org/tools/atomfeed.xml
