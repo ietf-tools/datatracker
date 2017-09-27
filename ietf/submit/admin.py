@@ -6,6 +6,7 @@ from ietf.submit.models import Preapproval, Submission, SubmissionEvent, Submiss
 
 class SubmissionAdmin(admin.ModelAdmin):
     list_display = ['id', 'rev', 'draft_link', 'status_link', 'submission_date',]
+    list_filter = ['state', ]
     ordering = [ '-id' ]
     search_fields = ['name', ]
     raw_id_fields = ['group', 'draft']
