@@ -769,6 +769,11 @@ class SubmitTests(TestCase):
         self.assertEqual(r.status_code, 302)
         unprivileged_status_url = r['Location']
 
+        # search with rev
+        r = self.client.post(urlreverse("ietf.submit.views.search_submission"), dict(name=name+'-'+rev))
+        self.assertEqual(r.status_code, 302)
+        unprivileged_status_url = r['Location']
+
         # status page as unpriviliged => no edit button
         r = self.client.get(unprivileged_status_url)
         self.assertEqual(r.status_code, 200)

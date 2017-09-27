@@ -1,4 +1,6 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
+
+import re
 import base64
 import datetime
 
@@ -160,6 +162,11 @@ def search_submission(request):
         submission = Submission.objects.filter(name=name).order_by('-pk').first()
         if submission:
             return redirect(submission_status, submission_id=submission.pk)
+        else:
+            if re.search(r'-\d\d$', name):
+                submission = Submission.objects.filter(name=name[:-3]).order_by('-pk').first()
+                if submission:
+                    return redirect(submission_status, submission_id=submission.pk)
         error = 'No valid submission found for %s' % name
     return render(request, 'submit/search_submission.html',
                               {'selected': 'status',
