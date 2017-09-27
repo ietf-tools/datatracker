@@ -79,7 +79,7 @@ def api_submit(request):
     "Automated submission entrypoint"
     submission = None
     def err(code, text):
-        return HttpResponse(text, status=code, reason=text, content_type='text/plain')
+        return HttpResponse(text, status=code, content_type='text/plain')
         
     if request.method == 'GET':
         return render(request, 'submit/api_submit_info.html')
