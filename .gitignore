@@ -21,6 +21,7 @@
 /.Python
 /.settings
 /.tmp
+/.factoryboy_random_state
 /bin
 /etc
 /ghostdriver.log

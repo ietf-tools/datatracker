@@ -1,3 +1,39 @@
+ietfdb (6.63.0) ietf; urgency=medium
+
+  **Support for document-specific URL annotations**
+
+  This release adds support for document-specific URL annotations; look
+  for 'Additional URLs' on the draft status page.  These can be edited
+  by the group chairs for group drafts and by the authors for individual
+  drafts.  There are also some changes and enhancements related to the
+  submission automation API.
+
+  Commit log extract:
+
+  * Tweaked the submission search form to accept draft names which include 
+    revision numbers.  Fixes issue #2380.
+
+  * Added a cancel button to the submission confirmation page.  Fixes issue 
+    #2349.
+
+  * Removed the repeat of the error message in the HTTP reason string.  
+    Fixes issue #2378.
+
+  * Added 'Additional URLs' for documents, the same way we have them for
+    groups.  This could be used to point to a document source repository, to
+    extracted yang module files, document wikis, and other relevant resources.
+
+  * Added migrations for document url model changes.  Updated the name 
+    fixtures.  Added ability for individual draft authors to edit document urls.
+
+  * Removed some unreachable code.
+
+  * Another tweak to the draft author extraction code, to handle some name 
+    transliterations using multiple leading grave accents.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  27 Sep 2017 08:33:16 -0700
+
+
 ietfdb (6.62.1) ietf; urgency=medium
 
   This is a bugfix release which also brings in a utility script to add

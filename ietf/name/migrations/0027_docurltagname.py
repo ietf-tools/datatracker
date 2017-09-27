@@ -4,37 +4,6 @@ from __future__ import unicode_literals
 
 from django.db import migrations, models
 
-def forwards(apps,schema_editor):
-    DocUrlTagName = apps.get_model('name','DocUrlTagName')
-
-    DocUrlTagName.objects.create(
-        slug='wiki',
-        name='Document wiki',
-    )
-    DocUrlTagName.objects.create(
-        slug='issues',
-        name='Document Issue Tracker',
-    )
-    DocUrlTagName.objects.create(
-        slug='repository',
-        name='Document Source Repository',
-    )
-    DocUrlTagName.objects.create(
-        slug='yang-module',
-        name='Extracted Yang Module',
-    )
-    DocUrlTagName.objects.create(
-        slug='yang-impact-analysis',
-        name='Yang Impact Analysis',
-    )
-    DocUrlTagName.objects.create(
-        slug='yang-module-metadata',
-        name='Yang module metadata',
-    )
-
-def backwards(apps,schema_editor):
-    pass
-
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -56,7 +25,6 @@ class Migration(migrations.Migration):
                 'abstract': False,
             },
         ),
-        migrations.RunPython(forwards, backwards),
     ]
 
 
