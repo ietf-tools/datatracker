@@ -35,9 +35,13 @@
       <p>Please press the button below to finish posting of
         <b>{{ submission.name }}-{{ submission.rev }}</b>.</p>
 
-      <form class="confirm-submission" method="post">{% csrf_token %}
-        <button class="btn btn-primary" type="submit">Confirm submission & post draft</button>
+      
+      <form id="confirm-submission" method="post">
+	{% csrf_token %}
+        <button class="btn btn-primary" type="submit" name="action" value="confirm">Confirm submission & post draft</button>
+	<button class="btn btn-danger"  type="submit" name="action" value="cancel" >Cancel submission</button>
       </form>
+
     {% endif %}
 
   {% endif %}

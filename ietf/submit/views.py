@@ -33,7 +33,6 @@ from ietf.utils.accesstoken import generate_access_token
 from ietf.utils.log import log
 from ietf.utils.mail import send_mail_message
 
-
 def upload_submission(request):
     if request.method == 'POST':
         try:
@@ -438,20 +437,35 @@ def confirm_submission(request, submission_id, auth_token):
     if not key_matched: key_matched = auth_token == submission.auth_key # backwards-compat
 
     if request.method == 'POST' and submission.state_id in ("auth", "aut-appr") and key_matched:
-        submitter_parsed = submission.submitter_parsed()
-        if submitter_parsed["name"] and submitter_parsed["email"]:
-            # We know who approved it
-            desc = "New version approved"
-        elif submission.state_id == "auth":
-            desc = "New version approved by author"
+        action = request.POST.get('action')
+        if action == 'confirm':
+            submitter_parsed = submission.submitter_parsed()
+            if submitter_parsed["name"] and submitter_parsed["email"]:
+                # We know who approved it
+                desc = "New version approved"
+            elif submission.state_id == "auth":
+                desc = "New version approved by author"
+            else:
+                desc = "New version approved by previous author"
+
+            post_submission(request, submission, desc)
+
+            create_submission_event(request, submission, "Confirmed and posted submission")
+
+            return redirect("ietf.doc.views_doc.document_main", name=submission.name)
+
+        elif action == "cancel":
+            if  submission.state.next_states.filter(slug="cancel"):
+                cancel_submission(submission)
+                create_submission_event(request, submission, "Cancelled submission")
+                messages.success(request, 'The submission was cancelled.')
+            else:
+                messages.error(request, 'The submission is not in a state where it can be cancelled.')
+
+            return redirect("ietf.submit.views.submission_status", submission_id=submission_id)
+            
         else:
-            desc = "New version approved by previous author"
-
-        post_submission(request, submission, desc)
-
-        create_submission_event(request, submission, "Confirmed and posted submission")
-
-        return redirect("ietf.doc.views_doc.document_main", name=submission.name)
+            raise RuntimeError("Unexpected state in confirm_submission()")
 
     return render(request, 'submit/confirm_submission.html', {
         'submission': submission,

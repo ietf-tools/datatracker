@@ -141,9 +141,6 @@ class SubmitTests(TestCase):
             self.assertTrue(os.path.exists(os.path.join(self.staging_dir, u"%s-%s.%s" % (name, rev, format))))
         self.assertEqual(Submission.objects.filter(name=name).count(), 1)
         submission = Submission.objects.get(name=name)
-        if len(submission.authors) != 1:
-            debug.show('submission')
-            debug.pprint('submission.__dict__')
         self.assertEqual(len(submission.authors), 1)
         a = submission.authors[0]
         self.assertEqual(a["name"], author.ascii)
@@ -397,7 +394,7 @@ class SubmitTests(TestCase):
 
         # confirm
         mailbox_before = len(outbox)
-        r = self.client.post(confirm_url)
+        r = self.client.post(confirm_url, {'action':'confirm'})
         self.assertEqual(r.status_code, 302)
 
         # check we have document events 
@@ -526,7 +523,7 @@ class SubmitTests(TestCase):
 
         # confirm
         mailbox_before = len(outbox)
-        r = self.client.post(confirm_url)
+        r = self.client.post(confirm_url, {'action':'confirm'})
         self.assertEqual(r.status_code, 302)
 
         draft = Document.objects.get(docalias__name=name)
@@ -574,11 +571,34 @@ class SubmitTests(TestCase):
         confirm_url = self.extract_confirm_url(outbox[-1])
         self.assertFalse("chairs have been copied" in unicode(outbox[-1]))
         mailbox_before = len(outbox)
-        r = self.client.post(confirm_url)
+        r = self.client.post(confirm_url, {'action':'confirm'})
         self.assertEqual(r.status_code, 302)
+        self.assertEqual(len(outbox), mailbox_before+3)
         draft = Document.objects.get(docalias__name=name)
         self.assertEqual(draft.rev, rev)
         self.assertEqual(draft.relateddocument_set.filter(relationship_id='replaces').count(), replaces_count)
+
+    def test_submit_cancel_confirmation(self):
+        draft = make_test_data()
+        draft.group = None
+        draft.save_with_history([DocEvent.objects.create(doc=draft, rev=draft.rev, type="added_comment", by=Person.objects.get(user__username="secretary"), desc="Test")])
+        name = draft.name
+        old_rev = draft.rev
+        rev = '%02d'%(int(draft.rev)+1)
+        status_url, author = self.do_submission(name, rev)
+        mailbox_before = len(outbox)
+        r = self.supply_extra_metadata(name, status_url, "Submitter Name", "author@example.com", replaces='')
+        self.assertEqual(r.status_code, 302)
+        status_url = r["Location"]
+        r = self.client.get(status_url)
+        self.assertEqual(len(outbox), mailbox_before + 1)
+        confirm_url = self.extract_confirm_url(outbox[-1])
+        mailbox_before = len(outbox)
+        r = self.client.post(confirm_url, {'action':'cancel'})
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(len(outbox), mailbox_before)
+        draft = Document.objects.get(docalias__name=name)
+        self.assertEqual(draft.rev, old_rev)
 
     def test_submit_new_wg_with_dash(self):
         make_test_data()
