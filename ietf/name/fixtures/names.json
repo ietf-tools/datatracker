@@ -7769,17 +7769,17 @@
   {
     "fields": {
       "desc": "",
-      "name": "Document Issue Tracker",
+      "name": "Document issue tracker",
       "order": 0,
       "used": true
     },
     "model": "name.docurltagname",
-    "pk": "tracker"
+    "pk": "issues"
   },
   {
     "fields": {
       "desc": "",
-      "name": "Document Wiki",
+      "name": "Document wiki",
       "order": 0,
       "used": true
     },
@@ -7789,7 +7789,7 @@
   {
     "fields": {
       "desc": "",
-      "name": "Yang Impact Analysis",
+      "name": "Yang impact analysis",
       "order": 0,
       "used": true
     },
@@ -7799,7 +7799,7 @@
   {
     "fields": {
       "desc": "",
-      "name": "Extracted Yang Module",
+      "name": "Extracted yang module",
       "order": 0,
       "used": true
     },

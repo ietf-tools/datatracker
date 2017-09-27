@@ -9,6 +9,8 @@ from django.http import HttpResponseRedirect, HttpResponseForbidden
 from django.contrib.auth import REDIRECT_FIELD_NAME
 from django.utils.decorators import available_attrs
 
+import debug                            # pyflakes:ignore
+
 from ietf.group.models import Role
 from ietf.person.models import Person
 
@@ -128,7 +130,7 @@ def is_authorized_in_doc_stream(user, doc):
     if not doc.stream:
         return False
 
-    if doc.stream.slug == "ietf" and doc.group.type == "individ":
+    if doc.stream.slug == "ietf" and doc.group.type_id == "individ":
         return False
 
     if doc.stream.slug == "ietf":
@@ -141,3 +143,17 @@ def is_authorized_in_doc_stream(user, doc):
         group_req = Q()
 
     return Role.objects.filter(Q(name__in=("chair", "secr", "delegate", "auth"), person__user=user) & group_req).exists()
+
+def is_individual_draft_author(user, doc):
+
+    if not user.is_authenticated:
+        return False
+
+    if not doc.group.type_id == "individ" :
+        return False
+
+    if user.person in doc.authors():
+        return True
+
+    return False
+    

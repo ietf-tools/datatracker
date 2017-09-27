@@ -241,12 +241,12 @@
       {% endif %}
 
       {% with doc.documenturl_set.all as urls %}
-        {% if urls or can_edit_stream_info %}
+        {% if urls or can_edit_stream_info or can_edit_individual %}
 	<tr>
           <td></td>
           <th>Additional URLs</th>
 	  <td class="edit">
-	    {% if can_edit_stream_info %}
+	    {% if can_edit_stream_info or can_edit_individual %}
 	      <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_draft.edit_document_urls' name=doc.name %}">Edit</a>
 	    {% endif %}
 	  </td>

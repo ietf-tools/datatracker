@@ -54,7 +54,8 @@ from ietf.doc.utils import ( add_links_in_new_revision_events, augment_events_wi
 from ietf.community.utils import augment_docs_with_tracking_info
 from ietf.group.models import Role
 from ietf.group.utils import can_manage_group_type, can_manage_materials
-from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream, user_is_person, role_required
+from ietf.ietfauth.utils import ( has_role, is_authorized_in_doc_stream, user_is_person,
+    role_required, is_individual_draft_author)
 from ietf.name.models import StreamName, BallotPositionName
 from ietf.utils.history import find_history_active_at
 from ietf.doc.forms import TelechatForm, NotifyForm
@@ -284,6 +285,7 @@ def document_main(request, name, rev=None):
         can_edit_stream_info = is_authorized_in_doc_stream(request.user, doc)
         can_edit_shepherd_writeup = can_edit_stream_info or user_is_person(request.user, doc.shepherd and doc.shepherd.person) or has_role(request.user, ["Area Director"])
         can_edit_notify = can_edit_shepherd_writeup
+        can_edit_individual = is_individual_draft_author(request.user, doc)
 
         can_edit_consensus = False
         consensus = nice_consensus(default_consensus(doc))
@@ -383,6 +385,7 @@ def document_main(request, name, rev=None):
                                        can_edit=can_edit,
                                        can_change_stream=can_change_stream,
                                        can_edit_stream_info=can_edit_stream_info,
+                                       can_edit_individual=can_edit_individual,
                                        is_shepherd = user_is_person(request.user, doc.shepherd and doc.shepherd.person),
                                        can_edit_shepherd_writeup=can_edit_shepherd_writeup,
                                        can_edit_notify=can_edit_notify,

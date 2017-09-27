@@ -32,7 +32,7 @@ from ietf.doc.lastcall import request_last_call
 from ietf.doc.fields import SearchableDocAliasesField
 from ietf.group.models import Group, Role
 from ietf.iesg.models import TelechatDate
-from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream, user_is_person
+from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream, user_is_person, is_individual_draft_author
 from ietf.ietfauth.utils import role_required
 from ietf.message.models import Message
 from ietf.name.models import IntendedStdLevelName, DocTagName, StreamName, DocUrlTagName
@@ -1153,7 +1153,8 @@ def edit_document_urls(request, name):
     doc = get_object_or_404(Document, name=name)
 
     if not (has_role(request.user, ("Secretariat", "Area Director"))
-            or is_authorized_in_doc_stream(request.user, doc)):
+            or is_authorized_in_doc_stream(request.user, doc)
+            or is_individual_draft_author(request.user, doc)):
         return HttpResponseForbidden("You do not have the necessary permissions to view this page")
 
     old_urls = format_urls(doc.documenturl_set.all())

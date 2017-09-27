@@ -335,6 +335,9 @@ class DocumentInfo(models.Model):
     def author_list(self):
         return u", ".join(author.email_id for author in self.documentauthor_set.all() if author.email_id)
 
+    def authors(self):
+        return [ a.person for a in self.documentauthor_set.all() ]
+
     # This, and several other ballot related functions here, assume that there is only one active ballot for a document at any point in time.
     # If that assumption is violated, they will only expose the most recently created ballot
     def ballot_open(self, ballot_type_slug):
