@@ -7,10 +7,6 @@ Updated: $Date$
 Planned work in rough order
 ===========================
 
-* Add 'Additional URLs' for documents, the same way we have them for groups.
-  This could be used to point to a document source repository, to extracted
-  yang module files, document wikis, and other relevant resources.
-
 * Add a 'recent ballots' page (IESG request)
 
 * Revisit the review tool, work through the accumulated tickets.
