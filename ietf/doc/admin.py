@@ -7,7 +7,7 @@ from models import (StateType, State, RelatedDocument, DocumentAuthor, Document,
     DocHistoryAuthor, DocHistory, DocAlias, DocReminder, DocEvent, NewRevisionDocEvent,
     StateDocEvent, ConsensusDocEvent, BallotType, BallotDocEvent, WriteupDocEvent, LastCallDocEvent,
     TelechatDocEvent, BallotPositionDocEvent, ReviewRequestDocEvent, InitialReviewDocEvent,
-    AddedMessageEvent, SubmissionDocEvent, DeletedEvent, EditedAuthorsDocEvent, )
+    AddedMessageEvent, SubmissionDocEvent, DeletedEvent, EditedAuthorsDocEvent, DocumentURL)
 
 
 from ietf.doc.utils import get_state_types
@@ -211,3 +211,7 @@ class BallotPositionDocEventAdmin(DocEventAdmin):
     raw_id_fields = ["doc", "by", "ad", "ballot"]
 admin.site.register(BallotPositionDocEvent, BallotPositionDocEventAdmin)
     
+class DocumentUrlAdmin(admin.ModelAdmin):
+    list_display = ['id', 'doc', 'tag', 'url', 'desc', ]
+    raw_id_fields = ['doc', ]
+admin.site.register(DocumentURL, DocumentUrlAdmin)

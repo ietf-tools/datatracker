@@ -3,15 +3,17 @@
 import datetime
 
 from django import forms
+from django.conf import settings
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ValidationError, ObjectDoesNotExist
+from django.core.validators import URLValidator
 from django.db.models import Q
 from django.http import HttpResponseRedirect, HttpResponseForbidden, Http404
 from django.shortcuts import render, get_object_or_404, redirect
 from django.template.loader import render_to_string
-from django.conf import settings
 from django.forms.utils import ErrorList
-from django.contrib.auth.decorators import login_required
 from django.template.defaultfilters import pluralize
-from django.contrib import messages
 
 import debug                            # pyflakes:ignore
 
@@ -33,7 +35,7 @@ from ietf.iesg.models import TelechatDate
 from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream, user_is_person
 from ietf.ietfauth.utils import role_required
 from ietf.message.models import Message
-from ietf.name.models import IntendedStdLevelName, DocTagName, StreamName
+from ietf.name.models import IntendedStdLevelName, DocTagName, StreamName, DocUrlTagName
 from ietf.person.fields import SearchableEmailField
 from ietf.person.models import Person, Email
 from ietf.utils.mail import send_mail, send_mail_message
@@ -1110,13 +1112,88 @@ def edit_consensus(request, name):
                               },
                           )
 
-class PublicationForm(forms.Form):
-    subject = forms.CharField(max_length=200, required=True)
-    body = forms.CharField(widget=forms.Textarea, required=True, strip=False)
+def edit_document_urls(request, name):
+    class DocumentUrlForm(forms.Form):
+        urls = forms.CharField(widget=forms.Textarea, label="Additional URLs", required=False,
+            help_text=("Format: 'tag https://site/path (Optional description)'."
+                " Separate multiple entries with newline. Prefer HTTPS URLs where possible.") )
+
+        def clean_urls(self):
+            lines = [x.strip() for x in self.cleaned_data["urls"].splitlines() if x.strip()]
+            url_validator = URLValidator()
+            for l in lines:
+                errors = []
+                parts = l.split()
+                if len(parts) == 1:
+                    errors.append("Too few fields: Expected at least url and tag: '%s'" % l)
+                elif len(parts) >= 2:
+                    tag = parts[0]
+                    url = parts[1]
+                    try:
+                        url_validator(url)
+                    except ValidationError as e:
+                        errors.append(e)
+                    try:
+                        DocUrlTagName.objects.get(slug=tag)
+                    except ObjectDoesNotExist:
+                        errors.append("Bad tag in '%s': Expected one of %s" % (l, ', '.join([ o.slug for o in DocUrlTagName.objects.all() ])))
+            if errors:
+                raise ValidationError(errors)
+            return lines
+
+    def format_urls(urls, fs="\n"):
+        res = []
+        for u in urls:
+            if u.desc:
+                res.append(u"%s %s (%s)" % (u.tag.slug, u.url, u.desc.strip('()')))
+            else:
+                res.append(u"%s %s" % (u.tag.slug, u.url))
+        return fs.join(res)
+
+    doc = get_object_or_404(Document, name=name)
+
+    if not (has_role(request.user, ("Secretariat", "Area Director"))
+            or is_authorized_in_doc_stream(request.user, doc)):
+        return HttpResponseForbidden("You do not have the necessary permissions to view this page")
+
+    old_urls = format_urls(doc.documenturl_set.all())
+
+    if request.method == 'POST':
+        form = DocumentUrlForm(request.POST)
+        if form.is_valid():
+            old_urls = sorted(old_urls.splitlines())
+            new_urls = sorted(form.cleaned_data['urls'])
+            if old_urls != new_urls:
+                doc.documenturl_set.all().delete()
+                for u in new_urls:
+                    parts = u.split(None, 2)
+                    tag = parts[0]
+                    url = parts[1]
+                    desc = ' '.join(parts[2:]).strip('()')
+                    doc.documenturl_set.create(url=url, tag_id=tag, desc=desc)
+                    new_urls = format_urls(doc.documenturl_set.all())
+                    e = DocEvent(doc=doc, rev=doc.rev, by=request.user.person, type='changed_document')
+                    e.desc = "Changed document URLs from:\n\n%s\n\nto:\n\n%s" % (old_urls, new_urls)
+                    e.save()
+                    doc.save_with_history([e])
+                messages.success(request,"Document URLs updated.")
+            else:
+                messages.info(request,"No change in Document URLs.")
+            return redirect('ietf.doc.views_doc.document_main', name=doc.name)
+    else:
+        form = DocumentUrlForm(initial={'urls': old_urls, })
+
+    info = "Valid tags:<br><br> %s" % ', '.join([ o.slug for o in DocUrlTagName.objects.all() ])
+    title = "Additional document URLs"
+    return render(request, 'doc/edit_field.html',dict(doc=doc, form=form, title=title, info=info) )
 
 def request_publication(request, name):
     """Request publication by RFC Editor for a document which hasn't
     been through the IESG ballot process."""
+
+    class PublicationForm(forms.Form):
+        subject = forms.CharField(max_length=200, required=True)
+        body = forms.CharField(widget=forms.Textarea, required=True, strip=False)
 
     doc = get_object_or_404(Document, type="draft", name=name, stream__in=("iab", "ise", "irtf"))
 

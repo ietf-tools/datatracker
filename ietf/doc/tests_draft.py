@@ -765,6 +765,11 @@ class ExpireLastCallTests(TestCase):
         self.assertTrue('draft-ietf-mars-test@' in outbox[-1]['To'])
 
 class IndividualInfoFormsTests(TestCase):
+
+    def setUp(self):
+        self.doc = make_test_data()
+        self.docname = self.doc.name
+
     def test_doc_change_stream(self):
         url = urlreverse('ietf.doc.views_draft.change_stream', kwargs=dict(name=self.docname))
         login_testing_unauthorized(self, "secretary", url)
@@ -1050,11 +1055,24 @@ class IndividualInfoFormsTests(TestCase):
         q = PyQuery(r.content)
         self.assertTrue(q('textarea')[0].text.strip().startswith("As required by RFC 4858"))
 
-    def setUp(self):
-        make_test_data()
-        self.docname='draft-ietf-mars-test'
+    def test_doc_change_document_urls(self):
+        url = urlreverse('ietf.doc.views_draft.edit_document_urls', kwargs=dict(name=self.docname))
+  
+        # get
+        login_testing_unauthorized(self, "secretary", url)
+
+        r = self.client.get(url)
+        self.assertEqual(r.status_code,200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('form textarea[id=id_urls]')),1)
+
+        # direct edit
+        r = self.client.post(url, dict(urls='wiki https://wiki.org/ Wiki\nrepository https://repository.org/ Repo\n', submit="1"))
+        self.assertEqual(r.status_code,302)
         self.doc = Document.objects.get(name=self.docname)
-        
+        self.assertTrue(self.doc.latest_event(DocEvent,type="changed_document").desc.startswith('Changed document URLs'))
+        self.assertIn('wiki https://wiki.org/', self.doc.latest_event(DocEvent,type="changed_document").desc)
+        self.assertIn('https://wiki.org/', [ u.url for u in self.doc.documenturl_set.all() ])
 
 class SubmitToIesgTests(TestCase):
     def test_verify_permissions(self):

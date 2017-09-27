@@ -107,6 +107,9 @@ class CountryName(NameModel):
     "Afghanistan, Aaland Islands, Albania, ..."
     continent = models.ForeignKey(ContinentName)
     in_eu = models.BooleanField(verbose_name="In EU", default=False)
-
 class ImportantDateName(NameModel):
+    "Registration Opens, Scheduling Opens, ID Cutoff, ..."
     default_offset_days = models.SmallIntegerField()
+class DocUrlTagName(NameModel):
+    "Repository, Wiki, Issue Tracker, ..."
+    

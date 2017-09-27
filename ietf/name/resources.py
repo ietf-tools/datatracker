@@ -13,9 +13,9 @@ from ietf.name.models import (TimeSlotTypeName, GroupStateName, DocTagName, Inte
     IprEventTypeName, GroupMilestoneStateName, SessionStatusName, DocReminderTypeName,
     ConstraintName, MeetingTypeName, DocRelationshipName, RoomResourceName, IprLicenseTypeName,
     LiaisonStatementTagName, FeedbackTypeName, LiaisonStatementState, StreamName,
-    BallotPositionName, DBTemplateTypeName, NomineePositionStateName,
-    ReviewRequestStateName, ReviewTypeName, ReviewResultName,
-    TopicAudienceName, FormalLanguageName, ContinentName, CountryName, ImportantDateName)
+    BallotPositionName, DBTemplateTypeName, NomineePositionStateName, ReviewRequestStateName,
+    ReviewTypeName, ReviewResultName, TopicAudienceName, FormalLanguageName, ContinentName,
+    CountryName, ImportantDateName, DocUrlTagName)
 
 
 class TimeSlotTypeNameResource(ModelResource):
@@ -536,3 +536,19 @@ class ImportantDateNameResource(ModelResource):
             "default_offset_days": ALL,
         }
 api.name.register(ImportantDateNameResource())
+
+
+class DocUrlTagNameResource(ModelResource):
+    class Meta:
+        queryset = DocUrlTagName.objects.all()
+        serializer = api.Serializer()
+        cache = SimpleCache()
+        #resource_name = 'docurltagname'
+        filtering = { 
+            "slug": ALL,
+            "name": ALL,
+            "desc": ALL,
+            "used": ALL,
+            "order": ALL,
+        }
+api.name.register(DocUrlTagNameResource())

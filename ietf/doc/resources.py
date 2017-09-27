@@ -12,7 +12,7 @@ from ietf.doc.models import (BallotType, DeletedEvent, StateType, State, Documen
     TelechatDocEvent, DocReminder, LastCallDocEvent, NewRevisionDocEvent, WriteupDocEvent,
     InitialReviewDocEvent, DocHistoryAuthor, BallotDocEvent, RelatedDocument,
     RelatedDocHistory, BallotPositionDocEvent, AddedMessageEvent, SubmissionDocEvent,
-    ReviewRequestDocEvent, EditedAuthorsDocEvent)
+    ReviewRequestDocEvent, EditedAuthorsDocEvent, DocumentURL)
 
 from ietf.name.resources import BallotPositionNameResource, DocTypeNameResource
 class BallotTypeResource(ModelResource):
@@ -629,3 +629,22 @@ class EditedAuthorsDocEventResource(ModelResource):
             "docevent_ptr": ALL_WITH_RELATIONS,
         }
 api.doc.register(EditedAuthorsDocEventResource())
+
+
+from ietf.name.resources import DocUrlTagNameResource
+class DocumentURLResource(ModelResource):
+    doc              = ToOneField(DocumentResource, 'doc')
+    tag              = ToOneField(DocUrlTagNameResource, 'tag')
+    class Meta:
+        queryset = DocumentURL.objects.all()
+        serializer = api.Serializer()
+        cache = SimpleCache()
+        #resource_name = 'documenturl'
+        filtering = { 
+            "id": ALL,
+            "desc": ALL,
+            "url": ALL,
+            "doc": ALL_WITH_RELATIONS,
+            "tag": ALL_WITH_RELATIONS,
+        }
+api.doc.register(DocumentURLResource())

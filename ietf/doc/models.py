@@ -20,7 +20,8 @@ import debug                            # pyflakes:ignore
 
 from ietf.group.models import Group
 from ietf.name.models import ( DocTypeName, DocTagName, StreamName, IntendedStdLevelName, StdLevelName,
-    DocRelationshipName, DocReminderTypeName, BallotPositionName, ReviewRequestStateName, FormalLanguageName )
+    DocRelationshipName, DocReminderTypeName, BallotPositionName, ReviewRequestStateName, FormalLanguageName,
+    DocUrlTagName)
 from ietf.person.models import Email, Person
 from ietf.utils import log
 from ietf.utils.admin import admin_link
@@ -777,8 +778,13 @@ class Document(DocumentInfo):
                              stream=self.stream, group=self.group)
 
         return dh
-            
 
+
+class DocumentURL(models.Model):
+    doc  = models.ForeignKey(Document)
+    tag  = models.ForeignKey(DocUrlTagName)
+    desc = models.CharField(max_length=255, default='', blank=True)
+    url  = models.URLField()
 
 class RelatedDocHistory(models.Model):
     source = models.ForeignKey('DocHistory')
