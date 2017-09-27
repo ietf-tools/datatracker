@@ -333,9 +333,9 @@ class MergePersonForm(forms.Form):
         duplicate_persons = self.cleaned_data.get("duplicate_persons")
 
         subject = "Request to merge Person records"
-        from_email = settings.NOMCOM_FROM_EMAIL
+        from_email = settings.NOMCOM_FROM_EMAIL.format(year=self.nomcom.year())
         (to_email, cc) = gather_address_lists('person_merge_requested')
-        context = {'primary_person':primary_person, 'duplicate_persons':duplicate_persons}
+        context = {'primary_person':primary_person, 'duplicate_persons':duplicate_persons, 'year': self.nomcom.year(), }
         send_mail(None, to_email, from_email, subject, 'nomcom/merge_request.txt', context, cc=cc)
 
 class NominateForm(forms.ModelForm):
@@ -427,11 +427,13 @@ class NominateForm(forms.ModelForm):
         if confirmation:
             if author:
                 subject = 'Nomination receipt'
-                from_email = settings.NOMCOM_FROM_EMAIL
+                from_email = settings.NOMCOM_FROM_EMAIL.format(year=self.nomcom.year())
                 (to_email, cc) = gather_address_lists('nomination_receipt_requested',nominator=author.address)
                 context = {'nominee': nominee.email.person.name,
                           'comments': qualifications,
-                          'position': position.name}
+                          'position': position.name,
+                          'year': self.nomcom.year(),
+                      }
                 path = nomcom_template_path + NOMINATION_RECEIPT_TEMPLATE
                 send_mail(None, to_email, from_email, subject, path, context, cc=cc)
 
@@ -483,10 +485,11 @@ class NominateNewPersonForm(forms.ModelForm):
         candidate_email = self.cleaned_data['candidate_email']
         if Email.objects.filter(address=candidate_email).exists():
             normal_url_name = 'ietf.nomcom.views.%s_nominate' % 'public' if self.public else 'private'
-            msg = '%s is already in the datatracker. \
-                   Use the <a href="%s">normal nomination form</a> to nominate the person \
-                   with this address.\
-                  ' % (candidate_email,reverse(normal_url_name,kwargs={'year':self.nomcom.year()}))
+            msg = (('%s is already in the datatracker. '
+                    'Use the <a href="%s">normal nomination form</a> to nominate the person '
+                    'with this address. ') % 
+                        (candidate_email, reverse(normal_url_name, kwargs={'year':self.nomcom.year()}) )
+                  )
             raise forms.ValidationError(mark_safe(msg))
         return candidate_email
 
@@ -539,11 +542,13 @@ class NominateNewPersonForm(forms.ModelForm):
         if confirmation:
             if author:
                 subject = 'Nomination receipt'
-                from_email = settings.NOMCOM_FROM_EMAIL
+                from_email = settings.NOMCOM_FROM_EMAIL.format(year=self.nomcom.year())
                 (to_email, cc) = gather_address_lists('nomination_receipt_requested',nominator=author.address)
                 context = {'nominee': nominee.email.person.name,
                           'comments': qualifications,
-                          'position': position.name}
+                          'position': position.name,
+                          'year': self.nomcom.year(),
+                      }
                 path = nomcom_template_path + NOMINATION_RECEIPT_TEMPLATE
                 send_mail(None, to_email, from_email, subject, path, context, cc=cc)
 
@@ -625,14 +630,16 @@ class FeedbackForm(forms.ModelForm):
         if confirmation:
             if author:
                 subject = "NomCom comment confirmation"
-                from_email = settings.NOMCOM_FROM_EMAIL
+                from_email = settings.NOMCOM_FROM_EMAIL.format(year=self.nomcom.year())
                 (to_email, cc) = gather_address_lists('nomcom_comment_receipt_requested',commenter=author.address)
                 if self.nominee and self.position:
                     about = '%s for the position of\n%s'%(self.nominee.email.person.name, self.position.name)
                 elif self.topic:
                     about = self.topic.subject
                 context = {'about': about,
-                           'comments': comments, }
+                           'comments': comments,
+                           'year': self.nomcom.year(),
+                       }
                 path = nomcom_template_path + FEEDBACK_RECEIPT_TEMPLATE
                 # TODO - make the thing above more generic
                 send_mail(None, to_email, from_email, subject, path, context, cc=cc)

@@ -212,10 +212,10 @@ def validate_public_key(public_key):
 def send_accept_reminder_to_nominee(nominee_position):
     today = datetime.date.today().strftime('%Y%m%d')
     subject = 'Reminder: please accept (or decline) your nomination.'
-    from_email = settings.NOMCOM_FROM_EMAIL
     domain = Site.objects.get_current().domain
     position = nominee_position.position
     nomcom = position.nomcom
+    from_email = settings.NOMCOM_FROM_EMAIL.format(year=nomcom.year())
     nomcom_template_path = '/nomcom/%s/' % nomcom.group.acronym
     mail_path = nomcom_template_path + NOMINEE_ACCEPT_REMINDER_TEMPLATE
     nominee = nominee_position.nominee
@@ -241,7 +241,9 @@ def send_accept_reminder_to_nominee(nominee_position):
                'position': position,
                'domain': domain,
                'accept_url': accept_url,
-               'decline_url': decline_url}
+               'decline_url': decline_url,
+               'year': nomcom.year(),
+           }
     body = render_to_string(mail_path, context)
     path = '%s%d/%s' % (nomcom_template_path, position.id, QUESTIONNAIRE_TEMPLATE)
     body += '\n\n%s' % render_to_string(path, context)
@@ -249,10 +251,10 @@ def send_accept_reminder_to_nominee(nominee_position):
 
 def send_questionnaire_reminder_to_nominee(nominee_position):
     subject = 'Reminder: please complete the Nomcom questionnaires for your nomination.'
-    from_email = settings.NOMCOM_FROM_EMAIL
     domain = Site.objects.get_current().domain
     position = nominee_position.position
     nomcom = position.nomcom
+    from_email = settings.NOMCOM_FROM_EMAIL.format(year=nomcom.year())
     nomcom_template_path = '/nomcom/%s/' % nomcom.group.acronym
     mail_path = nomcom_template_path + NOMINEE_QUESTIONNAIRE_REMINDER_TEMPLATE
     nominee = nominee_position.nominee
@@ -261,7 +263,8 @@ def send_questionnaire_reminder_to_nominee(nominee_position):
     context = {'nominee': nominee,
                'position': position,
                'domain': domain,
-               }
+               'year': nomcom.year(),
+           }
     body = render_to_string(mail_path, context)
     path = '%s%d/%s' % (nomcom_template_path, position.id, QUESTIONNAIRE_TEMPLATE)
     body += '\n\n%s' % render_to_string(path, context)
@@ -296,21 +299,21 @@ def make_nomineeposition(nomcom, candidate, position, author):
     if nominee_position_created:
         # send email to nominee
         subject = 'IETF Nomination Information'
-        from_email = settings.NOMCOM_FROM_EMAIL
+        from_email = settings.NOMCOM_FROM_EMAIL.format(year=nomcom.year())
         (to_email, cc) = gather_address_lists('nomination_new_nominee',nominee=nominee.email.address)
         domain = Site.objects.get_current().domain
         today = datetime.date.today().strftime('%Y%m%d')
         hash = get_hash_nominee_position(today, nominee_position.id)
         accept_url = reverse('ietf.nomcom.views.process_nomination_status',
                               None,
-                              args=(get_year_by_nomcom(nomcom),
+                              args=(nomcom.year(),
                               nominee_position.id,
                               'accepted',
                               today,
                               hash))
         decline_url = reverse('ietf.nomcom.views.process_nomination_status',
                               None,
-                              args=(get_year_by_nomcom(nomcom),
+                              args=(nomcom.year(),
                               nominee_position.id,
                               'declined',
                               today,
@@ -318,9 +321,11 @@ def make_nomineeposition(nomcom, candidate, position, author):
 
         context = {'nominee': nominee.person.name,
                    'position': position.name,
+                   'year': nomcom.year(),
                    'domain': domain,
                    'accept_url': accept_url,
-                   'decline_url': decline_url}
+                   'decline_url': decline_url,
+               }
 
         path = nomcom_template_path + NOMINEE_EMAIL_TEMPLATE
         send_mail(None, to_email, from_email, subject, path, context, cc=cc)
@@ -328,10 +333,12 @@ def make_nomineeposition(nomcom, candidate, position, author):
         # send email to nominee with questionnaire
         if nomcom.send_questionnaire:
             subject = '%s Questionnaire' % position
-            from_email = settings.NOMCOM_FROM_EMAIL
+            from_email = settings.NOMCOM_FROM_EMAIL.format(year=nomcom.year())
             (to_email, cc) = gather_address_lists('nomcom_questionnaire',nominee=nominee.email.address)
             context = {'nominee': nominee.person.name,
-                      'position': position.name}
+                      'position': position.name,
+                      'year'    : nomcom.year(),
+                  }
             path = '%s%d/%s' % (nomcom_template_path,
                                 position.id, HEADER_QUESTIONNAIRE_TEMPLATE)
             body = render_to_string(path, context)
@@ -342,11 +349,13 @@ def make_nomineeposition(nomcom, candidate, position, author):
 
     # send emails to nomcom chair
     subject = 'Nomination Information'
-    from_email = settings.NOMCOM_FROM_EMAIL
+    from_email = settings.NOMCOM_FROM_EMAIL.format(year=nomcom.year())
     (to_email, cc) = gather_address_lists('nomination_received',nomcom=nomcom)
     context = {'nominee': nominee.person.name,
                'nominee_email': nominee.email.address,
-               'position': position.name}
+               'position': position.name,
+               'year': nomcom.year(),
+           }
 
     if author:
         context.update({'nominator': author.person.name,
@@ -372,11 +381,13 @@ def make_nomineeposition_for_newperson(nomcom, candidate_name, candidate_email, 
 
     # send email to secretariat and nomcomchair to warn about the new person
     subject = 'New person is created'
-    from_email = settings.NOMCOM_FROM_EMAIL
+    from_email = settings.NOMCOM_FROM_EMAIL.format(year=nomcom.year())
     (to_email, cc) = gather_address_lists('nomination_created_person',nomcom=nomcom)
     context = {'email': email.address,
                'fullname': email.person.name,
-               'person_id': email.person.id}
+               'person_id': email.person.id,
+               'year': nomcom.year(),
+           }
     nomcom_template_path = '/nomcom/%s/' % nomcom.group.acronym
     path = nomcom_template_path + INEXISTENT_PERSON_TEMPLATE
     send_mail(None, to_email, from_email, subject, path, context, cc=cc)

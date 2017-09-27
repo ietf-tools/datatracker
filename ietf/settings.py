@@ -654,7 +654,7 @@ RFC_EDITOR_ERRATA_URL = "https://www.rfc-editor.org/errata_search.php?rfc={rfc_n
 # NomCom Tool settings
 ROLODEX_URL = ""
 NOMCOM_PUBLIC_KEYS_DIR = '/a/www/nomcom/public_keys/'
-NOMCOM_FROM_EMAIL = 'nomcom-chair@ietf.org'
+NOMCOM_FROM_EMAIL = 'nomcom-chair-{year}@ietf.org'
 OPENSSL_COMMAND = '/usr/bin/openssl'
 DAYS_TO_EXPIRE_NOMINATION_LINK = ''
 NOMINEE_FEEDBACK_TYPES = ['comment', 'questio', 'nomina']
