@@ -68,6 +68,8 @@ class NomcomViewsTest(TestCase):
         nomcom_test_data()
         self.cert_file, self.privatekey_file = get_cert_files()
         self.year = NOMCOM_YEAR
+        self.email_from = settings.NOMCOM_FROM_EMAIL.format(year=self.year)
+        self.assertIn(self.year, self.email_from)
 
         # private urls
         self.private_index_url = reverse('ietf.nomcom.views.private_index', kwargs={'year': self.year})
@@ -494,14 +496,17 @@ class NomcomViewsTest(TestCase):
         self.assertEqual(len(outbox), messages_before + 3)
 
         self.assertEqual('IETF Nomination Information', outbox[-3]['Subject'])
-        self.assertTrue('nominee' in outbox[-3]['To'])
+        self.assertEqual(self.email_from, outbox[-3]['From'])
+        self.assertIn('nominee', outbox[-3]['To'])
 
         self.assertEqual('Nomination Information', outbox[-2]['Subject'])
-        self.assertTrue('nomcomchair' in outbox[-2]['To'])
+        self.assertEqual(self.email_from, outbox[-2]['From'])
+        self.assertIn('nomcomchair', outbox[-2]['To'])
 
         self.assertEqual('Nomination receipt', outbox[-1]['Subject'])
-        self.assertTrue('plain' in outbox[-1]['To'])
-        self.assertTrue(u'Comments with accents äöå' in unicode(outbox[-1].get_payload(decode=True),"utf-8","replace"))
+        self.assertEqual(self.email_from, outbox[-1]['From'])
+        self.assertIn('plain', outbox[-1]['To'])
+        self.assertIn(u'Comments with accents äöå', unicode(outbox[-1].get_payload(decode=True),"utf-8","replace"))
 
         # Nominate the same person for the same position again without asking for confirmation 
 
@@ -510,7 +515,8 @@ class NomcomViewsTest(TestCase):
         self.nominate_view(public=True)
         self.assertEqual(len(outbox), messages_before + 1)
         self.assertEqual('Nomination Information', outbox[-1]['Subject'])
-        self.assertTrue('nomcomchair' in outbox[-1]['To'])
+        self.assertEqual(self.email_from, outbox[-1]['From'])
+        self.assertIn('nomcomchair', outbox[-1]['To'])
 
     def test_private_nominate(self):
         self.access_member_url(self.private_nominate_url)
@@ -527,17 +533,21 @@ class NomcomViewsTest(TestCase):
         self.assertEqual(len(outbox), messages_before + 4)
 
         self.assertEqual('New person is created', outbox[-4]['Subject'])
-        self.assertTrue('secretariat' in outbox[-4]['To'])
+        self.assertEqual(self.email_from, outbox[-4]['From'])
+        self.assertIn('secretariat', outbox[-4]['To'])
 
         self.assertEqual('IETF Nomination Information', outbox[-3]['Subject'])
-        self.assertTrue('nominee' in outbox[-3]['To'])
+        self.assertEqual(self.email_from, outbox[-3]['From'])
+        self.assertIn('nominee', outbox[-3]['To'])
 
         self.assertEqual('Nomination Information', outbox[-2]['Subject'])
-        self.assertTrue('nomcomchair' in outbox[-2]['To'])
+        self.assertEqual(self.email_from, outbox[-2]['From'])
+        self.assertIn('nomcomchair', outbox[-2]['To'])
 
         self.assertEqual('Nomination receipt', outbox[-1]['Subject'])
-        self.assertTrue('plain' in outbox[-1]['To'])
-        self.assertTrue(u'Comments with accents äöå' in unicode(outbox[-1].get_payload(decode=True),"utf-8","replace"))
+        self.assertEqual(self.email_from, outbox[-1]['From'])
+        self.assertIn('plain', outbox[-1]['To'])
+        self.assertIn(u'Comments with accents äöå', unicode(outbox[-1].get_payload(decode=True),"utf-8","replace"))
 
         # Nominate the same person for the same position again without asking for confirmation 
 
@@ -546,7 +556,8 @@ class NomcomViewsTest(TestCase):
         self.nominate_view(public=True)
         self.assertEqual(len(outbox), messages_before + 1)
         self.assertEqual('Nomination Information', outbox[-1]['Subject'])
-        self.assertTrue('nomcomchair' in outbox[-1]['To'])
+        self.assertEqual(self.email_from, outbox[-1]['From'])
+        self.assertIn('nomcomchair', outbox[-1]['To'])
 
     def test_private_nominate_newperson(self):
         self.access_member_url(self.private_nominate_url)
@@ -562,8 +573,9 @@ class NomcomViewsTest(TestCase):
         self.nominate_view(public=True)
         self.assertEqual(len(outbox), 3)
         # test_public_nominate checks the other messages
-        self.assertTrue('Questionnaire' in outbox[1]['Subject'])
-        self.assertTrue('nominee@' in outbox[1]['To'])
+        self.assertEqual(self.email_from, outbox[-1]['From'])
+        self.assertIn('Questionnaire', outbox[1]['Subject'])
+        self.assertIn('nominee@', outbox[1]['To'])
 
 
     def nominate_view(self, *args, **kwargs):
@@ -775,13 +787,14 @@ class NomcomViewsTest(TestCase):
         # We're interested in the confirmation receipt here
         self.assertEqual(len(outbox),3)
         self.assertEqual('NomCom comment confirmation', outbox[2]['Subject'])
-        self.assertTrue('plain' in outbox[2]['To'])
-        self.assertTrue(u'Comments with accents äöå' in unicode(outbox[2].get_payload(decode=True),"utf-8","replace"))
+        self.assertEqual(self.email_from, outbox[-2]['From'])
+        self.assertIn('plain', outbox[2]['To'])
+        self.assertIn(u'Comments with accents äöå', unicode(outbox[2].get_payload(decode=True),"utf-8","replace"))
 
         empty_outbox()
         self.feedback_view(public=True)
         self.assertEqual(len(outbox),1)
-        self.assertFalse('confirmation' in outbox[0]['Subject'])
+        self.assertNotIn('confirmation', outbox[0]['Subject'])
 
     def test_private_feedback(self):
         self.access_member_url(self.private_feedback_url)
@@ -1007,17 +1020,17 @@ class ReminderTest(TestCase):
         self.nomcom.save()
         c.handle(None,None)
         self.assertEqual(len(outbox), messages_before + 2)
-        self.assertTrue('nominee1@example.org' in outbox[-1]['To'])
-        self.assertTrue('please complete' in outbox[-1]['Subject'])
-        self.assertTrue('nominee1@example.org' in outbox[-2]['To'])
-        self.assertTrue('please accept' in outbox[-2]['Subject'])
+        self.assertIn('nominee1@example.org', outbox[-1]['To'])
+        self.assertIn('please complete', outbox[-1]['Subject'])
+        self.assertIn('nominee1@example.org', outbox[-2]['To'])
+        self.assertIn('please accept', outbox[-2]['Subject'])
         messages_before=len(outbox)
         self.nomcom.reminder_interval = 4
         self.nomcom.save()
         c.handle(None,None)
         self.assertEqual(len(outbox), messages_before + 1)
-        self.assertTrue('nominee2@example.org' in outbox[-1]['To'])
-        self.assertTrue('please accept' in outbox[-1]['Subject'])
+        self.assertIn('nominee2@example.org', outbox[-1]['To'])
+        self.assertIn('please accept', outbox[-1]['Subject'])
      
     def test_remind_accept_view(self):
         url = reverse('ietf.nomcom.views.send_reminder_mail', kwargs={'year': NOMCOM_YEAR,'type':'accept'})
@@ -1027,8 +1040,8 @@ class ReminderTest(TestCase):
         response = self.client.post(url, test_data)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(outbox), messages_before + 2)
-        self.assertTrue('nominee1@' in outbox[-2]['To'])
-        self.assertTrue('nominee2@' in outbox[-1]['To'])
+        self.assertIn('nominee1@', outbox[-2]['To'])
+        self.assertIn('nominee2@', outbox[-1]['To'])
 
     def test_remind_questionnaire_view(self):
         url = reverse('ietf.nomcom.views.send_reminder_mail', kwargs={'year': NOMCOM_YEAR,'type':'questionnaire'})
@@ -1038,7 +1051,7 @@ class ReminderTest(TestCase):
         response = self.client.post(url, test_data)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(outbox), messages_before + 1)
-        self.assertTrue('nominee1@' in outbox[-1]['To'])
+        self.assertIn('nominee1@', outbox[-1]['To'])
 
 class InactiveNomcomTests(TestCase):
 
@@ -1060,8 +1073,8 @@ class InactiveNomcomTests(TestCase):
             response = self.client.get(url)
             self.assertEqual(response.status_code, 200)
             q = PyQuery(response.content)
-            self.assertTrue( '(Concluded)' in q('h1').text())
-            self.assertTrue( 'closed' in q('#instructions').text())
+            self.assertIn( '(Concluded)', q('h1').text())
+            self.assertIn( 'closed', q('#instructions').text())
             self.assertTrue( q('#nominees a') )
             self.assertFalse( q('#nominees a[href]') )
     
@@ -1079,7 +1092,7 @@ class InactiveNomcomTests(TestCase):
             response = self.client.post(url, test_data)
             self.assertEqual(response.status_code, 200)
             q = PyQuery(response.content)
-            self.assertTrue( 'closed' in q('#instructions').text())
+            self.assertIn( 'closed', q('#instructions').text())
             self.assertEqual( len(outbox), 0 )
             self.assertEqual( fb_before, self.nc.feedback_set.count() )
 
@@ -1091,8 +1104,8 @@ class InactiveNomcomTests(TestCase):
             response = self.client.get(url)
             self.assertEqual(response.status_code, 200)
             q = PyQuery(response.content)
-            self.assertTrue( '(Concluded)' in q('h1').text())
-            self.assertTrue( 'closed' in q('.alert-warning').text())
+            self.assertIn( '(Concluded)', q('h1').text())
+            self.assertIn( 'closed', q('.alert-warning').text())
 
     def test_acceptance_closed(self):
         today = datetime.date.today().strftime('%Y%m%d')
@@ -1136,7 +1149,7 @@ class InactiveNomcomTests(TestCase):
         response = self.client.post(url, test_data)
         self.assertEqual(response.status_code, 200)
         q = PyQuery(response.content)
-        self.assertTrue('not active' in q('.alert-warning').text() )
+        self.assertIn('not active', q('.alert-warning').text() )
 
     def test_email_pasting_closed(self):
         url = reverse('ietf.nomcom.views.private_feedback_email', kwargs={'year':self.nc.year()})
@@ -1150,7 +1163,7 @@ class InactiveNomcomTests(TestCase):
         response = self.client.post(url, test_data)
         self.assertEqual(response.status_code, 200)
         q = PyQuery(response.content)
-        self.assertTrue('not active' in q('.alert-warning').text() )
+        self.assertIn('not active', q('.alert-warning').text() )
 
     def test_questionnaire_entry_closed(self):
         url = reverse('ietf.nomcom.views.private_questionnaire', kwargs={'year':self.nc.year()})
@@ -1162,7 +1175,7 @@ class InactiveNomcomTests(TestCase):
         response = self.client.post(url, {})
         self.assertEqual(response.status_code, 200)
         q = PyQuery(response.content)
-        self.assertTrue('not active' in q('.alert-warning').text() )
+        self.assertIn('not active', q('.alert-warning').text() )
         
     def _test_send_reminders_closed(self,rtype):
         url = reverse('ietf.nomcom.views.send_reminder_mail', kwargs={'year':self.nc.year(),'type':rtype })
@@ -1174,7 +1187,7 @@ class InactiveNomcomTests(TestCase):
         response = self.client.post(url, {})
         self.assertEqual(response.status_code, 200)
         q = PyQuery(response.content)
-        self.assertTrue('not active' in q('.alert-warning').text() )
+        self.assertIn('not active', q('.alert-warning').text() )
 
     def test_send_accept_reminders_closed(self):
         self._test_send_reminders_closed('accept')
@@ -1191,7 +1204,7 @@ class InactiveNomcomTests(TestCase):
         response = self.client.post(url, {})
         self.assertEqual(response.status_code, 200)
         q = PyQuery(response.content)
-        self.assertTrue('not active' in q('.alert-warning').text() )
+        self.assertIn('not active', q('.alert-warning').text() )
 
     def test_cannot_edit_position(self):
         url = reverse('ietf.nomcom.views.edit_position',kwargs={'year':self.nc.year(),'position_id':self.nc.position_set.first().id})
@@ -1370,7 +1383,7 @@ class NewActiveNomComTests(TestCase):
         url = reverse('ietf.nomcom.views.process_nomination_status', kwargs=kwargs)
         response = self.client.get(url)
         self.assertEqual(response.status_code,403)
-        self.assertTrue('already was' in unicontent(response))
+        self.assertIn('already was', unicontent(response))
 
         settings.DAYS_TO_EXPIRE_NOMINATION_LINK = 2
         np.time = np.time - datetime.timedelta(days=3)
@@ -1380,13 +1393,13 @@ class NewActiveNomComTests(TestCase):
         url = reverse('ietf.nomcom.views.process_nomination_status', kwargs=kwargs)
         response = self.client.get(url)
         self.assertEqual(response.status_code,403)
-        self.assertTrue('Link expired' in unicontent(response))
+        self.assertIn('Link expired', unicontent(response))
 
         kwargs['hash'] = 'bad'
         url = reverse('ietf.nomcom.views.process_nomination_status', kwargs=kwargs)
         response = self.client.get(url)
         self.assertEqual(response.status_code,403)
-        self.assertTrue('Bad hash!' in unicontent(response))
+        self.assertIn('Bad hash!', unicontent(response))
 
     def test_accept_reject_nomination_comment(self):
         np = self.nc.nominee_set.order_by('pk').first().nomineeposition_set.order_by('pk').first()
@@ -1728,7 +1741,7 @@ Junk body for testing
         response = self.client.post(url,{'primary_person':nominee1.person.pk,
                                          'duplicate_persons':[nominee1.person.pk]})
         self.assertEqual(response.status_code, 200)
-        self.assertTrue('must not also be listed as a duplicate' in unicontent(response))
+        self.assertIn('must not also be listed as a duplicate', unicontent(response))
         response = self.client.post(url,{'primary_person':nominee1.person.pk,
                                          'duplicate_persons':[nominee2.person.pk]})
         self.assertEqual(response.status_code, 302)
@@ -1843,7 +1856,7 @@ class AcceptingTests(TestCase):
 
         posurl = url+ "?nominee=%d&position=%d" % (pos.nominee_set.first().pk, pos.pk)
         response = self.client.get(posurl)
-        self.assertTrue('not currently accepting feedback' in unicontent(response))
+        self.assertIn('not currently accepting feedback', unicontent(response))
 
         test_data = {'comments': 'junk',
                      'position_name': pos.name,
@@ -1854,17 +1867,17 @@ class AcceptingTests(TestCase):
                      'nominator_name':  self.plain_person.plain_name(),
                     }
         response = self.client.post(posurl, test_data)
-        self.assertTrue('not currently accepting feedback' in unicontent(response))
+        self.assertIn('not currently accepting feedback', unicontent(response))
 
         topicurl = url+ "?topic=%d" % (topic.pk, )
         response = self.client.get(topicurl)
-        self.assertTrue('not currently accepting feedback' in unicontent(response))
+        self.assertIn('not currently accepting feedback', unicontent(response))
 
         test_data = {'comments': 'junk',
                      'confirmation': False,
                     }
         response = self.client.post(topicurl, test_data)
-        self.assertTrue('not currently accepting feedback' in unicontent(response))
+        self.assertIn('not currently accepting feedback', unicontent(response))
 
     def test_private_accepting_feedback(self):
         url = reverse('ietf.nomcom.views.private_feedback',kwargs={'year':self.nc.year()})
@@ -1943,14 +1956,14 @@ class TopicTests(TestCase):
         login_testing_unauthorized(self,self.chair.user.username,url)
         response=self.client.get(url)
         self.assertEqual(response.status_code,200)
-        self.assertTrue('Test Topic Modified' in unicontent(response))
+        self.assertIn('Test Topic Modified', unicontent(response))
 
         self.client.logout()
         url = reverse('ietf.nomcom.views.remove_topic', kwargs={'year':self.nc.year(),'topic_id':self.nc.topic_set.first().pk})
         login_testing_unauthorized(self,self.chair.user.username,url)
         response=self.client.get(url)
         self.assertEqual(response.status_code,200)
-        self.assertTrue('Test Topic Modified' in unicontent(response))
+        self.assertIn('Test Topic Modified', unicontent(response))
         response=self.client.post(url,{'remove':1})
         self.assertEqual(response.status_code,302)
         self.assertFalse(self.nc.topic_set.exists())
@@ -1969,7 +1982,7 @@ class TopicTests(TestCase):
                                           'form-0-id': feedback.id,
                                           'form-0-type': 'comment',
                                         })
-        self.assertTrue('You must choose at least one Nominee or Topic' in unicontent(response))
+        self.assertIn('You must choose at least one Nominee or Topic', unicontent(response))
         response = self.client.post(url, {'form-TOTAL_FORMS':1,
                                           'form-INITIAL_FORMS':1,
                                           'end':'Save feedback',
@@ -2000,7 +2013,7 @@ class TopicTests(TestCase):
             login_testing_unauthorized(self, self.plain_person.user.username, feedback_url)
             r = self.client.get(feedback_url)
             self.assertEqual(r.status_code,200)
-            self.assertFalse(topic.subject in unicontent(r))
+            self.assertNotIn(topic.subject, unicontent(r))
             topic_url = feedback_url + '?topic=%d'%topic.pk
             r = self.client.get(topic_url)
             self.assertEqual(r.status_code,404)
@@ -2015,7 +2028,7 @@ class TopicTests(TestCase):
             self.client.login(username=valid_user.user.username,password=valid_user.user.username+"+password")
             r = self.client.get(feedback_url)
             self.assertEqual(r.status_code,200)
-            self.assertTrue(topic.subject in unicontent(r))
+            self.assertIn(topic.subject, unicontent(r))
             r = self.client.get(topic_url)
             self.assertEqual(r.status_code,200)
             r = self.client.post(topic_url, {'comments':'junk', 'confirmation':False})
