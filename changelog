@@ -19,7 +19,7 @@ ietfdb (6.63.0) ietf; urgency=medium
     revision numbers.  Fixes issue #2380.
 
   * Added a cancel button to the submission confirmation page.  Fixes issue 
-    #2349.
+    #2379.
 
   * Removed the repeat of the error message in the HTTP reason string.  
     Fixes issue #2378.
