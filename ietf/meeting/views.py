@@ -1135,7 +1135,7 @@ class UploadBlueSheetForm(forms.Form):
         validate_file_extension(file, settings.MEETING_VALID_BLUESHEET_EXTENSIONS)
         return file
 
-@role_required('Area Director', 'Secretariat', 'IRTF Chair', 'WG Chair')
+@role_required('Area Director', 'Secretariat', 'IRTF Chair', 'WG Chair', 'RG Chair')
 def upload_session_bluesheets(request, session_id, num):
     # num is redundant, but we're dragging it along an artifact of where we are in the current URL structure
     session = get_object_or_404(Session,pk=session_id)
@@ -1720,8 +1720,7 @@ def interim_skip_announcement(request, number):
         'meeting': meeting})
 
 
-@role_required('Area Director', 'Secretariat', 'IRTF Chair', 'WG Chair',
-               'RG Chair')
+@role_required('Area Director', 'Secretariat', 'IRTF Chair', 'WG Chair', 'RG Chair')
 def interim_pending(request):
     '''View which shows interim meeting requests pending approval'''
     meetings = Meeting.objects.filter(type='interim', session__status='apprw').distinct().order_by('date')
@@ -1740,8 +1739,7 @@ def interim_pending(request):
         'meetings': meetings})
 
 
-@role_required('Area Director', 'Secretariat', 'IRTF Chair', 'WG Chair',
-               'RG Chair')
+@role_required('Area Director', 'Secretariat', 'IRTF Chair', 'WG Chair', 'RG Chair')
 def interim_request(request):
     '''View for requesting an interim meeting'''
     SessionFormset = inlineformset_factory(
@@ -1825,8 +1823,7 @@ def interim_request(request):
         "formset": formset})
 
 
-@role_required('Area Director', 'Secretariat', 'IRTF Chair', 'WG Chair',
-               'RG Chair')
+@role_required('Area Director', 'Secretariat', 'IRTF Chair', 'WG Chair', 'RG Chair')
 def interim_request_cancel(request, number):
     '''View for cancelling an interim meeting request'''
     meeting = get_object_or_404(Meeting, number=number)
@@ -1854,8 +1851,7 @@ def interim_request_cancel(request, number):
         "meeting": meeting})
 
 
-@role_required('Area Director', 'Secretariat', 'IRTF Chair', 'WG Chair',
-               'RG Chair')
+@role_required('Area Director', 'Secretariat', 'IRTF Chair', 'WG Chair', 'RG Chair')
 def interim_request_details(request, number):
     '''View details of an interim meeting reqeust'''
     meeting = get_object_or_404(Meeting, number=number)
@@ -1884,8 +1880,7 @@ def interim_request_details(request, number):
         "can_approve": can_approve})
 
 
-@role_required('Area Director', 'Secretariat', 'IRTF Chair', 'WG Chair',
-               'RG Chair')
+@role_required('Area Director', 'Secretariat', 'IRTF Chair', 'WG Chair', 'RG Chair')
 def interim_request_edit(request, number):
     '''Edit details of an interim meeting reqeust'''
     meeting = get_object_or_404(Meeting, number=number)
