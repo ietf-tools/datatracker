@@ -8,13 +8,13 @@ from ietf.meeting.models import Meeting, Room, TimeSlot, Session, SchedTimeSessA
 from ietf.name.models import TimeSlotTypeName
 import ietf.utils.fields
 
-DAYS_CHOICES = ((-1,'Saturday'),
-                (0,'Sunday'),
-                (1,'Monday'),
-                (2,'Tuesday'),
-                (3,'Wednesday'),
-                (4,'Thursday'),
-                (5,'Friday'))
+DAYS_CHOICES = ((0,'Saturday'),
+                (1,'Sunday'),
+                (2,'Monday'),
+                (3,'Tuesday'),
+                (4,'Wednesday'),
+                (5,'Thursday'),
+                (6,'Friday'))
 
 # using Django week_day lookup values (Sunday=1)
 SESSION_DAYS = ((2,'Monday'),
