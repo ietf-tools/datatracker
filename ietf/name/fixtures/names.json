@@ -7759,22 +7759,22 @@
   {
     "fields": {
       "desc": "",
-      "name": "Document Source Repository",
-      "order": 0,
-      "used": true
-    },
-    "model": "name.docurltagname",
-    "pk": "repository"
-  },
-  {
-    "fields": {
-      "desc": "",
       "name": "Document issue tracker",
       "order": 0,
       "used": true
     },
     "model": "name.docurltagname",
     "pk": "issues"
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "Document source repository",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.docurltagname",
+    "pk": "repository"
   },
   {
     "fields": {
@@ -7819,18 +7819,9 @@
   {
     "fields": {
       "desc": "",
-      "name": "Yang module tree view",
-      "order": 0,
-      "used": true
-    },
-    "model": "name.docurltagname",
-    "pk": "yang-module-tree"
-  },
-  {
-    "fields": {
-      "desc": "",
       "name": "Awaiting Approval from Previous Version Authors",
       "next_states": [
+        "confirmed",
         "cancel",
         "posted"
       ],
@@ -7845,6 +7836,7 @@
       "desc": "",
       "name": "Awaiting Submitter Authentication",
       "next_states": [
+        "confirmed",
         "cancel",
         "posted"
       ],
@@ -7864,6 +7856,20 @@
     },
     "model": "name.draftsubmissionstatename",
     "pk": "cancel"
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "Confirmed",
+      "next_states": [
+        "cancel",
+        "posted"
+      ],
+      "order": 0,
+      "used": true
+    },
+    "model": "name.draftsubmissionstatename",
+    "pk": "confirmed"
   },
   {
     "fields": {
@@ -9982,7 +9988,7 @@
     "fields": {
       "command": "xym",
       "switch": "--version",
-      "time": "2017-09-26T22:17:08.858",
+      "time": "2017-09-29T00:07:40.668",
       "used": true,
       "version": "xym 0.4"
     },
@@ -9993,7 +9999,7 @@
     "fields": {
       "command": "pyang",
       "switch": "--version",
-      "time": "2017-09-26T22:17:11.006",
+      "time": "2017-09-29T00:07:41.703",
       "used": true,
       "version": "pyang 1.7.3"
     },
@@ -10004,7 +10010,7 @@
     "fields": {
       "command": "yanglint",
       "switch": "--version",
-      "time": "2017-09-26T22:17:11.079",
+      "time": "2017-09-29T00:07:41.812",
       "used": true,
       "version": "yanglint 0.13.49"
     },

@@ -444,6 +444,11 @@ def confirm_submission(request, submission_id, auth_token):
     if not key_matched: key_matched = auth_token == submission.auth_key # backwards-compat
 
     if request.method == 'POST' and submission.state_id in ("auth", "aut-appr") and key_matched:
+        # Set a temporary state 'confirmed' to avoid entering this code
+        # multiple times to confirm.
+        submission.state = DraftSubmissionStateName.objects.get(slug="confirmed")
+        submission.save()
+
         action = request.POST.get('action')
         if action == 'confirm':
             submitter_parsed = submission.submitter_parsed()
