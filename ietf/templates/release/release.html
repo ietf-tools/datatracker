@@ -76,3 +76,10 @@
   </table>
 </div>
 {% endblock %}
+
+{% block footer %}
+	  <div class="col-md-12 text-center padded-top">
+	    <a href="https://trac.tools.ietf.org/tools/ietfdb/wiki/ContractorInstructions"><i>Contractor instructions</i></a>
+	  </div>
+          {{ block.super }}
+{% endblock %}
