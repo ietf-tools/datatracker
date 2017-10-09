@@ -1,3 +1,26 @@
+ietfdb (6.63.1) ietf; urgency=medium
+
+  This is a small bugfix release.  From the commit log:
+
+  * Merged in [14189] from rcross@amsl.com:
+    Fixed an issue concerning the creation of new timeslots in secretariat
+    scheduling tool caused by changing the meeting start date to a Saturday.  
+
+  * Set a temporary state 'confirmed' when handling submission confirmations
+    in order to avoid running the confirmation code multiple times on multiple
+    form submits.
+
+  * Changed the suggested yanglint command to use its -i switch.
+
+  * Added bluesheet upload permission for RG Chairs; reformatted some 
+    role_required() decorators.
+
+  * Use the same layout for group additional URLs as for documents.  Fixes 
+    issue #2386.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  08 Oct 2017 04:20:51 -0700
+
+
 ietfdb (6.63.0) ietf; urgency=medium
 
   **Support for document-specific URL annotations**
