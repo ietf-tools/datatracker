@@ -18,7 +18,7 @@ ietfdb (6.63.1) ietf; urgency=medium
   * Use the same layout for group additional URLs as for documents.  Fixes 
     issue #2386.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  08 Oct 2017 04:20:51 -0700
+ -- Henrik Levkowetz <henrik@levkowetz.com>  09 Oct 2017 13:57:11 +0000
 
 
 ietfdb (6.63.0) ietf; urgency=medium
