@@ -90,7 +90,8 @@ def validate_submission_rev(name, rev):
             return 'Revision must be between 00 and 99'
 
         expected = 0
-        existing_revs = [int(i.rev) for i in Document.objects.filter(name=name)]
+        existing_revs = [int(i.rev) for i in Document.objects.filter(name=name) if i.rev and i.rev.isdigit() ]
+        log.assertion('[ i.rev for i in Document.objects.filter(name=name) if not (i.rev and i.rev.isdigit()) ] == []')
         if existing_revs:
             expected = max(existing_revs) + 1
 
