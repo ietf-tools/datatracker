@@ -39,21 +39,21 @@
        <table class="table">
 	 {% if person.role_set.count %}
 	   {% for role in person.role_set.all %}
-	    {% if role.group.state_id == 'active' or role.group.state_id == 'bof' %}
-	      {% if role.group.acronym != 'secretariat' %}
-	      <tr>
-		<td>
-		  {{ role.name.name }}
-		  {% if role.group.type_id == 'sdo' %}for{% elif role.name_id == 'reviewer' %}in{% else %}of{% endif %}
-		  <a href="{% url 'ietf.group.views.group_about' acronym=role.group.acronym %}">{{ role.group.name }}</a>
-		  (<a href="{% url 'ietf.group.views.group_about' acronym=role.group.acronym %}">{{ role.group.acronym }}</a>)
-		</td>
-		<td>
-		  <a href="mailto:{{role.email.address}}">{{ role.email.address }}</a>
-		</td>
-	      </tr>
-	      {% endif %}
-	    {% endif %}
+	     {% if role.group.state_id == 'active' or role.group.state_id == 'bof' %}
+	       {% if role.group.acronym != 'secretariat' %}
+	       <tr>
+		 <td>
+		   {{ role.name.name }}
+		   {% if role.group.type_id == 'sdo' %}for{% elif role.name_id == 'reviewer' %}in{% else %}of{% endif %}
+		   <a href="{% url 'ietf.group.views.group_about' acronym=role.group.acronym %}">{{ role.group.name }}</a>
+		   (<a href="{% url 'ietf.group.views.group_about' acronym=role.group.acronym %}">{{ role.group.acronym }}</a>)
+		 </td>
+		 <td>
+		   <a href="mailto:{{role.email.address}}">{{ role.email.address }}</a>
+		 </td>
+	       </tr>
+	       {% endif %}
+	     {% endif %}
 	   {% endfor %}
 	 {% else %}
 	   {{ person.first_name }} has no active roles as of {{ today }}.
