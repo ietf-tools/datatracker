@@ -8,5 +8,5 @@ def has_sessions(group,num):
 
 @register.filter
 def active_roles(queryset):
-    return queryset.filter(state_id='active').exclude(group__acronym='secretariat')
+    return queryset.filter(group__state_id__in=['active', 'bof']).exclude(group__acronym='secretariat')
     

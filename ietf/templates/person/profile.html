@@ -4,6 +4,7 @@
 {% load markup_tags %}
 {% load staticfiles %}
 {% load ietf_filters %}
+{% load group_filters %}
 
 {% block title %}Profile for {{ persons.0 }}{% endblock %}
 
@@ -37,10 +38,7 @@
      {% if person.role_set.exists %}
        <h2 id="roles">Roles</h2>
        <table class="table">
-	 {% if person.role_set.count %}
-	   {% for role in person.role_set.all %}
-	     {% if role.group.state_id == 'active' or role.group.state_id == 'bof' %}
-	       {% if role.group.acronym != 'secretariat' %}
+	   {% for role in person.role_set.all|active_roles %}
 	       <tr>
 		 <td>
 		   {{ role.name.name }}
@@ -52,12 +50,9 @@
 		   <a href="mailto:{{role.email.address}}">{{ role.email.address }}</a>
 		 </td>
 	       </tr>
-	       {% endif %}
-	     {% endif %}
+	   {% empty %}
+	     {{ person.first_name }} has no active roles as of {{ today }}.
 	   {% endfor %}
-	 {% else %}
-	   {{ person.first_name }} has no active roles as of {{ today }}.
-	 {% endif %}
        </table>
      {% endif %}
   </div>
