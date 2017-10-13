@@ -178,6 +178,9 @@ changes=$( sed -n "/^$PROJ ($VER.*)/,/^ -- /p" changelog )
 [ "$changes" ] || die "No changelog information for $VER found"
 #note "$changes"
 
+note "Checking for migrations not in SVN"
+$do svn st | grep "^[?] .*/migrations/[0-9].*\.py$" && die "There seems to be new migrations which aren't in SVN"
+
 if [ -z "$PERMIT_MIGR_MIX" ]; then
     note "Checking that we don't have both schema and data migrations ..."
     cur=$(svn info | awk '/^Revision:/ { print $2 }')
