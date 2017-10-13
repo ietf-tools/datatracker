@@ -37,7 +37,8 @@
      {% if person.role_set.exists %}
        <h2 id="roles">Roles</h2>
        <table class="table">
-	  {% for role in person.role_set.all %}
+	 {% if person.role_set.count %}
+	   {% for role in person.role_set.all %}
 	    {% if role.group.state_id == 'active' or role.group.state_id == 'bof' %}
 	      {% if role.group.acronym != 'secretariat' %}
 	      <tr>
@@ -53,7 +54,10 @@
 	      </tr>
 	      {% endif %}
 	    {% endif %}
-	  {% endfor %}
+	   {% endfor %}
+	 {% else %}
+	   {{ person.first_name }} has no active roles as of {{ today }}.
+	 {% endif %}
        </table>
      {% endif %}
   </div>
