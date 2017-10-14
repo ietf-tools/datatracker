@@ -559,16 +559,16 @@ class IetfTestRunner(DiscoverRunner):
         maybe_create_svn_symlinks(settings)
 
         if os.path.exists(settings.UTILS_TEST_RANDOM_STATE_FILE):
-            print "     Loading factory-boy random state from .random-state"
-            with open(settings.UTILS_TEST_RANDOM_STATE_FILE) as f:
-                s = json.load(f)
-                s[1] = tuple(s[1])      # random.setstate() won't accept a list in lieus of a tuple
-                factory.random.set_random_state(s)
+            print "     Loading factory-boy random state from %s" % settings.UTILS_TEST_RANDOM_STATE_FILE
         else:
-            print "     Saving factory-boy random state to .random-state"
+            print "     Saving factory-boy random state to %s" % settings.UTILS_TEST_RANDOM_STATE_FILE
             with open(settings.UTILS_TEST_RANDOM_STATE_FILE, 'w') as f:
                 s = factory.random.get_random_state()
                 json.dump(s, f)
+        with open(settings.UTILS_TEST_RANDOM_STATE_FILE) as f:
+            s = json.load(f)
+            s[1] = tuple(s[1])      # random.setstate() won't accept a list in lieu of a tuple
+        factory.random.set_random_state(s)
 
         super(IetfTestRunner, self).setup_test_environment(**kwargs)
 
