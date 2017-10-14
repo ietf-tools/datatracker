@@ -415,7 +415,7 @@ class IESGAgendaTests(TestCase):
         telechat_date = TelechatDate.objects.get(date=draft.telechat_date())
         url = urlreverse('admin:iesg_telechatdate_change', args=(telechat_date.id,))
         self.client.login(username="secretary", password="secretary+password")
-        r = self.client.post(url, {'date':today.strftime('%Y-%m-%d')})
+        r = self.client.post(url, {'initial-date': telechat_date.date.strftime('%Y-%m-%d'), 'date':today.strftime('%Y-%m-%d')})
         self.assertRedirects(r, urlreverse('admin:iesg_telechatdate_changelist'))
         self.assertEqual(draft.telechat_date(),today)
 
