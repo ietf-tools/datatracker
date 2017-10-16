@@ -501,7 +501,6 @@ def non_session_delete(request, meeting_id, schedule_name, slot_id):
     material first.  SchedTimeSessAssignment objects get deleted as well.
     '''
     slot = get_object_or_404(TimeSlot, id=slot_id)
-    assert slot.type_id in ('other','plenary','lead', 'reg')
 
     if request.method == 'POST' and request.POST['post'] == 'yes':
         assignments = slot.sessionassignments.all()
