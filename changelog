@@ -1,3 +1,34 @@
+ietfdb (6.63.2) ietf; urgency=medium
+
+  This is a bugfix release which also brings a small improvement of the
+  personal profile pages.  From the commit log:
+
+  * Merged in [14211] from rcross@amsl.com:
+    Changed to not check timeslot type on delete because other types now have
+    this option.
+
+  * Changed the telechat date admin to use the 'initial-date' field value 
+    instead of the now nonfunctional form.initial dictionary.  This may need 
+    revisiting under Django 1.11, which has an official api to grab a form's 
+    initial values.  This fixes a server 500 error on trying to save a 
+    non-default telechat date.
+
+  * Tweaked the test-runner random state handling to display the correct 
+    random state filename and make sure to set the same random state on
+    repeat runs.
+
+  * Added a check in bin/mkrelease for new migrations which haven't been added
+    to the repository yet.
+
+  * Added a 'no active roles' annotation in the roles section of personal 
+    profile pages if there are none.
+
+  * Added a guard against feeding int() a non-numeric string during 
+    submission confirmation and a log assertion to report same.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  16 Oct 2017 14:43:17 -0700
+
+
 ietfdb (6.63.1) ietf; urgency=medium
 
   This is a small bugfix release.  From the commit log:
