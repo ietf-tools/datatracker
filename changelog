@@ -3,6 +3,9 @@ ietfdb (6.63.2) ietf; urgency=medium
   This is a bugfix release which also brings a small improvement of the
   personal profile pages.  From the commit log:
 
+  * Fixed a URL encoding issue on the review doc pages (when linking to
+    rfcdiff).
+
   * Merged in [14211] from rcross@amsl.com:
     Changed to not check timeslot type on delete because other types now have
     this option.
@@ -26,7 +29,7 @@ ietfdb (6.63.2) ietf; urgency=medium
   * Added a guard against feeding int() a non-numeric string during 
     submission confirmation and a log assertion to report same.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  16 Oct 2017 14:43:17 -0700
+ -- Henrik Levkowetz <henrik@levkowetz.com>  17 Oct 2017 11:55:55 +0000
 
 
 ietfdb (6.63.1) ietf; urgency=medium
