@@ -152,6 +152,9 @@ def is_individual_draft_author(user, doc):
     if not doc.group.type_id == "individ" :
         return False
 
+    if not hasattr(user, 'person'):
+        return False
+
     if user.person in doc.authors():
         return True
 
