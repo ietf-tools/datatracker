@@ -9,9 +9,16 @@ Planned work in rough order
 
 * Add a 'recent ballots' page (IESG request)
 
+* Add email thread search links to IESG ballots.
+
+* Add an API to post IESG ballot comments
+
 * Revisit the review tool, work through the accumulated tickets.
 
 * Add sanitization of uploaded html documents.
+
+* Introduce an API for Meetecho to use to associate recordings with sessions
+  (and perhaps automate making copies of those videos)
 
 * Upgrade html5lib to the latest release, the same for bleach which uses it.
 
@@ -27,9 +34,6 @@ Planned work in rough order
 * Polish the htmlization pages, making the style identical with tools.ietf.org.
   Do a public release of the htmlization lib.
 
-* Introduce an API for Meetecho to use to associate recordings with sessions
-  (and perhaps automate making copies of those videos)
-
 * Revisit photo uploads: Add photo upload for people with roles.  Add
   photos to wg pages and group overview pages.
 
@@ -43,8 +47,8 @@ Planned work in rough order
 * Transition to Python 3.  This will make it easier to add add support for
   internationalsed email, and also other i18n enhancements.
 
-* Adde support for document shepherding reports, possibly re-using or
-  generalising some of the review plumbing.
+* Add support for document shepherding reports, possibly re-using or
+  generalising some of the review plumbing.  Check with IESG for details.
 
 * Add support for internationalised email addresses according to RFC 6531
   when sending email (this is not supported by smtplib under Python 2.7,
