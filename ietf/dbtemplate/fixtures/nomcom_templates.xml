@@ -146,8 +146,7 @@ $comments: Comments on this candidate</field>
         <field to="name.dbtemplatetypename" name="type" rel="ManyToOneRel">plain</field>
         <field type="TextField" name="content">Hi,
 
-Your input regarding $nominee for the position of
-$position has been received and registered.
+Your input regarding $about has been received and registered.
 
 The following comments have been registered:
 

@@ -780,13 +780,17 @@ class NomcomViewsTest(TestCase):
 
     def test_public_feedback(self):
         login_testing_unauthorized(self, COMMUNITY_USER, self.public_feedback_url)
+        position = "IAOC"
 
         empty_outbox()
-        self.feedback_view(public=True,confirmation=True)
+        self.feedback_view(public=True, confirmation=True, position=position)
         # feedback_view does a nomination internally: there is a lot of email related to that - tested elsewhere
         # We're interested in the confirmation receipt here
         self.assertEqual(len(outbox),3)
         self.assertEqual('NomCom comment confirmation', outbox[2]['Subject'])
+        email_body = outbox[2].get_payload()
+        self.assertIn(position, email_body)
+        self.assertNotIn('$', email_body)
         self.assertEqual(self.email_from, outbox[-2]['From'])
         self.assertIn('plain', outbox[2]['To'])
         self.assertIn(u'Comments with accents äöå', unicode(outbox[2].get_payload(decode=True),"utf-8","replace"))
