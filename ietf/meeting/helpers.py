@@ -374,6 +374,7 @@ def create_interim_meeting(group, date, city='', country='', timezone='UTC',
         number=number,
         type_id='interim',
         date=date,
+        days=1,
         city=city,
         country=country,
         time_zone=timezone)

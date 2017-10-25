@@ -578,11 +578,11 @@ class ExpireIDsTests(TestCase):
     def test_in_draft_expire_freeze(self):
         from ietf.doc.expire import in_draft_expire_freeze
 
-        Meeting.objects.create(number="123",
+        meeting = Meeting.objects.create(number="123",
                                type=MeetingTypeName.objects.get(slug="ietf"),
                                date=datetime.date.today())
-        second_cut_off = Meeting.get_second_cut_off()
-        ietf_monday = Meeting.get_ietf_monday()
+        second_cut_off = meeting.get_second_cut_off()
+        ietf_monday = meeting.get_ietf_monday()
 
         self.assertTrue(not in_draft_expire_freeze(datetime.datetime.combine(second_cut_off - datetime.timedelta(days=7), datetime.time(0, 0, 0))))
         self.assertTrue(not in_draft_expire_freeze(datetime.datetime.combine(second_cut_off, datetime.time(0, 0, 0))))

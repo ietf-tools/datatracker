@@ -37,6 +37,13 @@ class MeetingFactory(factory.DjangoModelFactory):
         else:
             return 'interim-%d-%s-%02d'%(self.date.year,GroupFactory().acronym,n)
 
+    @factory.lazy_attribute
+    def days(self):
+        if self.type_id == 'ietf':
+            return 7
+        else:
+            return 1
+
     @factory.post_generation
     def populate_agenda(obj, create, extracted, **kwargs): # pylint: disable=no-self-argument
         '''

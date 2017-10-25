@@ -70,6 +70,7 @@ class SecrMeetingTestCase(TestCase):
         url = reverse('ietf.secr.meetings.views.add')
         post_data = dict(number=number,city='Toronto',date='2014-07-20',country='CA',
                          time_zone='America/New_York',venue_name='Hilton',
+                         days=6,
                          venue_addr='100 First Ave',
                          idsubmit_cutoff_day_offset_00=13,
                          idsubmit_cutoff_day_offset_01=20,
@@ -106,6 +107,7 @@ class SecrMeetingTestCase(TestCase):
                            )
         url = reverse('ietf.secr.meetings.views.edit_meeting',kwargs={'meeting_id':1})
         post_data = dict(number='1',date='2014-07-20',city='Toronto',
+                         days=7,
                          idsubmit_cutoff_day_offset_00=13,
                          idsubmit_cutoff_day_offset_01=20,
                          idsubmit_cutoff_time_utc     =datetime.timedelta(hours=23, minutes=59, seconds=59),

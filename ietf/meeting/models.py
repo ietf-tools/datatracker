@@ -9,6 +9,7 @@ import string
 
 import debug                            # pyflakes:ignore
 
+from django.core.validators import MinValueValidator
 from django.db import models
 from django.db.models import Max
 from django.conf import settings
@@ -53,6 +54,8 @@ class Meeting(models.Model):
     # is not used to determine date for timeslot instances thereafter, as
     # they have their own datetime field.
     date = models.DateField()
+    days = models.PositiveIntegerField(default=7, null=False, validators=[MinValueValidator(1)],
+        help_text="The number of days the meeting lasts")
     city = models.CharField(blank=True, max_length=255)
     country = models.CharField(blank=True, max_length=2, choices=countries)
     # We can't derive time-zone from country, as there are some that have
@@ -101,12 +104,7 @@ class Meeting(models.Model):
         return self.date + datetime.timedelta(days=offset)
 
     def end_date(self):
-        if self.type_id == 'ietf':
-            return self.get_meeting_date(5)
-        else:
-            # TODO: Once interims have timeslots assigned, 
-            #       look for the last ending timeslot instead
-            return self.date
+        return self.get_meeting_date(self.days-1)
 
     def get_00_cutoff(self):
         start_date = datetime.datetime(year=self.date.year, month=self.date.month, day=self.date.day, tzinfo=pytz.utc)
@@ -143,20 +141,17 @@ class Meeting(models.Model):
     def get_current_meeting(cls, type="ietf"):
         return cls.objects.filter(type=type, date__gte=datetime.datetime.today()-datetime.timedelta(days=7) ).order_by('date').first()
 
-    @classmethod
-    def get_first_cut_off(cls):
-        meeting = cls.get_current_meeting()
-        return meeting.get_00_cutoff()
+    def get_first_cut_off(self):
+        return self.get_00_cutoff()
 
-    @classmethod
-    def get_second_cut_off(cls):
-        meeting = cls.get_current_meeting()
-        return meeting.get_01_cutoff()
+    def get_second_cut_off(self):
+        return self.get_01_cutoff()
 
-    @classmethod
-    def get_ietf_monday(cls):
-        date = cls.objects.all().filter(type="ietf").order_by('-date')[0].date
-        return date + datetime.timedelta(days=-date.weekday(), weeks=1)
+    def get_ietf_monday(self):
+        for offset in range(self.days):
+            date = self.date+datetime.timedelta(days=offset)
+            if date.weekday() == 0:     # Monday is 0
+                return date
 
     def get_materials_path(self):
         return os.path.join(settings.AGENDA_PATH,self.number)

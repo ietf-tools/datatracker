@@ -89,6 +89,7 @@ class InterimSessionInlineFormSet(BaseInlineFormSet):
                 if date - last_date != datetime.timedelta(days=1):
                     raise forms.ValidationError('For Multi-Day meetings, days must be consecutive')
                 last_date = date
+            self.days = len(dates)
         return                          # formset doesn't have cleaned_data
 
 class InterimMeetingModelForm(forms.ModelForm):
@@ -173,6 +174,7 @@ class InterimMeetingModelForm(forms.ModelForm):
         if not meeting.number:
             meeting.number = get_next_interim_number(group.acronym, date)
         meeting.date = date
+        meeting.days = 1
         if kwargs.get('commit', True):
             # create schedule with meeting
             meeting.save()  # pre-save so we have meeting.pk for schedule

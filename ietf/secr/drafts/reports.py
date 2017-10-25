@@ -44,7 +44,7 @@ def report_id_activity(start,end):
     approved = events.filter(type='iesg_approved').count()
     
     # get 4 weeks
-    monday = Meeting.get_ietf_monday()
+    monday = Meeting.get_current_meeting().get_ietf_monday()
     cutoff = monday + datetime.timedelta(days=3)
     ff1_date = cutoff - datetime.timedelta(days=28)
     #ff2_date = cutoff - datetime.timedelta(days=21)
