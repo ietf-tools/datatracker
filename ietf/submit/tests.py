@@ -7,6 +7,7 @@ import email
 import os
 import re
 import shutil
+import sys
 
 
 from StringIO import StringIO
@@ -141,6 +142,8 @@ class SubmitTests(TestCase):
             self.assertTrue(os.path.exists(os.path.join(self.staging_dir, u"%s-%s.%s" % (name, rev, format))))
         self.assertEqual(Submission.objects.filter(name=name).count(), 1)
         submission = Submission.objects.get(name=name)
+        if len(submission.authors) != 1:
+            sys.stderr.write((u"Author name used in test: %s\n"%author).encode('utf8'))
         self.assertEqual(len(submission.authors), 1)
         a = submission.authors[0]
         self.assertEqual(a["name"], author.ascii)
