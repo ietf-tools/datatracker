@@ -1,4 +1,11 @@
-import datetime, os, email.utils
+# -*- coding: utf-8 -*-
+# Copyright The IETF Trust 2011, All Rights Reserved
+from __future__ import unicode_literals, print_function
+
+import os
+import datetime
+import requests
+import email.utils
 
 import debug    # pyflakes:ignore
 
@@ -409,6 +416,15 @@ class CompleteReviewForm(forms.Form):
 
     def clean_review_file(self):
         return get_cleaned_text_file_content(self.cleaned_data["review_file"])
+
+    def clean_review_url(self):
+        url = self.cleaned_data['review_url']
+        #scheme, netloc, path, parameters, query, fragment = urlparse(url)
+        if url:
+            r = requests.get(url)
+            if r.status_code != 200:
+                raise forms.ValidationError("Trying to retrieve the URL resulted in status code %s: %s" % (r.status_code, r.text[:64]))
+        return url
 
     def clean(self):
         if "@" in self.review_req.reviewer.person.ascii:

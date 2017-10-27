@@ -4,6 +4,9 @@ import datetime, os, shutil, json
 import tarfile, tempfile, mailbox
 import email.mime.multipart, email.mime.text, email.utils
 from StringIO import StringIO
+from mock import patch
+from requests import Response
+
 
 from django.urls import reverse as urlreverse
 from django.conf import settings
@@ -618,7 +621,15 @@ class ReviewTests(TestCase):
 
         self.assertTrue(settings.MAILING_LIST_ARCHIVE_URL in review_req.review.external_url)
 
-    def test_complete_review_link_to_mailing_list(self):
+    @patch('requests.get')
+    def test_complete_review_link_to_mailing_list(self, mock):
+        # Mock up the url response for the request.get() call to retrieve the mailing list url
+        response = Response()
+        response.status_code = 200
+        response._content = "This is a review\nwith two lines"
+        mock.return_value = response
+
+        # Run the test
         review_req, url = self.setup_complete_review_test()
 
         login_testing_unauthorized(self, review_req.reviewer.person.user.username, url)
@@ -630,7 +641,7 @@ class ReviewTests(TestCase):
             "state": ReviewRequestStateName.objects.get(slug="completed").pk,
             "reviewed_rev": review_req.doc.rev,
             "review_submission": "link",
-            "review_content": "This is a review\nwith two lines",
+            "review_content": response.content,
             "review_url": "http://example.com/testreview/",
             "review_file": "",
         })
