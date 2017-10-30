@@ -22,6 +22,7 @@ testfiles= \
 	draft-ietf-curdle-cms-ecdh-new-curves-07.txt		\
 	draft-ietf-sidr-bgpsec-protocol-23mod.txt		\
 	draft-ietf-bess-evpn-vpws-14b.txt			\
+	draft-ietf-trill-rbridge-multilevel-07a.txt		\
 # draft-ietf-curdle-cms-ecdh-new-curves-07.txt is a modified copy, with
 # some reference fixes
 
