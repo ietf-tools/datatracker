@@ -54,7 +54,7 @@ class Meeting(models.Model):
     # is not used to determine date for timeslot instances thereafter, as
     # they have their own datetime field.
     date = models.DateField()
-    days = models.PositiveIntegerField(default=7, null=False, validators=[MinValueValidator(1)],
+    days = models.IntegerField(default=7, null=False, validators=[MinValueValidator(1)],
         help_text="The number of days the meeting lasts")
     city = models.CharField(blank=True, max_length=255)
     country = models.CharField(blank=True, max_length=2, choices=countries)
