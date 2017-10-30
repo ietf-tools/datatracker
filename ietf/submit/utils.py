@@ -313,7 +313,6 @@ def post_submission(request, submission, approvedDesc):
         check.items['rev'] = draft.rev
         if 'code' in check.items and check.items['code']:
             code = check.items['code']
-            debug.show('code')
             if 'yang' in code:
                 modules = code['yang']
                 # Yang impact analysis URL
@@ -325,7 +324,6 @@ def post_submission(request, submission, approvedDesc):
                 draft.documenturl_set.create(url=url, tag_id='yang-impact-analysis', desc=desc)
                 # Yang module metadata URLs
                 old_urls = draft.documenturl_set.filter(tag_id='yang-module-metadata')
-                debug.show('old_urls')
                 old_urls.delete()
                 for module in modules:
                     url  = settings.SUBMIT_YANG_CATALOG_MODULE_URL.format(module=module)
