@@ -1,0 +1,1176 @@
+
+
+
+
+RFC Beautification Working Group                               R. Gieben
+Internet-Draft                                                    Google
+Intended status: Informational                              January 2013
+Expires: July 5, 2013
+
+
+           Writing I-Ds and RFCs using Pandoc and xml2rfc 2.x
+                  draft-gieben-writing-rfcs-pandoc-02
+
+Abstract
+
+   This memo presents a technique for using Pandoc syntax as a source
+   format for documents in the Internet-Drafts (I-Ds) and Request for
+   Comments (RFC) series.
+
+   This version is adapted to work with "xml2rfc" version 2.x.
+
+Status of This Memo
+
+   This Internet-Draft is submitted in full conformance with the
+   provisions of BCP 78 and BCP 79.
+
+   Internet-Drafts are working documents of the Internet Engineering
+   Task Force (IETF).  Note that other groups may also distribute
+   working documents as Internet-Drafts.  The list of current Internet-
+   Drafts is at http://datatracker.ietf.org/drafts/current/.
+
+   Internet-Drafts are draft documents valid for a maximum of six months
+   and may be updated, replaced, or obsoleted by other documents at any
+   time.  It is inappropriate to use Internet-Drafts as reference
+   material or to cite them other than as "work in progress."
+
+   This Internet-Draft will expire on July 5, 2013.
+
+Copyright Notice
+
+   Copyright (c) 2013 IETF Trust and the persons identified as the
+   document authors.  All rights reserved.
+
+   This document is subject to BCP 78 and the IETF Trust's Legal
+   Provisions Relating to IETF Documents
+   (http://trustee.ietf.org/license-info) in effect on the date of
+   publication of this document.  Please review these documents
+   carefully, as they describe your rights and restrictions with respect
+   to this document.  Code Components extracted from this document must
+   include Simplified BSD License text as described in Section 4.e of
+   the Trust Legal Provisions and are provided without warranty as
+   described in the Simplified BSD License.
+
+
+
+Gieben                    Expires July 5, 2013                  [Page 1]
+
+Internet-Draft            Pandoc2rfc Version 2              January 2013
+
+
+Table of Contents
+
+   1.  Introduction  . . . . . . . . . . . . . . . . . . . . . . . .   3
+   2.  Pandoc to RFC . . . . . . . . . . . . . . . . . . . . . . . .   3
+     2.1.  Dependencies  . . . . . . . . . . . . . . . . . . . . . .   5
+   3.  Starting a new project  . . . . . . . . . . . . . . . . . . .   5
+   4.  Supported Features  . . . . . . . . . . . . . . . . . . . . .   5
+   5.  Unsupported Features  . . . . . . . . . . . . . . . . . . . .   6
+   6.  Acknowledgements  . . . . . . . . . . . . . . . . . . . . . .   7
+   7.  Pandoc Constructs . . . . . . . . . . . . . . . . . . . . . .   7
+     7.1.  Paragraph . . . . . . . . . . . . . . . . . . . . . . . .   7
+     7.2.  Section . . . . . . . . . . . . . . . . . . . . . . . . .   7
+     7.3.  List Styles . . . . . . . . . . . . . . . . . . . . . . .   7
+       7.3.1.  Symbol  . . . . . . . . . . . . . . . . . . . . . . .   7
+       7.3.2.  Number  . . . . . . . . . . . . . . . . . . . . . . .   8
+       7.3.3.  Empty . . . . . . . . . . . . . . . . . . . . . . . .   8
+       7.3.4.  Roman . . . . . . . . . . . . . . . . . . . . . . . .   8
+       7.3.5.  Letter  . . . . . . . . . . . . . . . . . . . . . . .   9
+       7.3.6.  Hanging . . . . . . . . . . . . . . . . . . . . . . .   9
+     7.4.  Figure/Artwork  . . . . . . . . . . . . . . . . . . . . .  10
+       7.4.1.  References  . . . . . . . . . . . . . . . . . . . . .  10
+     7.5.  Block Quote . . . . . . . . . . . . . . . . . . . . . . .  11
+     7.6.  References  . . . . . . . . . . . . . . . . . . . . . . .  11
+       7.6.1.  External  . . . . . . . . . . . . . . . . . . . . . .  11
+       7.6.2.  Internal  . . . . . . . . . . . . . . . . . . . . . .  11
+     7.7.  Spanx Styles  . . . . . . . . . . . . . . . . . . . . . .  12
+     7.8.  Tables  . . . . . . . . . . . . . . . . . . . . . . . . .  12
+       7.8.1.  References  . . . . . . . . . . . . . . . . . . . . .  12
+     7.9.  Indexes . . . . . . . . . . . . . . . . . . . . . . . . .  13
+   8.  Usage guidelines  . . . . . . . . . . . . . . . . . . . . . .  13
+     8.1.  Working with multiple files . . . . . . . . . . . . . . .  13
+     8.2.  Setting the title . . . . . . . . . . . . . . . . . . . .  13
+     8.3.  Uploading the XML/txt . . . . . . . . . . . . . . . . . .  14
+     8.4.  VIM syntax highlighting . . . . . . . . . . . . . . . . .  14
+   9.  Security Considerations . . . . . . . . . . . . . . . . . . .  14
+   10. IANA Considerations . . . . . . . . . . . . . . . . . . . . .  14
+   11. References  . . . . . . . . . . . . . . . . . . . . . . . . .  14
+     11.1.  Informative References . . . . . . . . . . . . . . . . .  14
+     11.2.  Normative References . . . . . . . . . . . . . . . . . .  14
+     11.3.  URIs . . . . . . . . . . . . . . . . . . . . . . . . . .  14
+   Appendix A.  Tests  . . . . . . . . . . . . . . . . . . . . . . .  15
+     A.1.  A Very Long Title Considerations With Regards to the
+           Already Deployed Routing Policy . . . . . . . . . . . . .  15
+     A.2.  Markup in heading . . . . . . . . . . . . . . . . . . . .  15
+     A.3.  Blockquote  . . . . . . . . . . . . . . . . . . . . . . .  15
+     A.4.  Verbatim code blocks  . . . . . . . . . . . . . . . . . .  15
+     A.5.  Reference Tests . . . . . . . . . . . . . . . . . . . . .  15
+     A.6.  Spanx Tests . . . . . . . . . . . . . . . . . . . . . . .  15
+
+
+
+Gieben                    Expires July 5, 2013                  [Page 2]
+
+Internet-Draft            Pandoc2rfc Version 2              January 2013
+
+
+     A.7.  List Tests  . . . . . . . . . . . . . . . . . . . . . . .  16
+     A.8.  Table Tests . . . . . . . . . . . . . . . . . . . . . . .  19
+     A.9.  Numbered examples . . . . . . . . . . . . . . . . . . . .  20
+     A.10. Figure tests  . . . . . . . . . . . . . . . . . . . . . .  20
+     A.11. Verse tests . . . . . . . . . . . . . . . . . . . . . . .  21
+   Index . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .  21
+   Author's Address  . . . . . . . . . . . . . . . . . . . . . . . .  21
+
+1.  Introduction
+
+   This document presents a technique for using Pandoc syntax as a
+   source format for documents in the Internet-Drafts (I-Ds) and Request
+   for Comments (RFC) series.
+
+   This version is adapted to work with "xml2rfc" version 2.x.
+
+   Pandoc is an "almost plain text" format and therefor particularly
+   well suited for editing RFC-like documents.
+
+      Note: this document is typeset in Pandoc and does not render
+      completely correct when reading it on github.
+
+2.  Pandoc to RFC
+
+      Pandoc2rfc -- designed to do the right thing, until it doesn't.
+
+   When writing [RFC4641] we directly wrote the XML.  Needless to say it
+   was tedious even thought the XML of xml2rfc [1] is very "light".  The
+   latest version of xml2rfc version 2 can be found here [2].
+
+   During the last few years people have been developing markup
+   languages that are very easy to remember and type.  These languages
+   have become known as "almost plain text"-markup languages.  One of
+   the first was the Markdown [3] syntax.  One that was developed later
+   and incorporates Markdown and a number of extensions is Pandoc [4].
+   The power of Pandoc also comes from the fact that it can be
+   translated to numerous output formats, including, but not limited to:
+   HTML, (plain) Markdown and "docbook" XML.
+
+   So using Pandoc for writing RFCs seems like a sane choice.  As
+   "xml2rfc" uses XML, the easiest way would be to create "docbook" XML
+   and transform that using XSLT.  Pandoc2rfc does just that.  The
+   conversions are, in some way amusing, as we start off with (almost)
+   plain text, use elaborate XML and end up with plain text again.
+
+
+
+
+
+
+
+Gieben                    Expires July 5, 2013                  [Page 3]
+
+Internet-Draft            Pandoc2rfc Version 2              January 2013
+
+
+   +-------------------+   pandoc   +---------+
+   | ALMOST PLAIN TEXT |   ------>  | DOCBOOK |
+   +-------------------+            +---------+
+                 |                       |
+   non-existent  |                       | xsltproc
+     faster way  |                       |
+                 v                       v
+         +------------+    xml2rfc  +---------+
+         | PLAIN TEXT |  <--------  | XML2RFC |
+         +------------+             +---------+
+
+                 Figure 1: Attempt to justify Pandoc2rfc.
+
+   The XML generated (the output after the "xsltproc" step in Figure 1)
+   is suitable for inclusion in either the "middle" or "back" section of
+   an RFC.  The simplest way is to create a template XML file and
+   include the appropriate XML:
+
+   <?xml version='1.0' ?>
+   <!DOCTYPE rfc SYSTEM 'rfc2629.dtd' [
+   <!ENTITY pandocMiddle PUBLIC '' 'middle.xml'>
+   <!ENTITY pandocBack   PUBLIC '' 'back.xml'>
+   ]>
+
+   <rfc ipr='trust200902' docName='draft-gieben-pandoc-rfcs-02'>
+    <front>
+       <title>Writing I-Ds and RFCs using Pandoc v2</title>
+   </front>
+
+   <middle>
+       &pandocMiddle;
+   </middle>
+
+   <back>
+       &pandocBack;
+   </back>
+
+   </rfc>
+
+                     Figure 2: A minimal template.xml.
+
+   See the Makefile for an example of this.  In this case you need to
+   edit 3 documents:
+
+   1.  middle.pdc - contains the main body of text;
+
+   2.  back.pdc - holds appendices and references;
+
+
+
+
+Gieben                    Expires July 5, 2013                  [Page 4]
+
+Internet-Draft            Pandoc2rfc Version 2              January 2013
+
+
+   3.  template.xml (probably a fairly static file).
+
+   The draft ("draft.txt") you are reading now, is automatically created
+   when you call "make".  The homepage of Pandoc2rfc is this github
+   repository [5].
+
+2.1.  Dependencies
+
+   It needs "xsltproc" and "pandoc" to be installed.  See the Pandoc
+   user manual for the details [6] on how to type in Pandoc style.  And
+   ofcourse "xml2rfc" version two.
+
+   When using Pandoc2rfc consider adding the following sentence to an
+   Acknowledgements section:
+
+    This document was produced using the Pandoc2rfc tool.
+
+3.  Starting a new project
+
+   When starting a new project with "pandoc2rfc" you'll need to copy the
+   following files:
+
+   o  "Makefile"
+
+   o  "transform.xslt"
+
+   o  And the above mentioned files:
+
+      *  "middle.pdc"
+
+      *  "back.pdc"
+
+      *  "template.xml"
+
+   After that you can start editing.
+
+4.  Supported Features
+
+   o  Sections with an anchor and title attributes (Section 7.2);
+
+   o  Lists
+
+      *  style=symbols (Section 7.3.1);
+
+      *  style=numbers (Section 7.3.2);
+
+      *  style=empty (Section 7.3.3);
+
+
+
+
+Gieben                    Expires July 5, 2013                  [Page 5]
+
+Internet-Draft            Pandoc2rfc Version 2              January 2013
+
+
+      *  style=format %i, use roman lowercase numerals, (Section 7.3.4);
+
+      *  style=format (%d), use roman uppercase numerals
+         (Section 7.3.4);
+
+      *  style=letters (lower- and uppercase, Section 7.3.5);
+
+      *  style=hanging (Section 7.3.6);
+
+   o  Figure/artwork with a title (Section 7.4);
+
+   o  Block quote this is converted to "<list style="empty">" paragraph
+      (Section 7.5);
+
+   o  References
+
+      *  external (eref) (Section 7.6.1);
+
+      *  internal (xref) (Section 7.6.2), you can refer to:
+
+         +  section (handled by Pandoc, see Section 7.6));
+
+         +  figures (handled by XSLT, see Section 7.4.1);
+
+         +  tables (handled by XSLT, see Section 7.8.1).
+
+   o  Citations, by using internal references;
+
+   o  Spanx style=verb, style=emph and style=strong (Section 7.7);
+
+   o  Tables with an anchor and title (Section 7.8);
+
+   o  Indexes, by using footnotes (Section 7.9).
+
+5.  Unsupported Features
+
+   o  Lists inside a table ("xml2rfc" doesn't handle this);
+
+   o  Pandoc markup in the caption for figures/artwork.  Pandoc markup
+      for table captions _is_ supported;
+
+   o  crefs: for comments (no input syntax available), use HTML
+      comments: "<!-- ... -->";
+
+
+
+
+
+
+
+
+Gieben                    Expires July 5, 2013                  [Page 6]
+
+Internet-Draft            Pandoc2rfc Version 2              January 2013
+
+
+6.  Acknowledgements
+
+   The following people have helped to make Pandoc2rfc what it is today:
+   Benno Overeinder, Erlend Hamnaberg, Matthijs Mekking, Trygve
+   Laugstoel.
+
+   This document was prepared using Pandoc2rfc.
+
+7.  Pandoc Constructs
+
+   So, what syntax do you need to use to get the correct output?  Well,
+   it is _just_ Pandoc.  The best introduction to the Pandoc style is
+   given in this README from Pandoc itself [7].
+
+   For convenience we list the most important ones in the following
+   sections.
+
+7.1.  Paragraph
+
+   Paragraphs are separated with an empty line.
+
+7.2.  Section
+
+   Just use the normal sectioning commands available in Pandoc, for
+   instance:
+
+   # Section1 One
+   Bla
+
+   Converts to: "<section title="Section1 One" anchor="section1-one">"
+   If you have another section that is also named "Section1 One", that
+   anchor will be called "section1-one-1", but _only_ when the sections
+   are in the _same_ source file!
+
+   Referencing the section is done with "see [](#section1-one)", as in
+   see Section 7.2.
+
+7.3.  List Styles
+
+   A good number of styles are supported.
+
+7.3.1.  Symbol
+
+   A symbol list.
+
+   * Item one;
+   * Item two.
+
+
+
+
+Gieben                    Expires July 5, 2013                  [Page 7]
+
+Internet-Draft            Pandoc2rfc Version 2              January 2013
+
+
+   Converts to "<list style="symbol">":
+
+   o  Item one;
+
+   o  Item two.
+
+7.3.2.  Number
+
+   A numbered list.
+
+   1. Item one;
+   1. Item two.
+
+   Converts to "<list style="numbers">":
+
+   1.  Item one;
+
+   2.  Item two.
+
+7.3.3.  Empty
+
+   Using the default list markers from Pandoc:
+
+   A list using the default list markers.
+
+   #. Item one;
+   #. Item two.
+
+   Converts to "<list style="empty">":
+
+      Item one;
+
+      Item two.
+
+7.3.4.  Roman
+
+   Use the supported Pandoc syntax:
+
+   ii. Item one;
+   ii. Item two.
+
+   Converts to "<list style="format %i.">":
+
+   i.    Item one;
+
+   ii.   Item two.
+
+
+
+
+
+Gieben                    Expires July 5, 2013                  [Page 8]
+
+Internet-Draft            Pandoc2rfc Version 2              January 2013
+
+
+   If you use uppercase Roman numerals, they convert to a different
+   style:
+
+   II. Item one;
+   II. Item two.
+
+   Yields "<list style="format (%d) ">":
+
+   (1)  Item one;
+
+   (2)  Item two.
+
+7.3.5.  Letter
+
+   A numbered list.
+
+   a.  Item one;
+   b.  Item two.
+
+   Converts to "<list style="letters">":
+
+   a.  Item one;
+
+   b.  Item two.
+
+   Uppercasing the letters works too (note two spaces after the letter.
+
+   A.  Item one;
+   B.  Item two.
+
+   Becomes:
+
+   A.  Item one;
+
+   B.  Item two.
+
+7.3.6.  Hanging
+
+   This is more like a description list, so we need to use:
+
+
+
+
+
+
+
+
+
+
+
+
+Gieben                    Expires July 5, 2013                  [Page 9]
+
+Internet-Draft            Pandoc2rfc Version 2              January 2013
+
+
+   First item that needs clarification:
+
+   :   Explanation one
+   More stuff, because item is difficult to explain.
+   * item1
+   * item2
+
+   Second item that needs clarification:
+
+   :   Explanation two
+
+   Converts to: "<list style="hanging">" and "<t hangText="First item
+   that...">"
+
+   If you want a newline after the hangTexts, search for the string
+   "OPTION" in "transform.xsl" and uncomment it.
+
+7.4.  Figure/Artwork
+
+   Indent the paragraph with 4 spaces.
+
+   Like this
+
+   Converts to: "<figure><artwork> ..." Note that "xml2rfc" supports a
+   caption with "<artwork>".  Pandoc does not support this, but
+   Pandoc2rfc does.  If you add a "@Figure: some text" as the last line,
+   the artwork gets a "title" attribute with the text after "@Figure:".
+   It will also be possible to reference the artwork.  If a caption is
+   supplied the artwork will be centered.  If a caption is needed but
+   the figure should not be centered use "@figure:\".
+
+7.4.1.  References
+
+   The reference anchor attribute will be: "fig:" + "first 10
+   (normalized) characters from the caption".  Where normalized means:
+
+   o  Take the first 10 characters of the caption (i.e. this is the text
+      _after_ the string "@Figure:");
+
+   o  Spaces and single quotes (') are translated to a minus "-";
+
+   o  Uppercase letters translated to lowercase.
+
+   So the first artwork with a caption will get "fig:a-minimal-" as a
+   reference.  See for instance Figure 2.
+
+
+
+
+
+
+Gieben                    Expires July 5, 2013                 [Page 10]
+
+Internet-Draft            Pandoc2rfc Version 2              January 2013
+
+
+   This anchoring is completely handled from within the "xslt".  Note
+   that duplicate anchors are an XML validation error which will make
+   "xml2rfc" fail.
+
+7.5.  Block Quote
+
+   Any paragraph like:
+
+   > quoted text
+
+   Converts to: "<t><list style="empty"> ..." paragraph, making it
+   indented.
+
+7.6.  References
+
+7.6.1.  External
+
+   Any reference like:
+
+   [Click here](URI)
+
+   Converts to: "<ulink target="URI">Click here ..."
+
+7.6.2.  Internal
+
+   Any reference like:
+
+   [Click here](#localid)
+
+   Converts to: "<link target="localid">Click here ..."
+
+   For referring to RFCs (for which you manually need add the reference
+   source in the template, with an external XML entity), you can just
+   use:
+
+   [](#RFC2119)
+
+   And it does the right thing.  Referencing sections is done with:
+
+   See [](#pandoc-constructs)
+
+   The word 'Section' is inserted automatically: ... see Section 7 ...
+   For referencing figures/artworks see Section 7.4.  For referencing
+   tables see Section 7.8.
+
+
+
+
+
+
+
+Gieben                    Expires July 5, 2013                 [Page 11]
+
+Internet-Draft            Pandoc2rfc Version 2              January 2013
+
+
+7.7.  Spanx Styles
+
+   The verb style can be selected with back-tics: "`text`" Converts to:
+   "<spanx style="verb"> ..."
+
+   And the emphasis style with asterisks: "*text*" or underscores:
+   "_text_" Converts to: "<spanx style="emph"> ..."
+
+   And the emphasis style with double asterisks: "**text**" Converts to:
+   "<spanx style="strong"> ..."
+
+7.8.  Tables
+
+   A table can be entered as:
+
+     Right     Left     Center     Default
+     -------   ------ ----------   -------
+          12     12        12        12
+         123     123       123       123
+           1     1         1         1
+
+     Table: A caption describing the table.
+
+      Figure 3: A caption describing the figure describing the table.
+
+   Is translated to "<texttable>" element in "xml2rfc".  You can choose
+   multiple styles as input, but they all are converted to the same
+   style (plain "<texttable>") table in "xml2rfc".  The column alignment
+   is copied over to the generated XML.
+
+7.8.1.  References
+
+   The caption is _always_ translated to a "title" attribute.  If a
+   table has a caption, it will _also_ get a reference.  The reference
+   anchor attribute will be: "tab:" + "first 10 (normalized) characters
+   from the caption".  Where normalized means:
+
+   o  Take the first 10 characters of the caption (i.e. this is the text
+      _after_ the string "Table:");
+
+   o  Spaces and single quotes (') are translated to a minus "-";
+
+   o  Uppercase letters translated to lowercase.
+
+   So the first table with a caption will get "tab:a-caption-" for
+   reference use.  See for instance
+
+
+
+
+
+Gieben                    Expires July 5, 2013                 [Page 12]
+
+Internet-Draft            Pandoc2rfc Version 2              January 2013
+
+
+   This anchoring is completely handled from within the "xslt".  Note
+   that duplicate anchors are an XML validation error which will make
+   "xml2rfc" fail.
+
+7.9.  Indexes
+
+   The footnote syntax of Pandoc is slightly abused to support an index.
+   Footnotes are entered in two steps, you have a marker in the text,
+   and later you give actual footnote text.  Like this:
+
+   [^1]
+
+   [^1]: footnote text
+
+   We re-use this syntax for the "<iref>" tag.  The above text
+   translates to:
+
+   <iref item="footnote text"/>
+
+   Sub items are also supported.  Use an exclamation mark ("!") to
+   separate them:
+
+   [^1]: item!sub item
+
+8.  Usage guidelines
+
+8.1.  Working with multiple files
+
+   As an author you will probably break up a draft in multiple files,
+   each dealing with a subject or section.  When doing so sections with
+   the same title will clash with each other.  Pandoc can deal with this
+   situation, but only if the different sections are in the _same_ file
+   or processed in the same Pandoc run.  Concatenating the different
+   section files before processing them is a solution to this problem.
+   You can, for instance, amend the "Makefile" and add something like
+   this:
+
+   allsections.pdc: section.pdc.1 section.pdc.2 section.pdc.3
+           cat $@ > allsections.pdc
+
+   And then process "allsection.pdc" in the normal way.
+
+8.2.  Setting the title
+
+   If you use double quotes in the documents title in the "docName"
+   attribute, like:
+
+   <rfc ipr="trust200902" docName="draft-gieben-writing-rfcs-pandoc-02">
+
+
+
+Gieben                    Expires July 5, 2013                 [Page 13]
+
+Internet-Draft            Pandoc2rfc Version 2              January 2013
+
+
+   The Makefile will pick this up automatically and make a symbolic
+   link:
+
+   draft-gieben-writing-rfcs-pandoc-00.txt -> draft.txt
+
+   This makes uploading the file to the i-d tracker a bit easier.
+
+8.3.  Uploading the XML/txt
+
+   The "draft.xml" target will generate an XML file with all XML
+   included, so you can upload just one file to the I-D tracker.
+
+8.4.  VIM syntax highlighting
+
+   If you are a VIM user you might be interested in a syntax
+   highlighting file (see [VIM]) that slightly lightens up your reading
+   experience while viewing a draft.txt from VIM.
+
+9.  Security Considerations
+
+   This document raises no security issues.
+
+10.  IANA Considerations
+
+   This document has no actions for IANA.
+
+11.  References
+
+11.1.  Informative References
+
+   [VIM]      Gieben, R., "VIM syntax file for RFCs and I-Ds", October
+              2012, <http://github.com/miekg/rfc>.
+
+11.2.  Normative References
+
+   [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
+              Requirement Levels", BCP 14, RFC 2119, March 1997.
+
+   [RFC4641]  Kolkman, O. and R. Gieben, "DNSSEC Operational Practices",
+              RFC 4641, September 2006.
+
+11.3.  URIs
+
+   [1] http://xml.resource.org/experimental
+
+   [2] http://pypi.python.org/pypi/xml2rfc/
+
+   [3] http://daringfireball.net/projects/markdown/
+
+
+
+Gieben                    Expires July 5, 2013                 [Page 14]
+
+Internet-Draft            Pandoc2rfc Version 2              January 2013
+
+
+   [4] http://johnmacfarlane.net/pandoc/
+
+   [5] https://github.com/miekg/pandoc2rfc
+
+   [6] http://johnmacfarlane.net/pandoc/README.html
+
+   [7] http://johnmacfarlane.net/pandoc/README.html
+
+   [8] http://miek.nl
+
+Appendix A.  Tests
+
+   This appendix consists out of a few tests that should all render to
+   proper "xml2rfc" XML.
+
+A.1.  A Very Long Title Considerations With Regards to the Already
+      Deployed Routing Policy
+
+   Test a very long title.
+
+A.2.  Markup in heading
+
+   This is discarded by "xml2rfc".
+
+A.3.  Blockquote
+
+      This is a blockquote, how does it look?
+
+A.4.  Verbatim code blocks
+
+   A verbatim code block
+   jkasjksajassjasjsajsajkas
+
+A.5.  Reference Tests
+
+   Refer to RFC 2119 [RFC2119] if you will.  Or maybe you want to
+   inspect Figure 2 in Section 2 again.  Or you might want to Click here
+   [8].
+
+A.6.  Spanx Tests
+
+      underscores: _underscores_
+
+      asterisks: _asterisks_
+
+      double asterisks: *double asterisks*
+
+      backticks: "backticks"
+
+
+
+Gieben                    Expires July 5, 2013                 [Page 15]
+
+Internet-Draft            Pandoc2rfc Version 2              January 2013
+
+
+A.7.  List Tests
+
+   1.  First we do
+
+   2.  And then
+
+       *  item 1
+
+       *  item 2
+
+   And the other around.
+
+   o  First we do
+
+   o  Then
+
+      1.  Something
+
+      2.  Another thing
+
+   Description lists:
+
+   Item to explain:  It works because of herbs.
+
+   Another item to explain:  More explaining.
+
+      Multiple paragraphs in such a list.
+
+   lists in description lists.
+
+   Item to explain:  It works because of
+
+      1.  One
+
+      2.  Two
+
+   Another item to explain:  More explaining
+
+   Item to explain:  It works because of
+
+      1.  One1
+
+      2.  Two1
+
+          +  Itemize list
+
+          +  Another item
+
+
+
+
+Gieben                    Expires July 5, 2013                 [Page 16]
+
+Internet-Draft            Pandoc2rfc Version 2              January 2013
+
+
+   Another item to explain again:  More explaining
+
+   list with description lists.
+
+   1.  More
+
+       Item to explain:  Explanation ...
+
+       Item to explain:  Another explanation ...
+
+   2.  Go'bye
+
+   Multiple paragraphs in a list.
+
+   1.  This is the first bullet point and it needs multiple
+       paragraphs...
+
+       ... to be explained properly.
+
+   2.  This is the next bullet.  New paragraphs should be indented with
+       4 four spaces.
+
+   3.  Another item with some artwork, indented by 8 spaces.
+
+   Artwork
+
+   4.  Final item.
+
+   xml2rfc does not allow this, so the second paragraph is faked with a
+
+   <vspace blankLines='1'>
+
+   Ordered lists.
+
+   1.  First item
+
+   2.  Second item
+
+   A lowercase roman list:
+
+   i.    Item 1
+
+   ii.   Item 2
+
+   An uppercase roman list.
+
+   (1)  Item1
+
+
+
+
+Gieben                    Expires July 5, 2013                 [Page 17]
+
+Internet-Draft            Pandoc2rfc Version 2              January 2013
+
+
+   (2)  Item2
+
+   (3)  Item 3
+
+   And default list markers.
+
+   Some surrounding text, to make it look better.
+
+      First item.  Use lot of text to get a real paragraphs sense.
+      First item.  Use lot of text to get a real paragraphs sense.
+      First item.  Use lot of text to get a real paragraphs sense.
+      First item.  Use lot of text to get a real paragraphs sense.
+
+      Second item.  So this is the second para in your list.  Enjoy;
+
+      Another item.
+
+   Text at the end.
+
+   Lowercase letters list.
+
+   a.  First item
+
+   b.  Second item
+
+   Uppercase letters list.
+
+   A.  First item
+
+   B.  Second item
+
+   And artwork in a description list.
+
+   Item1:  Tell something about it.  Tell something about it.  Tell
+      something about it.  Tell something about it.  Tell something
+      about it.  Tell something about it.
+
+   miek.nl.    IN  NS  a.miek.nl.
+   a.miek.nl.  IN  A   192.0.2.1    ; <- this is glue
+
+      Tell some more about it.  Tell some more about it.  Tell some more
+      about it.
+
+   Item2:  Another description
+
+   List with a sublist with a paragraph above the sublist
+
+   1.  First Item
+
+
+
+Gieben                    Expires July 5, 2013                 [Page 18]
+
+Internet-Draft            Pandoc2rfc Version 2              January 2013
+
+
+   2.  Second item
+
+   3.  Third item
+
+       A paragraph that comes first
+
+       A.  But what do you know
+
+       B.  This is another list
+
+A.8.  Table Tests
+
+                  +--------+-------+---------+----------+
+                  |  Right | Left  |  Center | Default  |
+                  +--------+-------+---------+----------+
+                  |     12 | 12    |    12   | 12       |
+                  |    123 | 123   |   123   | 123      |
+                  |      1 | 1     |    1    | 1        |
+                  +--------+-------+---------+----------+
+
+              Table 1: Demonstration of simple table syntax.
+
+   +-----------+-----------+---------------+---------------------------+
+   |  Centered | Default   | Right Aligned | Left Aligned              |
+   |   Header  | Aligned   |               |                           |
+   +-----------+-----------+---------------+---------------------------+
+   |   First   | row       |          12.0 | Example of a row that     |
+   |           |           |               | spans multiple lines.     |
+   |   Second  | row       |           5.0 | Here's another one. Note  |
+   |           |           |               | the blank line between    |
+   |           |           |               | rows.                     |
+   +-----------+-----------+---------------+---------------------------+
+
+   Table 2: Here's the caption.  It, too, may span multiple lines.  This
+               is a multiline table.  This is verbatim text.
+
+          +---------------+---------------+--------------------+
+          | Fruit         | Price         | Advantages         |
+          +---------------+---------------+--------------------+
+          | Bananas       | $1.34         | built-in wrapper   |
+          | Oranges       | $2.10         | cures scurvy       |
+          +---------------+---------------+--------------------+
+
+                        Table 3: Sample grid table.
+
+   Grid tables without a caption
+
+
+
+
+
+Gieben                    Expires July 5, 2013                 [Page 19]
+
+Internet-Draft            Pandoc2rfc Version 2              January 2013
+
+
+          +---------------+---------------+--------------------+
+          | Fruit         | Price         | Advantages         |
+          +---------------+---------------+--------------------+
+          | Bananas       | $1.34         | built-in wrapper   |
+          | Oranges       | $2.10         | cures scurvy       |
+          +---------------+---------------+--------------------+
+
+   This table has no caption, and therefor no reference.  But you can
+   refer to some of the other tables, with for instance:
+
+   See [](#tab:here-s-the)
+
+   Which will become "See Table 2".
+
+   We should also be able to refer to the table numbers directly, to say
+   things like 'Look at Tables 1, 2 and 3.'
+
+A.9.  Numbered examples
+
+   This is another example:
+
+   1.  Another bla bla..
+
+   as (1) shows...
+
+A.10.  Figure tests
+
+   This is a figure
+   This is a figure
+   This is a figure
+   This is a figure
+
+   Figure 4: This is the caption, with text in `typewriter`. Which isnt
+        converted to a <spanx> style, because this is copied as-is.
+
+   And how a figure that is not centered, do to using "figure" and not
+   "Figure".
+
+   This is a figure
+   This is a figure
+
+                     Figure 5: A non centered figure.
+
+   Test the use of "@title":
+
+   This is a figure with a title
+   This is a figure with a title
+   @title: and here it is: a title, don't mess it up *
+
+
+
+Gieben                    Expires July 5, 2013                 [Page 20]
+
+Internet-Draft            Pandoc2rfc Version 2              January 2013
+
+
+A.11.  Verse tests
+
+   This is a verse text This is another line
+
+Index
+
+   L
+      list
+         default markers  18
+         Uppercase Letters  18
+
+   T
+      table
+         grid  20
+         simple  19
+
+Author's Address
+
+   R. (Miek) Gieben
+   Google
+   123 Buckingham Palace Road
+   London  SW1W 9SH
+   UK
+
+   Email: miek@miek.nl
+   URI:   http://miek.nl/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Gieben                    Expires July 5, 2013                 [Page 21]
