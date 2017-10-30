@@ -687,6 +687,13 @@ SUBMIT_PYANG_COMMAND = 'pyang --verbose --ietf -p {libs} {model}'
 SUBMIT_YANGLINT_COMMAND = 'yanglint --verbose -p {rfclib} -p {draftlib} -p {tmplib} {model} -i'
 SUBMIT_YANGLINT_COMMAND = None        # use the value above if you have yanglint installed
 
+SUBMIT_YANG_CATALOG_MODULEARG = "modules[]={module}"
+SUBMIT_YANG_CATALOG_IMPACT_URL = "https://www.yangcatalog.org/yang-search/impact_analysis.php?{moduleargs}&recurse=0&rfcs=1&show_subm=1&show_dir=dependencies"
+SUBMIT_YANG_CATALOG_IMPACT_DESC = "Yang impact analysis for {draft}"
+SUBMIT_YANG_CATALOG_MODULE_URL = "https://www.yangcatalog.org/yang-search/module_details.php?module={module}"
+SUBMIT_YANG_CATALOG_MODULE_DESC = "Yang catalog entry for {module}"
+
+
 IDSUBMIT_CHECKER_CLASSES = (
     "ietf.submit.checkers.DraftIdnitsChecker",
     "ietf.submit.checkers.DraftYangChecker",
@@ -847,11 +854,15 @@ TRAC_WIKI_DIR_PATTERN = "/a/www/www6s/trac/%s"
 TRAC_WIKI_URL_PATTERN = "https://trac.ietf.org/trac/%s/wiki"
 TRAC_ISSUE_URL_PATTERN = "https://trac.ietf.org/trac/%s/report/1"
 TRAC_SVN_DIR_PATTERN = "/a/svn/group/%s"
-TRAC_SVN_URL_PATTERN = "https://svn.ietf.org/svn/group/%s/"
+#TRAC_SVN_URL_PATTERN = "https://svn.ietf.org/svn/group/%s/"
 
 TRAC_CREATE_GROUP_TYPES = ['wg', 'rg', 'area', 'team', 'dir', 'ag', ]
 TRAC_CREATE_GROUP_STATES = ['bof', 'active', ]
-TRAC_CREATE_GROUP_ACRONYMS = ['iesg', 'iaoc', ]
+TRAC_CREATE_GROUP_ACRONYMS = ['iesg', 'iaoc', 'ietf', ]
+TRAC_CREATE_ADHOC_WIKIS = [
+    # admin group, name, path
+    ('iesg', 'Meeting', '/a/www/www6s/trac/ietf/meeting'),
+]
 
 SVN_PACKAGES = [
     "/usr/lib/python2.7/dist-packages/svn",
