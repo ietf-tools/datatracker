@@ -301,6 +301,37 @@ def post_submission(request, submission, approvedDesc):
         # automatically set state "WG Document"
         draft.set_state(State.objects.get(used=True, type="draft-stream-%s" % draft.stream_id, slug="wg-doc"))
 
+    # Update yang urls if applicable
+    for check in submission.checks.all():
+        # Temporary code -- remove after 6.64.0 release
+        if not type(check.items) is dict:
+            continue
+        if not 'checker' in check.items:
+            continue
+        log.assertion('type(check.items) is dict')
+        check.items['draft'] = draft.name
+        check.items['rev'] = draft.rev
+        if 'code' in check.items and check.items['code']:
+            code = check.items['code']
+            debug.show('code')
+            if 'yang' in code:
+                modules = code['yang']
+                # Yang impact analysis URL
+                draft.documenturl_set.filter(tag_id='yang-impact-analysis').delete()
+                f = settings.SUBMIT_YANG_CATALOG_MODULEARG
+                moduleargs = '&'.join([ f.format(module=m) for m in modules])
+                url  = settings.SUBMIT_YANG_CATALOG_IMPACT_URL.format(moduleargs=moduleargs, draft=draft.name)
+                desc = settings.SUBMIT_YANG_CATALOG_IMPACT_DESC.format(modules=','.join(modules), draft=draft.name)
+                draft.documenturl_set.create(url=url, tag_id='yang-impact-analysis', desc=desc)
+                # Yang module metadata URLs
+                old_urls = draft.documenturl_set.filter(tag_id='yang-module-metadata')
+                debug.show('old_urls')
+                old_urls.delete()
+                for module in modules:
+                    url  = settings.SUBMIT_YANG_CATALOG_MODULE_URL.format(module=module)
+                    desc = settings.SUBMIT_YANG_CATALOG_MODULE_DESC.format(module=module)
+                    draft.documenturl_set.create(url=url, tag_id='yang-module-metadata', desc=desc)
+
     # save history now that we're done with changes to the draft itself
     draft.save_with_history(events)
 
@@ -667,9 +698,9 @@ def apply_checkers(submission, file_name):
     # run submission checkers
     def apply_check(submission, checker, method, fn):
         func = getattr(checker, method)
-        passed, message, errors, warnings, items = func(fn)
+        passed, message, errors, warnings, info = func(fn)
         check = SubmissionCheck(submission=submission, checker=checker.name, passed=passed,
-                                message=message, errors=errors, warnings=warnings, items=items,
+                                message=message, errors=errors, warnings=warnings, items=info,
                                 symbol=checker.symbol)
         check.save()
 
