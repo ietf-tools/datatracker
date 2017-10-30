@@ -143,7 +143,10 @@ class SubmitTests(TestCase):
         self.assertEqual(Submission.objects.filter(name=name).count(), 1)
         submission = Submission.objects.get(name=name)
         if len(submission.authors) != 1:
-            sys.stderr.write((u"Author name used in test: %s\n"%author).encode('utf8'))
+            sys.stderr.write("\nAuthor extraction failure.\n")
+            sys.stderr.write(("Author name used in test: %s\n"%author).encode('utf8'))
+            sys.stderr.write("Author ascii name: %s\n" % author.ascii)
+            sys.stderr.write("Author initials: %s\n" % author.initials())
         self.assertEqual(len(submission.authors), 1)
         a = submission.authors[0]
         self.assertEqual(a["name"], author.ascii)
