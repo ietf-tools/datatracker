@@ -70,8 +70,6 @@ class DraftIdnitsChecker(object):
         Error and warning list items are tuples:
             (line_number, line_text, message)
         """
-        filename = os.path.basename(path)
-        result = {}
         items = []
         errors = 0
         warnings = 0
@@ -111,16 +109,9 @@ class DraftIdnitsChecker(object):
                 item += " " + line.strip()
             else:
                 pass
-            result[filename] = {
-                    "passed":  passed,
-                    "message": message,
-                    "errors":  errors,
-                    "warnings":warnings,
-                    "items": items,
-                }
+        info = {'checker': self.name, 'items': [], 'code': {}}
 
-
-        return passed, message, errors, warnings, result
+        return passed, message, errors, warnings, info
 
 class DraftYangChecker(object):
 
@@ -137,10 +128,11 @@ class DraftYangChecker(object):
         results = []
         passed = True                   # Used by the submission tool.  Yang checks always pass.
         model_list = []
+        info = {'checker': self.name, 'items': [], 'code': {}}
 
-        extractor = xym.YangModuleExtractor(path, workdir, strict=True, strict_examples=False, debug_level=0)
+        extractor = xym.YangModuleExtractor(path, workdir, strict=True, strict_examples=False, debug_level=1)
         if not os.path.exists(path):
-            return None, "%s: No such file or directory: '%s'"%(name.capitalize(), path), errors, warnings, results
+            return None, "%s: No such file or directory: '%s'"%(name.capitalize(), path), errors, warnings, info
         with open(path) as file:
             out = ""
             err = ""
@@ -161,11 +153,10 @@ class DraftYangChecker(object):
             except Exception as exc:
                 msg = "Exception when running xym on %s: %s" % (name, exc)
                 log(msg)
-                return None, msg, 0, 0, []
-
+                return None, msg, 0, 0, info
         if not model_list:
-            # Found no yang modules, don't deliver any YangChecker result
-            return None, "", 0, 0, []
+            # Found no yang models, don't deliver any YangChecker result
+            return None, "", 0, 0, info
 
         for m in model_list:
             if not re.search(model_name_re, m):
@@ -174,6 +165,8 @@ class DraftYangChecker(object):
         if len(set(model_list)) != len(model_list):
             code += 1
             err += "Error: Multiple models with the same name:\n  %s\n" % ("\n  ".join(model_list))
+
+        model_list = list(set(model_list))
 
         command = "xym"
         cmd_version = VersionInfo.objects.get(command=command).version
@@ -188,7 +181,7 @@ class DraftYangChecker(object):
             "items": [],
         })
 
-        for model in set(model_list):
+        for model in model_list:
             path = os.path.join(workdir, model)
             message = ""
             modpath = ':'.join([
@@ -277,6 +270,7 @@ class DraftYangChecker(object):
         errors  = sum(res["errors"] for res in results )
         warnings  = sum(res["warnings"] for res in results )
         items  = [ e for res in results for e in res["items"] ]
-
-        return passed, message, errors, warnings, items
+        info['items'] = items
+        info['code']['yang'] = model_list
+        return passed, message, errors, warnings, info
 
