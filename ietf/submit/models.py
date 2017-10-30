@@ -70,7 +70,7 @@ class Submission(models.Model):
         return checks
         
 class SubmissionCheck(models.Model):
-    time = models.DateTimeField(auto_now=True)
+    time = models.DateTimeField(default=datetime.datetime.now)
     submission = models.ForeignKey(Submission, related_name='checks')
     checker = models.CharField(max_length=256, blank=True)
     passed = models.NullBooleanField(default=False)
