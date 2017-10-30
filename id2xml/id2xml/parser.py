@@ -102,7 +102,7 @@ section_start_re = {
     'front':    r'^%s'%('|'.join(section_names['front'])),
     'middle':   r"^([0-9]+ +|[0-9]+\.([0-9]+(\.[0-9]+)*\.?) |%s)" % ('|'.join(section_names['middle'])),
     'refs':     r"^([0-9]+ +|([0-9]+\.([0-9]+(\.[0-9]+)*\.?)? +)?(%s))" % ('|'.join(section_names['refs'])),
-    'back':     r'^([A-Za-z](\.[0-9]+)*\.?|%s)' % ('|'.join(section_names['back'])),
+    'back':     r'^([0-9A-Za-z](\.[0-9]+)*\.?|%s)' % ('|'.join(section_names['back'])),
 }
 
 # ----------------------------------------------------------------------
@@ -289,6 +289,9 @@ def flatten(l):
 
 def normalize_space(text):
     return re.sub('\s+', ' ', text)
+
+def normalize_http(text):
+    return re.sub(r'http://', r'https://', text)
 
 def strip(para):
     para = para[:]
@@ -534,8 +537,8 @@ def unindent(text, amount):
     return '\n'.join(fixed)
 
 def match_boilerplate(bp, txt):
-    txt = normalize_space(txt)
-    bp = normalize_space(bp)
+    txt = normalize_http(normalize_space(txt))
+    bp = normalize_http(normalize_space(bp))
     if txt.startswith(bp):
         return True
     else:
@@ -1577,7 +1580,7 @@ class DraftParser(Base):
             txt = line.txt
             is_editor = False
             if date and txt.strip() != '':
-                self.warn(line.num, "Unexpected text; expected blank lines after document date, found '%s'" % (line, ))
+                self.warn(line.num, "Unexpected text: expected blank lines after document date, found '%s'" % (line, ))
                 continue
             for regex in editorformats:
                 if re.search(regex, txt):
@@ -1795,8 +1798,8 @@ class DraftParser(Base):
         l = len(text)
         text = text.lstrip()
         strip_count = l - len(text)
-        text = normalize_space(text)
-        expect = normalize_space(expect.lstrip())
+        text = normalize_http(normalize_space(text))
+        expect = normalize_http(normalize_space(expect.lstrip()))
         def fail(l, e, t):
             self.err(l.num, "Unexpected text: expected '%s', found '%s'" % (e, t))
         while True:
@@ -1819,7 +1822,7 @@ class DraftParser(Base):
                     l = len(text)
                     text = text.strip()
                     strip_count = l - len(text)
-                    text = normalize_space(text)
+                    text = normalize_http(normalize_space(text))
                     expect = expect[tl:].lstrip()
                 else:
                     fail(line, expect, text)
@@ -1997,7 +2000,7 @@ class DraftParser(Base):
         #
         blank_line, p = self.get_line()
         if not blank_line.txt.strip() == '':
-            self.warn(blank_line.num, "Unexpected text; expected a blank line after section title, found '%s'" % (blank_line, ))
+            self.warn(blank_line.num, "Unexpected text: expected a blank line after section title, found '%s'" % (blank_line, ))
             self.push_line(line, p)
         while True:
             paragraph = self.get_block(part)
