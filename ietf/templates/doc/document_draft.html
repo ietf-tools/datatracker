@@ -254,7 +254,7 @@
             {% if urls %}
 	    <table class="col-md-12 col-sm-12 col-xs-12">
 	      <tbody>
-		{% for url in urls %}
+		{% for url in urls|dictsort:"desc" %}
 		  <tr><td> - <a href="{{ url.url }}">{% firstof url.desc url.tag.name %}</a></td></tr>
 		{% endfor %}
 	      </tbody>
