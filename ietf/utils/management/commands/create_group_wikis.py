@@ -88,7 +88,7 @@ class Command(BaseCommand):
 
     # --- trac ---
 
-    def remove_demo_components(self, group, env):
+    def remove_demo_components(self, env):
         for component in Component.select(env):
             if component.name.startswith('component'):
                 component.delete()
@@ -98,10 +98,10 @@ class Command(BaseCommand):
             if milestone.name.startswith('milestone'):
                 milestone.delete()
 
-    def symlink_to_master_assets(self, group, env):
+    def symlink_to_master_assets(self, path, env):
         master_dir = settings.TRAC_MASTER_DIR
         master_htdocs = os.path.join(master_dir, "htdocs")
-        group_htdocs = os.path.join(group.trac_dir, "htdocs")
+        group_htdocs = os.path.join(path, "htdocs")
         self.note("  Symlinking %s to %s" % (master_htdocs, group_htdocs))
         os.removedirs(group_htdocs)
         os.symlink(master_htdocs, group_htdocs)
@@ -149,7 +149,48 @@ class Command(BaseCommand):
         else:
             self.log("Trac environment '%s' does not have any repository" % env)
 
-    def create_trac(self, group):
+    def create_adhoc_trac(self, name, path):
+        if not os.path.exists(os.path.dirname(path)):
+            msg = "Intended to create '%s', but parent directory is missing" % path
+            self.log(msg)
+            return None, msg
+        options = copy.deepcopy(settings.TRAC_ENV_OPTIONS)
+        # Interpolate group field names to values in the option settings:
+        
+        remove = []
+        for i in range(len(options)):
+            sect, key, val = options[i]
+            if key in ['repository_type', 'repository_dir', ]:
+                remove = [i] + remove
+            else:
+                val = val.format(name=name)
+                options[i] = sect, key, val
+        for i in remove:
+            del options[i]
+
+        # Try to creat ethe environment, remove unwanted defaults, and add
+        # custom pages and settings.
+        if self.dummy_run:
+            self.note("Would create Trac for '%s' at %s" % (name, path))
+            return None, "Dummy run, no trac created"
+        else:
+            try:
+                self.note("Creating Trac for '%s' at %s" % (name, path))
+                env = Environment(path, create=True, options=options)
+                self.remove_demo_components(env)
+                self.remove_demo_milestones(group, env)
+                # Use custom assets (if any) from the master setup
+                self.symlink_to_master_assets(path, env)
+                self.add_custom_wiki_pages(group, env)
+                self.add_default_wiki_pages(group, env)
+                # Permissions will be handled during permission update later.
+                return env, ""
+            except TracError as e:
+                msg = "While creating Trac instance for %s: %s" % (name, e)
+                self.log(msg)
+                return None, msg
+
+    def create_group_trac(self, group):
         if not os.path.exists(os.path.dirname(group.trac_dir)):
             msg = "Intended to create '%s', but parent directory is missing" % group.trac_dir
             self.log(msg)
@@ -169,12 +210,12 @@ class Command(BaseCommand):
             try:
                 self.note("Creating Trac for group '%s' at %s" % (group.acronym, group.trac_dir))
                 env = Environment(group.trac_dir, create=True, options=options)
-                self.remove_demo_components(group, env)
+                self.remove_demo_components(env)
                 self.remove_demo_milestones(group, env)
                 self.maybe_add_group_url(group, 'Wiki', settings.TRAC_WIKI_URL_PATTERN % group.acronym)
                 self.maybe_add_group_url(group, 'Issue tracker', settings.TRAC_ISSUE_URL_PATTERN % group.acronym)
                 # Use custom assets (if any) from the master setup
-                self.symlink_to_master_assets(group, env)
+                self.symlink_to_master_assets(group.trac_dir, env)
                 if group.type_id in ['wg', 'rg', 'ag', ]:
                     self.add_wg_draft_states(group, env)
                 self.add_custom_wiki_pages(group, env)
@@ -189,11 +230,11 @@ class Command(BaseCommand):
                 self.log(msg)
                 return None, msg
 
-    def update_trac_permissions(self, group, env):
+    def update_trac_permissions(self, name, group, env):
         if self.dummy_run:
-            self.note("Would update Trac permissions for group '%s'" % group.acronym)
+            self.note("Would update Trac permissions for '%s'" % name)
         else:
-            self.note("Updating Trac permissions for group '%s'" % group.acronym)
+            self.note("Updating Trac permissions for '%s'" % name)
             mgr = PermissionSystem(env)
             permission_list = mgr.get_all_permissions()
             permission_list = [ (u,a) for (u,a) in permission_list if not u in ['anonymous', 'authenticated']]
@@ -210,8 +251,11 @@ class Command(BaseCommand):
                 users.append(user)
                 if not user in permissions:
                     try:
-                        mgr.grant_permission(user, 'TRAC_ADMIN')
                         self.note("  Granting admin permission for %s" % user)
+                        mgr.grant_permission(user, 'TRAC_ADMIN')
+                        if not user in permissions:
+                            permissions[user] = []
+                        permissions[user].append('TRAC_ADMIN')
                     except TracError as e:
                         self.log("While adding admin permission for %s: %s" (user, e))
             for user in permissions:
@@ -314,7 +358,7 @@ class Command(BaseCommand):
                         self.errors.append(err)
 
                 if not os.path.exists(group.trac_dir):
-                    trac_env, msg = self.create_trac(group)
+                    trac_env, msg = self.create_group_trac(group)
                     if not trac_env: 
                         self.errors.append(msg)
                 else:
@@ -323,13 +367,36 @@ class Command(BaseCommand):
                 if not trac_env and not self.dummy_run:
                     continue
 
-                self.update_trac_permissions(group, trac_env)
+                self.update_trac_permissions(group.acronym, group, trac_env)
                 self.update_trac_components(group, trac_env)
 
             except Exception as e:
                 self.errors.append(e)
                 self.log("While processing %s: %s" % (group.acronym, e))
                 raise
+
+        for acronym, name, path in settings.TRAC_CREATE_ADHOC_WIKIS:
+            try:
+                self.note("Processing wiki '%s'" % name)
+
+                if not os.path.exists(path):
+                    trac_env, msg = self.create_adhoc_trac(name, path)
+                    if not trac_env: 
+                        self.errors.append(msg)
+                else:
+                    trac_env = Environment(path)
+
+                if not trac_env and not self.dummy_run:
+                    continue
+
+                group = Group.objects.get(acronym=acronym)
+                self.update_trac_permissions(name, group, trac_env)
+
+            except Exception as e:
+                self.errors.append(e)
+                self.log("While processing %s: %s" % (name, e))
+                raise
+
 
         if self.errors:
             raise CommandError("There were %s failures in WG Trac creation:\n   %s" % (len(self.errors), "\n   ".join(self.errors)))
