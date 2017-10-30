@@ -25,6 +25,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('meeting', '0057_meeting_days'),
+        ('submit', '0021_submissioncheck_time_default'), # for schema vs. data migration ordering within release
     ]
 
     operations = [
