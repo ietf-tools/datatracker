@@ -1,3 +1,72 @@
+ietfdb (6.64.0) ietf; urgency=medium
+
+  **Yang resource links on yang draft pages**
+
+  Drafts containing yang modules now get links pointing to the yang impact
+  analysis, and to module metadata for each module.  Support has been added
+  for ad-hoc trac instances, permitting automatic maintenance of role-based
+  admin rights also for other trac instances than the WG, RG, and directorate
+  wikis.  The draft submission automation API description is now referenced
+  from the draft submission upload page.  'Additional URLs' for drafts are now
+  sorted, rather than presented in random order.  Links pointing from draft
+  review pages to mailing lists, for the full review text, are now validated
+  in order to avoid presenting links to unavailable resources.  An issue with
+  parameter expansion in a nomcom template has been fixed, as have various
+  other issues.
+
+  Details from the commit log:
+
+  * Added draft URLs pointing to Yang resources (impact analysis and model 
+    metadata) for submissions containing Yang modules.
+
+  * Changed the submission checkers to return more information in the 
+    checker details json blob; in particular added information about individual 
+    extracted code modules associated with a draft.  This is used by the yang 
+    valididty checker to return a list of extracted yang modules.
+
+  * Changed the SubmissionCheck.time field to use a default now value, 
+    instead of auto_now, to permit migrations without changing the timestamps.
+
+  * Added some more debugging output for occasional author extraction 
+    failures during test.  See also [14226].
+
+  * Added support for ad-hoc trac instances, with arbitrary names and 
+    filesystem paths, but still bound to a particular group's roles for 
+    management of trac admin rights.
+
+  * Display document urls in alphabetical order
+
+  * Permit document urls to be up to 512 bytes, rather than the default 200
+
+  * New settings for adhoc wikis and yang document urls
+
+  * Added a mention of the submission automation API on the submission 
+    upload page.
+
+  * Added cleaning of review_url from the review completion form, to make 
+    sure it's retrievable.
+
+  * Added some debugging code to help identify random test failures
+
+  * Added a new field Meeting.days to capture the length of a meeting.  
+    This is necessary now that we have previous meetings officially starting 
+    Sunday, lasting to Friday, and future meetings starting Saturday, Lasting 
+    to Friday.  We use Meeting.days to calculate Meeting.end_date().  
+    Meeting.get_ietf_monday() and two cut_off() methods have also been updated 
+    to be instance methods instead of class methods, and to not assume that a 
+    meeting starts on Sunday.
+
+  * Updated coverage data
+
+  * Expanded one of the nomcom tests a bit, and updated a fixture to match 
+    the current /nomcom/default/email/feedback_receipt.txt template.
+
+  * Don't blow up when checking if the logged-in user is a document author, 
+    if the user don't have a person record.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  30 Oct 2017 04:30:27 -0700
+
+
 ietfdb (6.63.2) ietf; urgency=medium
 
   This is a bugfix release which also brings a small improvement of the
