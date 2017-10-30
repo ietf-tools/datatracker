@@ -121,7 +121,7 @@ class Command(BaseCommand):
         page.text = text
         page.save(author="(System)", comment="Initial page import")
 
-    def add_default_wiki_pages(self, group, env):
+    def add_default_wiki_pages(self, env):
         dir = pkg_resources.resource_filename('trac.wiki', 'default-pages')
         #WikiAdmin(env).load_pages(dir)
         with env.db_transaction:
@@ -178,11 +178,11 @@ class Command(BaseCommand):
                 self.note("Creating Trac for '%s' at %s" % (name, path))
                 env = Environment(path, create=True, options=options)
                 self.remove_demo_components(env)
-                self.remove_demo_milestones(group, env)
+                self.remove_demo_milestones(env)
                 # Use custom assets (if any) from the master setup
                 self.symlink_to_master_assets(path, env)
-                self.add_custom_wiki_pages(group, env)
-                self.add_default_wiki_pages(group, env)
+                self.add_custom_wiki_pages(name, env)
+                self.add_default_wiki_pages(env)
                 # Permissions will be handled during permission update later.
                 return env, ""
             except TracError as e:
@@ -219,7 +219,7 @@ class Command(BaseCommand):
                 if group.type_id in ['wg', 'rg', 'ag', ]:
                     self.add_wg_draft_states(group, env)
                 self.add_custom_wiki_pages(group, env)
-                self.add_default_wiki_pages(group, env)
+                self.add_default_wiki_pages(env)
                 self.sync_default_repository(group, env)
                 # Components (i.e., drafts) will be handled during components
                 # update later
