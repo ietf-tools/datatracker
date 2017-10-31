@@ -676,8 +676,9 @@ def document_stats(request, stats_type=None):
                     country_name = aliases.get(country, country)
                     c = countries.get(country_name)
 
-                    if country_name:
-                        for year in doc_years.get(doc):
+                    years = doc_years.get(doc)
+                    if country_name and years:
+                        for year in years:
                             if years_from <= year <= years_to:
                                 bins[(year, country_name)].add(name)
 
