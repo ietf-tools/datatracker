@@ -156,7 +156,7 @@ def current_materials(request):
     else:
         raise Http404('No such meeting')
 
-@cache_page(5 * 60)
+@cache_page(1 * 60)
 def materials_document(request, document, num=None, ):
     if num is None:
         num = get_meeting(num).number
