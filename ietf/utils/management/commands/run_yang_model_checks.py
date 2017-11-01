@@ -27,7 +27,7 @@ class Command(BaseCommand):
     help = dedent(__doc__).strip()
             
     def add_arguments(self, parser):
-        parser.add_argument('filenames', nargs="*")
+        parser.add_argument('draftnames', nargs="*", help="drafts to check, or none to check all active yang drafts")
         parser.add_argument('--clean',
             action='store_true', dest='clean', default=False,
             help='Remove the current directory content before writing new models.')
@@ -65,7 +65,7 @@ class Command(BaseCommand):
         """
 
         self.verbosity = int(options.get('verbosity'))
-        filenames = options.get('filenames')
+        filenames = options.get('draftnames')
 
         active_state = State.objects.get(type="draft", slug="active")
 
