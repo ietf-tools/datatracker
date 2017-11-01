@@ -67,7 +67,7 @@ ietfdb (6.64.0) ietf; urgency=medium
     the current /nomcom/default/email/feedback_receipt.txt template.
 
   * Don't blow up when checking if the logged-in user is a document author, 
-    if the user don't have a person record.
+    if the user doesn't have a person record.
 
  -- Henrik Levkowetz <henrik@levkowetz.com>  01 Nov 2017 13:36:31 +0000
 
