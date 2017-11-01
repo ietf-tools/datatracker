@@ -226,7 +226,8 @@ class DraftYangChecker(object):
                     cmd_template = settings.SUBMIT_YANGLINT_COMMAND
                     command = [ w for w in cmd_template.split() if not '=' in w ][0]
                     cmd_version = VersionInfo.objects.get(command=command).version
-                    cmd = cmd_template.format(model=path, rfclib=settings.SUBMIT_YANG_RFC_MODEL_DIR, draftlib=settings.SUBMIT_YANG_DRAFT_MODEL_DIR, tmplib=workdir)
+                    cmd = cmd_template.format(model=path, rfclib=settings.SUBMIT_YANG_RFC_MODEL_DIR, tmplib=workdir,
+                        draftlib=settings.SUBMIT_YANG_DRAFT_MODEL_DIR, invallib=settings.SUBMIT_YANG_INVAL_MODEL_DIR, )
                     code, out, err = pipe(cmd)
                     if code > 0 or len(err.strip()) > 0:
                         error_lines = err.splitlines()
