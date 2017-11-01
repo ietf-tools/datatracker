@@ -69,7 +69,7 @@ ietfdb (6.64.0) ietf; urgency=medium
   * Don't blow up when checking if the logged-in user is a document author, 
     if the user don't have a person record.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  30 Oct 2017 04:30:27 -0700
+ -- Henrik Levkowetz <henrik@levkowetz.com>  01 Nov 2017 13:36:31 +0000
 
 
 ietfdb (6.63.2) ietf; urgency=medium
