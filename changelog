@@ -16,6 +16,11 @@ ietfdb (6.64.0) ietf; urgency=medium
 
   Details from the commit log:
 
+  * Tweaked a page cache time to make newly uploaded session agendas visible
+    with less delay.
+
+  * Added a guard against iterating over None in stats.views.document_stats()
+
   * Added draft URLs pointing to Yang resources (impact analysis and model 
     metadata) for submissions containing Yang modules.
 
