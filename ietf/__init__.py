@@ -7,7 +7,7 @@ import checks                           # pyflakes:ignore
 __version__ = "6.63.3.dev0"
 
 # set this to ".p1", ".p2", etc. after patching
-__patch__   = ""
+__patch__   = ".p2"
 
 __date__    = "$Date$"
 

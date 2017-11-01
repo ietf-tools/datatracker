@@ -453,7 +453,7 @@ def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""
         if ext == '.html':
             return HttpResponseRedirect( 'https://www.ietf.org/proceedings/%s' % num )
         else:
-            raise Http404(No such meeting")
+            raise Http404("No such meeting")
 
     if name is None:
         schedule = get_schedule(meeting, name)
