@@ -1,3 +1,29 @@
+ietfdb (6.64.1) ietf; urgency=medium
+
+  This is a bugfix release.  Here's an extract from the commit log:
+
+  * Added missing in-loop variable initializations in the yang checker 
+    code.  Fixes issue #2397.
+
+  * Improved the help message for the run_yang_model_checks management 
+    command.
+
+  * Included the path for draft moduled found invalid in the module paths 
+    when running yanglint, in order to avoid some unhelpful model not found 
+    messages.  Fixes issue #2398.
+
+  * Removed case sensitivity in the submission API when comparing the 
+    submitter email address with the email addresses found in the draft.  Fixes 
+    issue #2396.
+
+  * Added a data migration to upgrade the submission checker json details 
+    to a consistent format.
+
+  * Typo and initialization value fixes.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  01 Nov 2017 12:02:33 -0700
+
+
 ietfdb (6.64.0) ietf; urgency=medium
 
   **Yang resource links on yang draft pages**
