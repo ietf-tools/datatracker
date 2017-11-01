@@ -445,12 +445,15 @@ def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""
     
     assert num is None or num.isdigit()
 
+    current = get_ietf_meeting()
     meeting = get_ietf_meeting(num)
+    if int(meeting.number) > int(current.number):
+        raise Http404("Meeting too far in the future")
     if not meeting or (meeting.number.isdigit() and int(meeting.number) <= 64 and not meeting.agenda.assignments.exists()):
         if ext == '.html':
             return HttpResponseRedirect( 'https://www.ietf.org/proceedings/%s' % num )
         else:
-            raise Http404
+            raise Http404(No such meeting")
 
     if name is None:
         schedule = get_schedule(meeting, name)
