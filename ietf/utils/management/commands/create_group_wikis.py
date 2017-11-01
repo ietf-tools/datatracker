@@ -271,7 +271,7 @@ class Command(BaseCommand):
         if self.dummy_run:
             self.note("Would update Trac components for group '%s'" % group.acronym)
         else:
-            self.note("Updating Trac componets for group '%s'" % group.acronym)
+            self.note("Updating Trac components for group '%s'" % group.acronym)
             components = Component.select(env)
             comp_names = [ c.name for c in components ]
             group_docs = group.document_set.filter(states__slug='active', type_id='draft').distinct()
