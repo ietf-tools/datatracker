@@ -93,7 +93,7 @@ class Command(BaseCommand):
             if component.name.startswith('component'):
                 component.delete()
 
-    def remove_demo_milestones(self, group, env):
+    def remove_demo_milestones(self, env):
         for milestone in Milestone.select(env):
             if milestone.name.startswith('milestone'):
                 milestone.delete()
@@ -211,7 +211,7 @@ class Command(BaseCommand):
                 self.note("Creating Trac for group '%s' at %s" % (group.acronym, group.trac_dir))
                 env = Environment(group.trac_dir, create=True, options=options)
                 self.remove_demo_components(env)
-                self.remove_demo_milestones(group, env)
+                self.remove_demo_milestones(env)
                 self.maybe_add_group_url(group, 'Wiki', settings.TRAC_WIKI_URL_PATTERN % group.acronym)
                 self.maybe_add_group_url(group, 'Issue tracker', settings.TRAC_ISSUE_URL_PATTERN % group.acronym)
                 # Use custom assets (if any) from the master setup
