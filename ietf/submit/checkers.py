@@ -184,6 +184,10 @@ class DraftYangChecker(object):
         for model in model_list:
             path = os.path.join(workdir, model)
             message = ""
+            passed = 0
+            errors = 0
+            warnings = 0
+            items = []
             modpath = ':'.join([
                                 workdir,
                                 settings.SUBMIT_YANG_RFC_MODEL_DIR,
@@ -199,7 +203,6 @@ class DraftYangChecker(object):
                 cmd_version = VersionInfo.objects.get(command=command).version
                 cmd = cmd_template.format(libs=modpath, model=path)
                 code, out, err = pipe(cmd)
-                items = []
                 if code > 0 or len(err.strip()) > 0 :
                     error_lines = err.splitlines()
                     for line in error_lines:
@@ -263,6 +266,7 @@ class DraftYangChecker(object):
                 "errors":  errors,
                 "items": items,
             })
+
 
         shutil.rmtree(workdir)
 
