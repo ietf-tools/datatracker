@@ -184,7 +184,7 @@ class DraftYangChecker(object):
         for model in model_list:
             path = os.path.join(workdir, model)
             message = ""
-            passed = 0
+            passed = True
             errors = 0
             warnings = 0
             items = []
