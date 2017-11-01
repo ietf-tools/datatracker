@@ -115,7 +115,7 @@ def api_submit(request):
                 if errors:
                     raise ValidationError(errors)
 
-                if not user.username in [ a['email'] for a in authors ]:
+                if not user.username.lower() in [ a['email'].lower() for a in authors ]:
                     raise ValidationError('Submitter %s is not one of the document authors' % user.username)
 
                 submission.submitter = user.person.formatted_email()
