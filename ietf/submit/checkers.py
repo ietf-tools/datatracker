@@ -144,12 +144,12 @@ class DraftYangChecker(object):
                 sys.stdout = StringIO.StringIO()
                 sys.stderr = StringIO.StringIO()
                 extractor.extract_yang_model(file.readlines())
+                model_list = extractor.get_extracted_models(False, True)
                 out = sys.stdout.getvalue()
                 err = sys.stderr.getvalue()
                 sys.stdout = saved_stdout
                 sys.stderr = saved_stderr
                 # signature change in xym:
-                model_list = extractor.get_extracted_models(False, True)
             except Exception as exc:
                 msg = "Exception when running xym on %s: %s" % (name, exc)
                 log(msg)
