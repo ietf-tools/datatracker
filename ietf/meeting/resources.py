@@ -21,10 +21,11 @@ class MeetingResource(ModelResource):
         queryset = Meeting.objects.all()
         serializer = api.Serializer()
         #resource_name = 'meeting'
+        ordering = ['date', ]
         filtering = { 
             "id": ALL,
             "number": ALL,
-            "date": ALL,
+            "date": ALL_WITH_RELATIONS,
             "city": ALL,
             "country": ALL,
             "time_zone": ALL,
