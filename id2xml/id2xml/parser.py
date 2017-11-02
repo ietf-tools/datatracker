@@ -18,7 +18,7 @@ import inspect
 import textwrap
 from xml2rfc.writers.base import BaseRfcWriter
 from xml2rfc.writers.v2v3 import V2v3XmlWriter
-from xml2rfc.parser import XmlRfc, AnnotatedElement
+from xml2rfc.parser import XmlRfc
 from collections import deque
 from lxml.etree import Element, ElementTree, ProcessingInstruction, CDATA, Entity
 
@@ -2324,7 +2324,7 @@ class DraftParser(Base):
             style = 'headers'
         else:
             horz = [ b for b in borders if '-' in b ]
-            vert = [ b for b in borders if '|' in b ]
+            # vert = [ b for b in borders if '|' in b ]
             if len(horz) > 3:
                 style = 'all'
             else:
