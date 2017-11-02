@@ -1338,7 +1338,7 @@ class DraftParser(Base):
             if line.txt in submission_types.keys():
                 res.stream = submission_types[line.txt]
                 if self.is_draft and res.stream != None:
-                    self.warn(line.num, "The input document is named '%s' but has an RFC stream type:\n  '%'" % (self.name, line.txt))
+                    self.warn(line.num, "The input document is named '%s' but has an RFC stream type:\n  '%s'" % (self.name, line.txt))
             elif self.is_draft:
                 # check all the possible top left keywords:
                 for k in entries:
@@ -2289,6 +2289,7 @@ class DraftParser(Base):
         first_line = paragraph[0]
         # figure out the table characteristics
         borders = table_borders(paragraph)
+        self.dpprint('borders')
         # styles:
         #   none:
         #       Foo  Bar  Baz
@@ -2322,8 +2323,13 @@ class DraftParser(Base):
         if   borders[0][0] == '-':
             style = 'headers'
         else:
-            style = 'full'
-        ## Ignore 'none' and 'all' for now
+            horz = [ b for b in borders if '-' in b ]
+            vert = [ b for b in borders if '|' in b ]
+            if len(horz) > 3:
+                style = 'all'
+            else:
+                style = 'full'
+        ## Ignore 'none' for now
         # find a horizontal border
         for border in borders:
             if '-' in border:
@@ -2380,16 +2386,35 @@ class DraftParser(Base):
             ttcol = self.element('ttcol', h)
             texttable.append(ttcol)
         # collect table cells and generate <c>
-        while paragraph:
-            line = paragraph.pop(0)
-            if border in line.txt:
-                continue
-            txt = line.txt.replace('|', ' ')
-            columns = colsplit(colpos, txt)
-            if any( t for t in columns ):
-                for t in columns:
-                    c = self.element('c', t)
-                    texttable.append(c)
+        if style == 'all':
+            cols = len(columns)
+            columns = [ [] for i in range(cols) ]
+            while paragraph:
+                line = paragraph.pop(0)
+                if border in line.txt:
+                    # emit cells, if any
+                    if columns:
+                        for x in columns:
+                            c = self.element('c', ' '.join(x))
+                            texttable.append(c)
+                    columns = [ [] for i in range(cols) ]
+                    continue
+                txt = line.txt.replace('|', ' ')
+                chunks = colsplit(colpos, txt)
+                if any( t for t in chunks ):
+                    for i, t in enumerate(chunks):
+                        columns[i].append(t)
+        else:
+            while paragraph:
+                line = paragraph.pop(0)
+                if border in line.txt:
+                    continue
+                txt = line.txt.replace('|', ' ')
+                columns = colsplit(colpos, txt)
+                if any( t for t in columns ):
+                    for t in columns:
+                        c = self.element('c', t)
+                        texttable.append(c)
         if block:
             text = para2text(block.pop())
             postamble = self.element('postamble', text)
