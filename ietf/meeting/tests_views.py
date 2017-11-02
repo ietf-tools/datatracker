@@ -119,7 +119,9 @@ class MeetingTests(TestCase):
 
         # future meeting, no agenda
         r = self.client.get(urlreverse("ietf.meeting.views.agenda", kwargs=dict(num=future_meeting.number)))
-        self.assertEqual(r.status_code, 404)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, u"There is no agenda available yet.")
+        self.assertTemplateUsed(r, 'meeting/no-agenda.html')
 
         # text
         # the rest of the results don't have as nicely formatted times
@@ -141,7 +143,9 @@ class MeetingTests(TestCase):
 
         # future meeting, no agenda
         r = self.client.get(urlreverse("ietf.meeting.views.agenda", kwargs=dict(num=future_meeting.number, ext=".txt")))
-        self.assertEqual(r.status_code, 404)
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, "There is no agenda available yet.")
+        self.assertTemplateUsed(r, 'meeting/no-agenda.txt')
 
         # CSV
         r = self.client.get(urlreverse("ietf.meeting.views.agenda", kwargs=dict(num=meeting.number, ext=".csv")))
