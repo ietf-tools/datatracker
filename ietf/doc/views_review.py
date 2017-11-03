@@ -423,7 +423,7 @@ class CompleteReviewForm(forms.Form):
         if url:
             r = requests.get(url)
             if r.status_code != 200:
-                raise forms.ValidationError("Trying to retrieve the URL resulted in status code %s: %s" % (r.status_code, r.text[:64]))
+                raise forms.ValidationError("Trying to retrieve the URL resulted in status code %s: %s.  Please provide an URL that can be retrieved." % (r.status_code, r.reason))
         return url
 
     def clean(self):
