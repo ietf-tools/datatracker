@@ -33,11 +33,11 @@ class RestApi(ResourceTestCaseMixin, TestCase):
 
     def test_json_api_explore(self):
         make_test_data()
-        apitop = reverse('ietf.api.top_level')
+        apitop = reverse('ietf.api.views.top_level')
         self.list_recursively('%s/'%apitop, format='json')
 
     def test_xml_api_explore(self):
-        apitop = reverse('ietf.api.top_level')
+        apitop = reverse('ietf.api.views.top_level')
         self.assertValidXMLResponse(self.api_client.get('%s/doc/'%apitop, format='xml'))
 
     def test_json_doc_document(self):
@@ -47,7 +47,7 @@ class RestApi(ResourceTestCaseMixin, TestCase):
         than 100 documents in the test-data (the current count is 10)
         """
         make_test_data()
-        apitop = reverse('ietf.api.top_level')
+        apitop = reverse('ietf.api.views.top_level')
         r = self.api_client.get('%s/doc/document/'%apitop, format='json', limit=100)
         doclist = self.deserialize(r)["objects"]
         docs = dict( (doc["name"], doc) for doc in doclist )
@@ -67,7 +67,7 @@ class RestApi(ResourceTestCaseMixin, TestCase):
         of relationships give URLs which are handled without raising exceptions.
         """
         make_test_data()
-        apitop = reverse('ietf.api.top_level')
+        apitop = reverse('ietf.api.views.top_level')
         r = self.api_client.get('%s/doc/document/'%apitop, format='json')
         doclist = self.deserialize(r)["objects"]
         for doc in doclist:
