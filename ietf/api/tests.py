@@ -39,6 +39,11 @@ class CustomApiTestCase(TestCase):
         r = client.post(url)
         self.assertEqual(r.status_code, 201)
 
+    def test_api_help_page(self):
+        url = urlreverse('ietf.api.views.api_help')
+        r = self.client.get(url)
+        self.assertContains(r, 'The datatracker API', status_code=200)
+
 class TastypieApiTestCase(ResourceTestCaseMixin, TestCase):
     def __init__(self, *args, **kwargs):
         self.apps = {}
