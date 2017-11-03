@@ -4,9 +4,7 @@ import datetime
 from urllib import urlencode
 
 from django.conf import settings
-from django.http import HttpResponse
 from django.core.exceptions import ObjectDoesNotExist
-from django.urls import reverse
 from django.utils.encoding import force_text
 
 import debug                            # pyflakes:ignore
@@ -16,12 +14,8 @@ import tastypie.resources
 from tastypie.api import Api
 from tastypie.bundle import Bundle
 from tastypie.serializers import Serializer as BaseSerializer
-from tastypie.exceptions import BadRequest, ApiFieldError
-from tastypie.utils.mime import determine_format, build_content_type
-from tastypie.utils import is_valid_jsonp_callback_value
+from tastypie.exceptions import ApiFieldError
 from tastypie.fields import ApiField
-
-import debug                            # pyflakes:ignore
 
 _api_list = []
 
@@ -98,32 +92,6 @@ for _app in settings.INSTALLED_APPS:
                 _api = Api(api_name=_name)
                 _module_dict[_name] = _api
                 _api_list.append((_name, _api))
-
-def top_level(request):
-    available_resources = {}
-
-    apitop = reverse('ietf.api.top_level')
-
-    for name in sorted([ name for name, api in _api_list if len(api._registry) > 0 ]):
-        available_resources[name] = {
-            'list_endpoint': '%s/%s/' % (apitop, name),
-        }
-
-    serializer = Serializer()
-    desired_format = determine_format(request, serializer)
-
-    options = {}
-
-    if 'text/javascript' in desired_format:
-        callback = request.GET.get('callback', 'callback')
-
-        if not is_valid_jsonp_callback_value(callback):
-            raise BadRequest('JSONP callback name is invalid.')
-
-        options['callback'] = callback
-
-    serialized = serializer.serialize(available_resources, desired_format, options)
-    return HttpResponse(content=serialized, content_type=build_content_type(desired_format))
 
 def autodiscover():
     """

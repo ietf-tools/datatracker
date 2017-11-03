@@ -1,0 +1,193 @@
+{# Copyright The IETF Trust 2007, All Rights Reserved #}
+{% extends "base.html" %}
+{% load staticfiles %}
+{% block title %}API Notes{% endblock %}
+{% block content %}
+
+  <h2>Datatracker API Notes</h2>
+  <div class="col-md-1"></div>
+  <div class="col-md-11 bio-text">
+    <h3>Framework</h3>
+    <p>
+      The datatracker API uses <a href="https://django-tastypie.readthedocs.org/">tastypie</a>
+      to generate an API which mirrors the Django ORM (Object Relational Mapping)
+      for the database.  Each Django model class maps down to the SQL database
+      tables and up to the API.  The Django models classes are defined in the
+      models.py files of the datatracker:
+    </p>
+
+    <p>
+      <a href="http://svn.tools.ietf.org/svn/tools/ietfdb/trunk/ietf/doc/models.py">https://svn.tools.ietf.org/svn/tools/ietfdb/trunk/ietf/doc/models.py</a>
+      <br>
+      <a href="http://svn.tools.ietf.org/svn/tools/ietfdb/trunk/ietf/group/models.py">https://svn.tools.ietf.org/svn/tools/ietfdb/trunk/ietf/group/models.py</a>
+      <br>
+      <a href="http://svn.tools.ietf.org/svn/tools/ietfdb/trunk/ietf/iesg/models.py">http://svn.tools.ietf.org/svn/tools/ietfdb/trunk/ietf/iesg/models.py</a>
+      <br>
+      &hellip;
+
+    </p>
+    <p>
+
+      The API top endpoint is at <a href="https://datatracker.ietf.org/api/v1/">https://datatracker.ietf.org/api/v1/</a>.  The top
+      endpoint lists inferior endpoints, and thus permits some autodiscovery,
+      but there's really no substitute for looking at the actual ORM model classes.
+      Comparing a class in models.py with the equivalent endpoint may give
+      some clue (note that in the case of Group, it's a subclass of GroupInfo):
+
+    </p>
+    <p>
+
+      <a href="https://datatracker.ietf.org/api/v1/group/group/">https://datatracker.ietf.org/api/v1/group/group/</a>
+      <br>
+      <a href="https://trac.tools.ietf.org/tools/ietfdb/browser/trunk/ietf/group/models.py">https://trac.tools.ietf.org/tools/ietfdb/browser/trunk/ietf/group/models.py</a>
+
+    </p>
+    <p>
+
+      Data is currently provided in JSON and XML format.  Adding new formats is
+      fairly easy, if it should be found desriable.
+
+    </p>
+
+    <h3>Documents</h3>
+
+    <p>
+
+      Documents are listed at
+      <a href="https://datatracker.ietf.org/api/v1/doc/document/">/api/v1/doc/document/</a>.
+
+    </p>
+    <p>
+
+      In general, individual database objects are represented in the api with a path
+      composed of the model collection, the object name, and the object key.  Most
+      objects have simple numerical keys, but documents have the document name as
+      key.  Take draft-ietf-eppext-keyrelay.  Documents have a model 'Document' which
+      is described in the 'doc' models.py file.  Assembling the path components
+      'doc', 'document' (lowercase!) and 'draft-ietf-eppext-keyrelay', we get the
+      URL:
+
+    </p>
+    <p>
+
+
+        <a href="https://datatracker.ietf.org/api/v1/doc/document/draft-ietf-eppext-keyrelay/">
+	  https://datatracker.ietf.org/api/v1/doc/document/draft-ietf-eppext-keyrelay/
+	</a>
+
+    </p>
+    <p>
+
+      If you instead do a search for this document, you will get a machine-readable
+      search result, which is composed of some meta-information about the search,
+      and a list with one element:
+
+    </p>
+    <p>
+
+        <a href="https://datatracker.ietf.org/api/v1/doc/document/?name=draft-ietf-eppext-keyrelay">
+	  api/v1/doc/document/?name=draft-ietf-eppext-keyrelay
+	</a>
+
+    </p>
+    <p>
+
+      To search for documents based on state, you need to know that documents have
+      multiple orthogonal states:
+
+    </p>
+    <ul>
+      <li>
+	If a document has an rfc-editor state, you can select for it by asking for e.g.
+	<a href="https://datatracker.ietf.org/api/v1/doc/document/?limit=0&name__contains=-v6ops-&states__type__slug__in=draft-rfceditor">
+	   v6ops documents which match 'states__type__slug__in=draft-rfceditor'
+	 </a>
+      </li>
+
+      <li>
+	If a document has an IESG state, you can select for it by asking for e.g.
+	<a href="https://datatracker.ietf.org/api/v1/doc/document/?name__contains=-v6ops&states__type__slug__in=draft-iesg">
+	  v6ops documents which match 'states__type__slug__in=draft-iesg'
+	</a>
+      </li>
+
+      <li>
+	If a document has a WG state, you can select for it by asking for
+	documents which match 'states__type__slug__in=draft-stream-ietf'
+	(but without additional filters, that's going to be a lot of documents)
+      </li>
+
+      <li>
+	States which match 'states__type__slug__in=draft' describe the basic
+	Active/Expired/Dead whatever state of the draft.
+      </li>
+    </ul>
+
+    <p>
+      You could use this in at least two alternative ways:
+    </p>
+
+    <p>
+      You could either fetch and remember the different state groups of interest to you
+      with queries like
+
+      <pre>
+      $ curl 'https://datatracker.ietf.org/api/v1/doc/state/?format=json&limit=0&type__slug__in=draft-rfceditor'
+      $ curl 'https://datatracker.ietf.org/api/v1/doc/state/?format=json&limit=0&type__slug__in=draft-iesg'
+      $ curl 'https://datatracker.ietf.org/api/v1/doc/state/?format=json&limit=0&type__slug__in=draft-stream-ietf'
+      </pre>
+    </p>
+
+    <p>
+      and then match the listed "resource_uri" of the results to the states listed for each
+      document when you ask for
+      <pre>
+      $ curl 'https://datatracker.ietf.org/api/v1/doc/document/?limit=0&name__contains=-v6ops-'
+      </pre>
+    </p>
+
+    <p>
+      Or alternatively you could do a series of queries asking for matches to the RFC Editor
+      state first, then the IESG state, then the Stream state, and exclude earlier hits:
+      <pre>
+      $ curl 'https://datatracker.ietf.org/api/v1/doc/document/?limit=0&name__contains=-v6ops-&states__type__slug__in=draft-rfceditor' ...
+      $ curl 'https://datatracker.ietf.org/api/v1/doc/document/?limit=0&name__contains=-v6ops-&states__type__slug__in=draft-iesg' ...
+    </pre>
+    </p>
+
+    <p>
+      etc.
+    </p>
+
+    <h3>API Keys</h3>
+
+    <p>
+
+      The datatracker does not use any form of API keys currently (03 Nov
+      2017), but may do so in the future.  If so, personal API keys will be
+      available from your <a href={% url 'ietf.ietfauth.views.profile'
+      %}>Account Profile</a> page when you are logged in, and document keys
+      will be visible to document authors on the document status page when
+      logged in.
+
+    </p>
+
+    <p>
+
+      When sending notifications to other APIs, the datatracker may sign
+      information with a <a href="https://tools.ietf.org/html/rfc7515">RFC
+      7515: JSON Web Signature (JWS)</a>, using a public/private keypair with
+      this public key:
+
+    </p>
+    <p><code>{{key.export_public}}</code></p>
+
+    <p>or alternatively:</p>
+
+    <pre>{{key.export_to_pem}}</pre>
+
+  </div>
+
+
+{% endblock %}
+
