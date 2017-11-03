@@ -65,13 +65,13 @@ class Command(BaseCommand):
         """
 
         self.verbosity = int(options.get('verbosity'))
-        filenames = options.get('draftnames')
+        drafts = options.get('draftnames')
 
         active_state = State.objects.get(type="draft", slug="active")
 
         checker = DraftYangChecker()
-        if filenames:
-            for name in filenames:
+        if drafts:
+            for name in drafts:
                 parts = name.rsplit('-',1)
                 if len(parts)==2 and len(parts[1])==2 and parts[1].isdigit():
                     name = parts[0]
