@@ -1,27 +1,41 @@
 ietfdb (6.64.1) ietf; urgency=medium
 
-  This is a bugfix release.  Here's an extract from the commit log:
+  This is a bugfix and data migration release.  Here's an extract from the
+  commit log:
 
-  * Added missing in-loop variable initializations in the yang checker 
-    code.  Fixes issue #2397.
+  * Added new checker runs for all active drafts with yang modules to the yang
+    link data migration, in order to make sure to have complete yang module
+    information available when running the draft yang url creation.  This
+    migration now adds links to yangcatalog.org for all active drafts with
+    yang modules.
 
-  * Improved the help message for the run_yang_model_checks management 
+  * Added a progress bar to the submission checker json field upgrade
+    migration, as well as the yang links data migration.
+
+  * Added capture of messages from xym's get_extracted_models().
+
+  * Made the REST API accept ordering and date before/after relations for the
+    meeting date field.
+
+  * Added missing in-loop variable initializations in the yang checker code.
+    Fixes issue #2397.
+
+  * Improved the help message for the run_yang_model_checks management
     command.
 
-  * Included the path for draft moduled found invalid in the module paths 
-    when running yanglint, in order to avoid some unhelpful model not found 
-    messages.  Fixes issue #2398.
+  * Included invalid yang modules in the yanglint module paths, in order to
+    avoid some unhelpful 'model not found' messages.  Fixes issue #2398.
 
-  * Removed case sensitivity in the submission API when comparing the 
-    submitter email address with the email addresses found in the draft.  Fixes 
-    issue #2396.
+  * Removed case sensitivity in the submission API when comparing the
+    submitter email address with the email addresses found in the draft.
+    Fixes issue #2396.
 
-  * Added a data migration to upgrade the submission checker json details 
-    to a consistent format.
+  * Added a data migration to upgrade the submission checker json details to a
+    consistent format.
 
   * Typo and initialization value fixes.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  01 Nov 2017 12:02:33 -0700
+ -- Henrik Levkowetz <henrik@levkowetz.com>  03 Nov 2017 11:03:03 +0000
 
 
 ietfdb (6.64.0) ietf; urgency=medium
