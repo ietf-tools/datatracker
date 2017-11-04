@@ -861,7 +861,7 @@ TRAC_CREATE_GROUP_STATES = ['bof', 'active', ]
 TRAC_CREATE_GROUP_ACRONYMS = ['iesg', 'iaoc', 'ietf', ]
 TRAC_CREATE_ADHOC_WIKIS = [
     # admin group, name, path
-    ('iesg', 'Meeting', '/a/www/www6s/trac/ietf/meeting'),
+    ('iesg', 'Meeting', TRAC_WIKI_DIR_PATTERN % "ietf/meeting"),
 ]
 
 SVN_PACKAGES = [
