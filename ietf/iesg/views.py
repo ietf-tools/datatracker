@@ -51,7 +51,7 @@ from django.shortcuts import render, redirect
 from django.contrib.sites.models import Site
 
 
-from ietf.doc.models import Document, TelechatDocEvent, LastCallDocEvent, ConsensusDocEvent, DocEvent, IESG_BALLOT_ACTIVE_STATES
+from ietf.doc.models import Document, State, TelechatDocEvent, LastCallDocEvent, ConsensusDocEvent, DocEvent, IESG_BALLOT_ACTIVE_STATES
 from ietf.doc.utils import update_telechat, augment_events_with_revision
 from ietf.group.models import GroupMilestone, Role
 from ietf.iesg.agenda import agenda_data, agenda_sections, fill_in_agenda_docs, get_agenda_date
@@ -178,6 +178,14 @@ def agenda_json(request, date=None):
                 s["docs"].append(docinfo)
 
     return HttpResponse(json.dumps(res, indent=2), content_type='text/plain')
+
+# def past_agendas(request):
+#     # This is not particularly useful with the current way of constructing
+#     # an agenda, because the code and data strucutes assume we're showing
+#     # the current agenda, and documents on later agendas won't show on
+#     # earlier agendas, even if they were actually on them.
+#     telechat_dates = TelechatDate.objects.filter(date__lt=datetime.date.today(), date__gte=datetime.date(2012,3,1))
+#     return render(request, 'iesg/past_agendas.html', {'telechat_dates': telechat_dates })
 
 def agenda(request, date=None):
     data = agenda_data(date)
@@ -379,6 +387,41 @@ def agenda_documents(request):
                 })
     request.session['ballot_edit_return_point'] = request.path_info
     return render(request, 'iesg/agenda_documents.html', { 'telechats': telechats })
+
+def past_documents(request):
+    iesg_state_slugs = ('approved', 'iesg-eva')
+    iesg_states = State.objects.filter(type='draft-iesg', slug__in=iesg_state_slugs)
+    possible_docs = Document.objects.filter(models.Q(states__type="draft-iesg",
+                                                     states__slug__in=iesg_state_slugs) |
+                                            models.Q(states__type__in=("statchg", "conflrev"),
+                                                     states__slug__in=("appr-pr", )),
+                                        )
+    possible_docs = possible_docs.select_related("stream", "group", "ad").distinct()
+
+    docs = []
+    for doc in possible_docs:
+        ballot = doc.latest_ballot()
+        blocking_positions = []
+        if ballot:
+            blocking_positions = [p for p in ballot.all_positions() if p.pos.blocking]
+            if blocking_positions:
+                augment_events_with_revision(doc, blocking_positions)
+
+        doc.by_me = bool([p for p in blocking_positions if user_is_person(request.user, p.ad)])
+        doc.for_me = user_is_person(request.user, doc.ad)
+        doc.milestones = doc.groupmilestone_set.filter(state="active").order_by("time").select_related("group")
+        doc.blocking_positions = blocking_positions
+        doc.telechat = doc.previous_telechat_date()
+
+        if doc.telechat:
+            docs.append(doc)
+
+    # latest first
+    #docs.sort(key=lambda d: d.latest_event().time, reverse=True)
+    docs.sort(key=lambda d: d.telechat, reverse=True)
+
+    return render(request, 'iesg/past_documents.html', { 'docs': docs, 'states': iesg_states })
+
 
 def telechat_docs_tarfile(request, date):
     date = get_agenda_date(date)

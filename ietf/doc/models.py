@@ -344,9 +344,14 @@ class DocumentInfo(models.Model):
         e = self.latest_event(BallotDocEvent, ballot_type__slug=ballot_type_slug)
         return e and not e.type == "closed_ballot"
 
+    def latest_ballot(self):
+        """Returns the most recently created ballot"""
+        ballot = self.latest_event(BallotDocEvent, type__in=("created_ballot", "closed_ballot"))
+        return ballot
+
     def active_ballot(self):
         """Returns the most recently created ballot if it isn't closed."""
-        ballot = self.latest_event(BallotDocEvent, type__in=("created_ballot", "closed_ballot"))
+        ballot = self.latest_ballot()
         if ballot and ballot.type == "created_ballot":
             return ballot
         else:
@@ -649,8 +654,14 @@ class Document(DocumentInfo):
         return e.telechat_date if e and e.telechat_date and e.telechat_date >= datetime.date.today() else None
 
     def past_telechat_date(self):
+        "Return the latest telechat date if it isn't in the future; else None"
         e = self.latest_event(TelechatDocEvent, type="scheduled_for_telechat")
         return e.telechat_date if e and e.telechat_date and e.telechat_date < datetime.date.today() else None
+
+    def previous_telechat_date(self):
+        "Return the most recent telechat date in the past, if any (even if there's another in the future)"
+        e = self.latest_event(TelechatDocEvent, type="scheduled_for_telechat", telechat_date__lt=datetime.datetime.now())
+        return e.telechat_date if e else None
 
     def area_acronym(self):
         g = self.group

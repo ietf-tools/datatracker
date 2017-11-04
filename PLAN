@@ -7,8 +7,6 @@ Updated: $Date$
 Planned work in rough order
 ===========================
 
-* Add a 'recent ballots' page (IESG request)
-
 * Add email thread search links to IESG ballots.
 
 * Add an API to post IESG ballot comments

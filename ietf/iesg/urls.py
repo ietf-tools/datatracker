@@ -53,6 +53,7 @@ urlpatterns = [
 
     url(r'^agenda/documents.txt$', views.agenda_documents_txt),
     url(r'^agenda/documents/$', views.agenda_documents),
+    url(r'^past/documents/$', views.past_documents),
     url(r'^agenda/telechat-(?:%(date)s-)?docs.tgz' % settings.URL_REGEXPS, views.telechat_docs_tarfile),
     url(r'^discusses/$', views.discusses),
     url(r'^milestones/$', views.milestones_needing_review),
