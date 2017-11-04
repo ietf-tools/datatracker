@@ -2,6 +2,14 @@
 {% load ietf_filters %}
 <div class="row">
   <div class="col-md-2 hidden-sm hidden-xs">
+    {% if doc.type_id == "draft"%}
+	<p class="well well-sm text-center">
+	  <a title="Mail archive search for discusses, comments and review messages related to {{ doc.name }}."
+	    href="https://mailarchive.ietf.org/arch/search/?q=subject:{{doc.name}}+AND+subject:(discuss+OR+comment+OR+review)">
+	  Mail search</a>
+	</p>
+    {% endif %}
+
     {% for n, positions in position_groups %}
       <h4><span class="label label-{{ n|pos_to_label }}"> {{ n.name }}</span></h4>
       {% for p in positions|dictsort:"ad.last_name" %}
