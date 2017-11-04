@@ -377,22 +377,26 @@ def make_test_data():
         )
 
     # an independent submission before review
-    doc = Document.objects.create(name='draft-imaginary-independent-submission',type_id='draft',rev='00')
+    doc = Document.objects.create(name='draft-imaginary-independent-submission',type_id='draft',rev='00',
+        title="Some Independent Notes on Imagination")
     doc.set_state(State.objects.get(used=True, type="draft", slug="active"))    
     DocAlias.objects.create(name=doc.name, document=doc)
 
     # an irtf submission mid review
-    doc = Document.objects.create(name='draft-imaginary-irtf-submission', type_id='draft',rev='00', stream=StreamName.objects.get(slug='irtf'))
+    doc = Document.objects.create(name='draft-imaginary-irtf-submission', type_id='draft',rev='00',
+        stream=StreamName.objects.get(slug='irtf'), title="The Importance of Research Imagination")
     docalias = DocAlias.objects.create(name=doc.name, document=doc)
     doc.set_state(State.objects.get(type="draft", slug="active"))
-    crdoc = Document.objects.create(name='conflict-review-imaginary-irtf-submission', type_id='conflrev', rev='00', notify="fsm@ietf.org")
+    crdoc = Document.objects.create(name='conflict-review-imaginary-irtf-submission', type_id='conflrev',
+        rev='00', notify="fsm@ietf.org", title="Conflict Review of IRTF Imagination Document")
     DocAlias.objects.create(name=crdoc.name, document=crdoc)
     crdoc.set_state(State.objects.get(name='Needs Shepherd', type__slug='conflrev'))
     crdoc.relateddocument_set.create(target=docalias,relationship_id='conflrev')
     
     # A status change mid review
     iesg = Group.objects.get(acronym='iesg')
-    doc = Document.objects.create(name='status-change-imaginary-mid-review',type_id='statchg', rev='00', notify="fsm@ietf.org",group=iesg)
+    doc = Document.objects.create(name='status-change-imaginary-mid-review',type_id='statchg', rev='00',
+        notify="fsm@ietf.org", group=iesg, title="Status Change Review without Imagination")
     doc.set_state(State.objects.get(slug='needshep',type__slug='statchg'))
     docalias = DocAlias.objects.create(name='status-change-imaginary-mid-review',document=doc)
 

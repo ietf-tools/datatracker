@@ -379,6 +379,37 @@ class IESGAgendaTests(TestCase):
             self.assertTrue(d.name in unicontent(r), "%s not in response" % k)
             self.assertTrue(d.title in unicontent(r), "%s title not in response" % k)
 
+    def test_past_documents(self):
+        url = urlreverse("ietf.iesg.views.past_documents")
+        # We haven't put any documents on past telechats, so this should be empty
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        for k, d in self.telechat_docs.iteritems():
+            self.assertNotIn(d.name, unicontent(r))
+            self.assertNotIn(d.title, unicontent(r))
+        # Add the documents to a past telechat
+        by = Person.objects.get(name="Areað Irector")
+        date = datetime.date.today() - datetime.timedelta(days=14)
+        approved = State.objects.get(type='draft-iesg', slug='approved')
+        iesg_eval = State.objects.get(type='draft-iesg', slug='iesg-eva')
+        for d in self.telechat_docs.values():
+            TelechatDocEvent.objects.create(type="scheduled_for_telechat",
+                doc=d, rev=d.rev, by=by, telechat_date=date, returning_item=False)
+            s = d.get_state('draft-iesg')
+            d.states.clear()
+            if s and s.slug == 'pub-req':
+                d.states.add(iesg_eval)
+            else:
+                d.states.add(approved)
+        # Now check that they are present on the past documents page
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        for k, d in self.telechat_docs.iteritems():
+            if d.states.get(type='draft-iesg').slug in ['approved', 'iesg-eva', ]:
+                self.assertIn(d.name, unicontent(r))
+            else:
+                self.assertNotIn(d.name, unicontent(r))
+
     def test_agenda_telechat_docs(self):
         d1 = self.telechat_docs["ietf_draft"]
         d2 = self.telechat_docs["ise_draft"]
