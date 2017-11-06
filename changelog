@@ -18,8 +18,6 @@ ietfdb (6.65.0) ietf; urgency=medium
   * Tweaked the error message for review message URLs which cannot be 
     retrieved.
 
-  * Revert an incorrectly committed patch level change.
-
   * Updated some tests to match api views refactoring.
 
   * Added a brief REST API info page.  In preparation for signing http 
