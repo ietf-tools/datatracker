@@ -2181,16 +2181,22 @@ def api_import_recordings(request, number):
 
 def important_dates(request, num=None):
     assert num is None or num.isdigit()
+    preview_roles = ['Area Director', 'Secretariat', 'IETF Chair', 'IAD', ]
 
     meeting = get_ietf_meeting(num)
     if not meeting:
         raise Http404
     base_num = int(meeting.number)
 
-    meetings=[meeting]
+    user = request.user
+    today = datetime.date.today()
+    meetings = []
+    if meeting.show_important_dates or meeting.date < today:
+        meetings.append(meeting)
     for i in range(1,3):
         future_meeting = get_ietf_meeting(base_num+i)
-        if future_meeting:
+        if future_meeting and ( future_meeting.show_important_dates
+            or (user and user.is_authenticated and has_role(user, preview_roles))):
             meetings.append(future_meeting)
 
     context={'meetings':meetings}

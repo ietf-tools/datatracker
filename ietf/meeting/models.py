@@ -93,6 +93,7 @@ class Meeting(models.Model):
     proceedings_final = models.BooleanField(default=False, help_text=u"Are the proceedings for this meeting complete?")
     acknowledgements = models.TextField(blank=True, help_text="Acknowledgements for use in meeting proceedings.  Use ReStructuredText markup.")
     overview = models.ForeignKey(DBTemplate, related_name='overview', null=True, editable=False)
+    show_important_dates = models.BooleanField(default=False)
 
     def __unicode__(self):
         if self.type_id == "ietf":
