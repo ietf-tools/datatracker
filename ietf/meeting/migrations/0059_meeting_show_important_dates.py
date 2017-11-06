@@ -8,7 +8,7 @@ from django.db import migrations, models
 
 def forwards(apps, schema_editor):
     Meeting = apps.get_model('meeting', 'Meeting')
-    stop_date = datetime.date.today() + datetime.timedelta(days=180)
+    stop_date = datetime.date.today() + datetime.timedelta(days=30)
     for m in Meeting.objects.filter(show_important_dates=False):
         if m.date < today:
             m.show_important_dates = True
