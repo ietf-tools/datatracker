@@ -1,3 +1,37 @@
+ietfdb (6.65.0) ietf; urgency=medium
+
+  **IESG recent documents page**
+
+  This release adds a 'recent documents' page for the IESG, by request, and a
+  ballot page link to a document-specific search for discusses, comments, and
+  review messages in the email archives.  There's also now a brief
+  introduction to the REST API under /api/, and some miscellaneous tweaks and
+  fixes:
+
+  * Added a link to draft ballot pages for a mail archive search for 
+    discuss, comment, and review messages related to the draft.
+
+  * Added a 'Recent documents' to the IESG pages.
+
+  * Revert an incorrectly committed patch level change.
+
+  * Tweaked the error message for review message URLs which cannot be 
+    retrieved.
+
+  * Revert an incorrectly committed patch level change.
+
+  * Updated some tests to match api views refactoring.
+
+  * Added a brief REST API info page.  In preparation for signing http 
+    notifications using RFC 7515, added information about API signing 
+    public/private keypair.  Refactored api views to reside in api/views.py.  
+    Added jwcrypto to requirements.
+
+  * Permit ADs to do wg session materials upload.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  06 Nov 2017 09:56:14 +0000
+  
+
 ietfdb (6.64.1) ietf; urgency=medium
 
   This is a bugfix and data migration release.  Here's an extract from the
