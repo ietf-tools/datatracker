@@ -10,7 +10,7 @@ def forwards(apps, schema_editor):
     Meeting = apps.get_model('meeting', 'Meeting')
     stop_date = datetime.date.today() + datetime.timedelta(days=30)
     for m in Meeting.objects.filter(show_important_dates=False):
-        if m.date < today:
+        if m.date < stop_date:
             m.show_important_dates = True
             m.save()
 
