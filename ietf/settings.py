@@ -688,7 +688,7 @@ SUBMIT_YANGLINT_COMMAND = 'yanglint --verbose -p {tmplib} -p {rfclib} -p {draftl
 SUBMIT_YANGLINT_COMMAND = None        # use the value above if you have yanglint installed
 
 SUBMIT_YANG_CATALOG_MODULEARG = "modules[]={module}"
-SUBMIT_YANG_CATALOG_IMPACT_URL = "https://www.yangcatalog.org/yang-search/impact_analysis.php?{moduleargs}&recurse=0&rfcs=1&show_subm=1&show_dir=dependencies"
+SUBMIT_YANG_CATALOG_IMPACT_URL = "https://www.yangcatalog.org/yang-search/impact_analysis.php?{moduleargs}&recurse=0&rfcs=1&show_subm=1&show_dir=both"
 SUBMIT_YANG_CATALOG_IMPACT_DESC = "Yang impact analysis for {draft}"
 SUBMIT_YANG_CATALOG_MODULE_URL = "https://www.yangcatalog.org/yang-search/module_details.php?module={module}"
 SUBMIT_YANG_CATALOG_MODULE_DESC = "Yang catalog entry for {module}"
