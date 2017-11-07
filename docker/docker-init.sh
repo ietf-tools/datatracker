@@ -109,7 +109,7 @@ if [ ! -f $VIRTDIR/lib/site-python/settings_local.py ]; then
     cp /usr/local/share/datatracker/settings_local.py $VIRTDIR/lib/site-python/
 fi
 
-for sub in test/id/ test/staging/ test/archive/ test/rfc test/media; do
+for sub in test/id/ test/staging/ test/archive/ test/rfc test/media test/wiki/ietf; do
     dir="/home/$USER/$CWD/$sub"
     if [ ! -d "$dir"  ]; then
 	echo "Creating dir $dir"
