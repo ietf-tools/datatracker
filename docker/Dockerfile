@@ -20,7 +20,7 @@
 # have *not* been downloaded.
 
 FROM debian:jessie
-MAINTAINER Henrik Levkowetz <henrik@levkowetz.com>
+LABEL maintainer="Henrik Levkowetz <henrik@levkowetz.com>"
 
 # Default django runserver port
 EXPOSE	8000
@@ -151,7 +151,8 @@ WORKDIR /usr/local/bin
 RUN ln -s /usr/local/phantomjs-1.9.8-linux-x86_64/bin/phantomjs .
 
 # idnits and dependencies
-RUN wget -q --no-check-certificate -P /usr/local/bin/ https://tools.ietf.org/tools/idnits/idnits && chmod +x /usr/local/bin/idnits
+ADD https://tools.ietf.org/tools/idnits/idnits /usr/local/bin/
+RUN chmod +rx /usr/local/bin/idnits
 
 ENV DDIR="/usr/local/share/datatracker"
 RUN mkdir -p $DDIR
