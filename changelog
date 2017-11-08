@@ -1,3 +1,33 @@
+ietfdb (6.65.1) ietf; urgency=medium
+
+  This is a small release in preparation for the IETF 100 code sprint.  It
+  adds a per-meeting public/private setting for important dates, and a menu
+  entry for the same.  From the commit log:
+
+  * In order to make it possible to enter meeting important dates and have the
+    IESG see and approve them before they are generally visible, a by-default
+    false show_important_dates flag has been added to the Meeting model, and
+    code has been added to show the important dates as appropriate.  The
+    secretariat will set this flag true once a meeting's important dates have
+    IESG approval.  A menu link to the important dates has also been added.
+
+  * Added a check for proper API key settings in production, and added 
+    workable default API key settings for development.  This is in preparation
+    for an upcoming API endpoint to permit automation of ballot potsing.
+
+  * Updated the requirements for factory boy (it must be a version that
+    has a factory.random module)
+
+  * Changed the yang impact analysis URL setting.
+
+  * Updated the Dockerfile to use more modern constructs in a couple of 
+    places.
+
+  * Updated docker-init with a new directory to be created.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  08 Nov 2017 12:30:40 +0000
+
+
 ietfdb (6.65.0) ietf; urgency=medium
 
   **IESG recent documents page**
