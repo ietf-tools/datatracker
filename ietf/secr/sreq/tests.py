@@ -7,6 +7,7 @@ from ietf.group.models import Group
 from ietf.meeting.helpers import get_meeting
 from ietf.meeting.models import Meeting, Session, ResourceAssociation
 from ietf.meeting.test_data import make_meeting_test_data
+from ietf.meeting.factories import SessionFactory
 from ietf.utils.mail import outbox, empty_outbox
 from ietf.utils.test_data import make_test_data
 
@@ -42,6 +43,53 @@ class SessionRequestTestCase(TestCase):
         self.assertEqual(len(unsched),3)
         self.assertEqual(len(sched),2)
 
+    def test_approve(self):
+        meeting = make_meeting_test_data()
+        mars = Group.objects.get(acronym='mars')
+        # create session waiting for approval
+        session = SessionFactory(meeting=meeting, group=mars, status_id='apprw')
+        url = reverse('ietf.secr.sreq.views.approve', kwargs={'acronym':'mars'})
+        self.client.login(username="ad", password="ad+password")
+        r = self.client.get(url)
+        self.assertRedirects(r,reverse('ietf.secr.sreq.views.view', kwargs={'acronym':'mars'}))
+        session = Session.objects.get(pk=session.pk)
+        self.assertEqual(session.status_id,'appr')
+        
+    def test_cancel(self):
+        meeting = make_meeting_test_data()
+        mars = Group.objects.get(acronym='mars')
+        url = reverse('ietf.secr.sreq.views.cancel', kwargs={'acronym':'mars'})
+        self.client.login(username="ad", password="ad+password")
+        r = self.client.get(url)
+        self.assertRedirects(r,reverse('ietf.secr.sreq.views.main'))
+        sessions = Session.objects.filter(meeting=meeting, group=mars)
+        self.assertEqual(sessions[0].status_id,'deleted')
+    
+    def test_edit(self):
+        make_meeting_test_data()
+        url = reverse('ietf.secr.sreq.views.edit', kwargs={'acronym':'mars'})
+        self.client.login(username="marschairman", password="marschairman+password")
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        post_data = {'num_session':'2',
+                     'length_session1':'3600',
+                     'length_session2':'3600',
+                     'attendees':'10',
+                     'conflict1':'',
+                     'comments':'need lights',
+                     'submit': 'Continue'}
+        r = self.client.post(url, post_data, HTTP_HOST='example.com')
+        self.assertRedirects(r,reverse('ietf.secr.sreq.views.view', kwargs={'acronym':'mars'}))
+                   
+    def test_tool_status(self):
+        make_meeting_test_data()
+        url = reverse('ietf.secr.sreq.views.tool_status')
+        self.client.login(username="secretary", password="secretary+password")
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        r = self.client.post(url, {'message':'locked', 'submit':'Lock'})
+        self.assertRedirects(r,reverse('ietf.secr.sreq.views.main'))
+        
 class SubmitRequestCase(TestCase):
     def test_submit_request(self):
         make_test_data()
@@ -167,12 +215,8 @@ class LockAppTestCase(TestCase):
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         self.assertEqual(len(q('#session-request-form')),1)
-        
-class EditRequestCase(TestCase):
-    pass
     
 class NotMeetingCase(TestCase):
-
     def test_not_meeting(self):
         make_meeting_test_data()
         group = Group.objects.get(acronym='mars')
