@@ -1459,10 +1459,10 @@ def manage_review_requests(request, acronym, group_type=None, assignment_status=
 
             reqs_to_assign = []
             for review_req in review_requests:
-                form_action = review_req.form.cleaned_data.get("action")
-                if form_action=="close":
+                action = review_req.form.cleaned_data.get("action")
+                if action=="close":
                     close_review_request(request, review_req, review_req.form.cleaned_data["close"])
-                elif form_action=="assign":
+                elif action=="assign":
                     reqs_to_assign.append(review_req)
 
             assignments_by_person = dict()
