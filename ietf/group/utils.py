@@ -221,7 +221,7 @@ def construct_group_menu_context(request, group, selected, group_type, others):
 
         if Role.objects.filter(name="secr", group=group, person__user=request.user).exists():
             actions.append((u"Secretary settings", urlreverse(ietf.group.views.change_review_secretary_settings, kwargs=kwargs)))
-
+            actions.append((u"Email open assignments summary", urlreverse(ietf.group.views.email_open_review_assignments, kwargs=dict(acronym=group.acronym, group_type=group.type_id))))
 
     if group.state_id != "conclude" and (is_admin or can_manage):
         can_edit_group = True
