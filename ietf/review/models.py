@@ -138,6 +138,15 @@ class ReviewRequest(models.Model):
     def other_completed_requests(self):
         return self.other_requests().filter(state_id__in=['completed','part-completed'])
 
+    def review_done_time(self):
+        # First check if this is completed review having review and if so take time from there.
+        if self.review and self.review.time:
+            return self.review.time
+        # If not, then it is closed review, so it either has event in doc or if not then take
+        # time from the request.
+        time = self.doc.request_closed_time(self)
+        return time if time else self.time
+
 def get_default_review_types():
     return ReviewTypeName.objects.filter(slug__in=['early','lc','telechat'])
 
