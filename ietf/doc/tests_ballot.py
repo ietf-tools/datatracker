@@ -334,9 +334,9 @@ class BallotWriteupsTests(TestCase):
 
         self.assertTrue(draft.latest_event(type="sent_ballot_announcement"))
         self.assertEqual(len(outbox), 2)
-        self.assertTrue('Evaluation:' in outbox[-2]['Subject'])
+        self.assertTrue('Ballot issued:' in outbox[-2]['Subject'])
         self.assertTrue('iesg@' in outbox[-2]['To'])
-        self.assertTrue('Evaluation:' in outbox[-1]['Subject'])
+        self.assertTrue('Ballot issued:' in outbox[-1]['Subject'])
         self.assertTrue('drafts-eval@' in outbox[-1]['To'])
         self.assertTrue('X-IETF-Draft-string' in outbox[-1])
 

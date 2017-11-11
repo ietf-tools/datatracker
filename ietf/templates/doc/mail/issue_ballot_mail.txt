@@ -1,6 +1,6 @@
 {% load ietf_filters %}{% load mail_filters %}{% autoescape off %}From: IESG Secretary <iesg-secretary@ietf.org>
 Reply-To: IESG Secretary <iesg-secretary@ietf.org>
-Subject: Evaluation: {{ doc.file_tag }} to {{ doc|std_level_prompt }}
+Subject: Ballot issued: {{ doc.file_tag }} to {{ doc|std_level_prompt }}
 
 {% filter wordwrap:78 %}Evaluation for {{ doc.file_tag }} can be found at {{ doc_url }}
 
