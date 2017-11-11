@@ -69,12 +69,12 @@
 
       $(".slides tbody").sortable({
         helper: rowWidthHelper,
-        stop: function(event,ui) {adjustDatabase("#slides")}
+        stop: function(event,ui) {adjustDatabase(ui.item.parent())}
       }).disableSelection();
     });
 
-    function adjustDatabase(tableID) {
-      $(tableID + " tr").each(function() {
+    function adjustDatabase(tbody) {
+      tbody.find('tr').each(function() {
         count = $(this).parent().children().index($(this)) + 1;
         old_order = $(this).attr("data-order");
         if ( count != old_order ) {
