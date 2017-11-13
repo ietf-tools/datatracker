@@ -663,6 +663,10 @@ class Document(DocumentInfo):
         e = self.latest_event(TelechatDocEvent, type="scheduled_for_telechat", telechat_date__lt=datetime.datetime.now())
         return e.telechat_date if e else None
 
+    def request_closed_time(self, review_req):
+        e = self.latest_event(ReviewRequestDocEvent, type="closed_review_request", review_request=review_req)
+        return e.time if e and e.time else None
+
     def area_acronym(self):
         g = self.group
         if g:

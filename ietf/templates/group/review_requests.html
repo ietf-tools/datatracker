@@ -90,6 +90,7 @@
           <th>Type</th>
           <th>Requested</th>
           <th>Deadline</th>
+          <th>Closed</th>
           <th>Reviewer</th>
           <th>State</th>
           <th>Result</th>
@@ -102,6 +103,7 @@
             <td>{{ r.type }}</td>
             <td>{{ r.time|date:"Y-m-d" }} by {{ r.requested_by.plain_name }}</td>
             <td>{{ r.deadline|date:"Y-m-d" }}</td>
+            <td>{{ r.review_done_time|date:"Y-m-d" }}</td>
             <td>
               {% if r.reviewer %}
                 {{ r.reviewer.person }}
