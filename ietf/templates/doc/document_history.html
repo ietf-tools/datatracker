@@ -36,6 +36,11 @@
 	        ({{ time|date:"Y-m-d" }})
 	      </option>
 	    {% endfor %}
+	    {% if doc.name|rfcbis %}
+	      <option value="{{ doc.name|rfcbis }}">
+	        {{ doc.name|rfcbis }}
+	      </option>
+	    {% endif %}
           </select>
         </div>
       </div>
@@ -52,6 +57,11 @@
 	        ({{ time|date:"Y-m-d" }})
 	      </option>
 	    {% endfor %}
+	    {% if doc.name|rfcbis %}
+	      <option value="{{ doc.name|rfcbis }}">
+	        {{ doc.name|rfcbis }}
+	      </option>
+	    {% endif %}
           </select>
         </div>
       </div>
