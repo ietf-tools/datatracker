@@ -1,3 +1,36 @@
+ietfdb (6.66.0) ietf; urgency=medium
+
+  **IETF 100 code sprint**
+
+  This release contains datatracker bugfixes and enhancements from the IETF-100
+  Code Sprint.  Many thanks to everyone who contributed!
+
+  * Merged in [14365] from kivinen@iki.fi:
+    Added a closed date column to the closed review list. Fixes #2150.  
+
+  * Merged in [14362] from rcross@amsl.com:
+    Improved test coverage for ietf.secr.sreq.   
+
+  * Merged in [14359] from kivinen@iki.fi:
+    Fixed save-continue to work. Fixes #2383.  
+
+  * Merged in [14356] from kivinen@iki.fi:
+    Moved the email open assignment summary from a subpage to the main review
+    request page. Fixes #2091.
+
+  * Merged in [14355] from suresh@kaloom.com:
+    Changed the ballot announcement email subject to be more correct.  
+    Fixes #2109
+
+  * Changed the placement of the mail-archive search link on the ballot 
+    pages.
+
+  * Merged in [14354] from rcross@amsl.com:
+    Fixed a problem where slide reordering is not retained.  Fixes #2405.   
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  15 Nov 2017 04:17:00 +0000
+
+
 ietfdb (6.65.1) ietf; urgency=medium
 
   This is a small release in preparation for the IETF 100 code sprint.  It
