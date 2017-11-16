@@ -536,3 +536,8 @@ def role_names(roles):
 @register.filter()
 def zaptmp(s):
     return re.sub(r'/tmp/tmp[^/]+/', '', s)
+
+@register.filter()
+def rfcbis(s):
+    m = re.search('^.*-rfc(\d+)-?bis(-.*)?$', s)
+    return None if m is None else 'rfc' + m.group(1) 

@@ -43,6 +43,11 @@ Planned work in rough order
 * Transition to Python 3.  This will make it easier to add add support for
   internationalsed email, and also other i18n enhancements.
 
+* Update IPR disclosure pages with 1) itemized section V, 2) use the RFC
+  Updates and Obsoletes fields to add document relationships to be followed by
+  IPR searches, 3) show current values in the IPR update form, and 4) show
+  updates in a diff format (old/new columns).
+
 * Add support for document shepherding reports, possibly re-using or
   generalising some of the review plumbing.  Check with IESG for details.
 
