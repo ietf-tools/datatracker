@@ -27,9 +27,9 @@ class Options(object):
     pass
 
 
-def wrap(s):
+def wrap(s, w=120):
     termsize = get_terminal_size() if get_terminal_size else (80, 24)
-    cols = min(120, max(termsize[0], 60))
+    cols = min(w, max(termsize[0], 60))
 
     lines = s.split('\n')
     wrapped = []

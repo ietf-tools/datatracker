@@ -20,7 +20,7 @@ from xml2rfc.writers.base import BaseRfcWriter
 from xml2rfc.writers.v2v3 import V2v3XmlWriter
 from xml2rfc.parser import XmlRfc
 from collections import deque
-from lxml.etree import Element, ElementTree, ProcessingInstruction, CDATA, Entity
+from lxml.etree import Element, ElementTree, ProcessingInstruction, CDATA, Entity, Comment
 
 from id2xml.utils import Options, Line, wrap, strip_pagebreaks
 
@@ -648,6 +648,9 @@ class Base(object):
         else:
             msg = "\n%s: Warning: %s" % (self.name, text)
         self.emit(msg)
+        if self.e is not None:
+            c = Comment("\n   %s\n   " % wrap(msg.strip(), 80))
+            self.e.append(c)
 
     def err(self, lnum, text):
         msg = "\n%s(%s): Error: %s" % (self.name, lnum+1, text)
@@ -921,6 +924,7 @@ class DraftParser(Base):
         self.schema = ElementTree(file=schema_file)
         self.rfc_attr = self.schema.xpath("/x:grammar/x:define/x:element[@name='rfc']//x:attribute", namespaces=ns)
         self.rfc_attr_defaults = dict( (a.get('name'), a.get("{%s}defaultValue"%ns['a'], None)) for a in self.rfc_attr )
+        self.e = None
 
     @dtrace
     def get_tabstop(self, line):
@@ -1041,6 +1045,7 @@ class DraftParser(Base):
             assert len(args) == 1
             text = args[0]
             e.text = text
+        self.e = e
         return e
 
     # ------------------------------------------------------------------------
