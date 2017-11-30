@@ -95,7 +95,7 @@ def unidecode_name(uname):
     name = unidecode.unidecode(uname)
     if name == uname:
         return name
-    name = name.strip().replace('  ', ' ')
+    name = name.strip().replace('  ', ' ').replace('@', '')
     # Fix all-upper and all-lower names:
     # Check for name particles -- don't capitalize those
     m = name_particle_match(name)
@@ -103,7 +103,7 @@ def unidecode_name(uname):
     # Get the name parts
     prefix, first, middle, last, suffix = name_parts(name)
     # Capitalize names
-    first = capfirst(first)
+    first = first.title()
     middle = ' '.join([ capfirst(p) for p in middle.split() ])
     last   = ' '.join([ capfirst(p) for p in last.split() ])
     # Restore the particle, if any
