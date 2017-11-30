@@ -8,6 +8,7 @@ import json
 from collections import defaultdict
 
 from django.conf import settings
+from django.contrib import messages
 from django.forms import ValidationError
 from django.utils.html import escape
 from django.urls import reverse as urlreverse
@@ -174,15 +175,21 @@ def needed_ballot_positions(doc, active_positions):
 
     return " ".join(answer)
 
-def create_ballot_if_not_open(doc, by, ballot_slug, time=None):
+def create_ballot_if_not_open(request, doc, by, ballot_slug, time=None):
+    ballot_type = BallotType.objects.get(doc_type=doc.type, slug=ballot_slug)
     if not doc.ballot_open(ballot_slug):
         if time:
             e = BallotDocEvent(type="created_ballot", by=by, doc=doc, rev=doc.rev, time=time)
         else:
             e = BallotDocEvent(type="created_ballot", by=by, doc=doc, rev=doc.rev)
-        e.ballot_type = BallotType.objects.get(doc_type=doc.type, slug=ballot_slug)
+        e.ballot_type = ballot_type
         e.desc = u'Created "%s" ballot' % e.ballot_type.name
         e.save()
+        return e
+    else:
+        if request:
+            messages.warning(request, "There already exists an open '%s' ballot for %s.  No new ballot created." % (ballot_type, doc.name))
+        return None
 
 def close_ballot(doc, by, ballot_slug):
     if doc.ballot_open(ballot_slug):

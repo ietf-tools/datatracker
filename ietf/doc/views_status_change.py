@@ -7,6 +7,8 @@ from django.urls import reverse
 from django.template.loader import render_to_string
 from django.conf import settings
 
+import debug                            # pyflakes:ignore
+
 from ietf.doc.models import ( Document, DocAlias, State, DocEvent, BallotDocEvent,
     BallotPositionDocEvent, NewRevisionDocEvent, WriteupDocEvent, STATUSCHANGE_RELATIONS )
 from ietf.doc.forms import AdForm
@@ -16,11 +18,13 @@ from ietf.doc.views_ballot import LastCallTextForm
 from ietf.group.models import Group
 from ietf.iesg.models import TelechatDate
 from ietf.ietfauth.utils import has_role, role_required
+from ietf.mailtrigger.utils import gather_address_lists
 from ietf.name.models import DocRelationshipName, StdLevelName
 from ietf.person.models import Person
+from ietf.utils import log
 from ietf.utils.mail import send_mail_preformatted
 from ietf.utils.textupload import get_cleaned_text_file_content
-from ietf.mailtrigger.utils import gather_address_lists
+
 
 class ChangeStateForm(forms.Form):
     new_state = forms.ModelChoiceField(State.objects.filter(type="statchg", used=True), label="Status Change Evaluation State", empty_label=None, required=True)
@@ -55,8 +59,9 @@ def change_state(request, name, option=None):
                 status_change.save_with_history(events)
 
                 if new_state.slug == "iesgeval":
-                    create_ballot_if_not_open(status_change, login, "statchg", status_change.time)
+                    e = create_ballot_if_not_open(request, status_change, login, "statchg", status_change.time) # pyflakes:ignore
                     ballot = status_change.latest_event(BallotDocEvent, type="created_ballot")
+                    log.assertion('ballot == e')
                     if has_role(request.user, "Area Director") and not status_change.latest_event(BallotPositionDocEvent, ad=login, ballot=ballot, type="changed_ballot_position"):
 
                         # The AD putting a status change into iesgeval who doesn't already have a position is saying "yes"

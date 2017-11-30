@@ -23,12 +23,13 @@ from ietf.doc.mails import ( email_ballot_deferred, email_ballot_undeferred,
 from ietf.doc.lastcall import request_last_call
 from ietf.iesg.models import TelechatDate
 from ietf.ietfauth.utils import has_role, role_required, is_authorized_in_doc_stream
+from ietf.mailtrigger.utils import gather_address_lists
+from ietf.mailtrigger.forms import CcSelectForm
 from ietf.message.utils import infer_message
 from ietf.name.models import BallotPositionName
 from ietf.person.models import Person
+from ietf.utils import log
 from ietf.utils.mail import send_mail_text, send_mail_preformatted
-from ietf.mailtrigger.utils import gather_address_lists
-from ietf.mailtrigger.forms import CcSelectForm
 
 BALLOT_CHOICES = (("yes", "Yes"),
                   ("noobj", "No Objection"),
@@ -233,7 +234,6 @@ def edit_position(request, name, ballot_id):
                                    blocking_positions=json.dumps(blocking_positions),
                                    ))
 
-
 @role_required('Area Director','Secretariat')
 def send_ballot_comment(request, name, ballot_id):
     """Email document ballot position discuss/comment for Area Director."""
@@ -329,7 +329,7 @@ def clear_ballot(request, name):
         by = request.user.person
         for t in BallotType.objects.filter(doc_type=doc.type_id):
             close_ballot(doc, by, t.slug)
-            create_ballot_if_not_open(doc, by, t.slug)
+            create_ballot_if_not_open(request, doc, by, t.slug)
         if doc.get_state('draft-iesg').slug == 'defer':
             do_undefer_ballot(request,doc)
         return redirect("ietf.doc.views_doc.document_main", name=doc.name)
@@ -533,9 +533,9 @@ def ballot_writeupnotes(request, name):
                 existing.save()
 
             if "issue_ballot" in request.POST:
-                create_ballot_if_not_open(doc, login, "approve")
+                e = create_ballot_if_not_open(request, doc, login, "approve") # pyflakes:ignore
                 ballot = doc.latest_event(BallotDocEvent, type="created_ballot")
-
+                log.assertion('ballot == e')
                 if has_role(request.user, "Area Director") and not doc.latest_event(BallotPositionDocEvent, ad=login, ballot=ballot):
                     # sending the ballot counts as a yes
                     pos = BallotPositionDocEvent(doc=doc, rev=doc.rev, by=login)

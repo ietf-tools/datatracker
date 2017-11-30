@@ -7,6 +7,8 @@ from django.urls import reverse
 from django.template.loader import render_to_string
 from django.conf import settings
 
+import debug                            # pyflakes:ignore
+
 from ietf.doc.models import ( BallotDocEvent, BallotPositionDocEvent, DocAlias, DocEvent,
     Document, NewRevisionDocEvent, State )
 from ietf.doc.utils import ( add_state_change_event, close_open_ballots,
@@ -17,6 +19,7 @@ from ietf.group.models import Role, Group
 from ietf.iesg.models import TelechatDate
 from ietf.ietfauth.utils import has_role, role_required, is_authorized_in_doc_stream
 from ietf.person.models import Person
+from ietf.utils import log
 from ietf.utils.mail import send_mail_preformatted
 from ietf.utils.textupload import get_cleaned_text_file_content
 from ietf.mailtrigger.utils import gather_address_lists
@@ -55,8 +58,9 @@ def change_state(request, name, option=None):
                 review.save_with_history(events)
 
                 if new_state.slug == "iesgeval":
-                    create_ballot_if_not_open(review, login, "conflrev")
+                    e = create_ballot_if_not_open(request, review, login, "conflrev") # pyflakes:ignore
                     ballot = review.latest_event(BallotDocEvent, type="created_ballot")
+                    log.assertion('ballot == e')
                     if has_role(request.user, "Area Director") and not review.latest_event(BallotPositionDocEvent, ad=login, ballot=ballot, type="changed_ballot_position"):
 
                         # The AD putting a conflict review into iesgeval who doesn't already have a position is saying "yes"
