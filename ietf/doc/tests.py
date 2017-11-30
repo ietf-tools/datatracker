@@ -23,6 +23,7 @@ import debug                            # pyflakes:ignore
 from ietf.doc.models import ( Document, DocAlias, DocRelationshipName, RelatedDocument, State,
     DocEvent, BallotPositionDocEvent, LastCallDocEvent, WriteupDocEvent, NewRevisionDocEvent )
 from ietf.doc.factories import DocumentFactory, DocEventFactory
+from ietf.doc.utils import create_ballot_if_not_open
 from ietf.group.models import Group
 from ietf.group.factories import GroupFactory
 from ietf.meeting.models import Meeting, Session, SessionPresentation
@@ -642,10 +643,13 @@ class DocTestCase(TestCase):
 
     def test_document_ballot(self):
         doc = make_test_data()
-        ballot = doc.active_ballot()
+        ad = Person.objects.get(user__username="ad")
+        ballot = create_ballot_if_not_open(None, doc, ad, 'approve')
+        assert ballot == doc.active_ballot()
 
         # make sure we have some history
-        doc.save_with_history([DocEvent.objects.create(doc=doc, rev=doc.rev, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
+        doc.save_with_history([DocEvent.objects.create(doc=doc, rev=doc.rev, type="changed_document",
+                                                    by=Person.objects.get(user__username="secretary"), desc="Test")])
 
         pos = BallotPositionDocEvent.objects.create(
             doc=doc,
@@ -681,10 +685,11 @@ class DocTestCase(TestCase):
         self.assertTrue( '(%s for -%s)' % (pos.comment_time.strftime('%Y-%m-%d'), oldrev) in unicontent(r))
         
     def test_document_ballot_needed_positions(self):
-        make_test_data()
-
         # draft
-        doc = Document.objects.get(name='draft-ietf-mars-test')
+        doc = make_test_data()
+        ad = Person.objects.get(user__username="ad")
+        create_ballot_if_not_open(None, doc, ad, 'approve')
+
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_ballot", kwargs=dict(name=doc.name)))
         self.assertTrue('more YES or NO' in unicontent(r))
         Document.objects.filter(pk=doc.pk).update(intended_std_level='inf')

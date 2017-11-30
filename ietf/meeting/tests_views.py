@@ -416,11 +416,13 @@ class MeetingTests(TestCase):
 
     def test_important_dates(self):
         meeting=MeetingFactory(type_id='ietf')
+        meeting.show_important_dates = True
+        meeting.save()
         populate_important_dates(meeting)
         url = urlreverse('ietf.meeting.views.important_dates',kwargs={'num':meeting.number})
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(str(meeting.importantdate_set.first().date) in unicontent(r))
+        self.assertIn(str(meeting.importantdate_set.first().date), unicontent(r))
 
 class EditTests(TestCase):
     def setUp(self):

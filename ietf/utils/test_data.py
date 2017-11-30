@@ -11,7 +11,7 @@ from django.utils.encoding import smart_text
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.models import Document, DocAlias, State, DocumentAuthor, BallotType, DocEvent, BallotDocEvent, RelatedDocument, NewRevisionDocEvent
+from ietf.doc.models import Document, DocAlias, State, DocumentAuthor, DocEvent, RelatedDocument, NewRevisionDocEvent
 from ietf.group.models import Group, GroupHistory, Role, RoleHistory
 from ietf.iesg.models import TelechatDate
 from ietf.ipr.models import HolderIprDisclosure, IprDocRel, IprDisclosureStateName, IprLicenseTypeName
@@ -323,15 +323,6 @@ def make_test_data():
         doc=draft,
         desc="New revision available",
         rev="01",
-        )
-
-    BallotDocEvent.objects.create(
-        type="created_ballot",
-        ballot_type=BallotType.objects.get(doc_type="draft", slug="approve"),
-        by=ad,
-        doc=draft,
-        rev=draft.rev,
-        desc="Created ballot",
         )
 
     # IPR

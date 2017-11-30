@@ -19,7 +19,8 @@ from django.urls import reverse as urlreverse
 import debug                            # pyflakes:ignore
 
 from ietf.submit.utils import expirable_submissions, expire_submission, ensure_person_email_info_exists
-from ietf.doc.models import Document, DocAlias, DocEvent, State, BallotDocEvent, BallotPositionDocEvent, DocumentAuthor
+from ietf.doc.models import Document, DocAlias, DocEvent, State, BallotPositionDocEvent, DocumentAuthor
+from ietf.doc.utils import create_ballot_if_not_open
 from ietf.group.models import Group
 from ietf.group.utils import setup_default_community_list_for_group
 from ietf.meeting.models import Meeting
@@ -336,8 +337,10 @@ class SubmitTests(TestCase):
         e.save()
 
         # make a discuss to see if the AD gets an email
+        ad = Person.objects.get(user__username="ad")
+        ballot = create_ballot_if_not_open(None, draft, ad, 'approve')
         ballot_position = BallotPositionDocEvent()
-        ballot_position.ballot = draft.latest_event(BallotDocEvent, type="created_ballot")
+        ballot_position.ballot = ballot
         ballot_position.pos_id = "discuss"
         ballot_position.type = "changed_ballot_position"
         ballot_position.doc = draft

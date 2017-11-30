@@ -296,7 +296,7 @@ class StatusChangeTests(TestCase):
         # Some additional setup
         doc.relateddocument_set.create(target=DocAlias.objects.get(name='rfc9999'),relationship_id='tois')
         doc.relateddocument_set.create(target=DocAlias.objects.get(name='rfc9998'),relationship_id='tohist')
-        create_ballot_if_not_open(doc,Person.objects.get(user__username="secretary"),"statchg")
+        create_ballot_if_not_open(None, doc, Person.objects.get(user__username="secretary"), "statchg")
         doc.set_state(State.objects.get(slug='appr-pend',type='statchg'))
 
         # get

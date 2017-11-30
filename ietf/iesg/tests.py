@@ -10,8 +10,9 @@ from django.urls import reverse as urlreverse
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.models import DocEvent, BallotDocEvent, BallotPositionDocEvent, TelechatDocEvent
+from ietf.doc.models import DocEvent, BallotPositionDocEvent, TelechatDocEvent
 from ietf.doc.models import Document, DocAlias, State, RelatedDocument
+from ietf.doc.utils import create_ballot_if_not_open
 from ietf.group.models import Group, GroupMilestone, Role
 from ietf.iesg.agenda import get_agenda_date, agenda_data
 from ietf.iesg.models import TelechatDate
@@ -25,8 +26,10 @@ class IESGTests(TestCase):
         draft = make_test_data()
         draft.set_state(State.objects.get(type="draft-iesg", slug="iesg-eva"))
 
+        ad = Person.objects.get(user__username="ad")
+        ballot = create_ballot_if_not_open(None, draft, ad, 'approve')
         pos = BallotPositionDocEvent()
-        pos.ballot = draft.latest_event(BallotDocEvent, type="created_ballot")
+        pos.ballot = ballot
         pos.pos_id = "discuss"
         pos.type = "changed_ballot_position"
         pos.doc = draft

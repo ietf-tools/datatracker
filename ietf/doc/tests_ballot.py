@@ -6,9 +6,10 @@ import debug                            # pyflakes:ignore
 
 from django.urls import reverse as urlreverse
 
-from ietf.doc.models import ( Document, State, DocEvent, BallotDocEvent,
+from ietf.doc.models import ( Document, State, DocEvent,
     BallotPositionDocEvent, LastCallDocEvent, WriteupDocEvent, TelechatDocEvent )
 from ietf.doc.factories import DocumentFactory
+from ietf.doc.utils import create_ballot_if_not_open
 from ietf.group.models import Group, Role
 from ietf.name.models import BallotPositionName
 from ietf.iesg.models import TelechatDate
@@ -22,8 +23,10 @@ from ietf.utils.test_utils import login_testing_unauthorized
 class EditPositionTests(TestCase):
     def test_edit_position(self):
         draft = make_test_data()
+        ad = Person.objects.get(user__username="ad")
+        ballot = create_ballot_if_not_open(None, draft, ad, 'approve')
         url = urlreverse('ietf.doc.views_ballot.edit_position', kwargs=dict(name=draft.name,
-                                                          ballot_id=draft.latest_event(BallotDocEvent, type="created_ballot").pk))
+                                                          ballot_id=ballot.pk))
         login_testing_unauthorized(self, "ad", url)
 
         ad = Person.objects.get(name="Areað Irector")
@@ -84,8 +87,9 @@ class EditPositionTests(TestCase):
         
     def test_edit_position_as_secretary(self):
         draft = make_test_data()
-        url = urlreverse('ietf.doc.views_ballot.edit_position', kwargs=dict(name=draft.name,
-                                                          ballot_id=draft.latest_event(BallotDocEvent, type="created_ballot").pk))
+        ad = Person.objects.get(user__username="ad")
+        ballot = create_ballot_if_not_open(None, draft, ad, 'approve')
+        url = urlreverse('ietf.doc.views_ballot.edit_position', kwargs=dict(name=draft.name, ballot_id=ballot.pk))
         ad = Person.objects.get(name="Areað Irector")
         url += "?ad=%s" % ad.pk
         login_testing_unauthorized(self, "secretary", url)
@@ -109,8 +113,9 @@ class EditPositionTests(TestCase):
 
     def test_cannot_edit_position_as_pre_ad(self):
         draft = make_test_data()
-        url = urlreverse('ietf.doc.views_ballot.edit_position', kwargs=dict(name=draft.name,
-                          ballot_id=draft.latest_event(BallotDocEvent, type="created_ballot").pk))
+        ad = Person.objects.get(user__username="ad")
+        ballot = create_ballot_if_not_open(None, draft, ad, 'approve')
+        url = urlreverse('ietf.doc.views_ballot.edit_position', kwargs=dict(name=draft.name, ballot_id=ballot.pk))
         
         # transform to pre-ad
         ad_role = Role.objects.filter(name="ad")[0]
@@ -129,9 +134,8 @@ class EditPositionTests(TestCase):
         draft.notify = "somebody@example.com"
         draft.save_with_history([DocEvent.objects.create(doc=draft, rev=draft.rev, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
 
-        ad = Person.objects.get(name="Areað Irector")
-
-        ballot = draft.latest_event(BallotDocEvent, type="created_ballot")
+        ad = Person.objects.get(user__username="ad")
+        ballot = create_ballot_if_not_open(None, draft, ad, 'approve')
 
         BallotPositionDocEvent.objects.create(
             doc=draft, rev=draft.rev, type="changed_ballot_position",

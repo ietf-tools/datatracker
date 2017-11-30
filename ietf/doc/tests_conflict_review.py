@@ -268,7 +268,7 @@ class ConflictReviewTests(TestCase):
         login_testing_unauthorized(self, "secretary", url)
         
         # Some additional setup
-        create_ballot_if_not_open(doc,Person.objects.get(name="Sec Retary"),"conflrev")
+        create_ballot_if_not_open(None, doc, Person.objects.get(name="Sec Retary"), "conflrev")
         doc.set_state(State.objects.get(used=True, slug=approve_type+'-pend',type='conflrev'))
 
         # get

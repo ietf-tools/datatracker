@@ -4,7 +4,7 @@ from pyquery import PyQuery
 from django.urls import reverse
 
 from ietf.doc.models import Document, State, BallotDocEvent, BallotType
-from ietf.doc.utils import update_telechat
+from ietf.doc.utils import update_telechat, create_ballot_if_not_open
 from ietf.utils.test_utils import TestCase
 from ietf.iesg.models import TelechatDate
 from ietf.person.models import Person
@@ -37,6 +37,8 @@ class SecrTelechatTestCase(TestCase):
 
     def test_doc_detail_draft(self):
         draft = make_test_data()
+        ad = Person.objects.get(user__username="ad")
+        create_ballot_if_not_open(None, draft, ad, 'approve')
         d = get_next_telechat_date()
         date = d.strftime('%Y-%m-%d')
         by=Person.objects.get(name="(System)")

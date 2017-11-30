@@ -13,8 +13,8 @@ import debug                            # pyflakes:ignore
 from ietf.doc.factories import DocumentFactory
 from ietf.doc.models import ( Document, DocAlias, DocReminder, DocumentAuthor, DocEvent,
     ConsensusDocEvent, LastCallDocEvent, RelatedDocument, State, TelechatDocEvent, 
-    WriteupDocEvent, BallotDocEvent, DocRelationshipName)
-from ietf.doc.utils import get_tags_for_stream_id
+    WriteupDocEvent, DocRelationshipName)
+from ietf.doc.utils import get_tags_for_stream_id, create_ballot_if_not_open
 from ietf.name.models import StreamName, IntendedStdLevelName, DocTagName
 from ietf.group.factories import GroupFactory
 from ietf.group.models import Group
@@ -332,7 +332,8 @@ class EditInfoTests(TestCase):
         # First, make it appear that the previous telechat has already passed
         telechat_event.telechat_date = datetime.date.today()-datetime.timedelta(days=7)
         telechat_event.save()
-        ballot = draft.latest_event(BallotDocEvent, type="created_ballot")
+        ad = Person.objects.get(user__username="ad")
+        ballot = create_ballot_if_not_open(None, draft, ad, 'approve')
         ballot.time = telechat_event.telechat_date
         ballot.save()
 
