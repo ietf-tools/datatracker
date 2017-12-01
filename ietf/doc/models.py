@@ -1007,7 +1007,7 @@ class BallotType(models.Model):
     positions = models.ManyToManyField(BallotPositionName, blank=True)
 
     def __unicode__(self):
-        return self.name
+        return u"%s: %s" % (self.name, self.doc_type.name)
     
     class Meta:
         ordering = ['order']
