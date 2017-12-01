@@ -396,6 +396,8 @@ class IESGAgendaTests(TestCase):
         approved = State.objects.get(type='draft-iesg', slug='approved')
         iesg_eval = State.objects.get(type='draft-iesg', slug='iesg-eva')
         for d in self.telechat_docs.values():
+            if d.type_id in ['draft', 'charter']:
+                create_ballot_if_not_open(None, d, by, 'approve')
             TelechatDocEvent.objects.create(type="scheduled_for_telechat",
                 doc=d, rev=d.rev, by=by, telechat_date=date, returning_item=False)
             s = d.get_state('draft-iesg')
