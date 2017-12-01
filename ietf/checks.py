@@ -349,7 +349,7 @@ def check_svn_import(app_configs, **kwargs):
 def check_api_key_in_local_settings(app_configs, **kwargs):
     errors = []
     import settings_local
-    if settings.SERVER_MODE == 'development':
+    if settings.SERVER_MODE == 'production':
         if not (    hasattr(settings_local, 'API_PUBLIC_KEY_PEM')
                 and hasattr(settings_local, 'API_PRIVATE_KEY_PEM')):
             errors.append(checks.Critical(
