@@ -807,6 +807,8 @@ class DocTestCase(TestCase):
         make_test_data()
         r = self.client.get("/feed/rfc/")
         self.assertTrue(r.status_code, 200)
+        r = self.client.get("/feed/rfc/2016")
+        self.assertTrue(r.status_code, 200)
 
     def test_state_help(self):
         url = urlreverse('ietf.doc.views_help.state_help', kwargs=dict(type="draft-iesg"))

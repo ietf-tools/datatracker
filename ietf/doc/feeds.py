@@ -110,10 +110,16 @@ class RfcFeed(Feed):
     title = "RFCs"
     author_name = "RFC Editor"
     link = "https://www.rfc-editor.org/rfc-index2.html"
+
+    def get_object(self,request,year=None):
+        self.year = year
     
     def items(self):
-        cutoff = datetime.datetime.now() - datetime.timedelta(days=8)
-        rfc_events = DocEvent.objects.filter(type='published_rfc',time__gte=cutoff).order_by('-time')
+        if self.year:
+            rfc_events = DocEvent.objects.filter(type='published_rfc',time__year=self.year).order_by('-time')
+        else:
+            cutoff = datetime.datetime.now() - datetime.timedelta(days=8)
+            rfc_events = DocEvent.objects.filter(type='published_rfc',time__gte=cutoff).order_by('-time')
         results = [(e.doc, e.time) for e in rfc_events]
         for doc,time in results:
             doc.publication_time = time
