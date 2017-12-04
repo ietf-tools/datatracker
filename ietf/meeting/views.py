@@ -1163,6 +1163,8 @@ def upload_session_bluesheets(request, session_id, num):
             else:
                 ota = session.official_timeslotassignment()
                 sess_time = ota and ota.timeslot.time
+                if not sess_time:
+                    return HttpResponse("Cannot receive uploads for an unscheduled session.  Please check the session ID.", status=410, content_type="text/plain")
                 if session.meeting.type_id=='ietf':
                     name = 'bluesheets-%s-%s-%s' % (session.meeting.number, 
                                                     session.group.acronym, 
@@ -1253,6 +1255,8 @@ def upload_session_minutes(request, session_id, num):
             else:
                 ota = session.official_timeslotassignment()
                 sess_time = ota and ota.timeslot.time
+                if not sess_time:
+                    return HttpResponse("Cannot receive uploads for an unscheduled session.  Please check the session ID.", status=410, content_type="text/plain")
                 if session.meeting.type_id=='ietf':
                     name = 'minutes-%s-%s' % (session.meeting.number, 
                                                  session.group.acronym) 
@@ -1359,6 +1363,8 @@ def upload_session_agenda(request, session_id, num):
             else:
                 ota = session.official_timeslotassignment()
                 sess_time = ota and ota.timeslot.time
+                if not sess_time:
+                    return HttpResponse("Cannot receive uploads for an unscheduled session.  Please check the session ID.", status=410, content_type="text/plain")
                 if session.meeting.type_id=='ietf':
                     name = 'agenda-%s-%s' % (session.meeting.number, 
                                                  session.group.acronym) 

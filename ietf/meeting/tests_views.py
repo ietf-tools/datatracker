@@ -1655,6 +1655,27 @@ class MaterialsTests(TestCase):
             self.assertEqual(doc.rev,'01')
             self.assertTrue(session2.sessionpresentation_set.filter(document__type_id=doctype))
 
+    def test_upload_minutes_agenda_unscheduled(self):
+        for doctype in ('minutes','agenda'):
+            session = SessionFactory(meeting__type_id='ietf', add_to_schedule=False)
+            if doctype == 'minutes':
+                url = urlreverse('ietf.meeting.views.upload_session_minutes',kwargs={'num':session.meeting.number,'session_id':session.id})
+            else:
+                url = urlreverse('ietf.meeting.views.upload_session_agenda',kwargs={'num':session.meeting.number,'session_id':session.id})
+            self.client.logout()
+            login_testing_unauthorized(self,"secretary",url)
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            q = PyQuery(r.content)
+            self.assertTrue('Upload' in unicode(q("Title")))
+            self.assertFalse(session.sessionpresentation_set.exists())
+            self.assertFalse(q('form input[type="checkbox"]'))
+
+            test_file = StringIO('this is some text for a test')
+            test_file.name = "not_really.txt"
+            r = self.client.post(url,dict(file=test_file,apply_to_all=False))
+            self.assertEqual(r.status_code, 410)
+
     def test_upload_minutes_agenda_interim(self):
         session=SessionFactory(meeting__type_id='interim')
         for doctype in ('minutes','agenda'):
