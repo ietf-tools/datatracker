@@ -18,6 +18,6 @@ urlpatterns = [
     url(r'^ipr/$', LatestIprDisclosuresFeed()),
     url(r'^liaison/(?P<kind>recent|from|to|subject)/(?:(?P<search>[^/]+)/)?$', LiaisonStatementsFeed()),
     url(r'^wg-proceedings/$', LatestMeetingMaterialFeed()),
+    url(r'^rfc/(?P<year>\d{4})/?$', RfcFeed()),
     url(r'^rfc/$', RfcFeed()),
-    url(r'^rfc/(?P<year>\d{4})/$', RfcFeed()),
 ]
