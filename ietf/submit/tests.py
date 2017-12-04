@@ -92,9 +92,9 @@ class SubmitTests(TestCase):
         self.yang_draft_model_dir = self.tempdir('yang-draft-model')
         settings.SUBMIT_YANG_DRAFT_MODEL_DIR = self.yang_draft_model_dir
 
-        self.saved_yang_inval_model_dir = settings.SUBMIT_YANG_INVAL_MODEL_DIR
-        self.yang_inval_model_dir = self.tempdir('yang-inval-model')
-        settings.SUBMIT_YANG_INVAL_MODEL_DIR = self.yang_inval_model_dir
+        self.saved_yang_iana_model_dir = settings.SUBMIT_YANG_IANA_MODEL_DIR
+        self.yang_iana_model_dir = self.tempdir('yang-iana-model')
+        settings.SUBMIT_YANG_IANA_MODEL_DIR = self.yang_iana_model_dir
 
     def tearDown(self):
         shutil.rmtree(self.staging_dir)
@@ -102,14 +102,14 @@ class SubmitTests(TestCase):
         shutil.rmtree(self.archive_dir)
         shutil.rmtree(self.yang_rfc_model_dir)
         shutil.rmtree(self.yang_draft_model_dir)
-        shutil.rmtree(self.yang_inval_model_dir)
+        shutil.rmtree(self.yang_iana_model_dir)
         settings.IDSUBMIT_STAGING_PATH = self.saved_idsubmit_staging_path
         settings.INTERNET_DRAFT_PATH = self.saved_internet_draft_path
         settings.IDSUBMIT_REPOSITORY_PATH = self.saved_idsubmit_repository_path
         settings.INTERNET_DRAFT_ARCHIVE_DIR = self.saved_archive_dir
         settings.SUBMIT_YANG_RFC_MODEL_DIR = self.saved_yang_rfc_model_dir
         settings.SUBMIT_YANG_DRAFT_MODEL_DIR = self.saved_yang_draft_model_dir
-        settings.SUBMIT_YANG_INVAL_MODEL_DIR = self.saved_yang_inval_model_dir
+        settings.SUBMIT_YANG_IANA_MODEL_DIR = self.saved_yang_iana_model_dir
 
 
     def do_submission(self, name, rev, group=None, formats=["txt",], author=None):

@@ -20,8 +20,7 @@ class Command(BaseCommand):
 
     Extracts yang models from RFCs (found in settings.RFC_PATH and places
     them in settings.SUBMIT_YANG_RFC_MODEL_DIR, and from active drafts, placed in
-    settings.SUBMIT_YANG_DRAFT_MODEL_DIR if valid and settings.SUBMIT_YANG_INVAL_MODEL_DIR
-    if not.
+    settings.SUBMIT_YANG_DRAFT_MODEL_DIR.
 
     """
 
@@ -142,14 +141,14 @@ class Command(BaseCommand):
         for item in draftdir.iterdir():
             try:
                 if item.is_file() and item.name.startswith('draft') and item.name.endswith('.txt') and active(item):
-                    model_list = extract_from(item, moddir)
+                    model_list = extract_from(item, moddir, strict=False)
                     for name in model_list:
                         if not name.startswith('example'):
                             if verbosity > 1:
-                                print("  Extracted valid module from %s: %s" % (item, name))
+                                print("  Extracted module from %s: %s" % (item, name))
                             else:
-                                    sys.stdout.write('.')
-                                    sys.stdout.flush()
+                                sys.stdout.write('.')
+                                sys.stdout.flush()
                         else:
                             modfile = moddir / name
                             modfile.unlink()
@@ -161,39 +160,3 @@ class Command(BaseCommand):
                 sys.stderr.write('\n')
         print("")
 
-        # Extract invalid modules from drafts
-        valdir = moddir
-        moddir = Path(settings.SUBMIT_YANG_INVAL_MODEL_DIR)
-        if not moddir.exists():
-            moddir.mkdir(parents=True)
-        print("Emptying %s ..." % moddir)
-        for item in moddir.iterdir():
-            item.unlink()
-
-        print("Extracting to %s ..." % moddir)
-        for item in draftdir.iterdir():
-            try:
-                if item.is_file() and item.name.startswith('draft') and item.name.endswith('.txt') and active(item):
-                    model_list = extract_from(item, moddir, strict=False)
-                    for name in model_list:
-                        modfile = moddir / name                    
-                        if (valdir/name).exists():
-                            modfile.unlink()
-                            if verbosity > 1:
-                                print("  Skipped valid module from %s: %s" % (item, name))
-                        elif not name.startswith('example'):
-                            if verbosity > 1:
-                                print("  Extracted invalid module from %s: %s" % (item, name))
-                            else:
-                                    sys.stdout.write('.')
-                                    sys.stdout.flush()
-                        else:
-                            modfile.unlink()
-                            if verbosity > 1:
-                                print("  Skipped module from %s: %s" % (item, name))
-            except UnicodeDecodeError as e:
-                sys.stderr.write('\nError: %s\n' % (e, ))
-                sys.stderr.write(item.name)
-                sys.stderr.write('\n')
-
-        print("")

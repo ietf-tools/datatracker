@@ -192,7 +192,7 @@ class DraftYangChecker(object):
                                 workdir,
                                 settings.SUBMIT_YANG_RFC_MODEL_DIR,
                                 settings.SUBMIT_YANG_DRAFT_MODEL_DIR,
-                                settings.SUBMIT_YANG_INVAL_MODEL_DIR,
+                                settings.SUBMIT_YANG_IANA_MODEL_DIR,
                             ])
             if os.path.exists(path):
                 with open(path) as file:
@@ -230,7 +230,7 @@ class DraftYangChecker(object):
                     command = [ w for w in cmd_template.split() if not '=' in w ][0]
                     cmd_version = VersionInfo.objects.get(command=command).version
                     cmd = cmd_template.format(model=path, rfclib=settings.SUBMIT_YANG_RFC_MODEL_DIR, tmplib=workdir,
-                        draftlib=settings.SUBMIT_YANG_DRAFT_MODEL_DIR, invallib=settings.SUBMIT_YANG_INVAL_MODEL_DIR, )
+                        draftlib=settings.SUBMIT_YANG_DRAFT_MODEL_DIR, ianalib=settings.SUBMIT_YANG_IANA_MODEL_DIR, )
                     code, out, err = pipe(cmd)
                     if code > 0 or len(err.strip()) > 0:
                         error_lines = err.splitlines()
@@ -248,14 +248,9 @@ class DraftYangChecker(object):
             else:
                 errors += 1
                 message += "No such file: %s\nPossible mismatch between extracted xym file name and returned module name?\n" % (path)
-                    
 
-            if errors==0 and warnings==0:
-                dest = os.path.join(settings.SUBMIT_YANG_DRAFT_MODEL_DIR, model)
-                shutil.move(path, dest)
-            else:
-                dest = os.path.join(settings.SUBMIT_YANG_INVAL_MODEL_DIR, model)
-                shutil.move(path, dest)
+            dest = os.path.join(settings.SUBMIT_YANG_DRAFT_MODEL_DIR, model)
+            shutil.move(path, dest)
 
             # summary result
             results.append({

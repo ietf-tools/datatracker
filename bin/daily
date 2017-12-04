@@ -22,6 +22,10 @@ source $DTDIR/env/bin/activate
 # Update our information about the current version of some commands we use
 $DTDIR/ietf/manage.py update_external_command_info
 
+# Get IANA-registered yang models
+YANG_IANA_DIR=$(python -c 'import ietf.settings; print ietf.settings.SUBMIT_YANG_IANA_MODEL_DIR')
+rsync -avz --delete rsync.ietf.org::iana/yang-parameters $YANG_IANA_DIR/
+
 # Populate the yang repositories
 $DTDIR/ietf/manage.py populate_yang_model_dirs
 
