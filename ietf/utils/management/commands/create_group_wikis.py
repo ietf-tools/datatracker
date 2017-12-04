@@ -378,6 +378,8 @@ class Command(BaseCommand):
         for acronym, name, path in settings.TRAC_CREATE_ADHOC_WIKIS:
             try:
                 self.note("Processing wiki '%s'" % name)
+                if not os.path.isabs(path):
+                    path = self.wiki_dir_pattern % path
 
                 if not os.path.exists(path):
                     trac_env, msg = self.create_adhoc_trac(name, path)
