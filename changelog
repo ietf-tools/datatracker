@@ -1,3 +1,47 @@
+ietfdb (6.67.0) ietf; urgency=medium
+
+  **Per-year RFC feed, IANA yang modules, test improvements**
+
+  This release contains a number of small tweaks and features, as follows:
+
+  * Merged in [14386] from rjsparks@nostrum.com: Added a per-year RFC feed.  
+
+  * Changed settings and handling of adhoc wiki paths to be more
+    testing-friendly.
+
+  * Changed handling of yang modules from drafts with errors, to not place
+    them in separate directories, due to possible follow-on effects.  Added
+    use of IANA-held modules when validating, and regular rsyncing from IANA.
+
+  * Added better handling for attempted (mistaken) uploads to unscheduled
+    sessions.
+
+  * Fixed an incorrect comparison in a check function.
+
+  * Improved code coverage slightly.
+
+  * Made the ballot type representation string more expressive, showing both
+    name and doc_type.
+
+  * Added a warning message for the user if ballot creation failed due to an
+    already open ballot.  This is a bad state, and should prevented by
+    stricter checks before changing state, but is better than the current
+    situation until we decide exactly which checks to implement.
+
+  * Refactored the handling of BallotDocEvent in tests, only creating them as
+    needed, in preparation for stricter checks on state transitions to avoid
+    mismatches between state and ballot.
+
+  * Moved the 'Search mailarchive' link on ballot pages to a more visible
+    spot.
+
+  * Merged in [14374] from kivinen@iki.fi: If draft name has rfcXXXX-bis or
+    rfcXXXXbis then add rfcXXXX to diff context menu. Fixes #460 (7 years old
+    ticket).  
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  04 Dec 2017 07:29:35 -0800
+
+
 ietfdb (6.66.0) ietf; urgency=medium
 
   **IETF 100 code sprint**
