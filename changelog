@@ -39,7 +39,7 @@ ietfdb (6.67.0) ietf; urgency=medium
     rfcXXXXbis then add rfcXXXX to diff context menu. Fixes #460 (7 years old
     ticket).  
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  04 Dec 2017 07:29:35 -0800
+ -- Henrik Levkowetz <henrik@levkowetz.com>  05 Dec 2017 12:30:27 +0000
 
 
 ietfdb (6.66.0) ietf; urgency=medium
