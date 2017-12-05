@@ -9,10 +9,10 @@ Planned work in rough order
 
 * Add an API to post IESG ballot comments
 
-* Update IPR disclosure pages with 1) itemized section V, 2) use the RFC
-  Updates and Obsoletes fields to add document relationships to be followed by
-  IPR searches, 3) show current values in the IPR update form, and 4) show
-  updates in a diff format (old/new columns).
+* Update IPR disclosure pages with 1) itemized section V, 2) use draft Updates
+  and Obsoletes (if approved) information to add document relationships to be
+  followed by IPR searches, 3) show current values in the IPR update form, and
+  4) show updates in a diff format (old/new columns).
 
 * Upgrade Django to version 1.11
 
