@@ -140,11 +140,13 @@ class Command(BaseCommand):
                     self.stdout.write(self.diff_line_format % (mval, lval, key, ))
                 if mmisslines and lmisslines and set(lmissnum) != set(mmissnum) and options.get('verbosity',1) > 1:
                     self.stdout.write('    ------------------------------------------------------------')
+                    self.stdout.write('    Coverage lost:    -')
+                    self.stdout.write('    Coverage gained:  +')
                     ln = 0
                     mn = 0
                     p = -1
                     n = 0
-                    for line in ndiff(mmisslines, lmisslines):
+                    for line in ndiff(lmisslines, mmisslines):
                         if ln < len(lmissnum):
                             n = lmissnum[ln]
                         else:
