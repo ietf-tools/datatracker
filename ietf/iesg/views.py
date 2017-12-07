@@ -498,7 +498,7 @@ def discusses(request):
 def milestones_needing_review(request):
     # collect milestones, grouped on AD and group
     ads = {}
-    for m in GroupMilestone.objects.filter(state="review").exclude(group__state="concluded").distinct().select_related("group"):
+    for m in GroupMilestone.objects.filter(state="review").exclude(group__state="conclude").distinct().select_related("group"):
         if m.group.ad_role():
             groups = ads.setdefault(m.group.ad_role().person, {})
             milestones = groups.setdefault(m.group, [])
