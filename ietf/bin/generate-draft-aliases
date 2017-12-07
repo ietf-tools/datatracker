@@ -54,7 +54,11 @@ def get_draft_ad_emails(draft):
     # If working group document, return current WG ADs
     wg = draft.group
     if wg and wg.acronym != 'none' and wg.parent and wg.parent.acronym != 'none':
-        return get_group_ad_emails(wg)
+        ad_emails = get_group_ad_emails(wg)
+        if draft.ad:
+            if draft.ad.email_address() not in ad_emails:
+                ad_emails.add(draft.ad.email_address())
+        return ad_emails
     # If not, return explicit AD set (whether up to date or not)
     ad = draft.ad
     #return [ad and ad.user and ad.user.email]
