@@ -6,6 +6,8 @@ from django.forms.formsets import formset_factory
 from django.shortcuts import render, get_object_or_404, redirect
 from django.utils.functional import curry
 
+import debug                            # pyflakes:ignore
+
 from ietf.doc.models import DocEvent, Document, BallotDocEvent, BallotPositionDocEvent, BallotType, WriteupDocEvent
 from ietf.doc.utils import get_document_content, add_state_change_event
 from ietf.person.models import Person
@@ -15,7 +17,7 @@ from ietf.iesg.models import TelechatDate, TelechatAgendaItem, Telechat
 from ietf.iesg.agenda import agenda_data, get_doc_section
 from ietf.ietfauth.utils import role_required
 from ietf.secr.telechat.forms import BallotForm, ChangeStateForm, DateSelectForm, TELECHAT_TAGS
-
+from ietf.utils import log
 
 
 '''
@@ -70,7 +72,12 @@ def get_doc_writeup(doc):
             writeup = latest.text
     elif doc.type_id == 'conflrev':
         path = os.path.join(doc.get_file_path(),doc.filename_with_rev())
-        writeup = get_document_content(doc.name,path,split=False,markup=False)
+        writeup = get_document_content(doc.name,path,split=False,markup=False).decode('utf-8')
+        utext = doc.text_or_error()     # pyflakes:ignore
+        if writeup and writeup != utext and not 'Error; cannot read' in writeup:
+            debug.show('writeup[:64]')
+            debug.show('utext[:64]')
+            log.assertion('writeup == utext')
     return writeup
 
 def get_last_telechat_date():

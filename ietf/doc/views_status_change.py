@@ -282,7 +282,12 @@ def newstatus(relateddoc):
 def default_approval_text(status_change,relateddoc):
 
     filename = "%s-%s.txt" % (status_change.canonical_name(), status_change.rev)
-    current_text = get_document_content(filename, os.path.join(settings.STATUS_CHANGE_PATH, filename), split=False, markup=False)
+    current_text = get_document_content(filename, os.path.join(settings.STATUS_CHANGE_PATH, filename), split=False, markup=False).decode('utf-8')
+    utext = status_change.text_or_error() # pyflakes:ignore
+    if current_text and current_text != utext and not 'Error; cannot read' in current_text:
+        debug.show('current_text[:64]')
+        debug.show('utext[:64]')
+        log.assertion('current_text == utext')
 
     if relateddoc.target.document.std_level.slug in ('std','ps','ds','bcp',):
         action = "Protocol Action"

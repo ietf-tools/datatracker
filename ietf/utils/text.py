@@ -124,3 +124,12 @@ def isascii(text):
         return True
     except UnicodeEncodeError:
         return False
+
+def maybe_split(text, split=True, pos=5000):
+    if split:
+        n = text.find("\n", pos)
+        text = text[:n+1]
+    return text
+
+        
+    

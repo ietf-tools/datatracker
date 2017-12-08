@@ -18,7 +18,7 @@ import debug                            # pyflakes:ignore
 from ietf.doc.models import ConsensusDocEvent
 from ietf.doc.utils import get_document_content
 from ietf.utils.text import wordwrap, fill, wrap_text_if_unwrapped
-
+from ietf.utils import log
 
 register = template.Library()
 
@@ -509,7 +509,13 @@ def document_content(doc):
     if doc is None:
         return None
     path = os.path.join(doc.get_file_path(),doc.filename_with_rev())
-    return get_document_content(doc.name,path,markup=False)
+    content = get_document_content(doc.name,path,markup=False)
+    utext = doc.text_or_error()         # pyflakes:ignore
+    if content and content != utext and not 'Error; cannot read' in content:
+        debug.show('content[:64]')
+        debug.show('utext[:64]')
+        log.assertion('content == utext')
+    return content
 
 @register.filter
 def format_timedelta(timedelta):

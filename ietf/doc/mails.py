@@ -8,6 +8,8 @@ from django.utils.html import strip_tags
 from django.conf import settings
 from django.urls import reverse as urlreverse
 
+import debug                            # pyflakes:ignore
+
 from ietf.utils.mail import send_mail, send_mail_text
 from ietf.ipr.utils import iprs_from_docs, related_docs
 from ietf.doc.models import WriteupDocEvent, LastCallDocEvent, DocAlias, ConsensusDocEvent
@@ -15,6 +17,7 @@ from ietf.doc.utils import needed_ballot_positions, get_document_content
 from ietf.group.models import Role
 from ietf.doc.models import Document
 from ietf.mailtrigger.utils import gather_address_lists
+from ietf.utils import log
 
 def email_state_changed(request, doc, text, mailtrigger_id=None):
     (to,cc) = gather_address_lists(mailtrigger_id or 'doc_state_edited',doc=doc)
@@ -515,7 +518,13 @@ def email_charter_internal_review(request, charter):
                         os.path.join(settings.CHARTER_PATH,filename),
                         split=False,
                         markup=False,
-                   )
+                   ).decode('utf-8')
+    utext = charter.text_or_error()     # pyflakes:ignore
+    if charter_text and charter_text != utext and not 'Error; cannot read' in charter_text:
+        debug.show('charter_text[:64]')
+        debug.show('utext[:64]')
+        log.assertion('charter_text == utext')
+
     send_mail(request, addrs.to, settings.DEFAULT_FROM_EMAIL,
               'Internal %s Review: %s (%s)'%(charter.group.type.name,charter.group.name,charter.group.acronym),
               'doc/mail/charter_internal_review.txt',

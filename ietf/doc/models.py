@@ -449,6 +449,9 @@ class DocumentInfo(models.Model):
         #
         return text
 
+    def text_or_error(self):
+        return self.text() or "Error; cannot read (%s)"%self.get_file_name()
+
     def htmlized(self):
         name = self.get_base_name()
         text = self.text()

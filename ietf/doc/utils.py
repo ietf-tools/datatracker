@@ -22,7 +22,7 @@ from ietf.doc.models import TelechatDocEvent
 from ietf.name.models import DocReminderTypeName, DocRelationshipName
 from ietf.group.models import Role
 from ietf.ietfauth.utils import has_role
-from ietf.utils import draft, markup_txt
+from ietf.utils import draft
 from ietf.utils.mail import send_mail
 from ietf.mailtrigger.utils import gather_address_lists
 
@@ -299,6 +299,7 @@ def get_unicode_document_content(key, filename, codec='utf-8', errors='ignore'):
     return raw_content
 
 def get_document_content(key, filename, split=True, markup=True):
+    #log.unreachable("2017-12-05")
     try:
         with open(filename, 'rb') as f:
             raw_content = f.read()
@@ -306,10 +307,11 @@ def get_document_content(key, filename, split=True, markup=True):
         error = "Error; cannot read ("+key+")"
         return error
 
-    if markup:
-        return markup_txt.markup(raw_content, split)
-    else:
-        return raw_content
+#     if markup:
+#         return markup_txt.markup(raw_content, split)
+#     else:
+#         return raw_content
+    return raw_content
 
 def tags_suffix(tags):
     return (u"::" + u"::".join(t.name for t in tags)) if tags else u""

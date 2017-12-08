@@ -30,25 +30,36 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from django.utils.html import escape
-import string
 import re
+import six
+import string
 
+from django.utils.html import escape
+
+from ietf.utils import log
 from ietf.utils.text import wordwrap
 
-def markup(content, split=True, width=None):
+def markup_ascii(content, width=None):
+    log.unreachable('2017-12-08')
+    if six.PY2:
+        assert isinstance(content, basestring)
+        # at this point, "content" is normal string
+        # fix most common non-ASCII characters
+        t1 = string.maketrans("\x91\x92\x93\x94\x95\x96\x97\xc6\xe8\xe9", "\'\'\"\"o--\'ee")
+        # map everything except printable ASCII, TAB, LF, FF to "?"
+        t2 = string.maketrans('','')
+        t3 = "?"*9 + "\t\n?\f" + "?"*19 + t2[32:127] + "?"*129
+        t4 = t1.translate(t3)
+        content = content.translate(t4)
+    else:
+        log.assertion('six.PY2')
+    return markup(content.decode('ascii'), width)
+
+def markup(content, width=None):
+    log.assertion('isinstance(content, six.text_type)')
     # normalize line endings to LF only
     content = content.replace("\r\n", "\n")
     content = content.replace("\r", "\n")
-
-    # at this point, "content" is normal string
-    # fix most common non-ASCII characters
-    t1 = string.maketrans("\x91\x92\x93\x94\x95\x96\x97\xc6\xe8\xe9", "\'\'\"\"o--\'ee")
-    # map everything except printable ASCII, TAB, LF, FF to "?"
-    t2 = string.maketrans('','')
-    t3 = "?"*9 + "\t\n?\f" + "?"*19 + t2[32:127] + "?"*129
-    t4 = t1.translate(t3)
-    content = content.translate(t4)
 
     # remove leading white space
     content = content.lstrip()
@@ -69,36 +80,4 @@ def markup(content, split=True, width=None):
 
     content = re.sub("\n\n([0-9]+\\.|[A-Z]\\.[0-9]|Appendix|Status of|Abstract|Table of|Full Copyright|Copyright|Intellectual Property|Acknowled|Author|Index)(.*)(?=\n\n)", """\n\n<span class="m_h">\g<1>\g<2></span>""", content)
 
-    if split:
-        n = content.find("\n", 5000)
-        content1 = "<pre>"+content[:n+1]+"</pre>\n"
-        return content1
-        #content2 = "<pre>"+content[n+1:]+"</pre>\n"
-        #return (content1, content2)
-    else:
-        return "<pre>" + content + "</pre>\n"
-
-def markup_unicode(content, split=True, width=None, container_classes=None):
-    # normalize line endings to LF only
-    content = content.replace("\r\n", "\n")
-    content = content.replace("\r", "\n")
-
-    # remove leading white space
-    content = content.lstrip()
-    # remove runs of blank lines
-    content = re.sub("\n\n\n+", "\n\n", content)
-
-    # maybe wordwrap.  This must be done before the escaping below.
-    if width:
-        content = wordwrap(content, width)
-
-    # expand tabs + escape 
-    content_to_show = escape(content.expandtabs())
-
-    if split:
-        n = content.find("\n", 5000)
-        content_to_show = content_to_show[:n+1]
-    
-    pre = '<pre class="%s" >' % container_classes if container_classes else '<pre>'
-
-    return pre+content_to_show+'</pre>\n'
+    return "<pre>" + content + "</pre>\n"

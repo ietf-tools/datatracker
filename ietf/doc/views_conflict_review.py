@@ -254,7 +254,12 @@ def edit_ad(request, name):
 def default_approval_text(review):
 
     filename = "%s-%s.txt" % (review.canonical_name(), review.rev)
-    current_text = get_document_content(filename, os.path.join(settings.CONFLICT_REVIEW_PATH, filename), split=False, markup=False)
+    current_text = get_document_content(filename, os.path.join(settings.CONFLICT_REVIEW_PATH, filename), split=False, markup=False).decode('utf-8')
+    utext = review.text_or_error()      # pyflakes:ignore
+    if current_text and current_text != utext and not 'Error; cannot read' in current_text:
+        debug.show('current_text[:64]')
+        debug.show('utext[:64]')
+        log.assertion('current_text == utext')
 
     conflictdoc = review.relateddocument_set.get(relationship__slug='conflrev').target.document
     if conflictdoc.stream_id=='ise':

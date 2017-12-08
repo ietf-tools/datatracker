@@ -66,6 +66,8 @@ from ietf.meeting.utils import group_sessions, get_upcoming_manageable_sessions,
 from ietf.review.models import ReviewRequest
 from ietf.review.utils import can_request_review_of_doc, review_requests_to_list_for_docs
 from ietf.review.utils import no_review_from_teams_on_doc
+from ietf.utils import markup_txt, log
+from ietf.utils.text import maybe_split
 
 
 def render_document_top(request, doc, tab, name):
@@ -186,7 +188,13 @@ def document_main(request, name, rev=None):
             filename = name + ".txt"
 
             content = get_document_content(filename, os.path.join(settings.RFC_PATH, filename),
-                                           split_content, markup=True)
+                                           split_content, markup=True).decode('utf-8')
+            utext = doc.text_or_error() # pyflakes:ignore
+            if content and content != utext and not 'Error; cannot read' in content:
+                debug.show('content[:64]')
+                debug.show('utext[:64]')
+                log.assertion('content == utext')
+            content = markup_txt.markup(maybe_split(content, split=split_content))
 
             # file types
             base_path = os.path.join(settings.RFC_PATH, name + ".")
@@ -216,7 +224,13 @@ def document_main(request, name, rev=None):
             filename = "%s-%s.txt" % (draft_name, doc.rev)
 
             content = get_document_content(filename, os.path.join(settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR, filename),
-                                           split_content, markup=True)
+                                           split_content, markup=True).decode('utf-8')
+            utext = doc.text_or_error() # pyflakes:ignore
+            if content and content != utext and not 'Error; cannot read' in content:
+                debug.show('content[:64]')
+                debug.show('utext[:64]')
+                log.assertion('content == utext')
+            content = markup_txt.markup(maybe_split(content, split=split_content)) 
 
             # file types
             base_path = os.path.join(settings.INTERNET_DRAFT_PATH, doc.name + "-" + doc.rev + ".")
@@ -439,7 +453,13 @@ def document_main(request, name, rev=None):
     if doc.type_id == "charter":
         filename = "%s-%s.txt" % (doc.canonical_name(), doc.rev)
 
-        content = get_document_content(filename, os.path.join(settings.CHARTER_PATH, filename), split=False, markup=True)
+        content = get_document_content(filename, os.path.join(settings.CHARTER_PATH, filename), split=False, markup=True).decode('utf-8')
+        utext = doc.text_or_error()     # pyflakes:ignore
+        if content and content != utext and not 'Error; cannot read' in content:
+            debug.show('content[:64]')
+            debug.show('utext[:64]')
+            log.assertion('content == utext')
+        content = markup_txt.markup(content)
 
         ballot_summary = None
         if doc.get_state_slug() in ("intrev", "iesgrev"):
@@ -480,9 +500,15 @@ def document_main(request, name, rev=None):
 
         if doc.rev == "00" and not os.path.isfile(pathname):
             # This could move to a template
-            content = "A conflict review response has not yet been proposed."
+            content = u"A conflict review response has not yet been proposed."
         else:     
-            content = get_document_content(filename, pathname, split=False, markup=True)
+            content = get_document_content(filename, pathname, split=False, markup=True).decode('utf-8')
+            utext = doc.text_or_error() # pyflakes:ignore
+            if content and content != utext and not 'Error; cannot read' in content:
+                debug.show('content[:64]')
+                debug.show('utext[:64]')
+                log.assertion('content == utext')
+            content = markup_txt.markup(content)
 
         ballot_summary = None
         if doc.get_state_slug() in ("iesgeval") and doc.active_ballot():
@@ -507,9 +533,14 @@ def document_main(request, name, rev=None):
 
         if doc.rev == "00" and not os.path.isfile(pathname):
             # This could move to a template
-            content = "Status change text has not yet been proposed."
+            content = u"Status change text has not yet been proposed."
         else:     
-            content = get_document_content(filename, pathname, split=False)
+            content = get_document_content(filename, pathname, split=False).decode('utf-8')
+            utext = doc.text_or_error() # pyflakes:ignore
+            if content and content != utext and not 'Error; cannot read' in content:
+                debug.show('content[:64]')
+                debug.show('utext[:64]')
+                log.assertion('content == utext')
 
         ballot_summary = None
         if doc.get_state_slug() in ("iesgeval"):
@@ -562,7 +593,12 @@ def document_main(request, name, rev=None):
                 url = urlbase + extension 
 
             if extension == ".txt":
-                content = get_document_content(basename, pathname + extension, split=False)
+                content = get_document_content(basename, pathname + extension, split=False).decode('utf-8')
+                utext = doc.text_or_error()      # pyflakes:ignore
+                if content != utext:
+                    debug.show('content[:64]')
+                    debug.show('utext[:64]')
+                log.assertion('content == utext')
                 t = "plain text"
 
             other_types.append((t, url))

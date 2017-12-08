@@ -18,6 +18,7 @@ from ietf.meeting.helpers import is_meeting_approved, get_next_agenda_name
 from ietf.message.models import Message
 from ietf.person.models import Person
 from ietf.utils.fields import DatepickerDateField, DurationField
+from ietf.utils import log
 
 # need to insert empty option for use in ChoiceField
 # countries.insert(0, ('', '-'*9 ))
@@ -220,7 +221,14 @@ class InterimSessionModelForm(forms.ModelForm):
             if self.instance.agenda():
                 doc = self.instance.agenda()
                 path = os.path.join(doc.get_file_path(), doc.filename_with_rev())
-                self.initial['agenda'] = get_document_content(os.path.basename(path), path, markup=False)
+                content = get_document_content(os.path.basename(path), path, markup=False).decode('utf-8')
+                utext = doc.text_or_error() # pyflakes:ignore
+                if content and content != utext and not 'Error; cannot read' in content:
+                    debug.show('content[:64]')
+                    debug.show('utext[:64]')
+                    log.assertion('content == utext')
+                self.initial['agenda'] = content
+                
 
     def clean_date(self):
         '''Date field validator.  We can't use required on the input because
