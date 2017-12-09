@@ -188,14 +188,15 @@
       </tr>
       {% endif %}
 
-      {% if review_req.review_done_time %}
-      <tr>
-        <th></th>
-        <th>Review closed:</th>
-        <td>{{ review_req.review_done_time|date:"Y-m-d" }}</td>
-      </tr>
+      {% if review_req.state_id == "completed" or review_req.state_id == "part-completed" %}
+	<tr>
+	  <th></th>
+	  <th>Review completed:</th>
+	  <td>
+	    {{ review_req.review_done_time|date:"Y-m-d" }}
+	  </td>
+	</tr>
       {% endif %}
-      
     </tbody>
   </table>
 
