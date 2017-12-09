@@ -82,7 +82,7 @@ def check_doc_email_aliases_exists(app_configs, **kwargs):
         ok = check_doc_email_aliases()
         if not ok:
             errors.append(checks.Error(
-                "Found no aliases in the document email aliases file\n'%s'."%settings.DRAFT_ALIASES_PATH,
+                "Found no aliases in the document email aliases file\n'%s'."%settings.DRAFT_VIRTUAL_PATH,
                 hint="Please run ietf/bin/generate-draft-aliases to generate them.",
                 obj=None,
                 id="datatracker.E0004",
@@ -108,11 +108,11 @@ def check_id_submission_directories(app_configs, **kwargs):
         p = getattr(settings, s)
         if not os.path.exists(p):
             errors.append(checks.Critical(
-                "A directory used by the ID submission tool does not exist at the path given\n"
-                "in the settings file.  The setting is:\n"
+                "A directory used by the ID submission tool does not\n"
+                "exist at the path given in the settings file.  The setting is:\n"
                 "    %s = %s" % (s, p),
-                hint = ("Please either update the local settings to point at the correct directory,"
-                    "or if the setting is correct, create the indicated directory."),
+                hint = ("Please either update the local settings to point at the correct\n"
+                    "\tdirectory, or if the setting is correct, create the indicated directory.\n"),
                 id = "datatracker.E0006",
             ))
     return errors
@@ -128,11 +128,12 @@ def check_id_submission_files(app_configs, **kwargs):
         p = getattr(settings, s)
         if not os.path.exists(p):
             errors.append(checks.Critical(
-                "A file used by the ID submission tool does not exist at the path given\n"
-                "in the settings file.  The setting is:\n"
+                "A file used by the ID submission tool does not exist\n"
+                "at the path given in the settings file.  The setting is:\n"
                 "    %s = %s" % (s, p),
-                hint = ("Please either update the local settings to point at the correct file,"
-                    "or if the setting is correct, make sure the file is in place and has the right permissions."),
+                hint = ("Please either update the local settings to point at the correct\n"
+                    "\tfile, or if the setting is correct, make sure the file is in place and\n"
+                    "\thas the right permissions.\n"),
                 id = "datatracker.E0007",
             ))
     return errors
@@ -149,11 +150,11 @@ def check_yang_model_directories(app_configs, **kwargs):
         p = getattr(settings, s)
         if not os.path.exists(p):
             errors.append(checks.Critical(
-                "A directory used by the yang validation tools does not exist at the path\n"
-                "gvien in the settings file.  The setting is:\n"
+                "A directory used by the yang validation tools does\n"
+                "not exist at the path gvien in the settings file.  The setting is:\n"
                 "    %s = %s" % (s, p),
-                hint = ("Please either update your local settings to point at the correct directory,"
-                    "or if the setting is correct, create the indicated directory."),
+                hint = ("Please either update your local settings to point at the correct\n"
+                    "\tdirectory, or if the setting is correct, create the indicated directory.\n"),
                 id = "datatracker.E0006",
             ))
     return errors
@@ -171,26 +172,27 @@ def check_id_submission_checkers(app_configs, **kwargs):
             checker_class = import_string(checker_path)
         except Exception as e:
             errors.append(checks.Critical(
-                "An exception was raised when trying to import the draft submission"
-                "checker class '%s':\n %s" % (checker_path, e),
-                hint = "Please check that the class exists and can be imported.",
+                "An exception was raised when trying to import the\n"
+                "draft submission checker class '%s':\n    %s" % (checker_path, e),
+                hint = "Please check that the class exists and can be imported.\n",
                 id = "datatracker.E0008",
             ))
         try:
             checker = checker_class()
         except Exception as e:
             errors.append(checks.Critical(
-                "An exception was raised when trying to instantiate the draft submission"
-                "checker class '%s': %s" % (checker_path, e),
-                hint = "Please check that the class can be instantiated.",
+                "An exception was raised when trying to instantiate\n"
+                "the draft submission checker class '%s':\n    %s" % (checker_path, e),
+                hint = "Please check that the class can be instantiated.\n",
                 id = "datatracker.E0009",
             ))
             continue
         for attr in ('name',):
             if not hasattr(checker, attr):
                 errors.append(checks.Critical(
-                    "The draft submission checker '%s' has no attribute '%s', which is required" % (checker_path, attr),
-                    hint = "Please update the class.",
+                    "The draft submission checker\n    '%s'\n"
+                    "has no attribute '%s', which is required" % (checker_path, attr),
+                    hint = "Please update the class.\n",
                     id = "datatracker.E0010",
                 ))
         checker_methods = ("check_file_txt", "check_file_xml", "check_fragment_txt", "check_fragment_xml", )
@@ -199,9 +201,10 @@ def check_id_submission_checkers(app_configs, **kwargs):
                 break
         else:
             errors.append(checks.Critical(
-                "The draft submission checker '%s' has no recognised checker method;  "
+                "The draft submission checker\n    '%s'\n"
+                " has no recognised checker method;  "
                 "should be one or more of %s." % (checker_path, checker_methods),
-                hint = "Please update the class.",
+                hint = "Please update the class.\n",
                 id = "datatracker.E0011",
             ))
     return errors
@@ -217,11 +220,11 @@ def check_media_directories(app_configs, **kwargs):
         p = getattr(settings, s)
         if not os.path.exists(p):
             errors.append(checks.Critical(
-                "A directory used for media uploads and serves does not exist at the path given\n"
-                "in the settings file.  The setting is:\n"
+                "A directory used for media uploads and serves does\n"
+                "not exist at the path given in the settings file.  The setting is:\n"
                 "    %s = %s" % (s, p),
-                hint = ("Please either update the local settings to point at the correct directory,"
-                    "or if the setting is correct, create the indicated directory."),
+                hint = ("Please either update the local settings to point at the correct\n"
+                    "\tdirectory, or if the setting is correct, create the indicated directory.\n"),
                 id = "datatracker.E0012",
             ))
     return errors
@@ -238,11 +241,11 @@ def check_proceedings_directories(app_configs, **kwargs):
         p = getattr(settings, s)
         if not os.path.exists(p):
             errors.append(checks.Critical(
-                "A directory used for meeting materials does not exist at the path given\n"
-                "in the settings file.  The setting is:\n"
+                "A directory used for meeting materials does not\n"
+                "exist at the path given in the settings file.  The setting is:\n"
                 "    %s = %s" % (s, p),
-                hint = ("Please either update the local settings to point at the correct directory,"
-                    "or if the setting is correct, create the indicated directory."),
+                hint = ("Please either update the local settings to point at the correct\n"
+                    "\tdirectory, or if the setting is correct, create the indicated directory.\n"),
                 id = "datatracker.E0013",
             ))
     return errors
@@ -261,7 +264,7 @@ def check_cache(app_configs, **kwargs):
                 ( "A cache test failed with the message:\n    '%s'.\n"
                 "This indicates that the cache is unavailable or not working as expected.\n"
                 "It will impact performance, but isn't fatal.  The default cache is:\n"
-                "    CACHES['default']['BACKEND'] = %s\n") % (
+                "    CACHES['default']['BACKEND'] = %s") % (
                     msg,
                     settings.CACHES["default"]["BACKEND"],
                 ),
@@ -303,7 +306,7 @@ def maybe_create_svn_symlinks(settings):
                     "does not exist:\n"
                     "   %s\n" % path,
                     hint = "Please provide the correct python system site-package paths for\n"
-                    "svn and libsvn in SVN_PACKAGES.",
+                    "\tsvn and libsvn in SVN_PACKAGES.\n",
                     id = "datatracker.E0015",))
     return errors
 
@@ -374,6 +377,7 @@ def check_api_key_in_local_settings(app_configs, **kwargs):
                     different than the default settings.  You seem to have  API key settings
                     in settings_local.py, but they don't seem to propagate to django.conf.settings.
                     Please check if you have multiple settings_local.py files.
+
                     """).replace('\n', '\n   ').rstrip(),
                 id = "datatracker.E0016",
             ))
