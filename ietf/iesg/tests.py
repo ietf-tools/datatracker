@@ -56,6 +56,12 @@ class IESGTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertTrue(m.desc in unicontent(r))
+        draft.group.state_id = 'conclude'
+        draft.group.save()
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertFalse(m.desc in unicontent(r))
+        
 
     def test_review_decisions(self):
         draft = make_test_data()
