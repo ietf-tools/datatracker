@@ -22,7 +22,7 @@ from ietf.doc.models import TelechatDocEvent
 from ietf.name.models import DocReminderTypeName, DocRelationshipName
 from ietf.group.models import Role
 from ietf.ietfauth.utils import has_role
-from ietf.utils import draft
+from ietf.utils import draft, text
 from ietf.utils.mail import send_mail
 from ietf.mailtrigger.utils import gather_address_lists
 
@@ -311,7 +311,7 @@ def get_document_content(key, filename, split=True, markup=True):
 #         return markup_txt.markup(raw_content, split)
 #     else:
 #         return raw_content
-    return raw_content
+    return text.decode(raw_content)
 
 def tags_suffix(tags):
     return (u"::" + u"::".join(t.name for t in tags)) if tags else u""

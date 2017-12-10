@@ -221,7 +221,7 @@ class InterimSessionModelForm(forms.ModelForm):
             if self.instance.agenda():
                 doc = self.instance.agenda()
                 path = os.path.join(doc.get_file_path(), doc.filename_with_rev())
-                content = get_document_content(os.path.basename(path), path, markup=False).decode('utf-8')
+                content = get_document_content(os.path.basename(path), path, markup=False)
                 utext = doc.text_or_error() # pyflakes:ignore
                 if content and content != utext and not 'Error; cannot read' in content:
                     debug.show('content[:64]')

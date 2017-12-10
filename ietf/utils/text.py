@@ -131,5 +131,13 @@ def maybe_split(text, split=True, pos=5000):
         text = text[:n+1]
     return text
 
-        
+def decode(raw):
+    assert isinstance(raw, six.binary_type)
+    try:
+        text = raw.decode('utf-8')
+    except UnicodeDecodeError:
+        # if this fails, don't catch the exception here; let it propagate
+        text = raw.decode('latin-1')
+    #
+    return text
     

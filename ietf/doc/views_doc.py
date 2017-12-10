@@ -188,7 +188,7 @@ def document_main(request, name, rev=None):
             filename = name + ".txt"
 
             content = get_document_content(filename, os.path.join(settings.RFC_PATH, filename),
-                                           split_content, markup=True).decode('utf-8')
+                                           split_content, markup=True)
             utext = doc.text_or_error() # pyflakes:ignore
             if content and content != utext and not 'Error; cannot read' in content:
                 debug.show('content[:64]')
@@ -224,7 +224,7 @@ def document_main(request, name, rev=None):
             filename = "%s-%s.txt" % (draft_name, doc.rev)
 
             content = get_document_content(filename, os.path.join(settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR, filename),
-                                           split_content, markup=True).decode('utf-8')
+                                           split_content, markup=True)
             utext = doc.text_or_error() # pyflakes:ignore
             if content and content != utext and not 'Error; cannot read' in content:
                 debug.show('content[:64]')
@@ -453,7 +453,7 @@ def document_main(request, name, rev=None):
     if doc.type_id == "charter":
         filename = "%s-%s.txt" % (doc.canonical_name(), doc.rev)
 
-        content = get_document_content(filename, os.path.join(settings.CHARTER_PATH, filename), split=False, markup=True).decode('utf-8')
+        content = get_document_content(filename, os.path.join(settings.CHARTER_PATH, filename), split=False, markup=True)
         utext = doc.text_or_error()     # pyflakes:ignore
         if content and content != utext and not 'Error; cannot read' in content:
             debug.show('content[:64]')
@@ -502,7 +502,7 @@ def document_main(request, name, rev=None):
             # This could move to a template
             content = u"A conflict review response has not yet been proposed."
         else:     
-            content = get_document_content(filename, pathname, split=False, markup=True).decode('utf-8')
+            content = get_document_content(filename, pathname, split=False, markup=True)
             utext = doc.text_or_error() # pyflakes:ignore
             if content and content != utext and not 'Error; cannot read' in content:
                 debug.show('content[:64]')
@@ -535,7 +535,7 @@ def document_main(request, name, rev=None):
             # This could move to a template
             content = u"Status change text has not yet been proposed."
         else:     
-            content = get_document_content(filename, pathname, split=False).decode('utf-8')
+            content = get_document_content(filename, pathname, split=False)
             utext = doc.text_or_error() # pyflakes:ignore
             if content and content != utext and not 'Error; cannot read' in content:
                 debug.show('content[:64]')
@@ -593,7 +593,7 @@ def document_main(request, name, rev=None):
                 url = urlbase + extension 
 
             if extension == ".txt":
-                content = get_document_content(basename, pathname + extension, split=False).decode('utf-8')
+                content = get_document_content(basename, pathname + extension, split=False)
                 utext = doc.text_or_error()      # pyflakes:ignore
                 if content != utext:
                     debug.show('content[:64]')

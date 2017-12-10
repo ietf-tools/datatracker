@@ -72,7 +72,7 @@ def get_doc_writeup(doc):
             writeup = latest.text
     elif doc.type_id == 'conflrev':
         path = os.path.join(doc.get_file_path(),doc.filename_with_rev())
-        writeup = get_document_content(doc.name,path,split=False,markup=False).decode('utf-8')
+        writeup = get_document_content(doc.name,path,split=False,markup=False)
         utext = doc.text_or_error()     # pyflakes:ignore
         if writeup and writeup != utext and not 'Error; cannot read' in writeup:
             debug.show('writeup[:64]')

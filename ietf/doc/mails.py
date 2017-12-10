@@ -518,7 +518,7 @@ def email_charter_internal_review(request, charter):
                         os.path.join(settings.CHARTER_PATH,filename),
                         split=False,
                         markup=False,
-                   ).decode('utf-8')
+                   )
     utext = charter.text_or_error()     # pyflakes:ignore
     if charter_text and charter_text != utext and not 'Error; cannot read' in charter_text:
         debug.show('charter_text[:64]')
