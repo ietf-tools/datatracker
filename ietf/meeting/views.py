@@ -25,7 +25,6 @@ from django.contrib.auth.decorators import login_required
 from django.urls import reverse,reverse_lazy
 from django.db.models import Min, Max, Q
 from django.forms.models import modelform_factory, inlineformset_factory
-from django.forms import ModelForm
 from django.template import TemplateDoesNotExist
 from django.template.loader import render_to_string
 from django.utils.functional import curry
@@ -40,7 +39,7 @@ from ietf.doc.models import Document, State, DocEvent, NewRevisionDocEvent
 from ietf.group.models import Group
 from ietf.group.utils import can_manage_materials
 from ietf.ietfauth.utils import role_required, has_role
-from ietf.meeting.models import Meeting, Session, Schedule, Room, FloorPlan, SessionPresentation
+from ietf.meeting.models import Meeting, Session, Schedule, FloorPlan, SessionPresentation
 from ietf.meeting.helpers import get_areas, get_person_by_email, get_schedule_by_name
 from ietf.meeting.helpers import build_all_agenda_slices, get_wg_name_list
 from ietf.meeting.helpers import get_all_assignments_from_schedule
@@ -297,11 +296,6 @@ def edit_timeslots(request, num=None):
                                           "meeting":meeting,
                                           "hide_menu": True,
                                       })
-
-class RoomForm(ModelForm):
-    class Meta:
-        model = Room
-        exclude = ('meeting',)
 
 
 ##############################################################################
