@@ -13,7 +13,7 @@ from ietf.doc.models import ( Document, DocAlias, State, DocEvent, BallotDocEven
     BallotPositionDocEvent, NewRevisionDocEvent, WriteupDocEvent, STATUSCHANGE_RELATIONS )
 from ietf.doc.forms import AdForm
 from ietf.doc.lastcall import request_last_call
-from ietf.doc.utils import get_document_content, add_state_change_event, update_telechat, close_open_ballots, create_ballot_if_not_open
+from ietf.doc.utils import add_state_change_event, update_telechat, close_open_ballots, create_ballot_if_not_open
 from ietf.doc.views_ballot import LastCallTextForm
 from ietf.group.models import Group
 from ietf.iesg.models import TelechatDate
@@ -281,13 +281,7 @@ def newstatus(relateddoc):
 
 def default_approval_text(status_change,relateddoc):
 
-    filename = "%s-%s.txt" % (status_change.canonical_name(), status_change.rev)
-    current_text = get_document_content(filename, os.path.join(settings.STATUS_CHANGE_PATH, filename), split=False, markup=False)
-    utext = status_change.text_or_error() # pyflakes:ignore
-    if current_text and current_text != utext and not 'Error; cannot read' in current_text:
-        debug.show('current_text[:64]')
-        debug.show('utext[:64]')
-        log.assertion('current_text == utext')
+    current_text = status_change.text_or_error() # pyflakes:ignore
 
     if relateddoc.target.document.std_level.slug in ('std','ps','ds','bcp',):
         action = "Protocol Action"

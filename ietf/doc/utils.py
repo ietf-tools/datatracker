@@ -25,6 +25,7 @@ from ietf.ietfauth.utils import has_role
 from ietf.utils import draft, text
 from ietf.utils.mail import send_mail
 from ietf.mailtrigger.utils import gather_address_lists
+from ietf.utils import log
 
 def save_document_in_history(doc):
     """Save a snapshot of document and related objects in the database."""
@@ -299,7 +300,7 @@ def get_unicode_document_content(key, filename, codec='utf-8', errors='ignore'):
     return raw_content
 
 def get_document_content(key, filename, split=True, markup=True):
-    #log.unreachable("2017-12-05")
+    log.unreachable("2017-12-05")
     try:
         with open(filename, 'rb') as f:
             raw_content = f.read()

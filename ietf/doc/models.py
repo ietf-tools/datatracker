@@ -437,6 +437,10 @@ class DocumentInfo(models.Model):
 
     def text(self):
         path = self.get_file_name()
+        root, ext =  os.path.splitext(path)
+        txtpath = root+'.txt'
+        if ext != '.txt' and os.path.exists(txtpath):
+            path = txtpath
         try:
             with open(path, 'rb') as file:
                 raw = file.read()
@@ -450,7 +454,7 @@ class DocumentInfo(models.Model):
         return text
 
     def text_or_error(self):
-        return self.text() or "Error; cannot read (%s)"%self.get_file_name()
+        return self.text() or "Error; cannot read '%s'"%self.get_base_name()
 
     def htmlized(self):
         name = self.get_base_name()
@@ -607,7 +611,7 @@ class Document(DocumentInfo):
         if not hasattr(self, '_canonical_name'):
             name = self.name
             if self.type_id == "draft" and self.get_state_slug() == "rfc":
-                a = self.docalias_set.filter(name__startswith="rfc").first()
+                a = self.docalias_set.filter(name__startswith="rfc").order_by('-name').first()
                 if a:
                     name = a.name
             elif self.type_id == "charter":

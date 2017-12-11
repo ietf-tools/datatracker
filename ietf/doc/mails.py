@@ -1,6 +1,5 @@
 # generation of mails 
 
-import os
 import textwrap, datetime
 
 from django.template.loader import render_to_string
@@ -13,11 +12,11 @@ import debug                            # pyflakes:ignore
 from ietf.utils.mail import send_mail, send_mail_text
 from ietf.ipr.utils import iprs_from_docs, related_docs
 from ietf.doc.models import WriteupDocEvent, LastCallDocEvent, DocAlias, ConsensusDocEvent
-from ietf.doc.utils import needed_ballot_positions, get_document_content
+from ietf.doc.utils import needed_ballot_positions
 from ietf.group.models import Role
 from ietf.doc.models import Document
 from ietf.mailtrigger.utils import gather_address_lists
-from ietf.utils import log
+
 
 def email_state_changed(request, doc, text, mailtrigger_id=None):
     (to,cc) = gather_address_lists(mailtrigger_id or 'doc_state_edited',doc=doc)
@@ -512,18 +511,7 @@ def send_review_possibly_replaces_request(request, doc, submitter_info):
 
 def email_charter_internal_review(request, charter):
     addrs = gather_address_lists('charter_internal_review',doc=charter,group=charter.group)
-    filename = '%s-%s.txt' % (charter.canonical_name(),charter.rev)
-    charter_text = get_document_content(
-                        filename,
-                        os.path.join(settings.CHARTER_PATH,filename),
-                        split=False,
-                        markup=False,
-                   )
-    utext = charter.text_or_error()     # pyflakes:ignore
-    if charter_text and charter_text != utext and not 'Error; cannot read' in charter_text:
-        debug.show('charter_text[:64]')
-        debug.show('utext[:64]')
-        log.assertion('charter_text == utext')
+    charter_text = charter.text_or_error()     # pyflakes:ignore
 
     send_mail(request, addrs.to, settings.DEFAULT_FROM_EMAIL,
               'Internal %s Review: %s (%s)'%(charter.group.type.name,charter.group.name,charter.group.acronym),

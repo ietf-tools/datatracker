@@ -2,7 +2,6 @@
 
 import re
 import datetime
-import os
 import types
 from email.utils import parseaddr
 
@@ -16,9 +15,7 @@ from django.utils.html import strip_tags
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import ConsensusDocEvent
-from ietf.doc.utils import get_document_content
 from ietf.utils.text import wordwrap, fill, wrap_text_if_unwrapped
-from ietf.utils import log
 
 register = template.Library()
 
@@ -508,13 +505,7 @@ def emailwrap(email):
 def document_content(doc):
     if doc is None:
         return None
-    path = os.path.join(doc.get_file_path(),doc.filename_with_rev())
-    content = get_document_content(doc.name,path,markup=False)
-    utext = doc.text_or_error()         # pyflakes:ignore
-    if content and content != utext and not 'Error; cannot read' in content:
-        debug.show('content[:64]')
-        debug.show('utext[:64]')
-        log.assertion('content == utext')
+    content = doc.text_or_error()         # pyflakes:ignore
     return content
 
 @register.filter

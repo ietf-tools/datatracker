@@ -9,7 +9,6 @@ from django.forms import BaseInlineFormSet
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import Document, DocAlias, State, NewRevisionDocEvent
-from ietf.doc.utils import get_document_content
 from ietf.group.models import Group
 from ietf.ietfauth.utils import has_role
 from ietf.meeting.models import Session, Meeting, Schedule, countries, timezones
@@ -18,7 +17,6 @@ from ietf.meeting.helpers import is_meeting_approved, get_next_agenda_name
 from ietf.message.models import Message
 from ietf.person.models import Person
 from ietf.utils.fields import DatepickerDateField, DurationField
-from ietf.utils import log
 
 # need to insert empty option for use in ChoiceField
 # countries.insert(0, ('', '-'*9 ))
@@ -220,13 +218,7 @@ class InterimSessionModelForm(forms.ModelForm):
             self.initial['time'] = self.instance.official_timeslotassignment().timeslot.time
             if self.instance.agenda():
                 doc = self.instance.agenda()
-                path = os.path.join(doc.get_file_path(), doc.filename_with_rev())
-                content = get_document_content(os.path.basename(path), path, markup=False)
-                utext = doc.text_or_error() # pyflakes:ignore
-                if content and content != utext and not 'Error; cannot read' in content:
-                    debug.show('content[:64]')
-                    debug.show('utext[:64]')
-                    log.assertion('content == utext')
+                content = doc.text_or_error()
                 self.initial['agenda'] = content
                 
 

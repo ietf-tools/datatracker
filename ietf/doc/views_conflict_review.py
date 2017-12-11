@@ -12,7 +12,7 @@ import debug                            # pyflakes:ignore
 from ietf.doc.models import ( BallotDocEvent, BallotPositionDocEvent, DocAlias, DocEvent,
     Document, NewRevisionDocEvent, State )
 from ietf.doc.utils import ( add_state_change_event, close_open_ballots,
-    create_ballot_if_not_open, get_document_content, update_telechat )
+    create_ballot_if_not_open, update_telechat )
 from ietf.doc.mails import email_iana
 from ietf.doc.forms import AdForm 
 from ietf.group.models import Role, Group
@@ -253,14 +253,7 @@ def edit_ad(request, name):
 
 def default_approval_text(review):
 
-    filename = "%s-%s.txt" % (review.canonical_name(), review.rev)
-    current_text = get_document_content(filename, os.path.join(settings.CONFLICT_REVIEW_PATH, filename), split=False, markup=False)
-    utext = review.text_or_error()      # pyflakes:ignore
-    if current_text and current_text != utext and not 'Error; cannot read' in current_text:
-        debug.show('current_text[:64]')
-        debug.show('utext[:64]')
-        log.assertion('current_text == utext')
-
+    current_text = review.text_or_error()      # pyflakes:ignore
     conflictdoc = review.relateddocument_set.get(relationship__slug='conflrev').target.document
     if conflictdoc.stream_id=='ise':
          receiver = 'Independent Submissions Editor'
