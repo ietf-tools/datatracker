@@ -1,3 +1,55 @@
+ietfdb (6.67.1) ietf; urgency=medium
+
+  **Fixed display of unicode document content**
+
+  This is a bugfix release, which addresses a couple of tickets (#2423,
+  #2427), and also the longstanding issue of non-unicode-aware handling of
+  document content internally in the datatracker.  Drafts, agendas, minutes,
+  etc.  that contain unicode characters in utf-8 encoding should now be shown
+  correctly.
+
+  Commit log excerpt:
+
+  * Removed some dead code.
+
+  * Third part of the document read refactoring, after [14406] and [14410].  
+    This replaces all usage of the non-unicode-aware get_document_content() 
+    function with unicode-aware Document.text() or Document.text_or_error() 
+    methods.  This was triggered by yet another report of unicode content not 
+    being shown properly, and should fix all instances of document (drafts, 
+    agendas, minutes, etc.) display in the datatracker not handling unicode 
+    characters properly.
+
+  * Tweaked the file content read refactoring in [14406] to try latin-1 
+    conversion if unicode doesn't work.
+
+  * Applied a patch from kivinen@iki.fi to only show review completion date 
+    when the review is completed or part completed.  Fixes issue #2423.
+
+  * Merged in [14403] from rjsparks@nostrum.com:
+    Fixed a typo in the milestones under review view. Added bootstrap 
+    panels. Fixes #2427,  
+
+  * Fixed the formatting of a number of custom checks for the django check 
+    format, to be easier to read.
+
+  * Started refactoring of reading text from document files (drafts, 
+    charters, etc.) in order to normalise on one way of doing this, and making 
+    that return unicode rather than undecoded bytes.  This is the first step of 
+    two, in order to gauge the possible issues and report on discrepancies.
+
+  * Improved cleaning of unidecode results in ascii name conversion.
+
+  * Tweaked the coverage_changes management comand output.
+
+  * Updated the IPR form update text.
+
+  * Moved IPR form updates and Django 1.11 upgrade forward to positions 2 
+    and 3 on the list.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  12 Dec 2017 14:40:47 +0000
+
+
 ietfdb (6.67.0) ietf; urgency=medium
 
   **Per-year RFC feed, IANA yang modules, test improvements**
