@@ -6,7 +6,7 @@ from tastypie.cache import SimpleCache
 
 from ietf import api
 
-from ietf.person.models import (Person, Email, Alias, PersonHistory)
+from ietf.person.models import (Person, Email, Alias, PersonHistory, PersonalApiKey)
 
 
 from ietf.utils.resources import UserResource
@@ -82,3 +82,23 @@ class PersonHistoryResource(ModelResource):
             "user": ALL_WITH_RELATIONS,
         }
 api.person.register(PersonHistoryResource())
+
+
+class PersonalApiKeyResource(ModelResource):
+    person           = ToOneField(PersonResource, 'person')
+    class Meta:
+        queryset = PersonalApiKey.objects.all()
+        serializer = api.Serializer()
+        cache = SimpleCache()
+        #resource_name = 'personalapikey'
+        filtering = { 
+            "id": ALL,
+            "endpoint": ALL,
+            "created": ALL,
+            "valid": ALL,
+            "salt": ALL,
+            "count": ALL,
+            "latest": ALL,
+            "person": ALL_WITH_RELATIONS,
+        }
+api.person.register(PersonalApiKeyResource())

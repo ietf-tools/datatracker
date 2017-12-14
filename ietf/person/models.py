@@ -3,6 +3,9 @@
 import datetime
 import email.utils
 import email.header
+import six
+import uuid
+
 from hashids import Hashids
 from urlparse import urljoin
 
@@ -274,3 +277,48 @@ class Email(models.Model):
             return
         return self.address
 
+
+# "{key.id}{salt}{hash}
+KEY_STRUCT = "i12s32s"
+
+def salt():
+    return uuid.uuid4().bytes[:12]
+
+API_KEY_ENDPOINTS = [
+    ("/api/submit", "/api/submit"),
+    ("/api/iesg/discuss", "/api/iesg/discuss"),
+]
+
+class PersonalApiKey(models.Model):
+    person   = models.ForeignKey(Person, related_name='apikeys')
+    endpoint = models.CharField(max_length=128, null=False, blank=False, choices=API_KEY_ENDPOINTS)
+    created  = models.DateTimeField(default=datetime.datetime.now, null=False)
+    valid    = models.BooleanField(default=True)
+    salt     = models.BinaryField(default=salt, max_length=12, null=False, blank=False)
+    count    = models.IntegerField(default=0, null=False, blank=False)
+    latest   = models.DateTimeField(blank=True, null=True)
+
+    @classmethod
+    def validate_key(cls, s):
+        import struct, hashlib, base64
+        key = base64.urlsafe_b64decode(six.binary_type(s))
+        id, salt, hash = struct.unpack(KEY_STRUCT, key)
+        k = cls.objects.get(id=id)
+        check = hashlib.sha256()
+        for v in (str(id), str(k.person.id), k.created.isoformat(), k.endpoint, str(k.valid), salt, settings.SECRET_KEY):
+            check.update(v)
+        return k if check.digest() == hash else None
+
+    def hash(self):
+        import struct, hashlib, base64
+        if not hasattr(self, '_cached_hash'):
+            hash = hashlib.sha256()
+            # Hash over: ( id, person, created, endpoint, valid, salt, secret )
+            for v in (str(self.id), str(self.person.id), self.created.isoformat(), self.endpoint, str(self.valid), self.salt, settings.SECRET_KEY):
+                hash.update(v)
+            key = struct.pack(KEY_STRUCT, self.id, six.binary_type(self.salt), hash.digest())
+            self._cached_hash =  base64.urlsafe_b64encode(key)
+        return self._cached_hash
+
+    def __unicode__(self):
+        return "%s (%s): %s ..." % (self.endpoint, self.created.strftime("%Y-%m-%d %H:%M"), self.hash()[:16])

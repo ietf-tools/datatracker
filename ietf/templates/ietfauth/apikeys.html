@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{# Copyright The IETF Trust 2015, All Rights Reserved #}
+{% load origin %}
+
+{% load widget_tweaks bootstrap3 %}
+
+{% load person_filters %}
+
+{% block title %}API keys for {{ user }}{% endblock %}
+
+{% block content %}
+  {% origin %}
+  <h1>API keys for {{ user.username }}</h1>
+
+    {% csrf_token %}
+    <div class="form-group">
+      <label class="col-sm-2 control-label">Personal API keys</label>
+      <div class="col-sm-10">
+	<div>
+	    <table class="table table-condensed">
+	      {% for key in person.apikeys.all %}
+	      {% if forloop.first %}
+	      <tr ><th>Key</th><th>Created</th><th>Endpoint</th><th>Valid</th><th>&nbsp;</th></tr>
+	      {% endif %}
+	      <tr>
+		<td><code>{{ key.hash }}</code></td>
+		<td>{{ key.created }}	</td>
+		<td>{{ key.endpoint }}	</td>
+		<td>{{ key.valid }}	</td>
+		<td>
+	        {% if key.valid %}
+		  <a href="{%url 'ietf.ietfauth.views.apikey_del' %}?hash={{key.hash}}" class="btn btn-warning btn-xs del-apikey">Delete</a>
+		{% endif %}
+		</td>
+	      </tr>
+	      {% empty %}
+	      <tr><td>You have no personal API keys.</td></tr>
+	      <tr><td></td></tr>
+	      {% endfor %}
+	    </table>
+	    <a href="{% url 'ietf.ietfauth.views.apikey_add' %}" class="btn btn-default btn-sm add-apikey">Get a new personal API key</a>
+	    </div>
+      </div>
+
+    </div>
+
+{% endblock %}

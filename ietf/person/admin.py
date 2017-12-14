@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 
-from ietf.person.models import Email, Alias, Person, PersonHistory
+from ietf.person.models import Email, Alias, Person, PersonHistory, PersonalApiKey
 from ietf.person.name import name_parts
 
 class EmailAdmin(admin.ModelAdmin):
@@ -43,4 +43,9 @@ class PersonHistoryAdmin(admin.ModelAdmin):
     search_fields = ['name', 'ascii']
 admin.site.register(PersonHistory, PersonHistoryAdmin)
 
-
+class PersonalApiKeyAdmin(admin.ModelAdmin):
+    list_display = ['id', 'person', 'created', 'endpoint', 'valid', 'count', 'latest', ]
+    list_filter = ['endpoint', 'created', ]
+    raw_id_fields = ['person', ]
+    search_fields = ['person__name', ]
+admin.site.register(PersonalApiKey, PersonalApiKeyAdmin)

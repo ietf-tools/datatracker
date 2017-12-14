@@ -16,10 +16,11 @@ import debug                            # pyflakes:ignore
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized, unicontent
 from ietf.utils.test_data import make_test_data, make_review_data
 from ietf.utils.mail import outbox, empty_outbox
-from ietf.person.models import Person, Email
 from ietf.group.models import Group, Role, RoleName
 from ietf.ietfauth.htpasswd import update_htpasswd_file
 from ietf.mailinglists.models import Subscribed
+from ietf.person.models import Person, Email
+from ietf.person.factories import PersonFactory
 from ietf.review.models import ReviewWish, UnavailablePeriod
 from ietf.utils.decorators import skip_coverage
 
@@ -495,3 +496,58 @@ class IetfAuthTests(TestCase):
         user = User.objects.get(username="othername@example.org")
         self.assertEqual(prev, user)
         self.assertTrue(user.check_password(u'password'))
+
+    def test_apikey(self):
+        person = PersonFactory()
+        
+        url = urlreverse('ietf.ietfauth.views.apikey_index')
+
+        # Check that the url is protected, then log in
+        login_testing_unauthorized(self, person.user.username, url)
+
+        # Check api key list content
+        r = self.client.get(url)
+        self.assertContains(r, 'Personal API keys')
+        self.assertContains(r, 'Get a new personal API key')
+
+        # Check the add key form content
+        url = urlreverse('ietf.ietfauth.views.apikey_add')
+        r = self.client.get(url)
+        self.assertContains(r, 'Create a new personal API key')
+        self.assertContains(r, 'Endpoint')
+
+        # Add 2 keys
+        r = self.client.post(url, {'endpoint': '/api/submit'})
+        self.assertRedirects(r, urlreverse('ietf.ietfauth.views.apikey_index'))
+        r = self.client.post(url, {'endpoint': '/api/iesg/discuss'})
+        self.assertRedirects(r, urlreverse('ietf.ietfauth.views.apikey_index'))
+        
+        # Check api key list content
+        url = urlreverse('ietf.ietfauth.views.apikey_index')
+        r = self.client.get(url)
+        self.assertContains(r, '/api/submit')
+        self.assertContains(r, '/api/iesg/discuss')
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('td code')), 2)
+
+        # Get one of the keys
+        key = person.apikeys.first()
+
+        # Check the delete key form content
+        url = urlreverse('ietf.ietfauth.views.apikey_del')
+        r = self.client.get(url)
+
+        self.assertContains(r, 'Delete a personal API key')
+        self.assertContains(r, 'Key')
+        
+        # Delete a key
+        r = self.client.post(url, {'hash': key.hash()})
+        self.assertRedirects(r, urlreverse('ietf.ietfauth.views.apikey_index'))
+
+        # Check the api key list content again
+        url = urlreverse('ietf.ietfauth.views.apikey_index')
+        r = self.client.get(url)
+        self.assertNotContains(r, key.endpoint)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('td code')), 1)
+        

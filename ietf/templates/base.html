@@ -108,7 +108,7 @@
 	      <![endif]-->
 
         {% endif %}
-        {% block content %}{% endblock %}
+        {% block content %}{{ content|safe }}{% endblock %}
         {% block content_end %}{% endblock %}
         {% if request.COOKIES.left_menu != "off" and not hide_menu %}
 	    </div>
