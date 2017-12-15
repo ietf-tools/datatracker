@@ -24,7 +24,7 @@ from ietf.utils.log import log
 from ietf.utils.mail import send_mail
 
 AUDIO_FILE_RE = re.compile(r'ietf(?P<number>[\d]+)-(?P<room>.*)-(?P<time>[\d]{8}-[\d]{4})')
-VIDEO_TITLE_RE = re.compile(r'IETF(?P<number>\d{2})-(?P<name>.*)-(?P<date>\d{8})-(?P<time>\d{4})')
+VIDEO_TITLE_RE = re.compile(r'IETF(?P<number>[\d]+)-(?P<name>.*)-(?P<date>\d{8})-(?P<time>\d{4})')
 
 
 
