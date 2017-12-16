@@ -35,7 +35,7 @@ def person_required(f, request, *args, **kwargs):
     return  f(request, *args, **kwargs)
 
 @decorator
-def require_user_api_key(f, request, *args, **kwargs):
+def require_api_key(f, request, *args, **kwargs):
     
     def err(code, text):
         return HttpResponse(text, status=code, content_type='text/plain')

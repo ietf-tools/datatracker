@@ -284,7 +284,7 @@ KEY_STRUCT = "i12s32s"
 def salt():
     return uuid.uuid4().bytes[:12]
 
-# Manual maintenance: List all endpoints that use @require_user_api_key here
+# Manual maintenance: List all endpoints that use @require_api_key here
 PERSON_API_KEY_ENDPOINTS = [
     ("/api/iesg/position", "/api/iesg/position"),
 ]

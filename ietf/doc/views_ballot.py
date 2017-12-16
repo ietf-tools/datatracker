@@ -31,7 +31,7 @@ from ietf.message.utils import infer_message
 from ietf.name.models import BallotPositionName
 from ietf.person.models import Person
 from ietf.utils.mail import send_mail_text, send_mail_preformatted
-from ietf.utils.decorators import require_user_api_key
+from ietf.utils.decorators import require_api_key
 
 BALLOT_CHOICES = (("yes", "Yes"),
                   ("noobj", "No Objection"),
@@ -236,10 +236,15 @@ def edit_position(request, name, ballot_id):
                                    blocking_positions=json.dumps(blocking_positions),
                                    ))
 
-@require_user_api_key
+@require_api_key
 @role_required('Area Director', 'Secretariat')
 @csrf_exempt
 def api_set_position(request):
+    if request.method == 'POST':
+        pass
+    else:
+        return HttpResponse("Method not allowed", status=405, content_type='text/plain')
+
     return HttpResponse("Done", status=200, content_type='text/plain')
 
 
