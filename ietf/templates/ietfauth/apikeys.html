@@ -20,16 +20,20 @@
 	    <table class="table table-condensed">
 	      {% for key in person.apikeys.all %}
 	      {% if forloop.first %}
-	      <tr ><th>Key</th><th>Created</th><th>Endpoint</th><th>Valid</th><th>&nbsp;</th></tr>
+	      <tr ><th>Endpoint</th><th>Created</th><th>Latest use</th><th>Count</th><th>Valid</th></tr>
 	      {% endif %}
 	      <tr>
-		<td><code>{{ key.hash }}</code></td>
-		<td>{{ key.created }}	</td>
 		<td>{{ key.endpoint }}	</td>
+		<td>{{ key.created }}	</td>
+		<td>{{ key.latest }}	</td>
+		<td>{{ key.count }}	</td>
 		<td>{{ key.valid }}	</td>
-		<td>
+	      </tr>
+	      <tr>
+		<td style="border-top: 0" colspan="4"><code>{{ key.hash }}</code></td>
+		<td style="border-top: 0">
 	        {% if key.valid %}
-		  <a href="{%url 'ietf.ietfauth.views.apikey_del' %}?hash={{key.hash}}" class="btn btn-warning btn-xs del-apikey">Delete</a>
+		  <a href="{%url 'ietf.ietfauth.views.apikey_disable' %}?hash={{key.hash}}" class="btn btn-warning btn-xs del-apikey">Disable</a>
 		{% endif %}
 		</td>
 	      </tr>
@@ -38,7 +42,7 @@
 	      <tr><td></td></tr>
 	      {% endfor %}
 	    </table>
-	    <a href="{% url 'ietf.ietfauth.views.apikey_add' %}" class="btn btn-default btn-sm add-apikey">Get a new personal API key</a>
+	    <a href="{% url 'ietf.ietfauth.views.apikey_create' %}" class="btn btn-default btn-sm add-apikey">Get a new personal API key</a>
 	    </div>
       </div>
 

@@ -6,7 +6,7 @@ from tastypie.cache import SimpleCache
 
 from ietf import api
 
-from ietf.person.models import (Person, Email, Alias, PersonHistory, PersonalApiKey)
+from ietf.person.models import (Person, Email, Alias, PersonHistory, PersonalApiKey, PersonEvent, PersonApiKeyEvent)
 
 
 from ietf.utils.resources import UserResource
@@ -102,3 +102,41 @@ class PersonalApiKeyResource(ModelResource):
             "person": ALL_WITH_RELATIONS,
         }
 api.person.register(PersonalApiKeyResource())
+
+
+class PersonEventResource(ModelResource):
+    person           = ToOneField(PersonResource, 'person')
+    class Meta:
+        queryset = PersonEvent.objects.all()
+        serializer = api.Serializer()
+        cache = SimpleCache()
+        #resource_name = 'personevent'
+        filtering = { 
+            "id": ALL,
+            "time": ALL,
+            "type": ALL,
+            "desc": ALL,
+            "person": ALL_WITH_RELATIONS,
+        }
+api.person.register(PersonEventResource())
+
+
+class PersonApiKeyEventResource(ModelResource):
+    person           = ToOneField(PersonResource, 'person')
+    personevent_ptr  = ToOneField(PersonEventResource, 'personevent_ptr')
+    key              = ToOneField(PersonalApiKeyResource, 'key')
+    class Meta:
+        queryset = PersonApiKeyEvent.objects.all()
+        serializer = api.Serializer()
+        cache = SimpleCache()
+        #resource_name = 'personapikeyevent'
+        filtering = { 
+            "id": ALL,
+            "time": ALL,
+            "type": ALL,
+            "desc": ALL,
+            "person": ALL_WITH_RELATIONS,
+            "personevent_ptr": ALL_WITH_RELATIONS,
+            "key": ALL_WITH_RELATIONS,
+        }
+api.person.register(PersonApiKeyEventResource())

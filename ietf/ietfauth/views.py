@@ -602,7 +602,7 @@ def apikey_index(request):
 
 @login_required
 @person_required
-def apikey_add(request):
+def apikey_create(request):
     class ApiKeyForm(forms.ModelForm):
         class Meta:
             model = PersonalApiKey
@@ -623,7 +623,7 @@ def apikey_add(request):
 
 @login_required
 @person_required
-def apikey_del(request):
+def apikey_disable(request):
     person = request.user.person
     choices = [ (k.hash(), str(k)) for k in person.apikeys.all() ]
     #
@@ -642,11 +642,12 @@ def apikey_del(request):
         if form.is_valid():
             hash = form.data['hash']
             key = PersonalApiKey.validate_key(hash)
-            key.delete()
-            messages.success(request, "Deleted key %s" % hash)
+            key.valid = False
+            key.save()
+            messages.success(request, "Disabled key %s" % hash)
             return redirect('ietf.ietfauth.views.apikey_index')
         else:
-            messages.error(request, "Key validation failed; key not deleted")
+            messages.error(request, "Key validation failed; key not disabled")
     else:
         form = KeyDeleteForm(request.GET)
-    return render(request, 'form.html', {'form':form, 'title':"Delete a personal API key", 'description':'', 'button':'Delete key'})
+    return render(request, 'form.html', {'form':form, 'title':"Disable a personal API key", 'description':'', 'button':'Disable key'})

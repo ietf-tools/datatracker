@@ -3,12 +3,14 @@
 
 import datetime, json
 
-from django.http import HttpResponseForbidden, HttpResponseRedirect, Http404
-from django.shortcuts import render, get_object_or_404, redirect
-from django.urls import reverse as urlreverse
-from django.template.loader import render_to_string
 from django import forms
 from django.conf import settings
+from django.http import HttpResponse, HttpResponseForbidden, HttpResponseRedirect, Http404
+from django.shortcuts import render, get_object_or_404, redirect
+from django.template.loader import render_to_string
+from django.urls import reverse as urlreverse
+from django.views.decorators.csrf import csrf_exempt
+
 
 import debug                            # pyflakes:ignore
 
@@ -23,12 +25,13 @@ from ietf.doc.mails import ( email_ballot_deferred, email_ballot_undeferred,
 from ietf.doc.lastcall import request_last_call
 from ietf.iesg.models import TelechatDate
 from ietf.ietfauth.utils import has_role, role_required, is_authorized_in_doc_stream
+from ietf.mailtrigger.utils import gather_address_lists
+from ietf.mailtrigger.forms import CcSelectForm
 from ietf.message.utils import infer_message
 from ietf.name.models import BallotPositionName
 from ietf.person.models import Person
 from ietf.utils.mail import send_mail_text, send_mail_preformatted
-from ietf.mailtrigger.utils import gather_address_lists
-from ietf.mailtrigger.forms import CcSelectForm
+from ietf.utils.decorators import require_user_api_key
 
 BALLOT_CHOICES = (("yes", "Yes"),
                   ("noobj", "No Objection"),
@@ -232,6 +235,12 @@ def edit_position(request, name, ballot_id):
                                    show_discuss_text=old_pos and old_pos.pos.blocking,
                                    blocking_positions=json.dumps(blocking_positions),
                                    ))
+
+@require_user_api_key
+@role_required('Area Director', 'Secretariat')
+@csrf_exempt
+def api_set_position(request):
+    return HttpResponse("Done", status=200, content_type='text/plain')
 
 
 @role_required('Area Director','Secretariat')

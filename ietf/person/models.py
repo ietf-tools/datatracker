@@ -284,14 +284,14 @@ KEY_STRUCT = "i12s32s"
 def salt():
     return uuid.uuid4().bytes[:12]
 
-API_KEY_ENDPOINTS = [
-    ("/api/submit", "/api/submit"),
-    ("/api/iesg/discuss", "/api/iesg/discuss"),
+# Manual maintenance: List all endpoints that use @require_user_api_key here
+PERSON_API_KEY_ENDPOINTS = [
+    ("/api/iesg/position", "/api/iesg/position"),
 ]
 
 class PersonalApiKey(models.Model):
     person   = models.ForeignKey(Person, related_name='apikeys')
-    endpoint = models.CharField(max_length=128, null=False, blank=False, choices=API_KEY_ENDPOINTS)
+    endpoint = models.CharField(max_length=128, null=False, blank=False, choices=PERSON_API_KEY_ENDPOINTS)
     created  = models.DateTimeField(default=datetime.datetime.now, null=False)
     valid    = models.BooleanField(default=True)
     salt     = models.BinaryField(default=salt, max_length=12, null=False, blank=False)
@@ -303,7 +303,10 @@ class PersonalApiKey(models.Model):
         import struct, hashlib, base64
         key = base64.urlsafe_b64decode(six.binary_type(s))
         id, salt, hash = struct.unpack(KEY_STRUCT, key)
-        k = cls.objects.get(id=id)
+        k = cls.objects.filter(id=id)
+        if not k.exists():
+            return None
+        k = k.first()
         check = hashlib.sha256()
         for v in (str(id), str(k.person.id), k.created.isoformat(), k.endpoint, str(k.valid), salt, settings.SECRET_KEY):
             check.update(v)
@@ -322,3 +325,23 @@ class PersonalApiKey(models.Model):
 
     def __unicode__(self):
         return "%s (%s): %s ..." % (self.endpoint, self.created.strftime("%Y-%m-%d %H:%M"), self.hash()[:16])
+
+PERSON_EVENT_CHOICES = [
+    ("apikey_login", "API key login"),
+    ]
+
+class PersonEvent(models.Model):
+    person = models.ForeignKey(Person)
+    time = models.DateTimeField(default=datetime.datetime.now, help_text="When the event happened")
+    type = models.CharField(max_length=50, choices=PERSON_EVENT_CHOICES)
+    desc = models.TextField()
+
+    def __unicode__(self):
+        return u"%s %s at %s" % (self.person.plain_name(), self.get_type_display().lower(), self.time)
+
+    class Meta:
+        ordering = ['-time', '-id']
+
+class PersonApiKeyEvent(PersonEvent):
+    key = models.ForeignKey(PersonalApiKey)
+    

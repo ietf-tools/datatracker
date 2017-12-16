@@ -932,7 +932,7 @@ SILENCED_SYSTEM_CHECKS = [
 STATS_NAMES_LIMIT = 25
 
 UTILS_TEST_RANDOM_STATE_FILE = '.factoryboy_random_state'
-
+UTILS_APIKEY_GUI_LOGIN_LIMIT_DAYS = 30
 
 # Put the production SECRET_KEY in settings_local.py, and also any other
 # sensitive or site-specific changes.  DO NOT commit settings_local.py to svn.
