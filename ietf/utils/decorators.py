@@ -60,7 +60,7 @@ def require_api_key(f, request, *args, **kwargs):
     person = key.person
     last_login = person.user.last_login
     time_limit = (datetime.datetime.now() - datetime.timedelta(days=settings.UTILS_APIKEY_GUI_LOGIN_LIMIT_DAYS))
-    if last_login < time_limit:
+    if last_login == None or last_login < time_limit:
         return err(400, "Too long since last regular login")
     # Log in
     login(request, person.user)

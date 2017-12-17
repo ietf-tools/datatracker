@@ -1,5 +1,6 @@
+# Copyright The IETF Trust 2017, All Rights Reserved
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+from __future__ import unicode_literals, print_function
 
 import os, shutil, time, datetime
 from urlparse import urlsplit
@@ -101,7 +102,7 @@ class IetfAuthTests(TestCase):
                 if l.startswith(username + ":"):
                     return True
         with open(settings.HTPASSWD_FILE) as f:
-            print f.read()
+            print(f.read())
 
         return False
 
@@ -552,7 +553,7 @@ class IetfAuthTests(TestCase):
         self.assertEqual(len(q('td code')), len(PERSON_API_KEY_ENDPOINTS)) # key hash
         self.assertEqual(len(q('td a:contains("Disable")')), len(PERSON_API_KEY_ENDPOINTS)-1)
 
-    def test_apikey_usage(self):
+    def test_apikey_errors(self):
         BAD_KEY = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
 
         person = PersonFactory()
@@ -570,10 +571,6 @@ class IetfAuthTests(TestCase):
 
         for key in person.apikeys.all()[:3]:
             url = key.endpoint
-
-            # successful access
-            r = self.client.post(url, {'apikey':key.hash(), 'dummy':'dummy',})
-            self.assertEqual(r.status_code, 200)
 
             # bad method
             r = self.client.put(url, {'apikey':key.hash()})
@@ -638,7 +635,7 @@ class IetfAuthTests(TestCase):
         
         self.assertEqual(len(outbox), len(PERSON_API_KEY_ENDPOINTS))
         for mail in outbox:
-            body = mail.get_payload()
+            body = mail.get_payload(decode=True).decode('utf-8')
             self.assertIn("API key usage", mail['subject'])
             self.assertIn(" %s times" % count, body)
             self.assertIn(date, body)
