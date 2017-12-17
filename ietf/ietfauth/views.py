@@ -48,6 +48,7 @@ from django.contrib.auth.hashers import identify_hasher
 from django.contrib.auth.models import User
 from django.contrib.auth.views import login as django_login
 from django.contrib.sites.models import Site
+from django.core.validators import ValidationError
 from django.urls import reverse as urlreverse
 from django.http import Http404, HttpResponseRedirect  #, HttpResponse, 
 from django.shortcuts import render, redirect, get_object_or_404
@@ -61,11 +62,12 @@ from ietf.ietfauth.forms import ( RegistrationForm, PasswordForm, ResetPasswordF
 from ietf.ietfauth.htpasswd import update_htpasswd_file
 from ietf.ietfauth.utils import role_required
 from ietf.mailinglists.models import Subscribed, Whitelisted
-from ietf.person.models import Person, Email, Alias
+from ietf.person.models import Person, Email, Alias, PersonalApiKey
 from ietf.review.models import ReviewRequest, ReviewerSettings, ReviewWish
 from ietf.review.utils import unavailable_periods_to_list, get_default_filter_re
-from ietf.utils.mail import send_mail
 from ietf.doc.fields import SearchableDocumentField
+from ietf.utils.decorators import person_required
+from ietf.utils.mail import send_mail
 
 def index(request):
     return render(request, 'registration/index.html')
@@ -190,14 +192,10 @@ def confirm_account(request, auth):
     })
 
 @login_required
+@person_required
 def profile(request):
     roles = []
-    person = None
-
-    try:
-        person = request.user.person
-    except Person.DoesNotExist:
-        return render(request, 'registration/missing_person.html')
+    person = request.user.person
 
     roles = Role.objects.filter(person=person, group__state='active').order_by('name__name', 'group__name')
     emails = Email.objects.filter(person=person).order_by('-active','-time')
@@ -533,13 +531,9 @@ def change_password(request):
 
     
 @login_required
+@person_required
 def change_username(request):
-    person = None
-
-    try:
-        person = request.user.person
-    except Person.DoesNotExist:
-        return render(request, 'registration/missing_person.html')
+    person = request.user.person
 
     emails = [ e.address for e in Email.objects.filter(person=person, active=True) ]
     emailz = [ e.address for e in person.email_set.filter(active=True) ]
@@ -599,3 +593,61 @@ def login(request, extra_context=None):
                                 }
 
     return django_login(request, extra_context=extra_context)
+
+@login_required
+@person_required
+def apikey_index(request):
+    person = request.user.person
+    return render(request, 'ietfauth/apikeys.html', {'person': person})                
+
+@login_required
+@person_required
+def apikey_create(request):
+    class ApiKeyForm(forms.ModelForm):
+        class Meta:
+            model = PersonalApiKey
+            fields = ['endpoint']
+    #
+    person = request.user.person
+    if request.method == 'POST':
+        form = ApiKeyForm(request.POST)
+        if form.is_valid():
+            api_key = form.save(commit=False)
+            api_key.person = person
+            api_key.save()
+            return redirect('ietf.ietfauth.views.apikey_index')
+    else:
+        form = ApiKeyForm()
+    return render(request, 'form.html', {'form':form, 'title':"Create a new personal API key", 'description':'', 'button':'Create key'})
+
+
+@login_required
+@person_required
+def apikey_disable(request):
+    person = request.user.person
+    choices = [ (k.hash(), str(k)) for k in person.apikeys.all() ]
+    #
+    class KeyDeleteForm(forms.Form):
+        hash = forms.ChoiceField(label='Key', choices=choices)
+        def clean_key(self):
+            hash = self.cleaned_data['hash']
+            key = PersonalApiKey.validate_key(hash)
+            if key and key.person == request.user.person:
+                return hash
+            else:
+                raise ValidationError("Bad key value")
+    #
+    if request.method == 'POST':
+        form = KeyDeleteForm(request.POST)
+        if form.is_valid():
+            hash = form.data['hash']
+            key = PersonalApiKey.validate_key(hash)
+            key.valid = False
+            key.save()
+            messages.success(request, "Disabled key %s" % hash)
+            return redirect('ietf.ietfauth.views.apikey_index')
+        else:
+            messages.error(request, "Key validation failed; key not disabled")
+    else:
+        form = KeyDeleteForm(request.GET)
+    return render(request, 'form.html', {'form':form, 'title':"Disable a personal API key", 'description':'', 'button':'Disable key'})

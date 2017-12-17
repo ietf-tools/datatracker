@@ -3,8 +3,7 @@
 # Hourly datatracker jobs
 # 
 # This script is expected to be triggered by cron from
-# $DTDIR/etc/cron.d/datatracker which should be symlinked from
-# /etc/cron.d/
+# /etc/cron.d/datatracker
 
 DTDIR=/a/www/ietf-datatracker/web
 cd $DTDIR/

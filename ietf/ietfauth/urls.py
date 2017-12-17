@@ -7,6 +7,9 @@ from ietf.utils.urls import url
 
 urlpatterns = [
         url(r'^$', views.index),
+        url(r'^apikey/?$', views.apikey_index),
+        url(r'^apikey/add/?$', views.apikey_create),
+        url(r'^apikey/del/?$', views.apikey_disable),
         url(r'^confirmnewemail/(?P<auth>[^/]+)/$', views.confirm_new_email),
         url(r'^create/$', views.create_account),
         url(r'^create/confirm/(?P<auth>[^/]+)/$', views.confirm_account),

@@ -34,8 +34,8 @@
     </div>
   </div>
 
-  <div class="col-md-12">
-     {% if person.role_set.exists %}
+  {% if person.role_set.exists %}
+    <div class="col-md-12">
        <h2 id="roles">Roles</h2>
        <table class="table">
 	   {% for role in person.role_set.all|active_roles %}
@@ -54,8 +54,10 @@
 	     {{ person.first_name }} has no active roles as of {{ today }}.
 	   {% endfor %}
        </table>
-     {% endif %}
-  </div>
+    </div>
+  {% endif %}
+
+
 
   <div class="col-md-6">
      <h2 id="rfcs">RFCs</h2>

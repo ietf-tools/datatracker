@@ -4,6 +4,7 @@ from django.conf.urls import include
 
 from ietf import api
 from ietf.api import views as api_views
+from ietf.doc import views_ballot
 from ietf.meeting import views as meeting_views
 from ietf.submit import views as submit_views
 from ietf.utils.urls import url
@@ -17,6 +18,7 @@ urlpatterns = [
     # Custom API endpoints
     url(r'^notify/meeting/import_recordings/(?P<number>[a-z0-9-]+)/?$', meeting_views.api_import_recordings),
     url(r'^submit/?$', submit_views.api_submit),
+    url(r'^iesg/position', views_ballot.api_set_position),
 ]
 
 # Additional (standard) Tastypie endpoints

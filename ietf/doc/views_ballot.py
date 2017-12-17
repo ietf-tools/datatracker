@@ -3,12 +3,15 @@
 
 import datetime, json
 
-from django.http import HttpResponseForbidden, HttpResponseRedirect, Http404
-from django.shortcuts import render, get_object_or_404, redirect
-from django.urls import reverse as urlreverse
-from django.template.loader import render_to_string
 from django import forms
 from django.conf import settings
+from django.http import HttpResponse, HttpResponseForbidden, HttpResponseRedirect, Http404
+from django.shortcuts import render, get_object_or_404, redirect
+from django.template.defaultfilters import striptags
+from django.template.loader import render_to_string
+from django.urls import reverse as urlreverse
+from django.views.decorators.csrf import csrf_exempt
+
 
 import debug                            # pyflakes:ignore
 
@@ -30,6 +33,7 @@ from ietf.name.models import BallotPositionName
 from ietf.person.models import Person
 from ietf.utils import log
 from ietf.utils.mail import send_mail_text, send_mail_preformatted
+from ietf.utils.decorators import require_api_key
 
 BALLOT_CHOICES = (("yes", "Yes"),
                   ("noobj", "No Objection"),
@@ -106,6 +110,74 @@ class EditPositionForm(forms.Form):
            raise forms.ValidationError("You must enter a non-empty discuss")
        return entered_discuss
 
+def save_position(form, doc, ballot, ad, login=None):
+    # save the vote
+    if login is None:
+        login = ad
+    clean = form.cleaned_data
+
+    old_pos = doc.latest_event(BallotPositionDocEvent, type="changed_ballot_position", ad=ad, ballot=ballot)
+    pos = BallotPositionDocEvent(doc=doc, rev=doc.rev, by=login)
+    pos.type = "changed_ballot_position"
+    pos.ballot = ballot
+    pos.ad = ad
+    pos.pos = clean["position"]
+    pos.comment = clean["comment"].rstrip()
+    pos.comment_time = old_pos.comment_time if old_pos else None
+    pos.discuss = clean["discuss"].rstrip()
+    if not pos.pos.blocking:
+        pos.discuss = ""
+    pos.discuss_time = old_pos.discuss_time if old_pos else None
+
+    changes = []
+    added_events = []
+    # possibly add discuss/comment comments to history trail
+    # so it's easy to see what's happened
+    old_comment = old_pos.comment if old_pos else ""
+    if pos.comment != old_comment:
+        pos.comment_time = pos.time
+        changes.append("comment")
+
+        if pos.comment:
+            e = DocEvent(doc=doc, rev=doc.rev)
+            e.by = ad # otherwise we can't see who's saying it
+            e.type = "added_comment"
+            e.desc = "[Ballot comment]\n" + pos.comment
+            added_events.append(e)
+
+    old_discuss = old_pos.discuss if old_pos else ""
+    if pos.discuss != old_discuss:
+        pos.discuss_time = pos.time
+        changes.append("discuss")
+
+        if pos.pos.blocking:
+            e = DocEvent(doc=doc, rev=doc.rev, by=login)
+            e.by = ad # otherwise we can't see who's saying it
+            e.type = "added_comment"
+            e.desc = "[Ballot %s]\n" % pos.pos.name.lower()
+            e.desc += pos.discuss
+            added_events.append(e)
+
+    # figure out a description
+    if not old_pos and pos.pos.slug != "norecord":
+        pos.desc = u"[Ballot Position Update] New position, %s, has been recorded for %s" % (pos.pos.name, pos.ad.plain_name())
+    elif old_pos and pos.pos != old_pos.pos:
+        pos.desc = "[Ballot Position Update] Position for %s has been changed to %s from %s" % (pos.ad.plain_name(), pos.pos.name, old_pos.pos.name)
+
+    if not pos.desc and changes:
+        pos.desc = u"Ballot %s text updated for %s" % (u" and ".join(changes), ad.plain_name())
+
+    # only add new event if we actually got a change
+    if pos.desc:
+        if login != ad:
+            pos.desc += u" by %s" % login.plain_name()
+
+        pos.save()
+
+        for e in added_events:
+            e.save() # save them after the position is saved to get later id for sorting order
+    
+
 @role_required('Area Director','Secretariat')
 def edit_position(request, name, ballot_id):
     """Vote and edit discuss and comment on document as Area Director."""
@@ -126,8 +198,6 @@ def edit_position(request, name, ballot_id):
             raise Http404
         ad = get_object_or_404(Person, pk=ad_id)
 
-    old_pos = doc.latest_event(BallotPositionDocEvent, type="changed_ballot_position", ad=ad, ballot=ballot)
-
     if request.method == 'POST':
         if not has_role(request.user, "Secretariat") and not ad.role_set.filter(name="ad", group__type="area", group__state="active"):
             # prevent pre-ADs from voting
@@ -135,68 +205,7 @@ def edit_position(request, name, ballot_id):
         
         form = EditPositionForm(request.POST, ballot_type=ballot.ballot_type)
         if form.is_valid():
-            # save the vote
-            clean = form.cleaned_data
-
-            pos = BallotPositionDocEvent(doc=doc, rev=doc.rev, by=login)
-            pos.type = "changed_ballot_position"
-            pos.ballot = ballot
-            pos.ad = ad
-            pos.pos = clean["position"]
-            pos.comment = clean["comment"].rstrip()
-            pos.comment_time = old_pos.comment_time if old_pos else None
-            pos.discuss = clean["discuss"].rstrip()
-            if not pos.pos.blocking:
-                pos.discuss = ""
-            pos.discuss_time = old_pos.discuss_time if old_pos else None
-
-            changes = []
-            added_events = []
-            # possibly add discuss/comment comments to history trail
-            # so it's easy to see what's happened
-            old_comment = old_pos.comment if old_pos else ""
-            if pos.comment != old_comment:
-                pos.comment_time = pos.time
-                changes.append("comment")
-
-                if pos.comment:
-                    e = DocEvent(doc=doc, rev=doc.rev)
-                    e.by = ad # otherwise we can't see who's saying it
-                    e.type = "added_comment"
-                    e.desc = "[Ballot comment]\n" + pos.comment
-                    added_events.append(e)
-
-            old_discuss = old_pos.discuss if old_pos else ""
-            if pos.discuss != old_discuss:
-                pos.discuss_time = pos.time
-                changes.append("discuss")
-
-                if pos.pos.blocking:
-                    e = DocEvent(doc=doc, rev=doc.rev, by=login)
-                    e.by = ad # otherwise we can't see who's saying it
-                    e.type = "added_comment"
-                    e.desc = "[Ballot %s]\n" % pos.pos.name.lower()
-                    e.desc += pos.discuss
-                    added_events.append(e)
-
-            # figure out a description
-            if not old_pos and pos.pos.slug != "norecord":
-                pos.desc = u"[Ballot Position Update] New position, %s, has been recorded for %s" % (pos.pos.name, pos.ad.plain_name())
-            elif old_pos and pos.pos != old_pos.pos:
-                pos.desc = "[Ballot Position Update] Position for %s has been changed to %s from %s" % (pos.ad.plain_name(), pos.pos.name, old_pos.pos.name)
-
-            if not pos.desc and changes:
-                pos.desc = u"Ballot %s text updated for %s" % (u" and ".join(changes), ad.plain_name())
-
-            # only add new event if we actually got a change
-            if pos.desc:
-                if login != ad:
-                    pos.desc += u" by %s" % login.plain_name()
-
-                pos.save()
-
-                for e in added_events:
-                    e.save() # save them after the position is saved to get later id for sorting order
+            save_position(form, doc, ballot, ad, login)
                         
             if request.POST.get("send_mail"):
                 qstr=""
@@ -211,6 +220,7 @@ def edit_position(request, name, ballot_id):
                 return HttpResponseRedirect(return_to_url)
     else:
         initial = {}
+        old_pos = doc.latest_event(BallotPositionDocEvent, type="changed_ballot_position", ad=ad, ballot=ballot)
         if old_pos:
             initial['position'] = old_pos.pos.slug
             initial['discuss'] = old_pos.discuss
@@ -233,6 +243,45 @@ def edit_position(request, name, ballot_id):
                                    show_discuss_text=old_pos and old_pos.pos.blocking,
                                    blocking_positions=json.dumps(blocking_positions),
                                    ))
+
+@require_api_key
+@role_required('Area Director', 'Secretariat')
+@csrf_exempt
+def api_set_position(request):
+    def err(code, text):
+        return HttpResponse(text, status=code, content_type='text/plain')
+    if request.method == 'POST':
+        ad = request.user.person
+        name = request.POST.get('doc')
+        if not name:
+            return err(400, "Missing document name")
+        try:
+            doc = Document.objects.get(docalias__name=name)
+        except Document.DoesNotExist:
+            return err(404, "Document not found")
+        position_names = BallotPositionName.objects.values_list('slug', flat=True)
+        position = request.POST.get('position')
+        if not position:
+            return err(400, "Missing parameter: position, one of: %s " % ','.join(position_names))
+        if not position in position_names:
+            return err(400, "Bad position name, must be one of: %s " % ','.join(position_names))
+        ballot = doc.active_ballot()
+        if not ballot:
+            return err(404, "No open ballot found")
+        form = EditPositionForm(request.POST, ballot_type=ballot.ballot_type)
+        if form.is_valid():
+            save_position(form, doc, ballot, ad)
+        else:
+            debug.type('form.errors')
+            debug.show('form.errors')
+            errors = form.errors
+            summary = ','.join([ "%s: %s" % (f, striptags(errors[f])) for f in errors ])
+            return err(400, "Form not valid: %s" % summary)
+    else:
+        return err(405, "Method not allowed")
+
+    return HttpResponse("Done", status=200, content_type='text/plain')
+
 
 @role_required('Area Director','Secretariat')
 def send_ballot_comment(request, name, ballot_id):

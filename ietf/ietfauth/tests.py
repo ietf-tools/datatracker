@@ -1,5 +1,6 @@
+# Copyright The IETF Trust 2017, All Rights Reserved
 # -*- coding: utf-8 -*-
-from __future__ import unicode_literals
+from __future__ import unicode_literals, print_function
 
 import os, shutil, time, datetime
 from urlparse import urlsplit
@@ -16,10 +17,12 @@ import debug                            # pyflakes:ignore
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized, unicontent
 from ietf.utils.test_data import make_test_data, make_review_data
 from ietf.utils.mail import outbox, empty_outbox
-from ietf.person.models import Person, Email
 from ietf.group.models import Group, Role, RoleName
+from ietf.group.factories import GroupFactory
 from ietf.ietfauth.htpasswd import update_htpasswd_file
 from ietf.mailinglists.models import Subscribed
+from ietf.person.models import Person, Email, PersonalApiKey, PERSON_API_KEY_ENDPOINTS
+from ietf.person.factories import PersonFactory
 from ietf.review.models import ReviewWish, UnavailablePeriod
 from ietf.utils.decorators import skip_coverage
 
@@ -99,7 +102,7 @@ class IetfAuthTests(TestCase):
                 if l.startswith(username + ":"):
                     return True
         with open(settings.HTPASSWD_FILE) as f:
-            print f.read()
+            print(f.read())
 
         return False
 
@@ -495,3 +498,145 @@ class IetfAuthTests(TestCase):
         user = User.objects.get(username="othername@example.org")
         self.assertEqual(prev, user)
         self.assertTrue(user.check_password(u'password'))
+
+    def test_apikey_management(self):
+        person = PersonFactory()
+        
+        url = urlreverse('ietf.ietfauth.views.apikey_index')
+
+        # Check that the url is protected, then log in
+        login_testing_unauthorized(self, person.user.username, url)
+
+        # Check api key list content
+        r = self.client.get(url)
+        self.assertContains(r, 'Personal API keys')
+        self.assertContains(r, 'Get a new personal API key')
+
+        # Check the add key form content
+        url = urlreverse('ietf.ietfauth.views.apikey_create')
+        r = self.client.get(url)
+        self.assertContains(r, 'Create a new personal API key')
+        self.assertContains(r, 'Endpoint')
+
+        # Add 2 keys
+        for endpoint, display in PERSON_API_KEY_ENDPOINTS:
+            r = self.client.post(url, {'endpoint': endpoint})
+            self.assertRedirects(r, urlreverse('ietf.ietfauth.views.apikey_index'))
+        
+        # Check api key list content
+        url = urlreverse('ietf.ietfauth.views.apikey_index')
+        r = self.client.get(url)
+        for endpoint, display in PERSON_API_KEY_ENDPOINTS:
+            self.assertContains(r, endpoint)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('td code')), len(PERSON_API_KEY_ENDPOINTS)) # hash
+        self.assertEqual(len(q('td a:contains("Disable")')), len(PERSON_API_KEY_ENDPOINTS))
+
+        # Get one of the keys
+        key = person.apikeys.first()
+
+        # Check the disable key form content
+        url = urlreverse('ietf.ietfauth.views.apikey_disable')
+        r = self.client.get(url)
+
+        self.assertContains(r, 'Disable a personal API key')
+        self.assertContains(r, 'Key')
+        
+        # Delete a key
+        r = self.client.post(url, {'hash': key.hash()})
+        self.assertRedirects(r, urlreverse('ietf.ietfauth.views.apikey_index'))
+
+        # Check the api key list content again
+        url = urlreverse('ietf.ietfauth.views.apikey_index')
+        r = self.client.get(url)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('td code')), len(PERSON_API_KEY_ENDPOINTS)) # key hash
+        self.assertEqual(len(q('td a:contains("Disable")')), len(PERSON_API_KEY_ENDPOINTS)-1)
+
+    def test_apikey_errors(self):
+        BAD_KEY = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+
+        person = PersonFactory()
+        area = GroupFactory(type_id='area')
+        area.role_set.create(name_id='ad', person=person, email=person.email())
+
+        url = urlreverse('ietf.ietfauth.views.apikey_create')
+        # Check that the url is protected, then log in
+        login_testing_unauthorized(self, person.user.username, url)
+
+        # Add keys
+        for endpoint, display in PERSON_API_KEY_ENDPOINTS:
+            r = self.client.post(url, {'endpoint': endpoint})
+            self.assertRedirects(r, urlreverse('ietf.ietfauth.views.apikey_index'))
+
+        for key in person.apikeys.all()[:3]:
+            url = key.endpoint
+
+            # bad method
+            r = self.client.put(url, {'apikey':key.hash()})
+            self.assertEqual(r.status_code, 405)
+
+            # missing apikey
+            r = self.client.post(url, {'dummy':'dummy',})
+            self.assertEqual(r.status_code, 400)
+            self.assertIn('Missing apikey parameter', unicontent(r))
+
+            # invalid apikey
+            r = self.client.post(url, {'apikey':BAD_KEY, 'dummy':'dummy',})
+            self.assertEqual(r.status_code, 400)
+            self.assertIn('Invalid apikey', unicontent(r))
+
+            # too long since regular login
+            person.user.last_login = datetime.datetime.now() - datetime.timedelta(days=settings.UTILS_APIKEY_GUI_LOGIN_LIMIT_DAYS+1)
+            person.user.save()
+            r = self.client.post(url, {'apikey':key.hash(), 'dummy':'dummy',})
+            self.assertEqual(r.status_code, 400)
+            self.assertIn('Too long since last regular login', unicontent(r))
+            person.user.last_login = datetime.datetime.now()
+            person.user.save()
+
+            # endpoint mismatch
+            key2 = PersonalApiKey.objects.create(person=person, endpoint='/')
+            r = self.client.post(url, {'apikey':key2.hash(), 'dummy':'dummy',})
+            self.assertEqual(r.status_code, 400)
+            self.assertIn('Apikey endpoint mismatch', unicontent(r))
+            key2.delete()
+
+    def test_send_apikey_report(self):
+        from ietf.ietfauth.management.commands.send_apikey_usage_emails import Command
+        from ietf.utils.mail import outbox, empty_outbox
+
+        person = PersonFactory()
+
+        url = urlreverse('ietf.ietfauth.views.apikey_create')
+        # Check that the url is protected, then log in
+        login_testing_unauthorized(self, person.user.username, url)
+
+        # Add keys
+        for endpoint, display in PERSON_API_KEY_ENDPOINTS:
+            r = self.client.post(url, {'endpoint': endpoint})
+            self.assertRedirects(r, urlreverse('ietf.ietfauth.views.apikey_index'))
+        
+        # Use the endpoints (the form content will not be acceptable, but the
+        # apikey usage will be registered)
+        count = 2
+        # avoid usage across dates
+        if datetime.datetime.now().time() > datetime.time(hour=23, minute=59, second=58):
+            time.sleep(2)
+        for i in range(count):
+            for key in person.apikeys.all():
+                url = key.endpoint
+                self.client.post(url, {'apikey':key.hash(), 'dummy': 'dummy', })
+        date = str(datetime.date.today())
+
+        empty_outbox()
+        cmd = Command()
+        cmd.handle(verbosity=0, days=7)
+        
+        self.assertEqual(len(outbox), len(PERSON_API_KEY_ENDPOINTS))
+        for mail in outbox:
+            body = mail.get_payload(decode=True).decode('utf-8')
+            self.assertIn("API key usage", mail['subject'])
+            self.assertIn(" %s times" % count, body)
+            self.assertIn(date, body)
+        
