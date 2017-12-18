@@ -90,6 +90,7 @@ class PersonalApiKeyResource(ModelResource):
         queryset = PersonalApiKey.objects.all()
         serializer = api.Serializer()
         cache = SimpleCache()
+        excludes = ['salt', ]
         #resource_name = 'personalapikey'
         filtering = { 
             "id": ALL,
