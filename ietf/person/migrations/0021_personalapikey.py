@@ -19,7 +19,7 @@ class Migration(migrations.Migration):
             name='PersonalApiKey',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('endpoint', models.CharField(choices=[(b'/api/submit', b'/api/submit'), (b'/api/iesg/position', b'/api/iesg/position')], max_length=128)),
+                ('endpoint', models.CharField(choices=[(b'/api/iesg/position', b'/api/iesg/position')], max_length=128)),
                 ('created', models.DateTimeField(default=datetime.datetime.now)),
                 ('valid', models.BooleanField(default=True)),
                 ('salt', models.BinaryField(default=ietf.person.models.salt, max_length=12)),
