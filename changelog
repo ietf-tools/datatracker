@@ -1,3 +1,46 @@
+ietfdb (6.68.0) ietf; urgency=medium
+
+  **Ballot position API.  Support for API keys.**
+
+  This release provides infrastructure to handle API keys and easily
+  build API endpoints which use API keys instead of username/password
+  login.  It also introduces an API endpoint built on this infrastrucure
+  in order to let ADs automate posting of their ballot positions (if for
+  example they have built their own infrastructure to manage, track, and
+  update ballot positions and comments).
+
+  Pages to view, create, and disable API keys are available to logged-in
+  users.  Since the use case for API keys is somewhat different (and possibly
+  harder to secure) than the use case for username/password login (they might
+  for instance be placed on servers in order to automate operations from the
+  server) they have been given some addtional limitations, compared to
+  username/password authentication.  These are the principles used:
+
+  - Each API key is bound to a specific user with a personal profile and
+    verified email.
+
+  - API keys require an active user -- API keys cannot be used to authorise
+    operations if too long a time has passed since the user logged in with
+    username and password (this limit is initially set to 30 days).
+
+  - API keys can easily be revoked by the owner (and replacement keys
+    generated) in order to make it easy to recover from inadvertent
+    exposure of a key.
+
+  - Each API key is bound to a specific API endpoint.  On each use it is
+    checked that the API key matches the API endpoint for which it is being
+    used.
+
+  - API key usage is logged, and users who have active (not disabled) API keys
+    will receive a weekly email report for each key showing how many times it
+    has been used, and at which time, as a monitoring service.
+
+  The release also contains [14404] from rjsparks@nostrum.com:
+  Include an explicitly set Responsible ADs email addresses in generated 
+  aliases when a document has a group.  
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  18 Dec 2017 17:58:46 +0000
+
 ietfdb (6.67.1) ietf; urgency=medium
 
   **Fixed display of unicode document content**
