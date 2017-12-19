@@ -495,7 +495,8 @@ class RelatedDocument(models.Model):
         if self.source.type.slug!='draft' or self.relationship.slug not in ['refnorm','refold','refunk']:
             return None
 
-        if self.source.get_state().slug == 'rfc':
+        state = self.source.get_state()
+        if state and state.slug == 'rfc':
             source_lvl = self.source.std_level.slug if self.source.std_level else None
         elif self.source.intended_std_level:
             source_lvl = self.source.intended_std_level.slug
