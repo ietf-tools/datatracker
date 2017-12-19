@@ -168,15 +168,16 @@
 
     <p>
 
-      The datatracker does not use any form of API keys currently (03 Nov
-      2017), but may do so in the future.  If so, personal API keys will be
-      available from your <a href="{% url 'ietf.ietfauth.views.apikey_index'%}">
-      Account API Key</a> page when you are logged in, and document keys
-      will be visible to document authors on the document status page when
-      logged in.
+      The datatracker has some API endpoints that uses Personal API keys,
+      rather than username/password login, see for example details for
+      <code>{% url 'ietf.doc.views_ballot.api_set_position' %}</code> further
+      down on this page.  Personal API keys are available from your <a
+      href="{% url 'ietf.ietfauth.views.apikey_index'%}"> Account API Key</a>
+      page when you are logged in.
 
     </p>
 
+    <h3>Signing</h3>
     <p>
 
       When sending notifications to other APIs, the datatracker may sign
@@ -194,20 +195,23 @@
     <h3 id="iesg-position-api">IESG ballot position API</h3>
 
     <p>
-      A simplified IESG ballot position interface, intended for automation,
-      is available at <code>{% url 'ietf.doc.views_ballot.api_set_position' %}</code>.
+
+      A simplified IESG ballot position interface, intended for automation, is
+      available at <code>{% url 'ietf.doc.views_ballot.api_set_position' %}
+      </code>.  Access is limited to area directors.
+
     </p>
     <p>
       The interface requires the use of a personal API key, which can be created at
       <a href="{% url 'ietf.ietfauth.views.apikey_index' %}">{% url 'ietf.ietfauth.views.apikey_index' %}</a>
     </p>
     <p>
-      It takes the following parameters:
+      The ballot position API takes the following parameters:
     </p>
     <ul>
       <li><code>apikey</code> (required) which is the personal API key hash</li>
       <li><code>doc</code> (required) which is the balloted document name</li>
-      <li><code>position</code> (required) which is the position slug, one of: yes, noobj, block, discuss, abstain, recuse, norecord </li>
+      <li><code>position</code> (required) which is the position slug, one of: <tt>yes, noobj, block, discuss, abstain, recuse, norecord</tt>. </li>
       <li><code>discuss</code> (required if position is 'discuss') which is the discuss text</li>
       <li><code>comment</code> (optional) which is comment text</li>
     </ul>
