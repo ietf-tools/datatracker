@@ -6,7 +6,8 @@ This is a notification from the {{ clist.long_name }}.
 Document: {{ event.doc }},
 https://datatracker.ietf.org/doc/{{ event.doc_id }}/
 
-Change:
+Change by {{ event.by }} on {{ event.time }}:
+
 {{ event.desc|textify|striptags }}
 
 Best regards,
