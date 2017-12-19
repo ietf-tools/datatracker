@@ -1,3 +1,15 @@
+id2xml (1.4.1) ietf; urgency=medium
+
+  This release which provides 2 small enhancements:
+
+  * Deal better with comma-separated lists of rfc numbers in Updates: and 
+    Obsoletes: fields in the input document header.
+
+  * Added warnings as comments inline in the xml file (in addition to 
+    showing them on stderr).
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  19 Dec 2017 22:39:48 +0000
+
 id2xml (1.4.0) ietf; urgency=medium
 
   This is a small feature release which adds support for tables with
