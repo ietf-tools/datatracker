@@ -9,7 +9,7 @@ from django.core.management.base import BaseCommand
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.models import Document, State
+from ietf.doc.models import Document, State, DocAlias
 from ietf.submit.models import Submission, SubmissionCheck
 from ietf.submit.checkers import DraftYangChecker
 
@@ -75,7 +75,7 @@ class Command(BaseCommand):
                 parts = name.rsplit('-',1)
                 if len(parts)==2 and len(parts[1])==2 and parts[1].isdigit():
                     name = parts[0]
-                draft = Document.objects.get(name=name)
+                draft = DocAlias.objects.get(name=name).document
                 self.check_yang(checker, draft, force=True)
         else:
             for draft in Document.objects.filter(states=active_state, type_id='draft'):
