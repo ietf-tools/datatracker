@@ -245,7 +245,7 @@ def edit_position(request, name, ballot_id):
                                    ))
 
 @require_api_key
-@role_required('Area Director', 'Secretariat')
+@role_required('Area Director')
 @csrf_exempt
 def api_set_position(request):
     def err(code, text):
