@@ -1491,7 +1491,7 @@ ietfdb (6.52.0) ietf; urgency=medium
   * Merged in [13412] from rcross@amsl.com:
     Allow chairs to upload bluesheets for interim meetings.  Fixes #2165.   
 
-  * Fixed a bug for /meeting/*/agenda.json where multiple entries for a 
+  * Fixed a bug for /meeting/.../agenda.json where multiple entries for a 
     room name could occur, even if only one of them were referenced by sessions.
 
   * Added stripping of leading and trailing whitespace from submission data 
@@ -1727,7 +1727,7 @@ ietfdb (6.49.1) ietf; urgency=medium
 
   * Changed the signature of ietf.utils.aliases.dump_sublist() to include a 
     list of the alias domains, in order to be able to generate IRTF group 
-    aliases @irtf.org.  Updated ietf/bin/generate-*-aliases accordingly.
+    aliases @irtf.org.  Updated ietf/bin/generate-...-aliases accordingly.
 
   * Trying to re-apply already run migrations after loading a new databases 
     dump runs into the problem that new tables created by the migrations 
