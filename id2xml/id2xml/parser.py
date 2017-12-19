@@ -1428,7 +1428,7 @@ class DraftParser(Base):
                     if self.is_draft and not '(if approved)' in clause:
                         self.warn(line.num, "Expected the %s notice to end with '(if approved)', found '%s'" % (w, clause))
                     clause = clause.replace('(if approved)', '')
-                    numbers = clause.split()[1:]
+                    numbers = re.split('[:, ]+', clause)[1:]
                     num_list = [ n for n in numbers if n.isdigit() ]
                     if w == 'obsoletes':
                         res.obsoletes = num_list
