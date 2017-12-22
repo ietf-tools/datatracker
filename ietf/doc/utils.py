@@ -650,22 +650,20 @@ def extract_complete_replaces_ancestor_mapping_for_docs(names):
 def make_rev_history(doc):
     # return document history data for inclusion in doc.json (used by timeline)
 
-    def get_predecessors(doc):
-        predecessors = []
+    def get_predecessors(doc, predecessors=[]):
         if hasattr(doc, 'relateddocument_set'):
             for alias in doc.related_that_doc('replaces'):
                 if alias.document not in predecessors:
                     predecessors.append(alias.document)
-                    predecessors.extend(get_predecessors(alias.document))
+                    predecessors.extend(get_predecessors(alias.document, predecessors))
         return predecessors
 
-    def get_ancestors(doc):
-        ancestors = []
+    def get_ancestors(doc, ancestors = []):
         if hasattr(doc, 'relateddocument_set'):
             for alias in doc.related_that('replaces'):
                 if alias.document not in ancestors:
                     ancestors.append(alias.document)
-                    ancestors.extend(get_ancestors(alias.document))
+                    ancestors.extend(get_ancestors(alias.document, ancestors))
         return ancestors
 
     def get_replaces_tree(doc):
