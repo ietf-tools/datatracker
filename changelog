@@ -1,5 +1,33 @@
 ietfdb (6.68.0) ietf; urgency=medium
 
+
+  * Added a guard in document replacement following methods against infinite
+    recursion on circular relationships.
+
+  * Enhanced doc event notification emails with who and when.  Fixes issue 
+    #2428.
+
+  * Added a data migration to create yang catalog links for yang documents 
+    published before the yang catalog link feature was introduced in the 
+    datatracker.
+
+  * Fixed an ungarded object attribute access.
+
+  * Updated the API notes page.
+
+  * Limited the iesg ballot position API to ADs (excluding secretariat).
+
+  * Modified the run_yang_model_checks management command to accept 
+    document aliases on the command line.
+
+  * Reverted an inadvertently included patch version.
+
+  * Fixed some reStructuredText issues in the changelog
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  22 Dec 2017 11:29:14 -0800
+
+ietfdb (6.68.0) ietf; urgency=medium
+
   **Ballot position API.  Support for API keys.**
 
   This release provides infrastructure to handle API keys and easily

@@ -1,5 +1,6 @@
 # Copyright 2016 IETF Trust
 
+import datetime
 import syslog
 
 from django.core.management.base import BaseCommand, CommandError
@@ -30,7 +31,7 @@ class Command(BaseCommand):
         elif options['all']:
             meetings = Meeting.objects.filter(type="ietf").order_by("date")
         elif options['latest']:
-            meetings = Meeting.objects.filter(type="ietf").order_by("-date")[:options['latest']]
+            meetings = Meeting.objects.filter(type="ietf", date__lte=datetime.datetime.today()).order_by("-date")[:options['latest']]
         else:
             raise CommandError("Please use one of --meeting, --all or --latest")
 
