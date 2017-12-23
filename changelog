@@ -1,8 +1,13 @@
-ietfdb (6.68.0) ietf; urgency=medium
+ietfdb (6.68.1) ietf; urgency=medium
 
+  This is a bugfix release, with a number of minor fixes, as follows:
 
-  * Added a guard in document replacement following methods against infinite
-    recursion on circular relationships.
+  * Tweaked the query filter for 'latest' meetings in the
+    fetch_meeting_attendance management command to deal with future meetings
+    beyond the current meeting in the database.
+
+  * Added a guard against infinite recursion in document replacement listing
+    methods to deal better with circular relationships.
 
   * Enhanced doc event notification emails with who and when.  Fixes issue 
     #2428.
@@ -13,18 +18,18 @@ ietfdb (6.68.0) ietf; urgency=medium
 
   * Fixed an ungarded object attribute access.
 
-  * Updated the API notes page.
+  * Updated the API notes page with improved descriptions and information.
 
   * Limited the iesg ballot position API to ADs (excluding secretariat).
 
   * Modified the run_yang_model_checks management command to accept 
-    document aliases on the command line.
+    document aliases (not only canonical names) on the command line.
 
   * Reverted an inadvertently included patch version.
 
   * Fixed some reStructuredText issues in the changelog
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  22 Dec 2017 11:29:14 -0800
+ -- Henrik Levkowetz <henrik@levkowetz.com>  23 Dec 2017 21:53:13 +0000
 
 ietfdb (6.68.0) ietf; urgency=medium
 
