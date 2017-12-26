@@ -276,6 +276,7 @@ class ReviewTests(TestCase):
             type=ReviewTypeName.objects.get(slug="early"),
             team=review_req.team,
             state=ReviewRequestStateName.objects.get(slug="completed"),
+            result_id='serious-issues',
             reviewed_rev="01",
             deadline=datetime.date.today() - datetime.timedelta(days=80),
             reviewer=reviewer_email,
