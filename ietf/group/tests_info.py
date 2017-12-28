@@ -738,6 +738,23 @@ class GroupEditTests(TestCase):
         group = Group.objects.get(acronym=group.acronym)
         self.assertEqual(group.state_id, "active")
 
+    def test_add_comment(self):
+        make_test_data()
+        group = Group.objects.get(acronym="mars")
+        url = urlreverse('ietf.group.views.add_comment', kwargs=dict(acronym=group.acronym))
+        empty_outbox()
+        for username in ['secretary','ad','marschairman','marssecretary','marsdelegate']:
+            login_testing_unauthorized(self, username, url)
+            r = self.client.post(url, dict(comment="Test comment %s"%username))
+            self.assertEqual(r.status_code, 302)
+            person = Person.objects.get(user__username=username)
+            self.assertTrue(GroupEvent.objects.filter(group=group,by=person,type='added_comment',desc='Test comment %s'%username).exists())
+            self.client.logout()
+        self.client.login(username='ameschairman',password='ameschairman+password')
+        r=self.client.get(url)
+        self.assertEqual(r.status_code,403)
+        self.assertEqual(len(outbox),5)
+
 class MilestoneTests(TestCase):
     def create_test_milestones(self):
         draft = make_test_data()
