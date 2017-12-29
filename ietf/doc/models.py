@@ -342,7 +342,7 @@ class DocumentInfo(models.Model):
     # If that assumption is violated, they will only expose the most recently created ballot
     def ballot_open(self, ballot_type_slug):
         e = self.latest_event(BallotDocEvent, ballot_type__slug=ballot_type_slug)
-        return e and not e.type == "closed_ballot"
+        return e if e and not e.type == "closed_ballot" else None
 
     def latest_ballot(self):
         """Returns the most recently created ballot"""
