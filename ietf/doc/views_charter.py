@@ -15,7 +15,7 @@ from ietf.doc.models import ( Document, DocAlias, DocHistory, State, DocEvent,
     BallotDocEvent, BallotPositionDocEvent, InitialReviewDocEvent, NewRevisionDocEvent,
     WriteupDocEvent )
 from ietf.doc.utils import ( add_state_change_event, close_open_ballots,
-    create_ballot_if_not_open, get_chartering_type )
+    create_ballot, get_chartering_type )
 from ietf.doc.utils_charter import ( historic_milestones_for_charter,
     approved_revision, default_review_text, default_action_text,
     generate_ballot_writeup, generate_issue_ballot_mail, next_revision,
@@ -152,16 +152,16 @@ def change_state(request, name, option=None):
 
                 if charter_state.slug == "intrev" and group.type_id == "wg":
                     if request.POST.get("ballot_wo_extern"):
-                        create_ballot_if_not_open(request, charter, by, "r-wo-ext")
+                        create_ballot(charter, by, "r-wo-ext")
                     else:
-                        create_ballot_if_not_open(request, charter, by, "r-extrev")
+                        create_ballot(charter, by, "r-extrev")
                     (e1, e2) = default_review_text(group, charter, by)
                     e1.save()
                     e2.save()
                     e = default_action_text(group, charter, by)
                     e.save()
                 elif charter_state.slug in ["extrev","iesgrev"]:
-                    create_ballot_if_not_open(request, charter, by, "approve")
+                    create_ballot(charter, by, "approve")
                 elif charter_state.slug == "approved":
                     change_group_state_after_charter_approval(group, by)
                     fix_charter_revision_after_approval(charter, by)

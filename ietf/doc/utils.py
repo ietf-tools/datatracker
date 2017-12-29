@@ -176,6 +176,16 @@ def needed_ballot_positions(doc, active_positions):
 
     return " ".join(answer)
 
+def create_ballot(doc, by, ballot_slug, time=None):
+    close_open_ballots(doc, by)
+    if time:
+        e = BallotDocEvent(type="created_ballot", by=by, doc=doc, rev=doc.rev, time=time)
+    else:
+        e = BallotDocEvent(type="created_ballot", by=by, doc=doc, rev=doc.rev)
+    e.ballot_type = BallotType.objects.get(doc_type=doc.type, slug=ballot_slug)
+    e.desc = u'Created "%s" ballot' % e.ballot_type.name
+    e.save()
+
 def create_ballot_if_not_open(request, doc, by, ballot_slug, time=None):
     ballot_type = BallotType.objects.get(doc_type=doc.type, slug=ballot_slug)
     if not doc.ballot_open(ballot_slug):

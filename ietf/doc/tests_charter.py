@@ -153,7 +153,73 @@ class EditCharterTests(TestCase):
         r = self.client.post(url, dict(charter_state=str(State.objects.get(used=True,type="charter",slug="intrev").pk), message="test"))
         self.assertEqual(r.status_code, 302)
         self.assertTrue("A new charter" in outbox[-3].get_payload())
-                    
+
+    def test_already_open_charter_ballot(self):
+        # make sure the right thing happens to the charter ballots as the Secretariat
+        # does the unusual state sequence of: intrev --> extrev --> intrev
+        make_test_data()
+
+        group = Group.objects.get(acronym="ames")
+        charter = group.charter
+
+        url = urlreverse('ietf.doc.views_charter.change_state', kwargs=dict(name=charter.name))
+        login_testing_unauthorized(self, "secretary", url)
+
+        # get the charter state change page
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+
+        # put the charter in "intrev" state
+        s = State.objects.get(used=True, type="charter", slug="intrev")
+        r = self.client.post(url, dict(charter_state=str(s.pk), message="test message"))
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(charter.get_state_slug(), "intrev")
+        self.assertTrue(charter.ballot_open("r-extrev"))
+
+        events_before = charter.docevent_set.count()
+
+        # get the charter state change page again
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+
+        # put the charter in "extrev" state without closing the previous ballot
+        s = State.objects.get(used=True, type="charter", slug="extrev")
+        r = self.client.post(url, dict(charter_state=str(s.pk), message="test message"))
+        self.assertEqual(r.status_code, 302)
+        charter = Document.objects.get(name="charter-ietf-%s" % group.acronym)
+        self.assertEqual(charter.get_state_slug(), "extrev")
+        self.assertTrue(charter.ballot_open("approve"))
+
+        # make sure there is a closed_ballot event and a create_ballot event
+        events_now = charter.docevent_set.count()
+        self.assertTrue(events_now > events_before)
+
+        def find_event(t):
+            return [e for e in charter.docevent_set.all()[:events_now - events_before] if e.type == t]
+
+        self.assertTrue(find_event("closed_ballot"))
+        self.assertTrue(find_event("created_ballot"))
+
+        events_before = events_now
+
+        # get the charter state change page for a third time
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+
+        # put the charter back in "intrev" state without closing the previous ballot
+        s = State.objects.get(used=True, type="charter", slug="intrev")
+        r = self.client.post(url, dict(charter_state=str(s.pk), message="test message"))
+        self.assertEqual(r.status_code, 302)
+        charter = Document.objects.get(name="charter-ietf-%s" % group.acronym)
+        self.assertEqual(charter.get_state_slug(), "intrev")
+        self.assertTrue(charter.ballot_open("r-extrev"))
+
+        # make sure there is a closed_ballot event and a create_ballot event
+        events_now = charter.docevent_set.count()
+        self.assertTrue(events_now > events_before)
+        self.assertTrue(find_event("closed_ballot"))
+        self.assertTrue(find_event("created_ballot"))
+
     def test_edit_telechat_date(self):
         make_test_data()
 
