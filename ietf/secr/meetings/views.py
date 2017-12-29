@@ -1,5 +1,4 @@
 import datetime
-import json
 import os
 import time
 
@@ -8,7 +7,6 @@ from django.contrib import messages
 from django.db.models import Max
 from django.forms.formsets import formset_factory
 from django.forms.models import inlineformset_factory
-from django.http import HttpResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.utils.functional import curry
 
@@ -237,22 +235,23 @@ def send_notifications(meeting, groups, person):
 # -------------------------------------------------
 # AJAX Functions
 # -------------------------------------------------
-def ajax_get_times(request, meeting_id, day):
-    '''
-    Ajax function to get timeslot times for a given day.
-    returns JSON format response: [{id:start_time, value:start_time-end_time},...]
-    '''
-    # TODO strip duplicates if there are any
-    from ietf.utils import log
-    log.unreachable("2017-07-08")
-    results=[]
-    room = Room.objects.filter(meeting__number=meeting_id)[0]
-    slots = TimeSlot.objects.filter(meeting__number=meeting_id,time__week_day=day,location=room).order_by('time')
-    for slot in slots:
-        d = {'id': slot.time.strftime('%H%M'), 'value': '%s-%s' % (slot.time.strftime('%H%M'), slot.end_time().strftime('%H%M'))}
-        results.append(d)
+# def ajax_get_times(request, meeting_id, day):
+#     '''
+#     Ajax function to get timeslot times for a given day.
+#     returns JSON format response: [{id:start_time, value:start_time-end_time},...]
+#     '''
+#     # TODO strip duplicates if there are any
+#     from ietf.utils import log
+#     log.unreachable("2017-07-08")
+#     results=[]
+#     room = Room.objects.filter(meeting__number=meeting_id)[0]
+#     slots = TimeSlot.objects.filter(meeting__number=meeting_id,time__week_day=day,location=room).order_by('time')
+#     for slot in slots:
+#         d = {'id': slot.time.strftime('%H%M'), 'value': '%s-%s' % (slot.time.strftime('%H%M'), slot.end_time().strftime('%H%M'))}
+#         results.append(d)
+# 
+#     return HttpResponse(json.dumps(results), content_type='application/javascript')
 
-    return HttpResponse(json.dumps(results), content_type='application/javascript')
 # --------------------------------------------------
 # STANDARD VIEW FUNCTIONS
 # --------------------------------------------------
@@ -1012,22 +1011,22 @@ def times_delete(request, meeting_id, schedule_name, time):
         'extra': 'Any sessions assigned to this timeslot will be unscheduled'
     })
 
-@role_required('Secretariat')
-def unschedule(request, meeting_id, schedule_name, session_id):
-    '''
-    Unschedule given session object
-    '''
-    from ietf.utils import log
-    log.unreachable("2017-07-08")
-    meeting = get_object_or_404(Meeting, number=meeting_id)
-    session = get_object_or_404(Session, id=session_id)
-
-    session.timeslotassignments.filter(schedule=meeting.agenda).delete()
-
-    # TODO: change session state?
-
-    messages.success(request, 'Session unscheduled')
-    return redirect('ietf.secr.meetings.views.select_group', meeting_id=meeting_id, schedule_name=schedule_name)
+# @role_required('Secretariat')
+# def unschedule(request, meeting_id, schedule_name, session_id):
+#     '''
+#     Unschedule given session object
+#     '''
+#     from ietf.utils import log
+#     log.unreachable("2017-07-08")
+#     meeting = get_object_or_404(Meeting, number=meeting_id)
+#     session = get_object_or_404(Session, id=session_id)
+# 
+#     session.timeslotassignments.filter(schedule=meeting.agenda).delete()
+# 
+#     # TODO: change session state?
+# 
+#     messages.success(request, 'Session unscheduled')
+#     return redirect('ietf.secr.meetings.views.select_group', meeting_id=meeting_id, schedule_name=schedule_name)
 
 @role_required('Secretariat')
 def view(request, meeting_id):

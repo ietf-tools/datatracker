@@ -7,7 +7,6 @@ from dateutil.parser import parse
 from django.conf import settings
 from django.contrib import messages
 from django.db.models import Max
-from django.forms.formsets import formset_factory
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from django.utils.http import urlencode
@@ -21,8 +20,8 @@ from ietf.name.models import StreamName
 from ietf.person.models import Person
 from ietf.secr.drafts.email import announcement_from_form, get_email_initial
 from ietf.secr.drafts.forms import ( AddModelForm, AuthorForm, BaseRevisionModelForm, EditModelForm,
-                                    EmailForm, ExtendForm, ReplaceForm, RevisionModelForm, RfcModelForm,
-                                    RfcObsoletesForm, SearchForm, UploadForm, WithdrawForm )
+                                    EmailForm, ExtendForm, ReplaceForm, RevisionModelForm, 
+                                    SearchForm, UploadForm, WithdrawForm )
 from ietf.secr.utils.ams_utils import get_base
 from ietf.secr.utils.document import get_rfc_num, get_start_date
 from ietf.submit.models import Submission, Preapproval, DraftSubmissionStateName, SubmissionEvent
@@ -804,84 +803,84 @@ def extend(request, id):
         'draft': draft},
     )
     
-@role_required('Secretariat')
-def makerfc(request, id):
-    ''' 
-    Make RFC out of Internet Draft
-
-    **Templates:**
-
-    * ``drafts/makerfc.html``
-
-    **Template Variables:**
-
-    * draft 
-    '''
-    from ietf.utils import log
-    log.unreachable("2017-07-08")
-
-    draft = get_object_or_404(Document, name=id)
-    
-    # raise error if draft intended standard is empty
-    if not draft.intended_std_level:
-        messages.error(request, 'ERROR: intended RFC status is not set')
-        return redirect('ietf.secr.drafts.views.view', id=id)
-
-    ObsFormset = formset_factory(RfcObsoletesForm, extra=15, max_num=15)
-    if request.method == 'POST':
-        button_text = request.POST.get('submit', '')
-        if button_text == 'Cancel':
-            return redirect('ietf.secr.drafts.views.view', id=id)
-
-        form = RfcModelForm(request.POST, instance=draft)
-        obs_formset = ObsFormset(request.POST, prefix='obs')
-        if form.is_valid() and obs_formset.is_valid():
-
-            # TODO
-            archive_draft_files(draft.name + '-' + draft.rev)
-            
-            rfc = form.save(commit=False)
-            
-            # create DocEvent
-            e = DocEvent.objects.create(type='published_rfc',
-                                        by=request.user.person,
-                                        doc=rfc,
-                                        rev=draft.rev,
-                                        desc="Published RFC")
-
-            # change state
-            draft.set_state(State.objects.get(type="draft", slug="rfc"))
-            
-            # handle rfc_obsoletes formset
-            # NOTE: because we are just adding RFCs in this form we don't need to worry
-            # about the previous state of the obs forms
-            for obs_form in obs_formset.forms:
-                if obs_form.has_changed():
-                    rfc_acted_on = obs_form.cleaned_data.get('rfc','')
-                    target = DocAlias.objects.get(name="rfc%s" % rfc_acted_on)
-                    relation = obs_form.cleaned_data.get('relation','')
-                    if rfc and relation:
-                        # form validation ensures the rfc_acted_on exists, can safely use get
-                        RelatedDocument.objects.create(source=draft,
-                                                       target=target,
-                                                       relationship=DocRelationshipName.objects.get(slug=relation))
-
-            rfc.save_with_history([e])
-
-            messages.success(request, 'RFC created successfully!')
-            return redirect('ietf.secr.drafts.views.view', id=id)
-        else:
-            # assert False, (form.errors, obs_formset.errors)
-            pass      
-    else:
-        form = RfcModelForm(instance=draft)
-        obs_formset = ObsFormset(prefix='obs')
-    
-    return render(request, 'drafts/makerfc.html', {
-        'form': form,
-        'obs_formset': obs_formset,
-        'draft': draft},
-    )
+# @role_required('Secretariat')
+# def makerfc(request, id):
+#     ''' 
+#     Make RFC out of Internet Draft
+# 
+#     **Templates:**
+# 
+#     * ``drafts/makerfc.html``
+# 
+#     **Template Variables:**
+# 
+#     * draft 
+#     '''
+#     from ietf.utils import log
+#     log.unreachable("2017-07-08")
+# 
+#     draft = get_object_or_404(Document, name=id)
+#     
+#     # raise error if draft intended standard is empty
+#     if not draft.intended_std_level:
+#         messages.error(request, 'ERROR: intended RFC status is not set')
+#         return redirect('ietf.secr.drafts.views.view', id=id)
+# 
+#     ObsFormset = formset_factory(RfcObsoletesForm, extra=15, max_num=15)
+#     if request.method == 'POST':
+#         button_text = request.POST.get('submit', '')
+#         if button_text == 'Cancel':
+#             return redirect('ietf.secr.drafts.views.view', id=id)
+# 
+#         form = RfcModelForm(request.POST, instance=draft)
+#         obs_formset = ObsFormset(request.POST, prefix='obs')
+#         if form.is_valid() and obs_formset.is_valid():
+# 
+#             # TODO
+#             archive_draft_files(draft.name + '-' + draft.rev)
+#             
+#             rfc = form.save(commit=False)
+#             
+#             # create DocEvent
+#             e = DocEvent.objects.create(type='published_rfc',
+#                                         by=request.user.person,
+#                                         doc=rfc,
+#                                         rev=draft.rev,
+#                                         desc="Published RFC")
+# 
+#             # change state
+#             draft.set_state(State.objects.get(type="draft", slug="rfc"))
+#             
+#             # handle rfc_obsoletes formset
+#             # NOTE: because we are just adding RFCs in this form we don't need to worry
+#             # about the previous state of the obs forms
+#             for obs_form in obs_formset.forms:
+#                 if obs_form.has_changed():
+#                     rfc_acted_on = obs_form.cleaned_data.get('rfc','')
+#                     target = DocAlias.objects.get(name="rfc%s" % rfc_acted_on)
+#                     relation = obs_form.cleaned_data.get('relation','')
+#                     if rfc and relation:
+#                         # form validation ensures the rfc_acted_on exists, can safely use get
+#                         RelatedDocument.objects.create(source=draft,
+#                                                        target=target,
+#                                                        relationship=DocRelationshipName.objects.get(slug=relation))
+# 
+#             rfc.save_with_history([e])
+# 
+#             messages.success(request, 'RFC created successfully!')
+#             return redirect('ietf.secr.drafts.views.view', id=id)
+#         else:
+#             # assert False, (form.errors, obs_formset.errors)
+#             pass      
+#     else:
+#         form = RfcModelForm(instance=draft)
+#         obs_formset = ObsFormset(prefix='obs')
+#     
+#     return render(request, 'drafts/makerfc.html', {
+#         'form': form,
+#         'obs_formset': obs_formset,
+#         'draft': draft},
+#     )
 
 @role_required('Secretariat')
 def nudge_report(request):

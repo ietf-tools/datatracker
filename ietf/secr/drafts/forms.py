@@ -5,7 +5,7 @@ import os
 from django import forms
 
 from ietf.doc.models import Document, DocAlias, State
-from ietf.name.models import IntendedStdLevelName, DocRelationshipName
+from ietf.name.models import IntendedStdLevelName
 from ietf.group.models import Group
 from ietf.person.models import Person, Email
 from ietf.person.fields import SearchableEmailField
@@ -276,55 +276,55 @@ class RevisionModelForm(forms.ModelForm):
         self.fields['title'].widget=forms.Textarea()
         self.fields['pages'].label='Number of Pages'
 
-class RfcModelForm(forms.ModelForm):
-    rfc_number = forms.IntegerField()
-    rfc_published_date = forms.DateField(initial=datetime.datetime.now)
-    group = GroupModelChoiceField(required=True)
+# class RfcModelForm(forms.ModelForm):
+#     rfc_number = forms.IntegerField()
+#     rfc_published_date = forms.DateField(initial=datetime.datetime.now)
+#     group = GroupModelChoiceField(required=True)
+# 
+#     class Meta:
+#         model = Document
+#         fields = ('title','group','pages','std_level','internal_comments')
+# 
+#     # use this method to set attrs which keeps other meta info from model.
+#     def __init__(self, *args, **kwargs):
+#         super(RfcModelForm, self).__init__(*args, **kwargs)
+#         self.fields['title'].widget = forms.Textarea()
+#         self.fields['std_level'].required = True
+# 
+#     def save(self, force_insert=False, force_update=False, commit=False):
+#         obj = super(RfcModelForm, self).save(commit=False)
+# 
+#         # create DocAlias
+#         DocAlias.objects.create(document=self.instance,name="rfc%d" % self.cleaned_data['rfc_number'])
+# 
+#         return obj
+# 
+#     def clean_rfc_number(self):
+#         rfc_number = self.cleaned_data['rfc_number']
+#         if DocAlias.objects.filter(name='rfc' + str(rfc_number)):
+#             raise forms.ValidationError("RFC %d already exists" % rfc_number)
+#         return rfc_number
 
-    class Meta:
-        model = Document
-        fields = ('title','group','pages','std_level','internal_comments')
-
-    # use this method to set attrs which keeps other meta info from model.
-    def __init__(self, *args, **kwargs):
-        super(RfcModelForm, self).__init__(*args, **kwargs)
-        self.fields['title'].widget = forms.Textarea()
-        self.fields['std_level'].required = True
-
-    def save(self, force_insert=False, force_update=False, commit=False):
-        obj = super(RfcModelForm, self).save(commit=False)
-
-        # create DocAlias
-        DocAlias.objects.create(document=self.instance,name="rfc%d" % self.cleaned_data['rfc_number'])
-
-        return obj
-
-    def clean_rfc_number(self):
-        rfc_number = self.cleaned_data['rfc_number']
-        if DocAlias.objects.filter(name='rfc' + str(rfc_number)):
-            raise forms.ValidationError("RFC %d already exists" % rfc_number)
-        return rfc_number
-
-class RfcObsoletesForm(forms.Form):
-    relation = forms.ModelChoiceField(queryset=DocRelationshipName.objects.filter(slug__in=('updates','obs')),required=False)
-    rfc = forms.IntegerField(required=False)
-
-    # ensure that RFC exists
-    def clean_rfc(self):
-        rfc = self.cleaned_data.get('rfc','')
-        if rfc:
-            if not Document.objects.filter(docalias__name="rfc%s" % rfc):
-                raise forms.ValidationError("RFC does not exist")
-        return rfc
-
-    def clean(self):
-        super(RfcObsoletesForm, self).clean()
-        cleaned_data = self.cleaned_data
-        relation = cleaned_data.get('relation','')
-        rfc = cleaned_data.get('rfc','')
-        if (relation and not rfc) or (rfc and not relation):
-            raise forms.ValidationError('You must select a relation and enter RFC #')
-        return cleaned_data
+# class RfcObsoletesForm(forms.Form):
+#     relation = forms.ModelChoiceField(queryset=DocRelationshipName.objects.filter(slug__in=('updates','obs')),required=False)
+#     rfc = forms.IntegerField(required=False)
+# 
+#     # ensure that RFC exists
+#     def clean_rfc(self):
+#         rfc = self.cleaned_data.get('rfc','')
+#         if rfc:
+#             if not Document.objects.filter(docalias__name="rfc%s" % rfc):
+#                 raise forms.ValidationError("RFC does not exist")
+#         return rfc
+# 
+#     def clean(self):
+#         super(RfcObsoletesForm, self).clean()
+#         cleaned_data = self.cleaned_data
+#         relation = cleaned_data.get('relation','')
+#         rfc = cleaned_data.get('rfc','')
+#         if (relation and not rfc) or (rfc and not relation):
+#             raise forms.ValidationError('You must select a relation and enter RFC #')
+#         return cleaned_data
 
 class SearchForm(forms.Form):
     intended_std_level = forms.ModelChoiceField(queryset=IntendedStdLevelName.objects,label="Intended Status",required=False)
