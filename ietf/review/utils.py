@@ -451,10 +451,26 @@ def assign_review_request_to_reviewer(request, review_req, reviewer, add_skip=Fa
         state=None,
     )
 
+    msg = "%s has assigned you as a reviewer for this document." % request.user.person.ascii
+    prev_team_reviews = ReviewRequest.objects.filter(
+        doc=review_req.doc,
+        state="completed",
+        team=review_req.team,
+    )
+    if prev_team_reviews.exists():
+        msg = msg + '\n\nThis team has completed other reviews of this document:\n'
+        for req in prev_team_reviews:
+            msg += u'%s %s -%s %s\n'% (
+                     req.review_done_time().strftime('%d %b %Y'), 
+                     req.reviewer.person.ascii,
+                     req.reviewed_rev or req.requested_rev,
+                     req.result.name,
+                   )
+
     email_review_request_change(
         request, review_req,
         "%s %s assignment: %s" % (review_req.team.acronym.capitalize(), review_req.type.name,review_req.doc.name),
-        "%s has assigned you as a reviewer for this document." % request.user.person,
+        msg ,
         by=request.user.person, notify_secretary=False, notify_reviewer=True, notify_requested_by=False)
 
 def possibly_advance_next_reviewer_for_team(team, assigned_review_to_person_id, add_skip=False):
