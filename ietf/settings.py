@@ -536,13 +536,11 @@ GROUP_STATES_WITH_EXTRA_PROCESSING = ["sub-pub", "rfc-edit", ]
 DATE_FORMAT = "Y-m-d"
 DATETIME_FORMAT = "Y-m-d H:i T"
 
-
-DRAFT_NAMES_WITH_DOT = "(draft-[a-z0-9-]+-(ion-sig-uni4\.0|pilc-2\.5g3g|trade-iotp-v1\.0-[a-z]+|msword-template-v2\.0|1240\.his|(ieee)?802\.[0-9a-z.]+(-[a-z0-9-]+)?))"
 URL_REGEXPS = {
     "acronym": r"(?P<acronym>[-a-z0-9]+)",
     "charter": r"(?P<name>charter-[-a-z0-9]+)",
     "date": r"(?P<date>\d{4}-\d{2}-\d{2})",
-    "name": r"(?P<name>([A-Za-z0-9_+-]+?|%s))" % DRAFT_NAMES_WITH_DOT,
+    "name": r"(?P<name>[A-Za-z0-9._+-]+)",
     "document": r"(?P<document>[a-z][-a-z0-9]+)", # regular document names
     "rev": r"(?P<rev>[0-9]{1,2}(-[0-9]{2})?)",
     "owner": r"(?P<owner>[-A-Za-z0-9\'+._]+@[A-Za-z0-9-._]+)",
