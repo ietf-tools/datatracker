@@ -322,15 +322,14 @@ if __name__ == "__main__":
     for i in range(len(error_list)):
         if error_list[i].id in settings.SILENCED_SYSTEM_CHECKS:
             silenced.append(i)
-        silenced.sort(reverse=True)
-        for i in silenced:
-            del error_list[i]
+    silenced.sort(reverse=True)
+    for i in silenced:
+        del error_list[i]
     if error_list:
         print("")
         for entry in error_list:
             print(entry)
-        sys.exit(1)
-        
+
     while urls:
         if args.random:
             # popitem() is documented to be random, but really isn't

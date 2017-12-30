@@ -1,3 +1,30 @@
+ietfdb (6.68.2) ietf; urgency=medium
+
+  This is a bugfix release, with minor fixes as follows:
+
+  * Added a patch for django issue #28772, a checks action to apply the 
+    patch, and a setting that lists patches to be applied.
+
+  * With a validator in place for document names (introduced some time ago) 
+    we will not get any new documents with invalid name strings, so we can go 
+    back to a simpler regexp for document name urls.
+
+  * Removed code that has been marked unreachable for more than 5 months.
+
+  * Added user notification about ballots closed automatically when 
+    creating a new ballot.
+
+  * Merged in [14467] from housley@vigilsec.com:
+    Close any previous ballots when a charter goes to Internal Review or 
+    Extrernal Review.  Fixes #2421. 
+
+  * Merged in [14466] from rjsparks@nostrum.com:
+    Include information about previous team reviews in assignement emails. 
+    Fixes #2392.  
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  29 Dec 2017 16:40:28 -0800
+
+
 ietfdb (6.68.1) ietf; urgency=medium
 
   This is a bugfix release, with a number of minor fixes, as follows:
