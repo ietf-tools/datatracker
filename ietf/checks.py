@@ -1,4 +1,5 @@
 import os
+import patch
 import sys
 import time
 from textwrap import dedent
@@ -155,7 +156,7 @@ def check_yang_model_directories(app_configs, **kwargs):
                 "    %s = %s" % (s, p),
                 hint = ("Please either update your local settings to point at the correct\n"
                     "\tdirectory, or if the setting is correct, create the indicated directory.\n"),
-                id = "datatracker.E0006",
+                id = "datatracker.E0017",
             ))
     return errors
 
@@ -285,6 +286,7 @@ def check_cache(app_configs, **kwargs):
         if not cache.get(key) == val:
             errors.append(cache_error("Cache didn't accept session cookie age", "E0016"))
     return errors
+
     
 def maybe_create_svn_symlinks(settings):
     site_packages_dir = None
@@ -307,7 +309,7 @@ def maybe_create_svn_symlinks(settings):
                     "   %s\n" % path,
                     hint = "Please provide the correct python system site-package paths for\n"
                     "\tsvn and libsvn in SVN_PACKAGES.\n",
-                    id = "datatracker.E0015",))
+                    id = "datatracker.E0018",))
     return errors
 
 @checks.register('cache')
@@ -344,8 +346,28 @@ def check_svn_import(app_configs, **kwargs):
                     available at https://trac.edgewall.org/wiki/TracSubversion.
 
                     """).replace('\n', '\n   ').rstrip(),
-                id = "datatracker.E0014",
+                id = "datatracker.E0019",
             ))
+    return errors
+
+@checks.register('files')
+def maybe_patch_django_db_model_fields_unicode_comparison(app_configs, **kwargs):
+    errors = []
+    for patch_file in settings.CHECKS_PATCHES_TO_APPLY:
+        patch_set = patch.fromfile(patch_file)
+        if patch_set:
+            if not patch_set.apply():
+                errors.append(checks.Warning(
+                    "Could not apply patch from file '%s'"%patch_file,
+                    hint="Make sure that the patch file contains a unified diff and has valid file paths",
+                    id="datatracker.W0002",
+                    ))
+        else:
+            errors.append(checks.Warning(
+                "Could not parse patch file '%s'"%patch_file,
+                hint="Make sure that the patch file contains a unified diff",
+                id="datatracker.W0001",
+                ))
     return errors
 
 @checks.register('security')
@@ -366,7 +388,7 @@ def check_api_key_in_local_settings(app_configs, **kwargs):
                     extract the public key with 'openssl rsa -in apikey.pem -pubout > apikey.pub'.
                     
                     """).replace('\n', '\n   ').rstrip(),
-                id = "datatracker.E0015",
+                id = "datatracker.E0020",
             ))
         elif not ( settings_local.API_PUBLIC_KEY_PEM == settings.API_PUBLIC_KEY_PEM
                     and settings_local.API_PRIVATE_KEY_PEM == settings.API_PRIVATE_KEY_PEM ):
@@ -379,7 +401,7 @@ def check_api_key_in_local_settings(app_configs, **kwargs):
                     Please check if you have multiple settings_local.py files.
 
                     """).replace('\n', '\n   ').rstrip(),
-                id = "datatracker.E0016",
+                id = "datatracker.E0021",
             ))
 
     return errors
