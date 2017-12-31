@@ -14,7 +14,7 @@ import debug                            # pyflakes:ignore
 from ietf.submit.checkers import DraftYangChecker
 
 def get_file_name(draft):
-    return os.path.join(settings.INTERNET_DRAFT_PATH, '%s-%s.txt'%(draft.name, draft.rev))
+    return os.path.join(settings.INTERNET_ALL_DRAFTS_ARCHIVE_DIR, '%s-%s.txt'%(draft.name, draft.rev))
 
 YANG_RFCS = [ 5717, 6021, 6022, 6087, 6095, 6241, 6243, 6470, 6536, 6643,
     6728, 6991, 7223, 7224, 7277, 7317, 7407, 7758, 7895, 7952, 8022, 8040,
@@ -29,8 +29,6 @@ def forwards(apps, schema_editor):
         draft = DocAlias.objects.get(name="rfc%s" % rfc_number).document
         submission = draft.submission_set.filter(rev=draft.rev).order_by('-id').first()
         if submission:
-            prev_check = submission.checks.filter(checker=checker.name).order_by('-id').first()
-            if prev_check and prev_check.message:
                 result = checker.check_file_txt(get_file_name(draft))
                 passed, message, errors, warnings, items = result
                 items = json.loads(json.dumps(items))
@@ -49,14 +47,14 @@ def forwards(apps, schema_editor):
                         moduleargs = '&'.join([ f.format(module=m) for m in modules])
                         url  = settings.SUBMIT_YANG_CATALOG_IMPACT_URL.format(moduleargs=moduleargs, draft=draft.name)
                         desc = settings.SUBMIT_YANG_CATALOG_IMPACT_DESC.format(modules=','.join(modules), draft=draft.name)
-                        draft.documenturl_set.create(url=url, tag_id='yang-impact-analysis', desc=desc)
+                        draft.documenturl_set.create(url=url[:512], tag_id='yang-impact-analysis', desc=desc)
                         # Yang module metadata URLs
                         old_urls = draft.documenturl_set.filter(tag_id='yang-module-metadata')
                         old_urls.delete()
                         for module in modules:
                             url  = settings.SUBMIT_YANG_CATALOG_MODULE_URL.format(module=module)
                             desc = settings.SUBMIT_YANG_CATALOG_MODULE_DESC.format(module=module)
-                            draft.documenturl_set.create(url=url, tag_id='yang-module-metadata', desc=desc)
+                            draft.documenturl_set.create(url=url[:512], tag_id='yang-module-metadata', desc=desc)
 
 def backwards(apps, schema_editor):
     pass
