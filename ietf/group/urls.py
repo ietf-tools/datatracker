@@ -24,6 +24,7 @@ info_detail_urls = [
     url(r'^about/status/edit/$', views.group_about_status_edit),
     url(r'^about/status/meeting/(?P<num>\d+)/$', views.group_about_status_meeting),
     url(r'^history/$',views.history),
+    url(r'^history/addcomment/$',views.add_comment),
     url(r'^email/$', views.email),
     url(r'^deps/(?P<output_type>[\w-]+)/$', views.dependencies),
     url(r'^meetings/$', views.meetings),

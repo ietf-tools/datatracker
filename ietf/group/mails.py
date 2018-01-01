@@ -57,3 +57,12 @@ def email_milestones_changed(request, group, changes, states):
     if (addrs.to or addrs.cc) and msg:
         wrap_up_email(addrs, msg)
 
+def email_comment(request, event):
+    (to, cc) = gather_address_lists('group_added_comment',group=event.group)
+    send_mail(request, to, None, "Comment added to %s history"%event.group.acronym,
+              "group/comment_added_email.txt",
+              dict( event = event, 
+                    group_url=settings.IDTRACKER_BASE_URL + event.group.about_url(),
+              ),
+              cc = cc)
+                    

@@ -10,6 +10,10 @@
 
 {% block group_content %}
   {% origin %}
+  <h2>Group History</h2>
+  {% if can_add_comment %}
+    <a class="btn btn-default" href="{% url 'ietf.group.views.add_comment' acronym=group.acronym %}"><span class="fa fa-plus"></span> Add comment</a>
+  {% endif %}
   <table class="table table-condensed table-striped tablesorter">
     <thead>
       <tr>

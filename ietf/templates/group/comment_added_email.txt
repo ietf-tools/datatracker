@@ -1,0 +1,10 @@
+{% autoescape off %}
+Please DO NOT reply to this email.
+
+{{event.by}} added the following comment to the history of {{event.group.acronym}}:
+
+{{ event.desc }}
+
+Information for the group can be found at {{ group_url }}.
+
+{% endautoescape%}

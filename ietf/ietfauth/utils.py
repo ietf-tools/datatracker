@@ -144,6 +144,26 @@ def is_authorized_in_doc_stream(user, doc):
 
     return Role.objects.filter(Q(name__in=("chair", "secr", "delegate", "auth"), person__user=user) & group_req).exists()
 
+def is_authorized_in_group(user, group):
+    """Return whether user is authorized to perform duties on
+    a given group."""
+
+    if not user.is_authenticated:
+        return False
+
+    if has_role(user, ["Secretariat",]):
+        return True
+
+    if group.parent:
+        if group.parent.type_id == 'area' and has_role(user, ['Area Director',]):
+            return True
+        if group.parent.acronym == 'irtf' and has_role(user, ['IRTF Chair',]):
+            return True
+        if group.parent.acronym == 'iab' and has_role(user, ['IAB','IAB Executive Director',]):
+            return True
+
+    return Role.objects.filter(name__in=("chair", "secr", "delegate", "auth"), person__user=user,group=group ).exists()
+
 def is_individual_draft_author(user, doc):
 
     if not user.is_authenticated:

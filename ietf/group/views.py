@@ -41,6 +41,7 @@ import datetime
 from tempfile import mkstemp
 from collections import OrderedDict, defaultdict
 
+from django import forms
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.db.models.aggregates import Max
@@ -65,7 +66,7 @@ from ietf.group.dot import make_dot
 from ietf.group.forms import (GroupForm, StatusUpdateForm, ConcludeGroupForm, StreamEditForm,
                               ManageReviewRequestForm, EmailOpenAssignmentsForm, ReviewerSettingsForm,
                               AddUnavailablePeriodForm, EndUnavailablePeriodForm, ReviewSecretarySettingsForm, )
-from ietf.group.mails import email_admin_re_charter, email_personnel_change
+from ietf.group.mails import email_admin_re_charter, email_personnel_change, email_comment
 from ietf.group.models import ( Group, Role, GroupEvent, GroupStateTransitions, GroupURL, ChangeStateGroupEvent )
 from ietf.group.utils import (get_charter_text, can_manage_group_type, 
                               milestone_reviewer_for_group_type, can_provide_status_update,
@@ -74,7 +75,7 @@ from ietf.group.utils import (get_charter_text, can_manage_group_type,
                               save_group_in_history, can_manage_group, 
                               get_group_or_404, setup_default_community_list_for_group, )                              
 #
-from ietf.ietfauth.utils import has_role
+from ietf.ietfauth.utils import has_role, is_authorized_in_group
 from ietf.mailtrigger.utils import gather_relevant_expansions
 from ietf.meeting.helpers import get_meeting
 from ietf.meeting.utils import group_sessions
@@ -632,10 +633,13 @@ def history(request, acronym, group_type=None):
     group = get_group_or_404(acronym, group_type)
 
     events = group.groupevent_set.all().select_related('by').order_by('-time', '-id')
+    can_add_comment = is_authorized_in_group(request.user,group)
 
     return render(request, 'group/history.html',
                   construct_group_menu_context(request, group, "history", group_type, {
+                      "group": group,
                       "events": events,
+                      "can_add_comment": can_add_comment,
                   }))
 
 def materials(request, acronym, group_type=None):
@@ -1784,4 +1788,24 @@ def change_review_secretary_settings(request, acronym, group_type=None):
         'back_url': back_url,
         'settings_form': settings_form,
     })
+
+class AddCommentForm(forms.Form):
+    comment = forms.CharField(required=True, widget=forms.Textarea, strip=False)
+
+def add_comment(request, acronym, group_type=None):
+    group = get_group_or_404(acronym, group_type)
+
+    if not is_authorized_in_group(request.user,group):
+        return HttpResponseForbidden("You need to a chair, secretary, or delegate of this group to add a comment.")
     
+    if request.method == 'POST':
+        form = AddCommentForm(request.POST)
+        if form.is_valid():
+            comment = form.cleaned_data['comment']
+            event = GroupEvent.objects.create(group=group,desc=comment,type="added_comment",by=request.user.person)
+            email_comment(request,event)
+            return redirect('ietf.group.views.history', acronym=group.acronym)
+    else:
+        form = AddCommentForm()
+
+    return render(request, 'group/add_comment.html', { 'group':group, 'form':form, })
