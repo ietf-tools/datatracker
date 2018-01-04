@@ -351,10 +351,21 @@ def check_svn_import(app_configs, **kwargs):
     return errors
 
 @checks.register('files')
-def maybe_patch_django_db_model_fields_unicode_comparison(app_configs, **kwargs):
+def maybe_patch_django(app_configs, **kwargs):
     errors = []
-    for patch_file in settings.CHECKS_PATCHES_TO_APPLY:
-        patch_set = patch.fromfile(patch_file)
+    # Change path to our copy of django (this assumes we're running in a
+    # virtualenv, which we should)
+    import os, django
+    django_path = os.path.dirname(django.__file__)
+    parent_path = os.path.dirname(django_path)
+    saved_cwd = os.getcwd()
+    os.chdir(parent_path)
+    # All patches in settings.CHECKS_DJANGO_PATCHES_TO_APPLY must have a
+    # relative file path rooted in the django dir, for instance
+    # 'django/db/models/fields/__init__.py'
+    for patch_file in settings.CHECKS_DJANGO_PATCHES_TO_APPLY:
+        patch_path = os.path.join(saved_cwd, patch_file)
+        patch_set = patch.fromfile(patch_path)
         if patch_set:
             if not patch_set.apply():
                 errors.append(checks.Warning(
@@ -368,6 +379,7 @@ def maybe_patch_django_db_model_fields_unicode_comparison(app_configs, **kwargs)
                 hint="Make sure that the patch file contains a unified diff",
                 id="datatracker.W0001",
                 ))
+    os.chdir(saved_cwd)
     return errors
 
 @checks.register('security')

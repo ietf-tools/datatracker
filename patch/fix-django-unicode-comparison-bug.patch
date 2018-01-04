@@ -1,5 +1,5 @@
---- ./../yang/env/lib/python2.7/site-packages/django/db/models/fields/__init__.py	2017-06-14 08:43:21.665812000 -0700
-+++ env/lib/python2.7/site-packages/django/db/models/fields/__init__.py	2017-12-17 14:34:03.023976702 -0800
+--- django/db/models/fields/__init__.py.old	2017-06-14 08:43:21.665812000 -0700
++++ django/db/models/fields/__init__.py	2017-12-17 14:34:03.023976702 -0800
 @@ -2323,7 +2323,7 @@
          if self.has_default() and not callable(self.default):
              return self.default
