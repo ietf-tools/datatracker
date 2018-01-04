@@ -275,7 +275,8 @@ def post_submission(request, submission, approvedDesc):
         draft.set_state(State.objects.get(used=True, type="draft-stream-%s" % draft.stream_id, slug="wg-doc"))
 
     # automatic state changes for IANA review
-    if draft.get_state_slug("draft-iana-review") in ("ok-act", "ok-noact", "not-ok"):
+    if (draft.get_state_slug("draft-iana-review") in ("ok-act", "ok-noact", "not-ok")
+        and not draft.get_state_slug("draft-iesg") in ("approved", "ann", "rfcqueue", "pub", "nopubadw", "nopubanw", "dead") ):
         prev_state = draft.get_state("draft-iana-review")
         next_state = State.objects.get(used=True, type="draft-iana-review", slug="changed")
         draft.set_state(next_state)
