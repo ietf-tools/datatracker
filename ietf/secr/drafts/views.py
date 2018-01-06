@@ -27,7 +27,7 @@ from ietf.secr.utils.document import get_rfc_num, get_start_date
 from ietf.submit.models import Submission, Preapproval, DraftSubmissionStateName, SubmissionEvent
 from ietf.submit.mail import announce_new_version, announce_to_lists, announce_to_authors
 from ietf.utils.draft import Draft
-
+from ietf.utils.log import log
 
 # -------------------------------------------------
 # Helper Functions
@@ -241,9 +241,14 @@ def do_resurrect(draft, request):
     sorted_files = sorted(files)
     latest,ext = os.path.splitext(sorted_files[-1])
     files = glob.glob(os.path.join(settings.INTERNET_DRAFT_ARCHIVE_DIR,latest) + '.*')
+    log("Resurrecting %s.  Moving files:" % draft.name)
     for file in files:
-        shutil.move(file,settings.INTERNET_DRAFT_PATH)
-    
+        try:
+            shutil.move(file, settings.INTERNET_DRAFT_PATH)
+            log("  Moved file %s to %s" % (file, settings.INTERNET_DRAFT_PATH))
+        except shutil.Error as e:
+            log("  Exception %s when attempting to move %s" % (e, file))
+
     # Update draft record
     draft.set_state(State.objects.get(type="draft", slug="active"))
     
