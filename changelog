@@ -1,3 +1,35 @@
+ietfdb (6.68.3) ietf; urgency=medium
+
+  **Group history comments and other refinements**
+
+  This is a minor release, to fix some bugs, introduce some tweaks, and
+  clean the slate before the planned modifications to IPR disclosure
+  pages (see issues #2411, #2412, #2413 and #2414).  From the commit log:
+
+  * Merged in [14468] from rjsparks@nostrum.com:
+    Add the ability to add a comment to a group's history. Fixes #1483.
+
+  * Added more logging during draft resurrection.  Added a guard against
+    acting on an old draft status if draft status changes occur while the
+    draft expiration loop is running.
+
+  * Modified the django patch check action from [14474] (for django issue 
+    #28772) to work with arbitrary locations of the virtual Python environment, 
+    rather than assuming a particular location of the virtual environment 
+    directory.
+
+  * Restricted automatic IANA state changes into 'Version Changed - Review
+    Needed' on new draft revisions.  They now only occur for events before
+    document approval, based on a mail conversation with Michelle.  (This is a
+    preliminary release, which can come to be reverted if IANA comes back with
+    a different desired resolution.)
+
+  * Fixed some issues with a migration.  The migration has been re-run on 
+    production.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  09 Jan 2018 14:02:11 +0000
+
+
 ietfdb (6.68.2) ietf; urgency=medium
 
   This is a bugfix release, with minor fixes as follows:
