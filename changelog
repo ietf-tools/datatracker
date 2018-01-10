@@ -1,3 +1,17 @@
+ietfdb (6.68.4) ietf; urgency=medium
+
+  * Merged in [14497] from rjsparks@nostrum.com:
+    Added navigation to nomcom pages for nomcom members. Put the RFC 
+    Status change link in a saner place in the navigation. Fixes #1411 and 
+    #2433.  
+
+  * Excluded arabic names from PersonFactory due to difficulties with the
+    romanization of the names using our current transliteration library
+    (unidecode), in particular in connection with tests doing draft author
+    extraction.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  10 Jan 2018 07:31:41 -0800
+
 ietfdb (6.68.3) ietf; urgency=medium
 
   **Group history comments and other refinements**
