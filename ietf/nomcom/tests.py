@@ -1743,6 +1743,12 @@ Junk body for testing
         self.assertEqual(len(outbox),1)
         self.assertTrue(all([str(x.person.pk) in outbox[0].get_payload(decode=True) for x in [nominee1,nominee2]]))
 
+    def test_extract_email(self):
+        url = reverse('ietf.nomcom.views.extract_email_lists',kwargs={'year':self.nc.year()})
+        login_testing_unauthorized(self,self.chair.user.username,url)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
 
 class NomComIndexTests(TestCase):
     def setUp(self):

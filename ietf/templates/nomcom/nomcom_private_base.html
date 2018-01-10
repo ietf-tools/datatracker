@@ -31,6 +31,7 @@
             <li {% if selected == "feedback_pending" %}class="active"{% endif %}><a href="{% url 'ietf.nomcom.views.view_feedback_pending' year %}">Classify pending feedback</a></li>
             <li {% if selected == "feedback_email" %}class="active"{% endif %}><a href="{% url 'ietf.nomcom.views.private_feedback_email' year %}">Enter email feedback</a></li>
             <li {% if selected == "questionnaire" %}class="active"{% endif %}><a href="{% url 'ietf.nomcom.views.private_questionnaire' year %}">Enter questionnaire response</a></li>
+            <li {% if selected == "extract_email_lists" %}class="active"{% endif %}><a href="{% url 'ietf.nomcom.views.extract_email_lists' year %}">Extract email lists</a></li>
             <li {% if selected == "send_accept_reminder" %}class="active"{% endif %}><a href="{% url 'ietf.nomcom.views.send_reminder_mail' year "accept" %}">Send accept reminder</a></li>
             <li {% if selected == "send_questionnaire_reminder" %}class="active"{% endif %}><a href="{% url 'ietf.nomcom.views.send_reminder_mail' year "questionnaire" %}">Send questionnaire reminder</a></li>
             <li {% if selected == "merge_person" %}class="active"{% endif %}><a href="{% url "ietf.nomcom.views.private_merge_person" year %}">Request Person Record Merge</a></li>

@@ -23,6 +23,7 @@ urlpatterns = [
     url(r'^(?P<year>\d{4})/private/merge-nominee/?$', views.private_merge_nominee),
     url(r'^(?P<year>\d{4})/private/merge-person/?$', views.private_merge_person),
     url(r'^(?P<year>\d{4})/private/send-reminder-mail/(?P<type>\w+)/$', views.send_reminder_mail),
+    url(r'^(?P<year>\d{4})/private/extract-email-lists/$', views.extract_email_lists),
     url(r'^(?P<year>\d{4})/private/edit-members/$', views.edit_members),
     url(r'^(?P<year>\d{4})/private/edit-nomcom/$', views.edit_nomcom),
     url(r'^(?P<year>\d{4})/private/chair/templates/$', views.list_templates),
