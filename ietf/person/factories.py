@@ -19,7 +19,11 @@ from ietf.person.name import unidecode_name
 fake = faker.Factory.create()
 
 def random_faker():
-    return faker.Faker(random.sample(faker.config.AVAILABLE_LOCALES, 1)[0])
+    # The transliteration of arabic names introduces non-alphabetic
+    # characgters that don't work with the draft author extraction code, and
+    # also don't seem to match the way people with arabic names romanize them.
+    locales = set( [ l for l in faker.config.AVAILABLE_LOCALES if not l.startswith('ar_') ] )
+    return faker.Faker(random.sample(locales, 1)[0])
 
 class UserFactory(factory.DjangoModelFactory):
     class Meta:
