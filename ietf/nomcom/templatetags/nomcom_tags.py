@@ -1,5 +1,6 @@
 import os
 import tempfile
+import re
 
 from django import template
 from django.conf import settings
@@ -38,11 +39,16 @@ def lookup(container,key):
 @register.filter
 def formatted_email(address):
     person = None
-    if address:
-        persons = Person.objects.filter(email__address__in=[address])
+    addrmatch = re.search('<([^>]+)>',address)
+    if addrmatch:
+        addr = addrmatch.group(1)
+    else:
+        addr = address
+    if addr:
+        persons = Person.objects.filter(email__address__in=[addr])
         person = persons and persons[0] or None
     if person and person.name:
-        return formataddr((person.plain_name(), address))
+        return formataddr((person.plain_name(), addr))
     else:
         return address
 
