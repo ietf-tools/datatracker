@@ -1,17 +1,13 @@
 from django.conf import settings
 from django import forms
-from formtools.preview import FormPreview, AUTO_ID
-from django.shortcuts import get_object_or_404, redirect
-from django.utils.decorators import method_decorator
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404 
 from django.urls import reverse
 from django.utils.html import mark_safe
 from django.forms.widgets import FileInput
 
 from ietf.dbtemplate.forms import DBTemplateForm
-from ietf.group.models import Group, Role
-from ietf.ietfauth.utils import role_required
-from ietf.name.models import RoleName, FeedbackTypeName, NomineePositionStateName
+from ietf.group.models import Group
+from ietf.name.models import FeedbackTypeName, NomineePositionStateName
 from ietf.nomcom.models import ( NomCom, Nomination, Nominee, NomineePosition,
                                  Position, Feedback, ReminderDates, Topic )
 from ietf.nomcom.utils import (NOMINATION_RECEIPT_TEMPLATE, FEEDBACK_RECEIPT_TEMPLATE,
@@ -21,7 +17,6 @@ from ietf.nomcom.utils import (NOMINATION_RECEIPT_TEMPLATE, FEEDBACK_RECEIPT_TEM
 from ietf.person.models import Email
 from ietf.person.fields import (SearchableEmailField, SearchableEmailsField,
                                 SearchablePersonField, SearchablePersonsField )
-from ietf.utils.fields import MultiEmailField
 from ietf.utils.mail import send_mail
 from ietf.mailtrigger.utils import gather_address_lists
 
@@ -94,107 +89,9 @@ class MultiplePositionNomineeField(forms.MultipleChoiceField, PositionNomineeFie
         return result
 
 
-class EditMembersForm(forms.Form):
+class NewEditMembersForm(forms.Form):
 
-    members = MultiEmailField(label="Members email", required=False, widget=forms.Textarea)
-
-class EditMembersFormPreview(FormPreview):
-    form_template = 'nomcom/edit_members.html'
-    preview_template = 'nomcom/edit_members_preview.html'
-
-    @method_decorator(role_required("Nomcom Chair", "Nomcom Advisor"))
-    def __call__(self, request, *args, **kwargs):
-        year = kwargs['year']
-        group = get_nomcom_group_or_404(year)
-        self.state['group'] = group
-        self.state['rolodex_url'] = ROLODEX_URL
-        groups = group.nomcom_set.all()
-        self.nomcom = groups and groups[0] or None
-        self.group = group
-        self.year = year
-
-        return super(EditMembersFormPreview, self).__call__(request, *args, **kwargs)
-
-    def preview_get(self, request):
-        "Displays the form"
-        f = self.form(auto_id=self.get_auto_id(), initial=self.get_initial(request))
-        return render(request, self.form_template,
-                                  {
-                                      'form': f,
-                                      'stage_field': self.unused_name('stage'),
-                                      'state': self.state,
-                                      'year': self.year,
-                                      'nomcom': self.nomcom,
-                                      'selected': 'edit_members',
-                                  }
-                              )
-
-    def get_initial(self, request):
-        members = self.group.role_set.filter(name__slug='member')
-        if members:
-            return { "members": ",\r\n".join(role.email.address for role in members) }
-        return {}
-
-    def process_preview(self, request, form, context):
-        members_email = form.cleaned_data['members']
-
-        members_info = []
-        emails_not_found = []
-
-        for email in members_email:
-            try:
-                email_obj = Email.objects.get(address=email)
-                person = email_obj.person
-            except Email.DoesNotExist:
-                person = None
-            if person:
-                members_info.append({'email': email,
-                                     'email_obj': email_obj,
-                                     'person': person})
-            else:
-                emails_not_found.append(email)
-        self.state.update({'members_info': members_info,
-                           'emails_not_found': emails_not_found})
-
-    def preview_post(self, request):
-        "Validates the POST data. If valid, displays the preview page. Else, redisplays form."
-        f = self.form(request.POST, auto_id=AUTO_ID)
-        context = {'form': f, 'stage_field': self.unused_name('stage'), 'state': self.state,
-                   'year': self.year}
-        if f.is_valid():
-            self.process_preview(request, f, context)
-            context['hash_field'] = self.unused_name('hash')
-            context['hash_value'] = self.security_hash(request, f)
-            return render(request, self.preview_template, context )
-        else:
-            return render(request, self.form_template, context )
-
-    def post_post(self, request):
-        "Validates the POST data. If valid, calls done(). Else, redisplays form."
-        f = self.form(request.POST, auto_id=AUTO_ID)
-        context = {'form': f, 'stage_field': self.unused_name('stage'), 'state': self.state,
-                   'year': self.year}
-        if f.is_valid():
-            if self.security_hash(request, f) != request.POST.get(self.unused_name('hash')):
-                return self.failed_hash(request)  # Security hash failed.
-            self.process_preview(request, f, context)
-            return self.done(request, f.cleaned_data)
-        else:
-            return render(request, self.form_template, context )
-
-    def done(self, request, cleaned_data):
-        members_info = self.state['members_info']
-        members_email = [member['email'] for member in self.state['members_info']]
-        members_excluded = self.group.role_set.filter(name__slug='member').exclude(email__address__in=members_email)
-        members_excluded.delete()
-        for member in members_info:
-            Role.objects.get_or_create(name=RoleName.objects.get(slug="member"),
-                                       group=self.group,
-                                       person=member['person'],
-                                       email=member['email_obj'])
-
-        return redirect('ietf.nomcom.forms.EditMembersFormPreview', year=self.year)
-
+    members = SearchableEmailsField(only_users=True,all_emails=True)
 
 class EditNomcomForm(forms.ModelForm):
 

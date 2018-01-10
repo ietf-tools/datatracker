@@ -27,7 +27,6 @@ from ietf.nomcom.test_data import nomcom_test_data, generate_cert, check_comment
 from ietf.nomcom.models import NomineePosition, Position, Nominee, \
                                NomineePositionStateName, Feedback, FeedbackTypeName, \
                                Nomination, FeedbackLastSeen, TopicFeedbackLastSeen
-from ietf.nomcom.forms import EditMembersForm, EditMembersFormPreview
 from ietf.nomcom.utils import get_nomcom_by_year, make_nomineeposition, get_hash_nominee_position
 from ietf.nomcom.management.commands.send_reminders import Command, is_time_to_send
 
@@ -75,7 +74,7 @@ class NomcomViewsTest(TestCase):
         self.private_index_url = reverse('ietf.nomcom.views.private_index', kwargs={'year': self.year})
         self.private_merge_person_url = reverse('ietf.nomcom.views.private_merge_person', kwargs={'year': self.year})
         self.private_merge_nominee_url = reverse('ietf.nomcom.views.private_merge_nominee', kwargs={'year': self.year})
-        self.edit_members_url = reverse('ietf.nomcom.forms.EditMembersFormPreview', kwargs={'year': self.year})
+        self.edit_members_url = reverse('ietf.nomcom.views.edit_members', kwargs={'year': self.year})
         self.edit_nomcom_url = reverse('ietf.nomcom.views.edit_nomcom', kwargs={'year': self.year})
         self.private_nominate_url = reverse('ietf.nomcom.views.private_nominate', kwargs={'year': self.year})
         self.private_nominate_newperson_url = reverse('ietf.nomcom.views.private_nominate_newperson', kwargs={'year': self.year})
@@ -380,15 +379,7 @@ class NomcomViewsTest(TestCase):
 
     def change_members(self, members):
         members_emails = u','.join(['%s%s' % (member, EMAIL_DOMAIN) for member in members])
-        test_data = {'members': members_emails,
-                     'stage': 1}
-        # preview
-        self.client.post(self.edit_members_url, test_data)
-
-        hash = EditMembersFormPreview(EditMembersForm).security_hash(None, EditMembersForm(test_data))
-        test_data.update({'hash': hash, 'stage': 2})
-
-        # submit
+        test_data = {'members': members_emails,}
         self.client.post(self.edit_members_url, test_data)
 
     def test_edit_members_view(self):

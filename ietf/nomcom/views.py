@@ -16,7 +16,7 @@ from django.forms.models import modelformset_factory, inlineformset_factory
 from ietf.dbtemplate.models import DBTemplate
 from ietf.dbtemplate.views import template_edit, template_show
 from ietf.name.models import NomineePositionStateName, FeedbackTypeName
-from ietf.group.models import Group, GroupEvent
+from ietf.group.models import Group, GroupEvent 
 from ietf.message.models import Message
 
 from ietf.nomcom.decorators import nomcom_private_key_required
@@ -24,7 +24,8 @@ from ietf.nomcom.forms import (NominateForm, NominateNewPersonForm, FeedbackForm
                                MergeNomineeForm, MergePersonForm, NomComTemplateForm, PositionForm,
                                PrivateKeyForm, EditNomcomForm, EditNomineeForm,
                                PendingFeedbackForm, ReminderDatesForm, FullFeedbackFormSet,
-                               FeedbackEmailForm, NominationResponseCommentForm, TopicForm)
+                               FeedbackEmailForm, NominationResponseCommentForm, TopicForm,
+                               NewEditMembersForm,)
 from ietf.nomcom.models import (Position, NomineePosition, Nominee, Feedback, NomCom, ReminderDates,
                                 FeedbackLastSeen, Topic, TopicFeedbackLastSeen, )
 from ietf.nomcom.utils import (get_nomcom_by_year, store_nomcom_private_key,
@@ -1174,3 +1175,30 @@ def edit_topic(request, year, topic_id=None):
 @role_required("Nomcom Chair", "Nomcom Advisor")
 def configuration_help(request, year):
     return render(request,'nomcom/chair_help.html',{'year':year})
+
+@role_required("Nomcom Chair", "Nomcom Advisor")
+def edit_members(request, year):
+    nomcom = get_nomcom_by_year(year)
+
+    if nomcom.group.state_id=='conclude':
+        return HttpResponseForbidden('This nomcom is closed.')
+
+    old_members_email = [r.email for r in nomcom.group.role_set.filter(name='member')]
+
+    if request.method=='POST':
+        form = NewEditMembersForm(data=request.POST)
+        if form.is_valid():
+            new_members_email = form.cleaned_data['members']
+            nomcom.group.role_set.filter( email__in=set(old_members_email)-set(new_members_email) ).delete()
+            for email in set(new_members_email)-set(old_members_email):
+                nomcom.group.role_set.create(email=email,person=email.person,name_id='member')
+            return HttpResponseRedirect(reverse('ietf.nomcom.views.private_index',kwargs={'year':year}))
+    else:
+        form = NewEditMembersForm(initial={ 'members' : old_members_email })
+
+    return render(request, 'nomcom/new_edit_members.html',
+                              {'nomcom' : nomcom,
+                               'year' : year,
+                               'form': form,
+                              })
+

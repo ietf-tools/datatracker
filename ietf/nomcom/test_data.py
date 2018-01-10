@@ -114,8 +114,8 @@ def nomcom_test_data():
     nomcom.public_key.save('cert', File(open(nomcom_test_cert_file.name, 'r')))
 
     # chair and member
-    create_person(group, "chair", username=CHAIR_USER)
-    create_person(group, "member", username=MEMBER_USER)
+    create_person(group, "chair", username=CHAIR_USER, email_address='%s%s'%(CHAIR_USER,EMAIL_DOMAIN))
+    create_person(group, "member", username=MEMBER_USER, email_address='%s%s'%(MEMBER_USER,EMAIL_DOMAIN))
 
     # nominee
     u, created = User.objects.get_or_create(username=COMMUNITY_USER)
