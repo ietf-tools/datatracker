@@ -292,7 +292,7 @@ class IprTests(TestCase):
         ipr = iprs[0]
         self.assertEqual(ipr.holder_legal_name, "Test Legal")
         self.assertEqual(ipr.state.slug, 'pending')
-        self.assertTrue(isinstance(ipr.get_child(),GenericIprDisclosure))
+        self.assertTrue(isinstance(ipr.get_child(), GenericIprDisclosure))
 
     def test_new_specific(self):
         """Add a new specific disclosure.  Note: submitter does not need to be logged in.
@@ -314,14 +314,16 @@ class IprTests(TestCase):
             "iprdocrel_set-0-document": "%s" % draft.docalias_set.first().pk,
             "iprdocrel_set-0-revisions": '00',
             "iprdocrel_set-1-document": DocAlias.objects.filter(name__startswith="rfc").first().pk,
-            "patent_info": "none",
+            "patent_number": "SE12345678901",
+            "patent_inventor": "A. Nonymous",
+            "patent_title": "A method of transfering bits",
+            "patent_date": "2000-01-01",
             "has_patent_pending": False,
             "licensing": "royalty-free",
             "submitter_name": "Test Holder",
             "submitter_email": "test@holder.com",
             })
         self.assertEqual(r.status_code, 200)
-        # print r.content
         self.assertTrue("Your IPR disclosure has been submitted" in unicontent(r))
 
         iprs = IprDisclosureBase.objects.filter(title__icontains=draft.name)
@@ -329,6 +331,8 @@ class IprTests(TestCase):
         ipr = iprs[0]
         self.assertEqual(ipr.holder_legal_name, "Test Legal")
         self.assertEqual(ipr.state.slug, 'pending')
+        for item in [u'SE12345678901','A method of transfering bits','2000-01-01']:
+            self.assertIn(item, ipr.get_child().patent_info)
         self.assertTrue(isinstance(ipr.get_child(),HolderIprDisclosure))
         self.assertEqual(len(outbox),1)
         self.assertTrue('New IPR Submission' in outbox[0]['Subject'])
@@ -352,7 +356,10 @@ class IprTests(TestCase):
             "iprdocrel_set-0-document": "%s" % draft.docalias_set.first().pk,
             "iprdocrel_set-0-revisions": '00',
             "iprdocrel_set-1-document": DocAlias.objects.filter(name__startswith="rfc").first().pk,
-            "patent_info": "none",
+            "patent_number": "SE12345678901",
+            "patent_inventor": "A. Nonymous",
+            "patent_title": "A method of transfering bits",
+            "patent_date": "2000-01-01",
             "has_patent_pending": False,
             "licensing": "royalty-free",
             "submitter_name": "Test Holder",
@@ -366,6 +373,8 @@ class IprTests(TestCase):
         ipr = iprs[0]
         self.assertEqual(ipr.holder_legal_name, "Test Legal")
         self.assertEqual(ipr.state.slug, "pending")
+        for item in [u'SE12345678901','A method of transfering bits','2000-01-01' ]:
+            self.assertIn(item, ipr.get_child().patent_info)
         self.assertTrue(isinstance(ipr.get_child(),ThirdPartyIprDisclosure))
         self.assertEqual(len(outbox),1)
         self.assertTrue('New IPR Submission' in outbox[0]['Subject'])
@@ -391,7 +400,10 @@ class IprTests(TestCase):
             "iprdocrel_set-0-document": "%s" % draft.docalias_set.first().pk,
             "iprdocrel_set-0-revisions": '00',
             "iprdocrel_set-1-document": DocAlias.objects.filter(name__startswith="rfc").first().pk,
-            "patent_info": "none",
+            "patent_number": "SE12345678901",
+            "patent_inventor": "A. Nonymous",
+            "patent_title": "A method of transfering bits",
+            "patent_date": "2000-01-01",
             "has_patent_pending": False,
             "licensing": "royalty-free",
             "submitter_name": "Test Holder",
@@ -415,7 +427,6 @@ class IprTests(TestCase):
         draft = make_test_data()
         url = urlreverse("ietf.ipr.views.new", kwargs={ "type": "specific" })
 
-        # successful post
         empty_outbox()
         r = self.client.post(url, {
             "updates": "this is supposed to be an integer",
@@ -426,7 +437,10 @@ class IprTests(TestCase):
             "iprdocrel_set-INITIAL_FORMS": 0,
             "iprdocrel_set-0-document": "%s" % draft.docalias_set.first().pk,
             "iprdocrel_set-0-revisions": '00',
-            "patent_info": "none",
+            "patent_number": "SE12345678901",
+            "patent_inventor": "A. Nonymous",
+            "patent_title": "A method of transfering bits",
+            "patent_date": "2000-01-01",
             "has_patent_pending": False,
             "licensing": "royalty-free",
             "submitter_name": "Test Holder",

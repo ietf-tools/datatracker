@@ -162,7 +162,21 @@
       <h2>{% cycle section %}. Disclosure of Patent Information{% if form.instance|to_class_name == "ThirdPartyIprDicslosure" %}, if known{% endif %}
         <small>i.e., patents or patent applications required to be disclosed by Section 5 of RFC8179</small></h2>
 
-      {% if form.patent_info %}
+      {% if form.patent_number %}
+        <p>
+          A. For granted patents or published pending patent applications,
+          please provide the following information:
+        </p>
+        {% bootstrap_field form.patent_number layout='horizontal' %}
+        {% bootstrap_field form.patent_inventor layout='horizontal' %}
+        {% bootstrap_field form.patent_title layout='horizontal' %}
+        {% bootstrap_field form.patent_date layout='horizontal' %}
+        {% bootstrap_field form.patent_notes layout='horizontal' %}
+
+        <p>B. Does your disclosure relate to an unpublished pending patent application?</p>
+        {% bootstrap_field form.has_patent_pending layout='horizontal' %}
+
+      {% elif form.patent_info %}
         <p>
           A. For granted patents or published pending patent applications,
           please provide the following information:
