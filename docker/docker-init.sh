@@ -82,7 +82,6 @@ echo "Checking that there's a virtual environment for $TAG ..."
 if [ ! -f $VIRTDIR/bin/activate ]; then
     echo "Setting up python virtualenv at /opt/home/$USER ..."
     mkdir -p /opt/home/$USER
-    chown $USER /opt/home/$USER
     mkdir $VIRTDIR
     virtualenv --system-site-packages $VIRTDIR
     echo -e "
@@ -126,6 +125,7 @@ for sub in					\
 	developers/ietf-ftp/rfc			\
 	developers/ietf-ftp/status-changes	\
 	developers/ietf-ftp/yang/draftmod	\
+	developers/ietf-ftp/yang/ianamod	\
 	developers/ietf-ftp/yang/invalmod	\
 	developers/ietf-ftp/yang/rfcmod		\
 	developers/www6s			\
@@ -154,6 +154,7 @@ if [ ! -f "/home/$USER/$CWD/test/data/group-aliases" ]; then
 fi
 
 chown -R $USER /opt/home/$USER
+chmod -R g+w   /usr/local/lib/		# so we can patch libs if needed
 
 cd "/home/$USER/$CWD" || cd "/home/$USER/"
 

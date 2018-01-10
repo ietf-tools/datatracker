@@ -31,7 +31,6 @@ EMAIL_PORT=2025
 TRAC_WIKI_DIR_PATTERN = "test/wiki/%s"
 TRAC_SVN_DIR_PATTERN = "test/svn/%s"
 TRAC_CREATE_ADHOC_WIKIS = [
-    ('iesg', 'Meeting', TRAC_WIKI_DIR_PATTERN % "ietf/meeting"),
 ]
 
 MEDIA_BASE_DIR = 'test'
@@ -46,6 +45,7 @@ DOCUMENT_PATH_PATTERN = 'data/developers/ietf-ftp/{doc.type_id}/'
 SUBMIT_YANG_RFC_MODEL_DIR   = 'data/developers/ietf-ftp/yang/rfcmod/'
 SUBMIT_YANG_DRAFT_MODEL_DIR = 'data/developers/ietf-ftp/yang/draftmod/'
 SUBMIT_YANG_INVAL_MODEL_DIR = 'data/developers/ietf-ftp/yang/invalmod/'
+SUBMIT_YANG_IANA_MODEL_DIR = 'data/developers/ietf-ftp/yang/ianamod/'
 SUBMIT_YANGLINT_COMMAND = 'yanglint --verbose -p {rfclib} -p {draftlib} -p {tmplib} {model}'
 
 
