@@ -26,13 +26,6 @@ import debug                   # pyflakes:ignore
 ROLODEX_URL = getattr(settings, 'ROLODEX_URL', None)
 
 
-def get_nomcom_group_or_404(year):
-    return get_object_or_404(Group,
-                             acronym__icontains=year,
-                             state__slug='active',
-                             nomcom__isnull=False)
-
-
 class PositionNomineeField(forms.ChoiceField):
 
     def __init__(self, *args, **kwargs):
