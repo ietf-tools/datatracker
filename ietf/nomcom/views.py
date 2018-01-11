@@ -1174,7 +1174,8 @@ def edit_topic(request, year, topic_id=None):
 
 @role_required("Nomcom Chair", "Nomcom Advisor")
 def configuration_help(request, year):
-    return render(request,'nomcom/chair_help.html',{'year':year})
+    nomcom = get_nomcom_by_year(year)
+    return render(request,'nomcom/chair_help.html',{'nomcom':nomcom,'year':year})
 
 @role_required("Nomcom Chair", "Nomcom Advisor")
 def edit_members(request, year):
