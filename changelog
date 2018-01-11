@@ -1,4 +1,24 @@
-ietfdb (6.68.4) ietf; urgency=medium
+ietfdb (6.69.0) ietf; urgency=medium
+
+  **Improved NomCom support**
+
+  * Merged in [14511] from rjsparks@nostrum.com:
+    Allow all the nomcom private tabs to show on the nomcom chair
+    configuration help page. Fixes #2303.  
+
+  * Merged in [14506] from rjsparks@nostrum.com:
+    Improved the resilience of the formatted_email nomcom filter. Fixes #1764.
+
+  * Merged in [14505] from rjsparks@nostrum.com:
+    Make extracting lists of nomcom-related email addresses easier for the
+    nomcom chair. Fixes #1852.
+
+  * Removed some dead code.
+
+  * Merged in [14504] from rjsparks@nostrum.com:
+    Simplified the edit nomcom members forms. Fixes #1756.  
+
+  * Updated docker build and config files.
 
   * Merged in [14497] from rjsparks@nostrum.com:
     Added navigation to nomcom pages for nomcom members. Put the RFC 
@@ -10,7 +30,7 @@ ietfdb (6.68.4) ietf; urgency=medium
     (unidecode), in particular in connection with tests doing draft author
     extraction.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  10 Jan 2018 07:31:41 -0800
+ -- Henrik Levkowetz <henrik@levkowetz.com>  11 Jan 2018 10:06:12 -0800
 
 ietfdb (6.68.3) ietf; urgency=medium
 
