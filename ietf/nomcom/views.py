@@ -1202,3 +1202,23 @@ def edit_members(request, year):
                                'form': form,
                               })
 
+@role_required("Nomcom Chair", "Nomcom Advisor")
+def extract_email_lists(request, year):
+    nomcom = get_nomcom_by_year(year)
+
+    pending = nomcom.nominee_set.filter(nomineeposition__state='pending').distinct()
+    accepted = nomcom.nominee_set.filter(nomineeposition__state='accepted').distinct()
+    noresp = [n for n in accepted if n.nomineeposition_set.without_questionnaire_response().filter(state='accepted')]
+    
+    bypos = {}
+    for pos in nomcom.position_set.all():
+        bypos[pos] = nomcom.nominee_set.filter(nomineeposition__position=pos,nomineeposition__state='accepted').distinct()
+
+    return render(request, 'nomcom/extract_email_lists.html',
+                             {'nomcom': nomcom,
+                              'year' : year,
+                              'pending': pending,
+                              'accepted': accepted,
+                              'noresp': noresp,
+                              'bypos': bypos,
+                             })
