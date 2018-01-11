@@ -619,7 +619,8 @@ def search(request):
         docid = request.GET.get("id") or request.GET.get("id_document_tag") or ""
         docs = doc = None
         iprs = []
-        
+        related_iprs = []
+
         # set states
         states = request.GET.getlist('state',('posted','removed'))
         if states == ['all']:
@@ -647,10 +648,12 @@ def search(request):
                 # one match
                 if len(start) == 1:
                     first = start[0]
-                    doc = str(first)
+                    doc = first.document
                     docs = related_docs(first)
                     iprs = iprs_from_docs(docs,states=states)
                     template = "ipr/search_doc_result.html"
+                    updated_docs = related_docs(first, ['updates',])
+                    related_iprs = list(set(iprs_from_docs(updated_docs, states=states)) - set(iprs))
                 # multiple matches, select just one
                 elif start:
                     docs = start
@@ -723,11 +726,12 @@ def search(request):
 
             return render(request, template, {
                 "q": q,
-                "iprs": iprs,
-                "docs": docs,
-                "doc": doc,
-                "form":form,
-                "states":states
+                "iprs":     iprs,
+                "docs":     docs,
+                "doc":      doc,
+                "form":     form,
+                "states":   states,
+                "related_iprs":  related_iprs,
             })
 
         return HttpResponseRedirect(request.path)

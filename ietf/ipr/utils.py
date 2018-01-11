@@ -29,11 +29,11 @@ def iprs_from_docs(aliases,**kwargs):
             iprdocrels += alias.document.ipr(**kwargs)
     return list(set([i.disclosure for i in iprdocrels]))
     
-def related_docs(alias):
+def related_docs(alias, relationship=['replaces', 'obs']):
     """Returns list of related documents"""
     results = list(alias.document.docalias_set.all())
     
-    rels = alias.document.all_relations_that_doc(['replaces','obs'])
+    rels = alias.document.all_relations_that_doc(relationship)
 
     for rel in rels:
         rel_aliases = list(rel.target.document.docalias_set.all())
@@ -43,3 +43,5 @@ def related_docs(alias):
             x.relation = rel.relationship.revname
         results += rel_aliases
     return list(set(results))
+
+    
