@@ -1,12 +1,10 @@
 from django.conf import settings
 from django import forms
-from django.shortcuts import get_object_or_404 
 from django.urls import reverse
 from django.utils.html import mark_safe
 from django.forms.widgets import FileInput
 
 from ietf.dbtemplate.forms import DBTemplateForm
-from ietf.group.models import Group
 from ietf.name.models import FeedbackTypeName, NomineePositionStateName
 from ietf.nomcom.models import ( NomCom, Nomination, Nominee, NomineePosition,
                                  Position, Feedback, ReminderDates, Topic )
