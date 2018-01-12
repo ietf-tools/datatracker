@@ -67,6 +67,7 @@ def main():
              'meeting.add_room','meeting.change_room','meeting.delete_room',
              'meeting.add_urlresource','meeting.change_urlresource','meeting.delete_urlresource',
              'message.add_announcementfrom','message.change_announcementfrom','message.delete_announcementfrom',
+             'nomcom.add_nomcom','nomcom.change_nomcom','nomcom.delete_nomcom',
              'person.add_person','person.change_person','person.delete_person',
              'person.add_alias','person.change_alias','person.delete_alias',
              'person.add_email','person.change_email','person.delete_email',
