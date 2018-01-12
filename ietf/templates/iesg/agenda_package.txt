@@ -3,13 +3,13 @@
 Contents:
 
 1. Roll Call and Dial-In Instructions
-   https://www.ietf.org/iesg/internal/rollcall.txt
+   https://www6.ietf.org/iesg/internal/rollcall.txt
 2. Agenda
    https://datatracker.ietf.org/iesg/agenda/
 3. Management Item Details
    https://datatracker.ietf.org/iesg/agenda/#6
 4. Previous minutes
-   https://www.ietf.org/iesg/internal/minutes.txt
+   https://www6.ietf.org/iesg/internal/minutes.txt
 
 ------------------------------------------------------------------------
 1. ROLL CALL AND DIAL-IN INSTRUCTIONS
