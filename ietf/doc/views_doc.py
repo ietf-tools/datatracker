@@ -551,18 +551,16 @@ def document_main(request, name, rev=None):
         content = None
         other_types = []
         globs = glob.glob(pathname + ".*")
+        url = doc.href()
+        urlbase, urlext = os.path.splitext(url) 
         for g in globs:
             extension = os.path.splitext(g)[1]
             t = os.path.splitext(g)[1].lstrip(".")
-            url = doc.href()
             if not url.endswith("/") and not url.endswith(extension): 
-                urlbase, urlext = os.path.splitext(url) 
                 url = urlbase + extension 
-
             if extension == ".txt":
                 content = doc.text_or_error()      # pyflakes:ignore
                 t = "plain text"
-
             other_types.append((t, url))
 
         return render(request, "doc/document_material.html",

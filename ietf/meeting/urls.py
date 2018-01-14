@@ -61,7 +61,7 @@ type_ietf_only_patterns = [
 type_interim_patterns = [
     url(r'^agenda/(?P<session>[A-Za-z0-9-]+)-drafts.pdf$', views.session_draft_pdf),
     url(r'^agenda/(?P<session>[A-Za-z0-9-]+)-drafts.tgz$', views.session_draft_tarfile),
-    url(r'^materials/%(document)s/?$' % settings.URL_REGEXPS, views.materials_document),
+    url(r'^materials/%(document)s((?P<ext>\.[a-z0-9]+)|/)?$' % settings.URL_REGEXPS, views.materials_document),
 ]
 
 type_ietf_only_patterns_id_optional = [
@@ -80,7 +80,7 @@ type_ietf_only_patterns_id_optional = [
     url(r'^week-view(?:.html)?/?$', views.week_view),
     url(r'^room-view(?:.html)?/?$', views.room_view),
     url(r'^materials(?:.html)?/?$', views.materials),
-    url(r'^materials/%(document)s/?$' % settings.URL_REGEXPS, views.materials_document),
+    url(r'^materials/%(document)s((?P<ext>\.[a-z0-9]+)|/)?$' % settings.URL_REGEXPS, views.materials_document),
     url(r'^session/?$', views.materials_editable_groups),
     url(r'^proceedings(?:.html)?/?$', views.proceedings),
     url(r'^proceedings(?:.html)?/finalize/?$', views.finalize_proceedings),

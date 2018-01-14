@@ -156,7 +156,7 @@ def current_materials(request):
         raise Http404('No such meeting')
 
 @cache_page(1 * 60)
-def materials_document(request, document, num=None, ):
+def materials_document(request, document, num=None, ext=None):
     if num is None:
         num = get_meeting(num).number
     doc = get_object_or_404(Document, name=document)
@@ -165,7 +165,10 @@ def materials_document(request, document, num=None, ):
     if not doc.session_set.filter(meeting__number=num).exists():
         raise Http404("No such document for meeting %s" % num)
     filename = doc.get_file_name()
-    basename = doc.get_base_name()
+    if ext and not filename.endswith(ext):
+        name, _ = os.path.splitext(filename)
+        filename = name + ext
+    _, basename = os.path.split(filename)
     if not os.path.exists(filename):
         raise Http404("File not found: %s" % filename)
     with open(filename, 'rb') as file:
