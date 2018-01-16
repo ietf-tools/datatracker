@@ -2,6 +2,22 @@ ietfdb (6.69.0) ietf; urgency=medium
 
   **Improved NomCom support**
 
+  This release provides a number of enhancements to the NomCom pages, as
+  well as fixes for a number of reported issues, as follows:
+
+  * Merged in [14518] from rjsparks@nostrum.com:
+    Added navigation for the nomcom-chair to external tools. Fixes #2258
+
+  * Merged in [14516] from rcross@amsl.com:
+    Added admin permissions to secretariat group for nomcom objects.   
+
+  * Refined the URL patterns and handling of alternative meeting material 
+    file formats, which were broken by an earlier refactoring (v6.57.0). Fixes 
+    issue #2436.
+
+  * Changed some URLs to match new locations after the deployment of the 
+    new IETF website.  Fixes issue #2434
+
   * Merged in [14511] from rjsparks@nostrum.com:
     Allow all the nomcom private tabs to show on the nomcom chair
     configuration help page. Fixes #2303.  
@@ -13,8 +29,6 @@ ietfdb (6.69.0) ietf; urgency=medium
     Make extracting lists of nomcom-related email addresses easier for the
     nomcom chair. Fixes #1852.
 
-  * Removed some dead code.
-
   * Merged in [14504] from rjsparks@nostrum.com:
     Simplified the edit nomcom members forms. Fixes #1756.  
 
@@ -25,12 +39,14 @@ ietfdb (6.69.0) ietf; urgency=medium
     Status change link in a saner place in the navigation. Fixes #1411 and 
     #2433.  
 
-  * Excluded arabic names from PersonFactory due to difficulties with the
+  * Excluded some locales from PersonFactory due to difficulties with the
     romanization of the names using our current transliteration library
     (unidecode), in particular in connection with tests doing draft author
     extraction.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  11 Jan 2018 10:06:12 -0800
+  * Removed some dead code.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  16 Jan 2018 11:32:18 +0000
 
 ietfdb (6.68.3) ietf; urgency=medium
 
