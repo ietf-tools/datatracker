@@ -927,8 +927,9 @@ SILENCED_SYSTEM_CHECKS = [
     "fields.W342",  # Setting unique=True on a ForeignKey has the same effect as using a OneToOneField.
 ]
 
-CHECKS_DJANGO_PATCHES_TO_APPLY = [
+CHECKS_LIBRARY_PATCHES_TO_APPLY = [
     'patch/fix-django-unicode-comparison-bug.patch',
+    'patch/fix-unidecode-argument-warning.patch',
 ]
 
 STATS_NAMES_LIMIT = 25
