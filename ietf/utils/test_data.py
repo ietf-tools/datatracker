@@ -331,7 +331,7 @@ def make_test_data():
         title="Statement regarding rights",
         holder_legal_name="Native Martians United",
         state=IprDisclosureStateName.objects.get(slug='posted'),
-        patent_info='US12345',
+        patent_info='Number: US12345\nTitle: A method of transfering bits\nInventor: A. Nonymous\nDate: 2000-01-01',
         holder_contact_name='George',
         holder_contact_email='george@acme.com',
         holder_contact_info='14 Main Street\nEarth',

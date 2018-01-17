@@ -39,7 +39,7 @@ class IprTests(TestCase):
             title="Statement regarding rights Update",
             holder_legal_name="Native Martians United",
             state_id='pending',
-            patent_info='US12345',
+            patent_info='Number: US12345\nTitle: A method of transfering bits\nInventor: A. Nonymous\nDate: 2000-01-01',
             holder_contact_name='Update Holder',
             holder_contact_email='update_holder@acme.com',
             licensing_id='royalty-free',
@@ -383,8 +383,13 @@ class IprTests(TestCase):
     def test_update(self):
         draft = make_test_data()
         original_ipr = IprDisclosureBase.objects.get(title='Statement regarding rights')
-        url = urlreverse("ietf.ipr.views.new", kwargs={ "type": "specific" })
 
+        # get
+        url = urlreverse("ietf.ipr.views.update", kwargs={ "id": original_ipr.id })
+        r = self.client.get(url)
+        self.assertContains(r, "Statement regarding rights")
+
+        #url = urlreverse("ietf.ipr.views.new", kwargs={ "type": "specific" })
         # successful post
         empty_outbox()
         r = self.client.post(url, {

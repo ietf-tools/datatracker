@@ -17,6 +17,7 @@ from ietf.ipr.models import (IprDocRel, IprDisclosureBase, HolderIprDisclosure,
     IprLicenseTypeName, IprDisclosureStateName)
 from ietf.message.models import Message
 from ietf.utils.fields import DatepickerDateField
+from ietf.utils.text import dict_to_text
 
 # ----------------------------------------------------------------
 # Globals
@@ -178,8 +179,9 @@ class GenericDisclosureForm(forms.Form):
             raise forms.ValidationError("A generic IPR disclosure cannot have any patent-specific information, "
                                         "but a patent-specific disclosure must provide full patent information.")
 
-        patent_values = [str(v) for v in patent_values if v ] + [ cleaned_data['patent_notes'] ]
-        cleaned_data['patent_info'] = ('\n'.join(patent_values)).strip()
+        patent_fields += ['patent_notes']
+        patent_info = dict([ (k.replace('patent_','').capitalize(), cleaned_data.get(k)) for k in patent_fields if cleaned_data.get(k) ] )
+        cleaned_data['patent_info'] = dict_to_text(patent_info).strip()
         cleaned_data['patent_fields'] = patent_fields
 
         return cleaned_data
@@ -189,7 +191,7 @@ class GenericDisclosureForm(forms.Form):
         same_as_ii_above = nargs.get('same_as_ii_above')
         del nargs['same_as_ii_above']
         
-        for k in self.cleaned_data['patent_fields'] + ['patent_fields', 'patent_notes']:
+        for k in self.cleaned_data['patent_fields'] + ['patent_fields',]:
             del nargs[k]
 
         if self.cleaned_data.get('patent_info'):
@@ -261,9 +263,9 @@ class IprDisclosureFormBase(forms.ModelForm):
                     raise forms.ValidationError('Submitter information must be provided in section VII')
         
         patent_fields = [ 'patent_'+k for k in ['number', 'inventor', 'title', 'date', 'notes'] ]
-        patent_values = [ cleaned_data.get(k) for k in patent_fields ]
-        patent_values = [ str(v) for v in patent_values if v ]
-        cleaned_data['patent_info'] = ('\n'.join(patent_values)).strip()
+
+        patent_info = dict([ (k.replace('patent_','').capitalize(), cleaned_data.get(k)) for k in patent_fields if cleaned_data.get(k) ] )
+        cleaned_data['patent_info'] = dict_to_text(patent_info).strip()
         cleaned_data['patent_fields'] = patent_fields
 
         return cleaned_data
