@@ -18,6 +18,7 @@ from ietf.dbtemplate.views import template_edit, template_show
 from ietf.name.models import NomineePositionStateName, FeedbackTypeName
 from ietf.group.models import Group, GroupEvent 
 from ietf.message.models import Message
+from ietf.meeting.models import Meeting
 
 from ietf.nomcom.decorators import nomcom_private_key_required
 from ietf.nomcom.forms import (NominateForm, NominateNewPersonForm, FeedbackForm, QuestionnaireForm,
@@ -1222,4 +1223,33 @@ def extract_email_lists(request, year):
                               'accepted': accepted,
                               'noresp': noresp,
                               'bypos': bypos,
+                             })
+
+@role_required("Nomcom Chair", "Nomcom Advisor", "Secretariat")
+def eligible(request, year):
+    nomcom = get_nomcom_by_year(year)
+
+    date = datetime.date.today()
+    previous_five = Meeting.objects.filter(type='ietf',date__lte=date).order_by('-date')[:5]
+    attendees = {}
+    potentials = set()
+    for m in previous_five:
+        registration_emails = m.meetingregistration_set.values_list('email',flat=True)
+        attendees[m] = Person.objects.filter(email__address__in=registration_emails).distinct()
+        potentials.update(attendees[m].exclude(role__group__type_id='area',role__group__state='active',role__name_id='ad').exclude(role__group__acronym='iab',role__name_id__in=['member','chair']).exclude(role__group__acronym='iaoc',role__name_id__in=['member','chair']))
+    eligible_persons = []
+    for p in potentials:
+        count = 0
+        for m in previous_five:
+            if p in attendees[m]:
+                count += 1
+        if count >= 3:
+            eligible_persons.append(p)
+
+    eligible_persons.sort(key=lambda p: p.last_name() )
+
+    return render(request, 'nomcom/eligible.html',
+                             {'nomcom':nomcom,
+                              'year':year,
+                              'eligible_persons':eligible_persons,
                              })
