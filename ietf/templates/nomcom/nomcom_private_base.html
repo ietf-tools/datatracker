@@ -45,6 +45,7 @@
             {% if nomcom.group.state_id == 'active' %}
             <li {% if selected == "edit_members" %}class="active"{% endif %}><a href="{% url 'ietf.nomcom.views.edit_members' year %}">Edit Members</a></li>
             {% endif %}
+            <li {% if selected == "view_eligible" %}class="active"{% endif %}><a href="{% url 'ietf.nomcom.views.eligible' year %}">View Eligible</a></li>
             <li {% if selected == "help" %}class="active"{% endif %}><a href="{% url 'ietf.nomcom.views.configuration_help' year %}">Configuration Help</a></li>
           <li role="presentation" class="dropdown-header">Other Tools</li>
             <li {% if selected == "announce" %}class="active"{% endif %}><a href="{% url 'ietf.secr.announcement.views.main'%}">Announcement Tool</a></li>

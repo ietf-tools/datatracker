@@ -1749,6 +1749,12 @@ Junk body for testing
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
 
+    def test_eligible(self):
+        url = reverse('ietf.nomcom.views.eligible',kwargs={'year':self.nc.year()})
+        login_testing_unauthorized(self,self.chair.user.username,url)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
 
 class NomComIndexTests(TestCase):
     def setUp(self):
