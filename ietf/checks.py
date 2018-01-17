@@ -365,8 +365,6 @@ def maybe_patch_library(app_configs, **kwargs):
     # 'django/db/models/fields/__init__.py'
     for patch_file in settings.CHECKS_LIBRARY_PATCHES_TO_APPLY:
         patch_path = os.path.join(saved_cwd, patch_file)
-        with open(patch_path) as f:
-            p = f.read()
         patch_set = patch.fromfile(patch_path)
         if patch_set:
             if not patch_set.apply():
