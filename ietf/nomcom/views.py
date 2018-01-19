@@ -43,11 +43,7 @@ def index(request):
         year = int(nomcom.acronym[6:])
         nomcom.year = year
         nomcom.label = "%s/%s" % (year, year+1)
-        if   year in [ 2005, 2006, 2007, 2008, 2009, 2010 ]:
-            nomcom.url = "https://tools.ietf.org/group/nomcom/%02d" % (year % 100)
-        elif year in [ 2011, 2012 ]:
-            nomcom.url = "https://www.ietf.org/nomcom/%04d" % year
-        elif year > 2012:
+        if year > 2012:
             nomcom.url = "/nomcom/%04d" % year
         else:
             nomcom.url = None
@@ -1229,6 +1225,9 @@ def extract_email_lists(request, year):
 def eligible(request, year):
     nomcom = get_nomcom_by_year(year)
 
+    # This should probably be refined.  If the nomcom year is this year, then
+    # today's date makes sense; for previous nomcoms, we should probably get
+    # the date of the announcement of the Call for Volunteers, instead
     date = datetime.date.today()
     previous_five = Meeting.objects.filter(type='ietf',date__lte=date).order_by('-date')[:5]
     attendees = {}
