@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 #import tempfile
 import datetime
+import random
 import shutil
 import urlparse
 from pyquery import PyQuery
@@ -14,28 +15,27 @@ from django.contrib.auth.models import User
 
 import debug                            # pyflakes:ignore
 
-from ietf.utils.test_utils import login_testing_unauthorized, TestCase, unicontent
-from ietf.utils.mail import outbox, empty_outbox
-
-from ietf.person.models import Email, Person
+from ietf.dbtemplate.factories import DBTemplateFactory
+from ietf.dbtemplate.models import DBTemplate
 from ietf.group.models import Group
+from ietf.meeting.factories import MeetingFactory
 from ietf.message.models import Message
-
 from ietf.nomcom.test_data import nomcom_test_data, generate_cert, check_comments, \
                                   COMMUNITY_USER, CHAIR_USER, \
                                   MEMBER_USER, SECRETARIAT_USER, EMAIL_DOMAIN, NOMCOM_YEAR
 from ietf.nomcom.models import NomineePosition, Position, Nominee, \
                                NomineePositionStateName, Feedback, FeedbackTypeName, \
                                Nomination, FeedbackLastSeen, TopicFeedbackLastSeen
-from ietf.nomcom.utils import get_nomcom_by_year, make_nomineeposition, get_hash_nominee_position
 from ietf.nomcom.management.commands.send_reminders import Command, is_time_to_send
-
 from ietf.nomcom.factories import NomComFactory, FeedbackFactory, TopicFactory, \
                                   nomcom_kwargs_for_year, provide_private_key_to_test_client, \
                                   key
+from ietf.nomcom.utils import get_nomcom_by_year, make_nomineeposition, get_hash_nominee_position
 from ietf.person.factories import PersonFactory, EmailFactory
-from ietf.dbtemplate.factories import DBTemplateFactory
-from ietf.dbtemplate.models import DBTemplate
+from ietf.person.models import Email, Person
+from ietf.stats.models import MeetingRegistration
+from ietf.utils.mail import outbox, empty_outbox
+from ietf.utils.test_utils import login_testing_unauthorized, TestCase, unicontent
 
 client_test_cert_files = None
 
@@ -1750,6 +1750,23 @@ Junk body for testing
         self.assertEqual(response.status_code, 200)
 
     def test_eligible(self):
+        def first_meeting_of_year(year):
+            assert isinstance(year, int)
+            assert year >= 1991
+            return (year-1985)*3+2
+        # Create meetings to ensure we have the 'last 5'
+        meeting_start = first_meeting_of_year(datetime.date.today().year-2)
+        # Populate the meeting registration records
+        for number in range(meeting_start, meeting_start+10):
+            meeting = MeetingFactory.create(type_id='ietf', number=number)
+            PersonFactory.create_batch(3)
+            samples = Person.objects.count()//2
+            for (person, ascii, email) in random.sample([ (p, p.ascii, p.email()) for p in Person.objects.all() ], samples):
+                if not ' ' in ascii:
+                    continue
+                first_name, last_name = ascii.rsplit(None, 1)
+                MeetingRegistration.objects.create(meeting=meeting, first_name=first_name, last_name=last_name, person=person, country_code='WO', email=email)
+        # test the page
         url = reverse('ietf.nomcom.views.eligible',kwargs={'year':self.nc.year()})
         login_testing_unauthorized(self,self.chair.user.username,url)
         response = self.client.get(url)
