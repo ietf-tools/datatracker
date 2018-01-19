@@ -489,8 +489,14 @@ def update_telechat(request, doc, by, new_telechat_date, new_returning_item=None
 
     e.save()
 
+    has_short_fuse = doc.type_id=='draft' and new_telechat_date and (( new_telechat_date - datetime.date.today() ) < datetime.timedelta(days=13))
+
     from ietf.doc.mails import email_update_telechat
-    email_update_telechat(request, doc, e.desc)
+
+    if has_short_fuse:
+       email_update_telechat(request, doc, e.desc+"\n\nWARNING: This may not leave enough time for directorate reviews!\n")
+    else:
+       email_update_telechat(request, doc, e.desc)
 
     return e
 

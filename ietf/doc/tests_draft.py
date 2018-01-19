@@ -356,6 +356,16 @@ class EditInfoTests(TestCase):
         self.assertEqual(len(outbox),mailbox_before+1)
         self.assertTrue("Telechat update" in outbox[-1]['Subject'])
 
+        # Put it on an agenda that's very soon from now
+        next_week = datetime.date.today()+datetime.timedelta(days=7)
+        td =  TelechatDate.objects.active()[0]
+        td.date = next_week
+        td.save()
+        data["telechat_date"] = next_week.isoformat()
+        r = self.client.post(url,data)
+        self.assertEqual(r.status_code, 302)
+        self.assertTrue("may not leave enough time" in outbox[-1].get_payload())
+
     def test_start_iesg_process_on_draft(self):
         make_test_data()
 
