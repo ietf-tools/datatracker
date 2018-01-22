@@ -200,6 +200,7 @@ def review_request(request, name, request_id):
                            and (is_reviewer or can_manage_request))
 
     can_edit_comment = can_request_review_of_doc(request.user, doc)
+    can_edit_deadline = can_edit_comment
 
     if request.method == "POST" and request.POST.get("action") == "accept" and can_accept_reviewer_assignment:
         review_req.state = ReviewRequestStateName.objects.get(slug="accepted")
@@ -216,6 +217,7 @@ def review_request(request, name, request_id):
         'can_accept_reviewer_assignment': can_accept_reviewer_assignment,
         'can_complete_review': can_complete_review,
         'can_edit_comment': can_edit_comment,
+        'can_edit_deadline': can_edit_deadline,
     })
 
 
@@ -681,6 +683,48 @@ def edit_comment(request, name, request_id):
         form = EditReviewRequestCommentForm(instance=review_req) 
 
     return render(request, 'doc/review/edit_request_comment.html', {
+        'review_req': review_req,
+        'form' : form,
+    })
+
+class EditReviewRequestDeadlineForm(forms.ModelForm):
+    deadline = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={ "autoclose": "1", "start-date": "+0d" })
+    class Meta:
+        fields = ['deadline',]
+        model = ReviewRequest
+
+    def clean_deadline(self):
+        v = self.cleaned_data.get('deadline')
+        if v < datetime.date.today():
+            raise forms.ValidationError("Select today or a date in the future.")
+        return v
+
+
+def edit_deadline(request, name, request_id):
+    review_req = get_object_or_404(ReviewRequest, pk=request_id)
+    if not can_request_review_of_doc(request.user, review_req.doc):
+        return HttpResponseForbidden("You do not have permission to perform this action")
+
+    old_deadline = review_req.deadline
+
+    if request.method == "POST":
+        form = EditReviewRequestDeadlineForm(request.POST, instance=review_req)
+        if form.is_valid():
+            if form.cleaned_data['deadline'] != old_deadline:
+                form.save()
+                subject = "Deadline changed: {} {} review of {}-{}".format(review_req.team.acronym.capitalize(),review_req.type.name.lower(), review_req.doc.name, review_req.reviewed_rev)
+                msg = render_to_string("review/deadline_changed.txt", {
+                    "review_req": review_req,
+                    "old_deadline": old_deadline,
+                    "by": request.user.person,
+                })
+                email_review_request_change(request, review_req, subject, msg, request.user.person, notify_secretary=True, notify_reviewer=True, notify_requested_by=True)
+
+            return redirect(review_request, name=review_req.doc.name, request_id=review_req.pk)
+    else: 
+        form = EditReviewRequestDeadlineForm(instance=review_req) 
+
+    return render(request, 'doc/review/edit_request_deadline.html', {
         'review_req': review_req,
         'form' : form,
     })

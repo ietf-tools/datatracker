@@ -800,3 +800,24 @@ class ReviewTests(TestCase):
         self.assertEqual(r.status_code, 302)
         review_req = reload_db_objects(review_req)
         self.assertEqual(review_req.comment,'iHsnReEHXEmNPXcixsvAF9Aa')
+
+    def test_edit_deadline(self):
+        doc = make_test_data()
+        review_req = make_review_data(doc)
+
+        url = urlreverse('ietf.doc.views_review.edit_deadline', kwargs={ "name": doc.name, "request_id": review_req.pk })
+
+        login_testing_unauthorized(self, "ad", url)
+
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+
+        old_deadline = review_req.deadline.date()
+        new_deadline = old_deadline + datetime.timedelta(days=1)
+        r = self.client.post(url, data={
+            "deadline": new_deadline.isoformat(),
+        })
+        self.assertEqual(r.status_code, 302)
+        review_req = reload_db_objects(review_req)
+        self.assertEqual(review_req.deadline,new_deadline)
+        self.assertTrue('Deadline changed' in outbox[-1]['Subject'])

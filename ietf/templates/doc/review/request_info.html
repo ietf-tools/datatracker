@@ -47,7 +47,11 @@
       <tr>
         <th></th>
         <th>Deadline</th>
-        <td>{{ review_req.deadline|date:"Y-m-d" }}</td>
+        <td>{{ review_req.deadline|date:"Y-m-d" }}
+            {% if can_edit_deadline %}
+              <a class="btn btn-default btn-xs" href="{% url "ietf.doc.views_review.edit_deadline" name=doc.name request_id=review_req.pk %}"><span class="fa fa-edit"></span> Edit</a>
+            {% endif %}
+        </td>
       </tr>
 
       <tr>

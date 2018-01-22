@@ -10,4 +10,5 @@ urlpatterns = [
     url(r'^(?P<request_id>[0-9]+)/complete/$', views_review.complete_review),
     url(r'^(?P<request_id>[0-9]+)/searchmailarchive/$', views_review.search_mail_archive),
     url(r'^(?P<request_id>[0-9]+)/editcomment/$', views_review.edit_comment),
+    url(r'^(?P<request_id>[0-9]+)/editdeadline/$', views_review.edit_deadline),
 ]
