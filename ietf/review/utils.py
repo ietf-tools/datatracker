@@ -340,22 +340,14 @@ def email_review_request_change(request, review_req, subject, msg, by, notify_se
 
     system_email = Person.objects.get(name="(System)").formatted_email()
 
-    to = []
+    to = set() 
 
     def extract_email_addresses(objs):
-        if any(o.person == by for o in objs if o):
-            l = []
-        else:
-            l = []
-            for o in objs:
-                if o:
-                    e = o.formatted_email()
-                    if e != system_email:
-                        l.append(e)
-
-        for e in l:
-            if e not in to:
-                to.append(e)
+        for o in objs:
+            if o and o.person!=by:
+                e = o.formatted_email()
+                if e != system_email:
+                    to.add(e)
 
     if notify_secretary:
         extract_email_addresses(Role.objects.filter(name="secr", group=review_req.team).distinct())
@@ -366,6 +358,8 @@ def email_review_request_change(request, review_req, subject, msg, by, notify_se
         
     if not to:
         return
+
+    to = list(to)
 
     url = urlreverse("ietf.doc.views_review.review_request", kwargs={ "name": review_req.doc.name, "request_id": review_req.pk })
     url = request.build_absolute_uri(url)
