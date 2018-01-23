@@ -1230,6 +1230,10 @@ def eligible(request, year):
     # the date of the announcement of the Call for Volunteers, instead
     date = datetime.date.today()
     previous_five = Meeting.objects.filter(type='ietf',date__lte=date).order_by('-date')[:5]
+    if not len(previous_five) == 5:
+        debug.show('year')
+        debug.show('date')
+        debug.show('previous_five')
     attendees = {}
     potentials = set()
     for m in previous_five:

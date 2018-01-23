@@ -16,6 +16,7 @@ import debug                            # pyflakes:ignore
 from ietf.utils.log import log
 from ietf.utils.models import VersionInfo
 from ietf.utils.pipe import pipe
+from ietf.utils.test_runner import set_coverage_checking
 
 class DraftSubmissionChecker():
     name = ""
@@ -225,6 +226,7 @@ class DraftYangChecker(object):
                 message += "%s: %s:\n%s\n" % (cmd_version, cmd_template, out+"No validation errors\n" if (code == 0 and len(err) == 0) else out+err)
 
                 # yanglint
+                set_coverage_checking(False) # we can't count the following as it may or may not be run, depending on setup
                 if settings.SUBMIT_YANGLINT_COMMAND:
                     cmd_template = settings.SUBMIT_YANGLINT_COMMAND
                     command = [ w for w in cmd_template.split() if not '=' in w ][0]
@@ -245,6 +247,7 @@ class DraftYangChecker(object):
                                     pass
                     #passed = passed and code == 0 # For the submission tool.  Yang checks always pass
                     message += "%s: %s:\n%s\n" % (cmd_version, cmd_template, out+"No validation errors\n" if (code == 0 and len(err) == 0) else out+err)
+                set_coverage_checking(True)
             else:
                 errors += 1
                 message += "No such file: %s\nPossible mismatch between extracted xym file name and returned module name?\n" % (path)
