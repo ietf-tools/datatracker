@@ -13,7 +13,7 @@ class MeetingFactory(factory.DjangoModelFactory):
         model = Meeting
 
     type_id = factory.Iterator(['ietf','interim'])
-    date = datetime.date(2010,1,1)+datetime.timedelta(days=random.randint(0,3652))
+
     city = factory.Faker('city')
     country = factory.Faker('country_code')
     time_zone = factory.Faker('timezone')
@@ -44,6 +44,17 @@ class MeetingFactory(factory.DjangoModelFactory):
         else:
             return 1
 
+    @factory.lazy_attribute
+    def date(self):
+        if self.type_id == 'ietf':
+            year = (self.number-2)//3+1985
+            month = ((self.number-2)%3+1)*4-1
+            day = random.randint(1,28)
+            return datetime.date(year, month, day)
+        else:
+            return datetime.date(2010,1,1)+datetime.timedelta(days=random.randint(0,3652))
+
+
     @factory.post_generation
     def populate_agenda(obj, create, extracted, **kwargs): # pylint: disable=no-self-argument
         '''
@@ -57,7 +68,6 @@ class MeetingFactory(factory.DjangoModelFactory):
                 TimeSlotFactory(meeting=obj)
             obj.agenda = ScheduleFactory(meeting=obj)
             obj.save()
-
 
 class SessionFactory(factory.DjangoModelFactory):
     class Meta:
