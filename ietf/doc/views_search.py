@@ -167,7 +167,11 @@ def retrieve_search_results(form, all_types=False):
     # radio choices
     by = query["by"]
     if by == "author":
-        docs = docs.filter(documentauthor__person__alias__name__icontains=query["author"])
+        docs = docs.filter(
+            Q(documentauthor__person__alias__name__icontains=query["author"]) |
+            Q(documentauthor__person__affiliation__icontains=query["author"]) |
+            Q(documentauthor__person__email__address__icontains=query["author"])
+        )
     elif by == "group":
         docs = docs.filter(group__acronym=query["group"])
     elif by == "area":
