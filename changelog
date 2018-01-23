@@ -1,3 +1,68 @@
+ietfdb (6.70.0) ietf; urgency=medium
+
+  **Enhanced document author search, and more**
+
+  This release expands the fields to which the 'author' entry in the document
+  search form is applied, from just author name, to author name, email
+  addresses, and affiliation.  This makes it more feasible to enter a company
+  name in the author field, and get meaningful results.  The search results
+  page now shows how many hits there are in each document category.
+  Bluesheets may now be uploaded in text/plain format, not only PDF.  For the
+  nomcom, there's a new eligibility view and some additional tool links in the
+  menu drop-downs, and for the IESG, there's now a warning if a draft is put
+  on the telechat agenda so close to the telechat date that directorate
+  reviews probably won't have time to be completed.  Review request deadlines
+  can now be edited, and there are also some testing enhancements.
+
+  Commit log excerpt:
+
+  * Made the MeetingFactory produce ietf meetings with dates appropriate 
+    for the numbers.  Fixes random failures in test_eligible().
+
+  * Merged in [14549] from rjsparks@nostrum.com:
+    Allow people who can make a review request to edit the request deadline.
+    Send mail to other directorate secretaries when one secretary makes a
+    change to a request. Fixes #2233.
+
+  * Added .txt, text/plain, to the permitted types for bluesheet upload.  
+    Fixes issue #2437.
+
+  * Expanded the fields that the 'author' entry of the document search form 
+    is applied to, from just author name, to author name, email addresses, and 
+    affiliation.  Fixes issue #2415.
+
+  * Added hit counts to the document search result page template.
+
+  * Removed a chunk of code that won't be executed in all test environments 
+    from the test coverage measurements
+
+  * Merged in [14539] from rjsparks@nostrum.com:
+    Warn when putting a draft on a telechat that is so close that 
+    directorates will probably not have time to complete a review. Fixes #2381. 
+
+  * Added more test data for the eligibility view, in order to exercise all 
+    parts of the view code.
+
+  * Removed code generating nomcom page urls which doesn't resolve any 
+    more.  Added a comment about the eligibility view for previous nomcoms.
+
+  * Merged in [14533] from rjsparks@nostrum.com:
+    Add a page for the nomcom-chair and the secretariat to view who the 
+    datatracker thinks is nomcom eligible. Related to #2257.  
+
+  * Merged in [14532] from rjsparks@nostrum.com:
+    Add another external tool link to the nomcom chair's task menu.  
+
+  * Modified the patch actions run under the 'check' management command to 
+    patch an issue with a unidecode lib warning.
+
+  * Excluded versions of the Faker lib that produces names of type string 
+    instead of unicode for locale ro_RO, to avoid warnings from unidecode 
+    during testing.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  23 Jan 2018 10:37:00 -0800
+
+
 ietfdb (6.69.0) ietf; urgency=medium
 
   **Improved NomCom support**
