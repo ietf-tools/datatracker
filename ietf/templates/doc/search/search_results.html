@@ -58,7 +58,7 @@
           {% else %}
               <th colspan="{{ meta.headers|length|add:"-1" }}">
           {% endif %}
-	    {{ doc_group.grouper|plural:doc_group.list }}
+	    {{ doc_group.grouper|plural:doc_group.list }} ({{doc_group.list|length}} {{"hit"|plural:doc_group.list}})
           </th>
         </tr>
     </tbody>
