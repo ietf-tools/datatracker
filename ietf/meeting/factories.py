@@ -47,8 +47,9 @@ class MeetingFactory(factory.DjangoModelFactory):
     @factory.lazy_attribute
     def date(self):
         if self.type_id == 'ietf':
-            year = (self.number-2)//3+1985
-            month = ((self.number-2)%3+1)*4-1
+            num = int(self.number)
+            year = (num-2)//3+1985
+            month = ((num-2)%3+1)*4-1
             day = random.randint(1,28)
             return datetime.date(year, month, day)
         else:
