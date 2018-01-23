@@ -738,7 +738,7 @@ MEETING_VALID_MINUTES_MIME_TYPES = ['text/plain', 'text/html', 'application/pdf'
 #
 MEETING_VALID_SLIDES_EXTENSIONS = ('.doc','.docx','.pdf','.ppt','.pptx','.txt') # Note the removal of .zip
 #
-MEETING_VALID_BLUESHEET_EXTENSIONS = ['.pdf', ]
+MEETING_VALID_BLUESHEET_EXTENSIONS = ['.pdf', '.txt', ]
 MEETING_VALID_BLUESHEET_MIME_TYPES = ['application/pdf', ]
 
 INTERNET_DRAFT_DAYS_TO_EXPIRE = 185
