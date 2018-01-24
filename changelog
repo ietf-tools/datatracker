@@ -1,6 +1,6 @@
 ietfdb (6.70.0) ietf; urgency=medium
 
-  **Enhanced document author search, and more**
+  **Enhanced document author search, NomCom tools, and more**
 
   This release expands the fields to which the 'author' entry in the document
   search form is applied, from just author name, to author name, email
@@ -60,7 +60,7 @@ ietfdb (6.70.0) ietf; urgency=medium
     instead of unicode for locale ro_RO, to avoid warnings from unidecode 
     during testing.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  23 Jan 2018 10:37:00 -0800
+ -- Henrik Levkowetz <henrik@levkowetz.com>  24 Jan 2018 12:45:39 +0000
 
 
 ietfdb (6.69.0) ietf; urgency=medium
