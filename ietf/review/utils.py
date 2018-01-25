@@ -699,7 +699,7 @@ def setup_reviewer_field(field, review_req):
         field.initial = review_req.reviewer_id
 
     choices = make_assignment_choices(field.queryset, review_req)
-    if not field.required:
+    if not field.required and not field.empty_label is None:
         choices = [("", field.empty_label)] + choices
 
     field.choices = choices

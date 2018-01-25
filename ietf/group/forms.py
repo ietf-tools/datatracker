@@ -219,7 +219,7 @@ class ManageReviewRequestForm(forms.Form):
 
     action = forms.ChoiceField(choices=ACTIONS, widget=forms.HiddenInput, required=False)
     close = forms.ModelChoiceField(queryset=close_review_request_states(), required=False)
-    reviewer = PersonEmailChoiceField(empty_label="(None)", required=False, label_with="person")
+    reviewer = PersonEmailChoiceField(empty_label=None, required=False, label_with="person")
     add_skip = forms.BooleanField(required=False)
 
     def __init__(self, review_req, *args, **kwargs):
