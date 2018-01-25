@@ -223,14 +223,15 @@ def save_test_results(failures, test_labels):
 def set_coverage_checking(flag=True):
     global template_coverage_collection
     global url_coverage_collection
-    if flag:
-        settings.TEST_CODE_COVERAGE_CHECKER.collector.resume()
-        template_coverage_collection = True
-        url_coverage_collection = True
-    else:
-        settings.TEST_CODE_COVERAGE_CHECKER.collector.pause()
-        template_coverage_collection = False
-        url_coverage_collection = False
+    if settings.SERVER_MODE == 'test':
+        if flag:
+            settings.TEST_CODE_COVERAGE_CHECKER.collector.resume()
+            template_coverage_collection = True
+            url_coverage_collection = True
+        else:
+            settings.TEST_CODE_COVERAGE_CHECKER.collector.pause()
+            template_coverage_collection = False
+            url_coverage_collection = False
 
 class CoverageReporter(Reporter):
     def report(self):
