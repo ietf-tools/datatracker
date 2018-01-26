@@ -45,6 +45,7 @@ from django import forms
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.db.models.aggregates import Max
+from django.db.models import Q
 from django.http import HttpResponse, HttpResponseForbidden, Http404, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.template.loader import render_to_string
@@ -1310,7 +1311,10 @@ def review_requests(request, acronym, group_type=None):
             "2y": datetime.timedelta(days=2 * 365),
         }[since]
 
-        closed_review_requests = closed_review_requests.filter(time__gte=datetime.date.today() - date_limit)
+        closed_review_requests = closed_review_requests.filter(
+              Q(reviewrequestdocevent__type='closed_review_request', reviewrequestdocevent__time__gte=datetime.date.today() - date_limit)
+            | Q(reviewrequestdocevent__isnull=True, time__gte=datetime.date.today() - date_limit)
+        ).distinct()
 
     return render(request, 'group/review_requests.html',
                   construct_group_menu_context(request, group, "review requests", group_type, {
