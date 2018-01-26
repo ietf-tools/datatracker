@@ -44,6 +44,16 @@
       Your draft has <b>NOT</b> been verified to pass the submission checks.
     {% endif %}
   </p>
+
+  {% if submission.authors|length > 5 %}<p class="alert alert-danger"><b>
+    This document has more than five authors listed, which is considered excessive
+    under normal circumstances.</b> If you plan to request publication as an RFC, this
+    will require additional consideration by the stream manager (for example, the
+    IESG), and publication may be declined unless sufficient justification is
+    provided. See <a href="https://tools.ietf.org/html/rfc7322#section-4.1.1">
+    RFC 7322, section 4.1.1</a> for details.</p>
+  {% endif %}
+
   {% for check in submission.latest_checks %}
     {% if check.errors %}
        <p class="alert alert-warning">
