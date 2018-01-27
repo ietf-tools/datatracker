@@ -1,3 +1,30 @@
+ietfdb (6.70.1) ietf; urgency=medium
+
+  **Many authors warning on draft submission, and more**
+
+  From the commit log:
+
+  * Merged in [14575] from adam@nostrum.com:
+    Provide authors with a prominent early warning whenever they submit a 
+    document with more than five authors listed.
+
+  * Added a management command to generate apache 'Require user ...' 
+    stanzas from group:type:role specifications.  This permits automated
+    maintenance of role based access permissions, for instance for private
+    IESG, IAOC etc. wikis.
+
+  * Merged in [14572] from rjsparks@nostrum.com:
+    Corrected the filter for closed review requests. Fixes #2152.  
+
+  * Removed the possibility of choosing '(None)' as reviewer from the bulk 
+    review request edit form; this prevents a crash on line 1474 of 
+    ietf/group/views.py, in manage_review_request().
+
+  * Only do coverage set/reset operations if we're in test mode. Fixes a 
+    500 error during draft submission yang checking.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  25 Jan 2018 10:16:47 -0800
+
 ietfdb (6.70.0) ietf; urgency=medium
 
   **Enhanced document author search, NomCom tools, and more**
