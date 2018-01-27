@@ -769,12 +769,17 @@ def show(request, id):
         elif ipr.state.slug != 'posted':
             raise Http404
 
+    updates_iprs = ipr.relatedipr_source_set.all().order_by('source__time')
+    prev_rel = updates_iprs.last()
+    prev = prev_rel.target.get_child() if prev_rel else None
+
     return render(request, "ipr/details_view.html",  {
         'ipr': ipr,
+        'prev': prev,
         'in_force_ipr_rfc': ipr_rfc_number(ipr.time, ipr.is_thirdparty),
         'tabs': get_details_tabs(ipr, 'Disclosure'),
         'choices_abc': [ i.desc for i in IprLicenseTypeName.objects.filter(slug__in=['no-license', 'royalty-free', 'reasonable', ]) ],
-        'updates_iprs': ipr.relatedipr_source_set.all().order_by('source__time'),
+        'updates_iprs': updates_iprs,
         'updated_by_iprs': ipr.relatedipr_target_set.filter(source__state="posted").order_by('target__time')
     })
 
