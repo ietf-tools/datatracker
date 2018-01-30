@@ -1,29 +1,45 @@
-ietfdb (6.70.1) ietf; urgency=medium
+ietfdb (6.71.0) ietf; urgency=medium
 
-  **Many authors warning on draft submission, and more**
+  **Non-WG mailing lists index; 'many authors' warning**
+
+  This release adds a page which lists all advertised IETF mailing lists that
+  are not WG lists.  The draft submission tool now shows a prominent warning
+  if the number of draft authors exceed 5.  Upload of agendas, minutes, and
+  other meeting materials has been tweaked to accept some files that
+  previously were (incorrectly) blocked.  There are also a number of bugfixes
+  and a new management command.
 
   From the commit log:
 
+  * Added a page that lists all the advertised non-wg mailing lists, based on
+    data fetched from mailman by a cronjob running the import_mailman_listinfo
+    managemnt command.
+
+  * Added a workaround for libmagic mislabelling plain text content with a
+    line beginning with 'virtual' as text/x-c++.
+
+  * Improved wordwrap on materials document pages.
+
   * Merged in [14575] from adam@nostrum.com:
-    Provide authors with a prominent early warning whenever they submit a 
+    Provide authors with a prominent early warning whenever they submit a
     document with more than five authors listed.
 
-  * Added a management command to generate apache 'Require user ...' 
-    stanzas from group:type:role specifications.  This permits automated
-    maintenance of role based access permissions, for instance for private
-    IESG, IAOC etc. wikis.
+  * Added a management command to generate apache 'Require user ...'  stanzas
+    from group:type:role specifications.  This permits automated maintenance
+    of role based access permissions, for instance for private IESG, IAOC etc.
+    wikis.
 
   * Merged in [14572] from rjsparks@nostrum.com:
     Corrected the filter for closed review requests. Fixes #2152.  
 
-  * Removed the possibility of choosing '(None)' as reviewer from the bulk 
-    review request edit form; this prevents a crash on line 1474 of 
+  * Removed the possibility of choosing '(None)' as reviewer from the bulk
+    review request edit form; this prevents a crash on line 1474 of
     ietf/group/views.py, in manage_review_request().
 
-  * Only do coverage set/reset operations if we're in test mode. Fixes a 
-    500 error during draft submission yang checking.
+  * Only do coverage set/reset operations if we're in test mode. Fixes a 500
+    error during draft submission yang checking.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  25 Jan 2018 10:16:47 -0800
+ -- Henrik Levkowetz <henrik@levkowetz.com>  30 Jan 2018 20:59:00 +0000
 
 ietfdb (6.70.0) ietf; urgency=medium
 
