@@ -1,10 +1,33 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
-from ietf.group.models import Group
+import re
+
 from django.shortcuts import render
+
+import debug                            # pyflakes:ignore
+
+from ietf.group.models import Group
+from ietf.mailinglists.models import List
 
 def groups(request):
     groups = Group.objects.filter(type__in=("wg", "rg", "ag"), list_archive__startswith='http').order_by("acronym")
 
     return render(request, "mailinglists/group_archives.html", { "groups": groups } )
 
+def nonwg(request):
+    groups = Group.objects.filter(type__in=("wg", "rg")).order_by("acronym")
+
+    #urls = [ g.list_archive for g in groups if '.ietf.org' in g.list_archive ]
+
+    wg_lists = set()
+    for g in groups:
+        wg_lists.add(g.acronym)
+        match = re.search(r'^(https?://mailarchive.ietf.org/arch/(browse/|search/\?email-list=))(?P<name>[^/]*)/?$', g.list_archive)
+        if match:
+            wg_lists.add(match.group('name').lower())
+
+    lists = List.objects.filter(advertised=True)
+    #debug.show('lists.count()')
+    lists = lists.exclude(name__in=wg_lists).order_by('name')
+    #debug.show('lists.count()')
+    return render(request, "mailinglists/nonwg.html", { "lists": lists } )

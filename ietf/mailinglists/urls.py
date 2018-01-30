@@ -6,8 +6,8 @@ from ietf.mailinglists import views
 from ietf.utils.urls import url
 
 urlpatterns = [
-    url(r'^wg/$', views.groups),
-    url(r'^nonwg/$', RedirectView.as_view(url='https://www.ietf.org/list/nonwg.html', permanent=True)),
-    url(r'^nonwg/update/$', RedirectView.as_view(url='https://www.ietf.org/list/nonwg.html', permanent=True)),
-    url(r'^request/$', RedirectView.as_view(url='https://www.ietf.org/list/request.html', permanent=True)),
+    url(r'^wg/?$', views.groups),
+    url(r'^nonwg/?$', views.nonwg),
+    url(r'^nonwg/update/?$', RedirectView.as_view(url='https://www.ietf.org/list/nonwg.html', permanent=True)),
+    url(r'^request/?$', RedirectView.as_view(url='https://www.ietf.org/list/request.html', permanent=True)),
 ]

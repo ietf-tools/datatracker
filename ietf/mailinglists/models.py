@@ -1,7 +1,9 @@
 # Copyright The IETF Trust 2016, All Rights Reserved
 
-from django.db import models
+
+from django.conf import settings
 from django.core.validators import validate_email
+from django.db import models
 
 from ietf.person.models import Person
 
@@ -11,6 +13,8 @@ class List(models.Model):
     advertised = models.BooleanField(default=True)
     def __unicode__(self):
         return "<List: %s>" % self.name
+    def info_url(self):
+        return settings.MAILING_LIST_INFO_URL % {'list_addr': self.name }
 
 class Subscribed(models.Model):
     time = models.DateTimeField(auto_now_add=True)
