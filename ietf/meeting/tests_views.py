@@ -1635,7 +1635,7 @@ class MaterialsTests(TestCase):
             q = PyQuery(r.content)
             self.assertTrue(q('form .has-error'))
 
-            test_file = StringIO('this is some text for a test')
+            test_file = StringIO(u'This is some text for a test, with the word\nvirtual at the beginning of a line.')
             test_file.name = "not_really.txt"
             r = self.client.post(url,dict(file=test_file,apply_to_all=False))
             self.assertEqual(r.status_code, 302)

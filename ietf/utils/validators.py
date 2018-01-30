@@ -73,7 +73,13 @@ def validate_file_size(file):
 
 def validate_mime_type(file, valid):
     file.open()
-    mime_type, encoding = get_mime_type(file.read())
+    raw = file.read()
+    mime_type, encoding = get_mime_type(raw)
+    # work around mis-identification of text where a line has 'virtual' as
+    # the first word:
+    if mime_type == 'text/x-c++' and re.search('(?m)^virtual\s', raw):
+        mod = raw.replace(str('virtual'), str(' virtual'))
+        mime_type, encoding = get_mime_type(mod)
     if not mime_type in valid:
         raise ValidationError('Found content with unexpected mime type: %s.  Expected one of %s.' %
                                     (mime_type, ', '.join(valid) ))
