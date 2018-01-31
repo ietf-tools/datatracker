@@ -37,14 +37,19 @@ def import_mailman_listinfo(verbosity=0):
     for name in names:
         mlist = MailList.MailList(name, lock=False)
         note("List: %s" % mlist.internal_name())
-        sys.exit()
+
+        description = mlist.description.decode('latin1')[:256]
+        lists = List.objects.filter(name=mlist.real_name)
+        if lists.count() > 1:
+            # Arbitrary choice; we'll update the remaining item next
+            for item in lists[1:]:
+                item.delete()
+        mmlist, created = List.objects.get_or_create(name=mlist.real_name)
+        mmlist.description = description
+        mmlist.advertised = mlist.advertised
+        mmlist.save()
+        # The following calls return lowercased addresses
         if mlist.advertised:
-            description = mlist.description.decode('latin1')[:256]
-            mmlist, created = List.objects.get_or_create(name=mlist.real_name)
-            mmlist.description = description
-            mmlist.advertised = mlist.advertised
-            mmlist.save()
-            # The following calls return lowercased addresses
             members = mlist.getRegularMemberKeys() + mlist.getDigestMemberKeys()
             members = [ m for m in members if mlist.getDeliveryStatus(m) == MemberAdaptor.ENABLED ]
             known = Subscribed.objects.filter(lists__name=name).values_list('email', flat=True)
