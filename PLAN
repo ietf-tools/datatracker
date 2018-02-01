@@ -7,13 +7,6 @@ Updated: $Date$
 Planned work in rough order
 ===========================
 
-* Update IPR disclosure pages with 1) itemized section V, 2) use draft Updates
-  and Obsoletes (if approved) information to add document relationships to be
-  followed by IPR searches, 3) show current values in the IPR update form, and
-  4) show updates in a diff format (old/new columns).
-
-* Add a page listing non-WG mailing lists.
-
 * Upgrade Django to version 1.11
 
 * Revisit the review tool, work through the accumulated tickets.
