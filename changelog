@@ -1,3 +1,18 @@
+ietfdb (6.71.1) ietf; urgency=low
+
+  This is a small bugfix release related to the new non-wg mailing list index
+  page, in preparation for merging in the IPR changes branch:
+
+  * Changed the menu entry for non-wg lists to point at our own page.
+
+  * Added view caching of the non-wg list index.
+
+  * Fixed 2 bugs in import_mailman_listinfo; one typo and one bug which 
+    prevented updating of lists that changed from advertised to not advertised.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  01 Feb 2018 15:02:08 +0000
+
+
 ietfdb (6.71.0) ietf; urgency=medium
 
   **Non-WG mailing lists index; 'many authors' warning**
