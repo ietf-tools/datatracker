@@ -1,3 +1,30 @@
+ietfdb (6.72.0) ietf; urgency=medium
+
+  **Updated IPR disclosure pages**
+
+  This release introduces changes to the IPR disclosure pages, requested
+  during WG Chairs Lunch where the changes to IPR handling introduced by
+  RFC8179 were presented.  From the commit log:
+
+  * Changed the IPR disclosure page for IPR disclosure updates to show both 
+    the previous and current disclosure details side-by-side.  Fixes issue 
+    #2414.
+
+  * Rewrote text_to_dict() and dict_to_text() to support unicode without 
+    RFC2822 encoding issues.  Added initial values in IPR update forms, from 
+    the original disclosure, in order to make updates easier. Addresses issue 
+    #2413.
+
+  * Added a new section for IPR disclosures on related documents to the IPR 
+    document search result page.  Fixes issue #2412.
+
+  * Changed the patent information text fields to individual fields for 
+    patent number, inventor, title, date and notes, with validation.  Fixes 
+    issue #2411.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  01 Feb 2018 07:10:21 -0800
+
+
 ietfdb (6.71.1) ietf; urgency=low
 
   This is a small bugfix release related to the new non-wg mailing list index

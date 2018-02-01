@@ -7,7 +7,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.urls import reverse as urlreverse
 from django.db.models import Q
-from django.forms.models import inlineformset_factory
+from django.forms.models import inlineformset_factory, model_to_dict
 from django.forms.formsets import formset_factory
 from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404, redirect
@@ -30,6 +30,7 @@ from ietf.ipr.models import (IprDisclosureStateName, IprDisclosureBase,
     RelatedIpr,IprEvent)
 from ietf.ipr.utils import (get_genitive, get_ipr_summary,
     iprs_from_docs, related_docs)
+from ietf.mailtrigger.utils import gather_address_lists
 from ietf.message.models import Message
 from ietf.message.utils import infer_message
 from ietf.name.models import IprLicenseTypeName
@@ -37,7 +38,7 @@ from ietf.person.models import Person
 from ietf.secr.utils.document import get_rfc_num, is_draft
 from ietf.utils.draft_search import normalize_draftname
 from ietf.utils.mail import send_mail, send_mail_message
-from ietf.mailtrigger.utils import gather_address_lists
+from ietf.utils.text import text_to_dict
 
 # ----------------------------------------------------------------
 # Globals
@@ -531,7 +532,16 @@ def new(request, type, updates=None):
 
     else:
         if updates:
-            form = ipr_form_mapping[type](initial={'updates':str(updates)})
+            original = IprDisclosureBase(id=updates).get_child()
+            initial = model_to_dict(original)
+            initial.update({'updates':str(updates), })
+            patent_info = text_to_dict(initial['patent_info'])
+            if patent_info.keys():
+                patent_dict = dict([ ('patent_'+k.lower(), v) for k,v in patent_info.items() ])
+            else:
+                patent_dict = {'patent_notes': initial['patent_info']}
+            initial.update(patent_dict)
+            form = ipr_form_mapping[type](initial=initial)
         else:
             form = ipr_form_mapping[type]()
         disclosure = IprDisclosureBase()    # dummy disclosure for inlineformset
@@ -619,7 +629,8 @@ def search(request):
         docid = request.GET.get("id") or request.GET.get("id_document_tag") or ""
         docs = doc = None
         iprs = []
-        
+        related_iprs = []
+
         # set states
         states = request.GET.getlist('state',('posted','removed'))
         if states == ['all']:
@@ -647,10 +658,12 @@ def search(request):
                 # one match
                 if len(start) == 1:
                     first = start[0]
-                    doc = str(first)
+                    doc = first.document
                     docs = related_docs(first)
                     iprs = iprs_from_docs(docs,states=states)
                     template = "ipr/search_doc_result.html"
+                    updated_docs = related_docs(first, ['updates',])
+                    related_iprs = list(set(iprs_from_docs(updated_docs, states=states)) - set(iprs))
                 # multiple matches, select just one
                 elif start:
                     docs = start
@@ -723,11 +736,12 @@ def search(request):
 
             return render(request, template, {
                 "q": q,
-                "iprs": iprs,
-                "docs": docs,
-                "doc": doc,
-                "form":form,
-                "states":states
+                "iprs":     iprs,
+                "docs":     docs,
+                "doc":      doc,
+                "form":     form,
+                "states":   states,
+                "related_iprs":  related_iprs,
             })
 
         return HttpResponseRedirect(request.path)
@@ -755,13 +769,18 @@ def show(request, id):
         elif ipr.state.slug != 'posted':
             raise Http404
 
+    updates_iprs = ipr.relatedipr_source_set.all().order_by('source__time')
+    prev_rel = updates_iprs.last()
+    prev = prev_rel.target.get_child() if prev_rel else None
+
     return render(request, "ipr/details_view.html",  {
         'ipr': ipr,
+        'prev': prev,
         'in_force_ipr_rfc': ipr_rfc_number(ipr.time, ipr.is_thirdparty),
         'tabs': get_details_tabs(ipr, 'Disclosure'),
         'choices_abc': [ i.desc for i in IprLicenseTypeName.objects.filter(slug__in=['no-license', 'royalty-free', 'reasonable', ]) ],
-        'updates_iprs': ipr.relatedipr_source_set.all(),
-        'updated_by_iprs': ipr.relatedipr_target_set.filter(source__state="posted")
+        'updates_iprs': updates_iprs,
+        'updated_by_iprs': ipr.relatedipr_target_set.filter(source__state="posted").order_by('target__time')
     })
 
 def showlist(request):

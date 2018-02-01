@@ -140,4 +140,37 @@ def decode(raw):
         text = raw.decode('latin-1')
     #
     return text
-    
+
+def text_to_dict(t):
+    "Converts text with RFC2822-formatted header fields into a dictionary-like object."
+    # ensure we're handed a unicode parameter
+    assert isinstance(t, six.text_type)
+    d = {}
+    # Return {} for malformed input
+    if not len(t.lstrip()) == len(t):
+        return {}
+    lines = t.splitlines()
+    items = []
+    # unfold folded lines
+    for l in lines:
+        if l[0].isspace():
+            if items:
+                items[-1] += l
+            else:
+                return {}
+        else:
+            items.append(l)
+    for i in items:
+        if re.match('^[A-Za-z0-9-]+: ', i):
+            k, v = i.split(': ', 1)
+            d[k] = v
+        else:
+            return {}
+    return d
+
+def dict_to_text(d):
+    "Convert a dictionary to RFC2822-formatted text"
+    t = ""
+    for k, v in d.items():
+        t += "%s: %s\n" % (k, v)
+    return t

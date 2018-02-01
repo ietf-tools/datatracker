@@ -753,6 +753,23 @@ blockquote {
 }
 
 
+.table-condensed th.ipr-label {
+    overflow: hidden;
+    clear: left;
+    text-align: right;
+    text-overflow: ellipsis;
+    padding-right: 1em;
+    vertical-align: top;
+}
+.table-condensed .ipr-prev {
+  color: #777;
+  background-color: #f0f0f0;
+  vertical-align: top;
+}
+.table-condensed .ipr-this {
+  vertical-align: top;
+}
+
 .rfcmarkup div {
   margin-top: 1em;
 }
