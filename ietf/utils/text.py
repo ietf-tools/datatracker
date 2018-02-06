@@ -153,7 +153,7 @@ def text_to_dict(t):
     items = []
     # unfold folded lines
     for l in lines:
-        if l[0].isspace():
+        if len(l) and l[0].isspace():
             if items:
                 items[-1] += l
             else:
