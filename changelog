@@ -3,7 +3,7 @@ ietfdb (6.72.0) ietf; urgency=medium
   **Updated IPR disclosure pages**
 
   This release introduces changes to the IPR disclosure pages, requested
-  during WG Chairs Lunch where the changes to IPR handling introduced by
+  during a WG Chairs Lunch where the changes to IPR handling introduced by
   RFC8179 were presented.  From the commit log:
 
   * Changed the IPR disclosure page for IPR disclosure updates to show both 
@@ -22,7 +22,7 @@ ietfdb (6.72.0) ietf; urgency=medium
     patent number, inventor, title, date and notes, with validation.  Fixes 
     issue #2411.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  01 Feb 2018 07:10:21 -0800
+ -- Henrik Levkowetz <henrik@levkowetz.com>  06 Feb 2018 14:18:36 +0000
 
 
 ietfdb (6.71.1) ietf; urgency=low
