@@ -199,6 +199,7 @@ def edit_position(request, name, ballot_id):
         ad = get_object_or_404(Person, pk=ad_id)
 
     if request.method == 'POST':
+        old_pos = None
         if not has_role(request.user, "Secretariat") and not ad.role_set.filter(name="ad", group__type="area", group__state="active"):
             # prevent pre-ADs from voting
             return HttpResponseForbidden("Must be a proper Area Director in an active area to cast ballot")
