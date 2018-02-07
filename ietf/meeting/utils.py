@@ -95,19 +95,29 @@ def create_proceedings_templates(meeting):
         attendees = sorted(attendees, key = lambda a: a['LastName'])
         content = render_to_string('meeting/proceedings_attendees_table.html', {
             'attendees':attendees})
-        DBTemplate.objects.create(
-            path='/meeting/proceedings/%s/attendees.html' % meeting.number,
-            title='IETF %s Attendee List' % meeting.number,
-            type_id='django',
-            content=content)
-    
+        try:
+            template = DBTemplate.objects.get(path='/meeting/proceedings/%s/attendees.html' % (meeting.number, ))
+            template.title='IETF %s Attendee List' % meeting.number
+            template.type_id='django'
+            template.content=content
+            template.save()
+        except DBTemplate.DoesNotExist:
+            DBTemplate.objects.create(
+                path='/meeting/proceedings/%s/attendees.html' % (meeting.number, ),
+                title='IETF %s Attendee List' % meeting.number,
+                type_id='django',
+                content=content)    
     # Make copy of default IETF Overview template
     if not meeting.overview:
-        template = DBTemplate.objects.get(path='/meeting/proceedings/defaults/overview.rst')
-        template.id = None
-        template.path = '/meeting/proceedings/%s/overview.rst' % (meeting.number)
-        template.title = 'IETF %s Proceedings Overview' % (meeting.number)
-        template.save()
+        path = '/meeting/proceedings/%s/overview.rst' % (meeting.number, )
+        try:
+            template = DBTemplate.objects.get(path=path)
+        except DBTemplate.DoesNotExist:
+            template = DBTemplate.objects.get(path='/meeting/proceedings/defaults/overview.rst')
+            template.id = None
+            template.path = path
+            template.title = 'IETF %s Proceedings Overview' % (meeting.number)
+            template.save()
         meeting.overview = template
         meeting.save()
 
