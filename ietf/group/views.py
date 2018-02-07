@@ -1475,7 +1475,8 @@ def manage_review_requests(request, acronym, group_type=None, assignment_status=
 
             assignments_by_person = dict()
             for r in reqs_to_assign:
-                assignments_by_person[r.form.cleaned_data["reviewer"].person] = r
+                if r.form.cleaned_data["reviewer"]:
+                    assignments_by_person[r.form.cleaned_data["reviewer"].person] = r
             
             # Make sure the any assignments to the person at the head
             # of the rotation queue are processed first so that the queue
