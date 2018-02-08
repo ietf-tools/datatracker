@@ -296,6 +296,19 @@ class ReviewTests(TestCase):
         self.assertEqual(settings.skip_next,1)
         self.assertEqual(review_req3.state_id, "requested")
 
+        r = self.client.post(assigned_url, {
+            "reviewrequest": [str(review_req2.pk)],
+            "r{}-existing_reviewer".format(review_req2.pk): review_req2.reviewer_id or "",
+            "r{}-action".format(review_req2.pk): "assign",
+            "r{}-reviewer".format(review_req2.pk): "",
+            "r{}-add_skip".format(review_req2.pk) : 0,
+            "action": "save",
+        })
+        self.assertEqual(r.status_code, 302)
+        review_req2 = reload_db_objects(review_req2)
+        self.assertEqual(review_req2.state_id, "requested")
+        self.assertEqual(review_req2.reviewer, None)
+
     def test_email_open_review_assignments(self):
         doc = make_test_data()
         review_req1 = make_review_data(doc)
