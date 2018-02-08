@@ -41,7 +41,7 @@
                   {% else %}
                       {% url 'ietf.meeting.views.upload_session_bluesheets' session_id=session.pk num=session.meeting.number as upload_url %}
                   {% endif %}
-                  {% if pres.document.type.slug != 'bluesheets' or user|has_role:"Secretariat" %}
+                  {% if pres.document.type.slug != 'bluesheets' or user|has_role:"Secretariat" or meeting.type.slug == 'interim' and can_manage_materials %}
                     <a class="btn btn-default btn-sm pull-right" href="{{upload_url}}">Upload Revision</a>
                   {% endif %}
                 </td> 
