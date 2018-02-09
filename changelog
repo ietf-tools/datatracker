@@ -1,3 +1,28 @@
+ietfdb (6.72.1) ietf; urgency=medium
+
+  This is a bugfix release that addresses a few recent issues, as follows:
+
+  * Merged in [14624] from rjsparks@nostrum.com:
+    Allow those people who could upload bluesheets for an interim to upload
+    revised bluesheets. Fixes #2442.  
+
+  * Merged in [14623] from rjsparks@nostrum.com:
+    Take a different approach to avoiding the crash when a team secretary uses
+    the bulk assignment form to unassign a request. Reverts r14570. Fixes
+    issue #2443.  
+
+  * Re-worked create_proceedings_templates() so it does not blow up if it's
+    run a second time for a given meeting.
+
+  * Fixed an UnboundLocalError (only partial variable initialization) bug in
+    views_ballot.py
+
+  * Fixed a bug where the code might try to look at the first character of a
+    line even when there are no characters, in test_to_dict()
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  09 Feb 2018 10:13:09 +0000
+
+
 ietfdb (6.72.0) ietf; urgency=medium
 
   **Updated IPR disclosure pages**
