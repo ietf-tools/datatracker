@@ -34,7 +34,7 @@ from ietf.utils.text import xslugify
 from ietf.person.factories import PersonFactory
 from ietf.group.factories import GroupFactory, GroupEventFactory
 from ietf.meeting.factories import ( SessionFactory, SessionPresentationFactory, ScheduleFactory,
-    MeetingFactory, FloorPlanFactory )
+    MeetingFactory, FloorPlanFactory, TimeSlotFactory )
 from ietf.doc.factories import DocumentFactory
 
 
@@ -535,6 +535,17 @@ class EditTests(TestCase):
         r = self.client.get(urlreverse("ietf.meeting.views.edit_timeslots", kwargs=dict(num=meeting.number)))
         self.assertEqual(r.status_code, 200)
         self.assertTrue(meeting.room_set.all().first().name in unicontent(r))
+
+    def test_edit_timeslot_type(self):
+        timeslot = TimeSlotFactory()
+        url = urlreverse('ietf.meeting.views.edit_timeslot_type', kwargs=dict(num=timeslot.meeting.number,slot_id=timeslot.id))
+        login_testing_unauthorized(self,"secretary",url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        r = self.client.post(url,{'type':'other',})
+        self.assertEqual(r.status_code, 302)
+        timeslot = TimeSlot.objects.get(id=timeslot.id)
+        self.assertEqual(timeslot.type.slug,'other')
 
     def test_slot_to_the_right(self):
         meeting = make_meeting_test_data()

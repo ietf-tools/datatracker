@@ -6,7 +6,7 @@ import re
 import tarfile
 import urllib
 from tempfile import mkstemp
-from collections import OrderedDict, Counter
+from collections import OrderedDict, Counter, deque
 import csv
 import json
 import pytz
@@ -39,7 +39,7 @@ from ietf.doc.models import Document, State, DocEvent, NewRevisionDocEvent
 from ietf.group.models import Group
 from ietf.group.utils import can_manage_materials
 from ietf.ietfauth.utils import role_required, has_role
-from ietf.meeting.models import Meeting, Session, Schedule, FloorPlan, SessionPresentation
+from ietf.meeting.models import Meeting, Session, Schedule, FloorPlan, SessionPresentation, TimeSlot
 from ietf.meeting.helpers import get_areas, get_person_by_email, get_schedule_by_name
 from ietf.meeting.helpers import build_all_agenda_slices, get_wg_name_list
 from ietf.meeting.helpers import get_all_assignments_from_schedule
@@ -266,40 +266,28 @@ def agenda_create(request, num=None, owner=None, name=None):
 
 
 @role_required('Secretariat')
-@ensure_csrf_cookie
 def edit_timeslots(request, num=None):
 
     meeting = get_meeting(num)
-    timeslots = meeting.timeslot_set.exclude(location=None).select_related("location", "type")
 
     time_slices,date_slices,slots = meeting.build_timeslices()
 
-    meeting_base_url = request.build_absolute_uri(meeting.base_url())
-    site_base_url = request.build_absolute_uri('/')[:-1] # skip the trailing slash
-
-    rooms = meeting.room_set.order_by("capacity")
-
-    # this import locate here to break cyclic loop.
-    from ietf.meeting.ajax import timeslot_roomsurl, AddRoomForm, timeslot_slotsurl, AddSlotForm
-    roomsurl  = reverse(timeslot_roomsurl, args=[meeting.number])
-    adddayurl = reverse(timeslot_slotsurl, args=[meeting.number])
+    ts_list = deque()
+    rooms = meeting.room_set.order_by("capacity","name","id")
+    for room in rooms:
+        for day in time_slices:
+            for slice in date_slices[day]:
+                ts_list.append(room.timeslot_set.filter(time=slice[0],duration=datetime.timedelta(seconds=slice[2])).first())
+            
 
     return render(request, "meeting/timeslot_edit.html",
-                                         {"timeslots": timeslots,
-                                          "meeting_base_url": meeting_base_url,
-                                          "site_base_url": site_base_url,
-                                          "rooms":rooms,
-                                          "addroom":  AddRoomForm(),
-                                          "roomsurl": roomsurl,
-                                          "addday":   AddSlotForm(),
-                                          "adddayurl":adddayurl,
+                                         {"rooms":rooms,
                                           "time_slices":time_slices,
                                           "slot_slices": slots,
                                           "date_slices":date_slices,
                                           "meeting":meeting,
-                                          "hide_menu": True,
+                                          "ts_list":ts_list,
                                       })
-
 
 ##############################################################################
 #@role_required('Area Director','Secretariat')
@@ -2204,3 +2192,26 @@ def important_dates(request, num=None):
 
     context={'meetings':meetings}
     return render(request, 'meeting/important-dates.html', context)
+
+TimeSlotTypeForm = modelform_factory(TimeSlot, fields=('type',))
+
+@role_required('Secretariat')
+def edit_timeslot_type(request, num, slot_id):
+    timeslot = get_object_or_404(TimeSlot,id=slot_id)
+    meeting = get_object_or_404(Meeting,number=num)
+    if timeslot.meeting!=meeting:
+        raise Http404()
+    if request.method=='POST':
+        form = TimeSlotTypeForm(instance=timeslot,data=request.POST)
+        if form.is_valid():
+            form.save()
+            return HttpResponseRedirect(reverse('ietf.meeting.views.edit_timeslots',kwargs={'num':num}))
+
+    else:
+        form = TimeSlotTypeForm(instance=timeslot)
+        
+    sessions = timeslot.sessions.filter(timeslotassignments__schedule=meeting.agenda)
+
+    return render(request, 'meeting/edit_timeslot_type.html', {'timeslot':timeslot,'form':form,'sessions':sessions})
+
+
