@@ -535,11 +535,11 @@ def new(request, type, updates=None):
             original = IprDisclosureBase(id=updates).get_child()
             initial = model_to_dict(original)
             initial.update({'updates':str(updates), })
-            patent_info = text_to_dict(initial['patent_info'])
+            patent_info = text_to_dict(initial.get('patent_info', u''))
             if patent_info.keys():
                 patent_dict = dict([ ('patent_'+k.lower(), v) for k,v in patent_info.items() ])
             else:
-                patent_dict = {'patent_notes': initial['patent_info']}
+                patent_dict = {'patent_notes': initial.get('patent_info', u'')}
             initial.update(patent_dict)
             form = ipr_form_mapping[type](initial=initial)
         else:
