@@ -486,7 +486,13 @@ def assignments_get(request, num, schedule):
 
 # this returns the list of scheduled sessions for the given named agenda
 def assignments_json(request, num, owner, name):
-    meeting, person, schedule = get_meeting_schedule(num, owner, name)
+    info = get_meeting_schedule(num, owner, name)
+    # The return values from get_meeting_schedule() are silly, in that it
+    # is a tuple for non-error return, but a HTTPResponse when error, but
+    # work around that for the moment
+    if isinstance(info, HttpResponse):
+        return info
+    meeting, person, schedule = info
 
     if request.method == 'GET':
         return assignments_get(request, meeting, schedule)
