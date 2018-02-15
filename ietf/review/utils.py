@@ -827,8 +827,9 @@ def make_assignment_choices(email_queryset, review_req):
         req_data = req_data_for_reviewers.get(e.person_id, [])
 
         currently_open = sum(1 for d in req_data if d.state in ["requested", "accepted"])
+        pages = sum(rd.doc_pages for rd in req_data if rd.state in ["requested", "accepted"])
         if currently_open > 0:
-            stats.append("currently {} open".format(currently_open))
+            stats.append("currently {count} open, {pages} pages".format(count=currently_open, pages=pages))
         could_have_completed = [d for d in req_data if d.state in ["part-completed", "completed", "no-response"]]
         if could_have_completed:
             no_response = sum(1 for d in could_have_completed if d.state == "no-response")
