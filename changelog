@@ -1,3 +1,37 @@
+ietfdb (6.72.2) ietf; urgency=medium
+
+  Bugfixes and minor features:
+
+  * Added page counts for open review requests on the reviewer assignment 
+    drop-downs of /group/*/reviews/manage/unassigned/. Fixes issue #2449.
+
+  * Added a patch for a faker problem with locale ro_RO names (default 
+    first_names from a region without first_names explicitly declared are 
+    returned as str instead of unicode under python 2.7, 
+    https://github.com/joke2k/faker/issues/684)
+
+  * Added a presence check before removing a list element.  Addresses a 500 
+    in unassigned review form POST.
+
+  * Fixed an issue which could arise when updating IPR declarations with no 
+    value for patent_info.
+
+  * The IPR disclosure form field for statement is too small to hold some 
+    of the existing statements.  Increased from 255 to 2000.
+
+  * Added a missing indirect dependency on PyOpenSSL (via urllib3) to 
+    requirements.txt, to work around a broken dependency chain.
+
+  * Merged in [14634] from rjsparks@nostrum.com:
+    Simplified the view that lets the secretariat see and change timeslot
+    types. Fixes #2313.  
+
+  * Updated the LICENSE file to used the wording from 
+    https://opensource.org/licenses/BSD-3-Clause
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  16 Feb 2018 14:46:47 +0000
+
+
 ietfdb (6.72.1) ietf; urgency=medium
 
   This is a bugfix release that addresses a few recent issues, as follows:
