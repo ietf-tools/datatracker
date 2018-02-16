@@ -930,6 +930,7 @@ SILENCED_SYSTEM_CHECKS = [
 CHECKS_LIBRARY_PATCHES_TO_APPLY = [
     'patch/fix-django-unicode-comparison-bug.patch',
     'patch/fix-unidecode-argument-warning.patch',
+    'patch/fix-faker-provider-ro-RO-string.patch',
 ]
 
 STATS_NAMES_LIMIT = 25
