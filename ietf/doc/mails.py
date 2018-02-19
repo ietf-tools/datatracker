@@ -81,11 +81,15 @@ def email_pulled_from_rfc_queue(request, doc, comment, prev_state, next_state):
 
 def email_iesg_processing_document(request, doc, changes):
     addrs = gather_address_lists('doc_iesg_processing_started',doc=doc)
+    tagless_changes = []
+    for c in changes:
+        tagless_changes.append(strip_tags(c))
     send_mail(request, addrs.to, None,
               'IESG processing details changed for %s' % doc.name,
               'doc/mail/email_iesg_processing.txt', 
               dict(doc=doc,
-                   changes=changes),
+                   changes=tagless_changes,
+                   url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url()),
               cc=addrs.cc)
 
 def html_to_text(html):
