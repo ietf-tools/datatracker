@@ -15,14 +15,15 @@ from ietf.name.models import GroupStateName, GroupTypeName, DocTagName, GroupMil
 from ietf.person.models import Email, Person
 from ietf.utils.mail import formataddr
 from ietf.utils import log
+from ietf.utils.models import ForeignKey, OneToOneField
 
 
 class GroupInfo(models.Model):
     time = models.DateTimeField(default=datetime.datetime.now)
     name = models.CharField(max_length=80)
-    state = models.ForeignKey(GroupStateName, null=True)
-    type = models.ForeignKey(GroupTypeName, null=True)
-    parent = models.ForeignKey('Group', blank=True, null=True)
+    state = ForeignKey(GroupStateName, null=True)
+    type = ForeignKey(GroupTypeName, null=True)
+    parent = ForeignKey('Group', blank=True, null=True)
     description = models.TextField(blank=True)
     list_email = models.CharField(max_length=64, blank=True)
     list_subscribe = models.CharField(max_length=255, blank=True)
@@ -76,7 +77,7 @@ class Group(GroupInfo):
     objects = GroupManager()
 
     acronym = models.SlugField(max_length=40, unique=True, db_index=True)
-    charter = models.OneToOneField('doc.Document', related_name='chartered_group', blank=True, null=True)
+    charter = OneToOneField('doc.Document', related_name='chartered_group', blank=True, null=True)
 
     def latest_event(self, *args, **filter_args):
         """Get latest event of optional Python type and with filter
@@ -193,14 +194,14 @@ class Group(GroupInfo):
         return desc
 
 class GroupHistory(GroupInfo):
-    group = models.ForeignKey(Group, related_name='history_set')
+    group = ForeignKey(Group, related_name='history_set')
     acronym = models.CharField(max_length=40)
 
     class Meta:
         verbose_name_plural="group histories"
 
 class GroupURL(models.Model):
-    group = models.ForeignKey(Group)
+    group = ForeignKey(Group)
     name = models.CharField(max_length=255)
     url = models.URLField()
 
@@ -208,12 +209,12 @@ class GroupURL(models.Model):
         return u"%s (%s)" % (self.url, self.name)
 
 class GroupMilestoneInfo(models.Model):
-    group = models.ForeignKey(Group)
+    group = ForeignKey(Group)
     # a group has two sets of milestones, current milestones
     # (active/under review/deleted) and charter milestones (active
     # during a charter/recharter event), events for charter milestones
     # are stored on the charter document
-    state = models.ForeignKey(GroupMilestoneStateName)
+    state = ForeignKey(GroupMilestoneStateName)
     desc = models.CharField(verbose_name="Description", max_length=500)
     due = models.DateField()
     resolved = models.CharField(max_length=50, blank=True, help_text="Explanation of why milestone is resolved (usually \"Done\"), or empty if still due.")
@@ -231,13 +232,13 @@ class GroupMilestone(GroupMilestoneInfo):
 
 class GroupMilestoneHistory(GroupMilestoneInfo):
     time = models.DateTimeField()
-    milestone = models.ForeignKey(GroupMilestone, related_name="history_set")
+    milestone = ForeignKey(GroupMilestone, related_name="history_set")
 
 class GroupStateTransitions(models.Model):
     """Captures that a group has overriden the default available
     document state transitions for a certain state."""
-    group = models.ForeignKey(Group)
-    state = models.ForeignKey('doc.State', help_text="State for which the next states should be overridden")
+    group = ForeignKey(Group)
+    state = ForeignKey('doc.State', help_text="State for which the next states should be overridden")
     next_states = models.ManyToManyField('doc.State', related_name='previous_groupstatetransitions_states')
 
     def __unicode__(self):
@@ -255,10 +256,10 @@ GROUP_EVENT_CHOICES = [
 
 class GroupEvent(models.Model):
     """An occurrence for a group, used for tracking who, when and what."""
-    group = models.ForeignKey(Group)
+    group = ForeignKey(Group)
     time = models.DateTimeField(default=datetime.datetime.now, help_text="When the event happened")
     type = models.CharField(max_length=50, choices=GROUP_EVENT_CHOICES)
-    by = models.ForeignKey(Person)
+    by = ForeignKey(Person)
     desc = models.TextField()
 
     def __unicode__(self):
@@ -268,16 +269,16 @@ class GroupEvent(models.Model):
         ordering = ['-time', 'id']
 
 class ChangeStateGroupEvent(GroupEvent):
-    state = models.ForeignKey(GroupStateName)
+    state = ForeignKey(GroupStateName)
 
 class MilestoneGroupEvent(GroupEvent):
-    milestone = models.ForeignKey(GroupMilestone)
+    milestone = ForeignKey(GroupMilestone)
 
 class Role(models.Model):
-    name = models.ForeignKey(RoleName)
-    group = models.ForeignKey(Group)
-    person = models.ForeignKey(Person)
-    email = models.ForeignKey(Email, help_text="Email address used by person for this role.")
+    name = ForeignKey(RoleName)
+    group = ForeignKey(Group)
+    person = ForeignKey(Person)
+    email = ForeignKey(Email, help_text="Email address used by person for this role.")
     def __unicode__(self):
         return u"%s is %s in %s" % (self.person.plain_name(), self.name.name, self.group.acronym or self.group.name)
 
@@ -295,10 +296,10 @@ class RoleHistory(models.Model):
     # used on its own - there should always be a GroupHistory
     # accompanying a change in roles, so lookup the appropriate
     # GroupHistory instead
-    name = models.ForeignKey(RoleName)
-    group = models.ForeignKey(GroupHistory)
-    person = models.ForeignKey(Person)
-    email = models.ForeignKey(Email, help_text="Email address used by person for this role.")
+    name = ForeignKey(RoleName)
+    group = ForeignKey(GroupHistory)
+    person = ForeignKey(Person)
+    email = ForeignKey(Email, help_text="Email address used by person for this role.")
     def __unicode__(self):
         return u"%s is %s in %s" % (self.person.plain_name(), self.name.name, self.group.acronym)
 

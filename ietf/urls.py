@@ -37,7 +37,7 @@ sitemaps = {
 urlpatterns = [
     url(r'^$', views_search.frontpage),
     url(r'^accounts/', include('ietf.ietfauth.urls')),
-    url(r'^admin/', include(admin.site.urls)),
+    url(r'^admin/', admin.site.urls),
     url(r'^admin/docs/', include('django.contrib.admindocs.urls')),
     url(r'^ann/', include('ietf.nomcom.redirect_ann_urls')),
     url(r'^api/', include('ietf.api.urls')),

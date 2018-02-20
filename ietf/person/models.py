@@ -24,6 +24,7 @@ from ietf.utils.mail import send_mail_preformatted
 from ietf.utils.storage import NoLocationMigrationFileSystemStorage
 from ietf.utils.mail import formataddr
 from ietf.person.name import unidecode_name
+from ietf.utils.models import ForeignKey, OneToOneField
 
 
 class PersonInfo(models.Model):
@@ -157,7 +158,7 @@ class PersonInfo(models.Model):
         abstract = True
 
 class Person(PersonInfo):
-    user = models.OneToOneField(User, blank=True, null=True)
+    user = OneToOneField(User, blank=True, null=True)
 
     def save(self, *args, **kwargs):
         created = not self.pk
@@ -197,8 +198,8 @@ class Person(PersonInfo):
         return ct1
 
 class PersonHistory(PersonInfo):
-    person = models.ForeignKey(Person, related_name="history_set")
-    user = models.ForeignKey(User, blank=True, null=True)
+    person = ForeignKey(Person, related_name="history_set")
+    user = ForeignKey(User, blank=True, null=True)
 
 class Alias(models.Model):
     """This is used for alternative forms of a name.  This is the
@@ -206,7 +207,7 @@ class Alias(models.Model):
     unicode form (and ascii form, if different) of a name which is
     recorded in the Person record.
     """
-    person = models.ForeignKey(Person)
+    person = ForeignKey(Person)
     name = models.CharField(max_length=255, db_index=True)
 
     def save(self, *args, **kwargs):
@@ -229,7 +230,7 @@ class Alias(models.Model):
 
 class Email(models.Model):
     address = models.CharField(max_length=64, primary_key=True, validators=[validate_email])
-    person = models.ForeignKey(Person, null=True)
+    person = ForeignKey(Person, null=True)
     time = models.DateTimeField(auto_now_add=True)
     primary = models.BooleanField(default=False)
     active = models.BooleanField(default=True)      # Old email addresses are *not* purged, as history
@@ -290,7 +291,7 @@ PERSON_API_KEY_ENDPOINTS = [
 ]
 
 class PersonalApiKey(models.Model):
-    person   = models.ForeignKey(Person, related_name='apikeys')
+    person   = ForeignKey(Person, related_name='apikeys')
     endpoint = models.CharField(max_length=128, null=False, blank=False, choices=PERSON_API_KEY_ENDPOINTS)
     created  = models.DateTimeField(default=datetime.datetime.now, null=False)
     valid    = models.BooleanField(default=True)
@@ -331,7 +332,7 @@ PERSON_EVENT_CHOICES = [
     ]
 
 class PersonEvent(models.Model):
-    person = models.ForeignKey(Person)
+    person = ForeignKey(Person)
     time = models.DateTimeField(default=datetime.datetime.now, help_text="When the event happened")
     type = models.CharField(max_length=50, choices=PERSON_EVENT_CHOICES)
     desc = models.TextField()
@@ -343,5 +344,5 @@ class PersonEvent(models.Model):
         ordering = ['-time', '-id']
 
 class PersonApiKeyEvent(PersonEvent):
-    key = models.ForeignKey(PersonalApiKey)
+    key = ForeignKey(PersonalApiKey)
     

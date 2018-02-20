@@ -2,7 +2,7 @@
 
 from __future__ import unicode_literals
 
-from django.core.urlresolvers import reverse as urlreverse
+from django.urls import reverse as urlreverse
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 
