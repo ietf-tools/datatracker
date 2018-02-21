@@ -1274,7 +1274,7 @@ class AdoptDraftTests(TestCase):
 class ChangeStreamStateTests(TestCase):
     def test_set_tags(self):
         draft = make_test_data()
-        draft.tags = DocTagName.objects.filter(slug="w-expert")
+        draft.tags.set(DocTagName.objects.filter(slug="w-expert"))
         draft.group.unused_tags.add("w-refdoc")
 
         url = urlreverse('ietf.doc.views_draft.change_stream_state', kwargs=dict(name=draft.name, state_type="draft-stream-ietf"))

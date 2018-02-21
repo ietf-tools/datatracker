@@ -1230,8 +1230,8 @@ def request_publication(request, name):
             m.save()
 
             if doc.group.acronym != "none":
-                m.related_groups = [doc.group]
-            m.related_docs = [doc]
+                m.related_groups.set([doc.group])
+            m.related_docs.set([doc])
 
             send_mail_message(request, m)
 
@@ -1514,7 +1514,8 @@ def change_stream_state(request, name, state_type):
             new_tags = set(form.cleaned_data["tags"])
 
             if existing_tags != new_tags:
-                doc.tags = new_tags
+                doc.tags.clear()
+                doc.tags.set(new_tags)
 
                 e = DocEvent(type="changed_document", doc=doc, rev=doc.rev, by=by)
                 added_tags = new_tags - existing_tags

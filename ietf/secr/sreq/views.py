@@ -264,7 +264,7 @@ def confirm(request, acronym):
                                      )
                 session_save(new_session)
                 if 'resources' in form.data:
-                    new_session.resources = session_data['resources']
+                    new_session.resources.set(session_data['resources'])
 
         # write constraint records
         save_conflicts(group,meeting,form.data.get('conflict1',''),'conflict')

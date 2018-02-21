@@ -395,7 +395,8 @@ def edit_submission(request, submission_id, access_token=None):
 
             formal_languages_changed = False
             if set(submission.formal_languages.all()) != set(edit_form.cleaned_data["formal_languages"]):
-                submission.formal_languages = edit_form.cleaned_data["formal_languages"]
+                submission.formal_languages.clear()
+                submission.formal_languages.set(edit_form.cleaned_data["formal_languages"])
                 formal_languages_changed = True
 
             send_manual_post_request(request, submission, errors)

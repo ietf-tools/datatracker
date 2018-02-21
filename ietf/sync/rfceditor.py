@@ -196,7 +196,8 @@ def update_drafts_from_queue(drafts):
 
         t = DocTagName.objects.filter(slug__in=tags)
         if set(t) != set(d.tags.all()):
-            d.tags = t
+            d.tags.clear()
+            d.tags.set(t)
             changed.add(name)
 
         if events:

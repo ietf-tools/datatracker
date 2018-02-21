@@ -226,8 +226,9 @@ def edit_milestones(request, acronym, group_type=None, milestone_set="current"):
 
                 if not history:
                     history = save_milestone_in_history(m)
-
-                m.docs = new_docs
+                    
+                m.docs.clear()
+                m.docs.set(new_docs)
 
             if len(changes) > 1:
                 m.save()
@@ -239,7 +240,7 @@ def edit_milestones(request, acronym, group_type=None, milestone_set="current"):
             set_attributes_from_form(f, m)
             m.save()
 
-            m.docs = c["docs"]
+            m.docs.set(c["docs"])
 
             named_milestone = 'milestone "%s"' % m.desc
             if milestone_set == "charter":
@@ -366,7 +367,8 @@ def reset_charter_milestones(request, group_type, acronym):
                                                 due=m.due,
                                                 resolved=m.resolved,
                                                 )
-            new.docs = m.docs.all()
+            new.docs.clear()
+            new.docs.set(m.docs.all())
 
             DocEvent.objects.create(type="changed_charter_milestone",
                                     doc=group.charter,
