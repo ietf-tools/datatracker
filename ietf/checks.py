@@ -366,13 +366,23 @@ def maybe_patch_library(app_configs, **kwargs):
     for patch_file in settings.CHECKS_LIBRARY_PATCHES_TO_APPLY:
         patch_path = os.path.join(saved_cwd, patch_file)
         patch_set = patch.fromfile(patch_path)
+        if not hasattr(patch_set, 'already_patched'):
+            patch_set.already_patched = False
         if patch_set:
-            if not patch_set.apply():
+            applied = patch_set.apply()
+            if not applied:
                 errors.append(checks.Warning(
                     "Could not apply patch from file '%s'"%patch_file,
                     hint="Make sure that the patch file contains a unified diff and has valid file paths",
                     id="datatracker.W0002",
                     ))
+            elif patch_set.already_patched:
+                #for p in patch_set:
+                #    sys.stderr.write("  Already patched: %s\n" % p.target)
+                pass
+            else:
+                for p in patch_set:
+                    sys.stderr.write("  Patched %s\n" % p.target)
         else:
             errors.append(checks.Warning(
                 "Could not parse patch file '%s'"%patch_file,
