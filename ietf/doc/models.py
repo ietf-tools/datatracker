@@ -27,7 +27,7 @@ from ietf.utils import log
 from ietf.utils.admin import admin_link
 from ietf.utils.validators import validate_no_control_chars
 from ietf.utils.mail import formataddr
-from ietf.utils.models import ForeignKey, OneToOneField
+from ietf.utils.models import ForeignKey
 
 logger = logging.getLogger('django')
 

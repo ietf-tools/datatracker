@@ -27,7 +27,7 @@ from ietf.person.models import Person
 from ietf.utils.storage import NoLocationMigrationFileSystemStorage
 from ietf.utils.text import xslugify
 from ietf.utils.timezone import date2datetime
-from ietf.utils.models import ForeignKey, OneToOneField
+from ietf.utils.models import ForeignKey
 
 countries = pytz.country_names.items()
 countries.sort(lambda x,y: cmp(x[1], y[1]))

@@ -6,7 +6,7 @@ from django.urls import reverse as urlreverse
 from ietf.doc.models import Document, DocEvent, State
 from ietf.group.models import Group
 from ietf.person.models import Person, Email
-from ietf.utils.models import ForeignKey, OneToOneField
+from ietf.utils.models import ForeignKey
 
 class CommunityList(models.Model):
     user = ForeignKey(User, blank=True, null=True)

@@ -9,7 +9,7 @@ from ietf.person.models import Person
 from ietf.group.models import Group
 from ietf.doc.models import Document
 from ietf.name.models import RoleName
-from ietf.utils.models import ForeignKey, OneToOneField
+from ietf.utils.models import ForeignKey
 
 class Message(models.Model):
     time = models.DateTimeField(default=datetime.datetime.now)

@@ -7,7 +7,7 @@ import debug                            # pyflakes:ignore
 from ietf.meeting.models import Meeting
 from ietf.name.models import CountryName
 from ietf.person.models import Person
-from ietf.utils.models import ForeignKey, OneToOneField
+from ietf.utils.models import ForeignKey
 
 
 class AffiliationAlias(models.Model):

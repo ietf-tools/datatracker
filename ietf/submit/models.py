@@ -12,7 +12,7 @@ from ietf.group.models import Group
 from ietf.message.models import Message
 from ietf.name.models import DraftSubmissionStateName, FormalLanguageName
 from ietf.utils.accesstoken import generate_random_key, generate_access_token
-from ietf.utils.models import ForeignKey, OneToOneField
+from ietf.utils.models import ForeignKey
 
 
 def parse_email_line(line):

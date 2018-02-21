@@ -2,7 +2,7 @@
 
 from django.db import models
 
-from ietf.utils.models import ForeignKey, OneToOneField
+from ietf.utils.models import ForeignKey
 
 class Redirect(models.Model):
     """Mapping of CGI script to url.  The "rest" is a

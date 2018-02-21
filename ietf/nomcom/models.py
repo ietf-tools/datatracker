@@ -23,7 +23,7 @@ from ietf.nomcom.utils import (initialize_templates_for_group,
                                initialize_requirements_for_position,
                                initialize_description_for_topic,
                                delete_nomcom_templates)
-from ietf.utils.models import ForeignKey, OneToOneField
+from ietf.utils.models import ForeignKey
 from ietf.utils.storage import NoLocationMigrationFileSystemStorage
 
 

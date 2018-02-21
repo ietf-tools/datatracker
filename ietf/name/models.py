@@ -2,7 +2,7 @@
 
 from django.db import models
 
-from ietf.utils.models import ForeignKey, OneToOneField
+from ietf.utils.models import ForeignKey
 
 class NameModel(models.Model):
     slug = models.CharField(max_length=32, primary_key=True)

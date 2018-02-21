@@ -6,7 +6,7 @@ from django.core.validators import validate_email
 from django.db import models
 
 from ietf.person.models import Person
-from ietf.utils.models import ForeignKey, OneToOneField
+from ietf.utils.models import ForeignKey
 
 class List(models.Model):
     name = models.CharField(max_length=32)

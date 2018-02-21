@@ -11,7 +11,7 @@ from ietf.name.models import (LiaisonStatementPurposeName, LiaisonStatementState
                               DocRelationshipName)
 from ietf.doc.models import Document
 from ietf.group.models import Group
-from ietf.utils.models import ForeignKey, OneToOneField
+from ietf.utils.models import ForeignKey
 
 # maps (previous state id, new state id) to event type id
 STATE_EVENT_MAPPING = {
@@ -44,6 +44,10 @@ class LiaisonStatement(models.Model):
     tags = models.ManyToManyField(LiaisonStatementTagName, blank=True)
     attachments = models.ManyToManyField(Document, through='LiaisonStatementAttachment', blank=True)
     state = ForeignKey(LiaisonStatementState, default='pending')
+
+    class Meta:
+        ordering = ['id']
+        
 
     def __unicode__(self):
         return self.title or u"<no title>"

@@ -10,7 +10,7 @@ from ietf.doc.models import DocAlias
 from ietf.name.models import DocRelationshipName,IprDisclosureStateName,IprLicenseTypeName,IprEventTypeName
 from ietf.person.models import Person
 from ietf.message.models import Message
-from ietf.utils.models import ForeignKey, OneToOneField
+from ietf.utils.models import ForeignKey
 
 class IprDisclosureBase(models.Model):
     by                  = ForeignKey(Person) # who was logged in, or System if nobody was logged in
@@ -25,6 +25,9 @@ class IprDisclosureBase(models.Model):
     submitter_email     = models.EmailField(blank=True)
     time                = models.DateTimeField(auto_now_add=True)
     title               = models.CharField(blank=True, max_length=255)
+
+    class Meta:
+        ordering = ['-time', '-id']
 
     def __unicode__(self):
         return self.title

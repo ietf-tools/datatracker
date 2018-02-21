@@ -2,7 +2,7 @@ from django.db import models
 
 from ietf.group.models import Group
 from ietf.name.models import DBTemplateTypeName
-from ietf.utils.models import ForeignKey, OneToOneField
+from ietf.utils.models import ForeignKey
 
 
 TEMPLATE_TYPES = (
