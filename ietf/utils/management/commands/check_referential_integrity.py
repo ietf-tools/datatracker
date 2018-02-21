@@ -46,10 +46,10 @@ class Command(BaseCommand):
                 raise
             if foreign_model == field.model:
                 return
-            foreign_field_name  = field.rel.name
-            foreign_accessor_name = field.rel.get_accessor_name()
+            foreign_field_name  = field.remote_field.name
+            foreign_accessor_name = field.remote_field.get_accessor_name()
             if verbosity > 1:
-                print "    %s <- %s -> %s.%s" % (field.model.__name__, field.rel.through._meta.db_table, foreign_model.__module__, foreign_model.__name__),
+                print "    %s <- %s -> %s.%s" % (field.model.__name__, field.remote_field.through._meta.db_table, foreign_model.__module__, foreign_model.__name__),
             try:
                 used = set(foreign_model.objects.values_list(foreign_field_name, flat=True))
             except FieldError:
@@ -66,7 +66,7 @@ class Command(BaseCommand):
                     print "  ok"
             else:
                 if used - exists:
-                    print "\n%s.%s <- %s -> %s.%s  ** Bad key values:\n    " % (field.model.__module__, field.model.__name__, field.rel.through._meta.db_table, foreign_model.__module__, foreign_model.__name__), list(used - exists)
+                    print "\n%s.%s <- %s -> %s.%s  ** Bad key values:\n    " % (field.model.__module__, field.model.__name__, field.remote_field.through._meta.db_table, foreign_model.__module__, foreign_model.__name__), list(used - exists)
 
         for conf in tqdm([ c for c in apps.get_app_configs() if c.name.startswith('ietf.')], desc='apps', disable=verbose):
             if verbosity > 1:

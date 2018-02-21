@@ -96,10 +96,10 @@ class Command(AppCommand):
                         for field in model._meta.fields:
                             if isinstance(field, (models.ForeignKey, models.OneToOneField)):
                                 #debug.show('field.name')
-                                #debug.pprint('dir(field.rel.to)')
+                                #debug.pprint('dir(field.remote_field.to)')
                                 #exit()
-                                rel_app=field.rel.to._meta.app_label
-                                rel_model_name=field.rel.to.__name__
+                                rel_app=field.remote_field.to._meta.app_label
+                                rel_model_name=field.remote_field.to.__name__
                                 if rel_model_name == model_name:
                                     # foreign key to self class -- quote
                                     # the rmodel_name
@@ -111,10 +111,10 @@ class Command(AppCommand):
                                     name=field.name,
                                     app=rel_app,
                                     module=rel_app.split('.')[-1],
-                                    model=field.rel.to,
+                                    model=field.remote_field.to,
                                     model_name=rel_model_name,
                                     rmodel_name=rmodel_name,
-                                    resource_name=field.rel.to.__name__.lower(),
+                                    resource_name=field.remote_field.to.__name__.lower(),
                                     ))
                                 imports[rel_app]["module"] = rel_app
                                 imports[rel_app]["names"].append(rel_model_name)
@@ -124,10 +124,10 @@ class Command(AppCommand):
                         m2m_keys = []
                         for field in model._meta.many_to_many:
                                 #debug.show('field.name')
-                                #debug.pprint('dir(field.rel.to)')
+                                #debug.pprint('dir(field.remote_field.to)')
                                 #exit()
-                                rel_app=field.rel.to._meta.app_label
-                                rel_model_name=field.rel.to.__name__
+                                rel_app=field.remote_field.to._meta.app_label
+                                rel_model_name=field.remote_field.to.__name__
                                 if rel_model_name == model_name:
                                     # foreign key to self class -- quote
                                     # the rmodel_name
@@ -139,10 +139,10 @@ class Command(AppCommand):
                                     name=field.name,
                                     app=rel_app,
                                     module=rel_app.split('.')[-1],
-                                    model=field.rel.to,
+                                    model=field.remote_field.to,
                                     model_name=rel_model_name,
                                     rmodel_name=rmodel_name,
-                                    resource_name=field.rel.to.__name__.lower(),
+                                    resource_name=field.remote_field.to.__name__.lower(),
                                     ))
                                 imports[rel_app]["module"] = rel_app
                                 imports[rel_app]["names"].append(rel_model_name)

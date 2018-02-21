@@ -91,5 +91,7 @@ def copy_many_to_many_for_history(history_obj, obj):
     """Copy basic many-to-many fields from obj to history_obj."""
     # copy many to many
     for field in obj._meta.many_to_many:
-        if field.rel.through and field.rel.through._meta.auto_created:
-            setattr(history_obj, field.name, getattr(obj, field.name).all())
+        if field.remote_field.through and field.remote_field.through._meta.auto_created:
+            history_field = getattr(history_obj, field.name)
+            history_field.clear()
+            history_field.set(getattr(obj, field.name).all())
