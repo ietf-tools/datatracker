@@ -390,7 +390,7 @@ def floorplan_path(instance, filename):
 
 class FloorPlan(models.Model):
     name    = models.CharField(max_length=255)
-    short   = models.CharField(max_length=2, default='')
+    short   = models.CharField(max_length=3, default='')
     time    = models.DateTimeField(default=datetime.datetime.now)
     meeting = models.ForeignKey(Meeting)
     order   = models.SmallIntegerField()
