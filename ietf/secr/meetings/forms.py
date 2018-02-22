@@ -3,6 +3,8 @@ import re
 
 from django import forms
 
+import debug                            # pyflakes:ignore
+
 from ietf.group.models import Group
 from ietf.meeting.models import Meeting, Room, TimeSlot, Session, SchedTimeSessAssignment
 from ietf.name.models import TimeSlotTypeName
@@ -131,7 +133,7 @@ class MeetingRoomForm(forms.ModelForm):
 class NewSessionForm(forms.Form):
     day = forms.ChoiceField(choices=SESSION_DAYS)
     time = TimeChoiceField()
-    room = forms.ModelChoiceField(queryset=Room.objects.none)
+    room = forms.ModelChoiceField(queryset=Room.objects.none())
     session = forms.CharField(widget=forms.HiddenInput)
     note = forms.CharField(max_length=255, required=False, label='Special Note from Scheduler')
     combine = forms.BooleanField(required=False, label='Combine with next session')
