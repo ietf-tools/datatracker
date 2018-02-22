@@ -359,27 +359,36 @@ def maybe_patch_library(app_configs, **kwargs):
     django_path = os.path.dirname(django.__file__)
     library_path = os.path.dirname(django_path)
     saved_cwd = os.getcwd()
-    os.chdir(library_path)
     # All patches in settings.CHECKS_LIBRARY_PATCHES_TO_APPLY must have a
     # relative file path rooted in the django dir, for instance
     # 'django/db/models/fields/__init__.py'
     for patch_file in settings.CHECKS_LIBRARY_PATCHES_TO_APPLY:
-        patch_path = os.path.join(saved_cwd, patch_file)
-        patch_set = patch.fromfile(patch_path)
-        if patch_set:
-            if not patch_set.apply():
+        try:
+            patch_path = os.path.join(saved_cwd, patch_file)
+            patch_set = patch.fromfile(patch_path)
+            if patch_set:
+                os.chdir(library_path)
+                if not patch_set.apply():
+                    errors.append(checks.Warning(
+                        "Could not apply patch from file '%s'"%patch_file,
+                        hint="Make sure that the patch file contains a unified diff and has valid file paths",
+                        id="datatracker.W0002",
+                        ))
+                os.chdir(saved_cwd)
+            else:
                 errors.append(checks.Warning(
-                    "Could not apply patch from file '%s'"%patch_file,
-                    hint="Make sure that the patch file contains a unified diff and has valid file paths",
-                    id="datatracker.W0002",
+                    "Could not parse patch file '%s'"%patch_file,
+                    hint="Make sure that the patch file contains a unified diff",
+                    id="datatracker.W0001",
                     ))
-        else:
-            errors.append(checks.Warning(
-                "Could not parse patch file '%s'"%patch_file,
-                hint="Make sure that the patch file contains a unified diff",
-                id="datatracker.W0001",
-                ))
-    os.chdir(saved_cwd)
+        except IOError as e:
+            errors.append(
+                checks.Warning("Could not apply patch from %s: %s" % (patch_file, e),
+                    hint="Check file permissions and locations",
+                    id="datatracker.W0003",
+                )
+            )
+            pass
     return errors
 
 @checks.register('security')
