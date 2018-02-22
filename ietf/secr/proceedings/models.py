@@ -4,7 +4,6 @@ from django.conf import settings
 from django.db import models
 
 from ietf.meeting.models import Meeting
-from ietf.utils.models import ForeignKey, OneToOneField
 
 
 class InterimManager(models.Manager):
