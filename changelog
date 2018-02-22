@@ -1,3 +1,21 @@
+ietfdb (6.72.3) ietf; urgency=medium
+
+  This release provides a bugfix and updates a requirement to avoid versions
+  of the bibtexparser that don't work under Python 2.7 or require changed
+  parser initialization, cleaning the slate for the Django 1.11 upgrade.
+
+  * Merged in [14655] from housley@vigilsec.com:
+    Strip the HTML tags around the new values in the mail produced by
+    email_iesg_processing_document. Also, provide the previously missing URL
+    at the end of the message. Fixes #2455. 
+
+  * Added code to catch IOError exceptions when trying to apply patches.
+
+  * Updated version requirement for bibtexparser.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  22 Feb 2018 18:33:07 +0000
+
+
 ietfdb (6.72.2) ietf; urgency=medium
 
   Bugfixes and minor features:
