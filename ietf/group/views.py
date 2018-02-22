@@ -1476,19 +1476,20 @@ def manage_review_requests(request, acronym, group_type=None, assignment_status=
             assignments_by_person = dict()
             for r in reqs_to_assign:
                 if r.form.cleaned_data["reviewer"]:
-                    assignments_by_person[r.form.cleaned_data["reviewer"].person] = r
+                    person = r.form.cleaned_data["reviewer"].person
+                    if not person in assignments_by_person:
+                        assignments_by_person[person] = []
+                    assignments_by_person[person].append(r)
             
             # Make sure the any assignments to the person at the head
             # of the rotation queue are processed first so that the queue
             # rotates before any more assignments are processed
             head_of_rotation = reviewer_rotation_list(group)[0]
             while head_of_rotation in assignments_by_person:
-                review_req = assignments_by_person[head_of_rotation]
-                assign_review_request_to_reviewer(request, review_req, review_req.form.cleaned_data["reviewer"],review_req.form.cleaned_data["add_skip"])
-                if review_req in reqs_to_assign:
-                    # XXX FIXME: It's not clear how we could end up here, but
-                    # it has happened.  See traceback email dated 14 Feb 2018
+                for review_req in assignments_by_person[head_of_rotation]:
+                    assign_review_request_to_reviewer(request, review_req, review_req.form.cleaned_data["reviewer"],review_req.form.cleaned_data["add_skip"])
                     reqs_to_assign.remove(review_req)
+                del assignments_by_person[head_of_rotation]
                 head_of_rotation = reviewer_rotation_list(group)[0]
 
             for review_req in reqs_to_assign:
