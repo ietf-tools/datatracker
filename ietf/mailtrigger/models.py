@@ -10,7 +10,6 @@ from ietf.person.models import Email
 import debug                            # pyflakes:ignore
 
 from ietf.group.models import Role
-from ietf.utils.models import ForeignKey, OneToOneField
 
 def clean_duplicates(addrlist):
     address_info = {}

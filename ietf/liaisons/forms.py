@@ -12,9 +12,6 @@ from django.forms.utils import ErrorList
 from django.db.models import Q
 #from django.forms.widgets import RadioFieldRenderer
 from django.core.validators import validate_email, ValidationError
-from django.utils.html import format_html
-from django.utils.encoding import force_text
-from django.utils.safestring import mark_safe
 
 import debug                            # pyflakes:ignore
 

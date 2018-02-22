@@ -36,7 +36,6 @@ import datetime
 
 from django.db import models
 
-from ietf.utils.models import ForeignKey, OneToOneField
 
 class TelechatAgendaItem(models.Model):
     TYPE_CHOICES = (
