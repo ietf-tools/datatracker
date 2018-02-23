@@ -1,22 +1,27 @@
 ietfdb (6.72.4) ietf; urgency=medium
 
   This release addresses a quite annoying bug that could occur when saving
-  reviewer assignments, and widens the short floor indication string that
-  is shown on the agenda from 2 to 3 characters.
+  reviewer assignments, and widens the short floor indication string that is
+  shown on the agenda from 2 to 3 characters.  Also addresses a couple of
+  other bugs:
 
-  * Rewrote the head-of-rotation review assignment loop to guarantee that 
-    it will terminate.  This should fix the 'gateway timeout' issues we've seen 
-    lately, when review request volume in some review teams have been such that 
-    multiple assignments to the head of queue members have triggered the issue.
+  * Rewrote the head-of-rotation review assignment loop to guarantee that it
+    will terminate.  This should fix the 'gateway timeout' issues we've seen
+    lately, when review request volume in some review teams have been such
+    that multiple assignments to the head of queue members have triggered the
+    issue.
 
-  * Changed the floorplan short string from 2 to 3 characters, in order to 
-    support things like London Hilton Metropole's level -3E, 3rd lower ground 
+  * Changed the floorplan short string from 2 to 3 characters, in order to
+    support things like London Hilton Metropole's level -3E, 3rd lower ground
     floor East.
 
   * Changed the arguments to the xml2rfc parser to use normalize=True, in
     alignment with xml2rfc internal use.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  22 Feb 2018 15:01:00 -0800
+  * Changed an exception handling to not depend on exceptions having a .msg
+    element.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  23 Feb 2018 17:16:48 +0000
 
 
 ietfdb (6.72.3) ietf; urgency=medium
