@@ -145,7 +145,7 @@ class SubmissionBaseUploadForm(forms.Form):
                 os.environ["XML_LIBRARY"] = settings.XML_LIBRARY
                 try:
                     parser = xml2rfc.XmlRfcParser(str(tfn), quiet=True)
-                    self.xmltree = parser.parse()
+                    self.xmltree = parser.parse(normalize=True)
                     ok, errors = self.xmltree.validate()
                 except Exception as exc:
                     raise forms.ValidationError("An exception occurred when trying to process the XML file: %s" % exc.msg)
