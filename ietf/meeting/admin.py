@@ -17,7 +17,6 @@ class RoomAdmin(admin.ModelAdmin):
     list_display = ["id", "meeting", "name", "capacity", "functional_name", "x1", "y1", "x2", "y2", ]
     list_filter = ["meeting"]
     inlines = [UrlResourceInline, ]
-    ordering = ["-meeting"]
 
 admin.site.register(Room, RoomAdmin)
 
@@ -28,7 +27,6 @@ class MeetingAdmin(admin.ModelAdmin):
     list_display = ["number", "type", "date", "location", "time_zone"]
     list_filter = ["type"]
     search_fields = ["number"]
-    ordering = ["-date"]
     inlines = [RoomInline]
 
     def location(self, instance):
@@ -94,7 +92,7 @@ class ScheduleAdmin(admin.ModelAdmin):
     list_filter = ["meeting", ]
     raw_id_fields = ["meeting", "owner", ]
     search_fields = ["meeting__number", "name", "owner__name"]
-    ordering = ["meeting", "name"]
+    ordering = ["-meeting", "name"]
 
 admin.site.register(Schedule, ScheduleAdmin)
 
@@ -129,6 +127,6 @@ admin.site.register(SessionPresentation, SessionPresentationAdmin)
 class ImportantDateAdmin(admin.ModelAdmin):
     model = ImportantDate
     list_display = ['meeting', 'name', 'date']
-    ordering = ['-meeting__number','date',]
+
 
 admin.site.register(ImportantDate,ImportantDateAdmin)

@@ -279,7 +279,7 @@ class Meeting(models.Model):
         return self._previous_meeting_cache
 
     class Meta:
-        ordering = ["-date", "id"]
+        ordering = ["-date", "-id"]
 
 # === Rooms, Resources, Floorplans =============================================
 
@@ -375,7 +375,7 @@ class Room(models.Model):
         return urlresource.url if urlresource else None
     #
     class Meta:
-        ordering = ["-meeting", "name"]
+        ordering = ["-id"]
 
 
 class UrlResource(models.Model):
@@ -395,6 +395,9 @@ class FloorPlan(models.Model):
     meeting = models.ForeignKey(Meeting)
     order   = models.SmallIntegerField()
     image   = models.ImageField(storage=NoLocationMigrationFileSystemStorage(), upload_to=floorplan_path, blank=True, default=None)
+    #
+    class Meta:
+        ordering = ['-id',]
     #
     def __unicode__(self):
         return 'floorplan-%s-%s' % (self.meeting.number, xslugify(self.name))
@@ -563,7 +566,7 @@ class TimeSlot(models.Model):
             time__lt = self.time + self.duration + datetime.timedelta(seconds=11*60)).first()
 
     class Meta:
-        ordering = ["-time", "id"]
+        ordering = ["-time", "-id"]
 
 
 # end of TimeSlot
@@ -1115,4 +1118,4 @@ class ImportantDate(models.Model):
     date = models.DateField()
     name = models.ForeignKey(ImportantDateName)
     class Meta:
-        ordering = ["-meeting","date", ]
+        ordering = ["-meeting_id","date", ]
