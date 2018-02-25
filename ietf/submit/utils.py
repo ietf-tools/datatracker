@@ -264,7 +264,7 @@ def post_submission(request, submission, approvedDesc):
 
     update_authors(draft, submission)
 
-    draft.formal_languages = submission.formal_languages.all()
+    draft.formal_languages.set(submission.formal_languages.all())
 
     trouble = rebuild_reference_relations(draft, filename=os.path.join(settings.IDSUBMIT_STAGING_PATH, '%s-%s.txt' % (submission.name, submission.rev)))
     if trouble:
@@ -691,7 +691,7 @@ def fill_in_submission(form, submission, authors, abstract, file_size):
 
     submission.save()
 
-    submission.formal_languages = FormalLanguageName.objects.filter(slug__in=form.parsed_draft.get_formal_languages())
+    submission.formal_languages.set(FormalLanguageName.objects.filter(slug__in=form.parsed_draft.get_formal_languages()))
 
 def apply_checkers(submission, file_name):
     # run submission checkers

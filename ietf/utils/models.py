@@ -15,4 +15,14 @@ class VersionInfo(models.Model):
     used    = models.BooleanField(default=True)
     class Meta:
         verbose_name_plural = 'VersionInfo'
+
+class ForeignKey(models.ForeignKey):
+    "A local ForeignKey proxy which provides the on_delete value required under Django 2.0."
+    def __init__(self, to, on_delete=models.CASCADE, **kwargs):
+        return super(ForeignKey, self).__init__(to, on_delete=on_delete, **kwargs)
+        
+class OneToOneField(models.OneToOneField):
+    "A local OneToOneField proxy which provides the on_delete value required under Django 2.0."
+    def __init__(self, to, on_delete=models.CASCADE, **kwargs):
+        return super(OneToOneField, self).__init__(to, on_delete=on_delete, **kwargs)
         

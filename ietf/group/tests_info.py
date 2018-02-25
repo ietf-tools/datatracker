@@ -774,7 +774,7 @@ class MilestoneTests(TestCase):
                                            due=datetime.date.today(),
                                            resolved="",
                                            state_id="active")
-        m1.docs = [draft]
+        m1.docs.set([draft])
 
         m2 = GroupMilestone.objects.create(id=2,
                                            group=group,
@@ -782,7 +782,7 @@ class MilestoneTests(TestCase):
                                            due=datetime.date.today(),
                                            resolved="",
                                            state_id="charter")
-        m2.docs = [draft]
+        m2.docs.set([draft])
 
         return (m1, m2, group)
 

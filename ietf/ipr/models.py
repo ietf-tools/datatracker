@@ -10,20 +10,24 @@ from ietf.doc.models import DocAlias
 from ietf.name.models import DocRelationshipName,IprDisclosureStateName,IprLicenseTypeName,IprEventTypeName
 from ietf.person.models import Person
 from ietf.message.models import Message
+from ietf.utils.models import ForeignKey
 
 class IprDisclosureBase(models.Model):
-    by                  = models.ForeignKey(Person) # who was logged in, or System if nobody was logged in
+    by                  = ForeignKey(Person) # who was logged in, or System if nobody was logged in
     compliant           = models.BooleanField("Complies to RFC3979", default=True)
     docs                = models.ManyToManyField(DocAlias, through='IprDocRel')
     holder_legal_name   = models.CharField(max_length=255)
     notes               = models.TextField("Additional notes", blank=True)
     other_designations  = models.CharField("Designations for other contributions", blank=True, max_length=255)
     rel                 = models.ManyToManyField('self', through='RelatedIpr', symmetrical=False)
-    state               = models.ForeignKey(IprDisclosureStateName)
+    state               = ForeignKey(IprDisclosureStateName)
     submitter_name      = models.CharField(max_length=255,blank=True)
     submitter_email     = models.EmailField(blank=True)
     time                = models.DateTimeField(auto_now_add=True)
     title               = models.CharField(blank=True, max_length=255)
+
+    class Meta:
+        ordering = ['-time', '-id']
 
     def __unicode__(self):
         return self.title
@@ -118,7 +122,7 @@ class HolderIprDisclosure(IprDisclosureBase):
     holder_contact_email     = models.EmailField()
     holder_contact_name      = models.CharField(max_length=255)
     holder_contact_info      = models.TextField(blank=True, help_text="Address, phone, etc.")
-    licensing                = models.ForeignKey(IprLicenseTypeName)
+    licensing                = ForeignKey(IprLicenseTypeName)
     licensing_comments       = models.TextField(blank=True)
     submitter_claims_all_terms_disclosed = models.BooleanField(default=False)
 
@@ -145,8 +149,8 @@ class GenericIprDisclosure(IprDisclosureBase):
     statement                = models.TextField() # includes licensing info
 
 class IprDocRel(models.Model):
-    disclosure = models.ForeignKey(IprDisclosureBase)
-    document   = models.ForeignKey(DocAlias)
+    disclosure = ForeignKey(IprDisclosureBase)
+    document   = ForeignKey(DocAlias)
     sections   = models.TextField(blank=True)
     revisions  = models.CharField(max_length=16,blank=True) # allows strings like 01-07
 
@@ -175,21 +179,21 @@ class IprDocRel(models.Model):
             return u"%s which applies to %s" % (self.disclosure, self.document.name)
 
 class RelatedIpr(models.Model):
-    source       = models.ForeignKey(IprDisclosureBase,related_name='relatedipr_source_set')
-    target       = models.ForeignKey(IprDisclosureBase,related_name='relatedipr_target_set')
-    relationship = models.ForeignKey(DocRelationshipName) # Re-use; change to a dedicated RelName if needed
+    source       = ForeignKey(IprDisclosureBase,related_name='relatedipr_source_set')
+    target       = ForeignKey(IprDisclosureBase,related_name='relatedipr_target_set')
+    relationship = ForeignKey(DocRelationshipName) # Re-use; change to a dedicated RelName if needed
 
     def __unicode__(self):
         return u"%s %s %s" % (self.source.title, self.relationship.name.lower(), self.target.title)
 
 class IprEvent(models.Model):
     time        = models.DateTimeField(auto_now_add=True)
-    type        = models.ForeignKey(IprEventTypeName)
-    by          = models.ForeignKey(Person)
-    disclosure  = models.ForeignKey(IprDisclosureBase)
+    type        = ForeignKey(IprEventTypeName)
+    by          = ForeignKey(Person)
+    disclosure  = ForeignKey(IprDisclosureBase)
     desc        = models.TextField()
-    message     = models.ForeignKey(Message, null=True, blank=True,related_name='msgevents')
-    in_reply_to = models.ForeignKey(Message, null=True, blank=True,related_name='irtoevents')
+    message     = ForeignKey(Message, null=True, blank=True,related_name='msgevents')
+    in_reply_to = ForeignKey(Message, null=True, blank=True,related_name='irtoevents')
     response_due= models.DateTimeField(blank=True,null=True)
 
     def __unicode__(self):

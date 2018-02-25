@@ -192,7 +192,7 @@ def fill_in_wg_drafts(group):
             group.drafts.append(a)
         else:
             group.rfcs.append(a)
-            a.rel = RelatedDocument.objects.filter(source=a.document,relationship_id__in=['obs','updates']).distinct()
+            a.remote_field = RelatedDocument.objects.filter(source=a.document,relationship_id__in=['obs','updates']).distinct()
             a.invrel = RelatedDocument.objects.filter(target=a,relationship_id__in=['obs','updates']).distinct()
 
 
@@ -1112,7 +1112,8 @@ def customize_workflow(request, group_type=None, acronym=None):
                 group.groupstatetransitions_set.filter(state=state).delete()
             else:
                 transitions, _ = GroupStateTransitions.objects.get_or_create(group=group, state=state)
-                transitions.next_states = next_states
+                transitions.next_states.clear()
+                transitions.next_states.set(next_states)
 
             return redirect("ietf.group.views.customize_workflow", group_type=group.type_id, acronym=group.acronym)
 

@@ -298,7 +298,7 @@ def edit(request, id, updates=None):
         else:
             draft_formset = None
 
-        if request.user.is_anonymous():
+        if request.user.is_anonymous:
             person = Person.objects.get(name="(System)")
         else:
             person = request.user.person
@@ -482,7 +482,7 @@ def new(request, type, updates=None):
         else:
             draft_formset = None
 
-        if request.user.is_anonymous():
+        if request.user.is_anonymous:
             person = Person.objects.get(name="(System)")
         else:
             person = request.user.person

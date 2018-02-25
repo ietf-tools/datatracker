@@ -44,8 +44,10 @@ def save_document_in_history(doc):
 
     # copy many to many
     for field in doc._meta.many_to_many:
-        if field.rel.through and field.rel.through._meta.auto_created:
-            setattr(dochist, field.name, getattr(doc, field.name).all())
+        if field.remote_field.through and field.remote_field.through._meta.auto_created:
+            hist_field = getattr(dochist, field.name)
+            hist_field.clear()
+            hist_field.set(getattr(doc, field.name).all())
 
     # copy remaining tricky many to many
     def transfer_fields(obj, HistModel):

@@ -5,12 +5,13 @@ import textwrap
 import types
 import unicodedata
 
-from django.utils.functional import allow_lazy
+from django.utils.functional import keep_lazy
 from django.utils import six
 from django.utils.safestring import mark_safe
 
 import debug                            # pyflakes:ignore
 
+@keep_lazy(six.text_type)
 def xslugify(value):
     """
     Converts to ASCII. Converts spaces to hyphens. Removes characters that
@@ -21,7 +22,6 @@ def xslugify(value):
     value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore').decode('ascii')
     value = re.sub('[^\w\s/-]', '', value).strip().lower()
     return mark_safe(re.sub('[-\s/]+', '-', value))
-xslugify = allow_lazy(xslugify, six.text_type)
 
 def strip_prefix(text, prefix):
     if text.startswith(prefix):

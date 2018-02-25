@@ -36,6 +36,7 @@ import datetime
 
 from django.db import models
 
+
 class TelechatAgendaItem(models.Model):
     TYPE_CHOICES = (
         (1, "Any Other Business (WG News, New Proposals, etc.)"),

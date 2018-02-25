@@ -2,6 +2,8 @@
 
 from django.db import models
 
+from ietf.utils.models import ForeignKey
+
 class NameModel(models.Model):
     slug = models.CharField(max_length=32, primary_key=True)
     name = models.CharField(max_length=255)
@@ -105,7 +107,7 @@ class ContinentName(NameModel):
     "Africa, Antarctica, Asia, ..."
 class CountryName(NameModel):
     "Afghanistan, Aaland Islands, Albania, ..."
-    continent = models.ForeignKey(ContinentName)
+    continent = ForeignKey(ContinentName)
     in_eu = models.BooleanField(verbose_name="In EU", default=False)
 class ImportantDateName(NameModel):
     "Registration Opens, Scheduling Opens, ID Cutoff, ..."

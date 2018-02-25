@@ -6,6 +6,7 @@ from django.core.validators import validate_email
 from django.db import models
 
 from ietf.person.models import Person
+from ietf.utils.models import ForeignKey
 
 class List(models.Model):
     name = models.CharField(max_length=32)
@@ -28,7 +29,7 @@ class Subscribed(models.Model):
 class Whitelisted(models.Model):
     time = models.DateTimeField(auto_now_add=True)
     email = models.CharField("Email address", max_length=64, validators=[validate_email])
-    by = models.ForeignKey(Person)
+    by = ForeignKey(Person)
     def __unicode__(self):
         return "<Whitelisted: %s at %s>" % (self.email, self.time)
     class Meta:

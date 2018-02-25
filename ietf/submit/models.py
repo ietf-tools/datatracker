@@ -12,6 +12,7 @@ from ietf.group.models import Group
 from ietf.message.models import Message
 from ietf.name.models import DraftSubmissionStateName, FormalLanguageName
 from ietf.utils.accesstoken import generate_random_key, generate_access_token
+from ietf.utils.models import ForeignKey
 
 
 def parse_email_line(line):
@@ -23,7 +24,7 @@ def parse_email_line(line):
     return dict(name=name, email=addr)
 
 class Submission(models.Model):
-    state = models.ForeignKey(DraftSubmissionStateName)
+    state = ForeignKey(DraftSubmissionStateName)
     remote_ip = models.CharField(max_length=100, blank=True)
 
     access_key = models.CharField(max_length=255, default=generate_random_key)
@@ -31,7 +32,7 @@ class Submission(models.Model):
 
     # draft metadata
     name = models.CharField(max_length=255, db_index=True)
-    group = models.ForeignKey(Group, null=True, blank=True)
+    group = ForeignKey(Group, null=True, blank=True)
     title = models.CharField(max_length=255, blank=True)
     abstract = models.TextField(blank=True)
     rev = models.CharField(max_length=3, blank=True)
@@ -51,7 +52,7 @@ class Submission(models.Model):
 
     submitter = models.CharField(max_length=255, blank=True, help_text="Name and email of submitter, e.g. \"John Doe &lt;john@example.org&gt;\".")
 
-    draft = models.ForeignKey(Document, null=True, blank=True)
+    draft = ForeignKey(Document, null=True, blank=True)
 
     def __unicode__(self):
         return u"%s-%s" % (self.name, self.rev)
@@ -71,7 +72,7 @@ class Submission(models.Model):
         
 class SubmissionCheck(models.Model):
     time = models.DateTimeField(default=datetime.datetime.now)
-    submission = models.ForeignKey(Submission, related_name='checks')
+    submission = ForeignKey(Submission, related_name='checks')
     checker = models.CharField(max_length=256, blank=True)
     passed = models.NullBooleanField(default=False)
     message = models.TextField(null=True, blank=True)
@@ -88,9 +89,9 @@ class SubmissionCheck(models.Model):
         return self.errors != '[]'
 
 class SubmissionEvent(models.Model):
-    submission = models.ForeignKey(Submission)
+    submission = ForeignKey(Submission)
     time = models.DateTimeField(default=datetime.datetime.now)
-    by = models.ForeignKey(Person, null=True, blank=True)
+    by = ForeignKey(Person, null=True, blank=True)
     desc = models.TextField()
 
     def __unicode__(self):
@@ -103,16 +104,16 @@ class SubmissionEvent(models.Model):
 class Preapproval(models.Model):
     """Pre-approved draft submission name."""
     name = models.CharField(max_length=255, db_index=True)
-    by = models.ForeignKey(Person)
+    by = ForeignKey(Person)
     time = models.DateTimeField(default=datetime.datetime.now)
 
     def __unicode__(self):
         return self.name
 
 class SubmissionEmailEvent(SubmissionEvent):
-    message     = models.ForeignKey(Message, null=True, blank=True,related_name='manualevents')
+    message     = ForeignKey(Message, null=True, blank=True,related_name='manualevents')
     msgtype     = models.CharField(max_length=25)
-    in_reply_to = models.ForeignKey(Message, null=True, blank=True,related_name='irtomanual')
+    in_reply_to = ForeignKey(Message, null=True, blank=True,related_name='irtomanual')
 
     def __unicode__(self):
         return u"%s %s by %s at %s" % (self.submission.name, self.desc, self.by.plain_name() if self.by else "(unknown)", self.time)

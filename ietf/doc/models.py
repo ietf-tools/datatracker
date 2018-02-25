@@ -27,6 +27,7 @@ from ietf.utils import log
 from ietf.utils.admin import admin_link
 from ietf.utils.validators import validate_no_control_chars
 from ietf.utils.mail import formataddr
+from ietf.utils.models import ForeignKey
 
 logger = logging.getLogger('django')
 
@@ -52,7 +53,7 @@ def check_statetype_slugs(app_configs, **kwargs):
     return errors
 
 class State(models.Model):
-    type = models.ForeignKey(StateType)
+    type = ForeignKey(StateType)
     slug = models.SlugField()
     name = models.CharField(max_length=255)
     used = models.BooleanField(default=True)
@@ -74,13 +75,13 @@ class DocumentInfo(models.Model):
     """Any kind of document.  Draft, RFC, Charter, IPR Statement, Liaison Statement"""
     time = models.DateTimeField(default=datetime.datetime.now) # should probably have auto_now=True
 
-    type = models.ForeignKey(DocTypeName, blank=True, null=True) # Draft, Agenda, Minutes, Charter, Discuss, Guideline, Email, Review, Issue, Wiki, External ...
+    type = ForeignKey(DocTypeName, blank=True, null=True) # Draft, Agenda, Minutes, Charter, Discuss, Guideline, Email, Review, Issue, Wiki, External ...
     title = models.CharField(max_length=255, validators=[validate_no_control_chars, ])
 
     states = models.ManyToManyField(State, blank=True) # plain state (Active/Expired/...), IESG state, stream state
     tags = models.ManyToManyField(DocTagName, blank=True) # Revised ID Needed, ExternalParty, AD Followup, ...
-    stream = models.ForeignKey(StreamName, blank=True, null=True) # IETF, IAB, IRTF, Independent Submission
-    group = models.ForeignKey(Group, blank=True, null=True) # WG, RG, IAB, IESG, Edu, Tools
+    stream = ForeignKey(StreamName, blank=True, null=True) # IETF, IAB, IRTF, Independent Submission
+    group = ForeignKey(Group, blank=True, null=True) # WG, RG, IAB, IESG, Edu, Tools
 
     abstract = models.TextField(blank=True)
     rev = models.CharField(verbose_name="revision", max_length=16, blank=True)
@@ -88,10 +89,10 @@ class DocumentInfo(models.Model):
     words = models.IntegerField(blank=True, null=True)
     formal_languages = models.ManyToManyField(FormalLanguageName, blank=True, help_text="Formal languages used in document")
     order = models.IntegerField(default=1, blank=True) # This is probably obviated by SessionPresentaion.order
-    intended_std_level = models.ForeignKey(IntendedStdLevelName, verbose_name="Intended standardization level", blank=True, null=True)
-    std_level = models.ForeignKey(StdLevelName, verbose_name="Standardization level", blank=True, null=True)
-    ad = models.ForeignKey(Person, verbose_name="area director", related_name='ad_%(class)s_set', blank=True, null=True)
-    shepherd = models.ForeignKey(Email, related_name='shepherd_%(class)s_set', blank=True, null=True)
+    intended_std_level = ForeignKey(IntendedStdLevelName, verbose_name="Intended standardization level", blank=True, null=True)
+    std_level = ForeignKey(StdLevelName, verbose_name="Standardization level", blank=True, null=True)
+    ad = ForeignKey(Person, verbose_name="area director", related_name='ad_%(class)s_set', blank=True, null=True)
+    shepherd = ForeignKey(Email, related_name='shepherd_%(class)s_set', blank=True, null=True)
     expires = models.DateTimeField(blank=True, null=True)
     notify = models.CharField(max_length=255, blank=True)
     external_url = models.URLField(blank=True) # Should be set for documents with type 'External'.
@@ -482,9 +483,9 @@ class DocumentInfo(models.Model):
 STATUSCHANGE_RELATIONS = ('tops','tois','tohist','toinf','tobcp','toexp')
 
 class RelatedDocument(models.Model):
-    source = models.ForeignKey('Document')
-    target = models.ForeignKey('DocAlias')
-    relationship = models.ForeignKey(DocRelationshipName)
+    source = ForeignKey('Document')
+    target = ForeignKey('DocAlias')
+    relationship = ForeignKey(DocRelationshipName)
     def action(self):
         return self.relationship.name
     def __unicode__(self):
@@ -536,9 +537,9 @@ class RelatedDocument(models.Model):
         return False
 
 class DocumentAuthorInfo(models.Model):
-    person = models.ForeignKey(Person)
+    person = ForeignKey(Person)
     # email should only be null for some historic documents
-    email = models.ForeignKey(Email, help_text="Email address used by author for submission", blank=True, null=True)
+    email = ForeignKey(Email, help_text="Email address used by author for submission", blank=True, null=True)
     affiliation = models.CharField(max_length=100, blank=True, help_text="Organization/company used by author for submission")
     country = models.CharField(max_length=255, blank=True, help_text="Country used by author for submission")
     order = models.IntegerField(default=1)
@@ -555,7 +556,7 @@ class DocumentAuthorInfo(models.Model):
         ordering = ["document", "order"]
 
 class DocumentAuthor(DocumentAuthorInfo):
-    document = models.ForeignKey('Document')
+    document = ForeignKey('Document')
 
     def __unicode__(self):
         return u"%s %s (%s)" % (self.document.name, self.person, self.order)
@@ -807,28 +808,28 @@ class Document(DocumentInfo):
 
 
 class DocumentURL(models.Model):
-    doc  = models.ForeignKey(Document)
-    tag  = models.ForeignKey(DocUrlTagName)
+    doc  = ForeignKey(Document)
+    tag  = ForeignKey(DocUrlTagName)
     desc = models.CharField(max_length=255, default='', blank=True)
     url  = models.URLField(max_length=512)
 
 class RelatedDocHistory(models.Model):
-    source = models.ForeignKey('DocHistory')
-    target = models.ForeignKey('DocAlias', related_name="reversely_related_document_history_set")
-    relationship = models.ForeignKey(DocRelationshipName)
+    source = ForeignKey('DocHistory')
+    target = ForeignKey('DocAlias', related_name="reversely_related_document_history_set")
+    relationship = ForeignKey(DocRelationshipName)
     def __unicode__(self):
         return u"%s %s %s" % (self.source.doc.name, self.relationship.name.lower(), self.target.name)
 
 class DocHistoryAuthor(DocumentAuthorInfo):
     # use same naming convention as non-history version to make it a bit
     # easier to write generic code
-    document = models.ForeignKey('DocHistory', related_name="documentauthor_set")
+    document = ForeignKey('DocHistory', related_name="documentauthor_set")
 
     def __unicode__(self):
         return u"%s %s (%s)" % (self.document.doc.name, self.person, self.order)
 
 class DocHistory(DocumentInfo):
-    doc = models.ForeignKey(Document, related_name="history_set")
+    doc = ForeignKey(Document, related_name="history_set")
     # the name here is used to capture the canonical name at the time
     # - it would perhaps be more elegant to simply call the attribute
     # canonical_name and replace the function on Document with a
@@ -878,7 +879,7 @@ class DocAlias(models.Model):
     to by RFC number, primarily, after achieving RFC status.
     """
     name = models.CharField(max_length=255, primary_key=True)
-    document = models.ForeignKey(Document)
+    document = ForeignKey(Document)
     def __unicode__(self):
         return "%s-->%s" % (self.name, self.document.name)
     document_link = admin_link("document")
@@ -887,8 +888,8 @@ class DocAlias(models.Model):
         verbose_name_plural = "document aliases"
 
 class DocReminder(models.Model):
-    event = models.ForeignKey('DocEvent')
-    type = models.ForeignKey(DocReminderTypeName)
+    event = ForeignKey('DocEvent')
+    type = ForeignKey(DocReminderTypeName)
     due = models.DateTimeField()
     active = models.BooleanField(default=True)
 
@@ -972,8 +973,8 @@ class DocEvent(models.Model):
     """An occurrence for a document, used for tracking who, when and what."""
     time = models.DateTimeField(default=datetime.datetime.now, help_text="When the event happened", db_index=True)
     type = models.CharField(max_length=50, choices=EVENT_TYPES)
-    by = models.ForeignKey(Person)
-    doc = models.ForeignKey('doc.Document')
+    by = ForeignKey(Person)
+    doc = ForeignKey('doc.Document')
     rev = models.CharField(verbose_name="revision", max_length=16, null=True, blank=True)
     desc = models.TextField()
 
@@ -998,15 +999,15 @@ class NewRevisionDocEvent(DocEvent):
     pass
 
 class StateDocEvent(DocEvent):
-    state_type = models.ForeignKey(StateType)
-    state = models.ForeignKey(State, blank=True, null=True)
+    state_type = ForeignKey(StateType)
+    state = ForeignKey(State, blank=True, null=True)
 
 class ConsensusDocEvent(DocEvent):
     consensus = models.NullBooleanField(default=None)
 
 # IESG events
 class BallotType(models.Model):
-    doc_type = models.ForeignKey(DocTypeName, blank=True, null=True)
+    doc_type = ForeignKey(DocTypeName, blank=True, null=True)
     slug = models.SlugField()
     name = models.CharField(max_length=255)
     question = models.TextField(blank=True)
@@ -1021,7 +1022,7 @@ class BallotType(models.Model):
         ordering = ['order']
 
 class BallotDocEvent(DocEvent):
-    ballot_type = models.ForeignKey(BallotType)
+    ballot_type = ForeignKey(BallotType)
 
     def active_ad_positions(self):
         """Return dict mapping each active AD to a current ballot position (or None if they haven't voted)."""
@@ -1083,9 +1084,9 @@ class BallotDocEvent(DocEvent):
         return positions
 
 class BallotPositionDocEvent(DocEvent):
-    ballot = models.ForeignKey(BallotDocEvent, null=True, default=None) # default=None is a temporary migration period fix, should be removed when charter branch is live
-    ad = models.ForeignKey(Person)
-    pos = models.ForeignKey(BallotPositionName, verbose_name="position", default="norecord")
+    ballot = ForeignKey(BallotDocEvent, null=True, default=None) # default=None is a temporary migration period fix, should be removed when charter branch is live
+    ad = ForeignKey(Person)
+    pos = ForeignKey(BallotPositionName, verbose_name="position", default="norecord")
     discuss = models.TextField(help_text="Discuss text if position is discuss", blank=True)
     discuss_time = models.DateTimeField(help_text="Time discuss text was written", blank=True, null=True)
     comment = models.TextField(help_text="Optional comment", blank=True)
@@ -1102,8 +1103,8 @@ class TelechatDocEvent(DocEvent):
     returning_item = models.BooleanField(default=False)
 
 class ReviewRequestDocEvent(DocEvent):
-    review_request = models.ForeignKey('review.ReviewRequest')
-    state = models.ForeignKey(ReviewRequestStateName, blank=True, null=True)
+    review_request = ForeignKey('review.ReviewRequest')
+    state = ForeignKey(ReviewRequestStateName, blank=True, null=True)
 
 # charter events
 class InitialReviewDocEvent(DocEvent):
@@ -1111,20 +1112,20 @@ class InitialReviewDocEvent(DocEvent):
 
 class AddedMessageEvent(DocEvent):
     import ietf.message.models
-    message     = models.ForeignKey(ietf.message.models.Message, null=True, blank=True,related_name='doc_manualevents')
+    message     = ForeignKey(ietf.message.models.Message, null=True, blank=True,related_name='doc_manualevents')
     msgtype     = models.CharField(max_length=25)
-    in_reply_to = models.ForeignKey(ietf.message.models.Message, null=True, blank=True,related_name='doc_irtomanual')
+    in_reply_to = ForeignKey(ietf.message.models.Message, null=True, blank=True,related_name='doc_irtomanual')
 
 
 class SubmissionDocEvent(DocEvent):
     import ietf.submit.models
-    submission = models.ForeignKey(ietf.submit.models.Submission)
+    submission = ForeignKey(ietf.submit.models.Submission)
 
 # dumping store for removed events
 class DeletedEvent(models.Model):
-    content_type = models.ForeignKey(ContentType)
+    content_type = ForeignKey(ContentType)
     json = models.TextField(help_text="Deleted object in JSON format, with attribute names chosen to be suitable for passing into the relevant create method.")
-    by = models.ForeignKey(Person)
+    by = ForeignKey(Person)
     time = models.DateTimeField(default=datetime.datetime.now)
 
     def __unicode__(self):

@@ -11,6 +11,7 @@ from ietf.name.models import (LiaisonStatementPurposeName, LiaisonStatementState
                               DocRelationshipName)
 from ietf.doc.models import Document
 from ietf.group.models import Group
+from ietf.utils.models import ForeignKey
 
 # maps (previous state id, new state id) to event type id
 STATE_EVENT_MAPPING = {
@@ -26,7 +27,7 @@ STATE_EVENT_MAPPING = {
 class LiaisonStatement(models.Model):
     title = models.CharField(max_length=255)
     from_groups = models.ManyToManyField(Group, blank=True, related_name='liaisonstatement_from_set')
-    from_contact = models.ForeignKey(Email, blank=True, null=True)
+    from_contact = ForeignKey(Email, blank=True, null=True)
     to_groups = models.ManyToManyField(Group, blank=True, related_name='liaisonstatement_to_set')
     to_contacts = models.CharField(max_length=2000, help_text="Contacts at recipient group")
 
@@ -35,14 +36,18 @@ class LiaisonStatement(models.Model):
     action_holder_contacts = models.CharField(blank=True, max_length=255, help_text="Who makes sure action is completed")  # incoming only?
     cc_contacts = models.TextField(blank=True)
 
-    purpose = models.ForeignKey(LiaisonStatementPurposeName)
+    purpose = ForeignKey(LiaisonStatementPurposeName)
     deadline = models.DateField(null=True, blank=True)
     other_identifiers = models.TextField(blank=True, null=True) # Identifiers from other bodies
     body = models.TextField(blank=True)
 
     tags = models.ManyToManyField(LiaisonStatementTagName, blank=True)
     attachments = models.ManyToManyField(Document, through='LiaisonStatementAttachment', blank=True)
-    state = models.ForeignKey(LiaisonStatementState, default='pending')
+    state = ForeignKey(LiaisonStatementState, default='pending')
+
+    class Meta:
+        ordering = ['id']
+        
 
     def __unicode__(self):
         return self.title or u"<no title>"
@@ -194,8 +199,8 @@ class LiaisonStatement(models.Model):
         return list(set([ r.email.address for r in approval_set ]))
 
 class LiaisonStatementAttachment(models.Model):
-    statement = models.ForeignKey(LiaisonStatement)
-    document = models.ForeignKey(Document)
+    statement = ForeignKey(LiaisonStatement)
+    document = ForeignKey(Document)
     removed = models.BooleanField(default=False)
 
     def __unicode__(self):
@@ -203,16 +208,16 @@ class LiaisonStatementAttachment(models.Model):
 
 
 class RelatedLiaisonStatement(models.Model):
-    source = models.ForeignKey(LiaisonStatement, related_name='source_of_set')
-    target = models.ForeignKey(LiaisonStatement, related_name='target_of_set')
-    relationship = models.ForeignKey(DocRelationshipName)
+    source = ForeignKey(LiaisonStatement, related_name='source_of_set')
+    target = ForeignKey(LiaisonStatement, related_name='target_of_set')
+    relationship = ForeignKey(DocRelationshipName)
 
     def __unicode__(self):
         return u"%s %s %s" % (self.source.title, self.relationship.name.lower(), self.target.title)
 
 
 class LiaisonStatementGroupContacts(models.Model):
-    group = models.ForeignKey(Group, unique=True, null=True)
+    group = ForeignKey(Group, unique=True, null=True)
     contacts = models.CharField(max_length=255,blank=True)
     cc_contacts = models.CharField(max_length=255,blank=True)
 
@@ -222,9 +227,9 @@ class LiaisonStatementGroupContacts(models.Model):
 
 class LiaisonStatementEvent(models.Model):
     time = models.DateTimeField(auto_now_add=True)
-    type = models.ForeignKey(LiaisonStatementEventTypeName)
-    by = models.ForeignKey(Person)
-    statement = models.ForeignKey(LiaisonStatement)
+    type = ForeignKey(LiaisonStatementEventTypeName)
+    by = ForeignKey(Person)
+    statement = ForeignKey(LiaisonStatement)
     desc = models.TextField()
 
     def __unicode__(self):

@@ -72,7 +72,7 @@ def reset_name_contains_index_for_rule(rule):
     if not rule.rule_type == "name_contains":
         return
 
-    rule.name_contains_index = Document.objects.filter(docalias__name__regex=rule.text)
+    rule.name_contains_index.set(Document.objects.filter(docalias__name__regex=rule.text))
 
 def update_name_contains_indexes_with_new_doc(doc):
     for r in SearchRule.objects.filter(rule_type="name_contains"):

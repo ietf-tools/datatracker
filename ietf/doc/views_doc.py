@@ -169,7 +169,7 @@ def document_main(request, name, rev=None):
 
         can_edit_replaces = has_role(request.user, ("Area Director", "Secretariat", "IRTF Chair", "WG Chair", "RG Chair", "WG Secretary", "RG Secretary"))
 
-        is_author = request.user.is_authenticated() and doc.documentauthor_set.filter(person__user=request.user).exists()
+        is_author = request.user.is_authenticated and doc.documentauthor_set.filter(person__user=request.user).exists()
         can_view_possibly_replaces = can_edit_replaces or is_author
 
         rfc_number = name[3:] if name.startswith("") else None

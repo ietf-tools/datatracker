@@ -12,6 +12,8 @@ import warnings
 warnings.simplefilter("always", DeprecationWarning)
 warnings.filterwarnings("ignore", message="Report.file_reporters will no longer be available in Coverage.py 4.2", module="coverage.report")
 warnings.filterwarnings("ignore", message="The popen2 module is deprecated.  Use the subprocess module.", module="ietf.utils.pipe")
+warnings.filterwarnings("ignore", message="The load_template\(\) method is deprecated. Use get_template\(\) instead.")
+warnings.filterwarnings("ignore", message="escape isn't the last filter in")
 
 
 try:
@@ -931,6 +933,7 @@ CHECKS_LIBRARY_PATCHES_TO_APPLY = [
     'patch/fix-django-unicode-comparison-bug.patch',
     'patch/fix-unidecode-argument-warning.patch',
     'patch/fix-faker-provider-ro-RO-string.patch',
+    'patch/add-patch-already-patched-flag.patch',
 ]
 
 STATS_NAMES_LIMIT = 25

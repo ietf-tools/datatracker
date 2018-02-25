@@ -6,10 +6,11 @@ from django.urls import reverse as urlreverse
 from ietf.doc.models import Document, DocEvent, State
 from ietf.group.models import Group
 from ietf.person.models import Person, Email
+from ietf.utils.models import ForeignKey
 
 class CommunityList(models.Model):
-    user = models.ForeignKey(User, blank=True, null=True)
-    group = models.ForeignKey(Group, blank=True, null=True)
+    user = ForeignKey(User, blank=True, null=True)
+    group = ForeignKey(Group, blank=True, null=True)
     added_docs = models.ManyToManyField(Document)
 
     def long_name(self):
@@ -59,13 +60,13 @@ class SearchRule(models.Model):
         ('name_contains', 'All I-Ds with particular text/regular expression in the name'),
     ]
 
-    community_list = models.ForeignKey(CommunityList)
+    community_list = ForeignKey(CommunityList)
     rule_type = models.CharField(max_length=30, choices=RULE_TYPES)
 
     # these are filled in depending on the type
-    state = models.ForeignKey(State, blank=True, null=True)
-    group = models.ForeignKey(Group, blank=True, null=True)
-    person = models.ForeignKey(Person, blank=True, null=True)
+    state = ForeignKey(State, blank=True, null=True)
+    group = ForeignKey(Group, blank=True, null=True)
+    person = ForeignKey(Person, blank=True, null=True)
     text = models.CharField(verbose_name="Text/RegExp", max_length=255, blank=True, default="")
 
     # store a materialized view/index over which documents are matched
@@ -78,8 +79,8 @@ class SearchRule(models.Model):
         return "%s %s %s/%s/%s/%s" % (self.community_list, self.rule_type, self.state, self.group, self.person, self.text)
 
 class EmailSubscription(models.Model):
-    community_list = models.ForeignKey(CommunityList)
-    email = models.ForeignKey(Email)
+    community_list = ForeignKey(CommunityList)
+    email = ForeignKey(Email)
 
     NOTIFICATION_CHOICES = [
         ("all", "All changes"),

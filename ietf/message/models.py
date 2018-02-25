@@ -9,10 +9,11 @@ from ietf.person.models import Person
 from ietf.group.models import Group
 from ietf.doc.models import Document
 from ietf.name.models import RoleName
+from ietf.utils.models import ForeignKey
 
 class Message(models.Model):
     time = models.DateTimeField(default=datetime.datetime.now)
-    by = models.ForeignKey(Person)
+    by = ForeignKey(Person)
 
     subject = models.CharField(max_length=255)
     frm = models.CharField(max_length=255)
@@ -35,7 +36,7 @@ class Message(models.Model):
 
 
 class MessageAttachment(models.Model):
-    message = models.ForeignKey(Message)
+    message = ForeignKey(Message)
     filename = models.CharField(max_length=255, db_index=True, blank=True)
     content_type = models.CharField(max_length=255, blank=True)
     encoding = models.CharField(max_length=255, blank=True)
@@ -48,9 +49,9 @@ class MessageAttachment(models.Model):
 
 class SendQueue(models.Model):
     time = models.DateTimeField(default=datetime.datetime.now)
-    by = models.ForeignKey(Person)
+    by = ForeignKey(Person)
     
-    message = models.ForeignKey(Message)
+    message = ForeignKey(Message)
     
     send_at = models.DateTimeField(blank=True, null=True)
     sent_at = models.DateTimeField(blank=True, null=True)
@@ -65,8 +66,8 @@ class SendQueue(models.Model):
 
 
 class AnnouncementFrom(models.Model):
-    name = models.ForeignKey(RoleName)
-    group = models.ForeignKey(Group)
+    name = ForeignKey(RoleName)
+    group = ForeignKey(Group)
     address = models.CharField(max_length=255)
 
     def __unicode__(self):

@@ -1,7 +1,13 @@
+# Copyright The IETF Trust 2017, All Rights Reserved
+
 from django.db import models
+
+import debug                            # pyflakes:ignore
+
 from ietf.meeting.models import Meeting
 from ietf.name.models import CountryName
 from ietf.person.models import Person
+from ietf.utils.models import ForeignKey
 
 
 class AffiliationAlias(models.Model):
@@ -34,7 +40,7 @@ class CountryAlias(models.Model):
     purposes."""
 
     alias = models.CharField(max_length=255, help_text="Note that lower-case aliases are matched case-insensitive while aliases with at least one uppercase letter is matched case-sensitive. So 'United States' is best entered as 'united states' so it both matches 'United States' and 'United states' and 'UNITED STATES', whereas 'US' is best entered as 'US' so it doesn't accidentally match an ordinary word like 'us'.")
-    country = models.ForeignKey(CountryName, max_length=255)
+    country = ForeignKey(CountryName, max_length=255)
 
     def __unicode__(self):
         return u"{} -> {}".format(self.alias, self.country.name)
@@ -44,12 +50,12 @@ class CountryAlias(models.Model):
     
 class MeetingRegistration(models.Model):
     """Registration attendee records from the IETF registration system"""
-    meeting = models.ForeignKey(Meeting)
+    meeting = ForeignKey(Meeting)
     first_name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255)
     affiliation = models.CharField(blank=True, max_length=255)
     country_code = models.CharField(max_length=2)        # ISO 3166
-    person = models.ForeignKey(Person, blank=True, null=True)
+    person = ForeignKey(Person, blank=True, null=True)
     email =  models.EmailField(blank=True, null=True)
     
     def __unicode__(self):

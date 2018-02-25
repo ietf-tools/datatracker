@@ -2,6 +2,8 @@
 
 from django.db import models
 
+from ietf.utils.models import ForeignKey
+
 class Redirect(models.Model):
     """Mapping of CGI script to url.  The "rest" is a
     sprintf-style string with %(param)s entries to insert
@@ -42,8 +44,8 @@ class Command(models.Model):
     """
     command = models.CharField(max_length=50)
     url = models.CharField(max_length=50, blank=True)
-    script = models.ForeignKey(Redirect, related_name='commands', editable=False)
-    suffix = models.ForeignKey(Suffix, null=True, blank=True)
+    script = ForeignKey(Redirect, related_name='commands', editable=False)
+    suffix = ForeignKey(Suffix, null=True, blank=True)
     def __str__(self):
 	ret = "%s?command=%s" % (self.script.cgi, self.command)
 	if self.suffix_id:

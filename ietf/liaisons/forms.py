@@ -10,11 +10,8 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db.models.query import QuerySet
 from django.forms.utils import ErrorList
 from django.db.models import Q
-from django.forms.widgets import RadioFieldRenderer
+#from django.forms.widgets import RadioFieldRenderer
 from django.core.validators import validate_email, ValidationError
-from django.utils.html import format_html
-from django.utils.encoding import force_text
-from django.utils.safestring import mark_safe
 
 import debug                            # pyflakes:ignore
 
@@ -122,18 +119,18 @@ class AddCommentForm(forms.Form):
     comment = forms.CharField(required=True, widget=forms.Textarea, strip=False)
     private = forms.BooleanField(label="Private comment", required=False,help_text="If this box is checked the comment will not appear in the statement's public history view.")
 
-class RadioRenderer(RadioFieldRenderer):
-    def render(self):
-        output = []
-        for widget in self:
-            output.append(format_html(force_text(widget)))
-        return mark_safe('\n'.join(output))
+# class RadioRenderer(RadioFieldRenderer):
+#     def render(self):
+#         output = []
+#         for widget in self:
+#             output.append(format_html(force_text(widget)))
+#         return mark_safe('\n'.join(output))
 
 
 class SearchLiaisonForm(forms.Form):
     '''Expects initial keyword argument queryset which then gets filtered based on form data'''
     text = forms.CharField(required=False)
-    scope = forms.ChoiceField(choices=(("all", "All text fields"), ("title", "Title field")), required=False, initial='title', widget=forms.RadioSelect(renderer=RadioRenderer))
+#    scope = forms.ChoiceField(choices=(("all", "All text fields"), ("title", "Title field")), required=False, initial='title')
     source = forms.CharField(required=False)
     destination = forms.CharField(required=False)
     start_date = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={"autoclose": "1" }, label='Start date', required=False)

@@ -1,0 +1,18 @@
+--- patch.py.old	2018-02-20 14:54:24.400212946 -0800
++++ patch.py	2018-02-20 14:55:29.681760580 -0800
+@@ -263,6 +263,7 @@
+ 
+     self.errors = 0    # fatal parsing errors
+     self.warnings = 0  # non-critical warnings
++    self.already_patched = False
+     # --- /API ---
+ 
+     if stream:
+@@ -933,6 +934,7 @@
+       if validhunks < len(p.hunks):
+         if self._match_file_hunks(filename, p.hunks):
+           warning("already patched  %s" % filename)
++          self.already_patched = True
+         else:
+           warning("source file is different - %s" % filename)
+           errors += 1

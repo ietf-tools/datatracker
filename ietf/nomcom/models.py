@@ -23,7 +23,7 @@ from ietf.nomcom.utils import (initialize_templates_for_group,
                                initialize_requirements_for_position,
                                initialize_description_for_topic,
                                delete_nomcom_templates)
-
+from ietf.utils.models import ForeignKey
 from ietf.utils.storage import NoLocationMigrationFileSystemStorage
 
 
@@ -33,14 +33,14 @@ def upload_path_handler(instance, filename):
 
 class ReminderDates(models.Model):
     date = models.DateField()
-    nomcom = models.ForeignKey('NomCom')
+    nomcom = ForeignKey('NomCom')
 
 
 class NomCom(models.Model):
     public_key = models.FileField(storage=NoLocationMigrationFileSystemStorage(location=settings.NOMCOM_PUBLIC_KEYS_DIR),
                                   upload_to=upload_path_handler, blank=True, null=True)
 
-    group = models.ForeignKey(Group)
+    group = ForeignKey(Group)
     send_questionnaire = models.BooleanField(verbose_name='Send questionnaires automatically', default=False,
                                              help_text='If you check this box, questionnaires are sent automatically after nominations.')
     reminder_interval = models.PositiveIntegerField(help_text='If the nomcom user sets the interval field then a cron command will '
@@ -83,14 +83,14 @@ post_delete.connect(delete_nomcom, sender=NomCom)
 
 
 class Nomination(models.Model):
-    position = models.ForeignKey('Position')
+    position = ForeignKey('Position')
     candidate_name = models.CharField(verbose_name='Candidate name', max_length=255)
     candidate_email = models.EmailField(verbose_name='Candidate email', max_length=255)
     candidate_phone = models.CharField(verbose_name='Candidate phone', blank=True, max_length=255)
-    nominee = models.ForeignKey('Nominee')
-    comments = models.ForeignKey('Feedback')
+    nominee = ForeignKey('Nominee')
+    comments = ForeignKey('Feedback')
     nominator_email = models.EmailField(verbose_name='Nominator Email', blank=True)
-    user = models.ForeignKey(User, editable=False)
+    user = ForeignKey(User, editable=False)
     time = models.DateTimeField(auto_now_add=True)
     share_nominator = models.BooleanField(verbose_name='Share nominator name with candidate', default=False,
                                           help_text='Check this box to allow the NomCom to let the '
@@ -108,11 +108,11 @@ class Nomination(models.Model):
 
 class Nominee(models.Model):
 
-    email = models.ForeignKey(Email)
-    person = models.ForeignKey(Person, blank=True, null=True)
+    email = ForeignKey(Email)
+    person = ForeignKey(Person, blank=True, null=True)
     nominee_position = models.ManyToManyField('Position', through='NomineePosition')
-    duplicated = models.ForeignKey('Nominee', blank=True, null=True)
-    nomcom = models.ForeignKey('NomCom')
+    duplicated = ForeignKey('Nominee', blank=True, null=True)
+    nomcom = ForeignKey('NomCom')
 
     objects = NomineeManager()
 
@@ -136,9 +136,9 @@ class Nominee(models.Model):
 
 class NomineePosition(models.Model):
 
-    position = models.ForeignKey('Position')
-    nominee = models.ForeignKey('Nominee')
-    state = models.ForeignKey(NomineePositionStateName)
+    position = ForeignKey('Position')
+    nominee = ForeignKey('Nominee')
+    state = ForeignKey(NomineePositionStateName)
     time = models.DateTimeField(auto_now_add=True)
 
     objects = NomineePositionManager()
@@ -164,10 +164,10 @@ class NomineePosition(models.Model):
 
 
 class Position(models.Model):
-    nomcom = models.ForeignKey('NomCom')
+    nomcom = ForeignKey('NomCom')
     name = models.CharField(verbose_name='Name', max_length=255, help_text='This short description will appear on the Nomination and Feedback pages. Be as descriptive as necessary. Past examples: "Transport AD", "IAB Member"')
-    requirement = models.ForeignKey(DBTemplate, related_name='requirement', null=True, editable=False)
-    questionnaire = models.ForeignKey(DBTemplate, related_name='questionnaire', null=True, editable=False)
+    requirement = ForeignKey(DBTemplate, related_name='requirement', null=True, editable=False)
+    questionnaire = ForeignKey(DBTemplate, related_name='questionnaire', null=True, editable=False)
     is_open = models.BooleanField(verbose_name='Is open', default=False, help_text="Set is_open when the nomcom is working on a position. Clear it when an appointment is confirmed.")
     accepting_nominations = models.BooleanField(verbose_name='Is accepting nominations', default=False)
     accepting_feedback = models.BooleanField(verbose_name='Is accepting feedback', default=False)
@@ -210,11 +210,11 @@ class Position(models.Model):
         return rendered
 
 class Topic(models.Model):
-    nomcom = models.ForeignKey('NomCom')
+    nomcom = ForeignKey('NomCom')
     subject = models.CharField(verbose_name='Name', max_length=255, help_text='This short description will appear on the Feedback pages.')
-    description = models.ForeignKey(DBTemplate, related_name='description', null=True, editable=False)
+    description = ForeignKey(DBTemplate, related_name='description', null=True, editable=False)
     accepting_feedback = models.BooleanField(verbose_name='Is accepting feedback', default=False)
-    audience = models.ForeignKey(TopicAudienceName)
+    audience = ForeignKey(TopicAudienceName)
 
     class Meta:
         verbose_name_plural = 'Topics'
@@ -239,15 +239,15 @@ class Topic(models.Model):
         return rendered
 
 class Feedback(models.Model):
-    nomcom = models.ForeignKey('NomCom')
+    nomcom = ForeignKey('NomCom')
     author = models.EmailField(verbose_name='Author', blank=True)
     positions = models.ManyToManyField('Position', blank=True)
     nominees = models.ManyToManyField('Nominee', blank=True)
     topics = models.ManyToManyField('Topic', blank=True)
     subject = models.TextField(verbose_name='Subject', blank=True)
     comments = EncryptedTextField(verbose_name='Comments')
-    type = models.ForeignKey(FeedbackTypeName, blank=True, null=True)
-    user = models.ForeignKey(User, editable=False, blank=True, null=True)
+    type = ForeignKey(FeedbackTypeName, blank=True, null=True)
+    user = ForeignKey(User, editable=False, blank=True, null=True)
     time = models.DateTimeField(auto_now_add=True)
 
     objects = FeedbackManager()
@@ -259,12 +259,12 @@ class Feedback(models.Model):
         ordering = ['time']
 
 class FeedbackLastSeen(models.Model):
-    reviewer = models.ForeignKey(Person)
-    nominee = models.ForeignKey(Nominee)
+    reviewer = ForeignKey(Person)
+    nominee = ForeignKey(Nominee)
     time = models.DateTimeField(auto_now=True)
 
 class TopicFeedbackLastSeen(models.Model):
-    reviewer = models.ForeignKey(Person)
-    topic = models.ForeignKey(Topic)
+    reviewer = ForeignKey(Person)
+    topic = ForeignKey(Topic)
     time = models.DateTimeField(auto_now=True)
     

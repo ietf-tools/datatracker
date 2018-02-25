@@ -27,6 +27,7 @@ from ietf.person.models import Person
 from ietf.utils.storage import NoLocationMigrationFileSystemStorage
 from ietf.utils.text import xslugify
 from ietf.utils.timezone import date2datetime
+from ietf.utils.models import ForeignKey
 
 countries = pytz.country_names.items()
 countries.sort(lambda x,y: cmp(x[1], y[1]))
@@ -49,7 +50,7 @@ class Meeting(models.Model):
     # number is either the number for IETF meetings, or some other
     # identifier for interim meetings/IESG retreats/liaison summits/...
     number = models.CharField(unique=True, max_length=64)
-    type = models.ForeignKey(MeetingTypeName)
+    type = ForeignKey(MeetingTypeName)
     # Date is useful when generating a set of timeslot for this meeting, but
     # is not used to determine date for timeslot instances thereafter, as
     # they have their own datetime field.
@@ -88,11 +89,11 @@ class Meeting(models.Model):
     break_area = models.CharField(blank=True, max_length=255)
     reg_area = models.CharField(blank=True, max_length=255)
     agenda_note = models.TextField(blank=True, help_text="Text in this field will be placed at the top of the html agenda page for the meeting.  HTML can be used, but will not be validated.")
-    agenda     = models.ForeignKey('Schedule',null=True,blank=True, related_name='+')
+    agenda     = ForeignKey('Schedule',null=True,blank=True, related_name='+')
     session_request_lock_message = models.CharField(blank=True,max_length=255) # locked if not empty
     proceedings_final = models.BooleanField(default=False, help_text=u"Are the proceedings for this meeting complete?")
     acknowledgements = models.TextField(blank=True, help_text="Acknowledgements for use in meeting proceedings.  Use ReStructuredText markup.")
-    overview = models.ForeignKey(DBTemplate, related_name='overview', null=True, editable=False)
+    overview = ForeignKey(DBTemplate, related_name='overview', null=True, editable=False)
     show_important_dates = models.BooleanField(default=False)
 
     def __unicode__(self):
@@ -284,7 +285,7 @@ class Meeting(models.Model):
 # === Rooms, Resources, Floorplans =============================================
 
 class ResourceAssociation(models.Model):
-    name = models.ForeignKey(RoomResourceName)
+    name = ForeignKey(RoomResourceName)
     icon = models.CharField(max_length=64)       # icon to be found in /static/img
     desc = models.CharField(max_length=256)
 
@@ -300,7 +301,7 @@ class ResourceAssociation(models.Model):
         return res1
 
 class Room(models.Model):
-    meeting = models.ForeignKey(Meeting)
+    meeting = ForeignKey(Meeting)
     time = models.DateTimeField(default=datetime.datetime.now)
     name = models.CharField(max_length=255)
     functional_name = models.CharField(max_length=255, blank = True)
@@ -308,7 +309,7 @@ class Room(models.Model):
     resources = models.ManyToManyField(ResourceAssociation, blank = True)
     session_types = models.ManyToManyField(TimeSlotTypeName, blank = True)
     # floorplan-related properties
-    floorplan = models.ForeignKey('FloorPlan', null=True, blank=True, default=None)
+    floorplan = ForeignKey('FloorPlan', null=True, blank=True, default=None)
     # floorplan: room pixel position : (0,0) is top left of image, (xd, yd)
     # is room width, height.
     x1 = models.SmallIntegerField(null=True, blank=True, default=None)
@@ -380,8 +381,8 @@ class Room(models.Model):
 
 class UrlResource(models.Model):
     "For things like audio stream urls, meetecho stream urls"
-    name    = models.ForeignKey(RoomResourceName)
-    room    = models.ForeignKey(Room)
+    name    = ForeignKey(RoomResourceName)
+    room    = ForeignKey(Room)
     url     = models.URLField(null=True, blank=True)
 
 def floorplan_path(instance, filename):
@@ -392,7 +393,7 @@ class FloorPlan(models.Model):
     name    = models.CharField(max_length=255)
     short   = models.CharField(max_length=3, default='')
     time    = models.DateTimeField(default=datetime.datetime.now)
-    meeting = models.ForeignKey(Meeting)
+    meeting = ForeignKey(Meeting)
     order   = models.SmallIntegerField()
     image   = models.ImageField(storage=NoLocationMigrationFileSystemStorage(), upload_to=floorplan_path, blank=True, default=None)
     #
@@ -410,12 +411,12 @@ class TimeSlot(models.Model):
     mapped to a time slot, including breaks. Sessions are connected to
     TimeSlots during scheduling.
     """
-    meeting = models.ForeignKey(Meeting)
-    type = models.ForeignKey(TimeSlotTypeName)
+    meeting = ForeignKey(Meeting)
+    type = ForeignKey(TimeSlotTypeName)
     name = models.CharField(max_length=255)
     time = models.DateTimeField()
     duration = models.DurationField(default=datetime.timedelta(0))
-    location = models.ForeignKey(Room, blank=True, null=True)
+    location = ForeignKey(Room, blank=True, null=True)
     show_location = models.BooleanField(default=True, help_text="Show location in agenda.")
     sessions = models.ManyToManyField('Session', related_name='slots', through='SchedTimeSessAssignment', blank=True, help_text=u"Scheduled session, if any.")
     modified = models.DateTimeField(auto_now=True)
@@ -581,13 +582,13 @@ class Schedule(models.Model):
     Secretariat to IESG members for review.  Only the owner may edit the
     agenda, others may copy it
     """
-    meeting  = models.ForeignKey(Meeting, null=True)
+    meeting  = ForeignKey(Meeting, null=True)
     name     = models.CharField(max_length=16, blank=False)
-    owner    = models.ForeignKey(Person)
+    owner    = ForeignKey(Person)
     visible  = models.BooleanField(default=True, help_text=u"Make this agenda available to those who know about it.")
     public   = models.BooleanField(default=True, help_text=u"Make this agenda publically available.")
     badness  = models.IntegerField(null=True, blank=True)
-    # considering copiedFrom = models.ForeignKey('Schedule', blank=True, null=True)
+    # considering copiedFrom = ForeignKey('Schedule', blank=True, null=True)
 
     def __unicode__(self):
         return u"%s:%s(%s)" % (self.meeting, self.name, self.owner)
@@ -686,10 +687,10 @@ class SchedTimeSessAssignment(models.Model):
     Each relationship is attached to the named agenda, which is owned by
     a specific person/user.
     """
-    timeslot = models.ForeignKey('TimeSlot', null=False, blank=False, related_name='sessionassignments')
-    session  = models.ForeignKey('Session', null=True, default=None, related_name='timeslotassignments', help_text=u"Scheduled session.")
-    schedule = models.ForeignKey('Schedule', null=False, blank=False, related_name='assignments')
-    extendedfrom = models.ForeignKey('self', null=True, default=None, help_text=u"Timeslot this session is an extension of.")
+    timeslot = ForeignKey('TimeSlot', null=False, blank=False, related_name='sessionassignments')
+    session  = ForeignKey('Session', null=True, default=None, related_name='timeslotassignments', help_text=u"Scheduled session.")
+    schedule = ForeignKey('Schedule', null=False, blank=False, related_name='assignments')
+    extendedfrom = ForeignKey('self', null=True, default=None, help_text=u"Timeslot this session is an extension of.")
     modified = models.DateTimeField(auto_now=True)
     notes    = models.TextField(blank=True)
     badness  = models.IntegerField(default=0, blank=True, null=True)
@@ -792,12 +793,12 @@ class Constraint(models.Model):
     A third type (name=avoidday) of constraint is between source WG and
            a particular day of the week, specified in day.
     """
-    meeting = models.ForeignKey(Meeting)
-    source = models.ForeignKey(Group, related_name="constraint_source_set")
-    target = models.ForeignKey(Group, related_name="constraint_target_set", null=True)
-    person = models.ForeignKey(Person, null=True, blank=True)
+    meeting = ForeignKey(Meeting)
+    source = ForeignKey(Group, related_name="constraint_source_set")
+    target = ForeignKey(Group, related_name="constraint_target_set", null=True)
+    person = ForeignKey(Person, null=True, blank=True)
     day    = models.DateTimeField(null=True, blank=True)
-    name   = models.ForeignKey(ConstraintName)
+    name   = ForeignKey(ConstraintName)
 
     active_status = None
 
@@ -831,8 +832,8 @@ class Constraint(models.Model):
 
 
 class SessionPresentation(models.Model):
-    session = models.ForeignKey('Session')
-    document = models.ForeignKey(Document)
+    session = ForeignKey('Session')
+    document = ForeignKey(Document)
     rev = models.CharField(verbose_name="revision", max_length=16, null=True, blank=True)
     order = models.PositiveSmallIntegerField(default=0)
 
@@ -852,18 +853,18 @@ class Session(models.Model):
     timeslots are needed, multiple sessions will have to be created.
     Training sessions and similar are modeled by filling in a
     responsible group (e.g. Edu team) and filling in the name."""
-    meeting = models.ForeignKey(Meeting)
+    meeting = ForeignKey(Meeting)
     name = models.CharField(blank=True, max_length=255, help_text="Name of session, in case the session has a purpose rather than just being a group meeting.")
     short = models.CharField(blank=True, max_length=32, help_text="Short version of 'name' above, for use in filenames.")
-    type = models.ForeignKey(TimeSlotTypeName)
-    group = models.ForeignKey(Group)    # The group type historically determined the session type.  BOFs also need to be added as a group. Note that not all meeting requests have a natural group to associate with.
+    type = ForeignKey(TimeSlotTypeName)
+    group = ForeignKey(Group)    # The group type historically determined the session type.  BOFs also need to be added as a group. Note that not all meeting requests have a natural group to associate with.
     attendees = models.IntegerField(null=True, blank=True)
     agenda_note = models.CharField(blank=True, max_length=255)
     requested = models.DateTimeField(default=datetime.datetime.now)
-    requested_by = models.ForeignKey(Person)
+    requested_by = ForeignKey(Person)
     requested_duration = models.DurationField(default=datetime.timedelta(0))
     comments = models.TextField(blank=True)
-    status = models.ForeignKey(SessionStatusName)
+    status = ForeignKey(SessionStatusName)
     scheduled = models.DateTimeField(null=True, blank=True)
     modified = models.DateTimeField(auto_now=True)
     remote_instructions = models.CharField(blank=True,max_length=1024)
@@ -1114,8 +1115,8 @@ class Session(models.Model):
         return self._agenda_file
 
 class ImportantDate(models.Model):
-    meeting = models.ForeignKey(Meeting)
+    meeting = ForeignKey(Meeting)
     date = models.DateField()
-    name = models.ForeignKey(ImportantDateName)
+    name = ForeignKey(ImportantDateName)
     class Meta:
         ordering = ["-meeting_id","date", ]

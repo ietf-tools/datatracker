@@ -11,7 +11,7 @@ class GeneralInfo(models.Model):
         db_table = u'general_info'
 
 class MeetingVenue(models.Model):
-    meeting_num = models.ForeignKey(Meeting, db_column='meeting_num', unique=True, editable=False)
+    meeting_num = ForeignKey(Meeting, db_column='meeting_num', unique=True, editable=False)
     break_area_name = models.CharField(max_length=255)
     reg_area_name = models.CharField(max_length=255)
     def __str__(self):
@@ -32,8 +32,8 @@ class NonSessionRef(models.Model):
 class NonSession(models.Model):
     non_session_id = models.AutoField(primary_key=True, editable=False)
     day_id = models.IntegerField(blank=True, null=True, editable=False)
-    non_session_ref = models.ForeignKey(NonSessionRef, editable=False)
-    meeting = models.ForeignKey(Meeting, db_column='meeting_num', editable=False)
+    non_session_ref = ForeignKey(NonSessionRef, editable=False)
+    meeting = ForeignKey(Meeting, db_column='meeting_num', editable=False)
     time_desc = models.CharField(blank=True, max_length=75, default='0')
     show_break_location = models.BooleanField(editable=False, default=True)
     def __str__(self):
