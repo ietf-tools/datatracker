@@ -1,3 +1,33 @@
+ietfdb (6.73.0) ietf; urgency=medium
+
+  **Django 1.11**
+
+  This release upgrades the datatracker to use version 1.11 of the Django
+  framework.  Django 1.11 is designated as a long-term support release. It
+  will receive security updates at least until April 4, 2020. The next Django
+  release, 2.0, will require Python 3.4 or higher.
+
+  Django 1.11 does not have any really notable features; but it introduces
+  template-based widget rendering, deprecating the earlier class-based
+  approach to creating custom widgets, adds subquery expressions, class-based
+  model indexes, and some minor features, see [a].
+
+  A full diff of the upgrade changes is available in changeset [14695].  
+
+  * Merged in ^/personal/henrik/6.72.1-django-1.11@14676: Upgrade to Django 
+    1.11
+
+  * Adjusted ordering for a number of meeting-related models to make the 
+    most relevant entries appear first in lists and drop-downs.  Fixes issue 
+    #2457.
+
+  * Updated the requirement on xml2rfc version.
+
+  [a] https://docs.djangoproject.com/en/1.11/releases/1.11/
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  26 Feb 2018 15:03:16 +0000
+
+
 ietfdb (6.72.4) ietf; urgency=medium
 
   This release addresses a quite annoying bug that could occur when saving
