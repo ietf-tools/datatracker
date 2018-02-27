@@ -7,8 +7,6 @@ Updated: $Date$
 Planned work in rough order
 ===========================
 
-* Upgrade Django to version 1.11
-
 * Revisit the review tool, work through the accumulated tickets.
 
 * Add sanitization of uploaded html documents.
