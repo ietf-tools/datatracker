@@ -11,8 +11,6 @@ from django.utils.safestring import mark_safe
 
 import debug                            # pyflakes:ignore
 
-from texescape import init as texescape_init, tex_escape_map
-
 @keep_lazy(six.text_type)
 def xslugify(value):
     """
@@ -175,10 +173,4 @@ def dict_to_text(d):
     t = ""
     for k, v in d.items():
         t += "%s: %s\n" % (k, v)
-    return t
-
-def texescape(s):
-    if not tex_escape_map:
-        texescape_init()
-    t = s.translate(tex_escape_map)
     return t
