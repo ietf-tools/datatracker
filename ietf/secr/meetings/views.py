@@ -10,6 +10,8 @@ from django.forms.models import inlineformset_factory
 from django.shortcuts import render, get_object_or_404, redirect
 from django.utils.functional import curry
 
+import debug
+
 from ietf.ietfauth.utils import role_required
 from ietf.utils.mail import send_mail
 from ietf.meeting.forms import duration_string
@@ -200,6 +202,7 @@ def send_notifications(meeting, groups, person):
         session_info = ''
         data = [ (s,get_timeslot(s)) for s in sessions ]
         data = [ (s,t) for s,t in data if t ]
+        data.sort(key=lambda d: d[1].time)
         for s,t in data:
             count += 1
             session_info += session_info_template.format(group.acronym,
