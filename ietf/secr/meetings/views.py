@@ -10,7 +10,7 @@ from django.forms.models import inlineformset_factory
 from django.shortcuts import render, get_object_or_404, redirect
 from django.utils.functional import curry
 
-import debug
+import debug                            # pyflakes:ignore
 
 from ietf.ietfauth.utils import role_required
 from ietf.utils.mail import send_mail
