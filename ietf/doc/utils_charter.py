@@ -207,7 +207,7 @@ def default_review_text(group, charter, by):
                                     techadv=group.role_set.filter(name="techadv"),
                                     milestones=group.groupmilestone_set.filter(state="charter"),
                                     review_date=(datetime.date.today() + datetime.timedelta(weeks=1)).isoformat(),
-                                    review_type="new" if group.state_id == "proposed" else "recharter",
+                                    review_type="new" if group.state_id in ["proposed","bof"] else "recharter",
                                     to=addrs.to,
                                     cc=addrs.cc,
                                    )
