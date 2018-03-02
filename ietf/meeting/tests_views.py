@@ -23,7 +23,7 @@ from ietf.meeting.helpers import can_approve_interim_request, can_view_interim_r
 from ietf.meeting.helpers import send_interim_approval_request
 from ietf.meeting.helpers import send_interim_cancellation_notice
 from ietf.meeting.helpers import send_interim_minutes_reminder, populate_important_dates
-from ietf.meeting.models import Session, TimeSlot, Meeting
+from ietf.meeting.models import Session, TimeSlot, Meeting, SchedTimeSessAssignment
 from ietf.meeting.test_data import make_meeting_test_data, make_interim_meeting
 from ietf.meeting.utils import finalize
 from ietf.name.models import SessionStatusName
@@ -423,6 +423,40 @@ class MeetingTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertIn(str(meeting.importantdate_set.first().date), unicontent(r))
+
+    def test_group_ical(self):
+        meeting = make_meeting_test_data()
+        s1 = Session.objects.filter(meeting=meeting, group__acronym="mars").first()
+        a1 = s1.official_timeslotassignment()
+        t1 = a1.timeslot
+        # Create an extra session
+        t2 = TimeSlotFactory.create(meeting=meeting, time=datetime.datetime.combine(meeting.date, datetime.time(11, 30)))
+        s2 = SessionFactory.create(meeting=meeting, group=s1.group, add_to_schedule=False)
+        SchedTimeSessAssignment.objects.create(timeslot=t2, session=s2, schedule=meeting.agenda)
+        #
+        url = urlreverse('ietf.meeting.views.ical_agenda', kwargs={'num':meeting.number, 'acronym':s1.group.acronym, })
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.get('Content-Type'), "text/calendar")
+        self.assertContains(r, 'BEGIN:VEVENT')
+        self.assertEqual(r.content.count('UID'), 2)
+        self.assertContains(r, 'SUMMARY:mars - Martian Special Interest Group')
+        self.assertContains(r, t1.time.strftime('%Y%m%dT%H%M%S'))
+        self.assertContains(r, t2.time.strftime('%Y%m%dT%H%M%S'))
+        self.assertContains(r, 'END:VEVENT')
+        #
+        url = urlreverse('ietf.meeting.views.ical_agenda', kwargs={'num':meeting.number, 'session_id':s1.id, })
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.get('Content-Type'), "text/calendar")
+        self.assertContains(r, 'BEGIN:VEVENT')
+        self.assertEqual(r.content.count('UID'), 1)
+        self.assertContains(r, 'SUMMARY:mars - Martian Special Interest Group')
+        self.assertContains(r, t1.time.strftime('%Y%m%dT%H%M%S'))
+        self.assertNotContains(r, t2.time.strftime('%Y%m%dT%H%M%S'))
+        self.assertContains(r, 'END:VEVENT')
+
+
 
 class EditTests(TestCase):
     def setUp(self):
