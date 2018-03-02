@@ -77,7 +77,7 @@ class SessionAdmin(admin.ModelAdmin):
     list_display = ["meeting", "name", "group", "attendees", "requested", "status"]
     list_filter = ["meeting", ]
     raw_id_fields = ["meeting", "group", "requested_by", "materials"]
-    search_fields = ["meeting__number", "name", "group__name"]
+    search_fields = ["meeting__number", "name", "group__name", "group__acronym", ]
     ordering = ["-requested"]
 
     def name_lower(self, instance):
@@ -99,8 +99,9 @@ admin.site.register(Schedule, ScheduleAdmin)
 
 class SchedTimeSessAssignmentAdmin(admin.ModelAdmin):
     list_display = ["id", "schedule", "timeslot", "session", "modified"]
-    list_filter = ["timeslot__meeting", "schedule"]
+    list_filter = ["timeslot__meeting", "session__group__acronym"]
     raw_id_fields = ["timeslot", "session", "schedule", "extendedfrom", ]
+    search_fields = ["session__group__acronym", "schedule__name", ]
 
 admin.site.register(SchedTimeSessAssignment, SchedTimeSessAssignmentAdmin)
 
