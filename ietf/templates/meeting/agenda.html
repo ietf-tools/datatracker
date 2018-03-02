@@ -130,7 +130,7 @@
           {% for p in group_parents %}
             <a class="btn btn-default" href="{% url "ietf.meeting.views.ical_agenda" num=schedule.meeting.number %}?{{p.acronym|upper}},-~Other,-~Plenary">{{p.acronym|upper}}</a>
           {% endfor %}
-          <a class="btn btn-default" href="{% url "ietf.meeting.views.ical_agenda" num=schedule.meeting.number %}">Non-area events</a>
+          <a class="btn btn-default" href="{% url "ietf.meeting.views.ical_agenda" num=schedule.meeting.number %}?~Plenary,~Other">Non-area events</a>
           <a id="ical-link" class="hidden btn btn-primary" href="{% url "ietf.meeting.views.ical_agenda" num=schedule.meeting.number %}">Customized schedule</a>
         </p>
 

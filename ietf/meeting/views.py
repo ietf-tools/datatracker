@@ -607,11 +607,11 @@ def agenda_by_type_ics(request,num=None,type=None):
     updated = meeting.updated()
     return render(request,"meeting/agenda.ics",{"schedule":schedule,"updated":updated,"assignments":assignments},content_type="text/calendar")
 
-def session_draft_list(num, session):
+def session_draft_list(num, acronym):
     try:
         agendas = Document.objects.filter(type="agenda",
                                          session__meeting__number=num,
-                                         session__group__acronym=session,
+                                         session__group__acronym=acronym,
                                          states=State.objects.get(type="agenda", slug="active")).distinct()
     except Document.DoesNotExist:
         raise Http404
@@ -636,18 +636,18 @@ def session_draft_list(num, session):
         except Document.DoesNotExist:
             pass
 
-    for sp in SessionPresentation.objects.filter(session__meeting__number=num, session__group__acronym=session, document__type='draft'):
+    for sp in SessionPresentation.objects.filter(session__meeting__number=num, session__group__acronym=acronym, document__type='draft'):
         doc_name = sp.document.name + "-" + sp.document.rev
         if doc_name not in result:
             result.append(doc_name)
 
     return sorted(result)
 
-def session_draft_tarfile(request, num, session):
-    drafts = session_draft_list(num, session);
+def session_draft_tarfile(request, num, acronym):
+    drafts = session_draft_list(num, acronym);
 
     response = HttpResponse(content_type='application/octet-stream')
-    response['Content-Disposition'] = 'attachment; filename=%s-drafts.tgz'%(session)
+    response['Content-Disposition'] = 'attachment; filename=%s-drafts.tgz'%(acronym)
     tarstream = tarfile.open('','w:gz',response)
     mfh, mfn = mkstemp()
     os.close(mfh)
@@ -674,8 +674,8 @@ def session_draft_tarfile(request, num, session):
     os.unlink(mfn)
     return response
 
-def session_draft_pdf(request, num, session):
-    drafts = session_draft_list(num, session);
+def session_draft_pdf(request, num, acronym):
+    drafts = session_draft_list(num, acronym);
     curr_page = 1
     pmh, pmn = mkstemp()
     os.close(pmh)
@@ -829,7 +829,7 @@ def room_view(request, num=None, name=None, owner=None):
     template = "meeting/room-view.html"
     return render(request, template,{"meeting":meeting,"schedule":schedule,"unavailable":unavailable,"assignments":assignments,"rooms":rooms,"days":days})
 
-def ical_agenda(request, num=None, name=None, ext=None):
+def ical_agenda(request, num=None, name=None, acronym=None, session_id=None):
     meeting = get_meeting(num)
     schedule = get_schedule(meeting, name)
     updated = meeting.updated()
@@ -863,11 +863,17 @@ def ical_agenda(request, num=None, name=None, ext=None):
     assignments = schedule.assignments.exclude(timeslot__type__in=['lead','offagenda'])
     assignments = preprocess_assignments_for_agenda(assignments, meeting)
 
-    assignments = [a for a in assignments if
+    if q:
+        assignments = [a for a in assignments if
                    (a.timeslot.type_id in include_types
                     or (a.session.historic_group and a.session.historic_group.acronym in include)
                     or (a.session.historic_group and a.session.historic_group.historic_parent and a.session.historic_group.historic_parent.acronym in include))
                    and (not a.session.historic_group or a.session.historic_group.acronym not in exclude)]
+
+    if acronym:
+        assignments = [ a for a in assignments if a.session.historic_group and a.session.historic_group.acronym == acronym ]
+    elif session_id:
+        assignments = [ a for a in assignments if a.session_id == int(session_id) ]
 
     return render(request, "meeting/agenda.ics", {
         "schedule": schedule,
