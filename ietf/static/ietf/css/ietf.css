@@ -393,6 +393,14 @@ table.materials .snippable {
   padding: 1em 1em 0 1em;
   line-height: 1.4142;
 }
+.padded-left,
+tbody > tr > td.padded-left {
+  padding-left: 1em;
+}
+.padded-right,
+tbody > tr > td.padded-right {
+  padding-right: 1em;
+}
 
 
 a.padded {
