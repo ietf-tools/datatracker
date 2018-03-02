@@ -412,7 +412,7 @@ def update_replaces_from_submission(request, submission, draft):
 def get_person_from_name_email(name, email):
     # try email
     if email and (email.startswith('unknown-email-') or is_valid_email(email)):
-        persons = Person.objects.filter(email__address=email).distinct()
+        persons = Person.objects.filter(email__address__iexact=email).distinct()
         if len(persons) == 1:
             return persons[0]
     else:
