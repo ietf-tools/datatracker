@@ -35,7 +35,14 @@
             {% endif %}
           {% endif %}
          </td>
-	 <td class="text-center">{% if s.meeting.type.slug == 'ietf' %}{{s.time|date:"H:i"}}{% endif %}</td>
+	 <td class="text-left padded-left ">
+	   {% if s.meeting.type.slug == 'ietf' %}
+	     {{s.time|date:"H:i"}}
+	     {% if show_ical %}
+	     &nbsp;<a href="{% url 'ietf.meeting.views.ical_agenda' num=s.meeting.number session_id=s.id %}"><span class="fa fa-calendar"></span></a>
+	     {% endif %}
+	   {% endif %}
+	 </td>
          <td>{% if s.agenda %}<a href="{{ s.agenda.get_absolute_url }}">Agenda</a>{% endif %}</td>
          <td>{% if s.minutes %}<a href="{{ s.minutes.get_absolute_url }}">Minutes</a>{% endif %}</td>
          <td>

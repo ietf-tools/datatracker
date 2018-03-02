@@ -23,7 +23,7 @@
         Meetings in progress
     </div>
     <div class="panel-body">
-      {% with sessions=in_progress show_request=True %}
+      {% with sessions=in_progress show_request=True show_ical=True %}
          {% include "group/meetings-row.html" %}
       {% endwith %}
     </div>
@@ -36,7 +36,7 @@
         Future Meetings 
     </div>
     <div class="panel-body">
-      {% with sessions=future show_request=True %}
+      {% with sessions=future show_request=True show_ical=True %}
          {% include "group/meetings-row.html" %}
       {% endwith %}
     </div>
