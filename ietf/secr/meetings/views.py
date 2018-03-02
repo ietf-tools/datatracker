@@ -181,11 +181,6 @@ def send_notifications(meeting, groups, person):
     Send session scheduled email notifications for each group in groups.  Person is the
     user who initiated this action, request.uesr.get_profile().
     '''
-    session_info_template = '''{0} Session {1} ({2})
-    {3}, {4} {5}
-    Room Name: {6}
-    ---------------------------------------------
-    '''
     now = datetime.datetime.now()
     for group in groups:
         sessions = group.session_set.filter(meeting=meeting)
@@ -198,27 +193,24 @@ def send_notifications(meeting, groups, person):
         template = 'meetings/session_schedule_notification.txt'
 
         # easier to populate template from timeslot perspective. assuming one-to-one timeslot-session
-        count = 0
-        session_info = ''
-        data = [ (s,get_timeslot(s)) for s in sessions ]
-        data = [ (s,t) for s,t in data if t ]
-        data.sort(key=lambda d: d[1].time)
-        for s,t in data:
-            count += 1
-            session_info += session_info_template.format(group.acronym,
-                                                         count,
-                                                         s.requested_duration,
-                                                         t.time.strftime('%A'),
-                                                         t.name,
-                                                         '%s-%s' % (t.time.strftime('%H%M'),(t.time + t.duration).strftime('%H%M')),
-                                                         t.location)
+        items = [ {'session':s, 'timeslot':get_timeslot(s)} for s in sessions ]
+        items.sort(key=lambda d: d['timeslot'].time)
+        for i,d in enumerate(items):
+            s = d['session']
+            t = d['timeslot']
+            dur = s.requested_duration.seconds/60
+            items[i]['duration'] = "%d:%02d" % (dur//60, dur%60)
+            items[i]['period'] = '%s-%s' % (t.time.strftime('%H%M'),(t.time + t.duration).strftime('%H%M'))
 
         # send email
-        context = {}
+        context = {
+            'items': items,
+            'meeting': meeting,
+            'baseurl': settings.IDTRACKER_BASE_URL,
+        }
         context['to_name'] = sessions[0].requested_by
         context['agenda_note'] = sessions[0].agenda_note
         context['session'] = get_initial_session(sessions)
-        context['session_info'] = session_info
         context['group'] = group
         context['login'] = sessions[0].requested_by
 
