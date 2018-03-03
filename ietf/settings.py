@@ -899,7 +899,7 @@ SVN_ADMIN_COMMAND = "/usr/bin/svnadmin"
 
 # Email addresses people attempt to set for their account will be checked
 # against the following list of regex expressions with re.search(pat, addr):
-EXLUDED_PERSONAL_EMAIL_REGEX_PATTERNS = ["@ietf.org$"]
+EXCLUDED_PERSONAL_EMAIL_REGEX_PATTERNS = ["@ietf.org$"]
 
 MARKUP_SETTINGS = {
     'restructuredtext': {

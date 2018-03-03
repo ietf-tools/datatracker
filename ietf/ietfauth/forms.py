@@ -148,7 +148,7 @@ class NewEmailForm(forms.Form):
             if existing:
                 raise forms.ValidationError("Email address '%s' is already assigned to account '%s' (%s)" % (existing, existing.person and existing.person.user, existing.person))
 
-        for pat in settings.EXLUDED_PERSONAL_EMAIL_REGEX_PATTERNS:
+        for pat in settings.EXCLUDED_PERSONAL_EMAIL_REGEX_PATTERNS:
             if re.search(pat, email):
                 raise ValidationError("This email address is not valid in a datatracker account")
 
