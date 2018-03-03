@@ -964,10 +964,10 @@ def json_agenda(request, num=None ):
         if room.x1 is not None:
             roomdict['x'] = (room.x1+room.x2)/2.0
             roomdict['y'] = (room.y1+room.y2)/2.0
-        roomdict['modified'] = room.time
+        roomdict['modified'] = room.modified
         if room.floorplan and room.floorplan.image:
             roomdict['map'] = room.floorplan.image.url
-            roomdict['modified'] = max(room.time,room.floorplan.time)
+            roomdict['modified'] = max(room.modified, room.floorplan.modified)
         rooms.append(roomdict)
 
     parents = []
