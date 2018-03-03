@@ -901,10 +901,6 @@ SVN_ADMIN_COMMAND = "/usr/bin/svnadmin"
 # against the following list of regex expressions with re.search(pat, addr):
 EXCLUDED_PERSONAL_EMAIL_REGEX_PATTERNS = [
     "@ietf.org$",
-    "@example.org$",
-    "@example.com$",
-    "@example.net$",
-    "@example$",
 ]
 
 MARKUP_SETTINGS = {
