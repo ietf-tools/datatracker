@@ -1,3 +1,54 @@
+ietfdb (6.74.0) ietf; urgency=medium
+
+  **Various notificaiton email improvements and additional iCalendar links**
+
+  This release provides a number of bugfixes and enhancements to various
+  notification email messages; and as a result of resolving ticket #2461
+  (adding iCalendar links to session scheduling notifications), a refined
+  ical_ageenda() view function which has permitted the placement of individual
+  session iCalendar links in a number of useful places.  From the commit log:
+
+  * Tweaked the routines to find Person records from draft submission
+    information to find persons also if the email address case doesn't 
+    match.
+
+  * Added date information to the 'scheduled session' emails, and also a 
+    link to an ical file for the group sessions.  Fixes issue #2461.
+
+  * Tweaked some meeting-related admin classes for better search and 
+    display.
+
+  * Fixed a settings typo and updated some settings.
+
+  * Renamed some datetime fields from 'time' to 'modified', to match their 
+    semantics, and changed them to use auto_now=True.  This should fix an issue 
+    with outdated timestamps on some meeting-related objects.
+
+  * Added links for per-session ical entries to the group meetings page and 
+    to draft pages when a page shows sessions where a draft is on the agenda.
+
+  * Refactored ical_agenda() to be more general. Added parameters and code 
+    to permit generation of per-group and per-session ical pages.  Added url 
+    entries for per-group and per-session ical pages.  Changed some parameter 
+    names to better reflect their semantics ('session'->'acronym').
+
+  * Merged in [14715] from rjsparks@nostrum.com:
+    Make a more appropriate review message when a BoF has an initial charter
+    under consideration. Fixes #2458.  
+
+  * Made sure that sessions listed in session scheduling notification 
+    emails are listed in time order.  Fixes issue #2460.
+
+  * Added TeX escaping utility functions and template filters.  Removed
+    html escaping and added TeX escaping for relevant parts of the bibtext
+    template.  Fixes issue #2459.
+
+  * Removed an option which could disagree with memcached.
+
+  * Updated PLAN
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  04 Mar 2018 16:07:35 +0000
+
 ietfdb (6.73.0) ietf; urgency=medium
 
   **Django 1.11**
