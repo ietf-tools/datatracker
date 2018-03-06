@@ -9,12 +9,8 @@ Planned work in rough order
 
 * Revisit the review tool, work through the accumulated tickets.
 
-* Add sanitization of uploaded html documents.
-
 * Introduce an API for Meetecho to use to associate recordings with sessions
   (and perhaps automate making copies of those videos)
-
-* Upgrade html5lib to the latest release, the same for bleach which uses it.
 
 * Reworked UI and refactored backend for the scretariat meeting scheduling
   tool.

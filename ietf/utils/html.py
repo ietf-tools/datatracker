@@ -1,9 +1,7 @@
 # Taken from http://code.google.com/p/soclone/source/browse/trunk/soclone/utils/html.py
 
 """Utilities for working with HTML."""
-import html5lib
 import bleach
-from html5lib import sanitizer, serializer, tokenizer, treebuilders, treewalkers
 
 import debug                            # pyflakes:ignore
 
@@ -26,36 +24,6 @@ acceptable_attributes = ('abbr', 'align', 'alt', 'axis', 'border',
     'span', 'src', 'start', 'summary', 'title', 'type', 'valign', 'vspace',
     'width')
 
-
-class HTMLSanitizerMixin(sanitizer.HTMLSanitizerMixin):
-    allowed_elements = acceptable_elements
-    allowed_attributes = acceptable_attributes
-    allowed_css_properties = ()
-    allowed_css_keywords = ()
-    allowed_svg_properties = ()
-
-class HTMLSanitizer(tokenizer.HTMLTokenizer, HTMLSanitizerMixin):
-    def __init__(self, *args, **kwargs):
-        tokenizer.HTMLTokenizer.__init__(self, *args, **kwargs)
-
-    def __iter__(self):
-        for token in tokenizer.HTMLTokenizer.__iter__(self):
-            token = self.sanitize_token(token)
-            if token:
-                yield token
-
-def sanitize_html(html):
-    """Sanitizes an HTML fragment."""
-    p = html5lib.HTMLParser(tokenizer=HTMLSanitizer,
-                            tree=treebuilders.getTreeBuilder("dom"))
-    dom_tree = p.parseFragment(html)
-    walker = treewalkers.getTreeWalker("dom")
-    stream = walker(dom_tree)
-    s = serializer.HTMLSerializer(omit_optional_tags=False,
-                                  quote_attr_values=True)
-    output_generator = s.serialize(stream)
-    return u''.join(output_generator)
-
 def unescape(text):
     """
     Returns the given text with ampersands, quotes and angle brackets decoded
@@ -71,10 +39,9 @@ def remove_tags(html, tags):
     return bleach.clean(html, tags=allowed)
 remove_tags = keep_lazy(remove_tags, six.text_type)
 
-def sanitize(html, tags=acceptable_elements, extra=[], remove=[], strip=True):
-    tags = list(set(tags) | set(extra) ^ set(remove))
+def sanitize_html(html, tags=acceptable_elements, extra=[], remove=[], strip=True):
+    tags = list(set(tags) | set(t.lower() for t in extra) ^ set(t.lower for t in remove))
     return bleach.clean(html, tags=tags, strip=strip)
 
 def clean_html(html):
     return bleach.clean(html)
-

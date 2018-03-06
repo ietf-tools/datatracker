@@ -7,7 +7,7 @@ from django.contrib import messages
 
 import debug                            # pyflakes:ignore
 
-from ietf.utils.html import sanitize
+from ietf.utils.html import sanitize_html
 
 def handle_upload_file(file,filename,meeting,subdir, request=None):
     '''
@@ -38,7 +38,7 @@ def handle_upload_file(file,filename,meeting,subdir, request=None):
         file.open()
         text = file.read()
         # Whole file sanitization; add back '<html>' (sanitize will remove it)
-        clean = u"<html>\n%s\n</html>\n" % sanitize(text)
+        clean = u"<html>\n%s\n</html>\n" % sanitize_html(text)
         destination.write(clean.encode('utf8'))
         if request and clean != text:
             messages.warning(request, "Uploaded html content is sanitized to prevent unsafe content.  "
