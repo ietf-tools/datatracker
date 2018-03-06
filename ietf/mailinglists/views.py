@@ -19,7 +19,7 @@ def groups(request):
 # safely cache this for some time.
 @cache_page(15*60)
 def nonwg(request):
-    groups = Group.objects.filter(type__in=("wg", "rg")).order_by("acronym")
+    groups = Group.objects.filter(type__in=("wg", "rg")).exclude(state='bof').order_by("acronym")
 
     #urls = [ g.list_archive for g in groups if '.ietf.org' in g.list_archive ]
 
