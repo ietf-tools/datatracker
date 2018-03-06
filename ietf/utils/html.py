@@ -5,6 +5,8 @@ import html5lib
 import bleach
 from html5lib import sanitizer, serializer, tokenizer, treebuilders, treewalkers
 
+import debug                            # pyflakes:ignore
+
 from django.utils.functional import keep_lazy
 from django.utils import six
 
@@ -68,6 +70,10 @@ def remove_tags(html, tags):
     allowed = set(acceptable_elements) - set([ t.lower() for t in tags ])
     return bleach.clean(html, tags=allowed)
 remove_tags = keep_lazy(remove_tags, six.text_type)
+
+def sanitize(html, tags=acceptable_elements, extra=[], remove=[], strip=True):
+    tags = list(set(tags) | set(extra) ^ set(remove))
+    return bleach.clean(html, tags=tags, strip=strip)
 
 def clean_html(html):
     return bleach.clean(html)

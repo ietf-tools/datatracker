@@ -3,6 +3,8 @@ import codecs
 import datetime
 
 from django import forms
+from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db.models import Q
 from django.forms import BaseInlineFormSet
 
@@ -17,6 +19,8 @@ from ietf.meeting.helpers import is_meeting_approved, get_next_agenda_name
 from ietf.message.models import Message
 from ietf.person.models import Person
 from ietf.utils.fields import DatepickerDateField, DurationField
+from ietf.utils.validators import ( validate_file_size, validate_mime_type,
+    validate_file_extension, validate_no_html_frame)
 
 # need to insert empty option for use in ChoiceField
 # countries.insert(0, ('', '-'*9 ))
@@ -305,3 +309,38 @@ class InterimCancelForm(forms.Form):
         super(InterimCancelForm, self).__init__(*args, **kwargs)
         self.fields['group'].widget.attrs['disabled'] = True
         self.fields['date'].widget.attrs['disabled'] = True
+
+class FileUploadForm(forms.Form):
+    file = forms.FileField(label='File to upload')
+
+    def __init__(self, *args, **kwargs):
+        doc_type = kwargs.pop('doc_type')
+        assert doc_type in settings.MEETING_VALID_UPLOAD_EXTENSIONS
+        self.doc_type = doc_type
+        self.extensions = settings.MEETING_VALID_UPLOAD_EXTENSIONS[doc_type]
+        self.mime_types = settings.MEETING_VALID_UPLOAD_MIME_TYPES[doc_type]
+        super(FileUploadForm, self).__init__(*args, **kwargs)
+        label = '%s file to upload.  ' % (self.doc_type.capitalize(), )
+        if self.mime_types:
+            label += 'Note that you can only upload files with these formats: %s.' % (', '.join(self.mime_types, ))
+        self.fields['file'].label=label
+
+    def clean_file(self):
+        file = self.cleaned_data['file']
+        validate_file_size(file)
+        ext = validate_file_extension(file, self.extensions)
+        mime_type = None
+        if self.mime_types:
+            mime_type, encoding = validate_mime_type(file, self.mime_types)
+            if mime_type != file.content_type:
+                raise ValidationError('Upload Content-Type (%s) is different from the observed mime-type (%s)' % (file.content_type, mime_type))
+            if mime_type in settings.MEETING_VALID_MIME_TYPE_EXTENSIONS:
+                if not ext in settings.MEETING_VALID_MIME_TYPE_EXTENSIONS[mime_type]:
+                    raise ValidationError('Upload Content-Type (%s) does not match the extension (%s)' % (file.content_type, ext))
+        if mime_type in ['text/html', ] or ext in settings.MEETING_VALID_MIME_TYPE_EXTENSIONS['text/html']:
+            # We'll do html sanitization later, but for frames, we fail here,
+            # as the sanitized version will most likely be useless.
+            validate_no_html_frame(file)
+        return file
+
+        

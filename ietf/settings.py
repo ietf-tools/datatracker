@@ -729,16 +729,26 @@ MEETING_MATERIALS_DEFAULT_SUBMISSION_START_DAYS = 90
 MEETING_MATERIALS_DEFAULT_SUBMISSION_CUTOFF_DAYS = 26
 MEETING_MATERIALS_DEFAULT_SUBMISSION_CORRECTION_DAYS = 50
 
-MEETING_VALID_AGENDA_EXTENSIONS = ['.txt','.html','.htm', '.md', ]
-MEETING_VALID_AGENDA_MIME_TYPES = ['text/plain', 'text/html', ]
-#
-MEETING_VALID_MINUTES_EXTENSIONS = ['.txt','.html','.htm', '.md', '.pdf', ]
-MEETING_VALID_MINUTES_MIME_TYPES = ['text/plain', 'text/html', 'application/pdf', ]
-#
-MEETING_VALID_SLIDES_EXTENSIONS = ('.doc','.docx','.pdf','.ppt','.pptx','.txt') # Note the removal of .zip
-#
-MEETING_VALID_BLUESHEET_EXTENSIONS = ['.pdf', '.txt', ]
-MEETING_VALID_BLUESHEET_MIME_TYPES = ['application/pdf', 'text/plain', ]
+MEETING_VALID_UPLOAD_EXTENSIONS = {
+    'agenda':       ['.txt','.html','.htm', '.md', ],
+    'minutes':      ['.txt','.html','.htm', '.md', '.pdf', ],
+    'slides':       ['.doc','.docx','.pdf','.ppt','.pptx','.txt', ], # Note the removal of .zip
+    'bluesheets':   ['.pdf', '.txt', ],
+}
+    
+MEETING_VALID_UPLOAD_MIME_TYPES = {
+    'agenda':       ['text/plain', 'text/html', ],
+    'minutes':      ['text/plain', 'text/html', 'application/pdf', ],
+    'slides':       None,
+    'bluesheets':   ['application/pdf', 'text/plain', ],
+}
+
+MEETING_VALID_MIME_TYPE_EXTENSIONS = {
+    'text/plain':   ['.txt', '.md', ],
+    'text/html':    ['.html', '.htm'],
+    'application/pdf': ['.pdf'],
+}
+
 
 INTERNET_DRAFT_DAYS_TO_EXPIRE = 185
 

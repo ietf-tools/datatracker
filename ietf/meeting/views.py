@@ -63,11 +63,10 @@ from ietf.utils.mail import send_mail_message
 from ietf.utils.pipe import pipe
 from ietf.utils.pdf import pdf_pages
 from ietf.utils.text import xslugify
-from ietf.utils.validators import ( validate_file_size, validate_mime_type,
-    validate_file_extension, validate_no_html_frame, get_mime_type)
+from ietf.utils.validators import get_mime_type
 
 from .forms import (InterimMeetingModelForm, InterimAnnounceForm, InterimSessionModelForm,
-    InterimCancelForm, InterimSessionInlineFormSet)
+    InterimCancelForm, InterimSessionInlineFormSet, FileUploadForm)
 
 
 def get_menu_entries(request):
@@ -1117,14 +1116,13 @@ def add_session_drafts(request, session_id, num):
                     'form': form,
                   })
 
-class UploadBlueSheetForm(forms.Form):
-    file = forms.FileField(label='Bluesheet scan to upload')
 
-    def clean_file(self):
-        file = self.cleaned_data['file']
-        validate_mime_type(file, settings.MEETING_VALID_BLUESHEET_MIME_TYPES)
-        validate_file_extension(file, settings.MEETING_VALID_BLUESHEET_EXTENSIONS)
-        return file
+class UploadBlueSheetForm(FileUploadForm):
+
+    def __init__(self, *args, **kwargs):
+        kwargs['doc_type'] = 'bluesheets'
+        super(UploadBlueSheetForm, self).__init__(*args, **kwargs )
+
 
 @role_required('Area Director', 'Secretariat', 'IRTF Chair', 'WG Chair', 'RG Chair')
 def upload_session_bluesheets(request, session_id, num):
@@ -1193,25 +1191,15 @@ def upload_session_bluesheets(request, session_id, num):
                   })
 
 
-# FIXME: This form validation code (based on the secretariat upload code) only looks at filename extensions
-#        It should look at the contents of the files instead. 
-class UploadMinutesForm(forms.Form):
-    file = forms.FileField(label='Minutes file to upload. Note that you can only upload minutes in txt, html, or pdf formats.')
+class UploadMinutesForm(FileUploadForm):
     apply_to_all = forms.BooleanField(label='Apply to all group sessions at this meeting',initial=True,required=False)
 
     def __init__(self, show_apply_to_all_checkbox, *args, **kwargs):
-        super(UploadMinutesForm, self).__init__(*args, **kwargs)
+        kwargs['doc_type'] = 'minutes'
+        super(UploadMinutesForm, self).__init__(*args, **kwargs )
         if not show_apply_to_all_checkbox:
             self.fields.pop('apply_to_all')
 
-    def clean_file(self):
-        file = self.cleaned_data['file']
-        validate_file_size(file)
-        ext = validate_file_extension(file, settings.MEETING_VALID_MINUTES_EXTENSIONS)
-        mime_type, encoding = validate_mime_type(file, settings.MEETING_VALID_MINUTES_MIME_TYPES)
-        if ext in ['.html', '.htm'] or mime_type in ['text/html', ]:
-            validate_no_html_frame(file)
-        return file
 
 def upload_session_minutes(request, session_id, num):
     # num is redundant, but we're dragging it along an artifact of where we are in the current URL structure
@@ -1301,25 +1289,14 @@ def upload_session_minutes(request, session_id, num):
                   })
 
 
-# FIXME: This form validation code (based on the secretariat upload code) only looks at filename extensions
-#        It should look at the contents of the files instead. 
-class UploadAgendaForm(forms.Form):
-    file = forms.FileField(label='Agenda file to upload. Note that you can only upload agendas in txt or html formats.')
+class UploadAgendaForm(FileUploadForm):
     apply_to_all = forms.BooleanField(label='Apply to all group sessions at this meeting',initial=True,required=False)
 
     def __init__(self, show_apply_to_all_checkbox, *args, **kwargs):
-        super(UploadAgendaForm, self).__init__(*args, **kwargs)
+        kwargs['doc_type'] = 'agenda'
+        super(UploadAgendaForm, self).__init__(*args, **kwargs )
         if not show_apply_to_all_checkbox:
             self.fields.pop('apply_to_all')
-
-    def clean_file(self):
-        file = self.cleaned_data['file']
-        validate_file_size(file)
-        ext = validate_file_extension(file, settings.MEETING_VALID_AGENDA_EXTENSIONS)
-        mime_type, encoding = validate_mime_type(file, settings.MEETING_VALID_AGENDA_MIME_TYPES)
-        if ext in ['.html', '.htm'] or mime_type in ['text/html', ]:
-            validate_no_html_frame(file)
-        return file
 
 def upload_session_agenda(request, session_id, num):
     # num is redundant, but we're dragging it along an artifact of where we are in the current URL structure
@@ -1399,7 +1376,7 @@ def upload_session_agenda(request, session_id, num):
             e = NewRevisionDocEvent.objects.create(doc=doc,by=request.user.person,type='new_revision',desc='New revision available: %s'%doc.rev,rev=doc.rev)
             doc.save_with_history([e])
             # The way this function builds the filename it will never trigger the file delete in handle_file_upload.
-            handle_upload_file(file, filename, session.meeting, 'agenda')
+            handle_upload_file(file, filename, session.meeting, 'agenda', request)
             return redirect('ietf.meeting.views.session_details',num=num,acronym=session.group.acronym)
     else: 
         form = UploadAgendaForm(show_apply_to_all_checkbox, initial={'apply_to_all':session.type_id=='session'})
@@ -1412,23 +1389,16 @@ def upload_session_agenda(request, session_id, num):
                   })
 
 
-# FIXME: This form validation code (based on the secretariat upload code) only looks at filename extensions
-#        It should look at the contents of the files instead. 
-class UploadSlidesForm(forms.Form):
+class UploadSlidesForm(FileUploadForm):
     title = forms.CharField(max_length=255)
-    file = forms.FileField(label='Slides file to upload.')
     apply_to_all = forms.BooleanField(label='Apply to all group sessions at this meeting',initial=False,required=False)
 
     def __init__(self, show_apply_to_all_checkbox, *args, **kwargs):
-        super(UploadSlidesForm, self).__init__(*args, **kwargs)
+        kwargs['doc_type'] = 'slides'
+        super(UploadSlidesForm, self).__init__(*args, **kwargs )
         if not show_apply_to_all_checkbox:
             self.fields.pop('apply_to_all')
 
-    def clean_file(self):
-        file = self.cleaned_data['file']
-        validate_file_size(file)
-        validate_file_extension(file, settings.MEETING_VALID_SLIDES_EXTENSIONS)
-        return file
 
 def upload_session_slides(request, session_id, num, name):
     # num is redundant, but we're dragging it along an artifact of where we are in the current URL structure

@@ -1,9 +1,15 @@
+
 import glob
 import os
 
+from django.conf import settings
+from django.contrib import messages
+
 import debug                            # pyflakes:ignore
 
-def handle_upload_file(file,filename,meeting,subdir):
+from ietf.utils.html import sanitize
+
+def handle_upload_file(file,filename,meeting,subdir, request=None):
     '''
     This function takes a file object, a filename and a meeting object and subdir as string.
     It saves the file to the appropriate directory, get_materials_path() + subdir.
@@ -28,8 +34,19 @@ def handle_upload_file(file,filename,meeting,subdir):
             os.remove(f)
 
     destination = open(os.path.join(path,filename), 'wb+')
-    for chunk in file.chunks():
-        destination.write(chunk)
+    if extension in settings.MEETING_VALID_MIME_TYPE_EXTENSIONS['text/html']:
+        file.open()
+        text = file.read()
+        # Whole file sanitization; add back '<html>' (sanitize will remove it)
+        clean = u"<html>\n%s\n</html>\n" % sanitize(text)
+        destination.write(clean.encode('utf8'))
+        if request and clean != text:
+            messages.warning(request, "Uploaded html content is sanitized to prevent unsafe content.  "
+                                      "Your upload %s was changed by the sanitization; please check the "
+                                       "resulting content.  " % (filename, ))
+    else:
+        for chunk in file.chunks():
+            destination.write(chunk)
     destination.close()
 
     # unzip zipfile

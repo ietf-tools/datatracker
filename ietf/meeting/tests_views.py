@@ -1680,12 +1680,23 @@ class MaterialsTests(TestCase):
             q = PyQuery(r.content)
             self.assertTrue(q('form .has-error'))
 
+            # Test html sanitization
+            test_file = StringIO('<html><h1>Title</h1><section>Some text</section></html>')
+            test_file.name = "some.html"
+            r = self.client.post(url,dict(file=test_file))
+            self.assertEqual(r.status_code, 302)
+            doc = session.sessionpresentation_set.filter(document__type_id=doctype).first().document
+            self.assertEqual(doc.rev,'00')
+            text = doc.text()
+            self.assertIn('Some text', text)
+            self.assertNotIn('<section>', text)
+
             test_file = StringIO(u'This is some text for a test, with the word\nvirtual at the beginning of a line.')
             test_file.name = "not_really.txt"
             r = self.client.post(url,dict(file=test_file,apply_to_all=False))
             self.assertEqual(r.status_code, 302)
             doc = session.sessionpresentation_set.filter(document__type_id=doctype).first().document
-            self.assertEqual(doc.rev,'00')
+            self.assertEqual(doc.rev,'01')
             self.assertFalse(session2.sessionpresentation_set.filter(document__type_id=doctype))
     
             r = self.client.get(url)
@@ -1697,7 +1708,7 @@ class MaterialsTests(TestCase):
             r = self.client.post(url,dict(file=test_file,apply_to_all=True))
             self.assertEqual(r.status_code, 302)
             doc = Document.objects.get(pk=doc.pk)
-            self.assertEqual(doc.rev,'01')
+            self.assertEqual(doc.rev,'02')
             self.assertTrue(session2.sessionpresentation_set.filter(document__type_id=doctype))
 
     def test_upload_minutes_agenda_unscheduled(self):
