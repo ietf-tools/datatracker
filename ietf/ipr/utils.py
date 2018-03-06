@@ -15,11 +15,13 @@ def get_ipr_summary(disclosure):
         names.append(disclosure.other_designations)
 
     if len(names) == 1:
-        return names[0]
+        summary = names[0]
     elif len(names) == 2:
-        return " and ".join(names)
+        summary = " and ".join(names)
     elif len(names) > 2:
-        return ", ".join(names[:-1]) + ", and " + names[-1]
+        summary = ", ".join(names[:-1]) + ", and " + names[-1]
+    return summary if len(summary) <= 128 else summary[:125]+'...'
+
 
 def iprs_from_docs(aliases,**kwargs):
     """Returns a list of IPRs related to doc aliases"""
