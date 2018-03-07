@@ -100,6 +100,9 @@ def api_submit(request):
                     return err(404, "No person with username %s" % username)
 
                 authors, abstract, file_name, file_size = get_draft_meta(form)
+                for a in authors:
+                    if not a['email']:
+                        raise ValidationError("Missing email address for author %s" % a)
 
                 submission = get_submission(form)
                 fill_in_submission(form, submission, authors, abstract, file_size)
