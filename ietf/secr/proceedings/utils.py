@@ -4,6 +4,7 @@ import os
 
 from django.conf import settings
 from django.contrib import messages
+from django.utils.encoding import smart_text
 
 import debug                            # pyflakes:ignore
 
@@ -36,8 +37,9 @@ def handle_upload_file(file,filename,meeting,subdir, request=None):
     destination = open(os.path.join(path,filename), 'wb+')
     if extension in settings.MEETING_VALID_MIME_TYPE_EXTENSIONS['text/html']:
         file.open()
-        text = file.read().decode('utf-8')
-        # Whole file sanitization; add back '<html>' (sanitize will remove it)
+        text = smart_text(file.read())
+        # Whole file sanitization; add back what's missing from a complete
+        # document (sanitize will remove these).
         clean = u"""<!DOCTYPE html>
         <html lang="en">
         <head><title>%s</title></head>

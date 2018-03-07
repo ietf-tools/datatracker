@@ -26,7 +26,7 @@ class StripFilter(Filter):
         for token in Filter.__iter__(self):
             if token["type"] in ["EmptyTag", "StartTag"]:
                 open_tags.append(token["name"])
-            if not set(strip_completely) & set(open_tags):
+            if not (set(open_tags) & set(strip_completely)):
                 yield token
             if token["type"] in ["EmptyTag", "EndTag"]:
                 open_tags.pop()
