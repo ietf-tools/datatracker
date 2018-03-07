@@ -16,14 +16,6 @@ acceptable_elements = ('a', 'abbr', 'acronym', 'address', 'b', 'big',
     'strong', 'sub', 'sup', 'table', 'tbody', 'td', 'tfoot', 'th', 'thead',
     'tr', 'tt', 'u', 'ul', 'var')
 
-acceptable_attributes = ('abbr', 'align', 'alt', 'axis', 'border',
-    'cellpadding', 'cellspacing', 'char', 'charoff', 'charset', 'cite',
-    'cols', 'colspan', 'datetime', 'dir', 'frame', 'headers', 'height',
-    'href', 'hreflang', 'hspace', 'lang', 'longdesc', 'name', 'nohref',
-    'noshade', 'nowrap', 'rel', 'rev', 'rows', 'rowspan', 'rules', 'scope',
-    'span', 'src', 'start', 'summary', 'title', 'type', 'valign', 'vspace',
-    'width')
-
 def unescape(text):
     """
     Returns the given text with ampersands, quotes and angle brackets decoded
