@@ -36,9 +36,16 @@ def handle_upload_file(file,filename,meeting,subdir, request=None):
     destination = open(os.path.join(path,filename), 'wb+')
     if extension in settings.MEETING_VALID_MIME_TYPE_EXTENSIONS['text/html']:
         file.open()
-        text = file.read()
+        text = file.read().decode('utf-8')
         # Whole file sanitization; add back '<html>' (sanitize will remove it)
-        clean = u"<html>\n%s\n</html>\n" % sanitize_html(text)
+        clean = u"""<!DOCTYPE html>
+        <html lang="en">
+        <head><title>%s</title></head>
+        <body>
+        %s
+        </body>
+        </html>
+        """ % (filename, sanitize_html(text))
         destination.write(clean.encode('utf8'))
         if request and clean != text:
             messages.warning(request, "Uploaded html content is sanitized to prevent unsafe content.  "
