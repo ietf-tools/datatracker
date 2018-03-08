@@ -1066,6 +1066,7 @@ def session_details(request, num, acronym ):
                     'meeting' :meeting ,
                     'acronym' :acronym,
                     'can_manage_materials' : can_manage,
+                    'thisweek': datetime.date.today()-datetime.timedelta(days=7),
                   })
 
 class SessionDraftsForm(forms.Form):
