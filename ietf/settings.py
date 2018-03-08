@@ -12,6 +12,9 @@ import warnings
 warnings.simplefilter("always", DeprecationWarning)
 warnings.filterwarnings("ignore", message="Report.file_reporters will no longer be available in Coverage.py 4.2", module="coverage.report")
 warnings.filterwarnings("ignore", message="The popen2 module is deprecated.  Use the subprocess module.", module="ietf.utils.pipe")
+warnings.filterwarnings("ignore", message="Usage of field.rel has been deprecated. Use field.remote_field instead.", module="tastypie.resources")
+warnings.filterwarnings("ignore", message="Importing from django.core.urlresolvers is deprecated in favor of django.urls.", module="tastypie.resources")
+warnings.filterwarnings("ignore", message="on_delete will be a required arg for OneToOneField in Django 2.0.", module="tastypie")
 warnings.filterwarnings("ignore", message="The load_template\(\) method is deprecated. Use get_template\(\) instead.")
 warnings.filterwarnings("ignore", message="escape isn't the last filter in")
 
