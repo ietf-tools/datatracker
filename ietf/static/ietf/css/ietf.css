@@ -450,6 +450,8 @@ h1 small .pull-right { margin-top: 10.5px; }
 /* from bootstrap: .small {  font-size: 84%; } */
 
 .tiny { font-size: 70%; }
+h1 .regular.pull-right { font-size: 50%; margin-top: 10.5px ; }
+h2 .regular.pull-right { font-size: 57.6%; margin-top: 7.5px; }
 
 .large {font-size: 120%;}
 .llarge {font-size: 144%;}
