@@ -72,5 +72,4 @@ def texescape_filter(value):
 @stringfilter
 def linkify(value):
     text = mark_safe(bleach.linkify(value))
-    debug.show('text[:240]')
     return text
