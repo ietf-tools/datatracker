@@ -1,5 +1,5 @@
---- ../x/env/lib/python2.7/site-packages/django/db/models/query.py	2017-04-07 15:10:29.426831000 -0700
-+++ env/lib/python2.7/site-packages/django/db/models/query.py	2017-04-12 08:23:20.061651277 -0700
+--- django/db/models/query.py	2017-04-07 15:10:29.426831000 -0700
++++ django/db/models/query.py	2017-04-12 08:23:20.061651277 -0700
 @@ -5,6 +5,7 @@
  import copy
  import sys
