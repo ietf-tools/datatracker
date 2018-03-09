@@ -62,6 +62,7 @@
             <div>{{ form.milestone.desc }}
               {% if form.needs_review %}<span title="This milestone is not active yet, awaiting {{ reviewer }} acceptance" class="label label-warning">Awaiting accept</span>{% endif %}
               {% if form.changed %}<span class="label label-info">Changed</span>{% endif %}
+              {% if form.delete.data %}<span class="label label-danger">Deleted</span>{% endif %}
             </div>
             
             {% for d in form.docs_names %}
