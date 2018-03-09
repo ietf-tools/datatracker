@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-
+
 import os
 import shutil
 import calendar
 import datetime
 import json
 import StringIO
+import bleach
+import six
 
 from pyquery import PyQuery
 from tempfile import NamedTemporaryFile
@@ -17,7 +20,6 @@ from django.urls import NoReverseMatch
 from django.contrib.auth.models import User
 
 from django.utils.html import escape
-from django.template.defaultfilters import urlize
 
 from ietf.community.models import CommunityList
 from ietf.community.utils import reset_name_contains_index_for_rule
@@ -1273,7 +1275,7 @@ class StatusUpdateTests(TestCase):
             response = self.client.get(url)
             self.assertEqual(response.status_code,200)
             q=PyQuery(response.content)
-            self.assertTrue(urlize(escape(event.desc) in q('pre')))
+            self.assertTrue(bleach.linkify(escape(event.desc)) in six.text_type(q('pre')))
             self.assertFalse(q('a#edit_button'))
             self.client.login(username=chair.person.user.username,password='%s+password'%chair.person.user.username)
             response = self.client.get(url)

@@ -4,6 +4,7 @@
 {% load staticfiles %}
 {% load bootstrap3 %}
 {% load ietf_filters %}
+{% load textfilters %}
 
 {% block title %}
     Status update for {{ group.type.name }} {{ group.acronym }}
@@ -15,7 +16,7 @@
     Status update for {{ group.type.name }} {{ group.acronym }}
   </h1>
 
-  <pre class="pasted">{{ status_update.desc|default:"(none)"|escape|urlize }}</pre>
+  <pre class="pasted">{{ status_update.desc|default:"(none)"|escape|linkify }}</pre>
 
   {% if can_provide_status_update %}
     <a id="edit_button" class="btn btn-primary" href="{% url "ietf.group.views.group_about_status_edit" acronym=group.acronym %}">Edit</a>

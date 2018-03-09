@@ -3,6 +3,7 @@
 {% load origin %}
 {% load staticfiles %}
 {% load ietf_filters %}
+{% load textfilters %}
 
 {% block title %}{{ doc.title }}{% endblock %}
 
@@ -54,6 +55,6 @@
   <h2>{{ doc.type.name }}<br><small>{{ doc.name }}</small></h2>
 
   {% if doc.rev and content != None %}
-    <pre class="pasted">{{ content|urlize|safe|sanitize_html|safe }}</pre>
+    <pre class="pasted">{{ content|linkify|safe|sanitize_html|safe }}</pre>
   {% endif %}
 {% endblock %}

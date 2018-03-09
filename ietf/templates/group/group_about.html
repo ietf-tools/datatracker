@@ -3,6 +3,7 @@
 {% load origin %}
 {% load ietf_filters %}
 {% load markup_tags %}
+{% load textfilters %}
 
 {% block group_content %}
   {% origin %}
@@ -176,7 +177,7 @@
 	      <a class="btn btn-default btn-xs" href="{% url 'ietf.group.views.edit' acronym=group.acronym field='list_email' %}">Edit</a>
 	    {% endif %}
 	 </td>
-	 <td>{{ group.list_email|urlize }}</td>
+	 <td>{{ group.list_email|linkify }}</td>
       </tr>
       <tr>
 	 <td></td>
@@ -186,7 +187,7 @@
 	      <a class="btn btn-default btn-xs" href="{% url 'ietf.group.views.edit' acronym=group.acronym field='list_subscribe' %}">Edit</a>
 	    {% endif %}
 	 </td>
-	 <td>{{ group.list_subscribe|urlize }}</td>
+	 <td>{{ group.list_subscribe|linkify }}</td>
       </tr>
       <tr>
 	 <td></td>
@@ -196,7 +197,7 @@
 	      <a class="btn btn-default btn-xs" href="{% url 'ietf.group.views.edit' acronym=group.acronym field='list_archive' %}">Edit</a>
 	    {% endif %}
 	 </td>
-	 <td>{{ group.list_archive|urlize }}</td>
+	 <td>{{ group.list_archive|linkify }}</td>
       </tr>
     </tbody>
     {% endif %}

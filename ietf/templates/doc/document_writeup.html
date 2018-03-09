@@ -3,6 +3,7 @@
 {% load origin %}
 
 {% load ietf_filters %}
+{% load textfilters %}
 
 {% block title %}Writeups for {{ doc.name }}-{{ doc.rev }}{% endblock %}
 
@@ -20,7 +21,7 @@
 
     {% for name, text, url in writeups %}
       {% if text %}
-        <pre>{{ text|urlize }}</pre>
+        <pre>{{ text|linkify }}</pre>
       {% endif %}
 
       <p>

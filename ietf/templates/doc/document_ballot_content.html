@@ -1,5 +1,7 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}{% load origin %}{% origin %}
 {% load ietf_filters %}
+{% load textfilters %}
+
 <div class="row">
   <div class="col-md-2 hidden-sm hidden-xs">
 
@@ -91,7 +93,7 @@
             <div class="panel-heading">
               <h5 class="panel-title"><b>{{ p.pos.name }}</b> ({{ p.discuss_time|date:"Y-m-d" }}{% if not p.for_current_revision %} for -{{ p.get_dochistory.rev}}{% endif %})</h5>
             </div>
-            <div class="panel-body"><pre class="ballot pasted">{{ p.discuss|escape|urlize }}</pre></div>
+            <div class="panel-body"><pre class="ballot pasted">{{ p.discuss|escape|linkify }}</pre></div>
           </div>
         {% endif %}
 
@@ -100,7 +102,7 @@
             <div class="panel-heading">
               <h5 class="panel-title"><b>Comment</b> ({{ p.comment_time|date:"Y-m-d" }}{% if not p.for_current_revision %} for -{{ p.get_dochistory.rev}}{% endif %})</h5>
             </div>
-            <div class="panel-body"><pre class="ballot pasted">{{ p.comment|escape|urlize }}</pre></div>
+            <div class="panel-body"><pre class="ballot pasted">{{ p.comment|escape|linkify }}</pre></div>
           </div>
         {% endif %}
       {% endfor %}

@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
-
 {% load ietf_filters staticfiles %}
+{% load textfilters %}
 
 {% block pagehead %}
   {% if last_call_only %}
@@ -47,7 +47,7 @@
 	      <a href="{% url "ietf.doc.views_doc.document_main" doc.name %}">{{ doc.name }}</a>
           <br><b>{{ doc.title }}</b>
 	      {% if doc.note %}
-	        <br><i>Note: {{ doc.note|linebreaksbr|urlize }}</i>
+	        <br><i>Note: {{ doc.note|linebreaksbr|linkify }}</i>
 	      {% endif %}
             </td>
           <td>{{ doc.intended_std_level.name }}</td>

@@ -370,8 +370,9 @@ def format_history_text(text, trunc_words=25):
 def format_snippet(text, trunc_words=25): 
     # urlize if there aren't already links present
     if not 'href=' in text:
-        # django's urlize() is buggy in at least Django 1.11; use
-        # bleach.linkify instead
+        # django's urlize() cannot handle adjacent parentheszised
+        # expressions, for instance [REF](http://example.com/foo)
+        # Use bleach.linkify instead
         text = bleach.linkify(text)
     full = keep_spacing(collapsebr(linebreaksbr(mark_safe(sanitize_html(text)))))
     snippet = truncatewords_html(full, trunc_words)
@@ -520,3 +521,9 @@ def zaptmp(s):
 def rfcbis(s):
     m = re.search('^.*-rfc(\d+)-?bis(-.*)?$', s)
     return None if m is None else 'rfc' + m.group(1) 
+
+@register.filter
+@stringfilter
+def urlize(value):
+    raise RuntimeError("Use linkify from textfilters instead of urlize")
+    

@@ -4,6 +4,8 @@
 {% load staticfiles %}
 {% load bootstrap3 %}
 {% load ietf_filters %}
+{% load textfilters %}
+
 
 {% block title %}
     Status updates
@@ -27,7 +29,7 @@
                <span class="label label-success">{{ rpt.group.state.slug|upper }}</span> 
             {% endif %}
            <br> {{rpt.time|date:"Y-m-d"}}</td>
-      <td><pre class="pasted">{{ rpt.desc|default:"(none)"|escape|urlize }}</pre></td>
+      <td><pre class="pasted">{{ rpt.desc|default:"(none)"|escape|linkify }}</pre></td>
      </tr>
     {% endfor %}
 </table>
@@ -42,7 +44,7 @@
               <span class="label label-success">{{ rpt.group.state.slug|upper }}</span> 
            {% endif %}
           <br> {{rpt.time|date:"Y-m-d"}}</td>
-    <td><pre class="pasted">{{ rpt.desc|default:"(none)"|escape|urlize }}</pre></td>
+    <td><pre class="pasted">{{ rpt.desc|default:"(none)"|escape|linkify }}</pre></td>
   </tr>
 {% endfor %}
 </table>

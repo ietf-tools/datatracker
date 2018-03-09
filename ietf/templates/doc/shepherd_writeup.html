@@ -2,6 +2,7 @@
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
 {% load ietf_filters %}
+{% load textfilters %}
 
 {% block title %}
   Shepherd writeup for {{ doc.canonical_name }}-{{ doc.rev }}
@@ -11,7 +12,7 @@
   {% origin %}
   <h1>Shepherd writeup<br><small>{{ doc.canonical_name }}-{{ doc.rev }}</small></h1>
 
-  <pre class="pasted">{{writeup|escape|urlize}}</pre>
+  <pre class="pasted">{{writeup|escape|linkify}}</pre>
 
   {% if can_edit %}
     <a class="btn btn-primary" href="{% url 'ietf.doc.views_draft.edit_shepherd_writeup' name=doc.name %}">Edit</a>

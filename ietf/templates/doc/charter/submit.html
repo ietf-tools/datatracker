@@ -1,8 +1,9 @@
 {% extends "base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
 {% load origin %}
-
 {% load bootstrap3 %}
+{% load textfilters %}
+
 
 {% block title %}
   Charter submission for {{ group.acronym }} {{ group.type.name }}
@@ -72,10 +73,10 @@
     <tbody class="meta">
       <tr>
          <th>Mailing list</th>
-         <th>Address</th><td>{{ group.list_email|urlize }}</td>
+         <th>Address</th><td>{{ group.list_email|linkify }}</td>
       </tr>
-      <tr><td></td><th>To subscribe</th><td>{{ group.list_subscribe|urlize }}</td></tr>
-      <tr><td></td><th>Archive</th><td>{{ group.list_archive|urlize }}</td></tr>
+      <tr><td></td><th>To subscribe</th><td>{{ group.list_subscribe|linkify }}</td></tr>
+      <tr><td></td><th>Archive</th><td>{{ group.list_archive|linkify }}</td></tr>
     </tbody>
     {% endif %}
   </table>
