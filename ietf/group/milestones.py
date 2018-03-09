@@ -118,8 +118,12 @@ def edit_milestones(request, acronym, group_type=None, milestone_set="current"):
     milestones_dict = dict((str(m.id), m) for m in milestones)
 
     def due_month_year_to_date(c):
-        y = c["due"].year
-        m = c["due"].month
+        if isinstance(c, dict):
+            y = c["due"].year
+            m = c["due"].month
+        else:
+            y = c.year
+            m = c.month
         first_day, last_day = calendar.monthrange(y, m)
         return datetime.date(y, m, last_day)
 
@@ -145,7 +149,7 @@ def edit_milestones(request, acronym, group_type=None, milestone_set="current"):
 
         c = f.cleaned_data
         return (c["desc"] != m.desc or
-                due_month_year_to_date(c) != m.due or
+                due_month_year_to_date(c) != due_month_year_to_date(m.due) or
                 c["resolved"] != m.resolved or
                 set(c["docs"]) != set(m.docs.all()) or
                 c.get("review") in ("accept", "reject")
@@ -193,7 +197,8 @@ def edit_milestones(request, acronym, group_type=None, milestone_set="current"):
 
 
             c_due = due_month_year_to_date(c)
-            if c_due != m.due:
+            m_due = due_month_year_to_date(m.due)
+            if c_due != m_due:
                 if not history:
                     history = save_milestone_in_history(m)
                 changes.append('set due date to %s from %s' % (c_due.strftime("%B %Y"), m.due.strftime("%B %Y")))
@@ -233,13 +238,14 @@ def edit_milestones(request, acronym, group_type=None, milestone_set="current"):
             if len(changes) > 1:
                 if c["delete"]:
                     messages.warning(request, "Found conflicting form data: both delete action and milestone changes for '%s'. "
-                                              "Ignoring the delete; if delete is wanted, please mark for deletion without making other changes." % (m.desc, ))
+                                              "Ignoring the delete; if deletion is wanted, please mark for deletion without making other changes." % (m.desc, ))
                     m.state_id = initial_state
                     changes[0] = 'Changed %s' % named_milestone
-
-
                 m.save()
+                return ", ".join(changes)
 
+            elif c["delete"]:
+                m.save()
                 return ", ".join(changes)
 
         else: # new milestone
