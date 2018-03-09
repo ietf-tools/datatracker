@@ -4,6 +4,7 @@ import datetime
 import calendar
 
 from django import forms
+from django.contrib import messages
 from django.http import HttpResponseForbidden, HttpResponseBadRequest, HttpResponseRedirect, Http404
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
@@ -155,23 +156,22 @@ def edit_milestones(request, acronym, group_type=None, milestone_set="current"):
 
         if f.milestone:
             m = f.milestone
+            initial_state = m.state_id
 
             named_milestone = 'milestone "%s"' % m.desc
             if milestone_set == "charter":
                 named_milestone = "charter " + named_milestone
 
-            if c["delete"]:
-                save_milestone_in_history(m)
-
-                m.state_id = "deleted"
-                m.save()
-
-                return 'Deleted %s' % named_milestone
-
             # compute changes
             history = None
 
-            changes = ['Changed %s' % named_milestone]
+            if c["delete"]:
+                history = save_milestone_in_history(m)
+                m.state_id = "deleted"
+
+                changes = ['Deleted %s' % named_milestone]
+            else:
+                changes = ['Changed %s' % named_milestone]
 
             if m.state_id == "review" and not needs_review and c["review"] != "noaction":
                 if not history:
@@ -231,6 +231,13 @@ def edit_milestones(request, acronym, group_type=None, milestone_set="current"):
                 m.docs.set(new_docs)
 
             if len(changes) > 1:
+                if c["delete"]:
+                    messages.warning(request, "Found conflicting form data: both delete action and milestone changes for '%s'. "
+                                              "Ignoring the delete; if delete is wanted, please mark for deletion without making other changes." % (m.desc, ))
+                    m.state_id = initial_state
+                    changes[0] = 'Changed %s' % named_milestone
+
+
                 m.save()
 
                 return ", ".join(changes)
