@@ -1,14 +1,17 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
-import re
+import bleach
 import datetime
+import re
+
 import types
+
 from email.utils import parseaddr
 
 from django import template
 from django.conf import settings
 from django.utils.html import escape
-from django.template.defaultfilters import truncatewords_html, linebreaksbr, stringfilter, striptags, urlize
+from django.template.defaultfilters import truncatewords_html, linebreaksbr, stringfilter, striptags
 from django.utils.safestring import mark_safe, SafeData
 from django.utils.html import strip_tags
 
@@ -367,7 +370,9 @@ def format_history_text(text, trunc_words=25):
 def format_snippet(text, trunc_words=25): 
     # urlize if there aren't already links present
     if not 'href=' in text:
-        text = urlize(text)
+        # django's urlize() is buggy in at least Django 1.11; use
+        # bleach.linkify instead
+        text = bleach.linkify(text)
     full = keep_spacing(collapsebr(linebreaksbr(mark_safe(sanitize_html(text)))))
     snippet = truncatewords_html(full, trunc_words)
     if snippet != full:
@@ -472,29 +477,6 @@ def lower_allcaps(text):
         if not re.match("^[A-Z]+$", token):
             result = result.replace(token, token.lower())
     return result
-
-# See https://djangosnippets.org/snippets/2072/ and
-# https://stackoverflow.com/questions/9939248/how-to-prevent-django-basic-inlines-from-autoescaping
-@register.filter
-def urlize_html(html, autoescape=False):
-    """
-    Returns urls found in an (X)HTML text node element as urls via Django urlize filter.
-    """
-    try:
-        from BeautifulSoup import BeautifulSoup
-    except ImportError:
-        if settings.DEBUG:
-            raise template.TemplateSyntaxError, "Error in urlize_html The Python BeautifulSoup libraries aren't installed."
-        return html
-    else:
-        soup = BeautifulSoup(html)
-
-        textNodes = soup.findAll(text=True)
-        for textNode in textNodes:
-            urlizedText = urlize(textNode, autoescape=autoescape)
-            textNode.replaceWith(BeautifulSoup(urlizedText))
-
-        return str(soup)
 
 @register.filter
 def emailwrap(email):
