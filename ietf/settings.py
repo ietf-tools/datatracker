@@ -946,6 +946,7 @@ CHECKS_LIBRARY_PATCHES_TO_APPLY = [
     'patch/fix-unidecode-argument-warning.patch',
     'patch/fix-faker-provider-ro-RO-string.patch',
     'patch/add-patch-already-patched-flag.patch',
+    'patch/fix-patch-no-chdir.patch',
 ]
 
 STATS_NAMES_LIMIT = 25
