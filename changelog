@@ -1,6 +1,26 @@
 ietfdb (6.75.0) ietf; urgency=medium
 
-  **Sanitized HTML uploads**
+  **Sanitization of HTML uploads**
+
+  During the last few IETF meetings, there have been a few cases of agenda and
+  minutes uploads that have not worked well, for various reasons.  Some have
+  unintentionally used frames, and failed to include the frame contents; some
+  have used iframes, which pulls the actual content from elsewhere, which
+  means it won't actually be saved on the IETF servers and archived.  There
+  has also been issues relating to styling and use of javascript.  This shows,
+  of course, that malicious uploads (even if unintentional) are possible.
+
+  Considering this, it seems that a good and general approach would be to do
+  what is often called 'sanitization' of uploaded html content.  (Uploaded
+  text and markdown documents won't be affected).
+
+  This release introduces such sanitization.
+
+  The cost of this is that if you upload agendas and minutes in HTML format,
+  you will need to check the results after upload, to make sure that the
+  agenda and minutes still captures your intent after the sanitization.
+
+  Additionally, there is, as usual, some other features and bugfixes:
 
   * Added sanitization of uploaded html content for session agendas and
     minutes, and did some refactoring of the upload form classes.
