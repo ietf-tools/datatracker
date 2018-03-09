@@ -8,6 +8,7 @@
      # --- /API ---
  
      if stream:
+
 @@ -933,6 +934,7 @@
        if validhunks < len(p.hunks):
          if self._match_file_hunks(filename, p.hunks):
