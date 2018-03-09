@@ -1,3 +1,48 @@
+ietfdb (6.75.0) ietf; urgency=medium
+
+  **Sanitized HTML uploads**
+
+  * Added sanitization of uploaded html content for session agendas and
+    minutes, and did some refactoring of the upload form classes.
+
+  * Replaced html sanitization code that called html5lib directly with calls
+    to bleach, and upgraded the requirements to let us use the latest html5lib
+    and bleach.
+
+  * Modified the sanitizer and upload handler to strip also the content of 
+    some tags, and to produce valid files (if the content is otherwise valid).
+
+  * Django's urlize filter does not deal well with adjacent parantheses.
+    Replaced it with a filter based on bleach.linkify, which does better, and
+    also replaced the use of the urlize() function with bleach.linkify(), to
+    avoid some exceptions caused by malformed urlize output, exposed by the
+    new sanitize_html().
+
+  * Removed some dead code.
+
+  * Made some per-group and per-session iCalendar links show only if 
+    occurring in the future.
+
+  * Added individual session icalendar links on the group materials pages.
+
+  * Added an error message for missing email address in extracted author
+    information during automated draft submission.
+
+  * Included mailing lists for groups in state 'bof' on the non-WG mailing 
+    list page, as that seems to match people's expectations better.  Thiw was 
+    triggered by the observation that the 'iasa20' list was not listed on the 
+    page.
+
+  * Limited the lenght of the ipr document summary to 128, in order to not
+    produce overlong message subjects.  Fixes a server 500 from 5 Mar 2018.
+
+  * The datatracker /html/ URLs don't currently accept revision numbers.
+    Fixed the URL in the announcement email for the time being.
+
+  * Fixed a typo.  Fixes issue #2466.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  06 Mar 2018 14:38:42 -0800
+
 ietfdb (6.74.0) ietf; urgency=medium
 
   **Various notificaiton email improvements and additional iCalendar links**
