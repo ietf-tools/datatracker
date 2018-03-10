@@ -12,7 +12,7 @@ ietfdb (6.75.0) ietf; urgency=medium
 
   Considering this, it seems that a good and general approach would be to do
   what is often called 'sanitization' of uploaded html content.  (Uploaded
-  text and markdown documents won't be affected).
+  text/plain and markdown documents won't be affected).
 
   This release introduces such sanitization.
 
@@ -20,7 +20,7 @@ ietfdb (6.75.0) ietf; urgency=medium
   you will need to check the results after upload, to make sure that the
   agenda and minutes still captures your intent after the sanitization.
 
-  Additionally, there is, as usual, some other features and bugfixes:
+  Additionally, there are, as usual, some other features and bugfixes:
 
   * Added sanitization of uploaded html content for session agendas and
     minutes, and did some refactoring of the upload form classes.
@@ -29,8 +29,19 @@ ietfdb (6.75.0) ietf; urgency=medium
     to bleach, and upgraded the requirements to let us use the latest html5lib
     and bleach.
 
-  * Modified the sanitizer and upload handler to strip also the content of 
-    some tags, and to produce valid files (if the content is otherwise valid).
+  * Modified the sanitizer and upload handler to strip not only the tags, but
+    also the content of some tags, and to produce valid files (if the content
+    is otherwise valid) by wrapping the content in appropriate <html> and
+    <body> tags.
+
+  * If there are both WG milestone changes and a deletion marked for a
+    specific milesone, show both 'Changed' and 'Deleted' labels on the
+    milestone review form.
+
+  * Changed the handling of the milestone edit form to defer deletion if it is
+    requested together with other changes to the same milestone.  Instead show
+    a warning, and ask that deletion be done without simultaneous changes to
+    the milestone.
 
   * Django's urlize filter does not deal well with adjacent parantheses.
     Replaced it with a filter based on bleach.linkify, which does better, and
@@ -62,6 +73,7 @@ ietfdb (6.75.0) ietf; urgency=medium
   * Fixed a typo.  Fixes issue #2466.
 
  -- Henrik Levkowetz <henrik@levkowetz.com>  06 Mar 2018 14:38:42 -0800
+
 
 ietfdb (6.74.0) ietf; urgency=medium
 
@@ -113,6 +125,7 @@ ietfdb (6.74.0) ietf; urgency=medium
   * Updated PLAN
 
  -- Henrik Levkowetz <henrik@levkowetz.com>  04 Mar 2018 16:07:35 +0000
+
 
 ietfdb (6.73.0) ietf; urgency=medium
 

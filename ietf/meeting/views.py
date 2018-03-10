@@ -829,11 +829,11 @@ def room_view(request, num=None, name=None, owner=None):
     return render(request, template,{"meeting":meeting,"schedule":schedule,"unavailable":unavailable,"assignments":assignments,"rooms":rooms,"days":days})
 
 def ical_agenda(request, num=None, name=None, acronym=None, session_id=None):
-    meeting = get_meeting(num)
+    meeting = get_meeting(num, type_in=None)
     schedule = get_schedule(meeting, name)
     updated = meeting.updated()
 
-    if schedule is None:
+    if schedule is None and acronym is None and session_id is None:
         raise Http404
 
     q = request.META.get('QUERY_STRING','') or ""
