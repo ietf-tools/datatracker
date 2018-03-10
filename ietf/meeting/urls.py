@@ -9,6 +9,7 @@ from ietf.utils.urls import url
 
 safe_for_all_meeting_types = [
     url(r'^session/(?P<acronym>[-a-z0-9]+)/?$',  views.session_details),
+    url(r'^session/(?P<acronym>[-a-z0-9]+)\.ics$', views.ical_agenda),
     url(r'^session/(?P<session_id>\d+)/drafts$',  views.add_session_drafts),
     url(r'^session/(?P<session_id>\d+)/bluesheets$', views.upload_session_bluesheets),
     url(r'^session/(?P<session_id>\d+)/minutes$', views.upload_session_minutes),
@@ -17,7 +18,6 @@ safe_for_all_meeting_types = [
     url(r'^session/(?P<session_id>\d+)/slides/%(name)s/order$' % settings.URL_REGEXPS, views.set_slide_order),
     url(r'^session/(?P<session_id>\d+)/doc/%(name)s/remove$' % settings.URL_REGEXPS, views.remove_sessionpresentation),
     url(r'^session/(?P<session_id>\d+)\.ics$',    views.ical_agenda),
-    url(r'^session/(?P<acronym>[-a-z0-9]+).ics$', views.ical_agenda),
 ]
 
 
@@ -73,10 +73,8 @@ type_ietf_only_patterns_id_optional = [
     url(r'^agenda(?P<ext>.csv)$', views.agenda),
     url(r'^agenda/edit$', views.edit_agenda),
     url(r'^requests$', views.meeting_requests),
-    url(r'^agenda/agenda.ics$', views.ical_agenda),
-    url(r'^agenda.ics$', views.ical_agenda),
-    url(r'^session/(?P<session_id>\d+)\.ics$',    views.ical_agenda),
-    url(r'^session/(?P<acronym>[-a-z0-9]+).ics$', views.ical_agenda),
+    url(r'^agenda/agenda\.ics$', views.ical_agenda),
+    url(r'^agenda\.ics$', views.ical_agenda),
     url(r'^agenda.json$', views.json_agenda),
     url(r'^agenda/week-view(?:.html)?/?$', views.week_view),
     url(r'^agenda/room-view(?:.html)?/?$', views.room_view),
@@ -112,7 +110,7 @@ urlpatterns = [
     url(r'^requests.html$', RedirectView.as_view(url='/meeting/requests', permanent=True)),
     url(r'^past/?$', views.past),
     url(r'^upcoming/?$', views.upcoming),
-    url(r'^upcoming.ics/?$', views.upcoming_ical),
+    url(r'^upcoming\.ics/?$', views.upcoming_ical),
     # Then patterns from more specific to less
     url(r'^(?P<num>interim-[a-z0-9-]+)/', include(type_interim_patterns)),
     url(r'^(?P<num>\d+)/requests.html$', RedirectView.as_view(url='/meeting/%(num)s/requests', permanent=True)),

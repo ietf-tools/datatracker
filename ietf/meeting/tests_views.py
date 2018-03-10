@@ -1469,6 +1469,40 @@ class InterimTests(TestCase):
         self.assertTrue('Action Required: Minutes' in outbox[-1]['Subject'])
 
 
+    def test_group_ical(self):
+        make_meeting_test_data()
+        meeting = Meeting.objects.filter(type='interim', session__group__acronym='mars').first()
+        s1 = Session.objects.filter(meeting=meeting, group__acronym="mars").first()
+        a1 = s1.official_timeslotassignment()
+        t1 = a1.timeslot
+        # Create an extra session
+        t2 = TimeSlotFactory.create(meeting=meeting, time=datetime.datetime.combine(meeting.date, datetime.time(11, 30)))
+        s2 = SessionFactory.create(meeting=meeting, group=s1.group, add_to_schedule=False)
+        SchedTimeSessAssignment.objects.create(timeslot=t2, session=s2, schedule=meeting.agenda)
+        #
+        url = urlreverse('ietf.meeting.views.ical_agenda', kwargs={'num':meeting.number, 'acronym':s1.group.acronym, })
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.get('Content-Type'), "text/calendar")
+        self.assertContains(r, 'BEGIN:VEVENT')
+        self.assertEqual(r.content.count('UID'), 2)
+        self.assertContains(r, 'SUMMARY:mars - Martian Special Interest Group')
+        self.assertContains(r, t1.time.strftime('%Y%m%dT%H%M%S'))
+        self.assertContains(r, t2.time.strftime('%Y%m%dT%H%M%S'))
+        self.assertContains(r, 'END:VEVENT')
+        #
+        url = urlreverse('ietf.meeting.views.ical_agenda', kwargs={'num':meeting.number, 'session_id':s1.id, })
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.get('Content-Type'), "text/calendar")
+        self.assertContains(r, 'BEGIN:VEVENT')
+        self.assertEqual(r.content.count('UID'), 1)
+        self.assertContains(r, 'SUMMARY:mars - Martian Special Interest Group')
+        self.assertContains(r, t1.time.strftime('%Y%m%dT%H%M%S'))
+        self.assertNotContains(r, t2.time.strftime('%Y%m%dT%H%M%S'))
+        self.assertContains(r, 'END:VEVENT')
+
+
 class AjaxTests(TestCase):
     def test_ajax_get_utc(self):
         # test bad queries
