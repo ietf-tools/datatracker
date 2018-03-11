@@ -8,8 +8,8 @@ from ietf.meeting import views, ajax
 from ietf.utils.urls import url
 
 safe_for_all_meeting_types = [
-    url(r'^session/(?P<acronym>[-a-z0-9]+)/?$',  views.session_details),
-    url(r'^session/(?P<acronym>[-a-z0-9]+)\.ics$', views.ical_agenda),
+    url(r'^sessions/(?P<acronym>[-a-z0-9]+)/?$',  views.session_details),
+    url(r'^sessions/(?P<acronym>[-a-z0-9]+)\.ics$', views.ical_agenda),
     url(r'^session/(?P<session_id>\d+)/drafts$',  views.add_session_drafts),
     url(r'^session/(?P<session_id>\d+)/bluesheets$', views.upload_session_bluesheets),
     url(r'^session/(?P<session_id>\d+)/minutes$', views.upload_session_minutes),
