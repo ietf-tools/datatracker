@@ -72,7 +72,7 @@ ietfdb (6.75.0) ietf; urgency=medium
 
   * Fixed a typo.  Fixes issue #2466.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  06 Mar 2018 14:38:42 -0800
+ -- Henrik Levkowetz <henrik@levkowetz.com>  12 Mar 2018 15:00:40 +0000
 
 
 ietfdb (6.74.0) ietf; urgency=medium
