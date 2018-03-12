@@ -22,7 +22,6 @@ Planned work in rough order
   logging and failure emails sent to ADMINS, are captured as a Message object.
 
 * Polish the htmlization pages, making the style identical with tools.ietf.org.
-  Do a public release of the htmlization lib.
 
 * Revisit RFC author ordering and author information based on rfc-index.xml
 
