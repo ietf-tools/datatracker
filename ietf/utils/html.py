@@ -18,6 +18,8 @@ acceptable_tags = ('a', 'abbr', 'acronym', 'address', 'b', 'big',
     'strong', 'sub', 'sup', 'table', 'tbody', 'td', 'tfoot', 'th', 'thead',
     'tr', 'tt', 'u', 'ul', 'var')
 
+acceptable_protocols = ['http', 'https', 'mailto', 'xmpp', ]
+
 strip_completely = ['style', 'script', ]
 
 class StripFilter(Filter):
@@ -33,7 +35,7 @@ class StripFilter(Filter):
 
 # Leave the stripping of the strip_completely tags to StripFilter
 bleach_tags = list(set(acceptable_tags) | set(strip_completely))
-cleaner = bleach.sanitizer.Cleaner(tags=bleach_tags, filters=[StripFilter], strip=True)
+cleaner = bleach.sanitizer.Cleaner(tags=bleach_tags, protocols=acceptable_protocols, filters=[StripFilter], strip=True)
 
 def unescape(text):
     """
