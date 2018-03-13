@@ -10,7 +10,7 @@ import debug                            # pyflakes:ignore
 
 from ietf.utils.html import sanitize_document
 
-def handle_upload_file(file,filename,meeting,subdir, request=None):
+def handle_upload_file(file,filename,meeting,subdir, request=None, encoding=None):
     '''
     This function takes a file object, a filename and a meeting object and subdir as string.
     It saves the file to the appropriate directory, get_materials_path() + subdir.
@@ -37,7 +37,16 @@ def handle_upload_file(file,filename,meeting,subdir, request=None):
     destination = open(os.path.join(path,filename), 'wb+')
     if extension in settings.MEETING_VALID_MIME_TYPE_EXTENSIONS['text/html']:
         file.open()
-        text = smart_text(file.read())
+        text = file.read()
+        if encoding:
+            text = text.decode(encoding)
+        else:
+            try:
+                text = smart_text(text)
+            except UnicodeDecodeError as e:
+                msg = "Failure trying to save '%s': %s..." % (filename, str(e)[:120])
+                return msg
+            
         # Whole file sanitization; add back what's missing from a complete
         # document (sanitize will remove these).
         clean = sanitize_document(text)
@@ -56,3 +65,4 @@ def handle_upload_file(file,filename,meeting,subdir, request=None):
         os.chdir(path)
         os.system('unzip %s' % filename)
 
+    return None
