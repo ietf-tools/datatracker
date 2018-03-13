@@ -49,7 +49,7 @@ class PyFlakesTestCase(TestCase):
         path = os.path.join(settings.BASE_DIR)
         warnings = []
         warnings = pyflakes.checkPaths([path], verbosity=0)
-        self.assertEqual([str(w) for w in warnings], [])
+        self.assertEqual([], [str(w) for w in warnings])
 
 class TestSMTPServer(TestCase):
 
