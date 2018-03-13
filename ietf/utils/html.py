@@ -2,8 +2,7 @@
 
 """Utilities for working with HTML."""
 import bleach
-
-from html5lib.filters.base import Filter
+import lxml.html.clean
 
 import debug                            # pyflakes:ignore
 
@@ -11,31 +10,14 @@ from django.utils.functional import keep_lazy
 from django.utils import six
 
 acceptable_tags = ('a', 'abbr', 'acronym', 'address', 'b', 'big',
-    'blockquote', 'br', 'caption', 'center', 'cite', 'code', 'col',
+    'blockquote', 'body', 'br', 'caption', 'center', 'cite', 'code', 'col',
     'colgroup', 'dd', 'del', 'dfn', 'dir', 'div', 'dl', 'dt', 'em', 'font',
-    'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'hr', 'i', 'ins', 'kbd',
+    'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'head', 'hr', 'html', 'i', 'ins', 'kbd',
     'li', 'ol', 'p', 'pre', 'q', 's', 'samp', 'small', 'span', 'strike',
-    'strong', 'sub', 'sup', 'table', 'tbody', 'td', 'tfoot', 'th', 'thead',
+    'strong', 'sub', 'sup', 'table', 'title', 'tbody', 'td', 'tfoot', 'th', 'thead',
     'tr', 'tt', 'u', 'ul', 'var')
 
 acceptable_protocols = ['http', 'https', 'mailto', 'xmpp', ]
-
-strip_completely = ['style', 'script', ]
-
-class StripFilter(Filter):
-    def __iter__(self):
-        open_tags = []
-        for token in Filter.__iter__(self):
-            if token["type"] in ["EmptyTag", "StartTag"]:
-                open_tags.append(token["name"])
-            if not (set(open_tags) & set(strip_completely)):
-                yield token
-            if token["type"] in ["EmptyTag", "EndTag"]:
-                open_tags.pop()
-
-# Leave the stripping of the strip_completely tags to StripFilter
-bleach_tags = list(set(acceptable_tags) | set(strip_completely))
-cleaner = bleach.sanitizer.Cleaner(tags=bleach_tags, protocols=acceptable_protocols, filters=[StripFilter], strip=True)
 
 def unescape(text):
     """
@@ -52,6 +34,19 @@ def remove_tags(html, tags):
     return bleach.clean(html, tags=allowed)
 remove_tags = keep_lazy(remove_tags, six.text_type)
 
-def sanitize_html(html):
-    return cleaner.clean(html)
+# ----------------------------------------------------------------------
+# Html fragment cleaning
 
+bleach_cleaner = bleach.sanitizer.Cleaner(tags=acceptable_tags, protocols=acceptable_protocols, strip=True)
+
+def sanitize_fragment(html):
+    return bleach_cleaner.clean(html)
+
+# ----------------------------------------------------------------------
+# Page cleaning
+
+lxml_cleaner = lxml.html.clean.Cleaner(allow_tags=acceptable_tags, 
+                                        remove_unknown_tags=None, style=False, page_structure=False)
+
+def sanitize_document(html):
+    return lxml_cleaner.clean_html(html)
