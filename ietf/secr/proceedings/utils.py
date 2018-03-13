@@ -8,7 +8,7 @@ from django.utils.encoding import smart_text
 
 import debug                            # pyflakes:ignore
 
-from ietf.utils.html import sanitize_html
+from ietf.utils.html import sanitize_document
 
 def handle_upload_file(file,filename,meeting,subdir, request=None):
     '''
@@ -40,14 +40,7 @@ def handle_upload_file(file,filename,meeting,subdir, request=None):
         text = smart_text(file.read())
         # Whole file sanitization; add back what's missing from a complete
         # document (sanitize will remove these).
-        clean = u"""<!DOCTYPE html>
-        <html lang="en">
-        <head><title>%s</title></head>
-        <body>
-        %s
-        </body>
-        </html>
-        """ % (filename, sanitize_html(text))
+        clean = sanitize_document(text)
         destination.write(clean.encode('utf8'))
         if request and clean != text:
             messages.warning(request, "Uploaded html content is sanitized to prevent unsafe content.  "

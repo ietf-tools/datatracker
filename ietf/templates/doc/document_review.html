@@ -55,6 +55,6 @@
   <h2>{{ doc.type.name }}<br><small>{{ doc.name }}</small></h2>
 
   {% if doc.rev and content != None %}
-    <pre class="pasted">{{ content|linkify|safe|sanitize_html|safe }}</pre>
+    <pre class="pasted">{{ content|linkify|safe|sanitize }}</pre>
   {% endif %}
 {% endblock %}

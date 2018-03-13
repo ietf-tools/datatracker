@@ -204,7 +204,7 @@
   {% endif %}
 
   {% if doc.rev != "" %}
-    {{ content|safe|keep_spacing|sanitize_html|wordwrap:80|safe }}
+    {{ content|safe|keep_spacing|sanitize|wordwrap:80|safe }}
   {% endif %}
 
   {% if not snapshot and chartering %}

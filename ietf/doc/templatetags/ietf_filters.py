@@ -19,6 +19,7 @@ import debug                            # pyflakes:ignore
 
 from ietf.doc.models import ConsensusDocEvent
 from ietf.utils.text import wordwrap, fill, wrap_text_if_unwrapped
+from ietf.utils.html import sanitize_fragment
 
 register = template.Library()
 
@@ -130,15 +131,14 @@ def format_textarea(value):
     Also calls keep_spacing."""
     return keep_spacing(linebreaksbr(escape(value).replace('&lt;b&gt;','<b>').replace('&lt;/b&gt;','</b>').replace('&lt;br&gt;','<br>')))
 
-@register.filter(name='sanitize_html')
-def sanitize_html(value):
+@register.filter(name='sanitize')
+def sanitize(value):
     """Sanitizes an HTML fragment.
     This means both fixing broken html and restricting elements and
     attributes to those deemed acceptable.  See ietf/utils/html.py
     for the details.
     """
-    from ietf.utils.html import sanitize_html
-    return sanitize_html(value)
+    return mark_safe(sanitize_fragment(value))
 
 
 # For use with ballot view
@@ -374,7 +374,7 @@ def format_snippet(text, trunc_words=25):
         # expressions, for instance [REF](http://example.com/foo)
         # Use bleach.linkify instead
         text = bleach.linkify(text)
-    full = keep_spacing(collapsebr(linebreaksbr(mark_safe(sanitize_html(text)))))
+    full = keep_spacing(collapsebr(linebreaksbr(mark_safe(sanitize_fragment(text)))))
     snippet = truncatewords_html(full, trunc_words)
     if snippet != full:
         return mark_safe(u'<div class="snippet">%s<button class="btn btn-xs btn-default show-all"><span class="fa fa-caret-down"></span></button></div><div class="hidden full">%s</div>' % (snippet, full))
