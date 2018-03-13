@@ -80,7 +80,7 @@ def validate_mime_type(file, valid):
     if mime_type == 'text/x-c++' and re.search('(?m)^virtual\s', raw):
         mod = raw.replace(str('virtual'), str(' virtual'))
         mime_type, encoding = get_mime_type(mod)
-    if not mime_type in valid:
+    if valid and not mime_type in valid:
         raise ValidationError('Found content with unexpected mime type: %s.  Expected one of %s.' %
                                     (mime_type, ', '.join(valid) ))
     return mime_type, encoding
