@@ -39,14 +39,15 @@ def handle_upload_file(file,filename,meeting,subdir, request=None, encoding=None
         file.open()
         text = file.read()
         if encoding:
-            text = text.decode(encoding)
+            try:
+                text = text.decode(encoding)
+            except LookupError as e:
+                return "Failure trying to save '%s': Could not identify the file encoding, got '%s'.  Hint: Try to upload as UTF-8." % (filename, str(e)[:120])
         else:
             try:
                 text = smart_text(text)
             except UnicodeDecodeError as e:
-                msg = "Failure trying to save '%s': %s..." % (filename, str(e)[:120])
-                return msg
-            
+                return "Failure trying to save '%s'. Hint: Try to upload as UTF-8: %s..." % (filename, str(e)[:120])
         # Whole file sanitization; add back what's missing from a complete
         # document (sanitize will remove these).
         clean = sanitize_document(text)

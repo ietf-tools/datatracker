@@ -1745,6 +1745,12 @@ class MaterialsTests(TestCase):
             self.assertEqual(doc.rev,'02')
             self.assertTrue(session2.sessionpresentation_set.filter(document__type_id=doctype))
 
+            # Test bad encoding
+            test_file = StringIO(u'<html><h1>Title</h1><section>Some\x93text</section></html>'.encode('latin1'))
+            test_file.name = "some.html"
+            r = self.client.post(url,dict(file=test_file))
+            self.assertContains(r, 'Could not identify the file encoding')
+
     def test_upload_minutes_agenda_unscheduled(self):
         for doctype in ('minutes','agenda'):
             session = SessionFactory(meeting__type_id='ietf', add_to_schedule=False)
