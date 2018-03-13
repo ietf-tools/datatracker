@@ -1178,9 +1178,12 @@ def upload_session_bluesheets(request, session_id, num):
             filename = '%s-%s%s'% ( doc.name, doc.rev, ext)
             doc.external_url = filename
             e = NewRevisionDocEvent.objects.create(doc=doc, rev=doc.rev, by=request.user.person, type='new_revision', desc='New revision available: %s'%doc.rev)
-            doc.save_with_history([e])
-            handle_upload_file(file, filename, session.meeting, 'bluesheets')
-            return redirect('ietf.meeting.views.session_details',num=num,acronym=session.group.acronym)
+            save_error = handle_upload_file(file, filename, session.meeting, 'bluesheets', request=request, encoding=form.file_encoding[file.name])
+            if save_error:
+                form.add_error(None, save_error)
+            else:
+                doc.save_with_history([e])
+                return redirect('ietf.meeting.views.session_details',num=num,acronym=session.group.acronym)
     else: 
         form = UploadBlueSheetForm()
 
@@ -1277,8 +1280,12 @@ def upload_session_minutes(request, session_id, num):
             e = NewRevisionDocEvent.objects.create(doc=doc, by=request.user.person, type='new_revision', desc='New revision available: %s'%doc.rev, rev=doc.rev)
             doc.save_with_history([e])
             # The way this function builds the filename it will never trigger the file delete in handle_file_upload.
-            handle_upload_file(file, filename, session.meeting, 'minutes')
-            return redirect('ietf.meeting.views.session_details',num=num,acronym=session.group.acronym)
+            save_error = handle_upload_file(file, filename, session.meeting, 'minutes', request=request, encoding=form.file_encoding[file.name])
+            if save_error:
+                form.add_error(None, save_error)
+            else:
+                doc.save_with_history([e])
+                return redirect('ietf.meeting.views.session_details',num=num,acronym=session.group.acronym)
     else: 
         form = UploadMinutesForm(show_apply_to_all_checkbox)
 
@@ -1377,8 +1384,12 @@ def upload_session_agenda(request, session_id, num):
             e = NewRevisionDocEvent.objects.create(doc=doc,by=request.user.person,type='new_revision',desc='New revision available: %s'%doc.rev,rev=doc.rev)
             doc.save_with_history([e])
             # The way this function builds the filename it will never trigger the file delete in handle_file_upload.
-            handle_upload_file(file, filename, session.meeting, 'agenda', request)
-            return redirect('ietf.meeting.views.session_details',num=num,acronym=session.group.acronym)
+            save_error = handle_upload_file(file, filename, session.meeting, 'agenda', request=request, encoding=form.file_encoding[file.name])
+            if save_error:
+                form.add_error(None, save_error)
+            else:
+                doc.save_with_history([e])
+                return redirect('ietf.meeting.views.session_details',num=num,acronym=session.group.acronym)
     else: 
         form = UploadAgendaForm(show_apply_to_all_checkbox, initial={'apply_to_all':session.type_id=='session'})
 
@@ -1479,9 +1490,13 @@ def upload_session_slides(request, session_id, num, name):
             e = NewRevisionDocEvent.objects.create(doc=doc,by=request.user.person,type='new_revision',desc='New revision available: %s'%doc.rev,rev=doc.rev)
             doc.save_with_history([e])
             # The way this function builds the filename it will never trigger the file delete in handle_file_upload.
-            handle_upload_file(file, filename, session.meeting, 'slides')
-            post_process(doc)
-            return redirect('ietf.meeting.views.session_details',num=num,acronym=session.group.acronym)
+            save_error = handle_upload_file(file, filename, session.meeting, 'slides', request=request, encoding=form.file_encoding[file.name])
+            if save_error:
+                form.add_error(None, save_error)
+            else:
+                doc.save_with_history([e])
+                post_process(doc)
+                return redirect('ietf.meeting.views.session_details',num=num,acronym=session.group.acronym)
     else: 
         initial = {}
         if slides:
