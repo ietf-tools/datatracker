@@ -158,12 +158,17 @@ def current_materials(request):
 def materials_document(request, document, num=None, ext=None):
     if num is None:
         num = get_meeting(num).number
-    doc = get_object_or_404(Document, name=document)
+    if re.search('-\d\d$', document):
+        name, rev = document.rsplit('-', 1)
+    doc = get_object_or_404(Document, name=name)
     if not doc.meeting_related():
         raise Http404("Not a meeting related document")
     if not doc.session_set.filter(meeting__number=num).exists():
         raise Http404("No such document for meeting %s" % num)
-    filename = doc.get_file_name()
+    if not rev:
+        filename = doc.get_file_name()
+    else:
+        filename = os.path.join(doc.get_file_path(), document)
     if ext and not filename.endswith(ext):
         name, _ = os.path.splitext(filename)
         filename = name + ext
