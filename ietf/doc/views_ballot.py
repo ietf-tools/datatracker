@@ -273,8 +273,6 @@ def api_set_position(request):
         if form.is_valid():
             save_position(form, doc, ballot, ad)
         else:
-            debug.type('form.errors')
-            debug.show('form.errors')
             errors = form.errors
             summary = ','.join([ "%s: %s" % (f, striptags(errors[f])) for f in errors ])
             return err(400, "Form not valid: %s" % summary)
