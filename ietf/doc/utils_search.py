@@ -1,9 +1,16 @@
+# Copyright The IETF Trust 2016, All Rights Reserved
+
+import datetime
+import debug                            # pyflakes:ignore
+
+from ietf.community.utils import augment_docs_with_tracking_info
 from ietf.doc.models import Document, DocAlias, RelatedDocument, DocEvent, TelechatDocEvent
 from ietf.doc.expire import expirable_draft
-from ietf.community.utils import augment_docs_with_tracking_info
+from ietf.meeting.models import SessionPresentation
 
 def wrap_value(v):
     return lambda: v
+
 
 def fill_in_document_table_attributes(docs):
     # fill in some attributes for the document table results to save
@@ -35,6 +42,13 @@ def fill_in_document_table_attributes(docs):
             d.telechat_date = wrap_value(d.telechat_date(e))
             seen.add(e.doc_id)
 
+    # on agenda in upcoming meetings
+    presentations = SessionPresentation.objects.filter(session__meeting__date__gte=datetime.date.today()-datetime.timedelta(days=15)).select_related('session', 'document')
+    session_list = [ (p.document, p.session) for p in presentations ]
+    sessions = dict( (d, []) for (d, s) in session_list )
+    for (d, s) in session_list:
+        sessions[d].append(s)
+
     # misc
     for d in docs:
         # emulate canonical name which is used by a lot of the utils
@@ -64,6 +78,7 @@ def fill_in_document_table_attributes(docs):
 
             d.reviewed_by_teams = sorted(set(r.team for r in d.reviewrequest_set.filter(state__in=["requested","accepted","part-completed","completed"])), key=lambda g: g.acronym)
 
+        d.sessions = sessions[d] if d in sessions else []
 
     # RFCs
 
@@ -101,10 +116,13 @@ def prepare_document_table(request, docs, query=None, max_results=500):
     if not isinstance(docs, list):
         # evaluate and fill in attribute results immediately to decrease
         # the number of queries
-        docs = docs.select_related("ad", "std_level", "intended_std_level", "group", "stream")
-        docs = docs.prefetch_related("states__type", "tags", "groupmilestone_set__group", "reviewrequest_set__team")
+        docs = docs.select_related("ad", "std_level", "intended_std_level", "group", "stream", "shepherd", )
+        docs = docs.prefetch_related("states__type", "tags", "groupmilestone_set__group", "reviewrequest_set__team",
+                                     "submission_set__checks", "ad__email_set")
 
-    docs = list(docs[:max_results])
+    if docs.count() > max_results:
+        docs = docs[:max_results]
+    docs = list(docs)
 
     fill_in_document_table_attributes(docs)
     augment_docs_with_tracking_info(docs, request.user)

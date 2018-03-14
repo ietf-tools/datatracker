@@ -20,6 +20,14 @@
         <span class="fa fa-bookmark-o"></span>
       </a>
     {% endif %}
+    {% for session in doc.sessions %}
+      <br><small>
+      <a href="{% url 'ietf.meeting.views.ical_agenda' num=session.meeting.number session_id=session.id %}"
+	title="Calendar entry: document is on the agenda for {{ session.group.acronym }}@{{ session.meeting }}">
+	<span class="fa fa-calendar"></span>
+      </a>
+      </small>
+    {% endfor %}
   </td>
 
   <td class="doc">
