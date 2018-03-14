@@ -275,11 +275,12 @@ class DocumentInfo(models.Model):
         the slug of the state or None. This frees the caller of having
         to check against None before accessing the slug for a
         comparison."""
-        s = self.get_state(state_type)
-        if s:
-            return s.slug
-        else:
-            return None
+        if not hasattr(self, '_cached_state_slug'):
+            self._cached_state_slug = {}
+        if not state_type in self._cached_state_slug:
+            s = self.get_state(state_type)
+            self._cached_state_slug[state_type] = s.slug if s else None
+        return self._cached_state_slug[state_type]
 
     def friendly_state(self):
         """ Return a concise text description of the document's current state."""
@@ -579,20 +580,24 @@ class Document(DocumentInfo):
         Returns an url to the document view.  This differs from .href(),
         which returns an url to the document content.
         """
-        name = self.name
-        if self.type_id == "draft" and self.get_state_slug() == "rfc":
-            name = self.canonical_name()
-        elif self.type_id in ('slides','bluesheets','recording'):
-            session = self.session_set.first()
-            if session:
-                meeting = session.meeting
-                if self.type_id == 'recording':
-                    url = self.external_url
-                else:
-                    filename = self.external_url
-                    url = '%sproceedings/%s/%s/%s' % (settings.IETF_HOST_URL,meeting.number,self.type_id,filename)
-                return url
-        return urlreverse('ietf.doc.views_doc.document_main', kwargs={ 'name': name }, urlconf="ietf.urls")
+        if not hasattr(self, '_cached_absolute_url'):
+            name = self.name
+            if self.type_id == "draft" and self.get_state_slug() == "rfc":
+                name = self.canonical_name()
+                url = urlreverse('ietf.doc.views_doc.document_main', kwargs={ 'name': name }, urlconf="ietf.urls")
+            elif self.type_id in ('slides','bluesheets','recording'):
+                session = self.session_set.first()
+                if session:
+                    meeting = session.meeting
+                    if self.type_id == 'recording':
+                        url = self.external_url
+                    else:
+                        filename = self.external_url
+                        url = '%sproceedings/%s/%s/%s' % (settings.IETF_HOST_URL,meeting.number,self.type_id,filename)
+            else:
+                url = urlreverse('ietf.doc.views_doc.document_main', kwargs={ 'name': name }, urlconf="ietf.urls")
+            self._cached_absolute_url = url
+        return self._cached_absolute_url
 
     def file_tag(self):
         return u"<%s>" % self.filename_with_rev()
