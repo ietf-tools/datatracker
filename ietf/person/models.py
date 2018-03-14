@@ -104,10 +104,12 @@ class PersonInfo(models.Model):
             return e[0]
         return None
     def email(self):
-        e = self.email_set.filter(primary=True).first()
-        if not e:
-            e = self.email_set.filter(active=True).order_by("-time").first()
-        return e
+        if not hasattr(self, '_cached_email'):
+            e = self.email_set.filter(primary=True).first()
+            if not e:
+                e = self.email_set.filter(active=True).order_by("-time").first()
+            self._cached_email = e
+        return self._cached_email
     def email_address(self):
         e = self.email()
         if e:
