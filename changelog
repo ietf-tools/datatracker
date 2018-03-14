@@ -1,3 +1,50 @@
+ietfdb (6.75.1) ietf; urgency=medium
+
+  **Modified HTML upload sanitization**
+
+  Feedback from wgchairs@ietf.org indicated that stripping out all styling
+  from uploaded files is too harsh.  This release modifies the sanitization to
+  permit <style> tags in the uploads, and differentiates between fragment
+  santitization (through the 'sanitize' template filter) and document
+  santitization.  This release also addresses some other issue encountered
+  with the new upload code, and introduces saving of uploaded files in a
+  consistent encoding (UTF-8).  From the commitlog:
+
+  * Added handling for when file magic doesn't return a definitive encoding 
+    for a file.  Added a test case to excercise upload error cases.
+
+  * Changed the meeting materials uploads to use the upload file encoding 
+    found by file-magic when decoding the upload content, and also return 
+    errors to the user if decoding the upload fails.  Fixes issue #2469.  This 
+    will also have the benefit (since we're saving with utf-8 encoding after 
+    decoding) of having meeting materials consistently stored with a the same
+    encoding on the server.
+
+  * Added a new argument encoding= to handle_upload_file() in order to be 
+    able to deal better with various upload encodings.
+
+  * Tweaked the mime type validator so it can be called also when there's no
+    explicitly required mime types, in order to consistently return mime-type
+    and encoding.
+
+  * Changed to an empty iterable instead of None in the valid upload
+    mime-types settings when there's no required mime type, in order to
+    simplify other code.
+
+  * Return encoding information to the FileUploadForm when doing mime type
+    validation, for later use in decoding.
+
+  * Changed html cleaning to differentiate between fragment cleaning and 
+    document cleaning.  Added an lxml-based cleaner for document cleaning, also 
+    permitting <style> tags (but not external style sheets).
+
+  * Changed order of arguments in a test assert for better error legibility.
+
+  * Updated PLAN
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  14 Mar 2018 10:35:54 +0000
+
+
 ietfdb (6.75.0) ietf; urgency=medium
 
   **Sanitization of HTML uploads**
