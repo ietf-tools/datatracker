@@ -3,6 +3,8 @@ import re
 from django.db.models import Q
 from django.conf import settings
 
+import debug                            # pyflakes:ignore
+
 from ietf.community.models import CommunityList, EmailSubscription, SearchRule
 from ietf.doc.models import Document, State
 from ietf.group.models import Role, Group
