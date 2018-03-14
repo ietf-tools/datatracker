@@ -13,7 +13,7 @@ acceptable_tags = ('a', 'abbr', 'acronym', 'address', 'b', 'big',
     'blockquote', 'body', 'br', 'caption', 'center', 'cite', 'code', 'col',
     'colgroup', 'dd', 'del', 'dfn', 'dir', 'div', 'dl', 'dt', 'em', 'font',
     'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'head', 'hr', 'html', 'i', 'ins', 'kbd',
-    'li', 'ol', 'p', 'pre', 'q', 's', 'samp', 'small', 'span', 'strike',
+    'li', 'ol', 'p', 'pre', 'q', 's', 'samp', 'small', 'span', 'strike', 'style',
     'strong', 'sub', 'sup', 'table', 'title', 'tbody', 'td', 'tfoot', 'th', 'thead',
     'tr', 'tt', 'u', 'ul', 'var')
 
