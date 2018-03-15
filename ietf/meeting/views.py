@@ -184,7 +184,6 @@ def materials_document(request, document, num=None, ext=None):
             filename = filenames[0]
     _, basename = os.path.split(filename)
     if not os.path.exists(filename):
-        
         raise Http404("File not found: %s" % filename)
     with open(filename, 'rb') as file:
         bytes = file.read()
