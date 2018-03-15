@@ -270,8 +270,13 @@ class MeetingTests(TestCase):
         self.write_materials_files(meeting, session)
         
         # session agenda
-        r = self.client.get(urlreverse("ietf.meeting.views.materials_document",
-                                       kwargs=dict(num=meeting.number, document=session.agenda())))
+        document = session.agenda()
+        url = urlreverse("ietf.meeting.views.materials_document",
+                                       kwargs=dict(num=meeting.number, document=document))
+        r = self.client.get(url)
+        if r.status_code != 200:
+            q = PyQuery(r.content)
+            debug.show('q(".alert").text()')
         self.assertEqual(r.status_code, 200)
         self.assertTrue("1. WG status" in unicontent(r))
 
