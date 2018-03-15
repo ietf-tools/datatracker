@@ -1,18 +1,19 @@
 # Copyright The IETF Trust 2007, All Rights Reserved
 
+import csv
 import datetime
+import glob
+import json
 import os
+import pytz
 import re
 import tarfile
 import urllib
-from tempfile import mkstemp
-from collections import OrderedDict, Counter, deque
-import csv
-import json
-import pytz
 
-from wsgiref.handlers import format_date_time
 from calendar import timegm
+from collections import OrderedDict, Counter, deque
+from tempfile import mkstemp
+from wsgiref.handlers import format_date_time
 
 import debug                            # pyflakes:ignore
 
@@ -158,8 +159,12 @@ def current_materials(request):
 def materials_document(request, document, num=None, ext=None):
     if num is None:
         num = get_meeting(num).number
-    if re.search('-\d\d$', document):
+    if (re.search('^\w+-\d+-\w+-\d\d$', document) or
+        re.search('^\w+-interim-\d+-\w+-\d\d-\d\d$', document)):
         name, rev = document.rsplit('-', 1)
+    else:
+        name, rev = document, None
+
     doc = get_object_or_404(Document, name=name)
     if not doc.meeting_related():
         raise Http404("Not a meeting related document")
@@ -169,11 +174,17 @@ def materials_document(request, document, num=None, ext=None):
         filename = doc.get_file_name()
     else:
         filename = os.path.join(doc.get_file_path(), document)
-    if ext and not filename.endswith(ext):
-        name, _ = os.path.splitext(filename)
-        filename = name + ext
+    if ext:
+        if not filename.endswith(ext):
+            name, _ = os.path.splitext(filename)
+            filename = name + ext
+    else:
+        filenames = glob.glob(filename+'.*')
+        if filenames:
+            filename = filenames[0]
     _, basename = os.path.split(filename)
     if not os.path.exists(filename):
+        
         raise Http404("File not found: %s" % filename)
     with open(filename, 'rb') as file:
         bytes = file.read()
