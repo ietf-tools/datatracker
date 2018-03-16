@@ -2,6 +2,9 @@
 
 """Utilities for working with HTML."""
 import bleach
+import copy
+import lxml.etree
+import lxml.html
 import lxml.html.clean
 
 import debug                            # pyflakes:ignore
@@ -45,8 +48,26 @@ def sanitize_fragment(html):
 # ----------------------------------------------------------------------
 # Page cleaning
 
-lxml_cleaner = lxml.html.clean.Cleaner(allow_tags=acceptable_tags, 
-                                        remove_unknown_tags=None, style=False, page_structure=False)
+
+class Cleaner(lxml.html.clean.Cleaner):
+    charset = 'utf-8'
+    # Copied from lxml 4.2.0 and modified to insert charset meta:
+    def clean_html(self, html):
+        result_type = type(html)
+        if isinstance(html, basestring):
+            doc = lxml.html.fromstring(html)
+        else:
+            doc = copy.deepcopy(html)
+        self(doc)
+        head = doc.find('head')
+        if head != None:
+            meta = lxml.etree.Element('meta', charset=self.charset)
+            meta.tail = '\n'
+            head.insert(0, meta)
+        return lxml.html._transform_result(result_type, doc)
+
+# We will be saving as utf-8 later, so set that in the meta tag.
+lxml_cleaner = Cleaner(allow_tags=acceptable_tags, remove_unknown_tags=None, style=False, page_structure=False, charset='utf-8')
 
 def sanitize_document(html):
     return lxml_cleaner.clean_html(html)

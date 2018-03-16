@@ -1720,7 +1720,7 @@ class MaterialsTests(TestCase):
             self.assertTrue(q('form .has-error'))
 
             # Test html sanitization
-            test_file = StringIO('<html><h1>Title</h1><section>Some text</section></html>')
+            test_file = StringIO('<html><head><title>Title</title></head><body><h1>Title</h1><section>Some text</section></body></html>')
             test_file.name = "some.html"
             r = self.client.post(url,dict(file=test_file))
             self.assertEqual(r.status_code, 302)
@@ -1729,6 +1729,7 @@ class MaterialsTests(TestCase):
             text = doc.text()
             self.assertIn('Some text', text)
             self.assertNotIn('<section>', text)
+            self.assertIn('charset="utf-8"', text)
 
             test_file = StringIO(u'This is some text for a test, with the word\nvirtual at the beginning of a line.')
             test_file.name = "not_really.txt"
