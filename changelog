@@ -1,3 +1,54 @@
+ietfdb (6.75.2) ietf; urgency=medium
+
+  **Session iCalendar links on document lists**
+
+  This release adds session ical links to group document lists and document
+  search results, fixes some issues related to upload sanitization and url
+  resolution, improves performance for some pages, and adds and improves some
+  tests in the test suite.  From the commit log:
+
+  * Merged in [14830] from rjsparks@nostrum.com:
+    Simple coverage tests for ietf/secr/drafts/reports.py.
+
+  * Tweaked the document sanitizer to insert a charset meta tag after 
+    sanitization.
+
+  * Fixed a mistaken change in session urls.
+
+  * Tweaked a test case to make it easier to get at failures.
+
+  * Made the materials_document() view function more robust in handling 
+    various materials document names.
+
+  * Gave the 404 message a class which will make it easier to pick out the 
+    message during testing.
+
+  * Updated the meeting materials document view to handle urls with 
+    revisions.
+
+  * Updated the meeting document href patterns in settings.py to reflect 
+    that we now have versioned agendas, minutes, and slides.
+
+  * Added session ical links to document lists (WG docs, search results, 
+    etc.) for documents on upcoming meeting agendas.  Reduced the query and 
+    rendering times of document lists some more through additional 
+    prefetch_related().
+
+  * Added result caching for the Person.email() method.
+
+  * Added result caching for a couple of Document methods.
+
+  * Added a missing tag to the sanitizer whitelist (telling lxml's Cleaner 
+    to not clean style with style=False is apparently not always enough).  
+    Fixes issue #2470.
+
+  * Added a debug import.
+
+  * Updated a django patch to add origin information to query sets.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  17 Mar 2018 10:42:11 +0000
+
+
 ietfdb (6.75.1) ietf; urgency=medium
 
   **Modified HTML upload sanitization**
