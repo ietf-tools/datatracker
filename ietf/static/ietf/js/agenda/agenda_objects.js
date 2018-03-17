@@ -482,6 +482,11 @@ ScheduledSlot.prototype.saveit = function() {
             session.placed(myss.timeslot);
         }
     });
+    saveit.fail(function(jqXHR, textStatus) {
+        var xhr = JSON.parse(jqXHR.responseText);
+        alert("ERROR: " + xhr.error + "\nThe schedule will now reload.");
+        location.reload(true);
+    });
 
     // return the promise, in case someone (tests!) needs to know when we are done.
     return saveit;

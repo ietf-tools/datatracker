@@ -455,6 +455,13 @@ def assignments_post(request, meeting, schedule):
                             status = 406,
                             content_type="application/json")
 
+    try:
+        Session.objects.get(pk=newvalues["session_id"])
+    except Session.DoesNotExist:
+        return HttpResponse(json.dumps({'error':'session has been deleted'}),
+                            status = 406,
+                            content_type="application/json")
+
     ss1 = SchedTimeSessAssignment(schedule = schedule,
                            session_id  = newvalues["session_id"],
                            timeslot_id = newvalues["timeslot_id"])
