@@ -38,7 +38,7 @@ class RegexStringValidator(object):
         except Exception as e:
             raise ValidationError('Please enter a valid regular expression.  '
                                     'Got an error when trying to compile this: "%s" : "%s"'
-                                    % (self.message, value, e))
+                                    % (value, e))
         if '-*' in value:
             raise ValidationError('Did you really mean that?  The regular expression '
                                     'contains "-*" which will match zero or more dashes.  '
