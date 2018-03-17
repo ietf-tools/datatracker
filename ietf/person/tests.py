@@ -87,11 +87,6 @@ class PersonTests(TestCase):
         Person.objects.create(name="Duplicate Test")
         self.assertTrue("possible duplicate" in outbox[0]["Subject"].lower())
 
-    def test_merge(self):
-        url = urlreverse("ietf.person.views.merge")
-        r = self.client.get(url)
-        self.assertEqual(r.status_code, 200)
-
 
 class PersonUtilsTests(TestCase):
     def get_person_no_user(self):
