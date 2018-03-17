@@ -1,7 +1,6 @@
 import datetime
 import json
 import urllib2
-import urlparse
 
 from django.conf import settings
 from django.template.loader import render_to_string
@@ -85,7 +84,7 @@ def sort_sessions(sessions):
 def create_proceedings_templates(meeting):
     '''Create DBTemplates for meeting proceedings'''
     # Get meeting attendees from registration system
-    url = urlparse.urljoin(settings.REGISTRATION_ATTENDEES_BASE_URL,meeting.number)
+    url = settings.STATS_REGISTRATION_ATTENDEES_JSON_URL.format(number=meeting.number)
     try:
         attendees = json.load(urllib2.urlopen(url))
     except (ValueError, urllib2.HTTPError):
