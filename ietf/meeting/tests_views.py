@@ -9,6 +9,8 @@ import random
 
 import debug           # pyflakes:ignore
 
+from contextlib import closing
+
 from django.urls import reverse as urlreverse
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -36,6 +38,7 @@ from ietf.group.factories import GroupFactory, GroupEventFactory
 from ietf.meeting.factories import ( SessionFactory, SessionPresentationFactory, ScheduleFactory,
     MeetingFactory, FloorPlanFactory, TimeSlotFactory )
 from ietf.doc.factories import DocumentFactory
+from ietf.submit.tests import submission_file
 
 
 class MeetingTests(TestCase):
@@ -456,6 +459,35 @@ class MeetingTests(TestCase):
         self.assertNotContains(r, t2.time.strftime('%Y%m%dT%H%M%S'))
         self.assertContains(r, 'END:VEVENT')
 
+    def test_session_draft_tarfile(self):
+        session = SessionFactory(group__type_id='wg',meeting__type_id='ietf')
+        doc = DocumentFactory(type_id='draft')
+        session.sessionpresentation_set.create(document=doc)
+        file,_ = submission_file(name=doc.name,format='txt',templatename='test_submission.txt',group=session.group,rev="00")
+        filename = os.path.join(doc.get_file_path(),file.name)
+        with closing(open(filename,'w')) as draftbits:
+            draftbits.write(file.getvalue())
+        
+        url = urlreverse('ietf.meeting.views.session_draft_tarfile', kwargs={'num':session.meeting.number,'acronym':session.group.acronym})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get('Content-Type'), 'application/octet-stream')
+        os.unlink(filename)
+
+    def test_session_draft_pdf(self):
+        session = SessionFactory(group__type_id='wg',meeting__type_id='ietf')
+        doc = DocumentFactory(type_id='draft')
+        session.sessionpresentation_set.create(document=doc)
+        file,_ = submission_file(name=doc.name,format='txt',templatename='test_submission.txt',group=session.group,rev="00")
+        filename = os.path.join(doc.get_file_path(),file.name)
+        with closing(open(filename,'w')) as draftbits:
+            draftbits.write(file.getvalue())
+        
+        url = urlreverse('ietf.meeting.views.session_draft_pdf', kwargs={'num':session.meeting.number,'acronym':session.group.acronym})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get('Content-Type'), 'application/pdf')
+        os.unlink(filename)
 
 
 class EditTests(TestCase):
