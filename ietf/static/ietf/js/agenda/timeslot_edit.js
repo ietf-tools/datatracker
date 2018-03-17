@@ -307,7 +307,7 @@ function insert_timeslotedit_cell(ts) {
 
         var purpose_struct = { "purpose" : newpurpose };
         var purpose_update = $.ajax(ts.href, {
-            "content-type": "text/json",
+            "content-type": "application/json",
             "type": "PUT",
             "data": purpose_struct,
         });
@@ -364,7 +364,7 @@ function create_timeslotedit_cell(slot_id) {
 
 
         var new_timeslot_promise = $.ajax(meeting_slots_href, {
-            "content-type": "text/json",
+            "content-type": "application/json",
             "type": "POST",
             "data": ts,
         });

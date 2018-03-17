@@ -1224,7 +1224,7 @@ def group_json(request, acronym):
 
     return HttpResponse(json.dumps(group.json_dict(request.build_absolute_uri('/')),
                                    sort_keys=True, indent=2),
-                        content_type="text/json")
+                        content_type="application/json")
 
 @cache_control(public=True, max_age=30*60)
 @cache_page(30 * 60)

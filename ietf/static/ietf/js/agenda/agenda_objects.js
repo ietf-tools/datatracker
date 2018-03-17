@@ -470,7 +470,7 @@ ScheduledSlot.prototype.saveit = function() {
     var stuff = JSON.stringify(stuffjson, null, '\t');
 
     var saveit = $.ajax(assignments_post_href,{
-        "content-type": "text/json",
+        "content-type": "application/json",
         "type": "POST",
         "data": stuff,
     });
@@ -496,7 +496,7 @@ ScheduledSlot.prototype.set_pinned = function(state, completefunc) {
     var ss = this;
     var pinned_struct = { "pinned" : state };
     var pinned_update = $.ajax(this.href, {
-        "content-type": "text/json",
+        "content-type": "application/json",
         "type": "PUT",
         "data": pinned_struct,
     });
@@ -539,7 +539,7 @@ function remove_from_slot_status(domid, ss_id) {
 
 ScheduledSlot.prototype.deleteit = function() {
     var deleteit = $.ajax(this.href, {
-        "content-type": "text/json",
+        "content-type": "application/json",
         "type": "DELETE",
     });
     // now nuke self!
