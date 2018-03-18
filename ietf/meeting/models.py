@@ -177,7 +177,7 @@ class Meeting(models.Model):
         return qs
 
     def json_url(self):
-        return "/meeting/%s.json" % (self.number, )
+        return "/meeting/%s/json" % (self.number, )
 
     def base_url(self):
         return "/meeting/%s" % (self.number, )
