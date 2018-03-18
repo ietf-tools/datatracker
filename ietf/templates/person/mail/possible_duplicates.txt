@@ -16,3 +16,6 @@ Please check to see if they represent the same actual person, and if so, merge t
     username: {% if person.user %}{{person.user.username}}{% else %}None{% endif %}
 
 {% endfor %} {% endautoescape %}
+
+Merge Link:
+{% url "ietf.person.views.merge" %}?source={{ persons.0.pk}}&target={{ persons.1.pk }}

@@ -911,3 +911,10 @@ blockquote {
   line-height: 1.0;
   cursor: pointer;
 }
+
+/* === Person ===================================================== */
+
+.person-info {
+  margin-bottom: 1.5em;
+}
+
