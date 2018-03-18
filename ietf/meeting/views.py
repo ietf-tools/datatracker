@@ -1944,7 +1944,7 @@ def past(request):
               in meetings.filter(type='interim')]
     group_parents = []
     for g in groups:
-        if g.parent.acronym not in seen:
+        if g.parent and g.parent.acronym not in seen:
             group_parents.append(g.parent)
             seen.add(g.parent.acronym)
 
