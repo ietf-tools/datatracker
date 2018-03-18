@@ -9,7 +9,6 @@ from ietf.ietfauth.utils import role_required
 from ietf.secr.groups.forms import RoleForm
 from ietf.secr.sreq.forms import GroupSelectForm
 
-#from forms import *
 
 # -------------------------------------------------
 # Helper Functions
