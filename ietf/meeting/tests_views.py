@@ -16,6 +16,7 @@ from django.contrib.auth.models import User
 from mock import patch
 from pyquery import PyQuery
 from StringIO import StringIO
+from bs4 import BeautifulSoup
 
 from ietf.doc.models import Document
 from ietf.group.models import Group, Role
@@ -1613,6 +1614,23 @@ class MaterialsTests(TestCase):
         settings.AGENDA_PATH = self.saved_agenda_path
         shutil.rmtree(self.materials_dir)
 
+    def crawl_materials(self, url, top):
+        seen = set()
+        def follow(url):
+            seen.add(url)
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            if not ('.' in url and url.rsplit('.', 1)[1] in ['tgz', 'pdf', ]):
+                if r.content:
+                    page = unicontent(r)
+                    soup = BeautifulSoup(page, 'html.parser')
+                    for a in soup('a'):
+                        href = a.get('href')
+                        path = urlparse.urlparse(href).path
+                        if (path and path not in seen and path.startswith(top)):
+                            follow(path)
+        follow(url)
+    
     def test_upload_bluesheets(self):
         session = SessionFactory(meeting__type_id='ietf')
         url = urlreverse('ietf.meeting.views.upload_session_bluesheets',kwargs={'num':session.meeting.number,'session_id':session.id})
@@ -1757,6 +1775,11 @@ class MaterialsTests(TestCase):
             r = self.client.post(url,dict(file=test_file))
             self.assertContains(r, 'Could not identify the file encoding')
 
+            # Verify that we don't have dead links
+            url = url=urlreverse('ietf.meeting.views.session_details', kwargs={'num':session.meeting.number, 'acronym': session.group.acronym})
+            top = '/meeting/%s/' % session.meeting.number
+            self.crawl_materials(url=url, top=top)
+
     def test_upload_minutes_agenda_unscheduled(self):
         for doctype in ('minutes','agenda'):
             session = SessionFactory(meeting__type_id='ietf', add_to_schedule=False)
@@ -1798,6 +1821,11 @@ class MaterialsTests(TestCase):
             self.assertEqual(r.status_code, 302)
             doc = session.sessionpresentation_set.filter(document__type_id=doctype).first().document
             self.assertEqual(doc.rev,'00')
+
+            # Verify that we don't have dead links
+            url = url=urlreverse('ietf.meeting.views.session_details', kwargs={'num':session.meeting.number, 'acronym': session.group.acronym})
+            top = '/meeting/%s/' % session.meeting.number
+            self.crawl_materials(url=url, top=top)
 
     def test_upload_slides(self):
 
