@@ -65,6 +65,7 @@ Table of Contents
    3.  JSON example  . . . . . . . . . . . . . . . . . . . . . . . .   2
    4.  Security Considerations . . . . . . . . . . . . . . . . . . .   2
    5.  IANA Considerations . . . . . . . . . . . . . . . . . . . . .   2
+   6.  Normative References  . . . . . . . . . . . . . . . . . . . .   2
    Author's Address  . . . . . . . . . . . . . . . . . . . . . . . .   2
 
 1. Introduction
@@ -177,6 +178,13 @@ Table of Contents
 5.  IANA Considerations
 
    No new registrations for IANA.
+
+6. Normative References
+
+  [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
+          Requirement Levels", BCP 14, RFC 2119,
+          DOI 10.17487/RFC2119, March 1997,
+          <https://www.rfc-editor.org/info/rfc2119>.
 
 Author's Address
 
