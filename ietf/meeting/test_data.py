@@ -1,5 +1,10 @@
 import datetime
 
+from django.utils.text import slugify
+
+import debug                            # pyflakes:ignore
+
+
 from ietf.doc.factories import DocumentFactory
 from ietf.group.models import Group
 from ietf.meeting.models import (Meeting, Room, TimeSlot, Session, Schedule, SchedTimeSessAssignment,
@@ -28,18 +33,29 @@ def make_interim_meeting(group,date,status='sched'):
         session=session,
         schedule=session.meeting.agenda)
     # agenda
-    doc = DocumentFactory.create(name='agenda-%s'%meeting.number, type_id='agenda', title="Agenda",
-        external_url="agenda-%s.txt"%meeting.number, group=group, rev='00', states=[('draft','active')])
+    name = "agenda-%s-%s-%s" % (meeting.number, group.acronym, "01")
+    rev = '00'
+    file = "%s-%s.txt" % (name, rev)
+    doc = DocumentFactory.create(name=name, type_id='agenda', title="Agenda",
+        external_url=file, group=group, rev=rev, states=[('draft','active')])
     pres = SessionPresentation.objects.create(session=session, document=doc, rev=doc.rev)
     session.sessionpresentation_set.add(pres)
     # minutes
-    doc = DocumentFactory.create(name='minutes-%s'%meeting.number, type_id='minutes', title="Minutes",
-        external_url="minutes-%s.txt"%meeting.number, group=group, rev='00', states=[('draft','active')])
+    name = "minutes-%s-%s" % (meeting.number, time.strftime("%Y%m%d%H%M"))
+    rev = '00'
+    file = "%s-%s.txt" % (name, rev)
+    doc = DocumentFactory.create(name=name, type_id='minutes', title="Minutes",
+        external_url=file, group=group, rev=rev, states=[('draft','active')])
     pres = SessionPresentation.objects.create(session=session, document=doc, rev=doc.rev)
     session.sessionpresentation_set.add(pres)
     # slides
-    doc = DocumentFactory.create(name='slides-%s-1-active'%meeting.number, type_id='slides', title="Slideshow",
-        external_url="slides-%s.txt"%meeting.number, group=group, rev='00',
+    title = "Slideshow"
+
+    name = "slides-%s-sessa-%s" % (meeting.number, slugify(title))
+    rev = '00'
+    file = "%s-%s.txt" % (name, rev)
+    doc = DocumentFactory.create(name=name, type_id='slides', title=title,
+        external_url=file, group=group, rev=rev,
         states=[('slides','active'), ('reuse_policy', 'single')])
     pres = SessionPresentation.objects.create(session=session, document=doc, rev=doc.rev)
     session.sessionpresentation_set.add(pres)

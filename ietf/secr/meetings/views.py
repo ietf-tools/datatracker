@@ -323,9 +323,12 @@ def blue_sheet(request, meeting_id):
         form = UploadBlueSheetForm(request.POST,request.FILES)
         if form.is_valid():
             file = request.FILES['file']
-            handle_upload_file(file,file.name,meeting,'bluesheets')
-            messages.success(request, 'File Uploaded')
-            return redirect('ietf.secr.meetings.views.blue_sheet', meeting_id=meeting.number)
+            save_error = handle_upload_file(file,file.name,meeting,'bluesheets')
+            if save_error:
+                form.add_error(None, save_error)
+            else:
+                messages.success(request, 'File Uploaded')
+                return redirect('ietf.secr.meetings.views.blue_sheet', meeting_id=meeting.number)
     else:
         form = UploadBlueSheetForm()
 

@@ -1619,6 +1619,8 @@ class MaterialsTests(TestCase):
         def follow(url):
             seen.add(url)
             r = self.client.get(url)
+            if r.status_code != 200:
+                debug.show('url')
             self.assertEqual(r.status_code, 200)
             if not ('.' in url and url.rsplit('.', 1)[1] in ['tgz', 'pdf', ]):
                 if r.content:
@@ -1774,6 +1776,8 @@ class MaterialsTests(TestCase):
             test_file.name = "some.html"
             r = self.client.post(url,dict(file=test_file))
             self.assertContains(r, 'Could not identify the file encoding')
+            doc = Document.objects.get(pk=doc.pk)
+            self.assertEqual(doc.rev,'02')
 
             # Verify that we don't have dead links
             url = url=urlreverse('ietf.meeting.views.session_details', kwargs={'num':session.meeting.number, 'acronym': session.group.acronym})

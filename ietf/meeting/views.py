@@ -161,6 +161,8 @@ def materials_document(request, document, num=None, ext=None):
         num = get_meeting(num).number
     if (re.search('^\w+-\d+-.+-\d\d$', document) or
         re.search('^\w+-interim-\d+-.+-\d\d-\d\d$', document) or
+        re.search('^\w+-interim-\d+-.+-sess[a-z]-\d\d$', document) or
+        re.search('^minutes-interim-\d+-.+-\d\d$', document) or
         re.search('^slides-interim-\d+-.+-\d\d$', document)):
         name, rev = document.rsplit('-', 1)
     else:
@@ -1293,7 +1295,6 @@ def upload_session_minutes(request, session_id, num):
             filename = '%s-%s%s'% ( doc.name, doc.rev, ext)
             doc.external_url = filename
             e = NewRevisionDocEvent.objects.create(doc=doc, by=request.user.person, type='new_revision', desc='New revision available: %s'%doc.rev, rev=doc.rev)
-            doc.save_with_history([e])
             # The way this function builds the filename it will never trigger the file delete in handle_file_upload.
             save_error = handle_upload_file(file, filename, session.meeting, 'minutes', request=request, encoding=form.file_encoding[file.name])
             if save_error:
@@ -1397,7 +1398,6 @@ def upload_session_agenda(request, session_id, num):
             filename = '%s-%s%s'% ( doc.name, doc.rev, ext)
             doc.external_url = filename
             e = NewRevisionDocEvent.objects.create(doc=doc,by=request.user.person,type='new_revision',desc='New revision available: %s'%doc.rev,rev=doc.rev)
-            doc.save_with_history([e])
             # The way this function builds the filename it will never trigger the file delete in handle_file_upload.
             save_error = handle_upload_file(file, filename, session.meeting, 'agenda', request=request, encoding=form.file_encoding[file.name])
             if save_error:
@@ -1503,7 +1503,6 @@ def upload_session_slides(request, session_id, num, name):
             filename = '%s-%s%s'% ( doc.name, doc.rev, ext)
             doc.external_url = filename
             e = NewRevisionDocEvent.objects.create(doc=doc,by=request.user.person,type='new_revision',desc='New revision available: %s'%doc.rev,rev=doc.rev)
-            doc.save_with_history([e])
             # The way this function builds the filename it will never trigger the file delete in handle_file_upload.
             save_error = handle_upload_file(file, filename, session.meeting, 'slides', request=request, encoding=form.file_encoding[file.name])
             if save_error:
