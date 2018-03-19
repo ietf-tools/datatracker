@@ -382,6 +382,8 @@ def edit_agenda(request, num=None, owner=None, name=None):
 #
 AgendaPropertiesForm = modelform_factory(Schedule, fields=('name','visible', 'public'))
 
+# The meeing urls.py won't allow empy num, owmer, or name values
+
 @role_required('Area Director','Secretariat')
 def edit_agenda_properties(request, num=None, owner=None, name=None):
     meeting  = get_meeting(num)

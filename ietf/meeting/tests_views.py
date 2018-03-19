@@ -24,10 +24,10 @@ from ietf.meeting.helpers import can_approve_interim_request, can_view_interim_r
 from ietf.meeting.helpers import send_interim_approval_request
 from ietf.meeting.helpers import send_interim_cancellation_notice
 from ietf.meeting.helpers import send_interim_minutes_reminder, populate_important_dates
-from ietf.meeting.models import Session, TimeSlot, Meeting, SchedTimeSessAssignment
+from ietf.meeting.models import Session, TimeSlot, Meeting, SchedTimeSessAssignment, Schedule
 from ietf.meeting.test_data import make_meeting_test_data, make_interim_meeting
 from ietf.meeting.utils import finalize
-from ietf.name.models import SessionStatusName
+from ietf.name.models import SessionStatusName 
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized, unicontent
 from ietf.utils.mail import outbox
 from ietf.utils.text import xslugify
@@ -493,6 +493,37 @@ class MeetingTests(TestCase):
         self.assertEqual(response.get('Content-Type'), 'application/pdf')
         os.unlink(filename)
 
+    def test_current_materials(self):
+        url = urlreverse('ietf.meeting.views.current_materials')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+        MeetingFactory(type_id='ietf')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 302)
+
+    def test_edit_agenda_properties(self):
+        self.client.login(username='secretary',password='secretary+password')
+        url = urlreverse('ietf.meeting.views.edit_agenda_properties',kwargs={'owner':'does@notexist.example','name':'doesnotexist','num':00})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code,404)
+        self.client.logout()
+        schedule = ScheduleFactory(meeting__type_id='ietf',visible=False,public=False)
+        url = urlreverse('ietf.meeting.views.edit_agenda_properties',kwargs={'owner':schedule.owner.email(),'name':schedule.name,'num':schedule.meeting.number})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code,302)
+        self.client.login(username='secretary',password='secretary+password')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code,200)
+        response = self.client.post(url, {
+                'name':schedule.name,
+                'visible':True,
+                'public':True,
+            }
+        )
+        self.assertEqual(response.status_code,302)
+        schedule = Schedule.objects.get(pk=schedule.pk)
+        self.assertTrue(schedule.visible)
+        self.assertTrue(schedule.public)
 
 class EditTests(TestCase):
     def setUp(self):
