@@ -12,6 +12,17 @@ Planned work in rough order
 * Introduce an API for Meetecho to use to associate recordings with sessions
   (and perhaps automate making copies of those videos)
 
+* GDPR related: a) Add SimpleHistory for Person in order to have traceability
+  of changes to person records.  Include client IP address.  b) Make sure all
+  parts of a person's record is reflected on the account page and can be
+  updated/corrected. c) Any form update requires a checkbox filled in which
+  signifies consent to use the data on the IETF website. d) The submission
+  tool also requires a consent checkbox for usage of personal data contained
+  in the uploaded draft. e) There should be a link (in the footer?) to a page
+  common for the IETF, probably, that describes how to request purging your
+  personal information from the datatracker.  Actual purging can be done trough
+  the Django admin interface, no new software required.
+
 * Reworked UI and refactored backend for the scretariat meeting scheduling
   tool.
 
