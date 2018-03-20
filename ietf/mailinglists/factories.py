@@ -11,7 +11,7 @@ class ListFactory(factory.DjangoModelFactory):
     class Meta:
         model = List
 
-    name = factory.Faker('word')
+    name = factory.Sequence(lambda n: "list-name-%s" % n)
     description = factory.Faker('sentence', nb_words=10)
     advertised = factory.LazyAttribute(lambda obj: random.randint(0, 1))
 
