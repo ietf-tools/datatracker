@@ -19,12 +19,18 @@ from ietf.person.models import Person, Alias
 from ietf.person.utils import (merge_persons, determine_merge_order, send_merge_notification,
     handle_users, get_extra_primary, dedupe_aliases, move_related_objects, merge_nominees, merge_users)
 from ietf.utils.test_data import make_test_data
-from ietf.utils.test_utils import TestCase
+from ietf.utils.test_utils import TestCase, login_testing_unauthorized
 from ietf.utils.mail import outbox, empty_outbox
 
 
-class PersonTests(TestCase):
+def get_person_no_user():
+    person = PersonFactory()
+    person.user = None
+    person.save()
+    return person
 
+
+class PersonTests(TestCase):
     def test_ajax_search_emails(self):
         draft = make_test_data()
         person = draft.ad
@@ -87,17 +93,43 @@ class PersonTests(TestCase):
         Person.objects.create(name="Duplicate Test")
         self.assertTrue("possible duplicate" in outbox[0]["Subject"].lower())
 
-class PersonUtilsTests(TestCase):
-    def get_person_no_user(self):
-        person = PersonFactory()
-        person.user = None
-        person.save()
-        return person
+    def test_merge(self):
+        url = urlreverse("ietf.person.views.merge")
+        login_testing_unauthorized(self, "secretary", url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
 
-    def test_determine_merge_order(self):
-        p1 = self.get_person_no_user()
+    def test_merge_with_params(self):
+        p1 = get_person_no_user()
         p2 = PersonFactory()
-        p3 = self.get_person_no_user()
+        url = urlreverse("ietf.person.views.merge") + "?source={}&target={}".format(p1.pk, p2.pk)
+        login_testing_unauthorized(self, "secretary", url)
+        r = self.client.get(url)
+        self.assertContains(r, 'retaining login', status_code=200)
+
+    def test_merge_with_params_bad_id(self):
+        url = urlreverse("ietf.person.views.merge") + "?source=1000&target=2000"
+        login_testing_unauthorized(self, "secretary", url)
+        r = self.client.get(url)
+        self.assertContains(r, 'ID does not exist', status_code=200)
+
+    def test_merge_post(self):
+        p1 = get_person_no_user()
+        p2 = PersonFactory()
+        url = urlreverse("ietf.person.views.merge")
+        expected_url = urlreverse("ietf.secr.rolodex.views.view", kwargs={'id': p2.pk})
+        login_testing_unauthorized(self, "secretary", url)
+        data = {'source': p1.pk, 'target': p2.pk}
+        r = self.client.post(url, data, follow=True)
+        self.assertRedirects(r, expected_url)
+        self.assertContains(r, 'Merged', status_code=200)
+        self.assertFalse(Person.objects.filter(pk=p1.pk))
+
+class PersonUtilsTests(TestCase):
+    def test_determine_merge_order(self):
+        p1 = get_person_no_user()
+        p2 = PersonFactory()
+        p3 = get_person_no_user()
         p4 = PersonFactory()
 
         # target has User
@@ -129,12 +161,12 @@ class PersonUtilsTests(TestCase):
         self.assertTrue('IETF Datatracker records merged' in outbox[-1]['Subject'])
 
     def test_handle_users(self):
-        source1 = self.get_person_no_user()
-        target1 = self.get_person_no_user()
-        source2 = self.get_person_no_user()
+        source1 = get_person_no_user()
+        target1 = get_person_no_user()
+        source2 = get_person_no_user()
         target2 = PersonFactory()
         source3 = PersonFactory()
-        target3 = self.get_person_no_user()
+        target3 = get_person_no_user()
         source4 = PersonFactory()
         target4 = PersonFactory()
 
@@ -223,4 +255,4 @@ class PersonUtilsTests(TestCase):
         merge_users(source, target)
         self.assertIn(communitylist, target.communitylist_set.all())
         self.assertIn(feedback, target.feedback_set.all())
-        self.assertIn(nomination, target.nomination_set.all())        
+        self.assertIn(nomination, target.nomination_set.all())
