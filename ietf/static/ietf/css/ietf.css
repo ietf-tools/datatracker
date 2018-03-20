@@ -614,6 +614,10 @@ table.simple-table td:last-child {
   height: 25em;
 }
 
+.document-stats #chart.chart-overview {
+  height: 35em;
+}
+
 .stats-time-graph {
   height: 15em;
 }
