@@ -525,6 +525,14 @@ class MeetingTests(TestCase):
         self.assertTrue(schedule.visible)
         self.assertTrue(schedule.public)
 
+    def test_agenda_by_type_ics(self):
+        session=SessionFactory(meeting__type_id='ietf',type_id='lead')
+        url = urlreverse('ietf.meeting.views.agenda_by_type_ics',kwargs={'num':session.meeting.number,'type':'lead'})
+        login_testing_unauthorized(self,"secretary",url)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code,200)
+        self.assertEqual(response.get('Content-Type'), 'text/calendar')
+
 class EditTests(TestCase):
     def setUp(self):
         # make sure we have the colors of the area
