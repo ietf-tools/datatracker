@@ -65,6 +65,7 @@ Table of Contents
    3.  JSON example  . . . . . . . . . . . . . . . . . . . . . . . .   2
    4.  Security Considerations . . . . . . . . . . . . . . . . . . .   2
    5.  IANA Considerations . . . . . . . . . . . . . . . . . . . . .   2
+   6.  Normative References  . . . . . . . . . . . . . . . . . . . .   2
    Author's Address  . . . . . . . . . . . . . . . . . . . . . . . .   2
 
 1. Introduction
