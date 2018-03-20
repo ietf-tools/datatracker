@@ -533,6 +533,19 @@ class MeetingTests(TestCase):
         self.assertEqual(response.status_code,200)
         self.assertEqual(response.get('Content-Type'), 'text/calendar')
 
+    def test_edit_slide_order(self):
+        session=SessionFactory(meeting__type_id='iestf',type_id='session')
+        slides = DocumentFactory(type_id='slides')
+        session.sessionpresentation_set.create(document=slides,order=0)
+        url = urlreverse('ietf.meeting.views.set_slide_order',kwargs={'session_id':session.id,'num':session.meeting.number,'name':slides.name})
+        response = self.client.put(url,{'order':2})
+        self.assertEqual(response.status_code, 403)
+        self.client.login(username='secretary', password='secretary+password')
+        response = self.client.post(url,{'order':'2'})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get('Content-Type'), 'application/json')
+        self.assertEqual(session.sessionpresentation_set.first().order,2)
+
 class EditTests(TestCase):
     def setUp(self):
         # make sure we have the colors of the area
