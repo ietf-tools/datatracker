@@ -35,6 +35,7 @@ from ietf.utils.mail import outbox, empty_outbox
 from ietf.utils.models import VersionInfo
 from ietf.utils.test_data import make_test_data
 from ietf.utils.test_utils import login_testing_unauthorized, unicontent, TestCase
+from ietf.utils.draft import Draft
 
 
 def submission_file(name, rev, group, format, templatename, author=None, email=None, title=None, year=None, ascii=True):
@@ -1660,3 +1661,17 @@ class ApiSubmitTests(TestCase):
         r, author, name = self.post_submission('00', year="1900")
         expected = "Document date must be within 3 days of submission date"
         self.assertContains(r, expected, status_code=400)
+
+class RefsTests(TestCase):
+
+    def test_draft_refs_identification(self):
+
+        group = None
+        file, __ = submission_file('draft-some-subject', '00', group, 'txt', "test_submission.txt", )
+        draft = Draft(file.read().decode('utf-8'), file.name)
+        refs = draft.get_refs()
+        self.assertEqual(refs['rfc2119'], 'norm')
+        self.assertEqual(refs['rfc8174'], 'norm')
+        self.assertEqual(refs['rfc8126'], 'info')
+        self.assertEqual(refs['rfc8175'], 'info')
+        

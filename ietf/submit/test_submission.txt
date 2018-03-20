@@ -178,6 +178,35 @@ Table of Contents
 
    No new registrations for IANA.
 
+   [RFC8175] is mentioned here in order to give the reference
+   classification code a chance to mess up.
+
+
+6.  References
+
+6.1.  Normative References
+
+   [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
+              Requirement Levels", BCP 14, RFC 2119,
+              DOI 10.17487/RFC2119, March 1997,
+              <https://www.rfc-editor.org/info/rfc2119>.
+
+   [RFC8174]  Leiba, B., "Ambiguity of Uppercase vs Lowercase in RFC
+              2119 Key Words", BCP 14, RFC 8174, DOI 10.17487/RFC8174,
+              May 2017, <https://www.rfc-editor.org/info/rfc8174>.
+
+6.2.  Informative References
+
+   [RFC8126]  Cotton, M., Leiba, B., and T. Narten, "Guidelines for
+              Writing an IANA Considerations Section in RFCs", BCP 26,
+              RFC 8126, DOI 10.17487/RFC8126, June 2017,
+              <https://www.rfc-editor.org/info/rfc8126>.
+
+   [RFC8175]  Ratliff, S., Jury, S., Satterwhite, D., Taylor, R., and B.
+              Berry, "Dynamic Link Exchange Protocol (DLEP)", RFC 8175,
+              DOI 10.17487/RFC8175, June 2017,
+              <https://www.rfc-editor.org/info/rfc8175>.
+
 Author's Address
 
    %(author)s
@@ -190,6 +219,10 @@ Author's Address
 
 
 
+Appendix A.  Comments
+
+   [RFC8174] is mentioned here just to give the reference classification
+   code a chance to mess up.
 
 
 
