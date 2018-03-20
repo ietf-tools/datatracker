@@ -17,7 +17,7 @@ warnings.filterwarnings("ignore", message="Importing from django.core.urlresolve
 warnings.filterwarnings("ignore", message="on_delete will be a required arg for OneToOneField in Django 2.0.", module="tastypie")
 warnings.filterwarnings("ignore", message="The load_template\(\) method is deprecated. Use get_template\(\) instead.")
 warnings.filterwarnings("ignore", message="escape isn't the last filter in")
-
+warnings.filterwarnings("ignore", message="Deprecated allow_tags attribute used on field")
 
 try:
     import syslog
