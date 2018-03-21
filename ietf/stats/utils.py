@@ -5,6 +5,8 @@ from collections import defaultdict
 from django.conf import settings
 from django.contrib.auth.models import User
 
+import debug
+
 from ietf.stats.models import AffiliationAlias, AffiliationIgnoredEnding, CountryAlias, MeetingRegistration
 from ietf.name.models import CountryName
 from ietf.person.models import Person, Email, Alias
@@ -243,8 +245,8 @@ def get_meeting_registration_data(meeting):
             address         = registration['Email'].strip()
             object, created = MeetingRegistration.objects.get_or_create(
                 meeting_id=meeting.pk,
-                first_name=first_name,
-                last_name=last_name,
+                first_name=first_name[:200],
+                last_name=last_name[:200],
                 affiliation=affiliation,
                 country_code=country_code,
                 email=address,
@@ -279,12 +281,15 @@ def get_meeting_registration_data(meeting):
                     else:
                         # Create a new user.
                         user = User.objects.create(
-                            first_name=first_name,
-                            last_name=last_name,
+                            first_name=first_name[:30],
+                            last_name=last_name[:30],
                             username=address,
                             email=address,
                         )
-                        user.save()
+                        if user.first_name != first_name:
+                            debug.say("Truncated first name: %s --> %s" % (first_name, user.first_name))
+                        if user.last_name != last_name:
+                            debug.say("Truncated last name: %s --> %s" % (last_name, user.last_name))
 
                     aliases = Alias.objects.filter(name=regname)
                     if aliases.exists():
@@ -297,13 +302,15 @@ def get_meeting_registration_data(meeting):
                             affiliation=affiliation,
                             user=user,
                         )
-                        person.save()
 
                     # Create an associated Email address for this Person
-                    email = Email.objects.create(
+                    email, __ = Email.objects.get_or_create(
                         person=person,
-                        address=address,
+                        address=address[:64],
                     )
+                    if email.address != address:
+                        debug.say("Truncated address: %s --> %s" % (address, email.address))
+                    
 
                     # If this is the only email address, set primary to true.
                     # If the person already existed (found through Alias) and
@@ -322,4 +329,7 @@ def get_meeting_registration_data(meeting):
     else:
         raise RuntimeError("Bad response from registrations API: %s, '%s'" % (response.status_code, response.content))
     num_total = MeetingRegistration.objects.filter(meeting_id=meeting.pk).count()
+    if meeting.attendees is None or num_total > meeting.attendees:
+        meeting.attendees = num_total
+        meeting.save()
     return num_created, num_processed, num_total
