@@ -216,7 +216,11 @@ def get_changeset_list_from_file(repo, filename):
     and hold-for-merge files.
     """
     list = []
-    note("Reading list from '%s'" % filename)
+    if os.path.exists(filename):
+        note("Reading list from '%s'" % filename)
+    else:
+        note("File doesn't exist: '%s'" % filename)
+        return list
     with open(filename) as file:
         for line in file:
             line = line.strip()
@@ -231,6 +235,8 @@ def get_changeset_list_from_file(repo, filename):
                 else:
                     changeset = parts[0]
                     branch, rev = changeset.split('@')
+                if branch.startswith('^'):
+                    branch = branch[1:]
                 if branch.startswith('/'):
                     branch = branch[1:]
                 if not (rev in merged_revs and branch == merged_revs[rev]):
@@ -277,6 +283,7 @@ def get_ready_commits(repo, tree):
     
 ready  = get_changeset_list_from_file(repo, 'ready-for-merge')
 hold   = get_changeset_list_from_file(repo, 'hold-for-merge')
+hold  += get_changeset_list_from_file(repo, '../hold-for-merge')
 ready += get_ready_commits(repo, 'personal')
 ready += get_ready_commits(repo, 'branch/amsl')
 ready += get_ready_commits(repo, 'branch/iola')
