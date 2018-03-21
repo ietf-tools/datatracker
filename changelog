@@ -71,7 +71,7 @@ ietfdb (6.76.0) ietf; urgency=medium
 
   * Fixed a bug in a RegexValidator error message string interpolation.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  21 Mar 2018 10:23:06 +0000
+ -- Henrik Levkowetz <henrik@levkowetz.com>  21 Mar 2018 10:58:52 +0000
 
 
 ietfdb (6.75.2) ietf; urgency=medium
