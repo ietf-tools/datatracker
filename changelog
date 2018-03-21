@@ -1,3 +1,79 @@
+ietfdb (6.76.0) ietf; urgency=medium
+
+  **IETF 101 code sprint**
+
+  This release contains datatracker bugfixes and enhancements from the IETF-101
+  Code Sprint.  It brings new views to merge duplicate person records, fixes
+  an annoying bug in downref identification and a bunch of links that didn't
+  point to the right document, corrects the mime-type for JSON responses, and
+  brings substantial improvments to test coverage.
+
+  Many thanks to everyone who contributed!
+
+  * Merged in [14864] from rjsparks@nostrum.com:
+    Improved test coverage for ietf.meeting.views.  
+
+  * Updated Note Well.  Fixes issue 2474.
+
+  * Tweaked person factory ascii name generation to not include periods 
+    inside names.
+
+  * Tweaked a factory to make duplicate mailing list names less likely in tests
+
+  * Test data template tweak.
+
+  * Merged in [14863] from rjsparks@nostrum.com:
+    Improved test coverage for ietf.utils.draft.  
+
+  * Merged in [14862] from rcross@amsl.com:
+    Add view for merge person records.   
+
+  * Merged in [14855] from rjsparks@nostrum.com:
+    Improved test coverage for ietf.meeting.views.  
+
+  * Added a test case for reference extraction.
+
+  * Merged in [14854] from rjsparks@nostrum.com:
+    Improved test coverage over meeting.views.  
+
+  * Merged in [14851] from housley@vigilsec.com:
+    Improve parser for references in Internet-Drafts. Fixes #2360 
+
+  * Merged in [14850] from rjsparks@nostrum.com:
+    Improvements to test coverage in ietf.meeting.views 
+
+  * Removed premature save of upload document state (doing it after 
+    verifying that the save to file worked instead).  Tweaked materials 
+    documents revision extraction regexes.  Added a test on no change of 
+    materials rev after failed upload.  Corrected the naming of materials in 
+    make_meeting_test_data.  Refined the test crawl of meeting materials pages.
+
+  * Added a couple of meeting material crawls to check that internal 
+    material links aren't broken.
+
+  * Check attribute isn't None before accessing sub-attributes.
+
+  * Merged in [14845] from rcross@amsl.com:
+    Remove unused roles/forms.py.   
+
+  * Merged in [14844] from adam@nostrum.com:
+    Fixing 'href' field for
+    https://datatracker.ietf.org/meeting/<meeting-num>/json.  
+
+  * Fixed some materials docname-with-rev regexes that were too narrow.
+
+  * Merged in [14843] from adam@nostrum.com:
+    Updated (deprecated, unregistered) 'text/json' with 'application/json' 
+    everwhere.  
+
+  * Merged in [14842] from rcross@amsl.com:
+    Add check for deleted session when scheduling.  Fixes #2450.   
+
+  * Fixed a bug in a RegexValidator error message string interpolation.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  21 Mar 2018 10:23:06 +0000
+
+
 ietfdb (6.75.2) ietf; urgency=medium
 
   **Session iCalendar links on document lists**
