@@ -12,6 +12,13 @@ Planned work in rough order
 * Introduce an API for Meetecho to use to associate recordings with sessions
   (and perhaps automate making copies of those videos)
 
+* GroupFeatures cleanup.  Move most to fields on GroupTypeName, and fix places
+  that still uses lists of group types to determine actions by instead
+  defining group type fields to hold the selector.  (Setting up a new
+  group type for things like PechaCucha and Hot RFC Lightning Tals probably
+  could have been done with only table edits if there hadn't been so much code
+  using type_id lists and features needing code changes).
+
 * GDPR related: a) Add SimpleHistory for Person in order to have traceability
   of changes to person records.  Include client IP address.  b) Make sure all
   parts of a person's record is reflected on the account page and can be
