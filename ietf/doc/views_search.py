@@ -410,9 +410,12 @@ def drafts_in_last_call(request):
     lc_state = State.objects.get(type="draft-iesg", slug="lc").pk
     form = SearchForm({'by':'state','state': lc_state, 'rfcs':'on', 'activedrafts':'on'})
     results, meta = prepare_document_table(request, retrieve_search_results(form), form.data)
+    pages = 0
+    for doc in results:
+        pages += doc.pages
 
     return render(request, 'doc/drafts_in_last_call.html', {
-        'form':form, 'docs':results, 'meta':meta
+        'form':form, 'docs':results, 'meta':meta, 'pages':pages
     })
 
 def drafts_in_iesg_process(request, last_call_only=None):
