@@ -12,6 +12,7 @@ from pipe import pipe
 from StringIO import StringIO
 from textwrap import dedent
 from unittest import skipIf
+from tempfile import mkdtemp
 
 from django.apps import apps
 from django.contrib.auth.models import User
@@ -25,12 +26,14 @@ from django.urls import reverse as urlreverse
 
 import debug                            # pyflakes:ignore
 
-from ietf.utils.management.commands import pyflakes
+from ietf.group.models import Group
+from ietf.submit.tests import submission_file
+from ietf.utils.draft import Draft, getmeta
 from ietf.utils.mail import send_mail_text, send_mail_mime, outbox 
+from ietf.utils.management.commands import pyflakes
 from ietf.utils.test_data import make_test_data
 from ietf.utils.test_runner import get_template_paths, set_coverage_checking
 from ietf.utils.test_utils import TestCase
-from ietf.group.models import Group
 
 skip_wiki_glue_testing = False
 skip_message = ""
@@ -333,3 +336,27 @@ class AdminTestCase(TestCase):
 #                 self.assertEqual(r.status_code, 200)
 
 
+class DraftTests(TestCase):
+
+    def setUp(self):
+        file,_ = submission_file(name='draft-test-draft-class',rev='00',format='txt',templatename='test_submission.txt',group=None)
+        self.draft = Draft(text=file.getvalue(),source='draft-test-draft-class-00.txt',name_from_source=False)
+
+    def test_get_status(self):
+        self.assertEqual(self.draft.get_status(),'Informational')
+    
+    def test_get_authors(self):
+        self.assertTrue(all([u'@' in author for author in self.draft.get_authors()]))
+
+    def test_get_authors_with_firm(self):
+        self.assertTrue(all([u'@' in author for author in self.draft.get_authors_with_firm()]))
+        
+    def test_old_get_refs(self):
+        self.assertEqual(self.draft.old_get_refs()[1][0],u'rfc2119')
+
+    def test_get_meta(self):
+        tempdir = mkdtemp()
+        filename = os.path.join(tempdir,self.draft.source)
+        with open(filename,'w') as file:
+            file.write(self.draft.text)
+        self.assertEqual(getmeta(filename)['docdeststatus'],'Informational')

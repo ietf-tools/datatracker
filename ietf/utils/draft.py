@@ -1125,8 +1125,8 @@ class Draft():
         refline = None
         for i in range(len(self.lines)-1, 15, -1):
             if re.search(r"(?i)^ *[0-9.]+ *(((normative|informative|informational|non-normative) )?references|references\W+(normative|informative))", self.lines[i]):
-                refline = i
-                break
+                if not '. . .' in self.lines[i] and not '...' in self.lines[i]:
+                    refline = i
         if refline:
             for i in range(refline, len(self.lines)):
                 line = self.lines[i].strip()
