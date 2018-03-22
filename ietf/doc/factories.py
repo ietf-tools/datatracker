@@ -11,14 +11,12 @@ def draft_name_generator(type_id,group,n):
               n,
             )
 
-class DocumentFactory(factory.DjangoModelFactory):
+class BaseDocumentFactory(factory.DjangoModelFactory):
     class Meta:
         model = Document
 
-    type_id = 'draft'
     title = factory.Faker('sentence',nb_words=6)
     rev = '00'
-    group = factory.SubFactory('ietf.group.factories.GroupFactory',type_id='individ')
     std_level_id = None
     intended_std_level_id = None
 
@@ -58,6 +56,22 @@ class DocumentFactory(factory.DjangoModelFactory):
             obj._has_an_event_so_saving_is_allowed = True
             obj.save()
 
+class DocumentFactory(BaseDocumentFactory):
+
+    type_id = 'draft'
+    group = factory.SubFactory('ietf.group.factories.GroupFactory',type_id='individ')
+
+class CharterFactory(BaseDocumentFactory):
+
+    type_id = 'charter'
+    group = factory.SubFactory('ietf.group.factories.GroupFactory',type_id='individ')
+
+    @factory.post_generation
+    def set_group_charter_document(obj, create, extracted, **kwargs):
+        if not create:
+            return
+        obj.group.charter = extracted or obj
+        obj.group.save()
 
 class DocAliasFactory(factory.DjangoModelFactory):
     class Meta:
