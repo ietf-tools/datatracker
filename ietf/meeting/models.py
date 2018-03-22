@@ -95,6 +95,8 @@ class Meeting(models.Model):
     acknowledgements = models.TextField(blank=True, help_text="Acknowledgements for use in meeting proceedings.  Use ReStructuredText markup.")
     overview = ForeignKey(DBTemplate, related_name='overview', null=True, editable=False)
     show_important_dates = models.BooleanField(default=False)
+    attendees = models.IntegerField(blank=True, null=True, default=None,
+                                    help_text=u"Number of Attendees for backfilled meetings, leave it blank for new meetings, and then it is calculated from the registrations")
 
     def __unicode__(self):
         if self.type_id == "ietf":

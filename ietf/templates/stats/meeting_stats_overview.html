@@ -1,9 +1,59 @@
 <h3>{{ stats_title }}</h3>
 
-<div id="chart"></div>
+
+<div id="chart" class="chart-{{ stats_type }}"></div>
 
 <script>
  var chartConf = {
+
+     {% if stats_type == "overview" %}
+     
+     chart: {
+         type: 'column',
+     },
+     colors: [ 'blue', 'red', 'cyan', 'orange', 'black',
+     	       'green', 'yellow' ],
+     plotOptions: {
+         series: {
+	     stacking: 'normal',
+	     point: {
+	         events: {
+		     click: function () {
+		         location.href = this.options.url;
+		     }
+		 }
+	     },
+	 },
+         column: {
+             marker: {
+                 enabled: false
+             },
+             animation: false
+         }
+     },
+     tooltip: {
+         formatter: function () {
+             var s = '<b>' + this.point.name + '</b>';
+
+	     s += '<br/>' + this.series.name + '<br/> Attendees: ' + this.y;
+             return s;
+         },
+         shared: false
+     },
+     legend: {
+         title: {
+	     text: "Continent of the venue",
+	 },
+	 borderWidth: 1,
+         align: "center",
+         verticalAlign: "bottom",
+         layout: "horizontal",
+         enabled: true
+     },
+
+     
+     {% else %}
+     
      chart: {
          type: 'line',
      },
@@ -15,14 +65,28 @@
              animation: false
          }
      },
-     {% if stats_type != "overview" %}
+     tooltip: {
+         formatter: function () {
+             var s = '<b>' + "IETF " + this.x + '</b>';
+
+             $.each(this.points, function () {
+                 s += '<br/>' + this.series.name + ': ' + this.y;
+             });
+
+             return s;
+         },
+         shared: true
+     },
      legend: {
          align: "right",
          verticalAlign: "middle",
          layout: "vertical",
          enabled: true
      },
+
+     
      {% endif %}
+     
      title: {
          text: '{{ stats_title|escapejs }}'
      },
@@ -38,18 +102,6 @@
              text: 'Attendees at meeting'
          }
      },
-     tooltip: {
-         formatter: function () {
-             var s = '<b>' + "IETF " + this.x + '</b>';
-
-             $.each(this.points, function () {
-                 s += '<br/>' + this.series.name + ': ' + this.y;
-             });
-
-             return s;
-         },
-         shared: true
-     },
      series: {{ chart_data }}
  };
 </script>
@@ -57,17 +109,25 @@
 {% if table_data %}
   <h3>Data</h3>
 
-  <table class="table table-condensed stats-data">
+  <table class="table table-condensed stats-data tablesorter">
     <thead>
       <tr>
         <th>Meeting</th>
+	<th>Date</th>
+	<th>City</th>
+	<th>Country</th>
+	<th>Continent</th>
         <th>Attendees</th>
       </tr>
     </thead>
     <tbody>
-      {% for meeting_number, label, url, count, names in table_data %}
+      {% for meeting, url, count, country in table_data %}
         <tr>
-          <td><a href="{{ url }}">{{ label }}</a></td>
+	  <td>{{ meeting.number }}</td>
+	  <td>{{ meeting.date }} </td>
+          <td><a href="{{ url }}">{{ meeting.city }}</a></td>
+	  <td>{{ country.name }}</td>
+	  <td>{{ country.continent }}</td>
           <td>{% include "stats/includes/number_with_details_cell.html" %}</td>
         </tr>
       {% endfor %}

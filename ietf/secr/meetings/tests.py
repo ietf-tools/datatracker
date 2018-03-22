@@ -98,6 +98,7 @@ class SecrMeetingTestCase(TestCase):
             meeting.agenda.assignments.filter(timeslot__type='reg').count(),
             new_meeting.agenda.assignments.filter(timeslot__type='reg').count()
         )
+        self.assertEqual(new_meeting.attendees, None)
 
     def test_edit_meeting(self):
         "Edit Meeting"
@@ -115,12 +116,14 @@ class SecrMeetingTestCase(TestCase):
                          submission_start_day_offset=90,
                          submission_cutoff_day_offset=26,
                          submission_correction_day_offset=50,
+                         attendees=1234,
                     )
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.post(url, post_data,follow=True)
         self.assertEqual(response.status_code, 200)
         meeting = Meeting.objects.get(number=1)
         self.assertEqual(meeting.city,'Toronto')
+        self.assertEqual(meeting.attendees,1234)
 
     def test_blue_sheets_upload(self):
         "Test Bluesheets"

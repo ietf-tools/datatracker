@@ -882,28 +882,51 @@ def meeting_stats(request, num=None, stats_type=None):
             if stats_type == "overview":
                 stats_title = "Number of attendees per meeting"
 
+                continents = {}
+                
+                meetings = Meeting.objects.filter(type='ietf').order_by('number')
+                for m in meetings:
+                    country = CountryName.objects.get(slug=m.country)
+                    continents[country.continent.name] = country.continent.name
+
                 bins = defaultdict(set)
 
                 for r in attendees:
                     meeting_number = int(r.meeting.number)
                     name = reg_name(r)
-
                     bins[meeting_number].add(name)
 
-                meeting_cities = dict(Meeting.objects.filter(number__in=bins.iterkeys()).values_list("number", "city"))
+                series_data = {}
+                for continent in continents.keys():
+                    series_data[continent] = []
 
-                series_data = []
-                for meeting_number, names in sorted(bins.iteritems()):
-                    series_data.append((meeting_number, len(names)))
-                    url = build_meeting_stats_url(number=meeting_number, stats_type_override="country")
-                    label = "IETF {} - {}".format(meeting_number, meeting_cities.get(str(meeting_number), ""))
-                    table_data.append((meeting_number, label, url, len(names), list(names)[:names_limit]))
+                for meeting in meetings:
+                    country = CountryName.objects.get(slug=meeting.country)
+                    url = build_meeting_stats_url(number=meeting.number,
+                                                  stats_type_override="country")
+                    for continent in continents.keys():
+                        if continent == country.continent.name:
+                            d = {
+                                "name": "IETF {} - {}, {}".format(int(meeting.number), meeting.city, country),
+                                "x": int(meeting.number),
+                                "y": meeting.attendees,
+                                "url": url,
+                                }
+                        else:
+                            d = {
+                                "x": int(meeting.number),
+                                "y": 0,
+                                }
+                        series_data[continent].append(d)
+                    table_data.append((meeting, url,
+                                       meeting.attendees, country))
 
-                series_data.sort(key=lambda t: t[0])
-                table_data.sort(key=lambda t: t[0], reverse=True)
-
-                chart_data.append({ "name": "Attendees", "data": series_data })
-
+                for continent in continents.keys():
+#                    series_data[continent].sort(key=lambda t: t[0]["x"])
+                    chart_data.append( { "name": continent,
+                                         "data": series_data[continent] })
+                    
+                table_data.sort(key=lambda t: int(t[0].number), reverse=True)
 
             elif stats_type == "country":
                 stats_title = "Number of attendees per country across meetings"
