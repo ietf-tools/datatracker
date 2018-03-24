@@ -360,3 +360,4 @@ class DraftTests(TestCase):
         with open(filename,'w') as file:
             file.write(self.draft.text)
         self.assertEqual(getmeta(filename)['docdeststatus'],'Informational')
+        shutil.rmtree(tempdir)
