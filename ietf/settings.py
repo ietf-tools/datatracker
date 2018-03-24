@@ -856,7 +856,7 @@ USER_PREFERENCE_DEFAULTS = {
     "expires_soon"  : "14",
     "new_enough"    : "14",
     "full_draft"    : "off",
-    "left_menu"     : "on",
+    "left_menu"     : "off",
 }
 
 TRAC_MASTER_DIR = "/a/www/trac-setup/"

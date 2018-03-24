@@ -92,7 +92,7 @@
                 {{ message }}
             </div>
         {% endfor %}
-        {% if request.COOKIES.left_menu != "off" and not hide_menu %} {# ugly hack for the more or less unported meeting agenda edit pages #}
+        {% if request.COOKIES.left_menu == "on" and not hide_menu %} {# ugly hack for the more or less unported meeting agenda edit pages #}
           <div class="row">
 	    <div class="col-md-2 visible-md visible-lg leftmenu">
 	      <ul class="nav nav-pills nav-stacked panel panel-default panel-body">
@@ -110,7 +110,7 @@
         {% endif %}
         {% block content %}{{ content|safe }}{% endblock %}
         {% block content_end %}{% endblock %}
-        {% if request.COOKIES.left_menu != "off" and not hide_menu %}
+        {% if request.COOKIES.left_menu == "on" and not hide_menu %}
 	    </div>
           </div>
         {% endif %}
