@@ -10,13 +10,13 @@ from django.urls import reverse as urlreverse
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.factories import DocumentFactory
+from ietf.doc.factories import DocumentFactory, CharterFactory
 from ietf.doc.models import ( Document, State, BallotDocEvent, BallotType, NewRevisionDocEvent,
     TelechatDocEvent, WriteupDocEvent )
 from ietf.doc.utils_charter import ( next_revision, default_review_text, default_action_text,
     charter_name_for_group )
 from ietf.doc.utils import close_open_ballots
-from ietf.group.factories import RoleFactory, GroupFactory
+from ietf.group.factories import RoleFactory
 from ietf.group.models import Group, GroupMilestone
 from ietf.iesg.models import TelechatDate
 from ietf.person.models import Person
@@ -157,11 +157,7 @@ class EditCharterTests(TestCase):
         self.assertTrue("A new charter" in outbox[-3].get_payload())
 
     def test_abandon_bof(self):
-        group = GroupFactory(type_id='ietf',state_id='bof')
-        charter = DocumentFactory(type_id='charter',group=group)
-        # This points to some more work to do in the factories
-        group.charter = charter
-        group.save()
+        charter = CharterFactory(group__state_id='bof',group__type_id='wg')
         url = urlreverse('ietf.doc.views_charter.change_state',kwargs={'name':charter.name,'option':'abandon'})
         login_testing_unauthorized(self, "secretary", url)
         response=self.client.get(url)
@@ -173,11 +169,7 @@ class EditCharterTests(TestCase):
         self.assertTrue('Testing Abandoning' in charter.docevent_set.filter(type='added_comment').first().desc)
 
     def test_change_title(self):
-        group = GroupFactory(type_id='ietf')
-        charter = DocumentFactory(type_id='charter',group=group)
-        # This points to some more work to do in the factories
-        group.charter = charter
-        group.save()
+        charter = CharterFactory(group__type_id='wg')
         url = urlreverse('ietf.doc.views_charter.change_title',kwargs={'name':charter.name})
         login_testing_unauthorized(self, "secretary", url)
         response=self.client.get(url)
