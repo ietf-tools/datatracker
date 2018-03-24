@@ -106,13 +106,16 @@
 	      <b>You are using an outdated browser.</b> Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.
 	      </p>
 	      <![endif]-->
-
+	{% else %}
+	  <div id="content">
         {% endif %}
         {% block content %}{{ content|safe }}{% endblock %}
         {% block content_end %}{% endblock %}
         {% if request.COOKIES.left_menu == "on" and not hide_menu %}
 	    </div>
           </div>
+	{% else %}
+	  </div>
         {% endif %}
 
 	{% block footer %}
