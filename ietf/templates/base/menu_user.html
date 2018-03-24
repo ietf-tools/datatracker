@@ -43,6 +43,7 @@
     <li><a href="{% url "ietf.iesg.views.agenda_documents" %}">Next telechat</a></li>
     <li><a href="{% url "ietf.iesg.views.discusses" %}">Discusses</a></li>
     <li><a href="{% url "ietf.iesg.views.milestones_needing_review" %}">Milestone review</a></li>
+    <li><a href="{% url "ietf.doc.views_search.drafts_in_last_call" %}">Last Call docs</a></li>
   {% endif %}
 
   {% if user|has_role:"Secretariat" %}
