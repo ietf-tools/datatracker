@@ -10,11 +10,14 @@ from django.utils.http import urlencode
 import debug                            # pyflakes:ignore
 
 from ietf.doc.expire import expire_draft
+from ietf.doc.factories import DocumentFactory
 from ietf.doc.models import State, Document
+from ietf.meeting.factories import MeetingFactory
+from ietf.person.factories import PersonFactory
 from ietf.person.models import Person
 from ietf.submit.models import Preapproval
 from ietf.submit.tests import submission_file
-from ietf.utils.test_utils import TestCase
+from ietf.utils.test_utils import TestCase, login_testing_unauthorized
 from ietf.utils.test_data import make_test_data
 from ietf.utils.mail import empty_outbox
 from ietf.secr.drafts.email import get_email_initial
@@ -94,7 +97,12 @@ class SecrDraftsTestCase(TestCase):
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
-    
+        response = self.client.post(url,{'title':draft.title,'name':draft.name,'rev':draft.rev,'state':4,'group':draft.group.pk})
+        #debug.show('response')
+        self.assertEqual(response.status_code, 302)
+        draft = Document.objects.get(pk=draft.pk)
+        self.assertEqual(draft.get_state().slug,'repl')
+
     def test_email(self):
         # can't test this directly, test via drafts actions
         pass
@@ -357,3 +365,28 @@ class SecrDraftsTestCase(TestCase):
         draft = Document.objects.get(name=draft.name)
         self.assertTrue(draft.get_state_slug('draft') == 'repl')
 
+    def test_authors(self):
+        draft = DocumentFactory()
+        person = PersonFactory()
+        url = urlreverse('ietf.secr.drafts.views.authors',kwargs={'id':draft.name})
+        login_testing_unauthorized(self, "secretary", url)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code,200)
+        response = self.client.post(url, {'submit':'Done'})
+        self.assertEqual(response.status_code,302)
+        response = self.client.post(url, {'person':'%s - (%s)'%(person.plain_name(),person.pk),'email':person.email_set.first().pk})
+        self.assertEqual(response.status_code,302)
+        self.assertTrue(draft.documentauthor_set.filter(person=person).exists)
+
+    def test_dates(self):
+        MeetingFactory(type_id='ietf',date=datetime.datetime.today()+datetime.timedelta(days=14))
+        url = urlreverse('ietf.secr.drafts.views.dates')
+        login_testing_unauthorized(self, "secretary", url)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code,200)
+    
+    def test_nudge_report(self):
+        url = urlreverse('ietf.secr.drafts.views.nudge_report')
+        login_testing_unauthorized(self, "secretary", url)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code,200)
