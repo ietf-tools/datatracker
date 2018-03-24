@@ -19,7 +19,7 @@ class CookieTests(TestCase):
         self.assertEqual(q('div a.active[href="/accounts/settings/full_draft/off"]').contents(),  ['Off'])
         self.assertEqual(q('div a.active[href="/accounts/settings/new_enough/14"]').contents(),   ['14 days'])
         self.assertEqual(q('div a.active[href="/accounts/settings/expires_soon/14"]').contents(), ['14 days'])
-        self.assertEqual(q('div a.active[href="/accounts/settings/left_menu/on"]').contents(),    ['On'])
+        self.assertEqual(q('div a.active[href="/accounts/settings/left_menu/off"]').contents(),   ['Off'])
 
         
     def test_settings_defaults_from_cookies(self):
@@ -43,7 +43,7 @@ class CookieTests(TestCase):
         self.assertEqual(q('div a.active[href="/accounts/settings/full_draft/off"]').contents(),  ['Off'])
         self.assertEqual(q('div a.active[href="/accounts/settings/new_enough/14"]').contents(),   ['14 days'])
         self.assertEqual(q('div a.active[href="/accounts/settings/expires_soon/14"]').contents(), ['14 days'])
-        self.assertEqual(q('div a.active[href="/accounts/settings/left_menu/on"]').contents(),    ['On'])
+        self.assertEqual(q('div a.active[href="/accounts/settings/left_menu/off"]').contents(),   ['Off'])
 
     def test_settings_values_from_cookies_random(self):
         make_test_data()
@@ -54,7 +54,7 @@ class CookieTests(TestCase):
         self.assertEqual(q('div a.active[href="/accounts/settings/full_draft/off"]').contents(),  ['Off'])
         self.assertEqual(q('div a.active[href^="/accounts/settings/new_enough/"]').contents(),    [])
         self.assertEqual(q('div a.active[href^="/accounts/settings/expires_soon/"]').contents(),  [])
-        self.assertEqual(q('div a.active[href="/accounts/settings/left_menu/on"]').contents(),    ['On'])
+        self.assertEqual(q('div a.active[href="/accounts/settings/left_menu/off"]').contents(),   ['Off'])
 
 # 
 #         self.assertRegexpMatches(r.content, r'ietf-highlight-y.*full_draft.*off')
@@ -204,14 +204,14 @@ class CookieTests(TestCase):
 
     def test_left_menu(self):
         make_test_data()
-        self.client.cookies = SimpleCookie({'full_draft': 'off', 'new_enough' : '14', 'expires_soon' : 14, 'left_menu': 'off', })
+        self.client.cookies = SimpleCookie({'full_draft': 'off', 'new_enough' : '14', 'expires_soon' : 14, 'left_menu': 'on', })
         r = self.client.get(urlreverse("ietf.cookies.views.left_menu")) # no value: reset
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.cookies['left_menu'].value, '')
         self.assertListEqual(['left_menu'], r.cookies.keys())
         q = PyQuery(r.content)
         self.assertEqual(q('div a.active[href="/accounts/settings/full_draft/off"]').contents(),  ['Off'])
-        self.assertEqual(q('div a.active[href="/accounts/settings/left_menu/on"]').contents(),    ['On'])
+        self.assertEqual(q('div a.active[href="/accounts/settings/left_menu/off"]').contents(),   ['Off'])
         self.assertEqual(q('div a.active[href="/accounts/settings/new_enough/14"]').contents(),   ['14 days'])
         self.assertEqual(q('div a.active[href="/accounts/settings/expires_soon/14"]').contents(), ['14 days'])
 
