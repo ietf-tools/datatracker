@@ -43,7 +43,7 @@ def fill_in_document_table_attributes(docs):
             seen.add(e.doc_id)
 
     # on agenda in upcoming meetings
-    presentations = SessionPresentation.objects.filter(session__meeting__date__gte=datetime.date.today()-datetime.timedelta(days=15)).select_related('session', 'document')
+    presentations = SessionPresentation.objects.filter(session__timeslotassignments__timeslot__time__gte=datetime.datetime.today()).distinct().select_related('session', 'document')
     session_list = [ (p.document, p.session) for p in presentations ]
     sessions = dict( (d, []) for (d, s) in session_list )
     for (d, s) in session_list:
