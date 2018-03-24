@@ -10,7 +10,12 @@
 
 {% block content %}
   {% origin %}
-  <h1>Internet-Drafts in IETF last call</h1>
+  <h1>
+    Internet-Drafts in IETF last call
+    {% if pages %}
+      <small class="padded-left">{{ pages }} pages</small>
+    {% endif %}
+  </h1>
 
   {% include "doc/search/search_results.html" %}
 
