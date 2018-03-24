@@ -16,7 +16,7 @@ from ietf.doc.models import ( Document, State, BallotDocEvent, BallotType, NewRe
 from ietf.doc.utils_charter import ( next_revision, default_review_text, default_action_text,
     charter_name_for_group )
 from ietf.doc.utils import close_open_ballots
-from ietf.group.factories import RoleFactory
+from ietf.group.factories import RoleFactory, GroupFactory
 from ietf.group.models import Group, GroupMilestone
 from ietf.iesg.models import TelechatDate
 from ietf.person.models import Person
@@ -155,6 +155,38 @@ class EditCharterTests(TestCase):
         r = self.client.post(url, dict(charter_state=str(State.objects.get(used=True,type="charter",slug="intrev").pk), message="test"))
         self.assertEqual(r.status_code, 302)
         self.assertTrue("A new charter" in outbox[-3].get_payload())
+
+    def test_abandon_bof(self):
+        group = GroupFactory(type_id='ietf',state_id='bof')
+        charter = DocumentFactory(type_id='charter',group=group)
+        # This points to some more work to do in the factories
+        group.charter = charter
+        group.save()
+        url = urlreverse('ietf.doc.views_charter.change_state',kwargs={'name':charter.name,'option':'abandon'})
+        login_testing_unauthorized(self, "secretary", url)
+        response=self.client.get(url)
+        self.assertEqual(response.status_code,200)
+        response = self.client.post(url,{'comment':'Testing Abandoning a Bof Charter'})
+        self.assertEqual(response.status_code,302)
+        charter = Document.objects.get(pk=charter.pk)
+        self.assertEqual(charter.group.state_id,'abandon')
+        self.assertTrue('Testing Abandoning' in charter.docevent_set.filter(type='added_comment').first().desc)
+
+    def test_change_title(self):
+        group = GroupFactory(type_id='ietf')
+        charter = DocumentFactory(type_id='charter',group=group)
+        # This points to some more work to do in the factories
+        group.charter = charter
+        group.save()
+        url = urlreverse('ietf.doc.views_charter.change_title',kwargs={'name':charter.name})
+        login_testing_unauthorized(self, "secretary", url)
+        response=self.client.get(url)
+        self.assertEqual(response.status_code,200)
+        response=self.client.post(url,{'charter_title':'New Test Title'})
+        self.assertEqual(response.status_code,302)
+        charter=Document.objects.get(pk=charter.pk)
+        self.assertEqual(charter.title,'New Test Title')
+        
 
     def test_already_open_charter_ballot(self):
         # make sure the right thing happens to the charter ballots as the Secretariat
