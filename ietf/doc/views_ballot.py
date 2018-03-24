@@ -369,7 +369,7 @@ def send_ballot_comment(request, name, ballot_id):
                           cc_select_form = cc_select_form,
                       ))
 
-@role_required('Secretariat')
+@role_required('Area Director','Secretariat')
 def clear_ballot(request, name):
     """Clear all positions and discusses on every open ballot for a document."""
     doc = get_object_or_404(Document, name=name)
