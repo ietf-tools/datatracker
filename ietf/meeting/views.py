@@ -449,8 +449,8 @@ def agenda(request, num=None, name=None, base=None, ext=None, owner=None, utc=""
     assert num is None or num.isdigit()
 
     meeting = get_ietf_meeting(num)
-    if not meeting or (meeting.number.isdigit() and int(meeting.number) <= 64 and not meeting.agenda.assignments.exists()):
-        if ext == '.html':
+    if not meeting or (meeting.number.isdigit() and int(meeting.number) <= 64 and (not meeting.agenda or not meeting.agenda.assignments.exists())):
+        if ext == '.html' or (meeting and meeting.number.isdigit() and 0 < int(meeting.number) <= 64):
             return HttpResponseRedirect( 'https://www.ietf.org/proceedings/%s' % num )
         else:
             raise Http404("No such meeting")
@@ -2064,7 +2064,7 @@ def proceedings(request, num=None):
 
     meeting = get_meeting(num)
 
-    if meeting.number <= 64 or not meeting.agenda.assignments.exists():
+    if meeting.number <= 64 or not meeting.agenda or not meeting.agenda.assignments.exists():
             return HttpResponseRedirect( 'https://www.ietf.org/proceedings/%s' % num )
 
     begin_date = meeting.get_submission_start_date()
@@ -2095,7 +2095,7 @@ def finalize_proceedings(request, num=None):
 
     meeting = get_meeting(num)
 
-    if meeting.number <= 64 or not meeting.agenda.assignments.exists() or meeting.proceedings_final:
+    if meeting.number <= 64 or not meeting.agenda or not meeting.agenda.assignments.exists() or meeting.proceedings_final:
         raise Http404
 
     if request.method=='POST':
