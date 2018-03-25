@@ -155,7 +155,7 @@
   </p>
 
   {% if doc.rev %}
-    {{ content|fill:"80"|safe|linebreaksbr|keep_spacing|sanitize }}
+  <pre>   {{ content|sanitize|maybewordwrap|safe }}</pre>
   {% endif %}
 
 {% endblock %}

@@ -1,6 +1,75 @@
+ietfdb (6.76.1) ietf; urgency=medium
+
+  **IETF 101 code sprint, release 2**
+
+  This release provides improved meeting attendance statistics (under
+  /stats/meeting/overview/), improved test coverage, additional menu entries,
+  html template fixes, total page count on the Last Call page, the ability
+  for ADs to clear ballots themselves without going through the secretariat,
+  and more.  It also changes the default cookie setting for showing or hiding
+  the duplicate left-hand menu column.  (If you don't like the new default, use
+  the 'User>Preferences' menu item to revert to the old look.)
+
+  Again, many thanks to all the contributors!
+
+  From the commit log:
+
+  * Merged in [14902] from rjsparks@nostrum.com:
+   Test coverage improvements for ietf/secr/telechat/views.  
+
+  * Merged in [14900] from rjsparks@nostrum.com:
+    Improvements to test coverage for ietf/secr/drafts/views.py.  
+
+  * Merged in [14899] from rjsparks@nostrum.com:
+    Cleaner charter factory simplifies test code.  
+
+  * Added submenu to the Statistics menu entry, pointing at the individual 
+    stats pages, and entries for NomComs and Releases.
+
+  * Merged in [14896] from rjsparks@nostrum.com:
+    Improved test coverage for ietf/doc/views_charter.py.  
+
+  * Fixed the base template to have id='content' for the content also when 
+    not showing the left-hand menu.
+
+  * Updated the cookies tests to match the new left_menu default.
+
+  * Changed the default setting for the datatracker left-hand menu to 
+    'off'.  The top menu is always present, and works well.
+
+  * Tweaked the document list iCalendar links to not show for presentations 
+    on days in the past.
+
+  * Merged in [14884] from adam@nostrum.com:
+    Adding page count to last call page.  
+
+  * Merged in [14883] from adam@nostrum.com:
+    Adding link to documents in last call to the AD dashboard side menu.  
+
+  * Merged in [14849] from ben@nostrum.com:
+    Give ADs the red Clear Ballot button 
+
+  * Merged in [14880] from rjsparks@nostrum.com:
+    Added a Draft test suite.
+
+  * Merged in [14879] from kivinen@iki.fi:
+    Backfilled IETF meetings starting from 1 and backfilled the attendee 
+    numbers for them. Modified the overview attendee statistics page to use 
+    different colors for different venue continents.  
+
+  * Tweaked the meeting registratoin import to deal more gracefully with 
+    too long names and email addresses, and to fill in the total attendees 
+    number for the meeting.
+
+  * Tweaked mergeready to accept an additional hold-for-merge file outside 
+    the repository.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  24 Mar 2018 21:04:22 +0000
+
+
 ietfdb (6.76.0) ietf; urgency=medium
 
-  **IETF 101 code sprint**
+  **IETF 101 code sprint, release 1**
 
   This release contains datatracker bugfixes and enhancements from the IETF-101
   Code Sprint.  It brings new views to merge duplicate person records, fixes
@@ -13,7 +82,7 @@ ietfdb (6.76.0) ietf; urgency=medium
   * Merged in [14864] from rjsparks@nostrum.com:
     Improved test coverage for ietf.meeting.views.  
 
-  * Updated Note Well.  Fixes issue 2474.
+  * Updated Note Well.  Fixes issue #2474.
 
   * Tweaked person factory ascii name generation to not include periods 
     inside names.
