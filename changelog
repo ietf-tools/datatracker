@@ -23,7 +23,7 @@ ietfdb (6.76.1) ietf; urgency=medium
     consistent.  Fixes issue #2481.
 
   * Merged in [14902] from rjsparks@nostrum.com:
-   Test coverage improvements for ietf/secr/telechat/views.  
+    Test coverage improvements for ietf/secr/telechat/views.  
 
   * Merged in [14900] from rjsparks@nostrum.com:
     Improvements to test coverage for ietf/secr/drafts/views.py.  
