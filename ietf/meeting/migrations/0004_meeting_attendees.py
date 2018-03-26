@@ -15,6 +15,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='meeting',
             name='attendees',
-            field=models.IntegerField(blank=True, default=0, help_text='Number of Attendees for backfilled meetings, leave it to 0 for new meetings, and then it is calculated from the registrations'),
+            field=models.IntegerField(blank=True, default=None, help_text='Number of Attendees for backfilled meetings, leave it blank for new meetings, and then it is calculated from the registrations', null=True),
         ),
     ]
