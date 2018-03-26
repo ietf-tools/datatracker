@@ -123,12 +123,21 @@
     <tbody>
       {% for meeting, url, count, country in table_data %}
         <tr>
-	  <td>{{ meeting.number }}</td>
-	  <td>{{ meeting.date }} </td>
-          <td><a href="{{ url }}">{{ meeting.city }}</a></td>
-	  <td>{{ country.name }}</td>
-	  <td>{{ country.continent }}</td>
-          <td>{% include "stats/includes/number_with_details_cell.html" %}</td>
+	  {% if meeting.get_number > 71 %}
+	    <td><a href="{{ url }}">{{ meeting.number }}</a></td>
+	    <td>{{ meeting.date }} </td>
+	    <td><a href="{{ url }}">{{ meeting.city }}</a></td>
+	    <td>{{ country.name }}</td>
+	    <td>{{ country.continent }}</td>
+	    <td>{% include "stats/includes/number_with_details_cell.html" %}</td>
+	  {% else %}
+	    <td>{{ meeting.number }}</td>
+	    <td>{{ meeting.date }} </td>
+	    <td>{{ meeting.city }}</td>
+	    <td>{{ country.name }}</td>
+	    <td>{{ country.continent }}</td>
+	    <td>{% include "stats/includes/number_with_details_cell.html" %}</td>
+	  {% endif %}
         </tr>
       {% endfor %}
     </tbody>

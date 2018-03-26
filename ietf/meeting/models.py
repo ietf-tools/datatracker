@@ -171,6 +171,13 @@ class Meeting(models.Model):
     def get_schedule_by_name(self, name):
         return self.schedule_set.filter(name=name).first()
 
+    def get_number(self):
+        "Return integer meeting number for ietf meetings, rather than strings."
+        if self.number.isdigit():
+            return int(self.number)
+        else:
+            return None
+
     @property
     def sessions_that_can_meet(self):
         qs = self.session_set.exclude(status__slug='notmeet').exclude(status__slug='disappr').exclude(status__slug='deleted').exclude(status__slug='apprw')
