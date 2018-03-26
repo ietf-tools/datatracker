@@ -900,26 +900,26 @@ def meeting_stats(request, num=None, stats_type=None):
                 for continent in continents.keys():
                     series_data[continent] = []
 
-                for meeting in meetings:
-                    country = CountryName.objects.get(slug=meeting.country)
-                    url = build_meeting_stats_url(number=meeting.number,
+                for m in meetings:
+                    country = CountryName.objects.get(slug=m.country)
+                    url = build_meeting_stats_url(number=m.number,
                                                   stats_type_override="country")
                     for continent in continents.keys():
                         if continent == country.continent.name:
                             d = {
-                                "name": "IETF {} - {}, {}".format(int(meeting.number), meeting.city, country),
-                                "x": int(meeting.number),
-                                "y": meeting.attendees,
+                                "name": "IETF {} - {}, {}".format(int(m.number), m.city, country),
+                                "x": int(m.number),
+                                "y": m.attendees,
                                 "url": url,
                                 }
                         else:
                             d = {
-                                "x": int(meeting.number),
+                                "x": int(m.number),
                                 "y": 0,
                                 }
                         series_data[continent].append(d)
-                    table_data.append((meeting, url,
-                                       meeting.attendees, country))
+                    table_data.append((m, url,
+                                       m.attendees, country))
 
                 for continent in continents.keys():
 #                    series_data[continent].sort(key=lambda t: t[0]["x"])
