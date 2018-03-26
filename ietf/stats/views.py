@@ -884,7 +884,7 @@ def meeting_stats(request, num=None, stats_type=None):
 
                 continents = {}
                 
-                meetings = Meeting.objects.filter(type='ietf').order_by('number')
+                meetings = Meeting.objects.filter(type='ietf', date__lte=datetime.date.today()).order_by('number')
                 for m in meetings:
                     country = CountryName.objects.get(slug=m.country)
                     continents[country.continent.name] = country.continent.name
