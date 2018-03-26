@@ -617,7 +617,7 @@ CACHES = {
         'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
         'LOCATION': '127.0.0.1:11211',
         'VERSION': __version__,
-        'KEY_PREFIX': 'ietf',
+        'KEY_PREFIX': 'ietf:dt',
     },
     'htmlized': {
         'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
