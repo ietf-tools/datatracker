@@ -9,6 +9,7 @@ def preferences(request, **kwargs):
     preferences = request.COOKIES.copy()
     new_cookies = {}
     del_cookies = []
+    preferences['defaults'] = settings.USER_PREFERENCE_DEFAULTS
     for key in settings.USER_PREFERENCE_DEFAULTS.keys():
         if key in kwargs:
             if kwargs[key] == None:
