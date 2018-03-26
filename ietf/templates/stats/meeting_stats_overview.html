@@ -34,7 +34,7 @@
      tooltip: {
          formatter: function () {
              var s = '<b>' + this.point.name + '</b>';
-
+	     s += '<br/>' + this.point.date;
 	     s += '<br/>' + this.series.name + '<br/> Attendees: ' + this.y;
              return s;
          },
