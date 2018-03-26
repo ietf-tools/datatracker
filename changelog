@@ -14,6 +14,14 @@ ietfdb (6.76.1) ietf; urgency=medium
 
   From the commit log:
 
+  * Fixed some issues with agenda and proceedings code for meetings 
+    numbered 64 and below, actualized by the introduction of meeting records 
+    for such meetings for stats purposes.
+
+  * The template filter 'keep_spacing' can interact badly with 'wordwrap'.
+    Removed it from several places, and made text document display more
+    consistent.  Fixes issue #2481.
+
   * Merged in [14902] from rjsparks@nostrum.com:
    Test coverage improvements for ietf/secr/telechat/views.  
 
@@ -64,7 +72,7 @@ ietfdb (6.76.1) ietf; urgency=medium
   * Tweaked mergeready to accept an additional hold-for-merge file outside 
     the repository.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  24 Mar 2018 21:04:22 +0000
+ -- Henrik Levkowetz <henrik@levkowetz.com>  26 Mar 2018 13:38:04 +0000
 
 
 ietfdb (6.76.0) ietf; urgency=medium
