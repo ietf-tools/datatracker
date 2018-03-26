@@ -134,7 +134,7 @@ def document_stats(request, stats_type=None):
 
         return urlreverse(document_stats, kwargs={ k: v for k, v in kwargs.iteritems() if v is not None }) + generate_query_string(request.GET, get_overrides)
 
-    cache_key = ("stats:document:%s:%s" % (stats_type, request.META.get('QUERY_STRING','')))
+    cache_key = ("stats:document_stats:%s:%s" % (stats_type, request.META.get('QUERY_STRING','')))
     data = cache.get(cache_key)
     if not data:
         names_limit = settings.STATS_NAMES_LIMIT
@@ -766,7 +766,7 @@ def meeting_stats(request, num=None, stats_type=None):
 
         return urlreverse(meeting_stats, kwargs={ k: v for k, v in kwargs.iteritems() if v is not None }) + generate_query_string(request.GET, get_overrides)
 
-    cache_key = "stats:meeting:%s:%s:%s" % (num, stats_type, request.META.get('QUERY_STRING',''))
+    cache_key = "stats:meeting_stats:%s:%s:%s" % (num, stats_type, request.META.get('QUERY_STRING',''))
     data = cache.get(cache_key)
     if not data:
         names_limit = settings.STATS_NAMES_LIMIT

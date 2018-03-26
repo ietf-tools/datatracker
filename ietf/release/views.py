@@ -24,7 +24,6 @@ import debug                            # pyflakes:ignore
 import time                             
 time.strptime('1984', '%Y')             # we do this to force lib loading, instead of it happening lazily when changelog calls tzparse later
 
-import ietf
 
 def trac_links(text):
     # changeset links
@@ -35,8 +34,8 @@ def trac_links(text):
 
 
 def get_coverage_data():
-    key = 'ietf:release:get_coverage_data:%s' % ietf.__version__
-    coverage_data = cache.get(key)
+    cache_key = 'release:get_coverage_data'
+    coverage_data = cache.get(cache_key)
     if not coverage_data:
         coverage_data = {}
         if os.path.exists(settings.TEST_COVERAGE_MASTER_FILE):
@@ -46,16 +45,16 @@ def get_coverage_data():
             else:
                 with open(settings.TEST_COVERAGE_MASTER_FILE) as file:
                     coverage_data = json.load(file)
-        cache.set(key, coverage_data, 60*60*24)
+        cache.set(cache_key, coverage_data, 60*60*24)
     return coverage_data
 
 def get_changelog_entries():
-    key = 'ietf:release:get_changelog_entries:%s' % ietf.__version__    
-    log_entries = cache.get(key)
+    cache_key = 'release:get_changelog_entries'
+    log_entries = cache.get(cache_key)
     if not log_entries:
         if os.path.exists(settings.CHANGELOG_PATH):
             log_entries = changelog.parse(settings.CHANGELOG_PATH)
-            cache.set(key, log_entries, 60*60*24)
+            cache.set(cache_key, log_entries, 60*60*24)
     return log_entries
 
 def release(request, version=None):

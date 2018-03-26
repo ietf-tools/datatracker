@@ -124,15 +124,15 @@ def chart_newrevisiondocevent(request):
 def chart_data_newrevisiondocevent(request):
     queryargs = request.GET
     if queryargs:
-        key = get_search_cache_key(queryargs)
-        results = cache.get(key)
+        cache_key = get_search_cache_key(queryargs)
+        results = cache.get(cache_key)
         if not results:
             form = SearchForm(queryargs)
             if not form.is_valid():
                 return HttpResponseBadRequest("form not valid: %s" % form.errors)
             results = retrieve_search_results(form)
             if results.exists():
-                cache.set(key, results)
+                cache.set(cache_key, results)
         if results.exists():
             data = model_to_timeline_data(DocEvent, doc__in=results, type='new_revision')
         else:

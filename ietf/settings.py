@@ -616,6 +616,8 @@ CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
         'LOCATION': '127.0.0.1:11211',
+        'VERSION': __version__,
+        'KEY_PREFIX': 'ietf',
     },
     'htmlized': {
         'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
@@ -1025,9 +1027,13 @@ if SERVER_MODE != 'production':
     TEMPLATES[0]['OPTIONS']['loaders'] = loaders
 
     CACHES = {
-         'default': {
-             'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
-         },
+        'default': {
+            #'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
+            #'LOCATION': '127.0.0.1:11211',
+            'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+            'VERSION': __version__,
+            'KEY_PREFIX': 'ietf:dt',
+        },
         'htmlized': {
             'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
             #'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',

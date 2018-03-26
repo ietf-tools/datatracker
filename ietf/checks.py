@@ -272,18 +272,18 @@ def check_cache(app_configs, **kwargs):
                 hint = "Please check that the configured cache backend is available.\n",
                 id = "datatracker.%s" % errnum,
             )
-        key = "ietf:checks:check_cache"
+        cache_key = "checks:check_cache"
         val = os.urandom(32)
         wait = 1
-        cache.set(key, val, wait)
-        if not cache.get(key) == val:
+        cache.set(cache_key, val, wait)
+        if not cache.get(cache_key) == val:
             errors.append(cache_error("Could not get value from cache", "E0014"))
         time.sleep(wait+1)
         # should have timed out
-        if cache.get(key) == val:
+        if cache.get(cache_key) == val:
             errors.append(cache_error("Cache value didn't time out", "E0015"))
-        cache.set(key, val, settings.SESSION_COOKIE_AGE)
-        if not cache.get(key) == val:
+        cache.set(cache_key, val, settings.SESSION_COOKIE_AGE)
+        if not cache.get(cache_key) == val:
             errors.append(cache_error("Cache didn't accept session cookie age", "E0016"))
     return errors
 

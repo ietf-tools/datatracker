@@ -204,11 +204,11 @@ def search(request):
         if not form.is_valid():
             return HttpResponseBadRequest("form not valid: %s" % form.errors)
 
-        key = get_search_cache_key(get_params)
-        results = cache.get(key)
+        cache_key = get_search_cache_key(get_params)
+        results = cache.get(cache_key)
         if not results:
             results = retrieve_search_results(form)
-            cache.set(key, results)
+            cache.set(cache_key, results)
 
         results, meta = prepare_document_table(request, results, get_params)
         meta['searching'] = True
@@ -242,8 +242,8 @@ def search_for_name(request, name):
 
         return None
 
-    def cached_redirect(key, url):
-        cache.set(key, url, settings.CACHE_MIDDLEWARE_SECONDS)
+    def cached_redirect(cache_key, url):
+        cache.set(cache_key, url, settings.CACHE_MIDDLEWARE_SECONDS)
         return HttpResponseRedirect(url)
 
     n = name
