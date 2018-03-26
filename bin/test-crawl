@@ -231,6 +231,7 @@ def skip_url(url):
             r"^/doc/html/status-change-icmpv6-dns-ipv6-to-internet-standard",
             r"^/static/coverage/",
             r"^/meeting/6[0-4]/agenda",
+            r"^https?://www.ietf.org/",
         ):
         if re.search(pattern, url):
             return True
@@ -354,7 +355,7 @@ if __name__ == "__main__":
             request_start = datetime.datetime.now()
             if args.verbose:
                 sys.stderr.write(url+'\n')
-            r = client.get(url, secure=True, follow=True)
+            r = client.get(url, secure=True)
             elapsed = datetime.datetime.now() - request_start
         except KeyboardInterrupt:
             log(" ... was fetching %s" % url)
