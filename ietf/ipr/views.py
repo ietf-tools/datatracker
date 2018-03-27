@@ -308,14 +308,15 @@ def edit(request, id, updates=None):
             valid_formsets = draft_formset.is_valid()
         else:
             valid_formsets = True
-            
+
         if form.is_valid() and valid_formsets: 
             updates = form.cleaned_data.get('updates')
             disclosure = form.save(commit=False)
             disclosure.save()
-            
+
             if type != 'generic':
                 draft_formset = DraftFormset(request.POST, instance=disclosure)
+                draft_formset.clean()
                 draft_formset.save()
 
             set_disclosure_title(disclosure)

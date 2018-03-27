@@ -13,11 +13,12 @@ from ietf.ipr.mail import (process_response_email, get_reply_to, get_update_subm
 from ietf.ipr.models import (IprDisclosureBase,GenericIprDisclosure,HolderIprDisclosure,
     ThirdPartyIprDisclosure,RelatedIpr)
 from ietf.ipr.utils import get_genitive, get_ipr_summary
-from ietf.message.models import Message
-from ietf.utils.test_utils import TestCase, login_testing_unauthorized, unicontent
-from ietf.utils.test_data import make_test_data
-from ietf.utils.mail import outbox, empty_outbox
 from ietf.mailtrigger.utils import gather_address_lists
+from ietf.message.models import Message
+from ietf.utils.mail import outbox, empty_outbox
+from ietf.utils.test_data import make_test_data
+from ietf.utils.test_utils import TestCase, login_testing_unauthorized, unicontent
+from ietf.utils.text import text_to_dict
 
 
 class IprTests(TestCase):
@@ -379,6 +380,53 @@ class IprTests(TestCase):
         self.assertEqual(len(outbox),1)
         self.assertTrue('New IPR Submission' in outbox[0]['Subject'])
         self.assertTrue('ietf-ipr@' in outbox[0]['To'])
+
+    def test_edit(self):
+        draft = make_test_data()
+        original_ipr = IprDisclosureBase.objects.get(title='Statement regarding rights')
+
+        # get
+        url = urlreverse("ietf.ipr.views.edit", kwargs={ "id": original_ipr.id })
+        login_testing_unauthorized(self, "secretary", url)
+        r = self.client.get(url)
+        self.assertContains(r, "Native Martians United")
+
+        #url = urlreverse("ietf.ipr.views.new", kwargs={ "type": "specific" })
+        # successful post
+        empty_outbox()
+        post_data = {
+            "has_patent_pending": False,
+            "holder_contact_email": "test@holder.com",
+            "holder_contact_info": "555-555-0100",
+            "holder_contact_name": "Test Holder",
+            "holder_legal_name": "Test Legal",
+            "ietfer_contact_info": "555-555-0101",
+            "ietfer_name": "Test Participant",
+            "iprdocrel_set-0-document": "%s" % draft.docalias_set.first().pk,
+            "iprdocrel_set-0-revisions": '00',
+            "iprdocrel_set-INITIAL_FORMS": 0,
+            "iprdocrel_set-TOTAL_FORMS": 1,
+            "licensing": "royalty-free",
+            "patent_date": "2000-01-01",
+            "patent_inventor": "A. Nonymous",
+            "patent_number": "SE12345678901",
+            "patent_title": "A method of transfering bits",
+            "submitter_email": "test@holder.com",
+            "submitter_name": "Test Holder",
+            "updates": "",
+        }
+        r = self.client.post(url, post_data, follow=True)
+        self.assertContains(r, "Disclosure modified")
+
+        iprs = IprDisclosureBase.objects.filter(title__icontains=draft.name)
+        self.assertEqual(len(iprs), 1)
+        ipr = iprs[0].get_child()
+        self.assertEqual(ipr.holder_legal_name, "Test Legal")
+        patent_info_dict = dict( (k.replace('patent_','').capitalize(), v) for k, v in post_data.items() if k.startswith('patent_') )
+        self.assertEqual(text_to_dict(ipr.patent_info), patent_info_dict)
+        self.assertEqual(ipr.state.slug, 'posted')
+
+        self.assertEqual(len(outbox),0)
 
     def test_update(self):
         draft = make_test_data()
