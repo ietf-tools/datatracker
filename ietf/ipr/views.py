@@ -338,10 +338,18 @@ def edit(request, id, updates=None):
             return redirect("ietf.ipr.views.show", id=ipr.id)
 
     else:
-        if ipr.updates:
-            form = ipr_form_mapping[ipr.__class__.__name__](instance=ipr,initial={'updates':[ x.target for x in ipr.updates ]})
+        initial = model_to_dict(ipr)
+        patent_info = text_to_dict(initial.get('patent_info', u''))
+        if patent_info.keys():
+            patent_dict = dict([ ('patent_'+k.lower(), v) for k,v in patent_info.items() ])
         else:
-            form = ipr_form_mapping[ipr.__class__.__name__](instance=ipr)
+            patent_dict = {'patent_notes': initial.get('patent_info', u'')}
+        initial.update(patent_dict)
+        if ipr.updates:
+            initial.update({'updates':[ x.target for x in ipr.updates ]})
+            form = ipr_form_mapping[ipr.__class__.__name__](instance=ipr, initial=initial)
+        else:
+            form = ipr_form_mapping[ipr.__class__.__name__](instance=ipr, initial=initial)
         #disclosure = IprDisclosureBase()    # dummy disclosure for inlineformset
         draft_formset = DraftFormset(instance=ipr, queryset=IprDocRel.objects.all())
 
