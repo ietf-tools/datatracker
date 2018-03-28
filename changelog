@@ -1,3 +1,45 @@
+ietfdb (6.76.2) ietf; urgency=medium
+
+  This release fixes a number of blemishes and cleans the slate for merging
+  in a meetecho API branch.
+
+  * Fixed an issue which could result in server 500 errors for paths like 
+    /meeting/99/session/plenary.
+
+  * Removed superfluous stats pages headers which would be repeated with 
+    different layout on the next line, as part of the graphs.
+
+  * Added a test for IPR edit.
+
+  * Filled in the IPR edit form, section V, with patent information derived 
+    from the patent_info field, the same way we do for the IPR update form.
+
+  * Added a pip version restriction to requirements.txt, as there seems to be
+    issues with pip 9.0.2 and 9.0.3; they seem to leave dross when down- and
+    upgrading packages.
+
+  * Don't show links to individual meeting stats pages when there's no 
+    content (meeting 71 and earlier currently has no attendance records).
+
+  * Added meeting dates to the meeting stats overview graph.
+
+  * Changed the name of a loop variable so as not to obscure a previous 
+    local variable.
+
+  * Don't show future meetings in the meeting stats overview.
+
+  * Changed settings so that cache keys used by memcached includes the 
+    release version, in order to avoid stale and incorrect cache content on new 
+    release deployment.  Made it easier to pick out cache key composition by 
+    normalizing the variable name.  Adjusted cache prefix and the composition 
+    of some keys to have a unique and consistent cache key prefix.
+
+  * Use the actual defaults from settings.py when showing the defaults on 
+    /accounts/settings/.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  28 Mar 2018 20:54:53 +0000
+
+
 ietfdb (6.76.1) ietf; urgency=medium
 
   **IETF 101 code sprint, release 2**
