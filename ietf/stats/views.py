@@ -910,7 +910,7 @@ def meeting_stats(request, num=None, stats_type=None):
                                 "name": "IETF {} - {}, {}".format(int(m.number), m.city, country),
                                 "x": int(m.number),
                                 "y": m.attendees,
-                                "date": m.date.strftime("%d %B %Y"),
+                                "date": m.date.strftime("%d %b %Y"),
                                 "url": url,
                                 }
                         else:
