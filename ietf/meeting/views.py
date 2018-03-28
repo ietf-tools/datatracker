@@ -1074,7 +1074,9 @@ def session_details(request, num, acronym ):
             qs = [p for p in qs if p.document.get_state_slug(p.document.type_id)!='deleted']
             session.type_counter.update([p.document.type.slug for p in qs])
 
-    can_manage = can_manage_materials(request.user, Group.objects.get(acronym=acronym))
+    # we somewhat arbitrarily use the group of the last session wet get from
+    # get_sessions() above when checking can_manage_materials()
+    can_manage = can_manage_materials(request.user, session.group)
 
     scheduled_sessions=[s for s in sessions if s.status_id=='sched']
     unscheduled_sessions = [s for s in sessions if s.status_id!='sched']
