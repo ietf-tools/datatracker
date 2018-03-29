@@ -8,6 +8,8 @@ from django.urls import reverse as urlreverse
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import DocAlias
+from ietf.doc.factories import DocumentFactory
+from ietf.ipr.factories import HolderIprDisclosureFactory
 from ietf.ipr.mail import (process_response_email, get_reply_to, get_update_submitter_emails,
     get_pseudo_submitter, get_holders, get_update_cc_addrs)
 from ietf.ipr.models import (IprDisclosureBase,GenericIprDisclosure,HolderIprDisclosure,
@@ -668,3 +670,34 @@ Subject: test
         result = process_response_email(message_string)
         self.assertIsInstance(result,Message)
         self.assertFalse(event.response_past_due())
+
+    def test_ajax_search(self):
+        url = urlreverse('ietf.ipr.views.ajax_search')
+        response=self.client.get(url+'?q=disclosure')
+        self.assertEqual(response.status_code,200)
+        self.assertEqual(response.get('Content-Type'),'application/json')
+
+    def test_edit_using_factory(self):
+        disclosure = HolderIprDisclosureFactory(docs=[DocumentFactory(type_id='draft')])
+        patent_dict = text_to_dict(disclosure.patent_info)
+        url = urlreverse('ietf.ipr.views.edit',kwargs={'id':disclosure.pk})
+        login_testing_unauthorized(self, "secretary", url)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code,200)
+        post_data = {
+            'iprdocrel_set-TOTAL_FORMS' : 1,
+            'iprdocrel_set-INITIAL_FORMS' : 1,
+            'iprdocrel_set-0-id': disclosure.pk,
+            "iprdocrel_set-0-document": disclosure.docs.first().pk,
+            "iprdocrel_set-0-revisions": disclosure.docs.first().document.rev,
+            'holder_legal_name': disclosure.holder_legal_name,
+            'patent_number': patent_dict['Number'],
+            'patent_title': patent_dict['Title'],
+            'patent_date' : patent_dict['Date'],
+            'patent_inventor' : patent_dict['Inventor'],
+            'licensing' : disclosure.licensing.slug,
+        }
+        response = self.client.post(url,post_data)
+        self.assertEqual(response.status_code,302)
+        disclosure = HolderIprDisclosure.objects.get(pk=disclosure.pk)
+        self.assertEqual(disclosure.compliant,False)
