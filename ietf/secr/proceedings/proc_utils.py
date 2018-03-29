@@ -177,7 +177,7 @@ def get_or_create_recording_document(url,session):
     except ObjectDoesNotExist:
         return create_recording(session,url)
 
-def create_recording(session,url):
+def create_recording(session, url, title=None, user=None):
     '''
     Creates the Document type=recording, setting external_url and creating
     NewRevisionDocEvent
@@ -185,10 +185,11 @@ def create_recording(session,url):
     sequence = get_next_sequence(session.group,session.meeting,'recording')
     name = 'recording-{}-{}-{}'.format(session.meeting.number,session.group.acronym,sequence)
     time = session.official_timeslotassignment().timeslot.time.strftime('%Y-%m-%d %H:%M')
-    if url.endswith('mp3'):
-        title = 'Audio recording for {}'.format(time)
-    else:
-        title = 'Video recording for {}'.format(time)
+    if not title:
+        if url.endswith('mp3'):
+            title = 'Audio recording for {}'.format(time)
+        else:
+            title = 'Video recording for {}'.format(time)
         
     doc = Document.objects.create(name=name,
                                   title=title,
@@ -202,7 +203,7 @@ def create_recording(session,url):
     
     # create DocEvent
     NewRevisionDocEvent.objects.create(type='new_revision',
-                                       by=Person.objects.get(name='(System)'),
+                                       by=user or Person.objects.get(name='(System)'),
                                        doc=doc,
                                        rev=doc.rev,
                                        desc='New revision available',

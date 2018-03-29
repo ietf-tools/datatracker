@@ -18,6 +18,7 @@ warnings.filterwarnings("ignore", message="on_delete will be a required arg for 
 warnings.filterwarnings("ignore", message="The load_template\(\) method is deprecated. Use get_template\(\) instead.")
 warnings.filterwarnings("ignore", message="escape isn't the last filter in")
 warnings.filterwarnings("ignore", message="Deprecated allow_tags attribute used on field")
+warnings.filterwarnings("ignore", message="You passed a bytestring as `filenames`. This will not work on Python 3.")
 
 try:
     import syslog

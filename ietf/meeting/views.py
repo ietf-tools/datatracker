@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007, All Rights Reserved
+# Copyright The IETF Trust 2007-2018, All Rights Reserved
 
 import csv
 import datetime
@@ -23,6 +23,8 @@ from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidde
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ValidationError
+from django.core.validators import URLValidator
 from django.urls import reverse,reverse_lazy
 from django.db.models import Min, Max, Q
 from django.forms.models import modelform_factory, inlineformset_factory
@@ -59,7 +61,8 @@ from ietf.meeting.helpers import send_interim_announcement_request
 from ietf.meeting.utils import finalize
 from ietf.secr.proceedings.utils import handle_upload_file
 from ietf.secr.proceedings.proc_utils import (get_progress_stats, post_process, import_audio_files,
-    import_youtube_video_urls)
+    import_youtube_video_urls, create_recording)
+from ietf.utils.decorators import require_api_key
 from ietf.utils.mail import send_mail_message
 from ietf.utils.pipe import pipe
 from ietf.utils.pdf import pdf_pages
@@ -2179,6 +2182,62 @@ def api_import_recordings(request, number):
         return HttpResponse(status=201)
     else:
         return HttpResponse(status=405)
+
+@require_api_key
+@role_required('Recording Manager')
+@csrf_exempt
+def api_set_session_video_url(request):
+    def err(code, text):
+        return HttpResponse(text, status=code, content_type='text/plain')
+    if request.method == 'POST':
+        # parameters:
+        #   apikey: the poster's personal API key
+        #   meeting: '101', or 'interim-2018-quic-02'
+        #   group: 'quic' or 'plenary'
+        #   item: '1', '2', '3' (the group's first, second, third etc.
+        #                           session during the week)
+        #   url: The recording url (on YouTube, or whatever)
+        user = request.user.person
+        for item in ['meeting', 'group', 'item', 'url',]:
+            value = request.POST.get(item)
+            if not value:
+                return err(400, "Missing %s parameter" % item)
+        number = request.POST.get('meeting')
+        sessions = Session.objects.filter(meeting__number=number)
+        if not sessions.exists():
+            return err(404, "No sessions found for meeting '%s'" % (number, ))
+        acronym = request.POST.get('group')
+        sessions = sessions.filter(group__acronym=acronym)
+        if not sessions.exists():
+            return err(404, "No sessions found in meeting '%s' for group '%s'" % (number, acronym))
+        session_times = [ (s.official_timeslotassignment().timeslot.time, s) for s in sessions ]
+        session_times.sort()
+        item = request.POST.get('item')
+        if not item.isdigit():
+            return err(400, "Expected a numeric value for 'item', found '%s'" % (item, ))
+        n = int(item)-1              # change 1-based to 0-based
+        try:
+            time, session = session_times[n]
+        except IndexError:
+            return err(400, "No item '%s' found in list of sessions for group" % (item, ))
+        url = request.POST.get('url')
+        try:
+            URLValidator()(url)
+        except ValidationError:
+            return err(400, "Invalid url value: '%s'" % (url, ))
+        recordings = [ (r.name, r.title, r) for r in session.recordings() if 'video' in r.title.lower() ]
+        if recordings:
+            r = recordings[-1][-1]
+            r.external_url = url
+        else:
+            time = session.official_timeslotassignment().timeslot.time
+            title = 'Video recording for %s on %s at %s' % (acronym, time.date(), time.time())
+            create_recording(session, url, title=title, user=user)
+    else:
+        return err(405, "Method not allowed")
+
+    return HttpResponse("Done", status=200, content_type='text/plain')
+
 
 def important_dates(request, num=None):
     assert num is None or num.isdigit()

@@ -9,13 +9,10 @@ Planned work in rough order
 
 * Revisit the review tool, work through the accumulated tickets.
 
-* Introduce an API for Meetecho to use to associate recordings with sessions
-  (and perhaps automate making copies of those videos)
-
 * GroupFeatures cleanup.  Move most to fields on GroupTypeName, and fix places
   that still uses lists of group types to determine actions by instead
   defining group type fields to hold the selector.  (Setting up a new
-  group type for things like PechaCucha and Hot RFC Lightning Tals probably
+  group type for things like PechaCucha and Hot RFC Lightning Talks probably
   could have been done with only table edits if there hadn't been so much code
   using type_id lists and features needing code changes).
 
