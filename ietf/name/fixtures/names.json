@@ -9541,6 +9541,16 @@
   {
     "fields": {
       "desc": "",
+      "name": "Recording Manager",
+      "order": 13,
+      "used": true
+    },
+    "model": "name.rolename",
+    "pk": "recman"
+  },
+  {
+    "fields": {
+      "desc": "",
       "name": "Reviewer",
       "order": 14,
       "used": true
@@ -9577,6 +9587,16 @@
     },
     "model": "name.rolename",
     "pk": "trac-admin"
+  },
+  {
+    "fields": {
+      "desc": "Provides log-in permission to restricted Trac instances",
+      "name": "Trac Editor",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.rolename",
+    "pk": "trac-editor"
   },
   {
     "fields": {
@@ -10002,7 +10022,7 @@
     "fields": {
       "command": "xym",
       "switch": "--version",
-      "time": "2017-12-31T00:07:14.314",
+      "time": "2018-03-23T00:08:43.130",
       "used": true,
       "version": "xym 0.4"
     },
@@ -10013,9 +10033,9 @@
     "fields": {
       "command": "pyang",
       "switch": "--version",
-      "time": "2017-12-31T00:07:15.241",
+      "time": "2018-03-23T00:08:44.177",
       "used": true,
-      "version": "pyang 1.7.3"
+      "version": "pyang 1.7.4"
     },
     "model": "utils.versioninfo",
     "pk": 2
@@ -10024,11 +10044,22 @@
     "fields": {
       "command": "yanglint",
       "switch": "--version",
-      "time": "2017-12-31T00:07:15.325",
+      "time": "2018-03-23T00:08:44.295",
       "used": true,
-      "version": "yanglint 0.14.53"
+      "version": "yanglint 0.14.73"
     },
     "model": "utils.versioninfo",
     "pk": 3
+  },
+  {
+    "fields": {
+      "command": "xml2rfc",
+      "switch": "--version",
+      "time": "2018-03-23T00:08:45.862",
+      "used": true,
+      "version": "xml2rfc 2.9.6"
+    },
+    "model": "utils.versioninfo",
+    "pk": 4
   }
 ]
