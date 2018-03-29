@@ -17,6 +17,7 @@ urlpatterns = [
     url(r'^v1/?$', api_views.top_level),
     # Custom API endpoints
     url(r'^notify/meeting/import_recordings/(?P<number>[a-z0-9-]+)/?$', meeting_views.api_import_recordings),
+    url(r'^meeting/session/video/url$', meeting_views.api_set_session_video_url),
     url(r'^submit/?$', submit_views.api_submit),
     url(r'^iesg/position', views_ballot.api_set_position),
 ]

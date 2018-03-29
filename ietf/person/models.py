@@ -290,6 +290,7 @@ def salt():
 # Manual maintenance: List all endpoints that use @require_api_key here
 PERSON_API_KEY_ENDPOINTS = [
     ("/api/iesg/position", "/api/iesg/position"),
+    ("/api/meeting/session/video/url", "/api/meeting/session/video/url"),
 ]
 
 class PersonalApiKey(models.Model):
@@ -304,7 +305,10 @@ class PersonalApiKey(models.Model):
     @classmethod
     def validate_key(cls, s):
         import struct, hashlib, base64
-        key = base64.urlsafe_b64decode(six.binary_type(s))
+        try:
+            key = base64.urlsafe_b64decode(six.binary_type(s))
+        except TypeError:
+            return None
         id, salt, hash = struct.unpack(KEY_STRUCT, key)
         k = cls.objects.filter(id=id)
         if not k.exists():

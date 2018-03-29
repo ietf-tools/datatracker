@@ -226,6 +226,45 @@
       Done
     </pre>
 
+
+
+    <h3 id="session-video-url-api">Set session video URL</h3>
+
+    <p>
+
+      This interface is intended for Meetecho, to provide a way to set the
+      URL of a video recording for a given session.  It is available at
+      <code>{% url 'ietf.meeting.views.api_set_session_video_url' %}</code>.
+      Access is limited to recording managers.
+
+    </p>
+    <p>
+      The interface requires the use of a personal API key, which can be created at
+      <a href="{% url 'ietf.ietfauth.views.apikey_index' %}">{% url 'ietf.ietfauth.views.apikey_index' %}</a>
+    </p>
+    <p>
+      The ballot position API takes the following parameters:
+    </p>
+    <ul>
+      <li><code>apikey</code> (required) which is the personal API key hash</li>
+      <li><code>meeting</code> (required) which is the meeting number</li>
+      <li><code>group</code> (required) which is the group acronym</li>
+      <li><code>item</code> (required) which is the chronological sequence number of the session (1 for a group's first session, 2 for the second, etc.)</li>
+      <li><code>url</code> (required) which is the url that points to the video recording</li>
+    </ul>
+    <p>
+      It returns an appropriate http result code, and a brief explanatory text message.
+    </p>
+    <p>
+      Here is an example:</li>
+    </p>
+    <pre>
+      $ curl -S -F "apikey=DgAAAMLSi3coaE5TjrRs518xO8eBRlCmFF3eQcC8_SjUTtRGLGiJh7-1SYPT5WiS" -F "meeting=101" -F "group=mptcp" -F "item=1" -F "url=https://foo.example/beer/mptcp" https://datatracker.ietf.org/api/meeting/session/video/url
+      Done
+    </pre>
+
+
+
   </div>
 
 {% endblock %}
