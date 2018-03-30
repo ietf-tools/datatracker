@@ -1,3 +1,18 @@
+ietfdb (6.77.0) ietf; urgency=medium
+
+  **Automation API endpoint: /api/meeting/session/video/url**
+
+  This release provides provides a new API endpoint to let video urls be
+  associated with sessions, intended for use by Meetecho to update the
+  datatracker with sesssion recording links as soon as a recording has been
+  uploaded to the YouTube (or equivalent).  It also introduces a new
+  'Recording Manager' role, used to authorize the API access.  A short
+  description of the API is available at
+  https://datatracker.ietf.org/api#session-video-url-api
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  30 Mar 2018 19:11:56 +0000
+
+
 ietfdb (6.76.2) ietf; urgency=medium
 
   This release fixes a number of blemishes and cleans the slate for merging
@@ -847,7 +862,7 @@ ietfdb (6.68.1) ietf; urgency=medium
 
 ietfdb (6.68.0) ietf; urgency=medium
 
-  **Ballot position API.  Support for API keys.**
+  **Support for API keys.  Ballot position API: /api/iesg/position**
 
   This release provides infrastructure to handle API keys and easily
   build API endpoints which use API keys instead of username/password
@@ -1336,7 +1351,7 @@ ietfdb (6.62.1) ietf; urgency=medium
 
 ietfdb (6.62.0) ietf; urgency=medium
 
-  **API for submission automation**
+  **API for submission automation: /api/submit**
 
   This release introduces an API suitable for automation of draft submission,
   as proposed by martin.thomson@gmail.com and encouraged by others.
