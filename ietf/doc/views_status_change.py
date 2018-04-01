@@ -283,7 +283,7 @@ def default_approval_text(status_change,relateddoc):
 
     current_text = status_change.text_or_error() # pyflakes:ignore
 
-    if relateddoc.target.document.std_level.slug in ('std','ps','ds','bcp',):
+    if relateddoc.target.document.std_level_id in ('std','ps','ds','bcp',):
         action = "Protocol Action"
     else:
         action = "Document Action"

@@ -59,7 +59,7 @@ def get_doc_section(doc):
     elif doc.type_id == 'statchg':
         protocol_action = False
         for relation in doc.relateddocument_set.filter(relationship__slug__in=('tops','tois','tohist','toinf','tobcp','toexp')):
-            if relation.relationship.slug in ('tops','tois') or relation.target.document.std_level.slug in ('std','ds','ps'):
+            if relation.relationship_id in ('tops','tois') or relation.target.document.std_level_id in ('std','ds','ps'):
                 protocol_action = True
         if protocol_action:
             s = "2.3"
