@@ -10,6 +10,7 @@ import debug                            # pyflakes:ignore
 from ietf.dbtemplate.models import DBTemplate
 from ietf.meeting.models import Session, Meeting
 from ietf.group.utils import can_manage_materials
+from ietf.person.models import Email
 from ietf.secr.proceedings.proc_utils import import_audio_files
 
 def group_sessions(sessions):

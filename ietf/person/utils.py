@@ -7,11 +7,12 @@ import syslog
 
 from django.contrib import admin
 from django.contrib.auth.models import User
+from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist
 
 import debug                            # pyflakes:ignore
 
-from ietf.person.models import Person, Email
+from ietf.person.models import Person
 from ietf.utils.mail import send_mail
 
 def merge_persons(source, target, file=sys.stdout, verbose=False):
