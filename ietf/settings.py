@@ -1051,3 +1051,9 @@ if SERVER_MODE != 'production':
 
     ALLOWED_HOSTS = ['*',]
     
+    try:
+        # see https://github.com/omarish/django-cprofile-middleware
+        import django_cprofile_middleware # pyflakes:ignore
+        MIDDLEWARE = MIDDLEWARE + ('django_cprofile_middleware.middleware.ProfilerMiddleware', )
+    except ImportError:
+        pass
