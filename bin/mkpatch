@@ -111,6 +111,7 @@ if [[ $1 =~ / ]]; then die "Expected a patch name, but the first argument to $pr
 name=$1; shift;
 
 patchfile=$progdir/../../patches/$(date +%Y-%m-%d)-$name.patch
+if [ -e $patchfile ]; then die "Patchfile $patchfile already exists"; fi
 svn diff ${CHG:+ -c $CHG} ${REV:+ -r $REV} "$@" > $patchfile
 less $patchfile
 echo ""
