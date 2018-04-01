@@ -53,6 +53,7 @@ from ietf.group.models import Group
 from ietf.idindex.index import active_drafts_index_by_group
 from ietf.name.models import DocTagName, DocTypeName, StreamName
 from ietf.person.models import Person
+from ietf.person.utils import get_active_ads
 from ietf.utils.draft_search import normalize_draftname
 from ietf.doc.utils_search import prepare_document_table
 
@@ -87,9 +88,7 @@ class SearchForm(forms.Form):
     def __init__(self, *args, **kwargs):
         super(SearchForm, self).__init__(*args, **kwargs)
         responsible = Document.objects.values_list('ad', flat=True).distinct()
-        active_ads = list(Person.objects.filter(role__name="ad",
-                                                role__group__type="area",
-                                                role__group__state="active").distinct())
+        active_ads = get_active_ads()
         inactive_ads = list(((Person.objects.filter(pk__in=responsible) | Person.objects.filter(role__name="pre-ad",
                                                                                               role__group__type="area",
                                                                                               role__group__state="active")).distinct())

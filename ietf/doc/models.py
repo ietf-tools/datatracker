@@ -23,6 +23,7 @@ from ietf.name.models import ( DocTypeName, DocTagName, StreamName, IntendedStdL
     DocRelationshipName, DocReminderTypeName, BallotPositionName, ReviewRequestStateName, FormalLanguageName,
     DocUrlTagName)
 from ietf.person.models import Email, Person
+from ietf.person.utils import get_active_ads
 from ietf.utils import log
 from ietf.utils.admin import admin_link
 from ietf.utils.validators import validate_no_control_chars
@@ -1031,9 +1032,9 @@ class BallotDocEvent(DocEvent):
 
     def active_ad_positions(self):
         """Return dict mapping each active AD to a current ballot position (or None if they haven't voted)."""
-        active_ads = list(Person.objects.filter(role__name="ad", role__group__state="active", role__group__type="area"))
         res = {}
     
+        active_ads = get_active_ads()
         positions = BallotPositionDocEvent.objects.filter(type="changed_ballot_position",ad__in=active_ads, ballot=self).select_related('ad', 'pos').order_by("-time", "-id")
 
         for pos in positions:
@@ -1050,7 +1051,7 @@ class BallotDocEvent(DocEvent):
 
         positions = []
         seen = {}
-        active_ads = list(Person.objects.filter(role__name="ad", role__group__state="active", role__group__type="area").distinct())
+        active_ads = get_active_ads()
         for e in BallotPositionDocEvent.objects.filter(type="changed_ballot_position", ballot=self).select_related('ad', 'pos').order_by("-time", '-id'):
             if e.ad not in seen:
                 e.old_ad = e.ad not in active_ads
