@@ -26,7 +26,7 @@ class TelechatForm(forms.Form):
         self.page_count = {}
         choice_display = {}
         for d in dates:
-          self.page_count[d] = telechat_page_count(d).for_approval
+          self.page_count[d] = telechat_page_count(date=d).for_approval
           choice_display[d] = '%s (%s pages)' % (d.strftime("%Y-%m-%d"),self.page_count[d])
           if d-datetime.date.today() < datetime.timedelta(days=13):
               choice_display[d] += ' : WARNING - this may not leave enough time for directorate reviews!'

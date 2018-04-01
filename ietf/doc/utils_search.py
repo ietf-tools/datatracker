@@ -43,7 +43,7 @@ def fill_in_document_table_attributes(docs):
             seen.add(e.doc_id)
 
     # on agenda in upcoming meetings
-    presentations = SessionPresentation.objects.filter(session__timeslotassignments__timeslot__time__gte=datetime.datetime.today()).distinct().select_related('session', 'document')
+    presentations = SessionPresentation.objects.filter(session__meeting__date__gte=datetime.date.today()-datetime.timedelta(days=7)).select_related('session', 'document')
     session_list = [ (p.document, p.session) for p in presentations ]
     sessions = dict( (d, []) for (d, s) in session_list )
     for (d, s) in session_list:
@@ -74,9 +74,8 @@ def fill_in_document_table_attributes(docs):
         d.expirable = expirable_draft(d)
 
         if d.get_state_slug() != "rfc":
-            d.milestones = sorted((m for m in d.groupmilestone_set.all() if m.state_id == "active"), key=lambda m: m.time)
-
-            d.reviewed_by_teams = sorted(set(r.team for r in d.reviewrequest_set.filter(state__in=["requested","accepted","part-completed","completed"])), key=lambda g: g.acronym)
+            d.milestones = [ m for (t, m) in sorted(((m.time, m) for m in d.groupmilestone_set.all() if m.state_id == "active")) ]
+            d.reviewed_by_teams = sorted(set(r.team.acronym for r in d.reviewrequest_set.filter(state__in=["requested","accepted","part-completed","completed"]).distinct().select_related('team')))
 
         d.sessions = sessions[d] if d in sessions else []
 

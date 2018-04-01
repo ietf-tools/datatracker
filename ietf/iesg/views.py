@@ -94,7 +94,7 @@ def agenda_json(request, date=None):
     res = {
         "telechat-date": str(data["date"]),
         "as-of": str(datetime.datetime.utcnow()),
-        "page-counts": telechat_page_count(get_agenda_date(date))._asdict(),
+        "page-counts": telechat_page_count(date=get_agenda_date(date))._asdict(),
         "sections": {},
         }
 
@@ -358,7 +358,10 @@ def agenda_documents(request):
     dates = list(TelechatDate.objects.active().order_by('date').values_list("date", flat=True)[:4])
 
     docs_by_date = dict((d, []) for d in dates)
-    for doc in Document.objects.filter(docevent__telechatdocevent__telechat_date__in=dates).select_related("stream", "group").distinct():
+    for doc in (Document.objects
+                                .filter(docevent__telechatdocevent__telechat_date__in=dates)
+                                .select_related('stream', 'group', 'intended_std_level')
+                                .distinct()):
         d = doc.latest_event(TelechatDocEvent, type="scheduled_for_telechat").telechat_date
         if d in docs_by_date:
             docs_by_date[d].append(doc)
@@ -379,9 +382,11 @@ def agenda_documents(request):
         # the search_result_row view to display them (which expects them)
         fill_in_document_table_attributes(docs_by_date[date])
         fill_in_agenda_docs(date, sections, docs_by_date[date])
+        pages = telechat_page_count(docs=docs_by_date[date]).for_approval
 
         telechats.append({
                 "date":date,
+                "pages":pages,
                 "sections": sorted((num, section) for num, section in sections.iteritems()
                                    if "2" <= num < "5")
                 })

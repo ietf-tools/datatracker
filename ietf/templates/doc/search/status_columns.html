@@ -44,8 +44,8 @@
 
     {% if doc.reviewed_by_teams %}
       <br>Reviews:
-      {% for g in doc.reviewed_by_teams %}
-        {{ g.acronym }}{% if not forloop.last %}, {% endif %}
+      {% for acronym in doc.reviewed_by_teams %}
+        {{ acronym }}{% if not forloop.last %}, {% endif %}
       {% endfor %}
     {% endif %}
 

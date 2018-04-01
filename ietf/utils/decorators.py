@@ -2,7 +2,7 @@
 
 import datetime
 
-from decorator import decorator
+from decorator import decorator, decorate
 
 from django.conf import settings
 from django.contrib.auth import login
@@ -74,3 +74,29 @@ def require_api_key(f, request, *args, **kwargs):
     PersonApiKeyEvent.objects.create(person=person, type='apikey_login', key=key, desc="Logged in with key ID %s, endpoint %s" % (key.id, key.endpoint))
     # Execute decorated function
     return f(request, *args, **kwargs)
+
+
+def _memoize(func, self, *args, **kwargs):
+    ''''Memoize wrapper for instance methouds.  Use @lru_cache for functions.'''
+    if kwargs:  # frozenset is used to ensure hashability
+        key = args, frozenset(kwargs.items())
+    else:
+        key = args
+    # instance method, set up cache if needed
+    if not hasattr(self, '_cache'):
+        self._cache = {}
+    if not func in self._cache:
+        self._cache[func] = {}            
+    #
+    cache = self._cache[func]
+    if key not in cache:
+        cache[key] = func(self, *args, **kwargs)
+    return cache[key]
+def memoize(func):
+    if not hasattr(func, '__class__'):
+        raise NotImplementedError("Use @lru_cache instead of memoize() for funcitons.")
+    # For methods, we want the cache on the object, not on the class, in order
+    # to not having to think about cache bloat and content becoming stale, so
+    # we cannot set up the cache here.
+    return decorate(func, _memoize)
+
