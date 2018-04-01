@@ -7,13 +7,12 @@ import syslog
 
 from django.contrib import admin
 from django.contrib.auth.models import User
+from django.core.exceptions import ObjectDoesNotExist
 
 import debug                            # pyflakes:ignore
 
-from ietf.nomcom.models import Nominee
 from ietf.person.models import Person, Email
 from ietf.utils.mail import send_mail
-from ietf.meeting.models import Meeting
 
 def merge_persons(source, target, file=sys.stdout, verbose=False):
     changes = []
@@ -141,7 +140,7 @@ def merge_nominees(source, target):
     for nominee in source.nominee_set.all():
         try:
             target_nominee = target.nominee_set.get(nomcom=nominee.nomcom)
-        except Nominee.DoesNotExist:
+        except ObjectDoesNotExist:
             target_nominee = target.nominee_set.create(nomcom=nominee.nomcom, email=target.email())
         nominee.nomination_set.all().update(nominee=target_nominee)
         for fb in nominee.feedback_set.all():
@@ -183,17 +182,11 @@ def determine_merge_order(source,target):
         source,target = sorted([source,target],key=lambda a: a.user.last_login if a.user.last_login else datetime.datetime.min)
     return source,target
 
-def attended_ietf_meetings(person):
-    return Meeting.objects.filter(type='ietf',meetingregistration__email__in=Email.objects.filter(person=person).values_list('address',flat=True))
-
-def attended_in_last_five_ietf_meetings(person, date=datetime.datetime.today()):
-    previous_five = Meeting.objects.filter(type='ietf',date__lte=date).order_by('-date')[:5]
-    attended = attended_ietf_meetings(person)
-    return set(previous_five).intersection(attended)
-
-def is_nomcom_eligible(person, date=datetime.date.today()):
-    attended = attended_in_last_five_ietf_meetings(person, date)
-    is_iesg = person.role_set.filter(group__type_id='area',group__state='active',name_id='ad').exists()
-    is_iab = person.role_set.filter(group__acronym='iab',name_id__in=['member','chair']).exists()
-    is_iaoc = person.role_set.filter(group__acronym='iaoc',name_id__in=['member','chair']).exists()
-    return len(attended)>=3 and not (is_iesg or is_iab or is_iaoc)
+def get_active_ads():
+    from ietf.person.models import Person
+    cache_key = "doc:active_ads"
+    active_ads = cache.get(cache_key)
+    if not active_ads:
+        active_ads = list(Person.objects.filter(role__name="ad", role__group__state="active", role__group__type="area").distinct())
+        cache.set(cache_key, active_ads)
+    return active_ads

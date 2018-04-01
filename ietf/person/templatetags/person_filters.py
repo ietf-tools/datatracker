@@ -6,7 +6,7 @@ from django import template
 
 import debug                            # pyflakes:ignore
 
-from ietf.person.utils import is_nomcom_eligible as util_is_nomcom_eligible
+from ietf.meeting.utils import is_nomcom_eligible as util_is_nomcom_eligible
 
 register = template.Library()
 

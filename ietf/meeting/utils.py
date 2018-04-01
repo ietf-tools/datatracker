@@ -8,7 +8,7 @@ from django.template.loader import render_to_string
 import debug                            # pyflakes:ignore
 
 from ietf.dbtemplate.models import DBTemplate
-from ietf.meeting.models import Session
+from ietf.meeting.models import Session, Meeting
 from ietf.group.utils import can_manage_materials
 from ietf.secr.proceedings.proc_utils import import_audio_files
 
@@ -138,3 +138,17 @@ def finalize(meeting):
     meeting.save()
     return
 
+def attended_ietf_meetings(person):
+    return Meeting.objects.filter(type='ietf',meetingregistration__email__in=Email.objects.filter(person=person).values_list('address',flat=True))
+
+def attended_in_last_five_ietf_meetings(person, date=datetime.datetime.today()):
+    previous_five = Meeting.objects.filter(type='ietf',date__lte=date).order_by('-date')[:5]
+    attended = attended_ietf_meetings(person)
+    return set(previous_five).intersection(attended)
+
+def is_nomcom_eligible(person, date=datetime.date.today()):
+    attended = attended_in_last_five_ietf_meetings(person, date)
+    is_iesg = person.role_set.filter(group__type_id='area',group__state='active',name_id='ad').exists()
+    is_iab = person.role_set.filter(group__acronym='iab',name_id__in=['member','chair']).exists()
+    is_iaoc = person.role_set.filter(group__acronym='iaoc',name_id__in=['member','chair']).exists()
+    return len(attended)>=3 and not (is_iesg or is_iab or is_iaoc)
