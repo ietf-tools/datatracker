@@ -38,6 +38,8 @@ Planned work in rough order
 
 * Polish the htmlization pages, making the style identical with tools.ietf.org.
 
+* Transition from soon deprecated bower package manager to yarn.
+
 * Revisit RFC author ordering and author information based on rfc-index.xml
 
 * Revisit photo uploads: Add photo upload for people with roles.  Add
