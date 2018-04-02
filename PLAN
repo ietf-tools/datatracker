@@ -38,7 +38,9 @@ Planned work in rough order
 
 * Polish the htmlization pages, making the style identical with tools.ietf.org.
 
-* Transition from soon deprecated bower package manager to yarn.
+* Transition from the bower package manager to yarn.  Some packages are
+  phasing out bower support, and yarn is gaining wider acceptance as web asset
+  package manager.
 
 * Revisit RFC author ordering and author information based on rfc-index.xml
 
