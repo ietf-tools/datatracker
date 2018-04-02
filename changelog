@@ -1,3 +1,54 @@
+ietfdb (6.77.1) ietf; urgency=medium
+
+  **Performance improvements**
+
+  This release brings performance improvements, focused in particular on the
+  IESG agenda documents page.  Some of the changes will also provide
+  performance benefits for other pages, in particular pages that lists
+  documents, such as search result pages and WG/RG document lists.  All in
+  all, the changes speed up the rendering of /iesg/agenda/documents with a
+  factor of about 2.  The page generation time is still roughly proportional
+  to the number of documents on the page, so a large number of documents on
+  future IESG telechats will still give a slow page.  More substantial
+  refactoring will probably be needed for further speedups.
+
+  From the commit log:
+
+  * Added an index for (doc, type) on DocEvent to speed up latest_event()
+    queries.
+
+  * Changed the reviewed_by_teams list to provide acronyms directly, to avoid
+    group lookups during template rendering.
+
+  * Changed telechat_page_count() to accept a list of documents if such a list
+    has already been generated, to avoid double work.
+
+  * Provided telechat page counts to the template from the view, instead of
+    repeated (costly) filtering through the telechat_page_count template
+    filter in the template, which caused new, redundant document lookups every
+    time.  Removed the telechat_page_count template filter altogether, due to
+    its cost. 
+
+  * Tweaked some lookups in fill_in_document_table_attributes().
+
+  * Added terms to the select_related() list for documents in IESG
+    agenda_documents().
+
+  * Added a get_active_ads() utility function that uses the cache to reduce
+    database access, and replaced database queries in various places with
+    calls to get_active_ads().
+
+  * Moved some utility functions so as to reduce the likelihood of import
+  * loops.
+
+  * Changed some instances of .slug to _id, to avoid unnecessary database
+    lookups.
+
+  * Added a profiling middleware to development settings, if installed.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  02 Apr 2018 11:55:07 +0000
+
+
 ietfdb (6.77.0) ietf; urgency=medium
 
   **Automation API endpoint: /api/meeting/session/video/url**
