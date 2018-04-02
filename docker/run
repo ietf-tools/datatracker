@@ -236,6 +236,6 @@ else
     echo ""
     echo "Cleaning up containers and images"
     docker rm $latest
-    docker images -f dangling=true -q | xargs docker rmi -f
+    docker images -f dangling=true -q | xargs -r docker rmi -f
 
 fi
