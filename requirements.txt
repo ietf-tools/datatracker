@@ -8,7 +8,7 @@ bibtexparser>=0.6.2,<1.0	# Version 1.0 doesn't work under python 2.7.  1.0.1 doe
 bleach>=2.0.0
 coverage>=4.0.1,!=4.0.2
 #cssselect>=0.6.1               # for PyQuery
-decorator>=3.4.0
+decorator>=4.0.4
 defusedxml>=0.4.1		# for TastyPie when ussing xml; not a declared dependency
 Django>=1.11,<1.12
 django-bcrypt>=0.9.2		# for the BCrypt password hasher option.  Remove when all bcrypt upgraded to argon2
