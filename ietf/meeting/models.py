@@ -24,6 +24,7 @@ from ietf.group.models import Group
 from ietf.group.utils import can_manage_materials
 from ietf.name.models import MeetingTypeName, TimeSlotTypeName, SessionStatusName, ConstraintName, RoomResourceName, ImportantDateName
 from ietf.person.models import Person
+from ietf.utils.decorators import memoize
 from ietf.utils.storage import NoLocationMigrationFileSystemStorage
 from ietf.utils.text import xslugify
 from ietf.utils.timezone import date2datetime
@@ -283,10 +284,9 @@ class Meeting(models.Model):
         ts = tz.localize(ts)
         return ts
 
+    @memoize
     def previous_meeting(self):
-        if not hasattr(self, "_previous_meeting_cache"):
-            self._previous_meeting_cache = Meeting.objects.filter(type_id=self.type_id,date__lt=self.date).order_by('-date').first()
-        return self._previous_meeting_cache
+        return Meeting.objects.filter(type_id=self.type_id,date__lt=self.date).order_by('-date').first()
 
     class Meta:
         ordering = ["-date", "-id"]
