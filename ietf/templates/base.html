@@ -107,7 +107,7 @@
 	      </p>
 	      <![endif]-->
 	{% else %}
-	  <div id="content">
+	  <div class="col-md-12 col-sm-12" id="content">
         {% endif %}
         {% block content %}{{ content|safe }}{% endblock %}
         {% block content_end %}{% endblock %}
@@ -120,7 +120,7 @@
 
 	{% block footer %}
 	<hr>
-	  <div class="col-md-12">
+	  <div class="col-md-12 col-sm-12">
 	    <div class="text-center padded">
 	        <a href="https://www.internetsociety.org/" class="padded">ISOC</a>
 	        <a href="https://trustee.ietf.org/" class="padded">IETF&nbsp;Trust</a>
@@ -136,7 +136,7 @@
 	  </div>
 
 
-        <footer class="row">
+        <footer class="row col-md-12 col-sm-12">
 	  <div class="col-md-12">
 	    <div class="text-center">
 	      <p class="small text-muted">
