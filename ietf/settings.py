@@ -951,6 +951,10 @@ CHECKS_LIBRARY_PATCHES_TO_APPLY = [
     'patch/add-patch-already-patched-flag.patch',
     'patch/fix-patch-no-chdir.patch',
 ]
+if DEBUG:
+    CHECKS_LIBRARY_PATCHES_TO_APPLY += [
+        'patch/add-django-cprofile-filter.patch',
+    ]
 
 STATS_NAMES_LIMIT = 25
 
