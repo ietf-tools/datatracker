@@ -191,6 +191,13 @@ def traceback(levels=None):
             sys.stderr.write("%s%s" % (indent, s))
         sys.stderr.write("%s---------------\n" % indent)
 
+def show_caller(level=None):
+    if debug:
+        indent = ' ' * (_report_indent[0])
+        if level is None:
+            level = -3
+        sys.stderr.write("%sCalled from %s\n" % (indent, tb.format_stack()[level].strip()[4:]))
+
 def info(name):
     if debug:
         frame = inspect.stack()[1][0]
