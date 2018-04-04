@@ -26,6 +26,7 @@ from ietf.person.models import Email, Person
 from ietf.person.utils import get_active_ads
 from ietf.utils import log
 from ietf.utils.admin import admin_link
+from ietf.utils.decorators import memoize
 from ietf.utils.validators import validate_no_control_chars
 from ietf.utils.mail import formataddr
 from ietf.utils.models import ForeignKey
@@ -606,14 +607,15 @@ class Document(DocumentInfo):
     def filename_with_rev(self):
         return u"%s-%s.txt" % (self.name, self.rev)
     
+    @memoize
     def latest_event(self, *args, **filter_args):
         """Get latest event of optional Python type and with filter
         arguments, e.g. d.latest_event(type="xyz") returns an DocEvent
         while d.latest_event(WriteupDocEvent, type="xyz") returns a
         WriteupDocEvent event."""
         model = args[0] if args else DocEvent
-        e = model.objects.filter(doc=self).filter(**filter_args).order_by('-time', '-id')[:1]
-        return e[0] if e else None
+        e = model.objects.filter(doc=self).filter(**filter_args).order_by('-time', '-id').first()
+        return e
 
     def canonical_name(self):
         if not hasattr(self, '_canonical_name'):
@@ -699,6 +701,7 @@ class Document(DocumentInfo):
         else:
             return "none"
 
+    @memoize
     def returning_item(self):
         e = self.latest_event(TelechatDocEvent, type="scheduled_for_telechat")
         return e.returning_item if e else None
