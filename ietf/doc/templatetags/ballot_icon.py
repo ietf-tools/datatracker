@@ -73,7 +73,8 @@ def ballot_icon(context, doc):
     if not showballoticon(doc):
         return ""
 
-    ballot = doc.active_ballot()
+    ballot = doc.ballot if hasattr(doc, 'ballot') else doc.active_ballot()
+
     if not ballot:
         return ""
 
@@ -86,7 +87,7 @@ def ballot_icon(context, doc):
         else:
             return (1, pos.pos.order)
 
-    positions = list(doc.active_ballot().active_ad_positions().items())
+    positions = list(ballot.active_ad_positions().items())
     positions.sort(key=sort_key)
 
     right_click_string = ''
