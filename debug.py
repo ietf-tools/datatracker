@@ -1,3 +1,4 @@
+import os
 import sys
 import time as timeutils
 import inspect
@@ -84,17 +85,27 @@ def trace(fn):                 # renamed from 'report' by henrik 16 Jun 2011
         return fn
 
 def mark():
-    _mark[0] = timeutils.time()
+    def show_entry(e):
+        sys.stderr.write(" at %s:L%s %s() %s\n" % e)
+    if debug:
+        indent = ' ' * (_report_indent[0])
+        file, line, func, text = tb.extract_stack(None, 2)[0]
+        parts = file.split(os.sep)
+        name = os.sep.join(parts[-2:])
+        sys.stderr.write("%sMark %s:%s\n" % (indent, name, line))
+        _mark[0] = timeutils.time()
 
 def lap(s):
-    clk = timeutils.time()
-    tau = clk - _mark[0]
-    ts = timeutils.strftime("%H:%M:%S", timeutils.localtime(clk))
-    say("%s: %.3fs since mark: %s" % (ts, tau, s))
+    if debug:
+        clk = timeutils.time()
+        tau = clk - _mark[0]
+        ts = timeutils.strftime("%H:%M:%S", timeutils.localtime(clk))
+        say("%s: %.3fs since mark: %s" % (ts, tau, s))
 
 def clock(s):
-    lap(s)
-    _mark[0] = timeutils.time()
+    if debug:
+        lap(s)
+        _mark[0] = timeutils.time()
 
 def time(fn):
     """Decorator to print timing information about a function call.
@@ -205,4 +216,3 @@ def info(name):
         vtype = eval("type(%s)"%name, frame.f_globals, frame.f_locals)
         indent = ' ' * (_report_indent[0])
         sys.stderr.write("%s%s: '%s' (%s)\n" % (indent, name, value, vtype))
-
