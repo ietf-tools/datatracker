@@ -63,7 +63,7 @@ class SearchForm(forms.Form):
     activedrafts = forms.BooleanField(required=False, initial=True)
     olddrafts = forms.BooleanField(required=False, initial=False)
 
-    by = forms.ChoiceField(choices=[(x,x) for x in ('author','group','area','ad','state','stream')], required=False, initial='group')
+    by = forms.ChoiceField(choices=[(x,x) for x in ('author','group','area','ad','state','irtfstate','stream')], required=False, initial='group')
     author = forms.CharField(required=False)
     group = forms.CharField(required=False)
     stream = forms.ModelChoiceField(StreamName.objects.all().order_by('name'), empty_label="any stream", required=False)
@@ -71,6 +71,7 @@ class SearchForm(forms.Form):
     ad = forms.ChoiceField(choices=(), required=False)
     state = forms.ModelChoiceField(State.objects.filter(type="draft-iesg"), empty_label="any state", required=False)
     substate = forms.ChoiceField(choices=(), required=False)
+    irtfstate = forms.ModelChoiceField(State.objects.filter(type="draft-stream-irtf"), empty_label="any state", required=False)
 
     sort = forms.ChoiceField(
         choices= (
@@ -112,7 +113,9 @@ class SearchForm(forms.Form):
             for k in ('author', 'group', 'area', 'ad'):
                 if q['by'] == k and not q.get(k):
                     q['by'] = None
-            if q['by'] == 'state' and not (q.get("state") or q.get('substate')):
+            if q['by'] == 'state' and not (q.get('state') or q.get('substate')):
+                q['by'] = None
+            if q['by'] == 'irtfstate' and not (q.get('irtfstate')):
                 q['by'] = None
         else:
             q['by'] = None
@@ -122,6 +125,8 @@ class SearchForm(forms.Form):
                 q[k] = ""
         if q['by'] != 'state':
             q['state'] = q['substate'] = None
+        if q['by'] != 'irtfstate':
+            q['irtfstate'] = None
         return q
 
 def retrieve_search_results(form, all_types=False):
@@ -184,6 +189,8 @@ def retrieve_search_results(form, all_types=False):
             docs = docs.filter(states=query["state"])
         if query["substate"]:
             docs = docs.filter(tags=query["substate"])
+    elif by == "irtfstate":
+        docs = docs.filter(states=query["irtfstate"])
     elif by == "stream":
         docs = docs.filter(stream=query["stream"])
 
