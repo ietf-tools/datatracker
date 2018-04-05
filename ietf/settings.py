@@ -607,6 +607,14 @@ MEETING_DOC_HREFS = {
     "bluesheets": "https://www.ietf.org/proceedings/{meeting.number}/bluesheets/{doc.external_url}",
 }
 
+MEETING_DOC_OLD_HREFS = {
+    "agenda": "/meeting/{meeting.number}/materials/{doc.name}",
+    "minutes": "/meeting/{meeting.number}/materials/{doc.name}",
+    "slides": "/meeting/{meeting.number}/materials/{doc.name}",
+    "recording": "{doc.external_url}",
+    "bluesheets": "https://www.ietf.org/proceedings/{meeting.number}/bluesheets/{doc.external_url}",
+}
+
 # Override this in settings_local.py if needed
 CACHE_MIDDLEWARE_SECONDS = 300
 CACHE_MIDDLEWARE_KEY_PREFIX = ''

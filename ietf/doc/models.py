@@ -213,7 +213,6 @@ class DocumentInfo(models.Model):
                     format = settings.DOC_HREFS[self.type_id]
             elif self.type_id in settings.MEETING_DOC_HREFS:
                 self.is_meeting_related = True
-                format = settings.MEETING_DOC_HREFS[self.type_id]
             else:
                 if len(self.external_url):
                     return self.external_url
@@ -229,6 +228,12 @@ class DocumentInfo(models.Model):
                     if not sess:
                         return ""
                     meeting = sess.meeting
+                # After IETF 96, meeting materials acquired revision
+                # handling, and the document naming changed.
+                if meeting.number.isdigit() and int(meeting.number) > 96:
+                    format = settings.MEETING_DOC_HREFS[self.type_id]
+                else:
+                    format = settings.MEETING_DOC_OLD_HREFS[self.type_id]
                 info = dict(doc=self, meeting=meeting)
             else:
                 info = dict(doc=self)

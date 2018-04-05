@@ -36,6 +36,9 @@ Planned work in rough order
 * Rework email sending so that all emails sent by the datatracker, except for
   logging and failure emails sent to ADMINS, are captured as a Message object.
 
+* Rework email subjects for messages relating to documents to consistently
+  start with the document name.
+
 * Polish the htmlization pages, making the style identical with tools.ietf.org.
 
 * Transition from the bower package manager to yarn.  Some packages are
