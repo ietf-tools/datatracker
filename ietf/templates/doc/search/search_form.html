@@ -108,6 +108,16 @@
 
 	  <div class="form-group search_field">
 	    <div class="col-sm-4">
+              <input type="radio" name="by" value="irtfstate" {% if form.by.value == "irtfstate" %}checked{% endif %} id="irtfstate"/>
+	      <label for="irtfstate" class="control-label">IRTF State</label>
+	    </div>
+	    <div class="col-sm-8">
+	      {{ form.irtfstate|add_class:"form-control" }}
+	    </div>
+	  </div>
+
+	  <div class="form-group search_field">
+	    <div class="col-sm-4">
               <input type="radio" name="by" value="stream" {% if form.by.value == "stream" %}checked{% endif %} id="stream"/>
 	      <label for="stream" class="control-label">Stream</label>
 	    </div>
