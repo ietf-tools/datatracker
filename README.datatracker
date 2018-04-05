@@ -7,7 +7,7 @@ We have some site-wide customization applied to the bootstrap version we keep
 in bootstrap/ (from which the minified dist version is built); it modifies
 some stuff under less/
 
-We also apply some additional custiomizations in static/css/ietf.css; we
+We also apply some additional customizations in static/css/ietf.css; we
 should eventually move that under bootstrap/less/ if possible. (ietf.css was
 what Lars used initially for customization with an unmodified bootstrap.)
 
