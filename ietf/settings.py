@@ -960,9 +960,11 @@ CHECKS_LIBRARY_PATCHES_TO_APPLY = [
     'patch/fix-patch-no-chdir.patch',
 ]
 if DEBUG:
-    CHECKS_LIBRARY_PATCHES_TO_APPLY += [
-        'patch/add-django-cprofile-filter.patch',
-    ]
+    try:
+        import django_cprofile_middleware # pyflakes:ignore
+        CHECKS_LIBRARY_PATCHES_TO_APPLY += [ 'patch/add-django-cprofile-filter.patch', ]
+    except ImportError:
+        pass
 
 STATS_NAMES_LIMIT = 25
 
