@@ -2,8 +2,8 @@
 {% load ietf_filters ballot_icon %}
 
 <td class="status">
-  <div class="pull-right">
-    {% ballot_icon doc %}
+  <div class="pull-right" id="ballot-icon-{{doc.name}}">
+    {% if doc.ballot %}{% ballot_icon doc %}{% endif %}
   </div>
 
   {% if not doc.get_state_slug == "rfc" %}

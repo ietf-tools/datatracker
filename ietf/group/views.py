@@ -382,6 +382,7 @@ def chartering_groups(request):
 
         for g in t.chartering_groups:
             g.chartering_type = get_chartering_type(g.charter)
+            g.charter.ballot = g.charter.active_ballot()
 
     return render(request, 'group/chartering_groups.html',
                   dict(charter_states=charter_states,

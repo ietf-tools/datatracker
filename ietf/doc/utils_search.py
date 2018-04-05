@@ -4,20 +4,34 @@ import datetime
 import debug                            # pyflakes:ignore
 
 from ietf.community.utils import augment_docs_with_tracking_info
-from ietf.doc.models import Document, DocAlias, RelatedDocument, DocEvent, TelechatDocEvent
+from ietf.doc.models import Document, DocAlias, RelatedDocument, DocEvent, TelechatDocEvent, BallotDocEvent
 from ietf.doc.expire import expirable_draft
-from ietf.meeting.models import SessionPresentation
+
 
 def wrap_value(v):
     return lambda: v
 
 
-def fill_in_document_table_attributes(docs):
+def fill_in_telechat_date(docs, doc_dict=None, doc_ids=None):
+    if doc_dict is None:
+        doc_dict = dict((d.pk, d) for d in docs)
+        doc_ids = doc_dict.keys()
+    if doc_ids is None:
+        doc_ids = doc_dict.keys()        
+
+    seen = set()
+    for e in TelechatDocEvent.objects.filter(doc__in=doc_ids, type="scheduled_for_telechat").order_by('-time'):
+        if e.doc_id not in seen:
+            d = doc_dict[e.doc_id]
+            d.telechat_date = wrap_value(d.telechat_date(e))
+            seen.add(e.doc_id)
+
+def fill_in_document_table_attributes(docs, have_telechat_date=False):
     # fill in some attributes for the document table results to save
     # some hairy template code and avoid repeated SQL queries
 
-    docs_dict = dict((d.pk, d) for d in docs)
-    doc_ids = docs_dict.keys()
+    doc_dict = dict((d.pk, d) for d in docs)
+    doc_ids = doc_dict.keys()
 
     rfc_aliases = dict(DocAlias.objects.filter(name__startswith="rfc", document__in=doc_ids).values_list("document", "name"))
 
@@ -32,22 +46,26 @@ def fill_in_document_table_attributes(docs):
             d.latest_event_cache[e] = None
 
     for e in DocEvent.objects.filter(doc__in=doc_ids, type__in=event_types).order_by('time'):
-        docs_dict[e.doc_id].latest_event_cache[e.type] = e
+        doc_dict[e.doc_id].latest_event_cache[e.type] = e
 
-    # telechat date, can't do this with above query as we need to get TelechatDocEvents out
     seen = set()
-    for e in TelechatDocEvent.objects.filter(doc__in=doc_ids, type="scheduled_for_telechat").order_by('-time'):
-        if e.doc_id not in seen:
-            d = docs_dict[e.doc_id]
-            d.telechat_date = wrap_value(d.telechat_date(e))
+    for e in BallotDocEvent.objects.filter(doc__in=doc_ids, type__in=('created_ballot', 'closed_ballot')).order_by('-time'):
+        if not e.doc_id in seen:
+            doc_dict[e.doc_id].ballot = e if e.type == 'created_ballot' else None
             seen.add(e.doc_id)
 
+    if not have_telechat_date:
+        fill_in_telechat_date(docs, doc_dict, doc_ids)
+
     # on agenda in upcoming meetings
-    presentations = SessionPresentation.objects.filter(session__meeting__date__gte=datetime.date.today()-datetime.timedelta(days=7)).select_related('session', 'document')
-    session_list = [ (p.document, p.session) for p in presentations ]
-    sessions = dict( (d, []) for (d, s) in session_list )
-    for (d, s) in session_list:
-        sessions[d].append(s)
+    sessions = {}
+#    debug.mark()
+#    presentations = SessionPresentation.objects.filter(session__meeting__date__gte=datetime.date.today()-datetime.timedelta(days=7)).select_related('session', 'document')
+#   session_list = [ (p.document, p.session) for p in presentations ]
+#    sessions = dict( (d, []) for (d, s) in session_list )
+#    for (d, s) in session_list:
+#        sessions[d].append(s)
+#    debug.clock('presentations')
 
     # misc
     for d in docs:
@@ -79,6 +97,9 @@ def fill_in_document_table_attributes(docs):
 
         d.sessions = sessions[d] if d in sessions else []
 
+        e = d.latest_event_cache.get('started_iesg_proces', None)
+        d.balloting_started = e.time if e else datetime.datetime.min
+
     # RFCs
 
     # errata
@@ -88,7 +109,7 @@ def fill_in_document_table_attributes(docs):
 
     # obsoleted/updated by
     for a in rfc_aliases:
-        d = docs_dict[a]
+        d = doc_dict[a]
         d.obsoleted_by_list = []
         d.updated_by_list = []
 
@@ -97,7 +118,7 @@ def fill_in_document_table_attributes(docs):
     rel_rfc_aliases = dict(DocAlias.objects.filter(name__startswith="rfc",
                                                    document__in=[rel.source_id for rel in xed_by]).values_list('document', 'name'))
     for rel in xed_by:
-        d = docs_dict[rel.target.document_id]
+        d = doc_dict[rel.target.document_id]
         if rel.relationship_id == "obs":
             l = d.obsoleted_by_list
         elif rel.relationship_id == "updates":

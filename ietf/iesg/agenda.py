@@ -7,7 +7,8 @@ from collections import OrderedDict
 from django.conf import settings
 from django.http import Http404
 
-from ietf.doc.models import Document, TelechatDocEvent, LastCallDocEvent, ConsensusDocEvent
+from ietf.doc.models import Document, LastCallDocEvent, ConsensusDocEvent
+from ietf.doc.utils_search import fill_in_telechat_date
 from ietf.iesg.models import TelechatDate, TelechatAgendaItem
 from ietf.review.utils import review_requests_to_list_for_docs
 
@@ -147,19 +148,21 @@ def fill_in_agenda_administrivia(date, sections):
 
         sections[s]["text"] = t
 
-def fill_in_agenda_docs(date, sections, matches=None):
-    if not matches:
-        matches = Document.objects.filter(docevent__telechatdocevent__telechat_date=date)
-        matches = matches.select_related("stream", "group").distinct()
+def fill_in_agenda_docs(date, sections, docs=None):
+    if not docs:
+        docs = Document.objects.filter(docevent__telechatdocevent__telechat_date=date)
+        docs = docs.select_related("stream", "group").distinct()
+        fill_in_telechat_date(docs)
 
-    review_requests_for_docs = review_requests_to_list_for_docs(matches)
+    review_requests_for_docs = review_requests_to_list_for_docs(docs)
 
-    for doc in matches:
-        if doc.latest_event(TelechatDocEvent, type="scheduled_for_telechat").telechat_date != date:
+    for doc in docs:
+        if doc.telechat_date() != date:
             continue
 
-        e = doc.latest_event(type="started_iesg_process")
-        doc.balloting_started = e.time if e else datetime.datetime.min
+        if not hasattr(doc, 'balloting_started'):
+            e = doc.latest_event(type="started_iesg_process")
+            doc.balloting_started = e.time if e else datetime.datetime.min
 
         if doc.type_id == "draft":
             s = doc.get_state("draft-iana-review")

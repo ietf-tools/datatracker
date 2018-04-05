@@ -2,8 +2,10 @@ from collections import namedtuple
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.models import Document, TelechatDocEvent, STATUSCHANGE_RELATIONS
+from ietf.doc.models import Document, STATUSCHANGE_RELATIONS
+from ietf.doc.utils_search import fill_in_telechat_date
 from ietf.iesg.agenda import get_doc_section
+
 
 TelechatPageCount = namedtuple('TelechatPageCount',['for_approval','for_action','related'])
 
@@ -13,7 +15,8 @@ def telechat_page_count(date=None, docs=None):
 
     if not docs:
         candidates = Document.objects.filter(docevent__telechatdocevent__telechat_date=date).distinct() 
-        docs = [ doc for doc in candidates if doc.latest_event(TelechatDocEvent,type='scheduled_for_telechat').telechat_date==date ]
+        fill_in_telechat_date(candidates)
+        docs = [ doc for doc in candidates if doc.telechat_date()==date ]
 
     for_action =[d for d in docs if get_doc_section(d).endswith('.3')]
 

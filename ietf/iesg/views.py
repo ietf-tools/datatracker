@@ -49,9 +49,10 @@ from django.db import models
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from django.contrib.sites.models import Site
+#from django.views.decorators.cache import cache_page
+#from django.views.decorators.vary import vary_on_cookie
 
-
-from ietf.doc.models import Document, State, TelechatDocEvent, LastCallDocEvent, ConsensusDocEvent, DocEvent, IESG_BALLOT_ACTIVE_STATES
+from ietf.doc.models import Document, State, LastCallDocEvent, ConsensusDocEvent, DocEvent, IESG_BALLOT_ACTIVE_STATES
 from ietf.doc.utils import update_telechat, augment_events_with_revision
 from ietf.group.models import GroupMilestone, Role
 from ietf.iesg.agenda import agenda_data, agenda_sections, fill_in_agenda_docs, get_agenda_date
@@ -59,7 +60,7 @@ from ietf.iesg.models import TelechatDate
 from ietf.iesg.utils import telechat_page_count
 from ietf.ietfauth.utils import has_role, role_required, user_is_person
 from ietf.person.models import Person
-from ietf.doc.utils_search import fill_in_document_table_attributes
+from ietf.doc.utils_search import fill_in_document_table_attributes, fill_in_telechat_date
 
 def review_decisions(request, year=None):
     events = DocEvent.objects.filter(type__in=("iesg_disapproved", "iesg_approved"))
@@ -288,8 +289,11 @@ def agenda_package(request, date=None):
 def agenda_documents_txt(request):
     dates = list(TelechatDate.objects.active().order_by('date').values_list("date", flat=True)[:4])
 
+    all_docs = Document.objects.filter(docevent__telechatdocevent__telechat_date__in=dates).distinct()
     docs = []
-    for d in Document.objects.filter(docevent__telechatdocevent__telechat_date__in=dates).distinct():
+    fill_in_telechat_date(all_docs)
+
+    for d in all_docs:
         date = d.telechat_date()
         if date in dates:
             d.computed_telechat_date = date
@@ -358,11 +362,13 @@ def agenda_documents(request):
     dates = list(TelechatDate.objects.active().order_by('date').values_list("date", flat=True)[:4])
 
     docs_by_date = dict((d, []) for d in dates)
-    for doc in (Document.objects
-                                .filter(docevent__telechatdocevent__telechat_date__in=dates)
-                                .select_related('stream', 'group', 'intended_std_level')
-                                .distinct()):
-        d = doc.latest_event(TelechatDocEvent, type="scheduled_for_telechat").telechat_date
+    docs = Document.objects.filter(docevent__telechatdocevent__telechat_date__in=dates).distinct()
+    docs = docs.select_related("ad", "std_level", "intended_std_level", "group", "stream", "shepherd", )
+    # No prefetch-related -- turns out not to be worth it
+
+    fill_in_telechat_date(docs)
+    for doc in docs:
+        d = doc.telechat_date()
         if d in docs_by_date:
             docs_by_date[d].append(doc)
 
@@ -380,13 +386,13 @@ def agenda_documents(request):
         sections = agenda_sections()
         # augment the docs with the search attributes, since we're using
         # the search_result_row view to display them (which expects them)
-        fill_in_document_table_attributes(docs_by_date[date])
+        fill_in_document_table_attributes(docs_by_date[date], have_telechat_date=True)
         fill_in_agenda_docs(date, sections, docs_by_date[date])
         pages = telechat_page_count(docs=docs_by_date[date]).for_approval
 
         telechats.append({
-                "date":date,
-                "pages":pages,
+                "date":     date,
+                "pages":    pages,
                 "sections": sorted((num, section) for num, section in sections.iteritems()
                                    if "2" <= num < "5")
                 })
@@ -417,6 +423,7 @@ def past_documents(request):
         doc.milestones = doc.groupmilestone_set.filter(state="active").order_by("time").select_related("group")
         doc.blocking_positions = blocking_positions
         doc.telechat = doc.previous_telechat_date()
+        doc.ballot = ballot
 
         if doc.telechat:
             docs.append(doc)
@@ -431,9 +438,11 @@ def past_documents(request):
 def telechat_docs_tarfile(request, date):
     date = get_agenda_date(date)
 
+    all_docs = Document.objects.filter(docevent__telechatdocevent__telechat_date=date).distinct()
+    fill_in_telechat_date(all_docs)
     docs = []
-    for d in Document.objects.filter(docevent__telechatdocevent__telechat_date=date).distinct():
-        if d.latest_event(TelechatDocEvent, type="scheduled_for_telechat").telechat_date == date:
+    for d in all_docs:
+        if d.telechat_date() == date:
             docs.append(d)
 
     response = HttpResponse(content_type='application/octet-stream')
@@ -491,6 +500,7 @@ def discusses(request):
         doc.for_me = user_is_person(request.user, doc.ad)
         doc.milestones = doc.groupmilestone_set.filter(state="active").order_by("time").select_related("group")
         doc.blocking_positions = blocking_positions
+        doc.ballot = ballot
 
         docs.append(doc)
 
