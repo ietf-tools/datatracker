@@ -436,7 +436,7 @@ ietfdb (6.75.0) ietf; urgency=medium
 
 ietfdb (6.74.0) ietf; urgency=medium
 
-  **Various notificaiton email improvements and additional iCalendar links**
+  **Various notification email improvements and additional iCalendar links**
 
   This release provides a number of bugfixes and enhancements to various
   notification email messages; and as a result of resolving ticket #2461
