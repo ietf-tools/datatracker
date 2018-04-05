@@ -60,6 +60,7 @@ class EditPositionTests(TestCase):
         r = self.client.post(url, dict(position="noobj"))
         self.assertEqual(r.status_code, 302)
 
+        draft = Document.objects.get(name=draft.name)
         pos = draft.latest_event(BallotPositionDocEvent, ad=ad)
         self.assertEqual(pos.pos.slug, "noobj")
         self.assertEqual(draft.docevent_set.count(), events_before + 1)
@@ -70,6 +71,7 @@ class EditPositionTests(TestCase):
         r = self.client.post(url, dict(position="norecord"))
         self.assertEqual(r.status_code, 302)
 
+        draft = Document.objects.get(name=draft.name)
         pos = draft.latest_event(BallotPositionDocEvent, ad=ad)
         self.assertEqual(pos.pos.slug, "norecord")
         self.assertEqual(draft.docevent_set.count(), events_before + 1)
@@ -80,6 +82,7 @@ class EditPositionTests(TestCase):
         r = self.client.post(url, dict(position="norecord", comment="New comment."))
         self.assertEqual(r.status_code, 302)
 
+        draft = Document.objects.get(name=draft.name)
         pos = draft.latest_event(BallotPositionDocEvent, ad=ad)
         self.assertEqual(pos.pos.slug, "norecord")
         self.assertEqual(draft.docevent_set.count(), events_before + 2)
@@ -121,6 +124,7 @@ class EditPositionTests(TestCase):
         r = self.client.post(url, dict(apikey=apikey.hash(), doc=draft.name, position="noobj"))
         self.assertEqual(r.status_code, 200)
 
+        draft = Document.objects.get(name=draft.name)
         pos = draft.latest_event(BallotPositionDocEvent, ad=ad)
         self.assertEqual(pos.pos.slug, "noobj")
         self.assertEqual(draft.docevent_set.count(), events_before + 1)
@@ -131,6 +135,7 @@ class EditPositionTests(TestCase):
         r = self.client.post(url, dict(apikey=apikey.hash(), doc=draft.name, position="norecord"))
         self.assertEqual(r.status_code, 200)
 
+        draft = Document.objects.get(name=draft.name)
         pos = draft.latest_event(BallotPositionDocEvent, ad=ad)
         self.assertEqual(pos.pos.slug, "norecord")
         self.assertEqual(draft.docevent_set.count(), events_before + 1)
@@ -141,6 +146,7 @@ class EditPositionTests(TestCase):
         r = self.client.post(url, dict(apikey=apikey.hash(), doc=draft.name, position="norecord", comment="New comment."))
         self.assertEqual(r.status_code, 200)
 
+        draft = Document.objects.get(name=draft.name)
         pos = draft.latest_event(BallotPositionDocEvent, ad=ad)
         self.assertEqual(pos.pos.slug, "norecord")
         self.assertEqual(draft.docevent_set.count(), events_before + 2)
@@ -428,6 +434,7 @@ class BallotWriteupsTests(TestCase):
         # test regenerate
         r = self.client.post(url, dict(regenerate_approval_text="1"))
         self.assertEqual(r.status_code, 200)
+        draft = Document.objects.get(name=draft.name)        
         self.assertTrue("Subject: Protocol Action" in draft.latest_event(WriteupDocEvent, type="changed_ballot_approval_text").text)
 
         # test regenerate when it's a disapprove
@@ -435,6 +442,7 @@ class BallotWriteupsTests(TestCase):
 
         r = self.client.post(url, dict(regenerate_approval_text="1"))
         self.assertEqual(r.status_code, 200)
+        draft = Document.objects.get(name=draft.name)
         self.assertTrue("NOT be published" in draft.latest_event(WriteupDocEvent, type="changed_ballot_approval_text").text)
 
         # test regenerate when it's a conflict review

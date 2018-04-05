@@ -468,7 +468,7 @@ class EditInfoTests(TestCase):
         self.assertTrue(not draft.latest_event(ConsensusDocEvent, type="changed_consensus"))
         r = self.client.post(url, dict(consensus="Yes"))
         self.assertEqual(r.status_code, 302)
-
+        draft = Document.objects.get(name=draft.name)
         self.assertEqual(draft.latest_event(ConsensusDocEvent, type="changed_consensus").consensus, True)
 
         # reset
@@ -489,7 +489,7 @@ class EditInfoTests(TestCase):
         draft.save_with_history([e])
         r = self.client.post(url, dict(consensus="Unknown"))
         self.assertEqual(r.status_code, 302)
-
+        draft = Document.objects.get(name=draft.name)
         self.assertEqual(draft.latest_event(ConsensusDocEvent, type="changed_consensus").consensus, None)
 
 
@@ -778,8 +778,8 @@ class ExpireLastCallTests(TestCase):
 class IndividualInfoFormsTests(TestCase):
 
     def setUp(self):
-        self.doc = make_test_data()
-        self.docname = self.doc.name
+        doc = make_test_data()
+        self.docname = doc.name
 
     def test_doc_change_stream(self):
         url = urlreverse('ietf.doc.views_draft.change_stream', kwargs=dict(name=self.docname))
@@ -795,21 +795,21 @@ class IndividualInfoFormsTests(TestCase):
         empty_outbox()
         r = self.client.post(url,dict(stream="ise",comment="7gRMTjBM"))
         self.assertEqual(r.status_code,302)
-        self.doc = Document.objects.get(name=self.docname)
-        self.assertEqual(self.doc.stream_id,'ise')
+        doc = Document.objects.get(name=self.docname)
+        self.assertEqual(doc.stream_id,'ise')
         self.assertEqual(len(outbox), 1)
         self.assertTrue('Stream Change Notice' in outbox[0]['Subject'])
         self.assertTrue('rfc-ise@' in outbox[0]['To'])
         self.assertTrue('iesg@' in outbox[0]['To'])
         self.assertTrue('7gRMTjBM' in str(outbox[0]))
-        self.assertTrue('7gRMTjBM' in self.doc.latest_event(DocEvent,type='added_comment').desc)
+        self.assertTrue('7gRMTjBM' in doc.latest_event(DocEvent,type='added_comment').desc)
 
         # shift to an unknown stream (it must be possible to throw a document out of any stream)
         empty_outbox()
         r = self.client.post(url,dict(stream=""))
         self.assertEqual(r.status_code,302)
-        self.doc = Document.objects.get(name=self.docname)
-        self.assertEqual(self.doc.stream,None)
+        doc = Document.objects.get(name=self.docname)
+        self.assertEqual(doc.stream,None)
         self.assertTrue('rfc-ise@' in outbox[0]['To'])
 
     def test_doc_change_notify(self):
@@ -825,15 +825,15 @@ class IndividualInfoFormsTests(TestCase):
         # Provide a list
         r = self.client.post(url,dict(notify="TJ2APh2P@ietf.org",save_addresses="1"))
         self.assertEqual(r.status_code,302)
-        self.doc = Document.objects.get(name=self.docname)
-        self.assertEqual(self.doc.notify,'TJ2APh2P@ietf.org')
+        doc = Document.objects.get(name=self.docname)
+        self.assertEqual(doc.notify,'TJ2APh2P@ietf.org')
         
         # Ask the form to regenerate the list
         r = self.client.post(url,dict(regenerate_addresses="1"))
         self.assertEqual(r.status_code,200)
-        self.doc = Document.objects.get(name=self.docname)
+        doc = Document.objects.get(name=self.docname)
         # Regenerate does not save!
-        self.assertEqual(self.doc.notify,'TJ2APh2P@ietf.org')
+        self.assertEqual(doc.notify,'TJ2APh2P@ietf.org')
         q = PyQuery(r.content)
         self.assertEqual(None,q('form input[name=notify]')[0].value)
 
@@ -857,14 +857,14 @@ class IndividualInfoFormsTests(TestCase):
         messages_before = len(outbox)
         r = self.client.post(url,dict(intended_std_level="bcp",comment="ZpyQFGmA"))
         self.assertEqual(r.status_code,302)
-        self.doc = Document.objects.get(name=self.docname)
-        self.assertEqual(self.doc.intended_std_level_id,'bcp')
+        doc = Document.objects.get(name=self.docname)
+        self.assertEqual(doc.intended_std_level_id,'bcp')
         self.assertEqual(len(outbox),messages_before+1)
         self.assertTrue('Intended Status ' in outbox[-1]['Subject'])
         self.assertTrue('mars-chairs@' in outbox[-1]['To'])
         self.assertTrue('ZpyQFGmA' in str(outbox[-1]))
 
-        self.assertTrue('ZpyQFGmA' in self.doc.latest_event(DocEvent,type='added_comment').desc)
+        self.assertTrue('ZpyQFGmA' in doc.latest_event(DocEvent,type='added_comment').desc)
        
     def test_doc_change_telechat_date(self):
         url = urlreverse('ietf.doc.views_doc.telechat_date', kwargs=dict(name=self.docname))
@@ -878,12 +878,13 @@ class IndividualInfoFormsTests(TestCase):
 
         # set a date
         empty_outbox()
-        self.assertFalse(self.doc.latest_event(TelechatDocEvent, "scheduled_for_telechat"))
+        doc = Document.objects.get(name=self.docname)
+        self.assertFalse(doc.latest_event(TelechatDocEvent, "scheduled_for_telechat"))
         telechat_date = TelechatDate.objects.active().order_by('date')[0].date
         r = self.client.post(url,dict(telechat_date=telechat_date.isoformat()))
         self.assertEqual(r.status_code,302)
-        self.doc = Document.objects.get(name=self.docname)
-        self.assertEqual(self.doc.latest_event(TelechatDocEvent, "scheduled_for_telechat").telechat_date,telechat_date)
+        doc = Document.objects.get(name=self.docname)
+        self.assertEqual(doc.latest_event(TelechatDocEvent, "scheduled_for_telechat").telechat_date,telechat_date)
         self.assertEqual(len(outbox), 1)
         self.assertTrue('Telechat update notice' in outbox[0]['Subject'])
         self.assertTrue('iesg@' in outbox[0]['To'])
@@ -892,7 +893,8 @@ class IndividualInfoFormsTests(TestCase):
         # Take the doc back off any telechat
         r = self.client.post(url,dict(telechat_date=""))
         self.assertEqual(r.status_code, 302)
-        self.assertEqual(self.doc.latest_event(TelechatDocEvent, "scheduled_for_telechat").telechat_date,None)
+        doc = Document.objects.get(name=self.docname)
+        self.assertEqual(doc.latest_event(TelechatDocEvent, "scheduled_for_telechat").telechat_date,None)
         
     def test_doc_change_iesg_note(self):
         url = urlreverse('ietf.doc.views_draft.edit_iesg_note', kwargs=dict(name=self.docname))
@@ -907,9 +909,9 @@ class IndividualInfoFormsTests(TestCase):
         # post
         r = self.client.post(url,dict(note='ZpyQFGmA\r\nZpyQFGmA'))
         self.assertEqual(r.status_code,302)
-        self.doc = Document.objects.get(name=self.docname)
-        self.assertEqual(self.doc.note,'ZpyQFGmA\nZpyQFGmA')
-        self.assertTrue('ZpyQFGmA' in self.doc.latest_event(DocEvent,type='added_comment').desc)
+        doc = Document.objects.get(name=self.docname)
+        self.assertEqual(doc.note,'ZpyQFGmA\nZpyQFGmA')
+        self.assertTrue('ZpyQFGmA' in doc.latest_event(DocEvent,type='added_comment').desc)
 
     def test_doc_change_ad(self):
         url = urlreverse('ietf.doc.views_draft.edit_ad', kwargs=dict(name=self.docname))
@@ -925,13 +927,14 @@ class IndividualInfoFormsTests(TestCase):
         ad2 = Person.objects.get(name='Ad No2')
         r = self.client.post(url,dict(ad=str(ad2.pk)))
         self.assertEqual(r.status_code,302)
-        self.doc = Document.objects.get(name=self.docname)
-        self.assertEqual(self.doc.ad,ad2)
-        self.assertTrue(self.doc.latest_event(DocEvent,type="added_comment").desc.startswith('Shepherding AD changed'))
+        doc = Document.objects.get(name=self.docname)
+        self.assertEqual(doc.ad,ad2)
+        self.assertTrue(doc.latest_event(DocEvent,type="added_comment").desc.startswith('Shepherding AD changed'))
 
     def test_doc_change_shepherd(self):
-        self.doc.shepherd = None
-        self.doc.save_with_history([DocEvent.objects.create(doc=self.doc, rev=self.doc.rev, type="changed_shepherd", by=Person.objects.get(user__username="secretary"), desc="Test")])
+        doc = Document.objects.get(name=self.docname)
+        doc.shepherd = None
+        doc.save_with_history([DocEvent.objects.create(doc=doc, rev=doc.rev, type="changed_shepherd", by=Person.objects.get(user__username="secretary"), desc="Test")])
 
         url = urlreverse('ietf.doc.views_draft.edit_shepherd',kwargs=dict(name=self.docname))
         
@@ -952,9 +955,9 @@ class IndividualInfoFormsTests(TestCase):
         plain_email = Email.objects.get(person__name="Plain Man")
         r = self.client.post(url, dict(shepherd=plain_email.pk))
         self.assertEqual(r.status_code,302)
-        self.doc = Document.objects.get(name=self.docname)
-        self.assertEqual(self.doc.shepherd, plain_email)
-        comment_events = self.doc.docevent_set.filter(time=self.doc.time,type="added_comment")
+        doc = Document.objects.get(name=self.docname)
+        self.assertEqual(doc.shepherd, plain_email)
+        comment_events = doc.docevent_set.filter(time=doc.time,type="added_comment")
         comments = '::'.join([x.desc for x in comment_events])
         self.assertTrue('Document shepherd changed to Plain Man' in comments)
         self.assertTrue('Notification list changed' in comments)
@@ -962,16 +965,16 @@ class IndividualInfoFormsTests(TestCase):
         # save the form without changing the email (nothing should be saved)
         r = self.client.post(url, dict(shepherd=plain_email.pk))
         self.assertEqual(r.status_code, 302)
-        self.doc = Document.objects.get(name=self.docname)
-        self.assertEqual(set(comment_events), set(self.doc.docevent_set.filter(time=self.doc.time,type="added_comment")))
+        doc = Document.objects.get(name=self.docname)
+        self.assertEqual(set(comment_events), set(doc.docevent_set.filter(time=doc.time,type="added_comment")))
         r = self.client.get(url)
         self.assertTrue(any(['no changes have been made' in m.message for m in r.context['messages']]))
 
         # Remove the shepherd
         r = self.client.post(url, dict(shepherd=''))
         self.assertEqual(r.status_code, 302)
-        self.doc = Document.objects.get(name=self.docname)
-        self.assertTrue(any(['Document shepherd changed to (None)' in x.desc for x in self.doc.docevent_set.filter(time=self.doc.time,type='added_comment')]))
+        doc = Document.objects.get(name=self.docname)
+        self.assertTrue(any(['Document shepherd changed to (None)' in x.desc for x in doc.docevent_set.filter(time=doc.time,type='added_comment')]))
         
         # test buggy change
         ad = Person.objects.get(name='Areað Irector')
@@ -982,22 +985,23 @@ class IndividualInfoFormsTests(TestCase):
         self.assertTrue(len(q('form .has-error')) > 0)
 
     def test_doc_change_shepherd_email(self):
-        self.doc.shepherd = None
-        self.doc.save_with_history([DocEvent.objects.create(doc=self.doc, rev=self.doc.rev, type="changed_shepherd", by=Person.objects.get(user__username="secretary"), desc="Test")])
+        doc = Document.objects.get(name=self.docname)
+        doc.shepherd = None
+        doc.save_with_history([DocEvent.objects.create(doc=doc, rev=doc.rev, type="changed_shepherd", by=Person.objects.get(user__username="secretary"), desc="Test")])
 
         url = urlreverse('ietf.doc.views_draft.change_shepherd_email',kwargs=dict(name=self.docname))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 404)
 
-        self.doc.shepherd = Email.objects.get(person__user__username="ad1")
-        self.doc.save_with_history([DocEvent.objects.create(doc=self.doc, rev=self.doc.rev, type="changed_shepherd", by=Person.objects.get(user__username="secretary"), desc="Test")])
+        doc.shepherd = Email.objects.get(person__user__username="ad1")
+        doc.save_with_history([DocEvent.objects.create(doc=doc, rev=doc.rev, type="changed_shepherd", by=Person.objects.get(user__username="secretary"), desc="Test")])
 
         login_testing_unauthorized(self, "plain", url)
 
-        self.doc.shepherd = Email.objects.get(person__user__username="plain")
-        self.doc.save_with_history([DocEvent.objects.create(doc=self.doc, rev=self.doc.rev, type="changed_shepherd", by=Person.objects.get(user__username="secretary"), desc="Test")])
+        doc.shepherd = Email.objects.get(person__user__username="plain")
+        doc.save_with_history([DocEvent.objects.create(doc=doc, rev=doc.rev, type="changed_shepherd", by=Person.objects.get(user__username="secretary"), desc="Test")])
 
-        new_email = Email.objects.create(address="anotheremail@example.com", person=self.doc.shepherd.person)
+        new_email = Email.objects.create(address="anotheremail@example.com", person=doc.shepherd.person)
 
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
@@ -1005,15 +1009,16 @@ class IndividualInfoFormsTests(TestCase):
         # change the shepherd email
         r = self.client.post(url, dict(shepherd=new_email))
         self.assertEqual(r.status_code, 302)
-        self.doc = Document.objects.get(name=self.docname)
-        self.assertEqual(self.doc.shepherd, new_email)
-        comment_event = self.doc.latest_event(DocEvent, type="added_comment")
+        doc = Document.objects.get(name=self.docname)
+        self.assertEqual(doc.shepherd, new_email)
+        comment_event = doc.latest_event(DocEvent, type="added_comment")
         self.assertTrue(comment_event.desc.startswith('Document shepherd email changed'))
 
         # save the form without changing the email (nothing should be saved)
         r = self.client.post(url, dict(shepherd=new_email))
         self.assertEqual(r.status_code, 302)
-        self.assertEqual(comment_event, self.doc.latest_event(DocEvent, type="added_comment"))
+        doc = Document.objects.get(name=self.docname)
+        self.assertEqual(comment_event, doc.latest_event(DocEvent, type="added_comment"))
        
 
     def test_doc_view_shepherd_writeup(self):
@@ -1029,8 +1034,9 @@ class IndividualInfoFormsTests(TestCase):
 
         # Try again when no longer a shepherd.
 
-        self.doc.shepherd = None
-        self.doc.save_with_history([DocEvent.objects.create(doc=self.doc, rev=self.doc.rev, type="changed_shepherd", by=Person.objects.get(user__username="secretary"), desc="Test")])
+        doc = Document.objects.get(name=self.docname)
+        doc.shepherd = None
+        doc.save_with_history([DocEvent.objects.create(doc=doc, rev=doc.rev, type="changed_shepherd", by=Person.objects.get(user__username="secretary"), desc="Test")])
         r = self.client.get(url)
         self.assertEqual(r.status_code,200)
         q = PyQuery(r.content)
@@ -1050,15 +1056,16 @@ class IndividualInfoFormsTests(TestCase):
         # direct edit
         r = self.client.post(url,dict(content='here is a new writeup',submit_response="1"))
         self.assertEqual(r.status_code,302)
-        self.doc = Document.objects.get(name=self.docname)
-        self.assertTrue(self.doc.latest_event(WriteupDocEvent,type="changed_protocol_writeup").text.startswith('here is a new writeup'))
+        doc = Document.objects.get(name=self.docname)
+        self.assertTrue(doc.latest_event(WriteupDocEvent,type="changed_protocol_writeup").text.startswith('here is a new writeup'))
 
         # file upload
         test_file = StringIO.StringIO("This is a different writeup.")
         test_file.name = "unnamed"
         r = self.client.post(url,dict(txt=test_file,submit_response="1"))
         self.assertEqual(r.status_code, 302)
-        self.assertTrue(self.doc.latest_event(WriteupDocEvent,type="changed_protocol_writeup").text.startswith('This is a different writeup.'))
+        doc = Document.objects.get(name=self.docname)
+        self.assertTrue(doc.latest_event(WriteupDocEvent,type="changed_protocol_writeup").text.startswith('This is a different writeup.'))
 
         # template reset
         r = self.client.post(url,dict(txt=test_file,reset_text="1"))
@@ -1080,12 +1087,19 @@ class IndividualInfoFormsTests(TestCase):
         # direct edit
         r = self.client.post(url, dict(urls='wiki https://wiki.org/ Wiki\nrepository https://repository.org/ Repo\n', submit="1"))
         self.assertEqual(r.status_code,302)
-        self.doc = Document.objects.get(name=self.docname)
-        self.assertTrue(self.doc.latest_event(DocEvent,type="changed_document").desc.startswith('Changed document URLs'))
-        self.assertIn('wiki https://wiki.org/', self.doc.latest_event(DocEvent,type="changed_document").desc)
-        self.assertIn('https://wiki.org/', [ u.url for u in self.doc.documenturl_set.all() ])
+        doc = Document.objects.get(name=self.docname)
+        self.assertTrue(doc.latest_event(DocEvent,type="changed_document").desc.startswith('Changed document URLs'))
+        self.assertIn('wiki https://wiki.org/', doc.latest_event(DocEvent,type="changed_document").desc)
+        self.assertIn('https://wiki.org/', [ u.url for u in doc.documenturl_set.all() ])
 
 class SubmitToIesgTests(TestCase):
+
+    def setUp(self):
+        make_test_data()
+        self.docname='draft-ietf-mars-test'
+        doc = Document.objects.get(name=self.docname)
+        doc.unset_state('draft-iesg') 
+
     def test_verify_permissions(self):
 
         def verify_fail(username):
@@ -1116,20 +1130,21 @@ class SubmitToIesgTests(TestCase):
 	r = self.client.post(url, dict(cancel="1"))
         self.assertEqual(r.status_code, 302)
 
-        doc = Document.objects.get(pk=self.doc.pk)
+        doc = Document.objects.get(name=self.docname)
         self.assertTrue(doc.get_state('draft-iesg')==None)
 
     def test_confirm_submission(self):
         url = urlreverse('ietf.doc.views_draft.to_iesg', kwargs=dict(name=self.docname))
         self.client.login(username="marschairman", password="marschairman+password")
 
-        docevent_count_pre = self.doc.docevent_set.count()
+        doc = Document.objects.get(name=self.docname)
+        docevent_count_pre = doc.docevent_set.count()
         mailbox_before = len(outbox)
 
 	r = self.client.post(url, dict(confirm="1"))
         self.assertEqual(r.status_code, 302)
 
-        doc = Document.objects.get(pk=self.doc.pk)
+        doc = Document.objects.get(name=self.docname)
         self.assertTrue(doc.get_state('draft-iesg').slug=='pub-req')
         self.assertTrue(doc.get_state('draft-stream-ietf').slug=='sub-pub')
         self.assertTrue(doc.ad!=None)
@@ -1139,11 +1154,6 @@ class SubmitToIesgTests(TestCase):
         self.assertTrue("aread@" in outbox[-1]['To'])
         self.assertTrue("iesg-secretary@" in outbox[-1]['Cc'])
 
-    def setUp(self):
-        make_test_data()
-        self.docname='draft-ietf-mars-test'
-        self.doc = Document.objects.get(name=self.docname)
-        self.doc.unset_state('draft-iesg') 
 
 
 class RequestPublicationTests(TestCase):

@@ -459,6 +459,7 @@ class IESGAgendaTests(TestCase):
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.post(url, {'initial-date': telechat_date.date.strftime('%Y-%m-%d'), 'date':today.strftime('%Y-%m-%d')})
         self.assertRedirects(r, urlreverse('admin:iesg_telechatdate_changelist'))
+        draft = Document.objects.get(name="draft-ietf-mars-test")
         self.assertEqual(draft.telechat_date(),today)
 
 class RescheduleOnAgendaTests(TestCase):

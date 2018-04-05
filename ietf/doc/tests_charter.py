@@ -508,6 +508,7 @@ class EditCharterTests(TestCase):
                 regenerate_text="1"))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
+        charter = Document.objects.get(name=charter.name)
         self.assertTrue(draft.group.name in charter.latest_event(WriteupDocEvent, type="changed_review_announcement").text)
         self.assertTrue(draft.group.name in charter.latest_event(WriteupDocEvent, type="changed_new_work_text").text)
 
@@ -530,6 +531,7 @@ class EditCharterTests(TestCase):
                 announcement_text="This is a simple test.",
                 save_text="1"))
         self.assertEqual(r.status_code, 302)
+        charter = Document.objects.get(name=charter.name)
         self.assertTrue("This is a simple test" in charter.latest_event(WriteupDocEvent, type="changed_action_announcement").text)
 
         # test regenerate
@@ -538,6 +540,7 @@ class EditCharterTests(TestCase):
                 regenerate_text="1"))
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
+        charter = Document.objects.get(name=charter.name)
         self.assertTrue(draft.group.name in charter.latest_event(WriteupDocEvent, type="changed_action_announcement").text)
 
     def test_edit_ballot_writeupnotes(self):
