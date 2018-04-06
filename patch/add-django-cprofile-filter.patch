@@ -1,5 +1,5 @@
 --- django_cprofile_middleware/middleware.py.old	2018-04-04 06:32:29.282187502 -0700
-+++ django_cprofile_middleware/middleware.py	2018-04-04 06:44:00.126537763 -0700
++++ django_cprofile_middleware/middleware.py	2018-04-06 10:11:18.936855634 -0700
 @@ -1,4 +1,5 @@
  import pstats
 +import re
@@ -34,7 +34,7 @@
 +                filter = request.GET.get('filter', None)
 +                if filter:
 +                    stats.filter_stats(filter)
-+                stats.sort_stats(request.GET.get('sort', 'time'))
++                stats.sort_stats(request.GET.get('psort') or 'time')
                  stats.print_stats(int(request.GET.get('count', 100)))
                  response = HttpResponse('<pre>%s</pre>' % io.getvalue())
          return response
