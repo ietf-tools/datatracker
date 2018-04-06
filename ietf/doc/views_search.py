@@ -137,7 +137,9 @@ def retrieve_search_results(form, all_types=False):
     query = form.cleaned_data
 
     if all_types:
-        docs = Document.objects.all()
+        # order by time here to retain the most recent documents in case we
+        # find too many and have to chop the results list
+        docs = Document.objects.all().order_by('-time')
     else:
         types = []
 
