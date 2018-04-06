@@ -145,7 +145,7 @@ def prepare_document_table(request, docs, query=None, max_results=500):
         # the number of queries
         docs = docs.select_related("ad", "std_level", "intended_std_level", "group", "stream", "shepherd", )
         docs = docs.prefetch_related("states__type", "tags", "groupmilestone_set__group", "reviewrequest_set__team",
-                                     "submission_set__checks", "ad__email_set")
+                                     "submission_set__checks", "ad__email_set", "docalias_set__iprdocrel_set")
 
     if docs.count() > max_results:
         docs = docs[:max_results]
