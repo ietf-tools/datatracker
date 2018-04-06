@@ -6,7 +6,7 @@ import debug                            # pyflakes:ignore
 from ietf.community.utils import augment_docs_with_tracking_info
 from ietf.doc.models import Document, DocAlias, RelatedDocument, DocEvent, TelechatDocEvent, BallotDocEvent
 from ietf.doc.expire import expirable_draft
-
+from ietf.meeting.models import SessionPresentation, Meeting, Session
 
 def wrap_value(v):
     return lambda: v
@@ -25,6 +25,21 @@ def fill_in_telechat_date(docs, doc_dict=None, doc_ids=None):
             d = doc_dict[e.doc_id]
             d.telechat_date = wrap_value(d.telechat_date(e))
             seen.add(e.doc_id)
+
+def fill_in_document_sessions(docs, doc_dict, doc_ids):
+    beg_date = datetime.date.today()-datetime.timedelta(days=7)
+    end_date = datetime.date.today()+datetime.timedelta(days=30)
+    meetings = Meeting.objects.filter(date__gte=beg_date, date__lte=end_date).prefetch_related('session_set')
+    # get sessions
+    sessions = Session.objects.filter(meeting_id__in=[ m.id for m in meetings ])
+    # get presentations
+    presentations = SessionPresentation.objects.filter(session_id__in=[ s.id for s in sessions ])
+    session_list = [ (p.document_id, p.session) for p in presentations ]
+    for d in doc_dict.values():
+        d.sessions = []
+    for (i, s) in session_list:
+        if i in doc_ids:
+            doc_dict[i].sessions.append(s)
 
 def fill_in_document_table_attributes(docs, have_telechat_date=False):
     # fill in some attributes for the document table results to save
@@ -58,14 +73,8 @@ def fill_in_document_table_attributes(docs, have_telechat_date=False):
         fill_in_telechat_date(docs, doc_dict, doc_ids)
 
     # on agenda in upcoming meetings
-    sessions = {}
-#    debug.mark()
-#    presentations = SessionPresentation.objects.filter(session__meeting__date__gte=datetime.date.today()-datetime.timedelta(days=7)).select_related('session', 'document')
-#   session_list = [ (p.document, p.session) for p in presentations ]
-#    sessions = dict( (d, []) for (d, s) in session_list )
-#    for (d, s) in session_list:
-#        sessions[d].append(s)
-#    debug.clock('presentations')
+    # get meetings
+    fill_in_document_sessions(docs, doc_dict, doc_ids)
 
     # misc
     for d in docs:
@@ -94,8 +103,6 @@ def fill_in_document_table_attributes(docs, have_telechat_date=False):
         if d.get_state_slug() != "rfc":
             d.milestones = [ m for (t, m) in sorted(((m.time, m) for m in d.groupmilestone_set.all() if m.state_id == "active")) ]
             d.reviewed_by_teams = sorted(set(r.team.acronym for r in d.reviewrequest_set.filter(state__in=["requested","accepted","part-completed","completed"]).distinct().select_related('team')))
-
-        d.sessions = sessions[d] if d in sessions else []
 
         e = d.latest_event_cache.get('started_iesg_proces', None)
         d.balloting_started = e.time if e else datetime.datetime.min
