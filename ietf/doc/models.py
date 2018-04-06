@@ -375,54 +375,52 @@ class DocumentInfo(models.Model):
              return self.type_id != "slides" or self.get_state_slug('reuse_policy')=='single'
         return False
 
+    @memoize
     def relations_that(self, relationship):
         """Return the related-document objects that describe a given relationship targeting self."""
         if isinstance(relationship, str):
-            relationship = [ relationship ]
-        if isinstance(relationship, tuple):
-            relationship = list(relationship)
-        if not isinstance(relationship, list):
-            raise TypeError("Expected a string, tuple or list, received %s" % type(relationship))
+            relationship = ( relationship, )
+        if not isinstance(relationship, tuple):
+            raise TypeError("Expected a string or tuple, received %s" % type(relationship))
         if isinstance(self, Document):
             return RelatedDocument.objects.filter(target__document=self, relationship__in=relationship).select_related('source')
         elif isinstance(self, DocHistory):
             return RelatedDocHistory.objects.filter(target__document=self.doc, relationship__in=relationship).select_related('source')
         else:
-            return RelatedDocument.objects.none()
+            raise TypeError("Expected method called on Document or DocHistory")
 
     def all_relations_that(self, relationship, related=None):
         if not related:
-            related = []
+            related = tuple([])
         rels = self.relations_that(relationship)
         for r in rels:
             if not r in related:
-                related += [ r ]
+                related += ( r, )
                 related = r.source.all_relations_that(relationship, related)
         return related
 
+    @memoize
     def relations_that_doc(self, relationship):
         """Return the related-document objects that describe a given relationship from self to other documents."""
         if isinstance(relationship, six.string_types):
-            relationship = [ relationship ]
-        if isinstance(relationship, tuple):
-            relationship = list(relationship)
-        if not isinstance(relationship, list):
-            raise TypeError("Expected a string, tuple or list, received %s" % type(relationship))
+            relationship = ( relationship, )
+        if not isinstance(relationship, tuple):
+            raise TypeError("Expected a string or tuple, received %s" % type(relationship))
         if isinstance(self, Document):
             return RelatedDocument.objects.filter(source=self, relationship__in=relationship).select_related('target__document')
         elif isinstance(self, DocHistory):
             return RelatedDocHistory.objects.filter(source=self, relationship__in=relationship).select_related('target__document')
         else:
-            return RelatedDocument.objects.none()
- 
+            raise TypeError("Expected method called on Document or DocHistory")
 
+    @memoize
     def all_relations_that_doc(self, relationship, related=None):
         if not related:
-            related = []
+            related = tuple([])
         rels = self.relations_that_doc(relationship)
         for r in rels:
             if not r in related:
-                related += [ r ]
+                related += ( r, )
                 related = r.target.document.all_relations_that_doc(relationship, related)
         return related
 
@@ -757,7 +755,7 @@ class Document(DocumentInfo):
         document directly or indirectly obsoletes or replaces
         """
         from ietf.ipr.models import IprDocRel
-        iprs = IprDocRel.objects.filter(document__in=list(self.docalias_set.all())+self.all_related_that_doc(['obs','replaces'])).filter(disclosure__state__in=['posted','removed']).values_list('disclosure', flat=True).distinct()
+        iprs = IprDocRel.objects.filter(document__in=list(self.docalias_set.all())+self.all_related_that_doc(('obs','replaces'))).filter(disclosure__state__in=('posted','removed')).values_list('disclosure', flat=True).distinct()
         return iprs
 
     def future_presentations(self):
