@@ -375,7 +375,6 @@ class DocumentInfo(models.Model):
              return self.type_id != "slides" or self.get_state_slug('reuse_policy')=='single'
         return False
 
-    @memoize
     def relations_that(self, relationship):
         """Return the related-document objects that describe a given relationship targeting self."""
         if isinstance(relationship, str):
@@ -399,7 +398,6 @@ class DocumentInfo(models.Model):
                 related = r.source.all_relations_that(relationship, related)
         return related
 
-    @memoize
     def relations_that_doc(self, relationship):
         """Return the related-document objects that describe a given relationship from self to other documents."""
         if isinstance(relationship, six.string_types):
@@ -413,7 +411,6 @@ class DocumentInfo(models.Model):
         else:
             raise TypeError("Expected method called on Document or DocHistory")
 
-    @memoize
     def all_relations_that_doc(self, relationship, related=None):
         if not related:
             related = tuple([])
