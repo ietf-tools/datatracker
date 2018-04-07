@@ -461,7 +461,7 @@ def by_draft_recursive_txt(request):
         alias = o.document
         document = alias.document
         name = alias.name
-        related = set(document.docalias_set.all()) | set(document.all_related_that_doc(['obs', 'replaces']))
+        related = set(document.docalias_set.all()) | set(document.all_related_that_doc(('obs', 'replaces')))
         for alias in related:
             name = alias.name
             if name.startswith("rfc"):
@@ -671,7 +671,7 @@ def search(request):
                     docs = related_docs(first)
                     iprs = iprs_from_docs(docs,states=states)
                     template = "ipr/search_doc_result.html"
-                    updated_docs = related_docs(first, ['updates',])
+                    updated_docs = related_docs(first, ('updates',))
                     related_iprs = list(set(iprs_from_docs(updated_docs, states=states)) - set(iprs))
                 # multiple matches, select just one
                 elif start:

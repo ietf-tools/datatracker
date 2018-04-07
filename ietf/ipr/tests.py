@@ -168,7 +168,7 @@ class IprTests(TestCase):
 
     def test_iprs_for_drafts_recursive(self):
         draft = make_test_data()
-        replaced = draft.all_related_that_doc(['replaces'])
+        replaced = draft.all_related_that_doc('replaces')
         ipr = IprDisclosureBase.objects.get(title='Statement regarding rights')
         r = self.client.get(urlreverse("ietf.ipr.views.by_draft_recursive_txt"))
         self.assertEqual(r.status_code, 200)
