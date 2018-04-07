@@ -134,7 +134,7 @@ def fill_in_document_table_attributes(docs, have_telechat_date=False):
         l.sort()
 
 
-def prepare_document_table(request, docs, query=None, max_results=500):
+def prepare_document_table(request, docs, query=None, max_results=200):
     """Take a queryset of documents and a QueryDict with sorting info
     and return list of documents with attributes filled in for
     displaying a full table of information about the documents, plus
