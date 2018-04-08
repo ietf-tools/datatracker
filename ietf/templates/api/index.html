@@ -164,7 +164,7 @@
       etc.
     </p>
 
-    <h3>API Keys</h3>
+    <h3 id="personal-api-keys" class="anchor-target">Personal API Keys</h3>
 
     <p>
 
@@ -172,12 +172,45 @@
       rather than username/password login, see for example details for
       <code>{% url 'ietf.doc.views_ballot.api_set_position' %}</code> further
       down on this page.  Personal API keys are available from your <a
-      href="{% url 'ietf.ietfauth.views.apikey_index'%}"> Account API Key</a>
+      href="{% url 'ietf.ietfauth.views.apikey_index'%}"> Account API Keys</a>
       page when you are logged in.
 
     </p>
+    <p>
 
-    <h3>Signing</h3>
+      Personal API keys have some characteristics you should be aware of:
+      <ul>
+	<li>
+
+	  Each API key is valid only for a specific endpoint.  If you try to use a key for
+	  a different API endpoint than it's created for, it will not work.
+
+	</li>
+	<li>
+
+	  The API keys will cause you to be given access with the datatracker
+	  roles you have, thus giving you appropriate access to the various
+	  API endpoints according to the role limitations indicated for each
+	  endpoint.
+
+	</li>
+	<li>
+
+	  An API key will only give you access to its related endpoint if you have logged
+	  in to the datatracker using your regular login and password during the last
+	  {{ settings.UTILS_APIKEY_GUI_LOGIN_LIMIT_DAYS }} days.  If you receive the
+	  error message "<code>Too long since last regular login</code>" you should do
+	  a regular login in order to activate access.
+
+	</li>
+	
+      </ul>
+
+      
+
+    </p>
+
+    <h3 id="signing-keys" class="anchor-target">Signing Keys</h3>
     <p>
 
       When sending notifications to other APIs, the datatracker may sign
@@ -192,7 +225,7 @@
 
     <pre>{{key.export_to_pem}}</pre>
 
-    <h3 id="iesg-position-api">IESG ballot position API</h3>
+    <h3 id="iesg-position-api" class="anchor-target">IESG ballot position API</h3>
 
     <p>
 
@@ -228,7 +261,7 @@
 
 
 
-    <h3 id="session-video-url-api">Set session video URL</h3>
+    <h3 id="session-video-url-api" class="anchor-target">Set session video URL</h3>
 
     <p>
 
