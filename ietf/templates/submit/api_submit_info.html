@@ -21,12 +21,12 @@
   <p>
     This interface does not provide all the options which the regular submission tool does.
     Some limitations:
-    <ul>
-      <li>Only xml-only uploads are supported, not text or combined.</li>
-      <li>Document replacement information cannot be supplied.</li>
-      <li>The server expects <code>multipart/form-data</code>, supported by <code>curl</code> but <b>not</b> by <code>wget</code></li>
-    </ul>
   </p>
+  <ul>
+    <li>Only xml-only uploads are supported, not text or combined.</li>
+    <li>Document replacement information cannot be supplied.</li>
+    <li>The server expects <code>multipart/form-data</code>, supported by <code>curl</code> but <b>not</b> by <code>wget</code></li>
+  </ul>
   <p>
     It takes 2 parameters:
   </p>
@@ -38,7 +38,7 @@
     It returns an appropriate http result code, and a brief explanatory text message.
   </p>
   <p>
-    Here is an example:</li>
+    Here is an example:
   </p>
   <pre>
     $ curl -S -F "user=user.name@example.com" -F "xml=@~/draft-user-example.xml" https://datatracker.ietf.org/api/submit

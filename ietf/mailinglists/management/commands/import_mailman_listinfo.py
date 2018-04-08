@@ -21,6 +21,7 @@ except ImportError:
     pass
 
 from ietf.mailinglists.models import List, Subscribed
+from ietf.utils.text import decode
 
 def import_mailman_listinfo(verbosity=0):
     def note(msg):
@@ -38,14 +39,13 @@ def import_mailman_listinfo(verbosity=0):
         mlist = MailList.MailList(name, lock=False)
         note("List: %s" % mlist.internal_name())
 
-        description = mlist.description.decode('latin1')[:256]
         lists = List.objects.filter(name=mlist.real_name)
         if lists.count() > 1:
             # Arbitrary choice; we'll update the remaining item next
             for item in lists[1:]:
                 item.delete()
         mmlist, created = List.objects.get_or_create(name=mlist.real_name)
-        mmlist.description = description
+        mmlist.description = decode(mlist.description)[:256]
         mmlist.advertised = mlist.advertised
         mmlist.save()
         # The following calls return lowercased addresses

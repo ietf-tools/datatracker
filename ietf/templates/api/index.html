@@ -135,30 +135,33 @@
     <p>
       You could either fetch and remember the different state groups of interest to you
       with queries like
+    </p>
 
-      <pre>
+    <pre>
       $ curl 'https://datatracker.ietf.org/api/v1/doc/state/?format=json&limit=0&type__slug__in=draft-rfceditor'
       $ curl 'https://datatracker.ietf.org/api/v1/doc/state/?format=json&limit=0&type__slug__in=draft-iesg'
       $ curl 'https://datatracker.ietf.org/api/v1/doc/state/?format=json&limit=0&type__slug__in=draft-stream-ietf'
-      </pre>
-    </p>
+    </pre>
+
 
     <p>
       and then match the listed "resource_uri" of the results to the states listed for each
       document when you ask for
-      <pre>
-      $ curl 'https://datatracker.ietf.org/api/v1/doc/document/?limit=0&name__contains=-v6ops-'
-      </pre>
     </p>
+
+    <pre>
+      $ curl 'https://datatracker.ietf.org/api/v1/doc/document/?limit=0&name__contains=-v6ops-'
+    </pre>
 
     <p>
       Or alternatively you could do a series of queries asking for matches to the RFC Editor
       state first, then the IESG state, then the Stream state, and exclude earlier hits:
-      <pre>
+    </p>
+    <pre>
       $ curl 'https://datatracker.ietf.org/api/v1/doc/document/?limit=0&name__contains=-v6ops-&states__type__slug__in=draft-rfceditor' ...
       $ curl 'https://datatracker.ietf.org/api/v1/doc/document/?limit=0&name__contains=-v6ops-&states__type__slug__in=draft-iesg' ...
     </pre>
-    </p>
+
 
     <p>
       etc.
@@ -179,36 +182,33 @@
     <p>
 
       Personal API keys have some characteristics you should be aware of:
-      <ul>
-	<li>
-
-	  Each API key is valid only for a specific endpoint.  If you try to use a key for
-	  a different API endpoint than it's created for, it will not work.
-
-	</li>
-	<li>
-
-	  The API keys will cause you to be given access with the datatracker
-	  roles you have, thus giving you appropriate access to the various
-	  API endpoints according to the role limitations indicated for each
-	  endpoint.
-
-	</li>
-	<li>
-
-	  An API key will only give you access to its related endpoint if you have logged
-	  in to the datatracker using your regular login and password during the last
-	  {{ settings.UTILS_APIKEY_GUI_LOGIN_LIMIT_DAYS }} days.  If you receive the
-	  error message "<code>Too long since last regular login</code>" you should do
-	  a regular login in order to activate access.
-
-	</li>
-	
-      </ul>
-
-      
-
     </p>
+    <ul>
+      <li>
+
+	Each API key is valid only for a specific endpoint.  If you try to use a key for
+	a different API endpoint than it's created for, it will not work.
+
+      </li>
+      <li>
+
+	The API keys will cause you to be given access with the datatracker
+	roles you have, thus giving you appropriate access to the various
+	API endpoints according to the role limitations indicated for each
+	endpoint.
+
+      </li>
+      <li>
+
+	An API key will only give you access to its related endpoint if you have logged
+	in to the datatracker using your regular login and password during the last
+	{{ settings.UTILS_APIKEY_GUI_LOGIN_LIMIT_DAYS }} days.  If you receive the
+	error message "<code>Too long since last regular login</code>" you should do
+	a regular login in order to activate access.
+
+      </li>
+
+    </ul>
 
     <h3 id="signing-keys" class="anchor-target">Signing Keys</h3>
     <p>
@@ -244,7 +244,7 @@
     <ul>
       <li><code>apikey</code> (required) which is the personal API key hash</li>
       <li><code>doc</code> (required) which is the balloted document name</li>
-      <li><code>position</code> (required) which is the position slug, one of: <tt>yes, noobj, block, discuss, abstain, recuse, norecord</tt>. </li>
+      <li><code>position</code> (required) which is the position slug, one of: <span class="samp">yes, noobj, block, discuss, abstain, recuse, norecord</span>. </li>
       <li><code>discuss</code> (required if position is 'discuss') which is the discuss text</li>
       <li><code>comment</code> (optional) which is comment text</li>
     </ul>
@@ -252,7 +252,7 @@
       It returns an appropriate http result code, and a brief explanatory text message.
     </p>
     <p>
-      Here is an example:</li>
+      Here is an example:
     </p>
     <pre>
       $ curl -S -F "apikey=AwAAABVR3D5GHkVMhspKSxBCVknGMmqikNIhT85kSnghjaV_pYy26WV92mm-jpdi" -F "doc=draft-ietf-lamps-eai-addresses" -F "position=noobj" -F "comment=Comment text"  https://datatracker.ietf.org/api/iesg/position 
@@ -289,7 +289,7 @@
       It returns an appropriate http result code, and a brief explanatory text message.
     </p>
     <p>
-      Here is an example:</li>
+      Here is an example:
     </p>
     <pre>
       $ curl -S -F "apikey=DgAAAMLSi3coaE5TjrRs518xO8eBRlCmFF3eQcC8_SjUTtRGLGiJh7-1SYPT5WiS" -F "meeting=101" -F "group=mptcp" -F "item=1" -F "url=https://foo.example/beer/mptcp" https://datatracker.ietf.org/api/meeting/session/video/url
