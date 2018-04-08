@@ -53,6 +53,7 @@ from coverage.results import Numbers
 from coverage.misc import NotPython
 
 from django.conf import settings
+from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.db.migrations.loader import MigrationLoader
 from django.db.migrations.operations.fields import FieldOperation
 from django.db.migrations.operations.models import ModelOperation
@@ -68,9 +69,9 @@ debug.debug = True
 
 import ietf
 import ietf.utils.mail
-from ietf.utils.test_smtpserver import SMTPTestServerDriver
-from ietf.utils.test_utils import TestCase
 from ietf.checks import maybe_create_svn_symlinks
+from ietf.utils.test_smtpserver import SMTPTestServerDriver
+
 
 loaded_templates = set()
 visited_urls = set()
@@ -263,7 +264,7 @@ class CoverageReporter(Reporter):
         return result
 
 
-class CoverageTest(TestCase):
+class CoverageTest(unittest.TestCase):
 
     def __init__(self, test_runner=None, **kwargs):
         self.runner = test_runner
@@ -629,6 +630,7 @@ class IetfTestRunner(DiscoverRunner):
     def run_tests(self, test_labels, extra_tests=[], **kwargs):
         global old_destroy, old_create, test_database_name, template_coverage_collection
         from django.db import connection
+        from ietf.doc.tests import TemplateTagTest
 
         # Tests that involve switching back and forth between the real
         # database and the test database are way too dangerous to run
@@ -657,7 +659,12 @@ class IetfTestRunner(DiscoverRunner):
                 CoverageTest(test_runner=self, methodName='code_coverage_test'),
             ]
 
-            self.reorder_by += (unittest.TestCase, ) # see to it that the coverage tests come last
+            # ensure that the coverage tests come last.  Specifically list
+            # TemplateTagTest before CoverageTest.  If this list contains
+            # parent classes to later subclasses, the parent classes will
+            # determine the ordering, so use the most specific classes
+            # necessary to get the right ordering:
+            self.reorder_by += (StaticLiveServerTestCase, TemplateTagTest, CoverageTest, ) 
 
         failures = super(IetfTestRunner, self).run_tests(test_labels, extra_tests=extra_tests, **kwargs)
 
