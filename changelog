@@ -1,3 +1,87 @@
+ietfdb (6.78.0) ietf; urgency=medium
+
+  **Document search on IRTF state, performance improvements**
+
+  This release brings document search support for filtering on IRTF states,
+  courtesy of Mat Ford, and further performance improvements to the IESG
+  agenda document page and document search pages.  There are also improvements
+  to the testing infrastructure, HTML cleanup, some added API documentation,
+  and a number of bugfixes, as follows:
+
+  * Merged in [15012] from ford@isoc.org:
+    Added IRTF State option to Additional Search Criteria pulldown.  
+
+  * Fixed various html issues.
+
+  * Added more information about personal API keys to the API help page.
+
+  * Tweaked the test runner to more consistently force the test coverage 
+    tests to be run last.
+
+  * Changed calls to .related_that*() and .relations_that*() to use tuples 
+    rather than lists (a slight optimization).
+
+  * Silenced another deprecation warning from a library.
+
+  * Reduced the max number of results returned by document searches from 
+    500 to 200, for a better user experience.  A faster return and a search 
+    term tweak to pinpoint the desired search result is better than a long wait 
+    and then maybe having to tweak the search terms anyway.
+
+  * Use .assertIn(...) in tests instead of .assertTrue(x in y) as the 
+    failure messages are much more informative
+
+  * Changed the signature of some document methods to not accept lists (but 
+    still accept tuples) in order to make caching possible.  Added @memoize to 
+    some methods.
+
+  * Added another prefetch to search doc query results.
+
+  * Imposed sort order (most recent docs first) on document search results, 
+    in order to retain the most recent docs in case we have to chop the result 
+    list due too many hits.
+
+  * Tweaked the django_cprofile_middleware patch to use a query arg of 
+    psort instead of sort, to avoid conflict with app query args 'sort'.
+
+  * Added back the on-agenda calendar links to document lists, now in an 
+    implementation with better performance characteristics.
+
+  * Updated minimum requirements for bootstrap3, to work with django 1.11
+
+  * Fixed an issue where the change of slide naming between IETF 96 and 97 
+    caused the datatracker to not provide correct link to pre-IETF-97 
+    materials.  Thanks to tjw.ietf@gmail.com for the heads-up.
+
+  * Merged in [14970] from rjsparks@nostrum.com:
+    Factories for the ipr app. Coverage of ietf.ipr.views.ajax_search, and 
+    a factory-driven test of ietf.ipr.views.edit.  
+
+  * Enhanced debug.py: made the mark() function indicate file and line 
+    number it was called from.  Added if debug: conditions around some other 
+    function actions.
+
+  * Another round of iesg page optimizations.  Reduced additional instances 
+    of individual lookups to a single lookup followed by annotation of document 
+    objects.  Reduced several instances of repeating the same work multiple 
+    times (queries for telechat documents, queries for telechat dates).
+
+  * Fixed a number of tests to deal correctly with model method caching.
+
+  * Changed the ballot_icon template tag to use an already found ballot if 
+    available, rather than doing lookups to find it (twice!).
+
+  * Added a patch for debug mode, to add a filtering option to the 
+    django-cprofile-middleware.
+
+  * Be more specific with bootstrap's layout classes for small devices in 
+    the base template, to avoid the bottom links and footer overlaying the 
+    bottom of the content area.  Fixes a problem with entering login 
+    information on small devices.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  08 Apr 2018 16:01:23 +0000
+
+
 ietfdb (6.77.1) ietf; urgency=medium
 
   **Performance improvements**
