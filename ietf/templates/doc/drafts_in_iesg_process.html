@@ -47,7 +47,7 @@
 	      <a href="{% url "ietf.doc.views_doc.document_main" doc.name %}">{{ doc.name }}</a>
           <br><b>{{ doc.title }}</b>
 	      {% if doc.note %}
-	        <br><i>Note: {{ doc.note|linebreaksbr|linkify }}</i>
+	        <br><i>Note: {{ doc.note|linkify|linebreaksbr }}</i>
 	      {% endif %}
             </td>
           <td>{{ doc.intended_std_level.name }}</td>

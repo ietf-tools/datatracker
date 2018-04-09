@@ -12,7 +12,7 @@
   {% origin %}
   <h1>Shepherd writeup<br><small>{{ doc.canonical_name }}-{{ doc.rev }}</small></h1>
 
-  <pre class="pasted">{{writeup|escape|linkify}}</pre>
+  <pre class="pasted">{{writeup|linkify}}</pre>
 
   {% if can_edit %}
     <a class="btn btn-primary" href="{% url 'ietf.doc.views_draft.edit_shepherd_writeup' name=doc.name %}">Edit</a>

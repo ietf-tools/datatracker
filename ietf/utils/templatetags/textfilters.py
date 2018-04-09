@@ -4,6 +4,7 @@ import bleach
 
 from django import template
 from django.template.defaultfilters import stringfilter
+from django.utils.html import escape
 from django.utils.safestring import mark_safe
 
 import debug                            # pyflakes:ignore
@@ -71,5 +72,5 @@ def texescape_filter(value):
 @register.filter
 @stringfilter
 def linkify(value):
-    text = mark_safe(bleach.linkify(value))
+    text = mark_safe(bleach.linkify(escape(value)))
     return text

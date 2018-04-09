@@ -29,7 +29,7 @@
                <span class="label label-success">{{ rpt.group.state.slug|upper }}</span> 
             {% endif %}
            <br> {{rpt.time|date:"Y-m-d"}}</td>
-      <td><pre class="pasted">{{ rpt.desc|default:"(none)"|escape|linkify }}</pre></td>
+      <td><pre class="pasted">{{ rpt.desc|default:"(none)"|linkify }}</pre></td>
      </tr>
     {% endfor %}
 </table>
@@ -44,7 +44,7 @@
               <span class="label label-success">{{ rpt.group.state.slug|upper }}</span> 
            {% endif %}
           <br> {{rpt.time|date:"Y-m-d"}}</td>
-    <td><pre class="pasted">{{ rpt.desc|default:"(none)"|escape|linkify }}</pre></td>
+    <td><pre class="pasted">{{ rpt.desc|default:"(none)"|linkify }}</pre></td>
   </tr>
 {% endfor %}
 </table>
