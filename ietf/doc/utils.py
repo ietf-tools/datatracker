@@ -314,7 +314,10 @@ def get_unicode_document_content(key, filename, codec='utf-8', errors='ignore'):
         with open(filename, 'rb') as f:
             raw_content = f.read().decode(codec,errors)
     except IOError:
-        error = "Error; cannot read ("+key+")"
+        if settings.DEBUG:
+            error = "Error; cannot read ("+filename+")"
+        else:
+            error = "Error; cannot read ("+key+")"
         return error
 
     return raw_content
@@ -325,7 +328,10 @@ def get_document_content(key, filename, split=True, markup=True):
         with open(filename, 'rb') as f:
             raw_content = f.read()
     except IOError:
-        error = "Error; cannot read ("+key+")"
+        if settings.DEBUG:
+            error = "Error; cannot read ("+filename+")"
+        else:
+            error = "Error; cannot read ("+key+")"
         return error
 
 #     if markup:
