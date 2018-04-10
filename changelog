@@ -30,22 +30,22 @@ ietfdb (6.78.0) ietf; urgency=medium
 
   * Silenced another deprecation warning from a library.
 
-  * Reduced the max number of results returned by document searches from 
-    500 to 200, for a better user experience.  A faster return and a search 
-    term tweak to pinpoint the desired search result is better than a long wait 
-    and then maybe having to tweak the search terms anyway.
+  * Reduced the max number of results returned by document searches from 500
+    to 200, for a better user experience.  A faster return and a search term
+    tweak to pinpoint the desired search result is better than a long wait and
+    then maybe having to tweak the search terms anyway.
 
   * Use .assertIn(...) in tests instead of .assertTrue(x in y) as the 
     failure messages are much more informative
 
-  * Changed the signature of some document methods to not accept lists (but 
-    still accept tuples) in order to make caching possible.  Added @memoize to 
+  * Changed the signature of some document methods to not accept lists (but
+    still accept tuples) in order to make caching possible.  Added @memoize to
     some methods.
 
   * Added another prefetch to search doc query results.
 
   * Imposed sort order (most recent docs first) on document search results, 
-    in order to retain the most recent docs in case we have to chop the result 
+    in order to retain the most recent docs in case we have to chop the result
     list due too many hits.
 
   * Tweaked the django_cprofile_middleware patch to use a query arg of 
