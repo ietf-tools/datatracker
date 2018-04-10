@@ -11,6 +11,13 @@ ietfdb (6.78.0) ietf; urgency=medium
   * Merged in [15012] from ford@isoc.org:
     Added IRTF State option to Additional Search Criteria pulldown.  
 
+  * Included django.utils.html.escape() in the linkify() code, and removed 
+    it from various templates, to make sure escape is consistently applied 
+    before linkify.  Fixes issue #2492.
+
+  * Tweaked the error return from Document.get_document_content() to be 
+    more helpful during development.
+
   * Fixed various html issues.
 
   * Added more information about personal API keys to the API help page.
@@ -79,7 +86,7 @@ ietfdb (6.78.0) ietf; urgency=medium
     bottom of the content area.  Fixes a problem with entering login 
     information on small devices.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  08 Apr 2018 16:01:23 +0000
+ -- Henrik Levkowetz <henrik@levkowetz.com>  10 Apr 2018 16:33:46 +0000
 
 
 ietfdb (6.77.1) ietf; urgency=medium
