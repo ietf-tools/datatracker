@@ -95,11 +95,11 @@ class CustomApiTestCase(TestCase):
 
         r = self.client.post(url, {'apikey': apikey.hash(), 'meeting': '1', 'group': group.acronym,
                                     'item': '1', 'url': video, })
-        self.assertContains(r, "No sessions found for meeting", status_code=404)
+        self.assertContains(r, "No sessions found for meeting", status_code=400)
 
         r = self.client.post(url, {'apikey': apikey.hash(), 'meeting': meeting.number, 'group': 'bogous',
                                     'item': '1', 'url': video, })
-        self.assertContains(r, "No sessions found in meeting '%s' for group 'bogous'"%meeting.number, status_code=404)
+        self.assertContains(r, "No sessions found in meeting '%s' for group 'bogous'"%meeting.number, status_code=400)
 
         r = self.client.post(url, {'apikey': apikey.hash(), 'meeting': meeting.number, 'group': group.acronym,
                                     'item': '1', 'url': "foobar", })

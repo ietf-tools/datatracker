@@ -1630,14 +1630,14 @@ class ApiSubmitTests(TestCase):
         email='nonexistant.user@example.org'
         r, author, name = self.post_submission('00', email=email)
         expected = "No such user: %s" % email
-        self.assertContains(r, expected, status_code=404)
+        self.assertContains(r, expected, status_code=400)
 
     def test_api_submit_no_person(self):
         user = UserFactory()
         email = user.username
         r, author, name = self.post_submission('00', email=email)
         expected = "No person with username %s" % email
-        self.assertContains(r, expected, status_code=404)
+        self.assertContains(r, expected, status_code=400)
 
     def test_api_submit_wrong_revision(self):
         r, author, name = self.post_submission('01')

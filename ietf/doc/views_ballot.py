@@ -259,7 +259,7 @@ def api_set_position(request):
         try:
             doc = Document.objects.get(docalias__name=name)
         except Document.DoesNotExist:
-            return err(404, "Document not found")
+            return err(400, "Document not found")
         position_names = BallotPositionName.objects.values_list('slug', flat=True)
         position = request.POST.get('position')
         if not position:
@@ -268,7 +268,7 @@ def api_set_position(request):
             return err(400, "Bad position name, must be one of: %s " % ','.join(position_names))
         ballot = doc.active_ballot()
         if not ballot:
-            return err(404, "No open ballot found")
+            return err(400, "No open ballot found")
         form = EditPositionForm(request.POST, ballot_type=ballot.ballot_type)
         if form.is_valid():
             save_position(form, doc, ballot, ad)

@@ -2205,11 +2205,11 @@ def api_set_session_video_url(request):
         number = request.POST.get('meeting')
         sessions = Session.objects.filter(meeting__number=number)
         if not sessions.exists():
-            return err(404, "No sessions found for meeting '%s'" % (number, ))
+            return err(400, "No sessions found for meeting '%s'" % (number, ))
         acronym = request.POST.get('group')
         sessions = sessions.filter(group__acronym=acronym)
         if not sessions.exists():
-            return err(404, "No sessions found in meeting '%s' for group '%s'" % (number, acronym))
+            return err(400, "No sessions found in meeting '%s' for group '%s'" % (number, acronym))
         session_times = [ (s.official_timeslotassignment().timeslot.time, s) for s in sessions ]
         session_times.sort()
         item = request.POST.get('item')

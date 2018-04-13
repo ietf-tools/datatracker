@@ -92,12 +92,12 @@ def api_submit(request):
                 username = form.cleaned_data['user']
                 user = User.objects.filter(username=username)
                 if user.count() == 0:
-                    return err(404, "No such user: %s" % username)
+                    return err(400, "No such user: %s" % username)
                 if user.count() > 1:
                     return err(500, "Multiple matching accounts for %s" % username)
                 user = user.first()
                 if not hasattr(user, 'person'):
-                    return err(404, "No person with username %s" % username)
+                    return err(400, "No person with username %s" % username)
 
                 authors, abstract, file_name, file_size = get_draft_meta(form)
                 for a in authors:
