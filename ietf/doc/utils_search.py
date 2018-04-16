@@ -64,7 +64,7 @@ def fill_in_document_table_attributes(docs, have_telechat_date=False):
         doc_dict[e.doc_id].latest_event_cache[e.type] = e
 
     seen = set()
-    for e in BallotDocEvent.objects.filter(doc__in=doc_ids, type__in=('created_ballot', 'closed_ballot')).order_by('-time'):
+    for e in BallotDocEvent.objects.filter(doc__in=doc_ids, type__in=('created_ballot', 'closed_ballot')).order_by('-time','-id'):
         if not e.doc_id in seen:
             doc_dict[e.doc_id].ballot = e if e.type == 'created_ballot' else None
             seen.add(e.doc_id)
