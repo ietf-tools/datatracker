@@ -176,7 +176,8 @@ def save_position(form, doc, ballot, ad, login=None):
 
         for e in added_events:
             e.save() # save them after the position is saved to get later id for sorting order
-    
+
+    return pos
 
 @role_required('Area Director','Secretariat')
 def edit_position(request, name, ballot_id):
@@ -271,7 +272,7 @@ def api_set_position(request):
             return err(400, "No open ballot found")
         form = EditPositionForm(request.POST, ballot_type=ballot.ballot_type)
         if form.is_valid():
-            save_position(form, doc, ballot, ad)
+            pos = save_position(form, doc, ballot, ad)
         else:
             errors = form.errors
             summary = ','.join([ "%s: %s" % (f, striptags(errors[f])) for f in errors ])
@@ -279,8 +280,44 @@ def api_set_position(request):
     else:
         return err(405, "Method not allowed")
 
+    # send position email
+    addrs, frm, subject, body = build_position_email(ad, doc, pos)
+    send_mail_text(request, addrs.to, frm, subject, body, cc=addrs.cc)
+
     return HttpResponse("Done", status=200, content_type='text/plain')
 
+
+def build_position_email(ad, doc, pos):
+    subj = []
+    d = ""
+    blocking_name = "DISCUSS"
+    if pos.pos.blocking and pos.discuss:
+        d = pos.discuss
+        blocking_name = pos.pos.name.upper()
+        subj.append(blocking_name)
+    c = ""
+    if pos.comment:
+        c = pos.comment
+        subj.append("COMMENT")
+
+    ad_name_genitive = ad.plain_name() + "'" if ad.plain_name().endswith('s') else ad.plain_name() + "'s"
+    subject = "%s %s on %s" % (ad_name_genitive, pos.pos.name if pos.pos else "No Position", doc.name + "-" + doc.rev)
+    if subj:
+        subject += ": (with %s)" % " and ".join(subj)
+
+    body = render_to_string("doc/ballot/ballot_comment_mail.txt",
+                            dict(discuss=d,
+                                 comment=c,
+                                 ad=ad.plain_name(),
+                                 doc=doc,
+                                 pos=pos.pos,
+                                 blocking_name=blocking_name,
+                                 settings=settings))
+    frm = ad.role_email("ad").formatted_email()
+    
+    addrs = gather_address_lists('ballot_saved',doc=doc)
+
+    return addrs, frm, subject, body
 
 @role_required('Area Director','Secretariat')
 def send_ballot_comment(request, name, ballot_id):
@@ -311,35 +348,8 @@ def send_ballot_comment(request, name, ballot_id):
     if not pos:
         raise Http404
 
-    subj = []
-    d = ""
-    blocking_name = "DISCUSS"
-    if pos.pos.blocking and pos.discuss:
-        d = pos.discuss
-        blocking_name = pos.pos.name.upper()
-        subj.append(blocking_name)
-    c = ""
-    if pos.comment:
-        c = pos.comment
-        subj.append("COMMENT")
+    addrs, frm, subject, body = build_position_email(ad, doc, pos)
 
-    ad_name_genitive = ad.plain_name() + "'" if ad.plain_name().endswith('s') else ad.plain_name() + "'s"
-    subject = "%s %s on %s" % (ad_name_genitive, pos.pos.name if pos.pos else "No Position", doc.name + "-" + doc.rev)
-    if subj:
-        subject += ": (with %s)" % " and ".join(subj)
-
-    body = render_to_string("doc/ballot/ballot_comment_mail.txt",
-                            dict(discuss=d,
-                                 comment=c,
-                                 ad=ad.plain_name(),
-                                 doc=doc,
-                                 pos=pos.pos,
-                                 blocking_name=blocking_name,
-                                 settings=settings))
-    frm = ad.role_email("ad").formatted_email()
-    
-    addrs = gather_address_lists('ballot_saved',doc=doc)
-        
     if request.method == 'POST':
         cc = []
         cc_select_form = CcSelectForm(data=request.POST,mailtrigger_slug='ballot_saved',mailtrigger_context={'doc':doc})
@@ -364,7 +374,6 @@ def send_ballot_comment(request, name, ballot_id):
                           frm=frm,
                           to=addrs.as_strings().to,
                           ad=ad,
-                          can_send=d or c,
                           back_url=back_url,
                           cc_select_form = cc_select_form,
                       ))
