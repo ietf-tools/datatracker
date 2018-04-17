@@ -99,7 +99,8 @@ class EditPositionTests(TestCase):
 
         # vote
         events_before = draft.docevent_set.count()
-        
+        mailbox_before = len(outbox)
+
         r = self.client.post(url, dict(
                                         apikey=apikey.hash(),
                                         doc=draft.name,
@@ -118,9 +119,11 @@ class EditPositionTests(TestCase):
         self.assertTrue(pos.comment_time != None)
         self.assertTrue("New position" in pos.desc)
         self.assertEqual(draft.docevent_set.count(), events_before + 3)
+        self.assertEqual(len(outbox), mailbox_before + 1)
 
         # recast vote
         events_before = draft.docevent_set.count()
+        mailbox_before = len(outbox)
         r = self.client.post(url, dict(apikey=apikey.hash(), doc=draft.name, position="noobj"))
         self.assertEqual(r.status_code, 200)
 
@@ -129,9 +132,16 @@ class EditPositionTests(TestCase):
         self.assertEqual(pos.pos.slug, "noobj")
         self.assertEqual(draft.docevent_set.count(), events_before + 1)
         self.assertTrue("Position for" in pos.desc)
-        
+        self.assertEqual(len(outbox), mailbox_before + 1)
+        m = outbox[-1]
+        self.assertIn('No Objection', m['Subject'])
+        self.assertIn('iesg@', m['To'])
+        self.assertIn(draft.name, m['Cc'])
+        self.assertIn(draft.group.acronym+'-chairs@', m['Cc'])
+
         # clear vote
         events_before = draft.docevent_set.count()
+        mailbox_before = len(outbox)
         r = self.client.post(url, dict(apikey=apikey.hash(), doc=draft.name, position="norecord"))
         self.assertEqual(r.status_code, 200)
 
@@ -140,9 +150,13 @@ class EditPositionTests(TestCase):
         self.assertEqual(pos.pos.slug, "norecord")
         self.assertEqual(draft.docevent_set.count(), events_before + 1)
         self.assertTrue("Position for" in pos.desc)
+        self.assertEqual(len(outbox), mailbox_before + 1)
+        m = outbox[-1]
+        self.assertIn('No Record', m['Subject'])
 
         # change comment
         events_before = draft.docevent_set.count()
+        mailbox_before = len(outbox)
         r = self.client.post(url, dict(apikey=apikey.hash(), doc=draft.name, position="norecord", comment="New comment."))
         self.assertEqual(r.status_code, 200)
 
@@ -151,6 +165,11 @@ class EditPositionTests(TestCase):
         self.assertEqual(pos.pos.slug, "norecord")
         self.assertEqual(draft.docevent_set.count(), events_before + 2)
         self.assertTrue("Ballot comment text updated" in pos.desc)
+        self.assertEqual(len(outbox), mailbox_before + 1)
+        m = outbox[-1]
+        self.assertIn('COMMENT', m['Subject'])
+        self.assertIn('New comment', m.get_payload())
+
 
     def test_edit_position_as_secretary(self):
         draft = make_test_data()
