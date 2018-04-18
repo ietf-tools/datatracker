@@ -231,7 +231,7 @@ def extract_review_request_data(teams=None, reviewers=None, time_from=None, time
 
         yield d
 
-def aggregate_raw_review_request_stats(review_request_data, count=None):
+def aggregate_raw_period_review_request_stats(review_request_data, count=None):
     """Take a sequence of review request data from
     extract_review_request_data and aggregate them."""
 
@@ -261,8 +261,8 @@ def aggregate_raw_review_request_stats(review_request_data, count=None):
 
     return state_dict, late_state_dict, result_dict, assignment_to_closure_days_list, assignment_to_closure_days_count
 
-def compute_review_request_stats(raw_aggregation):
-    """Compute statistics from aggregated review request data."""
+def sum_period_review_request_stats(raw_aggregation):
+    """Compute statistics from aggregated review request data for one aggregation point."""
     state_dict, late_state_dict, result_dict, assignment_to_closure_days_list, assignment_to_closure_days_count = raw_aggregation
 
     res = {}

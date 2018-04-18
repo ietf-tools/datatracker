@@ -100,7 +100,9 @@
                 {% endif %}  
                   <td>{{ meeting.date }}</td>
                   {% if meeting.type.slug == 'interim' %}
-                    <td>{{ meeting.session_set.all.0.group.acronym }}</td>
+                    <td>
+		      <a href="{% url 'ietf.group.views.group_home' meeting.session_set.all.0.group.acronym %}">{{ meeting.session_set.all.0.group.acronym }}</a>
+		    </td>
                   {% else %}
                     <td>ietf</td>
                   {% endif %}
@@ -111,6 +113,16 @@
                     <a href="{% url 'ietf.meeting.views.agenda' num=meeting.number %}">IETF - {{ meeting.number }}</a>
                   {% endif %}
                   </td>
+
+                  <td>
+                  {% if meeting.type.slug == "interim" %}
+                  {% else %}
+		    {% if meeting.get_number > 97 %}
+		      <a href="{% url 'ietf.meeting.views.important_dates' num=meeting.number %}">Important dates</a>
+		    {% endif %}
+                  {% endif %}
+                  </td>
+
                 </tr>
               {% endfor %}
             </tbody>

@@ -19,9 +19,9 @@ from django.utils.safestring import mark_safe
 import debug                            # pyflakes:ignore
 
 from ietf.review.utils import (extract_review_request_data,
-                               aggregate_raw_review_request_stats,
+                               aggregate_raw_period_review_request_stats,
                                ReviewRequestData,
-                               compute_review_request_stats,
+                               sum_period_review_request_stats,
                                sum_raw_review_request_aggregations)
 from ietf.submit.models import Submission
 from ietf.group.models import Role, Group
@@ -1150,8 +1150,8 @@ def review_stats(request, stats_type=None, acronym=None):
         found_states = set()
         aggrs = []
         for d, request_data_items in itertools.groupby(extracted_data, key=time_key_fn):
-            raw_aggr = aggregate_raw_review_request_stats(request_data_items, count=count)
-            aggr = compute_review_request_stats(raw_aggr)
+            raw_aggr = aggregate_raw_period_review_request_stats(request_data_items, count=count)
+            aggr = sum_period_review_request_stats(raw_aggr)
 
             aggrs.append((d, aggr))
 
@@ -1192,20 +1192,22 @@ def review_stats(request, stats_type=None, acronym=None):
             selected_completion_type = "completed_in_time"
 
         series_data = []
-        for d, aggr in aggrs:
-            v = 0
-            if selected_completion_type is not None:
-                v = aggr[selected_completion_type]
-            elif selected_result is not None:
-                v = aggr["result"][selected_result]
-            elif selected_state is not None:
-                v = aggr["state"][selected_state]
+        if selected_completion_type == "completed_combined":
+                pass
+        else:
+            for d, aggr in aggrs:
+                v = 0
+                if selected_completion_type is not None:
+                    v = aggr[selected_completion_type]
+                elif selected_result is not None:
+                    v = aggr["result"][selected_result]
+                elif selected_state is not None:
+                    v = aggr["state"][selected_state]
 
-            series_data.append((calendar.timegm(d.timetuple()) * 1000, v))
-
-        data = json.dumps([{
-            "data": series_data
-        }])
+                series_data.append((calendar.timegm(d.timetuple()) * 1000, v))
+            data = json.dumps([{
+                "data": series_data
+            }])
 
     else: # tabular data
         extracted_data = extract_review_request_data(query_teams, query_reviewers, from_time, to_time, ordering=[level])
@@ -1216,10 +1218,10 @@ def review_stats(request, stats_type=None, acronym=None):
         found_states = set()
         raw_aggrs = []
         for group_pk, request_data_items in itertools.groupby(extracted_data, key=lambda t: t[group_by_index]):
-            raw_aggr = aggregate_raw_review_request_stats(request_data_items, count=count)
+            raw_aggr = aggregate_raw_period_review_request_stats(request_data_items, count=count)
             raw_aggrs.append(raw_aggr)
 
-            aggr = compute_review_request_stats(raw_aggr)
+            aggr = sum_period_review_request_stats(raw_aggr)
 
             # skip zero-valued rows
             if aggr["open"] == 0 and aggr["completed"] == 0 and aggr["not_completed"] == 0:
@@ -1236,7 +1238,7 @@ def review_stats(request, stats_type=None, acronym=None):
 
         # add totals row
         if len(raw_aggrs) > 1:
-            totals = compute_review_request_stats(sum_raw_review_request_aggregations(raw_aggrs))
+            totals = sum_period_review_request_stats(sum_raw_review_request_aggregations(raw_aggrs))
             totals["obj"] = "Totals"
             data.append(totals)
 
