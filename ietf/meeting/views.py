@@ -1948,7 +1948,7 @@ def past(request):
     seen = set()
     groups = [m.session_set.first().group for m
               in meetings.filter(type='interim')]
-    group_parents = []
+    group_parents = [ Group.objects.get(acronym='ietf') ]
     for g in groups:
         if g.parent and g.parent.acronym not in seen:
             group_parents.append(g.parent)
