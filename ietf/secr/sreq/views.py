@@ -229,12 +229,22 @@ def confirm(request, acronym):
     group = get_object_or_404(Group,acronym=acronym)
     login = request.user.person
 
+    # check if request already exists for this group
+    if Session.objects.filter(group=group,meeting=meeting).exclude(status__in=('deleted','notmeet')):
+        messages.warning(request, 'Sessions for working group %s have already been requested once.' % group.acronym)
+        return redirect('ietf.secr.sreq.views.main')
+                
     session_data = form.data.copy()
     if 'bethere' in session_data:
         person_id_list = [ id for id in form.data['bethere'].split(',') if id ]
         session_data['bethere'] = Person.objects.filter(pk__in=person_id_list)
     session_data['resources'] = [ ResourceAssociation.objects.get(pk=pk) for pk in request.POST.getlist('resources') ]
     
+    button_text = request.POST.get('submit', '')
+    if button_text == 'Cancel':
+        messages.success(request, 'Session Request has been canceled')
+        return redirect('ietf.secr.sreq.views.main')
+
     button_text = request.POST.get('submit', '')
     if button_text == 'Cancel':
         messages.success(request, 'Session Request has been canceled')
@@ -322,7 +332,7 @@ def edit_mtg(request, num, acronym):
     '''
     meeting = get_meeting(num)
     group = get_object_or_404(Group, acronym=acronym)
-    sessions = Session.objects.filter(meeting=meeting,group=group).order_by('id')
+    sessions = Session.objects.filter(meeting=meeting,group=group).exclude(status__in=('deleted','notmeet')).order_by('id')
     sessions_count = sessions.count()
     initial = get_initial_session(sessions)
     if 'resources' in initial:
@@ -527,10 +537,6 @@ def new(request, acronym):
 
         form = SessionForm(request.POST)
         if form.is_valid():
-            # check if request already exists for this group
-            if Session.objects.filter(group=group,meeting=meeting).exclude(status__in=('deleted','notmeet')):
-                messages.warning(request, 'Sessions for working group %s have already been requested once.' % group.acronym)
-                return redirect('ietf.secr.sreq.views.main')
             return confirm(request, acronym)
 
     # the "previous" querystring causes the form to be returned

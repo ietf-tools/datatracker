@@ -114,6 +114,12 @@ class SubmitRequestCase(TestCase):
         session_count_after = Session.objects.filter(meeting=meeting, group=group).count()
         self.assertTrue(session_count_after == session_count_before + 1)
 
+        # test that second confirm does not add sessions
+        r = self.client.post(confirm_url,post_data)
+        self.assertRedirects(r, main_url)
+        session_count_after = Session.objects.filter(meeting=meeting, group=group).count()
+        self.assertTrue(session_count_after == session_count_before + 1)
+
     def test_submit_request_invalid(self):
         make_test_data()
         group = Group.objects.get(acronym='mars')
