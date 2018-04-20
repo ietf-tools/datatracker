@@ -107,8 +107,8 @@ class DraftForm(forms.ModelForm):
         help_texts = { 'sections': 'Sections' }
 
 validate_patent_number = RegexValidator(
-                                    regex="^(([A-Z][A-Z]\d{6,12}|[A-Z][A-Z]\d{4}(\w{1,2}\d{5,7})?)[, ]*)+$",
-                                    message="Please enter one or more patent publication or application numbers as country code and serial number, e.g.: WO2017123456." )
+                                    regex="^(([A-Z][A-Z]\d\d/\d{6}|[A-Z][A-Z]\d{6,12}|[A-Z][A-Z]\d{4}(\w{1,2}\d{5,7})?)[, ]*)+$",
+                                    message="Please enter one or more patent publication or application numbers as country code and serial number, e.g.: US62/123456 or WO2017123456." )
 
 def validate_string(s, letter_min, digit_min, space_min, message):
     letter_count = 0
@@ -150,7 +150,7 @@ class GenericDisclosureForm(forms.Form):
     patent_inventor =  forms.CharField(max_length=63, required=False, validators=[ validate_name ], help_text="Inventor name")
     patent_title =  forms.CharField(max_length=63, required=False, validators=[ validate_title ], help_text="Title of invention")
     patent_date =  forms.DateField(required=False, help_text="Date granted or applied for")
-    patent_notes =  forms.CharField(max_length=127, required=False, widget=forms.Textarea)
+    patent_notes =  forms.CharField(max_length=1024, required=False, widget=forms.Textarea)
 
     has_patent_pending = forms.BooleanField(required=False)
     statement = forms.CharField(max_length=2000,widget=forms.Textarea,required=False, strip=False)
@@ -219,7 +219,7 @@ class IprDisclosureFormBase(forms.ModelForm):
     patent_inventor =  forms.CharField(max_length=63, required=True, validators=[ validate_name ], help_text="Inventor name")
     patent_title =  forms.CharField(max_length=63, required=True, validators=[ validate_title ], help_text="Title of invention")
     patent_date =  forms.DateField(required=True, help_text="Date granted or applied for")
-    patent_notes =  forms.CharField(max_length=127, required=False, widget=forms.Textarea)
+    patent_notes =  forms.CharField(max_length=1024, required=False, widget=forms.Textarea)
     
     def __init__(self,*args,**kwargs):
         super(IprDisclosureFormBase, self).__init__(*args,**kwargs)
