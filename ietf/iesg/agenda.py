@@ -7,6 +7,8 @@ from collections import OrderedDict
 from django.conf import settings
 from django.http import Http404
 
+import debug                            # pyflakes:ignore
+
 from ietf.doc.models import Document, LastCallDocEvent, ConsensusDocEvent
 from ietf.doc.utils_search import fill_in_telechat_date
 from ietf.iesg.models import TelechatDate, TelechatAgendaItem
