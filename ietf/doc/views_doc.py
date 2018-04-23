@@ -280,8 +280,9 @@ def document_main(request, name, rev=None):
 
         shepherd_writeup = doc.latest_event(WriteupDocEvent, type="changed_protocol_writeup")
 
+        is_shepherd = user_is_person(request.user, doc.shepherd and doc.shepherd.person)
         can_edit_stream_info = is_authorized_in_doc_stream(request.user, doc)
-        can_edit_shepherd_writeup = can_edit_stream_info or user_is_person(request.user, doc.shepherd and doc.shepherd.person) or has_role(request.user, ["Area Director"])
+        can_edit_shepherd_writeup = can_edit_stream_info or is_shepherd or has_role(request.user, ["Area Director"])
         can_edit_notify = can_edit_shepherd_writeup
         can_edit_individual = is_individual_draft_author(request.user, doc)
 
@@ -354,7 +355,7 @@ def document_main(request, name, rev=None):
         if doc.get_state_slug() not in ["rfc", "expired"] and doc.stream_id in ("ietf",) and not snapshot:
             if not iesg_state and can_edit:
                 actions.append(("Begin IESG Processing", urlreverse('ietf.doc.views_draft.edit_info', kwargs=dict(name=doc.name)) + "?new=1"))
-            elif can_edit_stream_info and (not iesg_state or iesg_state.slug == 'watching'):
+            elif (can_edit_stream_info or is_shepherd) and (not iesg_state or iesg_state.slug == 'watching'):
                 actions.append(("Submit to IESG for Publication", urlreverse('ietf.doc.views_draft.to_iesg', kwargs=dict(name=doc.name))))
 
         augment_docs_with_tracking_info([doc], request.user)
@@ -384,7 +385,7 @@ def document_main(request, name, rev=None):
                                        can_change_stream=can_change_stream,
                                        can_edit_stream_info=can_edit_stream_info,
                                        can_edit_individual=can_edit_individual,
-                                       is_shepherd = user_is_person(request.user, doc.shepherd and doc.shepherd.person),
+                                       is_shepherd = is_shepherd,
                                        can_edit_shepherd_writeup=can_edit_shepherd_writeup,
                                        can_edit_notify=can_edit_notify,
                                        can_edit_iana_state=can_edit_iana_state,
