@@ -176,6 +176,8 @@ WSGI_APPLICATION = "ietf.wsgi.application"
 
 AUTHENTICATION_BACKENDS = ( 'django.contrib.auth.backends.ModelBackend', )
 
+FILE_UPLOAD_PERMISSIONS = 0o644          
+
 # ------------------------------------------------------------------------
 # Django/Python Logging Framework Modifications
 
