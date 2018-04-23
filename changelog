@@ -1,3 +1,65 @@
+ietfdb (6.79.0) ietf; urgency=medium
+
+  **IPR patent info field fixes, IESG position API enhancement, and more.**
+
+  This release enhances the IESG position API to send notification emails on
+  changes, widens some IPR disclosure form fields to accept more text, and
+  fixes a patent application number validation issue for IPR forms.  It adds
+  some useful links and a new filtering option to the past meetings page,
+  updates document stream status indications so as to be less prone to
+  misinterpretation, addresses an issue with session request forms, and fixes
+  an issue with I-D expirations and another related to ordering of documents
+  on IESG agendas.
+
+  From the commit log:
+
+  * Set file upload permissions to 0644 to avoid problems with photo access.
+
+  * Increased the length of the patent title in IPR forms
+
+  * Fixed a typo.  Fixes issue #2500 which caused different document ordering
+    on the IESG agenda compared with the IESG agenda documents page.
+
+  * Increased the size of the patent_notes form field, and tweaked the
+    validate_patent_number validator to accept US application numbers
+    containing a series number and forward slash.
+
+  * Merged in [15055] from rcross@amsl.com:
+    Fixed an issue where user can make two session request submissions,
+    corrupting data.  Also, ignore deleted session requests in edit view.  
+
+  * Merged in [15047] from rcross@amsl.com:
+    Reduced the get_meeting buffer to handle earlier shceduling requests date.   
+
+  * Added origin indication to a group of stats templates to make it easier 
+    to find the origin of stats configurations.
+
+  * Added group links to the past meetings page, and also important dates 
+    links to IETF meetings with important-date pages.
+
+  * Added IETF to past meetings filter pane, in order to be able to filter 
+    out interims.
+
+  * Fixed a problem with the expire-ids code, and added logging to catch 
+    future problems.
+
+  * Modified the IESG position setting API to send email messages about 
+    positions set.
+
+  * Tweaked the wording of coverage_changes output.
+
+  * Fixed an issue where simplified sorting of DocEvents resulted in some 
+    ballot icons not being shown on the IESG agenda documents page.
+
+  * Changed incorrect use of 404 status code in api to 400.  Fixes issue 
+    #2498.
+
+  * Removed what could be a misleading 'RFC' from  the stream indication in 
+    document search results.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  23 Apr 2018 12:28:57 +0000
+
+
 ietfdb (6.78.0) ietf; urgency=medium
 
   **Document search on IRTF state, performance improvements**
