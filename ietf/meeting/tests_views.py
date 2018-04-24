@@ -1988,7 +1988,7 @@ class MaterialsTests(TestCase):
 class SessionTests(TestCase):
 
     def test_meeting_requests(self):
-        meeting = MeetingFactory()
+        meeting = MeetingFactory(type_id='ietf')
         area = GroupFactory(type_id='area')
         requested_session = SessionFactory(meeting=meeting,group__parent=area,status_id='schedw',add_to_schedule=False)
         not_meeting = SessionFactory(meeting=meeting,group__parent=area,status_id='notmeet',add_to_schedule=False)
