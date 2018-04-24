@@ -22,7 +22,7 @@ import debug                            # pyflakes:ignore
 
 from ietf.doc.models import ( Document, DocAlias, DocRelationshipName, RelatedDocument, State,
     DocEvent, BallotPositionDocEvent, LastCallDocEvent, WriteupDocEvent, NewRevisionDocEvent )
-from ietf.doc.factories import DocumentFactory, DocEventFactory
+from ietf.doc.factories import DocumentFactory, DocEventFactory, CharterFactory
 from ietf.doc.utils import create_ballot_if_not_open
 from ietf.group.models import Group
 from ietf.group.factories import GroupFactory
@@ -201,13 +201,34 @@ class SearchTests(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertTrue("Document Search" in unicontent(r))
 
-    def test_drafts_pages(self):
-        draft = make_test_data()
-
-        r = self.client.get(urlreverse('ietf.doc.views_search.docs_for_ad', kwargs=dict(name=draft.ad.full_name_as_key())))
+    def test_docs_for_ad(self):
+        ad = PersonFactory()
+        draft = DocumentFactory(type_id='draft',ad=ad)
+        draft.set_state(State.objects.get(type='draft', slug='active'))
+        draft.set_state(State.objects.get(type='draft-iesg', slug='lc'))
+        rfc = DocumentFactory(type_id='draft',ad=ad)
+        rfc.set_state(State.objects.get(type='draft', slug='rfc'))
+        rfc.docalias_set.create(name='rfc6666')
+        conflrev = DocumentFactory(type_id='conflrev',ad=ad)
+        conflrev.set_state(State.objects.get(type='conflrev', slug='iesgeval'))
+        statchg = DocumentFactory(type_id='statchg',ad=ad)
+        statchg.set_state(State.objects.get(type='statchg', slug='iesgeval'))
+        charter = CharterFactory(ad=ad)
+        charter.set_state(State.objects.get(type='charter', slug='iesgrev'))
+        
+        r = self.client.get(urlreverse('ietf.doc.views_search.docs_for_ad', kwargs=dict(name=ad.full_name_as_key())))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(draft.title in unicontent(r))
+        response_content = unicontent(r)
+        #debug.show('response_content')
+        self.assertTrue(draft.name in response_content)
+        self.assertTrue(rfc.canonical_name() in response_content)
+        self.assertTrue(conflrev.name in response_content)
+        self.assertTrue(statchg.name in response_content)
+        self.assertTrue(charter.name in response_content)
+        
 
+    def test_drafts_in_last_call(self):
+        draft = make_test_data()
         draft.set_state(State.objects.get(type="draft-iesg", slug="lc"))
         r = self.client.get(urlreverse('ietf.doc.views_search.drafts_in_last_call'))
         self.assertEqual(r.status_code, 200)
