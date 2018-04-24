@@ -45,16 +45,15 @@ session_patterns = [
 
 urlpatterns = [ 
     url(r'^$', views_search.search),
-    url(r'^(?P<name>[A-Za-z0-9\._\+\-]+)$', views_search.search_for_name),
-    url(r'^search/$', views_search.search),
-    url(r'^in-last-call/$', views_search.drafts_in_last_call),
+    url(r'^search/?$', views_search.search),
+    url(r'^in-last-call/?$', views_search.drafts_in_last_call),
     url(r'^ad/(?P<name>[\w.-]+)/$(?u)', views_search.docs_for_ad),
     url(r'^ad2/(?P<name>[\w.-]+)/$(?u)', RedirectView.as_view(url='/doc/ad/%(name)s/', permanent=True)),
-    url(r'^rfc-status-changes/$', views_status_change.rfc_status_changes),
+    url(r'^rfc-status-changes/?$', views_status_change.rfc_status_changes),
     url(r'^start-rfc-status-change/(?:%(name)s/)?$' % settings.URL_REGEXPS, views_status_change.start_rfc_status_change),
     url(r'^iesg/(?P<last_call_only>[A-Za-z0-9.-]+/)?$', views_search.drafts_in_iesg_process),
-    url(r'^email-aliases/$', views_doc.email_aliases),
-    url(r'^downref/$', views_downref.downref_registry),
+    url(r'^email-aliases/?$', views_doc.email_aliases),
+    url(r'^downref/?$', views_downref.downref_registry),
     url(r'^downref/add/?$', views_downref.downref_registry_add),
     url(r'^stats/newrevisiondocevent/?$', views_stats.chart_newrevisiondocevent),
     url(r'^stats/newrevisiondocevent/conf/?$', views_stats.chart_conf_newrevisiondocevent),
@@ -63,8 +62,8 @@ urlpatterns = [
     url(r'^stats/person/(?P<id>[0-9]+)/drafts/data/?$', views_stats.chart_data_person_drafts),
     url(r'^html/%(name)s(?:-%(rev)s)?(\.txt|\.html)?$' % settings.URL_REGEXPS, views_doc.document_html),
 
-    url(r'^all/$', views_search.index_all_drafts),
-    url(r'^active/$', views_search.index_active_drafts),
+    url(r'^all/?$', views_search.index_all_drafts),
+    url(r'^active/?$', views_search.index_active_drafts),
     url(r'^select2search/(?P<model_name>(document|docalias))/(?P<doc_type>draft)/$', views_search.ajax_select2_search_docs),
 
     url(r'^%(name)s(?:/%(rev)s)?/$' % settings.URL_REGEXPS, views_doc.document_main),
@@ -132,4 +131,5 @@ urlpatterns = [
     url(r'^%(name)s/material/' % settings.URL_REGEXPS, include('ietf.doc.urls_material')),
     url(r'^%(name)s/session/' % settings.URL_REGEXPS, include('ietf.doc.urls_material')),
     url(r'^(?P<name>[A-Za-z0-9._+-]+)/session/', include(session_patterns)),
+    url(r'^(?P<name>[A-Za-z0-9\._\+\-]+)$', views_search.search_for_name),
 ]
