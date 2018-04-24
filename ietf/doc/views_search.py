@@ -426,13 +426,9 @@ def drafts_in_last_call(request):
         'form':form, 'docs':results, 'meta':meta, 'pages':pages
     })
 
-def drafts_in_iesg_process(request, last_call_only=None):
-    if last_call_only:
-        states = State.objects.filter(type="draft-iesg", slug__in=("lc", "writeupw", "goaheadw"))
-        title = "Documents in Last Call"
-    else:
-        states = State.objects.filter(type="draft-iesg").exclude(slug__in=('pub', 'dead', 'watching', 'rfcqueue'))
-        title = "Documents in IESG process"
+def drafts_in_iesg_process(request):
+    states = State.objects.filter(type="draft-iesg").exclude(slug__in=('pub', 'dead', 'watching', 'rfcqueue'))
+    title = "Documents in IESG process"
 
     grouped_docs = []
 
@@ -451,7 +447,6 @@ def drafts_in_iesg_process(request, last_call_only=None):
     return render(request, 'doc/drafts_in_iesg_process.html', {
             "grouped_docs": grouped_docs,
             "title": title,
-            "last_call_only": last_call_only,
             })
 
 def index_all_drafts(request):
