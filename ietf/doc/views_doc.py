@@ -964,10 +964,13 @@ def document_ballot(request, name, ballot_id=None):
 def ballot_popup(request, name, ballot_id):
     doc = get_object_or_404(Document, docalias__name=name)
     c = document_ballot_content(request, doc, ballot_id=ballot_id, editable=False)
+    ballot = get_object_or_404(BallotDocEvent,id=ballot_id)
     return render(request, "doc/ballot_popup.html",
                               dict(doc=doc,
                                    ballot_content=c,
                                    ballot_id=ballot_id,
+                                   ballot_type_slug=ballot.ballot_type.slug,
+                                   editable=True,
                                    ))
 
 

@@ -67,7 +67,7 @@
         {% endif %}
 
         {% if user|has_role:"Area Director,Secretariat" %}
-          <a class="btn btn-danger" href="{% url 'ietf.doc.views_ballot.clear_ballot' name=doc.name %}">Clear ballot</a>
+          <a class="btn btn-danger" href="{% url 'ietf.doc.views_ballot.clear_ballot' name=doc.name ballot_type_slug=ballot.ballot_type.slug%}">Clear ballot</a>
         {% endif %}
       {% endif %}
     {% endif %}

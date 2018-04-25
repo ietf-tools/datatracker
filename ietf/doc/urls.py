@@ -108,7 +108,7 @@ urlpatterns = [
     url(r'^%(name)s/edit/adopt/$' % settings.URL_REGEXPS, views_draft.adopt_draft),
     url(r'^%(name)s/edit/state/(?P<state_type>draft-stream-[a-z]+)/$' % settings.URL_REGEXPS, views_draft.change_stream_state),
 
-    url(r'^%(name)s/edit/clearballot/$' % settings.URL_REGEXPS, views_ballot.clear_ballot),
+    url(r'^%(name)s/edit/clearballot/(?P<ballot_type_slug>[\w-]+)/$' % settings.URL_REGEXPS, views_ballot.clear_ballot),
     url(r'^%(name)s/edit/deferballot/$' % settings.URL_REGEXPS, views_ballot.defer_ballot),
     url(r'^%(name)s/edit/undeferballot/$' % settings.URL_REGEXPS, views_ballot.undefer_ballot),
     url(r'^%(name)s/edit/lastcalltext/$' % settings.URL_REGEXPS, views_ballot.lastcalltext),

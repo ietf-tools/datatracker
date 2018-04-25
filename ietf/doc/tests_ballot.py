@@ -644,6 +644,23 @@ class ApproveBallotTests(TestCase):
         self.assertEqual(len(outbox), mailbox_before + 1)
         self.assertTrue("NOT be published" in str(outbox[-1]))
 
+    def test_clear_ballot(self):
+        draft = make_test_data()
+        ad = Person.objects.get(user__username="ad")
+        ballot = create_ballot_if_not_open(None, draft, ad, 'approve')
+        old_ballot_id = ballot.id
+        draft.set_state(State.objects.get(used=True, type="draft-iesg", slug="iesg-eva")) 
+        url = urlreverse('ietf.doc.views_ballot.clear_ballot', kwargs=dict(name=draft.name,ballot_type_slug=draft.ballot_open('approve').ballot_type.slug))
+        login_testing_unauthorized(self, "secretary", url)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        r = self.client.post(url,{})
+        self.assertEqual(r.status_code, 302)
+        ballot = draft.ballot_open('approve')
+        self.assertIsNotNone(ballot)
+        self.assertEqual(ballot.ballotpositiondocevent_set.count(),0)
+        self.assertNotEqual(old_ballot_id, ballot.id)
+
 class MakeLastCallTests(TestCase):
     def test_make_last_call(self):
         draft = make_test_data()
