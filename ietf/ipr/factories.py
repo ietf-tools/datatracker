@@ -10,8 +10,8 @@ from ietf.ipr.models import (
 def _fake_patent_info():
     return "Date: %s\nNotes: %s\nTitle: %s\nNumber: %s\nInventor: %s\n" % (
         (datetime.datetime.today()-datetime.timedelta(days=365)).strftime("%Y-%m-%d"),
-        factory.Faker('sentence').generate({}),
-        factory.Faker('sentence').generate({}),
+        factory.Faker('paragraph').generate({}),
+        factory.Faker('sentence', nb_words=8).generate({}),
         'US9999999',
         factory.Faker('name').generate({}),
     )
