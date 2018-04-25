@@ -607,7 +607,6 @@ class Document(DocumentInfo):
     def filename_with_rev(self):
         return u"%s-%s.txt" % (self.name, self.rev)
     
-    @memoize
     def latest_event(self, *args, **filter_args):
         """Get latest event of optional Python type and with filter
         arguments, e.g. d.latest_event(type="xyz") returns an DocEvent
