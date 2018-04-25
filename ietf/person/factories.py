@@ -24,7 +24,11 @@ def random_faker():
     # extraction code, and also don't seem to match the way people with arabic
     # names romanize arabic names.  Exlude those locales from name generation
     # in order to avoid test failures.
-    locales = set( [ l for l in faker.config.AVAILABLE_LOCALES if not (l.startswith('ar_') or l.startswith('sg_')) ] )
+    # 25 Apr 2018: Also exclude nepalese.  Nepalese names can contain
+    # non-spacing marks, which don't match \w; thus there are names that
+    # won't match ^\w+$, which is problematic in some url patterns meant to
+    # match names.
+    locales = set( [ l for l in faker.config.AVAILABLE_LOCALES if not (l.startswith('ar_') or l.startswith('sg_') or l.startswith('ne_')) ] )
     return faker.Faker(random.sample(locales, 1)[0])
 
 class UserFactory(factory.DjangoModelFactory):
