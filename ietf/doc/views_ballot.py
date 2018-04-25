@@ -84,12 +84,14 @@ def do_undefer_ballot(request, doc):
     email_ballot_undeferred(request, doc, by.plain_name(), telechat_date)
 
 def position_to_ballot_choice(position):
+    log.unreachable('2018-04-25')
     for v, label in BALLOT_CHOICES:
         if v and getattr(position, v):
             return v
     return ""
 
 def position_label(position_value):
+    log.unreachable('2018-04-25')
     return dict(BALLOT_CHOICES).get(position_value, "")
 
 # -------------------------------------------------
