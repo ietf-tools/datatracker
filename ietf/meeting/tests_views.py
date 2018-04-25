@@ -1984,3 +1984,16 @@ class MaterialsTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(0,session.sessionpresentation_set.count())
         self.assertEqual(2,doc.docevent_set.count())
+
+class SessionTests(TestCase):
+
+    def test_meeting_requests(self):
+        meeting = MeetingFactory(type_id='ietf')
+        area = GroupFactory(type_id='area')
+        requested_session = SessionFactory(meeting=meeting,group__parent=area,status_id='schedw',add_to_schedule=False)
+        not_meeting = SessionFactory(meeting=meeting,group__parent=area,status_id='notmeet',add_to_schedule=False)
+        url = urlreverse('ietf.meeting.views.meeting_requests',kwargs={'num':meeting.number})
+        r = self.client.get(url)
+        self.assertEqual(r.status_code,200)
+        self.assertTrue(requested_session.group.acronym in unicontent(r))
+        self.assertTrue(not_meeting.group.acronym in unicontent(r))
