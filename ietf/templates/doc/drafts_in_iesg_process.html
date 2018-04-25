@@ -5,9 +5,6 @@
 {% load textfilters %}
 
 {% block pagehead %}
-  {% if last_call_only %}
-    <link rel="alternate" type="application/atom+xml" href="/feed/last-call/">
-  {% endif %}
   <link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
 {% endblock %}
 

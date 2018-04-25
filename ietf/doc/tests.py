@@ -212,6 +212,15 @@ class SearchTests(TestCase):
         r = self.client.get(urlreverse('ietf.doc.views_search.drafts_in_last_call'))
         self.assertEqual(r.status_code, 200)
         self.assertTrue(draft.title in unicontent(r))
+
+    def test_in_iesg_process(self):
+        doc_in_process = DocumentFactory(type_id='draft')
+        doc_in_process.set_state(State.objects.get(type='draft-iesg', slug='lc'))
+        doc_not_in_process = DocumentFactory(type_id='draft')
+        r = self.client.get(urlreverse('ietf.doc.views_search.drafts_in_iesg_process'))
+        self.assertEqual(r.status_code, 200)
+        self.assertTrue(doc_in_process.title in unicontent(r))
+        self.assertFalse(doc_not_in_process.title in unicontent(r))
         
     def test_indexes(self):
         draft = make_test_data()
