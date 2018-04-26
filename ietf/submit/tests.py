@@ -1525,7 +1525,7 @@ Subject: test
         r = self.client.post(url, files)
         if r.status_code != 302:
             q = PyQuery(r.content)
-            print(q('div.has-error span.help-block div').text)
+            print(q('div.has-error span.help-block div').text())
 
         self.assertEqual(r.status_code, 302)
 
