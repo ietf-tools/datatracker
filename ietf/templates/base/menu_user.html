@@ -26,6 +26,7 @@
       <li><a rel="nofollow" href="/accounts/reset/">Password reset</a></li>
       <li><a href="{%url "ietf.cookies.views.preferences" %}" rel="nofollow">Preferences</a></li>
     {% endif %}
+    <li><a href="{% url 'personal-information' %}">Handling of personal information</a></li>  
   {% endif %}
 
   {% if not request.user.is_authenticated %}
