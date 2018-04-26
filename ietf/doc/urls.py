@@ -47,7 +47,7 @@ urlpatterns = [
     url(r'^$', views_search.search),
     url(r'^search/?$', views_search.search),
     url(r'^in-last-call/?$', views_search.drafts_in_last_call),
-    url(r'^ad/(?P<name>[\w.-]+)/$(?u)', views_search.docs_for_ad),
+    url(r'^ad/(?P<name>[^/]+)/?$(?u)', views_search.docs_for_ad),
     url(r'^ad2/(?P<name>[\w.-]+)/$(?u)', RedirectView.as_view(url='/doc/ad/%(name)s/', permanent=True)),
     url(r'^rfc-status-changes/?$', views_status_change.rfc_status_changes),
     url(r'^start-rfc-status-change/(?:%(name)s/)?$' % settings.URL_REGEXPS, views_status_change.start_rfc_status_change),
