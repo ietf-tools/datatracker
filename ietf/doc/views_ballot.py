@@ -16,7 +16,7 @@ from django.views.decorators.csrf import csrf_exempt
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import ( Document, State, DocEvent, BallotDocEvent, BallotPositionDocEvent,
-    BallotType, LastCallDocEvent, WriteupDocEvent, IESG_SUBSTATE_TAGS )
+    LastCallDocEvent, WriteupDocEvent, IESG_SUBSTATE_TAGS )
 from ietf.doc.utils import ( add_state_change_event, close_ballot, close_open_ballots,
     create_ballot_if_not_open, update_telechat )
 from ietf.doc.mails import ( email_ballot_deferred, email_ballot_undeferred, 
@@ -381,14 +381,13 @@ def send_ballot_comment(request, name, ballot_id):
                       ))
 
 @role_required('Area Director','Secretariat')
-def clear_ballot(request, name):
+def clear_ballot(request, name, ballot_type_slug):
     """Clear all positions and discusses on every open ballot for a document."""
     doc = get_object_or_404(Document, name=name)
     if request.method == 'POST':
         by = request.user.person
-        for t in BallotType.objects.filter(doc_type=doc.type_id):
-            close_ballot(doc, by, t.slug)
-            create_ballot_if_not_open(request, doc, by, t.slug)
+        if close_ballot(doc, by, ballot_type_slug):
+            create_ballot_if_not_open(request, doc, by, ballot_type_slug)
         if doc.get_state('draft-iesg').slug == 'defer':
             do_undefer_ballot(request,doc)
         return redirect("ietf.doc.views_doc.document_main", name=doc.name)

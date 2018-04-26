@@ -60,7 +60,7 @@ def make_immutable_base_data():
     date4 = TelechatDate.objects.create(date=t + datetime.timedelta(days=14 * 3)).date  # pyflakes:ignore
 
     # system
-    system_person = Person.objects.create(name="(System)", ascii="(System)", address="")
+    system_person = Person.objects.create(name="(System)", ascii="(System)")
     Email.objects.create(address="", person=system_person)
 
     # high-level groups
