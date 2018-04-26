@@ -1,3 +1,41 @@
+ietfdb (6.79.1) ietf; urgency=medium
+
+  * Merged in [15080] from rjsparks@nostrum.com:
+    Marked a couple of functions as unreachable.  
+
+  * Reverted a change to UserFactory to avoid nepalese names.  The issue is 
+    bigger, and needs a different resulution.  Changed the url pattern that 
+    used \w to match names to instead use a more inclusive regex.
+
+  * Fixed a PyQuery property access that should have been a method call.
+
+  * Merged in [15076] from rjsparks@nostrum.com:
+    Added a test for meeting/requests.
+
+  * Tweaked the IPR factory to be less likely to produce invalid patent 
+    info.
+
+  * Merged in [15075] from rjsparks@nostrum.com:
+    Improved testing for docs_for_ad. 
+
+  * Excluded nepalese from person name locales, to avoid test names that 
+    contain nonspacing marks that python 2.7 doesn't match to \w, which creates 
+    urlpattern issues.
+
+  * Merged in [15074] from rjsparks@nostrum.com:
+    Simplified docs_in_iesg_process. Added a test for it. 
+
+  * Merged in [15073] from rjsparks@nostrum.com:
+    Rearranged ietf/doc/urls.py to allow matching some special pages under 
+    /doc without a trailing slash. Adjusted several of those special URLs to 
+    work without the trailing slash. 
+
+  * Added permission for a document shepherd to request publication.  Fixes 
+    issue #2509.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  26 Apr 2018 12:08:20 +0000
+
+
 ietfdb (6.79.0) ietf; urgency=medium
 
   **IPR patent info field fixes, IESG position API enhancement, and more.**
