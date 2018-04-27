@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 
-from ietf.person.models import Email, Alias, Person, PersonHistory, PersonalApiKey, PersonEvent, PersonApiKeyEvent
+from ietf.person.models import Email, Alias, Person, PersonalApiKey, PersonEvent, PersonApiKeyEvent, HistoricalPerson
 from ietf.person.name import name_parts
 
 class EmailAdmin(admin.ModelAdmin):
@@ -33,16 +33,6 @@ class PersonAdmin(admin.ModelAdmin):
 #    actions = None
 admin.site.register(Person, PersonAdmin)
 
-class PersonHistoryAdmin(admin.ModelAdmin):
-    def plain_name(self, obj):
-        prefix, first, middle, last, suffix = name_parts(obj.name)
-        return "%s %s" % (first, last)
-    list_display = ['name', 'short', 'plain_name', 'time', 'user', 'person', ]
-    list_filter = ['time']
-    raw_id_fields = ['person', 'user']
-    search_fields = ['name', 'ascii']
-admin.site.register(PersonHistory, PersonHistoryAdmin)
-
 class PersonalApiKeyAdmin(admin.ModelAdmin):
     list_display = ['id', 'person', 'created', 'endpoint', 'valid', 'count', 'latest', ]
     list_filter = ['endpoint', 'created', ]
@@ -61,3 +51,14 @@ class PersonApiKeyEventAdmin(admin.ModelAdmin):
     search_fields = ["person__name", ]
     raw_id_fields = ['person', ]
 admin.site.register(PersonApiKeyEvent, PersonApiKeyEventAdmin)
+
+
+class HistoricalPersonAdmin(admin.ModelAdmin):
+    def plain_name(self, obj):
+        prefix, first, middle, last, suffix = name_parts(obj.name)
+        return "%s %s" % (first, last)
+    list_display = ["history_date", "name", "plain_name", "time", "history_user", "history_change_reason", ]
+    search_fields = ["name", "ascii"]
+    raw_id_fields = ["user", "history_user", ]
+#    actions = None
+admin.site.register(HistoricalPerson, HistoricalPersonAdmin)

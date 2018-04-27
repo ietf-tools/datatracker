@@ -16,6 +16,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.template.loader import render_to_string
 from django.utils.text import slugify
+from simple_history.models import HistoricalRecords
 
 import debug                            # pyflakes:ignore
 
@@ -27,7 +28,9 @@ from ietf.person.name import unidecode_name
 from ietf.utils.models import ForeignKey, OneToOneField
 
 
-class PersonInfo(models.Model):
+class Person(models.Model):
+    history = HistoricalRecords()
+    user = OneToOneField(User, blank=True, null=True)
     time = models.DateTimeField(default=datetime.datetime.now)      # When this Person record entered the system
     # The normal unicode form of the name.  This must be
     # set to the same value as the ascii-form if equal.
@@ -143,23 +146,20 @@ class PersonInfo(models.Model):
     def has_drafts(self):
         from ietf.doc.models import Document
         return Document.objects.filter(documentauthor__person=self, type='draft').exists()
+
     def rfcs(self):
         from ietf.doc.models import Document
         rfcs = list(Document.objects.filter(documentauthor__person=self, type='draft', states__slug='rfc'))
         rfcs.sort(key=lambda d: d.canonical_name() )
         return rfcs
+
     def active_drafts(self):
         from ietf.doc.models import Document
         return Document.objects.filter(documentauthor__person=self, type='draft', states__slug='active').order_by('-time')
+
     def expired_drafts(self):
         from ietf.doc.models import Document
         return Document.objects.filter(documentauthor__person=self, type='draft', states__slug__in=['repl', 'expired', 'auth-rm', 'ietf-rm']).order_by('-time')
-
-    class Meta:
-        abstract = True
-
-class Person(PersonInfo):
-    user = OneToOneField(User, blank=True, null=True)
 
     def save(self, *args, **kwargs):
         created = not self.pk
@@ -197,10 +197,6 @@ class Person(PersonInfo):
         ct1['ascii']     = self.ascii
         ct1['affiliation']= self.affiliation
         return ct1
-
-class PersonHistory(PersonInfo):
-    person = ForeignKey(Person, related_name="history_set")
-    user = ForeignKey(User, blank=True, null=True)
 
 class Alias(models.Model):
     """This is used for alternative forms of a name.  This is the

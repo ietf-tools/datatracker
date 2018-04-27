@@ -7,7 +7,7 @@ import debug                            # pyflakes:ignore
 from ietf.utils.test_utils import TestCase
 from ietf.doc.models import StateType
 
-class StateHelpTest(TestCase):
+class HelpPageTests(TestCase):
 
     def test_state_index(self):
         url = reverse('ietf.help.views.state_index')
@@ -21,3 +21,7 @@ class StateHelpTest(TestCase):
                 self.assertIn(name, content)
 
         
+    def test_personal_information_help(self):
+        r = self.client.get('/help/personal-information')
+        self.assertContains(r, 'personal information')
+        self.assertContains(r, 'GDPR')

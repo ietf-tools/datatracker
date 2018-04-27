@@ -6,7 +6,7 @@ from tastypie.cache import SimpleCache
 
 from ietf import api
 
-from ietf.person.models import (Person, Email, Alias, PersonHistory, PersonalApiKey, PersonEvent, PersonApiKeyEvent)
+from ietf.person.models import (Person, Email, Alias, PersonalApiKey, PersonEvent, PersonApiKeyEvent, HistoricalPerson)
 
 
 from ietf.utils.resources import UserResource
@@ -24,7 +24,6 @@ class PersonResource(ModelResource):
             "name": ALL,
             "ascii": ALL,
             "ascii_short": ALL,
-            "address": ALL,
             "affiliation": ALL,
             "photo": ALL,
             "biography": ALL,
@@ -60,29 +59,6 @@ class AliasResource(ModelResource):
             "person": ALL_WITH_RELATIONS,
         }
 api.person.register(AliasResource())
-
-from ietf.utils.resources import UserResource
-class PersonHistoryResource(ModelResource):
-    person           = ToOneField(PersonResource, 'person')
-    user             = ToOneField(UserResource, 'user', null=True)
-    class Meta:
-        cache = SimpleCache()
-        queryset = PersonHistory.objects.all()
-        serializer = api.Serializer()
-        #resource_name = 'personhistory'
-        filtering = { 
-            "id": ALL,
-            "time": ALL,
-            "name": ALL,
-            "ascii": ALL,
-            "ascii_short": ALL,
-            "address": ALL,
-            "affiliation": ALL,
-            "person": ALL_WITH_RELATIONS,
-            "user": ALL_WITH_RELATIONS,
-        }
-api.person.register(PersonHistoryResource())
-
 
 class PersonalApiKeyResource(ModelResource):
     person           = ToOneField(PersonResource, 'person')
@@ -141,3 +117,32 @@ class PersonApiKeyEventResource(ModelResource):
             "key": ALL_WITH_RELATIONS,
         }
 api.person.register(PersonApiKeyEventResource())
+
+
+from ietf.utils.resources import UserResource
+class HistoricalPersonResource(ModelResource):
+    user             = ToOneField(UserResource, 'user', null=True)
+    history_user     = ToOneField(UserResource, 'history_user', null=True)
+    class Meta:
+        queryset = HistoricalPerson.objects.all()
+        serializer = api.Serializer()
+        cache = SimpleCache()
+        #resource_name = 'historicalperson'
+        filtering = { 
+            "id": ALL,
+            "time": ALL,
+            "name": ALL,
+            "ascii": ALL,
+            "ascii_short": ALL,
+            "affiliation": ALL,
+            "biography": ALL,
+            "photo": ALL,
+            "photo_thumb": ALL,
+            "history_id": ALL,
+            "history_date": ALL,
+            "history_change_reason": ALL,
+            "history_type": ALL,
+            "user": ALL_WITH_RELATIONS,
+            "history_user": ALL_WITH_RELATIONS,
+        }
+api.person.register(HistoricalPersonResource())

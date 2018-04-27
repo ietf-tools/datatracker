@@ -349,6 +349,7 @@ MIDDLEWARE = (
     'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.http.ConditionalGetMiddleware',
+    'simple_history.middleware.HistoryRequestMiddleware',
 #    'ietf.middleware.sql_log_middleware',
     'ietf.middleware.SMTPExceptionMiddleware',
     'ietf.middleware.Utf8ExceptionMiddleware',
@@ -385,6 +386,7 @@ INSTALLED_APPS = (
     'django_password_strength',
     'djangobwr',
     'form_utils',
+    'simple_history',
     'tastypie',
     'widget_tweaks',
     # IETF apps
