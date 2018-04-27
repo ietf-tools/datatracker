@@ -694,7 +694,7 @@ class NomcomViewsTest(TestCase):
 
         # check objects
         email = Email.objects.get(address=candidate_email)
-        Person.objects.get(name=candidate_name, address=candidate_email)
+        Person.objects.get(name=candidate_name)
         nominee = Nominee.objects.get(email=email)
         NomineePosition.objects.get(position=position, nominee=nominee)
         feedback = Feedback.objects.filter(positions__in=[position],

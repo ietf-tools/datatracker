@@ -207,7 +207,6 @@ class IetfAuthTests(TestCase):
             "name": u"Test Nãme",
             "ascii": u"Test Name",
             "ascii_short": u"T. Name",
-            "address": "Test address",
             "affiliation": "Test Org",
             "active_emails": email_address,
         }

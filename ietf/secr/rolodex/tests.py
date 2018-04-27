@@ -41,7 +41,6 @@ class RolodexTestCase(TestCase):
             'ascii': 'Joe Smith',
             'ascii_short': 'Joe S',
             'affiliation': 'IETF',
-            'address': '100 First Ave',
             'email': 'joes@exanple.com',
             'submit': 'Submit',
         }
@@ -63,7 +62,6 @@ class RolodexTestCase(TestCase):
             'ascii': person.ascii,
             'ascii_short': person.ascii_short,
             'affiliation': person.affiliation,
-            'address': person.address,
             'user': user.username,
             'email-0-person':person.pk,
             'email-0-address': person.email_address(),

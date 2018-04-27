@@ -1435,7 +1435,7 @@ class ChangeReplacesTests(TestCase):
             expires=datetime.datetime.now() + datetime.timedelta(days=settings.INTERNET_DRAFT_DAYS_TO_EXPIRE),
             group=mars_wg,
         )
-        p = Person.objects.create(address="basea_author")
+        p = Person.objects.create(name="basea_author")
         e = Email.objects.create(address="basea_author@example.com", person=p)
         self.basea.documentauthor_set.create(person=p, email=e, order=1)
 

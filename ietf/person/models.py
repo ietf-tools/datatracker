@@ -37,7 +37,6 @@ class PersonInfo(models.Model):
     # The short ascii-form of the name.  Also in alias table if non-null
     ascii_short = models.CharField("Abbreviated Name (ASCII)", max_length=32, null=True, blank=True, help_text="Example: A. Nonymous.  Fill in this with initials and surname only if taking the initials and surname of the ASCII name above produces an incorrect initials-only form. (Blank is OK).")
     affiliation = models.CharField(max_length=255, blank=True, help_text="Employer, university, sponsor, etc.")
-    address = models.TextField(max_length=255, blank=True, help_text="Postal mailing address.")
     biography = models.TextField(blank=True, help_text="Short biography for use on leadership pages. Use plain text or reStructuredText markup.")
     photo = models.ImageField(storage=NoLocationMigrationFileSystemStorage(), upload_to=settings.PHOTOS_DIRNAME, blank=True, default=None)
     photo_thumb = models.ImageField(storage=NoLocationMigrationFileSystemStorage(), upload_to=settings.PHOTOS_DIRNAME, blank=True, default=None)

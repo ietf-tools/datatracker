@@ -375,7 +375,7 @@ def make_nomineeposition_for_newperson(nomcom, candidate_name, candidate_email, 
     email = Email.objects.create(address=candidate_email)
     person = Person.objects.create(name=candidate_name,
                                    ascii=unidecode_name(candidate_name),
-                                   address=candidate_email)
+                                   )
     email.person = person
     email.save()
 
