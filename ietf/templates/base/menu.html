@@ -44,6 +44,7 @@
     <ul class="dropdown-menu" role="menu">
   {% endif %}
   <li><a href="{% url "ietf.doc.views_search.search" %}">Search</a></li>
+  <li><a href="{% url "ietf.doc.views_search.recent_drafts" %}">Recent drafts</a></li>
   <li><a href="{% url "ietf.submit.views.upload_submission" %}">Draft submission</a></li>
 
   {% if user and user.is_authenticated %}

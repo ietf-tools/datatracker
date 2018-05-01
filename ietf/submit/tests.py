@@ -470,6 +470,12 @@ class SubmitTests(TestCase):
         self.assertTrue("New Version Notification" in outbox[-1]["Subject"])
         self.assertTrue(name in unicode(outbox[-1]))
         self.assertTrue("mars" in unicode(outbox[-1]))
+        #
+        r = self.client.get(urlreverse('ietf.doc.views_search.recent_drafts'))
+        self.assertEqual(r.status_code, 200)
+        self.assertIn(draft.name,  unicontent(r))
+        self.assertIn(draft.title, unicontent(r))
+
 
     def test_submit_existing_txt(self):
         self.submit_existing(["txt"])
@@ -587,6 +593,11 @@ class SubmitTests(TestCase):
         draft = Document.objects.get(docalias__name=name)
         self.assertEqual(draft.rev, rev)
         self.assertEqual(draft.relateddocument_set.filter(relationship_id='replaces').count(), replaces_count)
+        #
+        r = self.client.get(urlreverse('ietf.doc.views_search.recent_drafts'))
+        self.assertEqual(r.status_code, 200)
+        self.assertIn(draft.name,  unicontent(r))
+        self.assertIn(draft.title, unicontent(r))
 
     def test_submit_cancel_confirmation(self):
         draft = make_test_data()

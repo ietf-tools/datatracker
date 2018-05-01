@@ -46,7 +46,7 @@ from django.utils.cache import _generate_cache_key
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import ( Document, DocHistory, DocAlias, State,
-    LastCallDocEvent, IESG_SUBSTATE_TAGS )
+    LastCallDocEvent, NewRevisionDocEvent, IESG_SUBSTATE_TAGS )
 from ietf.doc.fields import select2_id_doc_name_json
 from ietf.doc.utils import get_search_cache_key
 from ietf.group.models import Group
@@ -448,6 +448,22 @@ def drafts_in_iesg_process(request):
             "grouped_docs": grouped_docs,
             "title": title,
             })
+
+def recent_drafts(request, days=7):
+    since = datetime.datetime.now()-datetime.timedelta(days=days)
+    state = State.objects.get(type='draft', slug='active')
+    events = NewRevisionDocEvent.objects.filter(time__gt=since)
+    names = [ e.doc.name for e in events ]
+    docs = Document.objects.filter(name__in=names, states=state)
+    results, meta = prepare_document_table(request, docs, query={'sort':'-date', }, max_results=len(names))
+    pages = 0
+    for doc in results:
+        pages += doc.pages
+
+    return render(request, 'doc/recent_drafts.html', {
+        'docs':results, 'meta':meta, 'pages':pages, 'days': days,
+    })
+
 
 def index_all_drafts(request):
     # try to be efficient since this view returns a lot of data
