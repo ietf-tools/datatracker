@@ -307,8 +307,11 @@ class AdminTestCase(TestCase):
             #
             model_list = apps.get_app_config(name).get_models()
             for model in model_list:
-                self.assertContains(r, model._meta.model_name,
-                    msg_prefix="There doesn't seem to be any admin API for model %s.models.%s"%(app.__name__,model.__name__,))
+                if model.__name__.startswith('Historical') and hasattr(model, "get_history_type_display"):
+                    continue
+                else:
+                    self.assertContains(r, model._meta.model_name,
+                        msg_prefix="There doesn't seem to be any admin API for model %s.models.%s"%(app.__name__,model.__name__,))
 
 ## One might think that the code below would work, but it doesn't ...
 

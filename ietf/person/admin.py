@@ -1,7 +1,7 @@
 from django.contrib import admin
+import simple_history
 
-
-from ietf.person.models import Email, Alias, Person, PersonalApiKey, PersonEvent, PersonApiKeyEvent, HistoricalPerson
+from ietf.person.models import Email, Alias, Person, PersonalApiKey, PersonEvent, PersonApiKeyEvent
 from ietf.person.name import name_parts
 
 class EmailAdmin(admin.ModelAdmin):
@@ -22,7 +22,7 @@ admin.site.register(Alias, AliasAdmin)
 class AliasInline(admin.StackedInline):
     model = Alias
 
-class PersonAdmin(admin.ModelAdmin):
+class PersonAdmin(simple_history.admin.SimpleHistoryAdmin):
     def plain_name(self, obj):
         prefix, first, middle, last, suffix = name_parts(obj.name)
         return "%s %s" % (first, last)
@@ -53,12 +53,3 @@ class PersonApiKeyEventAdmin(admin.ModelAdmin):
 admin.site.register(PersonApiKeyEvent, PersonApiKeyEventAdmin)
 
 
-class HistoricalPersonAdmin(admin.ModelAdmin):
-    def plain_name(self, obj):
-        prefix, first, middle, last, suffix = name_parts(obj.name)
-        return "%s %s" % (first, last)
-    list_display = ["history_date", "name", "plain_name", "time", "history_user", "history_change_reason", ]
-    search_fields = ["name", "ascii"]
-    raw_id_fields = ["user", "history_user", ]
-#    actions = None
-admin.site.register(HistoricalPerson, HistoricalPersonAdmin)
