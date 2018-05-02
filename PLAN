@@ -7,6 +7,9 @@ Updated: $Date$
 Planned work in rough order
 ===========================
 
+* Changes to address requirements of the EU General Data Protection Regulation
+  (GDPR).
+
 * Revisit the review tool, work through the accumulated tickets.
 
 * GroupFeatures cleanup.  Move most to fields on GroupTypeName, and fix places
@@ -16,7 +19,7 @@ Planned work in rough order
   could have been done with only table edits if there hadn't been so much code
   using type_id lists and features needing code changes).
 
-* GDPR related changes
+* Polish the htmlization pages, making the style identical with tools.ietf.org.
 
 * Reworked UI and refactored backend for the scretariat meeting scheduling
   tool.
@@ -29,8 +32,6 @@ Planned work in rough order
 
 * Rework email subjects for messages relating to documents to consistently
   start with the document name.
-
-* Polish the htmlization pages, making the style identical with tools.ietf.org.
 
 * Transition from the bower package manager to yarn.  Some packages are
   phasing out bower support, and yarn is gaining wider acceptance as web asset
