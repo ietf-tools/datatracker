@@ -1,5 +1,21 @@
 ietfdb (6.79.1) ietf; urgency=medium
 
+  This bugfix release fixes problems with IESG ballot clearing, marks dead
+  code as unreachable for later removal, adds new tests to increase test
+  coverage, and fixes some issues with the test suite.  It also tweaks the
+  roles which are permitted to request document publication, loosens the
+  need for trailing slashes for some URLs, and adds a 'Recent drafts' page.
+
+  * Merged in [15084] from rjsparks@nostrum.com:
+    Corrected the implementation of clear_ballot. Added a test for it.
+    Restored functionality to ballot popups that was missing because a
+    template variable was not passed in.  
+
+  * Added a 'recent drafts' page, showing drafs submitted the last 7 days.
+
+  * Merged in [15083] from rjsparks@nostrum.com:
+    Removed memoize from latest_event.  
+
   * Merged in [15080] from rjsparks@nostrum.com:
     Marked a couple of functions as unreachable.  
 
@@ -18,10 +34,6 @@ ietfdb (6.79.1) ietf; urgency=medium
   * Merged in [15075] from rjsparks@nostrum.com:
     Improved testing for docs_for_ad. 
 
-  * Excluded nepalese from person name locales, to avoid test names that 
-    contain nonspacing marks that python 2.7 doesn't match to \w, which creates 
-    urlpattern issues.
-
   * Merged in [15074] from rjsparks@nostrum.com:
     Simplified docs_in_iesg_process. Added a test for it. 
 
@@ -33,7 +45,7 @@ ietfdb (6.79.1) ietf; urgency=medium
   * Added permission for a document shepherd to request publication.  Fixes 
     issue #2509.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  26 Apr 2018 12:08:20 +0000
+ -- Henrik Levkowetz <henrik@levkowetz.com>  02 May 2018 10:42:26 +0000
 
 
 ietfdb (6.79.0) ietf; urgency=medium
