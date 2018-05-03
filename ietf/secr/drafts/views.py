@@ -481,31 +481,6 @@ def add(request):
     )
 
 @role_required('Secretariat')
-def announce(request, id):
-    '''
-    Schedule announcement of new Internet-Draft to I-D Announce list
-
-    **Templates:**
-
-    * none
-
-    **Template Variables:**
-
-    * none
-    '''
-    draft = get_object_or_404(Document, name=id)
-
-    email_form = EmailForm(get_email_initial(draft,action='new'))
-                            
-    announcement_from_form(email_form.data,
-                           by=request.user.person,
-                           from_val='Internet-Drafts@ietf.org',
-                           content_type='Multipart/Mixed; Boundary="NextPart"')
-            
-    messages.success(request, 'Announcement scheduled successfully!')
-    return redirect('ietf.secr.drafts.views.view', id=id)
-
-@role_required('Secretariat')
 def approvals(request):
     '''
     This view handles setting Initial Approval for drafts

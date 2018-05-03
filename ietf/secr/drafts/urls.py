@@ -10,7 +10,6 @@ urlpatterns = [
     url(r'^nudge-report/$', views.nudge_report),
     url(r'^(?P<id>[A-Za-z0-9._\-\+]+)/$', views.view),
     url(r'^(?P<id>[A-Za-z0-9._\-\+]+)/abstract/$', views.abstract),
-    url(r'^(?P<id>[A-Za-z0-9._\-\+]+)/announce/$', views.announce),
     url(r'^(?P<id>[A-Za-z0-9._\-\+]+)/authors/$', views.authors),
     url(r'^(?P<id>[A-Za-z0-9._\-\+]+)/author_delete/(?P<oid>\d{1,6})$', views.author_delete),
     url(r'^(?P<id>[A-Za-z0-9._\-\+]+)/confirm/$', views.confirm),
