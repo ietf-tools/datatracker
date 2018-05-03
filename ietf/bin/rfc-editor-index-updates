@@ -36,7 +36,7 @@ from ietf.utils.pipe import pipe
 from ietf.doc.utils import rebuild_reference_relations
 import ietf.sync.rfceditor
 
-syslog.syslog("Updating document metadata from RFC index from %s" % settings.RFC_EDITOR_QUEUE_URL)
+syslog.syslog("Updating document metadata from RFC index from %s" % settings.RFC_EDITOR_INDEX_URL)
 
 response = ietf.sync.rfceditor.fetch_index_xml(settings.RFC_EDITOR_INDEX_URL)
 data = ietf.sync.rfceditor.parse_index(response)
