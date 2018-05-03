@@ -11,7 +11,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from django.utils.http import urlencode
 
-from ietf.doc.models import Document, DocumentAuthor, DocAlias, DocRelationshipName, RelatedDocument, State
+from ietf.doc.models import Document, DocumentAuthor, DocAlias, State
 from ietf.doc.models import DocEvent, NewRevisionDocEvent
 from ietf.doc.utils import add_state_change_event
 from ietf.ietfauth.utils import role_required
@@ -20,7 +20,7 @@ from ietf.name.models import StreamName
 from ietf.person.models import Person
 from ietf.secr.drafts.email import announcement_from_form, get_email_initial
 from ietf.secr.drafts.forms import ( AddModelForm, AuthorForm, BaseRevisionModelForm, EditModelForm,
-                                    EmailForm, ExtendForm, ReplaceForm, RevisionModelForm, 
+                                    EmailForm, ExtendForm, RevisionModelForm, 
                                     SearchForm, UploadForm, WithdrawForm )
 from ietf.secr.utils.ams_utils import get_base
 from ietf.secr.utils.document import get_rfc_num, get_start_date
@@ -193,41 +193,6 @@ def do_extend(draft, request):
     
     return
 
-def do_replace(draft, request):
-    'Perform document replace'
-
-    replaced = DocAlias.objects.get(name=request.POST.get('replaced'))          # a DocAlias
-    replaced_by = Document.objects.get(name=request.POST.get('replaced_by'))    # a Document
-
-    # create relationship
-    RelatedDocument.objects.create(source=replaced_by,
-                                   target=replaced,
-                                   relationship=DocRelationshipName.objects.get(slug='replaces'))
-
-
-
-    draft.set_state(State.objects.get(type="draft", slug="repl"))
-
-    e = DocEvent.objects.create(
-        type='changed_document',
-        by=request.user.person,
-        doc=replaced_by,
-        rev=replaced_by.rev,
-        time=draft.time,
-        desc='This document now replaces <b>%s</b>' % replaced,
-    )
-
-    draft.save_with_history([e])
-
-    # move replaced document to archive
-    archive_draft_files(replaced.document.name + '-' + replaced.document.rev)
-
-    # send announcement
-    form = EmailForm(request.POST)
-    announcement_from_form(form.data,by=request.user.person)
-
-    return
-    
 def do_resurrect(draft, request):
     '''
      Actions
@@ -667,8 +632,6 @@ def do_action(request, id):
             func = do_revision
         elif action == 'resurrect':
             func = do_resurrect
-        elif action == 'replace':
-            func = do_replace
         elif action == 'update':
             func = do_update_announce
         elif action == 'extend':
@@ -900,42 +863,6 @@ def nudge_report(request):
         'docs': docs},
     )
     
-@role_required('Secretariat')
-def replace(request, id):
-    '''
-    This view handles replacing one Internet-Draft with another 
-    Prerequisites: draft must be active
-    Input: replacement draft filename
-  
-    # TODO: support two different replaced messages in email
-    '''
-    
-    draft = get_object_or_404(Document, name=id)
-    
-    if request.method == 'POST':
-        button_text = request.POST.get('submit', '')
-        if button_text == 'Cancel':
-            return redirect('ietf.secr.drafts.views.view', id=id)
-
-        form = ReplaceForm(request.POST, draft=draft)
-        if form.is_valid():
-            #params = form.cleaned_data
-            params = {}
-            params['replaced'] = form.data['replaced']
-            params['replaced_by'] = form.data['replaced_by']
-            params['action'] = 'replace'
-            url = reverse('ietf.secr.drafts.views.email', kwargs={'id':id})
-            url = url + '?' + urlencode(params)
-            return redirect(url)
-
-    else:
-        form = ReplaceForm(draft=draft)
-
-    return render(request, 'drafts/replace.html', {
-        'form': form,
-        'draft': draft},
-    )
-
 @role_required('Secretariat')
 def revision(request, id):
     '''

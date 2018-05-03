@@ -331,40 +331,6 @@ class SecrDraftsTestCase(TestCase):
         draft = Document.objects.get(name=draft.name)
         self.assertTrue(draft.get_state_slug('draft') == 'ietf-rm')
 
-    def test_replace(self):
-        draft = make_test_data()
-        other_draft = Document.objects.filter(type='draft').exclude(name=draft.name).first()
-        url = urlreverse('ietf.secr.drafts.views.replace', kwargs={'id':draft.name})
-        email_url = urlreverse('ietf.secr.drafts.views.email', kwargs={'id':draft.name})
-        confirm_url = urlreverse('ietf.secr.drafts.views.confirm', kwargs={'id':draft.name})
-        do_action_url = urlreverse('ietf.secr.drafts.views.do_action', kwargs={'id':draft.name})
-        view_url = urlreverse('ietf.secr.drafts.views.view', kwargs={'id':draft.name})
-        self.client.login(username="secretary", password="secretary+password")
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, 200)
-        get_data = {
-            'action': 'replace',
-            'replaced': draft.name,
-            'replaced_by': other_draft.name,
-        }
-        post_data = {
-            'action': 'replace',
-            'replaced': draft.name,
-            'replaced_by': other_draft.name,
-            'to': 'john@example.com',
-            'cc': 'joe@example.com',
-            'subject': 'test',
-            'body': 'draft resurrected',
-            'submit': 'Save'
-        }
-        response = self.client.get(email_url + '?' + urlencode(get_data)) 
-        self.assertEqual(response.status_code, 200)
-        response = self.client.post(confirm_url, post_data)
-        response = self.client.post(do_action_url, post_data)
-        self.assertRedirects(response, view_url)
-        draft = Document.objects.get(name=draft.name)
-        self.assertTrue(draft.get_state_slug('draft') == 'repl')
-
     def test_authors(self):
         draft = DocumentFactory()
         person = PersonFactory()
