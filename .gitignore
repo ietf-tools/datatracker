@@ -25,6 +25,7 @@
 /bin
 /etc
 /ghostdriver.log
+/htmlcov
 /include
 /INSTALL.pdf
 /latest-coverage.json
