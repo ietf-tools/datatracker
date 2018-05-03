@@ -1,7 +1,6 @@
 import datetime
 import glob
 import os
-import time
 
 from django.conf import settings
 from django.template.loader import render_to_string
@@ -173,13 +172,11 @@ def get_fullcc_list(draft):
 def get_email_initial(draft, action=None, input=None):
     """
     Takes a draft object, a string representing the email type:
-    (extend,new,replace,resurrect,revision,update,withdraw) and
-    a dictonary of the action form input data (for use with replace, update, extend).
+    (extend,resurrect,revision,update,withdraw) and
+    a dictonary of the action form input data (for use with update, extend).
     Returns a dictionary containing initial field values for a email notification.
     The dictionary consists of to, cc, subject, body.
     
-    NOTE: for type=new we are listing all authors in the message body to match legacy app.
-    It appears datatracker abbreviates the list with "et al".  
     """
     expiration_date = (datetime.date.today() + datetime.timedelta(185)).strftime('%B %d, %Y')
     new_revision = str(int(draft.rev)+1).zfill(2)
@@ -196,33 +193,6 @@ def get_email_initial(draft, action=None, input=None):
         data['body'] = render_to_string('drafts/message_extend.txt', context)
         data['expiration_date'] = input['expiration_date']
 
-    elif action == 'new':
-        # if the ID belongs to a group other than "none" add line to message body
-        if draft.group.type.slug == 'wg':
-            wg_message = 'This draft is a work item of the %s Working Group of the IETF.' % draft.group.name
-        else:
-            wg_message = ''
-        context = {'wg_message':wg_message,
-                   'draft':draft,
-                   'authors':get_abbr_authors(draft),
-                   'revision_date':draft.latest_event(type='new_revision').time.date(),
-                   'timestamp':time.strftime("%Y-%m-%d%H%M%S", time.localtime())}
-        data['to'] = 'i-d-announce@ietf.org'
-        data['cc'] = draft.group.list_email
-        data['subject'] = 'I-D Action: %s' % (curr_filename)
-        data['body'] = render_to_string('drafts/message_new.txt', context)
-
-    elif action == 'replace':
-        '''
-        input['replaced'] is a DocAlias
-        input['replaced_by'] is a Document
-        '''
-        context = {'doc':input['replaced'],'replaced_by':input['replaced_by']}
-        data['subject'] = 'Replacement of %s with %s' % (input['replaced'],input['replaced_by'])
-        data['body'] = render_to_string('drafts/message_replace.txt', context)
-        data['replaced'] = input['replaced']
-        data['replaced_by'] = input['replaced_by']
-        
     elif action == 'resurrect':
         last_revision = get_last_revision(draft.name)
         last_filename = draft.name + '-' + last_revision + '.txt'
