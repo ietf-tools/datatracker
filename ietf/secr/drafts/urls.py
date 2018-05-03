@@ -17,7 +17,6 @@ urlpatterns = [
     url(r'^(?P<id>[A-Za-z0-9._\-\+]+)/edit/$', views.edit),
     url(r'^(?P<id>[A-Za-z0-9._\-\+]+)/extend/$', views.extend),
     url(r'^(?P<id>[A-Za-z0-9._\-\+]+)/email/$', views.email),
-    # url(r'^(?P<id>[A-Za-z0-9._\-\+]+)/makerfc/$', views.makerfc), # Not used any more
     url(r'^(?P<id>[A-Za-z0-9._\-\+]+)/revision/$', views.revision),
     url(r'^(?P<id>[A-Za-z0-9._\-\+]+)/update/$', views.update),
     url(r'^(?P<id>[A-Za-z0-9._\-\+]+)/withdraw/$', views.withdraw),
