@@ -4,7 +4,7 @@ import os
 
 from django import forms
 
-from ietf.doc.models import Document, DocAlias, State
+from ietf.doc.models import Document, State
 from ietf.name.models import IntendedStdLevelName
 from ietf.group.models import Group
 from ietf.person.models import Person, Email
@@ -238,26 +238,6 @@ class EmailForm(forms.Form):
 class ExtendForm(forms.Form):
     action = forms.CharField(max_length=255, widget=forms.HiddenInput(),initial='extend')
     expiration_date = forms.DateField()
-
-class ReplaceForm(forms.Form):
-    replaced = AliasModelChoiceField(DocAlias.objects.none(),empty_label=None,help_text='This document may have more than one alias.  Be sure to select the correct alias to replace.')
-    replaced_by = forms.CharField(max_length=100,help_text='Enter the filename of the Draft which replaces this one.')
-
-    def __init__(self, *args, **kwargs):
-        self.draft = kwargs.pop('draft')
-        super(ReplaceForm, self).__init__(*args, **kwargs)
-        self.fields['replaced'].queryset = DocAlias.objects.filter(document=self.draft)
-
-    # field must contain filename of existing draft
-    def clean_replaced_by(self):
-        name = self.cleaned_data.get('replaced_by', '')
-        try:
-            doc = Document.objects.get(name=name)
-        except Document.DoesNotExist:
-            raise forms.ValidationError("ERROR: Draft does not exist: %s" % name)
-        if name == self.draft.name:
-            raise forms.ValidationError("ERROR: A draft can't replace itself")
-        return doc
 
 class BaseRevisionModelForm(forms.ModelForm):
     class Meta:
