@@ -18,7 +18,7 @@ from ietf.meeting.helpers import get_next_interim_number, make_materials_directo
 from ietf.meeting.helpers import is_meeting_approved, get_next_agenda_name
 from ietf.message.models import Message
 from ietf.person.models import Person
-from ietf.utils.fields import DatepickerDateField, DurationField
+from ietf.utils.fields import DatepickerDateField, DurationField, MultiEmailField
 from ietf.utils.validators import ( validate_file_size, validate_mime_type,
     validate_file_extension, validate_no_html_frame)
 
@@ -345,4 +345,8 @@ class FileUploadForm(forms.Form):
             validate_no_html_frame(file)
         return file
 
-        
+class RequestMinutesForm(forms.Form):
+    to = MultiEmailField()
+    cc = MultiEmailField(required=False)
+    subject = forms.CharField()
+    body = forms.CharField(widget=forms.Textarea,strip=False)

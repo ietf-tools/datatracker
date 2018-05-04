@@ -10,14 +10,14 @@
 
 {% block bodyAttrs %}data-spy="scroll" data-target="#affix"{% endblock %}
 
-{% block title %}IETF {{ meeting_num }} preliminary &amp; interim materials{% endblock %}
+{% block title %}IETF {{ meeting.number }} preliminary &amp; interim materials{% endblock %}
 
 {% block content %}
   {% origin %}
   <div class="row">
     <div class="col-md-10">
 
-      <h1>IETF {{ meeting_num }} meeting materials</h1>
+      <h1>IETF {{ meeting.number }} meeting materials</h1>
 
       {% if submission_started %}
         <p class="alert alert-info">
@@ -29,8 +29,11 @@
       <p>
         {% if user|has_role:"Secretariat" %}
           <a class="btn btn-default" href="{% url 'ietf.secr.proceedings.views.main' %}">Secretariat proceedings functions</a>
+          {% if meeting.end_date.today > meeting.end_date %}
+            <a class="btn btn-default" href="{% url 'ietf.meeting.views.request_minutes' num=meeting.number %}">Send request for minutes</a>
+          {% endif %}
         {% endif %}
-        <a class="btn btn-default" href="/meeting/{{meeting_num}}/requests">Meeting requests/conflicts</a>
+        <a class="btn btn-default" href="/meeting/{{meeting.number}}/requests">Meeting requests/conflicts</a>
       </p>
 
       {% with "True" as show_agenda %}
