@@ -1277,7 +1277,7 @@
   },
   {
     "fields": {
-      "desc": "The IESG and IAB are reviewing the early draft of the charter; this is the initial IESG and IAB review. The usual next state is External review if the idea is adopted, or Informal IESG review if the IESG decides the idea needs more work, or Not currently under review is the idea is abandoned",
+      "desc": "The IESG and IAB are reviewing the early draft of the charter; this is the initial IESG and IAB review. The usual next state is External review if the idea is adopted, or Informal IESG review if the IESG decides the idea needs more work, or Not currently under review if the idea is abandoned",
       "name": "Internal review",
       "next_states": [],
       "order": 0,
@@ -1290,7 +1290,7 @@
   },
   {
     "fields": {
-      "desc": "The IETF community and possibly other standards development organizations (SDOs) are reviewing the proposed charter. The usual next state is IESG review, although it might move to Not currently under review is the idea is abandoned during the external review.",
+      "desc": "The IETF community and possibly other standards development organizations (SDOs) are reviewing the proposed charter. The usual next state is IESG review, although it might move to Not currently under review if the idea is abandoned during the external review.",
       "name": "External review",
       "next_states": [],
       "order": 0,
@@ -2127,6 +2127,45 @@
     },
     "model": "doc.state",
     "pk": 146
+  },
+  {
+    "fields": {
+      "desc": "Replaced",
+      "name": "Replaced",
+      "next_states": [],
+      "order": 0,
+      "slug": "repl",
+      "type": "draft-stream-iab",
+      "used": true
+    },
+    "model": "doc.state",
+    "pk": 147
+  },
+  {
+    "fields": {
+      "desc": "Replaced",
+      "name": "Replaced",
+      "next_states": [],
+      "order": 0,
+      "slug": "repl",
+      "type": "draft-stream-ise",
+      "used": true
+    },
+    "model": "doc.state",
+    "pk": 148
+  },
+  {
+    "fields": {
+      "desc": "Replaced",
+      "name": "Replaced",
+      "next_states": [],
+      "order": 0,
+      "slug": "repl",
+      "type": "draft-stream-irtf",
+      "used": true
+    },
+    "model": "doc.state",
+    "pk": 149
   },
   {
     "fields": {
@@ -8451,7 +8490,7 @@
   },
   {
     "fields": {
-      "default_offset_days": -8,
+      "default_offset_days": -47,
       "desc": "Early Bird registration and payment cut-off at UTC 23:59",
       "name": "Earlybird cutoff",
       "order": 0,
@@ -8484,7 +8523,7 @@
   },
   {
     "fields": {
-      "default_offset_days": -68,
+      "default_offset_days": -82,
       "desc": "IETF Online Registration Opens",
       "name": "Registration Opens",
       "order": 0,
@@ -8547,6 +8586,17 @@
     },
     "model": "name.importantdatename",
     "pk": "revwgagenda"
+  },
+  {
+    "fields": {
+      "default_offset_days": -12,
+      "desc": "Standard rate registration and payment cut-off at UTC 23:59.",
+      "name": "Standard rate registration ends",
+      "order": 18,
+      "used": true
+    },
+    "model": "name.importantdatename",
+    "pk": "stdratecutoff"
   },
   {
     "fields": {
@@ -10022,7 +10072,7 @@
     "fields": {
       "command": "xym",
       "switch": "--version",
-      "time": "2018-03-23T00:08:43.130",
+      "time": "2018-05-03T00:07:54.849",
       "used": true,
       "version": "xym 0.4"
     },
@@ -10033,9 +10083,9 @@
     "fields": {
       "command": "pyang",
       "switch": "--version",
-      "time": "2018-03-23T00:08:44.177",
+      "time": "2018-05-03T00:07:55.605",
       "used": true,
-      "version": "pyang 1.7.4"
+      "version": "pyang 1.7.5"
     },
     "model": "utils.versioninfo",
     "pk": 2
@@ -10044,9 +10094,9 @@
     "fields": {
       "command": "yanglint",
       "switch": "--version",
-      "time": "2018-03-23T00:08:44.295",
+      "time": "2018-05-03T00:07:55.737",
       "used": true,
-      "version": "yanglint 0.14.73"
+      "version": "yanglint 0.14.78"
     },
     "model": "utils.versioninfo",
     "pk": 3
@@ -10055,7 +10105,7 @@
     "fields": {
       "command": "xml2rfc",
       "switch": "--version",
-      "time": "2018-03-23T00:08:45.862",
+      "time": "2018-05-03T00:07:56.594",
       "used": true,
       "version": "xml2rfc 2.9.6"
     },

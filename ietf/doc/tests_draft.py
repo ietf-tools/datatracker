@@ -1566,3 +1566,21 @@ class ChangeReplacesTests(TestCase):
         self.assertTrue(not self.replacea.related_that_doc("possibly-replaces"))
         self.assertEqual(len(self.replacea.related_that_doc("replaces")), 1)
         self.assertEquals(Document.objects.get(pk=self.basea.pk).get_state().slug, 'repl')
+
+class MoreReplacesTests(TestCase):
+
+    def test_stream_state_changes_when_replaced(self):
+        self.client.login(username='secretary',password='secretary+password')
+        for stream in ('iab','irtf','ise'):
+            old_doc = DocumentFactory(stream_id=stream)
+            old_doc.set_state(State.objects.get(type_id='draft-stream-%s'%stream, slug='ise-rev' if stream=='ise' else 'active'))
+            new_doc = DocumentFactory(stream_id=stream)
+
+            url = urlreverse('ietf.doc.views_draft.replaces', kwargs=dict(name=new_doc.name))
+            r = self.client.post(url, dict(replaces=old_doc.name))
+            self.assertEqual(r.status_code,302)
+            old_doc = Document.objects.get(name=old_doc.name)
+            self.assertEqual(old_doc.get_state_slug('draft'),'repl')
+            self.assertEqual(old_doc.get_state_slug('draft-stream-%s'%stream),'repl')
+
+            

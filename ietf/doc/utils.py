@@ -592,6 +592,11 @@ def set_replaces_for_document(request, doc, new_replaces, by, email_subject, com
             cc.update(other_addrs.cc)
             RelatedDocument.objects.create(source=doc, target=d, relationship=relationship)
             d.document.set_state(State.objects.get(type='draft', slug='repl'))
+            
+            if d.document.stream_id in ('irtf','ise','iab'):
+                repl_state = State.objects.get(type_id='draft-stream-%s'%d.document.stream_id, slug='repl')
+                d.document.set_state(repl_state)
+                events.append(StateDocEvent.objects.create(doc=d.document, rev=d.document.rev, by=by, type='changed_state', desc="Set stream state to Replaced",state_type=repl_state.type, state=repl_state))
 
     # make sure there are no lingering suggestions duplicating new replacements
     RelatedDocument.objects.filter(source=doc, target__in=new_replaces, relationship="possibly-replaces").delete()
