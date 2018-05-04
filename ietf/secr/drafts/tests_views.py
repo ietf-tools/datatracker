@@ -74,23 +74,16 @@ class SecrDraftsTestCase(TestCase):
         response = self.client.post(url,post)
         self.assertEqual(response.status_code, 302)
         
-    def test_announce(self):
-        draft = make_test_data()
-        url = urlreverse('ietf.secr.drafts.views.announce', kwargs={'id':draft.name})
-        self.client.login(username="secretary", password="secretary+password")
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, 302)
-        
-    def test_approvals(self):
-        make_test_data()
-        Preapproval.objects.create(name='draft-dummy',
-            by=Person.objects.get(name="(System)"))
-        url = urlreverse('ietf.secr.drafts.views.approvals')
-        self.client.login(username="secretary", password="secretary+password")
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue('draft-dummy' in response.content)
-    
+    def test_approvals(self): 
+        make_test_data() 
+        Preapproval.objects.create(name='draft-dummy', 
+            by=Person.objects.get(name="(System)")) 
+        url = urlreverse('ietf.secr.drafts.views.approvals') 
+        self.client.login(username="secretary", password="secretary+password") 
+        response = self.client.get(url) 
+        self.assertEqual(response.status_code, 200) 
+        self.assertTrue('draft-dummy' in response.content) 
+
     def test_edit(self):
         draft = make_test_data()
         url = urlreverse('ietf.secr.drafts.views.edit', kwargs={'id':draft.name})
