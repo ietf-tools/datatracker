@@ -61,7 +61,6 @@ class RolodexTestCase(TestCase):
             'name': person.name,
             'ascii': person.ascii,
             'ascii_short': person.ascii_short,
-            'affiliation': person.affiliation,
             'user': user.username,
             'email-0-person':person.pk,
             'email-0-address': person.email_address(),

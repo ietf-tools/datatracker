@@ -7,8 +7,6 @@ The merged record is:
 
 Name: {{ person.plain_name }}
 Aliases: {{ person.alias_set.all|join:", " }}
-Address: {{ person.address }}
-Affiliation: {{ person.affiliation }}
 User (login): {{ person.user.username }}
 
 Emails:
