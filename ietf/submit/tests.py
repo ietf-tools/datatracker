@@ -324,7 +324,7 @@ class SubmitTests(TestCase):
         prev_author = draft.documentauthor_set.all()[0]
         if change_authors:
             # Make it such that one of the previous authors has an invalid email address
-            bogus_person, bogus_email = ensure_person_email_info_exists(u'Bogus Person',None)
+            bogus_person, bogus_email = ensure_person_email_info_exists(u'Bogus Person', None, draft.name)
             DocumentAuthor.objects.create(document=draft, person=bogus_person, email=bogus_email, order=draft.documentauthor_set.latest('order').order+1)
 
         # pretend IANA reviewed it
