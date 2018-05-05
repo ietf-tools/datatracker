@@ -25,6 +25,7 @@ from ietf.utils.mail import send_mail_preformatted
 from ietf.utils.storage import NoLocationMigrationFileSystemStorage
 from ietf.utils.mail import formataddr
 from ietf.person.name import unidecode_name
+from ietf.utils import log
 from ietf.utils.models import ForeignKey, OneToOneField
 
 
@@ -39,10 +40,10 @@ class Person(models.Model):
     ascii = models.CharField("Full Name (ASCII)", max_length=255, help_text="Name as rendered in ASCII (Latin, unaccented) characters.")
     # The short ascii-form of the name.  Also in alias table if non-null
     ascii_short = models.CharField("Abbreviated Name (ASCII)", max_length=32, null=True, blank=True, help_text="Example: A. Nonymous.  Fill in this with initials and surname only if taking the initials and surname of the ASCII name above produces an incorrect initials-only form. (Blank is OK).")
-    affiliation = models.CharField(max_length=255, blank=True, help_text="Employer, university, sponsor, etc.")
     biography = models.TextField(blank=True, help_text="Short biography for use on leadership pages. Use plain text or reStructuredText markup.")
     photo = models.ImageField(storage=NoLocationMigrationFileSystemStorage(), upload_to=settings.PHOTOS_DIRNAME, blank=True, default=None)
     photo_thumb = models.ImageField(storage=NoLocationMigrationFileSystemStorage(), upload_to=settings.PHOTOS_DIRNAME, blank=True, default=None)
+    name_from_draft = models.CharField("Full Name (from submission)", null=True, max_length=255, editable=False, help_text="Name as found in a draft submission.")
 
     def __unicode__(self):
         return self.plain_name()
@@ -195,7 +196,6 @@ class Person(models.Model):
         ct1['href']      = urljoin(hostscheme, self.json_url())
         ct1['name']      = self.name
         ct1['ascii']     = self.ascii
-        ct1['affiliation']= self.affiliation
         return ct1
 
 class Alias(models.Model):
@@ -226,12 +226,15 @@ class Alias(models.Model):
         verbose_name_plural = "Aliases"
 
 class Email(models.Model):
+    history = HistoricalRecords()
     address = models.CharField(max_length=64, primary_key=True, validators=[validate_email])
     person = ForeignKey(Person, null=True)
     time = models.DateTimeField(auto_now_add=True)
     primary = models.BooleanField(default=False)
+    origin = models.CharField(max_length=150, default='', editable=False)       # User.username or Document.name
     active = models.BooleanField(default=True)      # Old email addresses are *not* purged, as history
-                                        # information points to persons through these
+                                                    # information points to persons through these
+
     def __unicode__(self):
         return self.address or "Email object with id: %s"%self.pk
 
@@ -275,6 +278,10 @@ class Email(models.Model):
             return
         return self.address
 
+    def save(self, *args, **kwargs):
+        if not self.origin:
+            log.assertion('self.origin')
+        super(Email, self).save(*args, **kwargs)
 
 # "{key.id}{salt}{hash}
 KEY_STRUCT = "i12s32s"
