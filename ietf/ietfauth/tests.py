@@ -308,7 +308,7 @@ class IetfAuthTests(TestCase):
         user.set_password("forgotten")
         user.save()
         p = Person.objects.create(name="Some One", ascii="Some One", user=user)
-        Email.objects.create(address=user.username, person=p)
+        Email.objects.create(address=user.username, person=p, origin='test')
         
         # get
         r = self.client.get(url)
@@ -418,7 +418,7 @@ class IetfAuthTests(TestCase):
         user.set_password("password")
         user.save()
         p = Person.objects.create(name="Some One", ascii="Some One", user=user)
-        Email.objects.create(address=user.username, person=p)
+        Email.objects.create(address=user.username, person=p, origin='test')
 
         # log in
         r = self.client.post(redir_url, {"username":user.username, "password":"password"})
@@ -465,8 +465,8 @@ class IetfAuthTests(TestCase):
         user.set_password("password")
         user.save()
         p = Person.objects.create(name="Some One", ascii="Some One", user=user)
-        Email.objects.create(address=user.username, person=p)
-        Email.objects.create(address="othername@example.org", person=p)        
+        Email.objects.create(address=user.username, person=p, origin='test')
+        Email.objects.create(address="othername@example.org", person=p, origin='test')
 
         # log in
         r = self.client.post(redir_url, {"username":user.username, "password":"password"})

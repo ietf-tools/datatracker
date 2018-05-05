@@ -123,7 +123,7 @@ def nomcom_test_data():
         u.set_password(COMMUNITY_USER+"+password")
         u.save()
     plainman, _ = Person.objects.get_or_create(name="Plain Man", ascii="Plain Man", user=u)
-    email, _ = Email.objects.get_or_create(address="plain@example.com", person=plainman)
+    email, _ = Email.objects.get_or_create(address="plain@example.com", person=plainman, origin='test')
     nominee, _ = Nominee.objects.get_or_create(email=email, nomcom=nomcom)
 
     # positions

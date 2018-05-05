@@ -1001,7 +1001,7 @@ class IndividualInfoFormsTests(TestCase):
         doc.shepherd = Email.objects.get(person__user__username="plain")
         doc.save_with_history([DocEvent.objects.create(doc=doc, rev=doc.rev, type="changed_shepherd", by=Person.objects.get(user__username="secretary"), desc="Test")])
 
-        new_email = Email.objects.create(address="anotheremail@example.com", person=doc.shepherd.person)
+        new_email = Email.objects.create(address="anotheremail@example.com", person=doc.shepherd.person, origin='test')
 
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
@@ -1436,7 +1436,7 @@ class ChangeReplacesTests(TestCase):
             group=mars_wg,
         )
         p = Person.objects.create(name="basea_author")
-        e = Email.objects.create(address="basea_author@example.com", person=p)
+        e = Email.objects.create(address="basea_author@example.com", person=p, origin='test')
         self.basea.documentauthor_set.create(person=p, email=e, order=1)
 
         self.baseb = Document.objects.create(
@@ -1449,7 +1449,7 @@ class ChangeReplacesTests(TestCase):
             group=mars_wg,
         )
         p = Person.objects.create(name="baseb_author")
-        e = Email.objects.create(address="baseb_author@example.com", person=p)
+        e = Email.objects.create(address="baseb_author@example.com", person=p, origin='test')
         self.baseb.documentauthor_set.create(person=p, email=e, order=1)
 
         self.replacea = Document.objects.create(
@@ -1462,7 +1462,7 @@ class ChangeReplacesTests(TestCase):
             group=mars_wg,
         )
         p = Person.objects.create(name="replacea_author")
-        e = Email.objects.create(address="replacea_author@example.com", person=p)
+        e = Email.objects.create(address="replacea_author@example.com", person=p, origin='test')
         self.replacea.documentauthor_set.create(person=p, email=e, order=1)
  
         self.replaceboth = Document.objects.create(
@@ -1475,7 +1475,7 @@ class ChangeReplacesTests(TestCase):
             group=mars_wg,
         )
         p = Person.objects.create(name="replaceboth_author")
-        e = Email.objects.create(address="replaceboth_author@example.com", person=p)
+        e = Email.objects.create(address="replaceboth_author@example.com", person=p, origin='test')
         self.replaceboth.documentauthor_set.create(person=p, email=e, order=1)
  
         self.basea.set_state(State.objects.get(used=True, type="draft", slug="active"))

@@ -38,7 +38,7 @@ def create_person(group, role_name, name=None, username=None, email_address=None
     user.set_password(password)
     user.save()
     person = Person.objects.create(name=name, ascii=unidecode_name(smart_text(name)), user=user)
-    email = Email.objects.create(address=email_address, person=person)
+    email = Email.objects.create(address=email_address, person=person, origin='test')
     Role.objects.create(group=group, name_id=role_name, person=person, email=email)
     return person
 
@@ -61,7 +61,7 @@ def make_immutable_base_data():
 
     # system
     system_person = Person.objects.create(name="(System)", ascii="(System)")
-    Email.objects.create(address="", person=system_person)
+    Email.objects.create(address="", person=system_person, origin='test')
 
     # high-level groups
     ietf = create_group(name="IETF", acronym="ietf", type_id="ietf")
@@ -112,7 +112,7 @@ def make_immutable_base_data():
     for i in range(1, 10):
         u = User.objects.create(username="ad%s" % i)
         p = Person.objects.create(name="Ad No%s" % i, ascii="Ad No%s" % i, user=u)
-        email = Email.objects.create(address="ad%s@ietf.org" % i, person=p)
+        email = Email.objects.create(address="ad%s@ietf.org" % i, person=p, origin='test')
         if i < 6:
             # active
             Role.objects.create(name_id="ad", group=area, person=p, email=email)
@@ -232,7 +232,7 @@ def make_test_data():
     u.set_password("plain+password")
     u.save()
     plainman = Person.objects.create(name="Plain Man", ascii="Plain Man", user=u)
-    email = Email.objects.create(address="plain@example.com", person=plainman)
+    email = Email.objects.create(address="plain@example.com", person=plainman, origin='test')
 
     # group personnel
     create_person(mars_wg, "chair", name="WG Cháir Man", username="marschairman")
@@ -473,7 +473,7 @@ def make_review_data(doc):
     u.set_password("reviewer+password")
     u.save()
     reviewer = Person.objects.create(name=u"Some Réviewer", ascii="Some Reviewer", user=u)
-    email = Email.objects.create(address="reviewer@example.com", person=reviewer)
+    email = Email.objects.create(address="reviewer@example.com", person=reviewer, origin='test')
 
     for team in (team1, team2, team3):
         Role.objects.create(name_id="reviewer", person=reviewer, email=email, group=team)
@@ -496,14 +496,14 @@ def make_review_data(doc):
     u.set_password("reviewsecretary+password")
     u.save()
     reviewsecretary = Person.objects.create(name=u"Réview Secretary", ascii="Review Secretary", user=u)
-    reviewsecretary_email = Email.objects.create(address="reviewsecretary@example.com", person=reviewsecretary)
+    reviewsecretary_email = Email.objects.create(address="reviewsecretary@example.com", person=reviewsecretary, origin='test')
     Role.objects.create(name_id="secr", person=reviewsecretary, email=reviewsecretary_email, group=team1)
 
     u = User.objects.create(username="reviewsecretary3")
     u.set_password("reviewsecretary3+password")
     u.save()
     reviewsecretary3 = Person.objects.create(name=u"Réview Secretary3", ascii="Review Secretary3", user=u)
-    reviewsecretary3_email = Email.objects.create(address="reviewsecretary3@example.com", person=reviewsecretary)
+    reviewsecretary3_email = Email.objects.create(address="reviewsecretary3@example.com", person=reviewsecretary, origin='test')
     Role.objects.create(name_id="secr", person=reviewsecretary3, email=reviewsecretary3_email, group=team3)
     
     return review_req

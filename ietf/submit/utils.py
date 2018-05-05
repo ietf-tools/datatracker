@@ -136,7 +136,7 @@ def docevent_from_submission(request, submission, desc, who=None):
     else:
         submitter_parsed = submission.submitter_parsed()
         if submitter_parsed["name"] and submitter_parsed["email"]:
-            by, _ = ensure_person_email_info_exists(submitter_parsed["name"], submitter_parsed["email"])
+            by, _ = ensure_person_email_info_exists(submitter_parsed["name"], submitter_parsed["email"], submission.name)
         else:
             by = system
 
@@ -190,7 +190,7 @@ def post_submission(request, submission, approvedDesc):
     system = Person.objects.get(name="(System)")
     submitter_parsed = submission.submitter_parsed()
     if submitter_parsed["name"] and submitter_parsed["email"]:
-        submitter, _ = ensure_person_email_info_exists(submitter_parsed["name"], submitter_parsed["email"])
+        submitter, _ = ensure_person_email_info_exists(submitter_parsed["name"], submitter_parsed["email"], submission.name)
         submitter_info = u'%s <%s>' % (submitter_parsed["name"], submitter_parsed["email"])
     else:
         submitter = system
@@ -428,7 +428,7 @@ def get_person_from_name_email(name, email):
 
     return None
 
-def ensure_person_email_info_exists(name, email):
+def ensure_person_email_info_exists(name, email, docname):
     addr = email
     email = None
     person = get_person_from_name_email(name, addr)
@@ -461,7 +461,7 @@ def ensure_person_email_info_exists(name, email):
             email = Email.objects.get(address=addr,person__isnull=True)
         except Email.DoesNotExist:
             # most likely we just need to create it
-            email = Email(address=addr)
+            email = Email(address=addr, origin=docname)
             email.active = active
 
         email.person = person
@@ -474,7 +474,7 @@ def ensure_person_email_info_exists(name, email):
 def update_authors(draft, submission):
     persons = []
     for order, author in enumerate(submission.authors):
-        person, email = ensure_person_email_info_exists(author["name"], author.get("email"))
+        person, email = ensure_person_email_info_exists(author["name"], author.get("email"), submission.name)
 
         a = DocumentAuthor.objects.filter(document=draft, person=person).first()
         if not a:

@@ -39,18 +39,18 @@ class Command(BaseCommand):
                                                                   populate_personnel=False,
                                                                   populate_positions=False))
 
-                e = EmailFactory(person__name=u'Dummy Chair',address=u'dummychair@example.com',person__user__username=u'dummychair',person__default_emails=False)
+                e = EmailFactory(person__name=u'Dummy Chair', address=u'dummychair@example.com', person__user__username=u'dummychair', person__default_emails=False, origin='test')
                 e.person.user.set_password('password')
                 e.person.user.save()
                 nc.group.role_set.create(name_id=u'chair',person=e.person,email=e)
 
-                e = EmailFactory(person__name=u'Dummy Member',address=u'dummymember@example.com',person__user__username=u'dummymember',person__default_emails=False)
+                e = EmailFactory(person__name=u'Dummy Member', address=u'dummymember@example.com', person__user__username=u'dummymember', person__default_emails=False, origin='test')
                 e.person.user.set_password('password')
                 e.person.user.save()
                 nc.group.role_set.create(name_id=u'member',person=e.person,email=e)
 
 
-                e = EmailFactory(person__name=u'Dummy Candidate',address=u'dummycandidate@example.com',person__user__username=u'dummycandidate',person__default_emails=False)
+                e = EmailFactory(person__name=u'Dummy Candidate', address=u'dummycandidate@example.com', person__user__username=u'dummycandidate', person__default_emails=False, origin='test')
                 e.person.user.set_password('password')
                 e.person.user.save()
                 NomineePositionFactory(nominee__nomcom=nc, nominee__person=e.person,

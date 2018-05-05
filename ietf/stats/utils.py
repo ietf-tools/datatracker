@@ -299,18 +299,16 @@ def get_meeting_registration_data(meeting):
                         person = Person.objects.create(
                             name=regname,
                             ascii=ascii_name,
-                            affiliation=affiliation,
                             user=user,
                         )
 
                     # Create an associated Email address for this Person
-                    email, __ = Email.objects.get_or_create(
-                        person=person,
-                        address=address[:64],
-                    )
+                    try:
+                        email = Email.objects.get(person=person, address=address[:64])
+                    except Email.DoesNotExist:
+                        email = Email.objects.create(person=person, address=address[:64], origin='ietf %s registration'%meeting.number)
                     if email.address != address:
                         debug.say("Truncated address: %s --> %s" % (address, email.address))
-                    
 
                     # If this is the only email address, set primary to true.
                     # If the person already existed (found through Alias) and

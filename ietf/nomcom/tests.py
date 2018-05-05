@@ -576,7 +576,7 @@ class NomcomViewsTest(TestCase):
         if not searched_email:
             searched_email = Email.objects.filter(address=nominee_email).first() 
             if not searched_email:
-                searched_email = EmailFactory(address=nominee_email,primary=True)
+                searched_email = EmailFactory(address=nominee_email, primary=True, origin='test')
         if not searched_email.person:
             searched_email.person = PersonFactory()
             searched_email.save()
@@ -967,8 +967,8 @@ class ReminderTest(TestCase):
         today = datetime.date.today()
         t_minus_3 = today - datetime.timedelta(days=3)
         t_minus_4 = today - datetime.timedelta(days=4)
-        e1 = EmailFactory(address="nominee1@example.org",person=PersonFactory(name=u"Nominee 1"))
-        e2 = EmailFactory(address="nominee2@example.org",person=PersonFactory(name=u"Nominee 2"))
+        e1 = EmailFactory(address="nominee1@example.org", person=PersonFactory(name=u"Nominee 1"), origin='test')
+        e2 = EmailFactory(address="nominee2@example.org", person=PersonFactory(name=u"Nominee 2"), origin='test')
         n = make_nomineeposition(self.nomcom,e1.person,gen,None)
         np = n.nomineeposition_set.get(position=gen)
         np.time = t_minus_3
@@ -1716,7 +1716,7 @@ Junk body for testing
 
     def test_edit_nominee(self):
         nominee = self.nc.nominee_set.order_by('pk').first()
-        new_email = EmailFactory(person=nominee.person)
+        new_email = EmailFactory(person=nominee.person, origin='test')
         url = reverse('ietf.nomcom.views.edit_nominee',kwargs={'year':self.nc.year(),'nominee_id':nominee.id})
         login_testing_unauthorized(self,self.chair.user.username,url)
         response = self.client.get(url)
