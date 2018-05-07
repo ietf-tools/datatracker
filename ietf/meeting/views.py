@@ -63,14 +63,14 @@ from ietf.secr.proceedings.utils import handle_upload_file
 from ietf.secr.proceedings.proc_utils import (get_progress_stats, post_process, import_audio_files,
     import_youtube_video_urls, create_recording)
 from ietf.utils.decorators import require_api_key
-from ietf.utils.mail import send_mail_message
+from ietf.utils.mail import send_mail_message, send_mail_text
 from ietf.utils.pipe import pipe
 from ietf.utils.pdf import pdf_pages
 from ietf.utils.text import xslugify
 from ietf.utils.validators import get_mime_type
 
 from .forms import (InterimMeetingModelForm, InterimAnnounceForm, InterimSessionModelForm,
-    InterimCancelForm, InterimSessionInlineFormSet, FileUploadForm)
+    InterimCancelForm, InterimSessionInlineFormSet, FileUploadForm, RequestMinutesForm,)
 
 
 def get_menu_entries(request):
@@ -139,7 +139,7 @@ def materials(request, num=None):
             if date_list: setattr(event, 'last_update', sorted(date_list, reverse=True)[0])
             
     return render(request, "meeting/materials.html", {
-        'meeting_num': meeting.number,
+        'meeting': meeting,
         'plenaries': plenaries,
         'ietf': ietf,
         'training': training,
@@ -2284,3 +2284,39 @@ def edit_timeslot_type(request, num, slot_id):
     return render(request, 'meeting/edit_timeslot_type.html', {'timeslot':timeslot,'form':form,'sessions':sessions})
 
 
+@role_required('Secretariat')
+def request_minutes(request, num=None):
+    meeting = get_ietf_meeting(num)
+    if request.method=='POST':
+        form = RequestMinutesForm(data=request.POST)
+        if form.is_valid():
+            send_mail_text(request,
+                           to=form.cleaned_data.get('to'),
+                           frm=request.user.person.email_address(),
+                           subject=form.cleaned_data.get('subject'),
+                           txt=form.cleaned_data.get('body'),
+                           cc=form.cleaned_data.get('cc'),
+                          )
+            return HttpResponseRedirect(reverse('ietf.meeting.views.materials',kwargs={'num':num}))
+    else:
+        needs_minutes = set() 
+        for a in meeting.agenda.assignments.filter(session__group__type_id__in=('wg','rg')):
+            if not a.session.all_meeting_minutes():
+                group = a.session.group
+                if group.parent and group.parent.type_id in ('area','irtf'):
+                    needs_minutes.add(a.session.group)
+        needs_minutes = list(needs_minutes)
+        needs_minutes.sort(key=lambda g: ('zzz' if g.parent.acronym == 'irtf' else g.parent.acronym)+":"+g.acronym)
+        body_context = {'meeting':meeting, 
+                        'needs_minutes':needs_minutes,
+                        'settings':settings,
+                       }
+        body = render_to_string('meeting/request_minutes.txt', body_context)
+        initial = {'to': 'wgchairs@ietf.org',
+                   'cc': 'irsg@irtf.org',
+                   'subject': 'Request for IETF WG and Bof Session Minutes',
+                   'body': body,
+                  }
+        form = RequestMinutesForm(initial=initial)
+    context = {'meeting':meeting, 'form': form}
+    return render(request, 'meeting/request_minutes.html', context)

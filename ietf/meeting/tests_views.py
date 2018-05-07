@@ -24,12 +24,12 @@ from ietf.meeting.helpers import can_approve_interim_request, can_view_interim_r
 from ietf.meeting.helpers import send_interim_approval_request
 from ietf.meeting.helpers import send_interim_cancellation_notice
 from ietf.meeting.helpers import send_interim_minutes_reminder, populate_important_dates
-from ietf.meeting.models import Session, TimeSlot, Meeting, SchedTimeSessAssignment, Schedule
+from ietf.meeting.models import Session, TimeSlot, Meeting, SchedTimeSessAssignment, Schedule, SessionPresentation
 from ietf.meeting.test_data import make_meeting_test_data, make_interim_meeting
 from ietf.meeting.utils import finalize
 from ietf.name.models import SessionStatusName 
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized, unicontent
-from ietf.utils.mail import outbox
+from ietf.utils.mail import outbox, empty_outbox
 from ietf.utils.text import xslugify
 
 from ietf.person.factories import PersonFactory
@@ -1997,3 +1997,24 @@ class SessionTests(TestCase):
         self.assertEqual(r.status_code,200)
         self.assertTrue(requested_session.group.acronym in unicontent(r))
         self.assertTrue(not_meeting.group.acronym in unicontent(r))
+
+    def test_request_minutes(self):
+        meeting = MeetingFactory(type_id='ietf')
+        area = GroupFactory(type_id='area')
+        has_minutes = SessionFactory(meeting=meeting,group__parent=area)
+        has_no_minutes = SessionFactory(meeting=meeting,group__parent=area)
+        SessionPresentation.objects.create(session=has_minutes,document=DocumentFactory(type_id='minutes'))
+
+        empty_outbox()
+        url = urlreverse('ietf.meeting.views.request_minutes',kwargs={'num':meeting.number})
+        login_testing_unauthorized(self,"secretary",url)
+        r = self.client.get(url)
+        self.assertNotIn(has_minutes.group.acronym, unicontent(r).lower())
+        self.assertIn(has_no_minutes.group.acronym, unicontent(r).lower())
+        r = self.client.post(url,{'to':'wgchairs@ietf.org',
+                                  'cc': 'irsg@irtf.org',
+                                  'subject': 'I changed the subject',
+                                  'body': 'corpus',
+                                 })
+        self.assertEqual(r.status_code,302)
+        self.assertEqual(len(outbox),1)
