@@ -1138,3 +1138,6 @@ class ImportantDate(models.Model):
     name = ForeignKey(ImportantDateName)
     class Meta:
         ordering = ["-meeting_id","date", ]
+
+    def __unicode__(self):
+        return u'%s : %s : %s' % ( self.meeting, self.name, self.date )
