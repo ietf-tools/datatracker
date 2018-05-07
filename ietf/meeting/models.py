@@ -165,9 +165,18 @@ class Meeting(models.Model):
     def get_submission_start_date(self):
         return self.date - datetime.timedelta(days=self.submission_start_day_offset)
     def get_submission_cut_off_date(self):
-        return self.date + datetime.timedelta(days=self.submission_cutoff_day_offset)
+        importantdate = self.importantdate_set.filter(name_id='procsub').first()
+        if importantdate:
+            return importantdate.date
+        else:
+            return self.date + datetime.timedelta(days=self.submission_cutoff_day_offset)
+
     def get_submission_correction_date(self):
-        return self.date + datetime.timedelta(days=self.submission_correction_day_offset)
+        importantdate = self.importantdate_set.filter(name_id='revsub').first()
+        if importantdate:
+            return importantdate.date
+        else:
+            return self.date + datetime.timedelta(days=self.submission_correction_day_offset)
 
     def get_schedule_by_name(self, name):
         return self.schedule_set.filter(name=name).first()
