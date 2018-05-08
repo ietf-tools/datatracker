@@ -452,6 +452,8 @@ def ensure_person_email_info_exists(name, email, docname):
 
     try:
         email = person.email_set.get(address=addr)
+        email.origin = docname          # overwrite earlier origin
+        email.save()
     except Email.DoesNotExist:
         try:
             # An Email object pointing to some other person will not exist
@@ -461,12 +463,12 @@ def ensure_person_email_info_exists(name, email, docname):
             email = Email.objects.get(address=addr,person__isnull=True)
         except Email.DoesNotExist:
             # most likely we just need to create it
-            email = Email(address=addr, origin=docname)
+            email = Email(address=addr)
             email.active = active
-
         email.person = person
         if email.time is None:
             email.time = datetime.datetime.now()
+        email.origin = docname
         email.save()
 
     return person, email
