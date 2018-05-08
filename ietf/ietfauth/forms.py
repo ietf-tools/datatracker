@@ -135,6 +135,11 @@ def get_person_form(*args, **kwargs):
             prevent_system_name(name)
             return ascii_cleaner(name)
 
+        def clean_consent(self):
+            consent = self.cleaned_data.get('consent')
+            if consent == False:
+                raise forms.ValidationError("In order to modify your profile data, you must permit the IETF to use the uploaded data.")
+
     return PersonForm(*args, **kwargs)
 
 
