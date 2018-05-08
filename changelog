@@ -1,3 +1,48 @@
+ietfdb (6.80.0) ietf; urgency=medium
+
+  This release fixes a number of bugs, and adds a view that makes it easier
+  for the secretariat to generate the meeting minutes request emails.
+
+  * Merged in [15125] from rjsparks@nostrum.com:
+    Added a view that generates the 'send minutes' email for the secretariat.
+    Fixes #2493.  
+
+  * Merged in [15124] from rjsparks@nostrum.com:
+    Provide a __unicode__ member for ImportantDate.  
+
+  * Merged in [15123] from rjsparks@nostrum.com:
+    Use importantdates for material submisssion cutoff and revision if they
+    exist. Fixes #2514.  
+
+  * Merged in [15119] and [15120] from rjsparks@nostrum.com:
+    Change stream state to replaced when an ISE, IAB, or IRTF document is
+    replaced. Fixes #1963.
+
+  * Merged in [15114] from rjsparks@nostrum.com:
+    Restored a test that was unintentionally removed. Removed unused
+    templates.  Related to #2513.
+
+  * Merged in [15113] from rjsparks@nostrum.com:
+    Removed the already disabled 'Make RFC' functionality from /secr/drafts.
+    Fixes #2513.
+    
+    Merged in [15112] from rjsparks@nostrum.com:
+    Removed the 'announce' functionality from /secr/drafts. Addresses part of
+    #2513.
+
+  * Merged in [15111] from rjsparks@nostrum.com:
+    Removed the \'replaces\' functionality from /secr/drafts. Addresses 
+    part of #2513.  
+
+  * Merged in [15110] from rjsparks@nostrum.com:
+    Made settings.URL_REGEXPS.name non-greedy. Added a test to exercise the 
+    bug at #2429. Fixes #2429.  
+
+  * Fixed an incorrect file name in a log message.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  08 May 2018 06:37:38 +0000
+
+
 ietfdb (6.79.1) ietf; urgency=medium
 
   This bugfix release fixes problems with IESG ballot clearing, marks dead
