@@ -97,4 +97,14 @@ class Migration(migrations.Migration):
             name='person',
             field=ietf.utils.models.ForeignKey(blank=True, db_constraint=False, null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='+', to='person.Person'),
         ),
+        migrations.AddField(
+            model_name='historicalperson',
+            name='consent',
+            field=models.BooleanField(verbose_name=b'I hereby give my consent to the use of the personal details I have provided within the IETF Datatracker', null=True, default=None, ),
+        ),
+        migrations.AddField(
+            model_name='person',
+            name='consent',
+            field=models.BooleanField(verbose_name=b'I hereby give my consent to the use of the personal details I have provided within the IETF Datatracker', null=True, default=None, ),
+        ),
     ]
