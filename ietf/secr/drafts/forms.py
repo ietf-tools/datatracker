@@ -178,6 +178,12 @@ class EditModelForm(forms.ModelForm):
             else:
                 m.tags.remove('rfc-rev')
 
+        if 'shepherd' in self.changed_data:
+            email = self.cleaned_data.get('shepherd')
+            if not email.origin:
+                email.origin = 'shepherd: %s' % m.name
+                email.save()
+
         # handle replaced by
 
         return m

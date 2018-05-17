@@ -500,6 +500,15 @@ class OutgoingLiaisonForm(LiaisonModelForm):
         if has_role(self.user, "Liaison Manager"):
             self.fields['to_groups'].initial = [queryset.first()]
 
+    def save(self, commit=False):
+        instance = super(EditModelForm, self).save(commit=False)
+
+        if 'from_contact' in self.changed_data:
+            email = self.cleaned_data.get('from_contact')
+            if not email.origin:
+                email.origin = "liaison: %s" % (','.join([ g.acronym for g in instance.from_groups.all() ]))
+                email.save()
+
 class EditLiaisonForm(LiaisonModelForm):
     def __init__(self, *args, **kwargs):
         super(EditLiaisonForm, self).__init__(*args, **kwargs)

@@ -93,6 +93,10 @@ def main(request):
                                 email=email,
                                 group=group)
 
+            if not email.origin or email.origin == person.user.username:
+                email.origin = "role: %s %s" % (group.acronym, name.slug)
+                email.save()
+
             messages.success(request, 'New %s added successfully!' % name)
             url = reverse('ietf.secr.roles.views.main') + '?group=%s' % group.acronym
             return HttpResponseRedirect(url)

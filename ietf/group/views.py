@@ -958,6 +958,10 @@ def edit(request, group_type=None, acronym=None, action="edit", field=None):
                     group.role_set.filter(name=slug).delete()
                     for e in new:
                         Role.objects.get_or_create(name_id=slug, email=e, group=group, person=e.person)
+                        if not e.origin or e.origin == e.person.user.username:
+                            e.origin = "role: %s %s" % (group.acronym, slug)
+                            e.save()
+
                     added = set(new) - set(old)
                     deleted = set(old) - set(new)
                     if added:
@@ -1206,6 +1210,9 @@ def stream_edit(request, acronym):
                 group.role_set.filter(name=slug).delete()
                 for e in new:
                     Role.objects.get_or_create(name_id=slug, email=e, group=group, person=e.person)
+                    if not e.origin or e.origin == e.person.user.username:
+                        e.origin = "role: %s %s" % (group.acronym, slug)
+                        e.save()
 
             return redirect("ietf.group.views.streams")
     else:

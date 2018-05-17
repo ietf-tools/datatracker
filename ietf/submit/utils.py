@@ -452,7 +452,7 @@ def ensure_person_email_info_exists(name, email, docname):
 
     try:
         email = person.email_set.get(address=addr)
-        email.origin = docname          # overwrite earlier origin
+        email.origin = "author: %s" % docname          # overwrite earlier origin
         email.save()
     except Email.DoesNotExist:
         try:
@@ -468,7 +468,7 @@ def ensure_person_email_info_exists(name, email, docname):
         email.person = person
         if email.time is None:
             email.time = datetime.datetime.now()
-        email.origin = docname
+        email.origin = "author: %s" % docname
         email.save()
 
     return person, email

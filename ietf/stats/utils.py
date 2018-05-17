@@ -306,7 +306,7 @@ def get_meeting_registration_data(meeting):
                     try:
                         email = Email.objects.get(person=person, address=address[:64])
                     except Email.DoesNotExist:
-                        email = Email.objects.create(person=person, address=address[:64], origin='ietf %s registration'%meeting.number)
+                        email = Email.objects.create(person=person, address=address[:64], origin='registration: ietf-%s'%meeting.number)
                     if email.address != address:
                         debug.say("Truncated address: %s --> %s" % (address, email.address))
 

@@ -372,7 +372,7 @@ def make_nomineeposition(nomcom, candidate, position, author):
 def make_nomineeposition_for_newperson(nomcom, candidate_name, candidate_email, position, author):
 
     # This is expected to fail if called with an existing email address
-    email = Email.objects.create(address=candidate_email, origin=nomcom.group.acronym)
+    email = Email.objects.create(address=candidate_email, origin="nominee: %s" % nomcom.group.acronym)
     person = Person.objects.create(name=candidate_name,
                                    ascii=unidecode_name(candidate_name),
                                    )
