@@ -94,6 +94,9 @@ def get_person_form(*args, **kwargs):
         class Meta:
             model = Person
             exclude = exclude_list
+            widgets = {
+                'consent': forms.widgets.CheckboxInput,
+            }            
 
         def __init__(self, *args, **kwargs):
             super(PersonForm, self).__init__(*args, **kwargs)

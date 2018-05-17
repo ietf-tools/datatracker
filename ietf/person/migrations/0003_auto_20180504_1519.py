@@ -100,11 +100,11 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='historicalperson',
             name='consent',
-            field=models.BooleanField(verbose_name=b'I hereby give my consent to the use of the personal details I have provided within the IETF Datatracker', null=True, default=None, ),
+            field=models.NullBooleanField(default=None, verbose_name=b'I hereby give my consent to the use of the personal details I have provided (photo, bio, name, email) within the IETF Datatracker'),
         ),
         migrations.AddField(
             model_name='person',
             name='consent',
-            field=models.BooleanField(verbose_name=b'I hereby give my consent to the use of the personal details I have provided within the IETF Datatracker', null=True, default=None, ),
+            field=models.NullBooleanField(default=None, verbose_name=b'I hereby give my consent to the use of the personal details I have provided (photo, bio, name, email) within the IETF Datatracker'),
         ),
     ]
