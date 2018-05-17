@@ -5,7 +5,7 @@ from ietf.person.models import Email, Alias, Person, PersonalApiKey, PersonEvent
 from ietf.person.name import name_parts
 
 class EmailAdmin(simple_history.admin.SimpleHistoryAdmin):
-    list_display = ["address", "person", "time", "active", ]
+    list_display = ["address", "person", "time", "active", "origin"]
     raw_id_fields = ["person", ]
     search_fields = ["address", "person__name", ]
 admin.site.register(Email, EmailAdmin)
