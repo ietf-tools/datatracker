@@ -29,7 +29,7 @@ import debug                            # pyflakes:ignore
 from ietf.group.models import Group
 from ietf.submit.tests import submission_file
 from ietf.utils.draft import Draft, getmeta
-from ietf.utils.mail import send_mail_text, send_mail_mime, outbox 
+from ietf.utils.mail import send_mail_preformatted, send_mail_text, send_mail_mime, outbox 
 from ietf.utils.management.commands import pyflakes
 from ietf.utils.test_data import make_test_data
 from ietf.utils.test_runner import get_template_paths, set_coverage_checking
@@ -53,6 +53,66 @@ class PyFlakesTestCase(TestCase):
         warnings = []
         warnings = pyflakes.checkPaths([path], verbosity=0)
         self.assertEqual([], [str(w) for w in warnings])
+
+class SendingMail(TestCase):
+
+    def test_send_mail_preformatted(self):
+        msg = """To: to1@example.com, to2@example.com
+From: from1@example.com, from2@example.com
+Cc: cc1@example.com, cc2@example.com
+Bcc: bcc1@example.com, bcc2@example.com
+Subject: subject
+
+body
+"""
+        send_mail_preformatted(None, msg, {}, {})
+        recv = outbox[-1]
+        self.assertEqual(recv['To'], '<to1@example.com>, <to2@example.com>')
+        self.assertEqual(recv['From'], 'from1@example.com, from2@example.com')
+        self.assertEqual(recv['Cc'], 'cc1@example.com, cc2@example.com')
+        self.assertEqual(recv['Bcc'], None)
+        self.assertEqual(recv['Subject'], 'subject')
+        self.assertEqual(recv.get_payload(), 'body\n')
+
+        override = {
+            'To': 'oto1@example.net, oto2@example.net',
+            'From': 'ofrom1@example.net, ofrom2@example.net',
+            'Cc': 'occ1@example.net, occ2@example.net',
+            'Subject': 'osubject',
+        }
+        send_mail_preformatted(request=None, preformatted=msg, extra={}, override=override)
+        recv = outbox[-1]
+        self.assertEqual(recv['To'], '<oto1@example.net>, <oto2@example.net>')
+        self.assertEqual(recv['From'], 'ofrom1@example.net, ofrom2@example.net')
+        self.assertEqual(recv['Cc'], 'occ1@example.net, occ2@example.net')
+        self.assertEqual(recv['Bcc'], None)
+        self.assertEqual(recv['Subject'], 'osubject')
+        self.assertEqual(recv.get_payload(), 'body\n')
+
+        override = {
+            'To': ['<oto1@example.net>', 'oto2@example.net'],
+            'From': ['<ofrom1@example.net>', 'ofrom2@example.net'],
+            'Cc': ['<occ1@example.net>', 'occ2@example.net'],
+            'Subject': 'osubject',
+        }
+        send_mail_preformatted(request=None, preformatted=msg, extra={}, override=override)
+        recv = outbox[-1]
+        self.assertEqual(recv['To'], '<oto1@example.net>, <oto2@example.net>')
+        self.assertEqual(recv['From'], '<ofrom1@example.net>, ofrom2@example.net')
+        self.assertEqual(recv['Cc'], '<occ1@example.net>, occ2@example.net')
+        self.assertEqual(recv['Bcc'], None)
+        self.assertEqual(recv['Subject'], 'osubject')
+        self.assertEqual(recv.get_payload(), 'body\n')
+
+        extra = {'Fuzz': 'bucket'}
+        send_mail_preformatted(request=None, preformatted=msg, extra=extra, override={})
+        recv = outbox[-1]
+        self.assertEqual(recv['Fuzz'], 'bucket')
+
+        extra = {'Fuzz': ['bucket','monger']}
+        send_mail_preformatted(request=None, preformatted=msg, extra=extra, override={})
+        recv = outbox[-1]
+        self.assertEqual(recv['Fuzz'], 'bucket, monger')
 
 class TestSMTPServer(TestCase):
 
