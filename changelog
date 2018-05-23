@@ -1,3 +1,27 @@
+ietfdb (6.80.1) ietf; urgency=medium
+
+  * Merged in [15153] from rjsparks@nostrum.com:
+    Changed how the mail utilities handle lists in their override and extra
+    arguments. Added a test for send_mail_preformatted exercising override and
+    extra.  
+
+  * Merged in [15152] from rjsparks@nostrum.com:
+    Send email when the responsible AD for a conflict review is changed.
+    Include the stream manager and stream steering group when the responsible
+    AD changes or when the telechat date changes. Fixes #2497.  
+
+  * Merged in [15151] from rjsparks@nostrum.com:
+    Provide an email group button for WG and RG documents. Fixes #2512.  
+
+  * Merged in [15145] from rjsparks@nostrum.com:
+    Secretariat requested tweak to the request for minutes template.  
+
+  * Updated the non-WG mailing list page to include advertised lists for closed
+    WGs, on request from the secretariat.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  23 May 2018 12:55:09 +0000
+
+
 ietfdb (6.80.0) ietf; urgency=medium
 
   This release fixes a number of bugs, and adds a view that makes it easier
