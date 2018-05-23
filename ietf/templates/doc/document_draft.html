@@ -556,6 +556,9 @@
 
   <div class="buttonlist">
     <a class="btn btn-default btn-xs" href="mailto:{{ doc.name }}@ietf.org?subject=Mail%20regarding%20{{ doc.name }}"><span class="fa fa-envelope-o"></span> Email authors</a>
+    {% if doc.group.type.slug == 'wg' or doc.group.type.slug == 'rg' %}
+      <a class="btn btn-default btn-xs" href="mailto:{{ doc.group.list_email}}?subject=Mail%20regarding%20{{ doc.name }}"><span class="fa fa-envelope-o"></span> Email {{ doc.group.type }}</a>
+    {% endif %}
     <a class="btn btn-default btn-xs" href="{% url "ietf.ipr.views.search" %}?submit=draft&amp;id={{ doc.name }}" rel="nofollow"><span class="fa fa-bolt"></span> IPR {% if doc.related_ipr %} <span class="badge">{{doc.related_ipr|length}}</span>{% endif %}</a>
     <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_doc.document_references' doc.canonical_name %}" rel="nofollow"><span class="fa fa-long-arrow-left"></span> References</a>
     <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_doc.document_referenced_by' doc.canonical_name %}" rel="nofollow"><span class="fa fa-long-arrow-right"></span> Referenced by</a>
