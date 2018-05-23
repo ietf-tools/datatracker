@@ -2438,7 +2438,8 @@
       "cc": [],
       "desc": "Recipients when a ballot is issued",
       "to": [
-        "iesg"
+        "iesg",
+        "iesg_secretary"
       ]
     },
     "model": "mailtrigger.mailtrigger",
@@ -2522,6 +2523,23 @@
     },
     "model": "mailtrigger.mailtrigger",
     "pk": "charter_state_edit_admin_needed"
+  },
+  {
+    "fields": {
+      "cc": [
+        "conflict_review_steering_group",
+        "conflict_review_stream_manager",
+        "doc_affecteddoc_authors",
+        "doc_affecteddoc_group_chairs",
+        "doc_affecteddoc_notify",
+        "doc_notify",
+        "iesg"
+      ],
+      "desc": "Recipients when the responsible AD for a conflict review is changed",
+      "to": []
+    },
+    "model": "mailtrigger.mailtrigger",
+    "pk": "conflrev_ad_changed"
   },
   {
     "fields": {
@@ -10072,7 +10090,7 @@
     "fields": {
       "command": "xym",
       "switch": "--version",
-      "time": "2018-05-03T00:07:54.849",
+      "time": "2018-05-21T00:08:52.105",
       "used": true,
       "version": "xym 0.4"
     },
@@ -10083,7 +10101,7 @@
     "fields": {
       "command": "pyang",
       "switch": "--version",
-      "time": "2018-05-03T00:07:55.605",
+      "time": "2018-05-21T00:08:53.585",
       "used": true,
       "version": "pyang 1.7.5"
     },
@@ -10094,9 +10112,9 @@
     "fields": {
       "command": "yanglint",
       "switch": "--version",
-      "time": "2018-05-03T00:07:55.737",
+      "time": "2018-05-21T00:08:53.827",
       "used": true,
-      "version": "yanglint 0.14.78"
+      "version": "yanglint 0.14.80"
     },
     "model": "utils.versioninfo",
     "pk": 3
@@ -10105,7 +10123,7 @@
     "fields": {
       "command": "xml2rfc",
       "switch": "--version",
-      "time": "2018-05-03T00:07:56.594",
+      "time": "2018-05-21T00:08:54.971",
       "used": true,
       "version": "xml2rfc 2.9.6"
     },

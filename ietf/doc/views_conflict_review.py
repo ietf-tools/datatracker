@@ -88,6 +88,22 @@ def change_state(request, name, option=None):
                                    help_url=reverse('ietf.doc.views_help.state_help', kwargs=dict(type="conflict-review")),
                                    ))
 
+def send_conflict_review_ad_changed_email(request, review, event):
+    addrs = gather_address_lists('conflrev_ad_changed', doc=review).as_strings(compact=False)
+    msg = render_to_string("doc/conflict_review/changed_ad.txt",
+                           dict(frm = settings.DEFAULT_FROM_EMAIL,
+                                 to = addrs.to,
+                                 cc = addrs.cc,
+                                 by = request.user.person,
+                                 event = event,
+                                 review = review,
+                                 reviewed_doc = review.relateddocument_set.get(relationship__slug='conflrev').target.document,
+                                 review_url = settings.IDTRACKER_BASE_URL+review.get_absolute_url(),
+                               )
+                          )
+    send_mail_preformatted(request,msg)
+
+                                
 def send_conflict_review_started_email(request, review):
     addrs = gather_address_lists('conflrev_requested',doc=review).as_strings(compact=False)
     msg = render_to_string("doc/conflict_review/review_started.txt",
@@ -234,6 +250,7 @@ def edit_ad(request, name):
             c.save()
 
             review.save_with_history([c])
+            send_conflict_review_ad_changed_email(request, review, c)
 
             return redirect('ietf.doc.views_doc.document_main', name=review.name)
 
