@@ -302,7 +302,10 @@ def parse_preformatted(preformatted, extra={}, override={}):
     for k, v in override.iteritems():
          if k in msg:
               del msg[k]
-         msg[k] = v
+         if isinstance(v, list):
+              msg[k] = ', '.join(v)
+         else:
+              msg[k] = v 
 
     headers = copy.copy(msg)
     for key in ['To', 'From', 'Subject', 'Bcc']:
@@ -310,7 +313,10 @@ def parse_preformatted(preformatted, extra={}, override={}):
     for k, v in extra.iteritems():
          if k in headers:
               del headers[k]
-         headers[k] = v
+         if isinstance(v, list):
+              headers[k] = ', '.join(v)
+         else:
+             headers[k] = v 
 
     bcc = msg['Bcc']
     del msg['Bcc']
