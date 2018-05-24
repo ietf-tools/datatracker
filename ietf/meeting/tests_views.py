@@ -23,11 +23,11 @@ from ietf.group.models import Group, Role
 from ietf.meeting.helpers import can_approve_interim_request, can_view_interim_request
 from ietf.meeting.helpers import send_interim_approval_request
 from ietf.meeting.helpers import send_interim_cancellation_notice
-from ietf.meeting.helpers import send_interim_minutes_reminder, populate_important_dates
+from ietf.meeting.helpers import send_interim_minutes_reminder, populate_important_dates, update_important_dates
 from ietf.meeting.models import Session, TimeSlot, Meeting, SchedTimeSessAssignment, Schedule, SessionPresentation
 from ietf.meeting.test_data import make_meeting_test_data, make_interim_meeting
 from ietf.meeting.utils import finalize
-from ietf.name.models import SessionStatusName 
+from ietf.name.models import SessionStatusName, ImportantDateName
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized, unicontent
 from ietf.utils.mail import outbox, empty_outbox
 from ietf.utils.text import xslugify
@@ -430,6 +430,13 @@ class MeetingTests(TestCase):
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertIn(str(meeting.importantdate_set.first().date), unicontent(r))
+        idn = ImportantDateName.objects.filter(used=True).first()
+        pre_date = meeting.importantdate_set.get(name=idn).date
+        idn.default_offset_days -= 1
+        idn.save()
+        update_important_dates(meeting)
+        post_date =  meeting.importantdate_set.get(name=idn).date
+        self.assertEqual(pre_date, post_date+datetime.timedelta(days=1))
 
     def test_group_ical(self):
         meeting = make_meeting_test_data()
