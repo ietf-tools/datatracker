@@ -618,3 +618,14 @@ def populate_important_dates(meeting):
     assert meeting.type_id=='ietf'
     for datename in ImportantDateName.objects.filter(used=True):
         ImportantDate.objects.create(meeting=meeting,name=datename,date=meeting.date+datetime.timedelta(days=datename.default_offset_days))
+
+def update_important_dates(meeting):
+    assert meeting.type_id=='ietf'
+    for datename in ImportantDateName.objects.filter(used=True):
+        date = meeting.date+datetime.timedelta(days=datename.default_offset_days)
+        d = ImportantDate.objects.filter(meeting=meeting, name=datename).first()
+        if d:
+            d.date = date
+            d.save()
+        else:
+            ImportantDate.objects.create(meeting=meeting, name=datename, date=date)
