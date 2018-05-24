@@ -15,7 +15,11 @@
   {% for d in meeting.importantdate_set.all %}
     <li> <strong>{{d.date}} ({% if d.name.slug == 'openreg' %}Week of{% else %}{{d.date|date:'l'}}{% endif %}):</strong> {{d.name.desc}}. 
     {% if d.name.slug == 'opensched' or d.name.slug == 'cutoffwgreq' %}
-      To request a Working Group session, use the <a href="{% url 'ietf.secr.sreq.views.main' %}">IETF Meeting Session Request Tool</a>.
+      To request a Working Group session, use the
+      <a href="{% url 'ietf.secr.sreq.views.main' %}">IETF Meeting Session Request Tool</a>.
+      If you are working on a BoF request, it is highly recommended
+      to tell the IESG now by sending an email to
+      <a href="mailto:iesg@ietf.org">iesg@ietf.org</a> to get advance help with the request.
     {% endif %}
     {% if d.name.slug == 'cutoffbofreq' %}
       To request a BOF, please see instructions on <a href="https://www.ietf.org/iesg/bof-procedures.html">Requesting a BOF</a>.
