@@ -1,16 +1,14 @@
 # Copyright The IETF Trust 2018, All Rights Reserved
 from __future__ import unicode_literals
 
-import sys
 import datetime
 
-from django.core.management.base import BaseCommand, CommandError
-from django.core import serializers
+from django.core.management.base import BaseCommand
 
 import debug                            # pyflakes:ignore
 
 from ietf.name.models import ImportantDateName
-from ietf.meeting.helpers import get_meeting, update_important_dates
+from ietf.meeting.helpers import update_important_dates
 from ietf.meeting.models import Meeting, ImportantDate
 
 class Command(BaseCommand):
