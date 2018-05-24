@@ -1,5 +1,15 @@
 ietfdb (6.80.1) ietf; urgency=medium
 
+  This is a bugfix release which also clears the slate for the upcoming
+  GDPR-related release.  From the commit log:
+
+  * Added a meeting helper function update_important_dates(), and a management
+    command update_important_dates to update the important dates for a meeting
+    if the offsets in the MeetingDateName table has been changed.
+
+  * Added some text to the important dates page for 'opensched', on request
+    from the IESG via Stephanie.
+
   * Merged in [15153] from rjsparks@nostrum.com:
     Changed how the mail utilities handle lists in their override and extra
     arguments. Added a test for send_mail_preformatted exercising override and
@@ -16,10 +26,10 @@ ietfdb (6.80.1) ietf; urgency=medium
   * Merged in [15145] from rjsparks@nostrum.com:
     Secretariat requested tweak to the request for minutes template.  
 
-  * Updated the non-WG mailing list page to include advertised lists for closed
-    WGs, on request from the secretariat.
+  * Updated the non-WG mailing list page to include advertised lists for
+    closed WGs, on request from the secretariat.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  23 May 2018 12:55:09 +0000
+ -- Henrik Levkowetz <henrik@levkowetz.com>  24 May 2018 15:53:08 +0000
 
 
 ietfdb (6.80.0) ietf; urgency=medium
