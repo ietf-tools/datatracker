@@ -954,7 +954,7 @@ def edit_shepherd(request, name):
                 events = []
 
                 doc.shepherd = form.cleaned_data['shepherd']
-                if not doc.shepherd.origin:
+                if doc.shepherd and not doc.shepherd.origin:
                     doc.shepherd.origin = 'shepherd: %s' % doc.name
                     doc.shepherd.save()
 

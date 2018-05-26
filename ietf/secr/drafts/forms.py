@@ -180,7 +180,7 @@ class EditModelForm(forms.ModelForm):
 
         if 'shepherd' in self.changed_data:
             email = self.cleaned_data.get('shepherd')
-            if not email.origin:
+            if email and not email.origin:
                 email.origin = 'shepherd: %s' % m.name
                 email.save()
 
