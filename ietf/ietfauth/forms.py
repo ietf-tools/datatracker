@@ -1,3 +1,7 @@
+# Copyright The IETF Trust 2016, All Rights Reserved
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals, print_function
+
 import re
 from unidecode import unidecode
 
@@ -107,6 +111,12 @@ def get_person_form(*args, **kwargs):
 
             if self.initial.get("ascii") == self.initial.get("name"):
                 self.initial["ascii"] = ""
+
+            for f in ['name', 'ascii', 'ascii_short', 'biography', 'photo', 'photo_thumb', ]:
+                if f in self.fields:
+                    self.fields[f].label += ' \u2020'
+
+            self.fields["consent"].required = True
 
             self.unidecoded_ascii = False
 
