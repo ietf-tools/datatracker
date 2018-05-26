@@ -251,6 +251,8 @@ def profile(request):
                 email.primary = email.address == primary_email
                 if email.primary and not email.active:
                     email.active = True
+                if not email.origin:
+                    email.origin = person.user.username
                 email.save()
 
             # Make sure the alias table contains any new and/or old names.
