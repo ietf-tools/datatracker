@@ -12,22 +12,57 @@
   {% origin %}
   <h1>Profile for {{ user.username }}</h1>
 
+  <p>
+      Personal information in the datatracker which is derived from your contributions
+      to the IETF standards development process is covered by the EU General Data Protection
+      Regulation's
+      <a href="https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#d1e1888-1-1">Article 6(1)&nbsp;(f)</a>
+      covering IETF's Legitimate Interest due to the IETF's mission of developing standards
+      for the internet.  See also the page on <a href="/help/personal-information">handling
+      of personal information</a>.
+
+  </p>
+  <p>
+
+      Personal information which is <b>not</b> derived from your contributions is covered by the EU
+      <a href="https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32016R0679#d1e1888-1-1">GDPR Article 6(1)&nbsp;(a)</a>
+      regarding consent.  All such information is visible on this page, and is shown with the
+      dagger symbol &dagger; next to it.  Most of this
+      information can be edited or removed on this page.  There are some exceptions, such
+      as photos, which currently require an email to <a href="mailto:ietf-action@ietf.org">the Secretariat</a>
+      if you wish to update or remove the information.
+
+  </p>
+  <hr>
+
   <form class="form-horizontal" method="post">
     {% csrf_token %}
 
-    {% bootstrap_form_errors person_form 'non_fields' %}
+    {% bootstrap_form_errors person_form %}
+    {% for f in new_email_forms %}
+      {% bootstrap_form_errors f %}
+    {% endfor %}
+
 
     <div class="form-group">
-      <label class="col-sm-2 control-label">User name</label>
+      <label class="col-sm-2 control-label">User name &dagger;</label>
       <div class="col-sm-10">
-        <p class="form-control-static">{{ user.username }}</p>
+	<p class="form-control-static">
+	  {{ user.username }}
+	  &nbsp;<a href="/accounts/username/"><span class="fa fa-pencil"></span></a>
+	</p>
+
       </div>
     </div>
 
     <div class="form-group">
-      <label class="col-sm-2 control-label">Password</label>
+      <label class="col-sm-2 control-label">Password &dagger;</label>
       <div class="col-sm-10">
-	 <p class="form-control-static"><a href="{% url 'ietf.ietfauth.views.change_password' %}">Password change form</a></p>
+	 <p class="form-control-static">
+	   
+	   <a href="/accounts/password/">Password change form</a>
+	   &nbsp;<a href="/accounts/password/"><span class="fa fa-pencil"></span></a>
+	 </p>
       </div>
     </div>
 
@@ -78,7 +113,12 @@
       {% bootstrap_field role.email_form.email layout="horizontal" show_label=False %}
     {% endfor %}
 
-    {% bootstrap_form person_form layout="horizontal" %}
+    {% bootstrap_field person_form.name layout="horizontal" %}
+    {% bootstrap_field person_form.ascii layout="horizontal" %}
+    {% if roles %}
+      {% bootstrap_field person_form.biography layout="horizontal" %}
+    {% endif %}
+    {% bootstrap_field person_form.consent layout="horizontal" %}
 
     <div class="form-group">
       <div class="col-sm-offset-2 col-sm-10">
