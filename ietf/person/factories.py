@@ -71,7 +71,7 @@ class PersonFactory(factory.DjangoModelFactory):
             extracted = True
         if create and extracted:
             make_email = getattr(EmailFactory, 'create' if create else 'build')
-            make_email(person=obj, address=obj.user.email, origin='test')
+            make_email(person=obj, address=obj.user.email)
 
     @factory.post_generation
     def default_photo(obj, create, extracted, **kwargs): # pylint: disable=no-self-argument
@@ -131,4 +131,4 @@ class EmailFactory(factory.DjangoModelFactory):
 
     active = True
     primary = False
-    origin = ''
+    origin = factory.LazyAttribute(lambda obj: obj.person.user.username if obj.person.user else '')
