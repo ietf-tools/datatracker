@@ -84,11 +84,11 @@ class LiaisonStatement(models.Model):
         if self.from_groups.count():
             frm = ', '.join([i.acronym or i.name for i in self.from_groups.all()])
         else:
-            frm = self.from_name
+            frm = self.from_contact.person.name
         if self.to_groups.count():
             to = ', '.join([i.acronym or i.name for i in self.to_groups.all()])
         else:
-            to = self.to_name
+            to = self.to_contacts
         return slugify("liaison" + " " + self.submitted.strftime("%Y-%m-%d") + " " + frm[:50] + " " + to[:50] + " " + self.title[:115])
 
     @property
