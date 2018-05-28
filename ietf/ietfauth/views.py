@@ -172,7 +172,7 @@ def confirm_account(request, auth):
                     Alias.objects.create(person=person, name=name)
 
             if not email_obj:
-                email_obj = Email.objects.create(address=email, person=person)
+                email_obj = Email.objects.create(address=email, person=person, origin=user.username)
             else:
                 if not email_obj.person:
                     email_obj.person = person
@@ -251,6 +251,8 @@ def profile(request):
                 email.primary = email.address == primary_email
                 if email.primary and not email.active:
                     email.active = True
+                if not email.origin:
+                    email.origin = person.user.username
                 email.save()
 
             # Make sure the alias table contains any new and/or old names.
@@ -293,7 +295,7 @@ def confirm_new_email(request, auth):
     can_confirm = form.is_valid() and email
     new_email_obj = None
     if request.method == 'POST' and can_confirm and request.POST.get("action") == "confirm":
-        new_email_obj = Email.objects.create(address=email, person=person)
+        new_email_obj = Email.objects.create(address=email, person=person, origin=username)
 
     return render(request, 'registration/confirm_new_email.html', {
         'username': username,

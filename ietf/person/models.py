@@ -16,6 +16,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.template.loader import render_to_string
 from django.utils.text import slugify
+from simple_history.models import HistoricalRecords
 
 import debug                            # pyflakes:ignore
 
@@ -24,10 +25,13 @@ from ietf.utils.mail import send_mail_preformatted
 from ietf.utils.storage import NoLocationMigrationFileSystemStorage
 from ietf.utils.mail import formataddr
 from ietf.person.name import unidecode_name
+from ietf.utils import log
 from ietf.utils.models import ForeignKey, OneToOneField
 
 
-class PersonInfo(models.Model):
+class Person(models.Model):
+    history = HistoricalRecords()
+    user = OneToOneField(User, blank=True, null=True)
     time = models.DateTimeField(default=datetime.datetime.now)      # When this Person record entered the system
     # The normal unicode form of the name.  This must be
     # set to the same value as the ascii-form if equal.
@@ -36,11 +40,11 @@ class PersonInfo(models.Model):
     ascii = models.CharField("Full Name (ASCII)", max_length=255, help_text="Name as rendered in ASCII (Latin, unaccented) characters.")
     # The short ascii-form of the name.  Also in alias table if non-null
     ascii_short = models.CharField("Abbreviated Name (ASCII)", max_length=32, null=True, blank=True, help_text="Example: A. Nonymous.  Fill in this with initials and surname only if taking the initials and surname of the ASCII name above produces an incorrect initials-only form. (Blank is OK).")
-    affiliation = models.CharField(max_length=255, blank=True, help_text="Employer, university, sponsor, etc.")
-    address = models.TextField(max_length=255, blank=True, help_text="Postal mailing address.")
     biography = models.TextField(blank=True, help_text="Short biography for use on leadership pages. Use plain text or reStructuredText markup.")
     photo = models.ImageField(storage=NoLocationMigrationFileSystemStorage(), upload_to=settings.PHOTOS_DIRNAME, blank=True, default=None)
     photo_thumb = models.ImageField(storage=NoLocationMigrationFileSystemStorage(), upload_to=settings.PHOTOS_DIRNAME, blank=True, default=None)
+    name_from_draft = models.CharField("Full Name (from submission)", null=True, max_length=255, editable=False, help_text="Name as found in a draft submission.")
+    consent = models.NullBooleanField("I hereby give my consent to the use of the personal details I have provided (photo, bio, name, email) within the IETF Datatracker", null=True, default=None)
 
     def __unicode__(self):
         return self.plain_name()
@@ -144,23 +148,20 @@ class PersonInfo(models.Model):
     def has_drafts(self):
         from ietf.doc.models import Document
         return Document.objects.filter(documentauthor__person=self, type='draft').exists()
+
     def rfcs(self):
         from ietf.doc.models import Document
         rfcs = list(Document.objects.filter(documentauthor__person=self, type='draft', states__slug='rfc'))
         rfcs.sort(key=lambda d: d.canonical_name() )
         return rfcs
+
     def active_drafts(self):
         from ietf.doc.models import Document
         return Document.objects.filter(documentauthor__person=self, type='draft', states__slug='active').order_by('-time')
+
     def expired_drafts(self):
         from ietf.doc.models import Document
         return Document.objects.filter(documentauthor__person=self, type='draft', states__slug__in=['repl', 'expired', 'auth-rm', 'ietf-rm']).order_by('-time')
-
-    class Meta:
-        abstract = True
-
-class Person(PersonInfo):
-    user = OneToOneField(User, blank=True, null=True)
 
     def save(self, *args, **kwargs):
         created = not self.pk
@@ -196,12 +197,7 @@ class Person(PersonInfo):
         ct1['href']      = urljoin(hostscheme, self.json_url())
         ct1['name']      = self.name
         ct1['ascii']     = self.ascii
-        ct1['affiliation']= self.affiliation
         return ct1
-
-class PersonHistory(PersonInfo):
-    person = ForeignKey(Person, related_name="history_set")
-    user = ForeignKey(User, blank=True, null=True)
 
 class Alias(models.Model):
     """This is used for alternative forms of a name.  This is the
@@ -231,12 +227,15 @@ class Alias(models.Model):
         verbose_name_plural = "Aliases"
 
 class Email(models.Model):
+    history = HistoricalRecords()
     address = models.CharField(max_length=64, primary_key=True, validators=[validate_email])
     person = ForeignKey(Person, null=True)
     time = models.DateTimeField(auto_now_add=True)
     primary = models.BooleanField(default=False)
+    origin = models.CharField(max_length=150, default='', editable=False)       # User.username or Document.name
     active = models.BooleanField(default=True)      # Old email addresses are *not* purged, as history
-                                        # information points to persons through these
+                                                    # information points to persons through these
+
     def __unicode__(self):
         return self.address or "Email object with id: %s"%self.pk
 
@@ -280,6 +279,10 @@ class Email(models.Model):
             return
         return self.address
 
+    def save(self, *args, **kwargs):
+        if not self.origin:
+            log.assertion('self.origin')
+        super(Email, self).save(*args, **kwargs)
 
 # "{key.id}{salt}{hash}
 KEY_STRUCT = "i12s32s"

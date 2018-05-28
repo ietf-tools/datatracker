@@ -193,6 +193,9 @@ class RoleForm(forms.Form):
         name = cleaned_data['name']
         group_acronym = cleaned_data['group_acronym']
         
+        if email.person != person:
+            raise forms.ValidationError('ERROR: The person associated with the chosen email address is different from the chosen person')
+
         if Role.objects.filter(name=name,group=self.group,person=person,email=email):
             raise forms.ValidationError('ERROR: This is a duplicate entry')
         

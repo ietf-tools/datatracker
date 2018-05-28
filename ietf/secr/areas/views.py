@@ -214,6 +214,10 @@ def people(request, name):
                 # create role
                 Role.objects.create(name_id='pre-ad',group=area,email=email,person=person)
                 
+                if not email.origin or email.origin == person.user.username:
+                    email.origin = "role: %s %s" % (area.acronym, 'pre-ad')
+                    email.save()
+
                 messages.success(request, 'New Area Director added successfully!')
                 return redirect('ietf.secr.areas.views.view', name=name)
     else:

@@ -18,8 +18,6 @@
     <tr><td>Ascii Name:</td><td>{{ person.ascii }}</td></tr>
     <tr><td>Short Name:</td><td>{{ person.ascii_short }}</td></tr>
     <tr><td>Aliases:</td><td>{% for alias in person.alias_set.all %}{% if not forloop.first %}, {% endif %}{{ alias.name }}{% endfor %}
-    <tr><td>Address:</td><td>{{ person.address }}</td></tr>
-    <tr><td>Affiliation:</td><td>{{ person.affiliation }}</td></tr>
     <tr><td>User:</td><td>{{ person.user }}</td></tr>
     <tr></tr>
     {% for email in person.emails %}

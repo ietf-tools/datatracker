@@ -86,7 +86,9 @@ def add_proceed(request):
 
             # save email
             Email.objects.create(address=email,
-                                 person=person)
+                                 person=person,
+                                 origin=request.user.username,
+                             )
 
             # in theory a user record could exist which wasn't associated with a Person
             try:

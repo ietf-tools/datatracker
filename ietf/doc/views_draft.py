@@ -954,6 +954,9 @@ def edit_shepherd(request, name):
                 events = []
 
                 doc.shepherd = form.cleaned_data['shepherd']
+                if doc.shepherd and not doc.shepherd.origin:
+                    doc.shepherd.origin = 'shepherd: %s' % doc.name
+                    doc.shepherd.save()
 
                 c = DocEvent(type="added_comment", doc=doc, rev=doc.rev, by=request.user.person)
                 c.desc = "Document shepherd changed to "+ (doc.shepherd.person.name if doc.shepherd else "(None)")

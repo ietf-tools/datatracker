@@ -1,3 +1,7 @@
+# Copyright The IETF Trust 2016, All Rights Reserved
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals, print_function
+
 import re
 from unidecode import unidecode
 
@@ -94,6 +98,9 @@ def get_person_form(*args, **kwargs):
         class Meta:
             model = Person
             exclude = exclude_list
+            widgets = {
+                'consent': forms.widgets.CheckboxInput,
+            }            
 
         def __init__(self, *args, **kwargs):
             super(PersonForm, self).__init__(*args, **kwargs)
@@ -104,6 +111,12 @@ def get_person_form(*args, **kwargs):
 
             if self.initial.get("ascii") == self.initial.get("name"):
                 self.initial["ascii"] = ""
+
+            for f in ['name', 'ascii', 'ascii_short', 'biography', 'photo', 'photo_thumb', ]:
+                if f in self.fields:
+                    self.fields[f].label += ' \u2020'
+
+            self.fields["consent"].required = True
 
             self.unidecoded_ascii = False
 
@@ -134,6 +147,11 @@ def get_person_form(*args, **kwargs):
             prevent_at_symbol(name)
             prevent_system_name(name)
             return ascii_cleaner(name)
+
+        def clean_consent(self):
+            consent = self.cleaned_data.get('consent')
+            if consent == False:
+                raise forms.ValidationError("In order to modify your profile data, you must permit the IETF to use the uploaded data.")
 
     return PersonForm(*args, **kwargs)
 

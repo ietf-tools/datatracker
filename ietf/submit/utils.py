@@ -136,7 +136,7 @@ def docevent_from_submission(request, submission, desc, who=None):
     else:
         submitter_parsed = submission.submitter_parsed()
         if submitter_parsed["name"] and submitter_parsed["email"]:
-            by, _ = ensure_person_email_info_exists(submitter_parsed["name"], submitter_parsed["email"])
+            by, _ = ensure_person_email_info_exists(submitter_parsed["name"], submitter_parsed["email"], submission.name)
         else:
             by = system
 
@@ -190,7 +190,7 @@ def post_submission(request, submission, approvedDesc):
     system = Person.objects.get(name="(System)")
     submitter_parsed = submission.submitter_parsed()
     if submitter_parsed["name"] and submitter_parsed["email"]:
-        submitter, _ = ensure_person_email_info_exists(submitter_parsed["name"], submitter_parsed["email"])
+        submitter, _ = ensure_person_email_info_exists(submitter_parsed["name"], submitter_parsed["email"], submission.name)
         submitter_info = u'%s <%s>' % (submitter_parsed["name"], submitter_parsed["email"])
     else:
         submitter = system
@@ -428,7 +428,7 @@ def get_person_from_name_email(name, email):
 
     return None
 
-def ensure_person_email_info_exists(name, email):
+def ensure_person_email_info_exists(name, email, docname):
     addr = email
     email = None
     person = get_person_from_name_email(name, addr)
@@ -437,9 +437,12 @@ def ensure_person_email_info_exists(name, email):
     if not person:
         person = Person()
         person.name = name
+        person.name_from_draft = name
         log.assertion('isinstance(person.name, six.text_type)')
         person.ascii = unidecode_name(person.name).decode('ascii')
         person.save()
+    else:
+        person.name_from_draft = name
 
     # make sure we have an email address
     if addr and (addr.startswith('unknown-email-') or is_valid_email(addr)):
@@ -452,6 +455,8 @@ def ensure_person_email_info_exists(name, email):
 
     try:
         email = person.email_set.get(address=addr)
+        email.origin = "author: %s" % docname          # overwrite earlier origin
+        email.save()
     except Email.DoesNotExist:
         try:
             # An Email object pointing to some other person will not exist
@@ -463,10 +468,10 @@ def ensure_person_email_info_exists(name, email):
             # most likely we just need to create it
             email = Email(address=addr)
             email.active = active
-
         email.person = person
         if email.time is None:
             email.time = datetime.datetime.now()
+        email.origin = "author: %s" % docname
         email.save()
 
     return person, email
@@ -474,7 +479,7 @@ def ensure_person_email_info_exists(name, email):
 def update_authors(draft, submission):
     persons = []
     for order, author in enumerate(submission.authors):
-        person, email = ensure_person_email_info_exists(author["name"], author.get("email"))
+        person, email = ensure_person_email_info_exists(author["name"], author.get("email"), submission.name)
 
         a = DocumentAuthor.objects.filter(document=draft, person=person).first()
         if not a:

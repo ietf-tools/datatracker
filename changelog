@@ -1,3 +1,67 @@
+ietfdb (6.81.0) ietf; urgency=medium
+
+  This release contains code and schema changes necessary for compliance
+  with the European GDPR (General Data Protection Regulation).  It provides
+  necessary GUI and internal changes, but lacks some admin utilities, and
+  also data migration routines which takes some time to run, and therefore
+  will be packaged in a separate release and applied separately.
+
+  From the commit log:
+
+  * Updated the personal information page with reviewed text from legal 
+    counsel.  Fixes issue #2503.
+
+  * Removed the Person.address field, which is not being used.  This was a 
+    legacy from the 2001 perl-based datatracker tables.  Fixes issue #2504.
+
+  * Added django-simple-history and replaced the old (and unused) 
+    PersonHistory class with a history=HistoricalRecords() field on Person.  
+    Added the needed migrations and changes to admin, resources, and settings.  
+    Related to issues #2505 and #2507.
+
+  * Added a new field name_from_draft to Person, to hold the name field 
+    equivalent as captured from drafts, in case name has been modified by the 
+    user and we're asked to remove that info under GDPR.  Added history for 
+    Email, and also an origin field to capture from where we got an email 
+    address (draft name, username, meeting registration, etc.)  Added a 
+    log.assertion() to Email.save() in order to ensure we don't create any 
+    email without setting origin.
+
+  * Added origin information to all places where we create email address 
+    entries.
+
+  * Removed all references to the removed Person.affiliation field.
+
+  * Added email origin information to some function calls that needed it.
+
+  * Overwrite earlier email origin when we've picked up the address from a 
+    submission.
+
+  * Added a consent field to the Person model.
+
+  * Disallow profile changes without consent given.  Together with previous 
+    commits this fixes issues #2505 and #2507.
+
+  * Added another category of personal information to the 
+    personal-information page, after review of personal information in the 
+    code.  Completes issue #2501.
+
+  * Added a dagger at the end of some fields in the account data forms to 
+    signify consent-based fields, and made the consent field required.
+
+  * Simplified the email.origin assignment code for outgoing liaisons.
+
+  * Fixed a long-standing bug in the liaison.name() code.
+
+  * Added assingment of the person.name_from_draft field on draft 
+    submission.
+
+
+  * Updated the edit_profile template with information about consent-based 
+    fields.  Fixes issue #2502.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  28 May 2018 11:15:34 +0000
+
 ietfdb (6.80.1) ietf; urgency=medium
 
   This is a bugfix release which also clears the slate for the upcoming

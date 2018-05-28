@@ -42,9 +42,9 @@ class PersonTests(TestCase):
 
     def test_default_email(self):
         person = PersonFactory()
-        primary = EmailFactory(person=person,primary=True,active=True)
-        EmailFactory(person=person,primary=False,active=True)
-        EmailFactory(person=person,primary=False,active=False)
+        primary = EmailFactory(person=person, primary=True, active=True)
+        EmailFactory(person=person, primary=False, active=True)
+        EmailFactory(person=person, primary=False, active=False)
         self.assertTrue(primary.address in person.formatted_email())
 
     def test_profile(self):

@@ -2,7 +2,6 @@
   <thead>
     <tr> 
       <th>Name</th>
-      <th>Company</th>
       <th>Email</th>
       <th>ID</th>
     </tr>
@@ -11,7 +10,6 @@
     {% for item in results %}
        <tr class="{% cycle 'row1' 'row2' %}">
          <td><a href="{% url 'ietf.secr.rolodex.views.view' id=item.person.id %}">{{item.name}}</a></td>
-         <td>{{item.person.affiliation}}</td>
          <td>{{item.person.email_address}}</td>
          <td>{{item.person.id}}</a></td>
        </tr>

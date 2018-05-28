@@ -207,9 +207,9 @@ class IetfAuthTests(TestCase):
             "name": u"Test Nãme",
             "ascii": u"Test Name",
             "ascii_short": u"T. Name",
-            "address": "Test address",
             "affiliation": "Test Org",
             "active_emails": email_address,
+            "consent": True,
         }
 
         # edit details - faulty ASCII
@@ -309,7 +309,7 @@ class IetfAuthTests(TestCase):
         user.set_password("forgotten")
         user.save()
         p = Person.objects.create(name="Some One", ascii="Some One", user=user)
-        Email.objects.create(address=user.username, person=p)
+        Email.objects.create(address=user.username, person=p, origin=user.username)
         
         # get
         r = self.client.get(url)
@@ -419,7 +419,7 @@ class IetfAuthTests(TestCase):
         user.set_password("password")
         user.save()
         p = Person.objects.create(name="Some One", ascii="Some One", user=user)
-        Email.objects.create(address=user.username, person=p)
+        Email.objects.create(address=user.username, person=p, origin=user.username)
 
         # log in
         r = self.client.post(redir_url, {"username":user.username, "password":"password"})
@@ -466,8 +466,8 @@ class IetfAuthTests(TestCase):
         user.set_password("password")
         user.save()
         p = Person.objects.create(name="Some One", ascii="Some One", user=user)
-        Email.objects.create(address=user.username, person=p)
-        Email.objects.create(address="othername@example.org", person=p)        
+        Email.objects.create(address=user.username, person=p, origin=user.username)
+        Email.objects.create(address="othername@example.org", person=p, origin=user.username)
 
         # log in
         r = self.client.post(redir_url, {"username":user.username, "password":"password"})

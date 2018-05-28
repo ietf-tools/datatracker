@@ -34,7 +34,7 @@ def merge_persons(source, target, file=sys.stdout, verbose=False):
     dedupe_aliases(target)
 
     # copy other attributes
-    for field in ('ascii','ascii_short','address','affiliation'):
+    for field in ('ascii','ascii_short', 'biography', 'photo', 'photo_thumb', 'name_from_draft'):
         if getattr(source,field) and not getattr(target,field):
             setattr(target,field,getattr(source,field))
             target.save()

@@ -266,8 +266,12 @@ class LiaisonModelForm(BetterModelForm):
         
     def clean_from_contact(self):
         contact = self.cleaned_data.get('from_contact')
+        from_groups = self.cleaned_data.get('from_groups')
         try:
             email = Email.objects.get(address=contact)
+            if not email.origin:
+                email.origin = "liaison: %s" % (','.join([ g.acronym for g in from_groups.all() ]))
+                email.save()
         except ObjectDoesNotExist:
             raise forms.ValidationError('Email address does not exist')
         return email
@@ -499,6 +503,7 @@ class OutgoingLiaisonForm(LiaisonModelForm):
         # set initial
         if has_role(self.user, "Liaison Manager"):
             self.fields['to_groups'].initial = [queryset.first()]
+
 
 class EditLiaisonForm(LiaisonModelForm):
     def __init__(self, *args, **kwargs):

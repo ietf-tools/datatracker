@@ -101,7 +101,7 @@ with db_con.cursor() as c:
                 for name in new_aliases:
                     Alias.objects.create(person=person, name=name)
 
-            email, created = Email.objects.get_or_create(address=row.email, person=person)
+            email, created = Email.objects.get_or_create(address=row.email, person=person, origin="import: %s" % __name__)
             if created:
                 print "created email", email
 
