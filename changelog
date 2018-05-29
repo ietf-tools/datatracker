@@ -1,3 +1,16 @@
+ietfdb (6.81.1) ietf; urgency=medium
+
+  This is the second in a small series of releases to address compliance
+  with the European GDPR (General Data Protection Regulation).
+
+  This release provides two data migrations to polulate email address origin
+  and other trace information, to make it possible to differentiate between
+  that personal information which is to be treated as Consent-based, that
+  which falls under Legitimate Interest.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  29 May 2018 14:38:09 +0000
+
+
 ietfdb (6.81.0) ietf; urgency=medium
 
   This is the first in a small series of releases to address compliance with
