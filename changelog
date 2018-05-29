@@ -1,10 +1,12 @@
 ietfdb (6.81.0) ietf; urgency=medium
 
-  This release contains code and schema changes necessary for compliance
-  with the European GDPR (General Data Protection Regulation).  It provides
-  necessary GUI and internal changes, but lacks some admin utilities, and
-  also data migration routines which takes some time to run, and therefore
-  will be packaged in a separate release and applied separately.
+  This is the first in a small series of releases to address compliance with
+  with the European GDPR (General Data Protection Regulation).  
+
+  This release provides necessary GUI and internal changes, but lacks some
+  admin utilities, and also data migration routines which takes some time to
+  run, and therefore will be packaged in a separate release and applied
+  separately.
 
   From the commit log:
 
@@ -60,7 +62,7 @@ ietfdb (6.81.0) ietf; urgency=medium
   * Updated the edit_profile template with information about consent-based 
     fields.  Fixes issue #2502.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  28 May 2018 11:15:34 +0000
+ -- Henrik Levkowetz <henrik@levkowetz.com>  29 May 2018 11:10:28 +0000
 
 ietfdb (6.80.1) ietf; urgency=medium
 
