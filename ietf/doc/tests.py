@@ -207,7 +207,6 @@ class SearchTests(TestCase):
         self.assertEqual(urlparse.parse_qs(parsed.query)["name"][0], "draft-ietf-doesnotexist-42")
 
     def test_frontpage(self):
-        make_test_data()
         r = self.client.get("/")
         self.assertEqual(r.status_code, 200)
         self.assertTrue("Document Search" in unicontent(r))
@@ -239,7 +238,8 @@ class SearchTests(TestCase):
         
 
     def test_drafts_in_last_call(self):
-        draft = make_test_data()
+        draft = DocumentFactory(pages=1)
+        draft.set_state(State.objects.get(type='draft',slug='active'))
         draft.set_state(State.objects.get(type="draft-iesg", slug="lc"))
         r = self.client.get(urlreverse('ietf.doc.views_search.drafts_in_last_call'))
         self.assertEqual(r.status_code, 200)
@@ -255,7 +255,8 @@ class SearchTests(TestCase):
         self.assertFalse(doc_not_in_process.title in unicontent(r))
         
     def test_indexes(self):
-        draft = make_test_data()
+        draft = DocumentFactory()
+        draft.set_state(State.objects.get(type='draft',slug='active'))
 
         r = self.client.get(urlreverse('ietf.doc.views_search.index_all_drafts'))
         self.assertEqual(r.status_code, 200)
@@ -266,7 +267,7 @@ class SearchTests(TestCase):
         self.assertTrue(draft.title in unicontent(r))
 
     def test_ajax_search_docs(self):
-        draft = make_test_data()
+        draft = DocumentFactory()
 
         # Document
         url = urlreverse('ietf.doc.views_search.ajax_select2_search_docs', kwargs={
