@@ -28,7 +28,7 @@ from ietf.group.models import Group
 from ietf.group.factories import GroupFactory
 from ietf.meeting.models import Meeting, Session, SessionPresentation
 from ietf.meeting.factories import MeetingFactory, SessionFactory
-from ietf.meeting.test_data import make_meeting_test_data
+#from ietf.meeting.test_data import make_meeting_test_data
 from ietf.name.models import SessionStatusName
 from ietf.person.models import Person
 from ietf.person.factories import PersonFactory
@@ -610,8 +610,16 @@ Man                    Expires September 22, 2015               [Page 3]
         self.assertEqual(r.status_code, 404)
 
     def test_document_primary_and_history_views(self):
-        make_test_data()
-        make_meeting_test_data()
+        #make_test_data()
+        #make_meeting_test_data()
+        DocumentFactory(name='draft-imaginary-independent-submission')
+        ConflictReviewFactory(name='conflict-review-imaginary-irtf-submission')
+        CharterFactory(name='charter-ietf-mars')
+        DocumentFactory(type_id='agenda',name='agenda-42-mars')
+        DocumentFactory(type_id='minutes',name='minutes-42-mars')
+        DocumentFactory(type_id='slides',name='slides-42-mars-1-active')
+        statchg = DocumentFactory(type_id='statchg',name='status-change-imaginary-mid-review')
+        statchg.set_state(State.objects.get(type_id='statchg',slug='adrev'))
 
         # Ensure primary views of both current and historic versions of documents works
         for docname in ["draft-imaginary-independent-submission",
@@ -684,7 +692,7 @@ class DocTestCase(TestCase):
         self.assertEqual(r.status_code, 200)
 
     def test_document_ballot(self):
-        doc = make_test_data()
+        doc = DocumentFactory()
         ad = Person.objects.get(user__username="ad")
         ballot = create_ballot_if_not_open(None, doc, ad, 'approve')
         assert ballot == doc.active_ballot()
@@ -728,7 +736,9 @@ class DocTestCase(TestCase):
         
     def test_document_ballot_needed_positions(self):
         # draft
-        doc = make_test_data()
+        doc = DocumentFactory(intended_std_level_id='ps')
+        doc.set_state(State.objects.get(type_id='draft-iesg',slug='iesg-eva'))
+        doc.set_state(State.objects.get(type_id='draft',slug='active'))
         ad = Person.objects.get(user__username="ad")
         create_ballot_if_not_open(None, doc, ad, 'approve')
 
@@ -739,7 +749,9 @@ class DocTestCase(TestCase):
         self.assertFalse('more YES or NO' in unicontent(r))
 
         # status change
-        doc = Document.objects.get(name='status-change-imaginary-mid-review')
+        DocumentFactory().docalias_set.create(name='rfc9998')
+        DocumentFactory().docalias_set.create(name='rfc9999')
+        doc = DocumentFactory(type_id='statchg',name='status-change-imaginary-mid-review')
         iesgeval_pk = str(State.objects.get(slug='iesgeval',type__slug='statchg').pk)
         self.client.login(username='ad', password='ad+password')
         r = self.client.post(urlreverse('ietf.doc.views_status_change.change_state',kwargs=dict(name=doc.name)),dict(new_state=iesgeval_pk))

@@ -7,6 +7,7 @@ from ietf.review.factories import ReviewTeamSettingsFactory
 class GroupFactory(factory.DjangoModelFactory):
     class Meta:
         model = Group
+        django_get_or_create = ('acronym',)
 
     name = factory.Faker('sentence',nb_words=6)
     acronym = factory.Sequence(lambda n: 'acronym%d' %n)
