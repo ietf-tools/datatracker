@@ -122,8 +122,15 @@ class SearchTests(TestCase):
         self.assertTrue(draft.title in unicontent(r))
 
     def test_search_for_name(self):
-        draft = make_test_data()
-        make_meeting_test_data()
+        draft = DocumentFactory(name='draft-ietf-mars-test',group=GroupFactory(acronym='mars',parent=Group.objects.get(acronym='farfut')),authors=[PersonFactory()],ad=PersonFactory())
+        draft.set_state(State.objects.get(used=True, type="draft-iesg", slug="pub-req"))
+        CharterFactory(group=draft.group,name='charter-ietf-mars')
+        DocumentFactory(type_id='conflrev',name='conflict-review-imaginary-irtf-submission')
+        DocumentFactory(type_id='statchg',name='status-change-imaginary-mid-review')
+        DocumentFactory(type_id='agenda',name='agenda-42-mars')
+        DocumentFactory(type_id='minutes',name='minutes-42-mars')
+        DocumentFactory(type_id='slides',name='slides-42-mars')
+
         draft.save_with_history([DocEvent.objects.create(doc=draft, rev=draft.rev, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
 
         prev_rev = draft.rev
