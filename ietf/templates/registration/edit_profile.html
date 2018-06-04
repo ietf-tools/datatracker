@@ -77,6 +77,19 @@
       </div>
     </div>
 
+    {% if person.photo %}
+    <div class="form-group">
+      <label class="col-sm-2 control-label">Photo &dagger;</label>
+      <div class="col-sm-10">
+	 <p class="form-control-static">
+	   <a href="{{person.photo.url}}">
+	     <img class="photo" src="{{ person.photo.url }}" alt="Photo of {{ person }}" />
+	   </a>
+	 </p>
+      </div>
+    </div>
+    {% endif %}
+
     <div class="form-group">
       <label class="col-sm-2 control-label">Nomcom Eligible</label>
       <div class="col-sm-1 form-control-static">{{person|is_nomcom_eligible|yesno:'Yes,No,No'}}</div>
@@ -89,20 +102,24 @@
       <label class="col-sm-2 control-label">Email addresses</label>
       <div class="col-sm-10">
         <div class="row">
-	  <div class="col-sm-5" id="emails">
+	  <div class="col-sm-10" id="emails">
 	    <table class="table table-condensed">
-	      <tr ><th>Primary</th><th>Active</th><th>Address</th></tr>
+	      <tr ><th>Primary</th><th>Active</th><th>Address</th><th>Origin</th></tr>
 	      {% for email in emails %}
 	      <tr >
 		 <td><input type="radio" name="primary_email" value="{{ email.pk }}" {% if email.primary %}checked{% endif %}></td>
 		 <td><input type="checkbox" name="active_emails" value="{{ email.pk }}" {% if email.active %}checked{% endif %}></td>
-		 <td>{{ email }}</td>
+		 <td>
+		   {% if email.origin == person.user.username or email.origin == '' %}&dagger;{% endif %}
+		   {{ email }}
+		 </td>
+		 <td>{{ email.origin|default:'(unknown)' }}</td>
 	      </tr>
 	      {% endfor %}
 	    </table>
 	  </div>
-	  <div class="col-sm-7">
-	    <div class="help-block">Note: Email addresses cannot be deleted, only deactivated.</div>
+	  <div class="col-sm-10">
+	    <div class="help-block">Note: Email addresses cannot be deleted in this form, only deactivated.</div>
 	  </div>
         </div>
       </div>
@@ -146,11 +163,11 @@
    $(document).ready(function() {
        $("input[name=active_emails]").on("change keypress click", function () {
            if (this.checked) {
-               $(this).parent().parent().addClass("text-success");;
-               $(this).parent().parent().removeClass("text-danger line-through");
+               $(this).parent().next().addClass("text-success");;
+               $(this).parent().next().removeClass("text-danger line-through");
            } else {
-               $(this).parent().parent().addClass("text-danger line-through");
-               $(this).parent().parent().removeClass("text-success");
+               $(this).parent().next().addClass("text-danger line-through");
+               $(this).parent().next().removeClass("text-success");
            }
        }).trigger("change");
 

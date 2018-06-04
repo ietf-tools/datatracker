@@ -46,10 +46,11 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.hashers import identify_hasher
 from django.contrib.auth.models import User
-from django.contrib.auth.views import login as django_login
+from django.contrib.auth.views import LoginView
 from django.contrib.sites.models import Site
 from django.core.validators import ValidationError
 from django.urls import reverse as urlreverse
+from django.utils.safestring import mark_safe
 from django.http import Http404, HttpResponseRedirect  #, HttpResponse, 
 from django.shortcuts import render, redirect, get_object_or_404
 
@@ -583,6 +584,22 @@ def login(request, extra_context=None):
         form = AuthenticationForm(request, data=request.POST)
         username = form.data.get('username')
         user = User.objects.filter(username=username).first()
+        #
+        require_consent = []
+        if user.person and not user.person.consent:
+            person = user.person
+            if person.name != person.name_from_draft:
+                require_consent.append("full name")
+            elif person.ascii != person.name_from_draft:
+                require_consent.append("ascii name")
+            elif person.biography:
+                require_consent.append("biography")
+            elif user.communitylist_set.exists():
+                require_consent.append("draft notification subscription(s)")
+            else:
+                for email in person.email_set.all():
+                    if not email.origin.split(':')[0] in ['author', 'role', 'reviewer', 'liaison', 'shepherd', ]:
+                        require_consent.append("email address(es)")
         if user:
             try:
                 identify_hasher(user.password)
@@ -593,8 +610,19 @@ def login(request, extra_context=None):
                                     "Please use the password reset link below "
                                     "to set a new password for your account.",
                                 }
+    response = LoginView.as_view(extra_context=extra_context)(request)
+    if isinstance(response, HttpResponseRedirect) and user.is_authenticated():
+        if require_consent:
+            messages.warning(request, mark_safe("""
 
-    return django_login(request, extra_context=extra_context)
+                You have personal information associated with your account which is not
+                derived from draft submissions or other ietf work, namely: %s.  Please go
+                to your <a href='/accounts/profile'>account profile</a> and review your
+                personal information, and confirm that it may be used and displayed
+                within the IETF datatracker.
+
+                """ % ', '.join(require_consent)))
+    return response
 
 @login_required
 @person_required
