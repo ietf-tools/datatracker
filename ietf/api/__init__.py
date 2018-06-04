@@ -5,7 +5,6 @@ from urllib import urlencode
 
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
-from django.utils.encoding import force_text
 
 import debug                            # pyflakes:ignore
 
@@ -13,75 +12,11 @@ import tastypie
 import tastypie.resources
 from tastypie.api import Api
 from tastypie.bundle import Bundle
-from tastypie.serializers import Serializer as BaseSerializer
 from tastypie.exceptions import ApiFieldError
+from tastypie.serializers import Serializer # pyflakes:ignore (we're re-exporting this)
 from tastypie.fields import ApiField
 
 _api_list = []
-
-class ModelResource(tastypie.resources.ModelResource):
-    def generate_cache_key(self, *args, **kwargs):
-        """
-        Creates a unique-enough cache key.
-
-        This is based off the current api_name/resource_name/args/kwargs.
-        """
-        #smooshed = ["%s=%s" % (key, value) for key, value in kwargs.items()]
-        smooshed = urlencode(kwargs)
-
-        # Use a list plus a ``.join()`` because it's faster than concatenation.
-        return "%s:%s:%s:%s" % (self._meta.api_name, self._meta.resource_name, ':'.join(args), smooshed)
-
-class Serializer(BaseSerializer):
-    def to_html(self, data, options=None):
-        """
-        Reserved for future usage.
-
-        The desire is to provide HTML output of a resource, making an API
-        available to a browser. This is on the TODO list but not currently
-        implemented.
-        """
-        from django.template.loader import render_to_string
-
-        options = options or {}
-
-        serialized = self.to_simple_html(data, options)
-        return render_to_string("api/base.html", {"data": serialized})
-
-    def to_simple_html(self, data, options):
-        """
-        """
-        from django.template.loader import render_to_string
-        #
-        if isinstance(data, (list, tuple)):
-            return render_to_string("api/listitem.html", {"data": [self.to_simple_html(item, options) for item in data]})
-        if isinstance(data, dict):
-            return render_to_string("api/dictitem.html", {"data": dict((key, self.to_simple_html(val, options)) for (key, val) in data.items())})
-        elif isinstance(data, Bundle):
-            return render_to_string("api/dictitem.html", {"data":dict((key, self.to_simple_html(val, options)) for (key, val) in data.data.items())})
-        elif hasattr(data, 'dehydrated_type'):
-            if getattr(data, 'dehydrated_type', None) == 'related' and data.is_m2m == False:
-                return render_to_string("api/relitem.html", {"fk": data.fk_resource, "val": self.to_simple_html(data.value, options)})
-            elif getattr(data, 'dehydrated_type', None) == 'related' and data.is_m2m == True:
-                render_to_string("api/listitem.html", {"data": [self.to_simple_html(bundle, options) for bundle in data.m2m_bundles]})
-            else:
-                return self.to_simple_html(data.value, options)
-        elif isinstance(data, datetime.datetime):
-            return self.format_datetime(data)
-        elif isinstance(data, datetime.date):
-            return self.format_date(data)
-        elif isinstance(data, datetime.time):
-            return self.format_time(data)
-        elif isinstance(data, bool):
-            return data
-        elif isinstance(data, (six.integer_types, float)):
-            return data
-        elif data is None:
-            return None
-        elif isinstance(data, basestring) and data.startswith("/api/v1/"):  # XXX Will not work for Python 3
-            return render_to_string("api/relitem.html", {"fk": data, "val": data.split('/')[-2]})
-        else:
-            return force_text(data)
 
 for _app in settings.INSTALLED_APPS:
     _module_dict = globals()
@@ -115,6 +50,20 @@ def autodiscover():
             # attempting to import it, otherwise we want it to bubble up.
             if module_has_submodule(mod, "resources"):
                 raise
+
+class ModelResource(tastypie.resources.ModelResource):
+    def generate_cache_key(self, *args, **kwargs):
+        """
+        Creates a unique-enough cache key.
+
+        This is based off the current api_name/resource_name/args/kwargs.
+        """
+        #smooshed = ["%s=%s" % (key, value) for key, value in kwargs.items()]
+        smooshed = urlencode(kwargs)
+
+        # Use a list plus a ``.join()`` because it's faster than concatenation.
+        return "%s:%s:%s:%s" % (self._meta.api_name, self._meta.resource_name, ':'.join(args), smooshed)
+
 
 TIMEDELTA_REGEX = re.compile('^(?P<days>\d+d)?\s?(?P<hours>\d+h)?\s?(?P<minutes>\d+m)?\s?(?P<seconds>\d+s?)$')
 

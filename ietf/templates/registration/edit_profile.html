@@ -33,6 +33,16 @@
       if you wish to update or remove the information.
 
   </p>
+  <p>
+
+      All the information the datatracker has that is coupled to this account and visible
+      on this page or otherwise related to your work on ietf documents, is also available
+      to you as a <a href="{% url 'ietf.api.views.PersonExportView' %}">JSON blob</a> when
+      you are logged in.
+
+  </p>
+
+
   <hr>
 
   <form class="form-horizontal" method="post">
@@ -126,6 +136,8 @@
       </div>
     </div>
   </form>
+
+
 {% endblock %}
 
 {% block js %}

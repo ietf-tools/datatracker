@@ -20,8 +20,9 @@ import debug                            # pyflakes:ignore
 from ietf.group.factories import RoleFactory
 from ietf.meeting.factories import MeetingFactory, SessionFactory
 from ietf.meeting.test_data import make_meeting_test_data
+from ietf.person.factories import PersonFactory
 from ietf.person.models import PersonalApiKey
-from ietf.utils.test_utils import TestCase
+from ietf.utils.test_utils import TestCase, login_testing_unauthorized
 
 OMITTED_APPS = (
     'ietf.secr.meetings',
@@ -123,6 +124,17 @@ class CustomApiTestCase(TestCase):
         event = doc.latest_event()
         self.assertEqual(event.by, recman)
 
+
+    def test_person_export(self):
+        person = PersonFactory()
+        url = urlreverse('ietf.api.views.PersonExportView')
+        login_testing_unauthorized(self, person.user.username, url)
+        r = self.client.get(url)
+        jsondata = r.json()
+        data = jsondata['person.person'][str(person.id)]
+        self.assertEqual(data['name'], person.name)
+        self.assertEqual(data['ascii'], person.ascii)
+        self.assertEqual(data['user']['email'], person.user.email)
 
 class TastypieApiTestCase(ResourceTestCaseMixin, TestCase):
     def __init__(self, *args, **kwargs):

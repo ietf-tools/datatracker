@@ -6,17 +6,24 @@ from __future__ import unicode_literals
 from jwcrypto.jwk import JWK
 
 from django.conf import settings
+from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.urls import reverse
+from django.utils.decorators import method_decorator
+from django.views.decorators.gzip import gzip_page
+from django.views.generic.detail import DetailView
 
 from tastypie.exceptions import BadRequest
 from tastypie.utils.mime import determine_format, build_content_type
 from tastypie.utils import is_valid_jsonp_callback_value
+from tastypie.serializers import Serializer
 
 import debug                            # pyflakes:ignore
 
-from ietf.api import Serializer, _api_list
+from ietf.person.models import Person
+from ietf.api import _api_list
+from ietf.api.serializer import JsonExportMixin
 
 def top_level(request):
     available_resources = {}
@@ -50,3 +57,19 @@ def api_help(request):
     key.import_from_pem(settings.API_PUBLIC_KEY_PEM)
     return render(request, "api/index.html", {'key': key, 'settings':settings, })
     
+
+@method_decorator((login_required, gzip_page), name='dispatch')
+class PersonExportView(DetailView, JsonExportMixin):
+    model = Person
+
+    def get(self, request):
+        person = get_object_or_404(self.model, user=request.user)
+        expand = ['searchrule', 'documentauthor', 'ad_document_set', 'ad_dochistory_set', 'docevent',
+            'ballotpositiondocevent', 'deletedevent', 'email_set', 'groupevent', 'role', 'rolehistory', 'iprdisclosurebase',
+            'iprevent', 'liaisonstatementevent', 'whitelisted', 'schedule', 'constraint', 'session', 'message',
+            'sendqueue', 'nominee', 'topicfeedbacklastseen', 'alias', 'email', 'apikeys', 'personevent',
+            'reviewersettings', 'reviewsecretarysettings', 'unavailableperiod', 'reviewwish',
+            'nextreviewerinteam', 'reviewrequest', 'meetingregistration', 'submissionevent', 'preapproval',
+            'user']
+        return self.json_view(request, filter={'id':person.id}, expand=expand)
+
