@@ -152,6 +152,7 @@ def get_person_form(*args, **kwargs):
             consent = self.cleaned_data.get('consent')
             if consent == False:
                 raise forms.ValidationError("In order to modify your profile data, you must permit the IETF to use the uploaded data.")
+            return consent
 
     return PersonForm(*args, **kwargs)
 
