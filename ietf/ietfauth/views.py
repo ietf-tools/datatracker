@@ -611,7 +611,7 @@ def login(request, extra_context=None):
                                     "to set a new password for your account.",
                                 }
     response = LoginView.as_view(extra_context=extra_context)(request)
-    if isinstance(response, HttpResponseRedirect) and user.is_authenticated():
+    if isinstance(response, HttpResponseRedirect) and user.is_authenticated:
         if require_consent:
             messages.warning(request, mark_safe("""
 
