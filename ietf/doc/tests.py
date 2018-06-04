@@ -39,7 +39,11 @@ from ietf.utils.test_utils import TestCase
 
 class SearchTests(TestCase):
     def test_search(self):
-        draft = make_test_data()
+
+        draft = DocumentFactory(name='draft-ietf-mars-test',group=GroupFactory(acronym='mars',parent=Group.objects.get(acronym='farfut')),authors=[PersonFactory()],ad=PersonFactory())
+        draft.set_state(State.objects.get(used=True, type="draft-iesg", slug="pub-req"))
+        old_draft = DocumentFactory(name='draft-foo-mars-test',authors=[PersonFactory()],title="Optimizing Martian Network Topologies")
+        old_draft.set_state(State.objects.get(used=True, type="draft", slug="expired"))
 
         base_url = urlreverse('ietf.doc.views_search.search')
 
