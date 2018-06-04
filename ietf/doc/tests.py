@@ -28,7 +28,6 @@ from ietf.group.models import Group
 from ietf.group.factories import GroupFactory
 from ietf.meeting.models import Meeting, Session, SessionPresentation
 from ietf.meeting.factories import MeetingFactory, SessionFactory
-#from ietf.meeting.test_data import make_meeting_test_data
 from ietf.name.models import SessionStatusName
 from ietf.person.models import Person
 from ietf.person.factories import PersonFactory
@@ -610,8 +609,6 @@ Man                    Expires September 22, 2015               [Page 3]
         self.assertEqual(r.status_code, 404)
 
     def test_document_primary_and_history_views(self):
-        #make_test_data()
-        #make_meeting_test_data()
         DocumentFactory(name='draft-imaginary-independent-submission')
         ConflictReviewFactory(name='conflict-review-imaginary-irtf-submission')
         CharterFactory(name='charter-ietf-mars')
