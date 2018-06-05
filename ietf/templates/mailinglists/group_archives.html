@@ -13,9 +13,9 @@
     charters for more information about the mailing lists and archives
     of specific working groups.  Charters for active working groups are
     available on
-    the <a href="/wg/">Active IETF Working Groups</a> Web page.
+    the <a href="{% url 'ietf.group.views.active_groups' group_type='wg' %}">Active IETF Working Groups</a> Web page.
     Charters for concluded working groups are available on
-    the <a href="https://www.ietf.org/wg/concluded/index.html">Concluded
+    the <a href="{% url 'ietf.group.views.concluded_groups' %}">Concluded
     Working Groups</a> Web page.</p>
 
   <table class="table table-condensed table-striped">
