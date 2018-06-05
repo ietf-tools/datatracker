@@ -22,7 +22,7 @@ import debug                            # pyflakes:ignore
 
 from ietf.doc.models import ( Document, DocAlias, DocRelationshipName, RelatedDocument, State,
     DocEvent, BallotPositionDocEvent, LastCallDocEvent, WriteupDocEvent, NewRevisionDocEvent )
-from ietf.doc.factories import DocumentFactory, DocEventFactory, CharterFactory, ConflictReviewFactory
+from ietf.doc.factories import DocumentFactory, DocEventFactory, CharterFactory, ConflictReviewFactory, WgDraftFactory, IndividualDraftFactory, WgRfcFactory, IndividualRfcFactory
 from ietf.doc.utils import create_ballot_if_not_open
 from ietf.group.models import Group
 from ietf.group.factories import GroupFactory
@@ -32,16 +32,16 @@ from ietf.name.models import SessionStatusName
 from ietf.person.models import Person
 from ietf.person.factories import PersonFactory
 from ietf.utils.mail import outbox
-from ietf.utils.test_data import make_test_data
+#from ietf.utils.test_data import make_test_data
 from ietf.utils.test_utils import login_testing_unauthorized, unicontent
 from ietf.utils.test_utils import TestCase
 
 class SearchTests(TestCase):
     def test_search(self):
 
-        draft = DocumentFactory(name='draft-ietf-mars-test',group=GroupFactory(acronym='mars',parent=Group.objects.get(acronym='farfut')),authors=[PersonFactory()],ad=PersonFactory())
+        draft = WgDraftFactory(name='draft-ietf-mars-test',group=GroupFactory(acronym='mars',parent=Group.objects.get(acronym='farfut')),authors=[PersonFactory()],ad=PersonFactory())
         draft.set_state(State.objects.get(used=True, type="draft-iesg", slug="pub-req"))
-        old_draft = DocumentFactory(name='draft-foo-mars-test',authors=[PersonFactory()],title="Optimizing Martian Network Topologies")
+        old_draft = IndividualDraftFactory(name='draft-foo-mars-test',authors=[PersonFactory()],title="Optimizing Martian Network Topologies")
         old_draft.set_state(State.objects.get(used=True, type="draft", slug="expired"))
 
         base_url = urlreverse('ietf.doc.views_search.search')
@@ -121,7 +121,7 @@ class SearchTests(TestCase):
         self.assertTrue(draft.title in unicontent(r))
 
     def test_search_for_name(self):
-        draft = DocumentFactory(name='draft-ietf-mars-test',group=GroupFactory(acronym='mars',parent=Group.objects.get(acronym='farfut')),authors=[PersonFactory()],ad=PersonFactory())
+        draft = WgDraftFactory(name='draft-ietf-mars-test',group=GroupFactory(acronym='mars',parent=Group.objects.get(acronym='farfut')),authors=[PersonFactory()],ad=PersonFactory())
         draft.set_state(State.objects.get(used=True, type="draft-iesg", slug="pub-req"))
         CharterFactory(group=draft.group,name='charter-ietf-mars')
         DocumentFactory(type_id='conflrev',name='conflict-review-imaginary-irtf-submission')
@@ -212,10 +212,9 @@ class SearchTests(TestCase):
 
     def test_docs_for_ad(self):
         ad = PersonFactory()
-        draft = DocumentFactory(type_id='draft',ad=ad)
-        draft.set_state(State.objects.get(type='draft', slug='active'))
+        draft = IndividualDraftFactory(ad=ad)
         draft.set_state(State.objects.get(type='draft-iesg', slug='lc'))
-        rfc = DocumentFactory(type_id='draft',ad=ad)
+        rfc = IndividualDraftFactory(ad=ad)
         rfc.set_state(State.objects.get(type='draft', slug='rfc'))
         rfc.docalias_set.create(name='rfc6666')
         conflrev = DocumentFactory(type_id='conflrev',ad=ad)
@@ -237,25 +236,23 @@ class SearchTests(TestCase):
         
 
     def test_drafts_in_last_call(self):
-        draft = DocumentFactory(pages=1)
-        draft.set_state(State.objects.get(type='draft',slug='active'))
+        draft = IndividualDraftFactory(pages=1)
         draft.set_state(State.objects.get(type="draft-iesg", slug="lc"))
         r = self.client.get(urlreverse('ietf.doc.views_search.drafts_in_last_call'))
         self.assertEqual(r.status_code, 200)
         self.assertTrue(draft.title in unicontent(r))
 
     def test_in_iesg_process(self):
-        doc_in_process = DocumentFactory(type_id='draft')
+        doc_in_process = IndividualDraftFactory()
         doc_in_process.set_state(State.objects.get(type='draft-iesg', slug='lc'))
-        doc_not_in_process = DocumentFactory(type_id='draft')
+        doc_not_in_process = IndividualDraftFactory()
         r = self.client.get(urlreverse('ietf.doc.views_search.drafts_in_iesg_process'))
         self.assertEqual(r.status_code, 200)
         self.assertTrue(doc_in_process.title in unicontent(r))
         self.assertFalse(doc_not_in_process.title in unicontent(r))
         
     def test_indexes(self):
-        draft = DocumentFactory()
-        draft.set_state(State.objects.get(type='draft',slug='active'))
+        draft = IndividualDraftFactory()
 
         r = self.client.get(urlreverse('ietf.doc.views_search.index_all_drafts'))
         self.assertEqual(r.status_code, 200)
@@ -266,7 +263,7 @@ class SearchTests(TestCase):
         self.assertTrue(draft.title in unicontent(r))
 
     def test_ajax_search_docs(self):
-        draft = DocumentFactory()
+        draft = IndividualDraftFactory()
 
         # Document
         url = urlreverse('ietf.doc.views_search.ajax_select2_search_docs', kwargs={
@@ -479,14 +476,10 @@ Man                    Expires September 22, 2015               [Page 3]
         shutil.rmtree(self.id_dir)
 
     def test_document_draft(self):
-        draft = DocumentFactory(name='draft-ietf-mars-test',rev='01')
+        draft = WgDraftFactory(name='draft-ietf-mars-test',rev='01')
 
         # these tests aren't testing all attributes yet, feel free to
         # expand them
-
-
-        # active draft
-        draft.set_state(State.objects.get(type="draft", slug="active"))
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=draft.name)))
         self.assertEqual(r.status_code, 200)
@@ -555,10 +548,9 @@ Man                    Expires September 22, 2015               [Page 3]
         # replaced draft
         draft.set_state(State.objects.get(type="draft", slug="repl"))
 
-        replacement = DocumentFactory(
+        replacement = WgDraftFactory(
             name="draft-ietf-replacement",
             time=datetime.datetime.now(),
-            type_id="draft",
             title="Replacement Draft",
             stream_id=draft.stream_id, group_id=draft.group_id, abstract=draft.abstract,stream=draft.stream, rev=draft.rev,
             pages=draft.pages, intended_std_level_id=draft.intended_std_level_id,
@@ -593,10 +585,9 @@ Man                    Expires September 22, 2015               [Page 3]
         self.assertTrue("RFC 123456" in unicontent(r))
         self.assertTrue(draft.name in unicontent(r))
 
-        # naked RFC
-        rfc = DocumentFactory(
+        # naked RFC - also wierd that we test a PS from the ISE
+        rfc = IndividualDraftFactory(
             name="rfc1234567",
-            type_id="draft",
             title="RFC without a Draft",
             stream_id="ise",
             std_level_id="ps")
@@ -609,7 +600,7 @@ Man                    Expires September 22, 2015               [Page 3]
         self.assertEqual(r.status_code, 404)
 
     def test_document_primary_and_history_views(self):
-        DocumentFactory(name='draft-imaginary-independent-submission')
+        IndividualDraftFactory(name='draft-imaginary-independent-submission')
         ConflictReviewFactory(name='conflict-review-imaginary-irtf-submission')
         CharterFactory(name='charter-ietf-mars')
         DocumentFactory(type_id='agenda',name='agenda-42-mars')
@@ -689,7 +680,7 @@ class DocTestCase(TestCase):
         self.assertEqual(r.status_code, 200)
 
     def test_document_ballot(self):
-        doc = DocumentFactory()
+        doc = IndividualDraftFactory()
         ad = Person.objects.get(user__username="ad")
         ballot = create_ballot_if_not_open(None, doc, ad, 'approve')
         assert ballot == doc.active_ballot()
@@ -733,9 +724,8 @@ class DocTestCase(TestCase):
         
     def test_document_ballot_needed_positions(self):
         # draft
-        doc = DocumentFactory(intended_std_level_id='ps')
+        doc = IndividualDraftFactory(intended_std_level_id='ps')
         doc.set_state(State.objects.get(type_id='draft-iesg',slug='iesg-eva'))
-        doc.set_state(State.objects.get(type_id='draft',slug='active'))
         ad = Person.objects.get(user__username="ad")
         create_ballot_if_not_open(None, doc, ad, 'approve')
 
@@ -746,8 +736,8 @@ class DocTestCase(TestCase):
         self.assertFalse('more YES or NO' in unicontent(r))
 
         # status change
-        DocumentFactory().docalias_set.create(name='rfc9998')
-        DocumentFactory().docalias_set.create(name='rfc9999')
+        IndividualDraftFactory().docalias_set.create(name='rfc9998')
+        IndividualDraftFactory().docalias_set.create(name='rfc9999')
         doc = DocumentFactory(type_id='statchg',name='status-change-imaginary-mid-review')
         iesgeval_pk = str(State.objects.get(slug='iesgeval',type__slug='statchg').pk)
         self.client.login(username='ad', password='ad+password')
@@ -766,7 +756,7 @@ class DocTestCase(TestCase):
         self.assertTrue('more YES or NO' in unicontent(r))
 
     def test_document_json(self):
-        doc = make_test_data()
+        doc = IndividualDraftFactory()
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_json", kwargs=dict(name=doc.name)))
         self.assertEqual(r.status_code, 200)
@@ -775,7 +765,8 @@ class DocTestCase(TestCase):
         self.assertEqual(doc.pages,data['pages'])
 
     def test_writeup(self):
-        doc = make_test_data()
+        doc = IndividualDraftFactory(states = [('draft','active'),('draft-iesg','iesg-eva')],
+)
 
         appr = WriteupDocEvent.objects.create(
             doc=doc,
@@ -809,7 +800,7 @@ class DocTestCase(TestCase):
         self.assertTrue(rfced_note.text in r.content)
 
     def test_history(self):
-        doc = make_test_data()
+        doc = IndividualDraftFactory()
 
         e = DocEvent.objects.create(
             doc=doc,
@@ -824,7 +815,7 @@ class DocTestCase(TestCase):
         self.assertTrue(e.desc in unicontent(r))
         
     def test_document_feed(self):
-        doc = make_test_data()
+        doc = IndividualDraftFactory()
 
         e = DocEvent.objects.create(
             doc=doc,
@@ -838,7 +829,7 @@ class DocTestCase(TestCase):
         self.assertTrue(e.desc in unicontent(r))
 
     def test_last_call_feed(self):
-        doc = make_test_data()
+        doc = IndividualDraftFactory()
 
         doc.set_state(State.objects.get(type="draft-iesg", slug="lc"))
 
@@ -855,7 +846,7 @@ class DocTestCase(TestCase):
         self.assertTrue(doc.name in unicontent(r))
 
     def test_rfc_feed(self):
-        make_test_data()
+        WgRfcFactory()
         r = self.client.get("/feed/rfc/")
         self.assertTrue(r.status_code, 200)
         r = self.client.get("/feed/rfc/2016")
@@ -868,7 +859,7 @@ class DocTestCase(TestCase):
         self.assertTrue(State.objects.get(type="draft-iesg", slug="lc").name in unicontent(r))
 
     def test_document_nonietf_pubreq_button(self):
-        doc = make_test_data()
+        doc = IndividualDraftFactory()
 
         self.client.login(username='iab-chair', password='iab-chair+password')
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))
@@ -888,45 +879,46 @@ class DocTestCase(TestCase):
 
     def test_document_bibtex(self):
 
-        rfc = DocumentFactory.create(
-                  other_aliases = ['rfc6020',],
+        rfc = WgRfcFactory.create(
+                  #other_aliases = ['rfc6020',],
                   states = [('draft','rfc'),('draft-iesg','pub')],
                   std_level_id = 'ps',
                   time = '2010-10-10',
               )
+        num = rfc.rfc_number()
         DocEventFactory.create(doc=rfc, type='published_rfc', time = '2010-10-10')
         #
         url = urlreverse('ietf.doc.views_doc.document_bibtex', kwargs=dict(name=rfc.name))
         r = self.client.get(url)
-        entry = bibtexparser.loads(r.content).get_entry_dict()["rfc6020"]
+        entry = bibtexparser.loads(r.content).get_entry_dict()["rfc%s"%num]
         self.assertEqual(entry['series'],   u'Request for Comments')
-        self.assertEqual(entry['number'],   u'6020')
-        self.assertEqual(entry['doi'],      u'10.17487/RFC6020')
+        self.assertEqual(entry['number'],   num)
+        self.assertEqual(entry['doi'],      u'10.17487/RFC%s'%num)
         self.assertEqual(entry['year'],     u'2010')
         self.assertEqual(entry['month'],    u'oct')
         #
         self.assertNotIn('day', entry)
 
-        april1 = DocumentFactory.create(
-                  other_aliases =   ['rfc1149',],
+        april1 = IndividualRfcFactory.create(
                   stream_id =       'rse',
                   states =          [('draft','rfc'),('draft-iesg','pub')],
                   std_level_id =    'ind',
                   time =            '1990-04-01',
               )
+        num = april1.rfc_number()
         DocEventFactory.create(doc=april1, type='published_rfc', time = '1990-04-01')
         #
         url = urlreverse('ietf.doc.views_doc.document_bibtex', kwargs=dict(name=april1.name))
         r = self.client.get(url)
-        entry = bibtexparser.loads(r.content).get_entry_dict()['rfc1149']
+        entry = bibtexparser.loads(r.content).get_entry_dict()['rfc%s'%num]
         self.assertEqual(entry['series'],   u'Request for Comments')
-        self.assertEqual(entry['number'],   u'1149')
-        self.assertEqual(entry['doi'],      u'10.17487/RFC1149')
+        self.assertEqual(entry['number'],   num)
+        self.assertEqual(entry['doi'],      u'10.17487/RFC%s'%num)
         self.assertEqual(entry['year'],     u'1990')
         self.assertEqual(entry['month'],    u'apr')
         self.assertEqual(entry['day'],      u'1')
 
-        draft = DocumentFactory.create()
+        draft = IndividualDraftFactory.create()
         docname = u'%s-%s' % (draft.name, draft.rev)
         bibname = docname[6:]           # drop the 'draft-' prefix
         url = urlreverse('ietf.doc.views_doc.document_bibtex', kwargs=dict(name=draft.name))
@@ -942,7 +934,7 @@ class DocTestCase(TestCase):
 
 class AddCommentTestCase(TestCase):
     def test_add_comment(self):
-        draft = make_test_data()
+        draft = WgDraftFactory(name='draft-ietf-mars-test',group__acronym='mars')
         url = urlreverse('ietf.doc.views_doc.add_comment', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "secretary", url)
 
@@ -987,9 +979,8 @@ class TemplateTagTest(unittest.TestCase):
 class ReferencesTest(TestCase):
 
     def test_references(self):
-        make_test_data()
-        doc1 = Document.objects.get(name='draft-ietf-mars-test')
-        doc2 = DocAlias.objects.get(name='draft-imaginary-independent-submission')
+        doc1 = WgDraftFactory(name='draft-ietf-mars-test')
+        doc2 = IndividualDraftFactory(name='draft-imaginary-independent-submission').docalias_set.first()
         RelatedDocument.objects.get_or_create(source=doc1,target=doc2,relationship=DocRelationshipName.objects.get(slug='refnorm'))
         url = urlreverse('ietf.doc.views_doc.document_references', kwargs=dict(name=doc1.name))
         r = self.client.get(url)
@@ -1004,7 +995,8 @@ class ReferencesTest(TestCase):
 class EmailAliasesTests(TestCase):
 
     def setUp(self):
-        make_test_data()
+        WgDraftFactory(name='draft-ietf-mars-test',group__acronym='mars')
+        WgDraftFactory(name='draft-ietf-ames-test',group__acronym='ames')
         self.doc_alias_file = NamedTemporaryFile(delete=False)
         self.doc_alias_file.write("""# Generated by hand at 2015-02-12_16:26:45
 virtual.ietf.org anything
@@ -1035,6 +1027,7 @@ expand-draft-ietf-ames-test.all@virtual.ietf.org  ames-author@example.ames, ames
         os.unlink(self.doc_alias_file.name)
 
     def testAliases(self):
+        PersonFactory(user__username='plain')
         url = urlreverse('ietf.doc.urls.redirect.document_email', kwargs=dict(name="draft-ietf-mars-test"))
         r = self.client.get(url)
         self.assertEqual(r.status_code, 302)
@@ -1073,7 +1066,7 @@ class DocumentMeetingTests(TestCase):
         self.interim = SessionFactory.create(meeting__type_id='interim',group=self.group,meeting__date=today+datetime.timedelta(days=45))
 
     def test_view_document_meetings(self):
-        doc = DocumentFactory.create()
+        doc = IndividualDraftFactory.create()
         doc.sessionpresentation_set.create(session=self.inprog,rev=None)
         doc.sessionpresentation_set.create(session=self.interim,rev=None)
 
@@ -1121,7 +1114,7 @@ class DocumentMeetingTests(TestCase):
         self.assertFalse(q("#pastmeets a.btn:contains('Remove document')"))
 
     def test_edit_document_session(self):
-        doc = DocumentFactory.create()
+        doc = IndividualDraftFactory.create()
         sp = doc.sessionpresentation_set.create(session=self.future,rev=None)
 
         url = urlreverse('ietf.doc.views_doc.edit_sessionpresentation',kwargs=dict(name='no-such-doc',session_id=sp.session_id))
@@ -1153,7 +1146,7 @@ class DocumentMeetingTests(TestCase):
         self.assertEqual(2,doc.docevent_set.count())
 
     def test_edit_document_session_after_proceedings_closed(self):
-        doc = DocumentFactory.create()
+        doc = IndividualDraftFactory.create()
         sp = doc.sessionpresentation_set.create(session=self.past_cutoff,rev=None)
 
         url = urlreverse('ietf.doc.views_doc.edit_sessionpresentation',kwargs=dict(name=doc.name,session_id=sp.session_id))
@@ -1168,7 +1161,7 @@ class DocumentMeetingTests(TestCase):
         self.assertEqual(1,len(q(".alert-warning:contains('may affect published proceedings')")))
 
     def test_remove_document_session(self):
-        doc = DocumentFactory.create()
+        doc = IndividualDraftFactory.create()
         sp = doc.sessionpresentation_set.create(session=self.future,rev=None)
 
         url = urlreverse('ietf.doc.views_doc.remove_sessionpresentation',kwargs=dict(name='no-such-doc',session_id=sp.session_id))
@@ -1198,7 +1191,7 @@ class DocumentMeetingTests(TestCase):
         self.assertEqual(2,doc.docevent_set.count())
 
     def test_remove_document_session_after_proceedings_closed(self):
-        doc = DocumentFactory.create()
+        doc = IndividualDraftFactory.create()
         sp = doc.sessionpresentation_set.create(session=self.past_cutoff,rev=None)
 
         url = urlreverse('ietf.doc.views_doc.remove_sessionpresentation',kwargs=dict(name=doc.name,session_id=sp.session_id))
@@ -1213,7 +1206,7 @@ class DocumentMeetingTests(TestCase):
         self.assertEqual(1,len(q(".alert-warning:contains('may affect published proceedings')")))
 
     def test_add_document_session(self):
-        doc = DocumentFactory.create()
+        doc = IndividualDraftFactory.create()
 
         url = urlreverse('ietf.doc.views_doc.add_sessionpresentation',kwargs=dict(name=doc.name))
         login_testing_unauthorized(self,self.group_chair.user.username,url)
@@ -1238,7 +1231,7 @@ class DocumentMeetingTests(TestCase):
 
 class ChartTests(ResourceTestCaseMixin, TestCase):
     def test_search_chart_conf(self):
-        doc = DocumentFactory.create(states=[('draft','active')])
+        doc = IndividualDraftFactory()
 
         conf_url = urlreverse('ietf.doc.views_stats.chart_conf_newrevisiondocevent')
 
@@ -1260,7 +1253,7 @@ class ChartTests(ResourceTestCaseMixin, TestCase):
         self.assertEqual(len(d['series'][0]['data']), 0)
 
     def test_search_chart_data(self):
-        doc = DocumentFactory.create(states=[('draft','active')])
+        doc = IndividualDraftFactory()
 
         data_url = urlreverse('ietf.doc.views_stats.chart_data_newrevisiondocevent')
 
@@ -1282,7 +1275,7 @@ class ChartTests(ResourceTestCaseMixin, TestCase):
         self.assertEqual(len(d[0]), 2)
 
     def test_search_chart(self):
-        doc = DocumentFactory.create(states=[('draft','active')])
+        doc = IndividualDraftFactory()
 
         chart_url = urlreverse('ietf.doc.views_stats.chart_newrevisiondocevent')
         r = self.client.get(chart_url)
@@ -1293,8 +1286,7 @@ class ChartTests(ResourceTestCaseMixin, TestCase):
         
     def test_personal_chart(self):
         person = PersonFactory.create()
-        DocumentFactory.create(
-            states=[('draft','active')],
+        IndividualDraftFactory.create(
             authors=[person, ],
         )
 
