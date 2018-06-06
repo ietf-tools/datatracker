@@ -63,7 +63,8 @@ class DocumentFactory(BaseDocumentFactory):
     # TODO : If more than one document is created in a test with this factory,
     # and group isn't explicitly specified, this will violate the assumption
     # that there is only one group of type 'individ'
-    group = factory.SubFactory('ietf.group.factories.GroupFactory',type_id='individ')
+    # Update : this, along with the django_get_or_create in GroupFactory is better, but replace this with traits and a post_generation hoook.
+    group = factory.SubFactory('ietf.group.factories.GroupFactory',type_id='individ',acronym='none')
 
 class CharterFactory(BaseDocumentFactory):
 

@@ -10,7 +10,7 @@ from django.urls import reverse as urlreverse
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.factories import DocumentFactory, CharterFactory
+from ietf.doc.factories import CharterFactory
 from ietf.doc.models import ( Document, State, BallotDocEvent, BallotType, NewRevisionDocEvent,
     TelechatDocEvent, WriteupDocEvent )
 from ietf.doc.utils_charter import ( next_revision, default_review_text, default_action_text,
@@ -697,6 +697,6 @@ class EditCharterTests(TestCase):
 
     def test_chartering_from_bof(self):
         ad_role = RoleFactory(group__type_id='area',name_id='ad')
-        charter = DocumentFactory(type_id='charter',group__type_id='wg',group__state_id='bof',group__parent=ad_role.group)
+        charter = CharterFactory(group__type_id='wg',group__state_id='bof',group__parent=ad_role.group)
         e1,_ = default_review_text(charter.group, charter, Person.objects.get(name="(System)"))
         self.assertTrue('A new IETF WG has been proposed' in e1.text)
