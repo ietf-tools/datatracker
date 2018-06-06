@@ -590,16 +590,15 @@ def login(request, extra_context=None):
             person = user.person
             if person.name != person.name_from_draft:
                 require_consent.append("full name")
-            elif person.ascii != person.name_from_draft:
+            if person.ascii != person.name_from_draft:
                 require_consent.append("ascii name")
-            elif person.biography:
+            if person.biography:
                 require_consent.append("biography")
-            elif user.communitylist_set.exists():
+            if user.communitylist_set.exists():
                 require_consent.append("draft notification subscription(s)")
-            else:
-                for email in person.email_set.all():
-                    if not email.origin.split(':')[0] in ['author', 'role', 'reviewer', 'liaison', 'shepherd', ]:
-                        require_consent.append("email address(es)")
+            for email in person.email_set.all():
+                if not email.origin.split(':')[0] in ['author', 'role', 'reviewer', 'liaison', 'shepherd', ]:
+                    require_consent.append("email address(es)")
         if user:
             try:
                 identify_hasher(user.password)
