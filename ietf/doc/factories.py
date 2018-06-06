@@ -1,6 +1,7 @@
 import factory
 
 from ietf.doc.models import Document, DocEvent, NewRevisionDocEvent, DocAlias, State, DocumentAuthor
+from ietf.group.models import Group
 
 def draft_name_generator(type_id,group,n):
         return '%s-%s-%s-%s%d'%( 
@@ -59,12 +60,15 @@ class BaseDocumentFactory(factory.DjangoModelFactory):
 class DocumentFactory(BaseDocumentFactory):
 
     type_id = 'draft'
+    # TODO : If more than one document is created in a test with this factory,
+    # and group isn't explicitly specified, this will violate the assumption
+    # that there is only one group of type 'individ'
     group = factory.SubFactory('ietf.group.factories.GroupFactory',type_id='individ')
 
 class CharterFactory(BaseDocumentFactory):
 
     type_id = 'charter'
-    group = factory.SubFactory('ietf.group.factories.GroupFactory',type_id='individ')
+    group = factory.SubFactory('ietf.group.factories.GroupFactory',type_id='wg')
 
     @factory.post_generation
     def set_group_charter_document(obj, create, extracted, **kwargs):
@@ -72,6 +76,28 @@ class CharterFactory(BaseDocumentFactory):
             return
         obj.group.charter = extracted or obj
         obj.group.save()
+
+class ConflictReviewFactory(BaseDocumentFactory):
+    type_id='conflrev'
+    
+    @factory.post_generation
+    def review_of(obj, create, extracted, **kwargs):
+        if not create:
+            return
+        if extracted:
+            obj.relateddocument_set.create(relationship_id='conflrev',target=extracted.docalias_set.first())
+        else:
+            obj.relateddocument_set.create(relationship_id='conflrev',target=DocumentFactory(type_id='draft',group=Group.objects.get(type_id='individ')).docalias_set.first())
+
+    @factory.post_generation
+    def states(obj, create, extracted, **kwargs):
+        if not create:
+            return
+        if extracted:
+            for state in extracted:
+                obj.set_state(state)
+        else:
+            obj.set_state(State.objects.get(type_id='conflrev',slug='iesgeval'))
 
 class DocAliasFactory(factory.DjangoModelFactory):
     class Meta:

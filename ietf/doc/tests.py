@@ -22,12 +22,12 @@ import debug                            # pyflakes:ignore
 
 from ietf.doc.models import ( Document, DocAlias, DocRelationshipName, RelatedDocument, State,
     DocEvent, BallotPositionDocEvent, LastCallDocEvent, WriteupDocEvent, NewRevisionDocEvent )
-from ietf.doc.factories import DocumentFactory, DocEventFactory, CharterFactory
+from ietf.doc.factories import DocumentFactory, DocEventFactory, CharterFactory, ConflictReviewFactory
 from ietf.doc.utils import create_ballot_if_not_open
 from ietf.group.models import Group
 from ietf.group.factories import GroupFactory
 from ietf.meeting.models import Meeting, Session, SessionPresentation
-from ietf.meeting.factories import SessionFactory
+from ietf.meeting.factories import MeetingFactory, SessionFactory
 from ietf.meeting.test_data import make_meeting_test_data
 from ietf.name.models import SessionStatusName
 from ietf.person.models import Person
@@ -480,7 +480,7 @@ Man                    Expires September 22, 2015               [Page 3]
         shutil.rmtree(self.id_dir)
 
     def test_document_draft(self):
-        draft = make_test_data()
+        draft = DocumentFactory(name='draft-ietf-mars-test',rev='01')
 
         # these tests aren't testing all attributes yet, feel free to
         # expand them
@@ -541,7 +541,7 @@ Man                    Expires September 22, 2015               [Page 3]
         q = PyQuery(r.content)
         self.assertEqual(len(q('.rfcmarkup pre')), 4)
         self.assertEqual(len(q('.rfcmarkup span.h1')), 2)
-        self.assertEqual(len(q('.rfcmarkup a[href]')), 30)
+        self.assertEqual(len(q('.rfcmarkup a[href]')), 29)
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=draft.name, rev=draft.rev)))
         self.assertEqual(r.status_code, 200)
@@ -556,16 +556,15 @@ Man                    Expires September 22, 2015               [Page 3]
         # replaced draft
         draft.set_state(State.objects.get(type="draft", slug="repl"))
 
-        replacement = Document.objects.create(
+        replacement = DocumentFactory(
             name="draft-ietf-replacement",
             time=datetime.datetime.now(),
             type_id="draft",
             title="Replacement Draft",
-            stream_id=draft.stream_id, group_id=draft.group_id, abstract=draft.stream, rev=draft.rev,
+            stream_id=draft.stream_id, group_id=draft.group_id, abstract=draft.abstract,stream=draft.stream, rev=draft.rev,
             pages=draft.pages, intended_std_level_id=draft.intended_std_level_id,
             shepherd_id=draft.shepherd_id, ad_id=draft.ad_id, expires=draft.expires,
             notify=draft.notify, note=draft.note)
-        DocAlias.objects.create(name=replacement.name, document=replacement)
         rel = RelatedDocument.objects.create(source=replacement,
                                              target=draft.docalias_set.get(name__startswith="draft"),
                                              relationship_id="replaces")
@@ -596,14 +595,12 @@ Man                    Expires September 22, 2015               [Page 3]
         self.assertTrue(draft.name in unicontent(r))
 
         # naked RFC
-        rfc = Document.objects.create(
+        rfc = DocumentFactory(
             name="rfc1234567",
             type_id="draft",
             title="RFC without a Draft",
             stream_id="ise",
-            group=Group.objects.get(type="individ"),
             std_level_id="ps")
-        DocAlias.objects.create(name=rfc.name, document=rfc)
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=rfc.name)))
         self.assertEqual(r.status_code, 200)
         self.assertTrue("RFC 1234567" in unicontent(r))
@@ -648,29 +645,29 @@ Man                    Expires September 22, 2015               [Page 3]
 
 class DocTestCase(TestCase):
     def test_document_charter(self):
-        make_test_data()
-
+        CharterFactory(name='charter-ietf-mars')
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name="charter-ietf-mars")))
         self.assertEqual(r.status_code, 200)
 
     def test_document_conflict_review(self):
-        make_test_data()
+        ConflictReviewFactory(name='conflict-review-imaginary-irtf-submission')
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name='conflict-review-imaginary-irtf-submission')))
         self.assertEqual(r.status_code, 200)
 
     def test_document_material(self):
-        draft = make_test_data()
-
-        doc = Document.objects.create(
+        MeetingFactory(type_id='ietf',number='42')
+        mars = GroupFactory(type_id='wg',acronym='mars')
+        marschairman = PersonFactory(user__username='marschairman')
+        mars.role_set.create(name_id='chair',person=marschairman,email=marschairman.email())
+        doc = DocumentFactory(
             name="slides-testteam-test-slides",
             rev="00",
             title="Test Slides",
-            group=draft.group,
+            group__acronym='testteam',
             type_id="slides"
         )
         doc.set_state(State.objects.get(type="slides", slug="active"))
-        DocAlias.objects.create(name=doc.name, document=doc)
 
         session = Session.objects.create(
             name = "session-42-mars-1",
