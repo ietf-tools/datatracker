@@ -13,6 +13,7 @@ class GroupFactory(factory.DjangoModelFactory):
     acronym = factory.Sequence(lambda n: 'acronym%d' %n)
     state_id = 'active'
     type_id = 'wg'
+    list_email = factory.LazyAttribute(lambda a: '%s@ietf.org'% a.acronym)
 
 class ReviewTeamFactory(factory.DjangoModelFactory):
     class Meta:
