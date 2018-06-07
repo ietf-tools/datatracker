@@ -8,22 +8,23 @@ from django.urls import reverse as urlreverse
 
 from ietf.doc.models import ( Document, State, DocEvent,
     BallotPositionDocEvent, LastCallDocEvent, WriteupDocEvent, TelechatDocEvent )
-from ietf.doc.factories import DocumentFactory
+from ietf.doc.factories import DocumentFactory, IndividualDraftFactory, IndividualRfcFactory, WgDraftFactory
 from ietf.doc.utils import create_ballot_if_not_open
 from ietf.group.models import Group, Role
+from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.name.models import BallotPositionName
 from ietf.iesg.models import TelechatDate
 from ietf.person.models import Person, PersonalApiKey
+from ietf.person.factories import PersonFactory
 from ietf.utils.test_utils import TestCase, unicontent
 from ietf.utils.mail import outbox, empty_outbox
-from ietf.utils.test_data import make_test_data
 from ietf.utils.test_utils import login_testing_unauthorized
 
 
 class EditPositionTests(TestCase):
     def test_edit_position(self):
-        draft = make_test_data()
         ad = Person.objects.get(user__username="ad")
+        draft = IndividualDraftFactory(ad=ad)
         ballot = create_ballot_if_not_open(None, draft, ad, 'approve')
         url = urlreverse('ietf.doc.views_ballot.edit_position', kwargs=dict(name=draft.name,
                                                           ballot_id=ballot.pk))
@@ -89,9 +90,9 @@ class EditPositionTests(TestCase):
         self.assertTrue("Ballot comment text updated" in pos.desc)
         
     def test_api_set_position(self):
-        draft = make_test_data()
-        url = urlreverse('ietf.doc.views_ballot.api_set_position')
         ad = Person.objects.get(name="Areað Irector")
+        draft = WgDraftFactory(ad=ad)
+        url = urlreverse('ietf.doc.views_ballot.api_set_position')
         create_ballot_if_not_open(None, draft, ad, 'approve')
         ad.user.last_login = datetime.datetime.now()
         ad.user.save()
@@ -172,7 +173,7 @@ class EditPositionTests(TestCase):
 
 
     def test_edit_position_as_secretary(self):
-        draft = make_test_data()
+        draft = IndividualDraftFactory()
         ad = Person.objects.get(user__username="ad")
         ballot = create_ballot_if_not_open(None, draft, ad, 'approve')
         url = urlreverse('ietf.doc.views_ballot.edit_position', kwargs=dict(name=draft.name, ballot_id=ballot.pk))
@@ -198,7 +199,7 @@ class EditPositionTests(TestCase):
         self.assertTrue("by Sec" in pos.desc)
 
     def test_cannot_edit_position_as_pre_ad(self):
-        draft = make_test_data()
+        draft = IndividualDraftFactory()
         ad = Person.objects.get(user__username="ad")
         ballot = create_ballot_if_not_open(None, draft, ad, 'approve')
         url = urlreverse('ietf.doc.views_ballot.edit_position', kwargs=dict(name=draft.name, ballot_id=ballot.pk))
@@ -216,11 +217,11 @@ class EditPositionTests(TestCase):
         self.assertEqual(r.status_code, 403)
         
     def test_send_ballot_comment(self):
-        draft = make_test_data()
+        ad = Person.objects.get(user__username="ad")
+        draft = WgDraftFactory(ad=ad,group__acronym='mars')
         draft.notify = "somebody@example.com"
         draft.save_with_history([DocEvent.objects.create(doc=draft, rev=draft.rev, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
 
-        ad = Person.objects.get(user__username="ad")
         ballot = create_ballot_if_not_open(None, draft, ad, 'approve')
 
         BallotPositionDocEvent.objects.create(
@@ -274,7 +275,7 @@ class EditPositionTests(TestCase):
 
 class BallotWriteupsTests(TestCase):
     def test_edit_last_call_text(self):
-        draft = make_test_data()
+        draft = IndividualDraftFactory(ad=Person.objects.get(user__username='ad'),states=[('draft','active'),('draft-iesg','ad-eval')])
         url = urlreverse('ietf.doc.views_ballot.lastcalltext', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "secretary", url)
 
@@ -314,7 +315,8 @@ class BallotWriteupsTests(TestCase):
 
 
     def test_request_last_call(self):
-        draft = make_test_data()
+        ad = Person.objects.get(user__username="ad")
+        draft = IndividualDraftFactory(ad=ad,states=[('draft-iesg','iesg-eva')])
         url = urlreverse('ietf.doc.views_ballot.lastcalltext', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "secretary", url)
 
@@ -339,7 +341,7 @@ class BallotWriteupsTests(TestCase):
         self.assertTrue('aread@' in outbox[-1]['Cc'])
 
     def test_edit_ballot_writeup(self):
-        draft = make_test_data()
+        draft = IndividualDraftFactory()
         url = urlreverse('ietf.doc.views_ballot.ballot_writeupnotes', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "secretary", url)
 
@@ -369,7 +371,7 @@ class BallotWriteupsTests(TestCase):
         self.assertTrue("This is a simple test" in draft.latest_event(WriteupDocEvent, type="changed_ballot_writeup_text").text)
 
     def test_edit_ballot_rfceditornote(self):
-        draft = make_test_data()
+        draft = IndividualDraftFactory()
         url = urlreverse('ietf.doc.views_ballot.ballot_rfceditornote', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "secretary", url)
 
@@ -409,7 +411,8 @@ class BallotWriteupsTests(TestCase):
         self.assertFalse(draft.has_rfc_editor_note())
 
     def test_issue_ballot(self):
-        draft = make_test_data()
+        ad = Person.objects.get(user__username="ad")
+        draft = IndividualDraftFactory(ad=ad)
         url = urlreverse('ietf.doc.views_ballot.ballot_writeupnotes', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "ad", url)
 
@@ -431,7 +434,8 @@ class BallotWriteupsTests(TestCase):
         self.assertTrue('X-IETF-Draft-string' in outbox[-1])
 
     def test_edit_approval_text(self):
-        draft = make_test_data()
+        ad = Person.objects.get(user__username="ad")
+        draft = WgDraftFactory(ad=ad,states=[('draft','active'),('draft-iesg','iesg-eva')],intended_std_level_id='ps')
         url = urlreverse('ietf.doc.views_ballot.ballot_approvaltext', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "secretary", url)
 
@@ -489,7 +493,12 @@ class BallotWriteupsTests(TestCase):
             q = PyQuery(r.content)
             self.assertEqual(len(q("<textarea class=\"form-control\"")),1) 
 
-        draft = make_test_data()
+        for username in ['plain','marschairman']:
+            PersonFactory(user__username=username)
+        mars = GroupFactory(acronym='mars',type_id='wg')
+        RoleFactory(group=mars,person=Person.objects.get(user__username='marschairman'),name_id='chair')
+        ad = Person.objects.get(user__username="ad")
+        draft = WgDraftFactory(group=mars,ad=ad,states=[('draft','active'),('draft-iesg','ad-eval')])
 
         events = []
         
@@ -527,7 +536,7 @@ class BallotWriteupsTests(TestCase):
         for p in ['ietf.doc.views_ballot.ballot_approvaltext','ietf.doc.views_ballot.ballot_writeupnotes','ietf.doc.views_ballot.ballot_rfceditornote']:
             url = urlreverse(p, kwargs=dict(name=draft.name))
 
-            for username in ['plain','marschairman','iab chair','irtf chair','ise','iana']:
+            for username in ['plain','marschairman','iab-chair','irtf-chair','ise','iana']:
                 verify_fail(username, url)
 
             for username in ['secretary','ad']:
@@ -538,10 +547,10 @@ class BallotWriteupsTests(TestCase):
         draft.save_with_history(events)
         url = urlreverse('ietf.doc.views_ballot.ballot_rfceditornote', kwargs=dict(name=draft.name))
 
-        for username in ['plain','marschairman','ad','irtf chair','ise','iana']:
+        for username in ['plain','marschairman','ad','irtf-chair','ise','iana']:
             verify_fail(username, url)
 
-        for username in ['secretary','iab chair']:
+        for username in ['secretary','iab-chair']:
             verify_can_see(username, url)
 
         # RFC Editor Notes for documents in the IRTF Stream
@@ -553,7 +562,7 @@ class BallotWriteupsTests(TestCase):
         draft.save_with_history([e])
         url = urlreverse('ietf.doc.views_ballot.ballot_rfceditornote', kwargs=dict(name=draft.name))
 
-        for username in ['plain','marschairman','ad','iab chair','ise','iana']:
+        for username in ['plain','marschairman','ad','iab-chair','ise','iana']:
             verify_fail(username, url)
 
         for username in ['secretary','irtf chair']:
@@ -568,7 +577,7 @@ class BallotWriteupsTests(TestCase):
         draft.save_with_history([e])
         url = urlreverse('ietf.doc.views_ballot.ballot_rfceditornote', kwargs=dict(name=draft.name))
 
-        for username in ['plain','marschairman','ad','iab chair','irtf chair','iana']:
+        for username in ['plain','marschairman','ad','iab-chair','irtf-chair','iana']:
             verify_fail(username, url)
 
         for username in ['secretary','ise']:
@@ -576,7 +585,8 @@ class BallotWriteupsTests(TestCase):
 
 class ApproveBallotTests(TestCase):
     def test_approve_ballot(self):
-        draft = make_test_data()
+        ad = Person.objects.get(name="Areað Irector")
+        draft = IndividualDraftFactory(ad=ad, intended_std_level_id='ps')
         draft.set_state(State.objects.get(used=True, type="draft-iesg", slug="iesg-eva")) # make sure it's approvable
 
         url = urlreverse('ietf.doc.views_ballot.approve_ballot', kwargs=dict(name=draft.name))
@@ -627,7 +637,7 @@ class ApproveBallotTests(TestCase):
         # This tests a codepath that is not used in production
         # and that has already had some drift from usefulness (it results in a
         # older-style conflict review response). 
-        draft = make_test_data()
+        draft = IndividualDraftFactory()
         draft.set_state(State.objects.get(used=True, type="draft-iesg", slug="nopubadw"))
 
         url = urlreverse('ietf.doc.views_ballot.approve_ballot', kwargs=dict(name=draft.name))
@@ -645,7 +655,7 @@ class ApproveBallotTests(TestCase):
         self.assertTrue("NOT be published" in str(outbox[-1]))
 
     def test_clear_ballot(self):
-        draft = make_test_data()
+        draft = IndividualDraftFactory()
         ad = Person.objects.get(user__username="ad")
         ballot = create_ballot_if_not_open(None, draft, ad, 'approve')
         old_ballot_id = ballot.id
@@ -663,7 +673,8 @@ class ApproveBallotTests(TestCase):
 
 class MakeLastCallTests(TestCase):
     def test_make_last_call(self):
-        draft = make_test_data()
+        ad = Person.objects.get(user__username="ad")
+        draft = WgDraftFactory(name='draft-ietf-mars-test',group__acronym='mars',ad=ad)
         draft.set_state(State.objects.get(used=True, type="draft-iesg", slug="lc-req"))
 
         url = urlreverse('ietf.doc.views_ballot.make_last_call', kwargs=dict(name=draft.name))
@@ -841,12 +852,14 @@ class DeferUndeferTestCase(TestCase):
     # when charters support being deferred, be sure to test them here
 
     def setUp(self):
-        make_test_data()
+        IndividualDraftFactory(name='draft-ietf-mars-test',states=[('draft','active'),('draft-iesg','iesg-eva')])
+        DocumentFactory(type_id='statchg',name='status-change-imaginary-mid-review',states=[('statchg','iesgeval')])
+        DocumentFactory(type_id='conflrev',name='conflict-review-imaginary-irtf-submission',states=[('conflrev','iesgeval')])
 
 class RegenerateLastCallTestCase(TestCase):
 
     def test_regenerate_last_call(self):
-        draft = DocumentFactory.create(
+        draft = WgDraftFactory.create(
                     stream_id='ietf',
                     states=[('draft','active'),('draft-iesg','pub-req')],
                     intended_std_level_id='ps',
@@ -864,7 +877,7 @@ class RegenerateLastCallTestCase(TestCase):
         self.assertTrue("Subject: Last Call" in lc_text)
         self.assertFalse("contains these normative down" in lc_text)
 
-        rfc = DocumentFactory.create(
+        rfc = IndividualRfcFactory.create(
                   stream_id='ise',
                   other_aliases=['rfc6666',],
                   states=[('draft','rfc'),('draft-iesg','pub')],
