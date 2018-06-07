@@ -1,3 +1,4 @@
+import debug    # pyflakes:ignore
 import factory
 
 from ietf.doc.models import Document, DocEvent, NewRevisionDocEvent, DocAlias, State, DocumentAuthor
@@ -57,14 +58,71 @@ class BaseDocumentFactory(factory.DjangoModelFactory):
             obj._has_an_event_so_saving_is_allowed = True
             obj.save()
 
+#TODO remove this - rename BaseDocumentFactory to DocumentFactory
 class DocumentFactory(BaseDocumentFactory):
 
     type_id = 'draft'
-    # TODO : If more than one document is created in a test with this factory,
-    # and group isn't explicitly specified, this will violate the assumption
-    # that there is only one group of type 'individ'
-    # Update : this, along with the django_get_or_create in GroupFactory is better, but replace this with traits and a post_generation hoook.
-    group = factory.SubFactory('ietf.group.factories.GroupFactory',type_id='individ',acronym='none')
+    group = factory.SubFactory('ietf.group.factories.GroupFactory',acronym='none')
+
+
+class IndividualDraftFactory(BaseDocumentFactory):
+
+    type_id = 'draft'
+    group = factory.SubFactory('ietf.group.factories.GroupFactory',acronym='none')
+
+    @factory.post_generation
+    def states(obj, create, extracted, **kwargs):
+        if not create:
+            return
+        if extracted:
+            for (state_type_id,state_slug) in extracted:
+                obj.set_state(State.objects.get(type_id=state_type_id,slug=state_slug))
+        else:
+            obj.set_state(State.objects.get(type_id='draft',slug='active'))
+
+class IndividualRfcFactory(IndividualDraftFactory):
+
+    alias2 = factory.RelatedFactory('ietf.doc.factories.DocAliasFactory','document',name=factory.Sequence(lambda n: 'rfc%04d'%(n+1000)))
+
+    @factory.post_generation
+    def states(obj, create, extracted, **kwargs):
+        if not create:
+            return
+        if extracted:
+            for (state_type_id,state_slug) in extracted:
+                obj.set_state(State.objects.get(type_id=state_type_id,slug=state_slug))
+        else:
+            obj.set_state(State.objects.get(type_id='draft',slug='rfc'))
+
+class WgDraftFactory(BaseDocumentFactory):
+
+    type_id = 'draft'
+    group = factory.SubFactory('ietf.group.factories.GroupFactory',type_id='wg')
+
+    @factory.post_generation
+    def states(obj, create, extracted, **kwargs):
+        if not create:
+            return
+        if extracted:
+            for (state_type_id,state_slug) in extracted:
+                obj.set_state(State.objects.get(type_id=state_type_id,slug=state_slug))
+        else:
+            obj.set_state(State.objects.get(type_id='draft',slug='active'))
+            obj.set_state(State.objects.get(type_id='draft-stream-ietf',slug='wg-doc'))
+
+class WgRfcFactory(WgDraftFactory):
+
+    alias2 = factory.RelatedFactory('ietf.doc.factories.DocAliasFactory','document',name=factory.Sequence(lambda n: 'rfc%04d'%(n+1000)))
+
+    @factory.post_generation
+    def states(obj, create, extracted, **kwargs):
+        if not create:
+            return
+        if extracted:
+            for (state_type_id,state_slug) in extracted:
+                obj.set_state(State.objects.get(type_id=state_type_id,slug=state_slug))
+        else:
+            obj.set_state(State.objects.get(type_id='draft',slug='rfc'))
 
 class CharterFactory(BaseDocumentFactory):
 
