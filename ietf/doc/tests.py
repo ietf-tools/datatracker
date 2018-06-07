@@ -882,7 +882,7 @@ class DocTestCase(TestCase):
                   #other_aliases = ['rfc6020',],
                   states = [('draft','rfc'),('draft-iesg','pub')],
                   std_level_id = 'ps',
-                  time = '2010-10-10',
+                  time = datetime.datetime(2010,10,10),
               )
         num = rfc.rfc_number()
         DocEventFactory.create(doc=rfc, type='published_rfc', time = '2010-10-10')
@@ -902,7 +902,7 @@ class DocTestCase(TestCase):
                   stream_id =       'rse',
                   states =          [('draft','rfc'),('draft-iesg','pub')],
                   std_level_id =    'ind',
-                  time =            '1990-04-01',
+                  time =            datetime.datetime(1990,04,01),
               )
         num = april1.rfc_number()
         DocEventFactory.create(doc=april1, type='published_rfc', time = '1990-04-01')
