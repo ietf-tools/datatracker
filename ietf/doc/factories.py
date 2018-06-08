@@ -1,5 +1,8 @@
 import debug    # pyflakes:ignore
 import factory
+import datetime
+
+from django.conf import settings
 
 from ietf.doc.models import Document, DocEvent, NewRevisionDocEvent, DocAlias, State, DocumentAuthor
 from ietf.group.models import Group
@@ -21,6 +24,8 @@ class BaseDocumentFactory(factory.DjangoModelFactory):
     rev = '00'
     std_level_id = None
     intended_std_level_id = None
+    time = datetime.datetime.now()
+    expires = factory.LazyAttribute(lambda o: o.time+datetime.timedelta(days=settings.INTERNET_DRAFT_DAYS_TO_EXPIRE))
 
     @factory.lazy_attribute_sequence
     def name(self, n):
@@ -98,6 +103,7 @@ class WgDraftFactory(BaseDocumentFactory):
 
     type_id = 'draft'
     group = factory.SubFactory('ietf.group.factories.GroupFactory',type_id='wg')
+    stream_id = 'ietf'
 
     @factory.post_generation
     def states(obj, create, extracted, **kwargs):

@@ -10,20 +10,19 @@ from django.conf import settings
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.factories import DocumentFactory
-from ietf.doc.models import ( Document, DocAlias, DocReminder, DocumentAuthor, DocEvent,
+from ietf.doc.factories import IndividualDraftFactory, WgDraftFactory, DocEventFactory
+from ietf.doc.models import ( Document, DocReminder, DocEvent,
     ConsensusDocEvent, LastCallDocEvent, RelatedDocument, State, TelechatDocEvent, 
     WriteupDocEvent, DocRelationshipName)
 from ietf.doc.utils import get_tags_for_stream_id, create_ballot_if_not_open
-from ietf.name.models import StreamName, IntendedStdLevelName, DocTagName
-from ietf.group.factories import GroupFactory
+from ietf.name.models import StreamName, DocTagName
+from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.group.models import Group
 from ietf.person.factories import PersonFactory
 from ietf.person.models import Person, Email
 from ietf.meeting.models import Meeting, MeetingTypeName
 from ietf.iesg.models import TelechatDate
 from ietf.utils.test_utils import login_testing_unauthorized, unicontent
-from ietf.utils.test_data import make_test_data
 from ietf.utils.mail import outbox, empty_outbox
 from ietf.utils.test_utils import TestCase
 
@@ -31,8 +30,9 @@ from ietf.utils.test_utils import TestCase
 class ChangeStateTests(TestCase):
     def test_ad_approved(self):
         # get a draft in iesg evaluation, point raised
-        draft = make_test_data()
-        draft.set_state(State.objects.get(used=True, type="draft-iesg", slug="iesg-eva"))
+        ad = Person.objects.get(user__username="ad")
+        draft = WgDraftFactory(ad=ad,states=[('draft','active'),('draft-iesg','iesg-eva')])
+        DocEventFactory(type='started_iesg_process',by=ad,doc=draft,rev=draft.rev,desc="Started IESG Process")
         draft.tags.add("point")
 
         url = urlreverse('ietf.doc.views_draft.change_state', kwargs=dict(name=draft.name))
@@ -71,8 +71,9 @@ class ChangeStateTests(TestCase):
         self.assertTrue('iesg@' in outbox[-1]['To'])
         
     def test_change_state(self):
-        draft = make_test_data()
-        draft.set_state(State.objects.get(used=True, type="draft-iesg", slug="ad-eval"))
+        ad = Person.objects.get(user__username="ad")
+        draft = WgDraftFactory(name='draft-ietf-mars-test',group__acronym='mars',ad=ad,states=[('draft','active'),('draft-iesg','ad-eval')])
+        DocEventFactory(type='started_iesg_process',by=ad,doc=draft,rev=draft.rev,desc="Started IESG Process")
 
         url = urlreverse('ietf.doc.views_draft.change_state', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "secretary", url)
@@ -130,8 +131,9 @@ class ChangeStateTests(TestCase):
         self.assertEqual(len(q('form [type=submit][value="%s"]' % first_state.name)), 1)
 
     def test_pull_from_rfc_queue(self):
-        draft = make_test_data()
-        draft.set_state(State.objects.get(used=True, type="draft-iesg", slug="rfcqueue"))
+        ad = Person.objects.get(user__username="ad")
+        draft = WgDraftFactory(ad=ad,states=[('draft-iesg','rfcqueue')])
+        DocEventFactory(type='started_iesg_process',by=ad,doc=draft,rev=draft.rev,desc="Started IESG Process")
 
         url = urlreverse('ietf.doc.views_draft.change_state', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "secretary", url)
@@ -162,7 +164,7 @@ class ChangeStateTests(TestCase):
         
 
     def test_change_iana_state(self):
-        draft = make_test_data()
+        draft = WgDraftFactory()
 
         first_state = State.objects.get(used=True, type="draft-iana-review", slug="need-rev")
         next_state = State.objects.get(used=True, type="draft-iana-review", slug="ok-noact")
@@ -193,8 +195,9 @@ class ChangeStateTests(TestCase):
         self.assertEqual(draft.get_state("draft-iana-review"), next_state)
 
     def test_request_last_call(self):
-        draft = make_test_data()
-        draft.set_state(State.objects.get(used=True, type="draft-iesg", slug="ad-eval"))
+        ad = Person.objects.get(user__username="ad")
+        draft = WgDraftFactory(ad=ad,states=[('draft-iesg','ad-eval')])
+        DocEventFactory(type='started_iesg_process',by=ad,doc=draft,rev=draft.rev,desc="Started IESG Process")
 
         self.client.login(username="secretary", password="secretary+password")
         url = urlreverse('ietf.doc.views_draft.change_state', kwargs=dict(name=draft.name))
@@ -203,6 +206,7 @@ class ChangeStateTests(TestCase):
 
         self.assertTrue(not draft.latest_event(type="changed_ballot_writeup_text"))
         r = self.client.post(url, dict(state=State.objects.get(used=True, type="draft-iesg", slug="lc-req").pk))
+        self.assertEqual(r.status_code,200)
         self.assertTrue("Your request to issue" in unicontent(r))
 
         # last call text
@@ -240,7 +244,7 @@ class ChangeStateTests(TestCase):
 
 class EditInfoTests(TestCase):
     def test_edit_info(self):
-        draft = make_test_data()
+        draft = WgDraftFactory(intended_std_level_id='ps',states=[('draft','active'),('draft-iesg','iesg-eva')])
         url = urlreverse('ietf.doc.views_draft.edit_info', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "secretary", url)
 
@@ -284,7 +288,8 @@ class EditInfoTests(TestCase):
         self.assertTrue(draft.name in outbox[-1]['Subject'])
 
     def test_edit_telechat_date(self):
-        draft = make_test_data()
+        ad = Person.objects.get(user__username="ad")
+        draft = WgDraftFactory(ad=ad,intended_std_level_id='ps',states=[('draft','active'),('draft-iesg','iesg-eva')])
         
         url = urlreverse('ietf.doc.views_draft.edit_info', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "secretary", url)
@@ -367,35 +372,12 @@ class EditInfoTests(TestCase):
         self.assertTrue("may not leave enough time" in outbox[-1].get_payload())
 
     def test_start_iesg_process_on_draft(self):
-        make_test_data()
 
-        draft = Document.objects.create(
+        draft = WgDraftFactory(
             name="draft-ietf-mars-test2",
-            time=datetime.datetime.now(),
-            type_id="draft",
-            title="Testing adding a draft",
-            stream=None,
-            group=Group.objects.get(acronym="mars"),
-            abstract="Test test test.",
-            rev="01",
-            pages=2,
+            group__acronym='mars',
             intended_std_level_id="ps",
-            shepherd=None,
-            ad=None,
-            expires=datetime.datetime.now() + datetime.timedelta(days=settings.INTERNET_DRAFT_DAYS_TO_EXPIRE),
-            )
-        DocAlias.objects.create(
-            document=draft,
-            name=draft.name,
-            )
-
-        DocumentAuthor.objects.create(
-            document=draft,
-            person=Person.objects.get(email__address="aread@ietf.org"),
-            email=Email.objects.get(address="aread@ietf.org"),
-            country="US",
-            affiliation="",
-            order=1
+            authors=[Person.objects.get(user__username='ad')],
             )
         
         url = urlreverse('ietf.doc.views_draft.edit_info', kwargs=dict(name=draft.name))
@@ -455,7 +437,7 @@ class EditInfoTests(TestCase):
         self.assertEqual(draft.get_state_slug('draft-stream-ietf'),'sub-pub')
 
     def test_edit_consensus(self):
-        draft = make_test_data()
+        draft = WgDraftFactory()
         
         url = urlreverse('ietf.doc.views_draft.edit_consensus', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "secretary", url)
@@ -495,8 +477,7 @@ class EditInfoTests(TestCase):
 
 class ResurrectTests(TestCase):
     def test_request_resurrect(self):
-        draft = make_test_data()
-        draft.set_state(State.objects.get(used=True, type="draft", slug="expired"))
+        draft = WgDraftFactory(states=[('draft','expired')])
 
         url = urlreverse('ietf.doc.views_draft.request_resurrect', kwargs=dict(name=draft.name))
         
@@ -527,12 +508,9 @@ class ResurrectTests(TestCase):
         self.assertTrue('internet-drafts@' in outbox[-1]['To'])
 
     def test_resurrect(self):
-        draft = make_test_data()
-        draft.set_state(State.objects.get(used=True, type="draft", slug="expired"))
-
-        DocEvent.objects.create(doc=draft, rev=draft.rev,
-                             type="requested_resurrect",
-                             by=Person.objects.get(name="Areað Irector"))
+        ad = Person.objects.get(name="Areað Irector")
+        draft = WgDraftFactory(ad=ad,states=[('draft','expired')])
+        DocEventFactory(doc=draft,type="requested_resurrect",by=ad)
 
         url = urlreverse('ietf.doc.views_draft.resurrect', kwargs=dict(name=draft.name))
         
@@ -604,7 +582,9 @@ class ExpireIDsTests(TestCase):
     def test_warn_expirable_drafts(self):
         from ietf.doc.expire import get_soon_to_expire_drafts, send_expire_warning_for_draft
 
-        draft = make_test_data()
+        mars = GroupFactory(type_id='wg',acronym='mars')
+        RoleFactory(group=mars, name_id='ad', person=Person.objects.get(user__username='ad'))
+        draft = WgDraftFactory(name='draft-ietf-mars-test',group=mars)
 
         self.assertEqual(len(list(get_soon_to_expire_drafts(14))), 0)
 
@@ -628,7 +608,10 @@ class ExpireIDsTests(TestCase):
     def test_expire_drafts(self):
         from ietf.doc.expire import get_expired_drafts, send_expire_notice_for_draft, expire_draft
 
-        draft = make_test_data()
+        mars = GroupFactory(type_id='wg',acronym='mars')
+        ad_role = RoleFactory(group=mars, name_id='ad', person=Person.objects.get(user__username='ad'))
+        draft = WgDraftFactory(name='draft-ietf-mars-test',group=mars)
+        DocEventFactory(type='started_iesg_process',by=ad_role.person,doc=draft,rev=draft.rev,desc="Started IESG Process")
         
         self.assertEqual(len(list(get_expired_drafts())), 0)
         
@@ -672,7 +655,7 @@ class ExpireIDsTests(TestCase):
         self.assertTrue(os.path.exists(os.path.join(self.archive_dir, txt)))
 
     def test_clean_up_draft_files(self):
-        draft = make_test_data()
+        draft = WgDraftFactory()
         
         from ietf.doc.expire import clean_up_draft_files
 
@@ -737,7 +720,8 @@ class ExpireLastCallTests(TestCase):
         
         # check that non-expirable drafts aren't expired
 
-        draft = make_test_data()
+        ad = Person.objects.get(user__username='ad')
+        draft = WgDraftFactory(ad=ad,name='draft-ietf-mars-test')
         draft.set_state(State.objects.get(used=True, type="draft-iesg", slug="lc"))
 
         secretary = Person.objects.get(name="Sec Retary")
@@ -778,7 +762,7 @@ class ExpireLastCallTests(TestCase):
 class IndividualInfoFormsTests(TestCase):
 
     def setUp(self):
-        doc = make_test_data()
+        doc = WgDraftFactory(group__acronym='mars',shepherd=PersonFactory(user__username='plain',name=u'Plain Man').email_set.first())
         self.docname = doc.name
 
     def test_doc_change_stream(self):
@@ -1095,10 +1079,9 @@ class IndividualInfoFormsTests(TestCase):
 class SubmitToIesgTests(TestCase):
 
     def setUp(self):
-        make_test_data()
-        self.docname='draft-ietf-mars-test'
-        doc = Document.objects.get(name=self.docname)
-        doc.unset_state('draft-iesg') 
+        role=RoleFactory(group__acronym='mars',name_id='chair',person=PersonFactory(user__username='marschairman'))
+        doc=WgDraftFactory(name='draft-ietf-mars-test',group=role.group,ad=Person.objects.get(user__username='ad'))
+        self.docname=doc.name
 
     def test_verify_permissions(self):
 
@@ -1147,7 +1130,12 @@ class SubmitToIesgTests(TestCase):
         doc = Document.objects.get(name=self.docname)
         self.assertTrue(doc.get_state('draft-iesg').slug=='pub-req')
         self.assertTrue(doc.get_state('draft-stream-ietf').slug=='sub-pub')
+
+        # It's not clear what this testing - the view can certainly
+        # leave the document without an ad. This line as written only
+        # checks whether the setup document had an ad or not.
         self.assertTrue(doc.ad!=None)
+
         self.assertTrue(doc.docevent_set.count() != docevent_count_pre)
         self.assertEqual(len(outbox), mailbox_before + 1)
         self.assertTrue("Publication has been requested" in outbox[-1]['Subject'])
@@ -1158,12 +1146,7 @@ class SubmitToIesgTests(TestCase):
 
 class RequestPublicationTests(TestCase):
     def test_request_publication(self):
-        draft = make_test_data()
-        draft.stream = StreamName.objects.get(slug="iab")
-        draft.group = Group.objects.get(acronym="iab")
-        draft.intended_std_level = IntendedStdLevelName.objects.get(slug="inf")
-        draft.save_with_history([DocEvent.objects.create(doc=draft, rev=draft.rev, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
-        draft.set_state(State.objects.get(used=True, type="draft-stream-iab", slug="approved"))
+        draft = IndividualDraftFactory(stream_id='iab',group__acronym='iab',intended_std_level_id='inf',states=[('draft-stream-iab','approved')])
 
         url = urlreverse('ietf.doc.views_draft.request_publication', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "iab-chair", url)
@@ -1199,11 +1182,8 @@ class RequestPublicationTests(TestCase):
 
 class AdoptDraftTests(TestCase):
     def test_adopt_document(self):
-        draft = make_test_data()
-        draft.stream = None
-        draft.group = Group.objects.get(type="individ")
-        draft.unset_state("draft-stream-ietf")
-        draft.save_with_history([DocEvent.objects.create(doc=draft, rev=draft.rev, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
+        RoleFactory(group__acronym='mars',group__list_email='mars-wg@ietf.org',person__user__username='marschairman',name_id='chair')
+        draft = IndividualDraftFactory(name='draft-ietf-mars-test',notify='aliens@example.mars')
 
         url = urlreverse('ietf.doc.views_draft.adopt_draft', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "marschairman", url)
@@ -1240,7 +1220,7 @@ class AdoptDraftTests(TestCase):
         self.assertFalse(mars.list_email in draft.notify)
 
     def test_right_state_choices_offered(self):
-        draft = DocumentFactory()
+        draft = IndividualDraftFactory()
         wg = GroupFactory(type_id='wg',state_id='active')
         rg = GroupFactory(type_id='rg',state_id='active')
         person = PersonFactory(user__username='person')
@@ -1283,7 +1263,9 @@ class AdoptDraftTests(TestCase):
 
 class ChangeStreamStateTests(TestCase):
     def test_set_tags(self):
-        draft = make_test_data()
+        role = RoleFactory(name_id='chair',group__acronym='mars',group__list_email='mars-wg@ietf.org',person__user__username='marschairman',person__name=u'WG Cháir Man')
+        RoleFactory(name_id='delegate',group=role.group,person__user__email='marsdelegate@ietf.org')
+        draft = WgDraftFactory(group=role.group,shepherd=PersonFactory(user__username='plain',user__email='plain@example.com').email_set.first())
         draft.tags.set(DocTagName.objects.filter(slug="w-expert"))
         draft.group.unused_tags.add("w-refdoc")
 
@@ -1323,8 +1305,10 @@ class ChangeStreamStateTests(TestCase):
         self.assertTrue("plain@example.com" in unicode(outbox[-1]))
 
     def test_set_initial_state(self):
-        draft = make_test_data()
-        draft.unset_state("draft-stream-%s"%draft.stream_id)
+        role = RoleFactory(name_id='chair',group__acronym='mars',group__list_email='mars-wg@ietf.org',person__user__username='marschairman',person__name=u'WG Cháir Man')
+        RoleFactory(name_id='delegate',group=role.group,person__user__email='marsdelegate@ietf.org')
+        draft = WgDraftFactory(group=role.group)
+        draft.states.all().delete()
 
         url = urlreverse('ietf.doc.views_draft.change_stream_state', kwargs=dict(name=draft.name, state_type="draft-stream-ietf"))
         login_testing_unauthorized(self, "marschairman", url)
@@ -1357,7 +1341,9 @@ class ChangeStreamStateTests(TestCase):
         self.assertTrue("marsdelegate@ietf.org" in unicode(outbox[0]))
 
     def test_set_state(self):
-        draft = make_test_data()
+        role = RoleFactory(name_id='chair',group__acronym='mars',group__list_email='mars-wg@ietf.org',person__user__username='marschairman',person__name=u'WG Cháir Man')
+        RoleFactory(name_id='delegate',group=role.group,person__user__email='marsdelegate@ietf.org')
+        draft = WgDraftFactory(group=role.group)
 
         url = urlreverse('ietf.doc.views_draft.change_stream_state', kwargs=dict(name=draft.name, state_type="draft-stream-ietf"))
         login_testing_unauthorized(self, "marschairman", url)
@@ -1400,7 +1386,9 @@ class ChangeStreamStateTests(TestCase):
         self.assertTrue("marsdelegate@ietf.org" in unicode(outbox[0]))
 
     def test_pubreq_validation(self):
-        draft = make_test_data()
+        role = RoleFactory(name_id='chair',group__acronym='mars',group__list_email='mars-wg@ietf.org',person__user__username='marschairman',person__name=u'WG Cháir Man')
+        RoleFactory(name_id='delegate',group=role.group,person__user__email='marsdelegate@ietf.org')
+        draft = WgDraftFactory(group=role.group)
 
         url = urlreverse('ietf.doc.views_draft.change_stream_state', kwargs=dict(name=draft.name, state_type="draft-stream-ietf"))
         login_testing_unauthorized(self, "marschairman", url)
@@ -1422,56 +1410,43 @@ class ChangeStreamStateTests(TestCase):
 class ChangeReplacesTests(TestCase):
     def setUp(self):
 
-        make_test_data()
+        role = RoleFactory(name_id='chair',group__acronym='mars',group__list_email='mars-wg@ietf.org',person__user__username='marschairman',person__name=u'WG Cháir Man')
+        RoleFactory(name_id='delegate',group=role.group,person__user__email='marsdelegate@ietf.org')
+        #draft = WgDraftFactory(group=role.group)
 
         mars_wg = Group.objects.get(acronym='mars')
 
-        self.basea = Document.objects.create(
+        self.basea = WgDraftFactory(
             name="draft-test-base-a",
-            time=datetime.datetime.now(),
-            type_id="draft",
             title="Base A",
-            stream_id="ietf",
-            expires=datetime.datetime.now() + datetime.timedelta(days=settings.INTERNET_DRAFT_DAYS_TO_EXPIRE),
             group=mars_wg,
         )
         p = PersonFactory(name=u"basea_author")
         e = Email.objects.create(address="basea_author@example.com", person=p, origin=p.user.username)
         self.basea.documentauthor_set.create(person=p, email=e, order=1)
 
-        self.baseb = Document.objects.create(
+        self.baseb = WgDraftFactory(
             name="draft-test-base-b",
-            time=datetime.datetime.now()-datetime.timedelta(days=365),
-            type_id="draft",
             title="Base B",
-            stream_id="ietf",
-            expires=datetime.datetime.now() - datetime.timedelta(days = 365 - settings.INTERNET_DRAFT_DAYS_TO_EXPIRE),
             group=mars_wg,
+            expires = datetime.datetime.now() - datetime.timedelta(days = 365 - settings.INTERNET_DRAFT_DAYS_TO_EXPIRE),
         )
         p = PersonFactory(name=u"baseb_author")
         e = Email.objects.create(address="baseb_author@example.com", person=p, origin=p.user.username)
         self.baseb.documentauthor_set.create(person=p, email=e, order=1)
 
-        self.replacea = Document.objects.create(
+        self.replacea = WgDraftFactory(
             name="draft-test-replace-a",
-            time=datetime.datetime.now(),
-            type_id="draft",
             title="Replace Base A",
-            stream_id="ietf",
-            expires=datetime.datetime.now() + datetime.timedelta(days = settings.INTERNET_DRAFT_DAYS_TO_EXPIRE),
             group=mars_wg,
         )
         p = PersonFactory(name=u"replacea_author")
         e = Email.objects.create(address="replacea_author@example.com", person=p, origin=p.user.username)
         self.replacea.documentauthor_set.create(person=p, email=e, order=1)
  
-        self.replaceboth = Document.objects.create(
+        self.replaceboth = WgDraftFactory(
             name="draft-test-replace-both",
-            time=datetime.datetime.now(),
-            type_id="draft",
             title="Replace Base A and Base B",
-            stream_id="ietf",
-            expires=datetime.datetime.now() + datetime.timedelta(days = settings.INTERNET_DRAFT_DAYS_TO_EXPIRE),
             group=mars_wg,
         )
         p = PersonFactory(name=u"replaceboth_author")
@@ -1483,10 +1458,6 @@ class ChangeReplacesTests(TestCase):
         self.replacea.set_state(State.objects.get(used=True, type="draft", slug="active"))
         self.replaceboth.set_state(State.objects.get(used=True, type="draft", slug="active"))
 
-        DocAlias.objects.create(document=self.basea,name=self.basea.name)
-        DocAlias.objects.create(document=self.baseb,name=self.baseb.name)
-        DocAlias.objects.create(document=self.replacea,name=self.replacea.name)
-        DocAlias.objects.create(document=self.replaceboth,name=self.replaceboth.name)
 
     def test_change_replaces(self):
 
@@ -1572,9 +1543,9 @@ class MoreReplacesTests(TestCase):
     def test_stream_state_changes_when_replaced(self):
         self.client.login(username='secretary',password='secretary+password')
         for stream in ('iab','irtf','ise'):
-            old_doc = DocumentFactory(stream_id=stream)
+            old_doc = IndividualDraftFactory(stream_id=stream)
             old_doc.set_state(State.objects.get(type_id='draft-stream-%s'%stream, slug='ise-rev' if stream=='ise' else 'active'))
-            new_doc = DocumentFactory(stream_id=stream)
+            new_doc = IndividualDraftFactory(stream_id=stream)
 
             url = urlreverse('ietf.doc.views_draft.replaces', kwargs=dict(name=new_doc.name))
             r = self.client.post(url, dict(replaces=old_doc.name))
@@ -1582,5 +1553,3 @@ class MoreReplacesTests(TestCase):
             old_doc = Document.objects.get(name=old_doc.name)
             self.assertEqual(old_doc.get_state_slug('draft'),'repl')
             self.assertEqual(old_doc.get_state_slug('draft-stream-%s'%stream),'repl')
-
-            
