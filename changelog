@@ -1,3 +1,55 @@
+ietfdb (6.81.2) ietf; urgency=medium
+
+  This is the third in a small series of releases to address compliance with
+  the European GDPR (General Data Protection Regulation).  It provides
+  serialized (machine-readable) access to information associated with a user's
+  account, adds photo and some links to the user account page, and improves
+  the annotation of which information is consent-based on the account page.
+  It adds a warning on login if consent is missing for some personal
+  information, and requests the user to give consent.  It also brings in
+  refactoring of a number of test cases to use test object factories, giving
+  improved test performance.
+
+  * Merged in [15219] from rjsparks@nostrum.com:
+    Use factories for ietf.doc.tests_ballots. Fixed a long-hidden bug in
+    test_edit_verify_permissions where non-existing usernames were used and
+    passed the tests accidently. Added list_email to the GroupFactory.  
+
+  * Merged in [15217], [15205], [15204], [15203], [15202], and [15201] from
+    rjsparks@nostrum.com:
+    Converted ietf.doc.tests to use object Factories. Created draft type
+    specific factories.  
+
+  * Fixed the logic of gathering which personal information needs consent 
+    confirmation in the code that requests consent on login.
+
+  * Added a request to give consent for non-LI information on user login.  
+    Addresses issue #2505.
+
+  * Fixed a bug in a form clean method.
+
+  * Added a missing related object to the person information export.  
+    Related to issue #2501.
+
+  * Tweaked the language on the user account page.  Related to issue #2501.
+
+  * Added a recursive object to JSON serializer and a view which will let 
+    any logged-in user download a JSON serialized copy of the datatracker 
+    information related to his person record.  Added information about this, 
+    and a link, to the account page.  Related to issue #2501.
+
+  * Added a requirement of oauth2client, needed by google-api-python-client 
+    but not always automatically pulled in.
+
+  * Added a link to the overall IETF Statement concerning personal data to 
+    the datatracker personal-information page.
+
+  * Added some text about BOF requests to the important-dates page for the 
+    session request opens dates, on request from the IESG.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  08 Jun 2018 16:05:15 +0000
+
+
 ietfdb (6.81.1) ietf; urgency=medium
 
   This is the second in a small series of releases to address compliance
