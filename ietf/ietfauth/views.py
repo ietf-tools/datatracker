@@ -586,20 +586,21 @@ def login(request, extra_context=None):
         user = User.objects.filter(username=username).first()
         #
         require_consent = []
-        if user.person and not user.person.consent:
-            person = user.person
-            if person.name != person.name_from_draft:
-                require_consent.append("full name")
-            if person.ascii != person.name_from_draft:
-                require_consent.append("ascii name")
-            if person.biography:
-                require_consent.append("biography")
-            if user.communitylist_set.exists():
-                require_consent.append("draft notification subscription(s)")
-            for email in person.email_set.all():
-                if not email.origin.split(':')[0] in ['author', 'role', 'reviewer', 'liaison', 'shepherd', ]:
-                    require_consent.append("email address(es)")
         if user:
+            if user.person and not user.person.consent:
+                person = user.person
+                if person.name != person.name_from_draft:
+                    require_consent.append("full name")
+                if person.ascii != person.name_from_draft:
+                    require_consent.append("ascii name")
+                if person.biography:
+                    require_consent.append("biography")
+                if user.communitylist_set.exists():
+                    require_consent.append("draft notification subscription(s)")
+                for email in person.email_set.all():
+                    if not email.origin.split(':')[0] in ['author', 'role', 'reviewer', 'liaison', 'shepherd', ]:
+                        require_consent.append("email address(es)")
+
             try:
                 identify_hasher(user.password)
             except ValueError:
