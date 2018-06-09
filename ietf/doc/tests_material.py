@@ -17,7 +17,6 @@ from ietf.meeting.models import Meeting, Session, SessionPresentation
 from ietf.name.models import SessionStatusName
 from ietf.person.models import Person
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized, unicontent
-from ietf.utils.test_data import make_test_data
 
 
 class GroupMaterialTests(TestCase):
@@ -43,7 +42,6 @@ class GroupMaterialTests(TestCase):
         shutil.rmtree(self.agenda_dir)
 
     def create_slides(self):
-        make_test_data()
 
         group = Group.objects.create(type_id="team", acronym="testteam", name="Test Team", state_id="active")
 
