@@ -107,6 +107,8 @@ def unidecode_name(uname):
     first = first.title()
     middle = ' '.join([ capfirst(p) for p in middle.split() ])
     last   = ' '.join([ capfirst(p) for p in last.split() ])
+    if len(last) == 1:
+        last = (last+last).capitalize()
     # Restore the particle, if any
     if particle and last.startswith(capfirst(particle)+' '):
         last = ' '.join([ particle, last[len(particle)+1:] ])
