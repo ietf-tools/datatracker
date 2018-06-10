@@ -7,16 +7,20 @@ from django.urls import reverse as urlreverse
 
 import debug    # pyflakes:ignore
 
+from ietf.doc.factories import WgDraftFactory, WgRfcFactory
 from ietf.doc.models import Document, DocAlias, RelatedDocument, State
+from ietf.person.factories import PersonFactory
 from ietf.utils.test_utils import TestCase
-from ietf.utils.test_data  import make_test_data, make_downref_test_data
 from ietf.utils.test_utils import login_testing_unauthorized, unicontent
 
 class Downref(TestCase):
 
     def setUp(self):
-        make_test_data()
-        make_downref_test_data()
+        PersonFactory(name='Plain Man',user__username='plain')
+        WgDraftFactory(name='draft-ietf-mars-test')
+        doc = WgDraftFactory(name='draft-ietf-mars-approved-document',states=[('draft-iesg','rfcqueue')])
+        rfc = WgRfcFactory(alias2__name='rfc9998')
+        RelatedDocument.objects.create(source=doc, target=rfc.docalias_set.get(name='rfc9998'),relationship_id='downref-approval')
 
     def test_downref_registry(self):
         url = urlreverse('ietf.doc.views_downref.downref_registry')
