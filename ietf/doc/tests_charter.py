@@ -16,13 +16,12 @@ from ietf.doc.models import ( Document, State, BallotDocEvent, BallotType, NewRe
 from ietf.doc.utils_charter import ( next_revision, default_review_text, default_action_text,
     charter_name_for_group )
 from ietf.doc.utils import close_open_ballots
-from ietf.group.factories import RoleFactory
+from ietf.group.factories import RoleFactory, GroupFactory
 from ietf.group.models import Group, GroupMilestone
 from ietf.iesg.models import TelechatDate
 from ietf.person.models import Person
 from ietf.utils.test_utils import TestCase, unicontent
 from ietf.utils.mail import outbox, empty_outbox
-from ietf.utils.test_data import make_test_data
 from ietf.utils.test_utils import login_testing_unauthorized
 
 class EditCharterTests(TestCase):
@@ -40,7 +39,7 @@ class EditCharterTests(TestCase):
             f.write("This is a charter.")
 
     def test_startstop_process(self):
-        make_test_data()
+        CharterFactory(group__acronym='mars')
 
         group = Group.objects.get(acronym="mars")
         charter = group.charter
@@ -65,7 +64,19 @@ class EditCharterTests(TestCase):
                 self.assertTrue("state changed" in charter.latest_event(type="changed_state").desc.lower())
 
     def test_change_state(self):
-        make_test_data()
+
+        area = GroupFactory(type_id='area')
+        RoleFactory(name_id='ad',group=area,person=Person.objects.get(user__username='ad'))
+
+        ames = GroupFactory(acronym='ames',state_id='proposed',list_email='ames-wg@ietf.org',parent=area)
+        RoleFactory(name_id='ad',group=ames,person=Person.objects.get(user__username='ad'))
+        RoleFactory(name_id='chair',group=ames,person__name=u'Ames Man',person__user__email='ameschairman@ietf.org')
+        RoleFactory(name_id='secr',group=ames,person__name=u'Secretary',person__user__email='amessecretary@ietf.org')
+        CharterFactory(group=ames)
+
+        mars = GroupFactory(acronym='mars',parent=area)
+        CharterFactory(group=mars)
+
 
         group = Group.objects.get(acronym="ames")
         charter = group.charter
@@ -183,9 +194,11 @@ class EditCharterTests(TestCase):
     def test_already_open_charter_ballot(self):
         # make sure the right thing happens to the charter ballots as the Secretariat
         # does the unusual state sequence of: intrev --> extrev --> intrev
-        make_test_data()
+        area = GroupFactory(type_id='area')
+        RoleFactory(name_id='ad',group=area,person=Person.objects.get(user__username='ad'))
+        group = GroupFactory(acronym='ames',state_id='proposed',list_email='ames-wg@ietf.org',parent=area)
+        CharterFactory(group=group)
 
-        group = Group.objects.get(acronym="ames")
         charter = group.charter
 
         url = urlreverse('ietf.doc.views_charter.change_state', kwargs=dict(name=charter.name))
@@ -247,10 +260,8 @@ class EditCharterTests(TestCase):
         self.assertTrue(find_event("created_ballot"))
 
     def test_edit_telechat_date(self):
-        make_test_data()
-
-        group = Group.objects.get(acronym="mars")
-        charter = group.charter
+        charter = CharterFactory()
+        group = charter.group
 
         url = urlreverse('ietf.doc.views_doc.telechat_date;charter', kwargs=dict(name=charter.name))
         login_testing_unauthorized(self, "secretary", url)
@@ -286,10 +297,9 @@ class EditCharterTests(TestCase):
         self.assertTrue(not charter.latest_event(TelechatDocEvent, "scheduled_for_telechat").telechat_date)
 
     def test_no_returning_item_for_different_ballot(self):
-        make_test_data()
+        charter = CharterFactory()
+        group = charter.group
 
-        group = Group.objects.get(acronym="ames")
-        charter = group.charter
         url = urlreverse('ietf.doc.views_doc.telechat_date;charter', kwargs=dict(name=charter.name))
         login_testing_unauthorized(self, "secretary", url)
         login = Person.objects.get(user__username="secretary")
@@ -315,9 +325,7 @@ class EditCharterTests(TestCase):
         self.assertFalse(telechat_event.returning_item)
 
     def test_edit_notify(self):
-        make_test_data()
-
-        charter = Group.objects.get(acronym="mars").charter
+        charter=CharterFactory()
 
         url = urlreverse('ietf.doc.views_doc.edit_notify;charter', kwargs=dict(name=charter.name))
         login_testing_unauthorized(self, "secretary", url)
@@ -346,9 +354,8 @@ class EditCharterTests(TestCase):
         self.assertEqual(formlist, None)
 
     def test_edit_ad(self):
-        make_test_data()
 
-        charter = Group.objects.get(acronym="mars").charter
+        charter = CharterFactory()
 
         url = urlreverse('ietf.doc.views_charter.edit_ad', kwargs=dict(name=charter.name))
         login_testing_unauthorized(self, "secretary", url)
@@ -369,10 +376,8 @@ class EditCharterTests(TestCase):
         self.assertEqual(charter.ad, ad2)
 
     def test_submit_charter(self):
-        make_test_data()
-
-        group = Group.objects.get(acronym="mars")
-        charter = group.charter
+        charter = CharterFactory()
+        group = charter.group
 
         url = urlreverse('ietf.doc.views_charter.submit', kwargs=dict(name=charter.name))
         login_testing_unauthorized(self, "secretary", url)
@@ -411,15 +416,7 @@ class EditCharterTests(TestCase):
                               "Windows line\nMac line\nUnix line\n" + utf_8_snippet)
 
     def test_submit_initial_charter(self):
-        make_test_data()
-
-        group = Group.objects.get(acronym="mars")
-        # get rid of existing charter
-        charter = group.charter
-        group.charter = None
-        group.save()
-        charter.delete()
-        charter = None
+        group = GroupFactory(type_id='wg',acronym='mars',list_email='mars-wg@ietf.org')
 
         url = urlreverse('ietf.doc.views_charter.submit', kwargs=dict(name=charter_name_for_group(group)))
         login_testing_unauthorized(self, "secretary", url)
@@ -445,8 +442,10 @@ class EditCharterTests(TestCase):
         self.assertEqual(group.charter, charter)
 
     def test_edit_review_announcement_text(self):
-        draft = make_test_data()
-        charter = draft.group.charter
+        area = GroupFactory(type_id='area')
+        RoleFactory(name_id='ad',group=area,person=Person.objects.get(user__username='ad'))
+        charter = CharterFactory(group__parent=area,group__list_email='mars-wg@ietf.org')
+        group = charter.group
 
         url = urlreverse('ietf.doc.views_charter.review_announcement_text', kwargs=dict(name=charter.name))
         self.client.logout()
@@ -461,7 +460,7 @@ class EditCharterTests(TestCase):
 
         by = Person.objects.get(user__username="secretary")
 
-        (e1, e2) = default_review_text(draft.group, charter, by)
+        (e1, e2) = default_review_text(group, charter, by)
         announcement_text = e1.text
         new_work_text = e2.text
 
@@ -509,12 +508,14 @@ class EditCharterTests(TestCase):
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         charter = Document.objects.get(name=charter.name)
-        self.assertTrue(draft.group.name in charter.latest_event(WriteupDocEvent, type="changed_review_announcement").text)
-        self.assertTrue(draft.group.name in charter.latest_event(WriteupDocEvent, type="changed_new_work_text").text)
+        self.assertTrue(group.name in charter.latest_event(WriteupDocEvent, type="changed_review_announcement").text)
+        self.assertTrue(charter.group.name in charter.latest_event(WriteupDocEvent, type="changed_new_work_text").text)
 
     def test_edit_action_announcement_text(self):
-        draft = make_test_data()
-        charter = draft.group.charter
+        area = GroupFactory(type_id='area')
+        RoleFactory(name_id='ad',group=area,person=Person.objects.get(user__username='ad'))
+        charter = CharterFactory(group__parent=area)
+        group = charter.group
 
         url = urlreverse('ietf.doc.views_charter.action_announcement_text', kwargs=dict(name=charter.name))
         self.client.logout()
@@ -541,11 +542,12 @@ class EditCharterTests(TestCase):
         self.assertEqual(r.status_code, 200)
         q = PyQuery(r.content)
         charter = Document.objects.get(name=charter.name)
-        self.assertTrue(draft.group.name in charter.latest_event(WriteupDocEvent, type="changed_action_announcement").text)
+        self.assertTrue(group.name in charter.latest_event(WriteupDocEvent, type="changed_action_announcement").text)
 
     def test_edit_ballot_writeupnotes(self):
-        draft = make_test_data()
-        charter = draft.group.charter
+        area = GroupFactory(type_id='area')
+        RoleFactory(name_id='ad',group=area,person=Person.objects.get(user__username='ad'))
+        charter = CharterFactory(group__parent=area)
         by = Person.objects.get(user__username="secretary")
 
         BallotDocEvent.objects.create(
@@ -560,7 +562,7 @@ class EditCharterTests(TestCase):
         url = urlreverse('ietf.doc.views_charter.ballot_writeupnotes', kwargs=dict(name=charter.name))
         login_testing_unauthorized(self, "secretary", url)
 
-        e = default_action_text(draft.group, charter, by)
+        e = default_action_text(charter.group, charter, by)
         e.save()
 
         # normal get
@@ -585,10 +587,12 @@ class EditCharterTests(TestCase):
         self.assertTrue('Evaluation' in outbox[0]['Subject'])
         
     def test_approve(self):
-        make_test_data()
-
-        group = Group.objects.get(acronym="ames")
-        charter = group.charter
+        area = GroupFactory(type_id='area')
+        RoleFactory(name_id='ad',group=area,person=Person.objects.get(user__username='ad'))
+        charter = CharterFactory(group__acronym='ames',group__list_email='ames-wg@ietf.org',group__parent=area)
+        group = charter.group
+        RoleFactory(name_id='chair',group=group,person__name=u'Ames Man',person__user__email='ameschairman@ietf.org')
+        RoleFactory(name_id='secr',group=group,person__name=u'Secretary',person__user__email='amessecretary@ietf.org')
 
         url = urlreverse('ietf.doc.views_charter.approve', kwargs=dict(name=charter.name))
         login_testing_unauthorized(self, "secretary", url)
@@ -676,15 +680,14 @@ class EditCharterTests(TestCase):
         self.assertEqual(group.groupmilestone_set.filter(state="active", desc=m4.desc).count(), 1)
 
     def test_charter_with_milestones(self):
-        draft = make_test_data()
-        charter = draft.group.charter
+        charter = CharterFactory()
 
         NewRevisionDocEvent.objects.create(doc=charter,
                                            type="new_revision",
                                            rev=charter.rev,
                                            by=Person.objects.get(name="(System)"))
 
-        m = GroupMilestone.objects.create(group=draft.group,
+        m = GroupMilestone.objects.create(group=charter.group,
                                           state_id="active",
                                           desc="Test milestone",
                                           due=datetime.date.today(),

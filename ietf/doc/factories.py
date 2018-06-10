@@ -134,6 +134,7 @@ class CharterFactory(BaseDocumentFactory):
 
     type_id = 'charter'
     group = factory.SubFactory('ietf.group.factories.GroupFactory',type_id='wg')
+    name = factory.LazyAttribute(lambda o: 'charter-ietf-%s'%o.group.acronym)
 
     @factory.post_generation
     def set_group_charter_document(obj, create, extracted, **kwargs):
