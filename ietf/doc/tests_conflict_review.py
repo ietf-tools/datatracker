@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import debug    # pyflakes:ignore
 import os
 import shutil
 
@@ -9,6 +10,7 @@ from textwrap import wrap
 from django.conf import settings
 from django.urls import reverse as urlreverse
 
+from ietf.doc.factories import IndividualDraftFactory, ConflictReviewFactory
 from ietf.doc.models import Document, DocEvent, NewRevisionDocEvent, BallotPositionDocEvent, TelechatDocEvent, State
 from ietf.doc.utils import create_ballot_if_not_open
 from ietf.doc.views_conflict_review import default_approval_text
@@ -17,7 +19,6 @@ from ietf.iesg.models import TelechatDate
 from ietf.name.models import StreamName
 from ietf.utils.test_utils import TestCase, unicontent
 from ietf.utils.mail import outbox, empty_outbox
-from ietf.utils.test_data  import make_test_data
 from ietf.utils.test_utils import login_testing_unauthorized
 
 
@@ -308,7 +309,8 @@ class ConflictReviewTests(TestCase):
         self.approve_test_helper('appr-noprob')
 
     def setUp(self):
-        make_test_data()
+        IndividualDraftFactory(name='draft-imaginary-independent-submission')
+        ConflictReviewFactory(name='conflict-review-imaginary-irtf-submission',review_of=IndividualDraftFactory(name='draft-imaginary-irtf-submission',stream_id='irtf'),notify='notifyme@example.net')
 
 
 class ConflictReviewSubmitTests(TestCase):
@@ -387,7 +389,7 @@ class ConflictReviewSubmitTests(TestCase):
         self.assertTrue(q('textarea')[0].text.strip().startswith("[Edit this page"))
         
     def setUp(self):
-        make_test_data()
+        ConflictReviewFactory(name='conflict-review-imaginary-irtf-submission',review_of=IndividualDraftFactory(name='draft-imaginary-irtf-submission',stream_id='irtf'),notify='notifyme@example.net')
         self.test_dir = self.tempdir('conflict-review')
         self.saved_conflict_review_path = settings.CONFLICT_REVIEW_PATH
         settings.CONFLICT_REVIEW_PATH = self.test_dir
