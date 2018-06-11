@@ -16,17 +16,20 @@ from pyquery import PyQuery
 import debug                            # pyflakes:ignore
 
 import ietf.review.mailarch
-from ietf.doc.models import DocumentAuthor, Document, DocAlias, RelatedDocument, DocEvent, ReviewRequestDocEvent
+from ietf.doc.factories import NewRevisionDocEventFactory, WgDraftFactory, WgRfcFactory
+from ietf.doc.models import DocumentAuthor, RelatedDocument, DocEvent, ReviewRequestDocEvent
+from ietf.group.factories import RoleFactory, ReviewTeamFactory
 from ietf.group.models import Group
 from ietf.message.models import Message
-from ietf.name.models import ReviewResultName, ReviewRequestStateName, ReviewTypeName, DocRelationshipName
+from ietf.name.models import ReviewResultName, ReviewRequestStateName, ReviewTypeName
 from ietf.person.models import Email, Person
+from ietf.review.factories import ReviewRequestFactory
 from ietf.review.models import (ReviewRequest, ReviewerSettings,
                                 ReviewWish, UnavailablePeriod, NextReviewerInTeam)
 from ietf.review.utils import reviewer_rotation_list, possibly_advance_next_reviewer_for_team
 
 from ietf.utils.test_utils import TestCase
-from ietf.utils.test_data import make_test_data, make_review_data, create_person
+from ietf.utils.test_data import create_person
 from ietf.utils.test_utils import login_testing_unauthorized, unicontent, reload_db_objects
 from ietf.utils.mail import outbox, empty_outbox
 from ietf.person.factories import PersonFactory
@@ -46,10 +49,17 @@ class ReviewTests(TestCase):
         settings.DOCUMENT_PATH_PATTERN = self.old_document_path_pattern
 
     def test_request_review(self):
-        doc = make_test_data()
-        review_req = make_review_data(doc)
-        review_team = review_req.team
-        review_team3 = Group.objects.get(acronym='reviewteam3')
+        doc = WgDraftFactory(group__acronym='mars',rev='01')
+        NewRevisionDocEventFactory(doc=doc,rev='01')
+        RoleFactory(name_id='chair',person__user__username='marschairman',group=doc.group)
+        review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="dir", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
+        review_team3 = ReviewTeamFactory(acronym="reviewteam3", name="Review Team3", type_id="dir", list_email="reviewteam3@ietf.org", parent=Group.objects.get(acronym="farfut"))
+        rev_role = RoleFactory(group=review_team,person__user__username='reviewer',person__user__email='reviewer@example.com',name_id='reviewer')
+        RoleFactory(group=review_team3,person=rev_role.person,name_id='reviewer')
+        RoleFactory(group=review_team,person__user__username='reviewsecretary',person__user__email='reviewsecretary@example.com',name_id='secr')
+        RoleFactory(group=review_team3,person__user__username='reviewsecretary3',person__user__email='reviewsecretary3@example.com',name_id='secr')
+
+        ReviewRequestFactory(doc=doc,team=review_team,type_id='early',state_id='accepted',requested_by=rev_role.person,reviewer=rev_role.person.email_set.first(),deadline=datetime.datetime.now()+datetime.timedelta(days=20))
 
         url = urlreverse('ietf.doc.views_review.request_review', kwargs={ "name": doc.name })
         login_testing_unauthorized(self, "ad", url)
@@ -89,9 +99,7 @@ class ReviewTests(TestCase):
         self.assertTrue('reviewsecretary3@' in outbox[1]['To'])
 
     def test_request_review_of_rfc(self):
-        make_test_data()
-        doc = Document.objects.filter(states__type_id='draft',states__slug='rfc').first()
-        make_review_data(doc)
+        doc = WgRfcFactory()
 
         url = urlreverse('ietf.doc.views_review.request_review', kwargs={ "name": doc.name })
         login_testing_unauthorized(self, "ad", url)
@@ -101,15 +109,18 @@ class ReviewTests(TestCase):
         self.assertEqual(r.status_code, 403)
 
     def test_doc_page(self):
-        doc = make_test_data()
-        review_req = make_review_data(doc)
+
+        doc = WgDraftFactory(group__acronym='mars',rev='01')
+        review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="dir", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
+        rev_role = RoleFactory(group=review_team,person__user__username='reviewer',person__user__email='reviewer@example.com',name_id='reviewer')
+        review_req = ReviewRequestFactory(doc=doc,team=review_team,type_id='early',state_id='accepted',requested_by=rev_role.person,reviewer=rev_role.person.email_set.first(),deadline=datetime.datetime.now()+datetime.timedelta(days=20))
 
         # move the review request to a doubly-replaced document to
         # check we can fish it out
-        old_doc = Document.objects.get(name="draft-foo-mars-test")
-        older_doc = Document.objects.create(name="draft-older")
-        older_docalias = DocAlias.objects.create(name=older_doc.name, document=older_doc)
-        RelatedDocument.objects.create(source=old_doc, target=older_docalias, relationship=DocRelationshipName.objects.get(slug='replaces'))
+        old_doc = WgDraftFactory(name="draft-foo-mars-test")
+        older_doc = WgDraftFactory(name="draft-older")
+        RelatedDocument.objects.create(source=old_doc, target=older_doc.docalias_set.first(), relationship_id='replaces')
+        RelatedDocument.objects.create(source=doc, target=old_doc.docalias_set.first(), relationship_id='replaces')
         review_req.doc = older_doc
         review_req.save()
 
@@ -120,8 +131,10 @@ class ReviewTests(TestCase):
         self.assertTrue("{} Review".format(review_req.type.name) in content)
 
     def test_review_request(self):
-        doc = make_test_data()
-        review_req = make_review_data(doc)
+        doc = WgDraftFactory(group__acronym='mars',rev='01')
+        review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="dir", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
+        rev_role = RoleFactory(group=review_team,person__user__username='reviewer',person__user__email='reviewer@example.com',name_id='reviewer')
+        review_req = ReviewRequestFactory(doc=doc,team=review_team,type_id='early',state_id='accepted',requested_by=rev_role.person,reviewer=rev_role.person.email_set.first(),deadline=datetime.datetime.now()+datetime.timedelta(days=20))
 
         url = urlreverse('ietf.doc.views_review.review_request', kwargs={ "name": doc.name, "request_id": review_req.pk })
 
@@ -131,10 +144,11 @@ class ReviewTests(TestCase):
         self.assertIn(review_req.team.name, unicontent(r))
 
     def test_close_request(self):
-        doc = make_test_data()
-        review_req = make_review_data(doc)
-        review_req.state = ReviewRequestStateName.objects.get(slug="accepted")
-        review_req.save()
+        doc = WgDraftFactory(group__acronym='mars',rev='01')
+        review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="dir", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
+        rev_role = RoleFactory(group=review_team,person__user__username='reviewer',person__user__email='reviewer@example.com',name_id='reviewer')
+        RoleFactory(group=review_team,person__user__username='reviewsecretary',person__user__email='reviewsecretary@example.com',name_id='secr')
+        review_req = ReviewRequestFactory(doc=doc,team=review_team,type_id='early',state_id='accepted',requested_by=rev_role.person,reviewer=rev_role.person.email_set.first(),deadline=datetime.datetime.now()+datetime.timedelta(days=20))
 
         close_url = urlreverse('ietf.doc.views_review.close_request', kwargs={ "name": doc.name, "request_id": review_req.pk })
 
@@ -166,10 +180,9 @@ class ReviewTests(TestCase):
         self.assertTrue("closed" in outbox[0].get_payload(decode=True).decode("utf-8").lower())
 
     def test_possibly_advance_next_reviewer_for_team(self):
-        doc = make_test_data()
 
-        team = Group.objects.create(state_id="active", acronym="rotationteam", name="Review Team", type_id="dir",
-                                    list_email="rotationteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
+        team = ReviewTeamFactory(acronym="rotationteam", name="Review Team", list_email="rotationteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
+        doc = WgDraftFactory()
 
         # make a bunch of reviewers
         reviewers = [
@@ -254,13 +267,15 @@ class ReviewTests(TestCase):
         self.assertEqual(get_skip_next(reviewers[4]), 0)
 
     def test_assign_reviewer(self):
-        doc = make_test_data()
+        doc = WgDraftFactory(pages=2)
+        review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="dir", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
+        rev_role = RoleFactory(group=review_team,person__user__username='reviewer',person__user__email='reviewer@example.com',person__name=u'Some Reviewer',name_id='reviewer')
+        RoleFactory(group=review_team,person__user__username='marschairman',person__name=u'WG Cháir Man',name_id='reviewer')
+        RoleFactory(group=review_team,person__user__username='reviewsecretary',person__user__email='reviewsecretary@example.com',name_id='secr')
+        ReviewerSettings.objects.create(team=review_team, person=rev_role.person, min_interval=14, skip_next=0)
 
         # review to assign to
-        review_req = make_review_data(doc)
-        review_req.state = ReviewRequestStateName.objects.get(slug="requested")
-        review_req.reviewer = None
-        review_req.save()
+        review_req = ReviewRequestFactory(team=review_team,doc=doc,state_id='requested')
 
         # set up some reviewer-suitability factors
         reviewer_email = Email.objects.get(person__user__username="reviewer")
@@ -288,7 +303,7 @@ class ReviewTests(TestCase):
         reviewer_settings.save()
 
         # Need one more person in review team one so we can test incrementing skip_count without immediately decrementing it
-        another_reviewer = PersonFactory.create(name = u"Extra TestReviewer") # needs to be lexically greater than the exsting one
+        another_reviewer = PersonFactory.create(name = u"Extra TestReviewer") # needs to be lexically greater than the existing one
         another_reviewer.role_set.create(name_id='reviewer', email=another_reviewer.email(), group=review_req.team)
 
         UnavailablePeriod.objects.create(
@@ -365,10 +380,11 @@ class ReviewTests(TestCase):
         self.assertEqual(ReviewerSettings.objects.get(person=reviewer.person).skip_next, 1)
 
     def test_accept_reviewer_assignment(self):
-        doc = make_test_data()
-        review_req = make_review_data(doc)
-        review_req.state = ReviewRequestStateName.objects.get(slug="requested")
-        review_req.save()
+
+        doc = WgDraftFactory(group__acronym='mars',rev='01')
+        review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="dir", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
+        rev_role = RoleFactory(group=review_team,person__user__username='reviewer',person__user__email='reviewer@example.com',name_id='reviewer')
+        review_req = ReviewRequestFactory(doc=doc,team=review_team,type_id='early',state_id='requested',requested_by=rev_role.person,reviewer=rev_role.person.email_set.first(),deadline=datetime.datetime.now()+datetime.timedelta(days=20))
 
         url = urlreverse('ietf.doc.views_review.review_request', kwargs={ "name": doc.name, "request_id": review_req.pk })
         username = review_req.reviewer.person.user.username
@@ -386,10 +402,11 @@ class ReviewTests(TestCase):
         self.assertEqual(review_req.state_id, "accepted")
 
     def test_reject_reviewer_assignment(self):
-        doc = make_test_data()
-        review_req = make_review_data(doc)
-        review_req.state = ReviewRequestStateName.objects.get(slug="accepted")
-        review_req.save()
+        doc = WgDraftFactory(group__acronym='mars',rev='01')
+        review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="dir", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
+        rev_role = RoleFactory(group=review_team,person__user__username='reviewer',person__user__email='reviewer@example.com',name_id='reviewer')
+        RoleFactory(group=review_team,person__user__username='reviewsecretary',person__user__email='reviewsecretary@example.com',name_id='secr')
+        review_req = ReviewRequestFactory(doc=doc,team=review_team,type_id='early',state_id='accepted',requested_by=rev_role.person,reviewer=rev_role.person.email_set.first(),deadline=datetime.datetime.now()+datetime.timedelta(days=20))
 
         reject_url = urlreverse('ietf.doc.views_review.reject_reviewer_assignment', kwargs={ "name": doc.name, "request_id": review_req.pk })
 
@@ -458,11 +475,11 @@ class ReviewTests(TestCase):
         return mbox_path
 
     def test_search_mail_archive(self):
-        doc = make_test_data()
-        review_req = make_review_data(doc)
-        review_req.state = ReviewRequestStateName.objects.get(slug="accepted")
-        review_req.save()
-        review_req.team.save()
+        doc = WgDraftFactory(group__acronym='mars',rev='01')
+        review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="dir", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
+        rev_role = RoleFactory(group=review_team,person__user__username='reviewer',person__user__email='reviewer@example.com',name_id='reviewer')
+        RoleFactory(group=review_team,person__user__username='reviewsecretary',person__user__email='reviewsecretary@example.com',name_id='secr')
+        review_req = ReviewRequestFactory(doc=doc,team=review_team,type_id='early',state_id='accepted',requested_by=rev_role.person,reviewer=rev_role.person.email_set.first(),deadline=datetime.datetime.now()+datetime.timedelta(days=20))
 
         # test URL construction
         query_urls = ietf.review.mailarch.construct_query_urls(review_req)
@@ -504,10 +521,12 @@ class ReviewTests(TestCase):
             ietf.review.mailarch.construct_query_urls = real_fn
 
     def setup_complete_review_test(self):
-        doc = make_test_data()
-        review_req = make_review_data(doc)
-        review_req.state = ReviewRequestStateName.objects.get(slug="accepted")
-        review_req.save()
+        doc = WgDraftFactory(group__acronym='mars',rev='01')
+        NewRevisionDocEventFactory(doc=doc,rev='01')
+        review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="dir", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
+        rev_role = RoleFactory(group=review_team,person__user__username='reviewer',person__user__email='reviewer@example.com',name_id='reviewer')
+        RoleFactory(group=review_team,person__user__username='reviewsecretary',person__user__email='reviewsecretary@example.com',name_id='secr')
+        review_req = ReviewRequestFactory(doc=doc,team=review_team,type_id='early',state_id='accepted',requested_by=rev_role.person,reviewer=rev_role.person.email_set.first(),deadline=datetime.datetime.now()+datetime.timedelta(days=20))
         for r in ReviewResultName.objects.filter(slug__in=("issues", "ready")):
             review_req.team.reviewteamsettings.review_results.add(r)
 
@@ -784,8 +803,11 @@ class ReviewTests(TestCase):
         self.assertEqual(len(outbox), 0)
         
     def test_edit_comment(self):
-        doc = make_test_data()
-        review_req = make_review_data(doc)
+        doc = WgDraftFactory(group__acronym='mars',rev='01')
+        review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="dir", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
+        rev_role = RoleFactory(group=review_team,person__user__username='reviewer',person__user__email='reviewer@example.com',name_id='reviewer')
+        RoleFactory(group=review_team,person__user__username='reviewsecretary',person__user__email='reviewsecretary@example.com',name_id='secr')
+        review_req = ReviewRequestFactory(doc=doc,team=review_team,type_id='early',state_id='accepted',requested_by=rev_role.person,reviewer=rev_role.person.email_set.first(),deadline=datetime.datetime.now()+datetime.timedelta(days=20))
 
         url = urlreverse('ietf.doc.views_review.edit_comment', kwargs={ "name": doc.name, "request_id": review_req.pk })
 
@@ -802,8 +824,11 @@ class ReviewTests(TestCase):
         self.assertEqual(review_req.comment,'iHsnReEHXEmNPXcixsvAF9Aa')
 
     def test_edit_deadline(self):
-        doc = make_test_data()
-        review_req = make_review_data(doc)
+        doc = WgDraftFactory(group__acronym='mars',rev='01')
+        review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="dir", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
+        rev_role = RoleFactory(group=review_team,person__user__username='reviewer',person__user__email='reviewer@example.com',name_id='reviewer')
+        RoleFactory(group=review_team,person__user__username='reviewsecretary',person__user__email='reviewsecretary@example.com',name_id='secr')
+        review_req = ReviewRequestFactory(doc=doc,team=review_team,type_id='early',state_id='accepted',requested_by=rev_role.person,reviewer=rev_role.person.email_set.first(),deadline=datetime.datetime.now()+datetime.timedelta(days=20))
 
         url = urlreverse('ietf.doc.views_review.edit_deadline', kwargs={ "name": doc.name, "request_id": review_req.pk })
 

@@ -12,12 +12,13 @@ from django.conf import settings
 from django.urls import reverse as urlreverse
 
 from ietf.doc.models import Document, State, DocAlias, NewRevisionDocEvent
+from ietf.group.factories import RoleFactory
 from ietf.group.models import Group
+from ietf.meeting.factories import MeetingFactory
 from ietf.meeting.models import Meeting, Session, SessionPresentation
 from ietf.name.models import SessionStatusName
 from ietf.person.models import Person
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized, unicontent
-from ietf.utils.test_data import make_test_data
 
 
 class GroupMaterialTests(TestCase):
@@ -43,8 +44,9 @@ class GroupMaterialTests(TestCase):
         shutil.rmtree(self.agenda_dir)
 
     def create_slides(self):
-        make_test_data()
 
+        MeetingFactory(type_id='ietf',number='42')
+        RoleFactory(name_id='chair',person__user__username='marschairman',group__type_id='wg',group__acronym='mars')
         group = Group.objects.create(type_id="team", acronym="testteam", name="Test Team", state_id="active")
 
         doc = Document.objects.create(name="slides-testteam-test-file", rev="01", type_id="slides", group=group)

@@ -2,6 +2,8 @@
 import os
 import shutil
 
+import debug    # pyflakes:ignore
+
 from pyquery import PyQuery
 from StringIO import StringIO
 from textwrap import wrap
@@ -9,6 +11,7 @@ from textwrap import wrap
 from django.conf import settings
 from django.urls import reverse as urlreverse
 
+from ietf.doc.factories import DocumentFactory, IndividualRfcFactory, WgRfcFactory
 from ietf.doc.models import ( Document, DocAlias, State, DocEvent,
     BallotPositionDocEvent, NewRevisionDocEvent, TelechatDocEvent, WriteupDocEvent )
 from ietf.doc.utils import create_ballot_if_not_open
@@ -17,7 +20,6 @@ from ietf.group.models import Person
 from ietf.iesg.models import TelechatDate
 from ietf.utils.test_utils import TestCase, unicontent
 from ietf.utils.mail import outbox
-from ietf.utils.test_data  import make_test_data
 from ietf.utils.test_utils import login_testing_unauthorized
 
 
@@ -389,8 +391,10 @@ class StatusChangeTests(TestCase):
         self.assertTrue(doc.latest_event(DocEvent,type="added_comment").desc.startswith('Affected RFC list changed.'))       
         
     def setUp(self):
-        make_test_data()
-
+        IndividualRfcFactory(alias2__name='rfc14',name='draft-was-never-issued',std_level_id='unkn')
+        WgRfcFactory(alias2__name='rfc9999',name='draft-ietf-random-thing',std_level_id='ps')
+        WgRfcFactory(alias2__name='rfc9998',name='draft-ietf-random-other-thing',std_level_id='inf')
+        DocumentFactory(type_id='statchg',name='status-change-imaginary-mid-review',notify='notify@example.org')
 
 class StatusChangeSubmitTests(TestCase):
     def test_initial_submission(self):
@@ -478,7 +482,7 @@ class StatusChangeSubmitTests(TestCase):
         self.assertTrue("This is the old proposal." in unicontent(r))
 
     def setUp(self):
-        make_test_data()
+        DocumentFactory(type_id='statchg',name='status-change-imaginary-mid-review',notify='notify@example.org')
         self.test_dir = self.tempdir('status-change')
         self.saved_status_change_path = settings.STATUS_CHANGE_PATH
         settings.STATUS_CHANGE_PATH = self.test_dir
