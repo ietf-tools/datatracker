@@ -30,7 +30,7 @@
       dagger symbol &dagger; next to it, or listed on your
       <a href="{% url 'ietf.community.views.view_list' user.username %}">notification subscription page</a>.  Most of this
       information can be edited or removed on these page.  There are some exceptions, such
-      as photos, which currently require an email to <a href="mailto:ietf-action@ietf.org">the Secretariat</a>
+      as photos, which currently require an email to <a href="mailto:{{settings.SECRETARIAT_TICKET_EMAIL}}">the Secretariat</a>
       if you wish to update or remove the information.
 
   </p>
@@ -94,7 +94,7 @@
       <label class="col-sm-2 control-label">Nomcom Eligible</label>
       <div class="col-sm-1 form-control-static">{{person|is_nomcom_eligible|yesno:'Yes,No,No'}}</div>
       <div class="col-sm-9">
-	   <p class="alert alert-info form-control-static ">This calculation is EXPERIMENTAL.<br/>If you believe it is incorrect, make sure you've added all the email addresses you've registered for IETF meetings with to the list below.<br/>If you've done so and the calculation is still incorrect, please send a note to <a href="{{settings.SECRETARIAT_TICKET_EMAIL}}">{{settings.SECRETARIAT_TICKET_EMAIL}}</a>.<br/>See <a href="{% url 'ietf.doc.views_doc.document_main' name='rfc3777' %}">RFC 3777</a> for eligibility requirements.</p>
+	   <p class="alert alert-info form-control-static ">This calculation is EXPERIMENTAL.<br/>If you believe it is incorrect, make sure you've added all the email addresses you've registered for IETF meetings with to the list below.<br/>If you've done so and the calculation is still incorrect, please send a note to <a href="mailto:{{settings.SECRETARIAT_TICKET_EMAIL}}">{{settings.SECRETARIAT_TICKET_EMAIL}}</a>.<br/>See <a href="{% url 'ietf.doc.views_doc.document_main' name='rfc3777' %}">RFC 3777</a> for eligibility requirements.</p>
       </div>
     </div>
 
