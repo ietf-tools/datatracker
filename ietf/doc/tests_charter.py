@@ -589,7 +589,7 @@ class EditCharterTests(TestCase):
     def test_approve(self):
         area = GroupFactory(type_id='area')
         RoleFactory(name_id='ad',group=area,person=Person.objects.get(user__username='ad'))
-        charter = CharterFactory(group__acronym='ames',group__list_email='ames-wg@ietf.org',group__parent=area)
+        charter = CharterFactory(group__acronym='ames',group__list_email='ames-wg@ietf.org',group__parent=area,group__state_id='bof')
         group = charter.group
         RoleFactory(name_id='chair',group=group,person__name=u'Ames Man',person__user__email='ameschairman@ietf.org')
         RoleFactory(name_id='secr',group=group,person__name=u'Secretary',person__user__email='amessecretary@ietf.org')

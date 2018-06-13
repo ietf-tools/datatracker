@@ -26,6 +26,7 @@ from ietf.doc.factories import DocumentFactory, DocEventFactory, CharterFactory,
 from ietf.doc.utils import create_ballot_if_not_open
 from ietf.group.models import Group
 from ietf.group.factories import GroupFactory
+from ietf.ipr.factories import HolderIprDisclosureFactory
 from ietf.meeting.models import Meeting, Session, SessionPresentation
 from ietf.meeting.factories import MeetingFactory, SessionFactory
 from ietf.name.models import SessionStatusName
@@ -252,10 +253,12 @@ class SearchTests(TestCase):
         
     def test_indexes(self):
         draft = IndividualDraftFactory()
+        rfc = WgRfcFactory()
 
         r = self.client.get(urlreverse('ietf.doc.views_search.index_all_drafts'))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue(draft.name in unicontent(r))
+        self.assertIn(draft.name, unicontent(r))
+        self.assertIn(rfc.canonical_name().upper(),unicontent(r))
 
         r = self.client.get(urlreverse('ietf.doc.views_search.index_active_drafts'))
         self.assertEqual(r.status_code, 200)
@@ -476,6 +479,9 @@ Man                    Expires September 22, 2015               [Page 3]
 
     def test_document_draft(self):
         draft = WgDraftFactory(name='draft-ietf-mars-test',rev='01')
+        HolderIprDisclosureFactory(docs=[draft])
+        replaced = IndividualDraftFactory()
+        draft.relateddocument_set.create(relationship_id='replaces',source=draft,target=replaced.docalias_set.first())
 
         # these tests aren't testing all attributes yet, feel free to
         # expand them
@@ -532,7 +538,7 @@ Man                    Expires September 22, 2015               [Page 3]
         q = PyQuery(r.content)
         self.assertEqual(len(q('.rfcmarkup pre')), 4)
         self.assertEqual(len(q('.rfcmarkup span.h1')), 2)
-        self.assertEqual(len(q('.rfcmarkup a[href]')), 29)
+        self.assertEqual(len(q('.rfcmarkup a[href]')), 31)
 
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_html", kwargs=dict(name=draft.name, rev=draft.rev)))
         self.assertEqual(r.status_code, 200)
