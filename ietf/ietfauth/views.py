@@ -580,25 +580,14 @@ def login(request, extra_context=None):
     which is not recognized as a valid password hash.
     """
 
+    require_consent = []
     if request.method == "POST":
         form = AuthenticationForm(request, data=request.POST)
         username = form.data.get('username')
         user = User.objects.filter(username=username).first()
         #
-        require_consent = []
         if user.person and not user.person.consent:
-            person = user.person
-            if person.name != person.name_from_draft:
-                require_consent.append("full name")
-            if person.ascii != person.name_from_draft:
-                require_consent.append("ascii name")
-            if person.biography:
-                require_consent.append("biography")
-            if user.communitylist_set.exists():
-                require_consent.append("draft notification subscription(s)")
-            for email in person.email_set.all():
-                if not email.origin.split(':')[0] in ['author', 'role', 'reviewer', 'liaison', 'shepherd', ]:
-                    require_consent.append("email address(es)")
+            require_consent = user.person.needs_consent()
         if user:
             try:
                 identify_hasher(user.password)
@@ -617,8 +606,10 @@ def login(request, extra_context=None):
                 You have personal information associated with your account which is not
                 derived from draft submissions or other ietf work, namely: %s.  Please go
                 to your <a href='/accounts/profile'>account profile</a> and review your
-                personal information, and confirm that it may be used and displayed
-                within the IETF datatracker.
+                personal information, then scoll to the bottom and check the 'confirm'
+                checkbox and submit the form, in order to to indicate that that the
+                provided personal information may be used and displayed within the IETF
+                datatracker.
 
                 """ % ', '.join(require_consent)))
     return response
