@@ -61,7 +61,6 @@ def change_state(request, name, option=None):
                 if new_state.slug == "iesgeval":
                     e = create_ballot_if_not_open(request, status_change, login, "statchg", status_change.time) # pyflakes:ignore
                     ballot = status_change.latest_event(BallotDocEvent, type="created_ballot")
-                    log.assertion('ballot == e')
                     if has_role(request.user, "Area Director") and not status_change.latest_event(BallotPositionDocEvent, ad=login, ballot=ballot, type="changed_ballot_position"):
 
                         # The AD putting a status change into iesgeval who doesn't already have a position is saying "yes"

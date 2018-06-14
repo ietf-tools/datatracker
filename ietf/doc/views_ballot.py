@@ -593,7 +593,6 @@ def ballot_writeupnotes(request, name):
             if "issue_ballot" in request.POST:
                 e = create_ballot_if_not_open(request, doc, login, "approve") # pyflakes:ignore
                 ballot = doc.latest_event(BallotDocEvent, type="created_ballot")
-                log.assertion('ballot == e')
                 if has_role(request.user, "Area Director") and not doc.latest_event(BallotPositionDocEvent, ad=login, ballot=ballot):
                     # sending the ballot counts as a yes
                     pos = BallotPositionDocEvent(doc=doc, rev=doc.rev, by=login)
