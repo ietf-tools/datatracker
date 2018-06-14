@@ -33,6 +33,10 @@ class DocAuthorInline(admin.TabularInline):
 
 class RelatedDocumentInline(admin.TabularInline):
     model = RelatedDocument
+    def this(self, instance):
+        return instance.source.canonical_name()
+    readonly_fields = ['this', ]
+    fields = ['this', 'relationship', 'target', ]
     raw_id_fields = ['target']
     extra = 1
 
