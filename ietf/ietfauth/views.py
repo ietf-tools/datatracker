@@ -587,7 +587,7 @@ def login(request, extra_context=None):
         #
         require_consent = []
         if user:
-            if user.person and not user.person.consent:
+            if hasattr(user, 'person') and not user.person.consent:
                 person = user.person
                 if person.name != person.name_from_draft:
                     require_consent.append("full name")
