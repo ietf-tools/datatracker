@@ -90,7 +90,7 @@ class Nomination(models.Model):
     nominee = ForeignKey('Nominee')
     comments = ForeignKey('Feedback')
     nominator_email = models.EmailField(verbose_name='Nominator Email', blank=True)
-    user = ForeignKey(User, editable=False)
+    user = ForeignKey(User, editable=False, null=True, on_delete=models.SET_NULL)
     time = models.DateTimeField(auto_now_add=True)
     share_nominator = models.BooleanField(verbose_name='Share nominator name with candidate', default=False,
                                           help_text='Check this box to allow the NomCom to let the '
@@ -247,7 +247,7 @@ class Feedback(models.Model):
     subject = models.TextField(verbose_name='Subject', blank=True)
     comments = EncryptedTextField(verbose_name='Comments')
     type = ForeignKey(FeedbackTypeName, blank=True, null=True)
-    user = ForeignKey(User, editable=False, blank=True, null=True)
+    user = ForeignKey(User, editable=False, blank=True, null=True, on_delete=models.SET_NULL)
     time = models.DateTimeField(auto_now_add=True)
 
     objects = FeedbackManager()

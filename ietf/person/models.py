@@ -31,7 +31,7 @@ from ietf.utils.models import ForeignKey, OneToOneField
 
 class Person(models.Model):
     history = HistoricalRecords()
-    user = OneToOneField(User, blank=True, null=True)
+    user = OneToOneField(User, blank=True, null=True, on_delete=models.SET_NULL)
     time = models.DateTimeField(default=datetime.datetime.now)      # When this Person record entered the system
     # The normal unicode form of the name.  This must be
     # set to the same value as the ascii-form if equal.
