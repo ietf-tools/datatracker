@@ -95,7 +95,7 @@ def unidecode_name(uname):
     name = unidecode.unidecode(uname)
     if name == uname:
         return name
-    name = re.sub('  +', ' ', name.strip().replace('@', ''))
+    name = re.sub('  +', ' ', name.strip().replace('@', '').replace('"', ''))
     name = re.sub(r'(\w)\.(\w)', r'\1\2', name)
     # Fix all-upper and all-lower names:
     # Check for name particles -- don't capitalize those
