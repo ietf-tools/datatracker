@@ -163,6 +163,25 @@ class Person(models.Model):
         from ietf.doc.models import Document
         return Document.objects.filter(documentauthor__person=self, type='draft', states__slug__in=['repl', 'expired', 'auth-rm', 'ietf-rm']).order_by('-time')
 
+    def needs_consent(self):
+        """
+        Returns an empty list or a list of fields which holds information that
+        requires consent to be given.
+        """
+        needs_consent = []
+        if self.name != self.name_from_draft:
+            needs_consent.append("full name")
+        if self.ascii != self.name_from_draft:
+            needs_consent.append("ascii name")
+        if self.biography and self.role_set.count():
+            needs_consent.append("biography")
+        if self.user and self.user.communitylist_set.exists():
+            needs_consent.append("draft notification subscription(s)")
+        for email in self.email_set.all():
+            if not email.origin.split(':')[0] in ['author', 'role', 'reviewer', 'liaison', 'shepherd', ]:
+                needs_consent.append("email address(es)")
+        return needs_consent
+
     def save(self, *args, **kwargs):
         created = not self.pk
         super(Person, self).save(*args, **kwargs)
