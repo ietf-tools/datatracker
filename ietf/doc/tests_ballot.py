@@ -12,6 +12,7 @@ from ietf.doc.factories import DocumentFactory, IndividualDraftFactory, Individu
 from ietf.doc.utils import create_ballot_if_not_open
 from ietf.group.models import Group, Role
 from ietf.group.factories import GroupFactory, RoleFactory
+from ietf.ipr.factories import HolderIprDisclosureFactory
 from ietf.name.models import BallotPositionName
 from ietf.iesg.models import TelechatDate
 from ietf.person.models import Person, PersonalApiKey
@@ -435,7 +436,7 @@ class BallotWriteupsTests(TestCase):
 
     def test_edit_approval_text(self):
         ad = Person.objects.get(user__username="ad")
-        draft = WgDraftFactory(ad=ad,states=[('draft','active'),('draft-iesg','iesg-eva')],intended_std_level_id='ps')
+        draft = WgDraftFactory(ad=ad,states=[('draft','active'),('draft-iesg','iesg-eva')],intended_std_level_id='ps',group__parent=Group.objects.get(acronym='farfut'))
         url = urlreverse('ietf.doc.views_ballot.ballot_approvaltext', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "secretary", url)
 
@@ -674,8 +675,8 @@ class ApproveBallotTests(TestCase):
 class MakeLastCallTests(TestCase):
     def test_make_last_call(self):
         ad = Person.objects.get(user__username="ad")
-        draft = WgDraftFactory(name='draft-ietf-mars-test',group__acronym='mars',ad=ad)
-        draft.set_state(State.objects.get(used=True, type="draft-iesg", slug="lc-req"))
+        draft = WgDraftFactory(name='draft-ietf-mars-test',group__acronym='mars',ad=ad,states=[('draft-iesg','lc-req')],intended_std_level_id='ps')
+        HolderIprDisclosureFactory(docs=[draft])
 
         url = urlreverse('ietf.doc.views_ballot.make_last_call', kwargs=dict(name=draft.name))
         login_testing_unauthorized(self, "secretary", url)
@@ -707,6 +708,7 @@ class MakeLastCallTests(TestCase):
         self.assertTrue("ietf-announce@" in outbox[-2]['To'])
         for prefix in ['draft-ietf-mars-test','mars-chairs','aread']:
             self.assertTrue(prefix+"@" in outbox[-2]['Cc'])
+        self.assertIn("The following IPR Declarations",outbox[-2].get_payload())
 
         self.assertTrue("Last Call" in outbox[-1]['Subject'])
         self.assertTrue("drafts-lastcall@icann.org" in outbox[-1]['To'])
