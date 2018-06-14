@@ -21,7 +21,6 @@ from ietf.ietfauth.utils import has_role, role_required
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.name.models import DocRelationshipName, StdLevelName
 from ietf.person.models import Person
-from ietf.utils import log
 from ietf.utils.mail import send_mail_preformatted
 from ietf.utils.textupload import get_cleaned_text_file_content
 
