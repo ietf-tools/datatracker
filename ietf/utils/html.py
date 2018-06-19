@@ -31,11 +31,11 @@ def unescape(text):
     """
     return text.replace('&#39;', "'").replace('&quot;', '"').replace('&gt;', '>').replace('&lt;', '<' ).replace('&amp;', '&')
 
+@keep_lazy(six.text_type)
 def remove_tags(html, tags):
     """Returns the given HTML sanitized, and with the given tags removed."""
     allowed = set(acceptable_tags) - set([ t.lower() for t in tags ])
     return bleach.clean(html, tags=allowed)
-remove_tags = keep_lazy(remove_tags, six.text_type)
 
 # ----------------------------------------------------------------------
 # Html fragment cleaning

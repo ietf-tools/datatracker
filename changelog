@@ -1,3 +1,48 @@
+ietfdb (6.81.3) ietf; urgency=medium
+
+  * Merged in [15248] from rjsparks@nostrum.com:
+    Improvements to tests after converting to factories suggested by studying
+    coverage_changes.  
+
+  * Merged in [15247] from rjsparks@nostrum.com:
+    Tweaked the color palatte for the agenda editor.  
+
+  * Removed two instances of log.assertion(); we have enough data on these
+    now.
+
+  * Changed an attribute guard to work with a reverse relationship attribute
+    (using hasattr()).
+
+  * Fixed a broken mailto link on the account edit page.
+
+  * Merged in [15238] from rjsparks@nostrum.com:
+    Use factories for ietf.doc.tests_status_change. Repair previous commit
+    errors in ietf.doc.tests_material.  
+
+  * Merged in [15228] from rjsparks@nostrum.com:
+    Use factories for ietf.doc.tests_downref.  
+
+  * Merged in [15227] from rjsparks@nostrum.com:
+    Use factories for ietf.doc.tests_conflict_review.  
+
+  * Merged in [15226] from rjsparks@nostrum.com:
+    Use factories for ietf.doc.tests_charter.  
+
+  * Tweaked unidecode_name() to not produce single-letter ascii surnames 
+    from non-ascii codepoints.  The unidecode transliteration is in any case 
+    somewhat arbitrary, and in most cases a real person will tweak the ascii 
+    name of his account.  When running tests, however, this tweak avoids some 
+    false test failures.  And no, it's not simple to fix the draft 
+    author-extraction heuristics to deal well with single-letter surnames.
+
+  * Added a guard against trying to access attributes of a None object.
+
+  * Merged in [15225] from rjsparks@nostrum.com:
+    Use factories for ietf.doc.tests_draft.  
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  14 Jun 2018 13:11:49 +0000
+
+
 ietfdb (6.81.2) ietf; urgency=medium
 
   This is the third in a small series of releases to address compliance with
