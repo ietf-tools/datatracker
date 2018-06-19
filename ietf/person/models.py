@@ -180,6 +180,7 @@ class Person(models.Model):
         for email in self.email_set.all():
             if not email.origin.split(':')[0] in ['author', 'role', 'reviewer', 'liaison', 'shepherd', ]:
                 needs_consent.append("email address(es)")
+                break
         return needs_consent
 
     def save(self, *args, **kwargs):
