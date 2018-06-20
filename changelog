@@ -1,11 +1,25 @@
 ietfdb (6.81.3) ietf; urgency=medium
 
+  This is a bugfix release to clear the board for the final GDPR release.
+  From the commit log:
+
+  * Merged in [15266] from rcross@amsl.com:
+    Updated the blue sheet template.  Replaced start time / end time with date.  
+
+  * Merged in [15267] from rcross@amsl.com:
+    Fixed an issue with a decorator on utils.html.remove_tags().   
+
+  * Tweaked the 'Related documents' part of the Document admin page to more 
+    intuitively show the relationships.
+
+  * Tweaked unidecode_name() to avoid double-quotes in the ascii string.
+
   * Merged in [15248] from rjsparks@nostrum.com:
     Improvements to tests after converting to factories suggested by studying
     coverage_changes.  
 
   * Merged in [15247] from rjsparks@nostrum.com:
-    Tweaked the color palatte for the agenda editor.  
+    Tweaked the color palette for the agenda editor.  
 
   * Removed two instances of log.assertion(); we have enough data on these
     now.
@@ -40,7 +54,7 @@ ietfdb (6.81.3) ietf; urgency=medium
   * Merged in [15225] from rjsparks@nostrum.com:
     Use factories for ietf.doc.tests_draft.  
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  14 Jun 2018 13:11:49 +0000
+ -- Henrik Levkowetz <henrik@levkowetz.com>  20 Jun 2018 21:47:42 +0000
 
 
 ietfdb (6.81.2) ietf; urgency=medium
