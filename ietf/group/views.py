@@ -1179,7 +1179,7 @@ def stream_documents(request, acronym):
     stream = StreamName.objects.get(slug=acronym)
 
     qs = Document.objects.filter(states__type="draft", states__slug__in=["active", "rfc"], stream=acronym)
-    docs, meta = prepare_document_table(request, qs)
+    docs, meta = prepare_document_table(request, qs, max_results=1000)
     return render(request, 'group/stream_documents.html', {'stream':stream, 'docs':docs, 'meta':meta, 'editable':editable } )
 
 def stream_edit(request, acronym):
