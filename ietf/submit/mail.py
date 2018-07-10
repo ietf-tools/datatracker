@@ -105,6 +105,8 @@ def announce_to_lists(request, submission):
     m.subject = 'I-D Action: %s-%s.txt' % (submission.name, submission.rev)
     m.frm = settings.IDSUBMIT_ANNOUNCE_FROM_EMAIL
     (m.to, m.cc) = gather_address_lists('sub_announced',submission=submission)
+    if m.cc:
+        m.reply_to = m.cc
     m.body = render_to_string('submit/announce_to_lists.txt',
                               dict(submission=submission,
                                    settings=settings))

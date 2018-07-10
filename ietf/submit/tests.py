@@ -1501,8 +1501,8 @@ Thank you
         outmsg = outbox[0]
         self.assertTrue(to in outmsg['To'])
         
-        reply_to = outmsg['Reply-to']
-        self.assertIsNotNone(reply_to, "Expected Reply-to")
+        reply_to = outmsg['Reply-To']
+        self.assertIsNotNone(reply_to, "Expected Reply-To")
         
         # Build a reply
 

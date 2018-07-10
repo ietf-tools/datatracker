@@ -206,6 +206,11 @@ def condition_message(to, frm, subject, msg, cc, extra):
         cc = ", ".join([isinstance(addr, tuple) and formataddr(addr) or addr for addr in cc if addr])
     if frm:
 	msg['From'] = frm
+    if extra and 'Reply-To' in extra:
+        reply_to = extra['Reply-To']
+        if isinstance(reply_to, list) or isinstance(reply_to, tuple):
+            reply_to = ", ".join([isinstance(addr, tuple) and formataddr(addr) or addr for addr in reply_to if addr])
+        extra['Reply-To'] = reply_to
 
     # The following is a hack to avoid an issue with how the email module (as of version 4.0.3)
     # breaks lines when encoding header fields with anything other than the us-ascii codec.
@@ -265,7 +270,7 @@ def send_mail_mime(request, to, frm, subject, msg, cc=None, extra=None, toUser=F
 
     if test_mode or debugging or settings.SERVER_MODE == 'production':
         try:
-            send_smtp(msg,bcc)
+            send_smtp(msg, bcc)
         except smtplib.SMTPException as e:
             log_smtp_exception(e)
             build_warning_message(request, e)
@@ -339,7 +344,7 @@ def send_mail_message(request, message, extra={}):
 
     e = extra.copy()
     if message.reply_to:
-        e['Reply-to'] = message.reply_to
+        e['Reply-To'] = message.reply_to
     if message.msgid:
         e['Message-ID'] = message.msgid
 
