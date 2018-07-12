@@ -46,7 +46,7 @@ def reverse(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('name', '0001_initial'),
+        ('name', '0002_agendatypename'),
         ('group', '0002_groupfeatures_historicalgroupfeatures'),
     ]
 
