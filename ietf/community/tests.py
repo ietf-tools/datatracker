@@ -11,21 +11,28 @@ from ietf.community.models import CommunityList, SearchRule, EmailSubscription
 from ietf.community.utils import docs_matching_community_list_rule, community_list_rules_matching_doc
 from ietf.community.utils import reset_name_contains_index_for_rule
 import ietf.community.views
+from ietf.group.models import Group
 from ietf.group.utils import setup_default_community_list_for_group
 from ietf.doc.models import State
 from ietf.doc.utils import add_state_change_event
 from ietf.person.models import Person, Email
-from ietf.utils.test_data import make_test_data
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase, unicontent
 from ietf.utils.mail import outbox
-from ietf.group.factories import GroupFactory
+from ietf.doc.factories import WgDraftFactory
+from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.person.factories import PersonFactory
 
 class CommunityListTests(TestCase):
     def test_rule_matching(self):
-        draft = make_test_data()
-        iesg_state = State.objects.get(type="draft-iesg", slug="lc")
-        draft.set_state(iesg_state)
+        plain = PersonFactory(user__username='plain')
+        ad = Person.objects.get(user__username='ad')
+        draft = WgDraftFactory(
+            group__parent=Group.objects.get(acronym='farfut' ),
+            authors=[ad],
+            ad=ad,
+            shepherd=plain.email(),
+            states=[('draft-iesg','lc'),('draft','active')],
+        )
 
         clist = CommunityList.objects.create(user=User.objects.get(username="plain"))
 
@@ -66,7 +73,8 @@ class CommunityListTests(TestCase):
         self.assertTrue(draft in list(docs_matching_community_list_rule(rule_name_contains)))
 
     def test_view_list(self):
-        draft = make_test_data()
+        PersonFactory(user__username='plain')
+        draft = WgDraftFactory()
 
         url = urlreverse(ietf.community.views.view_list, kwargs={ "username": "plain" })
 
@@ -88,7 +96,9 @@ class CommunityListTests(TestCase):
         self.assertTrue(draft.name in unicontent(r))
 
     def test_manage_personal_list(self):
-        draft = make_test_data()
+        PersonFactory(user__username='plain')
+        ad = Person.objects.get(user__username='ad')
+        draft = WgDraftFactory(authors=[ad])
 
         url = urlreverse(ietf.community.views.manage_list, kwargs={ "username": "plain" })
         login_testing_unauthorized(self, "plain", url)
@@ -152,7 +162,8 @@ class CommunityListTests(TestCase):
         self.assertTrue(not clist.searchrule_set.filter(rule_type="author_rfc"))
 
     def test_manage_group_list(self):
-        draft = make_test_data()
+        draft = WgDraftFactory(group__acronym='mars')
+        RoleFactory(group__acronym='mars',name_id='chair',person=PersonFactory(user__username='marschairman'))
 
         url = urlreverse(ietf.community.views.manage_list, kwargs={ "acronym": draft.group.acronym })
         setup_default_community_list_for_group(draft.group)
@@ -176,7 +187,8 @@ class CommunityListTests(TestCase):
             self.assertEqual(r.status_code, 200)
 
     def test_track_untrack_document(self):
-        draft = make_test_data()
+        PersonFactory(user__username='plain')
+        draft = WgDraftFactory()
 
         url = urlreverse(ietf.community.views.track_document, kwargs={ "username": "plain", "name": draft.name })
         login_testing_unauthorized(self, "plain", url)
@@ -201,7 +213,8 @@ class CommunityListTests(TestCase):
         self.assertEqual(list(clist.added_docs.all()), [])
 
     def test_track_untrack_document_through_ajax(self):
-        draft = make_test_data()
+        PersonFactory(user__username='plain')
+        draft = WgDraftFactory()
 
         url = urlreverse(ietf.community.views.track_document, kwargs={ "username": "plain", "name": draft.name })
         login_testing_unauthorized(self, "plain", url)
@@ -222,7 +235,8 @@ class CommunityListTests(TestCase):
         self.assertEqual(list(clist.added_docs.all()), [])
 
     def test_csv(self):
-        draft = make_test_data()
+        PersonFactory(user__username='plain')
+        draft = WgDraftFactory()
 
         url = urlreverse(ietf.community.views.export_to_csv, kwargs={ "username": "plain" })
 
@@ -245,7 +259,7 @@ class CommunityListTests(TestCase):
         self.assertTrue(draft.name in unicontent(r))
 
     def test_csv_for_group(self):
-        draft = make_test_data()
+        draft = WgDraftFactory()
 
         url = urlreverse(ietf.community.views.export_to_csv, kwargs={ "acronym": draft.group.acronym })
 
@@ -256,7 +270,8 @@ class CommunityListTests(TestCase):
         self.assertEqual(r.status_code, 200)
 
     def test_feed(self):
-        draft = make_test_data()
+        PersonFactory(user__username='plain')
+        draft = WgDraftFactory()
 
         url = urlreverse(ietf.community.views.feed, kwargs={ "username": "plain" })
 
@@ -283,7 +298,7 @@ class CommunityListTests(TestCase):
         self.assertTrue('<entry>' not in unicontent(r))
 
     def test_feed_for_group(self):
-        draft = make_test_data()
+        draft = WgDraftFactory()
 
         url = urlreverse(ietf.community.views.feed, kwargs={ "acronym": draft.group.acronym })
 
@@ -294,7 +309,8 @@ class CommunityListTests(TestCase):
         self.assertEqual(r.status_code, 200)
         
     def test_subscription(self):
-        draft = make_test_data()
+        PersonFactory(user__username='plain')
+        draft = WgDraftFactory()
 
         url = urlreverse(ietf.community.views.subscription, kwargs={ "username": "plain" })
 
@@ -331,7 +347,8 @@ class CommunityListTests(TestCase):
         self.assertEqual(EmailSubscription.objects.filter(community_list=clist, email=email, notify_on="significant").count(), 0)
 
     def test_subscription_for_group(self):
-        draft = make_test_data()
+        draft = WgDraftFactory(group__acronym='mars')
+        RoleFactory(group__acronym='mars',name_id='chair',person=PersonFactory(user__username='marschairman'))
 
         url = urlreverse(ietf.community.views.subscription, kwargs={ "acronym": draft.group.acronym })
 
@@ -344,16 +361,11 @@ class CommunityListTests(TestCase):
         self.assertEqual(r.status_code, 200)
         
     def test_notification(self):
-        draft = make_test_data()
+        PersonFactory(user__username='plain')
+        draft = WgDraftFactory()
 
         clist = CommunityList.objects.create(user=User.objects.get(username="plain"))
         clist.added_docs.add(draft)
-        SearchRule.objects.create(
-            community_list=clist,
-            rule_type="name_contains",
-            state=State.objects.get(type="draft", slug="active"),
-            text="test",
-        )
 
         EmailSubscription.objects.create(community_list=clist, email=Email.objects.filter(person__user__username="plain").first(), notify_on="significant")
 
