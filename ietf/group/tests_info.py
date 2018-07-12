@@ -65,9 +65,9 @@ class GroupPagesTests(TestCase):
         self.assertTrue(group.name in unicontent(r))
         self.assertTrue(group.ad_role().person.plain_name() in unicontent(r))
 
-        for t in ('rg','area','ag','dir','team','program'):
+        for t in ('rg','area','ag','dir','review','team','program'):
             g = GroupFactory.create(type_id=t,state_id='active') 
-            if t=='dir':
+            if t in ['dir','review']:
                 g.parent = GroupFactory.create(type_id='area',state_id='active')
                 g.save()
             url = urlreverse('ietf.group.views.active_groups', kwargs=dict(group_type=t))
@@ -81,7 +81,7 @@ class GroupPagesTests(TestCase):
         self.assertTrue("Directorate" in unicontent(r))
         self.assertTrue("AG" in unicontent(r))
 
-        for slug in GroupTypeName.objects.exclude(slug__in=['wg','rg','ag','area','dir','team', 'program']).values_list('slug',flat=True):
+        for slug in GroupTypeName.objects.exclude(slug__in=['wg','rg','ag','area','dir','review','team', 'program']).values_list('slug',flat=True):
             with self.assertRaises(NoReverseMatch):
                 url=urlreverse('ietf.group.views.active_groups', kwargs=dict(group_type=slug))
 
@@ -286,6 +286,7 @@ class GroupPagesTests(TestCase):
             'ag'   : ['secretary', ],
             'team' : ['secretary',], # The code currently doesn't let ads edit teams or directorates. Maybe it should.
             'dir'  : ['secretary',],
+            'review'  : ['secretary',],
             'program' : ['secretary', 'iab-member'],
         }
 
@@ -302,9 +303,10 @@ class GroupPagesTests(TestCase):
             setup_role(g,'chair')
             test_groups.append(g)
 
-        g = GroupFactory(type_id='dir')
-        setup_role(g,'secr')
-        test_groups.append(g)
+        for t in ['dir','review',]:
+            g = GroupFactory(type_id=t)
+            setup_role(g,'secr')
+            test_groups.append(g)
 
         g = GroupFactory(type_id='program')
         setup_role(g, 'lead')

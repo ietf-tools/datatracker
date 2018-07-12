@@ -124,7 +124,7 @@ def roles(group, role_name):
 
 def roles_for_group_type(group_type):
     roles = ["chair", "secr", "techadv", "delegate", ]
-    if group_type == "dir":
+    if group_type == "review":
         roles.append("reviewer")
     return roles
 
@@ -293,13 +293,15 @@ def active_groups(request, group_type=None):
         return active_teams(request)
     elif group_type == "dir":
         return active_dirs(request)
+    elif group_type == "review":
+        return active_review_dirs(request)
     elif group_type == "program":
         return active_programs(request)
     else:
         raise Http404
 
 def active_group_types(request):
-    grouptypes = GroupTypeName.objects.filter(slug__in=['wg','rg','ag','team','dir','area','program'])
+    grouptypes = GroupTypeName.objects.filter(slug__in=['wg','rg','ag','team','dir','review','area','program'])
     return render(request, 'group/active_groups.html', {'grouptypes':grouptypes})
 
 def active_dirs(request):
@@ -309,6 +311,14 @@ def active_dirs(request):
         group.ads = sorted(roles(group, "ad"), key=extract_last_name)
         group.secretaries = sorted(roles(group, "secr"), key=extract_last_name)
     return render(request, 'group/active_dirs.html', {'dirs' : dirs })
+
+def active_review_dirs(request):
+    dirs = Group.objects.filter(type="review", state="active").order_by("name")
+    for group in dirs:
+        group.chairs = sorted(roles(group, "chair"), key=extract_last_name)
+        group.ads = sorted(roles(group, "ad"), key=extract_last_name)
+        group.secretaries = sorted(roles(group, "secr"), key=extract_last_name)
+    return render(request, 'group/active_review_dirs.html', {'dirs' : dirs })
 
 def active_teams(request):
     teams = Group.objects.filter(type="team", state="active").order_by("name")
@@ -646,7 +656,7 @@ def history(request, acronym, group_type=None):
 
 def materials(request, acronym, group_type=None):
     group = get_group_or_404(acronym, group_type)
-    if not group.features.has_materials:
+    if not group.features.has_nonsession_materials:
         raise Http404
 
     docs = get_group_materials(group).order_by("type__order", "-time").select_related("type")

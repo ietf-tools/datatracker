@@ -52,8 +52,8 @@ class ReviewTests(TestCase):
         doc = WgDraftFactory(group__acronym='mars',rev='01')
         NewRevisionDocEventFactory(doc=doc,rev='01')
         RoleFactory(name_id='chair',person__user__username='marschairman',group=doc.group)
-        review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="dir", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
-        review_team3 = ReviewTeamFactory(acronym="reviewteam3", name="Review Team3", type_id="dir", list_email="reviewteam3@ietf.org", parent=Group.objects.get(acronym="farfut"))
+        review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="review", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
+        review_team3 = ReviewTeamFactory(acronym="reviewteam3", name="Review Team3", type_id="review", list_email="reviewteam3@ietf.org", parent=Group.objects.get(acronym="farfut"))
         rev_role = RoleFactory(group=review_team,person__user__username='reviewer',person__user__email='reviewer@example.com',name_id='reviewer')
         RoleFactory(group=review_team3,person=rev_role.person,name_id='reviewer')
         RoleFactory(group=review_team,person__user__username='reviewsecretary',person__user__email='reviewsecretary@example.com',name_id='secr')
@@ -111,7 +111,7 @@ class ReviewTests(TestCase):
     def test_doc_page(self):
 
         doc = WgDraftFactory(group__acronym='mars',rev='01')
-        review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="dir", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
+        review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="review", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
         rev_role = RoleFactory(group=review_team,person__user__username='reviewer',person__user__email='reviewer@example.com',name_id='reviewer')
         review_req = ReviewRequestFactory(doc=doc,team=review_team,type_id='early',state_id='accepted',requested_by=rev_role.person,reviewer=rev_role.person.email_set.first(),deadline=datetime.datetime.now()+datetime.timedelta(days=20))
 
@@ -132,7 +132,7 @@ class ReviewTests(TestCase):
 
     def test_review_request(self):
         doc = WgDraftFactory(group__acronym='mars',rev='01')
-        review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="dir", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
+        review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="review", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
         rev_role = RoleFactory(group=review_team,person__user__username='reviewer',person__user__email='reviewer@example.com',name_id='reviewer')
         review_req = ReviewRequestFactory(doc=doc,team=review_team,type_id='early',state_id='accepted',requested_by=rev_role.person,reviewer=rev_role.person.email_set.first(),deadline=datetime.datetime.now()+datetime.timedelta(days=20))
 
@@ -145,7 +145,7 @@ class ReviewTests(TestCase):
 
     def test_close_request(self):
         doc = WgDraftFactory(group__acronym='mars',rev='01')
-        review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="dir", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
+        review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="review", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
         rev_role = RoleFactory(group=review_team,person__user__username='reviewer',person__user__email='reviewer@example.com',name_id='reviewer')
         RoleFactory(group=review_team,person__user__username='reviewsecretary',person__user__email='reviewsecretary@example.com',name_id='secr')
         review_req = ReviewRequestFactory(doc=doc,team=review_team,type_id='early',state_id='accepted',requested_by=rev_role.person,reviewer=rev_role.person.email_set.first(),deadline=datetime.datetime.now()+datetime.timedelta(days=20))
@@ -268,7 +268,7 @@ class ReviewTests(TestCase):
 
     def test_assign_reviewer(self):
         doc = WgDraftFactory(pages=2)
-        review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="dir", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
+        review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="review", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
         rev_role = RoleFactory(group=review_team,person__user__username='reviewer',person__user__email='reviewer@example.com',person__name=u'Some Reviewer',name_id='reviewer')
         RoleFactory(group=review_team,person__user__username='marschairman',person__name=u'WG Cháir Man',name_id='reviewer')
         RoleFactory(group=review_team,person__user__username='reviewsecretary',person__user__email='reviewsecretary@example.com',name_id='secr')
@@ -382,7 +382,7 @@ class ReviewTests(TestCase):
     def test_accept_reviewer_assignment(self):
 
         doc = WgDraftFactory(group__acronym='mars',rev='01')
-        review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="dir", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
+        review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="review", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
         rev_role = RoleFactory(group=review_team,person__user__username='reviewer',person__user__email='reviewer@example.com',name_id='reviewer')
         review_req = ReviewRequestFactory(doc=doc,team=review_team,type_id='early',state_id='requested',requested_by=rev_role.person,reviewer=rev_role.person.email_set.first(),deadline=datetime.datetime.now()+datetime.timedelta(days=20))
 
@@ -403,7 +403,7 @@ class ReviewTests(TestCase):
 
     def test_reject_reviewer_assignment(self):
         doc = WgDraftFactory(group__acronym='mars',rev='01')
-        review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="dir", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
+        review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="review", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
         rev_role = RoleFactory(group=review_team,person__user__username='reviewer',person__user__email='reviewer@example.com',name_id='reviewer')
         RoleFactory(group=review_team,person__user__username='reviewsecretary',person__user__email='reviewsecretary@example.com',name_id='secr')
         review_req = ReviewRequestFactory(doc=doc,team=review_team,type_id='early',state_id='accepted',requested_by=rev_role.person,reviewer=rev_role.person.email_set.first(),deadline=datetime.datetime.now()+datetime.timedelta(days=20))
@@ -476,7 +476,7 @@ class ReviewTests(TestCase):
 
     def test_search_mail_archive(self):
         doc = WgDraftFactory(group__acronym='mars',rev='01')
-        review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="dir", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
+        review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="review", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
         rev_role = RoleFactory(group=review_team,person__user__username='reviewer',person__user__email='reviewer@example.com',name_id='reviewer')
         RoleFactory(group=review_team,person__user__username='reviewsecretary',person__user__email='reviewsecretary@example.com',name_id='secr')
         review_req = ReviewRequestFactory(doc=doc,team=review_team,type_id='early',state_id='accepted',requested_by=rev_role.person,reviewer=rev_role.person.email_set.first(),deadline=datetime.datetime.now()+datetime.timedelta(days=20))
@@ -523,7 +523,7 @@ class ReviewTests(TestCase):
     def setup_complete_review_test(self):
         doc = WgDraftFactory(group__acronym='mars',rev='01')
         NewRevisionDocEventFactory(doc=doc,rev='01')
-        review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="dir", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
+        review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="review", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
         rev_role = RoleFactory(group=review_team,person__user__username='reviewer',person__user__email='reviewer@example.com',name_id='reviewer')
         RoleFactory(group=review_team,person__user__username='reviewsecretary',person__user__email='reviewsecretary@example.com',name_id='secr')
         review_req = ReviewRequestFactory(doc=doc,team=review_team,type_id='early',state_id='accepted',requested_by=rev_role.person,reviewer=rev_role.person.email_set.first(),deadline=datetime.datetime.now()+datetime.timedelta(days=20))
@@ -804,7 +804,7 @@ class ReviewTests(TestCase):
         
     def test_edit_comment(self):
         doc = WgDraftFactory(group__acronym='mars',rev='01')
-        review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="dir", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
+        review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="review", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
         rev_role = RoleFactory(group=review_team,person__user__username='reviewer',person__user__email='reviewer@example.com',name_id='reviewer')
         RoleFactory(group=review_team,person__user__username='reviewsecretary',person__user__email='reviewsecretary@example.com',name_id='secr')
         review_req = ReviewRequestFactory(doc=doc,team=review_team,type_id='early',state_id='accepted',requested_by=rev_role.person,reviewer=rev_role.person.email_set.first(),deadline=datetime.datetime.now()+datetime.timedelta(days=20))
@@ -825,7 +825,7 @@ class ReviewTests(TestCase):
 
     def test_edit_deadline(self):
         doc = WgDraftFactory(group__acronym='mars',rev='01')
-        review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="dir", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
+        review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="review", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
         rev_role = RoleFactory(group=review_team,person__user__username='reviewer',person__user__email='reviewer@example.com',name_id='reviewer')
         RoleFactory(group=review_team,person__user__username='reviewsecretary',person__user__email='reviewsecretary@example.com',name_id='secr')
         review_req = ReviewRequestFactory(doc=doc,team=review_team,type_id='early',state_id='accepted',requested_by=rev_role.person,reviewer=rev_role.person.email_set.first(),deadline=datetime.datetime.now()+datetime.timedelta(days=20))

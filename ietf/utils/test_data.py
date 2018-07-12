@@ -416,9 +416,9 @@ def make_test_data():
     return draft
 
 def make_review_data(doc):
-    team1 = create_group(acronym="reviewteam", name="Review Team", type_id="dir", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
-    team2 = create_group(acronym="reviewteam2", name="Review Team 2", type_id="dir", list_email="reviewteam2@ietf.org", parent=Group.objects.get(acronym="farfut"))
-    team3 = create_group(acronym="reviewteam3", name="Review Team 3", type_id="dir", list_email="reviewteam2@ietf.org", parent=Group.objects.get(acronym="farfut"))
+    team1 = create_group(acronym="reviewteam", name="Review Team", type_id="review", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
+    team2 = create_group(acronym="reviewteam2", name="Review Team 2", type_id="review", list_email="reviewteam2@ietf.org", parent=Group.objects.get(acronym="farfut"))
+    team3 = create_group(acronym="reviewteam3", name="Review Team 3", type_id="review", list_email="reviewteam2@ietf.org", parent=Group.objects.get(acronym="farfut"))
     for team in (team1, team2, team3):
         ReviewTeamSettings.objects.create(group=team)
         for r in ReviewResultName.objects.filter(slug__in=["issues", "ready-issues", "ready", "not-ready"]):

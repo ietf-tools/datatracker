@@ -212,6 +212,41 @@
 	    </tbody>
 	  </table>
 	{% endif %}
+
+	{% if other %}
+	  <h2 class="anchor-target" id="other">Other <small>Miscellaneous other sessions</small></h2>
+	  <table class="table table-condensed table-striped tablesorter">
+	    <thead>
+	      <tr>
+                {% if user|has_role:"Secretariat" or user|managed_groups %}
+                  <th class="col-md-1">Group</th>
+                  <th class="col-md-1">Agenda</th>
+                  <th class="col-md-1">Minutes</th>
+                  <th class="col-md-3">Slides</th>
+                  <th class="col-md-4">Drafts</th>
+                  <th class="col-md-1">Updated</th>
+                  <th class="col-md-1">&nbsp;</th>
+                {% else %}
+                  <th class="col-md-1">Group</th>
+                  <th class="col-md-1">Agenda</th>
+                  <th class="col-md-1">Minutes</th>
+                  <th class="col-md-4">Slides</th>
+                  <th class="col-md-4">Drafts</th>
+                  <th class="col-md-1">Updated</th>
+                {% endif %}
+	      </tr>
+	    </thead>
+
+	    <tbody>
+	      {% for session in other|dictsort:"group.acronym" %}
+		{% ifchanged %}
+		  {% include "meeting/group_materials.html" %}
+		{% endifchanged %}
+	      {% endfor %}
+	    </tbody>
+	  </table>
+	{% endif %}
+
       {% endwith %}
     </div>
 
@@ -235,6 +270,10 @@
         {% if irtf %}
           <li><a href="#irtf">IRTF</a></li>
         {% endif %}
+        {% if other %}
+          <li><a href="#other">Other</a></li>
+        {% endif %}
+
       </ul>
     </div>
   </div>

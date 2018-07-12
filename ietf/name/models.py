@@ -57,6 +57,8 @@ class BallotPositionName(NameModel):
     blocking = models.BooleanField(default=False)
 class MeetingTypeName(NameModel):
     """IETF, Interim"""
+class AgendaTypeName(NameModel):
+    """ietf, ad, side, workshop, ..."""
 class SessionStatusName(NameModel):
     """Waiting for Approval, Approved, Waiting for Scheduling, Scheduled, Cancelled, Disapproved"""
 class TimeSlotTypeName(NameModel):

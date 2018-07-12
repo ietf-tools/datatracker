@@ -27,7 +27,7 @@ MAX_GROUP_DELEGATES = 3
 
 def roles_for_group_type(group_type):
     roles = ["chair", "secr", "techadv", "delegate", ]
-    if group_type == "dir":
+    if group_type == "review":
         roles.append("reviewer")
     return roles
 

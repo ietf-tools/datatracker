@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 from ietf.name.models import (
-    BallotPositionName, ConstraintName, ContinentName, CountryName, DBTemplateTypeName,
+    AgendaTypeName, BallotPositionName, ConstraintName, ContinentName, CountryName, DBTemplateTypeName,
     DocRelationshipName, DocReminderTypeName, DocTagName, DocTypeName, DraftSubmissionStateName,
     FeedbackTypeName, FormalLanguageName, GroupMilestoneStateName, GroupStateName, GroupTypeName,
     ImportantDateName, IntendedStdLevelName, IprDisclosureStateName, IprEventTypeName,
@@ -45,6 +45,7 @@ class ImportantDateNameAdmin(NameAdmin):
     ordering = ('-used','default_offset_days',)
 admin.site.register(ImportantDateName,ImportantDateNameAdmin)
 
+admin.site.register(AgendaTypeName, NameAdmin)
 admin.site.register(BallotPositionName, NameAdmin)
 admin.site.register(ConstraintName, NameAdmin)
 admin.site.register(ContinentName, NameAdmin)

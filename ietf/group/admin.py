@@ -10,7 +10,7 @@ from django.utils.encoding import force_unicode
 from django.utils.html import escape
 from django.utils.translation import ugettext as _
 
-from ietf.group.models import (Group, GroupHistory, GroupEvent, GroupURL, GroupMilestone,
+from ietf.group.models import (Group, GroupFeatures, GroupHistory, GroupEvent, GroupURL, GroupMilestone,
     GroupMilestoneHistory, GroupStateTransitions, Role, RoleHistory, ChangeStateGroupEvent,
     MilestoneGroupEvent, )
 
@@ -99,6 +99,25 @@ class GroupAdmin(admin.ModelAdmin):
     
 
 admin.site.register(Group, GroupAdmin)
+
+class GroupFeaturesAdmin(admin.ModelAdmin):
+    list_display = [
+        'type',
+        'customize_workflow',
+        'has_chartering_process',
+        'has_default_jabber',
+        'has_dependencies',
+        'has_documents',
+        'has_nonsession_materials',
+        'has_milestones',
+        'has_reviews',
+        'material_types',
+        'agenda_type',
+        'admin_roles',
+        'about_page',
+        'default_tab',
+        ]
+admin.site.register(GroupFeatures, GroupFeaturesAdmin)
 
 class GroupHistoryAdmin(admin.ModelAdmin):
     list_display = ["time", "acronym", "name", "type"]

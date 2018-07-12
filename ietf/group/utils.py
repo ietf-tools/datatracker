@@ -175,13 +175,14 @@ def construct_group_menu_context(request, group, selected, group_type, others):
     entries.append(("About", urlreverse("ietf.group.views.group_about", kwargs=kwargs)))
     if group.features.has_documents:
         entries.append(("Documents", urlreverse("ietf.group.views.group_documents", kwargs=kwargs)))
-    if group.features.has_materials and get_group_materials(group).exists():
+    if group.features.has_nonsession_materials and get_group_materials(group).exists():
         entries.append(("Materials", urlreverse("ietf.group.views.materials", kwargs=kwargs)))
     if group.features.has_reviews:
         import ietf.group.views
         entries.append(("Review requests", urlreverse(ietf.group.views.review_requests, kwargs=kwargs)))
         entries.append(("Reviewers", urlreverse(ietf.group.views.reviewer_overview, kwargs=kwargs)))
-    if group.type_id in ('rg','wg','ag','team'):
+
+    if group.features.has_meetings:     # type_id in ('rg','wg','ag','team'):
         entries.append(("Meetings", urlreverse("ietf.group.views.meetings", kwargs=kwargs)))
     entries.append(("History", urlreverse("ietf.group.views.history", kwargs=kwargs)))
     entries.append(("Photos", urlreverse("ietf.group.views.group_photos", kwargs=kwargs)))
@@ -211,7 +212,7 @@ def construct_group_menu_context(request, group, selected, group_type, others):
             import ietf.community.views
             actions.append((u'Manage document list', urlreverse(ietf.community.views.manage_list, kwargs=kwargs)))
 
-    if group.features.has_materials and can_manage_materials(request.user, group):
+    if group.features.has_nonsession_materials and can_manage_materials(request.user, group):
         actions.append((u"Upload material", urlreverse("ietf.doc.views_material.choose_material_type", kwargs=kwargs)))
 
     if group.features.has_reviews and can_manage_review_requests_for_team(request.user, group):

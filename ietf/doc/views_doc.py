@@ -572,7 +572,7 @@ def document_main(request, name, rev=None):
                                        latest_rev=latest_rev,
                                        snapshot=snapshot,
                                        can_manage_material=can_manage_material,
-                                       in_group_materials_types = doc.group and doc.group.features.has_materials and doc.type_id in doc.group.features.material_types,
+                                       in_group_materials_types = doc.group and doc.group.features.has_nonsession_materials and doc.type_id in doc.group.features.material_types,
                                        other_types=other_types,
                                        presentations=presentations,
                                        ))

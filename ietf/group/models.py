@@ -6,12 +6,16 @@ import os
 import re
 from urlparse import urljoin
 
+from django.core.validators import RegexValidator
 from django.db import models
+from django.db.models.deletion import CASCADE
+
+from simple_history.models import HistoricalRecords
 
 import debug                            # pyflakes:ignore
 
 from ietf.group.colors import fg_group_colors, bg_group_colors
-from ietf.name.models import GroupStateName, GroupTypeName, DocTagName, GroupMilestoneStateName, RoleName
+from ietf.name.models import GroupStateName, GroupTypeName, DocTagName, GroupMilestoneStateName, RoleName, AgendaTypeName
 from ietf.person.models import Email, Person
 from ietf.utils.mail import formataddr
 from ietf.utils import log
@@ -48,8 +52,12 @@ class GroupInfo(models.Model):
     @property
     def features(self):
         if not hasattr(self, "features_cache"):
-            from ietf.group.features import GroupFeatures
-            self.features_cache = GroupFeatures(self)
+            features = GroupFeatures.objects.get(type=self.type)
+            # convert textual lists to python lists:
+            for a in ['material_types', 'admin_roles', ]:
+                v = getattr(features, a)
+                setattr(features, a, v.split(','))
+            self.features_cache = features
         return self.features_cache
 
     def about_url(self):
@@ -192,6 +200,40 @@ class Group(GroupInfo):
                 if text:
                     desc = [ p for p in re.split('\r?\n\s*\r?\n\s*', text) if p.strip() ][0]
         return desc
+
+
+validate_comma_separated_materials = RegexValidator(
+    regex=r"[a-z0-9_-]+(,[a-z0-9_-]+)*",
+    message="Enter a comma-separated list of material types",
+    code='invalid',
+)
+validate_comma_separated_roles = RegexValidator(
+    regex=r"[a-z0-9_-]+(,[a-z0-9_-]+)*",
+    message="Enter a comma-separated list of role slugs",
+    code='invalid',
+)
+
+class GroupFeatures(models.Model):
+    type = ForeignKey(GroupTypeName, primary_key=True, null=False, related_name='features')
+    history = HistoricalRecords()
+    #
+    has_milestones          = models.BooleanField("Milestones", default=False)
+    has_chartering_process  = models.BooleanField("Chartering", default=False)
+    has_documents           = models.BooleanField("Documents",  default=False) # i.e. drafts/RFCs
+    has_dependencies        = models.BooleanField("Dependencies",default=False) # Do dependency graphs for group documents make sense?
+    has_nonsession_materials= models.BooleanField("Materials",  default=False)
+    has_meetings            = models.BooleanField("Meetings",   default=False)
+    has_reviews             = models.BooleanField("Reviews",    default=False)
+    has_default_jabber      = models.BooleanField("Jabber",     default=False)
+    customize_workflow      = models.BooleanField("Workflow",   default=False)
+    agenda_type             = models.ForeignKey(AgendaTypeName, null=True, default="ietf", on_delete=CASCADE)
+    about_page              = models.CharField(max_length=64, blank=False, default="ietf.group.views.group_about" )
+    default_tab             = models.CharField(max_length=64, blank=False, default="ietf.group.views.group_about" )
+    material_types          = models.CharField(max_length=64, blank=False, default="slides",
+                                                validators=[validate_comma_separated_materials])
+    admin_roles             = models.CharField(max_length=64, blank=False, default="chair",
+                                                validators=[validate_comma_separated_roles])
+
 
 class GroupHistory(GroupInfo):
     group = ForeignKey(Group, related_name='history_set')

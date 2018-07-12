@@ -130,6 +130,9 @@ def materials(request, num=None):
     irtf      = sessions.filter(group__parent__acronym = 'irtf')
     training  = sessions.filter(group__acronym__in=['edu','iaoc'], type_id__in=['session', 'other', ])
     iab       = sessions.filter(group__parent__acronym = 'iab')
+    other     = sessions.filter(type_id__in=['session'], group__type__features__has_meetings = True)
+    for ss in [plenaries, ietf, irtf, training, iab]:
+        other = other.exclude(pk__in=[s.pk for s in ss])
 
     for topic in [plenaries, ietf, training, irtf, iab]:
         for event in topic:
@@ -145,6 +148,7 @@ def materials(request, num=None):
         'training': training,
         'irtf': irtf,
         'iab': iab,
+        'other': other,
         'cut_off_date': cut_off_date,
         'cor_cut_off_date': cor_cut_off_date,
         'submission_started': now > begin_date,

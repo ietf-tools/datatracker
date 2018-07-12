@@ -19,7 +19,7 @@ class ReviewTeamFactory(factory.DjangoModelFactory):
     class Meta:
         model = Group
 
-    type_id = 'dir'
+    type_id = 'review'
     name = factory.Faker('sentence',nb_words=6)
     acronym = factory.Sequence(lambda n: 'acronym%d' %n)
     state_id = 'active'

@@ -20,7 +20,7 @@ from ietf.group.utils import can_manage_materials
 @login_required
 def choose_material_type(request, acronym):
     group = get_object_or_404(Group, acronym=acronym)
-    if not group.features.has_materials:
+    if not group.features.has_nonsession_materials:
         raise Http404
 
     return render(request, 'doc/material/choose_material_type.html', {
@@ -85,7 +85,7 @@ def edit_material(request, name=None, acronym=None, action=None, doc_type=None):
 
     if action == "new":
         group = get_object_or_404(Group, acronym=acronym)
-        if not group.features.has_materials:
+        if not group.features.has_nonsession_materials:
             raise Http404
 
         doc = None
@@ -95,7 +95,8 @@ def edit_material(request, name=None, acronym=None, action=None, doc_type=None):
         group = doc.group
         document_type = doc.type
 
-    if document_type not in DocTypeName.objects.filter(slug__in=group.features.material_types) and document_type.slug not in ['minutes','agenda','bluesheets',]:
+    if (document_type not in DocTypeName.objects.filter(slug__in=group.features.material_types)
+        and document_type.slug not in ['minutes','agenda','bluesheets',]):
         raise Http404
        
 

@@ -2330,6 +2330,326 @@
   },
   {
     "fields": {
+      "about_page": "ietf.group.views.group_about",
+      "admin_roles": "chair",
+      "agenda_type": "ietf",
+      "customize_workflow": false,
+      "default_tab": "ietf.group.views.group_about",
+      "has_chartering_process": false,
+      "has_default_jabber": false,
+      "has_dependencies": false,
+      "has_documents": false,
+      "has_meetings": true,
+      "has_milestones": false,
+      "has_nonsession_materials": false,
+      "has_reviews": false,
+      "material_types": "slides"
+    },
+    "model": "group.groupfeatures",
+    "pk": "ag"
+  },
+  {
+    "fields": {
+      "about_page": "ietf.group.views.group_about",
+      "admin_roles": "chair",
+      "agenda_type": "ietf",
+      "customize_workflow": false,
+      "default_tab": "ietf.group.views.group_about",
+      "has_chartering_process": false,
+      "has_default_jabber": false,
+      "has_dependencies": false,
+      "has_documents": false,
+      "has_meetings": false,
+      "has_milestones": false,
+      "has_nonsession_materials": false,
+      "has_reviews": false,
+      "material_types": "slides"
+    },
+    "model": "group.groupfeatures",
+    "pk": "area"
+  },
+  {
+    "fields": {
+      "about_page": "ietf.group.views.group_about",
+      "admin_roles": "chair,secr",
+      "agenda_type": null,
+      "customize_workflow": false,
+      "default_tab": "ietf.group.views.review_requests",
+      "has_chartering_process": false,
+      "has_default_jabber": false,
+      "has_dependencies": false,
+      "has_documents": false,
+      "has_meetings": false,
+      "has_milestones": false,
+      "has_nonsession_materials": false,
+      "has_reviews": false,
+      "material_types": "slides"
+    },
+    "model": "group.groupfeatures",
+    "pk": "dir"
+  },
+  {
+    "fields": {
+      "about_page": "ietf.group.views.group_about",
+      "admin_roles": "chair",
+      "agenda_type": "ietf",
+      "customize_workflow": false,
+      "default_tab": "ietf.group.views.group_about",
+      "has_chartering_process": false,
+      "has_default_jabber": false,
+      "has_dependencies": false,
+      "has_documents": false,
+      "has_meetings": true,
+      "has_milestones": false,
+      "has_nonsession_materials": false,
+      "has_reviews": false,
+      "material_types": "slides"
+    },
+    "model": "group.groupfeatures",
+    "pk": "iab"
+  },
+  {
+    "fields": {
+      "about_page": "ietf.group.views.group_about",
+      "admin_roles": "chair",
+      "agenda_type": "ietf",
+      "customize_workflow": false,
+      "default_tab": "ietf.group.views.group_about",
+      "has_chartering_process": false,
+      "has_default_jabber": false,
+      "has_dependencies": false,
+      "has_documents": false,
+      "has_meetings": true,
+      "has_milestones": false,
+      "has_nonsession_materials": false,
+      "has_reviews": false,
+      "material_types": "slides"
+    },
+    "model": "group.groupfeatures",
+    "pk": "ietf"
+  },
+  {
+    "fields": {
+      "about_page": "ietf.group.views.group_about",
+      "admin_roles": "chair",
+      "agenda_type": null,
+      "customize_workflow": false,
+      "default_tab": "ietf.group.views.group_about",
+      "has_chartering_process": false,
+      "has_default_jabber": false,
+      "has_dependencies": false,
+      "has_documents": false,
+      "has_meetings": false,
+      "has_milestones": false,
+      "has_nonsession_materials": false,
+      "has_reviews": false,
+      "material_types": "slides"
+    },
+    "model": "group.groupfeatures",
+    "pk": "individ"
+  },
+  {
+    "fields": {
+      "about_page": "ietf.group.views.group_about",
+      "admin_roles": "chair",
+      "agenda_type": "ietf",
+      "customize_workflow": false,
+      "default_tab": "ietf.group.views.group_about",
+      "has_chartering_process": false,
+      "has_default_jabber": false,
+      "has_dependencies": false,
+      "has_documents": false,
+      "has_meetings": false,
+      "has_milestones": false,
+      "has_nonsession_materials": false,
+      "has_reviews": false,
+      "material_types": "slides"
+    },
+    "model": "group.groupfeatures",
+    "pk": "irtf"
+  },
+  {
+    "fields": {
+      "about_page": "ietf.group.views.group_about",
+      "admin_roles": "chair",
+      "agenda_type": null,
+      "customize_workflow": false,
+      "default_tab": "ietf.group.views.group_about",
+      "has_chartering_process": false,
+      "has_default_jabber": false,
+      "has_dependencies": false,
+      "has_documents": false,
+      "has_meetings": false,
+      "has_milestones": false,
+      "has_nonsession_materials": false,
+      "has_reviews": false,
+      "material_types": "slides"
+    },
+    "model": "group.groupfeatures",
+    "pk": "isoc"
+  },
+  {
+    "fields": {
+      "about_page": "ietf.group.views.group_about",
+      "admin_roles": "chair",
+      "agenda_type": "side",
+      "customize_workflow": false,
+      "default_tab": "ietf.group.views.group_about",
+      "has_chartering_process": false,
+      "has_default_jabber": false,
+      "has_dependencies": false,
+      "has_documents": false,
+      "has_meetings": false,
+      "has_milestones": false,
+      "has_nonsession_materials": false,
+      "has_reviews": false,
+      "material_types": "slides"
+    },
+    "model": "group.groupfeatures",
+    "pk": "nomcom"
+  },
+  {
+    "fields": {
+      "about_page": "ietf.group.views.group_about",
+      "admin_roles": "lead",
+      "agenda_type": null,
+      "customize_workflow": false,
+      "default_tab": "ietf.group.views.group_about",
+      "has_chartering_process": false,
+      "has_default_jabber": false,
+      "has_dependencies": false,
+      "has_documents": true,
+      "has_meetings": false,
+      "has_milestones": true,
+      "has_nonsession_materials": false,
+      "has_reviews": false,
+      "material_types": "slides"
+    },
+    "model": "group.groupfeatures",
+    "pk": "program"
+  },
+  {
+    "fields": {
+      "about_page": "ietf.group.views.group_about",
+      "admin_roles": "chair,secr",
+      "agenda_type": null,
+      "customize_workflow": false,
+      "default_tab": "ietf.group.views.review_requests",
+      "has_chartering_process": false,
+      "has_default_jabber": false,
+      "has_dependencies": false,
+      "has_documents": false,
+      "has_meetings": false,
+      "has_milestones": false,
+      "has_nonsession_materials": false,
+      "has_reviews": true,
+      "material_types": "slides"
+    },
+    "model": "group.groupfeatures",
+    "pk": "review"
+  },
+  {
+    "fields": {
+      "about_page": "ietf.group.views.group_about",
+      "admin_roles": "chair",
+      "agenda_type": "side",
+      "customize_workflow": false,
+      "default_tab": "ietf.group.views.group_about",
+      "has_chartering_process": false,
+      "has_default_jabber": false,
+      "has_dependencies": false,
+      "has_documents": false,
+      "has_meetings": false,
+      "has_milestones": false,
+      "has_nonsession_materials": false,
+      "has_reviews": false,
+      "material_types": "slides"
+    },
+    "model": "group.groupfeatures",
+    "pk": "rfcedtyp"
+  },
+  {
+    "fields": {
+      "about_page": "ietf.group.views.group_about",
+      "admin_roles": "chair",
+      "agenda_type": "ietf",
+      "customize_workflow": true,
+      "default_tab": "ietf.group.views.group_documents",
+      "has_chartering_process": true,
+      "has_default_jabber": true,
+      "has_dependencies": true,
+      "has_documents": true,
+      "has_meetings": true,
+      "has_milestones": true,
+      "has_nonsession_materials": false,
+      "has_reviews": false,
+      "material_types": "slides"
+    },
+    "model": "group.groupfeatures",
+    "pk": "rg"
+  },
+  {
+    "fields": {
+      "about_page": "ietf.group.views.group_about",
+      "admin_roles": "chair",
+      "agenda_type": null,
+      "customize_workflow": false,
+      "default_tab": "ietf.group.views.group_about",
+      "has_chartering_process": false,
+      "has_default_jabber": false,
+      "has_dependencies": false,
+      "has_documents": false,
+      "has_meetings": false,
+      "has_milestones": false,
+      "has_nonsession_materials": false,
+      "has_reviews": false,
+      "material_types": "slides"
+    },
+    "model": "group.groupfeatures",
+    "pk": "sdo"
+  },
+  {
+    "fields": {
+      "about_page": "ietf.group.views.group_about",
+      "admin_roles": "chair",
+      "agenda_type": "ietf",
+      "customize_workflow": false,
+      "default_tab": "ietf.group.views.group_about",
+      "has_chartering_process": false,
+      "has_default_jabber": false,
+      "has_dependencies": false,
+      "has_documents": false,
+      "has_meetings": true,
+      "has_milestones": false,
+      "has_nonsession_materials": true,
+      "has_reviews": false,
+      "material_types": "slides"
+    },
+    "model": "group.groupfeatures",
+    "pk": "team"
+  },
+  {
+    "fields": {
+      "about_page": "ietf.group.views.group_about",
+      "admin_roles": "chair",
+      "agenda_type": "ietf",
+      "customize_workflow": true,
+      "default_tab": "ietf.group.views.group_documents",
+      "has_chartering_process": true,
+      "has_default_jabber": true,
+      "has_dependencies": true,
+      "has_documents": true,
+      "has_meetings": true,
+      "has_milestones": true,
+      "has_nonsession_materials": false,
+      "has_reviews": false,
+      "material_types": "slides"
+    },
+    "model": "group.groupfeatures",
+    "pk": "wg"
+  },
+  {
+    "fields": {
       "cc": [
         "doc_notify",
         "group_chairs",
@@ -2544,6 +2864,8 @@
   {
     "fields": {
       "cc": [
+        "conflict_review_steering_group",
+        "conflict_review_stream_manager",
         "doc_affecteddoc_authors",
         "doc_affecteddoc_group_chairs",
         "doc_affecteddoc_notify",
@@ -2775,6 +3097,8 @@
       "cc": [],
       "desc": "Recipients when a document's telechat date or other telechat specific details are changed",
       "to": [
+        "conflict_review_steering_group",
+        "conflict_review_stream_manager",
         "doc_affecteddoc_authors",
         "doc_affecteddoc_group_chairs",
         "doc_affecteddoc_notify",
@@ -3968,6 +4292,46 @@
     },
     "model": "mailtrigger.recipient",
     "pk": "submission_submitter"
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "AD Office Hours",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.agendatypename",
+    "pk": "ad"
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "IETF Agenda",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.agendatypename",
+    "pk": "ietf"
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "Side Meetings",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.agendatypename",
+    "pk": "side"
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "Workshops",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.agendatypename",
+    "pk": "workshop"
   },
   {
     "fields": {
@@ -8355,6 +8719,17 @@
   {
     "fields": {
       "desc": "",
+      "name": "Directorate (with reviews)",
+      "order": 0,
+      "used": true,
+      "verbose_name": ""
+    },
+    "model": "name.grouptypename",
+    "pk": "review"
+  },
+  {
+    "fields": {
+      "desc": "",
       "name": "RFC Editor",
       "order": 0,
       "used": true,
@@ -8468,7 +8843,7 @@
       "desc": "Final Pre-Registration and Pre-Payment cut-off at 17:00 local meeting time",
       "name": "Pre-Registration Cutoff",
       "order": 0,
-      "used": true
+      "used": false
     },
     "model": "name.importantdatename",
     "pk": "cutoffpre"
@@ -10090,7 +10465,7 @@
     "fields": {
       "command": "xym",
       "switch": "--version",
-      "time": "2018-05-21T00:08:52.105",
+      "time": "2018-07-11T00:07:49.096",
       "used": true,
       "version": "xym 0.4"
     },
@@ -10101,7 +10476,7 @@
     "fields": {
       "command": "pyang",
       "switch": "--version",
-      "time": "2018-05-21T00:08:53.585",
+      "time": "2018-07-11T00:07:49.823",
       "used": true,
       "version": "pyang 1.7.5"
     },
@@ -10112,7 +10487,7 @@
     "fields": {
       "command": "yanglint",
       "switch": "--version",
-      "time": "2018-05-21T00:08:53.827",
+      "time": "2018-07-11T00:07:50.005",
       "used": true,
       "version": "yanglint 0.14.80"
     },
@@ -10123,9 +10498,9 @@
     "fields": {
       "command": "xml2rfc",
       "switch": "--version",
-      "time": "2018-05-21T00:08:54.971",
+      "time": "2018-07-11T00:07:51.102",
       "used": true,
-      "version": "xml2rfc 2.9.6"
+      "version": "xml2rfc 2.9.8"
     },
     "model": "utils.versioninfo",
     "pk": 4

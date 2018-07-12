@@ -7,16 +7,15 @@ from tastypie.cache import SimpleCache
 
 from ietf import api
 
-from ietf.name.models import (TimeSlotTypeName, GroupStateName, DocTagName, IntendedStdLevelName,
-    LiaisonStatementPurposeName, DraftSubmissionStateName, DocTypeName, RoleName,
-    IprDisclosureStateName, StdLevelName, LiaisonStatementEventTypeName, GroupTypeName,
-    IprEventTypeName, GroupMilestoneStateName, SessionStatusName, DocReminderTypeName,
-    ConstraintName, MeetingTypeName, DocRelationshipName, RoomResourceName, IprLicenseTypeName,
-    LiaisonStatementTagName, FeedbackTypeName, LiaisonStatementState, StreamName,
-    BallotPositionName, DBTemplateTypeName, NomineePositionStateName, ReviewRequestStateName,
-    ReviewTypeName, ReviewResultName, TopicAudienceName, FormalLanguageName, ContinentName,
-    CountryName, ImportantDateName, DocUrlTagName)
-
+from ietf.name.models import ( AgendaTypeName, BallotPositionName, ConstraintName,
+    ContinentName, CountryName, DBTemplateTypeName, DocRelationshipName, DocReminderTypeName,
+    DocTagName, DocTypeName, DocUrlTagName, DraftSubmissionStateName, FeedbackTypeName,
+    FormalLanguageName, GroupMilestoneStateName, GroupStateName, GroupTypeName,
+    ImportantDateName, IntendedStdLevelName, IprDisclosureStateName, IprEventTypeName,
+    IprLicenseTypeName, LiaisonStatementEventTypeName, LiaisonStatementPurposeName,
+    LiaisonStatementState, LiaisonStatementTagName, MeetingTypeName, NomineePositionStateName,
+    ReviewRequestStateName, ReviewResultName, ReviewTypeName, RoleName, RoomResourceName,
+    SessionStatusName, StdLevelName, StreamName, TimeSlotTypeName, TopicAudienceName, )
 
 class TimeSlotTypeNameResource(ModelResource):
     class Meta:
@@ -552,3 +551,19 @@ class DocUrlTagNameResource(ModelResource):
             "order": ALL,
         }
 api.name.register(DocUrlTagNameResource())
+
+
+class AgendaTypeNameResource(ModelResource):
+    class Meta:
+        queryset = AgendaTypeName.objects.all()
+        serializer = api.Serializer()
+        cache = SimpleCache()
+        #resource_name = 'agendatypename'
+        filtering = { 
+            "slug": ALL,
+            "name": ALL,
+            "desc": ALL,
+            "used": ALL,
+            "order": ALL,
+        }
+api.name.register(AgendaTypeNameResource())
