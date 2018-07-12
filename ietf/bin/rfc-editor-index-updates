@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import os, sys, datetime
-import syslog
 import traceback
 
 # boilerplate
@@ -13,14 +12,19 @@ virtualenv_activation = os.path.join(basedir, "env", "bin", "activate_this.py")
 if os.path.exists(virtualenv_activation):
     execfile(virtualenv_activation, dict(__file__=virtualenv_activation))
 
-syslog.openlog(os.path.basename(__file__), syslog.LOG_PID, syslog.LOG_USER)
-
 import django
 django.setup()
 
 from django.conf import settings
 from optparse import OptionParser
 from django.core.mail import mail_admins
+
+from ietf.doc.utils import rebuild_reference_relations
+from ietf.utils.log import log
+from ietf.utils.pipe import pipe
+
+import ietf.sync.rfceditor
+
 
 parser = OptionParser()
 parser.add_option("-d", dest="skip_date",
@@ -32,17 +36,13 @@ skip_date = datetime.date.today() - datetime.timedelta(days=365)
 if options.skip_date:
     skip_date = datetime.datetime.strptime(options.skip_date, "%Y-%m-%d").date()
 
-from ietf.utils.pipe import pipe
-from ietf.doc.utils import rebuild_reference_relations
-import ietf.sync.rfceditor
-
-syslog.syslog("Updating document metadata from RFC index from %s" % settings.RFC_EDITOR_INDEX_URL)
+log("Updating document metadata from RFC index from %s" % settings.RFC_EDITOR_INDEX_URL)
 
 response = ietf.sync.rfceditor.fetch_index_xml(settings.RFC_EDITOR_INDEX_URL)
 data = ietf.sync.rfceditor.parse_index(response)
 
 if len(data) < ietf.sync.rfceditor.MIN_INDEX_RESULTS:
-    syslog.syslog("Not enough results, only %s" % len(data))
+    log("Not enough results, only %s" % len(data))
     sys.exit(1)
 
 new_rfcs = []
@@ -51,8 +51,7 @@ for changes, doc, rfc_published in ietf.sync.rfceditor.update_docs_from_rfc_inde
         new_rfcs.append(doc)
 
     for c in changes:
-        syslog.syslog("%s: %s" % (doc.name, c))
-        print "%s: %s" % (doc.name, c)
+        log("%s: %s" % (doc.name, c))
 
 sys.exit(0)
 
@@ -67,12 +66,12 @@ if newpid == 0:
         pipe("%s -a %s %s" % (settings.RSYNC_BINARY,settings.RFC_TEXT_RSYNC_SOURCE,settings.RFC_PATH))
         for rfc in new_rfcs:
             rebuild_reference_relations(rfc)
-            syslog.syslog("Updated references for %s"%rfc.canonical_name())
+            log("Updated references for %s"%rfc.canonical_name())
     except:
         subject = "Exception in updating references for new rfcs: %s : %s" % (sys.exc_info()[0],sys.exc_info()[1])
         msg = "%s\n%s\n----\n%s"%(sys.exc_info()[0],sys.exc_info()[1],traceback.format_tb(sys.exc_info()[2])) 
         mail_admins(subject,msg,fail_silently=True)
-        syslog.syslog(subject)
+        log(subject)
     os._exit(0)
 else:
     sys.exit(0)

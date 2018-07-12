@@ -8,6 +8,8 @@ from xml.dom import pulldom, Node
 
 from django.conf import settings
 
+import debug                            # pyflakes:ignore
+
 from ietf.doc.models import ( Document, DocAlias, State, StateType, DocEvent, DocRelationshipName,
     DocTagName, DocTypeName, RelatedDocument )
 from ietf.doc.expire import move_draft_files_to_archive
@@ -45,68 +47,73 @@ def parse_queue(response):
     stream = None
 
     for event, node in events:
-        if event == pulldom.START_ELEMENT and node.tagName == "entry":
-            events.expandNode(node)
-            node.normalize()
-            draft_name = get_child_text(node, "draft").strip()
-            draft_name = re.sub("(-\d\d)?(.txt){1,2}$", "", draft_name)
-            date_received = get_child_text(node, "date-received")
+        try:
+            if event == pulldom.START_ELEMENT and node.tagName == "entry":
+                events.expandNode(node)
+                node.normalize()
+                draft_name = get_child_text(node, "draft").strip()
+                draft_name = re.sub("(-\d\d)?(.txt){1,2}$", "", draft_name)
+                date_received = get_child_text(node, "date-received")
+
+                state = ""
+                tags = []
+                missref_generation = ""
+                for child in node.childNodes:
+                    if child.nodeType == Node.ELEMENT_NODE and child.localName == "state":
+                        state = child.firstChild.data
+                        # state has some extra annotations encoded, parse
+                        # them out
+                        if '*R' in state:
+                            tags.append("ref")
+                            state = state.replace("*R", "")
+                        if '*A' in state:
+                            tags.append("iana")
+                            state = state.replace("*A", "")
+                        m = re.search(r"\(([0-9]+)G\)", state)
+                        if m:
+                            missref_generation = m.group(1)
+                            state = state.replace("(%sG)" % missref_generation, "")
+
+                # AUTH48 link
+                auth48 = ""
+                for child in node.childNodes:
+                    if child.nodeType == Node.ELEMENT_NODE and child.localName == "auth48-url":
+                        auth48 = child.firstChild.data
+
+                # cluster link (if it ever gets implemented)
+                cluster = ""
+                for child in node.childNodes:
+                    if child.nodeType == Node.ELEMENT_NODE and child.localName == "cluster-url":
+                        cluster = child.firstChild.data
+
+                refs = []
+                for child in node.childNodes:
+                    if child.nodeType == Node.ELEMENT_NODE and child.localName == "normRef":
+                        ref_name = get_child_text(child, "ref-name")
+                        ref_state = get_child_text(child, "ref-state")
+                        in_queue = ref_state.startswith("IN-QUEUE")
+                        refs.append((ref_name, ref_state, in_queue))
+
+                drafts.append((draft_name, date_received, state, tags, missref_generation, stream, auth48, cluster, refs))
+
+            elif event == pulldom.START_ELEMENT and node.tagName == "section":
+                name = node.getAttribute('name')
+                if name.startswith("IETF"):
+                    stream = "ietf"
+                elif name.startswith("IAB"):
+                    stream = "iab"
+                elif name.startswith("IRTF"):
+                    stream = "irtf"
+                elif name.startswith("INDEPENDENT"):
+                    stream = "ise"
+                else:
+                    stream = None
+                    warnings.append("unrecognized section " + name)
+        except Exception as e:
+            log("Exception when processing an RFC queue entry: %s" % e)
+            log("node: %s" % node)
+            raise
             
-            state = ""
-            tags = []
-            missref_generation = ""
-            for child in node.childNodes:
-                if child.nodeType == Node.ELEMENT_NODE and child.localName == "state":
-                    state = child.firstChild.data
-                    # state has some extra annotations encoded, parse
-                    # them out
-                    if '*R' in state:
-                        tags.append("ref")
-                        state = state.replace("*R", "")
-                    if '*A' in state:
-                        tags.append("iana")
-                        state = state.replace("*A", "")
-                    m = re.search(r"\(([0-9]+)G\)", state)
-                    if m:
-                        missref_generation = m.group(1)
-                        state = state.replace("(%sG)" % missref_generation, "")
-
-            # AUTH48 link
-            auth48 = ""
-            for child in node.childNodes:
-                if child.nodeType == Node.ELEMENT_NODE and child.localName == "auth48-url":
-                    auth48 = child.firstChild.data
-
-            # cluster link (if it ever gets implemented)
-            cluster = ""
-            for child in node.childNodes:
-                if child.nodeType == Node.ELEMENT_NODE and child.localName == "cluster-url":
-                    cluster = child.firstChild.data
-
-            refs = []
-            for child in node.childNodes:
-                if child.nodeType == Node.ELEMENT_NODE and child.localName == "normRef":
-                    ref_name = get_child_text(child, "ref-name")
-                    ref_state = get_child_text(child, "ref-state")
-                    in_queue = ref_state.startswith("IN-QUEUE")
-                    refs.append((ref_name, ref_state, in_queue))
-
-            drafts.append((draft_name, date_received, state, tags, missref_generation, stream, auth48, cluster, refs))
-        
-        elif event == pulldom.START_ELEMENT and node.tagName == "section":
-            name = node.getAttribute('name')
-            if name.startswith("IETF"):
-                stream = "ietf"
-            elif name.startswith("IAB"):
-                stream = "iab"
-            elif name.startswith("IRTF"):
-                stream = "irtf"
-            elif name.startswith("INDEPENDENT"):
-                stream = "ise"
-            else:
-                stream = None
-                warnings.append("unrecognized section " + name)
-
     return drafts, warnings
 
 def update_drafts_from_queue(drafts):
@@ -243,67 +250,71 @@ def parse_index(response):
     data = []
     events = pulldom.parse(response)
     for event, node in events:
-        if event == pulldom.START_ELEMENT and node.tagName in ["bcp-entry", "fyi-entry", "std-entry"]:
-            events.expandNode(node)
-            node.normalize()
-            bcpid = normalize_std_name(get_child_text(node, "doc-id"))
-            doclist = extract_doc_list(node, "is-also")
-            for docid in doclist:
-                if docid in also_list:
-                    also_list[docid].append(bcpid)
+        try:
+            if event == pulldom.START_ELEMENT and node.tagName in ["bcp-entry", "fyi-entry", "std-entry"]:
+                events.expandNode(node)
+                node.normalize()
+                bcpid = normalize_std_name(get_child_text(node, "doc-id"))
+                doclist = extract_doc_list(node, "is-also")
+                for docid in doclist:
+                    if docid in also_list:
+                        also_list[docid].append(bcpid)
+                    else:
+                        also_list[docid] = [bcpid]
+
+            elif event == pulldom.START_ELEMENT and node.tagName == "rfc-entry":
+                events.expandNode(node)
+                node.normalize()
+                rfc_number = int(get_child_text(node, "doc-id")[3:])
+                title = get_child_text(node, "title")
+
+                authors = []
+                for author in node.getElementsByTagName("author"):
+                    authors.append(get_child_text(author, "name"))
+
+                d = node.getElementsByTagName("date")[0]
+                year = int(get_child_text(d, "year"))
+                month = get_child_text(d, "month")
+                month = ["January","February","March","April","May","June","July","August","September","October","November","December"].index(month)+1
+                rfc_published_date = datetime.date(year, month, 1)
+
+                current_status = get_child_text(node, "current-status").title()
+
+                updates = extract_doc_list(node, "updates") 
+                updated_by = extract_doc_list(node, "updated-by")
+                obsoletes = extract_doc_list(node, "obsoletes") 
+                obsoleted_by = extract_doc_list(node, "obsoleted-by")
+                stream = get_child_text(node, "stream")
+                wg = get_child_text(node, "wg_acronym")
+                if wg and ((wg == "NON WORKING GROUP") or len(wg) > 15):
+                    wg = None
+
+                l = []
+                pages = ""
+                for fmt in node.getElementsByTagName("format"):
+                    l.append(get_child_text(fmt, "file-format"))
+                    if get_child_text(fmt, "file-format") == "ASCII":
+                        pages = get_child_text(fmt, "page-count")
+                file_formats = (",".join(l)).lower()
+
+                abstract = ""
+                for abstract in node.getElementsByTagName("abstract"):
+                    abstract = get_child_text(abstract, "p")
+
+                draft = get_child_text(node, "draft")
+                if draft and re.search("-\d\d$", draft):
+                    draft = draft[0:-3]
+
+                if len(node.getElementsByTagName("errata-url")) > 0:
+                    has_errata = 1
                 else:
-                    also_list[docid] = [bcpid]
+                    has_errata = 0
 
-        elif event == pulldom.START_ELEMENT and node.tagName == "rfc-entry":
-            events.expandNode(node)
-            node.normalize()
-            rfc_number = int(get_child_text(node, "doc-id")[3:])
-            title = get_child_text(node, "title")
-
-            authors = []
-            for author in node.getElementsByTagName("author"):
-                authors.append(get_child_text(author, "name"))
-
-            d = node.getElementsByTagName("date")[0]
-            year = int(get_child_text(d, "year"))
-            month = get_child_text(d, "month")
-            month = ["January","February","March","April","May","June","July","August","September","October","November","December"].index(month)+1
-            rfc_published_date = datetime.date(year, month, 1)
-
-            current_status = get_child_text(node, "current-status").title()
-
-            updates = extract_doc_list(node, "updates") 
-            updated_by = extract_doc_list(node, "updated-by")
-            obsoletes = extract_doc_list(node, "obsoletes") 
-            obsoleted_by = extract_doc_list(node, "obsoleted-by")
-            stream = get_child_text(node, "stream")
-            wg = get_child_text(node, "wg_acronym")
-            if wg and ((wg == "NON WORKING GROUP") or len(wg) > 15):
-                wg = None
-           
-            l = []
-            pages = ""
-            for fmt in node.getElementsByTagName("format"):
-                l.append(get_child_text(fmt, "file-format"))
-                if get_child_text(fmt, "file-format") == "ASCII":
-                    pages = get_child_text(fmt, "page-count")
-            file_formats = (",".join(l)).lower()
-
-            abstract = ""
-            for abstract in node.getElementsByTagName("abstract"):
-                abstract = get_child_text(abstract, "p")
-
-            draft = get_child_text(node, "draft")
-            if draft and re.search("-\d\d$", draft):
-                draft = draft[0:-3]
-
-            if len(node.getElementsByTagName("errata-url")) > 0:
-                has_errata = 1
-            else:
-                has_errata = 0
-
-            data.append((rfc_number,title,authors,rfc_published_date,current_status,updates,updated_by,obsoletes,obsoleted_by,[],draft,has_errata,stream,wg,file_formats,pages,abstract))
-
+                data.append((rfc_number,title,authors,rfc_published_date,current_status,updates,updated_by,obsoletes,obsoleted_by,[],draft,has_errata,stream,wg,file_formats,pages,abstract))
+        except Exception as e:
+            log("Exception when processing an RFC index entry: %s" % e)
+            log("node: %s" % node)
+            raise
     for d in data:
         k = "RFC%04d" % d[0]
         if k in also_list:
