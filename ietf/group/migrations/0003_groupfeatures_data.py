@@ -279,7 +279,6 @@ def reverse(apps, schema_editor):
     dir = GroupTypeName.objects.get(slug='dir')
     review = GroupTypeName.objects.get(slug='review')
     for group in Group.objects.filter(type=review):
-        debug.show('group.acronym')
         group.type = dir
         group.save()
     for entry in GroupFeatures.objects.all():
@@ -290,8 +289,8 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('name', '0002_agendatypename'),
         ('group', '0002_groupfeatures_historicalgroupfeatures'),
+        ('name', '0003_agendatypename_data'),
     ]
 
     operations = [

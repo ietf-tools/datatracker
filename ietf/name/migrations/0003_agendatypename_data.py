@@ -47,7 +47,6 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('name', '0002_agendatypename'),
-        ('group', '0002_groupfeatures_historicalgroupfeatures'),
     ]
 
     operations = [
