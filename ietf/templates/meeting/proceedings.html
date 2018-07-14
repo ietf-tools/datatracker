@@ -40,6 +40,7 @@
         <a href="{% url 'ietf.meeting.views.proceedings_overview' num=meeting.number %}">IETF Overview</a><br>
         <a href="{% url 'ietf.meeting.views.proceedings_progress_report' num=meeting.number %}">Progress Report</a><br>
         <a href="{% url 'ietf.meeting.views.proceedings_attendees' num=meeting.number %}">Attendees</a><br>
+        <a href="{% url 'ietf.meeting.views.important_dates' num=meeting.number %}">Important Dates</a><br>
       </div>
       {% endif %}
 
