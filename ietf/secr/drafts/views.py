@@ -11,37 +11,20 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from django.utils.http import urlencode
 
-from ietf.doc.models import Document, DocumentAuthor, DocAlias, State
+from ietf.doc.models import Document, DocumentAuthor, State
 from ietf.doc.models import DocEvent, NewRevisionDocEvent
 from ietf.doc.utils import add_state_change_event
 from ietf.ietfauth.utils import role_required
 from ietf.meeting.helpers import get_meeting
-from ietf.name.models import StreamName
-from ietf.person.models import Person
 from ietf.secr.drafts.email import announcement_from_form, get_email_initial
-from ietf.secr.drafts.forms import ( AddModelForm, AuthorForm, BaseRevisionModelForm, EditModelForm,
-                                    EmailForm, ExtendForm, RevisionModelForm, 
-                                    SearchForm, UploadForm, WithdrawForm )
-from ietf.secr.utils.ams_utils import get_base
+from ietf.secr.drafts.forms import AuthorForm, EditModelForm, EmailForm, ExtendForm, SearchForm, WithdrawForm
 from ietf.secr.utils.document import get_rfc_num, get_start_date
-from ietf.submit.models import Submission, Preapproval, DraftSubmissionStateName, SubmissionEvent
-from ietf.submit.mail import announce_new_version, announce_to_lists, announce_to_authors
-from ietf.utils.draft import Draft
+from ietf.submit.models import Preapproval
 from ietf.utils.log import log
 
 # -------------------------------------------------
 # Helper Functions
 # -------------------------------------------------
-
-def archive_draft_files(filename):
-    '''
-    Takes a string representing the old draft filename, without extensions.
-    Moves any matching files to archive directory.
-    '''
-    files = glob.glob(os.path.join(settings.INTERNET_DRAFT_PATH,filename) + '.*')
-    for file in files:
-        shutil.move(file,settings.INTERNET_DRAFT_ARCHIVE_DIR)
-    return
 
 def get_action_details(draft, request):
     '''
@@ -71,72 +54,6 @@ def handle_uploaded_file(f):
         destination.write(chunk)
     destination.close()
 
-def handle_substate(doc):
-    '''
-    This function checks to see if the document has a revision needed tag, if so the
-    tag gets changed to ad followup, and a DocEvent is created.
-    '''
-    qs = doc.tags.filter(slug__in=('need-rev','rev-wglc','rev-ad','rev-iesg'))
-    if qs:
-        for tag in qs:
-            doc.tags.remove(tag)
-        doc.tags.add('ad-f-up')
-        
-        # add DocEvent
-        system = Person.objects.get(name="(system)")
-        DocEvent.objects.create(type="changed_document",
-                                doc=doc,
-                                rev=doc.rev,
-                                desc="Sub state has been changed to <b>AD Followup</b> from <b>Revised ID Needed</b>",
-                                by=system)
-        
-def process_files(request,draft):
-    '''
-    This function takes a request object and draft object.
-    It obtains the list of file objects (ie from request.FILES), uploads
-    the files by calling handle_file_upload() and returns
-    the basename, revision number and a list of file types.  Basename and revision
-    are assumed to be the same for all because this is part of the validation process.
-    '''
-    files = request.FILES
-    file = files[files.keys()[0]]
-    filename = os.path.splitext(file.name)[0]
-    revision = os.path.splitext(file.name)[0][-2:]
-    file_type_list = []
-    for file in files.values():
-        extension = os.path.splitext(file.name)[1]
-        file_type_list.append(extension)
-        handle_uploaded_file(file)
-    
-    return (filename,revision,file_type_list)
-
-def post_submission(request, draft):
-    with open(draft.get_file_name()) as file:
-        wrapper = Draft(file.read().decode('utf8'), file.name)
-    submission = Submission(
-        name=draft.name,
-        title=draft.title,
-        rev=draft.rev,
-        pages=draft.pages,
-        file_size=os.path.getsize(draft.get_file_name()),
-        document_date=wrapper.get_creation_date(),
-        submission_date=datetime.date.today(),
-        group_id=draft.group.id,
-        remote_ip=request.META['REMOTE_ADDR'],
-        first_two_pages=''.join(wrapper.pages[:2]),
-        state=DraftSubmissionStateName.objects.get(slug="posted"),
-        abstract=draft.abstract,
-        file_types=','.join(file_types_for_draft(draft)),
-    )
-    submission.save()
-
-    SubmissionEvent.objects.create(
-        submission=submission,
-        by=request.user.person,
-        desc="Submitted and posted manually")
-
-    return submission
-
 def file_types_for_draft(draft):
     '''Returns list of file extensions that exist for this draft'''
     basename, ext = os.path.splitext(draft.get_file_name())
@@ -147,16 +64,6 @@ def file_types_for_draft(draft):
         if ext:
             file_types.append(ext)
     return file_types
-
-def promote_files(draft, types):
-    '''
-    This function takes one argument, a draft object.  It then moves the draft files from
-    the temporary upload directory to the production directory.
-    '''
-    filename = '%s-%s' % (draft.name,draft.rev)
-    for ext in types:
-        path = os.path.join(settings.IDSUBMIT_MANUAL_STAGING_DIR, filename + ext)
-        shutil.move(path,settings.INTERNET_DRAFT_PATH)
 
 # -------------------------------------------------
 # Action Button Functions
@@ -235,109 +142,6 @@ def do_resurrect(draft, request):
     
     return
 
-def do_revision(draft, request, filename, file_type_list):
-    '''
-    This function handles adding a new revision of an existing Internet-Draft.  
-    Prerequisites: draft must be active
-    Input: title, revision_date, pages, abstract, file input fields to upload new 
-    draft document(s)
-    Actions
-    - move current doc(s) to archive directory
-    - upload new docs to live dir
-    - save doc in history
-    - increment revision 
-    - reset expires
-    - create DocEvent
-    - handle sub-state
-    - schedule notification
-    '''
-    
-    # TODO this behavior may change with archive strategy
-    archive_draft_files(draft.name + '-' + draft.rev)
-    
-    # save form data
-    form = BaseRevisionModelForm(request.POST,instance=draft)
-    if form.is_valid():
-        new_draft = form.save(commit=False)
-    else:
-        raise Exception(form.errors)
-        raise Exception('Problem with input data %s' % form.data)
-
-    # set revision and expires
-    new_draft.rev = filename[-2:]
-    new_draft.expires = datetime.datetime.now() + datetime.timedelta(settings.INTERNET_DRAFT_DAYS_TO_EXPIRE)
-
-    # create DocEvent
-    e = NewRevisionDocEvent.objects.create(type='new_revision',
-                                           by=request.user.person,
-                                           doc=draft,
-                                           rev=new_draft.rev,
-                                           desc='New revision available',
-                                           time=draft.time)
-
-    new_draft.save_with_history([e])
-
-    handle_substate(new_draft)
-    
-    # move uploaded files to production directory
-    promote_files(new_draft, file_type_list)
-    
-    # save the submission record
-    submission = post_submission(request, new_draft)
-
-    announce_to_lists(request, submission)
-    announce_new_version(request, submission, draft, '')
-    announce_to_authors(request, submission)
-        
-    return
-
-def do_update(draft,request,filename,file_type_list):
-    '''
-     Actions
-    - increment revision #
-    - reset expires
-    - create DocEvent
-    - do substate check
-    - change state to Active
-    '''
-    # save form data
-    form = BaseRevisionModelForm(request.POST,instance=draft)
-    if form.is_valid():
-        new_draft = form.save(commit=False)
-    else:
-        raise Exception('Problem with input data %s' % form.data)
-
-    handle_substate(new_draft)
-    
-    # update draft record
-    new_draft.rev = os.path.splitext(filename)[0][-2:]
-    new_draft.expires = datetime.datetime.now() + datetime.timedelta(settings.INTERNET_DRAFT_DAYS_TO_EXPIRE)
-
-    new_draft.set_state(State.objects.get(type="draft", slug="active"))
-    
-    # create DocEvent
-    e = NewRevisionDocEvent.objects.create(type='new_revision',
-                                           by=request.user.person,
-                                           doc=new_draft,
-                                           rev=new_draft.rev,
-                                           desc='New revision available',
-                                           time=new_draft.time)
-    
-    new_draft.save_with_history([e])
-
-    # move uploaded files to production directory
-    promote_files(new_draft, file_type_list)
-    
-    # save the submission record
-    post_submission(request, new_draft)
-
-def do_update_announce(draft, request):
-    # send announcement
-    form = EmailForm(request.POST)
-    announcement_from_form(form.data,by=request.user.person)
-    
-    return
-
 def do_withdraw(draft,request):
     '''
     Actions
@@ -388,96 +192,6 @@ def abstract(request, id):
 
     return render(request, 'drafts/abstract.html', {
         'draft': draft},
-    )
-
-@role_required('Secretariat')
-def add(request):
-    '''
-    Add Internet Draft
-
-    **Templates:**
-
-    * ``drafts/add.html``
-
-    **Template Variables:**
-
-    * form 
-    '''
-
-    if request.method == 'POST':
-        button_text = request.POST.get('submit', '')
-        if button_text == 'Cancel':
-            return redirect('drafts')
-
-        upload_form = UploadForm(request.POST, request.FILES)
-        form = AddModelForm(request.POST)
-        if form.is_valid() and upload_form.is_valid():
-            draft = form.save(commit=False)
-            
-            # process files
-            filename,revision,file_type_list = process_files(request, draft)
-            name = get_base(filename)
-            
-            # set fields (set stream or intended status?)
-            draft.rev = revision
-            draft.name = name
-            draft.type_id = 'draft'
-
-            # set stream based on document name
-            if not draft.stream:
-                stream_slug = None
-                if draft.name.startswith("draft-iab-"):
-                    stream_slug = "iab"
-                elif draft.name.startswith("draft-irtf-"):
-                    stream_slug = "irtf"
-                elif draft.name.startswith("draft-ietf-") and (draft.group.type_id != "individ"):
-                    stream_slug = "ietf"
-                
-                if stream_slug:
-                    draft.stream = StreamName.objects.get(slug=stream_slug)
-                
-            # set expires
-            draft.expires = datetime.datetime.now() + datetime.timedelta(settings.INTERNET_DRAFT_DAYS_TO_EXPIRE)
-
-            draft.save(force_insert=True)
-            
-            # set state
-            draft.set_state(State.objects.get(type="draft", slug="active"))
-            
-            # automatically set state "WG Document"
-            if draft.stream_id == "ietf" and draft.group.type_id == "wg":
-                draft.set_state(State.objects.get(type="draft-stream-%s" % draft.stream_id, slug="wg-doc"))
-            
-            # create DocAlias
-            DocAlias.objects.get_or_create(name=name, document=draft)
-            
-            # create DocEvent
-            NewRevisionDocEvent.objects.create(type='new_revision',
-                                               by=request.user.person,
-                                               doc=draft,
-                                               rev=draft.rev,
-                                               time=draft.time,
-                                               desc="New revision available")
-        
-            # move uploaded files to production directory
-            promote_files(draft, file_type_list)
-            
-            # save the submission record
-            post_submission(request, draft)
-            
-            messages.success(request, 'New draft added successfully!')
-            params = dict(action='add')
-            url = reverse('ietf.secr.drafts.views.authors', kwargs={'id':draft.pk})
-            url = url + '?' + urlencode(params)
-            return redirect(url)
-
-    else:
-        form = AddModelForm()
-        upload_form = UploadForm()
-        
-    return render(request, 'drafts/add.html', {
-        'form': form,
-        'upload_form': upload_form},
     )
 
 @role_required('Secretariat')
@@ -603,12 +317,8 @@ def do_action(request, id):
 
         action = request.POST.get('action')
 
-        if action == 'revision':
-            func = do_revision
-        elif action == 'resurrect':
+        if action == 'resurrect':
             func = do_resurrect
-        elif action == 'update':
-            func = do_update_announce
         elif action == 'extend':
             func = do_extend
         elif action == 'withdraw':
@@ -758,41 +468,6 @@ def nudge_report(request):
     return render(request, 'drafts/report_nudge.html', {
         'docs': docs},
     )
-    
-@role_required('Secretariat')
-def revision(request, id):
-    '''
-    This function presents the input form for the New Revision action.
-    on POST, updates draft to new revision and sends notification.
-    '''
-
-    draft = get_object_or_404(Document, name=id)
-    
-    if request.method == 'POST':
-        button_text = request.POST.get('submit', '')
-        if button_text == 'Cancel':
-            return redirect('ietf.secr.drafts.views.view', id=id)
-
-        upload_form = UploadForm(request.POST, request.FILES, draft=draft)
-        form = RevisionModelForm(request.POST, instance=draft)
-        if form.is_valid() and upload_form.is_valid():
-            # process files
-            filename,revision,file_type_list = process_files(request,draft)
-            
-            do_revision(draft, request, filename, file_type_list)
-
-            messages.success(request, 'New Revision successful!')
-            return redirect('ietf.secr.drafts.views.view', id=id)
-
-    else:
-        form = RevisionModelForm(instance=draft,initial={'revision_date':datetime.date.today().isoformat()})
-        upload_form = UploadForm(draft=draft)
-        
-    return render(request, 'drafts/revision.html', {
-        'form': form,
-        'upload_form': upload_form,
-        'draft': draft},
-    )
 
 @role_required('Secretariat')
 def search(request):
@@ -861,46 +536,6 @@ def search(request):
     return render(request, 'drafts/search.html', {
         'results': results,
         'form': form},
-    )
-
-@role_required('Secretariat')
-def update(request, id):
-    '''
-    This view handles the Update action for an Internet-Draft
-    Update is when an expired draft gets a new revision, (the state does not change?)
-    Prerequisites: draft must be expired 
-    Input: upload new files, pages, abstract, title
-    '''
-    
-    draft = get_object_or_404(Document, name=id)
-    
-    if request.method == 'POST':
-        button_text = request.POST.get('submit', '')
-        if button_text == 'Cancel':
-            return redirect('ietf.secr.drafts.views.view', id=id)
-
-        upload_form = UploadForm(request.POST, request.FILES, draft=draft)
-        form = RevisionModelForm(request.POST, instance=draft)
-        if form.is_valid() and upload_form.is_valid():
-            # process files
-            filename,revision,file_type_list = process_files(request,draft)
-
-            do_update(draft, request, filename, file_type_list)
-
-            params = dict(action='update')
-            params['filename'] = filename
-            url = reverse('ietf.secr.drafts.views.email', kwargs={'id':id})
-            url = url + '?' + urlencode(params)
-            return redirect(url)
-
-    else:
-        form = RevisionModelForm(instance=draft,initial={'revision_date':datetime.date.today().isoformat()})
-        upload_form = UploadForm(draft=draft)
-        
-    return render(request, 'drafts/revision.html', {
-        'form': form,
-        'upload_form':upload_form,
-        'draft': draft},
     )
 
 @role_required('Secretariat')

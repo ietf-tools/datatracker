@@ -1,4 +1,3 @@
-import datetime
 import re
 import os
 
@@ -80,22 +79,6 @@ class AliasModelChoiceField(forms.ModelChoiceField):
 # ---------------------------------------------
 # Forms
 # ---------------------------------------------
-class AddModelForm(forms.ModelForm):
-    start_date = forms.DateField()
-    group = GroupModelChoiceField(required=True,help_text='Use group "none" for Individual Submissions.')
-
-    class Meta:
-        model = Document
-        fields = ('title','group','stream','start_date','pages','abstract','internal_comments')
-
-    # use this method to set attrs which keeps other meta info from model.
-    def __init__(self, *args, **kwargs):
-        super(AddModelForm, self).__init__(*args, **kwargs)
-        self.fields['title'].label='Document Name'
-        self.fields['title'].widget=forms.Textarea()
-        self.fields['start_date'].initial=datetime.date.today
-        self.fields['pages'].label='Number of Pages'
-        self.fields['internal_comments'].label='Comments'
 
 class AuthorForm(forms.Form):
     '''
@@ -245,73 +228,6 @@ class ExtendForm(forms.Form):
     action = forms.CharField(max_length=255, widget=forms.HiddenInput(),initial='extend')
     expiration_date = forms.DateField()
 
-class BaseRevisionModelForm(forms.ModelForm):
-    class Meta:
-        model = Document
-        fields = ('title','pages','abstract')
-
-class RevisionModelForm(forms.ModelForm):
-    class Meta:
-        model = Document
-        fields = ('title','pages','abstract')
-
-    # use this method to set attrs which keeps other meta info from model.
-    def __init__(self, *args, **kwargs):
-        super(RevisionModelForm, self).__init__(*args, **kwargs)
-        self.fields['title'].label='Document Name'
-        self.fields['title'].widget=forms.Textarea()
-        self.fields['pages'].label='Number of Pages'
-
-# class RfcModelForm(forms.ModelForm):
-#     rfc_number = forms.IntegerField()
-#     rfc_published_date = forms.DateField(initial=datetime.datetime.now)
-#     group = GroupModelChoiceField(required=True)
-# 
-#     class Meta:
-#         model = Document
-#         fields = ('title','group','pages','std_level','internal_comments')
-# 
-#     # use this method to set attrs which keeps other meta info from model.
-#     def __init__(self, *args, **kwargs):
-#         super(RfcModelForm, self).__init__(*args, **kwargs)
-#         self.fields['title'].widget = forms.Textarea()
-#         self.fields['std_level'].required = True
-# 
-#     def save(self, force_insert=False, force_update=False, commit=False):
-#         obj = super(RfcModelForm, self).save(commit=False)
-# 
-#         # create DocAlias
-#         DocAlias.objects.create(document=self.instance,name="rfc%d" % self.cleaned_data['rfc_number'])
-# 
-#         return obj
-# 
-#     def clean_rfc_number(self):
-#         rfc_number = self.cleaned_data['rfc_number']
-#         if DocAlias.objects.filter(name='rfc' + str(rfc_number)):
-#             raise forms.ValidationError("RFC %d already exists" % rfc_number)
-#         return rfc_number
-
-# class RfcObsoletesForm(forms.Form):
-#     relation = forms.ModelChoiceField(queryset=DocRelationshipName.objects.filter(slug__in=('updates','obs')),required=False)
-#     rfc = forms.IntegerField(required=False)
-# 
-#     # ensure that RFC exists
-#     def clean_rfc(self):
-#         rfc = self.cleaned_data.get('rfc','')
-#         if rfc:
-#             if not Document.objects.filter(docalias__name="rfc%s" % rfc):
-#                 raise forms.ValidationError("RFC does not exist")
-#         return rfc
-# 
-#     def clean(self):
-#         super(RfcObsoletesForm, self).clean()
-#         cleaned_data = self.cleaned_data
-#         relation = cleaned_data.get('relation','')
-#         rfc = cleaned_data.get('rfc','')
-#         if (relation and not rfc) or (rfc and not relation):
-#             raise forms.ValidationError('You must select a relation and enter RFC #')
-#         return cleaned_data
-
 class SearchForm(forms.Form):
     intended_std_level = forms.ModelChoiceField(queryset=IntendedStdLevelName.objects,label="Intended Status",required=False)
     document_title = forms.CharField(max_length=80,label='Document Title',required=False)
@@ -320,57 +236,6 @@ class SearchForm(forms.Form):
     state = forms.ModelChoiceField(queryset=State.objects.filter(type='draft'),required=False)
     revision_date_start = forms.DateField(label='Revision Date (start)',required=False)
     revision_date_end = forms.DateField(label='Revision Date (end)',required=False)
-
-class UploadForm(forms.Form):
-    txt = DocumentField(label=u'.txt format', required=True,extension='.txt',filename=None,rev=None)
-    xml = DocumentField(label=u'.xml format', required=False,extension='.xml',filename=None,rev=None)
-    pdf = DocumentField(label=u'.pdf format', required=False,extension='.pdf',filename=None,rev=None)
-    ps = DocumentField(label=u'.ps format', required=False,extension='.ps',filename=None,rev=None)
-
-    def __init__(self, *args, **kwargs):
-        if 'draft' in kwargs:
-            self.draft = kwargs.pop('draft')
-        else:
-            self.draft = None
-        super(UploadForm, self).__init__(*args, **kwargs)
-        if self.draft:
-            for field in self.fields.itervalues():
-                field.filename = self.draft.name
-                field.rev = self.draft.rev
-
-
-    def clean(self):
-        # Checks that all files have the same base
-        if any(self.errors):
-            # Don't bother validating unless each field is valid on its own
-            return
-        txt = self.cleaned_data['txt']
-        xml = self.cleaned_data['xml']
-        pdf = self.cleaned_data['pdf']
-        ps = self.cleaned_data['ps']
-
-        # we only need to do these validations for new drafts
-        if not self.draft:
-            names = []
-            for file in (txt,xml,pdf,ps):
-                if file:
-                    base = os.path.splitext(file.name)[0]
-                    if base not in names:
-                        names.append(base)
-
-            if len(names) > 1:
-                raise forms.ValidationError, "All files must have the same base name"
-
-            # ensure that the basename is unique
-            base = os.path.splitext(txt.name)[0]
-            if Document.objects.filter(name=base[:-3]):
-                raise forms.ValidationError, "This document filename already exists: %s" % base[:-3]
-
-            # ensure that rev is 00
-            if base[-2:] != '00':
-                raise forms.ValidationError, "New Drafts must start with 00 revision number."
-
-        return self.cleaned_data
 
 class WithdrawForm(forms.Form):
     withdraw_type = forms.CharField(widget=forms.Select(choices=WITHDRAW_CHOICES),help_text='Select which type of withdraw to perform.')
