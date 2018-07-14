@@ -6,12 +6,16 @@
 
 {% block subtitle %} - View feedback {% endblock %}
 
+{% block bodyAttrs %}data-spy="scroll" data-target="#affix"{% endblock %}
+
 {% block pagehead %}
   <link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
 {% endblock %}
 
 {% block nomcom_content %}
   {% origin %}
+
+<div class="col-md-10">
   <h2>Feedback related to nominees</h2>
 
   {% regroup nominees_feedback by nominee.staterank as stateranked_nominees %}
@@ -19,11 +23,11 @@
     <div class="panel panel-default">
      <div class="panel-heading">
          {% if staterank.grouper == 0 %}
-            Accepted nomination for at least one position
+            <h6 class="anchor-target" id="accepted">Accepted nomination for at least one position</h6>
          {% elif staterank.grouper == 1 %}
-            Pending for at least one position and has not accepted any nomination
+            <h6 class="anchor-target" id="pending">Pending for at least one position and has not accepted any nomination</h6>
          {% else %}
-            Declined each nominated position
+            <h6 class="anchor-target" id="declined">Declined each nominated position</h6>
          {% endif %}
      </div>
      <div class="panel-body">
@@ -64,7 +68,7 @@
     </div>
   {% endfor %}
 
-  <h2>Feedback related to topics</h2>
+  <h2 class="anchor-target" id="topics">Feedback related to topics</h2>
 
     <div class="panel panel-default">
      <div class="panel-body">
@@ -97,7 +101,7 @@
     </div>
 
   {% if independent_feedback_types %}
-    <h2>Feedback not related to Nominees</h2>
+    <h2 class="anchor-target" id="misc">Feedback not related to Nominees</h2>
 
     <table class="table table-condensed table-striped">
       <thead>
@@ -120,6 +124,18 @@
       </tbody>
     </table>
   {% endif %}
+
+</div>
+    <div class="col-md-2 hidden-print bs-docs-sidebar" id="affix">
+      <ul class="nav nav-pills nav-stacked small" data-spy="affix">
+        <li><a href="#accepted">Accepted</a></li>
+        <li><a href="#pending">Pending</a></li>
+        <li><a href="#declined">Declined</a></li>
+        <li><a href="#topics">Topics</a></li>
+        <li><a href="#misc">Miscellaneous</a></li>
+     </ul>
+   </div>
+
 {% endblock %}
 
 {% block js %}
