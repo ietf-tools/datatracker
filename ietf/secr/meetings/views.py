@@ -5,6 +5,7 @@ import time
 from django.conf import settings
 from django.contrib import messages
 from django.db.models import Max
+from django.db.models.expressions import RawSQL
 from django.forms.formsets import formset_factory
 from django.forms.models import inlineformset_factory
 from django.shortcuts import render, get_object_or_404, redirect
@@ -411,7 +412,7 @@ def main(request):
     '''
     In this view the user can choose a meeting to manage or elect to create a new meeting.
     '''
-    meetings = Meeting.objects.filter(type='ietf').order_by('-number')
+    meetings = Meeting.objects.filter(type='ietf').annotate(number_as_integer=RawSQL('CAST(number AS UNSIGNED)', params=[])).order_by('-number_as_integer')
 
     if request.method == 'POST':
         return redirect('ietf.secr.meetings.views.view', meeting_id=request.POST['meeting'])
