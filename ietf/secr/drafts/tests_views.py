@@ -1,10 +1,12 @@
 import datetime
 import os
 import shutil
+from collections import OrderedDict
 
 from django.conf import settings
 from django.urls import reverse as urlreverse
 from django.utils.http import urlencode
+from pyquery import PyQuery
 
 import debug                            # pyflakes:ignore
 
@@ -15,6 +17,7 @@ from ietf.meeting.factories import MeetingFactory
 from ietf.person.factories import PersonFactory
 from ietf.person.models import Person
 from ietf.submit.models import Preapproval
+from ietf.utils.mail import outbox
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized
 from ietf.utils.test_data import make_test_data
 from ietf.secr.drafts.email import get_email_initial
@@ -134,23 +137,31 @@ class SecrDraftsTestCase(TestCase):
         confirm_url = urlreverse('ietf.secr.drafts.views.confirm', kwargs={'id':draft.name})
         do_action_url = urlreverse('ietf.secr.drafts.views.do_action', kwargs={'id':draft.name})
         view_url = urlreverse('ietf.secr.drafts.views.view', kwargs={'id':draft.name})
+        subject =  'Resurrection of %s' % draft.get_base_name()
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.get(email_url)
         self.assertEqual(response.status_code, 200)
+        self.assertTrue('<title>Drafts - Email</title>' in response.content)
+        q = PyQuery(response.content)
+        self.assertEqual(q("#id_subject").val(), subject)
         post_data = {
             'action': 'resurrect',
             'to': 'john@example.com',
             'cc': 'joe@example.com',
-            'subject': 'test',
+            'subject': subject,
             'body': 'draft resurrected',
             'submit': 'Save'
         }
-        response = self.client.post(email_url, post_data)
         response = self.client.post(confirm_url, post_data)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue('<title>Drafts - Confirm</title>' in response.content)
+        self.assertEqual(response.context['email']['subject'], subject)
         response = self.client.post(do_action_url, post_data)
         self.assertRedirects(response, view_url)
         draft = Document.objects.get(name=draft.name)
         self.assertTrue(draft.get_state_slug('draft') == 'active')
+        recv = outbox[-1]
+        self.assertEqual(recv['Subject'], subject)
 
     def test_extend(self):
         draft = make_test_data()
@@ -161,10 +172,11 @@ class SecrDraftsTestCase(TestCase):
         view_url = urlreverse('ietf.secr.drafts.views.view', kwargs={'id':draft.name})
         expiration = datetime.datetime.today() + datetime.timedelta(days=180)
         expiration = expiration.replace(hour=0,minute=0,second=0,microsecond=0)
+        subject = 'Extension of Expiration Date for %s' % draft.get_base_name()
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
-        get_data = {            
+        extend_data = {
             'action': 'extend',
             'expiration_date': expiration.strftime('%Y-%m-%d'),
         }
@@ -173,17 +185,22 @@ class SecrDraftsTestCase(TestCase):
             'expiration_date': expiration.strftime('%Y-%m-%d'),
             'to': 'john@example.com',
             'cc': 'joe@example.com',
-            'subject': 'test',
-            'body': 'draft resurrected',
+            'subject': subject,
+            'body': 'draft extended',
             'submit': 'Save'
         }
-        response = self.client.get(email_url + '?' + urlencode(get_data)) 
-        self.assertEqual(response.status_code, 200)
+        response = self.client.post(url, extend_data)
+        self.assertRedirects(response, email_url + '?' + urlencode(extend_data))
         response = self.client.post(confirm_url, post_data)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue('<title>Drafts - Confirm</title>' in response.content)
+        self.assertEqual(response.context['email']['subject'], subject)
         response = self.client.post(do_action_url, post_data)
         self.assertRedirects(response, view_url)
         draft = Document.objects.get(name=draft.name)
         self.assertTrue(draft.expires == expiration)
+        recv = outbox[-1]
+        self.assertEqual(recv['Subject'], subject)
 
     def test_withdraw(self):
         draft = make_test_data()
@@ -192,29 +209,32 @@ class SecrDraftsTestCase(TestCase):
         confirm_url = urlreverse('ietf.secr.drafts.views.confirm', kwargs={'id':draft.name})
         do_action_url = urlreverse('ietf.secr.drafts.views.do_action', kwargs={'id':draft.name})
         view_url = urlreverse('ietf.secr.drafts.views.view', kwargs={'id':draft.name})
+        subject = 'Withdraw of %s' % draft.get_base_name()
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
-        get_data = {            
-            'action': 'withdraw',
-            'withdraw_type': 'ietf',
-        }
+        withdraw_data = OrderedDict([('action', 'withdraw'), ('withdraw_type', 'ietf')])
         post_data = {
             'action': 'withdraw',
             'withdraw_type': 'ietf',
             'to': 'john@example.com',
             'cc': 'joe@example.com',
-            'subject': 'test',
+            'subject': subject,
             'body': 'draft resurrected',
             'submit': 'Save'
         }
-        response = self.client.get(email_url + '?' + urlencode(get_data)) 
-        self.assertEqual(response.status_code, 200)
+        response = self.client.post(url, withdraw_data)
+        self.assertRedirects(response, email_url + '?' + urlencode(withdraw_data))
         response = self.client.post(confirm_url, post_data)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue('<title>Drafts - Confirm</title>' in response.content)
+        self.assertEqual(response.context['email']['subject'], subject)
         response = self.client.post(do_action_url, post_data)
         self.assertRedirects(response, view_url)
         draft = Document.objects.get(name=draft.name)
         self.assertTrue(draft.get_state_slug('draft') == 'ietf-rm')
+        recv = outbox[-1]
+        self.assertEqual(recv['Subject'], subject)
 
     def test_authors(self):
         draft = DocumentFactory()
