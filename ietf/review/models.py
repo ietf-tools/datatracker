@@ -60,6 +60,7 @@ class UnavailablePeriod(models.Model):
         ("unavailable", "Completely unavailable - reassign any outstanding reviews"),
     ]
     availability = models.CharField(max_length=30, choices=AVAILABILITY_CHOICES)
+    reason       = models.TextField(verbose_name="Reason why reviewer is unavailable (Optional)", max_length=2048, blank=True, help_text="Provide (for the secretary's benefit) the reason why the review is unavailable", default='')
 
     def state(self):
         import datetime

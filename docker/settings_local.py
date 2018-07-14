@@ -1,4 +1,5 @@
 import os
+EMAIL_COPY_TO = 'peter@akayla.com'
 
 SECRET_KEY = 'jzv$o93h_lzw4a0%0oz-5t5lk+ai=3f8x@uo*9ahu8w4i300o6'
 

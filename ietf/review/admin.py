@@ -20,7 +20,7 @@ class ReviewSecretarySettingsAdmin(admin.ModelAdmin):
 admin.site.register(ReviewSecretarySettings, ReviewSecretarySettingsAdmin)
 
 class UnavailablePeriodAdmin(admin.ModelAdmin):
-    list_display = ["person", "team", "start_date", "end_date", "availability"]
+    list_display = ["person", "team", "start_date", "end_date", "availability", "reason"]
     list_display_links = ["person"]
     list_filter = ["team"]
     date_hierarchy = "start_date"

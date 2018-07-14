@@ -86,6 +86,7 @@ class UnavailablePeriodResource(ModelResource):
             "start_date": ALL,
             "end_date": ALL,
             "availability": ALL,
+	    "reason": ALL,
             "team": ALL_WITH_RELATIONS,
             "person": ALL_WITH_RELATIONS,
         }

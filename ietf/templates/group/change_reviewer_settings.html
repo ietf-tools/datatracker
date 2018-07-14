@@ -32,12 +32,18 @@
 
   {% if unavailable_periods %}
     <table class="table">
+      <th>Period</th>
+      <th>Availability</th>
+      <th>Reason</th>
+      <th> </th>
+      <th> </th>
       {% for o in unavailable_periods %}
         <tr class="unavailable-period-{{ o.state }}">
           <td>
             {{ o.start_date|default:"indefinite" }} - {{ o.end_date|default:"indefinite" }}
           </td>
           <td>{{ o.get_availability_display }}</td>
+	  <td>{{ o.reason }}</td>
           <td>
             {% if not o.end_date %}
               <form method="post" class="form-inline" style="display:inline-block">
