@@ -590,6 +590,15 @@ table.simple-table td:last-child {
   background-color: #F0F0F0;
 }
 
+
+.reviewer-doc-past {
+  background-color: #800000;
+}
+
+.reviewer-doc-ok {
+  background-color: #008000;
+}
+
 /* === Statistics =========================================================== */
 
 .stats-options > * {
