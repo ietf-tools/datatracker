@@ -1,3 +1,54 @@
+ietfdb (6.82.0) ietf; urgency=medium
+
+  **Group features moved from code to database**
+
+  This release replaces the code defined group features with features held
+  in a database table:
+
+  - Added a GroupFeatures model to the group models, and removed the old
+    features.py
+  - Added a agenda type for future use in showing different group types on
+    different agendas.
+  - Renamed the group feature has_materials to has_nonsession_materials.
+  - Added API resources and admin support for the new tables.
+  - Added a Directorate (with reviews) group type as complement to
+    Directorate, to distinguish between directorates with and without
+    reviews.
+  - Adjusted tests as needed.
+  - Updated the fixtures, and fixed the generate_fixtures script to include
+    the new AgendaTypeName objects.
+
+  There still exists about 70 instances of code comparing the group type
+  with a list of types; most of these should probably be replaced with new
+  features, instead, to make it possible to add new group types through the
+  database table, rather than having to edit the code.  That was the purpose
+  of this refactoring from the start, but the presence of this large number
+  of comparisons of group type against lists of types defeats the goal until
+  we add appropriate features and replace the group type list comparisons.
+
+  Additional changes:
+
+  * Added exception logging for ietf/bin/rfc-editor-queue-updates.  Changed 
+    the logging in the ietf/bin/rfc-editor-* scripts to use 
+    ietf.utils.log.log().  Reordered some imports.
+
+  * Replaced the use of a deprecated Django field attribute with the 
+    sanctioned replacement.
+
+  * Merged in [15282] from housley@vigilsec.com:
+    Set reply-to for I-D Announcements that include a CC to a mail list.
+    Fixes #2530. 
+
+  * Added support for patent 'kind codes' as part of patent numbers.
+
+  * Tweaked the rsync arguments for IANA YANG models.
+
+  * Upped the permitted number of search results for the /stream/ise/ page 
+    (and friends) from 200 to 1000.  Fixes issue #2527.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  14 Jul 2018 16:47:58 +0000
+
+
 ietfdb (6.81.3) ietf; urgency=medium
 
   This is a bugfix release to clear the board for the final GDPR release.
