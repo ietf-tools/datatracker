@@ -21,6 +21,12 @@ Planned work in rough order
 
 * Polish the htmlization pages, making the style identical with tools.ietf.org.
 
+* Change our web asset handling from the current bower-based (which has been
+  deprecated and gradually more and more unworkable) to a yarn-based setup.
+  Short-time the effect of not having the web asset updates in mkrelease is
+  negigible, but long-term the lack of this means that we may miss
+  security-updates to web assets.
+
 * Reworked UI and refactored backend for the scretariat meeting scheduling
   tool.
 
