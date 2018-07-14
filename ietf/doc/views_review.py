@@ -443,7 +443,6 @@ class CompleteReviewForm(forms.Form):
             require_field("review_file")
         elif submission_method == "link":
             require_field("review_url")
-            require_field("review_content")
 
 @login_required
 def complete_review(request, name, request_id):
