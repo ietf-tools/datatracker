@@ -17,6 +17,7 @@
   <p>
     <div><strong>Review type:</strong> {{ review_req.team.acronym }} - {{ review_req.type }} review </div>
     <div><strong>Requested version for review:</strong> {{ review_req.requested_rev|default:"Current" }} </div>
+    <div><strong>Requsted:</strong> {{ review_req.time|date:"Y-m-d" }} </div>
     <div><strong>Reviewer:</strong> {{ review_req.reviewer.person.name }}</div>
   </p>
 
