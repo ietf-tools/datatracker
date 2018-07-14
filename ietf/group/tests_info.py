@@ -23,17 +23,18 @@ from django.utils.html import escape
 
 from ietf.community.models import CommunityList
 from ietf.community.utils import reset_name_contains_index_for_rule
+from ietf.doc.factories import WgDraftFactory, CharterFactory
 from ietf.doc.models import Document, DocAlias, DocEvent, State
 from ietf.doc.utils_charter import charter_name_for_group
 from ietf.group.factories import GroupFactory, RoleFactory, GroupEventFactory
 from ietf.group.models import Group, GroupEvent, GroupMilestone, GroupStateTransitions, Role
-from ietf.group.utils import save_group_in_history
+from ietf.group.utils import save_group_in_history, setup_default_community_list_for_group
 from ietf.meeting.factories import SessionFactory
 from ietf.name.models import DocTagName, GroupStateName, GroupTypeName
 from ietf.person.models import Person, Email
 from ietf.person.factories import PersonFactory
+from ietf.review.factories import ReviewRequestFactory
 from ietf.utils.mail import outbox, empty_outbox
-from ietf.utils.test_data import make_test_data, make_review_data
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase, unicontent, reload_db_objects
 
 def group_urlreverse_list(group, viewname):
@@ -54,8 +55,9 @@ class GroupPagesTests(TestCase):
         shutil.rmtree(self.charter_dir)
 
     def test_active_groups(self):
-        draft = make_test_data()
-        group = draft.group
+        area = GroupFactory.create(type_id='area')
+        group = GroupFactory.create(type_id='wg',parent=area)
+        RoleFactory(group=group,name_id='ad',person=PersonFactory())
 
         url = urlreverse('ietf.group.views.active_groups', kwargs=dict(group_type="wg"))
         r = self.client.get(url)
@@ -86,8 +88,10 @@ class GroupPagesTests(TestCase):
                 url=urlreverse('ietf.group.views.active_groups', kwargs=dict(group_type=slug))
 
     def test_group_home(self):
-        draft = make_test_data()
+        draft = WgDraftFactory()
         group = draft.group
+        # TODO - move this into GroupFactory
+        setup_default_community_list_for_group(group)
 
         url_list = group_urlreverse_list(group, 'ietf.group.views.group_home')
         next_list = group_urlreverse_list(group, 'ietf.group.views.group_documents')
@@ -103,8 +107,9 @@ class GroupPagesTests(TestCase):
             self.assertTrue(draft.title in unicontent(r))
 
     def test_wg_summaries(self):
-        draft = make_test_data()
-        group = draft.group
+        group = CharterFactory(group__type_id='wg',group__parent=GroupFactory(type_id='area')).group
+        RoleFactory(group=group,name_id='chair',person=PersonFactory())
+        RoleFactory(group=group,name_id='ad',person=PersonFactory())
 
         chair = Email.objects.filter(role__group=group, role__name="chair")[0]
 
@@ -145,9 +150,7 @@ class GroupPagesTests(TestCase):
         self.assertTrue("This is a charter." in unicontent(r))
 
     def test_chartering_groups(self):
-        draft = make_test_data()
-        group = draft.group
-        group.charter.set_state(State.objects.get(used=True, type="charter", slug="intrev"))
+        group = CharterFactory(group__type_id='wg',group__parent=GroupFactory(type_id='area'),states=[('charter','intrev')]).group
 
         url = urlreverse('ietf.group.views.chartering_groups')
         r = self.client.get(url)
@@ -172,10 +175,7 @@ class GroupPagesTests(TestCase):
 
 
     def test_concluded_groups(self):
-        draft = make_test_data()
-        group = draft.group
-        group.state = GroupStateName.objects.get(used=True, slug="conclude")
-        group.save()
+        group = GroupFactory(state_id='conclude')
 
         url = urlreverse('ietf.group.views.concluded_groups')
         r = self.client.get(url)
@@ -184,10 +184,7 @@ class GroupPagesTests(TestCase):
         self.assertEqual(len(q('#content a:contains("%s")' % group.acronym)), 1)
 
     def test_bofs(self):
-        draft = make_test_data()
-        group = draft.group
-        group.state_id = "bof"
-        group.save()
+        group = GroupFactory(state_id='bof')
 
         url = urlreverse('ietf.group.views.bofs', kwargs=dict(group_type="wg"))
         r = self.client.get(url)
@@ -196,32 +193,10 @@ class GroupPagesTests(TestCase):
         self.assertEqual(len(q('#content a:contains("%s")' % group.acronym)), 1)
         
     def test_group_documents(self):
-        draft = make_test_data()
-        group = draft.group
-
-        draft2 = Document.objects.create(
-            name="draft-somebody-mars-test",
-            time=datetime.datetime.now(),
-            type_id="draft",
-            title="Test By Somebody",
-            stream_id="ietf",
-            group=Group.objects.get(type="individ"),
-            abstract="Abstract.",
-            rev="01",
-            pages=2,
-            intended_std_level_id="ps",
-            shepherd=None,
-            ad=None,
-            expires=datetime.datetime.now() + datetime.timedelta(days=10),
-            notify="",
-            note="",
-            )
-
-        draft2.set_state(State.objects.get(used=True, type="draft", slug="active"))
-        DocAlias.objects.create(
-            document=draft2,
-            name=draft2.name,
-            )
+        group = GroupFactory()
+        setup_default_community_list_for_group(group)
+        draft = WgDraftFactory(group=group)
+        draft2 = WgDraftFactory(group=group)
 
         clist = CommunityList.objects.get(group=group)
         related_docs_rule = clist.searchrule_set.get(rule_type='name_contains')
@@ -249,8 +224,8 @@ class GroupPagesTests(TestCase):
             self.assertTrue(draft2.name in unicontent(r))
 
     def test_group_charter(self):
-        draft = make_test_data()
-        group = draft.group
+        group = CharterFactory().group
+        draft = WgDraftFactory(group=group)
 
         with open(os.path.join(self.charter_dir, "%s-%s.txt" % (group.charter.canonical_name(), group.charter.rev)), "w") as f:
             f.write("This is a charter.")
@@ -273,10 +248,7 @@ class GroupPagesTests(TestCase):
 
     def test_group_about(self):
 
-        make_test_data()
-
-        p = PersonFactory(user__username='iab-member')
-        Group.objects.get(acronym='iab').role_set.create(name_id='member',person=p,email=p.email())
+        RoleFactory(group=Group.objects.get(acronym='iab'),name_id='member',person=PersonFactory(user__username='iab-member'))
 
         interesting_users = [ 'plain','iana','iab-chair','irtf-chair', 'marschairman', 'teamchairman','ad', 'iab-member', 'secretary', ]
 
@@ -341,8 +313,7 @@ class GroupPagesTests(TestCase):
                     verify_cannot_edit_group(url, group, username)
 
     def test_materials(self):
-        make_test_data()
-        group = Group.objects.create(type_id="team", acronym="testteam", name="Test Team", state_id="active")
+        group = GroupFactory(type_id="team", acronym="testteam", name="Test Team", state_id="active")
 
         doc = Document.objects.create(
             name="slides-testteam-test-slides",
@@ -370,8 +341,7 @@ class GroupPagesTests(TestCase):
         self.assertTrue(doc.title not in unicontent(r))
 
     def test_history(self):
-        draft = make_test_data()
-        group = draft.group
+        group = GroupFactory()
 
         e = GroupEvent.objects.create(
             group=group,
@@ -385,8 +355,7 @@ class GroupPagesTests(TestCase):
             self.assertTrue(e.desc in unicontent(r))
 
     def test_feed(self):
-        draft = make_test_data()
-        group = draft.group
+        group = CharterFactory().group
 
         ge = GroupEvent.objects.create(
             group=group,
@@ -408,7 +377,7 @@ class GroupPagesTests(TestCase):
 
 
     def test_chair_photos(self):
-        make_test_data()
+        RoleFactory(name_id='chair')
         url = urlreverse("ietf.group.views.chair_photos", kwargs={'group_type':'wg'})
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
@@ -417,7 +386,9 @@ class GroupPagesTests(TestCase):
         self.assertEqual(len(q('div.photo-thumbnail img')), chairs.count())
 
     def test_wg_photos(self):
-        make_test_data()
+        GroupFactory(acronym='mars')
+        RoleFactory(name_id='chair')
+        RoleFactory(name_id='secr')
         url = urlreverse("ietf.group.views.group_photos", kwargs={'group_type':'wg', 'acronym':'mars'})
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
@@ -426,7 +397,6 @@ class GroupPagesTests(TestCase):
         self.assertEqual(len(q('div.photo-thumbnail img')), roles.count())
 
     def test_group_photos(self):
-        make_test_data()
         url = urlreverse("ietf.group.views.group_photos", kwargs={'acronym':'iab'})
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
@@ -445,7 +415,6 @@ class GroupEditTests(TestCase):
         shutil.rmtree(self.charter_dir)
 
     def test_create(self):
-        make_test_data()
 
         url = urlreverse('ietf.group.views.edit', kwargs=dict(group_type="wg", action="charter"))
         login_testing_unauthorized(self, "secretary", url)
@@ -504,8 +473,6 @@ class GroupEditTests(TestCase):
 
     def test_create_rg(self):
 
-        make_test_data()
-
         url = urlreverse('ietf.group.views.edit', kwargs=dict(group_type="rg", action="charter"))
         login_testing_unauthorized(self, "secretary", url)
 
@@ -529,12 +496,11 @@ class GroupEditTests(TestCase):
         self.assertEqual(charter_name_for_group(group), "charter-irtf-testrg")
 
     def test_create_based_on_existing_bof(self):
-        make_test_data()
 
         url = urlreverse('ietf.group.views.edit', kwargs=dict(group_type="wg", action="charter"))
         login_testing_unauthorized(self, "secretary", url)
 
-        group = Group.objects.get(acronym="mars")
+        group = GroupFactory(acronym="mars",parent=GroupFactory(type_id='area'))
 
         # try hijacking area - faulty
         r = self.client.post(url, dict(name="Test", acronym=group.parent.acronym))
@@ -563,8 +529,10 @@ class GroupEditTests(TestCase):
         self.assertEqual(Group.objects.get(acronym=group.acronym).name, "Test")
 
     def test_edit_info(self):
-        make_test_data()
-        group = Group.objects.get(acronym="mars")
+        group = GroupFactory(acronym='mars',parent=GroupFactory(type_id='area'))
+        CharterFactory(group=group)
+        RoleFactory(group=group,name_id='chair',person__user__email='marschairman@ietf.org')
+        RoleFactory(group=group,name_id='delegate',person__user__email='marsdelegate@ietf.org')
 
         url = urlreverse('ietf.group.views.edit', kwargs=dict(group_type=group.type_id, acronym=group.acronym, action="edit"))
         login_testing_unauthorized(self, "secretary", url)
@@ -640,8 +608,7 @@ class GroupEditTests(TestCase):
 
 
     def test_edit_field(self):
-        make_test_data()
-        group = Group.objects.get(acronym="mars")
+        group = GroupFactory(acronym="mars")
 
         # Edit name
         url = urlreverse('ietf.group.views.edit', kwargs=dict(acronym=group.acronym, action="edit", field="name"))
@@ -677,9 +644,8 @@ class GroupEditTests(TestCase):
 
 
     def test_edit_reviewers(self):
-        doc = make_test_data()
-        review_req = make_review_data(doc)
-        group = review_req.team
+        group=GroupFactory(type_id='dir',parent=GroupFactory(type_id='area'))
+        ReviewRequestFactory(team=group)
 
         url = urlreverse('ietf.group.views.edit', kwargs=dict(group_type=group.type_id, acronym=group.acronym, action="edit"))
         login_testing_unauthorized(self, "secretary", url)
@@ -711,9 +677,7 @@ class GroupEditTests(TestCase):
         self.assertTrue('Personnel change' in outbox[0]['Subject'])
 
     def test_conclude(self):
-        make_test_data()
-
-        group = Group.objects.get(acronym="mars")
+        group = GroupFactory(acronym="mars")
 
         url = urlreverse('ietf.group.views.conclude', kwargs=dict(group_type=group.type_id, acronym=group.acronym))
         login_testing_unauthorized(self, "secretary", url)
@@ -741,8 +705,11 @@ class GroupEditTests(TestCase):
         self.assertEqual(group.state_id, "active")
 
     def test_add_comment(self):
-        make_test_data()
-        group = Group.objects.get(acronym="mars")
+        group = GroupFactory(acronym="mars",parent=GroupFactory(type_id='area'))
+        RoleFactory(group=group,person=Person.objects.get(user__username='ad'),name_id='ad')
+        RoleFactory(group=group,person__user__username='marschairman',name_id='chair')
+        RoleFactory(group=group,person__user__username='marssecretary',name_id='secr')
+        RoleFactory(group=group,person__user__username='marsdelegate',name_id='delegate')
         url = urlreverse('ietf.group.views.add_comment', kwargs=dict(acronym=group.acronym))
         empty_outbox()
         for username in ['secretary','ad','marschairman','marssecretary','marsdelegate']:
@@ -766,9 +733,11 @@ class GroupEditTests(TestCase):
 
 class MilestoneTests(TestCase):
     def create_test_milestones(self):
-        draft = make_test_data()
-
-        group = Group.objects.get(acronym="mars")
+        group = GroupFactory(acronym='mars',parent=GroupFactory(type_id='area'),list_email='mars-wg@ietf.org')
+        CharterFactory(group=group)
+        RoleFactory(group=group,name_id='ad',person=Person.objects.get(user__username='ad'))
+        RoleFactory(group=group,name_id='chair',person=PersonFactory(user__username='marschairman'))
+        draft = WgDraftFactory(group=group)
 
         m1 = GroupMilestone.objects.create(id=1,
                                            group=group,
@@ -1044,9 +1013,8 @@ class MilestoneTests(TestCase):
 
 class CustomizeWorkflowTests(TestCase):
     def test_customize_workflow(self):
-        make_test_data()
 
-        group = Group.objects.get(acronym="mars")
+        group = GroupFactory()
 
         url = urlreverse('ietf.group.views.customize_workflow', kwargs=dict(group_type=group.type_id, acronym=group.acronym))
         login_testing_unauthorized(self, "secretary", url)
@@ -1115,7 +1083,9 @@ class CustomizeWorkflowTests(TestCase):
 class EmailAliasesTests(TestCase):
 
     def setUp(self):
-        make_test_data()
+        PersonFactory(user__username='plain')
+        GroupFactory(acronym='mars',parent=GroupFactory(type_id='area'))
+        GroupFactory(acronym='ames',parent=GroupFactory(type_id='area'))
         self.group_alias_file = NamedTemporaryFile(delete=False)
         self.group_alias_file.write("""# Generated by hand at 2015-02-12_16:30:52
 virtual.ietf.org anything
@@ -1175,7 +1145,8 @@ expand-ames-chairs@virtual.ietf.org                              mars_chair@ietf
 
 class AjaxTests(TestCase):
     def test_group_menu_data(self):
-        make_test_data()
+
+        GroupFactory(acronym='mars',parent=Group.objects.get(acronym='farfut'))
 
         r = self.client.get(urlreverse('ietf.group.views.group_menu_data'))
         self.assertEqual(r.status_code, 200)
@@ -1331,8 +1302,7 @@ class StatusUpdateTests(TestCase):
 class GroupParentLoopTests(TestCase):
 
     def test_group_parent_loop(self):
-        make_test_data()
-        mars = Group.objects.get(acronym="mars")
+        mars = GroupFactory(acronym="mars",parent=Group.objects.get(acronym='farfut'))
         test1 = Group.objects.create(
             type_id="team",
             acronym="testteam1",
