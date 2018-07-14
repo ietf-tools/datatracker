@@ -25,7 +25,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='GroupFeatures',
             fields=[
-                ('type', ietf.utils.models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, primary_key=True, serialize=False, to='name.GroupTypeName')),
+                ('type', ietf.utils.models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, primary_key=True, serialize=False, to='name.GroupTypeName', related_name='features')),
                 ('has_milestones', models.BooleanField(default=False, verbose_name=b'Milestones')),
                 ('has_chartering_process', models.BooleanField(default=False, verbose_name=b'Chartering')),
                 ('has_documents', models.BooleanField(default=False, verbose_name=b'Documents')),
