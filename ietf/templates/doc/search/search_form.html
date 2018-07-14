@@ -5,7 +5,7 @@
 <form id="search_form" class="form-horizontal" action="{% url 'ietf.doc.views_search.search' %}">
 
   <div class="input-group search_field">
-    {{ form.name|add_class:"form-control"|attr:"placeholder:Document name, number, title, etc." }}
+    {{ form.name|add_class:"form-control"|attr:"placeholder:Document name/title/RFC number" }}
     <span class="input-group-btn">
       <button class="btn btn-primary" type="submit">
 	<span class="fa fa-search"></span>
