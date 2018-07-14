@@ -10,13 +10,14 @@ from django.test import Client
 
 import debug                             # pyflakes:ignore
 
-from ietf.doc.models import DocEvent
+from ietf.doc.factories import DocumentFactory, WgDraftFactory
+from ietf.doc.models import DocEvent, RelatedDocument
 from ietf.group.models import Role, Group
 from ietf.group.utils import get_group_role_emails, get_child_group_role_emails, get_group_ad_emails
-from ietf.group.factories import GroupFactory
+from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.utils.test_runner import set_coverage_checking
+from ietf.person.factories import EmailFactory
 from ietf.person.models import Person
-from ietf.utils.test_data import make_test_data
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase, unicontent
 
 if   getattr(settings,'SKIP_DOT_TO_PDF', False):
@@ -35,13 +36,12 @@ else:
 
 class StreamTests(TestCase):
     def test_streams(self):
-        make_test_data()
         r = self.client.get(urlreverse("ietf.group.views.streams"))
         self.assertEqual(r.status_code, 200)
         self.assertTrue("Independent Submission Editor" in unicontent(r))
 
     def test_stream_documents(self):
-        draft = make_test_data()
+        draft = DocumentFactory(type_id='draft',group__acronym='iab',states=[('draft','active')])
         draft.stream_id = "iab"
         draft.save_with_history([DocEvent.objects.create(doc=draft, rev=draft.rev, type="changed_stream", by=Person.objects.get(user__username="secretary"), desc="Test")])
 
@@ -50,7 +50,7 @@ class StreamTests(TestCase):
         self.assertTrue(draft.name in unicontent(r))
 
     def test_stream_edit(self):
-        make_test_data()
+        EmailFactory(address="ad2@ietf.org")
 
         stream_acronym = "ietf"
 
@@ -71,12 +71,14 @@ class GroupDocDependencyGraphTests(TestCase):
 
     def setUp(self):
         set_coverage_checking(False)
+        a = WgDraftFactory()
+        b = WgDraftFactory()
+        RelatedDocument.objects.create(source=a,target=b.docalias_set.first(),relationship_id='normref')
 
     def tearDown(self):
         set_coverage_checking(True)
 
     def test_group_document_dependency_dotfile(self):
-        make_test_data()
         for group in Group.objects.filter(Q(type="wg") | Q(type="rg")):
             client = Client(Accept='text/plain')
             for url in [ urlreverse("ietf.group.views.dependencies",kwargs=dict(acronym=group.acronym,output_type="dot")),
@@ -89,7 +91,6 @@ class GroupDocDependencyGraphTests(TestCase):
                     "%s has no content"%group.acronym)
 
     def test_group_document_dependency_pdffile(self):
-        make_test_data()
         for group in Group.objects.filter(Q(type="wg") | Q(type="rg")):
             client = Client(Accept='application/pdf')
             for url in [ urlreverse("ietf.group.views.dependencies",kwargs=dict(acronym=group.acronym,output_type="pdf")),
@@ -102,7 +103,6 @@ class GroupDocDependencyGraphTests(TestCase):
                     "%s has no content"%group.acronym)
 
     def test_group_document_dependency_svgfile(self):
-        make_test_data()
         for group in Group.objects.filter(Q(type="wg") | Q(type="rg")):
             client = Client(Accept='image/svg+xml')
             for url in [ urlreverse("ietf.group.views.dependencies",kwargs=dict(acronym=group.acronym,output_type="svg")),
@@ -116,9 +116,17 @@ class GroupDocDependencyGraphTests(TestCase):
             
 
 class GroupRoleEmailTests(TestCase):
+    
+    def setUp(self):
+        # make_immutable_base_data makes two areas, and puts a group in one of them
+        # the tests below assume all areas have groups
+        for area in Group.objects.filter(type_id='area'):
+            for iter_count in range(2):
+                group = GroupFactory(type_id='wg',parent=area)
+                RoleFactory(group=group,name_id='chair',person__user__email='{%s}chairman@ietf.org'%group.acronym)
+                RoleFactory(group=group,name_id='secr',person__user__email='{%s}secretary@ietf.org'%group.acronym)
 
     def test_group_role_emails(self):
-        make_test_data()
         wgs = Group.objects.filter(type='wg')
         for wg in wgs:
             chair_emails = get_group_role_emails(wg, ['chair'])
@@ -129,7 +137,6 @@ class GroupRoleEmailTests(TestCase):
             self.assertEqual(secr_emails | chair_emails, both_emails)
 
     def test_child_group_role_emails(self):
-        make_test_data()
         areas = Group.objects.filter(type='area')
         for area in areas:
             emails = get_child_group_role_emails(area, ['chair', 'secr'])
@@ -138,7 +145,6 @@ class GroupRoleEmailTests(TestCase):
                 self.assertIn('@', item)
 
     def test_group_ad_emails(self):
-        make_test_data()
         wgs = Group.objects.filter(type='wg')
         for wg in wgs:
             emails = get_group_ad_emails(wg)
