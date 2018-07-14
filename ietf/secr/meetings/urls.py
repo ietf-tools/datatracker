@@ -14,6 +14,7 @@ urlpatterns = [
     url(r'^(?P<meeting_id>\d{1,6})/notifications/$', views.notifications),
     url(r'^(?P<meeting_id>\d{1,6})/(?P<schedule_name>[A-Za-z0-9_\-]+)/$', views.select),
     url(r'^(?P<meeting_id>\d{1,6})/(?P<schedule_name>[A-Za-z0-9_\-]+)/non_session/$', views.non_session),
+    url(r'^(?P<meeting_id>\d{1,6})/(?P<schedule_name>[A-Za-z0-9_\-]+)/non_session/cancel/(?P<slot_id>\d{1,6})/$', views.non_session_cancel),
     url(r'^(?P<meeting_id>\d{1,6})/(?P<schedule_name>[A-Za-z0-9_\-]+)/non_session/edit/(?P<slot_id>\d{1,6})/$', views.non_session_edit),
     url(r'^(?P<meeting_id>\d{1,6})/(?P<schedule_name>[A-Za-z0-9_\-]+)/non_session/delete/(?P<slot_id>\d{1,6})/$', views.non_session_delete),
     url(r'^(?P<meeting_id>\d{1,6})/(?P<schedule_name>[A-Za-z0-9_\-]+)/rooms/$', views.rooms),
