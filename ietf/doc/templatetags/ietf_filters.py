@@ -508,10 +508,6 @@ def comma_separated_list(seq, end_word="and"):
         return u"".join(seq)
     else:
         return u", ".join(seq[:-1]) + u" %s %s"%(end_word, seq[-1])
-        
-@register.filter()
-def role_names(roles):
-    return list(set([ "%s %s" % (r.group.name, r.name.name) for r in roles ]))
 
 @register.filter()
 def zaptmp(s):
