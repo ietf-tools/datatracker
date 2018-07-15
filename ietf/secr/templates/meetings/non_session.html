@@ -6,7 +6,7 @@
     <h2>TimeSlots</h2>
 
     {% if slots %}
-    <table class="full-width">
+    <table id="nonsessions" class="full-width">
       <thead>
         <tr>
           <th>Day</th>
@@ -19,11 +19,12 @@
           <th>Type</th>
           <th></th>
           <th></th>
+          <th></th>
         </tr>
       </thead>
       <tbody>
         {% for item in slots %}
-          <tr class="{% cycle row1 row2 %}{% ifchanged item.type %} break{% endifchanged %}">
+          <tr class="{% cycle row1 row2 %}{% ifchanged item.type %} break{% endifchanged %}{% if item.session.status.slug == "canceled" %} cancelled{% endif %}">
             <td>{{ item.time|date:"D" }}</td>
             <td>{{ item.time|date:"H:i" }}-{{ item.end_time|date:"H:i" }}</td>
             <td>{{ item.name }}</td>
@@ -33,6 +34,7 @@
             <td>{{ item.show_location }}</td>
             <td>{{ item.type }}</td>
             <td><a href="{% url "ietf.secr.meetings.views.non_session_edit" meeting_id=meeting.number schedule_name=schedule.name slot_id=item.id %}">Edit</a></td>
+            <td><a href="{% url "ietf.secr.meetings.views.non_session_cancel" meeting_id=meeting.number schedule_name=schedule.name slot_id=item.id %}">Cancel</a></td>
             <td><a href="{% url "ietf.secr.meetings.views.non_session_delete" meeting_id=meeting.number schedule_name=schedule.name slot_id=item.id %}">Delete</a></td>
           </tr>
         {% endfor %}

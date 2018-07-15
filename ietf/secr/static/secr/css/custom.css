@@ -490,6 +490,11 @@ tr.break td {
     border-top: 2px solid black;
 }
 
+tr.cancelled {
+    background-color: #e12817;
+    color: white;
+}
+
 #id_schedule_selector {
     display: inline;
 }

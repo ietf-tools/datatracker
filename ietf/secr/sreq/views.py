@@ -213,7 +213,7 @@ def cancel(request, acronym):
               {'requester':get_requester_text(login,group),
                'meeting':meeting}, cc=cc_list)
 
-    messages.success(request, 'The %s Session Request has been canceled' % group.acronym)
+    messages.success(request, 'The %s Session Request has been cancelled' % group.acronym)
     return redirect('ietf.secr.sreq.views.main')
 
 @role_required(*AUTHORIZED_ROLES)
@@ -242,12 +242,12 @@ def confirm(request, acronym):
     
     button_text = request.POST.get('submit', '')
     if button_text == 'Cancel':
-        messages.success(request, 'Session Request has been canceled')
+        messages.success(request, 'Session Request has been cancelled')
         return redirect('ietf.secr.sreq.views.main')
 
     button_text = request.POST.get('submit', '')
     if button_text == 'Cancel':
-        messages.success(request, 'Session Request has been canceled')
+        messages.success(request, 'Session Request has been cancelled')
         return redirect('ietf.secr.sreq.views.main')
 
     if request.method == 'POST' and button_text == 'Submit':

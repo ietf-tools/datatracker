@@ -492,6 +492,25 @@ def non_session(request, meeting_id, schedule_name):
     )
 
 @role_required('Secretariat')
+def non_session_cancel(request, meeting_id, schedule_name, slot_id):
+    '''
+    This function cancels the non-session TimeSlot.  Check for uploaded
+    material first.  SchedTimeSessAssignment objects get cancelled as well.
+    '''
+    slot = get_object_or_404(TimeSlot, id=slot_id)
+    meeting = get_object_or_404(Meeting, number=meeting_id)
+    schedule = get_object_or_404(Schedule, meeting=meeting, name=schedule_name)
+
+    if request.method == 'POST' and request.POST['post'] == 'yes':
+        assignments = slot.sessionassignments.filter(schedule=schedule)
+        Session.objects.filter(pk__in=[x.session.pk for x in assignments]).update(status_id='canceled')
+
+        messages.success(request, 'The session was cancelled successfully')
+        return redirect('ietf.secr.meetings.views.non_session', meeting_id=meeting_id, schedule_name=schedule_name)
+
+    return render(request, 'confirm_cancel.html', {'object': slot})
+
+@role_required('Secretariat')
 def non_session_delete(request, meeting_id, schedule_name, slot_id):
     '''
     This function deletes the non-session TimeSlot.  Check for uploaded
@@ -844,7 +863,7 @@ def session_edit(request, meeting_id, schedule_name, session_id):
             if button_text == 'Cancel':
                 session.status = SessionStatusName.objects.get(slug='canceled')
                 session.save()
-                messages.success(request, 'Session canceled')
+                messages.success(request, 'Session cancelled')
             else:
                 form.save()
                 messages.success(request, 'Session saved')

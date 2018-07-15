@@ -335,6 +335,19 @@ class SecrMeetingTestCase(TestCase):
         self.assertRedirects(response, target)
         self.assertFalse(meeting.agenda.assignments.filter(timeslot=slot))
 
+    def test_meetings_non_session_cancel(self):
+        meeting = make_meeting_test_data()
+        slot = meeting.agenda.assignments.filter(timeslot__type='reg').first().timeslot
+        url = reverse('ietf.secr.meetings.views.non_session_cancel', kwargs={'meeting_id':meeting.number,'schedule_name':meeting.agenda.name,'slot_id':slot.id})
+        redirect_url = reverse('ietf.secr.meetings.views.non_session', kwargs={'meeting_id':meeting.number,'schedule_name':meeting.agenda.name})
+        self.client.login(username="secretary", password="secretary+password")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        response = self.client.post(url, {'post':'yes'})
+        self.assertRedirects(response, redirect_url)
+        session = slot.sessionassignments.filter(schedule=meeting.agenda).first().session
+        self.assertEqual(session.status_id, 'canceled')
+
     def test_meetings_select_group(self):
         make_meeting_test_data()
         url = reverse('ietf.secr.meetings.views.select_group',kwargs={'meeting_id':42,'schedule_name':'test-agenda'})
