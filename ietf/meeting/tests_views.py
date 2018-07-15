@@ -504,7 +504,7 @@ class MeetingTests(TestCase):
         url = urlreverse('ietf.meeting.views.current_materials')
         response = self.client.get(url)
         self.assertEqual(response.status_code, 404)
-        MeetingFactory(type_id='ietf')
+        MeetingFactory(type_id='ietf', date=datetime.date.today())
         response = self.client.get(url)
         self.assertEqual(response.status_code, 302)
 
