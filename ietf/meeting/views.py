@@ -156,7 +156,8 @@ def materials(request, num=None):
     })
 
 def current_materials(request):
-    meetings = Meeting.objects.exclude(number__startswith='interim-').order_by('-number')
+    today = datetime.date.today()
+    meetings = Meeting.objects.exclude(number__startswith='interim-').filter(date__lte=today).order_by('-date')
     if meetings:
         return redirect(materials, meetings[0].number)
     else:
