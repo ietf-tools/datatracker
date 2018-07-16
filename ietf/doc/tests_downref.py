@@ -4,6 +4,7 @@
 from __future__ import unicode_literals
 
 from django.urls import reverse as urlreverse
+from pyquery import PyQuery
 
 import debug    # pyflakes:ignore
 
@@ -112,3 +113,26 @@ class Downref(TestCase):
         self.assertTrue(RelatedDocument.objects.filter(source=draft, target=rfc, relationship_id='downref-approval'))
         self.assertEqual(draft.docevent_set.count(), draft_de_count_before + 1)
         self.assertEqual(rfc.document.docevent_set.count(), rfc_de_count_before + 1)
+
+    def test_downref_last_call(self):
+        draft = WgDraftFactory(name='draft-ietf-mars-ready-for-lc-document',intended_std_level_id='ps',states=[('draft-iesg','iesg-eva')])
+        WgDraftFactory(name='draft-ietf-mars-another-approved-document',states=[('draft-iesg','rfcqueue')])
+        rfc9999 = WgRfcFactory(alias2__name='rfc9999')
+        RelatedDocument.objects.create(source=draft, target=rfc9999.docalias_set.get(name='rfc9999'), relationship_id='refnorm')
+        url = urlreverse('ietf.doc.views_ballot.lastcalltext', kwargs=dict(name=draft.name))
+        login_testing_unauthorized(self, "secretary", url)
+
+        # the announcement text should call out the downref to RFC 9999
+        r = self.client.post(url, dict(regenerate_last_call_text="1"))
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        text = q("[name=last_call_text]").text()
+        self.assertIn('The document contains these normative downward references', text)
+
+        # now, the announcement text about the downref to RFC 9999 should be gone
+        RelatedDocument.objects.create(source=draft, target=rfc9999.docalias_set.get(name='rfc9999'),relationship_id='downref-approval')
+        r = self.client.post(url, dict(regenerate_last_call_text="1"))
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        text = q("[name=last_call_text]").text()
+        self.assertNotIn('The document contains these normative downward references', text)
