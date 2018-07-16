@@ -33,7 +33,11 @@ from ietf.utils.models import ForeignKey
 countries = pytz.country_names.items()
 countries.sort(lambda x,y: cmp(x[1], y[1]))
 
-timezones = [(name, name) for name in pytz.common_timezones]
+timezones = []
+for name in pytz.common_timezones:
+    tzfn = os.path.join(settings.TZDATA_ICS_PATH, name + ".ics")
+    if not os.path.islink(tzfn):
+        timezones.append((name, name))
 timezones.sort()
 
 
