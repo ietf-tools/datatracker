@@ -1,3 +1,48 @@
+ietfdb (6.83.0) ietf; urgency=medium
+
+  * Modified the list of timezones available when setting a meeting 
+    timezone so as to not show timezones that are links.  (Also edited the 102 
+    meeting timezone in the database to avoid this).  Fixes issues #2531 and 
+    #2534.
+
+  * Merged in [15338] from fenton@bluepopcorn.net:
+    Adds _required_ parameter to search widget. Fixes #1832.
+
+  * Merged in [15331] from housley@vigilsec.com:
+    Add test for downref in Last Call announcement 
+
+  * Merged in [15329] from rcross@amsl.com:
+    Add important dates link to proceedings.  Fixes #2538.   
+
+  * Merged in [15328] from rcross@amsl.com:
+    Give secretariat the ability to cancel non-working group sessions. 
+    Fixes #2537.   
+
+  * Updated a test to give predictable results (no future meeting dates) 
+    for commit [15361].
+
+  * Fixed an issue where /meeting/ showed the materials page of an earlier 
+    meeting, rather than the current.
+
+  * Merged in [15327] from mahoney@nostrum.com:
+    clarified description in the search form, removing the etc since you 
+    can't search on author names. Fixes issue #1159.  
+
+  * Merged in [15321] from rjsparks@nostrum.com:
+    Converted ietf.group.tests to factories.  
+
+  * Merged in [15320] from rjsparks@nostrum.com:
+    The cookie tests were all calling make_test_data, but not using 
+    anything it created. Removed the calls.  
+
+  * Merged in [15314] from rjsparks@nostrum.com:
+    Converted the community app tests to use factories.  
+
+  * Added bower --> yarn conversion for web asset handling to PLAN.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  16 Jul 2018 18:40:19 +0000
+
+
 ietfdb (6.82.0) ietf; urgency=medium
 
   **Group features moved from code to database**
