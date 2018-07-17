@@ -411,7 +411,7 @@ def main(request):
     '''
     In this view the user can choose a meeting to manage or elect to create a new meeting.
     '''
-    meetings = Meeting.objects.filter(type='ietf').order_by('-number')
+    meetings = Meeting.objects.filter(type='ietf').order_by('-date')
 
     if request.method == 'POST':
         return redirect('ietf.secr.meetings.views.view', meeting_id=request.POST['meeting'])
