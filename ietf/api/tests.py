@@ -115,8 +115,17 @@ class CustomApiTestCase(TestCase):
         self.assertContains(r, "Expected a numeric value for 'item', found 'foo'", status_code=400)
 
         r = self.client.post(url, {'apikey': apikey.hash(), 'meeting': meeting.number, 'group': group.acronym,
+                                    'item': '1', 'url': video+'/rum', })
+        self.assertContains(r, "Done", status_code=200)
+
+        r = self.client.post(url, {'apikey': apikey.hash(), 'meeting': meeting.number, 'group': group.acronym,
+                                    'item': '1', 'url': video+'/rum', })
+        self.assertContains(r, "URL is the same", status_code=400)
+
+        r = self.client.post(url, {'apikey': apikey.hash(), 'meeting': meeting.number, 'group': group.acronym,
                                     'item': '1', 'url': video, })
         self.assertContains(r, "Done", status_code=200)
+
         recordings = session.recordings()
         self.assertEqual(len(recordings), 1)
         doc = recordings[0]
