@@ -285,7 +285,7 @@ class ReviewerSettingsForm(forms.ModelForm):
 class AddUnavailablePeriodForm(forms.ModelForm):
     class Meta:
         model = UnavailablePeriod
-        fields = ['start_date', 'end_date', 'availability']
+        fields = ['start_date', 'end_date', 'availability', 'reason']
 
     def __init__(self, *args, **kwargs):
         super(AddUnavailablePeriodForm, self).__init__(*args, **kwargs)

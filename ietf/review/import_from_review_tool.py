@@ -164,6 +164,7 @@ with db_con.cursor() as c:
                             start_date=None,
                             end_date=end_date,
                             availability="unavailable",
+			    reason="reason",
                         )
 
 # check that we got the needed names
