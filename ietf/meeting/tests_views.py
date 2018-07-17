@@ -1078,7 +1078,7 @@ class InterimTests(TestCase):
         duration = datetime.timedelta(hours=3)
         city = 'San Francisco'
         country = 'US'
-        time_zone = 'US/Pacific'
+        time_zone = 'America/Los_Angeles'
         remote_instructions = 'Use webex'
         agenda = 'Intro. Slides. Discuss.'
         agenda_note = 'On second level'
@@ -1100,7 +1100,6 @@ class InterimTests(TestCase):
                 'session_set-INITIAL_FORMS':0}
 
         r = self.client.post(urlreverse("ietf.meeting.views.interim_request"),data)
-        
         self.assertRedirects(r,urlreverse('ietf.meeting.views.upcoming'))
         meeting = Meeting.objects.order_by('id').last()
         self.assertEqual(meeting.type_id,'interim')
@@ -1127,7 +1126,7 @@ class InterimTests(TestCase):
         group = Group.objects.get(acronym='mars')
         city = 'San Francisco'
         country = 'US'
-        time_zone = 'US/Pacific'
+        time_zone = 'America/Los_Angeles'
         remote_instructions = 'Use webex'
         agenda = 'Intro. Slides. Discuss.'
         agenda_note = 'On second level'
@@ -1188,7 +1187,7 @@ class InterimTests(TestCase):
         group = Group.objects.get(acronym='mars')
         city = 'San Francisco'
         country = 'US'
-        time_zone = 'US/Pacific'
+        time_zone = 'America/Los_Angeles'
         remote_instructions = 'Use webex'
         agenda = 'Intro. Slides. Discuss.'
         agenda_note = 'On second level'
@@ -1229,7 +1228,7 @@ class InterimTests(TestCase):
         group = Group.objects.get(acronym='mars')
         city = ''
         country = ''
-        time_zone = 'US/Pacific'
+        time_zone = 'America/Los_Angeles'
         remote_instructions = 'Use webex'
         agenda = 'Intro. Slides. Discuss.'
         agenda_note = 'On second level'
@@ -1617,7 +1616,7 @@ class AjaxTests(TestCase):
         data = json.loads(r.content)
         self.assertEqual(data["error"], True)
         # test good query
-        url = urlreverse('ietf.meeting.views.ajax_get_utc') + "?date=2016-1-1&time=12:00&timezone=US/Pacific"
+        url = urlreverse('ietf.meeting.views.ajax_get_utc') + "?date=2016-1-1&time=12:00&timezone=America/Los_Angeles"
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         data = json.loads(r.content)
