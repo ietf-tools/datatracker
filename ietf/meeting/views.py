@@ -2233,7 +2233,13 @@ def api_set_session_video_url(request):
         recordings = [ (r.name, r.title, r) for r in session.recordings() if 'video' in r.title.lower() ]
         if recordings:
             r = recordings[-1][-1]
-            r.external_url = url
+            if r.external_url != url:
+                e = DocEvent.objects.create(doc=r, rev=r.rev, type="added_comment", by=request.user.person,
+                    desc="External url changed from %s to %s" % (r.external_url, url))
+                r.external_url = url
+                r.save_with_history([e])
+            else:
+                return err(400, "URL is the same")
         else:
             time = session.official_timeslotassignment().timeslot.time
             title = 'Video recording for %s on %s at %s' % (acronym, time.date(), time.time())
