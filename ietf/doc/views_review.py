@@ -380,7 +380,7 @@ class CompleteReviewForm(forms.Form):
 
         doc = self.review_req.doc
 
-        known_revisions = NewRevisionDocEvent.objects.filter(doc=doc).order_by("time", "id").values_list("rev", flat=True)
+        known_revisions = NewRevisionDocEvent.objects.filter(doc=doc).order_by("time", "id").values_list("rev", "time", flat=False)
 
         revising_review = review_req.state_id not in ["requested", "accepted"]
 
@@ -391,7 +391,7 @@ class CompleteReviewForm(forms.Form):
             ]
 
         self.fields["reviewed_rev"].help_text = mark_safe(
-            " ".join("<a class=\"rev label label-default\">{}</a>".format(r)
+            " ".join("<a class=\"rev label label-default\" title=\"{1:%Y-%m-%d}\">{0}</a>".format(*r)
                      for r in known_revisions))
 
         self.fields["result"].queryset = self.fields["result"].queryset.filter(reviewteamsettings__group=review_req.team)
