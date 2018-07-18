@@ -167,7 +167,7 @@ def get_email_initial(draft, action=None, input=None):
 
     elif action == 'withdraw':
         context = {'doc':curr_filename,'by':input['withdraw_type']}
-        data['subject'] = 'Withdrawl of %s' % (curr_filename)
+        data['subject'] = 'Withdraw of %s' % (curr_filename)
         data['body'] = render_to_string('drafts/message_withdraw.txt', context)
         data['action'] = action
         data['withdraw_type'] = input['withdraw_type']

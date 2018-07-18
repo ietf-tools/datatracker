@@ -3,6 +3,7 @@ import glob
 import os
 import shutil
 from dateutil.parser import parse
+from collections import OrderedDict
 
 from django.conf import settings
 from django.contrib import messages
@@ -614,8 +615,8 @@ def withdraw(request, id):
 
         form = WithdrawForm(request.POST)
         if form.is_valid():
-            params = form.cleaned_data
-            params['action'] = 'withdraw'
+            params = OrderedDict([('action', 'withdraw')])
+            params['withdraw_type'] = form.cleaned_data['withdraw_type']
             url = reverse('ietf.secr.drafts.views.email', kwargs={'id':id})
             url = url + '?' + urlencode(params)
             return redirect(url)
