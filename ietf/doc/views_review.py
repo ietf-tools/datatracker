@@ -373,7 +373,7 @@ class CompleteReviewForm(forms.Form):
     completion_time = forms.TimeField(widget=forms.HiddenInput, initial=datetime.time.min)
     cc = MultiEmailField(required=False, help_text="Email addresses to send to in addition to the review team list")
 
-    def __init__(self, review_req, *args, **kwargs):
+    def __init__(self, review_req, is_reviewer, *args, **kwargs):
         self.review_req = review_req
 
         super(CompleteReviewForm, self).__init__(*args, **kwargs)
@@ -390,9 +390,33 @@ class CompleteReviewForm(forms.Form):
                 for slug, label in self.fields["state"].choices
             ]
 
-        self.fields["reviewed_rev"].help_text = mark_safe(
-            " ".join("<a class=\"rev label label-default\" title=\"{1:%Y-%m-%d}\">{0}</a>".format(*r)
-                     for r in known_revisions))
+        if 'initial' in kwargs:
+            reviewed_rev_class = []
+            for r in known_revisions:
+                last_version = r[0]
+                if r[1] < review_req.time:
+                    kwargs["initial"]["reviewed_rev"] = r[0]
+                    reviewed_rev_class.append('reviewer-doc-past')
+                else:
+                    reviewed_rev_class.append('reviewer-doc-ok')
+
+            # After this the ones in future are marked with green, but we
+            # want also to mark the oldest one before the review was assigned
+            # so shift list one step.
+            reviewed_rev_class.pop(0)
+            reviewed_rev_class.append('reviewer-doc-ok')
+
+            # If it is users own review, then default to latest version
+            if is_reviewer:
+                kwargs["initial"]["reviewed_rev"] = last_version
+
+            self.fields["reviewed_rev"].help_text = mark_safe(
+                " ".join("<a class=\"rev label label-default {0}\" title=\"{2:%Y-%m-%d}\">{1}</a>".format(reviewed_rev_class[i], *r)
+                         for i, r in enumerate(known_revisions)))
+        else:
+            self.fields["reviewed_rev"].help_text = mark_safe(
+                " ".join("<a class=\"rev label label-default {0}\" title=\"{2:%Y-%m-%d}\">{1}</a>".format('', *r)
+                         for i, r in enumerate(known_revisions)))
 
         self.fields["result"].queryset = self.fields["result"].queryset.filter(reviewteamsettings__group=review_req.team)
 
@@ -463,7 +487,8 @@ def complete_review(request, name, request_id):
     (to, cc) = gather_address_lists('review_completed',review_req = review_req)
 
     if request.method == "POST":
-        form = CompleteReviewForm(review_req, request.POST, request.FILES)
+        form = CompleteReviewForm(review_req, is_reviewer,
+                                  request.POST, request.FILES)
         if form.is_valid():
             review_submission = form.cleaned_data['review_submission']
 
@@ -626,7 +651,7 @@ def complete_review(request, name, request_id):
         except TemplateDoesNotExist:
             pass
 
-        form = CompleteReviewForm(review_req, initial=initial)
+        form = CompleteReviewForm(review_req, is_reviewer, initial=initial)
 
     mail_archive_query_urls = mailarch.construct_query_urls(review_req)
 
