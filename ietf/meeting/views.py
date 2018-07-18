@@ -1484,7 +1484,7 @@ def upload_session_slides(request, session_id, num, name):
                         name += '-%s' % (session.docname_token(),)
                 else:
                     name = 'slides-%s-%s' % (session.meeting.number, session.docname_token())
-                name = name + '-' + slugify(title).replace('_', '-')
+                name = name + '-' + slugify(title).replace('_', '-')[:128]
                 if Document.objects.filter(name=name).exists():
                    doc = Document.objects.get(name=name)
                    doc.rev = '%02d' % (int(doc.rev)+1)
