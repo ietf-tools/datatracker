@@ -97,40 +97,6 @@ def get_revision(name):
     base,ext = os.path.splitext(name)
     return base[-2:]
 
-def get_revision_emails(draft):
-    """
-    Dervied from the ColdFusion legacy app, we accumulate To: emails for a new
-    revision by adding:
-    1) the conents of id_internal.state_change_notice_to, this appears to be largely
-    custom mail lists for the document or group
-    2) the main AD, via id_internal.job_owner
-    3) any ad who has marked "discuss" in the ballot associated with this id_internal
-    4) And now, also, the RFC Editor if the draft is in the RFC Editor Queue
-    """
-    # from legacy
-    if not draft.get_state('draft-iesg'):
-        return ''
-    
-    emails = []
-    if draft.notify:
-        emails.append(draft.notify)
-    if draft.ad:
-        emails.append(draft.ad.role_email("ad").address)
-
-    if draft.active_ballot():
-        for ad, pos in draft.active_ballot().active_ad_positions().iteritems():
-            if pos and pos.pos_id == "discuss":
-                emails.append(ad.role_email("ad").address)
-
-    if draft.get_state('draft-iesg').slug == "rfcqueue":
-        emails.append('rfc-editor@rfc-editor.org')
-
-    return ', '.join(emails)
-
-def add_email(emails,person):
-    if person.email() not in emails:
-        emails[person.email()] = '"%s %s"' % (person.first_name,person.last_name)
-
 def get_fullcc_list(draft):
     """
     This function takes a draft object and returns a string of emails to use in cc field
@@ -179,8 +145,6 @@ def get_email_initial(draft, action=None, input=None):
     
     """
     expiration_date = (datetime.date.today() + datetime.timedelta(185)).strftime('%B %d, %Y')
-    new_revision = str(int(draft.rev)+1).zfill(2)
-    new_filename = draft.name + '-' + new_revision + '.txt'
     curr_filename = draft.name + '-' + draft.rev + '.txt'
     data = {}
     data['cc'] = get_fullcc_list(draft)
@@ -201,19 +165,6 @@ def get_email_initial(draft, action=None, input=None):
         data['body'] = render_to_string('drafts/message_resurrect.txt', context)
         data['action'] = action
 
-    elif action == 'revision':
-        context = {'rev':new_revision,'doc':new_filename,'doc_base':new_filename[:-4]}
-        data['to'] = get_revision_emails(draft)
-        data['cc'] = ''
-        data['subject'] = 'New Version Notification - %s' % (new_filename)
-        data['body'] = render_to_string('drafts/message_revision.txt', context)
-
-    elif action == 'update':
-        context = {'doc':input['filename'],'expire_date':expiration_date}
-        data['subject'] = 'Posting of %s' % (input['filename'])
-        data['body'] = render_to_string('drafts/message_update.txt', context)
-        data['action'] = action
-        
     elif action == 'withdraw':
         context = {'doc':curr_filename,'by':input['withdraw_type']}
         data['subject'] = 'Withdrawl of %s' % (curr_filename)

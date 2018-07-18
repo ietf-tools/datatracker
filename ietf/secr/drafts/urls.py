@@ -4,7 +4,6 @@ from ietf.utils.urls import url
 
 urlpatterns = [
     url(r'^$', views.search),
-    url(r'^add/$', views.add),
     url(r'^approvals/$', views.approvals),
     url(r'^dates/$', views.dates),
     url(r'^nudge-report/$', views.nudge_report),
@@ -17,7 +16,5 @@ urlpatterns = [
     url(r'^(?P<id>[A-Za-z0-9._\-\+]+)/edit/$', views.edit),
     url(r'^(?P<id>[A-Za-z0-9._\-\+]+)/extend/$', views.extend),
     url(r'^(?P<id>[A-Za-z0-9._\-\+]+)/email/$', views.email),
-    url(r'^(?P<id>[A-Za-z0-9._\-\+]+)/revision/$', views.revision),
-    url(r'^(?P<id>[A-Za-z0-9._\-\+]+)/update/$', views.update),
     url(r'^(?P<id>[A-Za-z0-9._\-\+]+)/withdraw/$', views.withdraw),
 ]
