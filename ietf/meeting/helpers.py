@@ -484,7 +484,7 @@ def make_materials_directories(meeting):
 
 
 def send_interim_approval_request(meetings):
-    """Sends an email to the secretariat, group chairs, and resposnible area
+    """Sends an email to the secretariat, group chairs, and responsible area
     director or the IRTF chair noting that approval has been requested for a
     new interim meeting.  Takes a list of one or more meetings."""
     group = meetings[0].session_set.first().group
@@ -501,7 +501,12 @@ def send_interim_approval_request(meetings):
         is_series = True
     else:
         is_series = False
-    context = locals()
+    approver_set = set()
+    for role in group.interim_approval_roles():
+        approver = "%s of the %s" % ( role.name.name, role.group.name)
+        approver_set.add(approver)
+    approvers = list(approver_set)
+    context = locals()  # TODO Unnecessarily complex, context needs to only contain what the template needs
     send_mail(None,
               to_email,
               from_email,
