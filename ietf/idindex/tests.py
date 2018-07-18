@@ -1,14 +1,20 @@
+# -*- coding: utf-8 -*-
+
 import os
 import datetime
 import shutil
 
+import debug    # pyflakes:ignore
+
 from django.conf import settings
 
+from ietf.doc.factories import WgDraftFactory
 from ietf.doc.models import Document, DocAlias, RelatedDocument, State, LastCallDocEvent, NewRevisionDocEvent
+from ietf.group.factories import GroupFactory
 from ietf.name.models import DocRelationshipName
 from ietf.idindex.index import all_id_txt, all_id2_txt, id_index_txt
+from ietf.person.factories import PersonFactory, EmailFactory
 from ietf.utils.test_utils import TestCase
-from ietf.utils.test_data import make_test_data
 
 class IndexTests(TestCase):
     def setUp(self):
@@ -25,11 +31,7 @@ class IndexTests(TestCase):
             f.write("a" * size)
 
     def test_all_id_txt(self):
-        draft = make_test_data()
-
-        # active in IESG process
-        draft.set_state(State.objects.get(type="draft", slug="active"))
-        draft.set_state(State.objects.get(type="draft-iesg", slug="lc"))
+        draft = WgDraftFactory(states=[('draft','active'),('draft-iesg','lc')])
 
         txt = all_id_txt()
 
@@ -64,17 +66,20 @@ class IndexTests(TestCase):
         self.assertTrue("Replaced replaced by draft-test-replacement" in txt)
 
     def test_all_id2_txt(self):
-        draft = make_test_data()
-
+        draft = WgDraftFactory(
+                    states=[('draft','active'),('draft-iesg','review-e')],
+                    ad=PersonFactory(),
+                    shepherd=EmailFactory(address='shepherd@example.com',person__name=u'Draft δραφτυ Shepherd'),
+                    group__parent=GroupFactory(type_id='area'),
+                    intended_std_level_id = 'ps',
+                    authors=[EmailFactory().person]
+                )
         def get_fields(content):
             self.assertTrue(draft.name + "-" + draft.rev in content)
 
             for line in content.splitlines():
                 if line.startswith(draft.name + "-" + draft.rev):
                     return line.split("\t")
-        # test Active
-        draft.set_state(State.objects.get(type="draft", slug="active"))
-        draft.set_state(State.objects.get(type="draft-iesg", slug="review-e"))
 
         NewRevisionDocEvent.objects.create(doc=draft, rev=draft.rev, type="new_revision", by=draft.ad)
 
@@ -98,7 +103,7 @@ class IndexTests(TestCase):
         self.assertEqual(t[13], draft.title)
         author = draft.documentauthor_set.order_by("order").get()
         self.assertEqual(t[14], u"%s <%s>" % (author.person.name, author.email.address))
-        self.assertEqual(t[15], u"%s <%s>" % (draft.shepherd.person.name, draft.shepherd.address))
+        self.assertEqual(t[15], u"%s <%s>" % (draft.shepherd.person.plain_ascii(), draft.shepherd.address))
         self.assertEqual(t[16], u"%s <%s>" % (draft.ad.plain_ascii(), draft.ad.email_address()))
 
 
@@ -129,9 +134,7 @@ class IndexTests(TestCase):
 
 
     def test_id_index_txt(self):
-        draft = make_test_data()
-
-        draft.set_state(State.objects.get(type="draft", slug="active"))
+        draft = WgDraftFactory(states=[('draft','active')],abstract='a'*20,authors=[PersonFactory()])
 
         txt = id_index_txt()
 
