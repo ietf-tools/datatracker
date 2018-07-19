@@ -182,3 +182,7 @@ def texescape(s):
         texescape_init()
     t = s.translate(tex_escape_map)
     return t
+
+def unwrap(s):
+    return s.replace('\n', ' ')
+    
