@@ -15,14 +15,14 @@ from django.conf import settings
 import debug                            # pyflakes:ignore
 
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized, unicontent
-from ietf.utils.test_data import make_test_data, make_review_data
 from ietf.utils.mail import outbox, empty_outbox
 from ietf.group.models import Group, Role, RoleName
-from ietf.group.factories import GroupFactory
+from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.ietfauth.htpasswd import update_htpasswd_file
 from ietf.mailinglists.models import Subscribed
 from ietf.person.models import Person, Email, PersonalApiKey, PERSON_API_KEY_ENDPOINTS
-from ietf.person.factories import PersonFactory
+from ietf.person.factories import PersonFactory, EmailFactory
+from ietf.review.factories import ReviewRequestFactory
 from ietf.review.models import ReviewWish, UnavailablePeriod
 from ietf.utils.decorators import skip_coverage
 
@@ -61,7 +61,7 @@ class IetfAuthTests(TestCase):
         self.assertEqual(self.client.get(urlreverse(ietf.ietfauth.views.index)).status_code, 200)
 
     def test_login_and_logout(self):
-        make_test_data()
+        PersonFactory(user__username='plain')
 
         # try logging in without a next
         r = self.client.get(urlreverse(ietf.ietfauth.views.login))
@@ -107,7 +107,6 @@ class IetfAuthTests(TestCase):
         return False
 
     def test_create_account_failure(self):
-        make_test_data()
 
         url = urlreverse(ietf.ietfauth.views.create_account)
 
@@ -187,7 +186,8 @@ class IetfAuthTests(TestCase):
         settings.LIST_ACCOUNT_DELAY = saved_delay
 
     def test_profile(self):
-        make_test_data()
+        EmailFactory(person__user__username='plain')
+        GroupFactory(acronym='mars')
 
         username = "plain"
         email_address = Email.objects.filter(person__user__username=username).first().address
@@ -346,11 +346,9 @@ class IetfAuthTests(TestCase):
         self.assertTrue(self.username_in_htpasswd_file(user.username))
 
     def test_review_overview(self):
-        doc = make_test_data()
-
-        review_req = make_review_data(doc)
-        review_req.reviewer = Email.objects.get(person__user__username="reviewer")
-        review_req.save()
+        review_req = ReviewRequestFactory(reviewer=EmailFactory(person__user__username='reviewer'))
+        RoleFactory(name_id='reviewer',group=review_req.team,person=review_req.reviewer.person)
+        doc = review_req.doc
 
         reviewer = review_req.reviewer.person
 
