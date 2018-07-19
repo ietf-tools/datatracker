@@ -18,6 +18,7 @@ testfiles= \
 	draft-sparks-genarea-review-tracker-03.txt		\
 	rfc5661.txt						\
 	rfc7629.txt						\
+	rfc7752.txt						\
 	rfc7842.txt						\
 	draft-ietf-curdle-cms-ecdh-new-curves-07.txt		\
 	draft-ietf-sidr-bgpsec-protocol-23mod.txt		\
