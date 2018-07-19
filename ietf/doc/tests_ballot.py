@@ -17,9 +17,9 @@ from ietf.name.models import BallotPositionName
 from ietf.iesg.models import TelechatDate
 from ietf.person.models import Person, PersonalApiKey
 from ietf.person.factories import PersonFactory
-from ietf.utils.test_utils import TestCase, unicontent
+from ietf.utils.test_utils import TestCase, unicontent, login_testing_unauthorized
 from ietf.utils.mail import outbox, empty_outbox
-from ietf.utils.test_utils import login_testing_unauthorized
+from ietf.utils.text import unwrap
 
 
 class EditPositionTests(TestCase):
@@ -467,7 +467,7 @@ class BallotWriteupsTests(TestCase):
         r = self.client.post(url, dict(regenerate_approval_text="1"))
         self.assertEqual(r.status_code, 200)
         draft = Document.objects.get(name=draft.name)
-        self.assertTrue("NOT be published" in draft.latest_event(WriteupDocEvent, type="changed_ballot_approval_text").text)
+        self.assertIn("NOT be published", unwrap(draft.latest_event(WriteupDocEvent, type="changed_ballot_approval_text").text))
 
         # test regenerate when it's a conflict review
         draft.group = Group.objects.get(type="individ")
