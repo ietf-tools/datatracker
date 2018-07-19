@@ -699,8 +699,7 @@
        attribute originalSrc { text }?,
        (text* | svg)
      }
-   # TODO: replace with link to RSE site, or provide an inline version
-   ## include "svg.rnc"
+   include "https://www.rfc-editor.org/materials/format/SVG-1.2-RFC.rnc"
 
    sourcecode =
      element sourcecode {
