@@ -12,19 +12,19 @@ import debug                            # pyflakes:ignore
 
 from ietf.doc.models import DocEvent, BallotPositionDocEvent, TelechatDocEvent
 from ietf.doc.models import Document, DocAlias, State, RelatedDocument
+from ietf.doc.factories import WgDraftFactory, IndividualDraftFactory, ConflictReviewFactory, BaseDocumentFactory, CharterFactory, WgRfcFactory
 from ietf.doc.utils import create_ballot_if_not_open
+from ietf.group.factories import RoleFactory, GroupFactory
 from ietf.group.models import Group, GroupMilestone, Role
 from ietf.iesg.agenda import get_agenda_date, agenda_data
 from ietf.iesg.models import TelechatDate
 from ietf.name.models import StreamName
 from ietf.person.models import Person
-from ietf.utils.test_data import make_test_data
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized, unicontent
 
 class IESGTests(TestCase):
     def test_feed(self):
-        draft = make_test_data()
-        draft.set_state(State.objects.get(type="draft-iesg", slug="iesg-eva"))
+        draft = WgDraftFactory(states=[('draft','active'),('draft-iesg','iesg-eva')],ad=Person.objects.get(user__username='ad'))
 
         ad = Person.objects.get(user__username="ad")
         ballot = create_ballot_if_not_open(None, draft, ad, 'approve')
@@ -44,7 +44,8 @@ class IESGTests(TestCase):
         self.assertTrue(pos.ad.plain_name() in unicontent(r))
 
     def test_milestones_needing_review(self):
-        draft = make_test_data()
+        draft = WgDraftFactory()
+        RoleFactory(name_id='ad',group=draft.group,person=Person.objects.get(user__username='ad'))
 
         m = GroupMilestone.objects.create(group=draft.group,
                                           state_id="review",
@@ -64,7 +65,7 @@ class IESGTests(TestCase):
         
 
     def test_review_decisions(self):
-        draft = make_test_data()
+        draft = WgDraftFactory()
 
         e = DocEvent(type="iesg_approved")
         e.doc = draft
@@ -88,11 +89,16 @@ class IESGTests(TestCase):
         
 class IESGAgendaTests(TestCase):
     def setUp(self):
-        make_test_data()
-
-        ise_draft = Document.objects.get(name="draft-imaginary-independent-submission")
+        mars = GroupFactory(acronym='mars',parent=Group.objects.get(acronym='farfut'))
+        WgDraftFactory(name='draft-ietf-mars-test',group=mars)
+        ise_draft = IndividualDraftFactory(name='draft-imaginary-independent-submission')
         ise_draft.stream = StreamName.objects.get(slug="ise")
         ise_draft.save_with_history([DocEvent(doc=ise_draft, rev=ise_draft.rev, type="changed_stream", by=Person.objects.get(user__username="secretary"), desc="Test")])
+        ConflictReviewFactory(name='conflict-review-imaginary-irtf-submission', review_of=ise_draft)
+        BaseDocumentFactory(type_id='statchg',name='status-change-imaginary-mid-review')
+        WgRfcFactory(std_level_id='inf')
+        WgRfcFactory(std_level_id='ps')
+        CharterFactory(states=[('charter','iesgrev')])
 
         self.telechat_docs = {
             "ietf_draft": Document.objects.get(name="draft-ietf-mars-test"),
@@ -142,7 +148,7 @@ class IESGAgendaTests(TestCase):
 
         # 2.1 protocol WG submissions
         draft.intended_std_level_id = "ps"
-        draft.group = Group.objects.get(acronym="mars")
+        draft.group = GroupFactory(acronym="mars")
         draft.save_with_history([DocEvent.objects.create(doc=draft, rev=draft.rev, type="changed_group", by=Person.objects.get(user__username="secretary"), desc="Test")])
         draft.set_state(State.objects.get(type="draft-iesg", slug="iesg-eva"))
         self.assertTrue(draft in agenda_data(date_str)["sections"]["2.1.1"]["docs"])
@@ -317,8 +323,12 @@ class IESGAgendaTests(TestCase):
         self.assertEqual(r.status_code, 200)
 
         for k, d in self.telechat_docs.iteritems():
-            self.assertTrue(d.name in unicontent(r), "%s not in response" % k)
-            self.assertTrue(d.title in unicontent(r), "%s title not in response" % k)
+            if d.type_id == "charter":
+                self.assertTrue(d.group.name in unicontent(r), "%s not in response" % k)
+                self.assertTrue(d.group.acronym in unicontent(r), "%s acronym not in response" % k)
+            else:
+                self.assertTrue(d.name in unicontent(r), "%s not in response" % k)
+                self.assertTrue(d.title in unicontent(r), "%s title not in response" % k)
 
     def test_agenda_txt(self):
         r = self.client.get(urlreverse("ietf.iesg.views.agenda_txt"))
@@ -464,7 +474,7 @@ class IESGAgendaTests(TestCase):
 
 class RescheduleOnAgendaTests(TestCase):
     def test_reschedule(self):
-        draft = make_test_data()
+        draft = WgDraftFactory()
 
         # add to schedule
         e = TelechatDocEvent(type="scheduled_for_telechat")
