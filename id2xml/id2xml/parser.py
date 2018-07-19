@@ -1071,7 +1071,7 @@ class DraftParser(Base):
 
         authors, date = self.parse_top_right(lines_right)
 
-        authornames = [ a['fullname'] for a in authors ] + [ a['organization'] for a in authors ]
+        authornames = [ a['fullname'] for a in authors ] + [ a['organization'] for a in authors if 'organization' in a ]
         
         # fixups
         if not stream and category in ['std', 'bcp']:
@@ -1779,7 +1779,7 @@ class DraftParser(Base):
                                   " on the first page: %s"%(first.txt, author['fullname']))
                 continue
             auth.set('fullname', author['fullname'])
-            full_org = author.get('organization').strip()
+            full_org = author.get('organization','').strip()
             if full_org:
                 org  = auth.find("./organization")
                 abbrev = org.text
