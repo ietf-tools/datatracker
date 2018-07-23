@@ -276,12 +276,22 @@ class LiaisonModelForm(BetterModelForm):
             raise forms.ValidationError('Email address does not exist')
         return email
 
+# Note to future person: This is the wrong place to fix the new lines
+# in cc_contacts and to_contacts. Those belong in the save function.
+# Or at least somewhere other than here.
     def clean_cc_contacts(self):
         '''Return a comma separated list of addresses'''
         cc_contacts = self.cleaned_data.get('cc_contacts')
         cc_contacts = cc_contacts.replace('\r\n',',')
         cc_contacts = cc_contacts.rstrip(',')
         return cc_contacts
+## to_contacts can also have new lines
+    def clean_to_contacts(self):
+        '''Return a comma separated list of addresses'''
+        to_contacts = self.cleaned_data.get('to_contacts')
+        to_contacts = to_contacts.replace('\r\n',',')
+        to_contacts = to_contacts.rstrip(',')
+        return to_contacts
 
     def clean(self):
         if not self.cleaned_data.get('body', None) and not self.has_attachments():
