@@ -43,8 +43,8 @@
             <tr>
               <td>{% if r.pk != None %}<a href="{% url "ietf.doc.views_review.review_request" name=r.doc.name request_id=r.pk %}">{% endif %}{{ r.doc.name }}-{% if r.requested_rev %}{{ r.requested_rev }}{% else %}{{ r.doc.rev }}{% endif %}{% if r.pk != None %}</a>{% endif %}</td>
               <td>{{ r.type.name }}</td>
-              <td>{% if r.pk %}{{ r.time|date:"Y-m-d" }} by {{r.requested_by.plain_name}}{% else %}<em>auto-suggested</em>{% endif %}</td>
-              <td>
+              <td><span style="display:none">X</span>{% if r.pk %}{{ r.time|date:"Y-m-d" }} by {{r.requested_by.plain_name}}{% else %}<em>auto-suggested</em>{% endif %}</td>
+              <td><span style="display:none">X</span>
                 {{ r.deadline|date:"Y-m-d" }}
                 {% if r.due %}<span class="label label-warning" title="{{ r.due }} day{{ r.due|pluralize }} past deadline">{{ r.due }} day{{ r.due|pluralize }}</span>{% endif %}
               </td>
@@ -101,7 +101,7 @@
           <tr>
             <td><a href="{% url "ietf.doc.views_review.review_request" name=r.doc.name request_id=r.pk %}">{{ r.doc.name }}{% if r.requested_rev %}-{{ r.requested_rev }}{% endif %}</a></td>
             <td>{{ r.type }}</td>
-            <td>{{ r.time|date:"Y-m-d" }} by {{ r.requested_by.plain_name }}</td>
+            <td><span style="display:none">X</span>{{ r.time|date:"Y-m-d" }} by {{ r.requested_by.plain_name }}</td>
             <td>{{ r.deadline|date:"Y-m-d" }}</td>
             <td>{{ r.review_done_time|date:"Y-m-d" }}</td>
             <td>
