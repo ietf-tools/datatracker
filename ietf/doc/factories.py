@@ -120,6 +120,8 @@ class WgRfcFactory(WgDraftFactory):
 
     alias2 = factory.RelatedFactory('ietf.doc.factories.DocAliasFactory','document',name=factory.Sequence(lambda n: 'rfc%04d'%(n+1000)))
 
+    std_level_id = 'ps'
+
     @factory.post_generation
     def states(obj, create, extracted, **kwargs):
         if not create:
