@@ -3,6 +3,8 @@
 
 import datetime, os
 
+import debug    # pyflakes:ignore
+
 import pytz
 
 from django.conf import settings

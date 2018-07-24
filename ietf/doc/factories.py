@@ -52,7 +52,7 @@ class BaseDocumentFactory(factory.DjangoModelFactory):
         if create and extracted:
             order = 0
             for person in extracted:
-                DocumentAuthor.objects.create(document=obj, person=person, order=order)
+                DocumentAuthor.objects.create(document=obj, person=person, email=person.email(), order=order)
                 order += 1
 
     @classmethod
