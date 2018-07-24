@@ -26,22 +26,22 @@
         <ul class="list-inline">
         {% regroup role_name.list by person as person_groups %}
         {% for person_with_groups in person_groups %}
-         <li>
-	 {% if person_with_groups.grouper.photo %}<a href="{% url 'ietf.person.views.profile' email_or_name=person_with_groups.grouper.plain_name %}">{% endif %}
-         <div class="well photo-thumbnail">
-	   <div>
-           {% if person_with_groups.grouper.photo_thumb %}
-		 <img width=100 src="{{person_with_groups.grouper.photo_thumb.url}}" alt="Photo of {{person_with_groups.grouper.name}}" />
-           {% else %}
-		 <img width=100 src="{{ MEDIA_URL }}photo/nopictureavailable.jpg" alt="No picture available"/>
-           {% endif %}
-	   </div>
-	   <div >
-	     <strong>{{person_with_groups.grouper.plain_name}}</strong>
-	   </div>
-         </div>
-	 {% if person_with_groups.grouper.photo %}</a>{% endif %}
-         </li>
+	  <li>
+	    <a href="{% url 'ietf.person.views.profile' email_or_name=person_with_groups.grouper.plain_name %}">
+	     <div class="well photo-thumbnail">
+	       <div>
+	       {% if person_with_groups.grouper.photo_thumb %}
+		     <img width=100 src="{{person_with_groups.grouper.photo_thumb.url}}" alt="Photo of {{person_with_groups.grouper.name}}" />
+	       {% else %}
+		     <img width=100 src="{{ MEDIA_URL }}photo/nopictureavailable.jpg" alt="No picture available"/>
+	       {% endif %}
+	       </div>
+	       <div >
+		 <strong>{{person_with_groups.grouper.plain_name}}</strong>
+	       </div>
+	     </div>
+	    </a>
+	  </li>
         {% endfor %}
         </ul>
       </div>
