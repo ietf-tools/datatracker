@@ -1,5 +1,127 @@
 ietfdb (6.83.0) ietf; urgency=medium
 
+  **IETF 102 code sprint**
+
+  This release contains datatracker bugfixes and enhancements from the
+  IETF-102 Code Sprint.  While we've had many more code sprint participants
+  before, I don't believe we've ever had this number of contributions from an
+  IETF week :-)
+
+  The release contains a number of different enhancements to the document
+  review pages (thanks Tero, Peter); refactoring of a number of tests to use
+  test object factories instead of indiscriminate creation of a large number
+  of often unused test objects, thus speeding up the tests (thanks to Robert);
+  fixes to template language and anchors (thanks to Jean); a fix for annoying
+  issue with a liaison form (thanks, Ben); a number of updates to secretariat
+  pages and proceedings (thanks, Ryan); a fix for a long-standing issue with
+  the document search forms behaviour when no search string has been given
+  (thanks, Jim); a test to expose bugs in downref listing in last call
+  announcements (thanks, Russ).
+
+  From the commit log:
+
+  * Show links to personal profile pages from group photo pages also when no 
+    photo is available -- the profile pages now contains more than just the 
+    photo.
+
+  * Merged in [15399] from rjsparks@nostrum.com:
+    Use factories for ietf.ietfauth.tests.  
+
+  * Merged in [15395] from rjsparks@nostrum.com:
+    Allow the IRTF stream to set shepherds and shepherd writeups. Fixes #1993.  
+
+  * Merged in [15387] from rjsparks@nostrum.com:
+    Use factories for ietf.iesg.tests.
+
+  * Merged in [15380] from rjsparks@nostrum.com:
+    Use factories for ietf.idindex.tests.
+
+  * Merged in [15370] from rjsparks@nostrum.com:
+    Use factories for ietf.group.tests_review.
+
+  * Merged in [15358] from kivinen@iki.fi:
+    Fixed the review tablesorter issue by adding display:none character in the
+    front of the date. Tablesorter looks first characters and picks the parser
+    based on that, meaning that if the text starts with number, it will try to
+    parse everything in column as numbers, and if there is anything that is
+    not numebr it will fail, and only sorts the column once. This is bit ugly
+    but I do not think we want to add yet another jquery meta tool. Fixes
+    #2089, and #2151.  
+
+  * Added a missing migration (for review unavailable-period reason)
+
+  * Merged in [15357] from mahoney@nostrum.com:
+    Added anchors for working group rows. Still needs some work since the 
+    anchor ends up being under the menu bar. Partially addresses issue #1481.  
+
+  * Merged in [15356] from ben@nostrum.com:
+    Changed newlines to commas in to contacts for new liaison email 
+    notification. Fixes issue 2525.  
+
+  * Merged in [15355] from rjsparks@nostrum.com:
+    Used factories for ietf.group.tests_info.  
+
+  * Tweaked a test to prevent failures when looking for a specific string 
+    in line-wrapped text.
+
+  * Added a tiny utility function unwrap() to unwrap wrapped text for 
+    matching expected strings in tests.
+
+  * Merged in [15354] from kivinen@iki.fi:
+    Added default to review completion draft version number. If the reviewer
+    is filling in the review form himself the default will be the latest
+    version of the draft. If it is someone else filling in the review
+    then the version number is the latest version at the point when review
+    was assigned (i.e., it assumes reviewer did review on version he was
+    requested to and then document authors might have updated the document).
+    Also mark the document versions that are earlier than the review request
+    date with red background and those which are newer with green background.
+    Fixes #2125.  
+
+  * Merged in [15353] from peter@akayla.com:
+    Add a sidebar to display feedback section names and simplify navigation.
+    Could use some visual improvements but otherwise works.  Fixes #2431.  
+
+  * Merged in [15351] from rcross@amsl.com:
+    Update secr/drafts/tests_views to align with view logic.  Fixes #2480.  
+
+  * Merged in [15349] from kivinen@iki.fi:
+    Removed the requirement for review_content field to be mandatory when
+    using \'link\' method. This partially addresses #2520. 
+
+  * Merged in [15347] from kivinen@iki.fi:
+    Add review request date to the top. Add tooltips for drafts versions
+    providing the date they were sumbmitted. Fixes #2218. 
+
+  * Limited the document name for uploaded slides to use 128 slugified 
+    characters from the slideset title as part of the name.  Fixes a possible 
+    server 500 issue.
+
+  * Merged in [15345] from rcross@amsl.com:
+    Remove duplicate functionality in secr/drafts.  Fixes #2540.   
+
+  * Merged in [15344] from mahoney@nostrum.com:
+    email confirming interim meeting request now says 'the Area Director of 
+    the <area>' instead of '<area> Area Director'. Fixes issue #2522.  
+
+  * Added additional checks to the meeting_session_video_url api test.
+
+  * Fixed api_set_session_video_url() to update the external video url if 
+    given a new value.
+
+  * Merged in [15342] from peter@akayla.com:
+    Added optional reviewer unavailability reason support.  Fixes issue #2146.   
+
+  * Merged in [15335] from rcross@amsl.com:
+    Fixed the ordering of meeting select in secr/meetings.  Fixes #2539.
+
+  * Adjusted some timezones in test code to use permitted time zones after 
+    the previous changes in listed timezones.  Added a migration for the 
+    changed timezone list.
+
+  * Fixed display of xml2rfc exceptions when processing draft submission in 
+    xml form.
+
   * Modified the list of timezones available when setting a meeting 
     timezone so as to not show timezones that are links.  (Also edited the 102 
     meeting timezone in the database to avoid this).  Fixes issues #2531 and 
@@ -25,20 +147,18 @@ ietfdb (6.83.0) ietf; urgency=medium
     meeting, rather than the current.
 
   * Merged in [15327] from mahoney@nostrum.com:
-    clarified description in the search form, removing the etc since you 
+    Clarified description in the search form, removing the etc since you 
     can't search on author names. Fixes issue #1159.  
 
   * Merged in [15321] from rjsparks@nostrum.com:
     Converted ietf.group.tests to factories.  
 
   * Merged in [15320] from rjsparks@nostrum.com:
-    The cookie tests were all calling make_test_data, but not using 
-    anything it created. Removed the calls.  
+    The cookie tests were all calling make_test_data, but not using anything
+    it created. Removed the calls.  
 
   * Merged in [15314] from rjsparks@nostrum.com:
     Converted the community app tests to use factories.  
-
-  * Added bower --> yarn conversion for web asset handling to PLAN.
 
  -- Henrik Levkowetz <henrik@levkowetz.com>  16 Jul 2018 18:40:19 +0000
 
