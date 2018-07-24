@@ -258,6 +258,6 @@ useful in selecting the IANA Experts for these new registries.
 (19) Describe reviews and automated checks performed by the Document
 Shepherd to validate sections of the document written in a formal
 language, such as XML code, BNF rules, MIB definitions, etc.
-{% endif %}{% else %}There is no default template for the {{d.stream}} stream
-{% endif %}{% else %}There is no stream set for this document (thus, no default template)
+{% endif %}{% else %}There is no default shepherd writeup template for the {{doc.stream}} stream
+{% endif %}{% else %}There is no stream set for this document (thus, no default shepherd writeup template)
 {% endif %}
