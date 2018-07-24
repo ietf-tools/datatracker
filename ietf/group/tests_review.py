@@ -5,7 +5,6 @@ from pyquery import PyQuery
 
 from django.urls import reverse as urlreverse
 
-from ietf.utils.test_data import make_test_data, make_review_data
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase, unicontent, reload_db_objects
 from ietf.doc.models import TelechatDocEvent
 from ietf.group.models import Role
@@ -22,16 +21,14 @@ from ietf.name.models import ReviewTypeName, ReviewResultName, ReviewRequestStat
 import ietf.group.views
 from ietf.utils.mail import outbox, empty_outbox
 from ietf.dbtemplate.factories import DBTemplateFactory
-from ietf.person.factories import PersonFactory
+from ietf.person.factories import PersonFactory, EmailFactory
 from ietf.doc.factories import DocumentFactory
 from ietf.group.factories import RoleFactory, ReviewTeamFactory
-from ietf.review.factories import ReviewRequestFactory
+from ietf.review.factories import ReviewRequestFactory, ReviewerSettingsFactory
 
 class ReviewTests(TestCase):
     def test_review_requests(self):
-        doc = make_test_data()
-        review_req = make_review_data(doc)
-
+        review_req = ReviewRequestFactory(reviewer=EmailFactory())
         group = review_req.team
 
         for url in [urlreverse(ietf.group.views.review_requests, kwargs={ 'acronym': group.acronym }),
@@ -53,8 +50,8 @@ class ReviewTests(TestCase):
         self.assertTrue(review_req.doc.name in unicontent(r))
 
     def test_suggested_review_requests(self):
-        doc = make_test_data()
-        review_req = make_review_data(doc)
+        review_req = ReviewRequestFactory()
+        doc = review_req.doc
         team = review_req.team
 
         # put on telechat
@@ -112,12 +109,11 @@ class ReviewTests(TestCase):
         self.assertEqual(len(suggested_review_requests_for_team(team)), 1)
 
     def test_reviewer_overview(self):
-        doc = make_test_data()
-        review_req1 = make_review_data(doc)
-        review_req1.state = ReviewRequestStateName.objects.get(slug="completed")
-        review_req1.save()
-
-        reviewer = review_req1.reviewer.person
+        team = ReviewTeamFactory()
+        reviewer = RoleFactory(name_id='reviewer',group=team,person__user__username='reviewer').person
+        ReviewerSettingsFactory(person=reviewer,team=team)
+        review_req1 = ReviewRequestFactory(state_id='completed',team=team,reviewer=reviewer.email())
+        RoleFactory(name_id='chair',person=reviewer,group=review_req1.doc.group)
 
         ReviewRequest.objects.create(
             doc=review_req1.doc,
@@ -155,10 +151,12 @@ class ReviewTests(TestCase):
         self.assertEqual(r.status_code, 200)
         
     def test_manage_review_requests(self):
-        doc = make_test_data()
-        review_req1 = make_review_data(doc)
-
-        group = review_req1.team
+        group = ReviewTeamFactory()
+        reviewer = RoleFactory(name_id='reviewer',group=group,person__user__username='reviewer').person
+        marsperson = RoleFactory(name_id='reviewer',group=group,person=PersonFactory(name=u"Mars Anders Chairman",user__username='marschairman')).person
+        review_req1 = ReviewRequestFactory(doc__pages=2,doc__shepherd=marsperson.email(),reviewer=reviewer.email(),team=group)
+        RoleFactory(name_id='chair',group=review_req1.doc.group,person=marsperson)
+        doc = review_req1.doc
 
         url = urlreverse(ietf.group.views.manage_review_requests, kwargs={ 'acronym': group.acronym, "assignment_status": "assigned" })
 
@@ -310,8 +308,7 @@ class ReviewTests(TestCase):
         self.assertEqual(review_req2.reviewer, None)
 
     def test_email_open_review_assignments(self):
-        doc = make_test_data()
-        review_req1 = make_review_data(doc)
+        review_req1 = ReviewRequestFactory(reviewer=EmailFactory(person__user__username='marschairman'))
         DBTemplateFactory.create(path='/group/defaults/email/open_assignments.txt',
                                  type_id='django',
                                  content = """
@@ -361,11 +358,10 @@ class ReviewTests(TestCase):
         self.assertTrue("Test body" in outbox[0].get_payload(decode=True).decode("utf-8"))
 
     def test_change_reviewer_settings(self):
-        doc = make_test_data()
-
-        review_req = make_review_data(doc)
-        review_req.reviewer = Email.objects.get(person__user__username="reviewer")
-        review_req.save()
+        reviewer = ReviewerSettingsFactory(person__user__username='reviewer',expertise='Some expertise').person
+        review_req = ReviewRequestFactory(reviewer=reviewer.email())
+        RoleFactory(name_id='reviewer',group=review_req.team,person=review_req.reviewer.person)
+        RoleFactory(name_id='secr',group=review_req.team)
 
         reviewer = review_req.reviewer.person
 
@@ -486,11 +482,8 @@ class ReviewTests(TestCase):
             
 
     def test_change_review_secretary_settings(self):
-        doc = make_test_data()
-
-        review_req = make_review_data(doc)
-
-        secretary = Person.objects.get(user__username="reviewsecretary")
+        review_req = ReviewRequestFactory()
+        secretary = RoleFactory(name_id='secr',group=review_req.team,person__user__username='reviewsecretary').person
 
         url = urlreverse(ietf.group.views.change_review_secretary_settings, kwargs={
             "acronym": review_req.team.acronym,
@@ -516,13 +509,12 @@ class ReviewTests(TestCase):
         self.assertEqual(settings.remind_days_before_deadline, 6)
 
     def test_review_reminders(self):
-        doc = make_test_data()
-
-        review_req = make_review_data(doc)
+        review_req = ReviewRequestFactory()
+        reviewer =  RoleFactory(name_id='reviewer',group=review_req.team,person__user__username='reviewer').person
+        RoleFactory(name_id='secr',group=review_req.team,person__user__username='reviewsecretary')
+        ReviewerSettingsFactory(team = review_req.team, person = reviewer)
 
         remind_days = 6
-
-        reviewer = Person.objects.get(user__username="reviewer")
 
         reviewer_settings = ReviewerSettings.objects.get(team=review_req.team, person=reviewer)
         reviewer_settings.remind_days_before_deadline = remind_days

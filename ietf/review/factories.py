@@ -1,7 +1,7 @@
 import factory
 import datetime
 
-from ietf.review.models import ReviewTeamSettings, ReviewRequest
+from ietf.review.models import ReviewTeamSettings, ReviewRequest, ReviewerSettings
 from ietf.name.models import ReviewTypeName, ReviewResultName
 
 class ReviewTeamSettingsFactory(factory.DjangoModelFactory):
@@ -39,3 +39,9 @@ class ReviewRequestFactory(factory.DjangoModelFactory):
     deadline = datetime.datetime.today()+datetime.timedelta(days=14)
     requested_by = factory.SubFactory('ietf.person.factories.PersonFactory')
 
+class ReviewerSettingsFactory(factory.DjangoModelFactory):
+    class Meta:
+        model = ReviewerSettings
+
+    team = factory.SubFactory('ietf.group.factories.ReviewTeamFactory')
+    person = factory.SubFactory('ietf.person.factories.PersonFactory')
