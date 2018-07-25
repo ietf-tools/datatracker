@@ -15,7 +15,7 @@ ietfdb (6.83.0) ietf; urgency=medium
   issue with a liaison form (thanks, Ben); a number of updates to secretariat
   pages and proceedings (thanks, Ryan); a fix for a long-standing issue with
   the document search forms behaviour when no search string has been given
-  (thanks, Jim); a test to expose bugs in downref listing in last call
+  (thanks, Jim); and a test to expose bugs in downref listing in last call
   announcements (thanks, Russ).
 
   From the commit log:
@@ -160,7 +160,7 @@ ietfdb (6.83.0) ietf; urgency=medium
   * Merged in [15314] from rjsparks@nostrum.com:
     Converted the community app tests to use factories.  
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  16 Jul 2018 18:40:19 +0000
+ -- Henrik Levkowetz <henrik@levkowetz.com>  25 Jul 2018 19:08:41 +0000
 
 
 ietfdb (6.82.0) ietf; urgency=medium
