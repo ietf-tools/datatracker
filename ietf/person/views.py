@@ -92,7 +92,7 @@ def merge(request):
                 target = form.cleaned_data.get('target')
                 if source.user and target.user:
                     warn_messages.append('WARNING: Both Person records have logins.  Be sure to specify the record to keep in the Target field.')
-                    if source.user.last_login > target.user.last_login:
+                    if source.user.last_login and target.user.last_login and source.user.last_login > target.user.last_login:
                         warn_messages.append('WARNING: The most recently used login is being deleted!')
                 change_details = handle_users(source, target, check_only=True)
                 method = 'post'
