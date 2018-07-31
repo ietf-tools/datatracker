@@ -968,7 +968,7 @@ def edit(request, group_type=None, acronym=None, action="edit", field=None):
                     group.role_set.filter(name=slug).delete()
                     for e in new:
                         Role.objects.get_or_create(name_id=slug, email=e, group=group, person=e.person)
-                        if not e.origin or e.origin == e.person.user.username:
+                        if not e.origin or (e.person.user and e.origin == e.person.user.username):
                             e.origin = "role: %s %s" % (group.acronym, slug)
                             e.save()
 
