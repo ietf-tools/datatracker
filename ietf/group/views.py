@@ -305,7 +305,7 @@ def active_group_types(request):
     return render(request, 'group/active_groups.html', {'grouptypes':grouptypes})
 
 def active_dirs(request):
-    dirs = Group.objects.filter(type="dir", state="active").order_by("name")
+    dirs = Group.objects.filter(type__in=['dir', 'review'], state="active").order_by("name")
     for group in dirs:
         group.chairs = sorted(roles(group, "chair"), key=extract_last_name)
         group.ads = sorted(roles(group, "ad"), key=extract_last_name)
