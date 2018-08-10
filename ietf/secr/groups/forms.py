@@ -3,7 +3,7 @@ import re
 from django import forms
 from django.db.models import Count
 
-from ietf.group.models import Group, GroupMilestone, Role
+from ietf.group.models import Group, Role
 from ietf.name.models import GroupStateName, GroupTypeName, RoleName
 from ietf.person.models import Person, Email
 from ietf.liaisons.models import LiaisonStatementGroupContacts
@@ -47,29 +47,6 @@ def get_parent_group_choices():
 class DescriptionForm (forms.Form):
     description = forms.CharField(widget=forms.Textarea(attrs={'rows':'20'}),required=True, strip=False)
 
-class GroupMilestoneForm(forms.ModelForm):
-    class Meta:
-        model = GroupMilestone
-        exclude = ('done',)
-
-    # use this method to set attrs which keeps other meta info from model.  
-    def __init__(self, *args, **kwargs):
-        super(GroupMilestoneForm, self).__init__(*args, **kwargs)
-        self.fields['desc'].widget=forms.TextInput(attrs={'size':'60'})
-        self.fields['expected_due_date'].widget.attrs['size'] = 10
-        self.fields['done_date'].widget.attrs['size'] = 10
-
-    # override save.  set done=True if done_date set
-    def save(self, force_insert=False, force_update=False, commit=True):
-        m = super(GroupMilestoneForm, self).save(commit=False)
-        if 'done_date' in self.changed_data:
-            if self.cleaned_data.get('done_date',''):
-                m.done = True
-            else:
-                m.done = False
-        if commit:
-            m.save()
-        return m
 
 class GroupModelForm(forms.ModelForm):
     type = forms.ModelChoiceField(queryset=GroupTypeName.objects.all(),empty_label=None)

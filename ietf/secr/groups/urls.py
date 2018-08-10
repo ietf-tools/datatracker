@@ -13,7 +13,5 @@ urlpatterns = [
     url(r'^%(acronym)s/delete/(?P<id>\d{1,6})/$' % settings.URL_REGEXPS, views.delete_role),
     url(r'^%(acronym)s/charter/$' % settings.URL_REGEXPS, views.charter),
     url(r'^%(acronym)s/edit/$' % settings.URL_REGEXPS, views.edit),
-    url(r'^%(acronym)s/gm/$' % settings.URL_REGEXPS, views.view_gm),
-    url(r'^%(acronym)s/gm/edit/$' % settings.URL_REGEXPS, views.edit_gm),
     url(r'^%(acronym)s/people/$' % settings.URL_REGEXPS, views.people),
 ]
