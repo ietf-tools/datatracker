@@ -88,7 +88,7 @@ def build_traceback(stack):
             break
     return tb
 
-def assertion(statement):
+def assertion(statement, state=True):
     """
     This acts like an assertion.  It uses the django logger in order to send
     the failed assertion and a backtrace as for an internal server error.
@@ -97,9 +97,10 @@ def assertion(statement):
     stack = inspect.stack()[1:]
     frame = stack[0][0]
     value = eval(statement, frame.f_globals, frame.f_locals)
-    if not value:
-        if settings.DEBUG is True or settings.SERVER_MODE == 'test':
-            raise AssertionError("Assertion '%s' failed." % (statement,))
+    if bool(value) != bool(state):
+        settings.DEBUG = False
+        if settings.DEBUG is True or settings.SERVER_MODE == 'test' :
+            raise AssertionError("Assertion failed: '%s': %s != %s." % (statement, repr(value), state))
         else:
             # build a simulated traceback object
             tb = build_traceback(stack)
@@ -108,7 +109,7 @@ def assertion(statement):
             for key in [ 'request', 'status_code', ]:
                 if key in frame.f_locals:
                     extra[key] = frame.f_locals[key]
-            logger.error("Assertion '%s' failed.", statement, exc_info=(AssertionError, statement, tb), extra=extra)
+            logger.error("Assertion failed: '%s': %s != %s", statement, repr(value), state, exc_info=(AssertionError, statement, tb), extra=extra)
 
 def unreachable(date="(unknown)"):
     "Raises an assertion or sends traceback to admins if executed."
