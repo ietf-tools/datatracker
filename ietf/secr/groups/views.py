@@ -3,11 +3,11 @@ from django.conf import settings
 from django.forms.models import inlineformset_factory
 from django.shortcuts import render, get_object_or_404, redirect
 
-from ietf.group.models import Group, GroupMilestone, ChangeStateGroupEvent, GroupEvent, GroupURL, Role
+from ietf.group.models import Group, ChangeStateGroupEvent, GroupEvent, GroupURL, Role
 from ietf.group.utils import save_group_in_history, get_charter_text, setup_default_community_list_for_group
 from ietf.ietfauth.utils import role_required
 from ietf.person.models import Person
-from ietf.secr.groups.forms import GroupModelForm, GroupMilestoneForm, RoleForm, SearchForm
+from ietf.secr.groups.forms import GroupModelForm, RoleForm, SearchForm
 from ietf.secr.areas.forms import AWPForm
 from ietf.secr.utils.meeting import get_current_meeting
 
@@ -278,41 +278,6 @@ def edit(request, acronym):
         'form': form},
     )
 
-@role_required('Secretariat')
-def edit_gm(request, acronym):
-    """
-    Edit IETF Group Goal and Milestone details
-
-    **Templates:**
-
-    * ``groups/edit_gm.html``
-
-    **Template Variables:**
-
-    * group, formset
-
-    """
-
-    group = get_object_or_404(Group, acronym=acronym)
-    GMFormset = inlineformset_factory(Group, GroupMilestone, form=GroupMilestoneForm, can_delete=True, extra=5)
-
-    if request.method == 'POST':
-        button_text = request.POST.get('submit', '')
-        if button_text == 'Cancel':
-            return redirect('ietf.secr.groups.views.view', acronym=acronym)
-
-        formset = GMFormset(request.POST, instance=group, prefix='goalmilestone')
-        if formset.is_valid():
-            formset.save()
-            messages.success(request, 'The Goals Milestones were changed successfully')
-            return redirect('ietf.secr.groups.views.view', acronym=acronym)
-    else:
-        formset = GMFormset(instance=group, prefix='goalmilestone')
-
-    return render(request, 'groups/edit_gm.html', {
-        'group': group,
-        'formset': formset},
-    )
 
 @role_required('Secretariat')
 def people(request, acronym):
@@ -460,21 +425,3 @@ def view(request, acronym):
 
     return render(request, 'groups/view.html', { 'group': group } )
 
-@role_required('Secretariat')
-def view_gm(request, acronym):
-    """
-    View IETF Group Goals and Milestones details
-
-    **Templates:**
-
-    * ``groups/view_gm.html``
-
-    **Template Variables:**
-
-    * group
-
-    """
-
-    group = get_object_or_404(Group, acronym=acronym)
-
-    return render(request, 'groups/view_gm.html', { 'group': group } )
