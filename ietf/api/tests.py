@@ -35,8 +35,7 @@ class CustomApiTestCase(TestCase):
     # Using mock to patch the import functions in ietf.meeting.views, where
     # api_import_recordings() are using them:
     @patch('ietf.meeting.views.import_audio_files')
-    @patch('ietf.meeting.views.import_youtube_video_urls')
-    def test_notify_meeting_import_audio_files(self, mock_import_youtube, mock_import_audio):
+    def test_notify_meeting_import_audio_files(self, mock_import_audio):
         meeting = make_meeting_test_data()
         client = Client(Accept='application/json')
         # try invalid method GET

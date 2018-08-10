@@ -2,9 +2,6 @@ import debug                            # pyflakes:ignore
 import json
 import os
 import shutil
-from apiclient.discovery import build
-from apiclient.http import HttpMock
-from mock import patch
 
 from django.conf import settings
 from django.urls import reverse
@@ -21,7 +18,6 @@ from ietf.utils.mail import outbox
 from ietf.secr.proceedings.proc_utils import (import_audio_files,
     get_timeslot_for_filename, normalize_room_name, send_audio_import_warning,
     get_or_create_recording_document, create_recording, get_next_sequence,
-    get_youtube_playlistid, get_youtube_videos, import_youtube_video_urls,
     _get_session, _get_urls_from_json)
 
 
@@ -43,47 +39,6 @@ class ProceedingsTestCase(TestCase):
 
 
 class VideoRecordingTestCase(TestCase):
-    @patch('ietf.secr.proceedings.proc_utils.get_youtube_videos')
-    @patch('ietf.secr.proceedings.proc_utils.get_youtube_playlistid')
-    def test_import_youtube_video_urls(self, mock_playlistid, mock_videos):
-        meeting = make_meeting_test_data()
-        session = Session.objects.filter(meeting=meeting, group__acronym='mars').first()
-        title = self._get_video_title_for_session(session)
-        url = 'https://youtube.com?v=test'
-        mock_playlistid.return_value = 'PLC86T-6ZTP5g87jdxNqdWV5475U-yEE8M'
-        mock_videos.return_value = [{'title':title,'url':url}]
-        discovery = os.path.join(settings.BASE_DIR, "../test/data/youtube-discovery.json")
-        http = HttpMock(discovery, {'status': '200'})
-        import_youtube_video_urls(meeting=meeting, http=http)
-        doc = Document.objects.get(external_url=url)
-        self.assertTrue(doc in session.materials.all())
-
-    def _get_video_title_for_session(self, session):
-        '''Returns the youtube video title of a session recording given session'''
-        timeslot = session.official_timeslotassignment().timeslot
-        return "{prefix}-{group}-{date}".format(
-            prefix=session.meeting.type.slug + session.meeting.number,
-            group=session.group.acronym,
-            date=timeslot.time.strftime('%Y%m%d-%H%M')).upper()
-
-    def test_get_youtube_playlistid(self):
-        discovery = os.path.join(settings.BASE_DIR, "../test/data/youtube-discovery.json")
-        http = HttpMock(discovery, {'status': '200'})
-        youtube = build(settings.YOUTUBE_API_SERVICE_NAME, settings.YOUTUBE_API_VERSION,
-            developerKey='',http=http)
-        path = os.path.join(settings.BASE_DIR, "../test/data/youtube-playlistid.json")
-        http = HttpMock(path, {'status': '200'})
-        self.assertEqual(get_youtube_playlistid(youtube, 'IETF98', http=http),'PLC86T-test')
-  
-    def test_get_youtube_videos(self):
-        discovery = os.path.join(settings.BASE_DIR, "../test/data/youtube-discovery.json")
-        http = HttpMock(discovery, {'status': '200'})
-        youtube = build(settings.YOUTUBE_API_SERVICE_NAME, settings.YOUTUBE_API_VERSION,
-            developerKey='',http=http)
-        path = os.path.join(settings.BASE_DIR, "../test/data/youtube-playlistitems.json")
-        http = HttpMock(path, {'status': '200'})
-        videos = get_youtube_videos(youtube, 'PLC86T', http=http)
-        self.assertEqual(len(videos),2)
 
     def test_get_session(self):
         meeting = make_meeting_test_data()

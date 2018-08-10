@@ -4,7 +4,6 @@ proc_utils.py
 This module contains all the functions for generating static proceedings pages
 '''
 import datetime
-import httplib2
 import os
 import re
 import subprocess
@@ -12,7 +11,6 @@ from urllib import urlencode
 
 import debug        # pyflakes:ignore
 
-from apiclient.discovery import build
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 
@@ -26,52 +24,6 @@ from ietf.utils.mail import send_mail
 AUDIO_FILE_RE = re.compile(r'ietf(?P<number>[\d]+)-(?P<room>.*)-(?P<time>[\d]{8}-[\d]{4})')
 VIDEO_TITLE_RE = re.compile(r'IETF(?P<number>[\d]+)-(?P<name>.*)-(?P<date>\d{8})-(?P<time>\d{4})')
 
-
-
-def import_youtube_video_urls(meeting, http=httplib2.Http()):
-    '''Create Document and set external_url for session videos'''
-    youtube = build(settings.YOUTUBE_API_SERVICE_NAME, settings.YOUTUBE_API_VERSION,
-        developerKey=settings.YOUTUBE_API_KEY, http=http)
-    playlistid = get_youtube_playlistid(youtube, 'IETF' + meeting.number)
-    if playlistid is None:
-        return None
-    for video in get_youtube_videos(youtube, playlistid):
-        match = VIDEO_TITLE_RE.match(video['title'])
-        if match:
-            session = _get_session(**match.groupdict())
-            if session:
-                url = video['url']
-                get_or_create_recording_document(url,session)
-
-def get_youtube_playlistid(youtube, title, http=httplib2.Http()):
-    '''Returns the youtube playlistId matching title string, a string'''
-    request = youtube.search().list(
-        q=title,
-        part='id,snippet',
-        channelId=settings.YOUTUBE_IETF_CHANNEL_ID,
-        type='playlist',
-        maxResults=1
-    )
-    search_response = request.execute(http=http)
-
-    try:
-        playlistid = search_response['items'][0]['id']['playlistId']
-    except (KeyError, IndexError):
-        return None
-    return playlistid
-
-def get_youtube_videos(youtube, playlistid, http=httplib2.Http()):
-    '''Returns list of dictionaries with title, urls keys'''
-    videos = []
-    kwargs = dict(part="snippet",playlistId=playlistid,maxResults=50)
-    playlistitems = youtube.playlistItems()
-    request = playlistitems.list(**kwargs)
-    # handle pagination
-    while request is not None:
-        playlistitems_doc = request.execute(http=http)
-        videos.extend(_get_urls_from_json(playlistitems_doc))
-        request = playlistitems.list_next(request, playlistitems_doc)
-    return videos
 
 def _get_session(number,name,date,time):
     '''Lookup session using data from video title'''

@@ -61,7 +61,7 @@ from ietf.meeting.helpers import send_interim_announcement_request
 from ietf.meeting.utils import finalize
 from ietf.secr.proceedings.utils import handle_upload_file
 from ietf.secr.proceedings.proc_utils import (get_progress_stats, post_process, import_audio_files,
-    import_youtube_video_urls, create_recording)
+    create_recording)
 from ietf.utils.decorators import require_api_key
 from ietf.utils.mail import send_mail_message, send_mail_text
 from ietf.utils.pipe import pipe
@@ -2183,7 +2183,6 @@ def api_import_recordings(request, number):
     if request.method == 'POST':
         meeting = get_meeting(number)
         import_audio_files(meeting)
-        import_youtube_video_urls(meeting)
         return HttpResponse(status=201)
     else:
         return HttpResponse(status=405)
