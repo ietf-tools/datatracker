@@ -28,7 +28,7 @@
         {% for person_with_groups in person_groups %}
          <li>
          <div class="well photo-thumbnail">
-	   <a href="{% url 'ietf.person.views.profile' email_or_name=person_with_groups.grouper.plain_name %}">
+	   <a href="{% url 'ietf.person.views.profile' email_or_name=person_with_groups.grouper.name %}">
 	     <div>
 	     {% if person_with_groups.grouper.photo_thumb %}
 	       <img width=100 src="{{person_with_groups.grouper.photo_thumb.url}}" alt="Photo of {{person_with_groups.grouper.name}}"/>

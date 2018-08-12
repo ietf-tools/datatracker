@@ -41,7 +41,7 @@
 	    {% regroup letter.list by person as person_groups %}
 	    {% for person_with_groups in person_groups %}
 	     <li>
-	     {% if person_with_groups.grouper.photo %}<a href="{% url 'ietf.person.views.profile' email_or_name=person_with_groups.grouper.plain_name %}">{% endif %}
+	     {% if person_with_groups.grouper.photo %}<a href="{% url 'ietf.person.views.profile' email_or_name=person_with_groups.grouper.name %}">{% endif %}
 	     <div class="well photo-thumbnail">
 	       <div>
 	       {% if person_with_groups.grouper.photo_thumb %}
