@@ -2310,7 +2310,7 @@ def request_minutes(request, num=None):
             return HttpResponseRedirect(reverse('ietf.meeting.views.materials',kwargs={'num':num}))
     else:
         needs_minutes = set() 
-        for a in meeting.agenda.assignments.filter(session__group__type_id__in=('wg','rg')):
+        for a in meeting.agenda.assignments.filter(session__group__type_id__in=('wg','rg','ag')).exclude(session__status='canceled'):
             if not a.session.all_meeting_minutes():
                 group = a.session.group
                 if group.parent and group.parent.type_id in ('area','irtf'):
