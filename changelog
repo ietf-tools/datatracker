@@ -1,3 +1,32 @@
+ietfdb (6.83.1) ietf; urgency=medium
+
+  This is a small bugfix and cleanup release:
+
+  * Replaced some cases of using person.plain_name when linking to a person's
+    profile with person.name, as the link using plain_name can fail.
+
+  * Generalized the log.assertion() function a bit to be able to provide 
+    more information on assertion failure.
+
+  * Merged in [15423] from rcross@amsl.com:
+    Removed WG milestone management from secretariat groups app.   
+
+  * Removed youtube video url import, which is not needed any more given the
+    /api/meeting/session/video/url API endpoint.  This also prevents duplicate
+    video URLs.
+
+  * Changed the menu listing of review dirs and their display on the 
+    Directorates page back to what it was before the 'reviews' group type was 
+    split out.  Added a 'Reviews' column to the Directoratges page.
+
+  * Added a guard against comparing email origin with username of None.
+
+  * Added a None guard for the person merge last_login date comparison.  
+    Fixes issue #2562
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  14 Aug 2018 12:31:32 +0000
+
+
 ietfdb (6.83.0) ietf; urgency=medium
 
   **IETF 102 code sprint**
