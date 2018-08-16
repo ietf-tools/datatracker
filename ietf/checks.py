@@ -370,7 +370,9 @@ def maybe_patch_library(app_configs, **kwargs):
                 if not patch_set.apply(root=library_path):
                     errors.append(checks.Warning(
                         "Could not apply patch from file '%s'"%patch_file,
-                        hint="Make sure that the patch file contains a unified diff and has valid file paths",
+                        hint=("Make sure that the patch file contains a unified diff and has valid file paths\n\n"
+                            "\tPatch root: %s\n"
+                            "\tTarget files: %s\n") % (library_path, ',  '.join(i.target for i in patch_set.items)),
                         id="datatracker.W0002",
                         ))
             else:
