@@ -236,6 +236,10 @@ else
     echo ""
     echo "Cleaning up containers and images"
     docker rm $latest
-    docker images -f dangling=true -q | xargs -r docker rmi -f
+    DANGLING=$( docker images -f dangling=true -q )
+    if [ -n "$DANGLING" ]; then
+	echo "Dangling images: $DANGLING"
+	docker rmi -f $DANGLING;
+    fi
 
 fi
