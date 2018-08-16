@@ -94,8 +94,8 @@ RUN apt-get remove --yes --purge --auto-remove systemd \
 # ------------------------------------------------------------------------------
 
 # Get the key used to sign the mysql repo
-RUN gpg --keyserver pgp.mit.edu --recv-keys 8C718D3B5072E1F5
-RUN gpg --export -a 8C718D3B5072E1F5 | apt-key add -
+RUN gpg --keyserver pgp.mit.edu --recv-keys 5072E1F5
+RUN gpg --export -a 5072E1F5 | apt-key add -
 
 # Install a package which will install apt sources entries for current mysql
 RUN echo 'mysql-apt-config mysql-apt-config/select-server select mysql-5.6' | debconf-set-selections
