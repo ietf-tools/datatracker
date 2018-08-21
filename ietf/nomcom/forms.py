@@ -815,5 +815,5 @@ class EditNomineeForm(forms.ModelForm):
         fields = ('nominee_email',)
 
 class NominationResponseCommentForm(forms.Form):
-    comments = forms.CharField(widget=forms.Textarea,required=False,help_text="Any comments provided will be encrytped and will only be visible to the NomCom.", strip=False)
+    comments = forms.CharField(widget=forms.Textarea,required=False,help_text="Any comments provided will be encrypted and will only be visible to the NomCom.", strip=False)
 
