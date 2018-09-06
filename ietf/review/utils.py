@@ -361,7 +361,7 @@ def email_review_request_change(request, review_req, subject, msg, by, notify_se
 
     to = list(to)
 
-    url = urlreverse("ietf.doc.views_review.review_request", kwargs={ "name": review_req.doc.name, "request_id": review_req.pk })
+    url = urlreverse("ietf.doc.views_review.review_request_forced_login", kwargs={ "name": review_req.doc.name, "request_id": review_req.pk })
     url = request.build_absolute_uri(url)
     send_mail(request, to, request.user.person.formatted_email(), subject, "review/review_request_changed.txt", {
         "review_req_url": url,

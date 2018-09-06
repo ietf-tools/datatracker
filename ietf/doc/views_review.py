@@ -173,6 +173,11 @@ def request_review(request, name):
         'scheduled_for_telechat_days': (scheduled_for_telechat - now.date()).days if scheduled_for_telechat else None,
     })
 
+@login_required
+def review_request_forced_login(request, name, request_id):
+    return redirect(urlreverse("ietf.doc.views_review.review_request", kwargs={ "name": name, "request_id": request_id }))
+
+
 def review_request(request, name, request_id):
     doc = get_object_or_404(Document, name=name)
     review_req = get_object_or_404(ReviewRequest, pk=request_id)
