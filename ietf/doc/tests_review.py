@@ -143,6 +143,14 @@ class ReviewTests(TestCase):
         self.assertIn(review_req.team.acronym, unicontent(r))
         self.assertIn(review_req.team.name, unicontent(r))
 
+        url = urlreverse('ietf.doc.views_review.review_request_forced_login', kwargs={ "name": doc.name, "request_id": review_req.pk })
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 302)
+        self.client.login(username='reviewer', password="reviewer+password")
+        r = self.client.get(url,follow=True)
+        self.assertEqual(r.status_code, 200)
+
+
     def test_close_request(self):
         doc = WgDraftFactory(group__acronym='mars',rev='01')
         review_team = ReviewTeamFactory(acronym="reviewteam", name="Review Team", type_id="review", list_email="reviewteam@ietf.org", parent=Group.objects.get(acronym="farfut"))
