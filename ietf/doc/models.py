@@ -177,7 +177,16 @@ class DocumentInfo(models.Model):
         revisions.sort()
         return revisions
 
+
     def href(self, meeting=None):
+        return self._get_ref(meeting=meeting,meeting_doc_refs=settings.MEETING_DOC_HREFS)
+
+
+    def gref(self, meeting=None):
+        return self._get_ref(meeting=meeting,meeting_doc_refs=settings.MEETING_DOC_GREFS)
+
+
+    def _get_ref(self, meeting=None, meeting_doc_refs=settings.MEETING_DOC_HREFS):
         """
         Returns an url to the document text.  This differs from .get_absolute_url(),
         which returns an url to the datatracker page for the document.   
@@ -198,10 +207,10 @@ class DocumentInfo(models.Model):
                     pass
 
 
-            if self.type_id in settings.DOC_HREFS and self.type_id in settings.MEETING_DOC_HREFS:
+            if self.type_id in settings.DOC_HREFS and self.type_id in meeting_doc_refs:
                 if self.meeting_related():
                     self.is_meeting_related = True
-                    format = settings.MEETING_DOC_HREFS[self.type_id]
+                    format = meeting_doc_refs[self.type_id]
                 else:
                     self.is_meeting_related = False
                     format = settings.DOC_HREFS[self.type_id]
@@ -211,7 +220,7 @@ class DocumentInfo(models.Model):
                     format = settings.DOC_HREFS['rfc']
                 else:
                     format = settings.DOC_HREFS[self.type_id]
-            elif self.type_id in settings.MEETING_DOC_HREFS:
+            elif self.type_id in meeting_doc_refs:
                 self.is_meeting_related = True
             else:
                 if len(self.external_url):
@@ -231,7 +240,7 @@ class DocumentInfo(models.Model):
                 # After IETF 96, meeting materials acquired revision
                 # handling, and the document naming changed.
                 if meeting.number.isdigit() and int(meeting.number) > 96:
-                    format = settings.MEETING_DOC_HREFS[self.type_id]
+                    format = meeting_doc_refs[self.type_id]
                 else:
                     format = settings.MEETING_DOC_OLD_HREFS[self.type_id]
                 info = dict(doc=self, meeting=meeting)
