@@ -246,7 +246,7 @@ def ajax_get_liaison_info(request):
                    'post_only': any(can_post_only)})
 
     json_result = json.dumps(result)
-    return HttpResponse(json_result, content_type='text/javascript')
+    return HttpResponse(json_result, content_type='application/json')
 
 def ajax_select2_search_liaison_statements(request):
     query = [w.strip() for w in request.GET.get('q', '').split() if w.strip()]
