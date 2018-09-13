@@ -117,6 +117,16 @@ div.anchor-target:before {
 }
 div.anchor-target { z-index: 0; }
 
+/* Same as above (avoid hiding content under navbar) for tab-panes */
+div.tab-pane:before {
+  content: '';
+  display: block;
+  position: relative;
+  width: 0;
+  height: 7.5em;
+  margin-top: -7.5em;
+}
+
 /* Make the panel title font normally large */
 .panel-title { font-size: 14px }
 
@@ -590,7 +600,6 @@ table.simple-table td:last-child {
 .reviewer-overview .busy {
   background-color: #F0F0F0;
 }
-
 
 .reviewer-doc-past {
   background-color: #800000;
