@@ -343,6 +343,7 @@ if DEBUG:
 
 MIDDLEWARE = (
     'django.middleware.csrf.CsrfViewMiddleware',
+    'corsheaders.middleware.CorsMiddleware', # see docs on CORS_REPLACE_HTTPS_REFERER before using it
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -382,6 +383,7 @@ INSTALLED_APPS = (
     # External apps 
     'anora',
     'bootstrap3',
+    'corsheaders',
     'django_markup',
     'django_password_strength',
     'djangobwr',
@@ -454,6 +456,12 @@ BOOTSTRAP3 = {
     },
     
 }
+
+# CORS settings
+# See https://github.com/ottoyiu/django-cors-headers/
+CORS_ORIGIN_ALLOW_ALL = True
+CORS_ALLOW_METHODS = ( 'GET', 'OPTIONS', )
+CORS_URLS_REGEX = r'^(/api/.*|.*\.json|.*/json/?)$'
 
 # Override this in your settings_local with the IP addresses relevant for you:
 INTERNAL_IPS = (
