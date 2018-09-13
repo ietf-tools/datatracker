@@ -115,6 +115,7 @@ def unidecode_name(uname):
     # Recombine the parts
     parts = prefix, first, middle, last, suffix
     name = ' '.join([ p for p in parts if p and p.strip() != '' ])
+    name = re.sub('  +', ' ', name)
     return name
 
 if __name__ == "__main__":
