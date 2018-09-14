@@ -26,7 +26,7 @@ from ietf.utils.storage import NoLocationMigrationFileSystemStorage
 from ietf.utils.mail import formataddr
 from ietf.person.name import unidecode_name
 from ietf.utils import log
-#from ietf.utils.models import ForeignKey, OneToOneField
+from ietf.utils.models import ForeignKey, OneToOneField
 
 
 class Person(models.Model):
@@ -338,7 +338,6 @@ class PersonalApiKey(models.Model):
 
 PERSON_EVENT_CHOICES = [
     ("apikey_login", "API key login"),
-    ("gdpr_notice_email", "GDPR notice email"),
     ]
 
 class PersonEvent(models.Model):
