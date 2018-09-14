@@ -350,6 +350,21 @@ class DocumentInfo(models.Model):
             self._cached_is_rfc = self.pk and self.type_id == 'draft' and self.states.filter(type='draft',slug='rfc').exists()
         return self._cached_is_rfc
 
+    def rfc_number(self):
+        if not hasattr(self, '_cached_rfc_number'):
+            self._cached_rfc_number = None
+            if self.is_rfc():
+                n = self.canonical_name()
+                if n.startswith("rfc"):
+                    self._cached_rfc_number = n[3:]
+                else:
+                    logger.error("Document self.is_rfc() is True but self.canonical_name() is %s" % n)
+        return self._cached_rfc_number
+
+    @property
+    def rfcnum(self):
+        return self.rfc_number()
+
     def author_list(self):
         return u", ".join(author.email_id for author in self.documentauthor_set.all() if author.email_id)
 
@@ -734,21 +749,6 @@ class Document(DocumentInfo):
 
     def displayname_with_link(self):
         return mark_safe('<a href="%s">%s-%s</a>' % (self.get_absolute_url(), self.name , self.rev))
-
-    def rfc_number(self):
-        if not hasattr(self, '_cached_rfc_number'):
-            self._cached_rfc_number = None
-            if self.is_rfc():
-                n = self.canonical_name()
-                if n.startswith("rfc"):
-                    self._cached_rfc_number = n[3:]
-                else:
-                    logger.error("Document self.is_rfc() is True but self.canonical_name() is %s" % n)
-        return self._cached_rfc_number
-
-    @property
-    def rfcnum(self):
-        return self.rfc_number()
 
     def ipr(self,states=('posted','removed')):
         """Returns the IPR disclosures against this document (as a queryset over IprDocRel)."""
