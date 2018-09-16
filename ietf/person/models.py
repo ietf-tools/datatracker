@@ -12,6 +12,7 @@ from urlparse import urljoin
 from django.conf import settings
 
 from django.core.validators import validate_email
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.contrib.auth.models import User
 from django.template.loader import render_to_string
@@ -173,10 +174,15 @@ class Person(models.Model):
             needs_consent.append("full name")
         if self.ascii != self.name_from_draft:
             needs_consent.append("ascii name")
-        if self.biography and self.role_set.count():
+        if self.biography and not (self.role_set.exists() or self.rolehistory_set.exists()):
             needs_consent.append("biography")
-        if self.user and self.user.communitylist_set.exists():
-            needs_consent.append("draft notification subscription(s)")
+        if self.user_id:
+            needs_consent.append("login")
+            try:
+                if self.user.communitylist_set.exists():
+                    needs_consent.append("draft notification subscription(s)")
+            except ObjectDoesNotExist:
+                pass
         for email in self.email_set.all():
             if not email.origin.split(':')[0] in ['author', 'role', 'reviewer', 'liaison', 'shepherd', ]:
                 needs_consent.append("email address(es)")
