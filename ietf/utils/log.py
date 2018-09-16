@@ -43,7 +43,7 @@ def log(msg):
         return
     elif settings.DEBUG == True:
         _logfunc = debug.say
-        _flushfunc = sys.stdout.flush
+        _flushfunc = sys.stdout.flush   # pyflakes:ignore (intentional redefinition)
     if isinstance(msg, unicode):
         msg = msg.encode('unicode_escape')
     try:

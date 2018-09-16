@@ -116,8 +116,6 @@ def get_person_form(*args, **kwargs):
                 if f in self.fields:
                     self.fields[f].label += ' \u2020'
 
-            self.fields["consent"].required = True
-
             self.unidecoded_ascii = False
 
             if self.data and not self.data.get("ascii", "").strip():
@@ -150,8 +148,13 @@ def get_person_form(*args, **kwargs):
 
         def clean_consent(self):
             consent = self.cleaned_data.get('consent')
-            if consent == False:
-                raise forms.ValidationError("In order to modify your profile data, you must permit the IETF to use the uploaded data.")
+            require_consent = (
+                self.cleaned_data.get('name') != person.name_from_draft
+                or self.cleaned_data.get('ascii') != person.name_from_draft
+                or self.cleaned_data.get('biography')
+            )
+            if consent == False and require_consent:
+                raise forms.ValidationError("In order to modify your profile with data that require consent, you must permit the IETF to use the uploaded data.")
             return consent
 
     return PersonForm(*args, **kwargs)

@@ -1,0 +1,23 @@
+{% load ietf_filters %}{% filter wordwrap:78 %}
+Dear {{ person.plain_name }},
+
+This email is regarding some of the personal information stored in your IETF datatracker
+profile; information for which we require your consent for storage and use.
+
+If you do nothing in response to this email, the information in your profile
+that requires consent ({{ fields|safe }} and login) will be deleted {{ days }}
+days from now, on {{ date }}.  If you later wish to create a new login, you can
+do so at {{ settings.IDTRACKER_BASE_URL }}{% url 'ietf.ietfauth.views.create_account' %}.
+
+If you would like to keep the information that requires consent available, please go to
+{{ settings.IDTRACKER_BASE_URL }}{% url 'ietf.ietfauth.views.profile' %}, and review and
+edit the information as desired.  When ready, please check the 'Consent' checkbox found
+at the bottom of the page and submit the form. 
+
+For information on how personal information is handled in the datatracker, please see
+{{ settings.IDTRACKER_BASE_URL }}/help/personal-information.
+
+
+Thank You,
+The IETF Secretariat
+{% endfilter %}

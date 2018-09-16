@@ -71,7 +71,7 @@ def initials(name):
 
 def plain_name(name):
     prefix, first, middle, last, suffix = name_parts(name)
-    return u" ".join([first, last])
+    return u" ".join( n for n in (first, last) if n)
 
 def capfirst(s):
     # Capitalize the first word character, skipping non-word characters and

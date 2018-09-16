@@ -580,12 +580,14 @@ def login(request, extra_context=None):
     which is not recognized as a valid password hash.
     """
 
+    require_consent = []
     if request.method == "POST":
         form = AuthenticationForm(request, data=request.POST)
         username = form.data.get('username')
         user = User.objects.filter(username=username).first()
         #
-        require_consent = []
+        if user.person and not user.person.consent:
+            require_consent = user.person.needs_consent()
         if user:
             if hasattr(user, 'person') and not user.person.consent:
                 person = user.person
@@ -618,8 +620,10 @@ def login(request, extra_context=None):
                 You have personal information associated with your account which is not
                 derived from draft submissions or other ietf work, namely: %s.  Please go
                 to your <a href='/accounts/profile'>account profile</a> and review your
-                personal information, and confirm that it may be used and displayed
-                within the IETF datatracker.
+                personal information, then scoll to the bottom and check the 'confirm'
+                checkbox and submit the form, in order to to indicate that that the
+                provided personal information may be used and displayed within the IETF
+                datatracker.
 
                 """ % ', '.join(require_consent)))
     return response
