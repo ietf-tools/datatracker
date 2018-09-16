@@ -36,10 +36,14 @@ def getcaller():
 def log(msg):
     "Uses syslog by preference.  Logs the given calling point and message."
     global logfunc
+    def _flushfunc():
+        pass
+    _logfunc = logfunc
     if settings.SERVER_MODE == 'test':
         return
     elif settings.DEBUG == True:
-        logfunc = debug.say
+        _logfunc = debug.say
+        _flushfunc = sys.stdout.flush
     if isinstance(msg, unicode):
         msg = msg.encode('unicode_escape')
     try:
@@ -52,7 +56,8 @@ def log(msg):
             where = " in " + func + "()"
     except IndexError:
         file, line, where = "/<UNKNOWN>", 0, ""
-    logfunc("ietf%s(%d)%s: %s" % (file, line, where, msg))
+    _flushfunc()
+    _logfunc("ietf%s(%d)%s: %s" % (file, line, where, msg))
 
 logger = logging.getLogger('django')
 
