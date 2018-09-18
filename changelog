@@ -1,3 +1,75 @@
+ietfdb (6.84.0) ietf; urgency=medium
+
+  **GDPR updates part 4**
+
+  This is the last in a series of GDPR-related releases.  It introduces two
+  management commands; one to email out reminders to all users that still have
+  not provided consent for storage of the personal information for which the
+  GDPR requires consent, and the other to delete all information for which
+  we don't have required consent.
+
+  The two new management commands are:
+
+    - ietf/manage.py send_gdpr_consent_request
+    - ietf/manage.py delete_data_lacking_consent
+
+  Both of these provide descriptions of the commands and switches when given
+  a --help switch, to assist the secretariat in using these.
+
+  There are also a few bugfixes and features not related to the GDPR, see
+  below:
+
+  * Merged in the latest GDPR changes.  This refines the handling of the 
+    consent checkbox on the account page; refines the Consent Needed warning 
+    given on login if consent is needed; tweaks several models to set the 
+    on_deletion fields for FK to User and Person appropriately; adds a 
+    Person.needs_consent() method to capture the logic of which fields require 
+    consent; refines the Person.plain_name() method and the user.log.log() 
+    function; and adds 2 management commands to send out consent requests and 
+    delete non-consent information, respectively.
+
+  * Refined utils.log.log() to flush stdout before logging if we're writing 
+    log messages to stderr.
+
+  * Moved document methods rfc_number() and rfcnum() to the abstract parent 
+    class to have them available also for historical document records.  Should 
+    fix the recent server 500 on /doc/draft-ietf-aaa-diameter/17/.
+
+  * Merged in [15448] from rjsparks@nostrum.com:
+    Add CORS headers for the api and views that serve json. Fixes #2546, 
+    #2551, and #2552.  
+
+  * Added a bit of javascript and styling to make it possible to use URL 
+    fragment identifiers to link to position-specific tabs on the nomocom 
+    requirements and questionnaire pages.
+
+  * Merged in [15446] from rjsparks@nostrum.com:
+    Use unversioned links in ics agendas. Partially fixes #2542.  
+
+  * Merged in [15444] from rjsparks@nostrum.com:
+    Review assignment email includes a link to the review request that 
+    ensures the reviewer is logged in. Fixes #2543.  
+
+  * Added a 'Mailing list discussion' link to the 'Additional URLs' section 
+    of the status page for drafts with doc.group and doc.group.list_archive set.
+
+  * Merged in [15441] from peter@akayla.com:
+    Fixed 2 trivial spelling errors in NomCom tools.  Fixes issue #2569.   
+
+  * Fixed a problem with fetching the mysql release signing key from a gpg 
+    keyserver.
+
+  * Added more hint information when patch actions in ietf/checks.py fail.
+
+  * Rewrote docker/run to work around a missing switch in BSD 'xargs'.
+
+  * Merged in [15435] from rjsparks@nostrum.com:
+    Include area groups in the request for minutes. Do not include sessions 
+    that have been canceled.  Fixes #2568. 
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  18 Sep 2018 14:07:27 +0000
+
+
 ietfdb (6.83.1) ietf; urgency=medium
 
   This is a small bugfix and cleanup release:
@@ -304,6 +376,8 @@ ietfdb (6.81.3) ietf; urgency=medium
 
 ietfdb (6.81.2) ietf; urgency=medium
 
+  **GDPR updates part 3**
+
   This is the third in a small series of releases to address compliance with
   the European GDPR (General Data Protection Regulation).  It provides
   serialized (machine-readable) access to information associated with a user's
@@ -356,6 +430,8 @@ ietfdb (6.81.2) ietf; urgency=medium
 
 ietfdb (6.81.1) ietf; urgency=medium
 
+  **GDPR updates part 2**
+
   This is the second in a small series of releases to address compliance
   with the European GDPR (General Data Protection Regulation).
 
@@ -368,6 +444,8 @@ ietfdb (6.81.1) ietf; urgency=medium
 
 
 ietfdb (6.81.0) ietf; urgency=medium
+
+  **GDPR updates part 1**
 
   This is the first in a small series of releases to address compliance with
   with the European GDPR (General Data Protection Regulation).  
