@@ -33,7 +33,7 @@ class Command(BaseCommand):
          parser.add_argument('-n', '--dry-run', action='store_true', default=False,
              help="Don't delete anything, just list what would be done.")
 #          parser.add_argument('-d', '--date', help="Date of deletion (mentioned in message)")
-         parser.add_argument('-m', '--minimum-response-time', metavar='TIME', type=int, default=14,
+         parser.add_argument('-m', '--minimum-response-time', metavar='TIME', type=int, default=7,
              help="Minimum response time, default: %(default)s days.  Persons to whom a "
                   "consent request email has been sent more recently than this will not "
                   "be affected by the run.")
