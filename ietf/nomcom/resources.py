@@ -135,7 +135,7 @@ class NominationResource(ModelResource):
     position         = ToOneField(PositionResource, 'position')
     nominee          = ToOneField(NomineeResource, 'nominee')
     comments         = ToOneField(FeedbackResource, 'comments')
-    user             = ToOneField(UserResource, 'user')
+    user             = ToOneField(UserResource, 'user', null=True)
     class Meta:
         cache = SimpleCache()
         queryset = Nomination.objects.all()
