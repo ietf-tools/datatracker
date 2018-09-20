@@ -48,6 +48,7 @@ from django.contrib.auth.hashers import identify_hasher
 from django.contrib.auth.models import User
 from django.contrib.auth.views import LoginView
 from django.contrib.sites.models import Site
+from django.core.exceptions import ObjectDoesNotExist
 from django.core.validators import ValidationError
 from django.urls import reverse as urlreverse
 from django.utils.safestring import mark_safe
@@ -587,8 +588,11 @@ def login(request, extra_context=None):
         user = User.objects.filter(username=username).first()
         #
         if user:
-            if user.person and not user.person.consent:
-                require_consent = user.person.needs_consent()
+            try:
+                if user.person and not user.person.consent:
+                    require_consent = user.person.needs_consent()
+            except ObjectDoesNotExist:
+                pass
             try:
                 identify_hasher(user.password)
             except ValueError:
