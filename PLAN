@@ -7,10 +7,6 @@ Updated: $Date$
 Planned work in rough order
 ===========================
 
-* Changes to comply with requirements of the EU General Data Protection Regulation
-  (GDPR).  What remains are admin tools to send out notification emails and to
-  clean out data for which we don't have consent.
-
 * GroupFeatures cleanup.  Move most to fields on GroupTypeName, and fix places
   that still uses lists of group types to determine actions by instead
   defining group type fields to hold the selector.  (Setting up a new
