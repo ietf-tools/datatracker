@@ -42,6 +42,9 @@ class Command(BaseCommand):
          
 
     def handle(self, *args, **options):
+        # Don't send copies of the whole bulk mailing to the debug mailbox
+        settings.EMAIL_COPY_TO = "Email Debug Copy <outbound@ietf.org>"
+        #
         event_type = 'gdpr_notice_email'
         # Arguments
         # --date
@@ -79,7 +82,7 @@ class Command(BaseCommand):
                     if not to:
                         to = [ e.address for e in person.email_set.all() ] # pyflakes:ignore
                     self.stdout.write("Sendimg email to %s" % to)
-                    send_mail(None, to, None,
+                    send_mail(None, to, "<gdprnoreply@ietf.org>",
                         subject='Personal Information in the IETF Datatracker',
                         template='utils/personal_information_notice.txt',
                         context={
