@@ -237,7 +237,7 @@ def send_accept_reminder_to_nominee(nominee_position):
                           today,
                           hash))
 
-    context = {'nominee': nominee,
+    context = {'nominee': nominee.person.name,
                'position': position,
                'domain': domain,
                'accept_url': accept_url,
@@ -260,7 +260,7 @@ def send_questionnaire_reminder_to_nominee(nominee_position):
     nominee = nominee_position.nominee
     (to_email,cc) = gather_address_lists('nomcom_questionnaire_reminder',nominee=nominee.email.address)
 
-    context = {'nominee': nominee,
+    context = {'nominee': nominee.person.name,
                'position': position,
                'domain': domain,
                'year': nomcom.year(),
