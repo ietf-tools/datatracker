@@ -99,7 +99,7 @@ class EditNomcomForm(forms.ModelForm):
 
     class Meta:
         model = NomCom
-        fields = ('public_key', 'initial_text', 'show_nominee_pictures',
+        fields = ('public_key', 'initial_text', 'show_nominee_pictures', 'show_accepted_nominees',
                   'send_questionnaire', 'reminder_interval')
         widgets = {'public_key':FileInput, }
 

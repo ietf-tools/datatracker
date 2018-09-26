@@ -51,6 +51,8 @@ class NomCom(models.Model):
                                     blank=True)
     show_nominee_pictures = models.BooleanField(verbose_name='Show nominee pictures', default=True,
                                                 help_text='Display pictures of each nominee (if available) on the feedback pages')
+    show_accepted_nominees = models.BooleanField(verbose_name='Show accepted nominees', default=True, 
+                                                 help_text='Show accepted nominees on the public nomination page')
 
     class Meta:
         verbose_name_plural = 'NomComs'
