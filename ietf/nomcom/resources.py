@@ -24,6 +24,8 @@ class NomComResource(ModelResource):
             "send_questionnaire": ALL,
             "reminder_interval": ALL,
             "initial_text": ALL,
+            "show_nominee_pictures": ALL,
+            "show_accepted_nominees": ALL,
             "group": ALL_WITH_RELATIONS,
         }
 api.nomcom.register(NomComResource())

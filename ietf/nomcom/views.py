@@ -424,6 +424,7 @@ def nominate(request, year, public, newperson):
                               {'form': form,
                                'nomcom': nomcom,
                                'year': year,
+                               'positions': nomcom.position_set.filter(is_open=True),
                                'selected': 'nominate'})
 
 @login_required
