@@ -21,6 +21,12 @@ checkbox found at the bottom of the page, and then submit the form.
 For information on how personal information is handled in the datatracker, please see
 {{ settings.IDTRACKER_BASE_URL }}/help/personal-information.
 
+In case you prefer to not follow any email links, due to phishing
+considerations, please just go to the datatracker and use the menu
+entries to log in or create an account.  The links above are provided
+for your convenience, but it works just as well to go the datracker
+manually and do what's needed.
+
 
 Thank You,
 The IETF Secretariat
