@@ -48,7 +48,7 @@ IETF_DOMAIN = 'ietf.org'
 ADMINS = (
     ('Henrik Levkowetz', 'henrik@levkowetz.com'),
     ('Robert Sparks', 'rjsparks@nostrum.com'),
-    ('Ole Laursen', 'olau@iola.dk'),
+#    ('Ole Laursen', 'olau@iola.dk'),
     ('Ryan Cross', 'rcross@amsl.com'),
     ('Glen Barney', 'glen@amsl.com'),
     ('Matt Larson', 'mlarson@amsl.com'),
