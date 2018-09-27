@@ -256,3 +256,9 @@ class ChangeUsernameForm(forms.Form):
         if not self.user.check_password(password):
             raise ValidationError('Invalid password')
         return password
+
+    def clean_username(self):
+        username = self.cleaned_data['username']
+        if User.objects.filter(username=username).exists():
+            raise ValidationError("A login with that username already exists.  Please contact the secretariat to get this resolved.")
+        return username
