@@ -148,7 +148,7 @@ class SubmissionBaseUploadForm(forms.Form):
                     self.xmltree = parser.parse(normalize=True)
                     ok, errors = self.xmltree.validate()
                 except Exception as exc:
-                    raise forms.ValidationError("An exception occurred when trying to process the XML file: %s" % exc.msg)
+                    raise forms.ValidationError("An exception occurred when trying to process the XML file: %s" % exc)
                 if not ok:
                     # Each error has properties:
                     #
