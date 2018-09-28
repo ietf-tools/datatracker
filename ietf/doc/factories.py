@@ -55,6 +55,14 @@ class BaseDocumentFactory(factory.DjangoModelFactory):
                 DocumentAuthor.objects.create(document=obj, person=person, email=person.email(), order=order)
                 order += 1
 
+    @factory.post_generation
+    def relations(obj, create, extracted, **kwargs): # pylint: disable=no-self-argument
+        if create and extracted:
+            for (rel_id,docalias) in extracted:
+                if isinstance(docalias,Document):
+                    docalias = docalias.docalias_set.first()
+                obj.relateddocument_set.create(relationship_id=rel_id,target=docalias)
+
     @classmethod
     def _after_postgeneration(cls, obj, create, results=None):
         """Save again the instance if creating and at least one hook ran."""

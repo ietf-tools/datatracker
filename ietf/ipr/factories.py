@@ -4,7 +4,7 @@ import factory
 
 from ietf.ipr.models import (
     IprDisclosureBase, HolderIprDisclosure, ThirdPartyIprDisclosure, NonDocSpecificIprDisclosure,
-    GenericIprDisclosure, IprDocRel
+    GenericIprDisclosure, IprDocRel, RelatedIpr
 )
 
 def _fake_patent_info():
@@ -35,6 +35,14 @@ class IprDisclosureBaseFactory(factory.DjangoModelFactory):
         if extracted:
             for doc in extracted:
                 IprDocRel.objects.create(disclosure=self,document=doc.docalias_set.first())
+
+    @factory.post_generation
+    def updates(self, create, extracted, **kwargs):
+        if not create:
+            return
+        if extracted:
+            for ipr in extracted:
+                RelatedIpr.objects.create(source=self,target=ipr,relationship_id='updates')
 
 
 class HolderIprDisclosureFactory(IprDisclosureBaseFactory):
