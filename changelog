@@ -1,3 +1,58 @@
+ietfdb (6.85.0) ietf; urgency=medium
+
+  **NomCom nominations can be shown before opening for feedback**
+
+  This is a combined feature and bugfix release, with fixes related
+  to User and Person record handling and merging, discovered when people
+  responded to the GDPR consent request emails, and enhancements in
+  the NomCom tools:
+
+  * Added username validation to the change username form, to avoid 
+    database key collision exceptions.  Instead give a message to contact the 
+    secretariat to resolve the situation.
+
+  * Fixed a problem where an exception could be raised when reporting an 
+    exception during draft XML processing to the user.
+
+  * Added 'consent' to the fields handled when merging person records.
+
+  * Merged in [15486] from rjsparks@nostrum.com:
+    Allow a nomcom to show nominees that have accepted nomination before 
+    feedback is open. Fixes #2598.  
+
+  * Tweaked the consent request email text to point out an alternative to 
+    follow email links.
+
+  * Merged in [15450] from rcross@amsl.com:
+    Change content-type of ajax_get_liaison_info to application/json.   
+
+  * Tweaked the text of the personal information help page to remove some 
+    ambiguity.
+
+  * A string.Template with a unicode template must be given unicode 
+    dictionary values if the values contain unicode codepoints.  Providing 
+    values that are objects with __str__() methods, or utf-8 encoded strings 
+    doesn't work.  Fixes an issue with nomcom template interpolation for 
+    nominees with non-ascii names.
+
+  * Tweaked the GDPR reminder command to avoid bounces to RT and copies to 
+    gmail.
+
+  * Changed the sort order of nominees on the private nomcom index page to be
+    according to name (instead of email address).
+
+  * Fixed an issue where a user record without matching person record will 
+    cause an exception.
+
+  * Removed the 2.5 hour session length choice for IETF 103, since there 
+    will be no Friday sessions that meeting.
+
+  * Updated the personal information notice email text based on advice from 
+    councel (Tom Zych).
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  28 Sep 2018 23:50:01 +0000
+
+
 ietfdb (6.84.0) ietf; urgency=medium
 
   **GDPR updates part 4**
