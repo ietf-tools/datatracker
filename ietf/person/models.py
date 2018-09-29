@@ -364,6 +364,8 @@ class PersonalApiKey(models.Model):
 
 PERSON_EVENT_CHOICES = [
     ("apikey_login", "API key login"),
+    ("gdpr_notice_email", "GDPR consent request email sent"),
+    ("email_address_deactivated", "Email address deactivated"),
     ]
 
 class PersonEvent(models.Model):
