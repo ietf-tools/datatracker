@@ -1,8 +1,12 @@
 {% extends "nomcom/nomcom_private_base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
-{% load origin %}
+{% load origin static %}
 
 {% block subtitle %} - Administration {% endblock %}
+
+{% block pagehead %}
+  <link rel="stylesheet" href="{% static "jquery.tablesorter/css/theme.bootstrap.min.css" %}">
+{% endblock %}
 
 {% block nomcom_content %}
   {% origin %}
@@ -111,7 +115,8 @@
     <form class="form-inline" id="batch-action-form" method="post">{% csrf_token %}
   {% endif %}
 
-  <table class="table table-condensed table-striped table-hover">
+
+  <table class="table table-condensed table-striped table-hover tablesorter">
     <thead>
       <tr>
 	{% if is_chair and nomcom.group.state_id == 'active' %}<th colspan="2"><span class="fa fa-check"></span></th>{% endif %}
@@ -160,4 +165,8 @@
   {% endif %}
   </div>
 
+{% endblock %}
+
+{% block js %}
+  <script src="{% static "jquery.tablesorter/js/jquery.tablesorter.combined.min.js" %}"></script>
 {% endblock %}
