@@ -27,6 +27,9 @@ entries to log in or create an account.  The links above are provided
 for your convenience, but it works just as well to go the datracker
 manually and do what's needed.
 
+Please note that you cannot give consent simply by replying to this email;
+you must log in to your account and do so there.
+
 
 Thank You,
 The IETF Secretariat
