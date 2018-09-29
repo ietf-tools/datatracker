@@ -2,18 +2,14 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals, print_function
 
-import datetime
-import email
 import flufl.bounce
 import mailbox
-import re
-import time
+import sys
 
 from tqdm import tqdm
 
-from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 from django.core.validators import validate_email
 
 import debug                            # pyflakes:ignore
@@ -26,8 +22,7 @@ class Command(BaseCommand):
         Deactivate bouncing email addresses.
 
         Take one or more email addresses to deactivate from the command line,
-        or read delivery-status emails from an mbox file and extract addresses
-        with delivery failures from that, and mark them inactive.
+        or read delivery-status emails from an mbox file and extract addresses        with delivery failures from that, and mark them inactive.
 
         """)
 
@@ -87,7 +82,7 @@ class Command(BaseCommand):
                     email.active = False
                     email.origin = email.person.user.username if email.person.user_id else ('script: %s deactivation' % options['reason'])
                     email.save()
-                    event = PersonEvent.objects.create(person=email.person, type='email_address_deactivated',
+                    PersonEvent.objects.create(person=email.person, type='email_address_deactivated',
                         desc="Deactivated the email addres <%s>. Reason: %s" % (email.address, options['reason']) )
                 else:
                     if email is None:
