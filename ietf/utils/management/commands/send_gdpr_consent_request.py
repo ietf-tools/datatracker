@@ -68,7 +68,8 @@ class Command(BaseCommand):
         if 'user' in options and options['user']:
             persons = Person.objects.filter(user__username__in=options['user'])
         else:
-            persons = Person.objects.exclude(consent=True).exclude(personevent__time__gt=latest_previous, personevent__type=event_type)
+            exclude = PersonEvent.objects.filter(time__gt=latest_previous, type=event_type)
+            persons = Person.objects.exclude(consent=True).exclude(personevent__in=exclude)
         # Report the size of the run
         runtime = persons.count() * delay
         self.stdout.write('Sending to %d users; estimated time a bit more than %d:%02d hours' % (persons.count(), runtime//3600, runtime%3600//60))
@@ -93,3 +94,4 @@ class Command(BaseCommand):
                     e = PersonEvent.objects.create(person=person, type='gdpr_notice_email', 
                                                desc="Sent GDPR notice email to %s with confirmation deadline %s" % (to, date))
                     time.sleep(delay)
+                
