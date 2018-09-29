@@ -31,14 +31,14 @@ class Command(BaseCommand):
         """)
 
     def add_arguments(self, parser):
-         parser.add_argument('-n', '--dry-run', action='store_true', default=False,
-             help="Don't send email, just list recipients")
-         parser.add_argument('-d', '--date', help="Date of deletion (mentioned in message)")
-         parser.add_argument('-m', '--minimum-interval', type=int, default=6,
-             help="Minimum interval between re-sending email messages, default: %(default)s days")
-         parser.add_argument('-r', '--rate', type=float, default=1.0,
-             help='Rate of sending mail, default: %(default)s/s')
-         parser.add_argument('user', nargs='*')
+        parser.add_argument('-n', '--dry-run', action='store_true', default=False,
+            help="Don't send email, just list recipients")
+        parser.add_argument('-d', '--date', help="Date of deletion (mentioned in message)")
+        parser.add_argument('-m', '--minimum-interval', type=int, default=6,
+            help="Minimum interval between re-sending email messages, default: %(default)s days")
+        parser.add_argument('-r', '--rate', type=float, default=1.0,
+            help='Rate of sending mail, default: %(default)s/s')
+        parser.add_argument('user', nargs='*')
          
 
     def handle(self, *args, **options):
