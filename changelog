@@ -1,6 +1,37 @@
+ietfdb (6.85.1) ietf; urgency=medium
+
+  **Email address managment and NomCom tool improvements**
+
+  This release brings no new user features, but provides a script that
+  will read email delivery-status messages and disable addresses with
+  permanent delivery failures.  There are also some other tweaks:
+
+  * Added a management command to deactivate email addresses found in 
+    delivery-status emails or given on the command-line.
+
+  * Added column sorting to the private nomcom nominee table.
+
+  * Tweaked the management command to send GDPR consent request emails, to 
+    correctly perform exclusion based on the time of previous consent request 
+    emails.
+
+  * Added a PersonEvent type for email address deactivation.
+
+  * Tweaked PersonAdmin to show name_from_draft after the name field.
+
+  * Added a clarification to the GDPR consent request email text after
+    receiving about 100 reply emails in response to the first email round that
+    contained what seems to be automatic responses indicating 'Yes, I
+    confirm'.  All those were from gmail addresses.  The consent request
+    now clearly says that people need to log in to their account in order
+    to indicate consent.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  30 Sep 2018 14:47:48 +0000
+
+
 ietfdb (6.85.0) ietf; urgency=medium
 
-  **NomCom nominations can be shown before opening for feedback**
+  **Improvements in NomCom pages and personal information handling**
 
   This is a combined feature and bugfix release, with fixes related
   to User and Person record handling and merging, discovered when people
