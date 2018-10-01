@@ -16,7 +16,7 @@ from django.views.decorators.csrf import csrf_exempt
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import ( Document, State, DocEvent, BallotDocEvent, BallotPositionDocEvent,
-    LastCallDocEvent, WriteupDocEvent, IESG_SUBSTATE_TAGS )
+    BallotCommentDocEvent, LastCallDocEvent, WriteupDocEvent, IESG_SUBSTATE_TAGS )
 from ietf.doc.utils import ( add_state_change_event, close_ballot, close_open_ballots,
     create_ballot_if_not_open, update_telechat )
 from ietf.doc.mails import ( email_ballot_deferred, email_ballot_undeferred, 
@@ -112,7 +112,7 @@ class EditPositionForm(forms.Form):
            raise forms.ValidationError("You must enter a non-empty discuss")
        return entered_discuss
 
-def save_position(form, doc, ballot, ad, login=None):
+def save_position(form, doc, ballot, ad, login=None, send_email=False):
     # save the vote
     if login is None:
         login = ad
@@ -141,10 +141,10 @@ def save_position(form, doc, ballot, ad, login=None):
         changes.append("comment")
 
         if pos.comment:
-            e = DocEvent(doc=doc, rev=doc.rev)
-            e.by = ad # otherwise we can't see who's saying it
+            e = BallotCommentDocEvent(doc=doc, rev=doc.rev, by=ad, send_email=send_email)
             e.type = "added_comment"
             e.desc = "[Ballot comment]\n" + pos.comment
+
             added_events.append(e)
 
     old_discuss = old_pos.discuss if old_pos else ""
@@ -153,8 +153,7 @@ def save_position(form, doc, ballot, ad, login=None):
         changes.append("discuss")
 
         if pos.pos.blocking:
-            e = DocEvent(doc=doc, rev=doc.rev, by=login)
-            e.by = ad # otherwise we can't see who's saying it
+            e = BallotCommentDocEvent(doc=doc, rev=doc.rev, by=ad, send_email=send_email)
             e.type = "added_comment"
             e.desc = "[Ballot %s]\n" % pos.pos.name.lower()
             e.desc += pos.discuss
@@ -209,9 +208,10 @@ def edit_position(request, name, ballot_id):
         
         form = EditPositionForm(request.POST, ballot_type=ballot.ballot_type)
         if form.is_valid():
-            save_position(form, doc, ballot, ad, login)
+            send_mail = request.POST.get("send_mail") or False
+            save_position(form, doc, ballot, ad, login, send_mail)
                         
-            if request.POST.get("send_mail"):
+            if send_mail:
                 qstr=""
                 if request.GET.get('ad'):
                     qstr += "?ad=%s" % request.GET.get('ad')
@@ -274,7 +274,7 @@ def api_set_position(request):
             return err(400, "No open ballot found")
         form = EditPositionForm(request.POST, ballot_type=ballot.ballot_type)
         if form.is_valid():
-            pos = save_position(form, doc, ballot, ad)
+            pos = save_position(form, doc, ballot, ad, send_email=True)
         else:
             errors = form.errors
             summary = ','.join([ "%s: %s" % (f, striptags(errors[f])) for f in errors ])

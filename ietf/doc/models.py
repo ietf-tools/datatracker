@@ -1112,6 +1112,9 @@ class BallotPositionDocEvent(DocEvent):
     comment = models.TextField(help_text="Optional comment", blank=True)
     comment_time = models.DateTimeField(help_text="Time optional comment was written", blank=True, null=True)
 
+class BallotCommentDocEvent(DocEvent):
+    send_email = models.BooleanField(default=False)
+
 class WriteupDocEvent(DocEvent):
     text = models.TextField(blank=True)
 
