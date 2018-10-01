@@ -14,7 +14,9 @@ def get_ipr_summary(disclosure):
     if disclosure.other_designations:
         names.append(disclosure.other_designations)
 
-    if len(names) == 1:
+    if not names:
+        summary = ''
+    elif len(names) == 1:
         summary = names[0]
     elif len(names) == 2:
         summary = " and ".join(names)
