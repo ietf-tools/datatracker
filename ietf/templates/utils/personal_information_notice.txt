@@ -11,7 +11,7 @@ the date of this email, that is, on {{ date }}.  If you later wish to create a
 new login, you can do so at
 {{ settings.IDTRACKER_BASE_URL }}{% url 'ietf.ietfauth.views.create_account' %}.
 
-If you would us to continue to maintain and process the information that
+If you would like us to continue to maintain and process the information that
 requires your consent, please go to 
 {{ settings.IDTRACKER_BASE_URL }}{% url 'ietf.ietfauth.views.profile' %}, 
 and review and edit the information as desired and confirm your consent to our
