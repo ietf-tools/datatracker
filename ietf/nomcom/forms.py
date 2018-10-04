@@ -661,6 +661,14 @@ class ReminderDatesForm(forms.ModelForm):
         super(ReminderDatesForm, self).__init__(*args, **kwargs)
         self.fields['date'].required = False
 
+    def clean(self):
+        cleaned_data = super(ReminderDatesForm, self).clean()
+        date = cleaned_data.get('date')
+        delete = cleaned_data.get('DELETE')
+        if date is None:
+            cleaned_data['date'] = ''
+            cleaned_data['DELETE'] = True
+        return cleaned_data
 
 class MutableFeedbackForm(forms.ModelForm):
 
