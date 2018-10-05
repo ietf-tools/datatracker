@@ -27,6 +27,7 @@ class EmailForm(forms.ModelForm):
     class Meta:
         model = Email
         fields = '__all__'
+        widgets = {'address': forms.TextInput(attrs={'readonly':True})}
 
 class EditPersonForm(forms.ModelForm):
     class Meta:
