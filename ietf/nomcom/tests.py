@@ -25,7 +25,7 @@ from ietf.nomcom.test_data import nomcom_test_data, generate_cert, check_comment
                                   MEMBER_USER, SECRETARIAT_USER, EMAIL_DOMAIN, NOMCOM_YEAR
 from ietf.nomcom.models import NomineePosition, Position, Nominee, \
                                NomineePositionStateName, Feedback, FeedbackTypeName, \
-                               Nomination, FeedbackLastSeen, TopicFeedbackLastSeen
+                               Nomination, FeedbackLastSeen, TopicFeedbackLastSeen, ReminderDates
 from ietf.nomcom.management.commands.send_reminders import Command, is_time_to_send
 from ietf.nomcom.factories import NomComFactory, FeedbackFactory, TopicFactory, \
                                   nomcom_kwargs_for_year, provide_private_key_to_test_client, \
@@ -404,6 +404,7 @@ class NomcomViewsTest(TestCase):
     def test_edit_nomcom_view(self):
         r = self.access_chair_url(self.edit_nomcom_url)
         q = PyQuery(r.content)
+        reminder_date = '%s-09-30' % self.year
 
         f = open(self.cert_file.name)
         response = self.client.post(self.edit_nomcom_url, {
@@ -411,9 +412,11 @@ class NomcomViewsTest(TestCase):
             'reminderdates_set-TOTAL_FORMS': q('input[name="reminderdates_set-TOTAL_FORMS"]').val(),
             'reminderdates_set-INITIAL_FORMS': q('input[name="reminderdates_set-INITIAL_FORMS"]').val(),
             'reminderdates_set-MAX_NUM_FORMS': q('input[name="reminderdates_set-MAX_NUM_FORMS"]').val(),
+            'reminderdates_set-0-date': reminder_date,
         })
         f.close()
         self.assertEqual(response.status_code, 200)
+
 
         nominee = Nominee.objects.get(email__person__user__username=COMMUNITY_USER)
         position = Position.objects.get(name='OAM')
@@ -430,6 +433,25 @@ class NomcomViewsTest(TestCase):
         self.assertNotEqual(feedback.comments, comments)
 
         self.assertEqual(check_comments(feedback.comments, comments, self.privatekey_file), True)
+
+        # Check that the set reminder date is present
+        reminder_dates = dict([ (d.id,str(d.date)) for d in nomcom.reminderdates_set.all() ])
+        self.assertIn(reminder_date, reminder_dates.values())
+
+        # Remove reminder date
+        q = PyQuery(response.content)          # from previous post
+        r = self.client.post(self.edit_nomcom_url, {
+            'reminderdates_set-TOTAL_FORMS': q('input[name="reminderdates_set-TOTAL_FORMS"]').val(),
+            'reminderdates_set-INITIAL_FORMS': q('input[name="reminderdates_set-INITIAL_FORMS"]').val(),
+            'reminderdates_set-MAX_NUM_FORMS': q('input[name="reminderdates_set-MAX_NUM_FORMS"]').val(),
+            'reminderdates_set-0-id': str(reminder_dates.keys()[0]),
+            'reminderdates_set-0-date': '',
+        })
+        self.assertEqual(r.status_code, 200)
+
+        # Check that reminder date has been removed
+        reminder_dates = dict([ (d.id,str(d.date)) for d in ReminderDates.objects.filter(nomcom=nomcom) ])
+        self.assertNotIn(reminder_date, reminder_dates.values())
 
         self.client.logout()
 

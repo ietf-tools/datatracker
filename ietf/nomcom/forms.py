@@ -664,7 +664,6 @@ class ReminderDatesForm(forms.ModelForm):
     def clean(self):
         cleaned_data = super(ReminderDatesForm, self).clean()
         date = cleaned_data.get('date')
-        delete = cleaned_data.get('DELETE')
         if date is None:
             cleaned_data['date'] = ''
             cleaned_data['DELETE'] = True
