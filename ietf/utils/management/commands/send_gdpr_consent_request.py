@@ -38,12 +38,15 @@ class Command(BaseCommand):
             help="Minimum interval between re-sending email messages, default: %(default)s days")
         parser.add_argument('-r', '--rate', type=float, default=1.0,
             help='Rate of sending mail, default: %(default)s/s')
+        parser.add_argument('-R', '--reminder', action='store_true', default=False,
+            help='Preface the subject with "Reminder:"')
         parser.add_argument('user', nargs='*')
          
 
     def handle(self, *args, **options):
         # Don't send copies of the whole bulk mailing to the debug mailbox
-        settings.EMAIL_COPY_TO = "Email Debug Copy <outbound@ietf.org>"
+        if settings.SERVER_MODE == 'production':
+            settings.EMAIL_COPY_TO = "Email Debug Copy <outbound@ietf.org>"
         #
         event_type = 'gdpr_notice_email'
         # Arguments
@@ -73,6 +76,9 @@ class Command(BaseCommand):
         # Report the size of the run
         runtime = persons.count() * delay
         self.stdout.write('Sending to %d users; estimated time a bit more than %d:%02d hours' % (persons.count(), runtime//3600, runtime%3600//60))
+        subject='Personal Information in the IETF Datatracker'
+        if options['reminder']:
+            subject = "Reminder: " + subject
         for person in persons:
             fields = ', '.join(person.needs_consent())
             if fields and person.email_set.exists():
@@ -84,7 +90,7 @@ class Command(BaseCommand):
                         to = [ e.address for e in person.email_set.all() ] # pyflakes:ignore
                     self.stdout.write("Sendimg email to %s" % to)
                     send_mail(None, to, "<gdprnoreply@ietf.org>",
-                        subject='Personal Information in the IETF Datatracker',
+                        subject=subject,
                         template='utils/personal_information_notice.txt',
                         context={
                             'date': date, 'days': days, 'fields': fields,
