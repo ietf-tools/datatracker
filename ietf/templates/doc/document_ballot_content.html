@@ -98,9 +98,10 @@
 		{% elif p.ballot.any_email_sent == True %}
 		  <span class="fa fa-envelope pull-right" title="Email requested to be sent for earlier discuss"></span>
 		{% elif p.ballot.any_email_sent == False %}
-		  <span class="fa fa-exclamation-triangle pull-right" title="No email send requests for this discuss"></span>
+		  <span class="fa fa-comment-o pull-right" title="No email send requests for this discuss"></span>
 		{% else %}
-		  <span class="pull-right small italic" style="margin-top: -0.3em;" title="No ballot position send log available">No email<br/>send info</span>
+		  <span class="fa fa-comment-o pull-right" title="No email send requests for this discuss"></span>
+
 		{% endif %}
 	      </h5>
             </div>
@@ -118,7 +119,7 @@
 		{% elif p.ballot.any_email_sent == True %}
 		  <span class="fa fa-envelope pull-right" title="Email requested to be sent for earlier comment"></span>
 		{% elif p.ballot.any_email_sent == False %}
-		  <span class="fa fa-exclamation-triangle pull-right" title="No email send requests for this comment"></span>
+		  <span class="fa fa-comment-o pull-right" title="No email send requests for this comment"></span>
 		{% else %}
 		  <div class="pull-right small italic" style="margin-top: -0.3em;" title="No ballot position send log available">No email<br/>send info</div>
 		{% endif %}
