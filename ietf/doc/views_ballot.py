@@ -16,7 +16,7 @@ from django.views.decorators.csrf import csrf_exempt
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import ( Document, State, DocEvent, BallotDocEvent, BallotPositionDocEvent,
-    BallotCommentDocEvent, LastCallDocEvent, WriteupDocEvent, IESG_SUBSTATE_TAGS )
+    LastCallDocEvent, WriteupDocEvent, IESG_SUBSTATE_TAGS )
 from ietf.doc.utils import ( add_state_change_event, close_ballot, close_open_ballots,
     create_ballot_if_not_open, update_telechat )
 from ietf.doc.mails import ( email_ballot_deferred, email_ballot_undeferred, 
@@ -127,6 +127,7 @@ def save_position(form, doc, ballot, ad, login=None, send_email=False):
     pos.comment = clean["comment"].rstrip()
     pos.comment_time = old_pos.comment_time if old_pos else None
     pos.discuss = clean["discuss"].rstrip()
+    pos.send_email = send_email
     if not pos.pos.blocking:
         pos.discuss = ""
     pos.discuss_time = old_pos.discuss_time if old_pos else None
@@ -141,7 +142,7 @@ def save_position(form, doc, ballot, ad, login=None, send_email=False):
         changes.append("comment")
 
         if pos.comment:
-            e = BallotCommentDocEvent(doc=doc, rev=doc.rev, by=ad, send_email=send_email)
+            e = DocEvent(doc=doc, rev=doc.rev, by=ad)
             e.type = "added_comment"
             e.desc = "[Ballot comment]\n" + pos.comment
 
@@ -153,7 +154,7 @@ def save_position(form, doc, ballot, ad, login=None, send_email=False):
         changes.append("discuss")
 
         if pos.pos.blocking:
-            e = BallotCommentDocEvent(doc=doc, rev=doc.rev, by=ad, send_email=send_email)
+            e = DocEvent(doc=doc, rev=doc.rev, by=ad)
             e.type = "added_comment"
             e.desc = "[Ballot %s]\n" % pos.pos.name.lower()
             e.desc += pos.discuss

@@ -7,7 +7,6 @@ from models import (StateType, State, RelatedDocument, DocumentAuthor, Document,
     DocHistoryAuthor, DocHistory, DocAlias, DocReminder, DocEvent, NewRevisionDocEvent,
     StateDocEvent, ConsensusDocEvent, BallotType, BallotDocEvent, WriteupDocEvent, LastCallDocEvent,
     TelechatDocEvent, BallotPositionDocEvent, ReviewRequestDocEvent, InitialReviewDocEvent,
-    BallotCommentDocEvent,
     AddedMessageEvent, SubmissionDocEvent, DeletedEvent, EditedAuthorsDocEvent, DocumentURL)
 
 
@@ -196,7 +195,6 @@ admin.site.register(NewRevisionDocEvent, DocEventAdmin)
 admin.site.register(StateDocEvent, DocEventAdmin)
 admin.site.register(ConsensusDocEvent, DocEventAdmin)
 admin.site.register(BallotDocEvent, DocEventAdmin)
-admin.site.register(BallotCommentDocEvent, DocEventAdmin)
 admin.site.register(WriteupDocEvent, DocEventAdmin)
 admin.site.register(LastCallDocEvent, DocEventAdmin)
 admin.site.register(TelechatDocEvent, DocEventAdmin)

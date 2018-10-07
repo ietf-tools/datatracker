@@ -1103,6 +1103,15 @@ class BallotDocEvent(DocEvent):
         positions.sort(key=lambda p: (p.old_ad, p.ad.last_name()))
         return positions
 
+    @memoize
+    def any_email_sent(self):
+        # When the send_email field is introduced, old positions will have it
+        # set to None.  We sill essentially return True, False, or don't know:
+        sent_list = BallotPositionDocEvent.objects.filter(ballot=self, send_email=True).values_list('send_email', flat=True)
+        false = any( s==False for s in sent_list )
+        true  = any( s==True for s in sent_list )
+        return True if true else False if false else None
+
 class BallotPositionDocEvent(DocEvent):
     ballot = ForeignKey(BallotDocEvent, null=True, default=None) # default=None is a temporary migration period fix, should be removed when charter branch is live
     ad = ForeignKey(Person)
@@ -1111,9 +1120,7 @@ class BallotPositionDocEvent(DocEvent):
     discuss_time = models.DateTimeField(help_text="Time discuss text was written", blank=True, null=True)
     comment = models.TextField(help_text="Optional comment", blank=True)
     comment_time = models.DateTimeField(help_text="Time optional comment was written", blank=True, null=True)
-
-class BallotCommentDocEvent(DocEvent):
-    send_email = models.BooleanField(default=False)
+    send_email = models.NullBooleanField(default=None)
 
 class WriteupDocEvent(DocEvent):
     text = models.TextField(blank=True)
