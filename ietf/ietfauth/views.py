@@ -41,7 +41,7 @@ import django.core.signing
 from django import forms
 from django.contrib import messages
 from django.conf import settings
-from django.contrib.auth import update_session_auth_hash
+from django.contrib.auth import update_session_auth_hash, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.hashers import identify_hasher
@@ -604,6 +604,11 @@ def login(request, extra_context=None):
                                 }
     response = LoginView.as_view(extra_context=extra_context)(request)
     if isinstance(response, HttpResponseRedirect) and user.is_authenticated:
+        try:
+            user.person
+        except Person.DoesNotExist:
+            logout(request)
+            response = render(request, 'registration/missing_person.html')
         if require_consent:
             messages.warning(request, mark_safe("""
 
