@@ -1015,7 +1015,7 @@ class SubmitTests(TestCase):
         q = PyQuery(r.content)
         m = q('p.alert-warning').text()
 
-        self.assertIn('The idnits check returned 1 error', m)
+        self.assertIn('The idnits check returned 1 warning', m)
 
     def test_submit_invalid_yang(self):
         make_test_data()
