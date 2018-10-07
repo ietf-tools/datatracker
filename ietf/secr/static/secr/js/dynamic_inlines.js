@@ -31,6 +31,7 @@ function add_inline_form(name) {
         var count = field_table.children().length
         var copy = $('tr:last', field_table).clone(true)
         copy.removeClass("row1 row2")
+        copy.find("input[name$='address']").removeAttr("readonly")
         copy.addClass("row"+((count % 2) == 0 ? 1 : 2))
         field_table.append(copy)
         increment_form_ids($('tr:last', field_table), count, name)
