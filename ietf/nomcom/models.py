@@ -121,7 +121,7 @@ class Nominee(models.Model):
     class Meta:
         verbose_name_plural = 'Nominees'
         unique_together = ('email', 'nomcom')
-        ordering = ['-nomcom__group__acronym', 'email__address', ]
+        ordering = ['-nomcom__group__acronym', 'person__name', ]
 
     def __unicode__(self):
         if self.email.person and self.email.person.name:
@@ -134,10 +134,6 @@ class Nominee(models.Model):
             return u'%s' % (self.email.person.plain_name(),)
         else:
             return self.email.address
-
-    class Meta:
-        ordering = ['person__name', ]
-
 
 class NomineePosition(models.Model):
 
