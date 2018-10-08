@@ -132,7 +132,7 @@ def private_key(request, year):
 @role_required("Nomcom")
 def private_index(request, year):
     nomcom = get_nomcom_by_year(year)
-    all_nominee_positions = NomineePosition.objects.get_by_nomcom(nomcom).not_duplicated().order_by('nominee__person__name')
+    all_nominee_positions = NomineePosition.objects.get_by_nomcom(nomcom).not_duplicated()
     is_chair = nomcom.group.has_role(request.user, "chair")
     if is_chair and request.method == 'POST':
         if nomcom.group.state_id != 'active':

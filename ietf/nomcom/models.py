@@ -135,6 +135,9 @@ class Nominee(models.Model):
         else:
             return self.email.address
 
+    class Meta:
+        ordering = ['person__name', ]
+
 
 class NomineePosition(models.Model):
 
