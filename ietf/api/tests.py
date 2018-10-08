@@ -132,10 +132,9 @@ class CustomApiTestCase(TestCase):
         event = doc.latest_event()
         self.assertEqual(event.by, recman)
 
-
     def test_person_export(self):
         person = PersonFactory()
-        url = urlreverse('ietf.api.views.PersonExportView')
+        url = urlreverse('ietf.api.views.PersonalInformationExportView')
         login_testing_unauthorized(self, person.user.username, url)
         r = self.client.get(url)
         jsondata = r.json()
@@ -143,6 +142,41 @@ class CustomApiTestCase(TestCase):
         self.assertEqual(data['name'], person.name)
         self.assertEqual(data['ascii'], person.ascii)
         self.assertEqual(data['user']['email'], person.user.email)
+
+    def test_api_v2_person_export_view(self):
+        url = urlreverse('ietf.api.views.ApiV2PersonExportView')
+        secretariat_role = RoleFactory(group__acronym='secretariat', name_id='secr')
+        secretariat = secretariat_role.person
+        apikey = PersonalApiKey.objects.create(endpoint=url, person=secretariat)
+
+        # error cases
+        r = self.client.post(url, {})
+        self.assertContains(r, "Missing apikey parameter", status_code=400)
+
+        badrole = RoleFactory(group__type_id='ietf', name_id='ad')
+        badapikey = PersonalApiKey.objects.create(endpoint=url, person=badrole.person)
+        badrole.person.user.last_login = timezone.now()
+        badrole.person.user.save()
+        r = self.client.post(url, {'apikey': badapikey.hash()})
+        self.assertContains(r, "Restricted to role Secretariat", status_code=403)
+
+        r = self.client.post(url, {'apikey': apikey.hash()})
+        self.assertContains(r, "Too long since last regular login", status_code=400)
+        secretariat.user.last_login = timezone.now()
+        secretariat.user.save()
+
+        r = self.client.post(url, {'apikey': apikey.hash()})
+        self.assertContains(r, "No filters provided", status_code=400)
+
+        # working case
+        r = self.client.post(url, {'apikey': apikey.hash(), 'email': secretariat.email().address, '_expand': 'user'})
+        self.assertEqual(r.status_code, 200)
+        jsondata = r.json()
+        data = jsondata['person.person'][str(secretariat.id)]
+        self.assertEqual(data['name'], secretariat.name)
+        self.assertEqual(data['ascii'], secretariat.ascii)
+        self.assertEqual(data['user']['email'], secretariat.user.email)
+
 
 class TastypieApiTestCase(ResourceTestCaseMixin, TestCase):
     def __init__(self, *args, **kwargs):

@@ -20,7 +20,8 @@ urlpatterns = [
     url(r'^meeting/session/video/url$', meeting_views.api_set_session_video_url),
     url(r'^submit/?$', submit_views.api_submit),
     url(r'^iesg/position', views_ballot.api_set_position),
-    url(r'^export/person/$', api_views.PersonExportView.as_view()), 
+    url(r'^export/personal-information/$', api_views.PersonalInformationExportView.as_view()),
+    url(r'^v2/person/person', api_views.ApiV2PersonExportView.as_view()),
 ]
 
 # Additional (standard) Tastypie endpoints

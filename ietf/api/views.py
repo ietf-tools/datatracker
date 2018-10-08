@@ -11,6 +11,7 @@ from django.http import HttpResponse
 from django.shortcuts import render, get_object_or_404
 from django.urls import reverse
 from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.gzip import gzip_page
 from django.views.generic.detail import DetailView
 
@@ -24,6 +25,9 @@ import debug                            # pyflakes:ignore
 from ietf.person.models import Person
 from ietf.api import _api_list
 from ietf.api.serializer import JsonExportMixin
+from ietf.utils.decorators import require_api_key
+from ietf.ietfauth.utils import role_required
+
 
 def top_level(request):
     available_resources = {}
@@ -59,10 +63,12 @@ def api_help(request):
     
 
 @method_decorator((login_required, gzip_page), name='dispatch')
-class PersonExportView(DetailView, JsonExportMixin):
+class PersonalInformationExportView(DetailView, JsonExportMixin):
+    debug.mark()
     model = Person
 
     def get(self, request):
+        debug.mark()
         person = get_object_or_404(self.model, user=request.user)
         expand = ['searchrule', 'documentauthor', 'ad_document_set', 'ad_dochistory_set', 'docevent',
             'ballotpositiondocevent', 'deletedevent', 'email_set', 'groupevent', 'role', 'rolehistory', 'iprdisclosurebase',
@@ -71,5 +77,22 @@ class PersonExportView(DetailView, JsonExportMixin):
             'reviewersettings', 'reviewsecretarysettings', 'unavailableperiod', 'reviewwish',
             'nextreviewerinteam', 'reviewrequest', 'meetingregistration', 'submissionevent', 'preapproval',
             'user', 'user__communitylist', ]
+        debug.mark()
         return self.json_view(request, filter={'id':person.id}, expand=expand)
 
+
+@method_decorator((csrf_exempt, require_api_key, role_required('Secretariat')), name='dispatch')
+class ApiV2PersonExportView(DetailView, JsonExportMixin):
+    model = Person
+
+    def err(self, code, text):
+        return HttpResponse(text, status=code, content_type='text/plain')
+
+    def post(self, request):
+        querydict = request.POST.copy()
+        querydict.pop('apikey', None)
+        expand = querydict.pop('_expand', [])
+        if not querydict:
+            return self.err(400, "No filters provided")
+
+        return self.json_view(request, filter=querydict.dict(), expand=expand)
