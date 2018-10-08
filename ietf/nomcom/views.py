@@ -6,6 +6,7 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import AnonymousUser
 from django.contrib import messages
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.urls import reverse
 from django.http import Http404, HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import render, get_object_or_404, redirect
@@ -789,9 +790,15 @@ def view_feedback_pending(request, year):
     FeedbackFormSet = modelformset_factory(Feedback,
                                            form=PendingFeedbackForm,
                                            extra=0)
-    feedbacks = Feedback.objects.filter(type__isnull=True, nomcom=nomcom)
-
-
+    feedback_list = Feedback.objects.filter(type__isnull=True, nomcom=nomcom).order_by('-time')
+    paginator = Paginator(feedback_list, 20)
+    page_num = request.GET.get('page')
+    try:
+        feedback_page = paginator.page(page_num)
+    except PageNotAnInteger:
+        feedback_page = paginator.page(1)
+    except EmptyPage:
+        feedback_page = paginator.page(paginator.num_pages)
     extra_step = False
     if request.method == 'POST' and request.POST.get('end'):
         extra_ids = request.POST.get('extra_ids', None)
@@ -853,7 +860,7 @@ def view_feedback_pending(request, year):
                 messages.success(request, 'Feedback saved')
                 return redirect('ietf.nomcom.views.view_feedback_pending', year=year)
     else:
-        formset = FeedbackFormSet(queryset=feedbacks)
+        formset = FeedbackFormSet(queryset=feedback_page.object_list)
         for form in formset.forms:
             form.set_nomcom(nomcom, request.user)
     type_dict = OrderedDict()
@@ -875,6 +882,7 @@ def view_feedback_pending(request, year):
                                'types': FeedbackTypeName.objects.all().order_by('pk'),
                                'nomcom': nomcom,
                                'is_chair_task' : True,
+                               'page': feedback_page,
                               })
 
 

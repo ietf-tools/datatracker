@@ -150,11 +150,33 @@
           </tbody>
         </table>
 
+	<div class="pagination text-center col-md-12 col-sm-12">
+	  <span class="step-links">
+	    {% if page.has_previous %}
+	    <a href="?page={{ page.previous_page_number }}">&lt;&nbsp;</a>
+	    {% else %}
+	    |&nbsp;
+	    {% endif %}
+
+	    <span class="current">
+	      Page {{ page.number }} of {{ page.paginator.num_pages }}
+	    </span>
+
+	    {% if page.has_next %}
+	    <a href="?page={{ page.next_page_number }}">&nbsp;&gt;</a>
+	    {% else %}
+	    &nbsp;|
+	    {% endif %}
+	  </span>
+	</div>
+
+
         {% buttons %}
           <input class="btn btn-primary" type="submit" value="Classify">
         {% endbuttons %}
       {% endif %}
     </form>
+
 
   {% else %}
       <p>There is no pending feedback.</p>
