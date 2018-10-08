@@ -75,6 +75,9 @@ class NomCom(models.Model):
                 self._cached_year = year
         return year
 
+    def pending_email_count(self):
+        return self.feedback_set.filter(type__isnull=True).count()
+
 
 def delete_nomcom(sender, **kwargs):
     nomcom = kwargs.get('instance', None)

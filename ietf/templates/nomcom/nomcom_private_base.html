@@ -23,12 +23,13 @@
     <li {% if selected == "private_key" %}class="active"{% endif %}><a href="{% url 'ietf.nomcom.views.private_key' year %}">Private key</a></li>
 
     {% if user|is_chair_or_advisor:year %}
+      <li {% if selected == "feedback_pending" %}class="active"{% endif %}><a href="{% url 'ietf.nomcom.views.view_feedback_pending' year %}">Pending emails&ensp;<span class="badge">{{nomcom.pending_email_count}}</span></a></li>
+
       <li class="dropdown">
         <a class="dropdown-toggle" data-toggle="dropdown" href="#">Chair/Advisor Tasks <span class="caret"></span></a>
         <ul class="dropdown-menu" role="menu">
           {% if nomcom.group.state_id == 'active' %}
           <li role = "presentation" class = "dropdown-header">Feedback Management</li>
-            <li {% if selected == "feedback_pending" %}class="active"{% endif %}><a href="{% url 'ietf.nomcom.views.view_feedback_pending' year %}">Classify pending feedback</a></li>
             <li {% if selected == "feedback_email" %}class="active"{% endif %}><a href="{% url 'ietf.nomcom.views.private_feedback_email' year %}">Enter email feedback</a></li>
             <li {% if selected == "questionnaire" %}class="active"{% endif %}><a href="{% url 'ietf.nomcom.views.private_questionnaire' year %}">Enter questionnaire response</a></li>
             <li {% if selected == "extract_email_lists" %}class="active"{% endif %}><a href="{% url 'ietf.nomcom.views.extract_email_lists' year %}">Extract email lists</a></li>

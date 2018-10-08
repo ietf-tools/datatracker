@@ -68,7 +68,6 @@ class PersonalInformationExportView(DetailView, JsonExportMixin):
     model = Person
 
     def get(self, request):
-        debug.mark()
         person = get_object_or_404(self.model, user=request.user)
         expand = ['searchrule', 'documentauthor', 'ad_document_set', 'ad_dochistory_set', 'docevent',
             'ballotpositiondocevent', 'deletedevent', 'email_set', 'groupevent', 'role', 'rolehistory', 'iprdisclosurebase',
@@ -77,7 +76,6 @@ class PersonalInformationExportView(DetailView, JsonExportMixin):
             'reviewersettings', 'reviewsecretarysettings', 'unavailableperiod', 'reviewwish',
             'nextreviewerinteam', 'reviewrequest', 'meetingregistration', 'submissionevent', 'preapproval',
             'user', 'user__communitylist', ]
-        debug.mark()
         return self.json_view(request, filter={'id':person.id}, expand=expand)
 
 
