@@ -1,3 +1,55 @@
+ietfdb (6.86.0) ietf; urgency=medium
+
+  **NomCom tool improvements**
+
+  This is a feature release with only small tweaks, mostly related to the
+  NomCom tools, but there are also some IESG page, test suite, account, and
+  utility script improvements, 
+
+  * Added pagination to the nomcom pending-feedback page, to reduce load 
+    time.
+
+  * Changed the default sort for nomcom.models.Nominees to be 
+    'person__name'.
+
+  * Merged in [15523] from rjsparks@nostrum.com:
+    Converted the liaisons tests to use factories.  
+
+  * Added a '--reminder' switch to the GDPR request mailer, for repeat 
+    notifications.
+
+  * Merged in [15522] from rcross@amsl.com:
+    Made email address read-only in rolodex edit form.  Fixes #2602.   
+
+  * Prevent issues for logins without Person records by not letting 
+    Person-less users through login.
+
+  * Added an send_email field to BallotPostitionDocEvent to reflect whether
+    the 'Send email' button was used to save the ballot position.  Added icons
+    on documents' IESG evaluation record to reflect this.
+
+  * Adjusted the test_submit_nonascii_name() to match the output from 
+    idnits 2.16.0, which emits warnings rather than errors for nonascii content.
+
+  * Built out test_edit_nomcom_view() to also test adding and removing 
+    reminder dates.
+
+  * Added a form clean() for the reminder dates of the nomcom edit form, to 
+    make something appropriate out of edits that remove reminder dates, rather 
+    than clicking 'delete'.  This fixes a potential exception, when a blank 
+    date cannot be saved, and also does what the user expected (deletes a 
+    blanked date).
+
+  * The nomcom send_reminders command was not being run daily.  Fixed that.
+
+  * Fixed a typo in the GDPR consent request email template.
+
+  * Merged in [15492] from rjsparks@nostrum.com:
+    Use factories for ipr tests.  
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  08 Oct 2018 13:23:53 +0000
+
+
 ietfdb (6.85.1) ietf; urgency=medium
 
   **Email address managment and NomCom tool improvements**
