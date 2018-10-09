@@ -209,7 +209,7 @@ def edit_position(request, name, ballot_id):
         
         form = EditPositionForm(request.POST, ballot_type=ballot.ballot_type)
         if form.is_valid():
-            send_mail = request.POST.get("send_mail") or False
+            send_mail = True if request.POST.get("send_mail") else False
             save_position(form, doc, ballot, ad, login, send_mail)
                         
             if send_mail:
