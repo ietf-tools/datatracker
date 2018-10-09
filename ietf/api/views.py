@@ -64,7 +64,6 @@ def api_help(request):
 
 @method_decorator((login_required, gzip_page), name='dispatch')
 class PersonalInformationExportView(DetailView, JsonExportMixin):
-    debug.mark()
     model = Person
 
     def get(self, request):
