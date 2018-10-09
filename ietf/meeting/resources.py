@@ -40,6 +40,7 @@ class MeetingResource(ModelResource):
             "venue_addr": ALL,
             "break_area": ALL,
             "reg_area": ALL,
+            "agenda_info_note": ALL,
             "agenda_warning_note": ALL,
             "session_request_lock_message": ALL,
             "type": ALL_WITH_RELATIONS,
