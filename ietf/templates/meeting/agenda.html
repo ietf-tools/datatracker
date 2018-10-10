@@ -137,8 +137,8 @@
 
         <h2>
           Schedule
-          {% if schedule.meeting.agenda_note %}
-            <span class="label label-danger">{{ schedule.meeting.agenda_note|removetags:"h1"|safe }}</span>
+          {% if schedule.meeting.agenda_warning_note %}
+            <span class="label label-danger">{{ schedule.meeting.agenda_warning_note|removetags:"h1"|safe }}</span>
           {% endif %}
         </h2>
 
