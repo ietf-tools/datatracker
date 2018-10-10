@@ -3,13 +3,12 @@ from django.urls import reverse
 from pyquery import PyQuery
 
 from ietf.utils.test_utils import TestCase
+from ietf.group.factories import RoleFactory
 from ietf.group.models import Group
 from ietf.message.models import Message
 from ietf.name.models import RoleName
 from ietf.nomcom.test_data import nomcom_test_data
-from ietf.person.models import Person
 from ietf.message.models import AnnouncementFrom
-from ietf.utils.test_data import make_test_data
 from ietf.utils.mail import outbox, empty_outbox
 
 SECR_USER='secretary'
@@ -18,7 +17,6 @@ AD_USER=''
 
 class SecrAnnouncementTestCase(TestCase):
     def setUp(self):
-        make_test_data()
         chair = RoleName.objects.get(slug='chair')
         secr = RoleName.objects.get(slug='secr')
         ietf = Group.objects.get(acronym='ietf')
@@ -64,9 +62,8 @@ class SecrAnnouncementTestCase(TestCase):
 class UnauthorizedAnnouncementCase(TestCase):
     def test_unauthorized(self):
         "Unauthorized Test"
-        make_test_data()
         url = reverse('ietf.secr.announcement.views.main')
-        person = Person.objects.filter(role__group__acronym='mars')[0]
+        person = RoleFactory(name_id='chair',group__acronym='mars').person
         self.client.login(username=person.user.username, password=person.user.username+"+password")
         r = self.client.get(url)
         self.assertEqual(r.status_code, 403)
@@ -74,7 +71,6 @@ class UnauthorizedAnnouncementCase(TestCase):
 class SubmitAnnouncementCase(TestCase):
     def test_invalid_submit(self):
         "Invalid Submit"
-        make_test_data()
         url = reverse('ietf.secr.announcement.views.main')
         post_data = {'id_subject':''}
         self.client.login(username="secretary", password="secretary+password")
@@ -85,7 +81,6 @@ class SubmitAnnouncementCase(TestCase):
         
     def test_valid_submit(self):
         "Valid Submit"
-        make_test_data()
         nomcom_test_data()
         empty_outbox()
         url = reverse('ietf.secr.announcement.views.main')
