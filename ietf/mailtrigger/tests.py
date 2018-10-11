@@ -1,12 +1,8 @@
 from django.urls import reverse as urlreverse
 
 from ietf.utils.test_utils import TestCase, unicontent
-from ietf.utils.test_data import make_test_data
 
 class EventMailTests(TestCase):
-
-    def setUp(self):
-        make_test_data()
 
     def test_show_triggers(self):
 

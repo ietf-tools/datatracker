@@ -1,9 +1,9 @@
 from django.urls import reverse
 
+from ietf.group.factories import GroupFactory, GroupEventFactory
 from ietf.group.models import Group, GroupEvent
 from ietf.person.models import Person
 from ietf.utils.test_utils import TestCase
-from ietf.utils.test_data import make_test_data
 
 
 SECR_USER='secretary'
@@ -18,7 +18,7 @@ def augment_data():
 class SecrAreasTestCase(TestCase):
     def test_main(self):
         "Main Test"
-        make_test_data()
+        GroupFactory(type_id='area')
         url = reverse('ietf.secr.areas.views.list_areas')
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.get(url)
@@ -26,17 +26,14 @@ class SecrAreasTestCase(TestCase):
 
     def test_view(self):
         "View Test"
-        make_test_data()
-        augment_data()
-        areas = Group.objects.filter(type='area',state='active')
-        url = reverse('ietf.secr.areas.views.view', kwargs={'name':areas[0].acronym})
+        area = GroupEventFactory(type='started',group__type_id='area').group
+        url = reverse('ietf.secr.areas.views.view', kwargs={'name':area.acronym})
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
 
     def test_add(self):
         "Add Test"
-        make_test_data()
         url = reverse('ietf.secr.areas.views.add')
         self.client.login(username="secretary", password="secretary+password")
         data = {'acronym':'ta',

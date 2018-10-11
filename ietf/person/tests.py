@@ -10,7 +10,7 @@ from django.urls import reverse as urlreverse
 import debug                            # pyflakes:ignore
 
 from ietf.community.models import CommunityList
-from ietf.group.models import Group
+from ietf.group.factories import RoleFactory
 from ietf.nomcom.models import NomCom
 from ietf.nomcom.test_data import nomcom_test_data
 from ietf.nomcom.factories import NomComFactory, NomineeFactory, NominationFactory, FeedbackFactory, PositionFactory
@@ -18,7 +18,6 @@ from ietf.person.factories import EmailFactory, PersonFactory, UserFactory
 from ietf.person.models import Person, Alias
 from ietf.person.utils import (merge_persons, determine_merge_order, send_merge_notification,
     handle_users, get_extra_primary, dedupe_aliases, move_related_objects, merge_nominees, merge_users)
-from ietf.utils.test_data import make_test_data
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized
 from ietf.utils.mail import outbox, empty_outbox
 
@@ -32,8 +31,7 @@ def get_person_no_user():
 
 class PersonTests(TestCase):
     def test_ajax_search_emails(self):
-        draft = make_test_data()
-        person = draft.ad
+        person = PersonFactory()
 
         r = self.client.get(urlreverse("ietf.person.views.ajax_select2_search", kwargs={ "model_name": "email"}), dict(q=person.name))
         self.assertEqual(r.status_code, 200)
@@ -238,12 +236,10 @@ class PersonUtilsTests(TestCase):
         self.assertFalse(source_user.is_active)
 
     def test_merge_users(self):
-        make_test_data()
-
         person = PersonFactory()
         source = person.user
         target = UserFactory()
-        mars = Group.objects.get(acronym='mars')
+        mars = RoleFactory(name_id='chair',group__acronym='mars').group
         communitylist = CommunityList.objects.create(user=source, group=mars)
         nomcom = NomComFactory()
         position = PositionFactory(nomcom=nomcom)

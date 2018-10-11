@@ -3,19 +3,16 @@ import datetime
 from django.urls import reverse as urlreverse
 
 from ietf.utils.test_utils import TestCase, unicontent
-from ietf.utils.test_data import make_test_data
 from ietf.utils.mail import outbox
 
 from ietf.message.models import Message, SendQueue
 from ietf.person.models import Person
-from ietf.group.models import Group
+from ietf.group.factories import GroupFactory
 from ietf.message.utils import send_scheduled_message_from_send_queue
 
 class MessageTests(TestCase):
     def test_message_view(self):
-        make_test_data()
-
-        nomcom = Group.objects.create(name="nomcom%s" % datetime.date.today().year, type_id="nomcom")
+        nomcom = GroupFactory(name="nomcom%s" % datetime.date.today().year, type_id="nomcom")
         msg = Message.objects.create(
             by=Person.objects.get(name="(System)"),
             subject="This is a test",
@@ -36,8 +33,6 @@ class MessageTests(TestCase):
 
 class SendScheduledAnnouncementsTests(TestCase):
     def test_send_plain_announcement(self):
-        make_test_data()
-
         msg = Message.objects.create(
             by=Person.objects.get(name="(System)"),
             subject="This is a test",
@@ -64,8 +59,6 @@ class SendScheduledAnnouncementsTests(TestCase):
         self.assertTrue(SendQueue.objects.get(id=q.id).sent_at)
 
     def test_send_mime_announcement(self):
-        make_test_data()
-
         msg = Message.objects.create(
             by=Person.objects.get(name="(System)"),
             subject="This is a test",
