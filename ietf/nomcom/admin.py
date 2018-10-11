@@ -42,8 +42,12 @@ class PositionAdmin(admin.ModelAdmin):
 admin.site.register(Position, PositionAdmin)
 
 class FeedbackAdmin(admin.ModelAdmin):
-    list_display = ['id', 'nomcom', 'author', 'subject', 'type', 'user', 'time']
-    list_filter = ['nomcom', 'type', 'time']
+    def nominee(self, obj):
+        return u", ".join(n.person.ascii for n in obj.nominees.all())
+    nominee.admin_order_field = 'nominees__person__ascii'
+
+    list_display = ['id', 'nomcom', 'author', 'nominee', 'subject', 'type', 'user', 'time']
+    list_filter = ['nomcom', 'type', 'time', ]
     raw_id_fields = ['positions', 'topics', 'user']
 admin.site.register(Feedback, FeedbackAdmin)
 
