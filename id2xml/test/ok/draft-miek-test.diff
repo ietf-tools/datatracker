@@ -1,3 +1,7 @@
+4c4
+< Intended status: Informational                              January 2013
+---
+> Intended status: Informational                           January 1, 2013
 68,69c68,69
 <    was tedious even thought the XML of xml2rfc [1] is very "light".  The
 <    latest version of xml2rfc version 2 can be found here [2].
