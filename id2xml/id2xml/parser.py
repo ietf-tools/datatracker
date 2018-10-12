@@ -108,6 +108,13 @@ section_start_re = {
     'back':     r'^([0-9A-Za-z](\.[0-9]+)*\.?|%s)' % ('|'.join(section_names['back'])),
 }
 
+class RunawayLoop(RuntimeError):
+    pass
+
+def loop_break(fn):
+    raise RunawayLoop("Runaway loop in %s()" % fn)
+    return 1
+
 # ----------------------------------------------------------------------
 #
 one_ref_re = r"(([0-9A-Z-]|I-?D.)[0-9A-Za-z-]*( [0-9A-Z-]+)?|(IEEE|ieee)[A-Za-z0-9.-]+|(ITU ?|ITU-T ?|G\\.)[A-Za-z0-9.-]+)";
@@ -1151,6 +1158,7 @@ class DraftParser(Base):
         found_rightleft = False
         #
         self.skip_blank_lines()
+        loops = 0
         while True:
             self.dshow('self.l')
             self.dshow('self.lines[self.l]')
@@ -1183,6 +1191,7 @@ class DraftParser(Base):
                 found_rightleft = True
                 lines_left.append(Line(line.num, left))
                 lines_right.append(Line(line.num, right))
+            loops += 1 if loops < 68 else loop_break('get_first_page_top')
         return lines_left, lines_right, lines_title, lines_name
 
     @dtrace
@@ -1608,6 +1617,7 @@ class DraftParser(Base):
                         'fullname': match.group(1).strip(),
                         'initials': match.group(2).strip(),
                         'surname':  match.group(3).strip(),
+                        'address':  {},
                     }
                     if is_editor:
                         author['role'] = 'editor'
@@ -1630,8 +1640,6 @@ class DraftParser(Base):
                         if a.get('organization') != None:
                             break
                         self.authors[i]['organization'] = organization
-        #debug.show('authors')
-        #debug.show('date')
         return self.authors, date
 
     @dtrace
@@ -1685,6 +1693,8 @@ class DraftParser(Base):
                     bp = boilerplate['status'][part]
                     if '_workgroup' in part:
                         bp = bp % workgroup
+                    if 'candidates' in bp and 'a candidate' in text:
+                        bp = bp.replace('candidates', 'a candidate')
                     if match_boilerplate(bp, text):
                         consensus = '_consensus' in part
                         self.skip(bp)
@@ -1773,7 +1783,9 @@ class DraftParser(Base):
                     break
         #
         for author in self.authors:
-            auth = self.root.find(".//author[@surname='{surname}'][@initials='{initials}']".format(**author))
+            auth = None
+            if 'initials' in author:
+                auth = self.root.find(".//author[@surname='{surname}'][@initials='{initials}']".format(**author))
             if auth is None:
                 self.warn(self.l, "This author is listed in the %s section, but was not found "
                                   " on the first page: %s"%(first.txt, author['fullname']))
@@ -1805,6 +1817,8 @@ class DraftParser(Base):
     def skip(self, expect):
         "Read, match, and skip over the given text."
         self.skip_blank_lines()
+        if not expect:
+            return True
         line, p = self.get_line()
         text = line.txt
         l = len(text)
@@ -1814,6 +1828,7 @@ class DraftParser(Base):
         expect = normalize_http(normalize_space(expect.lstrip()))
         def fail(l, e, t):
             self.err(l.num, "Unexpected text: expected '%s', found '%s'" % (e, t))
+        loops = 0
         while True:
             el = len(expect)
             tl = len(text)
@@ -1843,6 +1858,7 @@ class DraftParser(Base):
                     break
                 else:
                     fail(line, expect, text)
+            loops += 1 if loops < 100 else loop_break('skip')
         return True
 
     @dtrace
