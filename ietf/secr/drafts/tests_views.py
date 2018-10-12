@@ -11,7 +11,7 @@ from pyquery import PyQuery
 import debug                            # pyflakes:ignore
 
 from ietf.doc.expire import expire_draft
-from ietf.doc.factories import DocumentFactory
+from ietf.doc.factories import WgDraftFactory
 from ietf.doc.models import Document
 from ietf.meeting.factories import MeetingFactory
 from ietf.person.factories import PersonFactory
@@ -19,7 +19,6 @@ from ietf.person.models import Person
 from ietf.submit.models import Preapproval
 from ietf.utils.mail import outbox
 from ietf.utils.test_utils import TestCase, login_testing_unauthorized
-from ietf.utils.test_data import make_test_data
 from ietf.secr.drafts.email import get_email_initial
 
 
@@ -48,14 +47,13 @@ class SecrDraftsTestCase(TestCase):
         settings.IDSUBMIT_MANUAL_STAGING_DIR = self.saved_idsubmit_manual_staging_dir
         
     def test_abstract(self):
-        draft = make_test_data()
+        draft = WgDraftFactory()
         url = urlreverse('ietf.secr.drafts.views.abstract', kwargs={'id':draft.name})
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         
     def test_approvals(self): 
-        make_test_data() 
         Preapproval.objects.create(name='draft-dummy', 
             by=Person.objects.get(name="(System)")) 
         url = urlreverse('ietf.secr.drafts.views.approvals') 
@@ -65,7 +63,7 @@ class SecrDraftsTestCase(TestCase):
         self.assertTrue('draft-dummy' in response.content) 
 
     def test_edit(self):
-        draft = make_test_data()
+        draft = WgDraftFactory()
         url = urlreverse('ietf.secr.drafts.views.edit', kwargs={'id':draft.name})
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.get(url)
@@ -83,20 +81,22 @@ class SecrDraftsTestCase(TestCase):
     def test_get_email_initial(self):
         # Makes sure that a manual posting by the Secretariat of an I-D that is
         # in the RFC Editor Queue will result in notification of the RFC Editor
-        draft = make_test_data()
+        draft = WgDraftFactory()
         data = get_email_initial(draft,action='extend',input={'expiration_date': '2050-01-01'})
         self.assertTrue('Extension of Expiration Date' in data['subject'])
         
     def test_makerfc(self):
-        draft = make_test_data()
+        draft = WgDraftFactory(intended_std_level_id='ps')
         url = urlreverse('ietf.secr.drafts.views.edit', kwargs={'id':draft.name})
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
+        # It's not clear what this is testing. Was there supposed to be a POST here?
         self.assertTrue(draft.intended_std_level)
         
     def test_search(self):
-        draft = make_test_data()
+        WgDraftFactory() # Test exercises branch that requires >1 doc found
+        draft = WgDraftFactory()
         url = urlreverse('ietf.secr.drafts.views.search')
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.get(url)
@@ -108,14 +108,14 @@ class SecrDraftsTestCase(TestCase):
         self.assertTrue(draft.name in response.content)
 
     def test_view(self):
-        draft = make_test_data()
+        draft = WgDraftFactory()
         url = urlreverse('ietf.secr.drafts.views.view', kwargs={'id':draft.name})
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
 
     def test_author_delete(self):
-        draft = make_test_data()
+        draft = WgDraftFactory(authors=PersonFactory.create_batch(2))
         author = draft.documentauthor_set.first()
         id = author.id
         url = urlreverse('ietf.secr.drafts.views.author_delete', kwargs={'id':draft.name, 'oid':id})
@@ -128,7 +128,7 @@ class SecrDraftsTestCase(TestCase):
         self.assertFalse(draft.documentauthor_set.filter(id=id))
 
     def test_resurrect(self):
-        draft = make_test_data()
+        draft = WgDraftFactory()
         path = os.path.join(self.repository_dir, draft.filename_with_rev())
         with open(path, 'w') as file:
             file.write('test')
@@ -164,7 +164,7 @@ class SecrDraftsTestCase(TestCase):
         self.assertEqual(recv['Subject'], subject)
 
     def test_extend(self):
-        draft = make_test_data()
+        draft = WgDraftFactory()
         url = urlreverse('ietf.secr.drafts.views.extend', kwargs={'id':draft.name})
         email_url = urlreverse('ietf.secr.drafts.views.email', kwargs={'id':draft.name})
         confirm_url = urlreverse('ietf.secr.drafts.views.confirm', kwargs={'id':draft.name})
@@ -203,7 +203,7 @@ class SecrDraftsTestCase(TestCase):
         self.assertEqual(recv['Subject'], subject)
 
     def test_withdraw(self):
-        draft = make_test_data()
+        draft = WgDraftFactory()
         url = urlreverse('ietf.secr.drafts.views.withdraw', kwargs={'id':draft.name})
         email_url = urlreverse('ietf.secr.drafts.views.email', kwargs={'id':draft.name})
         confirm_url = urlreverse('ietf.secr.drafts.views.confirm', kwargs={'id':draft.name})
@@ -237,7 +237,7 @@ class SecrDraftsTestCase(TestCase):
         self.assertEqual(recv['Subject'], subject)
 
     def test_authors(self):
-        draft = DocumentFactory()
+        draft = WgDraftFactory()
         person = PersonFactory()
         url = urlreverse('ietf.secr.drafts.views.authors',kwargs={'id':draft.name})
         login_testing_unauthorized(self, "secretary", url)

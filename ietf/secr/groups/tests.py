@@ -3,23 +3,25 @@ from django.urls import reverse
 from ietf.utils.test_utils import TestCase
 from ietf.group.models import Group
 from ietf.secr.groups.forms import get_parent_group_choices
-from ietf.group.factories import GroupFactory
+from ietf.group.factories import GroupFactory, RoleFactory
+from ietf.meeting.factories import MeetingFactory
+from ietf.person.factories import PersonFactory
 from ietf.person.models import Person
-from ietf.utils.test_data import make_test_data
 import debug                            # pyflakes:ignore
 
 class GroupsTest(TestCase):
     def test_get_parent_group_choices(self):
-        make_test_data()
+        GroupFactory(type_id='area')
         choices = get_parent_group_choices()
         area = Group.objects.filter(type='area',state='active').first()
+        # This is opaque. Can it be rewritten to be more self-documenting?
         self.assertEqual(choices[0][1][0][0],area.id)
 
     # ------- Test Search -------- #
     def test_search(self):
         "Test Search"
-        make_test_data()
-        group = Group.objects.all()[0]
+        MeetingFactory(type_id='ietf')
+        group = GroupFactory()
         url = reverse('ietf.secr.groups.views.search')
         post_data = {'group_acronym':group.acronym,'submit':'Search'}
         self.client.login(username="secretary", password="secretary+password")
@@ -50,9 +52,8 @@ class GroupsTest(TestCase):
         self.assertTrue('This field is required' in response.content)
 
     def test_add_group_dupe(self):
-        make_test_data()
-        group = Group.objects.all()[0]
-        area = Group.objects.filter(type='area')[0]
+        group = GroupFactory()
+        area = GroupFactory(type_id='area')
         url = reverse('ietf.secr.groups.views.add')
         post_data = {'acronym':group.acronym,
                      'name':'Test Group',
@@ -69,8 +70,7 @@ class GroupsTest(TestCase):
         self.assertTrue('Group with this Acronym already exists' in response.content)
 
     def test_add_group_success(self):
-        make_test_data()
-        area = Group.objects.filter(type='area')[0]
+        area = GroupFactory(type_id='area')
         url = reverse('ietf.secr.groups.views.add')
         post_data = {'acronym':'test',
                      'name':'Test Group',
@@ -86,8 +86,8 @@ class GroupsTest(TestCase):
 
     # ------- Test View -------- #
     def test_view(self):
-        make_test_data()
-        group = Group.objects.all()[0]
+        MeetingFactory(type_id='ietf')
+        group = GroupFactory()
         url = reverse('ietf.secr.groups.views.view', kwargs={'acronym':group.acronym})
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.get(url)
@@ -95,10 +95,10 @@ class GroupsTest(TestCase):
 
     # ------- Test Edit -------- #
     def test_edit_valid(self):
-        make_test_data()
-        group = Group.objects.filter(acronym='mars')[0]
-        area = Group.objects.filter(acronym='farfut')[0]
-        ad = Person.objects.get(name='Areað Irector')        
+        group = GroupFactory()
+        area = GroupFactory(type_id='area')
+        ad = Person.objects.get(name='Areað Irector')
+        MeetingFactory(type_id='ietf')        
         url = reverse('ietf.secr.groups.views.edit', kwargs={'acronym':group.acronym})
         target = reverse('ietf.secr.groups.views.view', kwargs={'acronym':group.acronym})
         post_data = {'acronym':group.acronym,
@@ -116,9 +116,9 @@ class GroupsTest(TestCase):
         self.assertTrue('changed successfully' in response.content)
 
     def test_edit_non_wg_group(self):
-        make_test_data()
         parent_sdo = GroupFactory.create(type_id='sdo',state_id='active')
         child_sdo = GroupFactory.create(type_id='sdo',state_id='active',parent=parent_sdo)
+        MeetingFactory(type_id='ietf')
         url = reverse('ietf.secr.groups.views.edit', kwargs={'acronym':child_sdo.acronym})
         target = reverse('ietf.secr.groups.views.view', kwargs={'acronym':child_sdo.acronym})
         post_data = {'acronym':child_sdo.acronym,
@@ -137,9 +137,8 @@ class GroupsTest(TestCase):
 
     # ------- Test People -------- #
     def test_people_delete(self):
-        make_test_data()
-        group = Group.objects.filter(acronym='mars')[0]
-        role = group.role_set.all()[0]
+        role = RoleFactory(name_id='member')
+        group = role.group
         id = role.id
         url = reverse('ietf.secr.groups.views.delete_role', kwargs={'acronym':group.acronym,'id':role.id})
         target = reverse('ietf.secr.groups.views.people', kwargs={'acronym':group.acronym})
@@ -151,9 +150,8 @@ class GroupsTest(TestCase):
         self.assertFalse(group.role_set.filter(id=id))
 
     def test_people_add(self):
-        make_test_data()
-        person = Person.objects.get(name='Areað Irector')
-        group = Group.objects.filter(acronym='mars')[0]
+        person = PersonFactory()
+        group = GroupFactory()
         url = reverse('ietf.secr.groups.views.people', kwargs={'acronym':group.acronym})
         post_data = {'group_acronym':group.acronym,
                      'name':'chair',

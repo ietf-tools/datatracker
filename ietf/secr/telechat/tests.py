@@ -6,13 +6,13 @@ import debug    # pyflakes:ignore
 
 from django.urls import reverse
 
-from ietf.doc.models import Document, State, BallotDocEvent, BallotType, BallotPositionDocEvent
+from ietf.doc.factories import WgDraftFactory, CharterFactory
+from ietf.doc.models import BallotDocEvent, BallotType, BallotPositionDocEvent
 from ietf.doc.utils import update_telechat, create_ballot_if_not_open
 from ietf.utils.test_utils import TestCase
 from ietf.iesg.models import TelechatDate
 from ietf.person.models import Person
 from ietf.secr.telechat.views import get_next_telechat_date
-from ietf.utils.test_data import make_test_data
 
 SECR_USER='secretary'
 
@@ -39,7 +39,7 @@ class SecrTelechatTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_doc_detail_draft(self):
-        draft = make_test_data()
+        draft = WgDraftFactory(states=[('draft-iesg','pub-req'),])
         ad = Person.objects.get(user__username="ad")
         create_ballot_if_not_open(None, draft, ad, 'approve')
         d = get_next_telechat_date()
@@ -60,7 +60,7 @@ class SecrTelechatTestCase(TestCase):
 
     def test_doc_detail_draft_invalid(self):
         '''Test using a document not on telechat agenda'''
-        draft = make_test_data()
+        draft = WgDraftFactory(states=[('draft-iesg','pub-req'),])
         date = get_next_telechat_date().strftime('%Y-%m-%d')
         url = reverse('ietf.secr.telechat.views.doc_detail', kwargs={'date':date, 'name':draft.name})
         self.client.login(username="secretary", password="secretary+password")
@@ -69,10 +69,8 @@ class SecrTelechatTestCase(TestCase):
         self.assertTrue('not on the Telechat agenda' in response.content)
 
     def test_doc_detail_charter(self):
-        make_test_data()
         by=Person.objects.get(name="(System)")
-        charter = Document.objects.filter(type='charter').first()
-        charter.set_state(State.objects.get(used=True, slug="intrev", type="charter"))
+        charter = CharterFactory(states=[('charter','intrev')])
         last_week = datetime.date.today()-datetime.timedelta(days=7)
         BallotDocEvent.objects.create(type='created_ballot',by=by,doc=charter, rev=charter.rev,
                                       ballot_type=BallotType.objects.get(doc_type=charter.type,slug='r-extrev'),
@@ -100,10 +98,8 @@ class SecrTelechatTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_doc_detail_post_update_ballot(self):
-        make_test_data()
         by=Person.objects.get(name="(System)")
-        charter = Document.objects.filter(type='charter').first()
-        charter.set_state(State.objects.get(used=True, slug="intrev", type="charter"))
+        charter = CharterFactory(states=[('charter','intrev')])
         last_week = datetime.date.today()-datetime.timedelta(days=7)
         BallotDocEvent.objects.create(type='created_ballot',by=by,doc=charter, rev=charter.rev,
                                       ballot_type=BallotType.objects.get(doc_type=charter.type,slug='r-extrev'),
@@ -140,10 +136,8 @@ class SecrTelechatTestCase(TestCase):
         self.assertTrue(BallotPositionDocEvent.objects.filter(doc=charter, ad_id=13, pos__slug='noobj').exists())
 
     def test_doc_detail_post_update_state(self):
-        make_test_data()
         by=Person.objects.get(name="(System)")
-        charter = Document.objects.filter(type='charter').first()
-        charter.set_state(State.objects.get(used=True, slug="intrev", type="charter"))
+        charter = CharterFactory(states=[('charter','intrev')])
         last_week = datetime.date.today()-datetime.timedelta(days=7)
         BallotDocEvent.objects.create(type='created_ballot',by=by,doc=charter, rev=charter.rev,
                                       ballot_type=BallotType.objects.get(doc_type=charter.type,slug='r-extrev'),

@@ -1,15 +1,14 @@
 from django.urls import reverse
+import datetime
 
 import debug                            # pyflakes:ignore
 
 from ietf.utils.test_utils import TestCase, unicontent
-from ietf.group.models import Group
-from ietf.meeting.helpers import get_meeting
-from ietf.meeting.models import Meeting, Session, ResourceAssociation
-from ietf.meeting.test_data import make_meeting_test_data
-from ietf.meeting.factories import SessionFactory
+from ietf.group.factories import GroupFactory, RoleFactory
+from ietf.meeting.models import Session, ResourceAssociation
+from ietf.meeting.factories import MeetingFactory, SessionFactory
+from ietf.person.models import Person
 from ietf.utils.mail import outbox, empty_outbox
-from ietf.utils.test_data import make_test_data
 
 from pyquery import PyQuery
 
@@ -17,7 +16,7 @@ SECR_USER='secretary'
 
 class SreqUrlTests(TestCase):
     def test_urls(self):
-        make_meeting_test_data()
+        MeetingFactory(type_id='ietf',date=datetime.date.today())
 
         self.client.login(username="secretary", password="secretary+password")
 
@@ -27,13 +26,16 @@ class SreqUrlTests(TestCase):
         r = self.client.get("/secr/sreq/")
         self.assertEqual(r.status_code, 200)
 
-        testgroup=Group.objects.filter(type_id='wg').first()
+        testgroup=GroupFactory()
         r = self.client.get("/secr/sreq/%s/new/" % testgroup.acronym)
         self.assertEqual(r.status_code, 200)
 
 class SessionRequestTestCase(TestCase):
     def test_main(self):
-        make_meeting_test_data()
+        meeting = MeetingFactory(type_id='ietf', date=datetime.date.today())
+        SessionFactory.create_batch(2, meeting=meeting, status_id='sched')
+        SessionFactory.create_batch(2, meeting=meeting, status_id='unsched')
+        # An additional unscheduled group comes from make_immutable_base_data
         url = reverse('ietf.secr.sreq.views.main')
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(url)
@@ -44,8 +46,10 @@ class SessionRequestTestCase(TestCase):
         self.assertEqual(len(sched),2)
 
     def test_approve(self):
-        meeting = make_meeting_test_data()
-        mars = Group.objects.get(acronym='mars')
+        meeting = MeetingFactory(type_id='ietf', date=datetime.date.today())
+        ad = Person.objects.get(user__username='ad')
+        area = RoleFactory(name_id='ad', person=ad, group__type_id='area').group
+        mars = GroupFactory(parent=area, acronym='mars')
         # create session waiting for approval
         session = SessionFactory(meeting=meeting, group=mars, status_id='apprw')
         url = reverse('ietf.secr.sreq.views.approve', kwargs={'acronym':'mars'})
@@ -56,8 +60,10 @@ class SessionRequestTestCase(TestCase):
         self.assertEqual(session.status_id,'appr')
         
     def test_cancel(self):
-        meeting = make_meeting_test_data()
-        mars = Group.objects.get(acronym='mars')
+        meeting = MeetingFactory(type_id='ietf', date=datetime.date.today())
+        ad = Person.objects.get(user__username='ad')
+        area = RoleFactory(name_id='ad', person=ad, group__type_id='area').group
+        mars = SessionFactory(meeting=meeting, group__parent=area, group__acronym='mars').group
         url = reverse('ietf.secr.sreq.views.cancel', kwargs={'acronym':'mars'})
         self.client.login(username="ad", password="ad+password")
         r = self.client.get(url)
@@ -66,7 +72,10 @@ class SessionRequestTestCase(TestCase):
         self.assertEqual(sessions[0].status_id,'deleted')
     
     def test_edit(self):
-        make_meeting_test_data()
+        meeting = MeetingFactory(type_id='ietf', date=datetime.date.today())
+        mars = RoleFactory(name_id='chair', person__user__username='marschairman', group__acronym='mars').group
+        SessionFactory(meeting=meeting,group=mars)
+
         url = reverse('ietf.secr.sreq.views.edit', kwargs={'acronym':'mars'})
         self.client.login(username="marschairman", password="marschairman+password")
         r = self.client.get(url)
@@ -82,7 +91,7 @@ class SessionRequestTestCase(TestCase):
         self.assertRedirects(r,reverse('ietf.secr.sreq.views.view', kwargs={'acronym':'mars'}))
                    
     def test_tool_status(self):
-        make_meeting_test_data()
+        MeetingFactory(type_id='ietf', date=datetime.date.today())
         url = reverse('ietf.secr.sreq.views.tool_status')
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(url)
@@ -92,9 +101,10 @@ class SessionRequestTestCase(TestCase):
         
 class SubmitRequestCase(TestCase):
     def test_submit_request(self):
-        make_test_data()
-        meeting = get_meeting()
-        group = Group.objects.get(acronym='mars')
+        meeting = MeetingFactory(type_id='ietf', date=datetime.date.today())
+        ad = Person.objects.get(user__username='ad')
+        area = RoleFactory(name_id='ad', person=ad, group__type_id='area').group
+        group = GroupFactory(parent=area)
         session_count_before = Session.objects.filter(meeting=meeting, group=group).count()
         url = reverse('ietf.secr.sreq.views.new',kwargs={'acronym':group.acronym})
         confirm_url = reverse('ietf.secr.sreq.views.confirm',kwargs={'acronym':group.acronym})
@@ -121,8 +131,10 @@ class SubmitRequestCase(TestCase):
         self.assertTrue(session_count_after == session_count_before + 1)
 
     def test_submit_request_invalid(self):
-        make_test_data()
-        group = Group.objects.get(acronym='mars')
+        MeetingFactory(type_id='ietf', date=datetime.date.today())
+        ad = Person.objects.get(user__username='ad')
+        area = RoleFactory(name_id='ad', person=ad, group__type_id='area').group
+        group = GroupFactory(parent=area)
         url = reverse('ietf.secr.sreq.views.new',kwargs={'acronym':group.acronym})
         post_data = {'num_session':'2',
                      'length_session1':'3600',
@@ -137,14 +149,17 @@ class SubmitRequestCase(TestCase):
         self.assertTrue('You must enter a length for all sessions' in unicontent(r))
 
     def test_request_notification(self):
-        make_test_data()
-        meeting = Meeting.objects.filter(type='ietf').first()
-        group = Group.objects.get(acronym='ames')
-        ad = group.parent.role_set.filter(name='ad').first().person
-        resource = ResourceAssociation.objects.first()
+        meeting = MeetingFactory(type_id='ietf', date=datetime.date.today())
+        ad = Person.objects.get(user__username='ad')
+        area = GroupFactory(type_id='area')
+        RoleFactory(name_id='ad', person=ad, group=area)
+        group = GroupFactory(acronym='ames', parent=area)
+        RoleFactory(name_id='chair', group=group, person__user__username='ameschairman')
+        resource = ResourceAssociation.objects.create(name_id='project')
         # Bit of a test data hack - the fixture now has no used resources to pick from
         resource.name.used=True
         resource.name.save()
+
         url = reverse('ietf.secr.sreq.views.new',kwargs={'acronym':group.acronym})
         confirm_url = reverse('ietf.secr.sreq.views.confirm',kwargs={'acronym':group.acronym})
         len_before = len(outbox)
@@ -177,12 +192,14 @@ class SubmitRequestCase(TestCase):
         self.assertTrue(ad.ascii_name() in notification_payload)
 
 class LockAppTestCase(TestCase):
+    def setUp(self):
+        self.meeting = MeetingFactory(type_id='ietf', date=datetime.date.today(),session_request_lock_message='locked')
+        self.group = GroupFactory(acronym='mars')
+        RoleFactory(name_id='chair', group=self.group, person__user__username='marschairman')
+        SessionFactory(group=self.group,meeting=self.meeting)
+
     def test_edit_request(self):
-        meeting = make_meeting_test_data()
-        meeting.session_request_lock_message='locked'
-        meeting.save()
-        group = Group.objects.get(acronym='mars')
-        url = reverse('ietf.secr.sreq.views.edit',kwargs={'acronym':group.acronym})
+        url = reverse('ietf.secr.sreq.views.edit',kwargs={'acronym':self.group.acronym})
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
@@ -190,11 +207,7 @@ class LockAppTestCase(TestCase):
         self.assertEqual(len(q(':disabled[name="submit"]')), 1)
     
     def test_view_request(self):
-        meeting = make_meeting_test_data()
-        meeting.session_request_lock_message='locked'
-        meeting.save()
-        group = Group.objects.get(acronym='mars')
-        url = reverse('ietf.secr.sreq.views.view',kwargs={'acronym':group.acronym})
+        url = reverse('ietf.secr.sreq.views.view',kwargs={'acronym':self.group.acronym})
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(url,follow=True)
         self.assertEqual(r.status_code, 200)
@@ -202,11 +215,7 @@ class LockAppTestCase(TestCase):
         self.assertEqual(len(q(':disabled[name="edit"]')), 1)
         
     def test_new_request(self):
-        meeting = make_meeting_test_data()
-        meeting.session_request_lock_message='locked'
-        meeting.save()
-        group = Group.objects.get(acronym='mars')
-        url = reverse('ietf.secr.sreq.views.new',kwargs={'acronym':group.acronym})
+        url = reverse('ietf.secr.sreq.views.new',kwargs={'acronym':self.group.acronym})
         
         # try as WG Chair
         self.client.login(username="marschairman", password="marschairman+password")
@@ -224,8 +233,8 @@ class LockAppTestCase(TestCase):
     
 class NotMeetingCase(TestCase):
     def test_not_meeting(self):
-        make_meeting_test_data()
-        group = Group.objects.get(acronym='mars')
+        MeetingFactory(type_id='ietf',date=datetime.date.today())
+        group = GroupFactory(acronym='mars')
         url = reverse('ietf.secr.sreq.views.no_session',kwargs={'acronym':group.acronym}) 
         self.client.login(username="secretary", password="secretary+password")
 

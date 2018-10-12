@@ -7,11 +7,10 @@ from django.conf import settings
 from django.urls import reverse
 
 from ietf.doc.models import Document
-from ietf.group.models import Group
-from ietf.meeting.models import Session, TimeSlot, SchedTimeSessAssignment
-from ietf.meeting.test_data import make_meeting_test_data
+from ietf.group.factories import RoleFactory
+from ietf.meeting.models import SchedTimeSessAssignment
+from ietf.meeting.factories import MeetingFactory, SessionFactory
 from ietf.name.models import SessionStatusName
-from ietf.utils.test_data import make_test_data
 from ietf.utils.test_utils import TestCase
 from ietf.utils.mail import outbox
 
@@ -26,7 +25,8 @@ SECR_USER='secretary'
 class ProceedingsTestCase(TestCase):
     def test_main(self):
         "Main Test"
-        make_test_data()
+        MeetingFactory(type_id='ietf')
+        RoleFactory(name_id='chair',person__user__username='marschairman')
         url = reverse('ietf.secr.proceedings.views.main')
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.get(url)
@@ -41,8 +41,8 @@ class ProceedingsTestCase(TestCase):
 class VideoRecordingTestCase(TestCase):
 
     def test_get_session(self):
-        meeting = make_meeting_test_data()
-        session = Session.objects.filter(meeting=meeting, group__acronym='mars').first()
+        session = SessionFactory()
+        meeting = session.meeting
         number = meeting.number
         name = session.group.acronym
         date = session.official_timeslotassignment().timeslot.time.strftime('%Y%m%d')
@@ -69,20 +69,16 @@ class RecordingTestCase(TestCase):
         settings.MEETING_RECORDINGS_DIR = self.saved_meeting_recordings_dir
 
     def test_page(self):
-        meeting = make_meeting_test_data()
+        meeting = MeetingFactory(type_id='ietf')
         url = reverse('ietf.secr.proceedings.views.recording', kwargs={'meeting_num':meeting.number})
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
 
     def test_post(self):
-        meeting = make_meeting_test_data()
-        group = Group.objects.get(acronym='mars')
-        session = Session.objects.filter(meeting=meeting,group=group).first()
-        # explicitly set to scheduled for this test
-        status = SessionStatusName.objects.get(slug='sched')
-        session.status = status
-        session.save()
+        session = SessionFactory(status_id='sched',meeting__type_id='ietf')
+        meeting = session.meeting
+        group = session.group
         url = reverse('ietf.secr.proceedings.views.recording', kwargs={'meeting_num':meeting.number})
         data = dict(group=group.acronym,external_url='http://youtube.com/xyz',session=session.pk)
         self.client.login(username="secretary", password="secretary+password")
@@ -99,12 +95,8 @@ class RecordingTestCase(TestCase):
         self.assertTrue(external_url in response.content)
             
     def test_import_audio_files(self):
-        meeting = make_meeting_test_data()
-        group = Group.objects.get(acronym='mars')
-        session = Session.objects.filter(meeting=meeting,group=group).first()
-        status = SessionStatusName.objects.get(slug='sched')
-        session.status = status
-        session.save()
+        session = SessionFactory(status_id='sched',meeting__type_id='ietf')
+        meeting = session.meeting
         timeslot = session.official_timeslotassignment().timeslot
         self.create_audio_file_for_timeslot(timeslot)
         import_audio_files(meeting)
@@ -126,9 +118,9 @@ class RecordingTestCase(TestCase):
             date=timeslot.time.strftime('%Y%m%d-%H%M'))
 
     def test_import_audio_files_shared_timeslot(self):
-        meeting = make_meeting_test_data()
-        mars_session = Session.objects.filter(meeting=meeting,group__acronym='mars').first()
-        ames_session = Session.objects.filter(meeting=meeting,group__acronym='ames').first()
+        meeting = MeetingFactory(type_id='ietf',number='42')
+        mars_session = SessionFactory(meeting=meeting,status_id='sched',group__acronym='mars')
+        ames_session = SessionFactory(meeting=meeting,status_id='sched',group__acronym='ames')
         scheduled = SessionStatusName.objects.get(slug='sched')
         mars_session.status = scheduled
         mars_session.save()
@@ -148,15 +140,13 @@ class RecordingTestCase(TestCase):
         self.assertEqual(normalize_room_name('Rome/Venice'), 'rome_venice')
 
     def test_get_timeslot_for_filename(self):
-        meeting = make_meeting_test_data()
-        timeslot = TimeSlot.objects.filter(meeting=meeting,type='session').first()
+        session = SessionFactory(meeting__type_id='ietf')
+        timeslot = session.timeslotassignments.first().timeslot
         name = self.get_filename_for_timeslot(timeslot)
         self.assertEqual(get_timeslot_for_filename(name),timeslot)
 
     def test_get_or_create_recording_document(self):
-        meeting = make_meeting_test_data()
-        group = Group.objects.get(acronym='mars')
-        session = Session.objects.filter(meeting=meeting,group=group).first()
+        session = SessionFactory(meeting__type_id='ietf', meeting__number=42, group__acronym='mars')
         
         # test create
         filename = 'ietf42-testroom-20000101-0800.mp3'
@@ -174,20 +164,19 @@ class RecordingTestCase(TestCase):
         self.assertEqual(doc,doc2)
 
     def test_create_recording(self):
-        meeting = make_meeting_test_data()
-        group = Group.objects.get(acronym='mars')
-        session = Session.objects.filter(meeting=meeting,group=group).first()
+        session = SessionFactory(meeting__type_id='ietf', meeting__number=42, group__acronym='mars')
         filename = 'ietf42-testroomt-20000101-0800.mp3'
-        url = settings.IETF_AUDIO_URL + 'ietf{}/{}'.format(meeting.number, filename)
+        url = settings.IETF_AUDIO_URL + 'ietf{}/{}'.format(session.meeting.number, filename)
         doc = create_recording(session, url)
         self.assertEqual(doc.name,'recording-42-mars-1')
-        self.assertEqual(doc.group,group)
+        self.assertEqual(doc.group,session.group)
         self.assertEqual(doc.external_url,url)
         self.assertTrue(doc in session.materials.all())
 
     def test_get_next_sequence(self):
-        meeting = make_meeting_test_data()
-        group = Group.objects.get(acronym='mars')
+        session = SessionFactory(meeting__type_id='ietf', meeting__number=42, group__acronym='mars')
+        meeting = session.meeting
+        group = session.group
         sequence = get_next_sequence(group,meeting,'recording')
         self.assertEqual(sequence,1)
 
