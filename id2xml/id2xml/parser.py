@@ -1704,15 +1704,16 @@ class DraftParser(Base):
 
             # Status of memo paragraph 2, last sentence
             text = self.next_text()
-            repl = 'RFC 5741' if 'RFC 5741' in text else 'RFC 7841'
+            repl1 = 'RFC 5741' if 'RFC 5741' in text else 'RFC 7841'
+            repl2 = 'a candidate' if 'a candidate' in text else 'candidates'            
             if stream == 'IETF' and category == 'std':
-                self.skip(boilerplate['status']['p2end_ietf_std'].replace('RFC 7841', repl))
+                self.skip(boilerplate['status']['p2end_ietf_std'].replace('RFC 7841', repl1).replace('candidates', repl2))
             elif stream == 'IETF' and category == 'bcp':
-                self.skip(boilerplate['status']['p2end_ietf_bcp'].replace('RFC 7841', repl))
+                self.skip(boilerplate['status']['p2end_ietf_bcp'].replace('RFC 7841', repl1).replace('candidates', repl2))
             elif stream == 'IETF':
-                self.skip(boilerplate['status']['p2end_ietf_other'].replace('RFC 7841', repl))
+                self.skip(boilerplate['status']['p2end_ietf_other'].replace('RFC 7841', repl1).replace('candidates', repl2))
             else:
-                self.skip(boilerplate['status']['p2end_other'].replace('RFC 7841', repl) % approvers.get(stream, ''))
+                self.skip(boilerplate['status']['p2end_other'].replace('RFC 7841', repl1).replace('candidates', repl2) % approvers.get(stream, ''))
 
             self.skip(boilerplate['status']['p3'] % rfc_number)
         else:
