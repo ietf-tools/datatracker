@@ -159,8 +159,8 @@ def run():
     group.add_argument('--trace-methods', type=commalist, metavar='METHODS',
                                                                         help="a comma-separated list of methods to trace; requires -d")
 #                                                                        help=argparse.SUPPRESS)
-    group.add_argument('-v', '--version', action='store_true',          help="output version information, then exit")
-    group.add_argument('-V', '--verbose', action='store_true',          help="be (slightly) more verbose")
+    group.add_argument('-V', '--version', action='store_true',          help="output version information, then exit")
+    group.add_argument('-v', '--verbose', action='store_true',          help="be (slightly) more verbose")
     group.set_defaults(schema='v2')
 
     options = parser.parse_args(namespace=options)
