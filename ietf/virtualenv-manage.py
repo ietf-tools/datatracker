@@ -5,6 +5,9 @@ import sys
 
 path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+# change directory so patches etc. will be picked up as expected
+os.chdir(path)
+
 # Virtualenv support
 virtualenv_activation = os.path.join(path, "env", "bin", "activate_this.py")
 if os.path.exists(virtualenv_activation):
