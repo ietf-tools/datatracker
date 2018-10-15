@@ -1,3 +1,40 @@
+ietfdb (6.87.0) ietf; urgency=medium
+
+  **Nomcom, agenda, and test improvements, new API for secretariat use**
+
+  This is a small feature release, with the following changes:
+
+  * Updated the nomcom admin pages for Feedback to make it possible to see 
+    and sort on the Nominees field.
+
+  * Merged in [15551] from rjsparks@nostrum.com:
+    Used factories instead of make_test_data for malinglists, 
+    mailtrigger, message, person, secr/announcement, and secr/areas tests.  
+
+  * Merged in [15550] from rjsparks@nostrum.com:
+    Added meeting.agenda_info_note.  
+
+  * Merged in [15549] from rjsparks@nostrum.com:
+    Renamed meeting.agenda_note to meeting.agenda_warning_note.  
+
+  * Changed the 'View' button on the NomCom email classification page to 
+    render the email body within <pre>, and to not offer classification 
+    choices, as this encourages a slow workflow, and also seems to have been 
+    broken for some time.
+
+  * Bleach 3.0.0 has a bug that can result in exceptions for some inputs.  
+    Bug report filed.  Disallowed that version in requirements.txt
+
+  * Turned the nomcom chair dropdown menu item 'Classify pending feedback' 
+    into a tab with a mail count badge.
+
+  * Merged in [15263], [15264], [15265], [15287] from rcross@amsl.com:
+    Added new custom API endpoints for export of person data, restricted
+    to secretariat use.  Added a test for the new custom API.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  15 Oct 2018 05:46:07 +0000
+
+
 ietfdb (6.86.0) ietf; urgency=medium
 
   **NomCom tool improvements**
