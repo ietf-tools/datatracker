@@ -1014,7 +1014,7 @@ class LiaisonManagementTests(TestCase):
         # Statement 1
         LiaisonStatementEventFactory(type_id='posted', statement__body="Has recently in its body",statement__from_groups=[GroupFactory(type_id='sdo',acronym='ulm'),])
         # Statement 2
-        s2 = LiaisonStatementEventFactory(type_id='posted', statement__body="That word does not occur here")
+        s2 = LiaisonStatementEventFactory(type_id='posted', statement__body="That word does not occur here", statement__title="Nor does it occur here")
         s2.time=datetime.datetime(2010,1,1)
         s2.save()
 
@@ -1033,6 +1033,10 @@ class LiaisonManagementTests(TestCase):
         self.assertEqual(len(q('tr')),0)        # no results
 
         # test body text
+        # The view being tested looks for the word "recently" in several fields
+        # The test data right now constrains the second statement's body and title to not contain that word
+        # if the factories start generating in the other places it looks (see SearchLiaisonForm), this test
+        # will need to be smarter about inspecting or further constraining the test objects. 
         url = urlreverse('ietf.liaisons.views.liaison_list') + "?text=recently&source=&destination=&start_date=&end_date="
         r = self.client.get(url)
         q = PyQuery(r.content)
