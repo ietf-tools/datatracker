@@ -21,6 +21,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('meeting', '0009_add_agenda_info_note'),
+        ('person', '0008_auto_20181014_1448'),
     ]
 
     operations = [
