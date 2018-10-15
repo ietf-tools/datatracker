@@ -128,7 +128,7 @@ def send_smtp(msg, bcc=None):
                 server.quit()
             except smtplib.SMTPServerDisconnected:
                 pass
-        log("sent email from '%s' to %s subject '%s'" % (frm, to, msg.get('Subject', '[no subject]')))
+        log("sent email from '%s' to %s id %s subject '%s'" % (frm, to, msg.get('Message-ID', ''), msg.get('Subject', '[no subject]')))
     
 def copy_email(msg, to, toUser=False, originalBcc=None):
     '''
