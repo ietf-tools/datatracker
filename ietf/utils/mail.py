@@ -179,10 +179,10 @@ def encode_message(txt):
     assert isinstance(txt, unicode)
     return MIMEText(txt.encode('utf-8'), 'plain', 'UTF-8')
 
-def send_mail_text(request, to, frm, subject, txt, cc=None, extra=None, toUser=False, bcc=None):
+def send_mail_text(request, to, frm, subject, txt, cc=None, extra=None, toUser=False, bcc=None, copy=True):
     """Send plain text message."""
     msg = encode_message(txt)
-    return send_mail_mime(request, to, frm, subject, msg, cc, extra, toUser, bcc)
+    return send_mail_mime(request, to, frm, subject, msg, cc, extra, toUser, bcc, copy=copy)
         
 def formataddr(addrtuple):
     """
@@ -255,7 +255,7 @@ def show_that_mail_was_sent(request,leadline,msg,bcc):
                     info += "Bcc: %s\n" % bcc
                 messages.info(request,info,extra_tags='preformatted',fail_silently=True)
 
-def send_mail_mime(request, to, frm, subject, msg, cc=None, extra=None, toUser=False, bcc=None):
+def send_mail_mime(request, to, frm, subject, msg, cc=None, extra=None, toUser=False, bcc=None, copy=True):
     """Send MIME message with content already filled in."""
     
     condition_message(to, frm, subject, msg, cc, extra)
@@ -287,7 +287,7 @@ def send_mail_mime(request, to, frm, subject, msg, cc=None, extra=None, toUser=F
 	copy_to = settings.EMAIL_COPY_TO
     except AttributeError:
         copy_to = "ietf.tracker.archive+%s@gmail.com" % settings.SERVER_MODE
-    if copy_to and not test_mode and not debugging: # if we're running automated tests, this copy is just annoying
+    if copy and copy_to and not test_mode and not debugging: # if we're running automated tests, this copy is just annoying
         if bcc:
             msg['X-Tracker-Bcc']=bcc
         try:
