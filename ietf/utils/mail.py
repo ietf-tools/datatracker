@@ -264,11 +264,12 @@ def send_mail_mime(request, to, frm, subject, msg, cc=None, extra=None, toUser=F
     # then put USING_DEBUG_EMAIL_SERVER=True and EMAIL_HOST='localhost'
     # and EMAIL_PORT=2025 in settings_local.py
     debugging = getattr(settings, "USING_DEBUG_EMAIL_SERVER", False) and settings.EMAIL_HOST == 'localhost' and settings.EMAIL_PORT == 2025
+    production = settings.SERVER_MODE == 'production'
 
     if settings.SERVER_MODE == 'development':
         show_that_mail_was_sent(request,'In production, email would have been sent',msg,bcc)
 
-    if test_mode or debugging or settings.SERVER_MODE == 'production':
+    if test_mode or debugging or production:
         try:
             send_smtp(msg, bcc)
         except smtplib.SMTPException as e:
@@ -287,7 +288,7 @@ def send_mail_mime(request, to, frm, subject, msg, cc=None, extra=None, toUser=F
 	copy_to = settings.EMAIL_COPY_TO
     except AttributeError:
         copy_to = "ietf.tracker.archive+%s@gmail.com" % settings.SERVER_MODE
-    if copy and copy_to and not test_mode and not debugging: # if we're running automated tests, this copy is just annoying
+    if copy_to and (copy or not production) and not (test_mode or debugging): # if we're running automated tests, this copy is just annoying
         if bcc:
             msg['X-Tracker-Bcc']=bcc
         try:
