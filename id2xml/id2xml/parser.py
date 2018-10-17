@@ -1126,21 +1126,32 @@ class DraftParser(Base):
         #
         if workgroup:
             front.append(self.element('workgroup', workgroup))
-        #
+        # Before around RFC 5550, abstract comes after status of memo and
+        # copyright.  Later RFCs has it before those sections.  Check both
+        # before and after
         abstract = self.section(numlist=["Abstract"], tag='abstract', part='front')
-        if not abstract is None:
+        if abstract != None:
             front.append(abstract)
         #
+        notes = []
         while True:
             note = self.note()
             if note is None:
                 break
-            front.append(note)
+            notes.append(note)
         #
         self.read_status_of_memo(workgroup, stream, rfc_number, category, date)
         line = self.skip_blank_lines()
         if re.search('Copyright', line.txt.strip()):
             self.read_copyright(date)
+        # 
+        if abstract is None:
+            abstract = self.section(numlist=["Abstract"], tag='abstract', part='front')
+            if abstract != None:
+                front.append(abstract)
+        #
+        for note in notes:
+            front.append(note)
 
         line = self.skip_blank_lines()
         if line.txt == 'Table of Contents':
