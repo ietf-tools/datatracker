@@ -659,7 +659,7 @@ class Base(object):
             msg = "\n%s: Warning: %s" % (self.name, text)
         self.emit(msg)
         if self.e is not None:
-            c = Comment("\n   %s\n   " % wrap(msg.strip(), 80))
+            c = Comment("\n   %s\n   " % wrap(msg.strip().replace('--', '- '), 80))
             self.e.append(c)
 
     def err(self, lnum, text):
@@ -1126,9 +1126,9 @@ class DraftParser(Base):
         #
         if workgroup:
             front.append(self.element('workgroup', workgroup))
-        # Before around RFC 5550, abstract comes after status of memo and
+        # Before RFC ~ 5550, abstract comes after status of memo and
         # copyright.  Later RFCs has it before those sections.  Check both
-        # before and after
+        # before and after.
         abstract = self.section(numlist=["Abstract"], tag='abstract', part='front')
         if abstract != None:
             front.append(abstract)
