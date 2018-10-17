@@ -1,0 +1,5 @@
+lxml
+pathlib2
+six
+xml2rfc>=2.8.2
+decorator
