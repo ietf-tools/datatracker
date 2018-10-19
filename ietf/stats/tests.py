@@ -7,15 +7,17 @@ from requests import Response
 from django.urls import reverse as urlreverse
 from django.contrib.auth.models import User
 
-from ietf.utils.test_data import make_test_data, make_review_data
 from ietf.utils.test_utils import login_testing_unauthorized, TestCase, unicontent
 import ietf.stats.views
 
 from ietf.submit.models import Submission
-from ietf.doc.models import Document, DocAlias, State, RelatedDocument, NewRevisionDocEvent
+from ietf.doc.factories import WgDraftFactory, WgRfcFactory
+from ietf.doc.models import Document, DocAlias, State, RelatedDocument, NewRevisionDocEvent, DocumentAuthor
 from ietf.meeting.factories import MeetingFactory
+from ietf.person.factories import PersonFactory
 from ietf.person.models import Person, Email
 from ietf.name.models import FormalLanguageName, DocRelationshipName, CountryName
+from ietf.review.factories import ReviewRequestFactory
 from ietf.stats.models import MeetingRegistration, CountryAlias
 from ietf.stats.utils import get_meeting_registration_data
 
@@ -27,7 +29,16 @@ class StatisticsTests(TestCase):
         self.assertEqual(r.status_code, 200)
 
     def test_document_stats(self):
-        draft = make_test_data()
+        WgRfcFactory()
+        draft = WgDraftFactory()
+        DocumentAuthor.objects.create(
+            document=draft,
+            person=Person.objects.get(email__address="aread@ietf.org"),
+            email=Email.objects.get(address="aread@ietf.org"),
+            country="Germany",
+            affiliation="IETF",
+            order=1
+        )
 
         # create some data for the statistics
         Submission.objects.create(
@@ -102,7 +113,6 @@ class StatisticsTests(TestCase):
 
     def test_meeting_stats(self):
         # create some data for the statistics
-        make_test_data()
         meeting = MeetingFactory(type_id='ietf', date=datetime.date.today(), number="96")
         MeetingRegistration.objects.create(first_name='John', last_name='Smith', country_code='US', email="john.smith@example.us", meeting=meeting)
         CountryAlias.objects.get_or_create(alias="US", country=CountryName.objects.get(slug="US"))
@@ -137,8 +147,6 @@ class StatisticsTests(TestCase):
             self.assertTrue(q('table.stats-data'))
                 
     def test_known_country_list(self):
-        make_test_data()
-
         # check redirect
         url = urlreverse(ietf.stats.views.known_countries_list)
 
@@ -147,8 +155,8 @@ class StatisticsTests(TestCase):
         self.assertTrue("United States" in unicontent(r))
 
     def test_review_stats(self):
-        doc = make_test_data()
-        review_req = make_review_data(doc)
+        review_req = ReviewRequestFactory()
+        PersonFactory(user__username='plain')
 
         # check redirect
         url = urlreverse(ietf.stats.views.review_stats)

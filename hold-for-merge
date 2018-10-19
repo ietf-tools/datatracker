@@ -1,7 +1,5 @@
 # -*- conf-mode -*-
 
-
-/personal/rjs/6.86.1.dev0@15568		# Test coverage lower
 /personal/rcross/6.81.3.dev0@15262	# Secretariat admin access to Document has drawbacks
 /personal/sbirkholz/mtgreg3@14074	# reviewed with issues; feedback sent
 /personal/sbirkholz/meeting_registration@13969 # manual branch merge

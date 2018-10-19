@@ -8,19 +8,20 @@ import shutil
 from django.conf import settings
 from django.urls import reverse as urlreverse
 
+from ietf.doc.factories import WgDraftFactory
 from ietf.doc.models import Document, DocAlias, DocEvent, DeletedEvent, DocTagName, RelatedDocument, State, StateDocEvent
 from ietf.doc.utils import add_state_change_event
+from ietf.group.factories import GroupFactory
 from ietf.person.models import Person
 from ietf.sync import iana, rfceditor
 from ietf.utils.mail import outbox, empty_outbox
-from ietf.utils.test_data import make_test_data
 from ietf.utils.test_utils import login_testing_unauthorized, unicontent
 from ietf.utils.test_utils import TestCase
 
 
 class IANASyncTests(TestCase):
     def test_protocol_page_sync(self):
-        draft = make_test_data()
+        draft = WgDraftFactory()
         DocAlias.objects.create(name="rfc1234", document=draft)
         DocEvent.objects.create(doc=draft, rev=draft.rev, type="published_rfc", by=Person.objects.get(name="(System)"))
 
@@ -36,7 +37,7 @@ class IANASyncTests(TestCase):
         self.assertEqual(DocEvent.objects.filter(doc=draft, type="rfc_in_iana_registry").count(), 1)
 
     def test_changes_sync(self):
-        draft = make_test_data()
+        draft = WgDraftFactory(ad=Person.objects.get(user__username='ad'))
 
         data = json.dumps({
             "changes": [
@@ -91,7 +92,7 @@ class IANASyncTests(TestCase):
         self.assertEqual(len(warnings), 0)
 
     def test_changes_sync_errors(self):
-        draft = make_test_data()
+        draft = WgDraftFactory()
 
         # missing "type"
         data = json.dumps({
@@ -131,7 +132,7 @@ class IANASyncTests(TestCase):
         self.assertEqual(len(warnings), 1)
 
     def test_iana_review_mail(self):
-        draft = make_test_data()
+        draft = WgDraftFactory()
 
         subject_template = u'Subject: [IANA #12345] Last Call: <%(draft)s-%(rev)s.txt> (Long text) to Informational RFC'
         msg_template = u"""From: "%(person)s via RT" <drafts-lastcall@iana.org>
@@ -227,11 +228,10 @@ class RFCSyncTests(TestCase):
             f.write("a" * size)
 
     def test_rfc_index(self):
-        doc = make_test_data()
-        doc.set_state(State.objects.get(used=True, type="draft-iesg", slug="rfcqueue"))
-        # it's a bit strange to have this set when draft-iesg is set
+        area = GroupFactory(type_id='area')
+        doc = WgDraftFactory(group__parent=area,states=[('draft-iesg','rfcqueue'),('draft-stream-ise','rfc-edit')])
+        # it's a bit strange to have draft-stream-ise set when draft-iesg is set
         # too, but for testing purposes ...
-        doc.set_state(State.objects.get(used=True, type="draft-stream-ise", slug="rfc-edit"))
 
         updated_doc = Document.objects.create(name="draft-ietf-something")
         DocAlias.objects.create(name=updated_doc.name, document=updated_doc)
@@ -358,9 +358,7 @@ class RFCSyncTests(TestCase):
 
 
     def test_rfc_queue(self):
-        draft = make_test_data()
-
-        draft.set_state(State.objects.get(used=True, type="draft-iesg", slug="ann"))
+        draft = WgDraftFactory(states=[('draft-iesg','ann')])
 
         t = '''<rfc-editor-queue xmlns="http://www.rfc-editor.org/rfc-editor-queue">
 <section name="IETF STREAM: WORKING GROUP STANDARDS TRACK">
@@ -423,7 +421,6 @@ class RFCSyncTests(TestCase):
 
 class DiscrepanciesTests(TestCase):
     def test_discrepancies(self):
-        make_test_data()
 
         # draft approved but no RFC Editor state
         doc = Document.objects.create(name="draft-ietf-test1", type_id="draft")
@@ -462,7 +459,7 @@ class DiscrepanciesTests(TestCase):
 
 class RFCEditorUndoTests(TestCase):
     def test_rfceditor_undo(self):
-        draft = make_test_data()
+        draft = WgDraftFactory()
 
         e1 = add_state_change_event(draft, Person.objects.get(name="(System)"), None,
                                    State.objects.get(used=True, type="draft-rfceditor", slug="auth"))

@@ -26,12 +26,12 @@ from django.urls import reverse as urlreverse
 
 import debug                            # pyflakes:ignore
 
+from ietf.group.factories import GroupFactory
 from ietf.group.models import Group
 from ietf.submit.tests import submission_file
 from ietf.utils.draft import Draft, getmeta
 from ietf.utils.mail import send_mail_preformatted, send_mail_text, send_mail_mime, outbox 
 from ietf.utils.management.commands import pyflakes
-from ietf.utils.test_data import make_test_data
 from ietf.utils.test_runner import get_template_paths, set_coverage_checking
 from ietf.utils.test_utils import TestCase
 
@@ -299,7 +299,8 @@ class TestWikiGlueManagementCommand(TestCase):
         shutil.rmtree(os.path.dirname(self.svn_dir_pattern))
 
     def test_wiki_create_output(self):
-        make_test_data()
+        for type in ['wg','rg','ag','area']:
+            GroupFactory(type_id=type)
         groups = Group.objects.filter(
                         type__slug__in=['wg','rg','ag','area'],
                         state__slug='active'

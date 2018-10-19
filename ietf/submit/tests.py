@@ -19,8 +19,10 @@ from django.urls import reverse as urlreverse
 import debug                            # pyflakes:ignore
 
 from ietf.submit.utils import expirable_submissions, expire_submission, ensure_person_email_info_exists
+from ietf.doc.factories import DocumentFactory, WgDraftFactory, IndividualDraftFactory
 from ietf.doc.models import Document, DocAlias, DocEvent, State, BallotPositionDocEvent, DocumentAuthor
 from ietf.doc.utils import create_ballot_if_not_open
+from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.group.models import Group
 from ietf.group.utils import setup_default_community_list_for_group
 from ietf.meeting.models import Meeting
@@ -33,7 +35,6 @@ from ietf.submit.models import Submission, Preapproval
 from ietf.submit.mail import add_submission_email, process_response_email
 from ietf.utils.mail import outbox, empty_outbox
 from ietf.utils.models import VersionInfo
-from ietf.utils.test_data import make_test_data
 from ietf.utils.test_utils import login_testing_unauthorized, unicontent, TestCase
 from ietf.utils.draft import Draft
 
@@ -96,6 +97,9 @@ class SubmitTests(TestCase):
         self.saved_yang_iana_model_dir = settings.SUBMIT_YANG_IANA_MODEL_DIR
         self.yang_iana_model_dir = self.tempdir('yang-iana-model')
         settings.SUBMIT_YANG_IANA_MODEL_DIR = self.yang_iana_model_dir
+
+        # Submit views assume there is a "next" IETF to look for cutoff dates against
+        MeetingFactory(type_id='ietf', date=datetime.date.today()+datetime.timedelta(days=180))
 
     def tearDown(self):
         shutil.rmtree(self.staging_dir)
@@ -195,7 +199,10 @@ class SubmitTests(TestCase):
 
     def submit_new_wg(self, formats):
         # submit new -> supply submitter info -> approve
-        draft = make_test_data()
+        GroupFactory(type_id='wg',acronym='ames')
+        mars = GroupFactory(type_id='wg', acronym='mars')
+        RoleFactory(name_id='chair', group=mars, person__user__username='marschairman')
+        draft = WgDraftFactory(group=mars)
         setup_default_community_list_for_group(draft.group)
 
         # prepare draft to suggest replace
@@ -314,13 +321,19 @@ class SubmitTests(TestCase):
 
     def submit_existing(self, formats, change_authors=True, group_type='wg', stream_type='ietf'):
         # submit new revision of existing -> supply submitter info -> prev authors confirm
-        draft = make_test_data()
-        if not group_type=='wg':
-            draft.group.type_id=group_type
-            draft.group.save()
-        if not stream_type=='ietf':
-            draft.stream_id=stream_type
-            draft.save_with_history([DocEvent.objects.create(doc=draft, rev=draft.rev, type="added_comment", by=Person.objects.get(user__username="secretary"), desc="Test")])
+        # The tests expect the draft to always have an ad, but that doesn't match what happens for most streams
+        ad = Person.objects.get(user__username='ad')
+        if group_type == 'area':
+            group = GroupFactory(type_id='area', acronym='mars')
+            RoleFactory(name_id='ad', group=group, person=ad)
+        else:
+            area = GroupFactory(type_id='area')
+            RoleFactory(name_id='ad',group=area,person=ad)
+            group = GroupFactory(type_id=group_type, parent=area, acronym='mars')
+        draft = DocumentFactory(type_id='draft', group=group, stream_id=stream_type, ad=ad, authors=PersonFactory.create_batch(1))
+        if stream_type == 'ietf':
+            draft.set_state(State.objects.get(type_id='draft-stream-ietf',slug='wg-doc'))
+            
         prev_author = draft.documentauthor_set.all()[0]
         if change_authors:
             # Make it such that one of the previous authors has an invalid email address
@@ -503,7 +516,6 @@ class SubmitTests(TestCase):
 
     def submit_new_individual(self, formats):
         # submit new -> supply submitter info -> confirm
-        draft = make_test_data()
 
         name = "draft-authorname-testing-tests"
         rev = "00"
@@ -558,9 +570,10 @@ class SubmitTests(TestCase):
         self.submit_new_individual(["txt", "xml"])
 
     def test_submit_update_individual(self):
-        draft = make_test_data()
-        draft.group = None
-        draft.save_with_history([DocEvent.objects.create(doc=draft, rev=draft.rev, type="added_comment", by=Person.objects.get(user__username="secretary"), desc="Test")])
+        IndividualDraftFactory(name='draft-ietf-random-thing', states=[('draft','rfc')], other_aliases=['rfc9999',], pages=5)
+        ad=Person.objects.get(user__username='ad')
+        # Group of None here does not reflect real individual submissions
+        draft = IndividualDraftFactory(group=None, ad = ad, authors=[ad,], notify='aliens@example.mars', pages=5)
         replaces_count = draft.relateddocument_set.filter(relationship_id='replaces').count()
         name = draft.name
         rev = '%02d'%(int(draft.rev)+1)
@@ -600,9 +613,9 @@ class SubmitTests(TestCase):
         self.assertIn(draft.title, unicontent(r))
 
     def test_submit_cancel_confirmation(self):
-        draft = make_test_data()
-        draft.group = None
-        draft.save_with_history([DocEvent.objects.create(doc=draft, rev=draft.rev, type="added_comment", by=Person.objects.get(user__username="secretary"), desc="Test")])
+        ad=Person.objects.get(user__username='ad')
+        # Group of None here does not reflect real individual submissions
+        draft = IndividualDraftFactory(group=None, ad = ad, authors=[ad,], notify='aliens@example.mars', pages=5)
         name = draft.name
         old_rev = draft.rev
         rev = '%02d'%(int(draft.rev)+1)
@@ -622,8 +635,6 @@ class SubmitTests(TestCase):
         self.assertEqual(draft.rev, old_rev)
 
     def test_submit_new_wg_with_dash(self):
-        make_test_data()
-
         group = Group.objects.create(acronym="mars-special", name="Mars Special", type_id="wg", state_id="active")
 
         name = "draft-ietf-%s-testing-tests" % group.acronym
@@ -633,8 +644,6 @@ class SubmitTests(TestCase):
         self.assertEqual(Submission.objects.get(name=name).group.acronym, group.acronym)
 
     def test_submit_new_irtf(self):
-        make_test_data()
-
         group = Group.objects.create(acronym="saturnrg", name="Saturn", type_id="rg", state_id="active")
 
         name = "draft-irtf-%s-testing-tests" % group.acronym
@@ -645,8 +654,6 @@ class SubmitTests(TestCase):
         self.assertEqual(Submission.objects.get(name=name).group.type_id, group.type_id)
 
     def test_submit_new_iab(self):
-        make_test_data()
-
         name = "draft-iab-testing-tests"
 
         self.do_submission(name, "00")
@@ -655,7 +662,7 @@ class SubmitTests(TestCase):
 
     def test_cancel_submission(self):
         # submit -> cancel
-        make_test_data()
+        GroupFactory(acronym='mars')
 
         name = "draft-ietf-mars-testing-tests"
         rev = "00"
@@ -677,7 +684,7 @@ class SubmitTests(TestCase):
 
     def test_edit_submission_and_force_post(self):
         # submit -> edit
-        draft = make_test_data()
+        draft = WgDraftFactory(group__acronym='mars')
 
         name = "draft-ietf-mars-testing-tests"
         rev = "00"
@@ -773,7 +780,7 @@ class SubmitTests(TestCase):
 
     def test_search_for_submission_and_edit_as_secretariat(self):
         # submit -> edit
-        make_test_data()
+        GroupFactory(acronym='mars')
 
         name = "draft-ietf-mars-testing-tests"
         rev = "00"
@@ -823,7 +830,7 @@ class SubmitTests(TestCase):
 
     def test_request_full_url(self):
         # submit -> request full URL to be sent
-        make_test_data()
+        GroupFactory(acronym='mars')
 
         name = "draft-ietf-mars-testing-tests"
         rev = "00"
@@ -855,8 +862,7 @@ class SubmitTests(TestCase):
         # who gets the management url behaves as expected
 
     def test_submit_all_file_types(self):
-        make_test_data()
-
+        GroupFactory(acronym='mars')
         name = "draft-ietf-mars-testing-tests"
         rev = "00"
         group = "mars"
@@ -910,14 +916,12 @@ class SubmitTests(TestCase):
         self.assertEquals(r.status_code, 200)
         
     def test_blackout_access(self):
-        make_test_data()
-        
         # get
         url = urlreverse('ietf.submit.views.upload_submission')
-        # set meeting to today so we're in blackout period
+
+        # Put today in the blackout period
         meeting = Meeting.get_current_meeting()
-        meeting.date = datetime.datetime.utcnow()
-        meeting.save()
+        meeting.importantdate_set.create(name_id='idcutoff',date=datetime.date.today()-datetime.timedelta(days=2))
         
         # regular user, no access
         r = self.client.get(url)
@@ -933,9 +937,6 @@ class SubmitTests(TestCase):
         self.assertEqual(len(q('input[type=file][name=txt]')), 1)
 
     def submit_bad_file(self, name, formats):
-
-        make_test_data()
-
         rev = ""
         group = None
 
@@ -988,8 +989,6 @@ class SubmitTests(TestCase):
         self.assertIn('Expected an PS file of type "application/postscript"', m)
 
     def test_submit_nonascii_name(self):
-        make_test_data()
-
         name = "draft-authorname-testing-nonascii"
         rev = "00"
         group = None
@@ -1018,8 +1017,6 @@ class SubmitTests(TestCase):
         self.assertIn('The idnits check returned 1 warning', m)
 
     def test_submit_invalid_yang(self):
-        make_test_data()
-
         name = "draft-yang-testing-invalid"
         rev = "00"
         group = None
@@ -1054,8 +1051,7 @@ class SubmitTests(TestCase):
 
 class ApprovalsTestCase(TestCase):
     def test_approvals(self):
-        make_test_data()
-
+        RoleFactory(name_id='chair', group__acronym='mars', person__user__username='marschairman')
         url = urlreverse('ietf.submit.views.approvals')
         self.client.login(username="marschairman", password="marschairman+password")
 
@@ -1085,7 +1081,7 @@ class ApprovalsTestCase(TestCase):
         self.assertEqual(len(q('.recently-approved a:contains("draft-ietf-mars-foo")')), 1)
 
     def test_add_preapproval(self):
-        make_test_data()
+        RoleFactory(name_id='chair', group__acronym='mars', person__user__username='marschairman')
 
         url = urlreverse('ietf.submit.views.add_preapproval')
         login_testing_unauthorized(self, "marschairman", url)
@@ -1110,7 +1106,7 @@ class ApprovalsTestCase(TestCase):
         self.assertEqual(len(Preapproval.objects.filter(name=name)), 1)
 
     def test_cancel_preapproval(self):
-        make_test_data()
+        RoleFactory(name_id='chair', group__acronym='mars', person__user__username='marschairman')
 
         preapproval = Preapproval.objects.create(name="draft-ietf-mars-foo", by=Person.objects.get(user__username="marschairman"))
 
@@ -1131,7 +1127,7 @@ class ApprovalsTestCase(TestCase):
 
 class ManualPostsTestCase(TestCase):
     def test_manual_posts(self):
-        make_test_data()
+        GroupFactory(acronym='mars')
 
         url = urlreverse('ietf.submit.views.manualpost')
         # Secretariat has access

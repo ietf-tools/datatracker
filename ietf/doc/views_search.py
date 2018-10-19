@@ -457,7 +457,7 @@ def recent_drafts(request, days=7):
     results, meta = prepare_document_table(request, docs, query={'sort':'-date', }, max_results=len(names))
     pages = 0
     for doc in results:
-        pages += doc.pages
+        pages += doc.pages or 0
 
     return render(request, 'doc/recent_drafts.html', {
         'docs':results, 'meta':meta, 'pages':pages, 'days': days,
