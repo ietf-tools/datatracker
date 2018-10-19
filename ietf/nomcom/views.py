@@ -455,7 +455,7 @@ def feedback(request, year, public):
             topic = get_object_or_404(Topic,id=selected_topic)
             if topic.audience_id == 'nomcom' and not nomcom.group.has_role(request.user, ['chair','advisor','liaison','member']):
                 raise Http404()
-            if topic.audience_id == 'nominee' and not nomcom.nominee_set.filter(person=request.user.person).exists():
+            if topic.audience_id == 'nominees' and not nomcom.nominee_set.filter(person=request.user.person).exists():
                 raise Http404()
 
     if public:
@@ -468,8 +468,7 @@ def feedback(request, year, public):
     if not nomcom.group.has_role(request.user, ['chair','advisor','liaison','member']):
         topics = topics.exclude(audience_id='nomcom')
     if not nomcom.nominee_set.filter(person=request.user.person).exists():
-        topics = topics.exclude(audience_id='nominee')
-    
+        topics = topics.exclude(audience_id='nominees')
 
     user_comments = Feedback.objects.filter(nomcom=nomcom,
                                             type='comment',

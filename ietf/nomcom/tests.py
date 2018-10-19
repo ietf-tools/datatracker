@@ -2074,7 +2074,7 @@ class TopicTests(TestCase):
         self.assertEqual(topic.feedback_set.count(),1)
 
     def testAudience(self):
-        for audience in ['nomcom','nominee']:
+        for audience in ['nomcom','nominees']:
             topic = TopicFactory(nomcom=self.nc,audience_id=audience)
             feedback_url = reverse('ietf.nomcom.views.public_feedback',kwargs={'year':self.nc.year() })
             login_testing_unauthorized(self, self.plain_person.user.username, feedback_url)
