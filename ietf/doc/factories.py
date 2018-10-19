@@ -4,7 +4,7 @@ import datetime
 
 from django.conf import settings
 
-from ietf.doc.models import Document, DocEvent, NewRevisionDocEvent, DocAlias, State, DocumentAuthor
+from ietf.doc.models import Document, DocEvent, NewRevisionDocEvent, DocAlias, State, DocumentAuthor, StateDocEvent
 from ietf.group.models import Group
 
 def draft_name_generator(type_id,group,n):
@@ -210,3 +210,20 @@ class NewRevisionDocEventFactory(DocEventFactory):
     def desc(self):
          return 'New version available %s-%s'%(self.doc.name,self.rev)
 
+class StateDocEventFactory(DocEventFactory):
+    class Meta:
+        model = StateDocEvent
+
+    type = 'changed_state'
+    state_type_id = 'draft-iesg'
+
+    @factory.post_generation
+    def state(obj, create, extracted, **kwargs):
+        if not create:
+            return
+        if extracted:
+            (state_type_id, state_slug) = extracted
+            obj.state = State.objects.get(type_id=state_type_id,slug=state_slug)
+        else:
+            obj.state = State.objects.get(type_id='draft-iesg',slug='ad-eval')
+        obj.save()

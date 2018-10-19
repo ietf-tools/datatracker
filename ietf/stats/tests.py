@@ -13,11 +13,12 @@ import ietf.stats.views
 from ietf.submit.models import Submission
 from ietf.doc.factories import WgDraftFactory, WgRfcFactory
 from ietf.doc.models import Document, DocAlias, State, RelatedDocument, NewRevisionDocEvent, DocumentAuthor
+from ietf.group.factories import RoleFactory
 from ietf.meeting.factories import MeetingFactory
 from ietf.person.factories import PersonFactory
 from ietf.person.models import Person, Email
 from ietf.name.models import FormalLanguageName, DocRelationshipName, CountryName
-from ietf.review.factories import ReviewRequestFactory
+from ietf.review.factories import ReviewRequestFactory, ReviewerSettingsFactory
 from ietf.stats.models import MeetingRegistration, CountryAlias
 from ietf.stats.utils import get_meeting_registration_data
 
@@ -155,7 +156,10 @@ class StatisticsTests(TestCase):
         self.assertTrue("United States" in unicontent(r))
 
     def test_review_stats(self):
-        review_req = ReviewRequestFactory()
+        reviewer = PersonFactory()
+        review_req = ReviewRequestFactory(reviewer=reviewer.email_set.first())
+        RoleFactory(group=review_req.team,name_id='reviewer',person=reviewer)
+        ReviewerSettingsFactory(team=review_req.team, person=reviewer)
         PersonFactory(user__username='plain')
 
         # check redirect

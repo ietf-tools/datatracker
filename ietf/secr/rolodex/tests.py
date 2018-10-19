@@ -5,8 +5,6 @@ import debug                            # pyflakes:ignore
 from ietf.utils.test_utils import TestCase
 from ietf.person.factories import PersonFactory, UserFactory
 from ietf.person.models import Person, User
-from ietf.utils.test_data import make_test_data
-
 
 SECR_USER='secretary'
 
@@ -20,15 +18,13 @@ class RolodexTestCase(TestCase):
 
     def test_view(self):
         "View Test"
-        make_test_data()
-        person = Person.objects.all()[0]
+        person = PersonFactory()
         url = reverse('ietf.secr.rolodex.views.view', kwargs={'id':person.id})
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
 
     def test_add(self):
-        make_test_data()
         url = reverse('ietf.secr.rolodex.views.add')
         add_proceed_url = reverse('ietf.secr.rolodex.views.add_proceed') + '?name=Joe+Smith'
         self.client.login(username="secretary", password="secretary+password")
@@ -41,7 +37,7 @@ class RolodexTestCase(TestCase):
             'ascii': 'Joe Smith',
             'ascii_short': 'Joe S',
             'affiliation': 'IETF',
-            'email': 'joes@exanple.com',
+            'email': 'joes@example.com',
             'submit': 'Submit',
         }
         response = self.client.post(add_proceed_url, post_data)

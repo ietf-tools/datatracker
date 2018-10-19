@@ -2,6 +2,8 @@ import datetime
 import glob
 import os
 
+import debug           # pyflakes:ignore
+
 from django.conf import settings
 from django.template.loader import render_to_string
 

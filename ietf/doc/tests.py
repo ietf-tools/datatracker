@@ -22,7 +22,7 @@ import debug                            # pyflakes:ignore
 
 from ietf.doc.models import ( Document, DocAlias, DocRelationshipName, RelatedDocument, State,
     DocEvent, BallotPositionDocEvent, LastCallDocEvent, WriteupDocEvent, NewRevisionDocEvent )
-from ietf.doc.factories import DocumentFactory, DocEventFactory, CharterFactory, ConflictReviewFactory, WgDraftFactory, IndividualDraftFactory, WgRfcFactory, IndividualRfcFactory
+from ietf.doc.factories import DocumentFactory, DocEventFactory, CharterFactory, ConflictReviewFactory, WgDraftFactory, IndividualDraftFactory, WgRfcFactory, IndividualRfcFactory, StateDocEventFactory
 from ietf.doc.utils import create_ballot_if_not_open
 from ietf.group.models import Group
 from ietf.group.factories import GroupFactory
@@ -289,7 +289,25 @@ class SearchTests(TestCase):
         self.assertEqual(r.status_code, 200)
         data = json.loads(r.content)
         self.assertEqual(data[0]["id"], doc_alias.pk)
-        
+
+    def test_recent_drafts(self):
+        # Three drafts to show with various warnings
+        drafts = WgDraftFactory.create_batch(3,states=[('draft','active'),('draft-iesg','ad-eval')])
+        for index, draft in enumerate(drafts):
+            StateDocEventFactory(doc=draft, state=('draft-iesg','ad-eval'), time=datetime.datetime.now()-datetime.timedelta(days=[1,15,29][index]))
+
+        # And one draft that should not show (with the default of 7 days to view)
+        old = WgDraftFactory()
+        old.docevent_set.filter(newrevisiondocevent__isnull=False).update(time=datetime.datetime.now()-datetime.timedelta(days=8))
+        StateDocEventFactory(doc=old, time=datetime.datetime.now()-datetime.timedelta(days=8))
+
+        url = urlreverse('ietf.doc.views_search.recent_drafts')
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        q = PyQuery(r.content)
+        self.assertEqual(len(q('td.doc')),3)
+        self.assertEqual(q('td.status span.label-warning').text(),"for 15 days")
+        self.assertEqual(q('td.status span.label-danger').text(),"for 29 days")        
 
 class DocDraftTestCase(TestCase):
     draft_text = """

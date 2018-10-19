@@ -4,7 +4,7 @@ import datetime
 
 from django.core.files.base import ContentFile
 
-from ietf.meeting.models import Meeting, Session, Schedule, TimeSlot, SessionPresentation, FloorPlan
+from ietf.meeting.models import Meeting, Session, Schedule, TimeSlot, SessionPresentation, FloorPlan, Room
 from ietf.group.factories import GroupFactory
 from ietf.person.factories import PersonFactory
 
@@ -100,12 +100,29 @@ class ScheduleFactory(factory.DjangoModelFactory):
     name = factory.Sequence(lambda n: 'schedule_%d'%n)
     owner = factory.SubFactory(PersonFactory)
 
+class RoomFactory(factory.DjangoModelFactory):
+    class Meta:
+        model = Room
+
+    meeting = factory.SubFactory(MeetingFactory)
+    name = factory.Faker('name')
+
+
 class TimeSlotFactory(factory.DjangoModelFactory):
     class Meta:
         model = TimeSlot
 
     meeting = factory.SubFactory(MeetingFactory)
     type_id = 'session'
+
+    @factory.post_generation
+    def location(obj, create, extracted, **kwargs): # pylint: disable=no-self-argument
+        if create:
+            if extracted:
+                obj.location = extracted
+            else:
+                obj.location = RoomFactory(meeting=obj.meeting)
+            obj.save()
     
     @factory.lazy_attribute
     def time(self):
@@ -140,4 +157,3 @@ class FloorPlanFactory(factory.DjangoModelFactory):
                 ), 'floorplan.jpg'
             )
         )
-        
