@@ -1643,7 +1643,7 @@
   {
     "fields": {
       "desc": "Request completed. There were no IANA actions for this document",
-      "name": "No IC",
+      "name": "No IANA Actions",
       "next_states": [],
       "order": 9,
       "slug": "noic",
@@ -2351,7 +2351,7 @@
   {
     "fields": {
       "about_page": "ietf.group.views.group_about",
-      "admin_roles": "chair",
+      "admin_roles": "ad",
       "agenda_type": "ietf",
       "customize_workflow": false,
       "default_tab": "ietf.group.views.group_about",
@@ -2374,7 +2374,7 @@
       "admin_roles": "chair,secr",
       "agenda_type": null,
       "customize_workflow": false,
-      "default_tab": "ietf.group.views.review_requests",
+      "default_tab": "ietf.group.views.group_about",
       "has_chartering_process": false,
       "has_default_jabber": false,
       "has_dependencies": false,
@@ -2411,7 +2411,7 @@
   {
     "fields": {
       "about_page": "ietf.group.views.group_about",
-      "admin_roles": "chair",
+      "admin_roles": "chair,lead",
       "agenda_type": "ietf",
       "customize_workflow": false,
       "default_tab": "ietf.group.views.group_about",
@@ -8119,7 +8119,7 @@
       "desc": "",
       "name": "Liaison",
       "order": 0,
-      "prefix": "",
+      "prefix": "liaison",
       "used": false
     },
     "model": "name.doctypename",
@@ -8152,7 +8152,7 @@
       "desc": "",
       "name": "Review",
       "order": 0,
-      "prefix": "",
+      "prefix": "review",
       "used": true
     },
     "model": "name.doctypename",
@@ -8163,7 +8163,7 @@
       "desc": "",
       "name": "Shepherd's writeup",
       "order": 0,
-      "prefix": "",
+      "prefix": "shepherd",
       "used": false
     },
     "model": "name.doctypename",
@@ -8415,6 +8415,16 @@
     },
     "model": "name.feedbacktypename",
     "pk": "questio"
+  },
+  {
+    "fields": {
+      "desc": "",
+      "name": "Read",
+      "order": 0,
+      "used": true
+    },
+    "model": "name.feedbacktypename",
+    "pk": "read"
   },
   {
     "fields": {
@@ -10465,7 +10475,7 @@
     "fields": {
       "command": "xym",
       "switch": "--version",
-      "time": "2018-07-11T00:07:49.096",
+      "time": "2018-10-19T00:08:03.034",
       "used": true,
       "version": "xym 0.4"
     },
@@ -10476,7 +10486,7 @@
     "fields": {
       "command": "pyang",
       "switch": "--version",
-      "time": "2018-07-11T00:07:49.823",
+      "time": "2018-10-19T00:08:03.673",
       "used": true,
       "version": "pyang 1.7.5"
     },
@@ -10487,7 +10497,7 @@
     "fields": {
       "command": "yanglint",
       "switch": "--version",
-      "time": "2018-07-11T00:07:50.005",
+      "time": "2018-10-19T00:08:03.887",
       "used": true,
       "version": "yanglint 0.14.80"
     },
@@ -10498,9 +10508,9 @@
     "fields": {
       "command": "xml2rfc",
       "switch": "--version",
-      "time": "2018-07-11T00:07:51.102",
+      "time": "2018-10-19T00:08:04.519",
       "used": true,
-      "version": "xml2rfc 2.9.8"
+      "version": "xml2rfc 2.11.1"
     },
     "model": "utils.versioninfo",
     "pk": 4

@@ -292,7 +292,7 @@ def search_for_name(request, name):
         search_args += "&rfcs=on&activedrafts=on&olddrafts=on"
     else:
         for t in doctypenames:
-            if n.startswith(t.prefix):
+            if t.prefix and n.startswith(t.prefix):
                 search_args += "&doctypes=%s" % t.slug
                 break
         else:
