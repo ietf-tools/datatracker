@@ -1,3 +1,42 @@
+ietfdb (6.87.1) ietf; urgency=medium
+
+  This is a bugfix release, whith the following changes:
+
+  * Merged in [15601] from rjsparks@nostrum.com:
+    Corrected some DocTypeName entries' prefix value. Made the search code
+    more robust against DocTypeName objects that have an empty prefix value.
+    Fixes #2599.  
+
+  * Merged in [15596] from rjsparks@nostrum.com:
+    Improved coverage for several tests.  
+
+  * Merged in [15595] from rjsparks@nostrum.com:
+    Converted stats, submit, sync. and utils/test to use factories. 
+    Excluded utils/test_data from coverage checks.  
+
+  * Fixed some incorrect topic audience id slugs, to make the NomCom topic
+    availability filtering work correctly.
+
+  * Updated the nomcom reference from 3777 to 7437 on the Person profile edit
+    page.
+
+  * Merged in [15580] from rjsparks@nostrum.com:
+    Better constrain a liaison test object to match the preconditions for 
+    the test.  
+
+  * Tweaked the mail sending routines' handling of the copy flag.
+
+  * Changed the mail sending routines so it's possible to not copy the 
+    debug archive on some messages.
+
+  * Added 'os.chdir()' to virtualenv_activate to place us correctly to pick 
+    up patch files.
+
+  * Added Message-ID to log lines for sent email messages.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  22 Oct 2018 16:17:25 +0000
+
+
 ietfdb (6.87.0) ietf; urgency=medium
 
   **Nomcom, agenda, and test improvements, new API for secretariat use**
