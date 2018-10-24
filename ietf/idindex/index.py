@@ -221,6 +221,9 @@ def active_drafts_index_by_group(extra_values=()):
     # this returns a lot of data so try to be efficient
 
     active_state = State.objects.get(type="draft", slug="active")
+    wg_cand = State.objects.get(type="draft-stream-ietf", slug="wg-cand")
+    wg_adopt = State.objects.get(type="draft-stream-ietf", slug="c-adopt")
+    individual = Group.objects.get(acronym='none')
 
     groups_dict = dict((g.id, g) for g in Group.objects.all())
 
@@ -228,6 +231,10 @@ def active_drafts_index_by_group(extra_values=()):
 
     docs_dict = dict((d["name"], d)
                      for d in Document.objects.filter(states=active_state).values(*extracted_values))
+
+    # Special case for drafts with group set, but in state wg_cand:
+    for d in Document.objects.filter(states=active_state).filter(states__in=[wg_cand, wg_adopt]):
+        docs_dict[d.name]['group_id'] = individual.id
 
     # add initial and latest revision time
     for time, doc_id in NewRevisionDocEvent.objects.filter(type="new_revision", doc__states=active_state).order_by('-time').values_list("time", "doc_id"):
