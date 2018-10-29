@@ -62,13 +62,6 @@
                 <a class="btn btn-default btn-xs" {% if nomcom.group.state_id != 'conclude' %}href="?nominee={{np.nominee.id}}&position={{ np.position.id}}"{% endif %}>
 	          {{ np.nominee.name }}
                   {% with count=counts|lookup:np.position.id|lookup:np.nominee.id %}
-                    {% if nomcom.show_nominee_pictures %}
-                      {% if np.nominee.person.photo_thumb %}
-                        <span class="photo"><img src="{{np.nominee.person.photo_thumb.url}}" width=15 height=15/></span>
-                      {% else %}
-                        <span class="photo">&nbsp;</span>
-                      {% endif %}
-                    {% endif %}
                     <span class="badge" 
                           title="{% if count %}{{count}} earlier comment{{count|pluralize}} from you {% else %}You have not yet provided feedback {% endif %} on {{np.nominee.email.address}} as {{np.position}}">
                       {{ count | default:"no feedback" }}
