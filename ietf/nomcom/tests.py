@@ -1941,28 +1941,6 @@ class AcceptingTests(TestCase):
         q=PyQuery(response.content)
         self.assertEqual( len(q('.badge')) , 6 )
 
-
-class FeedbackPictureTests(TestCase):
-    def setUp(self):
-        build_test_public_keys_dir(self)
-        self.nc = NomComFactory(**nomcom_kwargs_for_year())
-        self.plain_person = PersonFactory.create()
-
-    def tearDown(self):
-        clean_test_public_keys_dir(self)
-
-    def test_feedback_pictures(self):
-        url = reverse('ietf.nomcom.views.public_feedback',kwargs={'year':self.nc.year()})
-        login_testing_unauthorized(self,self.plain_person.user.username,url)
-        response = self.client.get(url)
-        q = PyQuery(response.content)
-        self.assertTrue(q('.photo'))
-        self.nc.show_nominee_pictures=False;
-        self.nc.save()
-        response = self.client.get(url)
-        q = PyQuery(response.content)
-        self.assertFalse(q('.photo'))
-
 class ShowNomineeTests(TestCase):
     def setUp(self):
         build_test_public_keys_dir(self)
