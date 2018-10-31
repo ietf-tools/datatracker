@@ -1,3 +1,29 @@
+ietfdb (6.87.2) ietf; urgency=medium
+
+  This is a small bugfix release to clean the slate before the code sprint.
+  From the commit log:
+
+  * Merged in [15613] from rjsparks@nostrum.com:
+    Make having a trailing slash optional for doc/html/docname. Fixes #2247.  
+
+  * Merged in [15603] from rjsparks@nostrum.com:
+    Changed some text and button labels to make the workflow for commiting 
+    group schedules more self-documenting.  
+
+  * Clarified that the document search author field accepts also author
+    affiliation as a search term.
+
+  * Removed microscopic photos from nomcom feedback page buttons.  Few
+    browsers render them correctly with badges, and they are too small to
+    provide meaningful information.
+
+  * Changed the generation of the 1id-index.txt file to not list individual 
+    drafts in states Candidate for WG Adoption and Call for WG Adoption Issued 
+    as group drafts.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  31 Oct 2018 16:13:17 +0000
+
+
 ietfdb (6.87.1) ietf; urgency=medium
 
   This is a bugfix release, whith the following changes:
