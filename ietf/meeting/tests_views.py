@@ -666,7 +666,7 @@ class EditTests(TestCase):
         self.assertTrue(meeting.room_set.all().first().name in unicontent(r))
 
     def test_edit_timeslot_type(self):
-        timeslot = TimeSlotFactory()
+        timeslot = TimeSlotFactory(meeting__type_id='ietf')
         url = urlreverse('ietf.meeting.views.edit_timeslot_type', kwargs=dict(num=timeslot.meeting.number,slot_id=timeslot.id))
         login_testing_unauthorized(self,"secretary",url)
         r = self.client.get(url)
