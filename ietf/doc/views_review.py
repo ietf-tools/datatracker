@@ -12,6 +12,7 @@ import debug    # pyflakes:ignore
 from django.http import HttpResponseForbidden, JsonResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django import forms
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.utils.html import mark_safe
 from django.core.exceptions import ValidationError
@@ -25,6 +26,7 @@ from ietf.review.models import ReviewRequest
 from ietf.group.models import Group
 from ietf.ietfauth.utils import is_authorized_in_doc_stream, user_is_person, has_role
 from ietf.message.models import Message
+from ietf.message.utils import infer_message
 from ietf.person.fields import PersonEmailChoiceField, SearchablePersonField
 from ietf.review.utils import (active_review_teams, assign_review_request_to_reviewer,
                                can_request_review_of_doc, can_manage_review_requests_for_team,
@@ -423,7 +425,7 @@ class CompleteReviewForm(forms.Form):
                 " ".join("<a class=\"rev label label-default {0}\" title=\"{2:%Y-%m-%d}\">{1}</a>".format('', *r)
                          for i, r in enumerate(known_revisions)))
 
-        self.fields["result"].queryset = self.fields["result"].queryset.filter(reviewteamsettings__group=review_req.team)
+        self.fields["result"].queryset = self.fields["result"].queryset.filter(reviewteamsettings_review_results_set__group=review_req.team)
 
         def format_submission_choice(label):
             if revising_review:
@@ -642,6 +644,19 @@ def complete_review(request, name, request_id):
                 if list_name:
                     review.external_url = mailarch.construct_message_url(list_name, email.utils.unquote(msg["Message-ID"]))
                     review.save_with_history([close_event])
+
+            if review_req.result in review_req.team.reviewteamsettings.notify_ad_when.all():
+                (to, cc) = gather_address_lists('review_notify_ad',review_req = review_req)
+                msg_txt = render_to_string("review/notify_ad.txt", {
+                    "to": to,
+                    "cc": cc,
+                    "review_req": review_req,
+                    "settings": settings,
+                 })
+                msg = infer_message(msg_txt)
+                msg.by = request.user.person
+                msg.save()
+                send_mail_message(request, msg)
 
             return redirect("ietf.doc.views_doc.document_main", name=review_req.review.name)
     else:

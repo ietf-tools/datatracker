@@ -157,6 +157,7 @@ class ReviewTeamSettingsResource(ModelResource):
     group            = ToOneField(GroupResource, 'group')
     review_types     = ToManyField(ReviewTypeNameResource, 'review_types', null=True)
     review_results   = ToManyField(ReviewResultNameResource, 'review_results', null=True)
+    notify_ad_when   = ToManyField(ReviewResultNameResource, 'notify_ad_when', null = True)
     class Meta:
         queryset = ReviewTeamSettings.objects.all()
         serializer = api.Serializer()
@@ -168,6 +169,7 @@ class ReviewTeamSettingsResource(ModelResource):
             "group": ALL_WITH_RELATIONS,
             "review_types": ALL_WITH_RELATIONS,
             "review_results": ALL_WITH_RELATIONS,
+            "notify_ad_when": ALL_WITH_RELATIONS,
         }
 api.review.register(ReviewTeamSettingsResource())
 

@@ -63,6 +63,6 @@ class ReviewTeamSettingsAdmin(admin.ModelAdmin):
     list_display = ["group", ] 
     search_fields = ["group__acronym", ]
     raw_id_fields = ["group", ]
-    filter_horizontal = ["review_types", "review_results", ]
+    filter_horizontal = ["review_types", "review_results", "notify_ad_when"]
 
 admin.site.register(ReviewTeamSettings, ReviewTeamSettingsAdmin)

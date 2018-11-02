@@ -573,7 +573,7 @@ class ReviewTests(TestCase):
         test_file.name = "unnamed"
 
         r = self.client.post(url, data={
-            "result": ReviewResultName.objects.get(reviewteamsettings__group=review_req.team, slug="ready").pk,
+            "result": ReviewResultName.objects.get(reviewteamsettings_review_results_set__group=review_req.team, slug="ready").pk,
             "state": ReviewRequestStateName.objects.get(slug="completed").pk,
             "reviewed_rev": review_req.doc.rev,
             "review_submission": "upload",
@@ -627,7 +627,7 @@ class ReviewTests(TestCase):
         empty_outbox()
 
         r = self.client.post(url, data={
-            "result": ReviewResultName.objects.get(reviewteamsettings__group=review_req.team, slug="ready").pk,
+            "result": ReviewResultName.objects.get(reviewteamsettings_review_results_set__group=review_req.team, slug="ready").pk,
             "state": ReviewRequestStateName.objects.get(slug="completed").pk,
             "reviewed_rev": review_req.doc.rev,
             "review_submission": "enter",
@@ -649,6 +649,30 @@ class ReviewTests(TestCase):
 
         self.assertTrue(settings.MAILING_LIST_ARCHIVE_URL in review_req.review.external_url)
 
+    def test_complete_notify_ad(self):
+        review_req, url = self.setup_complete_review_test()
+        review_req.team.reviewteamsettings.notify_ad_when.add(ReviewResultName.objects.get(slug='issues'))
+        # TODO - it's a little surprising that the factories so far didn't give this doc an ad
+        review_req.doc.ad = PersonFactory()
+        review_req.doc.save_with_history([DocEvent.objects.create(doc=review_req.doc, rev=review_req.doc.rev, by=review_req.reviewer.person, type='changed_document',desc='added an AD')])
+        login_testing_unauthorized(self, review_req.reviewer.person.user.username, url)
+
+        empty_outbox()
+
+        r = self.client.post(url, data={
+            "result": ReviewResultName.objects.get(reviewteamsettings_review_results_set__group=review_req.team, slug="issues").pk,
+            "state": ReviewRequestStateName.objects.get(slug="completed").pk,
+            "reviewed_rev": review_req.doc.rev,
+            "review_submission": "enter",
+            "review_content": "This is a review\nwith two lines",
+            "review_url": "",
+            "review_file": "",
+        })
+        self.assertEqual(r.status_code, 302)
+
+        self.assertEqual(len(outbox), 2)
+        self.assertIn('Has Issues', outbox[-1]['Subject'])
+
     @patch('requests.get')
     def test_complete_review_link_to_mailing_list(self, mock):
         # Mock up the url response for the request.get() call to retrieve the mailing list url
@@ -665,7 +689,7 @@ class ReviewTests(TestCase):
         empty_outbox()
 
         r = self.client.post(url, data={
-            "result": ReviewResultName.objects.get(reviewteamsettings__group=review_req.team, slug="ready").pk,
+            "result": ReviewResultName.objects.get(reviewteamsettings_review_results_set__group=review_req.team, slug="ready").pk,
             "state": ReviewRequestStateName.objects.get(slug="completed").pk,
             "reviewed_rev": review_req.doc.rev,
             "review_submission": "link",
@@ -693,7 +717,7 @@ class ReviewTests(TestCase):
         empty_outbox()
 
         r = self.client.post(url, data={
-            "result": ReviewResultName.objects.get(reviewteamsettings__group=review_req.team, slug="ready").pk,
+            "result": ReviewResultName.objects.get(reviewteamsettings_review_results_set__group=review_req.team, slug="ready").pk,
             "state": ReviewRequestStateName.objects.get(slug="part-completed").pk,
             "reviewed_rev": review_req.doc.rev,
             "review_submission": "enter",
@@ -734,7 +758,7 @@ class ReviewTests(TestCase):
         url = urlreverse('ietf.doc.views_review.complete_review', kwargs={ "name": review_req.doc.name, "request_id": review_req.pk })
 
         r = self.client.post(url, data={
-            "result": ReviewResultName.objects.get(reviewteamsettings__group=review_req.team, slug="ready").pk,
+            "result": ReviewResultName.objects.get(reviewteamsettings_review_results_set__group=review_req.team, slug="ready").pk,
             "state": ReviewRequestStateName.objects.get(slug="completed").pk,
             "reviewed_rev": review_req.doc.rev,
             "review_submission": "enter",
@@ -766,7 +790,7 @@ class ReviewTests(TestCase):
         empty_outbox()
 
         r = self.client.post(url, data={
-            "result": ReviewResultName.objects.get(reviewteamsettings__group=review_req.team, slug="ready").pk,
+            "result": ReviewResultName.objects.get(reviewteamsettings_review_results_set__group=review_req.team, slug="ready").pk,
             "state": ReviewRequestStateName.objects.get(slug="completed").pk,
             "reviewed_rev": review_req.doc.rev,
             "review_submission": "enter",
@@ -791,7 +815,7 @@ class ReviewTests(TestCase):
         # revise again
         empty_outbox()
         r = self.client.post(url, data={
-            "result": ReviewResultName.objects.get(reviewteamsettings__group=review_req.team, slug="ready").pk,
+            "result": ReviewResultName.objects.get(reviewteamsettings_review_results_set__group=review_req.team, slug="ready").pk,
             "state": ReviewRequestStateName.objects.get(slug="part-completed").pk,
             "reviewed_rev": review_req.doc.rev,
             "review_submission": "enter",
