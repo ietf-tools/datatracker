@@ -649,7 +649,7 @@ class ReviewTests(TestCase):
 
         self.assertTrue(settings.MAILING_LIST_ARCHIVE_URL in review_req.review.external_url)
 
-    def test_complete_notify_ad(self):
+    def test_complete_notify_ad_because_team_settings(self):
         review_req, url = self.setup_complete_review_test()
         review_req.team.reviewteamsettings.notify_ad_when.add(ReviewResultName.objects.get(slug='issues'))
         # TODO - it's a little surprising that the factories so far didn't give this doc an ad
@@ -672,6 +672,31 @@ class ReviewTests(TestCase):
 
         self.assertEqual(len(outbox), 2)
         self.assertIn('Has Issues', outbox[-1]['Subject'])
+        self.assertIn('settings indicated', outbox[-1].get_payload(decode=True).decode("utf-8"))
+
+    def test_complete_notify_ad_because_checkbox(self):
+        review_req, url = self.setup_complete_review_test()
+        review_req.doc.ad = PersonFactory()
+        review_req.doc.save_with_history([DocEvent.objects.create(doc=review_req.doc, rev=review_req.doc.rev, by=review_req.reviewer.person, type='changed_document',desc='added an AD')])
+        login_testing_unauthorized(self, review_req.reviewer.person.user.username, url)
+
+        empty_outbox()
+
+        r = self.client.post(url, data={
+            "result": ReviewResultName.objects.get(reviewteamsettings_review_results_set__group=review_req.team, slug="issues").pk,
+            "state": ReviewRequestStateName.objects.get(slug="completed").pk,
+            "reviewed_rev": review_req.doc.rev,
+            "review_submission": "enter",
+            "review_content": "This is a review\nwith two lines",
+            "review_url": "",
+            "review_file": "",
+            "email_ad": "1",
+        })
+        self.assertEqual(r.status_code, 302)
+
+        self.assertEqual(len(outbox), 2)
+        self.assertIn('Has Issues', outbox[-1]['Subject']) 
+        self.assertIn('reviewer indicated', outbox[-1].get_payload(decode=True).decode("utf-8"))
 
     @patch('requests.get')
     def test_complete_review_link_to_mailing_list(self, mock):
