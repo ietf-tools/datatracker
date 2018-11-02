@@ -1,3 +1,14 @@
+ietfdb (6.87.3) ietf; urgency=low
+
+  This release contains one single fix, to give stable test results for
+  the test_edit_timeslot_type() test.
+
+  * Merged in [15648] from rjsparks@nostrum.com:
+    Use only ietf meetings for testing editing timeslots.  
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  02 Nov 2018 02:51:32 +0000
+
+
 ietfdb (6.87.2) ietf; urgency=medium
 
   This is a small bugfix release to clean the slate before the code sprint.
