@@ -22,7 +22,7 @@ DESCRIPTION
 	This is a wrapper which runs docker with suitable arguments on a
 	debian-based docker image which has been set up with the dependencies
 	needed to easily run the IETF datatracker in development mode.  By
-	default, it expects to find MySWL database files at
+	default, it expects to find the MySQL database files at
 	$parent/data/mysql, which is mapped inside the
 	container to /var/lib/mysql, and it will set up a home directory for
 	the current user ($USER) and map it to $HOME.
