@@ -1,5 +1,3 @@
-from django.utils.text import slugify
-from django.utils.safestring import mark_safe
 from django.contrib import admin
 from django import forms
 
@@ -9,8 +7,6 @@ from models import (StateType, State, RelatedDocument, DocumentAuthor, Document,
     TelechatDocEvent, BallotPositionDocEvent, ReviewRequestDocEvent, InitialReviewDocEvent,
     AddedMessageEvent, SubmissionDocEvent, DeletedEvent, EditedAuthorsDocEvent, DocumentURL)
 
-
-from ietf.doc.utils import get_state_types
 
 class StateTypeAdmin(admin.ModelAdmin):
     list_display = ["slug", "label"]
@@ -40,66 +36,14 @@ class RelatedDocumentInline(admin.TabularInline):
     raw_id_fields = ['target']
     extra = 1
 
-# document form for managing states in a less confusing way
-
-class StatesWidget(forms.SelectMultiple):
-    """Display all applicable states as separate select boxes,
-    requires 'instance' have been set on the widget."""
-    def render(self, name, value, attrs=None, choices=()):
-
-        types = StateType.objects.filter(slug__in=get_state_types(self.instance)).order_by("slug")
-        
-        categorized_choices = []
-        for t in types:
-            states = State.objects.filter(used=True, type=t).select_related()
-            if states:
-                categorized_choices.append((t.label, states))
-
-        html = []
-        first = True
-        for label, states in categorized_choices:
-            htmlid = "id_%s_%s" % (name, slugify(label))
-            
-            html.append('<div style="clear:both;padding-top:%s">' % ("1em" if first else "0.5em"))
-            html.append(u'<label for="%s">%s:</label>' % (htmlid, label))
-            html.append(u'<select name="%s" id="%s">' % (name, htmlid))
-            html.append(u'<option value="">-----------</option>')
-            for s in states:
-                html.append('<option %s value="%s">%s</option>' % ("selected" if s.pk in value else "", s.pk, s.name))
-            html.append(u'</select>')
-            html.append("</div>")
-            
-            first = False
-            
-        return mark_safe(u"".join(html))
-
-class StatesField(forms.ModelMultipleChoiceField):
-    def __init__(self, *args, **kwargs):
-        # use widget with multiple select boxes
-        kwargs['widget'] = StatesWidget
-        super(StatesField, self).__init__(*args, **kwargs)
-        
-    def clean(self, value):
-        if value and isinstance(value, (list, tuple)):
-            # remove "", in case a state is reset
-            value = [x for x in value if x]
-        return super(StatesField, self).clean(value)
-    
 class DocumentForm(forms.ModelForm):
-    states = StatesField(queryset=State.objects.all(), required=False)
     comment_about_changes = forms.CharField(
         widget=forms.Textarea(attrs={'rows':10,'cols':40,'class':'vLargeTextField'}), strip=False,
         help_text="This comment about the changes made will be saved in the document history.")
     
-    def __init__(self, *args, **kwargs):
-        super(DocumentForm, self).__init__(*args, **kwargs)
-
-        # we don't normally have access to the instance in the widget
-        # so set it here
-        self.fields["states"].widget.instance = self.instance
-
     class Meta:
         fields = '__all__'
+        exclude = ('states',)
         model = Document
 
 class DocumentAuthorAdmin(admin.ModelAdmin):
