@@ -4,6 +4,7 @@
 import datetime, tarfile, mailbox, tempfile, hashlib, base64, email.utils
 import urllib
 import urllib2, contextlib
+import re
 
 from django.conf import settings
 
@@ -92,6 +93,9 @@ def retrieve_messages(query_data_url):
     with contextlib.closing(urllib2.urlopen(query_data_url, timeout=15)) as fileobj:
         content_type = fileobj.info()["Content-type"]
         if not content_type.startswith("application/x-tar"):
+            if content_type.startswith("text/html"):
+                if not re.search("no-results", fileobj.read(20000)) is None:
+                    raise Exception("NONE")
             raise Exception("Export failed - this usually means no matches were found")
 
         with tarfile.open(fileobj=fileobj, mode='r|*') as tar:
