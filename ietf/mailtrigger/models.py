@@ -316,3 +316,12 @@ class Recipient(models.Model):
             session = kwargs['session']
             addrs.append(session.requested_by.role_email('chair').address)
         return addrs
+
+    def gather_review_team_ads(self, **kwargs):
+        addrs=[]
+        if 'review_req' in kwargs:
+            review_req = kwargs['review_req']
+            if review_req.team.parent:
+                for role in review_req.team.parent.role_set.filter(name='ad'):
+                    addrs.append(role.email.address)
+        return addrs

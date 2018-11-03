@@ -13,12 +13,16 @@ def forward(apps, schema_editor):
         desc = "The reviewed document's responsible area director",
         template = '{% if review_req.doc.ad %}{{review_req.doc.ad.email_address}}{% endif %}'
     )
+    Recipient.objects.create(
+        slug = 'review_team_ads',
+        desc = "The ADs of the team reviewing the document"
+    )
 
     review_notify_ad = MailTrigger.objects.create(
         slug = 'review_notify_ad',
         desc = 'Recipients when a team notifies area directors when a review with one of a certain set of results (typically results indicating problem) is submitted',
     )
-    review_notify_ad.to.set(Recipient.objects.filter(slug='review_doc_ad'))
+    review_notify_ad.to.set(Recipient.objects.filter(slug__in=['review_doc_ad','review_team_ads']))
 
 
 def reverse(apps, schema_editor):
@@ -27,6 +31,7 @@ def reverse(apps, schema_editor):
 
     MailTrigger.objects.filter(slug='review_notify_ad').delete()
     Recipient.objects.filter(slug='review_doc_ad').delete()
+    Recipient.objects.filter(slug='review_team_ads').delete()
 
 class Migration(migrations.Migration):
 

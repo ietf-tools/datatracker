@@ -3574,7 +3574,8 @@
       "cc": [],
       "desc": "Recipients when a team notifies area directors when a review with one of a certain set of results (typically results indicating problem) is submitted",
       "to": [
-        "review_doc_ad"
+        "review_doc_ad",
+        "review_team_ads"
       ]
     },
     "model": "mailtrigger.mailtrigger",
@@ -4215,6 +4216,14 @@
     },
     "model": "mailtrigger.recipient",
     "pk": "review_doc_group_mail_list"
+  },
+  {
+    "fields": {
+      "desc": "The ADs of the team reviewing the document",
+      "template": null
+    },
+    "model": "mailtrigger.recipient",
+    "pk": "review_team_ads"
   },
   {
     "fields": {
@@ -10494,7 +10503,7 @@
     "fields": {
       "command": "xym",
       "switch": "--version",
-      "time": "2018-11-01T00:08:56.002",
+      "time": "2018-11-02T00:08:27.707",
       "used": true,
       "version": "xym 0.4"
     },
@@ -10505,7 +10514,7 @@
     "fields": {
       "command": "pyang",
       "switch": "--version",
-      "time": "2018-11-01T00:08:57.320",
+      "time": "2018-11-02T00:08:28.485",
       "used": true,
       "version": "pyang 1.7.5"
     },
@@ -10516,7 +10525,7 @@
     "fields": {
       "command": "yanglint",
       "switch": "--version",
-      "time": "2018-11-01T00:08:57.507",
+      "time": "2018-11-02T00:08:28.661",
       "used": true,
       "version": "yanglint 0.14.80"
     },
@@ -10527,7 +10536,7 @@
     "fields": {
       "command": "xml2rfc",
       "switch": "--version",
-      "time": "2018-11-01T00:08:59.405",
+      "time": "2018-11-02T00:08:29.566",
       "used": true,
       "version": "xml2rfc 2.12.3"
     },
