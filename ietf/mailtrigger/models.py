@@ -172,7 +172,10 @@ class Recipient(models.Model):
         if 'group' in kwargs:
             group = kwargs['group']
             if not group.acronym=='none':
-                addrs.extend(group.role_set.filter(name='secr').values_list('email__address',flat=True))
+                if group.reviewteamsettings and group.reviewteamsettings.secr_mail_alias:
+                    addrs = [group.reviewteamsettings.secr_mail_alias, ]
+                else:
+                    addrs.extend(group.role_set.filter(name='secr').values_list('email__address',flat=True))
         return addrs
 
     def gather_doc_group_responsible_directors(self, **kwargs):

@@ -161,6 +161,7 @@ class ReviewTeamSettings(models.Model):
     autosuggest = models.BooleanField(default=True, verbose_name="Automatically suggest possible review requests")
     review_types = models.ManyToManyField(ReviewTypeName, default=get_default_review_types)
     review_results = models.ManyToManyField(ReviewResultName, default=get_default_review_results)
+    secr_mail_alias = models.CharField(verbose_name="Email alias for all of the review team secretaries", max_length=255, blank=True, help_text="Email alias for all of the review team secretaries")
 
     def __unicode__(self):
         return u"%s" % (self.group.acronym,)
