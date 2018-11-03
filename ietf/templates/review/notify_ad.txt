@@ -9,4 +9,6 @@ The review is available at {{settings.IDTRACKER_BASE_URL}}{% url 'ietf.doc.views
 
 The document is available at {{settings.IDTRACKER_BASE_URL}}{% url 'ietf.doc.views_doc.document_main' name=review_req.doc.name %}
 
+This message was sent because {% if explicit_request %}the reviewer indicated it should be on the review completion form{% else %}the review team settings indicated it should be{% endif %}.
+
 {% endautoescape %}

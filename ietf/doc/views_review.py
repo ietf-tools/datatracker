@@ -379,6 +379,7 @@ class CompleteReviewForm(forms.Form):
     completion_date = DatepickerDateField(date_format="yyyy-mm-dd", picker_settings={ "autoclose": "1" }, initial=datetime.date.today, help_text="Date of announcement of the results of this review")
     completion_time = forms.TimeField(widget=forms.HiddenInput, initial=datetime.time.min)
     cc = MultiEmailField(required=False, help_text="Email addresses to send to in addition to the review team list")
+    email_ad = forms.BooleanField(label="Send extra email to the responsible AD suggesting early attention", required=False)
 
     def __init__(self, review_req, is_reviewer, *args, **kwargs):
         self.review_req = review_req
@@ -645,13 +646,14 @@ def complete_review(request, name, request_id):
                     review.external_url = mailarch.construct_message_url(list_name, email.utils.unquote(msg["Message-ID"]))
                     review.save_with_history([close_event])
 
-            if review_req.result in review_req.team.reviewteamsettings.notify_ad_when.all():
+            if form.cleaned_data['email_ad'] or review_req.result in review_req.team.reviewteamsettings.notify_ad_when.all():
                 (to, cc) = gather_address_lists('review_notify_ad',review_req = review_req)
                 msg_txt = render_to_string("review/notify_ad.txt", {
                     "to": to,
                     "cc": cc,
                     "review_req": review_req,
                     "settings": settings,
+                    "explicit_request": form.cleaned_data['email_ad'],
                  })
                 msg = infer_message(msg_txt)
                 msg.by = request.user.person
