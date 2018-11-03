@@ -1,5 +1,5 @@
 --- patch.py.original	2018-11-02 23:17:51.816936730 -0700
-+++ patch.py	2018-11-02 23:20:28.800705155 -0700
++++ patch.py	2018-11-02 23:21:50.794673596 -0700
 @@ -803,10 +803,10 @@
  
    def findfile(self, old, new):
@@ -43,3 +43,4 @@
 -
      # todo: check for premature eof
      return (errors == 0)
+ 
