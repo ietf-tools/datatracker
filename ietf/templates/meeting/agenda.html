@@ -230,7 +230,7 @@
 	          </td>
 		  <td class="col-md-2">
 		    <span class="hidden-xs">
-		      {% if item.timeslot.type.slug == 'other' %}
+		      {% if item.timeslot.type.slug == 'other' and not item.session.agenda %}
 			{% for slide in item.session.slides %}
 			  <a href="{{slide.href}}">{{ slide.title|clean_whitespace }}</a>
 			  <br>
