@@ -181,9 +181,20 @@ class MeetingTests(TestCase):
         # week view
         r = self.client.get(urlreverse("ietf.meeting.views.week_view", kwargs=dict(num=meeting.number)))
         self.assertEqual(r.status_code, 200)
-        agenda_content = r.content
+        agenda_content = unicontent(r)
+        self.assertNotIn('CANCELLED',agenda_content)
         self.assertTrue(session.group.acronym in agenda_content)
         self.assertTrue(slot.location.name in agenda_content)
+
+        # week view with a cancelled session
+        session.status_id='canceled'
+        session.save()
+        r = self.client.get(urlreverse("ietf.meeting.views.week_view", kwargs=dict(num=meeting.number)))
+        self.assertEqual(r.status_code, 200)
+        agenda_content = unicontent(r)
+        self.assertIn('CANCELLED',agenda_content)
+        self.assertTrue(session.group.acronym in agenda_content)
+        self.assertTrue(slot.location.name in agenda_content)       
 
     def test_agenda_current_audio(self):
         date = datetime.date.today()

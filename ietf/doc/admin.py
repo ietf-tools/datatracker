@@ -1,5 +1,3 @@
-from django.utils.text import slugify
-from django.utils.safestring import mark_safe
 from django.contrib import admin
 from django import forms
 
@@ -9,8 +7,6 @@ from models import (StateType, State, RelatedDocument, DocumentAuthor, Document,
     TelechatDocEvent, BallotPositionDocEvent, ReviewRequestDocEvent, InitialReviewDocEvent,
     AddedMessageEvent, SubmissionDocEvent, DeletedEvent, EditedAuthorsDocEvent, DocumentURL)
 
-
-from ietf.doc.utils import get_state_types
 
 class StateTypeAdmin(admin.ModelAdmin):
     list_display = ["slug", "label"]

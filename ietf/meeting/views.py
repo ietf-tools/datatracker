@@ -790,6 +790,9 @@ def week_view(request, num=None, name=None, owner=None):
             if a.session and a.session.agenda():
                 item["agenda"] = a.session.agenda().href()
 
+            if a.session.status_id=='canceled':
+                item["name"] = "CANCELLED - " + item["name"]
+
         items.append(item)
 
     return render(request, "meeting/week-view.html", {
