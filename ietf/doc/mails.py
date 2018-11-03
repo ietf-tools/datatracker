@@ -363,11 +363,13 @@ def generate_issue_ballot_mail(request, doc, ballot):
     
     e = doc.latest_event(LastCallDocEvent, type="sent_last_call")
     last_call_expires = e.expires if e else None
+    last_call_has_expired = last_call_expires and last_call_expires < datetime.datetime.now()
 
     return render_to_string("doc/mail/issue_ballot_mail.txt",
                             dict(doc=doc,
                                  doc_url=settings.IDTRACKER_BASE_URL + doc.get_absolute_url(),
                                  last_call_expires=last_call_expires,
+                                 last_call_has_expired=last_call_has_expired,
                                  needed_ballot_positions=
                                    needed_ballot_positions(doc,
                                      doc.active_ballot().active_ad_positions().values()

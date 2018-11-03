@@ -413,26 +413,44 @@ class BallotWriteupsTests(TestCase):
 
     def test_issue_ballot(self):
         ad = Person.objects.get(user__username="ad")
-        draft = IndividualDraftFactory(ad=ad)
-        url = urlreverse('ietf.doc.views_ballot.ballot_writeupnotes', kwargs=dict(name=draft.name))
-        login_testing_unauthorized(self, "ad", url)
+        for case in ('none','past','future'):
+            draft = IndividualDraftFactory(ad=ad)
+            if case in ('past','future'):
+                LastCallDocEvent.objects.create(
+                    by=Person.objects.get(name='(System)'),
+                    type='sent_last_call',
+                    doc=draft,
+                    rev=draft.rev,
+                    desc='issued last call',
+                    expires = datetime.datetime.now()+datetime.timedelta(days = 1 if case=='future' else -1)
+                )
+            url = urlreverse('ietf.doc.views_ballot.ballot_writeupnotes', kwargs=dict(name=draft.name))
+            login_testing_unauthorized(self, "ad", url)
 
 
-        empty_outbox()
-        
-        r = self.client.post(url, dict(
-                ballot_writeup="This is a test.",
-                issue_ballot="1"))
-        self.assertEqual(r.status_code, 200)
-        draft = Document.objects.get(name=draft.name)
+            empty_outbox()
+            
+            r = self.client.post(url, dict(
+                    ballot_writeup="This is a test.",
+                    issue_ballot="1"))
+            self.assertEqual(r.status_code, 200)
+            draft = Document.objects.get(name=draft.name)
 
-        self.assertTrue(draft.latest_event(type="sent_ballot_announcement"))
-        self.assertEqual(len(outbox), 2)
-        self.assertTrue('Ballot issued:' in outbox[-2]['Subject'])
-        self.assertTrue('iesg@' in outbox[-2]['To'])
-        self.assertTrue('Ballot issued:' in outbox[-1]['Subject'])
-        self.assertTrue('drafts-eval@' in outbox[-1]['To'])
-        self.assertTrue('X-IETF-Draft-string' in outbox[-1])
+            self.assertTrue(draft.latest_event(type="sent_ballot_announcement"))
+            self.assertEqual(len(outbox), 2)
+            self.assertTrue('Ballot issued:' in outbox[-2]['Subject'])
+            self.assertTrue('iesg@' in outbox[-2]['To'])
+            self.assertTrue('Ballot issued:' in outbox[-1]['Subject'])
+            self.assertTrue('drafts-eval@' in outbox[-1]['To'])
+            self.assertTrue('X-IETF-Draft-string' in outbox[-1])
+            if case=='none':
+                self.assertNotIn('call expire', outbox[-1].get_payload(decode=True).decode("utf-8"))
+            elif case=='past':
+                self.assertIn('call expired', outbox[-1].get_payload(decode=True).decode("utf-8"))
+            else:
+                self.assertIn('call expires', outbox[-1].get_payload(decode=True).decode("utf-8"))
+            self.client.logout()
+
 
     def test_edit_approval_text(self):
         ad = Person.objects.get(user__username="ad")
