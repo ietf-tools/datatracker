@@ -9284,6 +9284,14 @@
 },
 {
  "model": "mailtrigger.recipient",
+ "pk": "review_team_ads",
+ "fields": {
+  "desc": "The ADs of the team reviewing the document",
+  "template": null
+ }
+},
+{
+ "model": "mailtrigger.recipient",
  "pk": "review_team_mail_list",
  "fields": {
   "desc": "The review team's email list",
@@ -9479,6 +9487,18 @@
    "doc_shepherd",
    "iesg",
    "iesg_secretary"
+  ],
+  "cc": []
+ }
+},
+{
+ "model": "mailtrigger.mailtrigger",
+ "pk": "ballot_ednote_changed_late",
+ "fields": {
+  "desc": "Recipients when the RFC Editor note for a document is changed after the document has been approved",
+  "to": [
+   "iesg",
+   "rfc_editor"
   ],
   "cc": []
  }
@@ -10305,7 +10325,8 @@
  "fields": {
   "desc": "Recipients when a team notifies area directors when a review with one of a certain set of results (typically results indicating problem) is submitted",
   "to": [
-   "review_doc_ad"
+   "review_doc_ad",
+   "review_team_ads"
   ],
   "cc": []
  }
