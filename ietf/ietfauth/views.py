@@ -41,7 +41,7 @@ import django.core.signing
 from django import forms
 from django.contrib import messages
 from django.conf import settings
-from django.contrib.auth import update_session_auth_hash, logout
+from django.contrib.auth import update_session_auth_hash, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.hashers import identify_hasher
@@ -586,6 +586,21 @@ def login(request, extra_context=None):
         form = AuthenticationForm(request, data=request.POST)
         username = form.data.get('username')
         user = User.objects.filter(username=username).first()
+        if not user:
+            # try to find user ID from the email address
+            email = Email.objects.filter(address=username).first()
+            if email:
+                u2 = email.person.user
+                # be conservative, only accept this if login is valid
+                if u2:
+                    pw = form.data.get('password')
+                    au = authenticate(request, username=str(u2), password=pw)
+                    if au:
+                        # kludge to change the querydict
+                        q2 = request.POST.copy()
+                        q2['username'] = str(u2)
+                        request.POST = q2
+                        user = u2
         #
         if user:
             try:
