@@ -1376,11 +1376,12 @@ def reviewer_overview(request, acronym, group_type=None):
             if group_type:
                 kwargs["group_type"] = group_type
             person.settings_url = urlreverse("ietf.group.views.change_reviewer_settings", kwargs=kwargs)
-        person.unavailable_periods = unavailable_periods.get(person.pk, [])
-        person.completely_unavailable = any(p.availability == "unavailable"
-                                       and (p.start_date is None or p.start_date <= today) and (p.end_date is None or today <= p.end_date)
-                                       for p in person.unavailable_periods)
-        person.busy = person.id in days_needed 
+        if can_access_review_stats_for_team(request.user, group):
+            person.unavailable_periods = unavailable_periods.get(person.pk, [])
+            person.completely_unavailable = any(p.availability == "unavailable"
+                                           and (p.start_date is None or p.start_date <= today) and (p.end_date is None or today <= p.end_date)
+                                           for p in person.unavailable_periods)
+            person.busy = person.id in days_needed 
         
 
         MAX_CLOSED_REQS = 10

@@ -114,6 +114,7 @@ class ReviewTests(TestCase):
         ReviewerSettingsFactory(person=reviewer,team=team)
         review_req1 = ReviewRequestFactory(state_id='completed',team=team,reviewer=reviewer.email())
         RoleFactory(name_id='chair',person=reviewer,group=review_req1.doc.group)
+        PersonFactory(user__username='plain')
 
         ReviewRequest.objects.create(
             doc=review_req1.doc,
@@ -146,10 +147,29 @@ class ReviewTests(TestCase):
             self.assertTrue(unicode(reviewer) in unicontent(r))
             self.assertTrue(review_req1.doc.name in unicontent(r))
 
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        # without a login, reason for being unavailable should not be seen
+        self.assertFalse("Availability" in unicontent(r))
+
+        self.client.login(username="plain", password="plain+password")
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        # not on review team, should not see reason for being unavailable
+        self.assertFalse("Availability" in unicontent(r))
+
+        self.client.login(username="chair", password="chair+password")
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        # review team members can see reason for being unavailable
+        self.assertTrue("Availability" in unicontent(r))
+
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        
+        # secretariat can see reason for being unavailable
+        self.assertTrue("Availability" in unicontent(r))
+
     def test_manage_review_requests(self):
         group = ReviewTeamFactory()
         reviewer = RoleFactory(name_id='reviewer',group=group,person__user__username='reviewer').person
