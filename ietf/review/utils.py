@@ -833,7 +833,10 @@ def make_assignment_choices(email_queryset, review_req):
         could_have_completed = [d for d in req_data if d.state in ["part-completed", "completed", "no-response"]]
         if could_have_completed:
             no_response = sum(1 for d in could_have_completed if d.state == "no-response")
-            stats.append("no response {}/{}".format(no_response, len(could_have_completed)))
+            if no_response > 0:
+                stats.append("{} no response, {} completed".format(no_response, len(could_have_completed) - no_response))
+            else:
+                stats.append("{} completed".format(len(could_have_completed)))
 
         if stats:
             explanations.append(", ".join(stats))
