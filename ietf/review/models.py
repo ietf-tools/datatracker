@@ -160,7 +160,8 @@ class ReviewTeamSettings(models.Model):
     group = OneToOneField(Group)
     autosuggest = models.BooleanField(default=True, verbose_name="Automatically suggest possible review requests")
     review_types = models.ManyToManyField(ReviewTypeName, default=get_default_review_types)
-    review_results = models.ManyToManyField(ReviewResultName, default=get_default_review_results)
+    review_results = models.ManyToManyField(ReviewResultName, default=get_default_review_results, related_name='reviewteamsettings_review_results_set')
+    notify_ad_when = models.ManyToManyField(ReviewResultName, related_name='reviewteamsettings_notify_ad_set')
 
     def __unicode__(self):
         return u"%s" % (self.group.acronym,)

@@ -3571,6 +3571,17 @@
   },
   {
     "fields": {
+      "cc": [],
+      "desc": "Recipients when a team notifies area directors when a review with one of a certain set of results (typically results indicating problem) is submitted",
+      "to": [
+        "review_doc_ad"
+      ]
+    },
+    "model": "mailtrigger.mailtrigger",
+    "pk": "review_notify_ad"
+  },
+  {
+    "fields": {
       "cc": [
         "group_responsible_directors"
       ],
@@ -4180,6 +4191,14 @@
     },
     "model": "mailtrigger.recipient",
     "pk": "nominee"
+  },
+  {
+    "fields": {
+      "desc": "The reviewed document's responsible area director",
+      "template": "{% if review_req.doc.ad %}{{review_req.doc.ad.email_address}}{% endif %}"
+    },
+    "model": "mailtrigger.recipient",
+    "pk": "review_doc_ad"
   },
   {
     "fields": {
@@ -10475,7 +10494,7 @@
     "fields": {
       "command": "xym",
       "switch": "--version",
-      "time": "2018-10-19T00:08:03.034",
+      "time": "2018-11-01T00:08:56.002",
       "used": true,
       "version": "xym 0.4"
     },
@@ -10486,7 +10505,7 @@
     "fields": {
       "command": "pyang",
       "switch": "--version",
-      "time": "2018-10-19T00:08:03.673",
+      "time": "2018-11-01T00:08:57.320",
       "used": true,
       "version": "pyang 1.7.5"
     },
@@ -10497,7 +10516,7 @@
     "fields": {
       "command": "yanglint",
       "switch": "--version",
-      "time": "2018-10-19T00:08:03.887",
+      "time": "2018-11-01T00:08:57.507",
       "used": true,
       "version": "yanglint 0.14.80"
     },
@@ -10508,9 +10527,9 @@
     "fields": {
       "command": "xml2rfc",
       "switch": "--version",
-      "time": "2018-10-19T00:08:04.519",
+      "time": "2018-11-01T00:08:59.405",
       "used": true,
-      "version": "xml2rfc 2.11.1"
+      "version": "xml2rfc 2.12.3"
     },
     "model": "utils.versioninfo",
     "pk": 4
