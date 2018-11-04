@@ -47,7 +47,7 @@
         {% endif %}
 
         {% if area.groups %}
-          <h3>{{ area.acronym }} active WG{{ area.groups|pluralize}}</h3>
+          <h3>{{ area.acronym }} active WG{{ area.groups|pluralize}} ({{area.groups.count}})</h3>
           <table class="table table-condensed table-striped tablesorter">
             <thead>
 	      <tr>
