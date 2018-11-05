@@ -128,7 +128,7 @@ class MeetingModelForm(forms.ModelForm):
 class MeetingRoomForm(forms.ModelForm):
     class Meta:
         model = Room
-        fields = '__all__'
+        exclude = ['resources']
 
 class NewSessionForm(forms.Form):
     day = forms.ChoiceField(choices=SESSION_DAYS)
