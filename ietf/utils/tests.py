@@ -30,7 +30,7 @@ from ietf.group.factories import GroupFactory
 from ietf.group.models import Group
 from ietf.submit.tests import submission_file
 from ietf.utils.draft import Draft, getmeta
-from ietf.utils.mail import send_mail_preformatted, send_mail_text, send_mail_mime, outbox 
+from ietf.utils.mail import send_mail_preformatted, send_mail_text, send_mail_mime, outbox
 from ietf.utils.management.commands import pyflakes
 from ietf.utils.test_runner import get_template_paths, set_coverage_checking
 from ietf.utils.test_utils import TestCase
@@ -130,7 +130,7 @@ class TestSMTPServer(TestCase):
         send_simple_mail('poison@example.com')
         self.assertEqual(len(outbox),len_before+2)
         self.assertTrue('error while sending email' in outbox[-1]['Subject'])
-        
+
     def test_rejecting_complex_mail(self):
 
         def send_complex_mail(to):
@@ -276,7 +276,7 @@ class TemplateChecksTestCase(TestCase):
 
     def test_500_page(self):
         url = urlreverse('django.views.defaults.server_error')
-        r = self.client.get(url)        
+        r = self.client.get(url)
         self.assertTemplateUsed(r, '500.html')
 
 @skipIf(skip_wiki_glue_testing, skip_message)
@@ -380,11 +380,11 @@ class AdminTestCase(TestCase):
 #     r = Path(settings.STATIC_ROOT)
 #     p = r / path
 #     files =  list(p.glob('**/*'))
-#     relfn = [ str(file.relative_to(r)) for file in files ] 
+#     relfn = [ str(file.relative_to(r)) for file in files ]
 #     return relfn
-# 
+#
 # class TestBowerStaticFiles(TestCase):
-# 
+#
 #     def test_bower_static_file_finder(self):
 #         from django.templatetags.static import static
 #         bower_json = os.path.join(settings.BASE_DIR, 'bower.json')
@@ -408,13 +408,13 @@ class DraftTests(TestCase):
 
     def test_get_status(self):
         self.assertEqual(self.draft.get_status(),'Informational')
-    
+
     def test_get_authors(self):
         self.assertTrue(all([u'@' in author for author in self.draft.get_authors()]))
 
     def test_get_authors_with_firm(self):
         self.assertTrue(all([u'@' in author for author in self.draft.get_authors_with_firm()]))
-        
+
     def test_old_get_refs(self):
         self.assertEqual(self.draft.old_get_refs()[1][0],u'rfc2119')
 

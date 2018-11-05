@@ -156,7 +156,7 @@ class Command(BaseCommand):
             return None, msg
         options = copy.deepcopy(settings.TRAC_ENV_OPTIONS)
         # Interpolate group field names to values in the option settings:
-        
+
         remove = []
         for i in range(len(options)):
             sect, key, val = options[i]
@@ -225,7 +225,7 @@ class Command(BaseCommand):
                 # update later
                 # Permissions will be handled during permission update later.
                 return env, ""
-            except TracError as e:
+            except IOError as e:
                 msg = "While creating Trac instance for %s: %s" % (group, e)
                 self.log(msg)
                 return None, msg
@@ -343,7 +343,7 @@ class Command(BaseCommand):
 
         groups = Group.objects.filter(gfilter).order_by('acronym')
         if self.group_list:
-            
+
             groups = groups.filter(acronym__in=self.group_list)
 
         for group in groups:
@@ -359,7 +359,7 @@ class Command(BaseCommand):
 
                 if not os.path.exists(group.trac_dir):
                     trac_env, msg = self.create_group_trac(group)
-                    if not trac_env: 
+                    if not trac_env:
                         self.errors.append(msg)
                 else:
                     trac_env = Environment(group.trac_dir)
@@ -383,7 +383,7 @@ class Command(BaseCommand):
 
                 if not os.path.exists(path):
                     trac_env, msg = self.create_adhoc_trac(name, path)
-                    if not trac_env: 
+                    if not trac_env:
                         self.errors.append(msg)
                 else:
                     trac_env = Environment(path)

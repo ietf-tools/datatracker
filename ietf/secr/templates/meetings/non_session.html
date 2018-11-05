@@ -5,7 +5,7 @@
 <div class="module">
     <h2>TimeSlots</h2>
 
-    {% if slots %}
+    {% if assignments %}
     <table id="nonsessions" class="full-width">
       <thead>
         <tr>
@@ -23,19 +23,19 @@
         </tr>
       </thead>
       <tbody>
-        {% for item in slots %}
+        {% for assignment in assignments %}
           <tr class="{% cycle row1 row2 %}{% ifchanged item.type %} break{% endifchanged %}{% if item.session.status.slug == "canceled" %} cancelled{% endif %}">
-            <td>{{ item.time|date:"D" }}</td>
-            <td>{{ item.time|date:"H:i" }}-{{ item.end_time|date:"H:i" }}</td>
-            <td>{{ item.name }}</td>
-            <td>{{ item.session.short }}</td>
-            <td>{{ item.session.group.acronym }}</td>
-            <td>{{ item.location }}</td>
-            <td>{{ item.show_location }}</td>
-            <td>{{ item.type }}</td>
-            <td><a href="{% url "ietf.secr.meetings.views.non_session_edit" meeting_id=meeting.number schedule_name=schedule.name slot_id=item.id %}">Edit</a></td>
-            <td><a href="{% url "ietf.secr.meetings.views.non_session_cancel" meeting_id=meeting.number schedule_name=schedule.name slot_id=item.id %}">Cancel</a></td>
-            <td><a href="{% url "ietf.secr.meetings.views.non_session_delete" meeting_id=meeting.number schedule_name=schedule.name slot_id=item.id %}">Delete</a></td>
+            <td>{{ assignment.timeslot.time|date:"D" }}</td>
+            <td>{{ assignment.timeslot.time|date:"H:i" }}-{{ assignment.timeslot.end_time|date:"H:i" }}</td>
+            <td>{{ assignment.timeslot.name }}</td>
+            <td>{{ assignment.session.short }}</td>
+            <td>{{ assignment.session.group.acronym }}</td>
+            <td>{{ assignment.timeslot.location }}</td>
+            <td>{{ assignment.timeslot.show_location }}</td>
+            <td>{{ assignment.timeslot.type }}</td>
+            <td><a href="{% url "ietf.secr.meetings.views.non_session_edit" meeting_id=meeting.number schedule_name=schedule.name slot_id=assignment.timeslot.id %}">Edit</a></td>
+            <td><a href="{% url "ietf.secr.meetings.views.non_session_cancel" meeting_id=meeting.number schedule_name=schedule.name slot_id=assignment.timeslot.id %}">Cancel</a></td>
+            <td><a href="{% url "ietf.secr.meetings.views.non_session_delete" meeting_id=meeting.number schedule_name=schedule.name slot_id=assignment.timeslot.id %}">Delete</a></td>
           </tr>
         {% endfor %}
       </tbody>
@@ -44,7 +44,7 @@
       <h3>No timeslots exist for this meeting.  First add the rooms and then the app will create timeslots based on the schedule from the last meeting.</h3>
     {% endif %}
     <br /><hr />
-    
+
     <div>
     <form id="timeslot-form" action="" method="post">{% csrf_token %}
         <table id="timeslot-form" class="full-width amstable">
@@ -54,13 +54,13 @@
         </table>
      </form>
      </div>
-    
+
     <div class="button-group">
       <ul>
         <li><button onclick="window.location='../'">Back</button></li>
       </ul>
     </div> <!-- button-group -->
-      
+
       </form>
 </div> <!-- module -->
 
