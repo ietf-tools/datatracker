@@ -71,6 +71,10 @@ Planned work in rough order
 
 * Performance analysis of database table and index setup
 
+* Refactor Document and types into Document subclasses, with conditional code
+  in views and utilities moved into models and overridden models where
+  handling differs between document types.
+
 * Review and change the draft submission and handling code to deal with UTF-8
   instead of ascii before upload of utf-8 drafts should be permitted.  In
   ietf.submit.views.upload_submission(), for instance, there's a file open()
