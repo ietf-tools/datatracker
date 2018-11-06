@@ -78,7 +78,7 @@ setup(
     long_description=long_description,
 
     # The project's main homepage.
-    url='https://tools.ietf.org/tools/ietfdb/browser/branch/elft/id2rfcx/',
+    url='https://tools.ietf.org/tools/ietfdb/browser/branch/elft/id2xml/',
 
     # Author details
     author='Henrik Levkowetz',
