@@ -5,7 +5,7 @@ from collections import defaultdict
 from django.conf import settings
 from django.contrib.auth.models import User
 
-import debug
+import debug                            # pyflakes:ignore
 
 from ietf.stats.models import AffiliationAlias, AffiliationIgnoredEnding, CountryAlias, MeetingRegistration
 from ietf.name.models import CountryName
