@@ -262,6 +262,7 @@ def get_meeting_registration_data(meeting):
                     person = emails.first().person
                 # Create a new Person object
                 else:
+                  try:
                     # Normalize all-caps or all-lower entries.  Don't touch
                     # others, there might be names properly spelled with
                     # internal uppercase letters.
@@ -310,7 +311,13 @@ def get_meeting_registration_data(meeting):
                     if Email.objects.filter(person=person).count() == 1:
                         email.primary = True
                         email.save()
-
+                  except:
+                      debug.show('first_name')
+                      debug.show('last_name')
+                      debug.show('regname')
+                      debug.show('user')
+                      debug.show('aliases')
+                      raise
                 # update the person object to an actual value
                 object.person = person
                 object.save()

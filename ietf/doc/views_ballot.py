@@ -683,6 +683,19 @@ def ballot_rfceditornote(request, name):
                 e.text = t.rstrip()
                 e.save()
 
+                if doc.get_state_slug('draft-iesg') in ['approved', 'ann', 'rfcqueue']:
+                    (to, cc) = gather_address_lists('ballot_ednote_changed_late').as_strings()
+                    msg = render_to_string(
+                              'doc/ballot/ednote_changed_late.txt',
+                              context = dict(
+                                  to = to,
+                                  cc = cc,
+                                  event = e,
+                                  settings = settings,
+                              )
+                          )
+                    send_mail_preformatted(request, msg)
+
     if request.method == 'POST' and "clear_ballot_rfceditornote" in request.POST:
         e = WriteupDocEvent(doc=doc, rev=doc.rev, by=login)
         e.by = login

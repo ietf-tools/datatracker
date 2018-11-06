@@ -395,6 +395,7 @@ class BallotWriteupsTests(TestCase):
         self.assertTrue("This is a note for the RFC Editor" in r.content)
 
         # save with a note
+        empty_outbox()
         r = self.client.post(url, dict(
                 rfc_editor_note="This is a simple test.",
                 save_ballot_rfceditornote="1"))
@@ -402,6 +403,7 @@ class BallotWriteupsTests(TestCase):
         draft = Document.objects.get(name=draft.name)
         self.assertTrue(draft.has_rfc_editor_note())
         self.assertTrue("This is a simple test" in draft.latest_event(WriteupDocEvent, type="changed_rfc_editor_note_text").text)
+        self.assertEqual(len(outbox), 0)
 
         # clear the existing note
         r = self.client.post(url, dict(
@@ -410,6 +412,16 @@ class BallotWriteupsTests(TestCase):
         self.assertEqual(r.status_code, 200)
         draft = Document.objects.get(name=draft.name)
         self.assertFalse(draft.has_rfc_editor_note())
+
+        # Add a note after the doc is approved
+        empty_outbox()
+        draft.set_state(State.objects.get(type='draft-iesg',slug='approved'))
+        r = self.client.post(url, dict(
+                rfc_editor_note='This is a new note.',
+                save_ballot_rfceditornote="1"))
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(len(outbox),1)
+        self.assertIn('RFC Editor note changed',outbox[-1]['Subject'])
 
     def test_issue_ballot(self):
         ad = Person.objects.get(user__username="ad")
