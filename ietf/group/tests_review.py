@@ -113,7 +113,7 @@ class ReviewTests(TestCase):
         reviewer = RoleFactory(name_id='reviewer',group=team,person__user__username='reviewer').person
         ReviewerSettingsFactory(person=reviewer,team=team)
         review_req1 = ReviewRequestFactory(state_id='completed',team=team,reviewer=reviewer.email())
-        RoleFactory(name_id='chair',person=reviewer,group=review_req1.doc.group)
+        PersonFactory(user__username='plain')
 
         ReviewRequest.objects.create(
             doc=review_req1.doc,
@@ -143,13 +143,30 @@ class ReviewTests(TestCase):
                     urlreverse(ietf.group.views.reviewer_overview, kwargs={ 'acronym': group.acronym, 'group_type': group.type_id })]:
             r = self.client.get(url)
             self.assertEqual(r.status_code, 200)
-            self.assertTrue(unicode(reviewer) in unicontent(r))
-            self.assertTrue(review_req1.doc.name in unicontent(r))
+            self.assertIn(unicode(reviewer), unicontent(r))
+            self.assertIn(review_req1.doc.name, unicontent(r))
+            # without a login, reason for being unavailable should not be seen
+            self.assertNotIn("Availability", unicontent(r))
+
+        url = urlreverse(ietf.group.views.reviewer_overview, kwargs={ 'acronym': group.acronym })
+        self.client.login(username="plain", password="plain+password")
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        # not on review team, should not see reason for being unavailable
+        self.assertNotIn("Availability", unicontent(r))
+
+        self.client.login(username="reviewer", password="reviewer+password")
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        # review team members can see reason for being unavailable
+        self.assertIn("Availability", unicontent(r))
 
         self.client.login(username="secretary", password="secretary+password")
         r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
-        
+        # secretariat can see reason for being unavailable
+        self.assertIn("Availability", unicontent(r))
+
     def test_manage_review_requests(self):
         group = ReviewTeamFactory()
         reviewer = RoleFactory(name_id='reviewer',group=group,person__user__username='reviewer').person
