@@ -4,9 +4,10 @@ import os
 import re
 import tempfile
 
+from email import message_from_string
 from email.header import decode_header
 from email.iterators import typed_subpart_iterator
-from email import message_from_string
+from email.utils import parseaddr
 
 from django.conf import settings
 from django.contrib.sites.models import Site
@@ -447,7 +448,8 @@ def parse_email(text):
 
     body = get_body(msg)
     subject = getheader(msg['Subject'])
-    return msg['From'], subject, body
+    __, addr = parseaddr(msg['From'])
+    return addr.lower(), subject, body
 
 
 def create_feedback_email(nomcom, msg):
