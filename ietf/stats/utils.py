@@ -286,10 +286,6 @@ def get_meeting_registration_data(meeting):
                             username=address,
                             email=address,
                         )
-                        if user.first_name != first_name:
-                            debug.say("Truncated first name: %s --> %s" % (first_name, user.first_name))
-                        if user.last_name != last_name:
-                            debug.say("Truncated last name: %s --> %s" % (last_name, user.last_name))
 
                     aliases = Alias.objects.filter(name=regname)
                     if aliases.exists():
@@ -307,8 +303,6 @@ def get_meeting_registration_data(meeting):
                         email = Email.objects.get(person=person, address=address[:64])
                     except Email.DoesNotExist:
                         email = Email.objects.create(person=person, address=address[:64], origin='registration: ietf-%s'%meeting.number)
-                    if email.address != address:
-                        debug.say("Truncated address: %s --> %s" % (address, email.address))
 
                     # If this is the only email address, set primary to true.
                     # If the person already existed (found through Alias) and
