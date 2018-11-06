@@ -16,7 +16,7 @@ from ietf.person.models import Person
 from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream
 from ietf.review.models import (ReviewRequest, ReviewRequestStateName, ReviewTypeName, 
                                 ReviewerSettings, UnavailablePeriod, ReviewWish, NextReviewerInTeam,
-                                ReviewSecretarySettings)
+                                ReviewTeamSettings, ReviewSecretarySettings)
 from ietf.utils.mail import send_mail
 from ietf.doc.utils import extract_complete_replaces_ancestor_mapping_for_docs
 
@@ -350,12 +350,20 @@ def email_review_request_change(request, review_req, subject, msg, by, notify_se
                     to.add(e)
 
     if notify_secretary:
-        extract_email_addresses(Role.objects.filter(name="secr", group=review_req.team).distinct())
+        rtsqs = ReviewTeamSettings.objects.filter(group=review_req.team)
+        if rtsqs:
+            rts = rtsqs[0]
+        else:
+            rts = None
+        if rts and rts.secr_mail_alias and len(rts.secr_mail_alias) > 1:
+            to.add(rts.secr_mail_alias)
+        else:
+            extract_email_addresses(Role.objects.filter(name="secr", group=review_req.team).distinct())
     if notify_reviewer:
         extract_email_addresses([review_req.reviewer])
     if notify_requested_by:
         extract_email_addresses([review_req.requested_by.email()])
-        
+
     if not to:
         return
 

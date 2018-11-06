@@ -7,7 +7,7 @@ from StringIO import StringIO
 from mock import patch
 from requests import Response
 
-
+from django.apps import apps
 from django.urls import reverse as urlreverse
 from django.conf import settings
 
@@ -97,6 +97,27 @@ class ReviewTests(TestCase):
         self.assertTrue('reviewsecretary@' in outbox[0]['To'])
         self.assertTrue('reviewteam3 Early' in outbox[1]['Subject'])
         self.assertTrue('reviewsecretary3@' in outbox[1]['To'])
+
+        # set the reviewteamsetting for the secretary email alias, then do the post again
+        m = apps.get_model('review', 'ReviewTeamSettings')
+        for row in m.objects.all():
+            if row.group.upcase_acronym == review_team3.upcase_acronym:
+               row.secr_mail_alias = 'reviewsecretary3-alias@example.com'
+               row.save(update_fields=['secr_mail_alias'])
+
+        r = self.client.post(url, {
+            "type": "early",
+            "team": [review_team.pk,review_team3.pk],
+            "deadline": deadline.isoformat(),
+            "requested_rev": "01",
+            "requested_by": Person.objects.get(user__username="ad").pk,
+            "comment": "gZT2iiYqYLKiQHvsgWCcVLdH"
+        })
+        self.assertEqual(r.status_code, 302)
+
+        self.assertEqual(len(outbox),4)
+        self.assertTrue('reviewsecretary@' in outbox[2]['To'])
+        self.assertTrue('reviewsecretary3-alias@' in outbox[3]['To'])
 
     def test_request_review_of_rfc(self):
         doc = WgRfcFactory()
