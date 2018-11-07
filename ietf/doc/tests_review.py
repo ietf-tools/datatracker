@@ -355,7 +355,7 @@ class ReviewTests(TestCase):
         self.assertIn("unavailable indefinitely", reviewer_label)
         self.assertIn("skip next 1", reviewer_label)
         self.assertIn("#1", reviewer_label)
-        self.assertIn("no response 0/1", reviewer_label)
+        self.assertIn("1 fully completed", reviewer_label)
 
         # assign
         empty_outbox()
