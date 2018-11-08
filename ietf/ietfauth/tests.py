@@ -84,6 +84,18 @@ class IetfAuthTests(TestCase):
         self.assertEqual(r.status_code, 302)
         self.assertEqual(urlsplit(r["Location"])[2], "/foobar")
 
+    def test_login_with_different_email(self):
+        person = PersonFactory(user__username='plain')
+        email = EmailFactory(person=person)
+
+        # try logging in without a next
+        r = self.client.get(urlreverse(ietf.ietfauth.views.login))
+        self.assertEqual(r.status_code, 200)
+
+        r = self.client.post(urlreverse(ietf.ietfauth.views.login), {"username":email, "password":"plain+password"})
+        self.assertEqual(r.status_code, 302)
+        self.assertEqual(urlsplit(r["Location"])[2], urlreverse(ietf.ietfauth.views.profile))
+
     def extract_confirm_url(self, confirm_email):
         # dig out confirm_email link
         msg = confirm_email.get_payload(decode=True)
