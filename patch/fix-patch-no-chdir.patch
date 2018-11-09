@@ -1,6 +1,14 @@
---- patch.py.original	2018-11-02 23:17:51.816936730 -0700
-+++ patch.py	2018-11-02 23:21:50.794673596 -0700
-@@ -803,10 +803,10 @@
+--- patch.py.orig	2018-11-09 11:48:08.507323235 -0800
++++ patch.py	2018-11-09 11:48:26.759761184 -0800
+@@ -263,6 +263,7 @@
+ 
+     self.errors = 0    # fatal parsing errors
+     self.warnings = 0  # non-critical warnings
++    self.already_patched = False
+     # --- /API ---
+ 
+     if stream:
+@@ -803,10 +804,10 @@
  
    def findfile(self, old, new):
      """ return name of file to be patched or None """
@@ -14,7 +22,7 @@
      else:
        # [w] Google Code generates broken patches with its online editor
        debug("broken patch from Google Code, stripping prefixes..")
-@@ -826,10 +826,6 @@
+@@ -826,10 +827,6 @@
          from file paths. `root` parameter specifies working dir.
          return True on success
      """
@@ -25,7 +33,7 @@
      total = len(self.items)
      errors = 0
      if strip:
-@@ -853,6 +849,8 @@
+@@ -853,6 +850,8 @@
          new = pathstrip(p.target, strip)
        else:
          old, new = p.source, p.target
@@ -34,7 +42,7 @@
  
        filename = self.findfile(old, new)
  
-@@ -954,9 +952,6 @@
+@@ -954,9 +953,6 @@
              # todo: proper rejects
              shutil.move(backupname, filename)
  
@@ -43,4 +51,3 @@
 -
      # todo: check for premature eof
      return (errors == 0)
- 
