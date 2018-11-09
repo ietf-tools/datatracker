@@ -980,7 +980,6 @@ CHECKS_LIBRARY_PATCHES_TO_APPLY = [
     'patch/fix-django-unicode-comparison-bug.patch',
     'patch/fix-unidecode-argument-warning.patch',
     'patch/fix-faker-provider-ro-RO-string.patch',
-    'patch/add-patch-already-patched-flag.patch',
     'patch/fix-patch-no-chdir.patch',
 ]
 if DEBUG:

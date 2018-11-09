@@ -51,3 +51,4 @@
 -
      # todo: check for premature eof
      return (errors == 0)
+
