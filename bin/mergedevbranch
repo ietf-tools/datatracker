@@ -192,6 +192,9 @@ G=$(svn st | cut -c 1-7 | grep -oh 'G' | head -n 1)
 ##cp cicmd/commit-${rev}-merge.sh merged@$rev/commit
 ##cd -
 
+read -p "Continue with tests? [Y/n] "
+[ "$REPLY" = "Y" -o  "$REPLY" = "y" -o  "$REPLY" = "" ] || exit
+
 echo -e "\nRunning tests"
 time { ietf/manage.py test --settings=settings_sqlitetest	\
 	|| die "Tests failed.\nThe commit script is ../cicmd/commit-${rev}-merge.sh"; } 3>&1 1>&2 2>&3 | bin/count
