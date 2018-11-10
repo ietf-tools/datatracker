@@ -48,7 +48,7 @@ def formatted_email(address):
         persons = Person.objects.filter(email__address__in=[addr])
         person = persons and persons[0] or None
     if person and person.name:
-        return formataddr((person.plain_name(), addr))
+        return "%s <%s>" % (person.plain_name(), addr) 
     else:
         return address
 
