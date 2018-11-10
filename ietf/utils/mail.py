@@ -448,3 +448,17 @@ def is_valid_email(address):
         return True
     except ValidationError:
         return False
+
+def get_email_addresses_from_text(text):
+    """
+
+    Expects a string with one or more email addresses, each in 2822-compatible
+    form, separated by comma (as in an RFC2822, Section 3.4 address-list)
+    Could be as simple as 'foo@example.com' or as complex as 'Some Person
+    <some.person@example.com>, "list@ietf.org"\n\t<list@ietf.org>'.
+
+    Returns a list of properly formatted email address strings.
+
+    """
+    return [ formataddr(e) for e in getaddresses([text, ]) ]
+    

@@ -4,7 +4,7 @@ from django.db import models
 from django.template import Template, Context
 
 from email.utils import parseaddr
-from ietf.utils.mail import formataddr
+from ietf.utils.mail import formataddr, get_email_addresses_from_text
 from ietf.person.models import Email
 from ietf.review.models import ReviewTeamSettings
 
@@ -60,7 +60,7 @@ class Recipient(models.Model):
         if self.template:
             rendering = Template('{%% autoescape off %%}%s{%% endautoescape %%}'%self.template).render(Context(kwargs))
             if rendering:
-                retval.extend([x.strip() for x in rendering.split(',')])
+                retval.extend( get_email_addresses_from_text(rendering) )
 
         return clean_duplicates(retval)
 
@@ -175,7 +175,7 @@ class Recipient(models.Model):
             if not group.acronym=='none':
                 rts = ReviewTeamSettings.objects.filter(group=group).first()
                 if rts and rts.secr_mail_alias and len(rts.secr_mail_alias) > 1:
-                    addrs = [rts.secr_mail_alias, ]
+                    addrs = get_email_addresses_from_text(rts.secr_mail_alias)
                 else:
                     addrs.extend(group.role_set.filter(name='secr').values_list('email__address',flat=True))
         return addrs
