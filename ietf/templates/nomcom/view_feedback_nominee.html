@@ -1,13 +1,13 @@
 {% extends "nomcom/nomcom_private_base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
-{% load origin %}{% origin %}
+{% load origin %}
 
 {% load nomcom_tags %}
 
 {% block subtitle %} - View feedback about {{ nominee.email.person.name }}{% endblock %}
 
 {% block nomcom_content %}
-
+  {% origin %}
   <h2>Feedback about {{ nominee }} </h2>
 
   <ul class="nav nav-tabs" role="tablist">

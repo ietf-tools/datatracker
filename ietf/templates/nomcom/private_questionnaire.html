@@ -1,6 +1,6 @@
 {% extends "nomcom/nomcom_private_base.html" %}
 {# Copyright The IETF Trust 2015, All Rights Reserved #}
-{% load origin %}{% origin %}
+{% load origin %}
 
 {% load bootstrap3 %}
 {% load nomcom_tags %}
@@ -8,7 +8,7 @@
 {% block subtitle %} - Quesionnaire Response{% endblock %}
 
 {% block nomcom_content %}
-
+  {% origin %}
   {% if form %}
     {% if questionnaire_response %}
       <h2>Questionnaire response</h2>
