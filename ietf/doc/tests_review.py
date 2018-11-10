@@ -525,6 +525,22 @@ class ReviewTests(TestCase):
             self.assertEqual(messages[1]["subject"], "Review of {}".format(review_req.doc.name))
             self.assertEqual(messages[1]["splitfrom"], ["John Doe II", "johndoe2@example.com"])
             self.assertEqual(messages[1]["utcdate"][0], "")
+
+
+            # Test failure to return mailarch results
+            no_result_path = os.path.join(self.review_dir, "mailarch_no_result.html")
+            with open(no_result_path, "w") as f:
+                f.write('Content-Type: text/html\n\n<html><body><div class="xtr"><div class="xtd no-results">No results found</div></div>')
+            ietf.review.mailarch.construct_query_urls = lambda review_req, query=None: { "query_data_url": "file://" + os.path.abspath(no_result_path) }
+
+            url = urlreverse('ietf.doc.views_review.search_mail_archive', kwargs={ "name": doc.name, "request_id": review_req.pk })
+
+            r = self.client.get(url)
+            self.assertEqual(r.status_code, 200)
+            result = json.loads(r.content)
+            self.assertNotIn('messages', result)
+            self.assertIn('No results found', result['error'])
+
         finally:
             ietf.review.mailarch.construct_query_urls = real_fn
 

@@ -4,7 +4,9 @@
 import datetime, tarfile, mailbox, tempfile, hashlib, base64, email.utils
 import urllib
 import urllib2, contextlib
-import re
+import debug                            # pyflakes:ignore
+
+from pyquery import PyQuery
 
 from django.conf import settings
 
@@ -94,8 +96,11 @@ def retrieve_messages(query_data_url):
         content_type = fileobj.info()["Content-type"]
         if not content_type.startswith("application/x-tar"):
             if content_type.startswith("text/html"):
-                if not re.search("no-results", fileobj.read(20000)) is None:
-                    raise Exception("NONE")
+                r = fileobj.read(20000)
+                q = PyQuery(r)
+                div = q('div[class~="no-results"]')
+                if div:
+                    raise KeyError("No results: %s -> %s" % (query_data_url, div.text(), ))
             raise Exception("Export failed - this usually means no matches were found")
 
         with tarfile.open(fileobj=fileobj, mode='r|*') as tar:

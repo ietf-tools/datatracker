@@ -703,11 +703,10 @@ def search_mail_archive(request, name, request_id):
 
     try:
         res["messages"] = mailarch.retrieve_messages(res["query_data_url"])[:MAX_RESULTS]
+    except KeyError as e:
+        res["error"] = "No results found"
     except Exception as e:
-        if unicode(e) == "NONE":
-            res["error"] = "No results found"
-        else:
-            res["error"] = "Retrieval from mail archive failed: %s" % unicode(e)
+        res["error"] = "Retrieval from mail archive failed: %s" % unicode(e)
         # raise # useful when debugging
 
     return JsonResponse(res)
