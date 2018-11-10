@@ -37,7 +37,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('mailtrigger', '0002_conflrev_changes'),
-        ('review', '0003_add_notify_ad_when'),
+        ('review', '0004_reviewteamsettings_secr_mail_alias'),
     ]
 
     operations = [

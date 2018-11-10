@@ -6,6 +6,7 @@ from django.template import Template, Context
 from email.utils import parseaddr
 from ietf.utils.mail import formataddr
 from ietf.person.models import Email
+from ietf.review.models import ReviewTeamSettings
 
 import debug                            # pyflakes:ignore
 
@@ -172,7 +173,11 @@ class Recipient(models.Model):
         if 'group' in kwargs:
             group = kwargs['group']
             if not group.acronym=='none':
-                addrs.extend(group.role_set.filter(name='secr').values_list('email__address',flat=True))
+                rts = ReviewTeamSettings.objects.filter(group=group).first()
+                if rts and rts.secr_mail_alias and len(rts.secr_mail_alias) > 1:
+                    addrs = [rts.secr_mail_alias, ]
+                else:
+                    addrs.extend(group.role_set.filter(name='secr').values_list('email__address',flat=True))
         return addrs
 
     def gather_doc_group_responsible_directors(self, **kwargs):

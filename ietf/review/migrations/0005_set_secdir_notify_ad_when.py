@@ -15,7 +15,7 @@ def reverse(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('review', '0003_add_notify_ad_when'),
+        ('review', '0004_reviewteamsettings_secr_mail_alias'),
     ]
 
     operations = [

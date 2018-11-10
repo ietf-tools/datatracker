@@ -162,6 +162,7 @@ class ReviewTeamSettings(models.Model):
     review_types = models.ManyToManyField(ReviewTypeName, default=get_default_review_types)
     review_results = models.ManyToManyField(ReviewResultName, default=get_default_review_results, related_name='reviewteamsettings_review_results_set')
     notify_ad_when = models.ManyToManyField(ReviewResultName, related_name='reviewteamsettings_notify_ad_set')
+    secr_mail_alias = models.CharField(verbose_name="Email alias for all of the review team secretaries", max_length=255, blank=True, help_text="Email alias for all of the review team secretaries")
 
     def __unicode__(self):
         return u"%s" % (self.group.acronym,)
