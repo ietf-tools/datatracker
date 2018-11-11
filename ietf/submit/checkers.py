@@ -13,7 +13,7 @@ from django.conf import settings
 
 import debug                            # pyflakes:ignore
 
-from ietf.utils.log import log
+from ietf.utils.log import log, assertion
 from ietf.utils.models import VersionInfo
 from ietf.utils.pipe import pipe
 from ietf.utils.test_runner import set_coverage_checking
@@ -206,6 +206,7 @@ class DraftYangChecker(object):
                 code, out, err = pipe(cmd)
                 if code > 0 or len(err.strip()) > 0 :
                     error_lines = err.splitlines()
+                    assertion('len(error_lines) > 0')
                     for line in error_lines:
                         if line.strip():
                             try:

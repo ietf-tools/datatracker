@@ -63,6 +63,7 @@ from ietf.secr.proceedings.utils import handle_upload_file
 from ietf.secr.proceedings.proc_utils import (get_progress_stats, post_process, import_audio_files,
     create_recording)
 from ietf.utils.decorators import require_api_key
+from ietf.utils.log import assertion
 from ietf.utils.mail import send_mail_message, send_mail_text
 from ietf.utils.pipe import pipe
 from ietf.utils.pdf import pdf_pages
@@ -722,7 +723,8 @@ def session_draft_pdf(request, num, acronym):
     pdfmarks.close()
     pdfh, pdfn = mkstemp()
     os.close(pdfh)
-    pipe("gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -sOutputFile=" + pdfn + " " + pdf_list + " " + pmn)
+    code, out, err = pipe("gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -sOutputFile=" + pdfn + " " + pdf_list + " " + pmn)
+    assertion('code == 0')
 
     pdf = open(pdfn,"r")
     pdf_contents = pdf.read()
