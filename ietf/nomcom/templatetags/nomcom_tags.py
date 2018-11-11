@@ -13,7 +13,6 @@ from ietf.utils.text import wordwrap
 from ietf.nomcom.utils import get_nomcom_by_year, retrieve_nomcom_private_key
 from ietf.person.models import Person
 from ietf.utils.log import log
-from ietf.utils.mail import formataddr
 from ietf.utils.pipe import pipe
 
 
