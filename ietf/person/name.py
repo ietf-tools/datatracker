@@ -5,7 +5,7 @@ import debug                            # pyflakes:ignore
 
 
 def name_particle_match(name):
-    return re.search(r" (af|al|Al|de|der|di|Di|du|el|El|Hadi|in 't|Le|st\.?|St\.?|ten|ter|van|van der|Van|von|von der|Von|zu) ", name)
+    return re.search(r" (af|al|Al|de|der|di|Di|du|el|El|Hadi|in 't|Le|st\.?|St\.?|ten|ter|van|van der|van 't|Van|von|von der|Von|zu) ", name)
 
 def name_parts(name):
     prefix, first, middle, last, suffix = u"", u"", u"", u"", u""
@@ -48,14 +48,16 @@ def name_parts(name):
     if len(parts) > 2:
         first = parts[0]
         last = parts[-1]
-        # Handle reverse-order names with uppercase surname correctly
-        if re.search("^[A-Z-]+$", first):
-            first, last = last, first
         middle = u" ".join(parts[1:-1])
     elif len(parts) == 2:
         first, last = parts
     else:
         last = parts[0]
+    if len(parts) >= 2:
+        # Handle reverse-order names with uppercase surname correctly
+        if re.search("^[A-Z-]+$", first):
+            debug.log('6, name')
+            first, last = last, first.capitalize()
     return prefix, first, middle, last, suffix
 
 def initials(name):
@@ -111,6 +113,7 @@ def unidecode_name(uname):
         last = (last+last).capitalize()
     # Restore the particle, if any
     if particle and last.startswith(capfirst(particle)+' '):
+        debug.log('7, uname')
         last = ' '.join([ particle, last[len(particle)+1:] ])
     # Recombine the parts
     parts = prefix, first, middle, last, suffix
