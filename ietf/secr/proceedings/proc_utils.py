@@ -82,7 +82,6 @@ def import_audio_files(meeting):
     if unmatched_files:
         send_audio_import_warning(unmatched_files)
 
-
 def get_timeslot_for_filename(filename):
     '''Returns a timeslot matching the filename given.
     NOTE: currently only works with ietfNN prefix (regular meetings)
@@ -99,7 +98,7 @@ def get_timeslot_for_filename(filename):
                 location__name=room_mapping[match.groupdict()['room']],
                 time=time,
                 sessionassignments__schedule=meeting.agenda,
-            ).distinct()
+            ).exclude(sessions__status_id='canceled').distinct()
             return slots.get()
         except (ObjectDoesNotExist, KeyError):
             return None
