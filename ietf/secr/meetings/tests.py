@@ -298,7 +298,6 @@ class SecrMeetingTestCase(TestCase):
             'group':group.pk,
             'location': room.pk,
         })
-        print response.content
         self.assertRedirects(response, url)
         session = Session.objects.filter(meeting=meeting, name='Testing').first()
         self.assertTrue(session)
