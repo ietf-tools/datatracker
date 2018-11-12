@@ -282,6 +282,29 @@ class SecrMeetingTestCase(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
     
+    def test_meetings_nonsession_add_valid(self):
+        meeting = make_meeting_test_data()
+        room = meeting.room_set.first()
+        group = Group.objects.get(acronym='secretariat')
+        url = reverse('ietf.secr.meetings.views.non_session',kwargs={'meeting_id':42,'schedule_name':'test-agenda'})
+        self.client.login(username="secretary", password="secretary+password")
+        response = self.client.post(url, {
+            'day':'1',
+            'time':'08:00',
+            'duration':'02:00',
+            'name':'Testing',
+            'short':'test',
+            'type':'reg',
+            'group':group.pk,
+            'location': room.pk,
+        })
+        print response.content
+        self.assertRedirects(response, url)
+        session = Session.objects.filter(meeting=meeting, name='Testing').first()
+        self.assertTrue(session)
+
+        self.assertEqual(session.timeslotassignments.first().timeslot.location, room)
+
     def test_meetings_nonsession_add_invalid(self):
         make_meeting_test_data()
         group = Group.objects.get(acronym='secretariat')
@@ -396,4 +419,3 @@ class SecrMeetingTestCase(TestCase):
         values = [ x[0] for x in times ]
         self.assertTrue(times)
         self.assertTrue(timeslot.time.strftime('%H%M') in values)
-        

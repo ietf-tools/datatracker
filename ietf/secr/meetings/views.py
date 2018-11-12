@@ -434,10 +434,9 @@ def non_session(request, meeting_id, schedule_name):
     
     check_nonsession(meeting,schedule)
 
-    slots = TimeSlot.objects.filter(meeting=meeting)
-    slots = slots.filter(sessionassignments__schedule=schedule)
-    slots = slots.filter(type__in=('break','reg','other','plenary','lead'))
-    slots = slots.order_by('-type__name','time')
+    non_session_types = ('break','reg','other','plenary','lead')
+    assignments = schedule.assignments.filter(timeslot__type__in=non_session_types)
+    assignments = assignments.order_by('-timeslot__type__name','timeslot__time')
     
     if request.method == 'POST':
         form = NonSessionForm(request.POST, meeting=meeting)
@@ -448,6 +447,7 @@ def non_session(request, meeting_id, schedule_name):
             type = form.cleaned_data['type']
             group = form.cleaned_data['group']
             duration = form.cleaned_data['duration']
+            location = form.cleaned_data['location']
 
             # create TimeSlot object
             timeslot = TimeSlot.objects.create(type=type,
@@ -455,6 +455,7 @@ def non_session(request, meeting_id, schedule_name):
                                                name=name,
                                                time=time,
                                                duration=duration,
+                                               location=location,
                                                show_location=form.cleaned_data['show_location'])
 
             if timeslot.type.slug not in ('other','plenary','lead'):
@@ -485,7 +486,7 @@ def non_session(request, meeting_id, schedule_name):
         messages.warning(request, 'There are non-session items which do not have a room assigned')
 
     return render(request, 'meetings/non_session.html', {
-        'slots': slots,
+        'assignments': assignments,
         'form': form,
         'meeting': meeting,
         'schedule': schedule},

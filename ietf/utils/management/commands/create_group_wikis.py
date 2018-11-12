@@ -225,7 +225,7 @@ class Command(BaseCommand):
                 # update later
                 # Permissions will be handled during permission update later.
                 return env, ""
-            except TracError as e:
+            except (TracError, IOError) as e:
                 msg = "While creating Trac instance for %s: %s" % (group, e)
                 self.log(msg)
                 return None, msg
