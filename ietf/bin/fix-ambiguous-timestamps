@@ -13,8 +13,6 @@ from __future__ import unicode_literals, print_function
 import os, sys
 import datetime
 import pytz
-import debug
-import tqdm
 
 filename = os.path.abspath(__file__)
 basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
