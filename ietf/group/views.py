@@ -45,7 +45,7 @@ from django import forms
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.db.models.aggregates import Max
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.http import HttpResponse, HttpResponseForbidden, Http404, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.template.loader import render_to_string
@@ -301,7 +301,7 @@ def active_groups(request, group_type=None):
         raise Http404
 
 def active_group_types(request):
-    grouptypes = GroupTypeName.objects.filter(slug__in=['wg','rg','ag','team','dir','review','area','program'])
+    grouptypes = GroupTypeName.objects.filter(slug__in=['wg','rg','ag','team','dir','review','area','program']).filter(group__state='active').annotate(group_count=Count('group'))
     return render(request, 'group/active_groups.html', {'grouptypes':grouptypes})
 
 def active_dirs(request):
