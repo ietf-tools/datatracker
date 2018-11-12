@@ -263,11 +263,13 @@ class DocumentInfo(models.Model):
         if state not in already_set:
             self.states.add(state)
         self.state_cache = None # invalidate cache
+        self._cached_state_slug = {}
 
     def unset_state(self, state_type):
         """Unset state of type so no state of that type is any longer set."""
         self.states.remove(*self.states.filter(type=state_type))
         self.state_cache = None # invalidate cache
+        self._cached_state_slug = {}
 
     def get_state(self, state_type=None):
         """Get state of type, or default state for document type if
