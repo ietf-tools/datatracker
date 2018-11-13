@@ -497,7 +497,10 @@ class DocumentInfo(models.Model):
         if text:
             cache = caches['htmlized']
             cache_key = name.split('.')[0]
-            html = cache.get(cache_key)
+            try:
+                html = cache.get(cache_key)
+            except EOFError:
+                html = None
             if not html:
                 # The path here has to match the urlpattern for htmlized
                 # documents in order to produce correct intra-document links
