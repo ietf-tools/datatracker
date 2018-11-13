@@ -56,7 +56,6 @@ def name_parts(name):
     if len(parts) >= 2:
         # Handle reverse-order names with uppercase surname correctly
         if re.search("^[A-Z-]+$", first):
-            debug.log('6, name')
             first, last = last, first.capitalize()
     return prefix, first, middle, last, suffix
 
@@ -113,7 +112,6 @@ def unidecode_name(uname):
         last = (last+last).capitalize()
     # Restore the particle, if any
     if particle and last.startswith(capfirst(particle)+' '):
-        debug.log('7, uname')
         last = ' '.join([ particle, last[len(particle)+1:] ])
     # Recombine the parts
     parts = prefix, first, middle, last, suffix

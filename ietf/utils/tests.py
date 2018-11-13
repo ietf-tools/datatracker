@@ -31,7 +31,7 @@ import debug                            # pyflakes:ignore
 
 from ietf.group.factories import GroupFactory
 from ietf.group.models import Group
-from ietf.person.name import name_parts
+from ietf.person.name import name_parts, unidecode_name
 from ietf.submit.tests import submission_file
 from ietf.utils.draft import Draft, getmeta
 from ietf.utils.mail import send_mail_preformatted, send_mail_text, send_mail_mime, outbox 
@@ -446,7 +446,7 @@ class NameTests(TestCase):
             ("Donald E. Eastlake 3rd",      ('', 'Donald', 'E.', 'Eastlake', '3rd')),
             ("Professor André Danthine",    ('Professor', 'André', '', 'Danthine', '')),
             ("DENG Hui",                    ('', 'Hui', '', 'Deng', '')),
-            ("",  ('', '', '', '', '')),
+            ("ዳዊት በቀለ (Dawit Bekele)",      ('', 'ዳዊት', '', 'በቀለ', '')),
             ("",  ('', '', '', '', '')),
             ("",  ('', '', '', '', '')),
             ("",  ('', '', '', '', '')),
@@ -456,3 +456,22 @@ class NameTests(TestCase):
         for name, parts in names:
             if name:
                 self.assertEqual(parts, name_parts(name))
+
+
+    def test_unidecode(self):
+        names = (
+            ("ዳዊት በቀለ",         "Daawite Baqala",),
+            ("丽 郜",    "Li Gao"),
+            ("कम्बोज डार",    "Kmboj Ddaar"),
+            ("Ηράκλεια Λιόντη",    "Erakleia Lionte"),
+            ("ישראל רוזנפלד",    "Yshrl Rvznpld"),
+            ("丽华 皇",    "Li Hua Huang"),
+            ("نرگس پویان",    "Nrgs Pwyn"),
+            ("موسوی سينا زمانی",    ""),
+            ("",    ""),
+            )
+
+        for name, ascii in names:
+            if name:
+                self.assertEqual(ascii, unidecode_name(name))
+            
