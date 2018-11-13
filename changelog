@@ -1,3 +1,164 @@
+ietfdb (6.88.0) ietf; urgency=low
+
+  **IETF 103 code sprint**
+
+  This release contains datatracker bug fixes and enhancements from the
+  IETF-103 Code Sprint.  Again, this looks to be a sprint with an extremely
+  large number of contributions.  Thanks to everyone who contributed!
+
+  Notable improvements: 
+
+  Reviewer statistics are now more readable.  Reasons for reviewer
+  unavailability is now only shown to authorised persons.  It is now possible
+  to set a mail alias for review group secretaries, instead of having
+  individual mails sent on updates.  AD notifications about reviews can now be
+  controlled better and the default settings are better tuned.  Import of
+  review text from mailing lists should now handle zero search results better.
+
+  Logging in is now possible using all active email addresses registered for
+  an account, not only the primary login name.
+
+  Inaccurate, misspelled or misleading text has been fixed for a number of
+  web pages and email messages.
+
+  Additionally, a large number of individual bugs has been squashed:
+
+  * Merged in [15722] from rcross@amsl.com:
+    Added a link to meeting/../agendas/list.  Fixes #2627.   
+
+  * Merged in [15720] from rjsparks@nostrum.com:
+    Invalidate the get_state_slug cache when the get_state cache is 
+    invalidated. Fixes #2630.  
+
+  * Merged in [15719] from rcross@amsl.com:
+    Removed resources field from secr/meetings/../rooms.  Tweaked CSS for this
+    page to eliminate horizontal scrolling.  Includes new base templates to
+    facilitate transition to bootstrap.  Fixes #2628.  
+
+  * Merged in [15717] from rcross@amsl.com:
+    Reworked the buttons on secr/meetings. Fixes #2629.   
+
+  * Merged in [15715] from rcross@amsl.com:
+    Fixed the issue where new non-session location field value wasn't saved.  
+    Fixes #2625.   
+
+  * Merged in [15709] from rjsparks@nostrum.com:
+    Show counts on the active groups page and on the active WGs page. Fixes
+    #2060.  
+
+  * Updated the script to fix ambiguous time stamps so that it will fix
+    ambiguous time fields for additional types of objects.
+
+  * Added a test for various name part combinations, and fixed a couple of
+    issues with utils.name.name_parts(), making the test coverage percentages
+    more stable.
+
+  * Added exclusion of cancelled session when doing audio file import.  This
+    fixes an server 500 error when a cancelled session is shown in the same 
+    room and time slot as an actual session.
+
+  * Corrected the rendering of non-ASCII email names in nomcom templates.
+
+  * Merged in [15708] and [15730] from housley@vigilsec.com:
+    Added a mail alias for all review team secretaries. Fixes #2139.  Use
+    the alias if there is one for email about review request changes.  Added
+    a test for the review team secretary alias functionality.
+
+  * Added a test that checks the mailarch search failure return, and tweaks 
+    the no-result return handling.
+
+  * Merged in [15706] from kivinen@iki.fi:
+    Added easier to detect error message when search returns 0 results. 
+    This currently parses HTML result from the mail archive system, but when we 
+    get proper API to mail archive system it should be changed to do that 
+    instead. Fixes #2126.  
+
+  * Merged in [15705] from johnl@taugh.com:
+    Trivial fix for trivial issue #1907, warn user that added addresses 
+    will be confirmed. 
+
+  * Merged in [15702] from johnl@taugh.com:
+    Allow email as well as username when logging in.   
+
+  * Merged in [15701] from kivinen@iki.fi:
+    Changed format of the reviewer statistics in lists. Fixes #2131.  
+
+  * Merged in [15683] and [15699] from housley@vigilsec.com:
+    Do not show reasons for review team member unavailability outside the team. 
+    Fixes #2614.
+
+  * Added normalisation of the email addresses returned by 
+    ietf.nomcom.utils.parse_email, in order to not treat feedback from the same 
+    person as coming from different sources due to email name+address 
+    variations.
+
+  * Merged in [15698] from rjsparks@nostrum.com:
+    Notify the RFC Editor when an RFC Editor note is changed after a draft 
+    has been approved. Fixes #2440.  
+
+  * Merged in [15696] from peter@akayla.com:
+    Minor text fixes.  Fixes issue #2621.   
+
+  * Merged in [15694] from rjsparks@nostrum.com:
+    Clearly label cancelled sessions on the week-view on the agenda page. 
+    Fixes #2619.  
+
+  * Merged in [15693] from mahoney@nostrum.com:
+    Fixed link to webex request page. Fixes issue #2564.  
+
+  * Added a guard against getting the attribute of None in 
+    api_set_session_video_url().  Fixes a server 500 for some hackathon 
+    sessions.
+
+  * Provided a tool-tip with full time information for the document history 
+    dates.
+
+  * Merged in [15689] from mahoney@nostrum.com:
+    It need not be an error to find duplicate person records, such as for 
+    instance for 'Matt Larson'.  Took out the statement in the profile template 
+    that this is an error.  Fixes issue #2616.  
+
+  * Factored out some parts of the meeting/agenda.html into separate files, 
+    and added session buttons for 'other' session (e.g., hotrfc)
+
+  * Merged in [15688] from mahoney@nostrum.com:
+    Fixed bad variable in title of requests.html. Fixes issue #2608.  
+
+  * Don't show slides in main IETF meeting agenda for sessions with their 
+    own session agenda.
+
+  * Merged in [15684] from rjsparks@nostrum.com:
+    Removed the field and widget that made editing document states easier 
+    on the document admin page since they do not survive validation failure of 
+    other fields on the form. Excluded states from the model form since the 
+    default states widget is almost impossible to use without producing bad 
+    data. If states need to be edited through the admin, it will, for now, need 
+    to be done gruelingly through the admin form for State. Fixes #2524.  
+
+  * Merged in [15681] from rjsparks@nostrum.com:
+    Only do state-parent cross-validation on the group edit form when both 
+    fields are used on the form. (Many invocations of the form suppress all but 
+    one field.) Fixes #2597.  
+
+  * Merged in [15679] from mahoney@nostrum.com:
+    Verb tense used in Ballot Issued emails now matches whether the LC end 
+    date is in the past or future. Fixes issue #2482.  
+
+  * Merged in [15677] from rjsparks@nostrum.com:
+    Tune the recipients when a teams settings or a reviewer indicate ADs 
+    should be notified about a review.  
+
+  * Merged in [15676] from rjsparks@nostrum.com:
+    Let a reviewer indicate that an AD should give this review early 
+    attention. Fixes #2553.  
+
+  * Merged in [15675] from rjsparks@nostrum.com:
+    Let review teams opt in to poking a responsible AD when unhappy reviews 
+    are submitted. Fixes #2544.  
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  13 Nov 2018 09:47:39 +0000
+
+
 ietfdb (6.87.3) ietf; urgency=low
 
   This release contains one single fix, to give stable test results for
