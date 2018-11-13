@@ -468,7 +468,7 @@ class NameTests(TestCase):
             ("丽华 皇",            "Li Hua Huang"),
             ("نرگس پویان",      "Nrgs Pwyn"),
             ("موسوی سينا زمانی","Mwswy Syn Zmny"),
-            ("",    ""),
+            ("Iñigo Sanç Ibáñez de la Peña",    "Inigo Sanc Ibanez de La Pena"),
             ("",    ""),
             )
 
