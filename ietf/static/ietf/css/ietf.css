@@ -663,6 +663,11 @@ table.simple-table td:last-child {
   display: block;
 }
 
+.highcharts-contextmenu hr {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
 /* === Photo pages ========================================================== */
 
 .photo-name {

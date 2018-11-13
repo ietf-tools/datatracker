@@ -7,7 +7,7 @@
     "bootstrap-datepicker": "~1",
     "d3": "~3",
     "font-awesome": "~4",
-    "highcharts": "~4",
+    "highcharts": "~6",
     "html5shiv": "~3",
     "jquery": "~1",
     "jquery.cookie": "~1",
@@ -51,6 +51,7 @@
 	  "highstock.js",
 	  "highmaps.js",
 	  "modules/exporting.js",
+	  "modules/export-data.js",
 	  "modules/offline-exporting.js",
 	  "modules/map.js"
 	]
