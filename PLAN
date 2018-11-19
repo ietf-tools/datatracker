@@ -14,6 +14,8 @@ Planned work in rough order
   could have been done with only table edits if there hadn't been so much code
   using type_id lists and features needing code changes).
 
+* Add the ability to unset certain state machines to allow documets to return to I-D Exists.
+
 * Revisit the review tool, work through the accumulated tickets.
 
 * Polish the htmlization pages, making the style identical with tools.ietf.org.
