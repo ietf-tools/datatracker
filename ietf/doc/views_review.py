@@ -649,8 +649,8 @@ def complete_review(request, name, request_id):
             if form.cleaned_data['email_ad'] or review_req.result in review_req.team.reviewteamsettings.notify_ad_when.all():
                 (to, cc) = gather_address_lists('review_notify_ad',review_req = review_req)
                 msg_txt = render_to_string("review/notify_ad.txt", {
-                    "to": to,
-                    "cc": cc,
+                    "to": ', '.join(to),
+                    "cc": ', '.join(cc),
                     "review_req": review_req,
                     "settings": settings,
                     "explicit_request": form.cleaned_data['email_ad'],
