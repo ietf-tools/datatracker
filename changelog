@@ -1,3 +1,28 @@
+ietfdb (6.89.0) ietf; urgency=low
+
+  This release provides improved export of statistics charts and data,
+  improved and more consistent test coverage, and fixes a few bugs:
+
+  * Fixed an issue with the To: and Cc: addresses of extra review email to 
+    responsible AD.
+
+  * Changed the liaison tool From: address to <statements@ietf.org>.
+
+  * Always show the liaison submitted date on liaison pages
+
+  * Added testing of unidecode_name() and name_parts(), in order to not rely
+    on random name generation to excercise all paths.
+
+  * Updated highcharts from v4.2.7 to v6.2.0, and added support for CSV export
+    from charts.  Also tweaked the look of the highcharts context menu
+    separators.
+
+  * Added handling for an EOF exception that can occur when using the 
+    django file-based cache.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  20 Nov 2018 13:22:15 +0000
+
+
 ietfdb (6.88.0) ietf; urgency=low
 
   **IETF 103 code sprint**

@@ -647,10 +647,10 @@ def complete_review(request, name, request_id):
                     review.save_with_history([close_event])
 
             if form.cleaned_data['email_ad'] or review_req.result in review_req.team.reviewteamsettings.notify_ad_when.all():
-                (to, cc) = gather_address_lists('review_notify_ad',review_req = review_req)
+                (to, cc) = gather_address_lists('review_notify_ad',review_req = review_req).as_strings()
                 msg_txt = render_to_string("review/notify_ad.txt", {
-                    "to": ', '.join(to),
-                    "cc": ', '.join(cc),
+                    "to": to,
+                    "cc": cc,
                     "review_req": review_req,
                     "settings": settings,
                     "explicit_request": form.cleaned_data['email_ad'],
