@@ -20,7 +20,7 @@ ietfdb (6.89.0) ietf; urgency=low
   * Added handling for an EOF exception that can occur when using the 
     django file-based cache.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  20 Nov 2018 13:22:15 +0000
+ -- Henrik Levkowetz <henrik@levkowetz.com>  20 Nov 2018 16:30:42 +0000
 
 
 ietfdb (6.88.0) ietf; urgency=low
