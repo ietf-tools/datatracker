@@ -460,19 +460,19 @@ class NameTests(TestCase):
 
     def test_unidecode(self):
         names = (
-            ("ዳዊት በቀለ",         "Daawite Baqala",),
-            ("丽 郜",             "Li Gao"),
-            ("कम्बोज डार",      "Kmboj Ddaar"),
-            ("Ηράκλεια Λιόντη", "Erakleia Lionte"),
-            ("ישראל רוזנפלד",   "Yshrl Rvznpld"),
-            ("丽华 皇",            "Li Hua Huang"),
-            ("نرگس پویان",      "Nrgs Pwyn"),
-            ("موسوی سينا زمانی","Mwswy Syn Zmny"),
-            ("Iñigo Sanç Ibáñez de la Peña",    "Inigo Sanc Ibanez de La Pena"),
-            ("",    ""),
+            ("ዳዊት በቀለ",         ("Daawite Baqala", )),
+            ("丽 郜",             ("Li Gao", )),
+            ("कम्बोज डार",      ("Kmboj Ddaar", )),
+            ("Ηράκλεια Λιόντη", ("Erakleia Lionte", )),
+            ("ישראל רוזנפלד",   ("Yshrl Rvznpld", "Yshral Rvznpld", )),
+            ("丽华 皇",            ("Li Hua Huang", )),
+            ("نرگس پویان",      ("Nrgs Pwyn", )),
+            ("موسوی سينا زمانی",("Mwswy Syn Zmny", )),
+            ("Iñigo Sanç Ibáñez de la Peña",    ("Inigo Sanc Ibanez de La Pena", )),
+            ("",    ("", )),
             )
 
         for name, ascii in names:
             if name:
-                self.assertEqual(ascii, unidecode_name(name))
+                self.assertIn(unidecode_name(name), ascii)
             
