@@ -21,13 +21,8 @@
   <td>{{ liaison.state }}</td>
 </tr>
 <tr>
-  {% if liaison.state.slug == "posted" %}
-    <th class="text-nowrap">Posted Date</th>
-    <td>{{ liaison.posted|date:"Y-m-d" }}</td></tr>
-  {% else %}
-    <th class="text-nowrap">Submitted Date</th>
-    <td>{{ liaison.submitted|date:"Y-m-d" }}</td></tr>
-  {% endif %}
+  <th class="text-nowrap">Submitted Date</th>
+  <td>{{ liaison.submitted|date:"Y-m-d" }}</td></tr>
 <tr>
   <th class="text-nowrap">From Group{{ liaison.from_groups.all|pluralize }}</th>
   <td>{{ liaison.from_groups_display }}</td>
