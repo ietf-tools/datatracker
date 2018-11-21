@@ -213,25 +213,20 @@ button.fancy:hover {
     padding: 0;
 }
 
-ul#list-nav {
+.list-nav {
     padding-left: 0;
     margin-left: 0;
     background-color: #36648B;
     color: White;
-    /* float: left; */
     width: 100%;
-    /* font-family: arial, helvetica, sans-serif; */
     overflow: auto;
 }
 
-ul#list-nav li { display: inline; }
+.list-nav li { display: inline; }
 
-
-ul#list-nav li a {
-    /*padding: 0.2em 1em; */
+.list-nav li a {
     padding: 0.2em;
-    /*width: 19.1%; */
-    width: 23%;
+    width: 19%;
     background-color: #36648B;
     color: White;
     text-decoration: none;
@@ -240,16 +235,24 @@ ul#list-nav li a {
     border-left: 1px solid #fff;
 }
 
-ul#list-nav li.leftmost a {
+.rooms-times-nav .list-nav li a {
+  width: 25%;
+}
+
+.list-nav li.selected a {
+    background-color: #4F94CD;
+}
+
+.list-nav li.leftmost a {
     border-left: none;
 }
 
-ul#list-nav li a:hover {
+.list-nav li a:hover {
     background-color: #4F94CD;
     color: #fff;
 }
 
-ul#list-nav a.current {
+.list-nav a.current {
     background-color: #7CA0C7;
 }
 

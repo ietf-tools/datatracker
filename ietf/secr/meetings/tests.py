@@ -102,12 +102,9 @@ class SecrMeetingTestCase(TestCase):
 
     def test_edit_meeting(self):
         "Edit Meeting"
-        Meeting.objects.create(number=1,
-                               type_id='ietf',
-                               date=datetime.datetime(2014,7,20),
-                           )
-        url = reverse('ietf.secr.meetings.views.edit_meeting',kwargs={'meeting_id':1})
-        post_data = dict(number='1',date='2014-07-20',city='Toronto',
+        meeting = make_meeting_test_data()
+        url = reverse('ietf.secr.meetings.views.edit_meeting',kwargs={'meeting_id':meeting.number})
+        post_data = dict(number=meeting.number,date='2014-07-20',city='Toronto',
                          days=7,
                          idsubmit_cutoff_day_offset_00=13,
                          idsubmit_cutoff_day_offset_01=20,
@@ -119,9 +116,9 @@ class SecrMeetingTestCase(TestCase):
                          attendees=1234,
                     )
         self.client.login(username="secretary", password="secretary+password")
-        response = self.client.post(url, post_data,follow=True)
+        response = self.client.post(url, post_data, follow=True)
         self.assertEqual(response.status_code, 200)
-        meeting = Meeting.objects.get(number=1)
+        meeting = Meeting.objects.get(number=meeting.number)
         self.assertEqual(meeting.city,'Toronto')
         self.assertEqual(meeting.attendees,1234)
 
@@ -186,13 +183,6 @@ class SecrMeetingTestCase(TestCase):
         response = self.client.post(url)
         self.assertEqual(response.status_code, 302)
         self.assertEqual(len(outbox), mailbox_before + 1)
-
-    def test_meetings_select(self):
-        make_meeting_test_data()
-        url = reverse('ietf.secr.meetings.views.select',kwargs={'meeting_id':42,'schedule_name':'test-agenda'})
-        self.client.login(username="secretary", password="secretary+password")
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, 200)
 
     def test_meetings_rooms(self):
         meeting = make_meeting_test_data()
@@ -371,31 +361,11 @@ class SecrMeetingTestCase(TestCase):
         session = slot.sessionassignments.filter(schedule=meeting.agenda).first().session
         self.assertEqual(session.status_id, 'canceled')
 
-    def test_meetings_select_group(self):
-        make_meeting_test_data()
-        url = reverse('ietf.secr.meetings.views.select_group',kwargs={'meeting_id':42,'schedule_name':'test-agenda'})
-        self.client.login(username="secretary", password="secretary+password")
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, 200)
-        q = PyQuery(response.content)
-        self.assertEqual(len(q("#id_scheduled_sessions")),1)
-
-    def test_meetings_schedule(self):
-        meeting = make_meeting_test_data()
-        url = reverse('ietf.secr.meetings.views.schedule',kwargs={
-            'meeting_id':meeting.number,
-            'schedule_name':meeting.agenda.name,
-            'acronym':'mars'
-        })
-        self.client.login(username="secretary", password="secretary+password")
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, 200)
-
     def test_meetings_session_edit(self):
         meeting = make_meeting_test_data()
         session = Session.objects.filter(meeting=meeting,group__acronym='mars').first()
         url = reverse('ietf.secr.meetings.views.session_edit', kwargs={'meeting_id':meeting.number,'schedule_name':meeting.agenda.name,'session_id':session.id})
-        redirect_url = reverse('ietf.secr.meetings.views.select_group', kwargs={'meeting_id':meeting.number,'schedule_name':meeting.agenda.name})
+        redirect_url = reverse('ietf.secr.meetings.views.sessions', kwargs={'meeting_id':meeting.number,'schedule_name':meeting.agenda.name})
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
@@ -403,10 +373,6 @@ class SecrMeetingTestCase(TestCase):
         self.assertRedirects(response, redirect_url)
         session = Session.objects.get(id=session.id)
         self.assertEqual(session.agenda_note, 'TEST')
-        response = self.client.post(url, {'agenda_note':'TEST','submit':'Cancel'})
-        self.assertRedirects(response, redirect_url)
-        session = Session.objects.get(id=session.id)
-        self.assertEqual(session.status.slug, 'canceled')
 
     # ----------------------
     # Unit Tests
