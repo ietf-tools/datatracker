@@ -402,7 +402,7 @@ def docs_for_ad(request, name):
                        'rfcs':'on', 'activedrafts':'on', 'olddrafts':'on',
                        'sort': 'status',
                        'doctypes': list(DocTypeName.objects.filter(used=True).exclude(slug='draft').values_list("pk", flat=True))})
-    results, meta = prepare_document_table(request, retrieve_search_results(form), form.data)
+    results, meta = prepare_document_table(request, retrieve_search_results(form), form.data, max_results=500)
     results.sort(key=ad_dashboard_sort_key)
     del meta["headers"][-1]
     #
