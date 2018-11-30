@@ -169,7 +169,10 @@ def community_lists_tracking_doc(doc):
 
 
 def notify_event_to_subscribers(event):
-    significant = event.type == "changed_state" and event.state_id in [s.pk for s in states_of_significant_change()]
+    try:
+        significant = event.type == "changed_state" and event.state_id in [s.pk for s in states_of_significant_change()]
+    except AttributeError:
+        significant = False
 
     subscriptions = EmailSubscription.objects.filter(community_list__in=community_lists_tracking_doc(event.doc)).distinct()
 
