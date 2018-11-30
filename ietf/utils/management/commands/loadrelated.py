@@ -2,9 +2,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals, print_function
 
-import datetime
 import gzip
-import io
 import os
 #import sys
 import tqdm
@@ -17,25 +15,15 @@ except ImportError:
     has_bz2 = False
 
 from django.core.exceptions import ObjectDoesNotExist
-from django.conf import settings
-from django.contrib.admin.utils import NestedObjects
-from django.contrib.auth.models import User
 from django.core import serializers
 from django.db import DEFAULT_DB_ALIAS, DatabaseError, IntegrityError, connections
-from django.db.models import F
-from django.db.models.signals import pre_delete, post_save
-from django.dispatch import receiver
+from django.db.models.signals import post_save
 from django.utils.encoding import force_text
 import django.core.management.commands.loaddata as loaddata
 
-
 import debug                            # pyflakes:ignore
 
-from ietf.community.models import SearchRule, CommunityList, EmailSubscription, notify_events
-from ietf.doc.models import Document
-from ietf.person.models import Person, HistoricalPerson, PersonEvent, Alias, PersonalApiKey, Email, HistoricalEmail
-from ietf.person.name import unidecode_name
-from ietf.utils.log import log
+from ietf.community.models import notify_events
 
 class Command(loaddata.Command):
     help = (u"""
@@ -76,7 +64,6 @@ class Command(loaddata.Command):
         #
         post_save.disconnect(notify_events)
         #
-        show_progress = self.verbosity >= 3
         connection = connections[self.using]
         self.fixture_count = 0
         self.loaded_object_count = 0
