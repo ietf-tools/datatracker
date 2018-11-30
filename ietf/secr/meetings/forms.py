@@ -1,4 +1,3 @@
-import datetime
 import re
 
 from django import forms
@@ -129,44 +128,6 @@ class MeetingRoomForm(forms.ModelForm):
     class Meta:
         model = Room
         exclude = ['resources']
-
-class NewSessionForm(forms.Form):
-    day = forms.ChoiceField(choices=SESSION_DAYS)
-    time = TimeChoiceField()
-    room = forms.ModelChoiceField(queryset=Room.objects.none())
-    session = forms.CharField(widget=forms.HiddenInput)
-    note = forms.CharField(max_length=255, required=False, label='Special Note from Scheduler')
-    combine = forms.BooleanField(required=False, label='Combine with next session')
-    
-    # setup the timeslot options based on meeting passed in
-    def __init__(self,*args,**kwargs):
-        self.meeting = kwargs.pop('meeting')
-        super(NewSessionForm, self).__init__(*args,**kwargs)
-        
-        # attach session object to the form so we can use it in the template
-        self.session_object = Session.objects.get(id=self.initial['session'])
-        self.fields['room'].queryset = Room.objects.filter(meeting=self.meeting)
-        self.fields['time'].choices = get_times(self.meeting,self.initial['day'])
-        
-    def clean(self):
-        super(NewSessionForm, self).clean()
-        if any(self.errors):
-            return
-        cleaned_data = self.cleaned_data
-        time = cleaned_data['time']
-        day = cleaned_data['day']
-        room = cleaned_data['room']
-        if cleaned_data['combine']:
-            # calculate datetime object from inputs, get current slot, feed to get_next_slot()
-            day_obj = self.meeting.get_meeting_date(int(day)-1)
-            hour = datetime.time(int(time[:2]),int(time[2:]))
-            time_obj = datetime.datetime.combine(day_obj,hour)
-            slot = TimeSlot.objects.get(meeting=self.meeting,time=time_obj,location=room)
-            next_slot = get_next_slot(slot)
-            if not next_slot:
-                raise forms.ValidationError('There is no next session to combine')
-        
-        return cleaned_data
 
 class TimeSlotForm(forms.Form):
     day = forms.ChoiceField(choices=DAYS_CHOICES)

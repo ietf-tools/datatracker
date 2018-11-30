@@ -166,33 +166,23 @@ function init_proceedings_table() {
 }
 
 $(document).ready(function() {
-  // in general set focus on first input field
-  $("input:text:visible:enabled:first").focus();
-
-  // custom focus settings --------------------------------
-  if ( $("form[id^=group-role-assignment-form]").length > 0){
+  // set focus --------------------------------
+  if ( $("form[id^=group-role-assignment-form]").length > 0) {
       $("#id_role_type").focus();
-  }
-  if ( $("form[id=draft-search-form]").length > 0){
+  } else if ( $("form[id=draft-search-form]").length > 0) {
       $("#id_filename").focus();
-  }
-  if ( $("form[id=drafts-add-form]").length > 0){
+  } else if ( $("form[id=drafts-add-form]").length > 0) {
       $("#id_title").focus();
-  }
-  if ( $("form[id=proceedings-add-form]").length > 0){
+  } else if ( $("form[id=proceedings-add-form]").length > 0) {
       $("#id_start_date").focus();
-  }
-  if ( $("form[id=proceedings-upload-form]").length > 0){
+  } else if ( $("form[id=proceedings-upload-form]").length > 0) {
       $("#id_group_name").focus();
-  }
-  if ( $("form[id=session-request-form]").length > 0){
+  } else if ( $("form[id=session-request-form]").length > 0) {
       $("#id_num_session").focus();
-  }
-  if ( $("form[id^=meetings-meta]").length > 0){
-      $("button[type=submit]:first").focus();
-  }
-  if ( $("form[id=meetings-schedule-form]").length > 0){
-      $("#id_form-0-time").focus();
+  } else if ( $(".rooms-times-nav").length > 0){
+      $("li.selected a").focus();
+  } else {
+      $("input:text:visible:enabled:first").focus();
   }
 
 

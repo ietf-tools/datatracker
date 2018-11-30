@@ -47,7 +47,7 @@
 <div id="telechat-main">
   {% if date %}
   <div id="telechat-nav">
-    <ul id="list-nav">
+    <ul class="list-nav">
       <li><a href="{% url 'ietf.secr.telechat.views.roll_call' date=date %}">Roll Call</a></li>
       <li><a href="{% url 'ietf.secr.telechat.views.bash' date=date %}">Bash Agenda</a></li>
       <li><a href="{% url 'ietf.secr.telechat.views.minutes' date=date %}">Minute Approval</a></li>

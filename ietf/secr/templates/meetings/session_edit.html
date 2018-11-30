@@ -9,8 +9,6 @@
 {% block breadcrumbs %}{{ block.super }}
   &raquo; <a href="{% url "ietf.secr.meetings.views.main" %}">Meetings</a>
   &raquo; <a href="{% url "ietf.secr.meetings.views.view" meeting_id=meeting.number %}">{{ meeting.number }}</a>
-  &raquo; <a href="{% url "ietf.secr.meetings.views.select" meeting_id=meeting.number schedule_name=schedule.name %}">{{ schedule.name }}</a>
-  &raquo; <a href="{% url "ietf.secr.meetings.views.select_group" meeting_id=meeting.number schedule_name=schedule.name %}">Select</a>
   &raquo; {{ session.group.acronym }}
 {% endblock %}
 
@@ -47,8 +45,7 @@
       <div class="button-group">
        <ul>
          <li><button type="submit" name="submit" value="Save">Save</button></li>
-         <li><button type="submit" name="submit" value="Cancel">Cancel Session</button></li>
-         <li><button type="button" onclick="window.location='{% url "ietf.secr.meetings.views.select_group" meeting_id=meeting.number schedule_name=schedule.name %}'">Back</button></li>
+         <li><button type="button" onclick="window.location='{% url "ietf.secr.meetings.views.sessions" meeting_id=meeting.number schedule_name=schedule.name %}'">Back</button></li>
         </ul>
       </div> <!-- button-group -->
       

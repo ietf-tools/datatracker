@@ -5,10 +5,8 @@ import time
 from django.conf import settings
 from django.contrib import messages
 from django.db.models import Max
-from django.forms.formsets import formset_factory
 from django.forms.models import inlineformset_factory
 from django.shortcuts import render, get_object_or_404, redirect
-from django.utils.functional import curry
 
 import debug                            # pyflakes:ignore
 
@@ -22,8 +20,8 @@ from ietf.group.models import Group, GroupEvent
 from ietf.person.models import Person
 from ietf.secr.meetings.blue_sheets import create_blue_sheets
 from ietf.secr.meetings.forms import ( BaseMeetingRoomFormSet, MeetingModelForm, MeetingSelectForm,
-    MeetingRoomForm, NewSessionForm, NonSessionForm, TimeSlotForm, SessionEditForm,
-    UploadBlueSheetForm, get_next_slot )
+    MeetingRoomForm, NonSessionForm, TimeSlotForm, SessionEditForm,
+    UploadBlueSheetForm )
 from ietf.secr.proceedings.utils import handle_upload_file
 from ietf.secr.sreq.views import get_initial_session
 from ietf.secr.utils.meeting import get_session, get_timeslot
@@ -489,7 +487,8 @@ def non_session(request, meeting_id, schedule_name):
         'assignments': assignments,
         'form': form,
         'meeting': meeting,
-        'schedule': schedule},
+        'schedule': schedule,
+        'selected': 'non-sessions'},
     )
 
 @role_required('Secretariat')
@@ -637,32 +636,6 @@ def notifications(request, meeting_id):
     )
 
 @role_required('Secretariat')
-def remove_session(request, meeting_id, acronym):
-    '''
-    Remove session from agenda.  Disassociate session from timeslot and set status.
-    According to Wanda this option is used when people cancel, so the Session
-    request should be deleted as well.
-    '''
-    from ietf.utils import log
-    log.unreachable("2017-07-08")
-    meeting = get_object_or_404(Meeting, number=meeting_id)
-    group = get_object_or_404(Group, acronym=acronym)
-    sessions = Session.objects.filter(meeting=meeting,group=group)
-    now = datetime.datetime.now()
-
-    for session in sessions:
-        ss = session.official_timeslotassignment()
-        ss.session = None
-        ss.modified = now
-        ss.save()
-        session.status_id = 'canceled'
-        session.modified = now
-        session.save()
-
-    messages.success(request, '%s Session removed from agenda' % (group.acronym))
-    return redirect('ietf.secr.meetings.views.select_group', meeting_id=meeting.number)
-
-@role_required('Secretariat')
 def rooms(request, meeting_id, schedule_name):
     '''
     Display and edit MeetingRoom records for the specified meeting
@@ -703,154 +676,39 @@ def rooms(request, meeting_id, schedule_name):
     return render(request, 'meetings/rooms.html', {
         'meeting': meeting,
         'schedule': schedule,
-        'formset': formset},
+        'formset': formset,
+        'selected': 'rooms'}
     )
 
 @role_required('Secretariat')
-def schedule(request, meeting_id, schedule_name, acronym):
+def sessions(request, meeting_id, schedule_name):
     '''
-    This view handles scheduling session requests to TimeSlots
+    Display and edit Session records for the specified meeting
     '''
     meeting = get_object_or_404(Meeting, number=meeting_id)
     schedule = get_object_or_404(Schedule, meeting=meeting, name=schedule_name)
-    group = get_object_or_404(Group, acronym=acronym)
+    sessions = schedule.sessions_that_can_meet.order_by('group__acronym')
     
-    sessions = Session.objects.filter(meeting=meeting,group=group,status__in=('schedw','apprw','appr','sched','canceled'))
-    legacy_session = get_initial_session(sessions)
-    now = datetime.datetime.now()
-
-    # build initial
-    initial = []
-    for s in sessions:
-        d = {'session':s.id,
-             'note':s.agenda_note}
-        timeslot = get_timeslot(s, schedule=schedule)
-
-        if timeslot:
-            d['room'] = timeslot.location.id if timeslot.location else None
-            d['day'] = timeslot.time.isoweekday() % 7 + 1     # adjust to django week_day
-            d['time'] = timeslot.time.strftime('%H%M')
-        else:
-            d['day'] = 2    # default
-        if is_combined(s,meeting,schedule=schedule):
-            d['combine'] = True
-        initial.append(d)
-
-    # need to use curry here to pass custom variable to form init
-    NewSessionFormset = formset_factory(NewSessionForm, extra=0)
-    NewSessionFormset.form = staticmethod(curry(NewSessionForm, meeting=meeting))
-
     if request.method == 'POST':
-        button_text = request.POST.get('submit', '')
-        if button_text == 'Cancel':
-            return redirect('ietf.secr.meetings.views.select_group', meeting_id=meeting_id,schedule_name=schedule_name)
+        if 'cancel' in request.POST:
+            pk = request.POST.get('pk')
+            session = Session.objects.get(pk=pk)
+            session.status = SessionStatusName.objects.get(slug='canceled')
+            session.save()
+            messages.success(request, 'Session cancelled')
 
-        formset = NewSessionFormset(request.POST,initial=initial)
-
-        if formset.is_valid():
-            # TODO formsets don't have has_changed until Django 1.3
-            has_changed = False
-            for form in formset.forms:
-                if form.has_changed():
-                    has_changed = True
-                    id = form.cleaned_data['session']
-                    note = form.cleaned_data['note']
-                    room = form.cleaned_data['room']
-                    time = form.cleaned_data['time']
-                    day = form.cleaned_data['day']
-                    combine = form.cleaned_data.get('combine',None)
-                    session = Session.objects.get(id=id)
-                    initial_timeslot = get_timeslot(session,schedule=schedule)
-
-                    # find new timeslot
-                    new_day = meeting.date + datetime.timedelta(days=int(day)-1)
-                    hour = datetime.time(int(time[:2]),int(time[2:]))
-                    new_time = datetime.datetime.combine(new_day,hour)
-                    timeslot = TimeSlot.objects.filter(meeting=meeting,time=new_time,location=room)[0]
-
-                    # COMBINE SECTION - BEFORE --------------
-                    if 'combine' in form.changed_data and not combine:
-                        next_slot = get_next_slot(initial_timeslot)
-                        for ss in next_slot.sessionassignments.filter(schedule=schedule,session=session):
-                            ss.session = None
-                            ss.save()
-                    # ---------------------------------------
-                    if any(x in form.changed_data for x in ('day','time','room')):
-                        # clear the old association
-                        if initial_timeslot:
-                            # delete schedtimesessassignment records to unschedule
-                            session.timeslotassignments.filter(schedule=schedule).delete()
-
-                        if timeslot:
-                            assign(session,timeslot,meeting,schedule=schedule)
-                            if timeslot.sessions.all().count() > 1:
-                                messages.warning(request, 'WARNING: There are now multiple sessions scheduled for the timeslot: %s' % timeslot)
-                        else:
-                            session.status_id = 'schedw'
-
-                        session.modified = now
-                        session.save()
-
-                    if 'note' in form.changed_data:
-                        session.agenda_note = note
-                        session.modified = now
-                        session.save()
-
-                    # COMBINE SECTION - AFTER ---------------
-                    if 'combine' in form.changed_data and combine:
-                        next_slot = get_next_slot(timeslot)
-                        assign(session,next_slot,meeting,schedule=schedule)
-                    # ---------------------------------------
-
-            if has_changed:
-                messages.success(request, 'Session(s) Scheduled for %s.' % group.acronym )
-
-            return redirect('ietf.secr.meetings.views.select_group', meeting_id=meeting_id,schedule_name=schedule_name)
-
-    else:
-        formset = NewSessionFormset(initial=initial)
-
-    return render(request, 'meetings/schedule.html', {
-        'group': group,
+    return render(request, 'meetings/sessions.html', {
         'meeting': meeting,
         'schedule': schedule,
-        'show_request': True,
-        'session': legacy_session,
-        'formset': formset},
-    )
-
-@role_required('Secretariat')
-def select(request, meeting_id, schedule_name):
-    '''
-    Options to edit Rooms & Times or schedule a session
-    '''
-    meeting = get_object_or_404(Meeting, number=meeting_id)
-    schedule = get_object_or_404(Schedule, meeting=meeting, name=schedule_name)
-    
-    return render(request, 'meetings/select.html', {
-        'meeting': meeting,
-        'schedule': schedule},
-    )
-
-@role_required('Secretariat')
-def select_group(request, meeting_id, schedule_name):
-    '''
-    Select the scheduled session to edit.
-    '''
-    meeting = get_object_or_404(Meeting, number=meeting_id)
-    schedule = get_object_or_404(Schedule, meeting=meeting, name=schedule_name)
-    assignments = schedule.assignments.filter(timeslot__type='session').order_by('session__group__acronym')
-
-    return render(request, 'meetings/select_group.html', {
-        'meeting': meeting,
-        'schedule': schedule,
-        'assignments': assignments},
+        'sessions': sessions,
+        'formset': None,
+        'selected': 'sessions',},
     )
 
 @role_required('Secretariat')
 def session_edit(request, meeting_id, schedule_name, session_id):
     '''
-    Edit session details, cancel session
+    Edit session details
     '''
     meeting = get_object_or_404(Meeting, number=meeting_id)
     schedule = get_object_or_404(Schedule, meeting=meeting, name=schedule_name)
@@ -860,15 +718,9 @@ def session_edit(request, meeting_id, schedule_name, session_id):
     if request.method == 'POST':
         form = SessionEditForm(request.POST, instance=session)
         if form.is_valid():
-            button_text = request.POST.get('submit', '')
-            if button_text == 'Cancel':
-                session.status = SessionStatusName.objects.get(slug='canceled')
-                session.save()
-                messages.success(request, 'Session cancelled')
-            else:
-                form.save()
-                messages.success(request, 'Session saved')
-            return redirect('ietf.secr.meetings.views.select_group', meeting_id=meeting_id,schedule_name=schedule_name)
+            form.save()
+            messages.success(request, 'Session saved')
+            return redirect('ietf.secr.meetings.views.sessions', meeting_id=meeting_id,schedule_name=schedule_name)
 
     else:
         form = SessionEditForm(instance=session)
@@ -938,7 +790,8 @@ def times(request, meeting_id, schedule_name):
         'form': form,
         'meeting': meeting,
         'schedule': schedule,
-        'times': times},
+        'times': times,
+        'selected': 'times'},
     )
 
 def get_timeslot_time(form, meeting):
@@ -1028,23 +881,6 @@ def times_delete(request, meeting_id, schedule_name, time):
         'object': '%s timeslots' % dtime.strftime("%A %H:%M"),
         'extra': 'Any sessions assigned to this timeslot will be unscheduled'
     })
-
-# @role_required('Secretariat')
-# def unschedule(request, meeting_id, schedule_name, session_id):
-#     '''
-#     Unschedule given session object
-#     '''
-#     from ietf.utils import log
-#     log.unreachable("2017-07-08")
-#     meeting = get_object_or_404(Meeting, number=meeting_id)
-#     session = get_object_or_404(Session, id=session_id)
-# 
-#     session.timeslotassignments.filter(schedule=meeting.agenda).delete()
-# 
-#     # TODO: change session state?
-# 
-#     messages.success(request, 'Session unscheduled')
-#     return redirect('ietf.secr.meetings.views.select_group', meeting_id=meeting_id, schedule_name=schedule_name)
 
 @role_required('Secretariat')
 def view(request, meeting_id):
