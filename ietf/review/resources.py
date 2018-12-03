@@ -9,7 +9,8 @@ from ietf.api import ToOneField                         # pyflakes:ignore
 
 from ietf.review.models import (ReviewerSettings, ReviewRequest,
                                 UnavailablePeriod, ReviewWish, NextReviewerInTeam,
-                                ReviewSecretarySettings, ReviewTeamSettings )
+                                ReviewSecretarySettings, ReviewTeamSettings, 
+                                HistoricalReviewerSettings )
 
 
 from ietf.person.resources import PersonResource
@@ -173,3 +174,33 @@ class ReviewTeamSettingsResource(ModelResource):
         }
 api.review.register(ReviewTeamSettingsResource())
 
+
+
+from ietf.person.resources import PersonResource
+from ietf.group.resources import GroupResource
+from ietf.utils.resources import UserResource
+class HistoricalReviewerSettingsResource(ModelResource):
+    team             = ToOneField(GroupResource, 'team', null=True)
+    person           = ToOneField(PersonResource, 'person', null=True)
+    history_user     = ToOneField(UserResource, 'history_user', null=True)
+    class Meta:
+        queryset = HistoricalReviewerSettings.objects.all()
+        serializer = api.Serializer()
+        cache = SimpleCache()
+        #resource_name = 'historicalreviewersettings'
+        filtering = { 
+            "id": ALL,
+            "min_interval": ALL,
+            "filter_re": ALL,
+            "skip_next": ALL,
+            "remind_days_before_deadline": ALL,
+            "expertise": ALL,
+            "history_id": ALL,
+            "history_change_reason": ALL,
+            "history_date": ALL,
+            "history_type": ALL,
+            "team": ALL_WITH_RELATIONS,
+            "person": ALL_WITH_RELATIONS,
+            "history_user": ALL_WITH_RELATIONS,
+        }
+api.review.register(HistoricalReviewerSettingsResource())

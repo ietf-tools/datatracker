@@ -40,6 +40,7 @@ import itertools
 import datetime
 from tempfile import mkstemp
 from collections import OrderedDict, defaultdict
+from simple_history.utils import update_change_reason
 
 from django import forms
 from django.conf import settings
@@ -1675,6 +1676,8 @@ def change_reviewer_settings(request, acronym, reviewer_email, group_type=None):
         settings_form = ReviewerSettingsForm(request.POST, instance=settings, exclude_fields=exclude_fields)
         if settings_form.is_valid():
             settings = settings_form.save()
+            if settings_form.has_changed():
+                update_change_reason(settings, "Updated %s" % ", ".join(settings_form.changed_data) )
 
             changes = []
             if settings.get_min_interval_display() != prev_min_interval:
@@ -1684,6 +1687,7 @@ def change_reviewer_settings(request, acronym, reviewer_email, group_type=None):
 
             if changes:
                 email_reviewer_availability_change(request, group, reviewer_role, "\n\n".join(changes), request.user.person)
+
 
             return HttpResponseRedirect(back_url)
     else:
@@ -1785,6 +1789,7 @@ def change_reviewer_settings(request, acronym, reviewer_email, group_type=None):
         'settings_form': settings_form,
         'period_form': period_form,
         'unavailable_periods': unavailable_periods,
+        'reviewersettings': settings,
     })
 
 

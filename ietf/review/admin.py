@@ -1,9 +1,11 @@
+import simple_history
+
 from django.contrib import admin
 
 from ietf.review.models import (ReviewerSettings, ReviewSecretarySettings, UnavailablePeriod,
     ReviewWish, NextReviewerInTeam, ReviewRequest, ReviewTeamSettings )
 
-class ReviewerSettingsAdmin(admin.ModelAdmin):
+class ReviewerSettingsAdmin(simple_history.admin.SimpleHistoryAdmin):
     def acronym(self, obj):
         return obj.team.acronym
     list_display = ['id', 'person', 'acronym', 'min_interval', 'filter_re', 'remind_days_before_deadline', ]

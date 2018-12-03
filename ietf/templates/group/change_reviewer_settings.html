@@ -83,6 +83,24 @@
     </form>
   </div>
 
+  <h3>History</h3>
+  
+  <div id="history">
+    <table class="table table-condensed table-striped">
+      <tr>
+        <th class="col-md-1">Date</th>
+        <th class="col-md-1">By</th>
+        <th class="col-md-10">Description</th>
+      </tr>
+      {% for h in reviewersettings.history.all %}
+        <tr>
+          <td>{{h.history_date|date}}</td>
+          <td>{{h.history_user.person}}</td>
+          <td>{{h.history_change_reason}}</td>
+        </tr>
+      {% endfor %}
+    </table>
+  </div>
   <p style="padding-top: 2em;">
     <a href="{{ back_url }}" class="btn btn-default">Back</a>
   </p>
