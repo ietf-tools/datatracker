@@ -1,3 +1,19 @@
+ietfdb (6.89.1) ietf; urgency=low
+
+  * Merged in [15787] from rcross@amsl.com:
+    Rework page flow and forms of secr/meetings app.  Fixes #2609.   
+
+  * Added code to catch a possible attribute error on event notification.
+
+  * Added two new management commands to make it easier to load back 
+    selected objects that have been removed by mistake (providing they are 
+    available in a full database dump or backup that can be loaded and worked 
+    with): dumprelated and loadrelated.
+
+  * Increased the document limit from 200 to 500 for the AD documents page.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  03 Dec 2018 18:09:35 +0000
+
 ietfdb (6.89.0) ietf; urgency=low
 
   This release provides improved export of statistics charts and data,
