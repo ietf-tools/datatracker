@@ -62,7 +62,7 @@
 
       <tr>
       	<td></td>
-	<th><a href="doc/help/state/conflict-review/">State</a></th>
+	<th><a href="{% url 'ietf.doc.views_help.state_help' type='conflict-review' %}">State</a></th>
 	<td class="edit">
 	  {% if not snapshot and user|has_role:"Area Director,Secretariat" %}
 	    <a title="{{ doc.get_state.desc }}" class="btn btn-default btn-xs pull-right" href="{% url 'ietf.doc.views_conflict_review.change_state' name=doc.name %}">Edit</a>
