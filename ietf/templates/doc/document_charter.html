@@ -73,7 +73,7 @@
 
       <tr>
         <td></td>
-	<th><a href="/doc/help/state/charter/">State</a></th>
+	<th><a href="{% url 'ietf.doc.views_help.state_help' type='charter' %}">State</a></th>
 	<td class="edit">
 	  {% if not snapshot and can_manage %}
 	    {% doc_edit_button 'ietf.doc.views_charter.change_state' name=doc.name %}
