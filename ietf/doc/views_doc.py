@@ -47,7 +47,7 @@ from ietf.doc.models import ( Document, DocAlias, DocHistory, DocEvent, BallotDo
     ConsensusDocEvent, NewRevisionDocEvent, TelechatDocEvent, WriteupDocEvent,
     IESG_BALLOT_ACTIVE_STATES, STATUSCHANGE_RELATIONS )
 from ietf.doc.utils import ( add_links_in_new_revision_events, augment_events_with_revision,
-    can_adopt_draft, get_chartering_type, get_tags_for_stream_id,
+    can_adopt_draft, can_unadopt_draft, get_chartering_type, get_tags_for_stream_id,
     needed_ballot_positions, nice_consensus, prettify_std_name, update_telechat, has_same_ballot,
     get_initial_notify, make_notify_changed_event, make_rev_history, default_consensus,
     add_events_message_info, get_unicode_document_content, build_doc_meta_block)
@@ -66,7 +66,7 @@ from ietf.meeting.utils import group_sessions, get_upcoming_manageable_sessions,
 from ietf.review.models import ReviewRequest
 from ietf.review.utils import can_request_review_of_doc, review_requests_to_list_for_docs
 from ietf.review.utils import no_review_from_teams_on_doc
-from ietf.utils import markup_txt
+from ietf.utils import markup_txt, log
 from ietf.utils.text import maybe_split
 
 
@@ -329,6 +329,15 @@ def document_main(request, name, rev=None):
                 button_text = "Manage Document Adoption in Group"
             actions.append((button_text, urlreverse('ietf.doc.views_draft.adopt_draft', kwargs=dict(name=doc.name))))
 
+        if can_unadopt_draft(request.user, doc) and not doc.get_state_slug() in ["rfc"] and not snapshot:
+            if doc.get_state_slug('draft-iesg') == 'idexists':
+                if doc.group and doc.group.acronym != 'none':
+                    actions.append(("Release document from group", urlreverse('ietf.doc.views_draft.release_draft', kwargs=dict(name=doc.name))))
+                elif doc.stream_id == 'ise':
+                    actions.append(("Release document from stream", urlreverse('ietf.doc.views_draft.release_draft', kwargs=dict(name=doc.name))))
+                else:
+                    pass
+
         if doc.get_state_slug() == "expired" and not resurrected_by and can_edit and not snapshot:
             actions.append(("Request Resurrect", urlreverse('ietf.doc.views_draft.request_resurrect', kwargs=dict(name=doc.name))))
 
@@ -348,14 +357,15 @@ def document_main(request, name, rev=None):
                 label = "Request Publication"
                 if not doc.intended_std_level:
                     label += " (note that intended status is not set)"
-                if iesg_state and iesg_state.slug != 'dead':
+                if iesg_state and iesg_state.slug not in ('idexists','dead'):
                     label += " (Warning: the IESG state indicates ongoing IESG processing)"
                 actions.append((label, urlreverse('ietf.doc.views_draft.request_publication', kwargs=dict(name=doc.name))))
 
         if doc.get_state_slug() not in ["rfc", "expired"] and doc.stream_id in ("ietf",) and not snapshot:
-            if not iesg_state and can_edit:
+            log.assertion('iesg_state')
+            if iesg_state.slug == 'idexists' and can_edit:
                 actions.append(("Begin IESG Processing", urlreverse('ietf.doc.views_draft.edit_info', kwargs=dict(name=doc.name)) + "?new=1"))
-            elif (can_edit_stream_info or is_shepherd) and (not iesg_state or iesg_state.slug == 'watching'):
+            elif (can_edit_stream_info or is_shepherd) and (iesg_state.slug in ('idexists','watching')):
                 actions.append(("Submit to IESG for Publication", urlreverse('ietf.doc.views_draft.to_iesg', kwargs=dict(name=doc.name))))
 
         augment_docs_with_tracking_info([doc], request.user)

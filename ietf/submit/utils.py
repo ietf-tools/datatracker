@@ -331,6 +331,9 @@ def post_submission(request, submission, approvedDesc):
                     desc = settings.SUBMIT_YANG_CATALOG_MODULE_DESC.format(module=module)
                     draft.documenturl_set.create(url=url, tag_id='yang-module-metadata', desc=desc)
 
+    if not draft.get_state('draft-iesg'):
+        draft.states.add(State.objects.get(type_id='draft-iesg', slug='idexists'))
+
     # save history now that we're done with changes to the draft itself
     draft.save_with_history(events)
 

@@ -10,14 +10,14 @@ from django.conf import settings
 
 import debug                            # pyflakes:ignore
 
-from ietf.doc.factories import IndividualDraftFactory, WgDraftFactory, DocEventFactory
+from ietf.doc.factories import IndividualDraftFactory, WgDraftFactory, RgDraftFactory, DocEventFactory
 from ietf.doc.models import ( Document, DocReminder, DocEvent,
     ConsensusDocEvent, LastCallDocEvent, RelatedDocument, State, TelechatDocEvent, 
     WriteupDocEvent, DocRelationshipName)
 from ietf.doc.utils import get_tags_for_stream_id, create_ballot_if_not_open
 from ietf.name.models import StreamName, DocTagName
 from ietf.group.factories import GroupFactory, RoleFactory
-from ietf.group.models import Group
+from ietf.group.models import Group, Role
 from ietf.person.factories import PersonFactory
 from ietf.person.models import Person, Email
 from ietf.meeting.models import Meeting, MeetingTypeName
@@ -419,7 +419,7 @@ class EditInfoTests(TestCase):
         self.assertTrue('draft-ietf-mars-test2@' in outbox[-1]['To']) 
 
         # Redo, starting in publication requested to make sure WG state is also set
-        draft.unset_state('draft-iesg')
+        draft.set_state(State.objects.get(type_id='draft-iesg', slug='idexists'))
         draft.set_state(State.objects.get(type='draft-stream-ietf',slug='writeupw'))
         draft.stream = StreamName.objects.get(slug='ietf')
         draft.save_with_history([DocEvent.objects.create(doc=draft, rev=draft.rev, type="changed_stream", by=Person.objects.get(user__username="secretary"), desc="Test")])
@@ -589,7 +589,7 @@ class ExpireIDsTests(TestCase):
         self.assertEqual(len(list(get_soon_to_expire_drafts(14))), 0)
 
         # hack into expirable state
-        draft.unset_state("draft-iesg")
+        draft.set_state(State.objects.get(type_id='draft-iesg',slug='idexists'))
         draft.expires = datetime.datetime.now() + datetime.timedelta(days=10)
         draft.save_with_history([DocEvent.objects.create(doc=draft, rev=draft.rev, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
 
@@ -616,7 +616,7 @@ class ExpireIDsTests(TestCase):
         self.assertEqual(len(list(get_expired_drafts())), 0)
         
         # hack into expirable state
-        draft.unset_state("draft-iesg")
+        draft.set_state(State.objects.get(type_id='draft-iesg',slug='idexists'))
         draft.expires = datetime.datetime.now()
         draft.save_with_history([DocEvent.objects.create(doc=draft, rev=draft.rev, type="changed_document", by=Person.objects.get(user__username="secretary"), desc="Test")])
 
@@ -1114,7 +1114,7 @@ class SubmitToIesgTests(TestCase):
         self.assertEqual(r.status_code, 302)
 
         doc = Document.objects.get(name=self.docname)
-        self.assertTrue(doc.get_state('draft-iesg')==None)
+        self.assertEqual(doc.get_state_slug('draft-iesg'),'idexists')
 
     def test_confirm_submission(self):
         url = urlreverse('ietf.doc.views_draft.to_iesg', kwargs=dict(name=self.docname))
@@ -1179,6 +1179,88 @@ class RequestPublicationTests(TestCase):
         self.assertTrue("drafts-approval@icann.org" in outbox[-1]['To'])
 
         self.assertTrue("Document Action" in draft.message_set.order_by("-time")[0].subject)
+
+class ReleaseDraftTests(TestCase):
+    def test_release_wg_draft(self):
+        chair_role = RoleFactory(group__type_id='wg',name_id='chair') 
+        draft = WgDraftFactory(group = chair_role.group)
+        draft.tags.set(DocTagName.objects.filter(slug__in=('sh-f-up','w-merge'))) 
+        other_chair_role = RoleFactory(group__type_id='wg',name_id='chair')
+
+        url = urlreverse('ietf.doc.views_draft.release_draft', kwargs=dict(name=draft.name))
+
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 302) # redirect to login
+
+        self.client.login(username=other_chair_role.person.user.username,password=other_chair_role.person.user.username+"+password")
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 403)
+
+        self.client.logout()
+        self.client.login(username=chair_role.person.user.username, password=chair_role.person.user.username+"+password")
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+
+        events_before = list(draft.docevent_set.all())
+        empty_outbox()
+        r = self.client.post(url,{"comment": "Here are some comments"})
+        self.assertEqual(r.status_code, 302)
+        draft = Document.objects.get(pk=draft.pk)
+        self.assertEqual(draft.stream, None)
+        self.assertEqual(draft.group.type_id, "individ")
+        self.assertFalse(draft.get_state('draft-stream-ietf'))
+        self.assertEqual(len(outbox),3)
+        subjects = [msg["Subject"] for msg in outbox]
+        cat_subjects = "".join(subjects)
+        self.assertIn("Tags changed", cat_subjects)
+        self.assertIn("State Update", cat_subjects)
+        self.assertIn("Stream Change", cat_subjects)
+        descs = sorted([event.desc for event in set(list(draft.docevent_set.all())) - set(events_before)])
+        self.assertEqual("Changed stream to <b>None</b> from IETF",descs[0])
+        self.assertEqual("Here are some comments",descs[1])
+        self.assertEqual("State changed to <b>None</b> from WG Document",descs[2])
+        self.assertEqual("Tags Awaiting Merge with Other Document, Document Shepherd Followup cleared.",descs[3])
+
+    def test_release_rg_draft(self):
+        chair_role = RoleFactory(group__type_id='rg',name_id='chair')
+        draft = RgDraftFactory(group = chair_role.group)
+        url = urlreverse('ietf.doc.views_draft.release_draft', kwargs=dict(name=draft.name))
+        self.client.login(username=chair_role.person.user.username, password=chair_role.person.user.username+"+password")
+        r = self.client.post(url,{"comment": "Here are some comments"})
+        self.assertEqual(r.status_code, 302)
+        draft = Document.objects.get(pk=draft.pk)
+        self.assertEqual(draft.stream, None)
+        self.assertEqual(draft.group.type_id, "individ")
+        self.assertFalse(draft.get_state('draft-stream-irtf'))
+
+    def test_release_ise_draft(self):
+        ise = Role.objects.get(name_id='chair', group__acronym='ise')
+        draft = IndividualDraftFactory(stream_id='ise')
+        draft.set_state(State.objects.get(type_id='draft-stream-ise',slug='ise-rev'))
+        draft.tags.set(DocTagName.objects.filter(slug='w-dep'))
+        url = urlreverse('ietf.doc.views_draft.release_draft', kwargs=dict(name=draft.name))
+
+        self.client.login(username=ise.person.user.username, password=ise.person.user.username+'+password')
+
+        events_before = list(draft.docevent_set.all())
+        empty_outbox()
+        r = self.client.post(url,{"comment": "Here are some comments"})
+        self.assertEqual(r.status_code, 302)
+        draft = Document.objects.get(pk=draft.pk)
+        self.assertEqual(draft.stream, None)
+        self.assertEqual(draft.group.type_id, "individ")
+        self.assertFalse(draft.get_state('draft-stream-ise'))
+        self.assertEqual(len(outbox),3)
+        subjects = [msg["Subject"] for msg in outbox]
+        cat_subjects = "".join(subjects)
+        self.assertIn("Tags changed", cat_subjects)
+        self.assertIn("State Update", cat_subjects)
+        self.assertIn("Stream Change", cat_subjects)
+        descs = sorted([event.desc for event in set(list(draft.docevent_set.all())) - set(events_before)])
+        self.assertEqual("Changed stream to <b>None</b> from ISE",descs[0])
+        self.assertEqual("Here are some comments",descs[1])
+        self.assertEqual("State changed to <b>None</b> from In ISE Review",descs[2])
+        self.assertEqual("Tag Waiting for Dependency on Other Document cleared.",descs[3])
 
 class AdoptDraftTests(TestCase):
     def test_adopt_document(self):

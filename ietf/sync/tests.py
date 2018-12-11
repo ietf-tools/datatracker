@@ -404,6 +404,7 @@ class RFCSyncTests(TestCase):
         self.assertEqual(len(changed), 1)
         self.assertEqual(len(warnings), 0)
 
+        draft = Document.objects.get(pk=draft.pk)
         self.assertEqual(draft.get_state_slug("draft-rfceditor"), "edit")
         self.assertEqual(draft.get_state_slug("draft-iesg"), "rfcqueue")
         self.assertEqual(set(draft.tags.all()), set(DocTagName.objects.filter(slug__in=("iana", "ref"))))

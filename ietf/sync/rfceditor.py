@@ -444,10 +444,12 @@ def update_docs_from_rfc_index(data, skip_older_than_date=None):
 
         for t in ("draft-iesg", "draft-stream-iab", "draft-stream-irtf", "draft-stream-ise"):
             slug = doc.get_state_slug(t)
-            if slug and slug != "pub":
+            if slug and slug not in ("pub", "idexists"):
                 new_state = State.objects.select_related("type").get(used=True, type=t, slug="pub")
                 doc.set_state(new_state)
                 changes.append("changed %s to %s" % (new_state.type.label, new_state))
+            if t == 'draft-iesg' and not slug:
+                doc.set_state(State.objects.get(type_id='draft-iesg', slug='idexists'))
 
         def parse_relation_list(l):
             res = []

@@ -120,6 +120,25 @@ def can_adopt_draft(user, doc):
             and (doc.group.type_id == "individ" or (doc.group in role_groups and len(role_groups)>1))
             and roles.exists())
 
+def can_unadopt_draft(user, doc):
+    if not user.is_authenticated:
+        return False
+    if has_role(user, "Secretariat"):
+        return True
+    if doc.stream_id == 'irtf':
+        if has_role(user, "IRTF Chair"):
+            return True
+        return user.person.role_set.filter(name__in=('chair','delegate','secr'),group=doc.group).exists()
+    elif doc.stream_id == 'ietf':
+        return user.person.role_set.filter(name__in=('chair','delegate','secr'),group=doc.group).exists()
+    elif doc.stream_id == 'ise':
+        return user.person.role_set.filter(name='chair',group__acronym='ise').exists()
+    elif doc.stream_id == 'iab':
+        return False    # Right now only the secretariat can add a document to the IAB stream, so we'll
+                        # leave it where only the secretariat can take it out.
+    else:
+        return False
+
 def two_thirds_rule( recused=0 ):
     # For standards-track, need positions from 2/3 of the non-recused current IESG.
     active = Role.objects.filter(name="ad",group__type="area",group__state="active").count()

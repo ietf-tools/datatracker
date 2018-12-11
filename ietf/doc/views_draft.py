@@ -18,13 +18,14 @@ from django.template.defaultfilters import pluralize
 import debug                            # pyflakes:ignore
 
 from ietf.doc.models import ( Document, DocAlias, RelatedDocument, State,
-    StateType, DocEvent, ConsensusDocEvent, TelechatDocEvent, WriteupDocEvent, IESG_SUBSTATE_TAGS)
+    StateType, DocEvent, ConsensusDocEvent, TelechatDocEvent, WriteupDocEvent, StateDocEvent,
+    IESG_SUBSTATE_TAGS)
 from ietf.doc.mails import ( email_pulled_from_rfc_queue, email_resurrect_requested,
     email_resurrection_completed, email_state_changed, email_stream_changed,
     email_stream_state_changed, email_stream_tags_changed, extra_automation_headers,
     generate_publication_request, email_adopted, email_intended_status_changed,
     email_iesg_processing_document, email_ad_approved_doc )
-from ietf.doc.utils import ( add_state_change_event, can_adopt_draft,
+from ietf.doc.utils import ( add_state_change_event, can_adopt_draft, can_unadopt_draft,
     get_tags_for_stream_id, nice_consensus,
     update_reminder, update_telechat, make_notify_changed_event, get_initial_notify,
     set_replaces_for_document, default_consensus, tags_suffix, )
@@ -62,6 +63,10 @@ class ChangeStateForm(forms.Form):
 
         if state == prev and tag == prev_tag:
             self._errors['comment'] = ErrorList([u'State not changed. Comments entered will be lost with no state change. Please go back and use the Add Comment feature on the history tab to add comments without changing state.'])
+
+        if state != '(None)' and state.slug == 'idexists' and tag:
+            self._errors['substate'] = ErrorList([u'Clear substate before setting the document to the idexists state.'])
+
         return retclean
 
 @role_required('Area Director','Secretariat')
@@ -141,6 +146,10 @@ def change_state(request, name):
                     return render(request, 'doc/draft/last_call_requested.html',
                                               dict(doc=doc,
                                                    url=doc.get_absolute_url()))
+
+                if new_state.slug == "idexists" and doc.stream:
+                    msg = "Note that this document is still in the %s stream. Please ensure the stream state settings make sense, or consider removing the document from the stream." % doc.stream.name
+                    messages.info(request, msg)
                 
             return HttpResponseRedirect(doc.get_absolute_url())
 
@@ -612,7 +621,7 @@ def edit_info(request, name):
         raise Http404
 
     new_document = False
-    if not doc.get_state("draft-iesg"): # FIXME: should probably receive "new document" as argument to view instead of this
+    if doc.get_state_slug("draft-iesg") == "idexists": # FIXME: should probably receive "new document" as argument to view instead of this
         new_document = True
         doc.notify = get_initial_notify(doc)
 
@@ -1412,6 +1421,79 @@ def adopt_draft(request, name):
                               {'doc': doc,
                                'form': form,
                               })
+
+class ReleaseDraftForm(forms.Form):
+    comment = forms.CharField(widget=forms.Textarea, required=False, label="Comment", help_text="Optional comment explaining the reasons for releasing the document." )
+
+@login_required
+def release_draft(request, name):
+    doc = get_object_or_404(Document, type="draft", name=name)
+
+    if doc.get_state_slug('draft-iesg') != 'idexists':
+        raise Http404
+
+    if not can_unadopt_draft(request.user, doc):
+        return HttpResponseForbidden("You don't have permission to access this page")
+
+    if request.method == 'POST':
+        form = ReleaseDraftForm(request.POST)
+        if form.is_valid():
+            comment = form.cleaned_data["comment"]
+            by = request.user.person
+            events = []
+
+            if doc.stream.slug == 'ise' or doc.group.type_id != 'individ':
+                existing_tags = set(doc.tags.all())
+                if existing_tags:
+                    doc.tags.clear()
+                    e = DocEvent(type="changed_document", doc=doc, rev=doc.rev, by=by)
+                    l = []
+                    l.append(u"Tag%s %s cleared." % (pluralize(existing_tags), ", ".join(t.name for t in existing_tags)))
+                    e.desc = " ".join(l)
+                    e.save()
+                    events.append(e)
+                    email_stream_tags_changed(request, doc, set(), existing_tags, by, comment)
+
+                prev_state = doc.get_state("draft-stream-%s" % doc.stream_id)
+                if prev_state:
+                    doc.unset_state("draft-stream-%s" % doc.stream_id)
+                    e = StateDocEvent(doc=doc, rev=doc.rev, by=by)
+                    e.type = "changed_state"
+                    e.state_type = (prev_state).type
+                    e.state = None
+                    e.desc = "State changed to <b>None</b> from %s" % prev_state.name 
+                    e.save()
+                    events.append(e)
+                    email_state_changed(request,doc,e.desc)
+
+                if doc.stream.slug != 'ise':
+                    old_group = doc.group
+                    doc.group = Group.objects.get(acronym='none')
+                    e = DocEvent(type="changed_document", doc=doc, rev=doc.rev, by=by)
+                    e.desc = "Document removed from group %s." % old_group.acronym.upper()
+
+            if doc.stream:
+                e = DocEvent(type="changed_stream", doc=doc, rev=doc.rev, by=by)
+                e.desc = u"Changed stream to <b>None</b> from %s" % doc.stream.name
+                e.save()
+                events.append(e)
+                old_stream = doc.stream
+                doc.stream = None
+                email_stream_changed(request, doc, old_stream, None)
+
+            if comment:
+                e = DocEvent(type="added_comment", doc=doc, rev=doc.rev, by=by)
+                e.desc = comment
+                e.save()
+                events.append(e)
+
+            doc.save_with_history(events)
+            return HttpResponseRedirect(doc.get_absolute_url())
+    else:
+        form = ReleaseDraftForm()
+
+    return render(request, 'doc/draft/release_draft.html', {'doc':doc, 'form':form })
+
 
 class ChangeStreamStateForm(forms.Form):
     new_state = forms.ModelChoiceField(queryset=State.objects.filter(used=True), label='State' )

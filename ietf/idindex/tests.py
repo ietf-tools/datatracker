@@ -39,7 +39,7 @@ class IndexTests(TestCase):
         self.assertTrue(draft.get_state("draft-iesg").name in txt)
 
         # not active in IESG process
-        draft.unset_state("draft-iesg")
+        draft.set_state(State.objects.get(type_id="draft-iesg", slug="idexists"))
 
         txt = all_id_txt()
         self.assertTrue(draft.name + "-" + draft.rev in txt)

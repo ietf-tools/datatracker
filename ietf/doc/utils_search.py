@@ -44,6 +44,7 @@ def fill_in_document_sessions(docs, doc_dict, doc_ids):
 def fill_in_document_table_attributes(docs, have_telechat_date=False):
     # fill in some attributes for the document table results to save
     # some hairy template code and avoid repeated SQL queries
+    # TODO - this function evolved from something that assumed it was handling only drafts. It still has places where it assumes all docs are drafts where that is not a correct assumption
 
     doc_dict = dict((d.pk, d) for d in docs)
     doc_ids = doc_dict.keys()

@@ -6,6 +6,7 @@ from django.db.models import Q
 from django.template.loader import render_to_string
 
 from ietf.doc.models import RelatedDocument
+from ietf.utils import log
 
 
 class Edge(object):
@@ -54,9 +55,10 @@ def get_node_styles(node, group):
 
     styles['style'] = 'filled'
 
+    log.assertion('node.get_state("draft_iesg")')
     if node.get_state('draft').slug == 'rfc':
         styles['shape'] = 'box'
-    elif node.get_state('draft-iesg') and not node.get_state('draft-iesg').slug in ['watching', 'dead']:
+    elif not node.get_state('draft-iesg').slug in ['idexists', 'watching', 'dead']:
         styles['shape'] = 'parallelogram'
     elif node.get_state('draft').slug == 'expired':
         styles['shape'] = 'house'
