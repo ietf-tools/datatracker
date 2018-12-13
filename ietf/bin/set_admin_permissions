@@ -61,6 +61,8 @@ def main():
              'iesg.add_telechatagendaitem','iesg.change_telechatagendaitem','iesg.delete_telechatagendaitem',
              'iesg.add_telechatdate','iesg.change_telechatdate','iesg.delete_telechatdate',
              'mailinglists.add_list','mailinglists.change_list','mailinglists.delete_list',
+             'mailtrigger.add_mailtrigger','mailtrigger.change_mailtrigger','mailtrigger.delete_mailtrigger',
+             'mailtrigger.add_recipient','mailtrigger.change_recipient','mailtrigger.delete_recipient',
              'meeting.add_floorplan','meeting.change_floorplan','meeting.delete_floorplan',
              'meeting.add_importantdate','meeting.change_importantdate','meeting.delete_importantdate',
              'meeting.add_meeting','meeting.change_meeting','meeting.delete_meeting',
