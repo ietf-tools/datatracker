@@ -1137,6 +1137,14 @@ class Session(models.Model):
             
         return self._agenda_file
 
+    def jabber_room_name(self):
+        if self.type_id=='plenary':
+            return 'plenary'
+        elif self.historic_group:
+            return self.historic_group.acronym
+        else:
+            return self.group.acronym
+
 class ImportantDate(models.Model):
     meeting = ForeignKey(Meeting)
     date = models.DateField()

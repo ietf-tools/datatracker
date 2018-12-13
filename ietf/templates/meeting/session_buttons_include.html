@@ -17,17 +17,10 @@
 		      {# show stream buttons up till end of session, then show archive buttons #}
 		      {% if now < item.timeslot.end_time %}
 		        <!-- Jabber -->
-			{% if item.timeslot.type.slug == 'plenary' %}
 			  <a class="btn btn-default btn-xs"
-			    href="xmpp:plenary@jabber.ietf.org?join"
-			    title="Jabber room for {{item.timeslot.name}}"><span class="fa fa-lightbulb-o"></span>
+			    href="xmpp:{{item.session.jabber_room_name}}@jabber.ietf.org?join"
+			    title="Jabber room for {{item.session.jabber_room_name}}"><span class="fa fa-lightbulb-o"></span>
 			  </a>
-			{% else %}
-			  <a class="btn btn-default btn-xs"
-			    href="xmpp:{{item.session.historic_group.acronym}}@jabber.ietf.org?join"
-			    title="Jabber room for {{item.session.historic_group.acronym}}"><span class="fa fa-lightbulb-o"></span>
-			  </a>
-			{% endif %}
 
 			<!-- Video stream (meetecho) -->
 			{% if item.timeslot.location.video_stream_url %}
@@ -47,8 +40,8 @@
 		        <!-- Jabber logs -->
 			{% if schedule.meeting.number|add:"0" >= 60 %}
 		        <a class="btn btn-default btn-xs"
-			  href="https://www.ietf.org/jabber/logs/{{item.session.historic_group.acronym}}"
-			  title="Jabber logs for {{item.session.historic_group.acronym}}">
+			  href="https://www.ietf.org/jabber/logs/{{item.session.jabber_room_name}}"
+			  title="Jabber logs for {{item.session.jabber_room_name}}">
 			   <span class="fa fa-stack">
 			     <i class="fa fa-file-o fa-stack-1x"></i>
 			     <i class="fa fa-lightbulb-o fa-stack-1x"></i>
