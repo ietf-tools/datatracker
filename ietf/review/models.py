@@ -1,5 +1,7 @@
 import datetime
 
+from simple_history.models import HistoricalRecords
+
 from django.db import models
 
 from ietf.doc.models import Document
@@ -11,6 +13,7 @@ from ietf.utils.models import ForeignKey, OneToOneField
 
 class ReviewerSettings(models.Model):
     """Keeps track of admin data associated with a reviewer in a team."""
+    history     = HistoricalRecords()
     team        = ForeignKey(Group, limit_choices_to=~models.Q(reviewteamsettings=None))
     person      = ForeignKey(Person)
     INTERVALS = [
