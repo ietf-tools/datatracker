@@ -114,7 +114,7 @@ class AuthorForm(forms.Form):
 class EditModelForm(forms.ModelForm):
     #expiration_date = forms.DateField(required=False)
     state = forms.ModelChoiceField(queryset=State.objects.filter(type='draft'),empty_label=None)
-    iesg_state = forms.ModelChoiceField(queryset=State.objects.filter(type='draft-iesg'),required=False)
+    iesg_state = forms.ModelChoiceField(queryset=State.objects.filter(type='draft-iesg'),empty_label=None)
     group = GroupModelChoiceField(required=True)
     review_by_rfc_editor = forms.BooleanField(required=False)
     shepherd = SearchableEmailField(required=False, only_users=True)
@@ -132,8 +132,7 @@ class EditModelForm(forms.ModelForm):
         self.fields['rev'].widget.attrs['size'] = 2
         self.fields['abstract'].widget.attrs['cols'] = 72
         self.initial['state'] = self.instance.get_state().pk
-        if self.instance.get_state('draft-iesg'):
-            self.initial['iesg_state'] = self.instance.get_state('draft-iesg').pk
+        self.initial['iesg_state'] = self.instance.get_state('draft-iesg').pk
 
         # setup special fields
         if self.instance:
@@ -150,10 +149,7 @@ class EditModelForm(forms.ModelForm):
 
         # note we're not sending notices here, is this desired
         if 'iesg_state' in self.changed_data:
-            if iesg_state == None:
-                m.unset_state('draft-iesg')
-            else:
-                m.set_state(iesg_state)
+            m.set_state(iesg_state)
 
         if 'review_by_rfc_editor' in self.changed_data:
             if self.cleaned_data.get('review_by_rfc_editor',''):

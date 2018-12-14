@@ -35,6 +35,7 @@ from ietf.nomcom.utils import (get_nomcom_by_year, store_nomcom_private_key,
                                HOME_TEMPLATE, NOMINEE_ACCEPT_REMINDER_TEMPLATE,NOMINEE_QUESTIONNAIRE_REMINDER_TEMPLATE)
 from ietf.ietfauth.utils import role_required
 from ietf.person.models import Person
+from ietf.utils import log
 
 import debug                  # pyflakes:ignore
 
@@ -1238,10 +1239,7 @@ def eligible(request, year):
     # the date of the announcement of the Call for Volunteers, instead
     date = datetime.date.today()
     previous_five = Meeting.objects.filter(type='ietf',date__lte=date).order_by('-date')[:5]
-    if not len(previous_five) == 5:
-        debug.show('year')
-        debug.show('date')
-        debug.show('previous_five')
+    log.assertion("len(previous_five) == 5")
     attendees = {}
     potentials = set()
     for m in previous_five:

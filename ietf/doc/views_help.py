@@ -31,14 +31,6 @@ def state_help(request, type):
     tags = []
 
     if state_type.slug == "draft-iesg":
-        # legacy hack
-        states = list(states)
-        fake_state = dict(name="I-D Exists",
-                          desc="Initial (default) state for all internet drafts. Such documents are not being tracked by the IESG as no request has been made of the IESG to do anything with the document.",
-                          next_states=dict(all=State.objects.filter(type="draft-iesg", slug__in=("watching", "pub-req")))
-                          )
-        states.insert(0, fake_state)
-
         tags = DocTagName.objects.filter(slug__in=IESG_SUBSTATE_TAGS)
     elif state_type.slug.startswith("draft-stream-"):
         possible = get_tags_for_stream_id(state_type.slug.replace("draft-stream-", ""))

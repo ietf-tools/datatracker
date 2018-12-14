@@ -267,6 +267,7 @@ class DocumentInfo(models.Model):
 
     def unset_state(self, state_type):
         """Unset state of type so no state of that type is any longer set."""
+        log.assertion('state_type != "draft-iesg"')
         self.states.remove(*self.states.filter(type=state_type))
         self.state_cache = None # invalidate cache
         self._cached_state_slug = {}
@@ -325,6 +326,7 @@ class DocumentInfo(models.Model):
                 else:
                     return "Replaced"
             elif state.slug == "active":
+                log.assertion('iesg_state')
                 if iesg_state:
                     if iesg_state.slug == "dead":
                         # Many drafts in the draft-iesg "Dead" state are not dead

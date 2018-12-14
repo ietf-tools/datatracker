@@ -418,7 +418,7 @@
 	  <th>IESG</th>
 	  <th><a href="{% url "ietf.help.views.state" doc=doc.type.slug type="iesg" %}">IESG state</a></th>
 	  <td class="edit">
-	    {% if iesg_state and can_edit %}
+	    {% if iesg_state.slug != 'idexists' and can_edit %}
 	    <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_draft.change_state' name=doc.name %}">Edit</a>
 	    {% endif %}
 	  </td>
@@ -481,7 +481,7 @@
 	  </td>
 	</tr>
 
-        {% if iesg_state %}
+  {% if iesg_state.slug != 'idexists' %}
 	  {% if doc.note or can_edit %}
 	    <tr>
 	      <th></th>
@@ -583,7 +583,7 @@
       <a class="btn btn-default btn-xs track-untrack-doc {% if doc.tracked_in_personal_community_list %}hide{% endif %}" href="{% url "ietf.community.views.track_document" username=user.username name=doc.name %}" title="Add to your personal ID list"><span class="fa fa-bookmark-o"></span> Track</a>
     {% endif %}
 
-    {% if can_edit and iesg_state %}
+    {% if can_edit and iesg_state.slug != 'idexists' %}
       <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_ballot.lastcalltext' name=doc.name %}">Last call text</a>
       <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_ballot.ballot_writeupnotes' name=doc.name %}">Ballot text</a>
       <a class="btn btn-default btn-xs" href="{% url 'ietf.doc.views_ballot.ballot_approvaltext' name=doc.name %}">Announcement text</a>

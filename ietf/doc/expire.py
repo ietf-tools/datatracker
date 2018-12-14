@@ -5,6 +5,7 @@ from django.conf import settings
 import datetime, os, shutil, glob, re
 from pathlib import Path
 
+from ietf.utils import log
 from ietf.utils.mail import send_mail
 from ietf.doc.models import Document, DocEvent, State, IESG_SUBSTATE_TAGS
 from ietf.person.models import Person 
@@ -17,8 +18,11 @@ def expirable_draft(draft):
     """Return whether draft is in an expirable state or not. This is
     the single draft version of the logic in expirable_drafts. These
     two functions need to be kept in sync."""
+    if draft.type_id != 'draft':
+        return False
+    log.assertion('draft.get_state_slug("draft-iesg")')
     return (draft.expires and draft.get_state_slug() == "active"
-            and draft.get_state_slug("draft-iesg") in (None, "watching", "dead")
+            and draft.get_state_slug("draft-iesg") in ("idexists", "watching", "dead")
             and draft.get_state_slug("draft-stream-%s" % draft.stream_id) not in ("rfc-edit", "pub")
             and not draft.tags.filter(slug="rfc-rev"))
 
@@ -29,8 +33,8 @@ def expirable_drafts():
     d = Document.objects.filter(states__type="draft", states__slug="active").exclude(expires=None)
 
     nonexpirable_states = []
-    # all IESG states except AD Watching and Dead block expiry
-    nonexpirable_states += list(State.objects.filter(used=True, type="draft-iesg").exclude(slug__in=("watching", "dead")))
+    # all IESG states except I-D Exists, AD Watching, and Dead block expiry
+    nonexpirable_states += list(State.objects.filter(used=True, type="draft-iesg").exclude(slug__in=("idexists","watching", "dead")))
     # sent to RFC Editor and RFC Published block expiry (the latter
     # shouldn't be possible for an active draft, though)
     nonexpirable_states += list(State.objects.filter(used=True, type__in=("draft-stream-iab", "draft-stream-irtf", "draft-stream-ise"), slug__in=("rfc-edit", "pub")))
@@ -75,7 +79,8 @@ def send_expire_warning_for_draft(doc):
     (to,cc) = gather_address_lists('doc_expires_soon',doc=doc)
 
     s = doc.get_state("draft-iesg")
-    state = s.name if s else "I-D Exists"
+    log.assertion('s')
+    state = s.name if s else "I-D Exists" # TODO remove the if clause after some runtime shows no assertions
 
     frm = None
     request = None
@@ -94,7 +99,8 @@ def send_expire_notice_for_draft(doc):
         return
 
     s = doc.get_state("draft-iesg")
-    state = s.name if s else "I-D Exists"
+    log.assertion('s')
+    state = s.name if s else "I-D Exists" # TODO remove the if clause after some rintime shows no assertions
 
     request = None
     (to,cc) = gather_address_lists('doc_expired',doc=doc)

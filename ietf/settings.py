@@ -494,6 +494,7 @@ TEST_URL_COVERAGE_EXCLUDE = [
 TEST_CODE_COVERAGE_EXCLUDE_FILES = [
     "*/tests*",
     "*/admin.py",
+    "*/factories.py",
     "*/migrations/*",
     "*/management/commands/*",
     "idindex/generate_all_id2_txt.py",

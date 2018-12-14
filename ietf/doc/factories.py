@@ -46,6 +46,9 @@ class BaseDocumentFactory(factory.DjangoModelFactory):
         if create and extracted:
             for (state_type_id,state_slug) in extracted:
                 obj.set_state(State.objects.get(type_id=state_type_id,slug=state_slug))
+            if obj.type_id == 'draft':
+                if not obj.states.filter(type_id='draft-iesg').exists():
+                    obj.set_state(State.objects.get(type_id='draft-iesg', slug='idexists'))
 
     @factory.post_generation
     def authors(obj, create, extracted, **kwargs): # pylint: disable=no-self-argument
@@ -90,8 +93,11 @@ class IndividualDraftFactory(BaseDocumentFactory):
         if extracted:
             for (state_type_id,state_slug) in extracted:
                 obj.set_state(State.objects.get(type_id=state_type_id,slug=state_slug))
+            if not obj.get_state('draft-iesg'):
+                obj.set_state(State.objects.get(type_id='draft-iesg',slug='idexists'))
         else:
             obj.set_state(State.objects.get(type_id='draft',slug='active'))
+            obj.set_state(State.objects.get(type_id='draft-iesg',slug='idexists'))
 
 class IndividualRfcFactory(IndividualDraftFactory):
 
@@ -120,9 +126,12 @@ class WgDraftFactory(BaseDocumentFactory):
         if extracted:
             for (state_type_id,state_slug) in extracted:
                 obj.set_state(State.objects.get(type_id=state_type_id,slug=state_slug))
+            if not obj.get_state('draft-iesg'):
+                obj.set_state(State.objects.get(type_id='draft-iesg',slug='idexists'))
         else:
             obj.set_state(State.objects.get(type_id='draft',slug='active'))
             obj.set_state(State.objects.get(type_id='draft-stream-ietf',slug='wg-doc'))
+            obj.set_state(State.objects.get(type_id='draft-iesg',slug='idexists'))
 
 class WgRfcFactory(WgDraftFactory):
 
@@ -137,8 +146,33 @@ class WgRfcFactory(WgDraftFactory):
         if extracted:
             for (state_type_id,state_slug) in extracted:
                 obj.set_state(State.objects.get(type_id=state_type_id,slug=state_slug))
+            if not obj.get_state('draft-iesg'):
+                obj.set_state(State.objects.get(type_id='draft-iesg', slug='pub'))
         else:
             obj.set_state(State.objects.get(type_id='draft',slug='rfc'))
+            obj.set_state(State.objects.get(type_id='draft-iesg', slug='pub'))
+
+
+class RgDraftFactory(BaseDocumentFactory):
+
+    type_id = 'draft'
+    group = factory.SubFactory('ietf.group.factories.GroupFactory',type_id='rg')
+    stream_id = 'irtf'
+
+    @factory.post_generation
+    def states(obj, create, extracted, **kwargs):
+        if not create:
+            return
+        if extracted:
+            for (state_type_id,state_slug) in extracted:
+                obj.set_state(State.objects.get(type_id=state_type_id,slug=state_slug))
+            if not obj.get_state('draft-iesg'):
+                obj.set_state(State.objects.get(type_id='draft-iesg',slug='idexists'))
+        else:
+            obj.set_state(State.objects.get(type_id='draft',slug='active'))
+            obj.set_state(State.objects.get(type_id='draft-stream-irtf',slug='active'))
+            obj.set_state(State.objects.get(type_id='draft-iesg',slug='idexists'))
+
 
 class CharterFactory(BaseDocumentFactory):
 

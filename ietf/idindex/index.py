@@ -16,6 +16,7 @@ from ietf.doc.models import LastCallDocEvent, NewRevisionDocEvent
 from ietf.doc.models import IESG_SUBSTATE_TAGS
 from ietf.group.models import Group
 from ietf.person.models import Person, Email
+from ietf.utils import log
 
 def all_id_txt():
     # this returns a lot of data so try to be efficient
@@ -44,7 +45,7 @@ def all_id_txt():
         res.append(f1 + "\t" + f2 + "\t" + f3 + "\t" + f4)
 
 
-    inactive_states = ["pub", "watching", "dead"]
+    inactive_states = ["idexists", "pub", "watching", "dead"]
 
     excludes = list(State.objects.filter(type="draft", slug__in=["rfc","repl"]))
     includes = list(State.objects.filter(type="draft-iesg").exclude(slug__in=inactive_states))
@@ -149,6 +150,7 @@ def all_id2_txt():
         # 3
         if state == "active":
             s = "I-D Exists"
+            log.assertion('iesg_state')
             if iesg_state:
                 s = iesg_state.name
                 tags = d.tags.filter(slug__in=IESG_SUBSTATE_TAGS).values_list("name", flat=True)
