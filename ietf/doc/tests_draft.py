@@ -4,6 +4,7 @@ import shutil
 import datetime
 import StringIO
 from pyquery import PyQuery
+from collections import Counter
 
 from django.urls import reverse as urlreverse
 from django.conf import settings
@@ -1110,7 +1111,7 @@ class SubmitToIesgTests(TestCase):
         url = urlreverse('ietf.doc.views_draft.to_iesg', kwargs=dict(name=self.docname))
         self.client.login(username="marschairman", password="marschairman+password")
 
-	r = self.client.post(url, dict(cancel="1"))
+        r = self.client.post(url, dict(cancel="1"))
         self.assertEqual(r.status_code, 302)
 
         doc = Document.objects.get(name=self.docname)
@@ -1121,10 +1122,10 @@ class SubmitToIesgTests(TestCase):
         self.client.login(username="marschairman", password="marschairman+password")
 
         doc = Document.objects.get(name=self.docname)
-        docevent_count_pre = doc.docevent_set.count()
+        docevents_pre = set(doc.docevent_set.all())
         mailbox_before = len(outbox)
 
-	r = self.client.post(url, dict(confirm="1"))
+        r = self.client.post(url, dict(confirm="1"))
         self.assertEqual(r.status_code, 302)
 
         doc = Document.objects.get(name=self.docname)
@@ -1136,7 +1137,12 @@ class SubmitToIesgTests(TestCase):
         # checks whether the setup document had an ad or not.
         self.assertTrue(doc.ad!=None)
 
-        self.assertTrue(doc.docevent_set.count() != docevent_count_pre)
+        new_docevents = set(doc.docevent_set.all()) - docevents_pre
+        self.assertEqual(len(new_docevents),3)
+        new_docevent_type_count = Counter([e.type for e in new_docevents])
+        self.assertEqual(new_docevent_type_count['changed_state'],2)
+        self.assertEqual(new_docevent_type_count['started_iesg_process'],1)
+
         self.assertEqual(len(outbox), mailbox_before + 1)
         self.assertTrue("Publication has been requested" in outbox[-1]['Subject'])
         self.assertTrue("aread@" in outbox[-1]['To'])

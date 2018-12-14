@@ -550,7 +550,7 @@ def to_iesg(request,name):
 
             changes = []
 
-            if not doc.get_state("draft-iesg"):
+            if doc.get_state_slug("draft-iesg") == "idexists":
                 e = DocEvent()
                 e.type = "started_iesg_process"
                 e.by = by
