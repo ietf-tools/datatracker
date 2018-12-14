@@ -28,10 +28,11 @@ MIN_QUEUE_RESULTS = 10
 MIN_INDEX_RESULTS = 5000
 
 def get_child_text(parent_node, tag_name):
+    text = []
     for node in parent_node.childNodes:
         if node.nodeType == Node.ELEMENT_NODE and node.localName == tag_name:
-            return node.firstChild.data
-    return None
+            text.append(node.firstChild.data)
+    return '\n\n'.join(text)
 
 
 def fetch_queue_xml(url):
