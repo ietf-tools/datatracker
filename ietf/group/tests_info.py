@@ -406,6 +406,21 @@ class GroupPagesTests(TestCase):
         roles = Role.objects.filter(group__acronym='iab')
         self.assertEqual(len(q('div.photo-thumbnail img')), roles.count())
 
+    def test_nonactive_group_badges(self):
+        concluded_group = GroupFactory(state_id='conclude')
+        url = urlreverse("ietf.group.views.history",kwargs={'acronym':concluded_group.acronym})
+        r = self.client.get(url)
+        self.assertEqual(r.status_code,200)
+        q = PyQuery(r.content)
+        self.assertEqual(q('.label-warning').text(),"Concluded WG")
+        replaced_group = GroupFactory(state_id='replaced')
+        url = urlreverse("ietf.group.views.history",kwargs={'acronym':replaced_group.acronym})
+        r = self.client.get(url)
+        self.assertEqual(r.status_code,200)
+        q = PyQuery(r.content)
+        self.assertEqual(q('.label-warning').text(),"Replaced WG")
+
+
 class GroupEditTests(TestCase):
     def setUp(self):
         self.charter_dir = self.tempdir('charter')
