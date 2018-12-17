@@ -351,6 +351,7 @@ class SubmitTests(TestCase):
         e.save()
 
         # make a discuss to see if the AD gets an email
+        # TODO : this should only happen if the document stream is IETF
         ad = Person.objects.get(user__username="ad")
         ballot = create_ballot_if_not_open(None, draft, ad, 'approve')
         ballot_position = BallotPositionDocEvent()
@@ -361,6 +362,9 @@ class SubmitTests(TestCase):
         ballot_position.rev = draft.rev
         ballot_position.ad = ballot_position.by = Person.objects.get(user__username="ad2")
         ballot_position.save()
+
+        # Set the revision needed tag
+        draft.tags.add("need-rev")
 
         name = draft.name
         rev = "%02d" % (int(draft.rev) + 1)
@@ -433,28 +437,36 @@ class SubmitTests(TestCase):
         docevents = list(draft.docevent_set.all().order_by("-time", "-id"))
         # Latest events are first (this is the default, but we make it explicit)
         # Assert event content in chronological order:
+        self.assertEqual(docevents[5].type, "new_submission")
+        self.assertIn("Uploaded new revision", docevents[5].desc)
+        self.assertEqual(docevents[5].by.name, "Submitter Name")
+        self.assertGreater(docevents[5].id, docevents[6].id)
+        #
         self.assertEqual(docevents[4].type, "new_submission")
-        self.assertIn("Uploaded new revision", docevents[4].desc)
-        self.assertEqual(docevents[4].by.name, "Submitter Name")
+        self.assertIn("Request for posting confirmation", docevents[4].desc)
+        self.assertEqual(docevents[4].by.name, "(System)")
         self.assertGreater(docevents[4].id, docevents[5].id)
         #
         self.assertEqual(docevents[3].type, "new_submission")
-        self.assertIn("Request for posting confirmation", docevents[3].desc)
+        self.assertIn("New version approved", docevents[3].desc)
         self.assertEqual(docevents[3].by.name, "(System)")
         self.assertGreater(docevents[3].id, docevents[4].id)
         #
-        self.assertEqual(docevents[2].type, "new_submission")
-        self.assertIn("New version approved", docevents[2].desc)
-        self.assertEqual(docevents[2].by.name, "(System)")
+        self.assertEqual(docevents[2].type, "new_revision")
+        self.assertIn("New version available", docevents[2].desc)
+        self.assertEqual(docevents[2].by.name, "Submitter Name")
         self.assertGreater(docevents[2].id, docevents[3].id)
         #
-        self.assertEqual(docevents[1].type, "new_revision")
-        self.assertIn("New version available", docevents[1].desc)
-        self.assertEqual(docevents[1].by.name, "Submitter Name")
+        self.assertEqual(docevents[1].type, "changed_state")
+        self.assertIn("IANA Review", docevents[1].desc)
+        self.assertEqual(docevents[1].by.name, "(System)")
         self.assertGreater(docevents[1].id, docevents[2].id)
         #
-        self.assertEqual(docevents[0].type, "changed_state")
-        self.assertIn("IANA Review", docevents[0].desc)
+        self.assertEqual(docevents[0].type, "changed_document")
+        if draft.stream_id == 'ietf':
+            self.assertIn("AD Followup", docevents[0].desc)
+        else:
+            self.assertIn("tag cleared", docevents[0].desc)
         self.assertEqual(docevents[0].by.name, "(System)")
         self.assertGreater(docevents[0].id, docevents[1].id)
         #
