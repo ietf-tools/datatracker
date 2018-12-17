@@ -55,7 +55,6 @@ def get_node_styles(node, group):
 
     styles['style'] = 'filled'
 
-    log.assertion('node.get_state("draft_iesg")')
     if node.get_state('draft').slug == 'rfc':
         styles['shape'] = 'box'
     elif not node.get_state('draft-iesg').slug in ['idexists', 'watching', 'dead']:
