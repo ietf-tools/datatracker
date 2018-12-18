@@ -6,7 +6,6 @@ from django.db.models import Q
 from django.template.loader import render_to_string
 
 from ietf.doc.models import RelatedDocument
-from ietf.utils import log
 
 
 class Edge(object):
