@@ -1,3 +1,62 @@
+ietfdb (6.89.2) ietf; urgency=low
+
+  * Added a migration to capture changes to HistoricalRecords triggered by 
+    changes in django-simple-history
+
+  * Bumped the minimum version requirement on django-simple-history; 
+    HistoricalChanges which we now use was introduced with 2.3.0.
+
+  * Changed the construction of element IDs that could trigger ad-blockers 
+    in a NomCom page to avoid the problem.
+
+  * Removed an assertion for iesg state for documents that can be in any 
+    stream.
+
+  * Merged in [15824] from rjsparks@nostrum.com:
+    Make it more obvious that a group has been replaced when looking at its 
+    pages. Fixes #2661.  
+
+  * Merged in [15818] from rjsparks@nostrum.com:
+    Whitespace only change to make the conditional structure followable.  
+
+  * Merged in [15822] and [15809] from rjsparks@nostrum.com:
+    Added an explicit ID-Exists state for the IESG state machine.
+    Reworked code so that the IESG state machine always has a state.
+    Added the ability to release a document from a working group,
+    research group, or the independent stream. Releasing a document
+    removes all stream state, and sets the document to have no stream.
+
+  * Fixed a bug in the RFC Index parsing that caused extraction of only one 
+    paragraph of an abstract, even if there were multiple.
+
+  * Merged in [15816] from rjsparks@nostrum.com:
+    Provide a correct link to jabber logs for plenaries in past agendas. 
+    Fixes #2641.  
+
+  * Merged in [15810] from rcross@amsl.com:
+    Grant secretariat admin permissions to mailtrigger models.  Fixes 
+    #2637.   
+
+  * Merged in [15808] from rjsparks@nostrum.com:
+    Allow notify_ad_when to be blank.  
+
+  * Merged in [15807] from rjsparks@nostrum.com:
+    Repaired another instance of a literal path with a reverse lookup. 
+    Related to #2657.  
+
+  * Added a description of the /doc//doc.json API to the /api/ index page, 
+    and also added a table-of-contents column.
+
+  * Merged in [15806] from rjsparks@nostrum.com:
+    Changed an inappropriate literal path to a reverse url lookup. Fixes 
+    #2657.  
+
+  * Merged in [15804] from rjsparks@nostrum.com:
+    Add history to ReviewerSettings. Fixes #2147.  
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  19 Dec 2018 08:27:48 +0000
+
+
 ietfdb (6.89.1) ietf; urgency=low
 
   * Merged in [15787] from rcross@amsl.com:
