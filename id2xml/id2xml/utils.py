@@ -17,6 +17,16 @@ try:
 except ImportError:
     pass
 
+submission_types = {
+    'Network Working Group':                    None,
+    'Internet Engineering Task Force (IETF)':   'IETF',
+    'Internet Architecture Board (IAB)':        'IAB',
+    'Internet Research Task Force (IRTF)':      'IRTF',
+    'Independent Submission':                   'independent',
+}
+
+stream_names = [ n for n in submission_types.values() if n ]
+
 Line = namedtuple('Line', ['num', 'txt'])
 
 class Options(object):
