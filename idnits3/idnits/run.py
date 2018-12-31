@@ -46,7 +46,7 @@ def die(*args):
 def main():
     # Populate options
     argparser = argparse.ArgumentParser(description=idnits.DESCRIPTION.split('\n')[0])
-    argparser.add_argument('docs', metavar='DOC', nargs='+', help="document to check")
+    argparser.add_argument('docs', metavar='DOC', nargs='*', help="document to check")
 
     argparser.add_argument('-d', '--debug', action='store_true', help="show debug information")
     argparser.add_argument('-m', '--mode', choices=['normal', 'lenient', 'submission',], default='normal',

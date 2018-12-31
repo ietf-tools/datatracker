@@ -61,7 +61,7 @@ def parse(filename, options):
 #         options.silent = True
 #         idparser = id2xml.parser.DraftParser(basename, doc.txt, options)
 #         doc.xml = idparser.parse_to_xml()
-    elif mime in ['application/xml', ]:
+    elif mime in ['application/xml', 'text/xml', ]:
         #doc.xml = lxml.etree.parse(filename)
         logfile = io.BytesIO()
         # capture errors

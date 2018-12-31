@@ -67,7 +67,7 @@ class Checker(PrepToolWriter):
 
     def get_checks(self):
         checks = self.checks
-        fmt = 'xml' if self.doc.type in ['application/xml', ] else 'txt' if self.doc.type in ['text/plain', ] else None
+        fmt = 'xml' if self.doc.type in ['application/xml', 'text/xml', ] else 'txt' if self.doc.type in ['text/plain', ] else None
         if fmt is None:
             self.nits['err'].append(([Nit(None,"Found input type %s" % self.doc.type)], "Input type text or xml is required"))
             return []
@@ -98,7 +98,7 @@ class Checker(PrepToolWriter):
         if any([ c.fmt == 'xml' for c in checks]) and self.doc.root != None:
             ver = self.doc.root.get('version')
             if ver != '3':
-                self.nits['err'].append(([Nit(self.doc.root.sourceline, 'Expected <rfc ... version="3" ...>, found %s'%ver),], "For xml input, version 3 is required"))
+                self.nits['err'].append(([Nit(self.doc.root.sourceline, 'Expected <rfc ... version="3" ...>, found %s'%ver),], "For xml checks, version 3 is required"))
                 self.doc.root = None
 
         for check in checks:
