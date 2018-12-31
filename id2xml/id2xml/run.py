@@ -9,11 +9,11 @@ NAME
 ...
 
 DESCRIPTION
-  id2xml reads text-format RFCs and IETF drafts which are reasonably
-  well formatted (i.e., conforms to the text format produced by xml2rfc)
-  and tries to generate a reasonably appropriate .xml file following the
-  format accepted by xml2rfc, defined in RFC 7749 and its predecessors/
-  successors.
+  id2xml reads text-format RFCs and IETF drafts which are reasonably well
+  formatted (i.e., conforms to the text format produced by xml2rfc, without
+  artwork that extends into the left-hand margin) and tries to generate a
+  reasonably appropriate .xml file following the format accepted by xml2rfc,
+  defined in RFC 7749 and its predecessors/successors.
 
   When using id2xml on manually formatted drafts there are sometimes
   issues which cannot be readily judged by software. In such cases,
@@ -50,7 +50,7 @@ from __future__ import print_function, unicode_literals, division
 
 from id2xml.__init__ import __version__
 from id2xml.parser import DraftParser
-from id2xml.utils import Options, wrap, strip_pagebreaks
+from id2xml.utils import Options, wrap, strip_pagebreaks, stream_names
 
 try:
     import debug
@@ -118,6 +118,13 @@ def run():
     # ----------------------------------------------------------------------
     # Parse options
 
+    # only show trace options if -d is set
+    def debughelp(s):
+        if '-d' in sys.argv or '--debug' in sys.argv:
+            return s
+        else:
+            return argparse.SUPPRESS
+
     def commalist(value):
         return [ s.strip() for s in value.split(',') ]
 
@@ -134,31 +141,31 @@ def run():
     group = parser.add_argument_group(argparse.SUPPRESS)
 
     group.add_argument('DRAFT', nargs='*',                              help="text format draft(s) to be converted to xml")
-    group.add_argument('-2', '--schema-v2', dest='schema', action='store_const', const='v2',
+    group.add_argument('-2', '--v2', dest='schema', action='store_const', const='v2',
                                                                         help="output v2 (RFC 7749) schema")
-    group.add_argument('-3', '--schema-v3', dest='schema', action='store_const', const='v3',
+    group.add_argument('-3', '--v3', dest='schema', action='store_const', const='v3',
                                                                         help="output v3 (RFC 7991) schema")
     group.add_argument('-d', '--debug', action='store_true',            help="turn on debugging")
+    group.add_argument(      '--doc-consensus', metavar='CONS',         help="set the doc consensus, one of yes, no")
+    group.add_argument(      '--doc-ipr', metavar='IPR',                help="set the doc ipr value (e.g., trust200902)")
+    group.add_argument(      '--doc-stream', metavar='STREAM',          help="set the doc stream, one of IETF, IAB, IRTF, or independent")
     group.add_argument('-h', '--help', action='help',                   help="show this help message and exit")
-    group.add_argument('-o', '--output-file', metavar='FILE',           help="set the output file name")
-    group.add_argument('-p', '--output-path', metavar="DIR",            help="set the output directory name")
+    group.add_argument('-o', '--out', dest='output_file', metavar='FILE',
+                                                                        help="set the output file name")
+    group.add_argument('-p', '--path', dest='output_path', metavar="DIR",
+                                                                        help="set the output directory name")
     group.add_argument('-q', '--quiet', action='store_true',            help="be more quiet")
     group.add_argument('-s', '--strip-only', action='store_true',       help="don't convert, only strip headers and footers")
     group.add_argument('--trace-start-regex', metavar='REGEX', default=None,
-                                                                        help="start debug tracing on matching line; requires -d")
-#                                                                        help=argparse.SUPPRESS)
+                                                                        help=debughelp("start debug tracing on matching line; requires -d"))
     group.add_argument('--trace-stop-regex',  metavar='REGEX', default='',
-                                                                        help="stop debug tracing on matching line; requires -d")
-#                                                                        help=argparse.SUPPRESS)
+                                                                        help=debughelp("stop debug tracing on matching line; requires -d"))
     group.add_argument('--trace-start-line', type=int, metavar='NUMBER', default=None,
-                                                                        help="start debug tracing on matching line; requires -d")
-#                                                                        help=argparse.SUPPRESS)
+                                                                        help=debughelp("start debug tracing on matching line; requires -d"))
     group.add_argument('--trace-stop-line', type=int, metavar='NUMBER', default=None,
-                                                                        help="stop debug tracing on matching line; requires -d")
-#                                                                        help=argparse.SUPPRESS)
+                                                                        help=debughelp("stop debug tracing on matching line; requires -d"))
     group.add_argument('--trace-methods', type=commalist, metavar='METHODS',
-                                                                        help="a comma-separated list of methods to trace; requires -d")
-#                                                                        help=argparse.SUPPRESS)
+                                                                        help=debughelp("a comma-separated list of methods to trace; requires -d"))
     group.add_argument('-V', '--version', action='store_true',          help="output version information, then exit")
     group.add_argument('-v', '--verbose', action='store_true',          help="be (slightly) more verbose")
     group.set_defaults(schema='v2')
@@ -182,6 +189,10 @@ def run():
         output_suffix = '.raw'
     else:
         output_suffix = '.xml'
+
+    if options.doc_stream:
+        if not options.doc_stream in stream_names:
+            die("Expected one of %s for stream, but got '%s'" % (', '.join(stream_names), options.doc_stream))
 
     if ( ( options.trace_start_regex or options.trace_start_line )
         and not (options.trace_stop_regex or options.trace_stop_line )):
