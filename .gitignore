@@ -15,3 +15,12 @@
 .*.swp
 .DS_store
 # Simulated Subversion default ignores end here
+/.coverage
+/.eggs
+/.tox
+/build
+/debug.py
+/dist
+/env
+/idnits.egg-info
+/unix.tag

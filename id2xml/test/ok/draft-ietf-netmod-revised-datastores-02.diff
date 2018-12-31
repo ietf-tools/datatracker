@@ -1,8 +1,0 @@
-929,930c929,930
-<    [RFC7952]  Lhotka, L., "Defining and Using Metadata with YANG", RFC
-<               7952, DOI 10.17487/RFC7952, August 2016,
----
->    [RFC7952]  Lhotka, L., "Defining and Using Metadata with YANG",
->               RFC 7952, DOI 10.17487/RFC7952, August 2016,
-1139a1140
-> 
