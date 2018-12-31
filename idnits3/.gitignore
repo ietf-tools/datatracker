@@ -1,0 +1,9 @@
+/.coverage
+/.eggs
+/.tox
+/build
+/debug.py
+/dist
+/env
+/idnits.egg-info
+/unix.tag
