@@ -25,7 +25,7 @@ from collections import deque
 from lxml.etree import Element, ElementTree, ProcessingInstruction, CDATA, Entity, Comment
 
 import id2xml
-from id2xml.utils import Options, Line, wrap, strip_pagebreaks
+from id2xml.utils import Options, Line, wrap, strip_pagebreaks, submission_types
 
 try:
     import debug
@@ -650,6 +650,11 @@ class Base(object):
                 lines = pformat(value).split('\n')
                 for line in lines:
                     sys.stderr.write("%s  %s\n"%(indent, line))
+
+    def say(self, s):
+        msg = "%s\n" % (s)
+        if not self.options.quiet:
+            sys.stderr.write(wrap(msg))
 
     def warn(self, lnum, text):
         if lnum:
@@ -1358,17 +1363,13 @@ class DraftParser(Base):
         @dtrace
         def get_stream(self, lines, res, entries):
             # Get workgroup or stream
-            submission_types = {
-                'Network Working Group':                    None,
-                'Internet Engineering Task Force (IETF)':   'IETF',
-                'Internet Architecture Board (IAB)':        'IAB',
-                'Internet Research Task Force (IRTF)':      'IRTF',
-                'Independent Submission':                   'independent',
-            }
             line = lines.pop(0) if lines else Line(None, "")
             self.dshow('line')
+            if self.options.doc_stream:
+                res.stream = self.options.doc_stream
             if line.txt in submission_types.keys():
-                res.stream = submission_types[line.txt]
+                if not res.stream:
+                    res.stream = submission_types[line.txt]
                 if self.is_draft and res.stream != None:
                     self.warn(line.num, "The input document is named '%s' but has an RFC stream type:\n  '%s'" % (self.name, line.txt))
             elif self.is_draft:
@@ -1681,68 +1682,85 @@ class DraftParser(Base):
             self.skip(line.txt)
         else:
             self.skip('Status of This Memo')
-        if self.is_rfc:
-            if not stream:
-                self.err(line.num,
-                        "Cannot parse 'Status of This Memo' without knowing the appropriate stream.  "
-                        "To process an old rfc without stream info and up-to-date Status of Memo "
-                        "section, please manually edit the text file to show the correct stream "
-                        "and status text, then run it through this program again.")
-            if not rfc_number:
-                self.err(line.num, "Cannot parse 'Status of This Memo' without an RFC number.")
-            if not category:
-                self.err(line.num, "Cannot parse 'Status of This Memo' without the correct category information.")
-            consensus = None
-            # Status of memo paragraph 1
-            self.skip(boilerplate['status'][category].get('p1', ""))
-            # Status of memo paragraph 2, first sentence
-            self.skip(boilerplate['status'][category].get('p2', ""))
-            # Status of memo paragraph 2, middle part
-            text = self.next_text()
-            for part in boilerplate['status'].keys():
-                if part.startswith(stream):
-                    bp = boilerplate['status'][part]
-                    if '_workgroup' in part:
-                        bp = bp % workgroup
-                    if 'candidates' in bp and 'a candidate' in text:
-                        bp = bp.replace('candidates', 'a candidate')
-                    if match_boilerplate(bp, text):
-                        consensus = '_consensus' in part
-                        self.skip(bp)
-                        break
-            if not consensus is None:
-                self.root.set('consensus', 'yes' if consensus else 'no')
-
-            # Status of memo paragraph 2, last sentence
-            text = self.next_text()
-            repl1 = 'RFC 5741' if 'RFC 5741' in text else 'RFC 7841'
-            repl2 = 'a candidate' if 'a candidate' in text else 'candidates'            
-            if stream == 'IETF' and category == 'std':
-                self.skip(boilerplate['status']['p2end_ietf_std'].replace('RFC 7841', repl1).replace('candidates', repl2))
-            elif stream == 'IETF' and category == 'bcp':
-                self.skip(boilerplate['status']['p2end_ietf_bcp'].replace('RFC 7841', repl1).replace('candidates', repl2))
-            elif stream == 'IETF':
-                self.skip(boilerplate['status']['p2end_ietf_other'].replace('RFC 7841', repl1).replace('candidates', repl2))
+        if self.options.doc_consensus or self.options.doc_ipr:
+            if self.is_rfc:
+                if self.options.doc_consensus:
+                    self.root.set('consensus', self.options.doc_consensus)
             else:
-                self.skip(boilerplate['status']['p2end_other'].replace('RFC 7841', repl1).replace('candidates', repl2) % approvers.get(stream, ''))
-
-            self.skip(boilerplate['status']['p3'] % rfc_number)
-        else:
-            text = self.next_text()
-            if text:
-                for part, d in [ ('ipr_200902_status', '200902'), ('ipr_200811_status', '200811'), ]:
-                    bp = boilerplate[part]
-                    if match_boilerplate(bp, text):
-                        self.skip(bp)
-                        break
-            for text in boilerplate['status']['draft']:
+                if self.options.doc_ipr:
+                    self.root.set('ipr', self.options.doc_ipr)
+            while True:
+                line = self.skip_blank_lines()
+                if self.is_section_start(line, part='front'):
+                    break
+                text = self.next_text()
+                if not text:
+                    break
                 self.skip(text)
-            text = self.next_text()
-            bp = boilerplate['draft_expire'][:-3]
-            if match_boilerplate(bp, text):
-                expires = text[len(bp):-1]
-                parse_date(expires)
-                self.skip(boilerplate['draft_expire'] % expires)
+        else:
+            if self.is_rfc:
+                if not stream:
+                    self.err(line.num,
+                            "Cannot parse 'Status of This Memo' without knowing the appropriate stream.  "
+                            "To process an old rfc without stream info and up-to-date Status of Memo "
+                            "section, please manually edit the text file to show the correct stream "
+                            "and status text, then run it through this program again.")
+                if not rfc_number:
+                    self.err(line.num, "Cannot parse 'Status of This Memo' without an RFC number.")
+                if not category:
+                    self.err(line.num, "Cannot parse 'Status of This Memo' without the correct category information.")
+                consensus = None
+                # Status of memo paragraph 1
+                self.skip(boilerplate['status'][category].get('p1', ""))
+                # Status of memo paragraph 2, first sentence
+                self.skip(boilerplate['status'][category].get('p2', ""))
+                # Status of memo paragraph 2, middle part
+                text = self.next_text()
+                for part in boilerplate['status'].keys():
+                    if part.startswith(stream):
+                        bp = boilerplate['status'][part]
+                        if '_workgroup' in part:
+                            bp = bp % workgroup
+                        if 'candidates' in bp and 'a candidate' in text:
+                            bp = bp.replace('candidates', 'a candidate')
+                        if match_boilerplate(bp, text):
+                            consensus = '_consensus' in part
+                            self.skip(bp)
+                            break
+                if not consensus is None:
+                    self.root.set('consensus', 'yes' if consensus else 'no')
+
+                # Status of memo paragraph 2, last sentence
+                text = self.next_text()
+                repl1 = 'RFC 5741' if 'RFC 5741' in text else 'RFC 7841'
+                repl2 = 'a candidate' if 'a candidate' in text else 'candidates'            
+                if stream == 'IETF' and category == 'std':
+                    self.skip(boilerplate['status']['p2end_ietf_std'].replace('RFC 7841', repl1).replace('candidates', repl2))
+                elif stream == 'IETF' and category == 'bcp':
+                    self.skip(boilerplate['status']['p2end_ietf_bcp'].replace('RFC 7841', repl1).replace('candidates', repl2))
+                elif stream == 'IETF':
+                    self.skip(boilerplate['status']['p2end_ietf_other'].replace('RFC 7841', repl1).replace('candidates', repl2))
+                else:
+                    self.skip(boilerplate['status']['p2end_other'].replace('RFC 7841', repl1).replace('candidates', repl2) % approvers.get(stream, ''))
+
+                self.skip(boilerplate['status']['p3'] % rfc_number)
+            else:
+                text = self.next_text()
+                if text:
+                    for part, ipr in [ ('ipr_200902_status', 'trust200902'), ('ipr_200811_status', 'trust200811'), ]:
+                        bp = boilerplate[part]
+                        if match_boilerplate(bp, text):
+                            self.skip(bp)
+                            self.root.set('ipr', ipr)
+                            break
+                for text in boilerplate['status']['draft']:
+                    self.skip(text)
+                text = self.next_text()
+                bp = boilerplate['draft_expire'][:-3]
+                if match_boilerplate(bp, text):
+                    expires = text[len(bp):-1]
+                    parse_date(expires)
+                    self.skip(boilerplate['draft_expire'] % expires)
 
     @dtrace
     def read_copyright(self, date):
@@ -2110,6 +2128,8 @@ class DraftParser(Base):
                     if '<CODE ENDS>' in text:
                         break
                     para = self.get_para()
+                    if not para:
+                        break
                     text = para2text(para)
                 break
             elif tag in ['figure', 'texttable']:
