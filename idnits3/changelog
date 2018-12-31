@@ -1,4 +1,4 @@
-idnits (3.0.0) ietf; urgency=medium
+idnits3 (3.0.0) ietf; urgency=medium
 
   This introduces a re-implementation of the idnits tool in Python.
 
@@ -16,4 +16,4 @@ idnits (3.0.0) ietf; urgency=medium
   while still containing the TXT format checks.  Additional checks related to
   both XML and TXT format input will be added in coming releases.
 
- -- Henrik Levkowetz <henrik@levkowetz.com>  31 Dec 2018 07:35:44 -0800
+ -- Henrik Levkowetz <henrik@levkowetz.com>  31 Dec 2018 19:54:01 +0000
