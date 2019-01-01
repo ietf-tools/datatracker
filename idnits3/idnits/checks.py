@@ -10,6 +10,7 @@ import sys
 from collections import namedtuple
 from idnits import default_options
 from idnits.utils import normalize_paragraph
+from six.moves.urllib.parse import urlparse
 from xml2rfc.boilerplate_tlp import boilerplate_tlp
 from xml2rfc.writers.base import deprecated_element_tags
 from xml2rfc.writers.preptool import PrepToolWriter
@@ -49,8 +50,12 @@ def plural(l):
     n = len(l)
     return n, ('' if n==1 else 's')
 
-def nit(nits, e, s):
+def enit(nits, e, s):
     nits.append(Nit(e.sourceline, s))
+
+def lnit(nits, l, s):
+    nits.append(Nit(l, s))
+
 
 class Checker(PrepToolWriter):
     # We subclass PrepToolWriter in order to use the checks it provides.  Have to override
@@ -115,9 +120,8 @@ class Checker(PrepToolWriter):
                 if nits:
                     self.nits[severity].append((nits, msg))
 
-        if blank:
-            pass
-            #sys.stdout.write("Checks: ran %d, %d unimplemented\n" % (done, blank))
+        if blank and self.options.debug:
+            sys.stdout.write("Checks: ran %d, %d unimplemented\n" % (done, blank))
         return self.nits
 
 
@@ -127,7 +131,7 @@ class Checker(PrepToolWriter):
         for l in self.doc.lines:
             match = re.search(r'[\x01-\x09\x0b\x0e-\x1f]', l.txt)
             if match:
-                nits.append(Nit(l.num, "Found control character 0x%02x in column %d" % (ord(match.group()), match.start(), )))
+                lnit(nits, l.num, "Found control character 0x%02x in column %d" % (ord(match.group()), match.start(), ))
         return nits, "Found %s line%s with control characters" % plural(nits)
         
     def any_text_has_invalid_utf8(self):
@@ -139,7 +143,7 @@ class Checker(PrepToolWriter):
                     txt.decode('utf-8')
                 except UnicodeDecodeError as e:
                     code = ord(e.args[1][e.start])
-                    nits.append(Nit(num, "Invalid UTF-8 characters starting in column %d: 0x%x" % (e.start, code)))
+                    lnit(nits, num, "Invalid UTF-8 characters starting in column %d: 0x%x" % (e.start, code))
         return nits, "File encoding is not utf-8 (seems to be %s)" % self.doc.encoding
 
     def any_text_has_nonascii_char(self):
@@ -153,7 +157,7 @@ class Checker(PrepToolWriter):
                         txt.decode('ascii')
                     except UnicodeDecodeError as e:
                         code = ord(e.args[1][e.start])
-                        nits.append(Nit(num, "Non-ASCII characters starting in column %d: 0x%x" % (e.start, code)))
+                        lnit(nits, num, "Non-ASCII characters starting in column %d: 0x%x" % (e.start, code))
         return nits, "Found %s line%s with non-ASCII characters" % plural(nits)
 
     def any_abstract_missing(self):
@@ -338,7 +342,7 @@ class Checker(PrepToolWriter):
         # any deprecated elements or attributes appear 
         nits = []
         for e in self.doc.root.iter(*list(deprecated_element_tags)):
-            nits.append(Nit(e.sourceline, "Deprecated element: %s" % e.tag))
+            enit(nits, e, "Deprecated element: %s" % e.tag)
         return nits, "Found %s deprecated xml element%s" % plural(nits)
 
     def xml_stream_contradiction(self):
@@ -353,7 +357,7 @@ class Checker(PrepToolWriter):
         nits = []
         for e in self.doc.root.iter('sourcecode'):
             if e.text and ('<CODE BEGINS>' in e.text) and (e.get('markers')=='true'):
-                nits.append(Nit(e.sourceline, 'Found "<SOURCE BEGINS>" in <sourcecode> element with markers="true"'))
+                enit(nits, e, 'Found "<SOURCE BEGINS>" in <sourcecode> element with markers="true"')
         return nits, 'Found %s instance%s of "<SOURCE BEGINS>" in <sourcecode> which will cause duplicate markers in the output' % plural(nits)
 
     def xml_source_code_in_text(self):
@@ -363,7 +367,7 @@ class Checker(PrepToolWriter):
         for e in self.doc.root.iter('t'):
             text = ' '.join(e.itertext())
             if text and ('<CODE BEGINS>' in text):
-                nits.append(Nit(e.sourceline, 'Found "<SOURCE BEGINS>" in text'))
+                enit(nits, e, 'Found "<SOURCE BEGINS>" in text')
         return nits, 'Found %s instance%s of "<SOURCE BEGINS>" in text.  If this is the start of a code block, it should be put in a <sourcecode> element' % plural(nits)
 
     def xml_text_looks_like_ref(self):
@@ -376,15 +380,15 @@ class Checker(PrepToolWriter):
             text = ' '.join([ t for t in [e.text, e.tail] if t and t.strip() ])
             match = re.search(ref_format, text)
             if match:
-                nits.append(Nit(e.sourceline, "Found text that looks like a citation: %s" % match.group(0)))
-        return nits, "Found %s instance%s of text that looks like a citation and maybe should use <xref> instead" % plural(nits)
+                enit(nits, e, "Found text that looks like a citation: %s" % match.group(0))
+        return nits, "Found %s instance%s of text that looks like a citation, and maybe should use <xref> instead" % plural(nits)
 
     def xml_ipr_attrib_missing(self):
         # <rfc> ipr attribute is missing or not recognized 
         nits = []
         ipr = self.doc.root.get('ipr')
         if ipr is None:
-            nits.append(Nit(self.doc.root.sourceline, "Expected an ipr attribute on <rfc>, but found none"))
+            enit(nits, self.doc.root, "Expected an ipr attribute on <rfc>, but found none")
         return nits, "Found no ipr attribute on <rfc>"
 
     def xml_ipr_attrib_unknown(self):
@@ -399,7 +403,7 @@ class Checker(PrepToolWriter):
         ]
         ipr = self.doc.root.get('ipr')
         if not ipr in supported_ipr:
-            nits.append(Nit(self.doc.root.sourceline, "Found an unrecognized ipr attribute on <rfc>: %s" % ipr))
+            enit(nits, self.doc.root, "Found an unrecognized ipr attribute on <rfc>: %s" % ipr)
         return nits, "Found an unrecognized ipr attribute: %s" % ipr
 
     def xml_ipr_attrib_disallowed(self):
@@ -413,7 +417,7 @@ class Checker(PrepToolWriter):
         ipr = self.doc.root.get('ipr')
         stream = self.doc.root.get('submissionType', 'IETF')
         if stream=='IETF' and ipr in disallowed_ipr:
-            nits.append(Nit(self.doc.root.sourceline, "Found a disallowed ipr attribute: %s" % ipr))
+            enit(nits, self.doc.root, "Found a disallowed ipr attribute: %s" % ipr)
         return nits, "Found a disallowed ipr attribute for stream IETF: %s" % ipr
 
     def xml_workgroup_not_group(self):
@@ -424,7 +428,7 @@ class Checker(PrepToolWriter):
         if e != None:
             wg = e.text.strip()
             if not wg.endswith('Group'):
-                nits.append(Nit(e.sourceline, "Expected a <workgroup> entry ending in 'Group', but found '%s'" % wg))
+                enit(nits, e, "Expected a <workgroup> entry ending in 'Group', but found '%s'" % wg)
         return nits, "Found a bad <workgroup> value: %s" % wg
 
     def xml_update_info_bad(self):
@@ -460,7 +464,7 @@ class Checker(PrepToolWriter):
         nits = []
         for e in self.doc.root.xpath('.//xref'):
             if not e.get('target'):
-                nits.append(Nit(e.sourceline, "Found <xref> without a target attribute: %s" % lxml.etree.tostring(e)))
+                enit(nits, e, "Found <xref> without a target attribute: %s" % lxml.etree.tostring(e))
         return nits, "Found %s instance%s of <xref> with no target" % plural(nits)
 
     def xml_xref_target_not_anchor(self):
@@ -474,7 +478,7 @@ class Checker(PrepToolWriter):
                 if t is None:
                     t = self.doc.root.find('.//*[@slugifiedName="%s"]' % target)
             if t is None:
-                nits.append(Nit(e.sourceline, "Found <xref> with a target without matching anchor: %s" % lxml.etree.tostring(e)))
+                enit(nits, e, "Found <xref> with a target without matching anchor: %s" % lxml.etree.tostring(e))
         return nits, "Found %s instance%s of <xref> with unmatched target" % plural(nits)
 
 
@@ -483,7 +487,7 @@ class Checker(PrepToolWriter):
         nits = []
         for e in self.doc.root.xpath('.//relref'):
             if not e.get('target'):
-                nits.append(Nit(e.sourceline, "Found <relref> without a target attribute: %s" % lxml.etree.tostring(e)))
+                enit(nits, e, "Found <relref> without a target attribute: %s" % lxml.etree.tostring(e))
         return nits, "Found %s instance%s of <relref> with no target" % plural(nits)
 
     def xml_relref_target_not_anchor(self):
@@ -493,7 +497,7 @@ class Checker(PrepToolWriter):
             target = e.get('target')
             t = self.doc.root.find('./back//reference[@anchor="%s"]' % target)
             if t is None:
-                nits.append(Nit(e.sourceline, "Found <relref> with a target that is not a <reference>: %s" % lxml.etree.tostring(e)))
+                enit(nits, e, "Found <relref> with a target that is not a <reference>: %s" % lxml.etree.tostring(e))
         return nits, "Found %s instance%s of <relref> bad target" % plural(nits)
 
     def xml_relref_target_no_target(self):
@@ -506,35 +510,81 @@ class Checker(PrepToolWriter):
             if t != None:
                 ttarget = t.get('target')
                 if not (ttarget and ttarget.strip()):
-                    nits.append(Nit(t.sourceline,
-                        'Found a <relref> target without its own target attribute: <reference anchor="%s"...>' % target))
+                    enit(nits, e, 
+                        'Found a <relref> target without its own target attribute: <reference anchor="%s"...>' % target)
         return nits, "Found %s instance%s of <relref> target without its own target attribute" % plural(nits)
 
     def xml_artwork_multiple_content(self):
         # An element (particularly <artwork> or <sourcecode>) contains both a src attribute, and
         # content 
+        # ----
+
+        # Note: The specifications RFCs had selfcontradictory text regarding this, for
+        # <artwork>.  After discussion, this is not a nit for <artwork>, as any content is
+        # text-mode fallback for SVG artwork.
         nits = []
+        for e in self.doc.root.xpath('.//sourcecode[@src]'):
+            debug.show('e')
+            if e.text and e.text.strip():
+                enit(nits, e,
+                    'Found a <sourcecode> element with both a src attribute and text content')
+        return nits, "Found %s instance%s of a <sourcecode> element with both a 'src' attribute and text content" % plural(nits)
+                
 
     def xml_element_src_bad_schema(self):
         # The src attribute of an element contains a URI scheme other than data:, file:, http:,
         # or https: 
         nits = []
+        for e in self.doc.root.xpath('.//*[@src]'):
+            valid_schemes = ['data', 'file', 'http', 'https', ]
+            src = e.get('src', '')
+            parts = urlparse(src)
+            if not parts.scheme in valid_schemes:
+                enit(nits, e, 'Expected the src scheme to be one of %s; but found "%s" in "%s ..."' % (','.join(valid_schemes), parts.scheme, src[:16]))
+        return nits, "Found %s instance%s of a 'src' attribute with disallowed URL scheme" % plural(nits)
+            
 
-    def xml_link_has_bad_content(self):
+    def xml_ids_link_has_bad_content(self):
         # <link> exists with DOI or RFC-series ISDN for this document when the document is an
         # <Internet-Draft 
         nits = []
+        for e in self.doc.root.xpath('./link'):
+            href = e.get('href')
+            if href == 'urn:issn:2070-1721':
+                enit(nits, e, "Found a <link> with an RFC ISSN URN in a draft: %s" % href)
+            scheme, rest = href.split(':', 1)
+            if rest.startswith('//dx.doi.org/10.17487/rfc'):
+                enit(nits, e, "Found a <link> with an RFC DOI in a draft: %s" % href)
+        return nits, "Found %s instance%s of a <link> element with incorrect conttent for an Internet-Draft" % plural(nits)
 
     def xml_section_bad_numbered_false(self):
         # <section> with a numbered attribute of 'false' is not a child of <boilerplate>,
-        # <<middle>, or <back>, or has a subsequent <section> sibling with a numbered attribute of
-        # <'true' 
+        # <middle>, or <back>, or has a subsequent <section> sibling with a numbered attribute of
+        # 'true'
         nits = []
+        valid_parents = ['boilerplate', 'middle', 'back']
+        for e in self.doc.root.xpath('.//section[@numbered="false"]'):
+            if not e.getparent().tag in valid_parents:
+                enit(nits, e, 'Found a section with numbered="false" which is not a top-level section')
+            for c in e.xpath('.//section[@numbered="true"]'):
+                enit(nits, c, 'Found a section with numbered="true" which is a child of an unnumbered section')
+        return nits, "Found %s instance%s of a <section> with an incorrect 'numbered' attribute" % plural(nits)
 
     def xml_xref_counter_bad_target(self):
         # An <xref> element with no content and a 'format' attribute of 'counter' has a 'target'
         # attribute whose value is not a section, figure, table or ordered list number 
         nits = []
+        valid_targets = [ 'section', 'figure', 'table', 'ol', ]
+        for e in self.doc.root.xpath('.//xref[@format="counter"]'):
+            if e.text and e.text.strip():
+                target = e.get('target')
+                t = self.doc.root.find('.//*[@anchor="%s"]'%target)
+                if t is None:
+                    enit(nits, e, 'Found an <xref> with format="counter" without a matching anchor: %s' % lxml.etree.tostring(e))
+                elif t.tag not in valid_targets:
+                    enit(nits, e, 'Found an <xref> with format="counter" referring to a <%s> element' % t.tag)
+        return nits, "Found %s instance%s of <xref> with format=\"counter\" having a bad target" % plural(nits)
+
 
     def xml_relref_target_missing_anchor(self):
         # A <relref> element whose 'target' attribute points to a document in xml2rfcv3 format,
@@ -825,7 +875,7 @@ class Checker(PrepToolWriter):
         Check('xml', 'any', 'err',  'warn', 'err',  xml_relref_target_no_target), # A <reference> element pointed to by a <relref> target attribute does not itself have a target attribute 
         Check('xml', 'any', 'warn', 'warn', 'warn', xml_artwork_multiple_content), # An element (particularly <artwork> or <sourcecode>) contains both a src attribute, and content 
         Check('xml', 'any', 'err',  'warn', 'err',  xml_element_src_bad_schema), # The src attribute of an element contains a URI scheme other than data:, file:, http:, or https: 
-        Check('xml', 'any', 'warn', 'warn', 'warn', xml_link_has_bad_content), # <link> exists with DOI or RFC-series ISDN for this document when the document is an Internet-Draft 
+        Check('xml', 'ids', 'warn', 'warn', 'warn', xml_ids_link_has_bad_content), # <link> exists with DOI or RFC-series ISDN for this document when the document is an Internet-Draft 
         Check('xml', 'any', 'err',  'warn', 'err',  xml_section_bad_numbered_false), # <section> with a numbered attribute of 'false' is not a child of <boilerplate>, <middle>, or <back>, or has a subsequent <section> sibling with a numbered attribute of 'true' 
         Check('xml', 'any', 'err',  'warn', 'err',  xml_xref_counter_bad_target), # An <xref> element with no content and a 'format' attribute of 'counter' has a 'target' attribute whose value is not a section, figure, table or ordered list number 
         Check('xml', 'any', 'err',  'warn', 'err',  xml_relref_target_missing_anchor), # A <relref> element whose 'target' attribute points to a document in xml2rfcv3 format, and whose 'relative' attribute value (or the derived value from a 'section' attribute) does not appear as an anchor in that document 
