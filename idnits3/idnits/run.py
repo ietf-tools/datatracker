@@ -87,7 +87,7 @@ def main():
         if count:
             items['err'] = [(parse_errors, "Found %d parse error%s while processing file.  The idnits result may be incomplete." %(count, '' if count==1 else 's')), ]
         #
-        checker = idnits.checks.Checker(doc)
+        checker = idnits.checks.Checker(doc, options=options)
         result = checker.check()
         for s in severities:
             items[s] += result[s]
@@ -114,10 +114,15 @@ def main():
         errors += len(result['err'])
 
         summary = []
+        tot = 0
         for s in severities:
             found = items[s]
             count = len(found)
+            tot += count
             summary.append("%s %s%s" % (count, longform[s], '' if count==1 else 's'))
-        sys.stdout.write("\nFound %s.\n\n"  % ', '.join(summary))
+        sys.stdout.write('\n')
+        if tot>0 and not options.verbose:
+            sys.stdout.write('Use --verbose mode to get a line-by-line listing of the issues found.\n\n')
+        sys.stdout.write("Found %s.\n\n"  % ', '.join(summary))
 
     sys.exit(1 if errors else 0)
