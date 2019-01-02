@@ -56,7 +56,7 @@ for i in range(len(bplist)):
     bplist[i] = para
     bpkeys.add(key)
 
-def fdict(l):
+def plurals(l):
     n = len(l)
     if n == 1:
         d = dict(n=n, s='', a='a', an='an', this='this')
@@ -132,7 +132,7 @@ class Checker(PrepToolWriter):
                 assert len(res) == 2
                 nits, msg = res
                 if nits:
-                    msg = msg.format(**fdict(nits)).replace('  ', ' ')
+                    msg = msg.format(**plurals(nits)).replace('  ', ' ')
                     self.nits[severity].append((nits, msg))
 
         if blank and self.options.debug:
@@ -141,7 +141,7 @@ class Checker(PrepToolWriter):
 
 
     def any_text_has_control_char(self):
-        # Control characters other than CR, NL, or FF appear (0x01-0x09,0x0b,0x0e-0x1f) 
+        "Control characters other than CR, NL, or FF appear (0x01-0x09,0x0b,0x0e-0x1f)"
         nits = []
         for l in self.doc.lines:
             match = re.search(r'[\x01-\x09\x0b\x0e-\x1f]', l.txt)
@@ -150,7 +150,7 @@ class Checker(PrepToolWriter):
         return nits, "Found {n} line{s} with control characters"
         
     def any_text_has_invalid_utf8(self):
-        # Byte sequences that are not valid UTF-8 appear 
+        "Byte sequences that are not valid UTF-8 appear"
         nits = []
         if not self.doc.encoding in ['ascii', 'us-ascii', 'utf-8', ]:
             for num, txt in enumerate(self.doc.raw.splitlines()):
@@ -162,8 +162,7 @@ class Checker(PrepToolWriter):
         return nits, "File encoding is not utf-8 (seems to be %s)" % self.doc.encoding
 
     def any_text_has_nonascii_char(self):
-        # Non-ASCII UTF-8 appear (comment will point to guidance in draft-iab-rfc-nonascii or
-        # its successor) 
+        "Non-ASCII UTF-8 appear (comment will point to guidance in draft-iab-rfc-nonascii or its successor)"
         nits = []
         if not self.doc.encoding in ['ascii', 'us-ascii', ]:
             if self.doc.encoding in ['utf-8', ]:
@@ -176,199 +175,146 @@ class Checker(PrepToolWriter):
         return nits, "Found {n} line{s} with non-ASCII characters"
 
     def any_abstract_missing(self):
-        # Missing Abstract section 
-        nits = []
+        "Missing Abstract section"
 
     def any_introduction_missing(self):
-        # Missing Introduction section 
-        nits = []
+        "Missing Introduction section"
 
     def any_security_considerations_missing(self):
-        # Missing Security Considerations section 
-        nits = []
+        "Missing Security Considerations section"
 
     def any_author_address_missing(self):
-        # Missing Author Address section 
-        nits = []
+        "Missing Author Address section"
 
     def any_references_no_category(self):
-        # References (if any present) are not categorized as Normative or Informative 
-        nits = []
+        "References (if any present) are not categorized as Normative or Informative"
 
     def any_abstract_with_reference(self):
-        # Abstract contains references 
-        nits = []
+        "Abstract contains references"
 
     def any_fqdn_not_example(self):
-        # FQDN appears (other than www.ietf.org) not meeting RFC2606/RFC6761 recommendations 
-        nits = []
+        "FQDN appears (other than www.ietf.org) not meeting RFC2606/RFC6761 recommendations"
 
     def any_ipv4_private_not_example(self):
-        # Private IPv4 address appears that doesn't meet RFC5735 recommendations 
-        nits = []
+        "Private IPv4 address appears that doesn't meet RFC5735 recommendations"
 
     def any_ipv4_multicast_not_example(self):
-        # Multicast IPv4 address appears that doesn't meet RFC5771/RFC6676 recommendations 
-        nits = []
+        "Multicast IPv4 address appears that doesn't meet RFC5771/RFC6676 recommendations"
 
     def any_ipv4_generic_not_example(self):
-        # Other IPv4 address appears that doesn't meet RFC5735 recommendations 
-        nits = []
+        "Other IPv4 address appears that doesn't meet RFC5735 recommendations"
 
     def any_ipv6_local_not_example(self):
-        # Unique Local IPv6 address appears that doesn't meet RFC3849/RFC4291 recommendations 
-        nits = []
+        "Unique Local IPv6 address appears that doesn't meet RFC3849/RFC4291 recommendations"
 
     def any_ipv6_link_not_example(self):
-        # Link Local IPv6 address appears that doesn't meet RFC3849/RFC4291 recommendations 
-        nits = []
+        "Link Local IPv6 address appears that doesn't meet RFC3849/RFC4291 recommendations"
 
     def any_ipv6_generic_not_example(self):
-        # Other IPv6 address appears that doesn't meet RFC3849/RFC4291 recommendations 
-        nits = []
+        "Other IPv6 address appears that doesn't meet RFC3849/RFC4291 recommendations"
 
     def any_text_code_comment(self):
-        # A possible code comment is detected outside of a marked code block 
-        nits = []
+        "A possible code comment is detected outside of a marked code block"
 
     def any_rfc2119_info_missing(self):
-        # 2119 keywords occur, but neither the matching boilerplate nor a reference to 2119 is
-        # missing 
-        nits = []
+        "2119 keywords occur, but neither the matching boilerplate nor a reference to 2119 is missing"
 
     def any_rfc2119_boilerplate_missing(self):
-        # 2119 keywords occur, a reference to 2119 exists, but matching boilerplate is missing 
-        nits = []
+        "2119 keywords occur, a reference to 2119 exists, but matching boilerplate is missing"
 
     def any_rfc2119_boilerplate_extra(self):
-        # 2119 boilerplate is present, but document doesn't use 2119 keywords 
-        nits = []
+        "2119 boilerplate is present, but document doesn't use 2119 keywords"
 
     def any_rfc2119_bad_keyword_combo(self):
-        # badly formed combination of 2119 words occurs (MUST not, SHALL not, SHOULD not, not
-        # RECOMMENDED, MAY NOT, NOT REQUIRED, NOT OPTIONAL) 
-        nits = []
+        "Badly formed combination of 2119 words occurs (MUST not, SHALL not, SHOULD not, not RECOMMENDED, MAY NOT, NOT REQUIRED, NOT OPTIONAL)"
 
     def any_rfc2119_boilerplate_lookalike(self):
-        # text similar to 2119 boilerplate occurs, but doesn't reference 2119 
-        nits = []
+        "Text similar to 2119 boilerplate occurs, but doesn't reference 2119"
 
     def any_rfc2119_keyword_lookalike(self):
-        # NOT RECOMMENDED appears, but is not included in 2119-like boilerplate 
-        nits = []
+        "NOT RECOMMENDED appears, but is not included in 2119-like boilerplate"
 
     def any_abstract_update_info_missing(self):
-        # Abstract doesn't directly state it updates or obsoletes each document so affected
-        # (Additional comment if Abstract mentions the document some other way) 
-        nits = []
+        "Abstract doesn't directly state it updates or obsoletes each document so affected (Additional comment if Abstract mentions the document some other way)"
 
     def any_abstract_update_info_extra(self):
-        # Abstract states it updates or obsoletes a document not declared in the relevant field
-        # previously 
-        nits = []
+        "Abstract states it updates or obsoletes a document not declared in the relevant field previously"
 
     def any_authors_addresss_grammar(self):
-        # Author's address section title misuses possessive mark or uses a character other than
-        # a single quote 
-        nits = []
+        "Author's address section title misuses possessive mark or uses a character other than a single quote"
 
     def any_reference_not_used(self):
-        # a reference is declared, but not used in the document 
-        nits = []
+        "A reference is declared, but not used in the document"
 
     def any_reference_is_downref(self):
-        # a reference appears to be a downref (noting if reference appears in the downref
-        # registry) 
-        nits = []
+        "A reference appears to be a downref (noting if reference appears in the downref registry)"
 
     def any_reference_status_unknown(self):
-        # a normative reference to an document of unknown status appears (possible downref) 
-        nits = []
+        "A normative reference to an document of unknown status appears (possible downref)"
 
     def any_reference_is_obsolete_norm(self):
-        # a normative or unclassified reference is to an obsolete document 
-        nits = []
+        "A normative or unclassified reference is to an obsolete document"
 
     def any_reference_is_obsolete_info(self):
-        # an informative reference is to an obsolete document 
-        nits = []
+        "An informative reference is to an obsolete document"
 
     def any_reference_is_draft_rfc(self):
-        # a reference is to a draft that has already been published as an rfc 
-        nits = []
+        "A reference is to a draft that has already been published as an rfc"
 
     def any_sourcecode_no_license(self):
-        # A code-block is detected, but the block does not contain a license declaration 
-        nits = []
+        "A code-block is detected, but the block does not contain a license declaration"
 
     def any_filename_base_bad_characters(self):
-        # filename's base name contains characters other than digits, lowercase alpha, and dash 
-        nits = []
+        "Filename's base name contains characters other than digits, lowercase alpha, and dash"
 
     def any_filename_ext_mismatch(self):
-        # filename's extension doesn't match format type (.txt, .xml) 
-        nits = []
+        "Filename's extension doesn't match format type (.txt, .xml)"
 
     def any_filename_base_not_docname_(self):
-        # filename's base name doesn't match the name declared in the document 
-        nits = []
+        "Filename's base name doesn't match the name declared in the document"
 
     def any_filename_too_long(self):
-        # filename (including extension) is more than 50 characters 
-        nits = []
+        "Filename (including extension) is more than 50 characters"
 
     def any_obsoletes_obsolete_rfc(self):
-        # Document claims to obsolete an RFC that is already obsolete 
-        nits = []
+        "Document claims to obsolete an RFC that is already obsolete"
 
     def any_updates_obsolete_rfc(self):
-        # Document claims to update an RFC that is obsolete 
-        nits = []
+        "Document claims to update an RFC that is obsolete"
 
     def any_doc_status_info_bad(self):
-        # Document's status or intended status is not found or not recognized 
-        nits = []
+        "Document's status or intended status is not found or not recognized"
 
     def any_doc_date_bad(self):
-        # Document's date can't be determined or is too far in the past or the future (see
-        # existing implementation for "too far") 
-        nits = []
+        "Document's date can't be determined or is too far in the past or the future (see existing implementation for 'too far')"
 
     def any_section_iana_missing(self):
-        # Missing IANA considerations section 
-        nits = []
+        "Missing IANA considerations section"
 
     def any_docname_malformed(self):
-        # filename's base name doesn't begin with 'draft', contains two consecutive hyphens, or
-        # doesn't have enough structure to contain the individual or stream, potentially a wg name, and
-        # a distinguishing name. (draft-example-00 is an error, but draft-example-filename is
-        # acceptable) 
-        nits = []
+        "Filename's base name doesn't begin with 'draft', contains two consecutive hyphens, or doesn't have enough structure to contain the individual or stream, potentially a wg name, and a distinguishing name. (draft-example-00 is an error, but draft-example-filename is acceptable)"
 
     def any_section_iana_missing(self):
-        # Missing IANA considerations section 
-        nits = []
+        "Missing IANA considerations section"
 
     def any_doc_rev_unexpected(self):
-        # version of document is unexpected (already exists, or leaves a gap) 
-        nits = []
+        "Version of document is unexpected (already exists, or leaves a gap)"
 
     def xml_element_deprecated(self):
-        # any deprecated elements or attributes appear 
+        "Any deprecated elements or attributes appear"
         nits = []
         for e in self.doc.root.iter(*list(deprecated_element_tags)):
             enit(nits, e, "Deprecated element: %s" % e.tag)
         return nits, "Found {n} deprecated xml element{s}"
 
     def xml_stream_contradiction(self):
-        # metadata and document's 'submissionType' attribute state different streams 
+        "Metadata and document's 'submissionType' attribute state different streams"
         self.tmpnits = []
         self.check_series_and_submission_type(self.doc.root, None)
         return self.tmpnits, "Found inconsistent stream settings"
 
     def xml_source_code_in_sourcecode(self):
-        # The text inside a <sourcecode> tag contains the string '<CODE BEGINS>' (Warn that the
-        # string is unnecessary and may duplicate what a presentation format converter will produce.) 
+        "The text inside a <sourcecode> tag contains the string '<CODE BEGINS>' (Warn that the string is unnecessary and may duplicate what a presentation format converter will produce.)"
         nits = []
         for e in self.doc.root.iter('sourcecode'):
             if e.text and ('<CODE BEGINS>' in e.text) and (e.get('markers')=='true'):
@@ -376,8 +322,7 @@ class Checker(PrepToolWriter):
         return nits, "Found {n} instance{s} of '<SOURCE BEGINS>' in <sourcecode> that will cause duplicate markers in the output"
 
     def xml_source_code_in_text(self):
-        # The text inside any other tag contains the string '<CODE BEGINS>' (Warn that if the
-        # text is a code block, it should appear in a <sourcecode> element) 
+        "The text inside any other tag contains the string '<CODE BEGINS>' (Warn that if the text is a code block, it should appear in a <sourcecode> element)"
         nits = []
         for e in self.doc.root.iter('t'):
             text = ' '.join(e.itertext())
@@ -386,8 +331,7 @@ class Checker(PrepToolWriter):
         return nits, 'Found {n} instance{s} of "<SOURCE BEGINS>" in text.  If this is the start of a code block, it should be put in a <sourcecode> element'
 
     def xml_text_looks_like_ref(self):
-        # text occurs that looks like a text-document reference (e.g. [1], or [RFC...])  (if the
-        # text was really a reference it should be in an <xref> tag) 
+        "Text occurs that looks like a text-document reference (e.g. [1], or [RFC...])  (if the text was really a reference it should be in an <xref> tag)"
         nits = []
         ref_format = r"\[(([0-9A-Z]|I-?D.)[0-9A-Za-z-]*( [0-9A-Z-]+)?|(IEEE|ieee)[A-Za-z0-9.-]+|(ITU ?|ITU-T ?|G\\.)[A-Za-z0-9.-]+)\]"
         tags = list(self.text_tags - set(['sourcecode', 'artwork', ]))
@@ -399,7 +343,7 @@ class Checker(PrepToolWriter):
         return nits, "Found {n} instance{s} of text that looks like a citation, and maybe should use <xref> instead"
 
     def xml_ipr_attrib_missing(self):
-        # <rfc> ipr attribute is missing or not recognized 
+        "The <rfc> ipr attribute is missing or not recognized"
         nits = []
         ipr = self.doc.root.get('ipr')
         if ipr is None:
@@ -407,8 +351,7 @@ class Checker(PrepToolWriter):
         return nits, "Found no ipr attribute on <rfc>"
 
     def xml_ipr_attrib_unknown(self):
-        # ipr attribute is not one of "trust200902", "noModificationTrust200902",
-        # "noDerivativesTrust200902", or "pre5378Trust200902" 
+        "The ipr attribute is not one of 'trust200902', 'noModificationTrust200902', 'noDerivativesTrust200902', or 'pre5378Trust200902'"
         nits = []
         supported_ipr = [
             'trust200902',
@@ -422,8 +365,7 @@ class Checker(PrepToolWriter):
         return nits, "Found an unrecognized ipr attribute: %s" % ipr
 
     def xml_ipr_attrib_disallowed(self):
-        # document is ietf stream and ipr attribute is one of "noModificationTrust200902" or
-        # "noDerivativesTrust200902" 
+        "Document is ietf stream and ipr attribute is one of 'noModificationTrust200902' or 'noDerivativesTrust200902'"
         nits = []
         disallowed_ipr = [
             'noModificationTrust200902',
@@ -432,11 +374,11 @@ class Checker(PrepToolWriter):
         ipr = self.doc.root.get('ipr')
         stream = self.doc.root.get('submissionType', 'IETF')
         if stream=='IETF' and ipr in disallowed_ipr:
-            enit(nits, self.doc.root, "Found a disallowed ipr attribute: %s" % ipr)
+            enit(nits, self.doc.root, 'Found a disallowed ipr attribute: %s' % ipr)
         return nits, "Found a disallowed ipr attribute for stream IETF: %s" % ipr
 
     def xml_workgroup_not_group(self):
-        # <workgroup> content doesn't end with "Group" 
+        "The <workgroup> content doesn't end with 'Group'"
         nits = []
         e = self.doc.root.find('./front/workgroup')
         wg = ''
@@ -447,8 +389,7 @@ class Checker(PrepToolWriter):
         return nits, "Found a bad <workgroup> value: %s" % wg
 
     def xml_update_info_bad(self):
-        # The "obsoletes" or "updates" attribute values of the <rfc> element are not comma
-        # separated strings of digits 
+        "The 'obsoletes' or 'updates' attribute values of the <rfc> element are not comma separated strings of digits"
         nits = []
         for a in 'obsoletes', 'updates':
             l = self.doc.root.get(a)
@@ -460,8 +401,7 @@ class Checker(PrepToolWriter):
         return nits, "Found malformed updates / obsoletes information"
 
     def xml_update_info_noref(self):
-        # The rfcs indicated by the "obsoletes" and "updates" attribute values of the <rfc>
-        # element are not included in the references section 
+        "The rfcs indicated by the 'obsoletes' and 'updates' attribute values of the <rfc> element are not included in the references section"
         nits = []
         for a in 'obsoletes', 'updates':
             l = self.doc.root.get(a)
@@ -476,7 +416,7 @@ class Checker(PrepToolWriter):
         return nits, "Found updates / obsoletes RFC numbers not included in a References section"
 
     def xml_xref_target_missing(self):
-        # <xref> has no target attribute 
+        "An <xref> has no target attribute"
         nits = []
         for e in self.doc.root.xpath('.//xref'):
             if not e.get('target'):
@@ -484,7 +424,7 @@ class Checker(PrepToolWriter):
         return nits, "Found {n} instance{s} of {an} <xref> element{s} without a target"
 
     def xml_xref_target_not_anchor(self):
-        # <xref> target attribute does not appear as an anchor of another element 
+        "Any <xref> target attribute does not appear as an anchor of another element"
         nits = []
         for e in self.doc.root.xpath('.//xref[@target]'):
             target = e.get('target')
@@ -499,7 +439,7 @@ class Checker(PrepToolWriter):
 
 
     def xml_relref_target_missing(self):
-        # <relref> has no target attribute 
+        "A <relref> has no target attribute"
         nits = []
         for e in self.doc.root.xpath('.//relref'):
             if not e.get('target'):
@@ -507,7 +447,7 @@ class Checker(PrepToolWriter):
         return nits, "Found {n} instance{s} of {a} <relref> element{s} without a target"
 
     def xml_relref_target_not_anchor(self):
-        # <relref> target attribute does not appear as an anchor of a <reference> element 
+        "Any <relref> target attribute does not appear as an anchor of a <reference> element"
         nits = []
         for e in self.doc.root.xpath('.//relref[@target]'):
             target = e.get('target')
@@ -517,8 +457,7 @@ class Checker(PrepToolWriter):
         return nits, "Found {n} instance{s} of {a} bad <relref> target{s}"
 
     def xml_relref_target_no_target(self):
-        # A <reference> element pointed to by a <relref> target attribute does not itself have a
-        # target attribute 
+        "A <reference> element pointed to by a <relref> target attribute does not itself have a target attribute"
         nits = []
         for e in self.doc.root.xpath('.//relref[@target]'):
             target = e.get('target')
@@ -531,18 +470,14 @@ class Checker(PrepToolWriter):
         return nits, "Found {n} instance{s} of {a} <relref> target{s} without a target attribute in the <reference>"
 
     def xml_artwork_multiple_content(self):
-        # An element (particularly <artwork> or <sourcecode>) contains both a src attribute, and
-        # content 
-        # ----
+        "An element (particularly <artwork> or <sourcecode>) contains both a src attribute, and content"
 
         # Note: The specifications RFCs had selfcontradictory text regarding this, for
         # <artwork>.  After discussion, this is not a nit for <artwork>, as any content is
         # text-mode fallback for SVG artwork.
-        nits = []
 
     def xml_element_src_bad_schema(self):
-        # The src attribute of an element contains a URI scheme other than data:, file:, http:,
-        # or https: 
+        "The src attribute of an element contains a URI scheme other than data:, file:, http:, or https:"
         nits = []
         for e in self.doc.root.xpath('.//*[@src]'):
             valid_schemes = ['data', 'file', 'http', 'https', ]
@@ -554,8 +489,7 @@ class Checker(PrepToolWriter):
             
 
     def xml_ids_link_has_bad_content(self):
-        # <link> exists with DOI or RFC-series ISDN for this document when the document is an
-        # <Internet-Draft 
+        "A <link> exists with DOI or RFC-series ISDN for this document when the document is an Internet-Draft"
         nits = []
         for e in self.doc.root.xpath('./link'):
             href = e.get('href')
@@ -567,9 +501,7 @@ class Checker(PrepToolWriter):
         return nits, "Found {n} instance{s} of {a} <link> element{s} with incorrect content for an Internet-Draft"
 
     def xml_section_bad_numbered_false(self):
-        # <section> with a numbered attribute of 'false' is not a child of <boilerplate>,
-        # <middle>, or <back>, or has a subsequent <section> sibling with a numbered attribute of
-        # 'true'
+        "A <section> with a numbered attribute of 'false' is not a child of <boilerplate>, <middle>, or <back>, or has a subsequent <section> sibling with a numbered attribute of 'true'"
         nits = []
         valid_parents = ['boilerplate', 'middle', 'back']
         for e in self.doc.root.xpath('.//section[@numbered="false"]'):
@@ -580,8 +512,7 @@ class Checker(PrepToolWriter):
         return nits, "Found {n} instance{s} of {a} <section> element{s} with an incorrect 'numbered' attribute"
 
     def xml_xref_counter_bad_target(self):
-        # An <xref> element with no content and a 'format' attribute of 'counter' has a 'target'
-        # attribute whose value is not a section, figure, table or ordered list number 
+        "An <xref> element with no content and a 'format' attribute of 'counter' has a 'target' attribute whose value is not a section, figure, table or ordered list number"
         nits = []
         valid_targets = [ 'section', 'figure', 'table', 'ol', ]
         for e in self.doc.root.xpath('.//xref[@format="counter"]'):
@@ -596,9 +527,7 @@ class Checker(PrepToolWriter):
 
 
     def xml_relref_target_missing_anchor(self):
-        # A <relref> element whose 'target' attribute points to a document in xml2rfcv3 format,
-        # and whose 'relative' attribute value (or the derived value from a 'section' attribute) does
-        # not appear as an anchor in that document 
+        "A <relref> element whose 'target' attribute points to a document in xml2rfcv3 format, and whose 'relative' attribute value (or the derived value from a 'section' attribute) does not appear as an anchor in that document"
         nits = []
         for tag in ['relref', 'xref', ]:
             for e in self.doc.root.xpath('.//%s[@target]'%tag):
@@ -635,8 +564,7 @@ class Checker(PrepToolWriter):
         return nits, "Found {n} instance{s} of {a} <relref> / <xref> element{s} with a relative identifier that does not exist in the target document"
 
     def xml_artwork_svg_wrong_media_type(self):
-        # An <artwork> element with type 'svg' has a 'src' attribute with URI scheme 'data:' and
-        # the mediatype of the data: URI is not 'image/svg+xml' 
+        "An <artwork> element with type 'svg' has a 'src' attribute with URI scheme 'data:' and the mediatype of the data: URI is not 'image/svg+xml'"
         nits = []
         for e in self.doc.root.xpath('.//artwork[@type="svg"]'):
             src = e.get('src')
@@ -652,7 +580,7 @@ class Checker(PrepToolWriter):
                     
 
     def xml_sourcecode_multiple_content(self):
-        # A <sourcecode> element has both a 'src' attribute and non-empty content 
+        "A <sourcecode> element has both a 'src' attribute and non-empty content"
         nits = []
         for e in self.doc.root.xpath('.//sourcecode[@src]'):
             debug.show('e')
@@ -663,17 +591,13 @@ class Checker(PrepToolWriter):
 
 
     def xml_rfc_note_remove_true(self):
-        # A <note> element has a 'removeInRFC' attribute with a value of 'true' 
-        nits = []
+        "A <note> element has a 'removeInRFC' attribute with a value of 'true'"
 
     def xml_rfc_artwork_wrong_type(self):
-        # An <artwork> element has type other than 'ascii-art','call-flow','hex-dump', or 'svg' 
-        nits = []
+        "An <artwork> element has type other than 'ascii-art','call-flow','hex-dump', or 'svg'"
 
     def xml_text_has_boilerplate(self):
-        # The text inside any tag sufficiently matches any of the boilerplate in the IETF-TLP-4
-        # section 6a-6d (such text should probably be removed and the ipr attribute of the rfc
-        # tag should be verified) 
+        "The text inside any tag sufficiently matches any of the boilerplate in the IETF-TLP-4 section 6a-6d (such text should probably be removed and the ipr attribute of the rfc tag should be verified)"
         nits = []
         for t in self.doc.root.xpath('./middle//section//t'):
             text = normalize_paragraph(' '.join(t.itertext()))
@@ -686,161 +610,113 @@ class Checker(PrepToolWriter):
         return nits, "Found {n} case{s} of what looks like boilerplate in xml <t> element{s}; {this} should be removed"
 
     def xml_boilerplate_mismatch(self):
-        # The value of the <boilerplate> element, if non-empty, does not match what the ipr,
-        # category, submission, and consensus <rfc> attributes would cause to be generated 
-        nits = []
+        "The value of the <boilerplate> element, if non-empty, does not match what the ipr, category, submission, and consensus <rfc> attributes would cause to be generated"
 
     def xml_rfc_generated_attrib_wrong(self):
-        # The value of any present pn or slugifiedName attributes do not match what would be
-        # regenerated 
-        nits = []
+        "The value of any present pn or slugifiedName attributes do not match what would be regenerated"
 
     def txt_text_added_whitespace(self):
-        # document does not appear to be ragged-right (more than 50 lines of intra-line extra
-        # spacing) 
-        nits = []
+        "Document does not appear to be ragged-right (more than 50 lines of intra-line extra spacing)"
 
     def txt_text_lines_too_long(self):
-        # document contains over-long lines (cut-off is 72 characters. Report longest line, and
-        # count of long lines) 
-        nits = []
+        "Document contains over-long lines (cut-off is 72 characters. Report longest line, and count of long lines)"
 
     def txt_text_line_break_hyphens(self):
-        # document has hyphenated line-breaks 
-        nits = []
+        "Document has hyphenated line-breaks"
 
     def txt_text_hyphen_space(self):
-        # document has a hyphen followed immediately by a space within a line 
-        nits = []
+        "Document has a hyphen followed immediately by a space within a line"
 
     def txt_update_info_extra_text(self):
-        # Updates or Obsoletes line on first page has more than just numbers of RFCs (such as
-        # the character sequence 'RFC') 
-        nits = []
+        "Updates or Obsoletes line on first page has more than just numbers of RFCs (such as the character sequence 'RFC')"
 
     def txt_update_info_not_in_order(self):
-        # Updates or Obsoletes numbers do not appear in ascending order 
-        nits = []
+        "Updates or Obsoletes numbers do not appear in ascending order"
 
     def txt_doc_bad_magic(self):
-        # document starts with PK or BM 
-        nits = []
+        "Document starts with PK or BM"
 
     def txt_reference_style_mixed(self):
-        # document appears to use numeric references, but contains something that looks like a
-        # text-style reference (or vice-versa) 
-        nits = []
+        "Document appears to use numeric references, but contains something that looks like a text-style reference (or vice-versa)"
 
     def txt_text_ref_unused_(self):
-        # a string that looks like a reference appears but does not occur in any reference
-        # section 
-        nits = []
+        "A string that looks like a reference appears but does not occur in any reference section"
 
     def txt_abstract_numbered(self):
-        # Abstract section is numbered 
-        nits = []
+        "Abstract section is numbered"
 
     def txt_status_of_memo_numbered(self):
-        # 'Status of this memo' section is numbered 
-        nits = []
+        "'Status of this memo' section is numbered"
 
     def txt_copyright_notice_numbered(self):
-        # Copyright Notice section is numbered 
-        nits = []
+        "Copyright Notice section is numbered"
 
     def txt_boilerplate_copyright_missing(self):
-        # TLP-4 6.b.i copyright line is not present 
-        nits = []
+        "TLP-4 6.b.i copyright line is not present"
 
     def txt_boilerplate_copyright_year_wrong(self):
-        # TLP-4 6.b.i copyright date is not this (or command-line specified) year 
-        nits = []
+        "TLP-4 6.b.i copyright date is not this (or command-line specified) year"
 
     def txt_boilerplate_licence_missing(self):
-        # TLP-4 6.b.i or b.ii license notice is not present, or doesn't match stream 
-        nits = []
+        "TLP-4 6.b.i or b.ii license notice is not present, or doesn't match stream"
 
     def txt_boilerplate_restrictions_found(self):
-        # IETF stream document sufficiently matches TLP-4 6.c.i or 6.c.ii text (restrictions on
-        # publication or derivative works) 
-        nits = []
+        "IETF stream document sufficiently matches TLP-4 6.c.i or 6.c.ii text (restrictions on publication or derivative works)"
 
     def txt_boilerplate_copyright_duplicate(self):
-        # More than one instance of text sufficiently matching the TLP-4 6.b.i copyright line
-        # occurs 
-        nits = []
+        "More than one instance of text sufficiently matching the TLP-4 6.b.i copyright line occurs"
 
     def txt_boilerplate_licence_duplicate(self):
-        # More than one instance of text sufficiently matching either the TLP4 6.b.i or 6.b.ii
-        # license notice occurs 
-        nits = []
+        "More than one instance of text sufficiently matching either the TLP4 6.b.i or 6.b.ii license notice occurs"
 
     def txt_boilerplate_pre5378_missing_upd(self):
-        # Document obsoletes or updates any pre-5378 document, and doesn't contain the pre-5378
-        # material of TLP4 6.c.iii 
-        nits = []
+        "Document obsoletes or updates any pre-5378 document, and doesn't contain the pre-5378 material of TLP4 6.c.iii"
 
     def txt_boilerplate_pre5378_missing_prev(self):
-        # Any prior version of the document might be pre-5378 and the document doesn't contain
-        # the pre-5378 material of TLP4 6.c.iii 
-        nits = []
+        "Any prior version of the document might be pre-5378 and the document doesn't contain the pre-5378 material of TLP4 6.c.iii"
 
     def txt_pages_too_long(self):
-        # contains over-long pages (report count of pages with more than 58 lines)
-        nits = []
+        "Contains over-long pages (report count of pages with more than 58 lines)"
 
     def txt_head_label_missing(self):
-        # doesn't say INTERNET DRAFT in the upper left of the first page 
-        nits = []
+        "Doesn't say INTERNET DRAFT in the upper left of the first page"
 
     def txt_head_expiration_missing(self):
-        # doesn't have expiration date on first and last page 
-        nits = []
+        "Doesn't have expiration date on first and last page"
 
     def txt_boilerplate_working_doc_missing(self):
-        # doesn't have an acceptable paragraph noting that IDs are working documents 
-        nits = []
+        "Doesn't have an acceptable paragraph noting that IDs are working documents"
 
     def txt_boilerplate_6month_missing(self):
-        # doesn't have an acceptable paragraph calling out 6 month validity 
-        nits = []
+        "Doesn't have an acceptable paragraph calling out 6 month validity"
 
     def txt_boilerplate_current_ids_missing(self):
-        # doesn't have an acceptable paragraph pointing to the list of current ids 
-        nits = []
+        "Doesn't have an acceptable paragraph pointing to the list of current ids"
 
     def txt_boilerplate_current_ids_duplicate(self):
-        # has multiple occurrences of current id text 
-        nits = []
+        "Has multiple occurrences of current id text"
 
     def txt_head_docname_missing(self):
-        # document name doesn't appear on first page 
-        nits = []
+        "Document name doesn't appear on first page"
 
     def txt_table_of_contents_missing(self):
-        # has no Table of Contents 
-        nits = []
+        "Has no Table of Contents"
 
     def txt_boilerplate_ipr_missing(self):
-        # IPR disclosure text (TLP 4.0 6.a) does not appear 
-        nits = []
+        "Ipr disclosure text (TLP 4.0 6.a) does not appear"
 
     def txt_boilerplate_ipr_not_first_page(self):
-        # IPR disclosure text (TLP 4.0 6.a) appears after first page 
-        nits = []
+        "Ipr disclosure text (TLP 4.0 6.a) appears after first page"
 
     def txt_pages_missing_formfeed(self):
-        # pages are not separated by formfeeds 
-        nits = []
+        "Pages are not separated by formfeeds"
+
 
     def txt_pages_formfeed_misplaced(self):
-        # 'FORMFEED' and '[Page...]' occur on a line, possibly separated by spaces (indicates
-        # 'NROFF post-processing wasn't successful) 
-        nits = []
+        "'FORMFEED' and '[Page...]' occur on a line, possibly separated by spaces (indicates 'NROFF post-processing wasn't successful)"
 
     def txt_text_bad_section_indentation(self):
-        # section title occurs at an unexpected indentation 
-        nits = []
+        "A section title occurs at an unexpected indentation"
 
     checks = [
 

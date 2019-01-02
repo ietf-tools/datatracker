@@ -13,6 +13,7 @@ import sys
 
 import idnits.parser
 import idnits.checks
+import idnits.utils
 
 try:
     import debug
@@ -38,6 +39,21 @@ def show_version(verbose=False):
         except:
             pass
 
+def show_checks():
+    def empty():
+        ""
+    show = dict(any='any', xml='XML', rfc='RFC', ids='IDs', txt='TXT')
+    format = "%3s  %3s  %s"
+    print(format % ('Fmt', 'Doc', 'Comment'))
+    print(format % ('---', '---', '-------'))
+    print('')
+    for c in idnits.checks.Checker.checks:
+        
+        if c.func.__code__.co_code != empty.__code__.co_code:
+            line = format % (show[c.fmt], show[c.type], c.func.__doc__ )
+            print(idnits.utils.wrap(line, i=10))
+            print('')
+
 def die(*args):
     sys.stderr.write('Error: ' + ' '.join(args))
     sys.stderr.write('\n')
@@ -49,6 +65,7 @@ def main():
     argparser.add_argument('docs', metavar='DOC', nargs='*', help="document to check")
 
     argparser.add_argument('-d', '--debug', action='store_true', help="show debug information")
+    argparser.add_argument('-l', '--list', action='store_true', help="list the idnits checks")
     argparser.add_argument('-m', '--mode', choices=['normal', 'lenient', 'submission',], default='normal',
         help="the mode to run in, default=%(default)s ")
     argparser.add_argument('-v', '--verbose', action='store_true', help="be more verbose")
@@ -62,13 +79,17 @@ def main():
         show_version(verbose=options.verbose)
         sys.exit(0)
 
+    if options.list:
+        show_checks()
+        sys.exit()
+
     errors = 0
     for filename in options.docs:
         severities = ['err', 'warn', 'comm']
         items = dict( (s, []) for s in severities)
         longform = dict(err='error', warn='warning', comm='comment')
         #
-        sys.stdout.write("Inspecting file %s\n" % filename)
+        print("Inspecting file %s" % filename)
         try:
             doc = idnits.parser.parse(filename, options)
         except LookupError as e:
@@ -97,20 +118,20 @@ def main():
 
             if found:
                 count = len(found)
-                sys.stdout.write("\n%s%s%s\n\n" % (long, '' if count==1 else 's', ':' if count>0 else ''))
+                print("\n%s%s%s\n" % (long, '' if count==1 else 's', ':' if count>0 else ''))
                 for nits, msg in found:
-                    sys.stdout.write("   %s" % (msg, ))
+                    sys.stdout.write(idnits.utils.wrap("   %s" % (msg, ), i=9))
                     assert msg.endswith('.') is False
                     if options.verbose:
-                        sys.stdout.write(':\n\n')
+                        print(':\n')
                         for item in nits:
                             if item.num:
-                                sys.stdout.write("%s(%s): %s\n" % (filename, item.num, item.msg))
+                                print("%s(%s): %s" % (filename, item.num, item.msg))
                             else:
-                                sys.stdout.write("%s: %s\n" % (filename, item.msg))
-                        sys.stdout.write('\n')
+                                print("%s: %s" % (filename, item.msg))
+                        print('')
                     else:
-                        sys.stdout.write('.\n')
+                        print('.')
         errors += len(result['err'])
 
         summary = []
@@ -120,9 +141,9 @@ def main():
             count = len(found)
             tot += count
             summary.append("%s %s%s" % (count, longform[s], '' if count==1 else 's'))
-        sys.stdout.write('\n')
+        print('')
         if tot>0 and not options.verbose:
-            sys.stdout.write('Use --verbose mode to get a line-by-line listing of the issues found.\n\n')
-        sys.stdout.write("Found %s.\n\n"  % ', '.join(summary))
+            print('Use --verbose mode to get a line-by-line listing of the issues found.\n')
+        print("Found %s.\n"  % ', '.join(summary))
 
     sys.exit(1 if errors else 0)

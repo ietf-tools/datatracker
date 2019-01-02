@@ -30,5 +30,5 @@ class Options(object):
                 setattr(self, k, v)
     pass
 
-default_options = Options(debug=False, docs=[], mode='normal', silent=False, verbose=False, version=False, )
+default_options = Options(debug=False, docs=[], list=False, mode='normal', silent=False, verbose=False, version=False, )
 
