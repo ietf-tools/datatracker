@@ -15,12 +15,14 @@ class LatestMeetingMaterialFeed(Feed):
 
     def items(self):
         objs = []
+        # FIXME: why aren't other materials types in here?
         for doc in Document.objects.filter(type__in=("agenda", "minutes", "slides")).order_by('-time')[:60]:
             obj = dict(
                 title=doc.type_id,
                 group_acronym=doc.name.split("-")[2],
                 date=doc.time,
-                link=self.base_url + os.path.join(doc.get_file_path(), doc.external_url)[len(settings.AGENDA_PATH):],
+                # FIXME: why isn't this using gref or href?
+                link=self.base_url + os.path.join(doc.get_file_path(), doc.uploaded_filename)[len(settings.AGENDA_PATH):],
                 author=""
                 )
             objs.append(obj)

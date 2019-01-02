@@ -5,9 +5,9 @@ def get_full_path(doc):
     '''
     import os
     
-    if doc.type_id not in ('slides','agenda','minutes') or not doc.external_url:
+    if doc.type_id not in ('slides','agenda','minutes') or not doc.uploaded_filename:
         return None
-    return os.path.join(doc.get_file_path(), doc.external_url)
+    return os.path.join(doc.get_file_path(), doc.uploaded_filename)
     
 def get_rfc_num(doc):
     qs = doc.docalias_set.filter(name__startswith='rfc')

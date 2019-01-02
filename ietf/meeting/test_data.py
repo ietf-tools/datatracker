@@ -37,7 +37,7 @@ def make_interim_meeting(group,date,status='sched'):
     rev = '00'
     file = "%s-%s.txt" % (name, rev)
     doc = DocumentFactory.create(name=name, type_id='agenda', title="Agenda",
-        external_url=file, group=group, rev=rev, states=[('draft','active')])
+        uploaded_filename=file, group=group, rev=rev, states=[('draft','active')])
     pres = SessionPresentation.objects.create(session=session, document=doc, rev=doc.rev)
     session.sessionpresentation_set.add(pres)
     # minutes
@@ -45,7 +45,7 @@ def make_interim_meeting(group,date,status='sched'):
     rev = '00'
     file = "%s-%s.txt" % (name, rev)
     doc = DocumentFactory.create(name=name, type_id='minutes', title="Minutes",
-        external_url=file, group=group, rev=rev, states=[('draft','active')])
+        uploaded_filename=file, group=group, rev=rev, states=[('draft','active')])
     pres = SessionPresentation.objects.create(session=session, document=doc, rev=doc.rev)
     session.sessionpresentation_set.add(pres)
     # slides
@@ -55,7 +55,7 @@ def make_interim_meeting(group,date,status='sched'):
     rev = '00'
     file = "%s-%s.txt" % (name, rev)
     doc = DocumentFactory.create(name=name, type_id='slides', title=title,
-        external_url=file, group=group, rev=rev,
+        uploaded_filename=file, group=group, rev=rev,
         states=[('slides','active'), ('reuse_policy', 'single')])
     pres = SessionPresentation.objects.create(session=session, document=doc, rev=doc.rev)
     session.sessionpresentation_set.add(pres)
@@ -158,23 +158,23 @@ def make_meeting_test_data(meeting=None):
     
 
     doc = DocumentFactory.create(name='agenda-42-mars', type_id='agenda', title="Agenda",
-        external_url="agenda-42-mars.txt", group=mars, rev='00', states=[('draft','active')])
+        uploaded_filename="agenda-42-mars.txt", group=mars, rev='00', states=[('draft','active')])
     pres = SessionPresentation.objects.create(session=mars_session,document=doc,rev=doc.rev)
     mars_session.sessionpresentation_set.add(pres) # 
 
     doc = DocumentFactory.create(name='minutes-42-mars', type_id='minutes', title="Minutes",
-        external_url="minutes-42-mars.txt", group=mars, rev='00', states=[('minutes','active')])
+        uploaded_filename="minutes-42-mars.txt", group=mars, rev='00', states=[('minutes','active')])
     pres = SessionPresentation.objects.create(session=mars_session,document=doc,rev=doc.rev)
     mars_session.sessionpresentation_set.add(pres)
 
     doc = DocumentFactory.create(name='slides-42-mars-1-active', type_id='slides', title="Slideshow",
-        external_url="slides-42-mars.txt", group=mars, rev='00',
+        uploaded_filename="slides-42-mars.txt", group=mars, rev='00',
         states=[('slides','active'), ('reuse_policy', 'single')])
     pres = SessionPresentation.objects.create(session=mars_session,document=doc,rev=doc.rev)
     mars_session.sessionpresentation_set.add(pres)
 
     doc = DocumentFactory.create(name='slides-42-mars-2-deleted', type_id='slides',
-        title="Bad Slideshow", external_url="slides-42-mars-2-deleted.txt", group=mars, rev='00',
+        title="Bad Slideshow", uploaded_filename="slides-42-mars-2-deleted.txt", group=mars, rev='00',
         states=[('slides','deleted'), ('reuse_policy', 'single')])
     pres = SessionPresentation.objects.create(session=mars_session,document=doc,rev=doc.rev)
     mars_session.sessionpresentation_set.add(pres)

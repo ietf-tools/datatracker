@@ -267,7 +267,9 @@ class InterimSessionModelForm(forms.ModelForm):
                 group=self.group,
                 name=filename,
                 rev='00',
-                external_url='{}-00.txt'.format(filename))
+                # FIXME: if these are always computed, they shouldn't be in uploaded_filename - just compute them when needed
+                # FIXME: What about agendas in html or markdown format?
+                uploaded_filename='{}-00.txt'.format(filename))
             doc.set_state(State.objects.get(type__slug=doc.type.slug, slug='active'))
             DocAlias.objects.create(name=doc.name, document=doc)
             self.instance.sessionpresentation_set.create(document=doc, rev=doc.rev)

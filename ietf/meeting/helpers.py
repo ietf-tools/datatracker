@@ -208,7 +208,8 @@ def read_session_file(type, num, doc):
     # style python format, something like this:
     #  DOC_PATH_FORMAT = { "agenda": "/foo/bar/agenda-{meeting.number}/agenda-{meeting-number}-{doc.group}*", }
     #
-    path = os.path.join(settings.AGENDA_PATH, "%s/%s/%s" % (num, type, doc.external_url))
+    # FIXME: uploaded_filename should be replaced with a function call that computes names that are fixed
+    path = os.path.join(settings.AGENDA_PATH, "%s/%s/%s" % (num, type, doc.uploaded_filename))
     if os.path.exists(path):
         with open(path) as f:
             return f.read(), path

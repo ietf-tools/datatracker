@@ -51,13 +51,12 @@ def find_index(slide_id, qs):
 def get_doc_filename(doc):
     '''
     This function takes a Document of type slides,minute or agenda and returns
-    the full path to the file on disk.  During migration of the system the
-    filename was saved in external_url, new files will also use this convention.
+    the full path to the file on disk.  
     '''
     session = doc.session_set.all()[0]
     meeting = session.meeting
     if doc.external_url:
-        return os.path.join(meeting.get_materials_path(),doc.type.slug,doc.external_url)
+        return os.path.join(meeting.get_materials_path(),doc.type.slug,doc.uploaded_filename)
     else:
         path = os.path.join(meeting.get_materials_path(),doc.type.slug,doc.name)
         files = glob.glob(path + '.*')
@@ -191,14 +190,14 @@ def process_pdfs(request, meeting_num):
     warn_count = 0
     count = 0
     meeting = get_object_or_404(Meeting, number=meeting_num)
-    ppt = Document.objects.filter(session__meeting=meeting,type='slides',external_url__endswith='.ppt').exclude(states__slug='deleted')
-    pptx = Document.objects.filter(session__meeting=meeting,type='slides',external_url__endswith='.pptx').exclude(states__slug='deleted')
+    ppt = Document.objects.filter(session__meeting=meeting,type='slides',uploaded_filename__endswith='.ppt').exclude(states__slug='deleted')
+    pptx = Document.objects.filter(session__meeting=meeting,type='slides',uploaded_filename__endswith='.pptx').exclude(states__slug='deleted')
     for doc in itertools.chain(ppt,pptx):
-        base,ext = os.path.splitext(doc.external_url)
+        base,ext = os.path.splitext(doc.uploaded_filename)
         pdf_file = base + '.pdf'
         path = os.path.join(settings.SECR_PROCEEDINGS_DIR,meeting_num,'slides',pdf_file)
         if os.path.exists(path):
-            doc.external_url = pdf_file
+            doc.uploaded_filename = pdf_file
             e = DocEvent.objects.create(
                 type='changed_document',
                 by=Person.objects.get(name="(System)"),
@@ -313,8 +312,8 @@ def select(request, meeting_num):
 
     # count PowerPoint files waiting to be converted
     # TODO : This should look at SessionPresentation instead
-    ppt = Document.objects.filter(session__meeting=meeting,type='slides',external_url__endswith='.ppt').exclude(states__slug='deleted')
-    pptx = Document.objects.filter(session__meeting=meeting,type='slides',external_url__endswith='.pptx').exclude(states__slug='deleted')
+    ppt = Document.objects.filter(session__meeting=meeting,type='slides',uploaded_filename__endswith='.ppt').exclude(states__slug='deleted')
+    pptx = Document.objects.filter(session__meeting=meeting,type='slides',uploaded_filename__endswith='.pptx').exclude(states__slug='deleted')
     ppt_count = ppt.count() + pptx.count()
 
     return render(request, 'proceedings/select.html', {

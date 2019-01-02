@@ -549,11 +549,9 @@ def document_main(request, name, rev=None):
     if doc.type_id in ("slides", "agenda", "minutes", "bluesheets",):
         can_manage_material = can_manage_materials(request.user, doc.group)
         presentations = doc.future_presentations()
-        if doc.meeting_related():
-            basename = doc.canonical_name() # meeting materials are unversioned at the moment
-            if doc.external_url:
-                # we need to remove the extension for the globbing below to work
-                basename = os.path.splitext(doc.external_url)[0]
+        if doc.uploaded_filename:
+            # we need to remove the extension for the globbing below to work
+            basename = os.path.splitext(doc.uploaded_filename)[0]
         else:
             basename = "%s-%s" % (doc.canonical_name(), doc.rev)
 

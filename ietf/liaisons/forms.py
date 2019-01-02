@@ -366,7 +366,7 @@ class LiaisonModelForm(BetterModelForm):
                 defaults=dict(
                     title = attachment_title,
                     type_id = "liai-att",
-                    external_url = name + extension, # strictly speaking not necessary, but just for the time being ...
+                    uploaded_filename = name + extension, 
                     )
                 )
             if created:

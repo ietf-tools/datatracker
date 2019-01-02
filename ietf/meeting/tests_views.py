@@ -51,7 +51,7 @@ class MeetingTests(TestCase):
         shutil.rmtree(self.materials_dir)
 
     def write_materials_file(self, meeting, doc, content):
-        path = os.path.join(self.materials_dir, "%s/%s/%s" % (meeting.number, doc.type_id, doc.external_url))
+        path = os.path.join(self.materials_dir, "%s/%s/%s" % (meeting.number, doc.type_id, doc.uploaded_filename))
 
         dirname = os.path.dirname(path)
         if not os.path.exists(dirname):
@@ -158,9 +158,9 @@ class MeetingTests(TestCase):
         self.assertTrue(session.group.parent.acronym.upper() in agenda_content)
         self.assertTrue(slot.location.name in agenda_content)
 
-        self.assertTrue(session.materials.get(type='agenda').external_url in unicontent(r))
-        self.assertTrue(session.materials.filter(type='slides').exclude(states__type__slug='slides',states__slug='deleted').first().external_url in unicontent(r))
-        self.assertFalse(session.materials.filter(type='slides',states__type__slug='slides',states__slug='deleted').first().external_url in unicontent(r))
+        self.assertTrue(session.materials.get(type='agenda').uploaded_filename in unicontent(r))
+        self.assertTrue(session.materials.filter(type='slides').exclude(states__type__slug='slides',states__slug='deleted').first().uploaded_filename in unicontent(r))
+        self.assertFalse(session.materials.filter(type='slides',states__type__slug='slides',states__slug='deleted').first().uploaded_filename in unicontent(r))
 
         # iCal
         r = self.client.get(urlreverse("ietf.meeting.views.ical_agenda", kwargs=dict(num=meeting.number))
