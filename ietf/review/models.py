@@ -110,8 +110,6 @@ class ReviewRequest(models.Model):
     document, rev, and reviewer."""
     state         = ForeignKey(ReviewRequestStateName)
 
-    old_id        = models.IntegerField(blank=True, null=True, help_text="ID in previous review system") # FIXME: remove this when everything has been migrated
-
     # Fields filled in on the initial record creation - these
     # constitute the request part.
     time          = models.DateTimeField(default=datetime.datetime.now)

@@ -505,7 +505,6 @@ TEST_CODE_COVERAGE_EXCLUDE_FILES = [
     "ietf/manage.py",
     "ietf/virtualenv-manage.py",
     "ietf/meeting/timedeltafield.py",   # Dead code, kept for a migration include
-    "ietf/review/import_from_review_tool.py",
     "ietf/settings*",
     "ietf/utils/templatetags/debug_filters.py",
     "ietf/utils/test_runner.py",

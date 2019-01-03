@@ -55,7 +55,6 @@ class ReviewRequestResource(ModelResource):
         #resource_name = 'reviewrequest'
         filtering = { 
             "id": ALL,
-            "old_id": ALL,
             "time": ALL,
             "deadline": ALL,
             "requested_rev": ALL,
