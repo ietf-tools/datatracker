@@ -30,6 +30,9 @@ Planned work in rough order
   there are about 100 file open() which should be reviewed and changed to
   io.open() unless that's clearly not right.
 
+* Add generation of bibxml reference library entries to the datatracker, in order
+  to be able to transition away from the old TCL code.
+
 * Add django pagination to selected pages with long lists of results in order
   return results to the user faster.
 
