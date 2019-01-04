@@ -14,11 +14,21 @@ Planned work in rough order
   could have been done with only table edits if there hadn't been so much code
   using type_id lists and features needing code changes).
 
-* Add the ability to unset certain state machines to allow documets to return to I-D Exists.
+* Change email sender -- move from AD and reviewer email addresses to a
+  datatracker address 'on behalf of'.
+
+* Fix the rfc sync script to update BCP changes (a BCP points to new RFC numbers)
+
+* Polish the htmlization pages, making the style identical with tools.ietf.org.
 
 * Revisit the review tool, work through the accumulated tickets.
 
-* Polish the htmlization pages, making the style identical with tools.ietf.org.
+* Review and change the draft submission and handling code to deal with UTF-8
+  instead of ascii before upload of utf-8 drafts should be permitted.  In
+  ietf.submit.views.upload_submission(), for instance, there's a file open()
+  which should be io.open() with the appropriate encoding.  In general,
+  there are about 100 file open() which should be reviewed and changed to
+  io.open() unless that's clearly not right.
 
 * Add django pagination to selected pages with long lists of results in order
   return results to the user faster.
@@ -31,6 +41,13 @@ Planned work in rough order
 
 * (EXTERNAL BID) Reworked UI and refactored backend for the scretariat meeting
   scheduling tool.
+
+* Transition to Python 3.  This will make it easier to add add support for
+  internationalsed email, and also other i18n enhancements.
+
+* Add support for internationalised email addresses according to RFC 6531
+  when sending email (this is not supported by smtplib under Python 2.7,
+  so will need python 3.x).
 
 * Test suite improvements.  Reduce and seek to eliminate causes of differences
   in code coverage between runs in the same and in different environments.
@@ -46,43 +63,34 @@ Planned work in rough order
 * Revisit photo uploads: Add photo upload for people with roles.  Add
   photos to wg pages and group overview pages.
 
+* Transition to Django 2.x (depends on Python 3.x).  Security updates to
+  Django 1.11 will cease around April 2020.
+
 * Revisit floorplans: Add room coordinate input tool (javascript).
   Add NOC object annotation possibilities.  Add support for break areas
   on multiple floors (probably means modelling break areas the same way
   as other sessions, and removing the break_area char_field on Meeting.
 
-* Transition to Python 3.  This will make it easier to add add support for
-  internationalsed email, and also other i18n enhancements.
-
-* Add support for document shepherding reports, possibly re-using or
-  generalising some of the review plumbing.  Check with IESG for details.
-
-* Add support for internationalised email addresses according to RFC 6531
-  when sending email (this is not supported by smtplib under Python 2.7,
-  so will need python 3.x).
-
-* Transition to PostgreSQL.  This will make it easier to start using
-  timezone-aware timestamps throughout the code, which will make it easy
-  to present localized times on web-pages.  It will also provide additional
-  tools for performance analysis
+* Add the ability to volunteer for Nomcom when logged in to the datatracker.
 
 * Transition to using timezone-aware timestamps.  Migrate database timestamps
   to be timezone-aware.  This means converting all timestamps to PST8PDT,
   except for meeting-related timestamps, which use the meeting.time_zone.
   Once done, set USE_TZ to True in settings.
 
+* Add support for document shepherding reports, possibly re-using or
+  generalising some of the review plumbing.  Check with IESG for details.
+
+* Transition to PostgreSQL.  This will make it easier to start using
+  timezone-aware timestamps throughout the code, which will make it easy
+  to present localized times on web-pages.  It will also provide additional
+  tools for performance analysis
+
 * Performance analysis of database table and index setup
 
 * Refactor Document and types into Document subclasses, with conditional code
   in views and utilities moved into models and overridden models where
   handling differs between document types.
-
-* Review and change the draft submission and handling code to deal with UTF-8
-  instead of ascii before upload of utf-8 drafts should be permitted.  In
-  ietf.submit.views.upload_submission(), for instance, there's a file open()
-  which should be codecs.open() with the appropriate encoding.  In general,
-  there are about 100 file open() which should be reviewed and changed to
-  codecs.open() unless that's clearly not right.
 
 * When draft XML source is available, take references from that instead
   of extracting them from the text version.
