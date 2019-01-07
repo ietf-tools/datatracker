@@ -405,6 +405,10 @@ def concluded_groups(request):
     sections['WGs'] = Group.objects.filter(type='wg', state="conclude").select_related("state", "charter").order_by("parent__name","acronym")
     sections['RGs'] = Group.objects.filter(type='rg', state="conclude").select_related("state", "charter").order_by("parent__name","acronym")
     sections['BOFs'] = Group.objects.filter(type='wg', state="bof-conc").select_related("state", "charter").order_by("parent__name","acronym")
+    sections['AGs'] = Group.objects.filter(type='ag', state="conclude").select_related("state", "charter").order_by("parent__name","acronym")
+    sections['Directorates'] = Group.objects.filter(type='dir', state="conclude").select_related("state", "charter").order_by("parent__name","acronym")
+    sections['Review teams'] = Group.objects.filter(type='review', state="conclude").select_related("state", "charter").order_by("parent__name","acronym")
+    sections['Teams'] = Group.objects.filter(type='team', state="conclude").select_related("state", "charter").order_by("parent__name","acronym")
 
     for name, groups in sections.items():
         
