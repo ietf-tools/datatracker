@@ -9,6 +9,7 @@ import shutil
 import tempfile
 import StringIO
 
+from collections import deque
 from django.conf import settings
 
 import debug                            # pyflakes:ignore
@@ -17,6 +18,8 @@ from ietf.utils.log import log, assertion
 from ietf.utils.models import VersionInfo
 from ietf.utils.pipe import pipe
 from ietf.utils.test_runner import set_coverage_checking
+
+cmd_pipe_results = deque([], 4)
 
 class DraftSubmissionChecker():
     name = ""
@@ -71,6 +74,8 @@ class DraftIdnitsChecker(object):
         Error and warning list items are tuples:
             (line_number, line_text, message)
         """
+        global cmd_pipe_results
+
         items = []
         errors = 0
         warnings = 0
@@ -80,6 +85,7 @@ class DraftIdnitsChecker(object):
 
         cmd = "%s %s %s" % (settings.IDSUBMIT_IDNITS_BINARY, self.options, path)
         code, out, err = pipe(cmd)
+        cmd_pipe_results.append((code, out, err))
         if code != 0 or out == "":
             message = "idnits error: %s:\n  Error %s: %s" %( cmd, code, err)
             log(message)
@@ -204,6 +210,7 @@ class DraftYangChecker(object):
                 cmd_version = VersionInfo.objects.get(command=command).version
                 cmd = cmd_template.format(libs=modpath, model=path)
                 code, out, err = pipe(cmd)
+                cmd_pipe_results.append((code, out, err))
                 if code > 0 or len(err.strip()) > 0 :
                     error_lines = err.splitlines()
                     assertion('len(error_lines) > 0')
@@ -235,6 +242,7 @@ class DraftYangChecker(object):
                     cmd = cmd_template.format(model=path, rfclib=settings.SUBMIT_YANG_RFC_MODEL_DIR, tmplib=workdir,
                         draftlib=settings.SUBMIT_YANG_DRAFT_MODEL_DIR, ianalib=settings.SUBMIT_YANG_IANA_MODEL_DIR, )
                     code, out, err = pipe(cmd)
+                    cmd_pipe_results.append((code, out, err))
                     if code > 0 or len(err.strip()) > 0:
                         error_lines = err.splitlines()
                         for line in error_lines:
