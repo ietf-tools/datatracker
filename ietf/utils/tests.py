@@ -33,6 +33,7 @@ from ietf.group.factories import GroupFactory
 from ietf.group.models import Group
 from ietf.person.name import name_parts, unidecode_name
 from ietf.submit.tests import submission_file
+from ietf.utils.bower_storage import BowerStorageFinder
 from ietf.utils.draft import Draft, getmeta
 from ietf.utils.mail import send_mail_preformatted, send_mail_text, send_mail_mime, outbox 
 from ietf.utils.management.commands import pyflakes
@@ -402,6 +403,13 @@ class AdminTestCase(TestCase):
 #                 debug.show('url')
 #                 r = self.client.get(url)
 #                 self.assertEqual(r.status_code, 200)
+
+class TestBowerStaticFiles(TestCase):
+
+    def test_bower_storage_finder(self):
+        bfs = BowerStorageFinder()
+        files = bfs.find('.')
+        self.assertNotEqual(files,[])
 
 
 class DraftTests(TestCase):
