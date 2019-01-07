@@ -80,6 +80,7 @@ old_destroy = None
 old_create = None
 
 template_coverage_collection = None
+code_coverage_collection = None
 url_coverage_collection = None
 
 
@@ -223,15 +224,18 @@ def save_test_results(failures, test_labels):
 
 def set_coverage_checking(flag=True):
     global template_coverage_collection
+    global code_coverage_collection
     global url_coverage_collection
     if settings.SERVER_MODE == 'test':
         if flag:
             settings.TEST_CODE_COVERAGE_CHECKER.collector.resume()
             template_coverage_collection = True
+            code_coverage_collection = True
             url_coverage_collection = True
         else:
             settings.TEST_CODE_COVERAGE_CHECKER.collector.pause()
             template_coverage_collection = False
+            code_coverage_collection = False
             url_coverage_collection = False
 
 class CoverageReporter(Reporter):
@@ -521,7 +525,6 @@ class IetfTestRunner(DiscoverRunner):
             settings.TEMPLATES[0]['OPTIONS']['loaders'] = ('ietf.utils.test_runner.TemplateCoverageLoader',) + settings.TEMPLATES[0]['OPTIONS']['loaders']
 
             settings.MIDDLEWARE = ('ietf.utils.test_runner.record_urls_middleware',) + tuple(settings.MIDDLEWARE)
-            url_coverage_collection = True
 
             self.code_coverage_checker = settings.TEST_CODE_COVERAGE_CHECKER
             if not self.code_coverage_checker._started:
@@ -628,7 +631,7 @@ class IetfTestRunner(DiscoverRunner):
         return test_apps, test_paths
 
     def run_tests(self, test_labels, extra_tests=[], **kwargs):
-        global old_destroy, old_create, test_database_name, template_coverage_collection
+        global old_destroy, old_create, test_database_name, template_coverage_collection, code_coverage_collection, url_coverage_collection
         from django.db import connection
         from ietf.doc.tests import TemplateTagTest
 
@@ -652,6 +655,8 @@ class IetfTestRunner(DiscoverRunner):
 
         if self.check_coverage:
             template_coverage_collection = True
+            code_coverage_collection = True
+            url_coverage_collection = True
             extra_tests += [
                 CoverageTest(test_runner=self, methodName='interleaved_migrations_test'),
                 CoverageTest(test_runner=self, methodName='url_coverage_test'),

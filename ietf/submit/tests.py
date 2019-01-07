@@ -31,8 +31,6 @@ from ietf.message.models import Message
 from ietf.name.models import FormalLanguageName
 from ietf.person.models import Person
 from ietf.person.factories import UserFactory, PersonFactory
-from ietf.submit.checkers import cmd_pipe_results
-
 from ietf.submit.models import Submission, Preapproval
 from ietf.submit.mail import add_submission_email, process_response_email
 from ietf.utils.mail import outbox, empty_outbox
@@ -1039,7 +1037,6 @@ class SubmitTests(TestCase):
         q = PyQuery(r.content)
         #
         self.assertContains(r, u'The yang validation returned 1 error')
-        self.assertIn('illegal keyword', cmd_pipe_results[-2][2])
         #
         m = q('#yang-validation-message').text()
         for command in ['xym', 'pyang', 'yanglint']:
