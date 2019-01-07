@@ -288,10 +288,14 @@ def post_submission(request, submission, approvedDesc):
 
     if not was_rfc and draft.tags.filter(slug="need-rev"):
         draft.tags.remove("need-rev")
-        draft.tags.add("ad-f-up")
+        if draft.stream_id == 'ietf':
+            draft.tags.add("ad-f-up")
 
         e = DocEvent(type="changed_document", doc=draft, rev=draft.rev)
-        e.desc = "Sub state has been changed to <b>AD Followup</b> from <b>Revised ID Needed</b>"
+        if draft.stream_id == 'ietf':
+            e.desc = "Sub state has been changed to <b>AD Followup</b> from <b>Revised ID Needed</b>"
+        else:
+            e.desc = "<b>Revised ID Needed</b> tag cleared"
         e.by = system
         e.save()
         events.append(e)
