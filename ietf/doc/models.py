@@ -97,13 +97,19 @@ class DocumentInfo(models.Model):
     shepherd = ForeignKey(Email, related_name='shepherd_%(class)s_set', blank=True, null=True)
     expires = models.DateTimeField(blank=True, null=True)
     notify = models.CharField(max_length=255, blank=True)
-    external_url = models.URLField(blank=True) # Should be set for documents with type 'External'.
+    external_url = models.URLField(blank=True)
+    uploaded_filename = models.TextField(blank=True)
     note = models.TextField(blank=True)
     internal_comments = models.TextField(blank=True)
 
     def file_extension(self):
-        _,ext = os.path.splitext(self.external_url)
-        return ext.lstrip(".").lower()
+        if not hasattr(self, '_cached_extension'):
+            if self.uploaded_filename:
+                _, ext= os.path.splitext(self.uploaded_filename)
+                self._cached_extension = ext.lstrip(".").lower()
+            else:
+                self._cached_extension = "txt"
+        return self._cached_extension
 
     def get_file_path(self):
         if not hasattr(self, '_cached_file_path'):
@@ -138,7 +144,9 @@ class DocumentInfo(models.Model):
 
     def get_base_name(self):
         if not hasattr(self, '_cached_base_name'):
-            if self.type_id == 'draft':
+            if self.uploaded_filename:
+                self._cached_base_name = self.uploaded_filename
+            elif self.type_id == 'draft':
                 if self.is_dochistory():
                     self._cached_base_name = "%s-%s.txt" % (self.doc.name, self.rev)
                 else:
@@ -147,12 +155,9 @@ class DocumentInfo(models.Model):
                     else:
                         self._cached_base_name = "%s-%s.txt" % (self.name, self.rev)
             elif self.type_id in ["slides", "agenda", "minutes", "bluesheets", ] and self.meeting_related():
-                if self.external_url:
-                    # we need to remove the extension for the globbing below to work
-                    self._cached_base_name = self.external_url
-                else:
-                    self._cached_base_name = "%s.txt" % self.canonical_name() # meeting materials are unversioned at the moment
+                    self._cached_base_name = "%s-%s.txt" % self.canonical_name() 
             elif self.type_id == 'review':
+                # TODO: This will be wrong if a review is updated on the same day it was created (or updated more than once on the same day)
                 self._cached_base_name = "%s.txt" % self.name
             else:
                 if self.rev:
@@ -195,8 +200,6 @@ class DocumentInfo(models.Model):
         # the earlier resulution order, but there's at the moment one single
         # instance which matches this (with correct results), so we won't
         # break things all over the place.
-        # XXX TODO: move all non-URL 'external_url' values into a field which is
-        # better named, or regularize the filename based on self.name
         if not hasattr(self, '_cached_href'):
             validator = URLValidator()
             if self.external_url and self.external_url.split(':')[0] in validator.schemes:
@@ -204,6 +207,7 @@ class DocumentInfo(models.Model):
                     validator(self.external_url)
                     return self.external_url
                 except ValidationError:
+                    log.unreachable('2018-12-28')
                     pass
 
 
@@ -223,10 +227,7 @@ class DocumentInfo(models.Model):
             elif self.type_id in meeting_doc_refs:
                 self.is_meeting_related = True
             else:
-                if len(self.external_url):
-                    return self.external_url
-                else:
-                    return None
+                return None
 
             if self.is_meeting_related:
                 if not meeting:
@@ -625,7 +626,7 @@ class Document(DocumentInfo):
                     if self.type_id == 'recording':
                         url = self.external_url
                     else:
-                        filename = self.external_url
+                        filename = self.uploaded_filename
                         url = '%sproceedings/%s/%s/%s' % (settings.IETF_HOST_URL,meeting.number,self.type_id,filename)
             else:
                 url = urlreverse('ietf.doc.views_doc.document_main', kwargs={ 'name': name }, urlconf="ietf.urls")

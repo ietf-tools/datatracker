@@ -1107,7 +1107,7 @@ class Session(models.Model):
     def agenda_text(self):
         doc = self.agenda()
         if doc:
-            path = os.path.join(settings.AGENDA_PATH, self.meeting.number, "agenda", doc.external_url)
+            path = os.path.join(settings.AGENDA_PATH, self.meeting.number, "agenda", doc.uploaded_filename)
             if os.path.exists(path):
                 with open(path) as f:
                     return f.read()
@@ -1130,10 +1130,8 @@ class Session(models.Model):
             if not agenda:
                 return ""
 
-            # we use external_url at the moment, should probably regularize
-            # the filenames to match the document name instead
-            filename = agenda.external_url
-            self._agenda_file = "%s/agenda/%s" % (self.meeting.number, filename)
+            # FIXME: uploaded_filename should be replaced with a function that computes filenames when they are of a fixed schema and not uploaded names
+            self._agenda_file = "%s/agenda/%s" % (self.meeting.number, agenda.uploaded_filename)
             
         return self._agenda_file
 

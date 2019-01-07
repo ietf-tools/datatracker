@@ -271,14 +271,14 @@ def post_process(doc):
         try:
             cmd = settings.SECR_PPT2PDF_COMMAND
             cmd.append(doc.get_file_path())                                 # outdir
-            cmd.append(os.path.join(doc.get_file_path(),doc.external_url))  # filename
+            cmd.append(os.path.join(doc.get_file_path(),doc.uploaded_filename))  # filename
             subprocess.check_call(cmd)
         except (subprocess.CalledProcessError, OSError) as error:
             log("Error converting PPT: %s" % (error))
             return
         # change extension
-        base,ext = os.path.splitext(doc.external_url)
-        doc.external_url = base + '.pdf'
+        base,ext = os.path.splitext(doc.uploaded_filename)
+        doc.uploaded_filename = base + '.pdf'
 
         e = DocEvent.objects.create(
             type='changed_document',

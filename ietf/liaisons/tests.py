@@ -432,7 +432,7 @@ class LiaisonManagementTests(TestCase):
         self.assertEqual(new_liaison.attachments.count(), attachments_before + 1)
         attachment = new_liaison.attachments.order_by("-name")[0]
         self.assertEqual(attachment.title, "attachment")
-        with open(os.path.join(self.liaison_dir, attachment.external_url)) as f:
+        with open(os.path.join(self.liaison_dir, attachment.uploaded_filename)) as f:
             written_content = f.read()
 
         test_file.seek(0)
@@ -736,7 +736,7 @@ class LiaisonManagementTests(TestCase):
         self.assertEqual(l.attachments.count(), 1)
         attachment = l.attachments.all()[0]
         self.assertEqual(attachment.title, "attachment")
-        with open(os.path.join(self.liaison_dir, attachment.external_url)) as f:
+        with open(os.path.join(self.liaison_dir, attachment.uploaded_filename)) as f:
             written_content = f.read()
 
         test_file.seek(0)
@@ -815,7 +815,7 @@ class LiaisonManagementTests(TestCase):
         self.assertEqual(l.attachments.count(), 1)
         attachment = l.attachments.all()[0]
         self.assertEqual(attachment.title, "attachment")
-        with open(os.path.join(self.liaison_dir, attachment.external_url)) as f:
+        with open(os.path.join(self.liaison_dir, attachment.uploaded_filename)) as f:
             written_content = f.read()
 
         test_file.seek(0)

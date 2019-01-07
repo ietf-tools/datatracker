@@ -530,12 +530,12 @@ def agenda_csv(schedule, filtered_assignments):
     def agenda_field(item):
         agenda_doc = item.session.agenda()
         if agenda_doc:
-            return "http://www.ietf.org/proceedings/{schedule.meeting.number}/agenda/{agenda.external_url}".format(schedule=schedule, agenda=agenda_doc)
+            return "http://www.ietf.org/proceedings/{schedule.meeting.number}/agenda/{agenda.uploaded_filename}".format(schedule=schedule, agenda=agenda_doc)
         else:
             return ""
 
     def slides_field(item):
-        return "|".join("http://www.ietf.org/proceedings/{schedule.meeting.number}/slides/{slide.external_url}".format(schedule=schedule, slide=slide) for slide in item.session.slides())
+        return "|".join("http://www.ietf.org/proceedings/{schedule.meeting.number}/slides/{slide.uploaded_filename}".format(schedule=schedule, slide=slide) for slide in item.session.slides())
 
     write_row(headings)
 
@@ -1210,7 +1210,7 @@ def upload_session_bluesheets(request, session_id, num):
                 doc.docalias_set.create(name=doc.name)
                 session.sessionpresentation_set.create(document=doc,rev='00')
             filename = '%s-%s%s'% ( doc.name, doc.rev, ext)
-            doc.external_url = filename
+            doc.uploaded_filename = filename
             e = NewRevisionDocEvent.objects.create(doc=doc, rev=doc.rev, by=request.user.person, type='new_revision', desc='New revision available: %s'%doc.rev)
             save_error = handle_upload_file(file, filename, session.meeting, 'bluesheets', request=request, encoding=form.file_encoding[file.name])
             if save_error:
@@ -1310,7 +1310,7 @@ def upload_session_minutes(request, session_id, num):
                         other_session.sessionpresentation_set.filter(document__type='minutes').delete()
                         other_session.sessionpresentation_set.create(document=doc,rev=doc.rev)
             filename = '%s-%s%s'% ( doc.name, doc.rev, ext)
-            doc.external_url = filename
+            doc.uploaded_filename = filename
             e = NewRevisionDocEvent.objects.create(doc=doc, by=request.user.person, type='new_revision', desc='New revision available: %s'%doc.rev, rev=doc.rev)
             # The way this function builds the filename it will never trigger the file delete in handle_file_upload.
             save_error = handle_upload_file(file, filename, session.meeting, 'minutes', request=request, encoding=form.file_encoding[file.name])
@@ -1413,7 +1413,7 @@ def upload_session_agenda(request, session_id, num):
                         other_session.sessionpresentation_set.filter(document__type='agenda').delete()
                         other_session.sessionpresentation_set.create(document=doc,rev=doc.rev)
             filename = '%s-%s%s'% ( doc.name, doc.rev, ext)
-            doc.external_url = filename
+            doc.uploaded_filename = filename
             e = NewRevisionDocEvent.objects.create(doc=doc,by=request.user.person,type='new_revision',desc='New revision available: %s'%doc.rev,rev=doc.rev)
             # The way this function builds the filename it will never trigger the file delete in handle_file_upload.
             save_error = handle_upload_file(file, filename, session.meeting, 'agenda', request=request, encoding=form.file_encoding[file.name])
@@ -1518,7 +1518,7 @@ def upload_session_slides(request, session_id, num, name):
                         max_order = other_session.sessionpresentation_set.filter(document__type='slides').aggregate(Max('order'))['order__max'] or 0
                         other_session.sessionpresentation_set.create(document=doc,rev=doc.rev,order=max_order+1)
             filename = '%s-%s%s'% ( doc.name, doc.rev, ext)
-            doc.external_url = filename
+            doc.uploaded_filename = filename
             e = NewRevisionDocEvent.objects.create(doc=doc,by=request.user.person,type='new_revision',desc='New revision available: %s'%doc.rev,rev=doc.rev)
             # The way this function builds the filename it will never trigger the file delete in handle_file_upload.
             save_error = handle_upload_file(file, filename, session.meeting, 'slides', request=request, encoding=form.file_encoding[file.name])

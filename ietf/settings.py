@@ -611,8 +611,8 @@ DOC_HREFS = {
     "slides": "https://www.ietf.org/slides/{doc.name}-{doc.rev}",
     "conflrev": "https://www.ietf.org/cr/{doc.name}-{doc.rev}.txt",
     "statchg": "https://www.ietf.org/sc/{doc.name}-{doc.rev}.txt",
-    "liaison": "%s{doc.external_url}" % LIAISON_ATTACH_URL,
-    "liai-att": "%s{doc.external_url}" % LIAISON_ATTACH_URL,
+    "liaison": "%s{doc.uploaded_filename}" % LIAISON_ATTACH_URL,
+    "liai-att": "%s{doc.uploaded_filename}" % LIAISON_ATTACH_URL,
 }
 
 MEETING_DOC_HREFS = {
@@ -620,7 +620,7 @@ MEETING_DOC_HREFS = {
     "minutes": "/meeting/{meeting.number}/materials/{doc.name}-{doc.rev}",
     "slides": "/meeting/{meeting.number}/materials/{doc.name}-{doc.rev}",
     "recording": "{doc.external_url}",
-    "bluesheets": "https://www.ietf.org/proceedings/{meeting.number}/bluesheets/{doc.external_url}",
+    "bluesheets": "https://www.ietf.org/proceedings/{meeting.number}/bluesheets/{doc.uploaded_filename}",
 }
 
 MEETING_DOC_OLD_HREFS = {
@@ -628,7 +628,7 @@ MEETING_DOC_OLD_HREFS = {
     "minutes": "/meeting/{meeting.number}/materials/{doc.name}",
     "slides": "/meeting/{meeting.number}/materials/{doc.name}",
     "recording": "{doc.external_url}",
-    "bluesheets": "https://www.ietf.org/proceedings/{meeting.number}/bluesheets/{doc.external_url}",
+    "bluesheets": "https://www.ietf.org/proceedings/{meeting.number}/bluesheets/{doc.uploaded_filename}",
 }
 
 # For http references to documents without a version number (that is, to the current version at the time of reference)
@@ -637,7 +637,7 @@ MEETING_DOC_GREFS = {
     "minutes": "/meeting/{meeting.number}/materials/{doc.name}",
     "slides": "/meeting/{meeting.number}/materials/{doc.name}",
     "recording": "{doc.external_url}",
-    "bluesheets": "https://www.ietf.org/proceedings/{meeting.number}/bluesheets/{doc.external_url}",
+    "bluesheets": "https://www.ietf.org/proceedings/{meeting.number}/bluesheets/{doc.uploaded_filename}",
 }
 
 # Override this in settings_local.py if needed
