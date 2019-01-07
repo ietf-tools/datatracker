@@ -321,47 +321,52 @@ class SubmitTests(TestCase):
 
     def submit_existing(self, formats, change_authors=True, group_type='wg', stream_type='ietf'):
         # submit new revision of existing -> supply submitter info -> prev authors confirm
-        # The tests expect the draft to always have an ad, but that doesn't match what happens for most streams
-        ad = Person.objects.get(user__username='ad')
-        if group_type == 'area':
-            group = GroupFactory(type_id='area', acronym='mars')
-            RoleFactory(name_id='ad', group=group, person=ad)
-        else:
-            area = GroupFactory(type_id='area')
-            RoleFactory(name_id='ad',group=area,person=ad)
-            group = GroupFactory(type_id=group_type, parent=area, acronym='mars')
-        draft = DocumentFactory(type_id='draft', group=group, stream_id=stream_type, ad=ad, authors=PersonFactory.create_batch(1))
         if stream_type == 'ietf':
+            ad = Person.objects.get(user__username='ad')
+            if group_type == 'area':
+                group = GroupFactory(type_id='area', acronym='mars')
+                RoleFactory(name_id='ad', group=group, person=ad)
+            else:
+                area = GroupFactory(type_id='area')
+                RoleFactory(name_id='ad',group=area,person=ad)
+                group = GroupFactory(type_id=group_type, parent=area, acronym='mars')
+            draft = DocumentFactory(type_id='draft', group=group, stream_id=stream_type, ad=ad, authors=PersonFactory.create_batch(1))
             draft.set_state(State.objects.get(type_id='draft-stream-ietf',slug='wg-doc'))
+
+            # pretend IANA reviewed it
+            draft.set_state(State.objects.get(used=True, type="draft-iana-review", slug="not-ok"))
+
+            # pretend it was approved to check that we notify the RFC Editor
+            e = DocEvent(type="iesg_approved", doc=draft, rev=draft.rev)
+            e.time = draft.time
+            e.by = Person.objects.get(name="(System)")
+            e.desc = "The IESG approved the document"
+            e.save()
+
+            # make a discuss to see if the AD gets an email
+            ad = Person.objects.get(user__username="ad")
+            ballot = create_ballot_if_not_open(None, draft, ad, 'approve')
+            ballot_position = BallotPositionDocEvent()
+            ballot_position.ballot = ballot
+            ballot_position.pos_id = "discuss"
+            ballot_position.type = "changed_ballot_position"
+            ballot_position.doc = draft
+            ballot_position.rev = draft.rev
+            ballot_position.ad = ballot_position.by = Person.objects.get(user__username="ad2")
+            ballot_position.save()
+
+        elif stream_type == 'irtf':
+            group = GroupFactory(type_id='rg', parent=Group.objects.get(acronym='irtf'), acronym='mars')
+            draft = DocumentFactory(type_id='draft', group=group, stream_id='irtf', authors=PersonFactory.create_batch(1))
+
+        else:
+            draft = IndividualDraftFactory(stream_id=stream_type, authors=PersonFactory.create_batch(1))
             
         prev_author = draft.documentauthor_set.all()[0]
         if change_authors:
             # Make it such that one of the previous authors has an invalid email address
             bogus_person, bogus_email = ensure_person_email_info_exists(u'Bogus Person', None, draft.name)
             DocumentAuthor.objects.create(document=draft, person=bogus_person, email=bogus_email, order=draft.documentauthor_set.latest('order').order+1)
-
-        # pretend IANA reviewed it
-        draft.set_state(State.objects.get(used=True, type="draft-iana-review", slug="not-ok"))
-
-        # pretend it was approved to check that we notify the RFC Editor
-        e = DocEvent(type="iesg_approved", doc=draft, rev=draft.rev)
-        e.time = draft.time
-        e.by = Person.objects.get(name="(System)")
-        e.desc = "The IESG approved the document"
-        e.save()
-
-        # make a discuss to see if the AD gets an email
-        # TODO : this should only happen if the document stream is IETF
-        ad = Person.objects.get(user__username="ad")
-        ballot = create_ballot_if_not_open(None, draft, ad, 'approve')
-        ballot_position = BallotPositionDocEvent()
-        ballot_position.ballot = ballot
-        ballot_position.pos_id = "discuss"
-        ballot_position.type = "changed_ballot_position"
-        ballot_position.doc = draft
-        ballot_position.rev = draft.rev
-        ballot_position.ad = ballot_position.by = Person.objects.get(user__username="ad2")
-        ballot_position.save()
 
         # Set the revision needed tag
         draft.tags.add("need-rev")
@@ -374,6 +379,8 @@ class SubmitTests(TestCase):
         old_rev = draft.rev
         with open(os.path.join(self.repository_dir, "%s-%s.txt" % (name, old_rev)), 'w') as f:
             f.write("a" * 2000)
+
+        old_docevents = list(draft.docevent_set.all())
 
         status_url, author = self.do_submission(name, rev, group, formats, author=prev_author.person)
 
@@ -405,9 +412,8 @@ class SubmitTests(TestCase):
                 self.assertTrue("aread@" in confirm_email["To"].lower())
             else:
                 pass
-            if stream_type not in 'ietf':
-                if stream_type=='ise':
-                   self.assertTrue("rfc-ise@" in confirm_email["To"].lower())
+            if stream_type=='ise':
+               self.assertTrue("rfc-ise@" in confirm_email["To"].lower())
         else:
             self.assertNotIn("chairs have been copied", unicode(confirm_email))
             self.assertNotIn("mars-chairs@", confirm_email["To"].lower())
@@ -424,8 +430,10 @@ class SubmitTests(TestCase):
         r = self.client.post(confirm_url, {'action':'confirm'})
         self.assertEqual(r.status_code, 302)
 
+        new_docevents = draft.docevent_set.exclude(pk__in=[event.pk for event in old_docevents])
+
         # check we have document events 
-        doc_events = draft.docevent_set.filter(type__in=["new_submission", "added_comment"])
+        doc_events = new_docevents.filter(type__in=["new_submission", "added_comment"])
         edescs = '::'.join([x.desc for x in doc_events])
         self.assertTrue('New version approved' in edescs)
         self.assertTrue('Uploaded new revision' in edescs)
@@ -434,42 +442,33 @@ class SubmitTests(TestCase):
         self.assertEqual(draft.rev, rev)
         self.assertEqual(draft.group.acronym, name.split("-")[2])
         #
-        docevents = list(draft.docevent_set.all().order_by("-time", "-id"))
+        docevents = list(new_docevents.order_by("-time", "-id"))
         # Latest events are first (this is the default, but we make it explicit)
         # Assert event content in chronological order:
-        self.assertEqual(docevents[5].type, "new_submission")
-        self.assertIn("Uploaded new revision", docevents[5].desc)
-        self.assertEqual(docevents[5].by.name, "Submitter Name")
-        self.assertGreater(docevents[5].id, docevents[6].id)
-        #
-        self.assertEqual(docevents[4].type, "new_submission")
-        self.assertIn("Request for posting confirmation", docevents[4].desc)
-        self.assertEqual(docevents[4].by.name, "(System)")
-        self.assertGreater(docevents[4].id, docevents[5].id)
-        #
-        self.assertEqual(docevents[3].type, "new_submission")
-        self.assertIn("New version approved", docevents[3].desc)
-        self.assertEqual(docevents[3].by.name, "(System)")
-        self.assertGreater(docevents[3].id, docevents[4].id)
-        #
-        self.assertEqual(docevents[2].type, "new_revision")
-        self.assertIn("New version available", docevents[2].desc)
-        self.assertEqual(docevents[2].by.name, "Submitter Name")
-        self.assertGreater(docevents[2].id, docevents[3].id)
-        #
-        self.assertEqual(docevents[1].type, "changed_state")
-        self.assertIn("IANA Review", docevents[1].desc)
-        self.assertEqual(docevents[1].by.name, "(System)")
-        self.assertGreater(docevents[1].id, docevents[2].id)
-        #
-        self.assertEqual(docevents[0].type, "changed_document")
+
+        def inspect_docevents(docevents, event_delta, type, be_in_desc, by_name):
+            self.assertEqual(docevents[event_delta].type, type)
+            self.assertIn(be_in_desc, docevents[event_delta].desc)
+            self.assertEqual(docevents[event_delta].by.name, by_name)
+            if len(docevents) > event_delta + 1:
+                self.assertGreater(docevents[event_delta].id, docevents[event_delta+1].id)
+
         if draft.stream_id == 'ietf':
-            self.assertIn("AD Followup", docevents[0].desc)
+            inspect_docevents(docevents, 5, "new_submission", "Uploaded new revision", "Submitter Name")
+            inspect_docevents(docevents, 4, "new_submission", "Request for posting confirmation", "(System)")
+            inspect_docevents(docevents, 3, "new_submission", "New version approved", "(System)")
+            inspect_docevents(docevents, 2, "new_revision", "New version available", "Submitter Name")
+            inspect_docevents(docevents, 1, "changed_state", "IANA Review", "(System)")
+            inspect_docevents(docevents, 0, "changed_document", "AD Followup", "(System)")
+        elif draft.stream_id in ('ise', 'irtf', 'iab'):
+            inspect_docevents(docevents, 4, "new_submission", "Uploaded new revision", "Submitter Name")
+            inspect_docevents(docevents, 3, "new_submission", "Request for posting confirmation", "(System)")
+            inspect_docevents(docevents, 2, "new_submission", "New version approved", "(System)")
+            inspect_docevents(docevents, 1, "new_revision", "New version available", "Submitter Name")
+            inspect_docevents(docevents, 0, "changed_document", "tag cleared", "(System)")
         else:
-            self.assertIn("tag cleared", docevents[0].desc)
-        self.assertEqual(docevents[0].by.name, "(System)")
-        self.assertGreater(docevents[0].id, docevents[1].id)
-        #
+            pass
+
         self.assertTrue(not os.path.exists(os.path.join(self.repository_dir, "%s-%s.txt" % (name, old_rev))))
         self.assertTrue(os.path.exists(os.path.join(self.archive_dir, "%s-%s.txt" % (name, old_rev))))
         self.assertTrue(not os.path.exists(os.path.join(self.staging_dir, u"%s-%s.txt" % (name, rev))))
@@ -478,7 +477,7 @@ class SubmitTests(TestCase):
         if stream_type == 'ietf':
             self.assertEqual(draft.stream_id, "ietf")
             self.assertEqual(draft.get_state_slug("draft-stream-%s" % draft.stream_id), "wg-doc")
-        self.assertEqual(draft.get_state_slug("draft-iana-review"), "changed")
+            self.assertEqual(draft.get_state_slug("draft-iana-review"), "changed")
         authors = draft.documentauthor_set.all()
         self.assertEqual(len(authors), 1)
         self.assertIn(author, [ a.person for a in authors ])
@@ -489,13 +488,13 @@ class SubmitTests(TestCase):
         self.assertTrue("i-d-announce@" in outbox[-3]['To'])
         self.assertTrue("New Version Notification" in outbox[-2]["Subject"])
         self.assertTrue(name in unicode(outbox[-2]))
-        self.assertTrue("mars" in unicode(outbox[-2]))
-        self.assertTrue(draft.ad.role_email("ad").address in unicode(outbox[-2]))
-        self.assertTrue(ballot_position.ad.role_email("ad").address in unicode(outbox[-2]))
+        interesting_address = {'ietf':'mars', 'irtf':'irtf-chair', 'iab':'iab-chair', 'ise':'rfc-ise'}[draft.stream_id]
+        self.assertTrue(interesting_address in unicode(outbox[-2]))
+        if draft.stream_id == 'ietf':
+            self.assertTrue(draft.ad.role_email("ad").address in unicode(outbox[-2]))
+            self.assertTrue(ballot_position.ad.role_email("ad").address in unicode(outbox[-2]))
         self.assertTrue("New Version Notification" in outbox[-1]["Subject"])
         self.assertTrue(name in unicode(outbox[-1]))
-        self.assertTrue("mars" in unicode(outbox[-1]))
-        #
         r = self.client.get(urlreverse('ietf.doc.views_search.recent_drafts'))
         self.assertEqual(r.status_code, 200)
         self.assertIn(draft.name,  unicontent(r))
@@ -515,7 +514,7 @@ class SubmitTests(TestCase):
         self.submit_existing(["txt"], change_authors=False)
 
     def test_submit_existing_rg(self):
-        self.submit_existing(["txt"],group_type='rg')
+        self.submit_existing(["txt"],group_type='rg', stream_type='irtf')
 
     def test_submit_existing_ag(self):
         self.submit_existing(["txt"],group_type='ag')
@@ -524,7 +523,10 @@ class SubmitTests(TestCase):
         self.submit_existing(["txt"],group_type='area')
 
     def test_submit_existing_ise(self):
-        self.submit_existing(["txt"],stream_type='ise')
+        self.submit_existing(["txt"],stream_type='ise', group_type='individ')
+
+    def test_submit_existing_iab(self):
+        self.submit_existing(["txt"],stream_type='iab', group_type='individ')
 
     def submit_new_individual(self, formats):
         # submit new -> supply submitter info -> confirm
