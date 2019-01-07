@@ -35,6 +35,7 @@ from ietf.person.name import name_parts, unidecode_name
 from ietf.submit.tests import submission_file
 from ietf.utils.bower_storage import BowerStorageFinder
 from ietf.utils.draft import Draft, getmeta
+from ietf.utils.log import unreachable, assertion
 from ietf.utils.mail import send_mail_preformatted, send_mail_text, send_mail_mime, outbox 
 from ietf.utils.management.commands import pyflakes
 from ietf.utils.test_runner import get_template_paths, set_coverage_checking
@@ -484,3 +485,18 @@ class NameTests(TestCase):
             if name:
                 self.assertIn(unidecode_name(name), ascii)
             
+class LogUtilTests(TestCase):
+    def test_unreachable(self):
+        with self.assertRaises(AssertionError):
+            unreachable()
+        settings.SERVER_MODE = 'development'
+        unreachable()
+        settings.SERVER_MODE = 'test'
+
+    def test_assertion(self):
+        with self.assertRaises(AssertionError):
+            assertion('False')
+        settings.DEBUG = False
+        settings.SERVER_MODE = 'development'
+        assertion('False')
+        settings.SERVER_MODE = 'test'
