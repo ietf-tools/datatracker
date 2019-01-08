@@ -35,8 +35,8 @@ class ReviewTests(TestCase):
                     urlreverse(ietf.group.views.review_requests, kwargs={ 'acronym': group.acronym , 'group_type': group.type_id})]:
             r = self.client.get(url)
             self.assertEqual(r.status_code, 200)
-            self.assertTrue(review_req.doc.name in unicontent(r))
-            self.assertTrue(unicode(review_req.reviewer.person) in unicontent(r))
+            self.assertIn(review_req.doc.name, unicontent(r))
+            self.assertIn(unicode(review_req.reviewer.person), unicontent(r))
 
         url = urlreverse(ietf.group.views.review_requests, kwargs={ 'acronym': group.acronym })
 
