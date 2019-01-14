@@ -1,3 +1,38 @@
+ietfdb (6.89.3) ietf; urgency=low
+
+  * Updated the timezone information to match the latest timezone database
+    release (2018i)
+
+  * Merged in [15865] from rjsparks@nostrum.com:
+    Cleanup: removed the infrastructure for importing reviews from the 
+    old review tool.  
+
+  * Merged in [15864] from rjsparks@nostrum.com:
+    Refactored DocumentInfo to address overloading the external_url field 
+    with strings that are not URLs.  
+
+  * Merged in [15846] from rjsparks@nostrum.com:
+    Simple tests of some log utilities.  
+
+  * Merged in [15845] from rjsparks@nostrum.com:
+    simple test of BowerStorageFinder.  
+
+  * Merged in [15833] from rjsparks@nostrum.com:
+    Incremental improvements to the submit_existing tests.  
+
+  * Merged in [15829] from rjsparks@nostrum.com:
+    Make state/substate changes on new submissions sensitive to stream. 
+    Fixes #2642.  
+
+  * Merged in [15828] from rjsparks@nostrum.com:
+    Show more group types on the concluded groups page. Fixes #2643.  
+
+  * Additional tweaks to submission yang testing and the test runner
+
+  * Updated PLAN
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  14 Jan 2019 15:25:32 +0000
+
 ietfdb (6.89.2) ietf; urgency=low
 
   * Added a migration to capture changes to HistoricalRecords triggered by 
