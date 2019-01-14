@@ -1,3 +1,32 @@
+ietfdb (6.89.4) ietf; urgency=low
+
+  * Moved __future__ imports down in ietf/utils/draft.py so as not to obscure
+    the module docstring.  Fixes inability to run '$ ietf/utils/draft.py -h'.
+
+  * Applied 5 patches from dkg@fifthhorseman.net, for py3 compatibility in
+    the text draft metainfo extractor ietf/utils/draft.py:
+
+    - Use a list of dictionary keys.  In python3, dict.keys() produces a
+      dict_keys object, not a list.  Since this code treats it as a list,
+      we'll just be explicit about that.
+
+    - Fix regex manipulation for word characters.  In python 3.7, re.sub()
+      started treating unknown escape sequences in as errors.  Fix this by
+      sending an escaped \ where we mean to pass it through raw.
+      See https://docs.python.org/3/library/re.html#re.sub
+
+    - Use // for explicit integer division. Without this fix, in modern
+      versions of python, the changed line produces: TypeError: 'float' object
+      cannot be interpreted as an integer
+
+    - Use modern form of exception handling
+
+    - Use print() function instead of print statement
+
+  * Added a bit of name normalization for test factory person names.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  14 Jan 2019 22:29:06 +0000
+
 ietfdb (6.89.3) ietf; urgency=low
 
   * Updated the timezone information to match the latest timezone database
