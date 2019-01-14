@@ -119,6 +119,12 @@ def unidecode_name(uname):
     name = re.sub('  +', ' ', name)
     return name
 
+def normalize_name(s):
+    # There is probably more to be done here, but we start by normalising
+    # spaces:
+    s = re.sub('  +', ' ', s)
+    return s
+
 if __name__ == "__main__":
     import sys
     name = u" ".join(sys.argv[1:])
