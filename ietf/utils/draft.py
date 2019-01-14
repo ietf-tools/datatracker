@@ -1,7 +1,5 @@
 #!/usr/bin/python
 # -*- python -*-
-from __future__ import unicode_literals
-from __future__ import print_function
 """
 NAME
 	%(program)s - Extract meta-information from an IETF draft.
@@ -31,6 +29,9 @@ COPYRIGHT
 	PURPOSE. See the GNU General Public License for more details.
 
 """
+
+from __future__ import unicode_literals
+from __future__ import print_function
 
 import datetime
 import getopt
