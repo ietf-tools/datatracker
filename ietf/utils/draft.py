@@ -1278,7 +1278,7 @@ def _output(docname, fields, outfile=sys.stdout):
                 outfile.write("%s " % (fields["eventdate"]))
             outfile.write("%s" % (os.path.basename(docname.strip())))
 
-        keys = fields.keys()
+        keys = list(fields.keys())
         keys.sort()
         for key in keys:
             if fields[key] and not key in ["eventdate", ] and not key.startswith("_"):
