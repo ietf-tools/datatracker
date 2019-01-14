@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- python -*-
 from __future__ import unicode_literals
+from __future__ import print_function
 """
 NAME
 	%(program)s - Extract meta-information from an IETF draft.
@@ -1260,7 +1261,7 @@ def _output(docname, fields, outfile=sys.stdout):
             fields["day"] = day
             fields["month"] = month_names[int(month)] if month != "UNKNOWN" else "UNKNOWN"
             fields["year"] = year
-            print "%(doctag)s:%(name)s:%(company)s:%(email)s:%(country)s:%(docpages)s:%(month)s:%(year)s:%(day)s:" % fields
+            print("%(doctag)s:%(name)s:%(company)s:%(email)s:%(country)s:%(docpages)s:%(month)s:%(year)s:%(day)s:" % fields)
     else:
         if opt_attributes:
             def outputkey(key, fields):
@@ -1319,7 +1320,7 @@ def _main(outfile=sys.stdout):
     if len(sys.argv) < 1:
         vars = globals()
         vars.update(locals())
-        print __doc__ % vars
+        print(__doc__ % vars)
         sys.exit(1)
 
     try:
@@ -1335,10 +1336,10 @@ def _main(outfile=sys.stdout):
         elif opt in ["-h", "--help"]:   # Output this help text, then exit
             vars = globals()
             vars.update(locals())
-            print __doc__ % vars
+            print(__doc__ % vars)
             sys.exit(1)
         elif opt in ["-v", "--version"]: # Output version information, then exit
-            print program, version
+            print(program, version)
             sys.exit(0)
         elif opt in ["--getauthors"]:  # Output an (incomplete) getauthors-compatible format
             opt_getauthors = True
