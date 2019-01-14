@@ -554,9 +554,9 @@ class Draft():
 
         def make_authpat(hon, first, last, suffix):
             def dotexp(s):
-                s = re.sub(r"\. ",    r"\w* ", s)
-                s = re.sub(r"\.$",    r"\w*", s)
-                s = re.sub(r"\.(\w)", r"\w* \1", s)
+                s = re.sub(r"\. ",    r"\\w* ", s)
+                s = re.sub(r"\.$",    r"\\w*", s)
+                s = re.sub(r"\.(\w)", r"\\w* \1", s)
                 return s
             first = dotexp(first)
             last = dotexp(last)
@@ -572,7 +572,7 @@ class Draft():
 
             # Some chinese names are shown with double-letter(latin) abbreviated given names, rather than
             # a single-letter(latin) abbreviation:
-            first = re.sub(r"^([A-Z])[A-Z]+\\w\*", r"\1[-\w]+", first) 
+            first = re.sub(r"^([A-Z])[A-Z]+\\w\*", r"\1[-\\w]+", first) 
 
             # permit insertion of middle names between first and last, and
             # add possible honorific and suffix information
