@@ -1325,8 +1325,8 @@ def _main(outfile=sys.stdout):
 
     try:
         opts, files = getopt.gnu_getopt(sys.argv[1:], "dhatTv", ["debug", "getauthors", "attribs", "attributes", "help", "timestamp", "notimestamp", "trace", "version",])
-    except Exception, e:
-        print "%s: %s" % (program, e)
+    except Exception as e:
+        print("%s: %s" % (program, e))
         sys.exit(1)
 
     # parse options
@@ -1396,7 +1396,7 @@ if __name__ == "__main__":
         _main()
     except KeyboardInterrupt:
         raise
-    except Exception, e:
+    except Exception as e:
         if opt_debug:
             raise
         else:
