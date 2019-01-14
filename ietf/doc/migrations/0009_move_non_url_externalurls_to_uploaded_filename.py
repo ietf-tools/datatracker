@@ -40,6 +40,7 @@ class Migration(migrations.Migration):
     dependencies = [
         ('doc', '0008_add_uploaded_filename'),
         ('review', '0008_remove_reviewrequest_old_id'),
+        ('meeting', '0011_auto_20190114_0550'),
     ]
 
     operations = [
