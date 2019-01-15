@@ -706,7 +706,7 @@ class Draft():
         _debug("B:authors   : %s" % str(authors))
 
         last_line = len(self.lines)-1
-        address_section_pos = last_line/2
+        address_section_pos = last_line//2
         for i in range(last_line//2,last_line):
             line = self.lines[i]
             if re.search(address_section, line):
