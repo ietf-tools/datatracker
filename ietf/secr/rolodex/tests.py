@@ -3,6 +3,7 @@ from django.urls import reverse
 import debug                            # pyflakes:ignore
 
 from ietf.utils.test_utils import TestCase
+from ietf.group.factories import GroupFactory, RoleFactory
 from ietf.person.factories import PersonFactory, UserFactory
 from ietf.person.models import Person, User
 
@@ -47,11 +48,15 @@ class RolodexTestCase(TestCase):
 
     def test_edit_replace_user(self):
         person = PersonFactory()
+        email = person.email()
         user = UserFactory()
+        group = GroupFactory(type_id='wg')
+        role = RoleFactory(group=group,name_id='chair',person=person)
         url = reverse('ietf.secr.rolodex.views.edit', kwargs={'id':person.id})
         redirect_url = reverse('ietf.secr.rolodex.views.view', kwargs={'id':person.id})
         self.client.login(username="secretary", password="secretary+password")
         response = self.client.get(url)
+        #debug.show('unicontent(response)')
         self.assertEqual(response.status_code, 200)
         post_data = {
             'name': person.name,
@@ -59,8 +64,12 @@ class RolodexTestCase(TestCase):
             'ascii_short': person.ascii_short,
             'user': user.username,
             'email-0-person':person.pk,
-            'email-0-address': person.email_address(),
-            'email-TOTAL_FORMS':1,
+            'email-0-address': email.address,
+            'email-0-origin': email.origin,
+            'email-1-person':person.pk,
+            'email-1-address': 'name@example.com',
+            'email-1-origin': 'role: %s %s' % (group.acronym, role.name.slug),
+            'email-TOTAL_FORMS':2,
             'email-INITIAL_FORMS':1,
             'email-MIN_NUM_FORMS':0,
             'email-MAX_NUM_FORMS':1000,

@@ -258,7 +258,7 @@ class Email(models.Model):
     person = ForeignKey(Person, null=True)
     time = models.DateTimeField(auto_now_add=True)
     primary = models.BooleanField(default=False)
-    origin = models.CharField(max_length=150, default='', editable=False)       # User.username or Document.name
+    origin = models.CharField(max_length=150, blank=False, help_text="The origin of the address: the user's email address, or 'author: DRAFTNAME' if a draft, or 'role: GROUP/ROLE' if a role.")       # User.username or Document.name
     active = models.BooleanField(default=True)      # Old email addresses are *not* purged, as history
                                                     # information points to persons through these
 

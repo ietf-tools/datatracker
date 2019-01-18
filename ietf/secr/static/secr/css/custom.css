@@ -612,11 +612,11 @@ td.document-name {
    ========================================================================== */
 
 form[id^="rolodex-"] input[type=text] {
-    width: 30em;
+    width: 25em;
 }
 
 form[id^="rolodex-"] #id_address {
-    width: 30em;
+    width: 25em;
     height: 7em;
 }
 

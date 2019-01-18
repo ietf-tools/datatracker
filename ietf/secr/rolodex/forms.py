@@ -1,12 +1,22 @@
+# Copyright The IETF Trust 2016, All Rights Reserved
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals, print_function
+
+import re
+
 from django import forms
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
-from django.core.validators import validate_email
+from django.core.validators import validate_email, EmailValidator
 
+import debug                            # pyflakes:ignore
+
+from ietf.doc.models import Document
+from ietf.group.models import Group
+from ietf.name.models import RoleName
 from ietf.person.models import Email, Person
 
-import re
 
 class SearchForm(forms.Form):
     name = forms.CharField(max_length=50,required=False)
@@ -27,7 +37,37 @@ class EmailForm(forms.ModelForm):
     class Meta:
         model = Email
         fields = '__all__'
-        widgets = {'address': forms.TextInput(attrs={'readonly':True})}
+        widgets = {
+            'address': forms.TextInput(attrs={'readonly':True}),
+            'origin':  forms.TextInput(attrs={'blank':False}),
+        }
+
+    def clean_origin(self):
+        validate_email = EmailValidator("Please provide the origin of the new email: A valid user email if provided by email, or 'author: doc' or 'role: role spec'.")
+        if 'origin' in self.changed_data and self.instance.origin:
+            raise forms.ValidationError("You may not change existing origin fields, only set the value when empty")
+        origin = self.cleaned_data['origin']
+        if ':' in origin:
+            valid_tags = ['author', 'role', 'registration', ]
+            tag, value = [ v.strip() for v in origin.split(':', 1) ]
+            if not tag in valid_tags:
+                raise forms.ValidationError("Invalid tag.  Valid tags are: %s" % ','.join(valid_tags))
+            if   tag == 'author':
+                if not Document.objects.filter(name=value).exists():
+                    raise forms.ValidationError("Invalid document: %s. A valid document is required with 'author:'" % value)
+            elif tag == 'role':
+                if not ' ' in value:
+                    raise forms.ValidationError("Invalid role spec: %s.  Please indicate 'group role'." % value)
+                acronym, slug = value.split(None, 1)
+                if not Group.objects.filter(acronym=acronym).exists():
+                    raise forms.ValidationError("Invalid group: %s. A valid 'group role' string is required with 'role:'" % acronym)
+                if not RoleName.objects.filter(slug=slug).exists():
+                    roles = RoleName.objects.values_list('slug', flat=True)
+                    raise forms.ValidationError("Invalid role: %s. A valid 'group role' string is required with 'role:'.\n  Valid roles are: %s" % (slug, ', '.join(roles)))
+        else:
+            validate_email(origin)
+        return origin
+                
 
 class EditPersonForm(forms.ModelForm):
     class Meta:
