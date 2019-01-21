@@ -365,7 +365,7 @@ def document_main(request, name, rev=None):
             log.assertion('iesg_state')
             if iesg_state.slug == 'idexists' and can_edit:
                 actions.append(("Begin IESG Processing", urlreverse('ietf.doc.views_draft.edit_info', kwargs=dict(name=doc.name)) + "?new=1"))
-            elif (can_edit_stream_info or is_shepherd) and (iesg_state.slug in ('idexists','watching')):
+            elif can_edit_stream_info and (iesg_state.slug in ('idexists','watching')):
                 actions.append(("Submit to IESG for Publication", urlreverse('ietf.doc.views_draft.to_iesg', kwargs=dict(name=doc.name))))
 
         augment_docs_with_tracking_info([doc], request.user)
