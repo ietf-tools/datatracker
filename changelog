@@ -1,3 +1,38 @@
+ietfdb (6.90.0) ietf; urgency=low
+
+  * Modified the rolodex code to make sure we capture information about the
+    origin of newly added email addresses.  This requires the secretariat to
+    be clear about where new email addresses come from, in order to be able to
+    remove them if we later receive a GDPR personal data deletion request.
+
+  * In the draft metadata extraction code, moved the __future__ imports down
+    so as not to obscure the module docstring.  Fixes the earlier inability to
+    run '$ ietf/utils/draft.py -h'.
+
+  * Applied a series of patches for python 3 compatibility from
+    dkg@fifthhorseman.net to the draft metadata extraction code:
+
+    - Use a list of dictionary keys.  In python3, dict.keys() produces a
+      dict_keys object, not a list.  Since this code treats it as a list,
+      we'll just be explicit about that.
+
+    - Fix regex manipulation for word characters.  In python 3.7, re.sub()
+      started treating unknown escape sequences in as errors.  Fix this by
+      sending an escaped \ where we mean to pass it through raw.
+
+    - Use // for explicit integer division.  Without this fix, in modern
+      versions of python, the changed line produces: 'TypeError: 'float'
+      object cannot be interpreted as an integer'.
+
+    - Use modern form of exception handling.
+
+    - Use the print function instead of print statement.
+
+  * Added more name normalization for test factory person names.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  21 Jan 2019 11:49:20 +0000
+
+
 ietfdb (6.89.4) ietf; urgency=low
 
   * Moved __future__ imports down in ietf/utils/draft.py so as not to obscure
