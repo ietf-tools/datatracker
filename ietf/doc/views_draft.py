@@ -1,3 +1,5 @@
+# Copyright The IETF Trust 2010-2019, All Rights Reserved
+
 # changing state and metadata on Internet Drafts
 
 import datetime
@@ -31,7 +33,7 @@ from ietf.doc.utils import ( add_state_change_event, can_adopt_draft, can_unadop
     set_replaces_for_document, default_consensus, tags_suffix, )
 from ietf.doc.lastcall import request_last_call
 from ietf.doc.fields import SearchableDocAliasesField
-from ietf.group.models import Group, Role
+from ietf.group.models import Group, Role, GroupFeatures
 from ietf.iesg.models import TelechatDate
 from ietf.ietfauth.utils import has_role, is_authorized_in_doc_stream, user_is_person, is_individual_draft_author
 from ietf.ietfauth.utils import role_required
@@ -1294,13 +1296,15 @@ def request_publication(request, name):
                           )
 
 class AdoptDraftForm(forms.Form):
-    group = forms.ModelChoiceField(queryset=Group.objects.filter(type__in=["wg", "rg"], state="active").order_by("-type", "acronym"), required=True, empty_label=None)
+    group = forms.ModelChoiceField(queryset=Group.objects.filter(type__features__acts_like_wg=True, state="active").order_by("-type", "acronym"), required=True, empty_label=None)
     newstate = forms.ModelChoiceField(queryset=State.objects.filter(type__in=['draft-stream-ietf','draft-stream-irtf'], used=True).exclude(slug__in=settings.GROUP_STATES_WITH_EXTRA_PROCESSING), required=True, label="State")
     comment = forms.CharField(widget=forms.Textarea, required=False, label="Comment", help_text="Optional comment explaining the reasons for the adoption.", strip=False)
     weeks = forms.IntegerField(required=False, label="Expected weeks in adoption state")
 
     def __init__(self, *args, **kwargs):
         user = kwargs.pop("user")
+        rg_features = GroupFeatures.objects.get(type_id='rg')
+        wg_features = GroupFeatures.objects.get(type_id='wg')
 
         super(AdoptDraftForm, self).__init__(*args, **kwargs)
 
@@ -1308,17 +1312,21 @@ class AdoptDraftForm(forms.Form):
         if has_role(user, "Secretariat"):
             state_types.update(['draft-stream-ietf','draft-stream-irtf'])
         else: 
-            if has_role(user, "IRTF Chair") or Group.objects.filter(type="rg", state="active", role__person__user=user, role__name__in=("chair", "delegate", "secr")).exists():
+            if has_role(user, "IRTF Chair") or Group.objects.filter(type="rg", state="active", role__person__user=user, role__name__in=rg_features.matman_roles).exists():
                 state_types.add('draft-stream-irtf')
-            if Group.objects.filter(type="wg", state="active", role__person__user=user, role__name__in=("chair", "delegate", "secr")).exists():
+            if Group.objects.filter(type="wg", state="active", role__person__user=user, role__name__in=wg_features.matman_roles).exists():
                 state_types.add('draft-stream-ietf')
+
+
+
+
         state_choices = State.objects.filter(type__in=state_types, used=True).exclude(slug__in=settings.GROUP_STATES_WITH_EXTRA_PROCESSING)
 
         if not has_role(user, "Secretariat"):
             if has_role(user, "IRTF Chair"):
-                group_queryset = self.fields["group"].queryset.filter(Q(role__person__user=user, role__name__in=("chair", "delegate", "secr"))|Q(type="rg", state="active")).distinct()
+                group_queryset = self.fields["group"].queryset.filter(Q(role__person__user=user, role__name__in=rg_features.matman_roles)|Q(type="rg", state="active")).distinct()
             else:
-                group_queryset = self.fields["group"].queryset.filter(role__person__user=user, role__name__in=("chair", "delegate", "secr")).distinct()
+                group_queryset = self.fields["group"].queryset.filter(role__person__user=user, role__name__in=wg_features.matman_roles).distinct()
             self.fields["group"].queryset = group_queryset
 
         self.fields['group'].choices = [(g.pk, '%s - %s' % (g.acronym, g.name)) for g in self.fields["group"].queryset]

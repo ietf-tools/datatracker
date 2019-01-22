@@ -78,7 +78,7 @@ class GroupModelForm(forms.ModelForm):
         parent = self.cleaned_data['parent']
         type = self.cleaned_data['type']
         
-        if type.slug in ('ag','wg','rg') and not parent:
+        if type.features.acts_like_wg and not parent:
             raise forms.ValidationError("This field is required.")
         
         return parent
@@ -130,8 +130,7 @@ class RoleForm(forms.Form):
         self.group = kwargs.pop('group')
         super(RoleForm, self).__init__(*args,**kwargs)
         # this form is re-used in roles app, use different roles in select
-        # TODO: should 'ag' be excluded here as well?
-        if self.group.type.slug not in ('wg','rg'):
+        if self.group.features.custom_group_roles:
             self.fields['name'].queryset = RoleName.objects.all()
         
     # check for id within parenthesis to ensure name was selected from the list 

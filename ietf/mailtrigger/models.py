@@ -68,7 +68,7 @@ class Recipient(models.Model):
         addrs = []
         if 'doc' in kwargs:
             doc=kwargs['doc']
-            if doc.group and doc.group.type.slug in ['wg','rg','ag',]:
+            if doc.group and doc.group.features.acts_like_wg:
                 addrs.append('%s-chairs@ietf.org'%doc.group.acronym)
         return addrs
 
@@ -76,7 +76,7 @@ class Recipient(models.Model):
         addrs = []
         if 'doc' in kwargs:
             doc=kwargs['doc']
-            if doc.group and doc.group.type.slug in ['wg','rg','ag',]:
+            if doc.group and doc.group.features.acts_like_wg:
                 addrs.extend(doc.group.role_set.filter(name='delegate').values_list('email__address',flat=True))
         return addrs
 
@@ -84,7 +84,7 @@ class Recipient(models.Model):
         addrs = []
         if 'doc' in kwargs:
             doc=kwargs['doc']
-            if doc.group.type.slug in ['wg','rg','ag',]:
+            if doc.group.features.acts_like_wg:
                 if doc.group.list_email:
                     addrs.append(doc.group.list_email)
         return addrs
@@ -226,7 +226,7 @@ class Recipient(models.Model):
                 new_author_email_set = set(author["email"] for author in submission.authors if author.get("email"))
 
                 if doc.group and old_author_email_set != new_author_email_set:
-                    if doc.group.type_id in ['wg','rg','ag']:
+                    if doc.group.features.acts_like_wg:
                         addrs.extend(Recipient.objects.get(slug='group_chairs').gather(**{'group':doc.group}))
                     elif doc.group.type_id in ['area']:
                         addrs.extend(Recipient.objects.get(slug='group_responsible_directors').gather(**{'group':doc.group}))

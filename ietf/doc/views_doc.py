@@ -1,4 +1,5 @@
-# Copyright The IETF Trust 2016, All Rights Reserved
+# Copyright The IETF Trust 2016-2018, All Rights Reserved
+
 
 # Parts Copyright (C) 2009-2010 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
@@ -160,11 +161,14 @@ def document_main(request, name, rev=None):
         iesg_state_summary = doc.friendly_state()
         can_edit = has_role(request.user, ("Area Director", "Secretariat"))
         stream_slugs = StreamName.objects.values_list("slug", flat=True)
-        can_change_stream = bool(can_edit or (
-                request.user.is_authenticated and
-                Role.objects.filter(name__in=("chair", "secr", "auth", "delegate"),
-                                    group__acronym__in=stream_slugs,
-                                    person__user=request.user)))
+        # For some reason, AnonymousUser has __iter__, but is not iterable,
+        # which causes problems in the filter() below.  Work around this:  
+        if request.user.is_authenticated:
+            roles = [ r for r in Role.objects.filter(group__acronym__in=stream_slugs, person__user=request.user)
+                        if r.name.slug in r.group.type.features.matman_roles ]
+        else:
+            roles = []
+        can_change_stream = bool(can_edit or roles)
         can_edit_iana_state = has_role(request.user, ("Secretariat", "IANA"))
 
         can_edit_replaces = has_role(request.user, ("Area Director", "Secretariat", "IRTF Chair", "WG Chair", "RG Chair", "WG Secretary", "RG Secretary"))

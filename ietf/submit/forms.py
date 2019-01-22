@@ -466,7 +466,7 @@ class PreapprovalForm(forms.Form):
         if not components[-1]:
             raise forms.ValidationError("Name ends with a dash.")
         acronym = components[2]
-        if acronym not in self.groups.values_list('acronym', flat=True):
+        if acronym not in [ g.acronym for g in self.groups ]:
             raise forms.ValidationError("Group acronym not recognized as one you can approve drafts for.")
 
         if Preapproval.objects.filter(name=n):

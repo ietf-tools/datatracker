@@ -1,3 +1,4 @@
+# Copyright The IETF Trust 2009-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 import json
@@ -294,14 +295,16 @@ class MeetingTests(TestCase):
         self.assertTrue("1. WG status" in unicontent(r))
 
         # session minutes
-        r = self.client.get(urlreverse("ietf.meeting.views.materials_document",
-                                       kwargs=dict(num=meeting.number, document=session.minutes())))
+        url = urlreverse("ietf.meeting.views.materials_document",
+                         kwargs=dict(num=meeting.number, document=session.minutes()))
+        r = self.client.get(url)
         self.assertEqual(r.status_code, 200)
         self.assertTrue("1. More work items underway" in unicontent(r))
 
         # test with explicit meeting number in url
         if meeting.number.isdigit():
-            r = self.client.get(urlreverse("ietf.meeting.views.materials", kwargs=dict(num=meeting.number)))
+            url = urlreverse("ietf.meeting.views.materials", kwargs=dict(num=meeting.number))
+            r = self.client.get(url)
             self.assertEqual(r.status_code, 200)
             q = PyQuery(r.content)
             row = q('#content #%s' % str(session.group.acronym)).closest("tr")
@@ -311,7 +314,8 @@ class MeetingTests(TestCase):
             self.assertFalse(row.find("a:contains(\"Bad Slideshow\")"))
 
             # test with no meeting number in url
-            r = self.client.get(urlreverse("ietf.meeting.views.materials", kwargs=dict()))
+            url = urlreverse("ietf.meeting.views.materials", kwargs=dict())
+            r = self.client.get(url)
             self.assertEqual(r.status_code, 200)
             q = PyQuery(r.content)
             row = q('#content #%s' % str(session.group.acronym)).closest("tr")
@@ -322,7 +326,8 @@ class MeetingTests(TestCase):
 
             # test with a loggged-in wg chair
             self.client.login(username="marschairman", password="marschairman+password")
-            r = self.client.get(urlreverse("ietf.meeting.views.materials", kwargs=dict(num=meeting.number)))
+            url = urlreverse("ietf.meeting.views.materials", kwargs=dict(num=meeting.number))
+            r = self.client.get(url)
             self.assertEqual(r.status_code, 200)
             q = PyQuery(r.content)
             row = q('#content #%s' % str(session.group.acronym)).closest("tr")

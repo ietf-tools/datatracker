@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2007, All Rights Reserved
+# Copyright The IETF Trust 2007-2019, All Rights Reserved
 
 import re
 import base64
@@ -17,7 +17,7 @@ import debug                            # pyflakes:ignore
 
 from ietf.doc.models import Document, DocAlias, AddedMessageEvent
 from ietf.doc.utils import prettify_std_name
-from ietf.group.models import Group
+from ietf.group.models import Group, Role
 from ietf.ietfauth.utils import has_role, role_required
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.message.models import Message, MessageAttachment
@@ -124,7 +124,9 @@ def api_submit(request):
                 submission.submitter = user.person.formatted_email()
                 docevent_from_submission(request, submission, desc="Uploaded new revision")
 
-                requires_group_approval = (submission.rev == '00' and submission.group and submission.group.type_id in ("wg", "rg", "ietf", "irtf", "iab", "iana", "rfcedtyp") and not Preapproval.objects.filter(name=submission.name).exists())
+                requires_group_approval = (submission.rev == '00'
+                    and submission.group and submission.group.features.req_subm_approval
+                    and not Preapproval.objects.filter(name=submission.name).exists())
                 requires_prev_authors_approval = Document.objects.filter(name=submission.name)
 
                 sent_to, desc, docDesc = send_confirmation_emails(request, submission, requires_group_approval, requires_prev_authors_approval)
@@ -212,7 +214,9 @@ def submission_status(request, submission_id, access_token=None):
     confirmation_list = addrs.to
     confirmation_list.extend(addrs.cc)
 
-    requires_group_approval = (submission.rev == '00' and submission.group and submission.group.type_id in ("wg", "rg", "ietf", "irtf", "iab", "iana", "rfcedtyp") and not Preapproval.objects.filter(name=submission.name).exists())
+    requires_group_approval = (submission.rev == '00'
+        and submission.group and submission.group.features.req_subm_approval
+        and not Preapproval.objects.filter(name=submission.name).exists())
 
     requires_prev_authors_approval = Document.objects.filter(name=submission.name)
 
@@ -506,10 +510,11 @@ def approvals(request):
 
 @role_required("Secretariat", "Area Director", "WG Chair", "RG Chair")
 def add_preapproval(request):
-    groups = Group.objects.filter(type__in=("wg", "rg")).exclude(state__in=["conclude","bof-conc"]).order_by("acronym").distinct()
+    groups = Group.objects.filter(type__features__acts_like_wg=True).exclude(state__in=["conclude","bof-conc"]).order_by("acronym").distinct()
 
     if not has_role(request.user, "Secretariat"):
-        groups = groups.filter(role__person__user=request.user,role__name__in=['ad','chair','delegate','secr'])
+        groups = [ g for g in groups.filter(role__person__user=request.user)
+                              if Role.objects.filter(group=g, person__user=request.user, name__slug__in=g.type.features.matman_roles).exists() ]
 
     if request.method == "POST":
         form = PreapprovalForm(request.POST)

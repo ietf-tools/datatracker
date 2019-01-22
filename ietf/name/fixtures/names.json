@@ -1264,8 +1264,8 @@
   },
   {
     "fields": {
-      "desc": "This is the initial state when an AD proposes a new charter. The normal next state is Internal review if the idea is accepted, or Not currently under review if the idea is abandoned.",
-      "name": "Informal IESG review",
+      "desc": "The proposed charter is not being considered at this time. A proposed charter will remain in this state until an AD moves it to Start Chartering/Rechartering (Internal IESG/IAB Review). This state is useful for drafting the charter, discussing with chairs, etc.",
+      "name": "Draft Charter",
       "next_states": [],
       "order": 0,
       "slug": "infrev",
@@ -1277,8 +1277,8 @@
   },
   {
     "fields": {
-      "desc": "The IESG and IAB are reviewing the early draft of the charter; this is the initial IESG and IAB review. The usual next state is External review if the idea is adopted, or Informal IESG review if the IESG decides the idea needs more work, or Not currently under review if the idea is abandoned",
-      "name": "Internal review",
+      "desc": "This is the state when you'd like to propose the charter / new charter. This state also allows you to ask whether external review can be skipped in ballot. After you select this state, the Secretariat takes over and drives the rest of the process.",
+      "name": "Start Chartering/Rechartering (Internal IESG/IAB Review)",
       "next_states": [],
       "order": 0,
       "slug": "intrev",
@@ -1290,8 +1290,8 @@
   },
   {
     "fields": {
-      "desc": "The IETF community and possibly other standards development organizations (SDOs) are reviewing the proposed charter. The usual next state is IESG review, although it might move to Not currently under review if the idea is abandoned during the external review.",
-      "name": "External review",
+      "desc": "This state is selected by the Secretariat (AD's, keep yer grubby mits off this!) when it has been decided that the charter needs external review.",
+      "name": "External Review (Message to Community, Selected by Secretariat)",
       "next_states": [],
       "order": 0,
       "slug": "extrev",
@@ -1303,8 +1303,8 @@
   },
   {
     "fields": {
-      "desc": "The IESG is reviewing the discussion from the external review of the proposed charter. The usual next state is Approved, or Not currently under review if the idea is abandoned.",
-      "name": "IESG review",
+      "desc": "This state is selected by the Secretariat (AD's, keep yer grubby mits off this!) when the IESG is reviewing the discussion from the external review of the proposed charter (this is similar to the IESG Evaluation state for a draft).",
+      "name": "IESG Review (Charter for Approval, Selected by Secretariat)",
       "next_states": [],
       "order": 0,
       "slug": "iesgrev",
@@ -2181,7 +2181,7 @@
       "used": true
     },
     "model": "doc.state",
-    "pk": 152
+    "pk": 150
   },
   {
     "fields": {
@@ -2347,8 +2347,11 @@
   {
     "fields": {
       "about_page": "ietf.group.views.group_about",
-      "admin_roles": "chair",
+      "acts_like_wg": true,
+      "admin_roles": "[\"chair\"]",
       "agenda_type": "ietf",
+      "create_wiki": true,
+      "custom_group_roles": true,
       "customize_workflow": false,
       "default_tab": "ietf.group.views.group_about",
       "has_chartering_process": false,
@@ -2359,7 +2362,13 @@
       "has_milestones": false,
       "has_nonsession_materials": false,
       "has_reviews": false,
-      "material_types": "slides"
+      "has_session_materials": true,
+      "is_schedulable": true,
+      "material_types": "[\"slides\"]",
+      "matman_roles": "[\"ad\",\"chair\",\"delegate\",\"secr\"]",
+      "req_subm_approval": true,
+      "role_order": "[\"chair\",\"secr\"]",
+      "show_on_agenda": true
     },
     "model": "group.groupfeatures",
     "pk": "ag"
@@ -2367,8 +2376,11 @@
   {
     "fields": {
       "about_page": "ietf.group.views.group_about",
-      "admin_roles": "ad",
+      "acts_like_wg": false,
+      "admin_roles": "[\"ad\"]",
       "agenda_type": "ietf",
+      "create_wiki": true,
+      "custom_group_roles": true,
       "customize_workflow": false,
       "default_tab": "ietf.group.views.group_about",
       "has_chartering_process": false,
@@ -2379,7 +2391,13 @@
       "has_milestones": false,
       "has_nonsession_materials": false,
       "has_reviews": false,
-      "material_types": "slides"
+      "has_session_materials": false,
+      "is_schedulable": false,
+      "material_types": "[\"slides\"]",
+      "matman_roles": "[\"ad\",\"chair\",\"delegate\",\"secr\"]",
+      "req_subm_approval": true,
+      "role_order": "[\"chair\",\"secr\"]",
+      "show_on_agenda": false
     },
     "model": "group.groupfeatures",
     "pk": "area"
@@ -2387,8 +2405,11 @@
   {
     "fields": {
       "about_page": "ietf.group.views.group_about",
-      "admin_roles": "chair,secr",
+      "acts_like_wg": false,
+      "admin_roles": "[\"chair\",\"secr\"]",
       "agenda_type": null,
+      "create_wiki": true,
+      "custom_group_roles": true,
       "customize_workflow": false,
       "default_tab": "ietf.group.views.group_about",
       "has_chartering_process": false,
@@ -2399,7 +2420,13 @@
       "has_milestones": false,
       "has_nonsession_materials": false,
       "has_reviews": false,
-      "material_types": "slides"
+      "has_session_materials": false,
+      "is_schedulable": false,
+      "material_types": "[\"slides\"]",
+      "matman_roles": "[\"ad\",\"chair\",\"delegate\",\"secr\"]",
+      "req_subm_approval": true,
+      "role_order": "[\"chair\",\"secr\"]",
+      "show_on_agenda": false
     },
     "model": "group.groupfeatures",
     "pk": "dir"
@@ -2407,8 +2434,11 @@
   {
     "fields": {
       "about_page": "ietf.group.views.group_about",
-      "admin_roles": "chair",
+      "acts_like_wg": false,
+      "admin_roles": "[\"chair\"]",
       "agenda_type": "ietf",
+      "create_wiki": false,
+      "custom_group_roles": true,
       "customize_workflow": false,
       "default_tab": "ietf.group.views.group_about",
       "has_chartering_process": false,
@@ -2419,7 +2449,13 @@
       "has_milestones": false,
       "has_nonsession_materials": false,
       "has_reviews": false,
-      "material_types": "slides"
+      "has_session_materials": false,
+      "is_schedulable": false,
+      "material_types": "[\"slides\"]",
+      "matman_roles": "[]",
+      "req_subm_approval": true,
+      "role_order": "[\"chair\",\"secr\"]",
+      "show_on_agenda": true
     },
     "model": "group.groupfeatures",
     "pk": "iab"
@@ -2427,8 +2463,11 @@
   {
     "fields": {
       "about_page": "ietf.group.views.group_about",
-      "admin_roles": "chair,lead",
+      "acts_like_wg": false,
+      "admin_roles": "[\"chair\",\"lead\"]",
       "agenda_type": "ietf",
+      "create_wiki": false,
+      "custom_group_roles": true,
       "customize_workflow": false,
       "default_tab": "ietf.group.views.group_about",
       "has_chartering_process": false,
@@ -2439,7 +2478,13 @@
       "has_milestones": false,
       "has_nonsession_materials": false,
       "has_reviews": false,
-      "material_types": "slides"
+      "has_session_materials": true,
+      "is_schedulable": false,
+      "material_types": "[\"slides\"]",
+      "matman_roles": "[\"chair\",\"delegate\"]",
+      "req_subm_approval": true,
+      "role_order": "[\"chair\",\"secr\"]",
+      "show_on_agenda": false
     },
     "model": "group.groupfeatures",
     "pk": "ietf"
@@ -2447,8 +2492,11 @@
   {
     "fields": {
       "about_page": "ietf.group.views.group_about",
-      "admin_roles": "chair",
+      "acts_like_wg": false,
+      "admin_roles": "[\"chair\"]",
       "agenda_type": null,
+      "create_wiki": false,
+      "custom_group_roles": true,
       "customize_workflow": false,
       "default_tab": "ietf.group.views.group_about",
       "has_chartering_process": false,
@@ -2459,7 +2507,13 @@
       "has_milestones": false,
       "has_nonsession_materials": false,
       "has_reviews": false,
-      "material_types": "slides"
+      "has_session_materials": false,
+      "is_schedulable": false,
+      "material_types": "[\"slides\"]",
+      "matman_roles": "[\"auth\"]",
+      "req_subm_approval": false,
+      "role_order": "[\"chair\",\"secr\"]",
+      "show_on_agenda": false
     },
     "model": "group.groupfeatures",
     "pk": "individ"
@@ -2467,8 +2521,11 @@
   {
     "fields": {
       "about_page": "ietf.group.views.group_about",
-      "admin_roles": "chair",
+      "acts_like_wg": false,
+      "admin_roles": "[\"chair\"]",
       "agenda_type": "ietf",
+      "create_wiki": false,
+      "custom_group_roles": true,
       "customize_workflow": false,
       "default_tab": "ietf.group.views.group_about",
       "has_chartering_process": false,
@@ -2479,7 +2536,13 @@
       "has_milestones": false,
       "has_nonsession_materials": false,
       "has_reviews": false,
-      "material_types": "slides"
+      "has_session_materials": false,
+      "is_schedulable": false,
+      "material_types": "[\"slides\"]",
+      "matman_roles": "[\"chair\",\"delegate\",\"secr\"]",
+      "req_subm_approval": true,
+      "role_order": "[\"chair\",\"secr\"]",
+      "show_on_agenda": false
     },
     "model": "group.groupfeatures",
     "pk": "irtf"
@@ -2487,8 +2550,11 @@
   {
     "fields": {
       "about_page": "ietf.group.views.group_about",
-      "admin_roles": "chair",
+      "acts_like_wg": false,
+      "admin_roles": "[\"chair\"]",
       "agenda_type": null,
+      "create_wiki": false,
+      "custom_group_roles": true,
       "customize_workflow": false,
       "default_tab": "ietf.group.views.group_about",
       "has_chartering_process": false,
@@ -2499,7 +2565,13 @@
       "has_milestones": false,
       "has_nonsession_materials": false,
       "has_reviews": false,
-      "material_types": "slides"
+      "has_session_materials": false,
+      "is_schedulable": false,
+      "material_types": "[\"slides\"]",
+      "matman_roles": "[\"chair\",\"secr\"]",
+      "req_subm_approval": true,
+      "role_order": "[\"chair\",\"secr\"]",
+      "show_on_agenda": false
     },
     "model": "group.groupfeatures",
     "pk": "isoc"
@@ -2507,8 +2579,11 @@
   {
     "fields": {
       "about_page": "ietf.group.views.group_about",
-      "admin_roles": "chair",
+      "acts_like_wg": false,
+      "admin_roles": "[\"chair\"]",
       "agenda_type": "side",
+      "create_wiki": true,
+      "custom_group_roles": true,
       "customize_workflow": false,
       "default_tab": "ietf.group.views.group_about",
       "has_chartering_process": false,
@@ -2519,7 +2594,13 @@
       "has_milestones": false,
       "has_nonsession_materials": false,
       "has_reviews": false,
-      "material_types": "slides"
+      "has_session_materials": false,
+      "is_schedulable": false,
+      "material_types": "[\"slides\"]",
+      "matman_roles": "[\"chair\"]",
+      "req_subm_approval": true,
+      "role_order": "[\"chair\",\"member\",\"advisor\"]",
+      "show_on_agenda": false
     },
     "model": "group.groupfeatures",
     "pk": "nomcom"
@@ -2527,8 +2608,11 @@
   {
     "fields": {
       "about_page": "ietf.group.views.group_about",
-      "admin_roles": "lead",
+      "acts_like_wg": false,
+      "admin_roles": "[\"lead\"]",
       "agenda_type": null,
+      "create_wiki": false,
+      "custom_group_roles": true,
       "customize_workflow": false,
       "default_tab": "ietf.group.views.group_about",
       "has_chartering_process": false,
@@ -2539,7 +2623,13 @@
       "has_milestones": true,
       "has_nonsession_materials": false,
       "has_reviews": false,
-      "material_types": "slides"
+      "has_session_materials": false,
+      "is_schedulable": false,
+      "material_types": "[\"slides\"]",
+      "matman_roles": "[\"chair\",\"secr\"]",
+      "req_subm_approval": false,
+      "role_order": "[\"chair\",\"secr\"]",
+      "show_on_agenda": false
     },
     "model": "group.groupfeatures",
     "pk": "program"
@@ -2547,8 +2637,11 @@
   {
     "fields": {
       "about_page": "ietf.group.views.group_about",
-      "admin_roles": "chair,secr",
+      "acts_like_wg": false,
+      "admin_roles": "[\"chair\",\"secr\"]",
       "agenda_type": null,
+      "create_wiki": true,
+      "custom_group_roles": true,
       "customize_workflow": false,
       "default_tab": "ietf.group.views.review_requests",
       "has_chartering_process": false,
@@ -2559,7 +2652,13 @@
       "has_milestones": false,
       "has_nonsession_materials": false,
       "has_reviews": true,
-      "material_types": "slides"
+      "has_session_materials": false,
+      "is_schedulable": false,
+      "material_types": "[\"slides\"]",
+      "matman_roles": "[\"ad\",\"secr\"]",
+      "req_subm_approval": true,
+      "role_order": "[\"chair\",\"secr\"]",
+      "show_on_agenda": false
     },
     "model": "group.groupfeatures",
     "pk": "review"
@@ -2567,8 +2666,11 @@
   {
     "fields": {
       "about_page": "ietf.group.views.group_about",
-      "admin_roles": "chair",
+      "acts_like_wg": false,
+      "admin_roles": "[\"chair\"]",
       "agenda_type": "side",
+      "create_wiki": false,
+      "custom_group_roles": true,
       "customize_workflow": false,
       "default_tab": "ietf.group.views.group_about",
       "has_chartering_process": false,
@@ -2579,7 +2681,13 @@
       "has_milestones": false,
       "has_nonsession_materials": false,
       "has_reviews": false,
-      "material_types": "slides"
+      "has_session_materials": false,
+      "is_schedulable": false,
+      "material_types": "[\"slides\"]",
+      "matman_roles": "[\"chair\",\"secr\"]",
+      "req_subm_approval": true,
+      "role_order": "[\"chair\",\"secr\"]",
+      "show_on_agenda": false
     },
     "model": "group.groupfeatures",
     "pk": "rfcedtyp"
@@ -2587,8 +2695,11 @@
   {
     "fields": {
       "about_page": "ietf.group.views.group_about",
-      "admin_roles": "chair",
+      "acts_like_wg": true,
+      "admin_roles": "[\"chair\"]",
       "agenda_type": "ietf",
+      "create_wiki": true,
+      "custom_group_roles": false,
       "customize_workflow": true,
       "default_tab": "ietf.group.views.group_documents",
       "has_chartering_process": true,
@@ -2599,7 +2710,13 @@
       "has_milestones": true,
       "has_nonsession_materials": false,
       "has_reviews": false,
-      "material_types": "slides"
+      "has_session_materials": true,
+      "is_schedulable": true,
+      "material_types": "[\"slides\"]",
+      "matman_roles": "[\"chair\",\"secr\"]",
+      "req_subm_approval": true,
+      "role_order": "[\"chair\",\"secr\"]",
+      "show_on_agenda": true
     },
     "model": "group.groupfeatures",
     "pk": "rg"
@@ -2607,8 +2724,11 @@
   {
     "fields": {
       "about_page": "ietf.group.views.group_about",
-      "admin_roles": "chair",
+      "acts_like_wg": false,
+      "admin_roles": "[\"chair\"]",
       "agenda_type": null,
+      "create_wiki": false,
+      "custom_group_roles": true,
       "customize_workflow": false,
       "default_tab": "ietf.group.views.group_about",
       "has_chartering_process": false,
@@ -2619,7 +2739,13 @@
       "has_milestones": false,
       "has_nonsession_materials": false,
       "has_reviews": false,
-      "material_types": "slides"
+      "has_session_materials": false,
+      "is_schedulable": false,
+      "material_types": "[\"slides\"]",
+      "matman_roles": "[\"liaiman\",\"matman\"]",
+      "req_subm_approval": true,
+      "role_order": "[\"liaiman\"]",
+      "show_on_agenda": false
     },
     "model": "group.groupfeatures",
     "pk": "sdo"
@@ -2627,8 +2753,11 @@
   {
     "fields": {
       "about_page": "ietf.group.views.group_about",
-      "admin_roles": "chair",
+      "acts_like_wg": false,
+      "admin_roles": "[\"chair\"]",
       "agenda_type": "ietf",
+      "create_wiki": true,
+      "custom_group_roles": true,
       "customize_workflow": false,
       "default_tab": "ietf.group.views.group_about",
       "has_chartering_process": false,
@@ -2639,7 +2768,13 @@
       "has_milestones": false,
       "has_nonsession_materials": true,
       "has_reviews": false,
-      "material_types": "slides"
+      "has_session_materials": false,
+      "is_schedulable": false,
+      "material_types": "[\"slides\"]",
+      "matman_roles": "[\"chair\",\"matman\"]",
+      "req_subm_approval": false,
+      "role_order": "[\"chair\",\"member\",\"matman\"]",
+      "show_on_agenda": false
     },
     "model": "group.groupfeatures",
     "pk": "team"
@@ -2647,8 +2782,11 @@
   {
     "fields": {
       "about_page": "ietf.group.views.group_about",
-      "admin_roles": "chair",
+      "acts_like_wg": true,
+      "admin_roles": "[\"chair\"]",
       "agenda_type": "ietf",
+      "create_wiki": true,
+      "custom_group_roles": false,
       "customize_workflow": true,
       "default_tab": "ietf.group.views.group_documents",
       "has_chartering_process": true,
@@ -2659,7 +2797,13 @@
       "has_milestones": true,
       "has_nonsession_materials": false,
       "has_reviews": false,
-      "material_types": "slides"
+      "has_session_materials": true,
+      "is_schedulable": true,
+      "material_types": "[\"slides\"]",
+      "matman_roles": "[\"ad\",\"chair\",\"delegate\",\"secr\"]",
+      "req_subm_approval": true,
+      "role_order": "[\"chair\",\"secr\",\"delegate\"]",
+      "show_on_agenda": true
     },
     "model": "group.groupfeatures",
     "pk": "wg"
@@ -3360,7 +3504,9 @@
   },
   {
     "fields": {
-      "cc": [],
+      "cc": [
+        "liaison_admin"
+      ],
       "desc": "Recipients for a message that a pending liaison statement needs approval",
       "to": [
         "liaison_approvers"
@@ -4133,6 +4279,14 @@
     },
     "model": "mailtrigger.recipient",
     "pk": "ipr_updatedipr_holders"
+  },
+  {
+    "fields": {
+      "desc": "Alias for secretariat liaison administration",
+      "template": "<statements@ietf.org>"
+    },
+    "model": "mailtrigger.recipient",
+    "pk": "liaison_admin"
   },
   {
     "fields": {
@@ -10532,7 +10686,7 @@
     "fields": {
       "command": "xym",
       "switch": "--version",
-      "time": "2018-12-04T00:08:13.259",
+      "time": "2019-01-21T00:08:23.930",
       "used": true,
       "version": "xym 0.4"
     },
@@ -10543,7 +10697,7 @@
     "fields": {
       "command": "pyang",
       "switch": "--version",
-      "time": "2018-12-04T00:08:13.958",
+      "time": "2019-01-21T00:08:25.229",
       "used": true,
       "version": "pyang 1.7.5"
     },
@@ -10554,7 +10708,7 @@
     "fields": {
       "command": "yanglint",
       "switch": "--version",
-      "time": "2018-12-04T00:08:14.121",
+      "time": "2019-01-21T00:08:25.465",
       "used": true,
       "version": "yanglint 0.14.80"
     },
@@ -10565,9 +10719,9 @@
     "fields": {
       "command": "xml2rfc",
       "switch": "--version",
-      "time": "2018-12-04T00:08:15.775",
+      "time": "2019-01-21T00:08:26.897",
       "used": true,
-      "version": "xml2rfc 2.15.2"
+      "version": "xml2rfc 2.16.3"
     },
     "model": "utils.versioninfo",
     "pk": 4

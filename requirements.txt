@@ -10,7 +10,7 @@ coverage>=4.0.1,!=4.0.2
 #cssselect>=0.6.1               # for PyQuery
 decorator>=4.0.4
 defusedxml>=0.4.1		# for TastyPie when ussing xml; not a declared dependency
-Django>=1.11,<1.12
+Django>=1.11,!=1.11.18,<1.12	# 1.11.18 has problems exporting BinaryField from django.db.models
 django-bcrypt>=0.9.2		# for the BCrypt password hasher option.  Remove when all bcrypt upgraded to argon2
 django-bootstrap3>=8.2.1,<9.0.0
 django-cors-headers>=2.4.0

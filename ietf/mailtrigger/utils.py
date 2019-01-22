@@ -67,9 +67,9 @@ def gather_relevant_expansions(**kwargs):
         relevant.update(starts_with('group_'))
         relevant.update(starts_with('milestones_'))
         group = kwargs['group']       
-        if group.type_id in ['rg','wg','ag',]:
+        if group.features.acts_like_wg:
             relevant.update(starts_with('session_'))
-        if group.type_id in ['wg',]:
+        if group.features.has_chartering_process:
             relevant.update(['charter_external_review',])
 
     if 'submission' in kwargs:
