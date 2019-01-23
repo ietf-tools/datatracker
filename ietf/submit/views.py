@@ -1,4 +1,5 @@
 # Copyright The IETF Trust 2007-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
 
 import re
 import base64
@@ -17,7 +18,8 @@ import debug                            # pyflakes:ignore
 
 from ietf.doc.models import Document, DocAlias, AddedMessageEvent
 from ietf.doc.utils import prettify_std_name
-from ietf.group.models import Group, Role
+from ietf.group.models import Group
+from ietf.group.utils import group_features_group_filter
 from ietf.ietfauth.utils import has_role, role_required
 from ietf.mailtrigger.utils import gather_address_lists
 from ietf.message.models import Message, MessageAttachment
@@ -513,8 +515,7 @@ def add_preapproval(request):
     groups = Group.objects.filter(type__features__acts_like_wg=True).exclude(state__in=["conclude","bof-conc"]).order_by("acronym").distinct()
 
     if not has_role(request.user, "Secretariat"):
-        groups = [ g for g in groups.filter(role__person__user=request.user)
-                              if Role.objects.filter(group=g, person__user=request.user, name__slug__in=g.type.features.matman_roles).exists() ]
+        groups = group_features_group_filter(groups, request.user.person, 'matman_roles')
 
     if request.method == "POST":
         form = PreapprovalForm(request.POST)

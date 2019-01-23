@@ -1,5 +1,5 @@
 # Copyright The IETF Trust 2016-2018, All Rights Reserved
-
+# -*- coding: utf-8 -*-
 
 # Parts Copyright (C) 2009-2010 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
@@ -54,7 +54,7 @@ from ietf.doc.utils import ( add_links_in_new_revision_events, augment_events_wi
     add_events_message_info, get_unicode_document_content, build_doc_meta_block)
 from ietf.community.utils import augment_docs_with_tracking_info
 from ietf.group.models import Role
-from ietf.group.utils import can_manage_group_type, can_manage_materials
+from ietf.group.utils import can_manage_group_type, can_manage_materials, group_features_role_filter
 from ietf.ietfauth.utils import ( has_role, is_authorized_in_doc_stream, user_is_person,
     role_required, is_individual_draft_author)
 from ietf.name.models import StreamName, BallotPositionName
@@ -164,8 +164,8 @@ def document_main(request, name, rev=None):
         # For some reason, AnonymousUser has __iter__, but is not iterable,
         # which causes problems in the filter() below.  Work around this:  
         if request.user.is_authenticated:
-            roles = [ r for r in Role.objects.filter(group__acronym__in=stream_slugs, person__user=request.user)
-                        if r.name.slug in r.group.type.features.matman_roles ]
+            roles = Role.objects.filter(group__acronym__in=stream_slugs, person__user=request.user)
+            roles = group_features_role_filter(roles, request.user.person, 'matman_roles')
         else:
             roles = []
         can_change_stream = bool(can_edit or roles)
