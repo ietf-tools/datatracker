@@ -195,6 +195,8 @@ def forward(apps, schema_editor):
         for k,v in features.items():
             setattr(gf, k, v)
         gf.save()
+# This migration does not remove or change any previous fields, and executes
+# swirftly, so we permit it to be interleaved with schema migrations
 forward.interleavable = True
 
 def reverse(apps, schema_editor):
