@@ -269,7 +269,9 @@ def generate_approval_mail_rfc_editor(request, doc):
 def generate_publication_request(request, doc):
     group_description = ""
     if doc.group and doc.group.acronym != "none":
-        group_description = doc.group.name_with_acronym()
+        group_description = doc.group.name
+        if doc.group.type_id not in ("ietf", "irtf", "iab",):
+            group_description += " %s (%s)" % (doc.group.type, doc.group.acronym)
 
     e = doc.latest_event(ConsensusDocEvent, type="changed_consensus")
     consensus = e.consensus if e else None

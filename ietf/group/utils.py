@@ -1,5 +1,9 @@
+# Copyright The IETF Trust 2012-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
 import os
 
+from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.utils.safestring import mark_safe
 from django.urls import reverse as urlreverse
@@ -11,6 +15,7 @@ from ietf.community.utils import reset_name_contains_index_for_rule, can_manage_
 from ietf.doc.models import Document, State
 from ietf.group.models import Group, RoleHistory, Role
 from ietf.ietfauth.utils import has_role
+from ietf.name.models import GroupTypeName
 from ietf.person.models import Email
 from ietf.review.utils import can_manage_review_requests_for_team
 from ietf.utils import log
@@ -121,12 +126,12 @@ def milestone_reviewer_for_group_type(group_type):
         return "Area Director"
 
 def can_manage_materials(user, group):
-    return has_role(user, 'Secretariat') or group.has_role(user, ("chair", "delegate", "secr", "matman", "ad"))
+    return has_role(user, 'Secretariat') or group.has_role(user, group.features.matman_roles)
 
 def can_provide_status_update(user, group):
-    if not group.type_id in ['wg','rg','ag','team']:
+    if not group.features.acts_like_wg:
         return False
-    return has_role(user, 'Secretariat') or group.has_role(user, ("chair", "delegate", "secr", "ad",))
+    return has_role(user, 'Secretariat') or group.has_role(user, group.features.matman_roles)
 
 def get_group_or_404(acronym, group_type):
     """Helper to overcome the schism between group-type prefixed URLs and generic."""
@@ -246,3 +251,23 @@ def construct_group_menu_context(request, group, selected, group_type, others):
     d.update(others)
 
     return d
+
+
+def group_features_group_filter(groups, person, feature):
+    """This returns a queryset of groups filtered such that the given person has
+    a role listed in the given feature for each group."""
+    type_slugs = set(groups.values_list('type__slug', flat=True))
+    group_types = GroupTypeName.objects.filter(slug__in=type_slugs)
+    if not group_types.exists():
+        return groups.none()
+    q = reduce(lambda a,b:a|b, [ Q(role__person=person, role__name__slug__in=getattr(t.features, feature)) for t in group_types ])
+    return groups.filter(q)
+
+def group_features_role_filter(roles, person, feature):
+    type_slugs = set(roles.values_list('group__type__slug', flat=True))
+    group_types = GroupTypeName.objects.filter(slug__in=type_slugs)
+    if not group_types.exists():
+        return roles.none()
+    q = reduce(lambda a,b:a|b, [ Q(person=person, name__slug__in=getattr(t.features, feature)) for t in group_types ])
+    return roles.filter(q)
+    

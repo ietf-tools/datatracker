@@ -1,7 +1,9 @@
-# Copyright The IETF Trust 2007, All Rights Reserved
+# Copyright The IETF Trust 2007-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
 
 import datetime
 import email.utils
+import jsonfield
 import os
 import re
 from urlparse import urljoin
@@ -40,31 +42,20 @@ class GroupInfo(models.Model):
     def __unicode__(self):
         return self.name
 
-    def name_with_acronym(self):
-        res = self.name
-        if self.type_id in ("wg", "rg", "ag", "area"):
-            res += " %s (%s)" % (self.type, self.acronym)
-        return res
-
     def ad_role(self):
         return self.role_set.filter(name='ad').first()
 
     @property
     def features(self):
         if not hasattr(self, "features_cache"):
-            features = GroupFeatures.objects.get(type=self.type)
-            # convert textual lists to python lists:
-            for a in ['material_types', 'admin_roles', ]:
-                v = getattr(features, a)
-                setattr(features, a, v.split(','))
-            self.features_cache = features
+            self.features_cache = GroupFeatures.objects.get(type=self.type)
         return self.features_cache
 
     def about_url(self):
         # bridge gap between group-type prefixed URLs and /group/ ones
         from django.urls import reverse as urlreverse
         kwargs = { 'acronym': self.acronym }
-        if self.type_id in ("wg", "rg", "ag"):
+        if self.features.acts_like_wg:
             kwargs["group_type"] = self.type_id
         return urlreverse(self.features.about_page, kwargs=kwargs)
 
@@ -214,25 +205,35 @@ validate_comma_separated_roles = RegexValidator(
 )
 
 class GroupFeatures(models.Model):
-    type = ForeignKey(GroupTypeName, primary_key=True, null=False, related_name='features')
+    type = OneToOneField(GroupTypeName, primary_key=True, null=False, related_name='features')
     history = HistoricalRecords()
     #
     has_milestones          = models.BooleanField("Milestones", default=False)
     has_chartering_process  = models.BooleanField("Chartering", default=False)
     has_documents           = models.BooleanField("Documents",  default=False) # i.e. drafts/RFCs
     has_dependencies        = models.BooleanField("Dependencies",default=False) # Do dependency graphs for group documents make sense?
-    has_nonsession_materials= models.BooleanField("Materials",  default=False)
+    has_session_materials   = models.BooleanField("Sess Matrl.",  default=False)
+    has_nonsession_materials= models.BooleanField("Other Matrl.",  default=False)
     has_meetings            = models.BooleanField("Meetings",   default=False)
     has_reviews             = models.BooleanField("Reviews",    default=False)
     has_default_jabber      = models.BooleanField("Jabber",     default=False)
+    #
+    acts_like_wg            = models.BooleanField("WG-Like",    default=False)
+    create_wiki             = models.BooleanField("Wiki",       default=False)
+    custom_group_roles      = models.BooleanField("Cust. Roles",default=False)
     customize_workflow      = models.BooleanField("Workflow",   default=False)
+    is_schedulable          = models.BooleanField("Schedulable",default=False)
+    show_on_agenda          = models.BooleanField("On Agenda",  default=False)
+    req_subm_approval       = models.BooleanField("Subm. Approval",  default=False)
+    #
     agenda_type             = models.ForeignKey(AgendaTypeName, null=True, default="ietf", on_delete=CASCADE)
     about_page              = models.CharField(max_length=64, blank=False, default="ietf.group.views.group_about" )
     default_tab             = models.CharField(max_length=64, blank=False, default="ietf.group.views.group_about" )
-    material_types          = models.CharField(max_length=64, blank=False, default="slides",
-                                                validators=[validate_comma_separated_materials])
-    admin_roles             = models.CharField(max_length=64, blank=False, default="chair",
-                                                validators=[validate_comma_separated_roles])
+    material_types          = jsonfield.JSONField(max_length=64, blank=False, default="slides")
+    admin_roles             = jsonfield.JSONField(max_length=64, blank=False, default="chair")
+    matman_roles            = jsonfield.JSONField(max_length=128, blank=False, default="ad,chair,delegate,secr")
+    role_order              = jsonfield.JSONField(max_length=128, blank=False, default="chair,secr,member",
+                                                help_text="The order in which roles are shown, for instance on photo pages.  Enter valid JSON.")
 
 
 class GroupHistory(GroupInfo):

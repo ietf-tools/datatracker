@@ -11,7 +11,7 @@ from ietf.group.models import Group
 from ietf.mailinglists.models import List
 
 def groups(request):
-    groups = Group.objects.filter(type__in=("wg", "rg", "ag"), list_archive__startswith='http').exclude(state__in=('bof', 'conclude')).order_by("acronym")
+    groups = Group.objects.filter(type__features__acts_like_wg=True, list_archive__startswith='http').exclude(state__in=('bof', 'conclude')).order_by("acronym")
 
     return render(request, "mailinglists/group_archives.html", { "groups": groups } )
 
@@ -19,7 +19,7 @@ def groups(request):
 # safely cache this for some time.
 @cache_page(15*60)
 def nonwg(request):
-    groups = Group.objects.filter(type__in=("wg", "rg")).exclude(state__in=['bof', 'conclude']).order_by("acronym")
+    groups = Group.objects.filter(type__features__acts_like_wg=True).exclude(state__in=['bof', 'conclude']).order_by("acronym")
 
     #urls = [ g.list_archive for g in groups if '.ietf.org' in g.list_archive ]
 

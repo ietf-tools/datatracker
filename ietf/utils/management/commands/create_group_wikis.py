@@ -19,7 +19,7 @@ from django.template.loader import render_to_string
 
 import debug                            # pyflakes:ignore
 
-from ietf.group.models import Group, GroupURL
+from ietf.group.models import Group, GroupURL, GroupFeatures
 from ietf.utils.pipe import pipe
 
 logtag = __name__.split('.')[-1]
@@ -216,7 +216,7 @@ class Command(BaseCommand):
                 self.maybe_add_group_url(group, 'Issue tracker', settings.TRAC_ISSUE_URL_PATTERN % group.acronym)
                 # Use custom assets (if any) from the master setup
                 self.symlink_to_master_assets(group.trac_dir, env)
-                if group.type_id in ['wg', 'rg', 'ag', ]:
+                if group.features.acts_like_wg:
                     self.add_wg_draft_states(group, env)
                 self.add_custom_wiki_pages(group, env)
                 self.add_default_wiki_pages(env)
@@ -338,7 +338,8 @@ class Command(BaseCommand):
         if not os.path.exists(os.path.dirname(self.svn_dir_pattern)):
             raise CommandError('The SVN base direcory specified for the SVN directories (%s) does not exist.' % os.path.dirname(self.svn_dir_pattern))
 
-        gfilter  = Q(type__slug__in=settings.TRAC_CREATE_GROUP_TYPES, state__slug__in=settings.TRAC_CREATE_GROUP_STATES)
+        gtypes = [ f.type for f in GroupFeatures.objects.filter(create_wiki=True) ]
+        gfilter  = Q(type__in=gtypes, state__slug__in=settings.TRAC_CREATE_GROUP_STATES)
         gfilter |= Q(acronym__in=settings.TRAC_CREATE_GROUP_ACRONYMS)
 
         groups = Group.objects.filter(gfilter).order_by('acronym')

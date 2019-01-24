@@ -1,6 +1,9 @@
 from django import template
 
+import debug                            # pyflakes:ignore
+
 from ietf.group.models import Group
+from ietf.group.utils import group_features_group_filter
 
 register = template.Library()
 
@@ -9,19 +12,10 @@ def managed_groups(user):
     if not (user and hasattr(user, "is_authenticated") and user.is_authenticated):
         return []
 
-    groups = []
-    # groups.extend(Group.objects.filter(
-    #     role__name__slug='ad',
-    #     role__person__user=user,
-    #     type__slug='area',
-    #     state__slug='active').select_related("type"))
-
-    groups.extend(Group.objects.filter(
-        role__name__slug__in=['chair', 'delegate', 'ad', ],
-        role__person__user=user,
-        type__slug__in=('rg', 'wg', 'ag', 'ietf'),
-        state__slug__in=('active', 'bof')).select_related("type"))
-
+    groups = Group.objects.filter(  role__person=user.person,
+                                    type__features__has_session_materials=True,
+                                    state__slug__in=('active', 'bof'))
+    groups = group_features_group_filter(groups, user.person, 'matman_roles')
     return groups
 
 @register.filter

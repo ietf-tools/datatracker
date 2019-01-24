@@ -11,15 +11,7 @@
 
 --- django/forms/widgets.py.old	2018-02-21 15:17:40.742742712 -0800
 +++ django/forms/widgets.py	2018-02-21 15:19:57.182002508 -0800
-@@ -7,6 +7,7 @@
- import copy
- import datetime
- import re
-+import six
- from itertools import chain
- 
- from django.conf import settings
-@@ -195,7 +196,7 @@
+@@ -195,7 +195,7 @@
          """
          Return a value as it should appear when rendered in a template.
          """

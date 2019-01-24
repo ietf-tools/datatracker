@@ -102,21 +102,30 @@ admin.site.register(Group, GroupAdmin)
 
 class GroupFeaturesAdmin(admin.ModelAdmin):
     list_display = [
+
         'type',
-        'customize_workflow',
-        'has_chartering_process',
-        'has_default_jabber',
-        'has_dependencies',
-        'has_documents',
-        'has_nonsession_materials',
         'has_milestones',
+        'has_chartering_process',
+        'has_documents',
+        'has_dependencies',
+        'has_session_materials',
+        'has_nonsession_materials',
+        'has_meetings',
         'has_reviews',
-        'material_types',
+        'has_default_jabber',
+        'acts_like_wg',
+        'create_wiki',
+        'custom_group_roles',
+        'customize_workflow',
+        'is_schedulable',
+        'show_on_agenda',
+        'req_subm_approval',
         'agenda_type',
+        'material_types',
         'admin_roles',
-        'about_page',
-        'default_tab',
-        ]
+        'matman_roles',
+        'role_order',
+    ]
 admin.site.register(GroupFeatures, GroupFeaturesAdmin)
 
 class GroupHistoryAdmin(admin.ModelAdmin):

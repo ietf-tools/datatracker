@@ -1,4 +1,6 @@
-# Copyright The IETF Trust 2007, All Rights Reserved
+# Copyright The IETF Trust 2007-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
 
 # Portion Copyright (C) 2009 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
@@ -422,6 +424,8 @@ class CoverageTest(unittest.TestCase):
                         if issubclass(cl, ModelOperation) or issubclass(cl, FieldOperation):
                             ops.append(('schema', cl.__name__))
                         elif issubclass(cl, Operation):
+                            if getattr(op, 'code', None) and getattr(op.code, 'interleavable', None) == True:
+                                continue
                             ops.append(('data', cl.__name__))
                         else:
                             raise RuntimeError("Found unexpected operation type in migration: %s" % (op))
@@ -441,10 +445,15 @@ class CoverageTest(unittest.TestCase):
                     unreleased.append((node, op, nm))
         # gather the transitions in operation types.  We'll allow 1
         # transition, but not 2 or more.
-        mixed = [ unreleased[i] for i in range(1,len(unreleased)) if unreleased[i][1] != unreleased[i-1][1] ]
+        for s in range(len(unreleased)):
+            # ignore leading data migrations, they run with the production
+            # schema so can take any time they like
+            if unreleased[s][1] != 'data':
+                break
+        mixed = [ unreleased[i] for i in range(s+1,len(unreleased)) if unreleased[i][1] != unreleased[i-1][1] ]
         if len(mixed) > 1:
             raise self.failureException('Found interleaved schema and data operations in unreleased migrations;'
-                ' please see if they can be re-ordered with all schema migrations before the data migrations:\n'
+                ' please see if they can be re-ordered with all data migrations before the schema migrations:\n'
                 +('\n'.join(['    %-6s:  %-12s, %s (%s)'% (op, node.key[0], node.key[1], nm) for (node, op, nm) in unreleased ])))
 
 class IetfTestRunner(DiscoverRunner):

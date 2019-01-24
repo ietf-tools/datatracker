@@ -1,4 +1,5 @@
-# Copyright The IETF Trust 2007, All Rights Reserved
+# Copyright The IETF Trust 2007-2019, All Rights Reserved
+
 
 # Portion Copyright (C) 2010 Nokia Corporation and/or its subsidiary(-ies).
 # All rights reserved. Contact: Pasi Eronen <pasi.eronen@nokia.com>
@@ -69,7 +70,8 @@ from ietf.group.forms import (GroupForm, StatusUpdateForm, ConcludeGroupForm, St
                               ManageReviewRequestForm, EmailOpenAssignmentsForm, ReviewerSettingsForm,
                               AddUnavailablePeriodForm, EndUnavailablePeriodForm, ReviewSecretarySettingsForm, )
 from ietf.group.mails import email_admin_re_charter, email_personnel_change, email_comment
-from ietf.group.models import ( Group, Role, GroupEvent, GroupStateTransitions, GroupURL, ChangeStateGroupEvent )
+from ietf.group.models import ( Group, Role, GroupEvent, GroupStateTransitions, GroupURL,
+                              ChangeStateGroupEvent, GroupFeatures )
 from ietf.group.utils import (get_charter_text, can_manage_group_type, 
                               milestone_reviewer_for_group_type, can_provide_status_update,
                               can_manage_materials, 
@@ -385,7 +387,8 @@ def bofs(request, group_type):
 def chartering_groups(request):
     charter_states = State.objects.filter(used=True, type="charter").exclude(slug__in=("approved", "notrev"))
 
-    group_types = GroupTypeName.objects.filter(slug__in=("wg", "rg"))
+    group_type_slugs = [ f.type.slug for f in GroupFeatures.objects.filter(has_chartering_process=True) ]
+    group_types = GroupTypeName.objects.filter(slug__in=group_type_slugs)
 
     for t in group_types:
         t.chartering_groups = Group.objects.filter(type=t, charter__states__in=charter_states).select_related("state", "charter").order_by("acronym")
@@ -788,16 +791,7 @@ def group_photos(request, group_type=None, acronym=None):
     group = get_object_or_404(Group, acronym=acronym)
     roles = sorted(Role.objects.filter(group__acronym=acronym),key=lambda x: x.name.name+x.person.last_name())
 
-    if   group.type_id in ['wg', 'rg', 'ag', ]:
-        roles = reorder_roles(roles, ['chair', 'secr'])
-    elif group.type_id in ['nomcom', ]:
-        roles = reorder_roles(roles, ['chair', 'member', 'advisor', ])
-    elif group.type_id in ['team', ]:
-        roles = reorder_roles(roles, ['chair', 'member', 'matman', ])
-    elif group.type_id in ['sdo', ]:
-        roles = reorder_roles(roles, ['liaiman', ])
-    else:
-        pass
+    roles = reorder_roles(roles, group.features.role_order)
     for role in roles:
         role.last_initial = role.person.last_name()[0]
     return render(request, 'group/group_photos.html',
@@ -1197,6 +1191,7 @@ def stream_documents(request, acronym):
     docs, meta = prepare_document_table(request, qs, max_results=1000)
     return render(request, 'group/stream_documents.html', {'stream':stream, 'docs':docs, 'meta':meta, 'editable':editable } )
 
+
 def stream_edit(request, acronym):
     group = get_object_or_404(Group, acronym=acronym)
 
@@ -1252,7 +1247,7 @@ def group_json(request, acronym):
 @cache_control(public=True, max_age=30*60)
 @cache_page(30 * 60)
 def group_menu_data(request):
-    groups = Group.objects.filter(state="active", type__in=("wg", "rg"), parent__state="active").order_by("acronym")
+    groups = Group.objects.filter(state="active", type__features__acts_like_wg=True, parent__state="active").order_by("acronym")
 
     groups_by_parent = defaultdict(list)
     for g in groups:

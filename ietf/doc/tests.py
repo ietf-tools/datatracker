@@ -887,17 +887,17 @@ class DocTestCase(TestCase):
         self.client.login(username='iab-chair', password='iab-chair+password')
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("Request publication" not in unicontent(r))
+        self.assertNotIn("Request publication", unicontent(r))
 
         Document.objects.filter(pk=doc.pk).update(stream='iab')
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("Request publication" in unicontent(r))
+        self.assertIn("Request publication", unicontent(r))
 
         doc.states.add(State.objects.get(type_id='draft-stream-iab',slug='rfc-edit'))
         r = self.client.get(urlreverse("ietf.doc.views_doc.document_main", kwargs=dict(name=doc.name)))
         self.assertEqual(r.status_code, 200)
-        self.assertTrue("Request publication" not in unicontent(r))
+        self.assertNotIn("Request publication", unicontent(r))
 
 
     def test_document_bibtex(self):

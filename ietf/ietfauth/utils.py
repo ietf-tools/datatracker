@@ -1,3 +1,5 @@
+# Copyright The IETF Trust 2013-2019, All Rights Reserved
+
 # various authentication and authorization utilities
 
 from functools import wraps
@@ -11,7 +13,7 @@ from django.utils.decorators import available_attrs
 
 import debug                            # pyflakes:ignore
 
-from ietf.group.models import Role
+from ietf.group.models import Group, Role
 from ietf.person.models import Person
 
 def user_is_person(user, person):
@@ -134,16 +136,20 @@ def is_authorized_in_doc_stream(user, doc):
     if doc.stream.slug == "ietf" and doc.group.type_id == "individ":
         return False
 
+    matman_roles = doc.group.features.matman_roles
     if doc.stream.slug == "ietf":
         group_req = Q(group=doc.group)
     elif doc.stream.slug == "irtf":
         group_req = Q(group__acronym=doc.stream.slug) | Q(group=doc.group)
     elif doc.stream.slug in ("iab", "ise"):
+        if doc.group.type.slug == 'individ':
+            # A lot of special cases here, for stream slugs and group acronyms
+            matman_roles = Group.objects.get(acronym=doc.stream.slug).features.matman_roles
         group_req = Q(group__acronym=doc.stream.slug)
     else:
         group_req = Q()
 
-    return Role.objects.filter(Q(name__in=("chair", "secr", "delegate", "auth"), person__user=user) & group_req).exists()
+    return Role.objects.filter(Q(name__in=matman_roles, person__user=user) & group_req).exists()
 
 def is_authorized_in_group(user, group):
     """Return whether user is authorized to perform duties on
@@ -163,7 +169,7 @@ def is_authorized_in_group(user, group):
         if group.parent.acronym == 'iab' and has_role(user, ['IAB','IAB Executive Director',]):
             return True
 
-    return Role.objects.filter(name__in=("chair", "secr", "delegate", "auth"), person__user=user,group=group ).exists()
+    return Role.objects.filter(name__in=group.features.matman_roles, person__user=user,group=group ).exists()
 
 def is_individual_draft_author(user, doc):
 
