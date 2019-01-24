@@ -229,10 +229,10 @@ class GroupFeatures(models.Model):
     agenda_type             = models.ForeignKey(AgendaTypeName, null=True, default="ietf", on_delete=CASCADE)
     about_page              = models.CharField(max_length=64, blank=False, default="ietf.group.views.group_about" )
     default_tab             = models.CharField(max_length=64, blank=False, default="ietf.group.views.group_about" )
-    material_types          = jsonfield.JSONField(max_length=64, blank=False, default='["slides"]')
-    admin_roles             = jsonfield.JSONField(max_length=64, blank=False, default='["chair"]')
-    matman_roles            = jsonfield.JSONField(max_length=128, blank=False, default='["ad","chair","delegate","secr"]')
-    role_order              = jsonfield.JSONField(max_length=128, blank=False, default='["chair","secr","member"]',
+    material_types          = jsonfield.JSONField(max_length=64, blank=False, default=["slides"])
+    admin_roles             = jsonfield.JSONField(max_length=64, blank=False, default=["chair"])
+    matman_roles            = jsonfield.JSONField(max_length=128, blank=False, default=["ad","chair","delegate","secr"])
+    role_order              = jsonfield.JSONField(max_length=128, blank=False, default=["chair","secr","member"],
                                                 help_text="The order in which roles are shown, for instance on photo pages.  Enter valid JSON.")
 
 
