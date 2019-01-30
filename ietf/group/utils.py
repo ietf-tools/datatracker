@@ -131,7 +131,7 @@ def can_manage_materials(user, group):
 def can_provide_status_update(user, group):
     if not group.features.acts_like_wg:
         return False
-    return has_role(user, 'Secretariat') or group.has_role(user, group.features.matman_roles)
+    return has_role(user, 'Secretariat') or group.has_role(user, group.features.groupman_roles)
 
 def get_group_or_404(acronym, group_type):
     """Helper to overcome the schism between group-type prefixed URLs and generic."""

@@ -1,4 +1,5 @@
-# Copyright The IETF Trust 2011, All Rights Reserved
+# Copyright The IETF Trust 2011-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
 
 import os
 import datetime
@@ -556,7 +557,7 @@ def preapprovals_for_user(user):
     if has_role(user, "Secretariat"):
         return res
 
-    acronyms = [g.acronym for g in Group.objects.filter(role__person__user=user, type__features__acts_like_wg=True)]
+    acronyms = [g.acronym for g in Group.objects.filter(role__person__user=user, type__features__req_subm_approval=True)]
 
     res = res.filter(name__regex="draft-[^-]+-(%s)-.*" % "|".join(acronyms))
 

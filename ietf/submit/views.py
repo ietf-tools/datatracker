@@ -512,10 +512,10 @@ def approvals(request):
 
 @role_required("Secretariat", "Area Director", "WG Chair", "RG Chair")
 def add_preapproval(request):
-    groups = Group.objects.filter(type__features__acts_like_wg=True).exclude(state__in=["conclude","bof-conc"]).order_by("acronym").distinct()
+    groups = Group.objects.filter(type__features__req_subm_approval=True).exclude(state__in=["conclude","bof-conc"]).order_by("acronym").distinct()
 
     if not has_role(request.user, "Secretariat"):
-        groups = group_features_group_filter(groups, request.user.person, 'matman_roles')
+        groups = group_features_group_filter(groups, request.user.person, 'docman_roles')
 
     if request.method == "POST":
         form = PreapprovalForm(request.POST)

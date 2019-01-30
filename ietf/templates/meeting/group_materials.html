@@ -1,4 +1,4 @@
-{# Copyright The IETF Trust 2015, All Rights Reserved #}{% load origin %}{% origin %}
+{# Copyright The IETF Trust 2015-2019, All Rights Reserved #}{% load origin %}{% origin %}
 {% load ietf_filters proceedings_filters managed_groups %}
 {% load tz %}
 <tr>
@@ -19,7 +19,7 @@
   </td>
 
   {% if session.status_id == 'canceled' %}
-    {% if user|has_role:"Secretariat" or user|managed_groups %}
+    {% if user|has_role:"Secretariat" or user|matman_groups %}
       <td colspan="6"><span class="label label-danger">Session cancelled</span></td>
     {% else %}
       <td colspan="5"><span class="label label-danger">Session cancelled</span></td>
@@ -88,7 +88,7 @@
               {{ session.last_update|utc|date:"Y-m-d" }}<br><small>{{ session.last_update|utc|date:"H:i:s" }}&nbsp;UTC</small>
           {% endif %}
       </td>
-    {% if user|has_role:"Secretariat" or user|managed_groups %}
+    {% if user|has_role:"Secretariat" or user|matman_groups %}
       <td> 
         <div>{% include "meeting/edit_materials_button.html" %}</div>
       </td>

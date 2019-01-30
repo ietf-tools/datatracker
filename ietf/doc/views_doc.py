@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2016-2018, All Rights Reserved
+# Copyright The IETF Trust 2016-2019, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 # Parts Copyright (C) 2009-2010 Nokia Corporation and/or its subsidiary(-ies).
@@ -165,9 +165,10 @@ def document_main(request, name, rev=None):
         # which causes problems in the filter() below.  Work around this:  
         if request.user.is_authenticated:
             roles = Role.objects.filter(group__acronym__in=stream_slugs, person__user=request.user)
-            roles = group_features_role_filter(roles, request.user.person, 'matman_roles')
+            roles = group_features_role_filter(roles, request.user.person, 'docman_roles')
         else:
             roles = []
+
         can_change_stream = bool(can_edit or roles)
         can_edit_iana_state = has_role(request.user, ("Secretariat", "IANA"))
 

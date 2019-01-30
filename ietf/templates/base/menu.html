@@ -1,4 +1,4 @@
-{# Copyright The IETF Trust 2015, All Rights Reserved #}{% load origin %}{% origin %}
+{# Copyright The IETF Trust 2015-2019, All Rights Reserved #}{% load origin %}{% origin %}
 {% load ietf_filters managed_groups wg_menu streams_menu active_groups_menu group_filters %}
 
 {% if flavor != "top" %}
@@ -63,10 +63,10 @@
     <li {%if flavor == "top" %}class="dropdown-header hidden-xs"{% else %}class="nav-header"{% endif %}>WG chair</li>
     <li><a href="{% url "ietf.submit.views.approvals" %}">Approve a draft</a></li>
 
-    {% for g in user|managed_groups %}
+    {% for g in user|docman_groups %}
       <li><a href="{% url "ietf.group.views.group_documents" g.acronym %}">{{ g.acronym }} {{ g.type.slug }} docs</a></li>
     {% endfor %}
-    {% for g in user|managed_groups %}
+    {% for g in user|matman_groups %}
       <li><a href="{% url "ietf.group.views.meetings" g.acronym %}">{{ g.acronym }} {{ g.type.slug }} meetings</a></li>
     {% endfor %}
   {% endif %}

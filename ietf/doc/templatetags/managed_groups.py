@@ -1,3 +1,7 @@
+# Copyright The IETF Trust 2016-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
 from django import template
 
 import debug                            # pyflakes:ignore
@@ -8,7 +12,18 @@ from ietf.group.utils import group_features_group_filter
 register = template.Library()
 
 @register.filter
-def managed_groups(user):
+def docman_groups(user):
+    if not (user and hasattr(user, "is_authenticated") and user.is_authenticated):
+        return []
+
+    groups = Group.objects.filter(  role__person=user.person,
+                                    type__features__has_documents=True,
+                                    state__slug__in=('active', 'bof'))
+    groups = group_features_group_filter(groups, user.person, 'docman_roles')
+    return groups
+
+@register.filter
+def matman_groups(user):
     if not (user and hasattr(user, "is_authenticated") and user.is_authenticated):
         return []
 

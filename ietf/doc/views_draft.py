@@ -1,4 +1,5 @@
 # Copyright The IETF Trust 2010-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
 
 # changing state and metadata on Internet Drafts
 
@@ -1312,21 +1313,25 @@ class AdoptDraftForm(forms.Form):
         if has_role(user, "Secretariat"):
             state_types.update(['draft-stream-ietf','draft-stream-irtf'])
         else: 
-            if has_role(user, "IRTF Chair") or Group.objects.filter(type="rg", state="active", role__person__user=user, role__name__in=rg_features.matman_roles).exists():
+            if (has_role(user, "IRTF Chair")
+                or Group.objects.filter(type="rg",
+                                        state="active",
+                                        role__person__user=user,
+                                        role__name__in=rg_features.docman_roles).exists()):
                 state_types.add('draft-stream-irtf')
-            if Group.objects.filter(type="wg", state="active", role__person__user=user, role__name__in=wg_features.matman_roles).exists():
+            if Group.objects.filter(    type="wg",
+                                        state="active",
+                                        role__person__user=user,
+                                        role__name__in=wg_features.docman_roles).exists():
                 state_types.add('draft-stream-ietf')
-
-
-
 
         state_choices = State.objects.filter(type__in=state_types, used=True).exclude(slug__in=settings.GROUP_STATES_WITH_EXTRA_PROCESSING)
 
         if not has_role(user, "Secretariat"):
             if has_role(user, "IRTF Chair"):
-                group_queryset = self.fields["group"].queryset.filter(Q(role__person__user=user, role__name__in=rg_features.matman_roles)|Q(type="rg", state="active")).distinct()
+                group_queryset = self.fields["group"].queryset.filter(Q(role__person__user=user, role__name__in=rg_features.docman_roles)|Q(type="rg", state="active")).distinct()
             else:
-                group_queryset = self.fields["group"].queryset.filter(role__person__user=user, role__name__in=wg_features.matman_roles).distinct()
+                group_queryset = self.fields["group"].queryset.filter(role__person__user=user, role__name__in=wg_features.docman_roles).distinct()
             self.fields["group"].queryset = group_queryset
 
         self.fields['group'].choices = [(g.pk, '%s - %s' % (g.acronym, g.name)) for g in self.fields["group"].queryset]
