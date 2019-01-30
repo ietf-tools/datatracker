@@ -1,3 +1,6 @@
+# Copyright The IETF Trust 2010-2019, All Rights Reserved
+# -*- coding: utf-8 -*-
+
 from functools import update_wrapper
 
 from django.contrib import admin
@@ -123,8 +126,11 @@ class GroupFeaturesAdmin(admin.ModelAdmin):
         'agenda_type',
         'material_types',
         'admin_roles',
+        'docman_roles',
+        'groupman_roles',
         'matman_roles',
         'role_order',
+
     ]
 admin.site.register(GroupFeatures, GroupFeaturesAdmin)
 
