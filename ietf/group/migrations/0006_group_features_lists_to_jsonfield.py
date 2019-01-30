@@ -14,10 +14,30 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.AddField(
+            model_name='groupfeatures',
+            name='docman_roles',
+            field=jsonfield.fields.JSONField(default=[b'ad', b'chair', b'delegate', b'secr'], max_length=128),
+        ),
+        migrations.AddField(
+            model_name='groupfeatures',
+            name='groupman_roles',
+            field=jsonfield.fields.JSONField(default=[b'ad', b'chair'], max_length=128),
+        ),
+        migrations.AddField(
+            model_name='historicalgroupfeatures',
+            name='docman_roles',
+            field=jsonfield.fields.JSONField(default=[b'ad', b'chair', b'delegate', b'secr'], max_length=128),
+        ),
+        migrations.AddField(
+            model_name='historicalgroupfeatures',
+            name='groupman_roles',
+            field=jsonfield.fields.JSONField(default=[b'ad', b'chair'], max_length=128),
+        ),
         migrations.AlterField(
             model_name='groupfeatures',
             name='admin_roles',
-            field=jsonfield.fields.JSONField(default=["chair"], max_length=64),
+            field=jsonfield.fields.JSONField(default=[b'chair'], max_length=64),
         ),
         migrations.AlterField(
             model_name='groupfeatures',
@@ -37,22 +57,22 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='groupfeatures',
             name='material_types',
-            field=jsonfield.fields.JSONField(default=["slides"], max_length=64),
+            field=jsonfield.fields.JSONField(default=[b'slides'], max_length=64),
         ),
         migrations.AlterField(
             model_name='groupfeatures',
             name='matman_roles',
-            field=jsonfield.fields.JSONField(default=["ad","chair","delegate","secr"], max_length=128),
+            field=jsonfield.fields.JSONField(default=[b'ad', b'chair', b'delegate', b'secr'], max_length=128),
         ),
         migrations.AlterField(
             model_name='groupfeatures',
             name='role_order',
-            field=jsonfield.fields.JSONField(default=["chair","secr","member"], help_text=b'The order in which roles are shown, for instance on photo pages.  Enter valid JSON.', max_length=128),
+            field=jsonfield.fields.JSONField(default=[b'chair', b'secr', b'member'], help_text=b'The order in which roles are shown, for instance on photo pages.  Enter valid JSON.', max_length=128),
         ),
         migrations.AlterField(
             model_name='historicalgroupfeatures',
             name='admin_roles',
-            field=jsonfield.fields.JSONField(default=["chair"], max_length=64),
+            field=jsonfield.fields.JSONField(default=[b'chair'], max_length=64),
         ),
         migrations.AlterField(
             model_name='historicalgroupfeatures',
@@ -72,16 +92,16 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='historicalgroupfeatures',
             name='material_types',
-            field=jsonfield.fields.JSONField(default=["slides"], max_length=64),
+            field=jsonfield.fields.JSONField(default=[b'slides'], max_length=64),
         ),
         migrations.AlterField(
             model_name='historicalgroupfeatures',
             name='matman_roles',
-            field=jsonfield.fields.JSONField(default=["ad","chair","delegate","secr"], max_length=128),
+            field=jsonfield.fields.JSONField(default=[b'ad', b'chair', b'delegate', b'secr'], max_length=128),
         ),
         migrations.AlterField(
             model_name='historicalgroupfeatures',
             name='role_order',
-            field=jsonfield.fields.JSONField(default=["chair","secr","member"], help_text=b'The order in which roles are shown, for instance on photo pages.  Enter valid JSON.', max_length=128),
+            field=jsonfield.fields.JSONField(default=[b'chair', b'secr', b'member'], help_text=b'The order in which roles are shown, for instance on photo pages.  Enter valid JSON.', max_length=128),
         ),
     ]
