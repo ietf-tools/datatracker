@@ -1,3 +1,37 @@
+ietfdb (6.91.0) ietf; urgency=low
+
+  **Expanded group property table entries**
+
+  This release contains a refactoring of a large number of instances in the
+  code where group types (wg, area, rg, etc.) have been hardcoded in the past
+  in order to reflect different properties for different groups.  Instead,
+  group types have now aquired a list of new 'feature' settings, for instance
+  is_schedulable, show_on_agenda, has_session_materials, and more.  This will
+  make it easier to add new group types without having to change the code,
+  by indicating for each new group type which properties it should have.
+
+  Additionally, some minor unrelated fixes has been applied.  From the
+  commit log:
+
+  * Merged in GroupFeatures refactoring and expansion from 
+    ^/personal/henrik/6.89.4.dev0@15911.
+
+  * Reverted r15071 with respects to showing the submit for publication 
+    button to shepherds.  Fixes issue #2673.
+
+  * Updated code and templates to use the new docman and groupman group 
+    features.
+
+  * Updated fixture with new group features and more.
+
+  * Added a tiny management command to list group types per feature.
+
+  * Removed origin information from the liaison_title.html template, as 
+    it's used in a context where  html comments will be rendered.  Fixes issue 
+    #2674.
+
+ -- Henrik Levkowetz <henrik@levkowetz.com>  31 Jan 2019 19:06:59 +0000
+
 ietfdb (6.90.0) ietf; urgency=low
 
   * Modified the rolodex code to make sure we capture information about the
