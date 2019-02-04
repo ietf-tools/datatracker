@@ -445,6 +445,7 @@ class CoverageTest(unittest.TestCase):
                     unreleased.append((node, op, nm))
         # gather the transitions in operation types.  We'll allow 1
         # transition, but not 2 or more.
+        s = 0
         for s in range(len(unreleased)):
             # ignore leading data migrations, they run with the production
             # schema so can take any time they like
