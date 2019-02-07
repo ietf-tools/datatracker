@@ -7,13 +7,6 @@ Updated: $Date$
 Planned work in rough order
 ===========================
 
-* GroupFeatures cleanup.  Move most to fields on GroupTypeName, and fix places
-  that still uses lists of group types to determine actions by instead
-  defining group type fields to hold the selector.  (Setting up a new
-  group type for things like PechaCucha and Hot RFC Lightning Talks probably
-  could have been done with only table edits if there hadn't been so much code
-  using type_id lists and features needing code changes).
-
 * Change email sender -- move from AD and reviewer email addresses to a
   datatracker address 'on behalf of'.
 
@@ -23,10 +16,14 @@ Planned work in rough order
 
 * Revisit the review tool, work through the accumulated tickets.
 
+* Transition to Python 3.  This will make it easier to add add support for
+  internationalsed email, and also other i18n enhancements.
+
 * Review and change the draft submission and handling code to deal with UTF-8
-  instead of ascii before upload of utf-8 drafts should be permitted.  In
-  ietf.submit.views.upload_submission(), for instance, there's a file open()
-  which should be io.open() with the appropriate encoding.  In general,
+  instead of ascii before upload of utf-8 drafts should be permitted.  
+  (This may fall out for free with the Python 3 transition).
+  In ietf.submit.views.upload_submission(), for instance, there's a file
+  open() which should be io.open() with the appropriate encoding.  In general,
   there are about 100 file open() which should be reviewed and changed to
   io.open() unless that's clearly not right.
 
@@ -44,9 +41,6 @@ Planned work in rough order
 
 * (EXTERNAL BID) Reworked UI and refactored backend for the scretariat meeting
   scheduling tool.
-
-* Transition to Python 3.  This will make it easier to add add support for
-  internationalsed email, and also other i18n enhancements.
 
 * Add support for internationalised email addresses according to RFC 6531
   when sending email (this is not supported by smtplib under Python 2.7,
