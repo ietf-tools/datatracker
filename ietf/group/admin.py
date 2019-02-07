@@ -110,7 +110,6 @@ class GroupFeaturesAdmin(admin.ModelAdmin):
         'has_milestones',
         'has_chartering_process',
         'has_documents',
-        'has_dependencies',
         'has_session_materials',
         'has_nonsession_materials',
         'has_meetings',

@@ -211,7 +211,6 @@ class GroupFeatures(models.Model):
     has_milestones          = models.BooleanField("Milestones", default=False)
     has_chartering_process  = models.BooleanField("Chartering", default=False)
     has_documents           = models.BooleanField("Documents",  default=False) # i.e. drafts/RFCs
-    has_dependencies        = models.BooleanField("Dependencies",default=False) # Do dependency graphs for group documents make sense?
     has_session_materials   = models.BooleanField("Sess Matrl.",  default=False)
     has_nonsession_materials= models.BooleanField("Other Matrl.",  default=False)
     has_meetings            = models.BooleanField("Meetings",   default=False)
