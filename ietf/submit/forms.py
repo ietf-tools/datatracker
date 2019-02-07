@@ -177,7 +177,7 @@ class SubmissionBaseUploadForm(forms.Form):
                 self.title = self.xmlroot.findtext('front/title').strip()
                 if type(self.title) is unicode:
                     self.title = unidecode(self.title)
-                self.abstract = self.xmlroot.findtext('front/abstract').strip()
+                self.abstract = (self.xmlroot.findtext('front/abstract') or '').strip()
                 if type(self.abstract) is unicode:
                     self.abstract = unidecode(self.abstract)
                 author_info = self.xmlroot.findall('front/author')
