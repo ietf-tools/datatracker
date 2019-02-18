@@ -462,7 +462,9 @@ def group_documents(request, acronym, group_type=None):
     if not group.features.has_documents:
         raise Http404
 
-    clist = get_object_or_404(CommunityList, group=group)
+    if not group.communitylist_set.exists():
+        setup_default_community_list_for_group(group)
+    clist = group.communitylist_set.first()
 
     docs, meta, docs_related, meta_related = prepare_group_documents(request, group, clist)
 
