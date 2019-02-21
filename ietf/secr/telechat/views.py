@@ -329,7 +329,10 @@ def doc_navigate(request, date, name, nav):
     target = name
 
     docs = get_doc_list(agenda)
-    index = docs.index(doc)
+    if doc in docs:
+        index = docs.index(doc)
+    else:
+        return redirect('ietf.secr.telechat.views.doc_detail', date=date, name=name)
 
     if nav == 'next' and index < len(docs) - 1:
         target = docs[index + 1].name
